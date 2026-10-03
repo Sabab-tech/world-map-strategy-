@@ -71,6 +71,25 @@
           "value": "Low-ash bituminous coal",
           "unit": null,
           "status": "OBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -153,6 +172,25 @@
           "value": "Thermal coal",
           "unit": null,
           "status": "OBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -231,6 +269,25 @@
           "value": "Lignite",
           "unit": null,
           "status": "OBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -310,6 +367,41 @@
           "value": "High-quality vein graphite",
           "unit": null,
           "status": "OBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {
+          "productionJanSep2025": {
+            "value": 451,
+            "unit": "metric_tons",
+            "basis": "ROM"
+          },
+          "productionAprSep2025": {
+            "value": 278,
+            "unit": "metric_tons",
+            "basis": "ROM"
+          },
+          "productionFY2024_25": {
+            "value": 405,
+            "unit": "metric_tons",
+            "basis": "ROM"
+          }
+        },
+        "quantitativeProvenance": {
+          "structuredSource": "site.webVerifiedMetrics",
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -389,6 +481,25 @@
           "value": 52,
           "unit": "percent_CaO",
           "status": "OBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -464,6 +575,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -545,6 +675,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -619,6 +768,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -696,6 +864,25 @@
           "value": "Iron ore; primary processing unit nearing completion",
           "unit": null,
           "status": "OBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -775,6 +962,36 @@
           "value": "1.37 g/t Au",
           "unit": null,
           "status": "OBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {
+          "goldProduction2025": {
+            "value": 500000,
+            "unit": "troy_ounces",
+            "basis": "attributable"
+          },
+          "mineralReserve2025": {
+            "value": 2360000,
+            "unit": "troy_ounces_gold",
+            "basis": "attributable"
+          }
+        },
+        "quantitativeProvenance": {
+          "structuredSource": "site.webVerifiedMetrics",
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -855,6 +1072,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -933,6 +1169,30 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "annualCapacity": 34025000,
+          "unit": "metric_tons_per_year",
+          "year": 2023,
+          "status": "REPORTED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": "site.capacityProfile",
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -1013,6 +1273,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -1090,6 +1369,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -1167,6 +1465,25 @@
           "value": 35.4,
           "unit": "percent_Fe",
           "status": "OBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -1246,6 +1563,25 @@
           "value": 2.01,
           "unit": "grams_per_tonne_gold",
           "status": "OBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -1320,6 +1656,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -1398,6 +1753,29 @@
           "value": 30,
           "unit": "percent_P2O5",
           "status": "OBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "annualProductionAndSalesCapacity": 1300000,
+          "unit": "metric_tons_per_year",
+          "status": "REPORTED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": "site.capacityProfile",
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -1476,6 +1854,31 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {
+          "annualCapacity": {
+            "value": 18500000,
+            "unit": "metric_tons_bauxite",
+            "basis": "annual_capacity"
+          }
+        },
+        "quantitativeProvenance": {
+          "structuredSource": "site.webVerifiedMetrics",
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -1553,6 +1956,29 @@
           "value": 0.93,
           "unit": "percent_rutile",
           "status": "OBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "annualRutileProductionCapacity": 120000,
+          "unit": "metric_tons_per_year",
+          "status": "REPORTED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": "site.capacityProfile",
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -1630,6 +2056,29 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "phase2ConcentrateCapacity": 15000000,
+          "unit": "metric_tons_per_year",
+          "status": "REPORTED_DESIGN_CAPACITY"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": "site.capacityProfile",
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -1707,6 +2156,31 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {
+          "goldProduction2025": {
+            "value": 319000,
+            "unit": "troy_ounces",
+            "basis": "site_production"
+          }
+        },
+        "quantitativeProvenance": {
+          "structuredSource": "site.webVerifiedMetrics",
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -1786,6 +2260,41 @@
           "value": "Gold-bearing Tarkwaian ore",
           "unit": null,
           "status": "OBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {
+          "goldProduction2025": {
+            "value": 474500,
+            "unit": "troy_ounces",
+            "basis": "site_production"
+          },
+          "oreMined2025": {
+            "value": 10649000,
+            "unit": "metric_tons",
+            "basis": "ore_mined"
+          },
+          "gradeMined2025": {
+            "value": 1.23,
+            "unit": "grams_per_tonne_gold",
+            "basis": "ore_grade"
+          }
+        },
+        "quantitativeProvenance": {
+          "structuredSource": "site.webVerifiedMetrics",
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -1864,6 +2373,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -1941,6 +2469,30 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "geologicalDepositSizeEstimate": 140000000,
+          "unit": "metric_tons",
+          "status": "GOVERNMENT_MINISTRY_ESTIMATE",
+          "scope": "Onigbolo + Massè + Bakpodji not site-exclusive"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": "site.capacityProfile",
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -2016,6 +2568,48 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {
+          "goldProduction2025": {
+            "value": 427200,
+            "unit": "troy_ounces",
+            "basis": "100% mine"
+          },
+          "attributableGoldProduction2025": {
+            "value": 372100,
+            "unit": "troy_ounces",
+            "basis": "company_attributable"
+          },
+          "oreMilled2025": {
+            "value": 12560000,
+            "unit": "metric_tons"
+          },
+          "headGrade2025": {
+            "value": 1.18,
+            "unit": "grams_per_tonne_gold"
+          },
+          "recovery2025": {
+            "value": 90,
+            "unit": "percent"
+          }
+        },
+        "quantitativeProvenance": {
+          "structuredSource": "site.webVerifiedMetrics",
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -2091,6 +2685,31 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {
+          "goldProduction2026H1": {
+            "value": 190000,
+            "unit": "troy_ounces",
+            "basis": "site_attributable_80_percent"
+          }
+        },
+        "quantitativeProvenance": {
+          "structuredSource": "site.webVerifiedMetrics",
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -2170,6 +2789,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -2251,6 +2889,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -2326,6 +2983,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -2406,6 +3082,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -2481,6 +3176,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -2556,6 +3270,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -2634,6 +3367,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -2712,6 +3464,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -2792,6 +3563,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -2875,6 +3665,38 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {
+          "copperProduction2025": {
+            "value": 388841,
+            "unit": "metric_tons_copper_in_concentrate"
+          },
+          "oreMilled2025": {
+            "value": 14300000,
+            "unit": "metric_tons"
+          },
+          "averageFeedGrade2025": {
+            "value": 3.14,
+            "unit": "percent_copper"
+          }
+        },
+        "quantitativeProvenance": {
+          "structuredSource": "site.webVerifiedMetrics",
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -2953,6 +3775,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -3033,6 +3874,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -3109,6 +3969,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -3186,6 +4065,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -3263,6 +4161,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -3338,6 +4255,38 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {
+          "goldProduction2025": {
+            "value": 491644,
+            "unit": "troy_ounces"
+          },
+          "headGrade2025": {
+            "value": 3.26,
+            "unit": "grams_per_tonne_gold"
+          },
+          "plantRecovery2025": {
+            "value": 90.2,
+            "unit": "percent"
+          }
+        },
+        "quantitativeProvenance": {
+          "structuredSource": "site.webVerifiedMetrics",
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -3413,6 +4362,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -3489,6 +4457,25 @@
           "value": 63,
           "unit": "percent_tin",
           "status": "OBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -3564,6 +4551,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -3639,6 +4645,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -3717,6 +4742,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -3795,6 +4839,29 @@
           "value": 3.64,
           "unit": "percent_zinc",
           "status": "OBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "oreExtractionAnnual": 2900000,
+          "unit": "metric_tons_per_year",
+          "status": "REPORTED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": "site.capacityProfile",
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -3875,6 +4942,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -3955,6 +5041,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -4030,6 +5135,31 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "refinedNickelAnnual": 40000,
+          "refinedCobaltAnnual": 4000,
+          "ammoniumSulfateAnnual": 120000,
+          "unit": "metric_tons_per_year",
+          "status": "REPORTED_OPERATIONAL_DESIGN"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": "site.capacityProfile",
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -4105,6 +5235,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -4182,6 +5331,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -4257,6 +5425,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -4334,6 +5521,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -4417,6 +5623,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -4492,6 +5717,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -4570,6 +5814,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -4649,6 +5912,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -4727,6 +6009,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -4806,6 +6107,30 @@
           "value": 1.74,
           "unit": "carats_per_hundred_tonnes",
           "status": "OBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "oreTreatedAnnual": 5200000,
+          "unit": "metric_tons_per_year",
+          "year": 2025,
+          "status": "OBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": "site.capacityProfile",
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -4881,6 +6206,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -4958,6 +6302,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -5035,6 +6398,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -5116,6 +6498,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -5199,6 +6600,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -5280,6 +6700,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -5362,6 +6801,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -5445,6 +6903,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -5527,6 +7004,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -5610,6 +7106,29 @@
           "value": 0.61,
           "unit": "percent_Cu",
           "status": "OBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "copperConcentrateProductionCapacity": 810000,
+          "unit": "metric_tons_per_year",
+          "status": "REPORTED_AFTER_2025_EXPANSION"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": "site.capacityProfile",
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -5685,6 +7204,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -5767,6 +7305,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -5849,6 +7406,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -5924,6 +7500,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -6006,6 +7601,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -6085,6 +7699,38 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {
+          "declaredGasReserve": {
+            "value": 31,
+            "unit": "billion_cubic_meters",
+            "basis": "PIF declared estimate",
+            "epistemicState": "DECLARED"
+          },
+          "plannedAnnualOutput": {
+            "value": 1.5,
+            "unit": "billion_cubic_meters_per_year",
+            "basis": "PIF declared estimate",
+            "epistemicState": "DECLARED"
+          }
+        },
+        "quantitativeProvenance": {
+          "structuredSource": "site.webVerifiedMetrics",
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -6160,6 +7806,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -6240,6 +7905,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -6317,6 +8001,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -6395,6 +8098,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -6476,6 +8198,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -6548,6 +8289,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -6630,6 +8390,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -6708,6 +8487,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -6786,6 +8584,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -6864,6 +8681,29 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "annualLigniteProductionCapacity": 16000000,
+          "unit": "metric_tons_per_year",
+          "status": "REPORTED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": "site.capacityProfile",
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -6943,6 +8783,25 @@
           "value": 1.58,
           "unit": "grams_per_tonne_gold",
           "status": "OBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -7022,6 +8881,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -7098,6 +8976,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -7180,6 +9077,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -7261,6 +9177,25 @@
           "value": 1.8,
           "unit": "grams_per_tonne_gold",
           "status": "OBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -7339,6 +9274,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -7420,6 +9374,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -7500,6 +9473,30 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "annualCoalProduction2025": 45251000,
+          "unit": "metric_tons_per_year",
+          "year": 2025,
+          "status": "OBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": "site.capacityProfile",
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -7575,6 +9572,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -7654,6 +9670,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -7730,6 +9765,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -7805,6 +9859,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -7879,6 +9952,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -7960,6 +10052,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -8040,6 +10151,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -8115,6 +10245,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -8195,6 +10344,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -8272,6 +10440,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -8349,6 +10536,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -8423,6 +10629,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -8504,6 +10729,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -8585,6 +10829,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -8662,6 +10925,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -8739,6 +11021,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -8815,6 +11116,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -8891,6 +11211,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -8969,6 +11308,25 @@
           "value": 45.5,
           "unit": "percent_Fe",
           "status": "OBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -9040,6 +11398,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -9117,6 +11494,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -9194,6 +11590,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -9271,6 +11686,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -9350,6 +11784,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -9426,6 +11879,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -9507,6 +11979,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -9587,6 +12078,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -9668,6 +12178,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -9749,6 +12278,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -9827,6 +12375,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -9908,6 +12475,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -9989,6 +12575,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -10066,6 +12671,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -10144,6 +12768,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -10218,6 +12861,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -10294,6 +12956,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -10370,6 +13051,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -10446,6 +13146,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -10525,6 +13244,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -10601,6 +13339,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -10677,6 +13434,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -10753,6 +13529,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -10833,6 +13628,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -10909,6 +13723,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -10986,6 +13819,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -11063,6 +13915,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -11145,6 +14016,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -11222,6 +14112,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -11292,6 +14201,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -11360,6 +14288,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -11428,6 +14375,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -11496,6 +14462,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -11576,6 +14561,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -11656,6 +14660,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -11733,6 +14756,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -11810,6 +14852,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -11886,6 +14947,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -11969,6 +15049,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -12047,6 +15146,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -12128,6 +15246,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -12210,6 +15347,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -12287,6 +15443,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -12363,6 +15538,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -12438,6 +15632,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -12516,6 +15729,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -12597,6 +15829,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -12674,6 +15925,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -12752,6 +16022,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -12829,6 +16118,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -12907,6 +16215,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -12985,6 +16312,25 @@
           "value": 1.86,
           "unit": "percent_nickel",
           "status": "OBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -13062,6 +16408,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -13141,6 +16506,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -13216,6 +16600,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -13291,6 +16694,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -13371,6 +16793,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -13449,6 +16890,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -13526,6 +16986,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -13608,6 +17087,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -13684,6 +17182,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -13759,6 +17276,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -13836,6 +17372,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -13910,6 +17465,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -13986,6 +17560,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -14061,6 +17654,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -14138,6 +17750,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -14214,6 +17845,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -14289,6 +17939,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -14367,6 +18036,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -14445,6 +18133,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -14523,6 +18230,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -14600,6 +18326,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -14676,6 +18421,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -14754,6 +18518,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -14828,6 +18611,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -14905,6 +18707,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -14982,6 +18803,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -15058,6 +18898,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -15132,6 +18991,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -15212,6 +19090,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -15286,6 +19183,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -15360,6 +19276,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {
@@ -15437,6 +19372,25 @@
           "value": null,
           "unit": null,
           "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-03"
         }
       },
       "verification": {

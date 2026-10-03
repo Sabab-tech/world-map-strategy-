@@ -1110,7 +1110,12 @@
                   "unit": null,
                   "status": "UNOBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": true
+                "quantitativeExtractionDataAvailable": true,
+                "quantitativeProvenance": {
+                  "structuredSource": null,
+                  "capacitySource": null,
+                  "promotedAt": "2026-10-03"
+                }
               },
               "resourceIdentity": {
                 "resourceTypeId": "nickel",
@@ -1224,6 +1229,25 @@
                     "value": null,
                     "unit": null,
                     "status": "UNOBSERVED"
+                  },
+                  "recovery": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "capacity": {},
+                  "reportedMetrics": {},
+                  "quantitativeProvenance": {
+                    "structuredSource": null,
+                    "capacitySource": null,
+                    "promotedAt": "2026-10-03"
                   }
                 },
                 "verification": {
@@ -1358,7 +1382,12 @@
                   "unit": null,
                   "status": "UNOBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": false,
+                "quantitativeProvenance": {
+                  "structuredSource": null,
+                  "capacitySource": null,
+                  "promotedAt": "2026-10-03"
+                }
               },
               "resourceIdentity": {
                 "resourceTypeId": "nickel",
@@ -1457,6 +1486,25 @@
                     "value": null,
                     "unit": null,
                     "status": "UNOBSERVED"
+                  },
+                  "recovery": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "capacity": {},
+                  "reportedMetrics": {},
+                  "quantitativeProvenance": {
+                    "structuredSource": null,
+                    "capacitySource": null,
+                    "promotedAt": "2026-10-03"
                   }
                 },
                 "verification": {
@@ -1603,7 +1651,12 @@
                   "unit": null,
                   "status": "UNOBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": false,
+                "quantitativeProvenance": {
+                  "structuredSource": null,
+                  "capacitySource": null,
+                  "promotedAt": "2026-10-03"
+                }
               },
               "resourceIdentity": {
                 "resourceTypeId": "nickel",
@@ -1702,6 +1755,25 @@
                     "value": null,
                     "unit": null,
                     "status": "UNOBSERVED"
+                  },
+                  "recovery": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "capacity": {},
+                  "reportedMetrics": {},
+                  "quantitativeProvenance": {
+                    "structuredSource": null,
+                    "capacitySource": null,
+                    "promotedAt": "2026-10-03"
                   }
                 },
                 "verification": {
@@ -2214,7 +2286,12 @@
                   "unit": null,
                   "status": "UNOBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": false,
+                "quantitativeProvenance": {
+                  "structuredSource": null,
+                  "capacitySource": null,
+                  "promotedAt": "2026-10-03"
+                }
               },
               "resourceIdentity": {
                 "resourceTypeId": "bauxite",
@@ -2319,6 +2396,25 @@
                     "value": null,
                     "unit": null,
                     "status": "UNOBSERVED"
+                  },
+                  "recovery": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "capacity": {},
+                  "reportedMetrics": {},
+                  "quantitativeProvenance": {
+                    "structuredSource": null,
+                    "capacitySource": null,
+                    "promotedAt": "2026-10-03"
                   }
                 },
                 "verification": {
@@ -2862,7 +2958,12 @@
                   "unit": null,
                   "status": "UNOBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": false,
+                "quantitativeProvenance": {
+                  "structuredSource": null,
+                  "capacitySource": null,
+                  "promotedAt": "2026-10-03"
+                }
               },
               "resourceIdentity": {
                 "resourceTypeId": "limestone",
@@ -2961,6 +3062,25 @@
                     "value": null,
                     "unit": null,
                     "status": "UNOBSERVED"
+                  },
+                  "recovery": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "capacity": {},
+                  "reportedMetrics": {},
+                  "quantitativeProvenance": {
+                    "structuredSource": null,
+                    "capacitySource": null,
+                    "promotedAt": "2026-10-03"
                   }
                 },
                 "verification": {
@@ -3492,7 +3612,12 @@
                   "unit": null,
                   "status": "UNOBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": false,
+                "quantitativeProvenance": {
+                  "structuredSource": null,
+                  "capacitySource": null,
+                  "promotedAt": "2026-10-03"
+                }
               },
               "resourceIdentity": {
                 "resourceTypeId": "gold",
@@ -3591,6 +3716,25 @@
                     "value": null,
                     "unit": null,
                     "status": "UNOBSERVED"
+                  },
+                  "recovery": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "capacity": {},
+                  "reportedMetrics": {},
+                  "quantitativeProvenance": {
+                    "structuredSource": null,
+                    "capacitySource": null,
+                    "promotedAt": "2026-10-03"
                   }
                 },
                 "verification": {
@@ -4118,7 +4262,12 @@
                   "unit": null,
                   "status": "UNOBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": false,
+                "quantitativeProvenance": {
+                  "structuredSource": null,
+                  "capacitySource": null,
+                  "promotedAt": "2026-10-03"
+                }
               },
               "resourceIdentity": {
                 "resourceTypeId": "crude_oil",
@@ -4227,6 +4376,25 @@
                     "value": null,
                     "unit": null,
                     "status": "UNOBSERVED"
+                  },
+                  "recovery": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "capacity": {},
+                  "reportedMetrics": {},
+                  "quantitativeProvenance": {
+                    "structuredSource": null,
+                    "capacitySource": null,
+                    "promotedAt": "2026-10-03"
                   }
                 },
                 "verification": {
@@ -4760,7 +4928,12 @@
                   "unit": null,
                   "status": "UNOBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": false,
+                "quantitativeProvenance": {
+                  "structuredSource": null,
+                  "capacitySource": null,
+                  "promotedAt": "2026-10-03"
+                }
               },
               "resourceIdentity": {
                 "resourceTypeId": "aragonite",
@@ -4857,6 +5030,25 @@
                     "value": null,
                     "unit": null,
                     "status": "UNOBSERVED"
+                  },
+                  "recovery": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "capacity": {},
+                  "reportedMetrics": {},
+                  "quantitativeProvenance": {
+                    "structuredSource": null,
+                    "capacitySource": null,
+                    "promotedAt": "2026-10-03"
                   }
                 },
                 "verification": {
@@ -5355,7 +5547,12 @@
                   "unit": null,
                   "status": "UNOBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": false,
+                "quantitativeProvenance": {
+                  "structuredSource": null,
+                  "capacitySource": null,
+                  "promotedAt": "2026-10-03"
+                }
               },
               "resourceIdentity": {
                 "resourceTypeId": "limestone",
@@ -5454,6 +5651,25 @@
                     "value": null,
                     "unit": null,
                     "status": "UNOBSERVED"
+                  },
+                  "recovery": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "capacity": {},
+                  "reportedMetrics": {},
+                  "quantitativeProvenance": {
+                    "structuredSource": null,
+                    "capacitySource": null,
+                    "promotedAt": "2026-10-03"
                   }
                 },
                 "verification": {
@@ -6000,7 +6216,12 @@
                   "unit": null,
                   "status": "UNOBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": false,
+                "quantitativeProvenance": {
+                  "structuredSource": null,
+                  "capacitySource": null,
+                  "promotedAt": "2026-10-03"
+                }
               },
               "resourceIdentity": {
                 "resourceTypeId": "construction_aggregate",
@@ -6097,6 +6318,25 @@
                     "value": null,
                     "unit": null,
                     "status": "UNOBSERVED"
+                  },
+                  "recovery": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "capacity": {},
+                  "reportedMetrics": {},
+                  "quantitativeProvenance": {
+                    "structuredSource": null,
+                    "capacitySource": null,
+                    "promotedAt": "2026-10-03"
                   }
                 },
                 "verification": {
@@ -6602,7 +6842,12 @@
                   "unit": null,
                   "status": "UNOBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": false,
+                "quantitativeProvenance": {
+                  "structuredSource": null,
+                  "capacitySource": null,
+                  "promotedAt": "2026-10-03"
+                }
               },
               "resourceIdentity": {
                 "resourceTypeId": "construction_aggregate",
@@ -6699,6 +6944,25 @@
                     "value": null,
                     "unit": null,
                     "status": "UNOBSERVED"
+                  },
+                  "recovery": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "capacity": {},
+                  "reportedMetrics": {},
+                  "quantitativeProvenance": {
+                    "structuredSource": null,
+                    "capacitySource": null,
+                    "promotedAt": "2026-10-03"
                   }
                 },
                 "verification": {
@@ -7236,7 +7500,12 @@
                   "unit": null,
                   "status": "UNOBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": false,
+                "quantitativeProvenance": {
+                  "structuredSource": null,
+                  "capacitySource": null,
+                  "promotedAt": "2026-10-03"
+                }
               },
               "resourceIdentity": {
                 "resourceTypeId": "construction_aggregate",
@@ -7333,6 +7602,25 @@
                     "value": null,
                     "unit": null,
                     "status": "UNOBSERVED"
+                  },
+                  "recovery": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "capacity": {},
+                  "reportedMetrics": {},
+                  "quantitativeProvenance": {
+                    "structuredSource": null,
+                    "capacitySource": null,
+                    "promotedAt": "2026-10-03"
                   }
                 },
                 "verification": {
@@ -7838,7 +8126,12 @@
                   "unit": null,
                   "status": "UNOBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": false,
+                "quantitativeProvenance": {
+                  "structuredSource": null,
+                  "capacitySource": null,
+                  "promotedAt": "2026-10-03"
+                }
               },
               "resourceIdentity": {
                 "resourceTypeId": "limestone",
@@ -7937,6 +8230,25 @@
                     "value": null,
                     "unit": null,
                     "status": "UNOBSERVED"
+                  },
+                  "recovery": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "capacity": {},
+                  "reportedMetrics": {},
+                  "quantitativeProvenance": {
+                    "structuredSource": null,
+                    "capacitySource": null,
+                    "promotedAt": "2026-10-03"
                   }
                 },
                 "verification": {
@@ -8462,7 +8774,12 @@
                   "unit": null,
                   "status": "UNOBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": false,
+                "quantitativeProvenance": {
+                  "structuredSource": null,
+                  "capacitySource": null,
+                  "promotedAt": "2026-10-03"
+                }
               },
               "resourceIdentity": {
                 "resourceTypeId": "limestone",
@@ -8561,6 +8878,25 @@
                     "value": null,
                     "unit": null,
                     "status": "UNOBSERVED"
+                  },
+                  "recovery": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "capacity": {},
+                  "reportedMetrics": {},
+                  "quantitativeProvenance": {
+                    "structuredSource": null,
+                    "capacitySource": null,
+                    "promotedAt": "2026-10-03"
                   }
                 },
                 "verification": {
@@ -9091,7 +9427,12 @@
                   "unit": null,
                   "status": "UNOBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": false,
+                "quantitativeProvenance": {
+                  "structuredSource": null,
+                  "capacitySource": null,
+                  "promotedAt": "2026-10-03"
+                }
               },
               "resourceIdentity": {
                 "resourceTypeId": "construction_aggregate",
@@ -9188,6 +9529,25 @@
                     "value": null,
                     "unit": null,
                     "status": "UNOBSERVED"
+                  },
+                  "recovery": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "capacity": {},
+                  "reportedMetrics": {},
+                  "quantitativeProvenance": {
+                    "structuredSource": null,
+                    "capacitySource": null,
+                    "promotedAt": "2026-10-03"
                   }
                 },
                 "verification": {
@@ -9692,7 +10052,12 @@
                   "unit": null,
                   "status": "UNOBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": false,
+                "quantitativeProvenance": {
+                  "structuredSource": null,
+                  "capacitySource": null,
+                  "promotedAt": "2026-10-03"
+                }
               },
               "resourceIdentity": {
                 "resourceTypeId": "gold",
@@ -9789,6 +10154,25 @@
                     "value": null,
                     "unit": null,
                     "status": "UNOBSERVED"
+                  },
+                  "recovery": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "capacity": {},
+                  "reportedMetrics": {},
+                  "quantitativeProvenance": {
+                    "structuredSource": null,
+                    "capacitySource": null,
+                    "promotedAt": "2026-10-03"
                   }
                 },
                 "verification": {
@@ -10317,7 +10701,12 @@
                   "unit": null,
                   "status": "UNOBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": false,
+                "quantitativeProvenance": {
+                  "structuredSource": null,
+                  "capacitySource": null,
+                  "promotedAt": "2026-10-03"
+                }
               },
               "resourceIdentity": {
                 "resourceTypeId": "gold",
@@ -10415,6 +10804,25 @@
                     "value": null,
                     "unit": null,
                     "status": "UNOBSERVED"
+                  },
+                  "recovery": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "capacity": {},
+                  "reportedMetrics": {},
+                  "quantitativeProvenance": {
+                    "structuredSource": null,
+                    "capacitySource": null,
+                    "promotedAt": "2026-10-03"
                   }
                 },
                 "verification": {
@@ -10943,7 +11351,12 @@
                   "unit": null,
                   "status": "UNOBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": false,
+                "quantitativeProvenance": {
+                  "structuredSource": null,
+                  "capacitySource": null,
+                  "promotedAt": "2026-10-03"
+                }
               },
               "resourceIdentity": {
                 "resourceTypeId": "gold",
@@ -11046,6 +11459,25 @@
                     "value": null,
                     "unit": null,
                     "status": "UNOBSERVED"
+                  },
+                  "recovery": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "capacity": {},
+                  "reportedMetrics": {},
+                  "quantitativeProvenance": {
+                    "structuredSource": null,
+                    "capacitySource": null,
+                    "promotedAt": "2026-10-03"
                   }
                 },
                 "verification": {
@@ -11584,7 +12016,12 @@
                   "unit": null,
                   "status": "UNOBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": false,
+                "quantitativeProvenance": {
+                  "structuredSource": null,
+                  "capacitySource": null,
+                  "promotedAt": "2026-10-03"
+                }
               },
               "resourceIdentity": {
                 "resourceTypeId": "gold",
@@ -11682,6 +12119,25 @@
                     "value": null,
                     "unit": null,
                     "status": "UNOBSERVED"
+                  },
+                  "recovery": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "capacity": {},
+                  "reportedMetrics": {},
+                  "quantitativeProvenance": {
+                    "structuredSource": null,
+                    "capacitySource": null,
+                    "promotedAt": "2026-10-03"
                   }
                 },
                 "verification": {
@@ -12228,7 +12684,12 @@
                   "unit": null,
                   "status": "UNOBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": false,
+                "quantitativeProvenance": {
+                  "structuredSource": null,
+                  "capacitySource": null,
+                  "promotedAt": "2026-10-03"
+                }
               },
               "resourceIdentity": {
                 "resourceTypeId": "gold",
@@ -12327,6 +12788,25 @@
                     "value": null,
                     "unit": null,
                     "status": "UNOBSERVED"
+                  },
+                  "recovery": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "capacity": {},
+                  "reportedMetrics": {},
+                  "quantitativeProvenance": {
+                    "structuredSource": null,
+                    "capacitySource": null,
+                    "promotedAt": "2026-10-03"
                   }
                 },
                 "verification": {
@@ -12873,7 +13353,12 @@
                   "unit": null,
                   "status": "UNOBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": false,
+                "quantitativeProvenance": {
+                  "structuredSource": null,
+                  "capacitySource": null,
+                  "promotedAt": "2026-10-03"
+                }
               },
               "resourceIdentity": {
                 "resourceTypeId": "gold",
@@ -12970,6 +13455,25 @@
                     "value": null,
                     "unit": null,
                     "status": "UNOBSERVED"
+                  },
+                  "recovery": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "capacity": {},
+                  "reportedMetrics": {},
+                  "quantitativeProvenance": {
+                    "structuredSource": null,
+                    "capacitySource": null,
+                    "promotedAt": "2026-10-03"
                   }
                 },
                 "verification": {
@@ -13536,7 +14040,12 @@
                   "unit": null,
                   "status": "UNOBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": false,
+                "quantitativeProvenance": {
+                  "structuredSource": null,
+                  "capacitySource": null,
+                  "promotedAt": "2026-10-03"
+                }
               },
               "resourceIdentity": {
                 "resourceTypeId": "gold",
@@ -13635,6 +14144,25 @@
                     "value": null,
                     "unit": null,
                     "status": "UNOBSERVED"
+                  },
+                  "recovery": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "capacity": {},
+                  "reportedMetrics": {},
+                  "quantitativeProvenance": {
+                    "structuredSource": null,
+                    "capacitySource": null,
+                    "promotedAt": "2026-10-03"
                   }
                 },
                 "verification": {
@@ -14141,7 +14669,12 @@
                   "unit": null,
                   "status": "UNOBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": false,
+                "quantitativeProvenance": {
+                  "structuredSource": null,
+                  "capacitySource": null,
+                  "promotedAt": "2026-10-03"
+                }
               },
               "resourceIdentity": {
                 "resourceTypeId": "construction_aggregate",
@@ -14238,6 +14771,25 @@
                     "value": null,
                     "unit": null,
                     "status": "UNOBSERVED"
+                  },
+                  "recovery": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "capacity": {},
+                  "reportedMetrics": {},
+                  "quantitativeProvenance": {
+                    "structuredSource": null,
+                    "capacitySource": null,
+                    "promotedAt": "2026-10-03"
                   }
                 },
                 "verification": {
@@ -14783,7 +15335,12 @@
                   "unit": null,
                   "status": "UNOBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": false,
+                "quantitativeProvenance": {
+                  "structuredSource": null,
+                  "capacitySource": null,
+                  "promotedAt": "2026-10-03"
+                }
               },
               "resourceIdentity": {
                 "resourceTypeId": "construction_aggregate",
@@ -14880,6 +15437,25 @@
                     "value": null,
                     "unit": null,
                     "status": "UNOBSERVED"
+                  },
+                  "recovery": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "capacity": {},
+                  "reportedMetrics": {},
+                  "quantitativeProvenance": {
+                    "structuredSource": null,
+                    "capacitySource": null,
+                    "promotedAt": "2026-10-03"
                   }
                 },
                 "verification": {
@@ -15416,7 +15992,12 @@
                   "unit": null,
                   "status": "UNOBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": false,
+                "quantitativeProvenance": {
+                  "structuredSource": null,
+                  "capacitySource": null,
+                  "promotedAt": "2026-10-03"
+                }
               },
               "resourceIdentity": {
                 "resourceTypeId": "construction_aggregate",
@@ -15513,6 +16094,25 @@
                     "value": null,
                     "unit": null,
                     "status": "UNOBSERVED"
+                  },
+                  "recovery": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "capacity": {},
+                  "reportedMetrics": {},
+                  "quantitativeProvenance": {
+                    "structuredSource": null,
+                    "capacitySource": null,
+                    "promotedAt": "2026-10-03"
                   }
                 },
                 "verification": {
@@ -16051,7 +16651,12 @@
                   "unit": null,
                   "status": "UNOBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": false,
+                "quantitativeProvenance": {
+                  "structuredSource": null,
+                  "capacitySource": null,
+                  "promotedAt": "2026-10-03"
+                }
               },
               "resourceIdentity": {
                 "resourceTypeId": "coral_aggregate",
@@ -16148,6 +16753,25 @@
                     "value": null,
                     "unit": null,
                     "status": "UNOBSERVED"
+                  },
+                  "recovery": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "capacity": {},
+                  "reportedMetrics": {},
+                  "quantitativeProvenance": {
+                    "structuredSource": null,
+                    "capacitySource": null,
+                    "promotedAt": "2026-10-03"
                   }
                 },
                 "verification": {
@@ -16677,7 +17301,12 @@
                   "unit": null,
                   "status": "UNOBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": false,
+                "quantitativeProvenance": {
+                  "structuredSource": null,
+                  "capacitySource": null,
+                  "promotedAt": "2026-10-03"
+                }
               },
               "resourceIdentity": {
                 "resourceTypeId": "construction_aggregate",
@@ -16774,6 +17403,25 @@
                     "value": null,
                     "unit": null,
                     "status": "UNOBSERVED"
+                  },
+                  "recovery": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "capacity": {},
+                  "reportedMetrics": {},
+                  "quantitativeProvenance": {
+                    "structuredSource": null,
+                    "capacitySource": null,
+                    "promotedAt": "2026-10-03"
                   }
                 },
                 "verification": {
@@ -17295,7 +17943,12 @@
                   "unit": null,
                   "status": "UNOBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": true
+                "quantitativeExtractionDataAvailable": true,
+                "quantitativeProvenance": {
+                  "structuredSource": null,
+                  "capacitySource": null,
+                  "promotedAt": "2026-10-03"
+                }
               },
               "resourceIdentity": {
                 "resourceTypeId": "phosphate",
@@ -17401,6 +18054,25 @@
                     "value": null,
                     "unit": null,
                     "status": "UNOBSERVED"
+                  },
+                  "recovery": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "capacity": {},
+                  "reportedMetrics": {},
+                  "quantitativeProvenance": {
+                    "structuredSource": null,
+                    "capacitySource": null,
+                    "promotedAt": "2026-10-03"
                   }
                 },
                 "verification": {
@@ -17915,7 +18587,12 @@
                   "unit": null,
                   "status": "UNOBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": false,
+                "quantitativeProvenance": {
+                  "structuredSource": null,
+                  "capacitySource": null,
+                  "promotedAt": "2026-10-03"
+                }
               },
               "resourceIdentity": {
                 "resourceTypeId": "construction_aggregate",
@@ -18012,6 +18689,25 @@
                     "value": null,
                     "unit": null,
                     "status": "UNOBSERVED"
+                  },
+                  "recovery": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "capacity": {},
+                  "reportedMetrics": {},
+                  "quantitativeProvenance": {
+                    "structuredSource": null,
+                    "capacitySource": null,
+                    "promotedAt": "2026-10-03"
                   }
                 },
                 "verification": {
@@ -18529,7 +19225,12 @@
                   "unit": null,
                   "status": "UNOBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": false,
+                "quantitativeProvenance": {
+                  "structuredSource": null,
+                  "capacitySource": null,
+                  "promotedAt": "2026-10-03"
+                }
               },
               "resourceIdentity": {
                 "resourceTypeId": "construction_aggregate",
@@ -18626,6 +19327,25 @@
                     "value": null,
                     "unit": null,
                     "status": "UNOBSERVED"
+                  },
+                  "recovery": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "capacity": {},
+                  "reportedMetrics": {},
+                  "quantitativeProvenance": {
+                    "structuredSource": null,
+                    "capacitySource": null,
+                    "promotedAt": "2026-10-03"
                   }
                 },
                 "verification": {
@@ -19155,7 +19875,12 @@
                   "unit": null,
                   "status": "UNOBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false
+                "quantitativeExtractionDataAvailable": false,
+                "quantitativeProvenance": {
+                  "structuredSource": null,
+                  "capacitySource": null,
+                  "promotedAt": "2026-10-03"
+                }
               },
               "resourceIdentity": {
                 "resourceTypeId": "limestone",
@@ -19254,6 +19979,25 @@
                     "value": null,
                     "unit": null,
                     "status": "UNOBSERVED"
+                  },
+                  "recovery": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "throughput": {
+                    "value": null,
+                    "unit": null,
+                    "year": null,
+                    "status": "UNOBSERVED"
+                  },
+                  "capacity": {},
+                  "reportedMetrics": {},
+                  "quantitativeProvenance": {
+                    "structuredSource": null,
+                    "capacitySource": null,
+                    "promotedAt": "2026-10-03"
                   }
                 },
                 "verification": {
