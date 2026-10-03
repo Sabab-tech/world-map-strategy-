@@ -557,7 +557,7 @@ const fixes = {
     sources: [
       evidence('https://www.researchgate.net/publication/270049924_Identification_of_onshore_aggregate-quarry_sites_prospects_for_development_Pohnpei_Isand_Federated_States_of_Micronesia', 'quarry_identity_owner_operator_and_hard_rock_resource', 'SPC_SOPAC')
     ]
-  }
+  },
 
   SITE_BTN_tsirang_limestone_quarries: {
     owner: 'Historical operators including Mr. Pasang Tamang and Wakleytar Taksha Mining Private Limited',
