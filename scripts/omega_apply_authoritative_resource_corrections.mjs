@@ -2852,16 +2852,25 @@ function updateQuantitativeCompleteness(site) {
   const production = qp.production?.annual != null || qp.production?.rate != null;
   const gradeNumber = Number(qp.grade?.value);
   const grade = Number.isFinite(gradeNumber) && gradeNumber > 0;
+  const structured = Boolean(
+    Object.keys(qp.capacity || {}).length ||
+    Object.keys(qp.reportedMetrics || {}).length ||
+    qp.recovery?.value != null ||
+    qp.throughput?.value != null ||
+    qp.purity?.value != null
+  );
   const isNA = String(site.status || '').toUpperCase() === 'NOT_APPLICABLE' || site.commercialExtraction === false;
   const core = { reserve, production, grade };
   const count = Object.values(core).filter(Boolean).length;
-  const overall = isNA ? 'NOT_APPLICABLE' : count === 3 ? 'COMPLETE' : count > 0 ? 'PARTIAL' : 'UNOBSERVED';
+  const overall = isNA ? 'NOT_APPLICABLE' : count === 3 ? 'COMPLETE' : (count > 0 || structured) ? 'PARTIAL' : 'UNOBSERVED';
   site.dataCompleteness = site.dataCompleteness || {};
   site.dataCompleteness.quantitative = {
     ...(site.dataCompleteness.quantitative || {}),
     reserve: qp.reserve?.status || 'UNOBSERVED',
     production: qp.production?.status || 'UNOBSERVED',
     grade: qp.grade?.status || 'UNOBSERVED',
+    structuredEvidence: structured,
+    coreFieldCount: count,
     overall
   };
   site.dataCompleteness.quantitativeOverall = overall;
