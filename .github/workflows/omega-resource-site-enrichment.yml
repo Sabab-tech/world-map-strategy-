@@ -8,6 +8,7 @@ permissions:
   contents: write
 
 # SINGLE RESOURCE-SITE ENRICHMENT EXECUTION
+# Current-pass trigger: 199-site web revalidation is a bounded <=5-minute job.
 
 
 jobs:
