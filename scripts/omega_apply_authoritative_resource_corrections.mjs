@@ -1298,7 +1298,6 @@ const fixes = {
       currentEvidence: 'Faxe Kalk states that limestone is extracted from its Faxe Kalkbrud quarry and used for agricultural limestone and milled limestone products. The 2025 annual report confirms continued quarrying as the company main activity.'
     },
     sources: [
-      evidence('https://cdn.yahoofinance.com/prod/sec-filings/0000831259/000083125926000006/a4q2025exhibit991.htm', 'company_context_only', 'SECONDARY_FINANCIAL_SOURCE'),
       evidence('https://regnskaber.cvrapi.dk/28128802/amNsb3VkczovLzAzLzU0L2NlL2U1LzBjLzBiY2UtNDljNS1hMjFlLWYzODM4Y2IyNjMxNQ.pdf', '2025_quarrying_business_description_and_faxe_quarry_identity', 'REGULATORY_FILING')
     ]
   },
@@ -1742,11 +1741,6 @@ const fixes = {
       measurementType: 'TOTAL_JV_COPPER_PRODUCTION',
       sourceScope: 'SITE_SPECIFIC'
     },
-    quantitativeGrade: {
-      value: 0,
-      unit: 'not_stored_as_single_average_grade',
-      status: 'UNOBSERVED'
-    },
     process: {
       resourceTypeId: 'copper',
       ontologyKey: 'COPPER',
@@ -1940,7 +1934,7 @@ const fixes = {
       currentEvidence: 'Barrick reports Pueblo Viejo as a 60%-owned joint venture with Barrick as operator. The mine is an open-pit conventional truck-and-shovel operation and produced 379,014 ounces attributable to Barrick in 2025. Mining is projected to continue through 2048 under current reserves and tailings plans.'
     },
     extra: {
-      2025BarrickAttributableGoldProduction: { value: 379014, unit: 'troy_ounces_gold', year: 2025, status: 'OBSERVED_60_PERCENT_ATTRIBUTABLE' },
+      '2025BarrickAttributableGoldProduction': { value: 379014, unit: 'troy_ounces_gold', year: 2025, status: 'OBSERVED_60_PERCENT_ATTRIBUTABLE' },
       mineLifeContext: { openPitThroughYear: 2048, processingThroughYear: 2049 }
     },
     sources: [
