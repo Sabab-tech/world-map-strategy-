@@ -5467,6 +5467,12 @@
                   "url": "https://edition.mv/environmental_regulatory_authority_era/46960",
                   "accessed": "2026-09-26",
                   "scope": "site_identity_or_operation"
+                },
+                {
+                  "url": "https://corporate.mtcc.mv/",
+                  "accessed": "2026-10-03",
+                  "scope": "nationwide_dredging_reclamation_operator_and_maldivian_atoll_coverage",
+                  "sourceType": "OPERATOR"
                 }
               ],
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -5622,12 +5628,25 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": null,
-                  "sourceCount": 2,
-                  "sourceAuthorities": [],
+                  "reviewedAt": "2026-10-03",
+                  "sourceCount": 3,
+                  "sourceAuthorities": [
+                    "OPERATOR"
+                  ],
                   "dataLimitations": null
                 }
-              }
+              },
+              "researchMetadata": {
+                "reviewedAt": "2026-10-03",
+                "sourceAuthority": "Maldives Transport and Contracting Company Plc (MTCC)",
+                "currentEvidence": "MTCC reports a nationwide dredging and reclamation footprint across all 20 atolls, with six dredgers and sand-search capability. This is sector/operator context, not proof of a single Malé Atoll borrow-site operator."
+              },
+              "ownershipScope": "AREA_MULTI_OPERATOR",
+              "knownNationwideDredgingOperators": [
+                "Maldives Transport and Contracting Company Plc (MTCC)"
+              ],
+              "operatorEvidenceScope": "NATIONWIDE_NOT_SITE_SPECIFIC",
+              "dataLimitation": "MTCC reports dredging and reclamation operations across all 20 atolls, but the reviewed source does not identify a single operator for this generic Malé Atoll coral-aggregate site record."
             }
           ],
           "processingFacilities": [
@@ -88459,15 +88478,17 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
                 "reviewedAt": "2026-10-03",
                 "stateBasis": "PRIOR_REPOSITORY_CURATED_DATA",
                 "note": "Identity and operational fields are preserved from the repository's prior curated dataset; no current site-specific web revalidation was recorded for this site in the present pass.",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
-                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
+                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+                "sourceAuthority": "Iceland municipal planning / Hólasandur planning record",
+                "currentEvidence": "The published planning proposal lists E452 Hólasandur as a 2.5 ha extraction area with a limit of up to 25,000 m² and 49,000 m³. This is a planning extraction limit, not a mineral reserve estimate, and it does not establish a named operator."
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -88535,13 +88556,32 @@
                   }
                 },
                 "verification": {
-                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
                   "reviewedAt": "2026-10-03",
-                  "sourceCount": 0,
-                  "sourceAuthorities": [],
+                  "sourceCount": 1,
+                  "sourceAuthorities": [
+                    "PLANNING_DOCUMENT"
+                  ],
                   "dataLimitations": null
                 }
-              }
+              },
+              "permittedExtractionLimit": {
+                "area": 25000,
+                "areaUnit": "m2",
+                "volume": 49000,
+                "volumeUnit": "m3",
+                "sourcePlanningYear": 2025,
+                "identifier": "E452"
+              },
+              "quantitativeEvidenceScope": "PLANNING_EXTRACTION_LIMIT_NOT_RESERVE",
+              "webResearchEvidence": [
+                {
+                  "url": "https://geo.alta.is/thing/ask24ask/",
+                  "accessed": "2026-10-03",
+                  "scope": "Holasandur_E452_planning_extraction_area_and_volume_limit",
+                  "sourceType": "PLANNING_DOCUMENT"
+                }
+              ]
             }
           ],
           "processingFacilities": [

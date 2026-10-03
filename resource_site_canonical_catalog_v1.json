@@ -623,9 +623,11 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": null,
-        "sourceCount": 2,
-        "sourceAuthorities": [],
+        "reviewedAt": "2026-10-03",
+        "sourceCount": 3,
+        "sourceAuthorities": [
+          "OPERATOR"
+        ],
         "dataLimitations": null
       }
     },
@@ -10832,10 +10834,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "PLANNING_DOCUMENT"
+        ],
         "dataLimitations": null
       }
     },
@@ -13343,10 +13347,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "MINERAL_INVENTORY"
+        ],
         "dataLimitations": null
       }
     },
@@ -13757,10 +13763,10 @@
         "operatorEvidenceStatus": "UNOBSERVED"
       },
       "operation": {
-        "status": "LIMITED",
-        "operationalStatus": "LIMITED",
+        "status": "RESOURCE_IDENTITY_UNVERIFIED",
+        "operationalStatus": "RESOURCE_IDENTITY_UNVERIFIED",
         "extractionMethod": "surface aggregate quarrying",
-        "extractionEligibility": null,
+        "extractionEligibility": "NON_EXECUTABLE",
         "commercialExtraction": true
       },
       "processing": {
@@ -13795,10 +13801,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "PUBLIC_AUTHORITY_REPORT"
+        ],
         "dataLimitations": null
       }
     },
@@ -13905,10 +13913,10 @@
         "operatorEvidenceStatus": "UNOBSERVED"
       },
       "operation": {
-        "status": "LIMITED",
-        "operationalStatus": "LIMITED",
+        "status": "RESOURCE_IDENTITY_UNVERIFIED",
+        "operationalStatus": "RESOURCE_IDENTITY_UNVERIFIED",
         "extractionMethod": "surface quarrying",
-        "extractionEligibility": null,
+        "extractionEligibility": "NON_EXECUTABLE",
         "commercialExtraction": true
       },
       "processing": {
@@ -13944,10 +13952,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "GOVERNMENT"
+        ],
         "dataLimitations": null
       }
     },
@@ -14019,10 +14029,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "GOVERNMENT"
+        ],
         "dataLimitations": null
       }
     },
@@ -14770,9 +14782,12 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": null,
-        "sourceCount": 1,
-        "sourceAuthorities": [],
+        "reviewedAt": "2026-10-03",
+        "sourceCount": 3,
+        "sourceAuthorities": [
+          "GOVERNMENT",
+          "DEVELOPMENT_AGENCY"
+        ],
         "dataLimitations": null
       }
     },
@@ -14994,9 +15009,11 @@
       },
       "verification": {
         "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-        "reviewedAt": null,
-        "sourceCount": 2,
-        "sourceAuthorities": [],
+        "reviewedAt": "2026-10-03",
+        "sourceCount": 4,
+        "sourceAuthorities": [
+          "SOPAC"
+        ],
         "dataLimitations": null
       }
     },

@@ -2863,7 +2863,7 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -2932,19 +2932,46 @@
                   }
                 },
                 "verification": {
-                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
                   "reviewedAt": "2026-10-03",
-                  "sourceCount": 0,
-                  "sourceAuthorities": [],
+                  "sourceCount": 1,
+                  "sourceAuthorities": [
+                    "MINERAL_INVENTORY"
+                  ],
                   "dataLimitations": null
                 }
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
                 "reviewedAt": "2026-10-03",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
-                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
-              }
+                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+                "sourceAuthority": "Bureau des Mines et de l’Energie / Haiti mineral inventory",
+                "currentEvidence": "The Artibonite mineral inventory documents limestone and cement raw-material occurrences around Gonaïves, including Morne Blanc with an estimated 2,000,000 m³ exploitable volume and CaCO3 of 85-92%. The repository record remains area-level and does not assign a single current operator."
+              },
+              "ownershipScope": "AREA_MULTI_OPERATOR",
+              "historicalAreaResourceEvidence": {
+                "sourceYear": 1990,
+                "deposits": [
+                  {
+                    "locality": "Morne Blanc, Gonaïves",
+                    "resource": "limestone_marl",
+                    "exploitableVolume": 2000000,
+                    "unit": "m3",
+                    "caCO3Range": "85-92 percent",
+                    "evidenceScope": "HISTORICAL_AREA_RESOURCE"
+                  }
+                ],
+                "dataLimitation": "Historical 1990 departmental mineral inventory; this is area geology/resource evidence, not a current concession-level reserve statement."
+              },
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.haitidocs.org/doc/bme-inventaire-minier-artibonite",
+                  "accessed": "2026-10-03",
+                  "scope": "gonaives_limestone_area_identity_and_historical_resource_characteristics",
+                  "sourceType": "MINERAL_INVENTORY"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -6389,8 +6416,8 @@
               "lat": 13.15,
               "lng": -61.22,
               "locationNodeKey": "ASSET:VCT:diamond_quarry",
-              "status": "LIMITED",
-              "operationalStatus": "LIMITED",
+              "status": "RESOURCE_IDENTITY_UNVERIFIED",
+              "operationalStatus": "RESOURCE_IDENTITY_UNVERIFIED",
               "owner": "UNOBSERVED",
               "operator": "UNOBSERVED",
               "extractionMethod": "surface aggregate quarrying",
@@ -6519,7 +6546,7 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -6549,10 +6576,10 @@
                   "operatorEvidenceStatus": "UNOBSERVED"
                 },
                 "operation": {
-                  "status": "LIMITED",
-                  "operationalStatus": "LIMITED",
+                  "status": "RESOURCE_IDENTITY_UNVERIFIED",
+                  "operationalStatus": "RESOURCE_IDENTITY_UNVERIFIED",
                   "extractionMethod": "surface aggregate quarrying",
-                  "extractionEligibility": null,
+                  "extractionEligibility": "NON_EXECUTABLE",
                   "commercialExtraction": true
                 },
                 "processing": {
@@ -6587,19 +6614,36 @@
                   }
                 },
                 "verification": {
-                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
                   "reviewedAt": "2026-10-03",
-                  "sourceCount": 0,
-                  "sourceAuthorities": [],
+                  "sourceCount": 1,
+                  "sourceAuthorities": [
+                    "PUBLIC_AUTHORITY_REPORT"
+                  ],
                   "dataLimitations": null
                 }
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
                 "reviewedAt": "2026-10-03",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
-                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
-              }
+                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+                "sourceAuthority": "BRAGSA / St Vincent public reporting",
+                "currentEvidence": "BRAGSA commissioned a 100 TPH crushing plant at Rabacca in March 2025. No reviewed current source established a concession specifically named Diamond Quarry."
+              },
+              "extractionEligibility": "NON_EXECUTABLE",
+              "ownershipScope": "IDENTITY_UNVERIFIED",
+              "knownCurrentAggregateAuthority": "Roads, Buildings and General Services Authority (BRAGSA)",
+              "knownCurrentAggregateFacility": "Rabacca Government Quarry",
+              "identityLimitation": "Current 2025 evidence confirms BRAGSA operates a 100 TPH aggregate crushing facility at Rabacca, but the reviewed sources do not establish that this facility is the repository record named Diamond Quarry.",
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.stvincenttimes.com/st-vincent-bragsa-new-5m-crusher-plant-rabacca/",
+                  "accessed": "2026-10-03",
+                  "scope": "current_BRAGSA_Rabacca_aggregate_crushing_facility",
+                  "sourceType": "PUBLIC_AUTHORITY_REPORT"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -7608,8 +7652,8 @@
               "lat": 17.08,
               "lng": -61.82,
               "locationNodeKey": "ASSET:ATG:gunthorpes_quarry",
-              "status": "LIMITED",
-              "operationalStatus": "LIMITED",
+              "status": "RESOURCE_IDENTITY_UNVERIFIED",
+              "operationalStatus": "RESOURCE_IDENTITY_UNVERIFIED",
               "owner": "UNOBSERVED",
               "operator": "UNOBSERVED",
               "extractionMethod": "surface quarrying",
@@ -7739,7 +7783,7 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -7769,10 +7813,10 @@
                   "operatorEvidenceStatus": "UNOBSERVED"
                 },
                 "operation": {
-                  "status": "LIMITED",
-                  "operationalStatus": "LIMITED",
+                  "status": "RESOURCE_IDENTITY_UNVERIFIED",
+                  "operationalStatus": "RESOURCE_IDENTITY_UNVERIFIED",
                   "extractionMethod": "surface quarrying",
-                  "extractionEligibility": null,
+                  "extractionEligibility": "NON_EXECUTABLE",
                   "commercialExtraction": true
                 },
                 "processing": {
@@ -7808,19 +7852,34 @@
                   }
                 },
                 "verification": {
-                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
                   "reviewedAt": "2026-10-03",
-                  "sourceCount": 0,
-                  "sourceAuthorities": [],
+                  "sourceCount": 1,
+                  "sourceAuthorities": [
+                    "GOVERNMENT"
+                  ],
                   "dataLimitations": null
                 }
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
                 "reviewedAt": "2026-10-03",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
-                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
-              }
+                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+                "sourceAuthority": "Government of Antigua and Barbuda",
+                "currentEvidence": "Government material identifies Gunthorpes as the site of the twentieth-century Central Sugar Factory. The reviewed search did not establish a current quarry concession with that exact name."
+              },
+              "extractionEligibility": "NON_EXECUTABLE",
+              "ownershipScope": "IDENTITY_UNVERIFIED",
+              "identityLimitation": "Reviewed authoritative material identifies Gunthorpes as the historic site of the Antigua Central Sugar Factory, but no reliable current quarry concession named Gunthorpes Quarry was established. The record is fail-closed pending site-specific quarry evidence.",
+              "webResearchEvidence": [
+                {
+                  "url": "https://ab.gov.ag/detail_template.php?page=aboutAB%2Fantigua_about",
+                  "accessed": "2026-10-03",
+                  "scope": "Gunthorpes_historical_identity_as_Central_Sugar_Factory_site",
+                  "sourceType": "GOVERNMENT"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -8348,7 +8407,7 @@
                   "grade": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED"
               },
               "siteDataPackage": {
                 "schemaVersion": "1.0.0",
@@ -8417,19 +8476,34 @@
                   }
                 },
                 "verification": {
-                  "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
                   "reviewedAt": "2026-10-03",
-                  "sourceCount": 0,
-                  "sourceAuthorities": [],
+                  "sourceCount": 1,
+                  "sourceAuthorities": [
+                    "GOVERNMENT"
+                  ],
                   "dataLimitations": null
                 }
               },
-              "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "researchMetadata": {
                 "reviewedAt": "2026-10-03",
                 "webSearchMethod": "SITE_NAME + COUNTRY",
-                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH"
-              }
+                "webSearchResult": "NO_HIGH_CONFIDENCE_WIKIPEDIA_OR_WIKIDATA_MATCH",
+                "sourceAuthority": "Government of Saint Kitts and Nevis",
+                "currentEvidence": "The Public Works Department Quarry Division is the single largest aggregate provider in Saint Kitts and Nevis and was modernised with new crushing and screening equipment in 2024-2025. Site-specific Ross Lands attribution was not established."
+              },
+              "knownNationalAggregateAuthority": "Government of Saint Kitts and Nevis Public Works Department, Quarry Division",
+              "identityScope": "NATIONAL_QUARRY_OPERATOR_CONTEXT_NOT_SITE_SPECIFIC",
+              "dataLimitation": "Government reporting confirms the national Quarry Division operates a government quarry producing aggregates, but the reviewed evidence does not independently map that facility to the repository Ross Lands Quarry Zone record.",
+              "webResearchEvidence": [
+                {
+                  "url": "https://www.sknis.gov.kn/2025/03/04/two-new-plants-commissioned-at-government-quarry-to-boost-efficiency-and-production-capacity/",
+                  "accessed": "2026-10-03",
+                  "scope": "government_quarry_division_current_operator_and_aggregate_output_context",
+                  "sourceType": "GOVERNMENT"
+                }
+              ]
             }
           ],
           "processingFacilities": [
@@ -14421,6 +14495,18 @@
                   "url": "https://www.theprif.org/sites/theprif.org/files/documents/PRIF-Aggregates-Report_final.pdf",
                   "accessed": "2026-09-26",
                   "scope": "site_identity_or_operation"
+                },
+                {
+                  "url": "https://www.mnre.gov.ws/wp-content/uploads/2024/09/Final-Samoa-SOE-2023-v39-digital-1.pdf",
+                  "accessed": "2026-10-03",
+                  "scope": "Samoa_PUMA_regulatory_requirement_for_aggregate_extraction",
+                  "sourceType": "GOVERNMENT"
+                },
+                {
+                  "url": "https://theprif.org/sites/theprif.org/files/documents/PRIF-Aggregates-Report_final.pdf",
+                  "accessed": "2026-10-03",
+                  "scope": "Lefaga_volcanic_and_alluvial_aggregate_source_context",
+                  "sourceType": "DEVELOPMENT_AGENCY"
                 }
               ],
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -14575,12 +14661,23 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": null,
-                  "sourceCount": 1,
-                  "sourceAuthorities": [],
+                  "reviewedAt": "2026-10-03",
+                  "sourceCount": 3,
+                  "sourceAuthorities": [
+                    "GOVERNMENT",
+                    "DEVELOPMENT_AGENCY"
+                  ],
                   "dataLimitations": null
                 }
-              }
+              },
+              "researchMetadata": {
+                "reviewedAt": "2026-10-03",
+                "sourceAuthority": "Samoa environmental and aggregate planning sources",
+                "currentEvidence": "Samoa earth-material extraction, including aggregates, requires PUMA applications. Public aggregate reviews identify volcanic hard rock and alluvial/coastal aggregate sources in the Lefaga area."
+              },
+              "ownershipScope": "AREA_MULTI_OPERATOR",
+              "regulatoryAuthority": "Planning and Urban Management Authority (PUMA)",
+              "dataLimitation": "Public aggregate review identifies Lefaga volcanic/alluvial sources and requires PUMA applications for extraction; the reviewed source does not establish one operator for this area-level record."
             }
           ],
           "processingFacilities": [
@@ -16291,6 +16388,18 @@
                   "url": "https://documents1.worldbank.org/curated/en/099041024214015027/pdf/P177100153d9830581905a18caa1847ea28.pdf",
                   "accessed": "2026-09-26",
                   "scope": "site_identity_or_operation"
+                },
+                {
+                  "url": "https://spccfpstore1.blob.core.windows.net/digitallibrary-docs/files/9a/9a1a6f11d0c7ea5515b0fb98fa60edbd.pdf",
+                  "accessed": "2026-10-03",
+                  "scope": "Funafuti_borrow_pit_public_works_and_lands_survey_involvement",
+                  "sourceType": "SOPAC"
+                },
+                {
+                  "url": "https://spccfpstore1.blob.core.windows.net/digitallibrary-docs/files/28/28a5f508625b3a152d75ae3ca4a3a231.pdf",
+                  "accessed": "2026-10-03",
+                  "scope": "Funafuti_borrow_pit_lagoon_sand_reclamation_and_government_equipment_context",
+                  "sourceType": "SOPAC"
                 }
               ],
               "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -16446,12 +16555,22 @@
                 },
                 "verification": {
                   "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
-                  "reviewedAt": null,
-                  "sourceCount": 2,
-                  "sourceAuthorities": [],
+                  "reviewedAt": "2026-10-03",
+                  "sourceCount": 4,
+                  "sourceAuthorities": [
+                    "SOPAC"
+                  ],
                   "dataLimitations": null
                 }
-              }
+              },
+              "researchMetadata": {
+                "reviewedAt": "2026-10-03",
+                "sourceAuthority": "Tuvalu Public Works Department / SOPAC",
+                "currentEvidence": "Historical Funafuti borrow-pit programmes were coordinated with the Public Works Department and Lands and Survey departments; current documentation treats these primarily as legacy reclamation/infrastructure sites rather than active commercial mines."
+              },
+              "historicalOperationalAuthority": "Tuvalu Public Works Department",
+              "historicalOwnershipContext": "Government of Tuvalu / public infrastructure programme",
+              "dataLimitation": "The Funafuti borrow-pit system has mixed historical excavation, reclamation and waste-use history; no current commercial quarry operator is asserted."
             }
           ],
           "processingFacilities": [
