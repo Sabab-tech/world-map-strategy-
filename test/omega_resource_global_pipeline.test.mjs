@@ -163,11 +163,8 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
     const qualityAuthority=qualityValue===null||qualityValue===undefined||qualityValue===''?'UNOBSERVED':
       normalizeAuthority(raw.qualityAuthority||raw.dataStatus?.grade||raw.dataStatus?.quality||raw.dataAuthority?.grade||raw.dataAuthority?.quality);
     const authorities=[reserveAuthority,productionAuthority,qualityAuthority];
-    const explicitAssetOverall=String(raw.resourceAsset?.dataStatus?.overall||'').trim();
-    const expectedOverall=explicitAssetOverall
-      ? normalizeAuthority(explicitAssetOverall)
-      : (authorities.length&&authorities.every(v=>v==='OBSERVED')?'OBSERVED':
-        authorities.some(v=>v==='SIMULATED')?'SIMULATED':'UNOBSERVED');
+    const expectedOverall=authorities.length&&authorities.every(v=>v==='OBSERVED')?'OBSERVED':
+      authorities.some(v=>v==='SIMULATED')?'SIMULATED':'UNOBSERVED';
     assert.equal(x.resourceAsset.dataStatus.overall,expectedOverall);
   }
   const unifiedSiteKeys=Object.keys(siteRefs[0]?.resourceAsset||{}).sort();
