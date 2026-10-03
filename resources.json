@@ -3042,8 +3042,8 @@
                 "operationalStatus": "ACTIVE_PRODUCING",
                 "owner": "Kahatagaha Graphite Lanka / Sri Lanka",
                 "operator": "Kahatagaha Graphite Lanka",
-                "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                "ownerEvidenceStatus": "WEB_REVIEWED",
+                "operatorEvidenceStatus": "WEB_REVIEWED"
               },
               "quantitativeProfile": {
                 "reserve": {
@@ -3052,15 +3052,11 @@
                   "status": "UNOBSERVED"
                 },
                 "production": {
-                  "annual": {
-                    "value": 451,
-                    "unit": "metric_tons",
-                    "year": 2025
-                  },
-                  "rate": null,
-                  "unit": null,
-                  "year": null,
-                  "status": "OBSERVED"
+                  "annual": 405,
+                  "unit": "metric_tons_graphite_ore_ROM",
+                  "year": 2025,
+                  "status": "OBSERVED",
+                  "basis": "FY2024_25_MINE_OUTPUT"
                 },
                 "grade": {
                   "value": "High-quality vein graphite",
@@ -3123,10 +3119,10 @@
                   "overall": "PARTIAL"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
                 "quantitativeOverall": "PARTIAL"
               },
-              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "webResearchEvidence": [
                 {
                   "url": "https://www.industry.gov.lk/web/wp-content/uploads/2025/11/Ministry-of-Industry-and-Entrepreneurship-Development-_E_compressed.pdf",
@@ -3135,7 +3131,7 @@
                 }
               ],
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "productionJanSep2025": "451 MT ROM graphite",
                 "productionAprSep2025": "278 MT ROM graphite",
                 "production2024_25": "405 MT ROM graphite",
@@ -3183,8 +3179,8 @@
                 "ownership": {
                   "owner": "Kahatagaha Graphite Lanka / Sri Lanka",
                   "operator": "Kahatagaha Graphite Lanka",
-                  "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                  "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                  "ownerEvidenceStatus": "WEB_REVIEWED",
+                  "operatorEvidenceStatus": "WEB_REVIEWED"
                 },
                 "operation": {
                   "status": "ACTIVE_PRODUCING",
@@ -3213,15 +3209,11 @@
                     "status": "UNOBSERVED"
                   },
                   "production": {
-                    "annual": {
-                      "value": 451,
-                      "unit": "metric_tons",
-                      "year": 2025
-                    },
-                    "rate": null,
-                    "unit": null,
-                    "year": null,
-                    "status": "OBSERVED"
+                    "annual": 405,
+                    "unit": "metric_tons_graphite_ore_ROM",
+                    "year": 2025,
+                    "status": "OBSERVED",
+                    "basis": "FY2024_25_MINE_OUTPUT"
                   },
                   "grade": {
                     "value": "High-quality vein graphite",
@@ -3271,13 +3263,26 @@
                   }
                 },
                 "verification": {
-                  "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+                  "reviewedAt": "2026-10-03",
                   "sourceCount": 1,
                   "sourceAuthorities": [],
                   "dataLimitations": null
                 }
-              }
+              },
+              "productionJanSep2025": {
+                "value": 451,
+                "unit": "metric_tons_ROM",
+                "year": 2025,
+                "status": "OBSERVED"
+              },
+              "productionAprSep2025": {
+                "value": 278,
+                "unit": "metric_tons_ROM",
+                "year": 2025,
+                "status": "OBSERVED"
+              },
+              "reserveStatus": "UNRESOLVED_RESERVE_ESTIMATION_IN_PROGRESS"
             }
           ],
           "processingFacilities": [
@@ -7122,29 +7127,30 @@
                 "operationalStatus": "ACTIVE_PRODUCING",
                 "owner": "AngloGold Ashanti / EMRA",
                 "operator": "Sukari Gold Mines",
-                "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                "ownerEvidenceStatus": "WEB_REVIEWED",
+                "operatorEvidenceStatus": "WEB_REVIEWED"
               },
               "quantitativeProfile": {
                 "reserve": {
-                  "quantity": 193000,
-                  "unit": "kilograms",
-                  "status": "OBSERVED",
+                  "quantity": 2360000,
+                  "unit": "troy_ounces_gold",
                   "year": 2025,
-                  "basis": "attributable"
+                  "status": "OBSERVED_ATTRIBUTABLE",
+                  "basis": "ATTRIBUTABLE_MINERAL_RESERVE"
                 },
                 "production": {
                   "annual": 500000,
-                  "rate": null,
-                  "unit": "troy_ounces",
+                  "unit": "troy_ounces_gold",
                   "year": 2025,
                   "status": "OBSERVED",
-                  "basis": "attributable"
+                  "basis": "TOTAL_SITE_GOLD_PRODUCTION"
                 },
                 "grade": {
-                  "value": "1.37 g/t Au",
-                  "unit": null,
-                  "status": "OBSERVED"
+                  "value": 1.37,
+                  "unit": "grams_per_tonne_gold",
+                  "year": 2025,
+                  "status": "OBSERVED",
+                  "basis": "2025_PLANT_HEAD_GRADE"
                 },
                 "quantitativeExtractionDataAvailable": true,
                 "reportedMetrics": {
@@ -7168,21 +7174,20 @@
               "resourceIdentity": {
                 "resourceTypeId": "gold",
                 "ontologyKey": "GOLD",
-                "commodityName": "Gold Ore & Doré",
+                "commodityName": "Gold ore and doré",
                 "category": "PRECIOUS_METAL",
                 "physicalForm": "SOLID_ORE_AND_DORE",
-                "upstreamProcess": "Open-Pit / Underground Mining, Gravity, Flotation",
-                "midstreamProcess": "Crushing, Grinding, Gravity/Flotation, Cyanide Leaching, Smelting",
+                "upstreamProcess": "Open-Pit and Underground Mining",
+                "midstreamProcess": "Crushing, Grinding, Flotation and CIL Recovery",
                 "refinedOutputs": [
-                  "GOLD_DORE",
-                  "JEWELRY",
-                  "ELECTRONICS"
+                  "GOLD_DORE"
                 ],
                 "downstreamSectors": [
                   "CENTRAL_BANK_RESERVES",
                   "INDUSTRIAL_CHEMICALS"
                 ],
-                "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY"
+                "ontologyStatus": "RESOLVED_FROM_RESOURCE_ONTOLOGY",
+                "primaryCommodity": "gold"
               },
               "dataCompleteness": {
                 "identity": "COMPLETE",
@@ -7191,16 +7196,16 @@
                 "operation": "COMPLETE",
                 "ownership": "REPORTED",
                 "quantitative": {
-                  "reserve": "OBSERVED",
+                  "reserve": "OBSERVED_ATTRIBUTABLE",
                   "production": "OBSERVED",
                   "grade": "OBSERVED",
-                  "overall": "PARTIAL"
+                  "overall": "COMPLETE"
                 },
                 "provenance": "PRESENT",
-                "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
-                "quantitativeOverall": "PARTIAL"
+                "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
+                "quantitativeOverall": "COMPLETE"
               },
-              "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
+              "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
               "webResearchEvidence": [
                 {
                   "url": "https://www.anglogoldashanti.com/portfolio/africa/sukari-egypt/",
@@ -7211,10 +7216,22 @@
                   "url": "https://reports.anglogoldashanti.com/25/wp-content/uploads/2026/03/AGA-OP25.pdf",
                   "accessed": "2026-09-27",
                   "scope": "2025_operational_profile"
+                },
+                {
+                  "url": "https://reports.anglogoldashanti.com/25/author/katherinerasc-co-za/page/5/",
+                  "accessed": "2026-10-03",
+                  "scope": "2025_Sukari_gold_production_head_grade_ore_treated_and_recovery",
+                  "sourceType": "OPERATOR"
+                },
+                {
+                  "url": "https://www.anglogoldashanti.com/investors/reporting/annual-reports/2025/",
+                  "accessed": "2026-10-03",
+                  "scope": "2025_Sukari_mineral_reserve_reporting_package",
+                  "sourceType": "OPERATOR"
                 }
               ],
               "researchMetadata": {
-                "reviewedAt": "2026-09-27",
+                "reviewedAt": "2026-10-03",
                 "goldProduction2025": "500000 oz attributable",
                 "attributableReserve2025": "2.36 Moz at 2025-12-31",
                 "miningMethod": "open pit + underground",
@@ -7241,7 +7258,7 @@
                   "countryIso3": "EGY",
                   "siteType": "MINE",
                   "resourceTypeId": "gold",
-                  "resourceName": "Gold Ore & Doré",
+                  "resourceName": "Gold ore and doré",
                   "ontologyKey": "GOLD"
                 },
                 "location": {
@@ -7257,8 +7274,8 @@
                 "ownership": {
                   "owner": "AngloGold Ashanti / EMRA",
                   "operator": "Sukari Gold Mines",
-                  "ownerEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED",
-                  "operatorEvidenceStatus": "REPORTED_NOT_SITE_VERIFIED"
+                  "ownerEvidenceStatus": "WEB_REVIEWED",
+                  "operatorEvidenceStatus": "WEB_REVIEWED"
                 },
                 "operation": {
                   "status": "ACTIVE_PRODUCING",
@@ -7268,12 +7285,10 @@
                   "commercialExtraction": true
                 },
                 "processing": {
-                  "upstreamProcess": "Open-Pit / Underground Mining, Gravity, Flotation",
-                  "midstreamProcess": "Crushing, Grinding, Gravity/Flotation, Cyanide Leaching, Smelting",
+                  "upstreamProcess": "Open-Pit and Underground Mining",
+                  "midstreamProcess": "Crushing, Grinding, Flotation and CIL Recovery",
                   "refinedOutputs": [
-                    "GOLD_DORE",
-                    "JEWELRY",
-                    "ELECTRONICS"
+                    "GOLD_DORE"
                   ],
                   "downstreamSectors": [
                     "CENTRAL_BANK_RESERVES",
@@ -7282,24 +7297,25 @@
                 },
                 "quantitative": {
                   "reserve": {
-                    "quantity": 193000,
-                    "unit": "kilograms",
-                    "status": "OBSERVED",
+                    "quantity": 2360000,
+                    "unit": "troy_ounces_gold",
                     "year": 2025,
-                    "basis": "attributable"
+                    "status": "OBSERVED_ATTRIBUTABLE",
+                    "basis": "ATTRIBUTABLE_MINERAL_RESERVE"
                   },
                   "production": {
                     "annual": 500000,
-                    "rate": null,
-                    "unit": "troy_ounces",
+                    "unit": "troy_ounces_gold",
                     "year": 2025,
                     "status": "OBSERVED",
-                    "basis": "attributable"
+                    "basis": "TOTAL_SITE_GOLD_PRODUCTION"
                   },
                   "grade": {
-                    "value": "1.37 g/t Au",
-                    "unit": null,
-                    "status": "OBSERVED"
+                    "value": 1.37,
+                    "unit": "grams_per_tonne_gold",
+                    "year": 2025,
+                    "status": "OBSERVED",
+                    "basis": "2025_PLANT_HEAD_GRADE"
                   },
                   "recovery": {
                     "value": null,
@@ -7332,19 +7348,38 @@
                     "promotedAt": "2026-10-03"
                   },
                   "completeness": {
-                    "reserve": "OBSERVED",
+                    "reserve": "OBSERVED_ATTRIBUTABLE",
                     "production": "OBSERVED",
                     "grade": "OBSERVED",
-                    "overall": "PARTIAL"
+                    "overall": "COMPLETE"
                   }
                 },
                 "verification": {
-                  "researchState": "SITE_SPECIFIC_WEB_REVALIDATED",
-                  "reviewedAt": "2026-09-27",
-                  "sourceCount": 2,
-                  "sourceAuthorities": [],
+                  "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+                  "reviewedAt": "2026-10-03",
+                  "sourceCount": 4,
+                  "sourceAuthorities": [
+                    "OPERATOR"
+                  ],
                   "dataLimitations": null
                 }
+              },
+              "oreTreated2025": {
+                "value": 12180000,
+                "unit": "metric_tons_ore",
+                "year": 2025,
+                "status": "OBSERVED"
+              },
+              "recovery2025": {
+                "value": 89,
+                "unit": "percent",
+                "year": 2025,
+                "status": "OBSERVED"
+              },
+              "processingCapacity": {
+                "value": 12000000,
+                "unit": "metric_tons_ore_per_year",
+                "status": "DESIGN_CAPACITY"
               }
             }
           ],
