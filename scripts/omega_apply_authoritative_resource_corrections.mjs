@@ -2644,6 +2644,30 @@ const fixes = {
     sources: [
       evidence('https://www.newmont.com/investors/news-release/news-details/2026/Newmont-Reports-Fourth-Quarter-and-Full-Year-2025-Results-Provides-2026-Guidance-and-Announces-Enhanced-Capital-Allocation-Framework/', '2026_Merian_gold_production_guidance', 'OPERATOR')
     ]
+  },
+  SITE_HTI_gona_ves_limestone_quarry_zone: {
+    extractionEligibility: 'CONDITIONAL',
+    metadata: {
+      currentDataState: 'Regional quarry zone; no single current commercial operator established in repository evidence'
+    }
+  },
+  SITE_KNA_ross_lands_quarry_zone: {
+    extractionEligibility: 'CONDITIONAL',
+    metadata: {
+      currentDataState: 'Regional quarry zone; no single current commercial operator established in repository evidence'
+    }
+  },
+  SITE_WSM_lefaga_aggregate_quarry_zone: {
+    extractionEligibility: 'CONDITIONAL',
+    metadata: {
+      currentDataState: 'Regional aggregate quarry zone; no single current commercial operator established in repository evidence'
+    }
+  },
+  SITE_TUV_funafuti_borrow_pits: {
+    extractionEligibility: 'NON_EXECUTABLE',
+    metadata: {
+      currentDataState: 'Historical borrow-pit reference; current commercial extraction operator is not established'
+    }
   }
 };
 
