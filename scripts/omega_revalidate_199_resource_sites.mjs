@@ -2,7 +2,7 @@
 import fs from 'node:fs';
 import { execFileSync } from 'node:child_process';
 
-const REVIEW_DATE = '2026-09-27';
+const REVIEW_DATE = '2026-10-03';
 const WIKI_API = 'https://en.wikipedia.org/w/api.php';
 const WD_API = 'https://www.wikidata.org/w/api.php';
 
