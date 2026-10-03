@@ -666,6 +666,9 @@ const fixes = {
     operationalStatus: 'PERMIT_PROCESSING',
     extractionEligibility: 'CONDITIONAL',
     extractionMethod: 'Hardstone extraction, inert-waste recycling and quarry backfilling',
+    extra: {
+      currentStatus: 'Current ERA permit application EP 0025/19 for HM18 Wied Moqbol, Hal Far is being processed for hardstone extraction, inert-waste recycling and quarry backfilling; current site owner/operator is not established from the permit summary.'
+    },
     metadata: {
       sourceAuthority: 'Environment and Resources Authority, Malta',
       permit: 'EP 0025/19, Quarry HM18 Wied Moqbol, Hal Far',
@@ -962,6 +965,9 @@ for (const { site } of sites) {
       site.dataCompleteness.ownership = 'UNOBSERVED';
     }
   }
+  site.extractionProfile = site.extractionProfile || {};
+  site.extractionProfile.owner = site.owner ?? 'UNOBSERVED';
+  site.extractionProfile.operator = site.operator ?? 'UNOBSERVED';
   buildSiteDataPackage(sites.find((x) => x.site === site)?.countryId || site.countryCode, site);
 }
 
