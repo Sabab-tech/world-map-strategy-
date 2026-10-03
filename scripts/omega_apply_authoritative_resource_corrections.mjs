@@ -2211,6 +2211,89 @@ function applyFix(site, fix) {
   site.dataCompleteness.ownership = site.owner === 'UNOBSERVED' ? 'UNOBSERVED' : 'REPORTED';
 }
 
+function promoteStructuredQuantitative(site) {
+  const qp = site.quantitativeProfile || (site.quantitativeProfile = {});
+  const web = site.webVerifiedMetrics && typeof site.webVerifiedMetrics === 'object'
+    ? site.webVerifiedMetrics : {};
+  const capacity = site.capacityProfile && typeof site.capacityProfile === 'object'
+    ? site.capacityProfile : {};
+
+  if (Object.keys(web).length) {
+    qp.reportedMetrics = { ...(qp.reportedMetrics || {}), ...web };
+  }
+
+  const numericMetric = (predicate) => {
+    for (const [key, metric] of Object.entries(web)) {
+      if (!predicate(key, metric)) continue;
+      const value = Number(metric?.value);
+      if (Number.isFinite(value) && value > 0) return { key, metric, value };
+    }
+    return null;
+  };
+
+  const annualProduction = numericMetric((key) =>
+    /Production\\d{4}$/.test(key) && !/attributable/i.test(key)
+  );
+  if (annualProduction && !(qp.production?.annual != null && qp.production?.annual !== '')) {
+    const yearMatch = annualProduction.key.match(/(\\d{4})$/);
+    qp.production = {
+      ...(qp.production || {}),
+      annual: annualProduction.value,
+      unit: annualProduction.metric?.unit || qp.production?.unit || null,
+      year: yearMatch ? Number(yearMatch[1]) : qp.production?.year || null,
+      status: 'OBSERVED',
+      basis: annualProduction.metric?.basis || 'SITE_SPECIFIC'
+    };
+  }
+
+  const headGrade = numericMetric((key) => /headGrade\\d{4}$/.test(key));
+  if (headGrade && !(qp.grade?.value != null && qp.grade.value !== '')) {
+    const yearMatch = headGrade.key.match(/(\\d{4})$/);
+    qp.grade = {
+      ...(qp.grade || {}),
+      value: headGrade.value,
+      unit: headGrade.metric?.unit || qp.grade?.unit || null,
+      year: yearMatch ? Number(yearMatch[1]) : qp.grade?.year || null,
+      status: 'OBSERVED'
+    };
+  }
+
+  const recovery = numericMetric((key) => /(?:^|_)recovery\\d{4}$/.test(key) || /plantRecovery\\d{4}$/.test(key));
+  if (recovery) {
+    const yearMatch = recovery.key.match(/(\\d{4})$/);
+    qp.recovery = {
+      ...(qp.recovery || {}),
+      value: recovery.value,
+      unit: recovery.metric?.unit || qp.recovery?.unit || null,
+      year: yearMatch ? Number(yearMatch[1]) : qp.recovery?.year || null,
+      status: 'OBSERVED'
+    };
+  }
+
+  const throughput = numericMetric((key) => /oreMilled\\d{4}$/.test(key) || /throughput\\d{4}$/.test(key));
+  if (throughput) {
+    const yearMatch = throughput.key.match(/(\\d{4})$/);
+    qp.throughput = {
+      ...(qp.throughput || {}),
+      value: throughput.value,
+      unit: throughput.metric?.unit || qp.throughput?.unit || null,
+      year: yearMatch ? Number(yearMatch[1]) : qp.throughput?.year || null,
+      status: 'OBSERVED'
+    };
+  }
+
+  if (Object.keys(capacity).length) {
+    qp.capacity = { ...(qp.capacity || {}), ...capacity };
+  }
+
+  qp.quantitativeProvenance = {
+    ...(qp.quantitativeProvenance || {}),
+    structuredSource: Object.keys(web).length ? 'site.webVerifiedMetrics' : qp.quantitativeProvenance?.structuredSource || null,
+    capacitySource: Object.keys(capacity).length ? 'site.capacityProfile' : qp.quantitativeProvenance?.capacitySource || null,
+    promotedAt: REVIEW_DATE
+  };
+}
+
 function buildSiteDataPackage(countryId, site) {
   const rp = site.resourceIdentity || {};
   const lp = site.locationIdentity || {};
@@ -2256,7 +2339,12 @@ function buildSiteDataPackage(countryId, site) {
     quantitative: {
       reserve: qp.reserve || { quantity: null, unit: null, status: 'UNOBSERVED' },
       production: qp.production || { annual: null, rate: null, unit: null, year: null, status: 'UNOBSERVED' },
-      grade: qp.grade || { value: null, unit: null, status: 'UNOBSERVED' }
+      grade: qp.grade || { value: null, unit: null, status: 'UNOBSERVED' },
+      recovery: qp.recovery || { value: null, unit: null, year: null, status: 'UNOBSERVED' },
+      throughput: qp.throughput || { value: null, unit: null, year: null, status: 'UNOBSERVED' },
+      capacity: qp.capacity || {},
+      reportedMetrics: qp.reportedMetrics || {},
+      quantitativeProvenance: qp.quantitativeProvenance || {}
     },
     verification: {
       researchState: site.researchState,
@@ -2298,6 +2386,7 @@ const placeholders = new Set([
   'former midroc'
 ]);
 for (const { site } of sites) {
+  promoteStructuredQuantitative(site);
   site.dataCompleteness = site.dataCompleteness || {};
   if (String(site.status).toUpperCase() === 'NOT_APPLICABLE' || site.commercialExtraction === false) {
     site.researchState = 'NOT_APPLICABLE_NO_COMMERCIAL_SITE';
