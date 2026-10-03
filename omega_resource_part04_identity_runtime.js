@@ -242,7 +242,12 @@
           profile?.resourceInfrastructureContext?.mineSites||[];
         if(!Array.isArray(sites))continue;
         sites.forEach(function(rawSite,index){
-          const siteName=String(typeof rawSite==='string'?rawSite:rawSite?.name||rawSite?.siteName||rawSite?.mineName||rawSite?.depositName||'').trim();
+          const siteName=String(
+            typeof rawSite==='string'
+              ? rawSite
+              : rawSite?.name||rawSite?.siteName||rawSite?.mineName||rawSite?.depositName||
+                rawSite?.siteId||rawSite?.mineId||rawSite?.depositId||('UNNAMED_SITE_'+countryId+'_'+index)
+          ).trim();
           if(!siteName)return;
           const siteReferenceKey='SITE:'+String(sourceDatasetId)+':'+countryId+':'+tok(siteName)+':'+index;
           const dedupeKey=sourceDatasetId+'|'+countryId+'|'+index+'|'+siteName.toUpperCase();
