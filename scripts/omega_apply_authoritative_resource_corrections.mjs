@@ -1042,7 +1042,7 @@ const fixes = {
       sourceScope: 'SITE_SPECIFIC'
     },
     extra: {
-      2026ProductionGuidance: {
+      '2026ProductionGuidance': {
         low: 70000,
         high: 80000,
         unit: 'troy_ounces_gold',
