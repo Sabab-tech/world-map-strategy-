@@ -22,7 +22,7 @@ function measure(text,allowed){const m=String(text??'').match(new RegExp('([0-9]
 function parseReserve(text,resourceId,targetUnit){
  const external=g.Omega?.ResourceRealism?.parseReserve;
  if(typeof external==='function'){const x=external(text,resourceId);if(x?.status){
-   const family=x.unitFamily||x.sourceUnit||null;
+   const family=x.sourceUnitFamily||x.sourceUnit||x.unitFamily||null;
    const resource=rid(resourceId);
    const canonicalTarget=resource==='natural_gas'?'BCM':
      (resource==='gold'||resource==='silver'||resource==='platinum'?'TROY_OZ':family);
