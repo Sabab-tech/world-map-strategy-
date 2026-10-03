@@ -2232,7 +2232,7 @@ function promoteStructuredQuantitative(site) {
   };
 
   const annualProduction = numericMetric((key) =>
-    /Production\\d{4}$/.test(key) && !/attributable/i.test(key)
+    /Production\d{4}$/.test(key) && !/attributable/i.test(key)
   );
   if (annualProduction && !(qp.production?.annual != null && qp.production?.annual !== '')) {
     const yearMatch = annualProduction.key.match(/(\\d{4})$/);
@@ -2246,7 +2246,7 @@ function promoteStructuredQuantitative(site) {
     };
   }
 
-  const headGrade = numericMetric((key) => /headGrade\\d{4}$/.test(key));
+  const headGrade = numericMetric((key) => /headGrade\d{4}$/.test(key));
   if (headGrade && !(qp.grade?.value != null && qp.grade.value !== '')) {
     const yearMatch = headGrade.key.match(/(\\d{4})$/);
     qp.grade = {
@@ -2258,7 +2258,7 @@ function promoteStructuredQuantitative(site) {
     };
   }
 
-  const recovery = numericMetric((key) => /(?:^|_)recovery\\d{4}$/.test(key) || /plantRecovery\\d{4}$/.test(key));
+  const recovery = numericMetric((key) => /(?:^|_)recovery\d{4}$/.test(key) || /plantRecovery\d{4}$/.test(key));
   if (recovery) {
     const yearMatch = recovery.key.match(/(\\d{4})$/);
     qp.recovery = {
@@ -2270,7 +2270,7 @@ function promoteStructuredQuantitative(site) {
     };
   }
 
-  const throughput = numericMetric((key) => /oreMilled\\d{4}$/.test(key) || /throughput\\d{4}$/.test(key));
+  const throughput = numericMetric((key) => /oreMilled\d{4}$/.test(key) || /throughput\d{4}$/.test(key));
   if (throughput) {
     const yearMatch = throughput.key.match(/(\\d{4})$/);
     qp.throughput = {
