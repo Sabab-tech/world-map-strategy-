@@ -2445,6 +2445,65 @@ const fixes = {
       evidence('https://masanhightechmaterials.com/wp-content/uploads/2026/04/EN_AnnualReport_2025.pdf', '2025_Nui_Phao_mined_ore_and_additional_permitted_reserve_context', 'OPERATOR'),
       evidence('https://masanhightechmaterials.com/wp-content/uploads/2022/04/EN_AnnualReport_2025.pdf', 'Nui_Phao_total_reserve_and_underground_phase_reserve_context', 'OPERATOR')
     ]
+  },
+  SITE_LKA_kahatagaha_graphite_mine: {
+    quantitativeProduction: {
+      annual: 405,
+      unit: 'metric_tons_graphite_ore_ROM',
+      year: 2025,
+      status: 'OBSERVED',
+      basis: 'FY2024_25_MINE_OUTPUT'
+    },
+    extra: {
+      productionJanSep2025: { value: 451, unit: 'metric_tons_ROM', year: 2025, status: 'OBSERVED' },
+      productionAprSep2025: { value: 278, unit: 'metric_tons_ROM', year: 2025, status: 'OBSERVED' },
+      reserveStatus: 'UNRESOLVED_RESERVE_ESTIMATION_IN_PROGRESS'
+    },
+    sources: [
+      evidence('https://www.industry.gov.lk/web/wp-content/uploads/2025/11/Ministry-of-Industry-and-Entrepreneurship-Development-_E_compressed.pdf', '2025_Kahatagaha_production_and_current_reserve_estimation_status', 'GOVERNMENT')
+    ]
+  },
+  SITE_EGY_sukari_gold_mine: {
+    quantitativeGrade: {
+      value: 1.37,
+      unit: 'grams_per_tonne_gold',
+      year: 2025,
+      status: 'OBSERVED',
+      basis: '2025_PLANT_HEAD_GRADE'
+    },
+    quantitativeProduction: {
+      annual: 500000,
+      unit: 'troy_ounces_gold',
+      year: 2025,
+      status: 'OBSERVED',
+      basis: 'TOTAL_SITE_GOLD_PRODUCTION'
+    },
+    quantitativeReserve: {
+      quantity: 2360000,
+      unit: 'troy_ounces_gold',
+      year: 2025,
+      status: 'OBSERVED_ATTRIBUTABLE',
+      basis: 'ATTRIBUTABLE_MINERAL_RESERVE'
+    },
+    extra: {
+      oreTreated2025: { value: 12180000, unit: 'metric_tons_ore', year: 2025, status: 'OBSERVED' },
+      recovery2025: { value: 89, unit: 'percent', year: 2025, status: 'OBSERVED' },
+      processingCapacity: { value: 12000000, unit: 'metric_tons_ore_per_year', status: 'DESIGN_CAPACITY' }
+    },
+    process: {
+      resourceTypeId: 'gold',
+      ontologyKey: 'GOLD',
+      commodityName: 'Gold ore and doré',
+      primaryCommodity: 'gold',
+      upstreamProcess: 'Open-Pit and Underground Mining',
+      midstreamProcess: 'Crushing, Grinding, Flotation and CIL Recovery',
+      refinedOutputs: ['GOLD_DORE']
+    },
+    sources: [
+      evidence('https://www.anglogoldashanti.com/portfolio/africa/sukari-egypt/', 'current_Sukari_mining_methods_and_12Mtpa_processing_plant', 'OPERATOR'),
+      evidence('https://reports.anglogoldashanti.com/25/author/katherinerasc-co-za/page/5/', '2025_Sukari_gold_production_head_grade_ore_treated_and_recovery', 'OPERATOR'),
+      evidence('https://www.anglogoldashanti.com/investors/reporting/annual-reports/2025/', '2025_Sukari_mineral_reserve_reporting_package', 'OPERATOR')
+    ]
   }
 };
 
