@@ -344,6 +344,43 @@ const fixes = {
       evidence('https://www.first-quantum.com/operations/cobre-panama/', 'mine_identity_location_reserves_and_preservation_status', 'OPERATOR')
     ]
   },
+  SITE_ERI_bisha_mine: {
+    process: {
+      resourceTypeId: 'zinc',
+      ontologyKey: 'ZINC',
+      commodityName: 'Zinc Ore & Concentrates',
+      category: 'BASE_METAL',
+      physicalForm: 'SOLID_ORE_AND_CONCENTRATE',
+      upstreamProcess: 'Open-Pit / Underground Sulfide Mining',
+      midstreamProcess: 'Flotation, Roasting, Leaching, Electrowinning',
+      refinedOutputs: ['SPECIAL_HIGH_GRADE_ZINC', 'GALVANIZED_STEEL', 'BRASS'],
+      downstreamSectors: ['BATTERIES'],
+      ontologyStatus: 'RESOLVED_FROM_RESOURCE_ONTOLOGY',
+      canonicalResourceId: 'zinc',
+      primaryCommodity: 'zinc',
+      secondaryCommodities: ['copper', 'silver']
+    },
+    metadata: {
+      sourceAuthority: 'Zijin Mining',
+      currentEvidence: 'Zijin identifies Bisha as a producing copper-zinc mine in Eritrea. The site operates open-pit and underground mining with flotation; 2025 reported output included 83 kt zinc, 23 kt copper and 63.4 t silver.'
+    },
+    quantitativeProduction: {
+      annual: {
+        value: 83000,
+        unit: 'metric_tons_zinc',
+        year: 2025,
+        status: 'OBSERVED'
+      }
+    },
+    quantitativeGrade: {
+      value: 3.64,
+      unit: 'percent_zinc',
+      status: 'OBSERVED'
+    },
+    sources: [
+      evidence('https://www.zijinmining.com/global/program-detail-71760.htm', '2025_bisha_zinc_copper_silver_output_resource_identity_and_mining_method', 'OPERATOR')
+    ]
+  },
   SITE_GTM_fenix_nickel_mine: {
     owner: 'Fenix Nickel Company / Guatemalan operating entities',
     operator: 'Fenix Minerales S.A.',
@@ -770,6 +807,10 @@ function applyFix(site, fix) {
     site.quantitativeProfile = site.quantitativeProfile || {};
     site.quantitativeProfile.grade = { ...fix.quantitativeGrade };
   }
+  if (fix.quantitativeProduction) {
+    site.quantitativeProfile = site.quantitativeProfile || {};
+    site.quantitativeProfile.production = { ...fix.quantitativeProduction };
+  }
   if (fix.ownershipScope !== undefined) site.ownershipScope = fix.ownershipScope;
   if (fix.extra && typeof fix.extra === 'object') Object.assign(site, fix.extra);
   if (fix.process && typeof fix.process === 'object') {
@@ -795,6 +836,9 @@ function applyFix(site, fix) {
   site.extractionProfile.operatorEvidenceStatus = site.operator === 'UNOBSERVED' ? 'UNOBSERVED' : 'WEB_REVIEWED';
   site.dataStatus = site.dataStatus || {};
   site.dataStatus.ownership = site.owner === 'UNOBSERVED' ? 'UNOBSERVED' : 'OBSERVED';
+  if (site.siteIdentity && typeof site.siteIdentity === 'object') {
+    site.siteIdentity.resourceTypeId = site.resourceTypeId ?? null;
+  }
   site.dataCompleteness = site.dataCompleteness || {};
   site.dataCompleteness.ownership = site.owner === 'UNOBSERVED' ? 'UNOBSERVED' : 'REPORTED';
 }
