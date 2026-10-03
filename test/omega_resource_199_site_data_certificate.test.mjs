@@ -1,4 +1,5 @@
 // CERTIFICATE_TRIGGER: verify generated 199-site dataset after targeted repair
+// Fresh post-repair certificate checkpoint: 2026-10-03T17:xx+06:00
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
