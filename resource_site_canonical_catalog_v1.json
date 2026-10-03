@@ -8567,10 +8567,12 @@
         }
       },
       "verification": {
-        "researchState": "LEGACY_CURATED_NOT_RECENTLY_REVALIDATED",
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
         "reviewedAt": "2026-10-03",
-        "sourceCount": 0,
-        "sourceAuthorities": [],
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "WIKIPEDIA"
+        ],
         "dataLimitations": null
       }
     },

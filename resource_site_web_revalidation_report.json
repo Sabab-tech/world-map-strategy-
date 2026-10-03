@@ -1,7 +1,7 @@
 {
   "runDate": "2026-10-03",
   "totalSites": 199,
-  "legacyTargets": 60,
+  "legacyTargets": 59,
   "matchedByWebSearch": 0,
   "wikipediaMatches": 1,
   "wikidataMatches": 0,
@@ -40,11 +40,6 @@
       "id": "SITE_ESP_cobre_las_cruces_mine",
       "siteName": "Cobre Las Cruces Mine",
       "countryCode": "ESP"
-    },
-    {
-      "id": "SITE_POL_be_chat_w_lignite_mine",
-      "siteName": "Bełchatów Lignite Mine",
-      "countryCode": "POL"
     },
     {
       "id": "SITE_NLD_veendam_salt_mine",
