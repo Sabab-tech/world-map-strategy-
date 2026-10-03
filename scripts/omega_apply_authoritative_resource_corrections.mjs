@@ -2284,6 +2284,167 @@ const fixes = {
     sources: [
       evidence('https://www.sec.gov/Archives/edgar/data/1973832/000197383226000062/geitatechnicalreportsumm.htm', '2025_geita_proven_probable_reserve_tonnage_grade_and_contained_gold', 'REGULATORY_FILING')
     ]
+  },
+  SITE_ZMB_kansanshi_copper_gold_mine: {
+    quantitativeReserve: {
+      quantity: 1070000000,
+      unit: 'metric_tons_ore',
+      year: 2024,
+      status: 'OBSERVED',
+      basis: 'PROVEN_PLUS_PROBABLE_MINERAL_RESERVE'
+    },
+    quantitativeGrade: {
+      value: 0.52,
+      unit: 'percent_copper',
+      year: 2024,
+      status: 'OBSERVED',
+      basis: 'PROVEN_PLUS_PROBABLE_MINERAL_RESERVE'
+    },
+    extra: {
+      goldGradeInReserve: { value: 0.10, unit: 'grams_per_tonne_gold', year: 2024, status: 'OBSERVED' },
+      averageCopperRecovery: { value: 82.8, unit: 'percent', year: 2024, status: 'REPORTED_MINE_PLAN' },
+      averageGoldRecovery: { value: 35.1, unit: 'percent', year: 2024, status: 'REPORTED_MINE_PLAN' },
+      s3ProcessingCapacity: { value: 25000000, unit: 'metric_tons_ore_per_year', year: 2025, status: 'REPORTED' },
+      productionGuidance2026: {
+        copper: { low: 175000, high: 205000, unit: 'metric_tons_copper_per_year', status: 'GUIDANCE' },
+        gold: { low: 110000, high: 120000, unit: 'troy_ounces_gold_per_year', status: 'GUIDANCE' }
+      }
+    },
+    process: {
+      resourceTypeId: 'copper',
+      ontologyKey: 'COPPER',
+      commodityName: 'Copper with gold by-product',
+      primaryCommodity: 'copper',
+      secondaryCommodities: ['gold'],
+      upstreamProcess: 'Open-Pit Mining',
+      midstreamProcess: 'Milling, Flotation, Leaching, SX-EW and Smelting',
+      refinedOutputs: ['COPPER_CONCENTRATE', 'COPPER_CATHODE', 'GOLD_BULLION']
+    },
+    sources: [
+      evidence('https://www.sec.gov/Archives/edgar/data/85535/000008553525000114/a2025-08x05defa14akansanshi.htm', '2024_reserves_grades_recovery_processing_capacity_and_2025_2026_guidance', 'REGULATORY_FILING'),
+      evidence('https://www.first-quantum.com/news/first-quantum-minerals-announces-2025-preliminary-production-and-2026-2028-guidance/', '2026_Kansanshi_production_guidance_and_S3_ramp_context', 'OPERATOR')
+    ]
+  },
+  SITE_GRC_olympias_gold_mine: {
+    quantitativeReserve: {
+      quantity: 9191000,
+      unit: 'metric_tons_ore',
+      year: 2025,
+      status: 'OBSERVED',
+      basis: 'PROVEN_PLUS_PROBABLE_MINERAL_RESERVE'
+    },
+    quantitativeGrade: {
+      value: 6.02,
+      unit: 'grams_per_tonne_gold',
+      year: 2025,
+      status: 'OBSERVED',
+      basis: 'PROVEN_PLUS_PROBABLE_MINERAL_RESERVE'
+    },
+    extra: {
+      containedGold: { value: 1780000, unit: 'troy_ounces_gold', year: 2025, status: 'OBSERVED' },
+      containedSilver: { value: 34356000, unit: 'troy_ounces_silver', year: 2025, status: 'OBSERVED' },
+      containedLead: { value: 360000, unit: 'metric_tons_lead', year: 2025, status: 'OBSERVED' },
+      containedZinc: { value: 475000, unit: 'metric_tons_zinc', year: 2025, status: 'OBSERVED' }
+    },
+    process: {
+      resourceTypeId: 'gold',
+      ontologyKey: 'GOLD',
+      commodityName: 'Gold, silver, lead and zinc polymetallic ore',
+      primaryCommodity: 'gold',
+      secondaryCommodities: ['silver', 'lead', 'zinc'],
+      upstreamProcess: 'Underground Mining',
+      midstreamProcess: 'Crushing, Grinding, Flotation and Concentrate Production',
+      refinedOutputs: ['GOLD_CONCENTRATE', 'SILVER_CONCENTRATE', 'LEAD_CONCENTRATE', 'ZINC_CONCENTRATE']
+    },
+    sources: [
+      evidence('https://www.sec.gov/Archives/edgar/data/918608/000091860826000007/a2025aifego2026-03x27991.htm', 'September_2025_Olympias_reserve_tonnage_grade_and_contained_metals', 'REGULATORY_FILING'),
+      evidence('https://www.eldoradogold.com/assets/reserves-and-resources', 'current_Olympias_reserve_and_resource_table', 'OPERATOR')
+    ]
+  },
+  SITE_JOR_eshidiya_phosphate_mine: {
+    quantitativeReserve: {
+      quantity: 372980000,
+      unit: 'cubic_meters_phosphate_ore',
+      year: 2026,
+      status: 'REPORTED',
+      basis: 'PROVEN_PLUS_POSSIBLE_PLUS_POTENTIAL_GEOLOGICAL_RESERVE'
+    },
+    quantitativeProduction: {
+      annual: 7440345,
+      unit: 'metric_tons_dry_phosphate',
+      year: 2025,
+      status: 'OBSERVED',
+      basis: 'MINE_OUTPUT'
+    },
+    extra: {
+      provenReserve: { value: 222980000, unit: 'cubic_meters_phosphate_ore', year: 2026, status: 'REPORTED' },
+      possibleReserve: { value: 50000000, unit: 'cubic_meters_phosphate_ore', year: 2026, status: 'REPORTED' },
+      potentialReserve: { value: 100000000, unit: 'cubic_meters_phosphate_ore', year: 2026, status: 'REPORTED' }
+    },
+    sources: [
+      evidence('https://www.jpmc.com.jo/en/exploration-and-excavation', '2026_Eshidiya_geological_reserve_and_proven_possible_potential_breakdown', 'OPERATOR_GOVERNMENT'),
+      evidence('https://www.jpmc.com.jo/en/phosphate-production', '2025_Eshidiya_dry_phosphate_production', 'OPERATOR_GOVERNMENT')
+    ]
+  },
+  SITE_ERI_bisha_mine: {
+    quantitativeProduction: {
+      annual: 83000,
+      unit: 'metric_tons_zinc',
+      year: 2025,
+      status: 'OBSERVED',
+      basis: '100_PERCENT_SITE_ZINC_PRODUCTION'
+    },
+    quantitativeGrade: {
+      value: 3.64,
+      unit: 'percent_zinc',
+      year: 2025,
+      status: 'REPORTED',
+      basis: 'CONTAINED_ZINC_RESOURCE_GRADE'
+    },
+    extra: {
+      containedZincResource: { value: 2756600, unit: 'metric_tons_zinc', year: 2025, status: 'REPORTED' },
+      minedCopper: { value: 23000, unit: 'metric_tons_copper', year: 2025, status: 'OBSERVED' },
+      minedSilver: { value: 63.4, unit: 'metric_tons_silver', year: 2025, status: 'OBSERVED' },
+      ownershipInterest: { value: 55, unit: 'percent', year: 2025, status: 'OBSERVED' }
+    },
+    process: {
+      resourceTypeId: 'zinc',
+      ontologyKey: 'ZINC',
+      commodityName: 'Zinc-copper-silver polymetallic ore',
+      primaryCommodity: 'zinc',
+      secondaryCommodities: ['copper', 'silver'],
+      upstreamProcess: 'Open-Pit Mining and Underground Mining',
+      midstreamProcess: 'Crushing, Grinding and Flotation',
+      refinedOutputs: ['ZINC_CONCENTRATE', 'COPPER_CONCENTRATE']
+    },
+    sources: [
+      evidence('https://www.zijinmining.com/global/program-detail-71760.htm', 'current_Bisha_operation_production_resources_grade_ownership_and_mining_processing_methods', 'OPERATOR'),
+      evidence('https://www.zijinmining.com/investor/2025-newyeji.htm', '2025_Bisha_zinc_resource_grade_and_mined_output', 'OPERATOR')
+    ]
+  },
+  SITE_VNM_nui_phao_polymetallic_mine: {
+    quantitativeReserve: {
+      quantity: 83000000,
+      unit: 'metric_tons_ore',
+      year: 2025,
+      status: 'REPORTED',
+      basis: 'TOTAL_NUI_PHAO_ORE_RESERVES'
+    },
+    quantitativeProduction: {
+      annual: 2005420,
+      unit: 'metric_tons_ore_mined',
+      year: 2025,
+      status: 'OBSERVED',
+      basis: 'TOTAL_MINED_ORE'
+    },
+    extra: {
+      additionalPermittedReserve: { value: 14600000, unit: 'metric_tons_tungsten_polymetallic_ore', year: 2025, status: 'REPORTED' },
+      undergroundReservePhase2: { value: 28028000, unit: 'metric_tons_ore', year: 2023, status: 'REPORTED' }
+    },
+    sources: [
+      evidence('https://masanhightechmaterials.com/wp-content/uploads/2026/04/EN_AnnualReport_2025.pdf', '2025_Nui_Phao_mined_ore_and_additional_permitted_reserve_context', 'OPERATOR'),
+      evidence('https://masanhightechmaterials.com/wp-content/uploads/2022/04/EN_AnnualReport_2025.pdf', 'Nui_Phao_total_reserve_and_underground_phase_reserve_context', 'OPERATOR')
+    ]
   }
 };
 
