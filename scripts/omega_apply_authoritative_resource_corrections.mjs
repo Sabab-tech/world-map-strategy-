@@ -1959,8 +1959,8 @@ const fixes = {
   SITE_BRB_arawak_cement_limestone_quarry: {
     owner: 'Arawak Cement Company Limited / TCL Group',
     operator: 'Arawak Cement Company Limited',
-    status: 'MILL_ONLY_NO_QUARRY_VERIFIED',
-    operationalStatus: 'MILL_ONLY_NO_QUARRY_VERIFIED',
+    status: 'LIMITED',
+    operationalStatus: 'LIMITED',
     extractionEligibility: 'NON_EXECUTABLE',
     extractionMethod: 'No current quarry extraction at Checker Hall is established; current site operation is cement grinding',
     metadata: {
