@@ -371,7 +371,7 @@ function batchFromExtraction(x,record){
         if(seen.has(occurrenceKey))continue;seen.add(occurrenceKey);
         const old=existing?.mineStates?.[occurrenceKey],unit=stream.reserve.unit,prod=stream.production,q=stream.quality;
         const generated={occurrenceKey,countryId:canonical(c),depositKey:'SIM_'+tok(occurrenceKey),resourceId:stream.resourceId,
-          geologicalQuantity:stream.reserve.quantity,recoverableQuantity:stream.reserve.quantity,residualQuantity:stream.reserve.quantity,unit,
+          geologicalQuantity:stream.reserve.geologicalQuantity??stream.reserve.quantity,recoverableQuantity:stream.reserve.recoverableQuantity??stream.reserve.quantity,residualQuantity:stream.reserve.recoverableQuantity??stream.reserve.quantity,unit,
           operationalStatus:'ACTIVE_EXTRACTION',stateVersion:1,quality:q,productionModel:prod,
           provenance:{sourceAuthority:'RESOURCE_JSON.countryProfiles',stateAuthority:'SIMULATED',sourceDatasetId:'resources.json.countryProfiles',sourcePath:asset?.sourcePath||null,
             quantityAuthority:stream.reserve.authority||'SIMULATED',productionAuthority:prod.authority||'SIMULATED',qualityAuthority:q.gradeStatus==='OBSERVED'?'OBSERVED':'SIMULATED',simulationRuleVersion:realism?.VERSION||null}};
@@ -379,7 +379,7 @@ function batchFromExtraction(x,record){
         const previous=merged?new p5.ReserveState(clone(merged)):null;
         const reserve=previous||new p5.ReserveState({
           occurrenceKey,countryId:canonical(c),depositKey:'SIM_'+tok(occurrenceKey),resourceId:stream.resourceId,
-          geologicalQuantity:stream.reserve.quantity,recoverableQuantity:stream.reserve.quantity,residualQuantity:stream.reserve.quantity,unit,
+          geologicalQuantity:stream.reserve.geologicalQuantity??stream.reserve.quantity,recoverableQuantity:stream.reserve.recoverableQuantity??stream.reserve.quantity,residualQuantity:stream.reserve.recoverableQuantity??stream.reserve.quantity,unit,
           operationalStatus:'ACTIVE_EXTRACTION',stateVersion:1,quality:q,productionModel:prod,
           provenance:{sourceAuthority:'RESOURCE_JSON.countryProfiles',stateAuthority:'SIMULATED',sourceDatasetId:'resources.json.countryProfiles',sourcePath:asset?.sourcePath||null,
             quantityAuthority:stream.reserve.authority||'SIMULATED',productionAuthority:prod.authority||'SIMULATED',qualityAuthority:q.gradeStatus==='OBSERVED'?'OBSERVED':'SIMULATED',simulationRuleVersion:realism?.VERSION||null}
