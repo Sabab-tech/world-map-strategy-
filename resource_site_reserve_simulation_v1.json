@@ -1,0 +1,3793 @@
+{
+  "schemaVersion": "1.0.0",
+  "datasetId": "OMEGA_RESOURCE_SITE_RESERVE_SIMULATION_V1",
+  "generatedAt": "2026-10-04",
+  "siteCount": 199,
+  "commercialSiteCount": 195,
+  "notApplicableSiteCount": 4,
+  "authority": "SCENARIO_SIMULATION_DATA",
+  "note": "Gameplay-only quantitative reserve layer. It does not claim real-world reserve figures and does not modify source datasets.",
+  "records": [
+    {
+      "siteId": "SITE_BGD_barapukuria_coal_mine",
+      "countryId": "BGD",
+      "resourceId": "coal",
+      "siteName": "Barapukuria Coal Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 1507663538,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_BGD_barapukuria_coal_mine|BGD|coal",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_IND_gevra_oc_mine",
+      "countryId": "IND",
+      "resourceId": "coal",
+      "siteName": "Gevra OC Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 8268001980,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_IND_gevra_oc_mine|IND|coal",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_PAK_thar_block_ii_coal_mine",
+      "countryId": "PAK",
+      "resourceId": "coal",
+      "siteName": "Thar Block II Coal Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 8228935489,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_PAK_thar_block_ii_coal_mine|PAK|coal",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_LKA_kahatagaha_graphite_mine",
+      "countryId": "LKA",
+      "resourceId": "graphite",
+      "siteName": "Kahatagaha Graphite Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 111878795,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_LKA_kahatagaha_graphite_mine|LKA|graphite",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_NPL_udayapur_limestone_mine",
+      "countryId": "NPL",
+      "resourceId": "limestone",
+      "siteName": "Udayapur Limestone Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 10380164392,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_NPL_udayapur_limestone_mine|NPL|limestone",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_BTN_tsirang_limestone_quarries",
+      "countryId": "BTN",
+      "resourceId": "limestone",
+      "siteName": "Tsirang Limestone Quarries",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 1442687215,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_BTN_tsirang_limestone_quarries|BTN|limestone",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_AFG_mes_aynak_copper_mine",
+      "countryId": "AFG",
+      "resourceId": "copper",
+      "siteName": "Mes Aynak Copper Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 771000820,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_AFG_mes_aynak_copper_mine|AFG|copper",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_MDV_mal_atoll_coral_aggregate_sites",
+      "countryId": "MDV",
+      "resourceId": "coral_aggregate",
+      "siteName": "Malé Atoll Coral Aggregate Sites",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 1772825547,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_MDV_mal_atoll_coral_aggregate_sites|MDV|coral_aggregate",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_DZA_gara_djebilet_iron_mine",
+      "countryId": "DZA",
+      "resourceId": "iron_ore",
+      "siteName": "Gara Djebilet Iron Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 9932293952,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_DZA_gara_djebilet_iron_mine|DZA|iron_ore",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_EGY_sukari_gold_mine",
+      "countryId": "EGY",
+      "resourceId": "gold",
+      "siteName": "Sukari Gold Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 69787674,
+        "unit": "TROY_OUNCES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_EGY_sukari_gold_mine|EGY|gold",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_LBY_sharara_oil_field",
+      "countryId": "LBY",
+      "resourceId": "crude_oil",
+      "siteName": "Sharara Oil Field",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 19090400098,
+        "unit": "BBL",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_LBY_sharara_oil_field|LBY|crude_oil",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_MAR_khouribga_phosphate_mine",
+      "countryId": "MAR",
+      "resourceId": "phosphate",
+      "siteName": "Khouribga Phosphate Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 5156363374,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_MAR_khouribga_phosphate_mine|MAR|phosphate",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_TUN_mdhilla_phosphate_mine",
+      "countryId": "TUN",
+      "resourceId": "phosphate",
+      "siteName": "Mdhilla Phosphate Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 5638518635,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_TUN_mdhilla_phosphate_mine|TUN|phosphate",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_SDN_hassai_gold_mine",
+      "countryId": "SDN",
+      "resourceId": "gold",
+      "siteName": "Hassai Gold Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 81276112,
+        "unit": "TROY_OUNCES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_SDN_hassai_gold_mine|SDN|gold",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_MRT_guelb_el_rhein_iron_ore_mine",
+      "countryId": "MRT",
+      "resourceId": "iron_ore",
+      "siteName": "Guelb el Rhein Iron Ore Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 9046852951,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_MRT_guelb_el_rhein_iron_ore_mine|MRT|iron_ore",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_SEN_sabodala_massawa_gold_mine",
+      "countryId": "SEN",
+      "resourceId": "gold",
+      "siteName": "Sabodala-Massawa Gold Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 23120754,
+        "unit": "TROY_OUNCES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_SEN_sabodala_massawa_gold_mine|SEN|gold",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_GMB_western_gambia_aggregate_quarry_zone",
+      "countryId": "GMB",
+      "resourceId": "construction_aggregate",
+      "siteName": "Western Gambia Aggregate Quarry Zone",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 2777938238,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_GMB_western_gambia_aggregate_quarry_zone|GMB|construction_aggregate",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_GNB_farim_phosphate_project",
+      "countryId": "GNB",
+      "resourceId": "phosphate",
+      "siteName": "Farim Phosphate Project",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 2561599686,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_GNB_farim_phosphate_project|GNB|phosphate",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_GIN_sangaredi_bauxite_mine",
+      "countryId": "GIN",
+      "resourceId": "bauxite",
+      "siteName": "Sangaredi Bauxite Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 1850705713,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_GIN_sangaredi_bauxite_mine|GIN|bauxite",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_SLE_sierra_rutile_area_1",
+      "countryId": "SLE",
+      "resourceId": "rutile",
+      "siteName": "Sierra Rutile Area 1",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 364820925,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_SLE_sierra_rutile_area_1|SLE|rutile",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_LBR_yekepa_iron_ore_mine",
+      "countryId": "LBR",
+      "resourceId": "iron_ore",
+      "siteName": "Nimba (Yekepa) Iron Ore Operations",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 12798992333,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_LBR_yekepa_iron_ore_mine|LBR|iron_ore",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_CIV_ity_gold_mine",
+      "countryId": "CIV",
+      "resourceId": "gold",
+      "siteName": "Ity Gold Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 37135670,
+        "unit": "TROY_OUNCES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_CIV_ity_gold_mine|CIV|gold",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_GHA_tarkwa_gold_mine",
+      "countryId": "GHA",
+      "resourceId": "gold",
+      "siteName": "Tarkwa Gold Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 83785806,
+        "unit": "TROY_OUNCES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_GHA_tarkwa_gold_mine|GHA|gold",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_TGO_hahoto_kpogam_phosphate_mine",
+      "countryId": "TGO",
+      "resourceId": "phosphate",
+      "siteName": "Hahotoé-Kpogamé Phosphate Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 5439875621,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_TGO_hahoto_kpogam_phosphate_mine|TGO|phosphate",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_BEN_onigbolo_limestone_quarry",
+      "countryId": "BEN",
+      "resourceId": "limestone",
+      "siteName": "Onigbolo Limestone Quarry",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 2983221482,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_BEN_onigbolo_limestone_quarry|BEN|limestone",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_BFA_essakane_gold_mine",
+      "countryId": "BFA",
+      "resourceId": "gold",
+      "siteName": "Essakane Gold Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 109807280,
+        "unit": "TROY_OUNCES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_BFA_essakane_gold_mine|BFA|gold",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_MLI_loulo_gounkoto_complex",
+      "countryId": "MLI",
+      "resourceId": "gold",
+      "siteName": "Loulo-Gounkoto Complex",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 134383733,
+        "unit": "TROY_OUNCES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_MLI_loulo_gounkoto_complex|MLI|gold",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_NER_soma_r_uranium_mine",
+      "countryId": "NER",
+      "resourceId": "uranium",
+      "siteName": "Somaïr Uranium Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 19690149,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_NER_soma_r_uranium_mine|NER|uranium",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_NGA_okaba_coal_mine",
+      "countryId": "NGA",
+      "resourceId": "coal",
+      "siteName": "Okaba Coal Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 1755867476,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_NGA_okaba_coal_mine|NGA|coal",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_CPV_santiago_pozzolana_quarry_zone",
+      "countryId": "CPV",
+      "resourceId": "construction_aggregate",
+      "siteName": "Santiago Pozzolana Quarry Zone",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 1785120779,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_CPV_santiago_pozzolana_quarry_zone|CPV|construction_aggregate",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_ESH_bou_craa_phosphate_mine",
+      "countryId": "ESH",
+      "resourceId": "phosphate",
+      "siteName": "Bou Craa Phosphate Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 3004262728,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_ESH_bou_craa_phosphate_mine|ESH|phosphate",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_CMR_mbalam_nabeba_iron_ore_project",
+      "countryId": "CMR",
+      "resourceId": "iron_ore",
+      "siteName": "Mbalam-Nabeba Iron Ore Project",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 9162034265,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_CMR_mbalam_nabeba_iron_ore_project|CMR|iron_ore",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_CAF_ndassima_gold_project",
+      "countryId": "CAF",
+      "resourceId": "gold",
+      "siteName": "Ndassima Gold Project",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 163243926,
+        "unit": "TROY_OUNCES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_CAF_ndassima_gold_project|CAF|gold",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_TCD_kouri_bougoudi_gold_mining_area",
+      "countryId": "TCD",
+      "resourceId": "gold",
+      "siteName": "Kouri Bougoudi Gold Mining Area",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 87271948,
+        "unit": "TROY_OUNCES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_TCD_kouri_bougoudi_gold_mining_area|TCD|gold",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_COG_mayoko_iron_ore_mine",
+      "countryId": "COG",
+      "resourceId": "iron_ore",
+      "siteName": "Mayoko Iron Ore Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 1416846978,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_COG_mayoko_iron_ore_mine|COG|iron_ore",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_AGO_catoca_diamond_mine",
+      "countryId": "AGO",
+      "resourceId": "diamond",
+      "siteName": "Catoca Diamond Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 76428874,
+        "unit": "CARATS",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_AGO_catoca_diamond_mine|AGO|diamond",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_COD_kamoa_kakula_copper_complex",
+      "countryId": "COD",
+      "resourceId": "copper",
+      "siteName": "Kamoa-Kakula Copper Complex",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 722121914,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_COD_kamoa_kakula_copper_complex|COD|copper",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_GAB_moanda_manganese_mine",
+      "countryId": "GAB",
+      "resourceId": "manganese",
+      "siteName": "Moanda Manganese Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 3315939350,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_GAB_moanda_manganese_mine|GAB|manganese",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_GNQ_zafiro_oil_field",
+      "countryId": "GNQ",
+      "resourceId": "crude_oil",
+      "siteName": "Zafiro Oil Field",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 2056095559,
+        "unit": "BBL",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_GNQ_zafiro_oil_field|GNQ|crude_oil",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_STP_s_o_tom_aggregate_quarry_zone",
+      "countryId": "STP",
+      "resourceId": "construction_aggregate",
+      "siteName": "São Tomé Aggregate Quarry Zone",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 2859854183,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_STP_s_o_tom_aggregate_quarry_zone|STP|construction_aggregate",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_ETH_lega_dembi_gold_mine",
+      "countryId": "ETH",
+      "resourceId": "gold",
+      "siteName": "Lega Dembi Gold Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 7089902,
+        "unit": "TROY_OUNCES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_ETH_lega_dembi_gold_mine|ETH|gold",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_KEN_kariandusi_diatomite_mine",
+      "countryId": "KEN",
+      "resourceId": "diatomite",
+      "siteName": "Kariandusi Diatomite Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 381023956,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_KEN_kariandusi_diatomite_mine|KEN|diatomite",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_TZA_geita_gold_mine",
+      "countryId": "TZA",
+      "resourceId": "gold",
+      "siteName": "Geita Gold Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 143679676,
+        "unit": "TROY_OUNCES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_TZA_geita_gold_mine|TZA|gold",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_UGA_tororo_limestone_quarry",
+      "countryId": "UGA",
+      "resourceId": "limestone",
+      "siteName": "Tororo Limestone Quarry",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 8410516897,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_UGA_tororo_limestone_quarry|UGA|limestone",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_RWA_rutongo_tin_mine",
+      "countryId": "RWA",
+      "resourceId": "tin",
+      "siteName": "Rutongo Tin Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 23605240,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_RWA_rutongo_tin_mine|RWA|tin",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_BDI_musongati_nickel_project",
+      "countryId": "BDI",
+      "resourceId": "nickel",
+      "siteName": "Musongati Nickel Project",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 461607735,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_BDI_musongati_nickel_project|BDI|nickel",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_SOM_el_buur_gold_mining_area",
+      "countryId": "SOM",
+      "resourceId": "gold",
+      "siteName": "El Buur Gold Mining Area",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 151429220,
+        "unit": "TROY_OUNCES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_SOM_el_buur_gold_mining_area|SOM|gold",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_DJI_ali_sabieh_limestone_quarry_zone",
+      "countryId": "DJI",
+      "resourceId": "limestone",
+      "siteName": "Ali Sabieh Limestone Quarry Zone",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 2167938357,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_DJI_ali_sabieh_limestone_quarry_zone|DJI|limestone",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_ERI_bisha_mine",
+      "countryId": "ERI",
+      "resourceId": "zinc",
+      "siteName": "Bisha Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 795497875,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_ERI_bisha_mine|ERI|zinc",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_SSD_paloch_oil_field",
+      "countryId": "SSD",
+      "resourceId": "crude_oil",
+      "siteName": "Paloch Oil Field",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 24247237942,
+        "unit": "BBL",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_SSD_paloch_oil_field|SSD|crude_oil",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_MWI_kayelekera_uranium_mine",
+      "countryId": "MWI",
+      "resourceId": "uranium",
+      "siteName": "Kayelekera Uranium Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 30717601,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_MWI_kayelekera_uranium_mine|MWI|uranium",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_MDG_ambatovy_mine",
+      "countryId": "MDG",
+      "resourceId": "nickel",
+      "siteName": "Ambatovy Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 426299924,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_MDG_ambatovy_mine|MDG|nickel",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_MUS_basalt_aggregate_quarry_zone",
+      "countryId": "MUS",
+      "resourceId": "basalt",
+      "siteName": "Basalt Aggregate Quarry Zone",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 5594345718,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_MUS_basalt_aggregate_quarry_zone|MUS|basalt",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_SYC_mah_granite_quarry_zone",
+      "countryId": "SYC",
+      "resourceId": "granite",
+      "siteName": "Mahé Granite Quarry Zone",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 4045738014,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_SYC_mah_granite_quarry_zone|SYC|granite",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_COM_grande_comore_basalt_aggregate_sites",
+      "countryId": "COM",
+      "resourceId": "basalt",
+      "siteName": "Grande Comore Basalt Aggregate Sites",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 5963926758,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_COM_grande_comore_basalt_aggregate_sites|COM|basalt",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_ZAF_mogalakwena_pgm_mine",
+      "countryId": "ZAF",
+      "resourceId": "platinum",
+      "siteName": "Mogalakwena PGM Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 75252551,
+        "unit": "TROY_OUNCES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_ZAF_mogalakwena_pgm_mine|ZAF|platinum",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_ZMB_kansanshi_copper_gold_mine",
+      "countryId": "ZMB",
+      "resourceId": "copper",
+      "siteName": "Kansanshi Copper-Gold Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 1555310477,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_ZMB_kansanshi_copper_gold_mine|ZMB|copper",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_ZWE_ngezi_platinum_mine",
+      "countryId": "ZWE",
+      "resourceId": "platinum",
+      "siteName": "Ngezi Platinum Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 76638153,
+        "unit": "TROY_OUNCES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_ZWE_ngezi_platinum_mine|ZWE|platinum",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_NAM_husab_uranium_mine",
+      "countryId": "NAM",
+      "resourceId": "uranium",
+      "siteName": "Husab Uranium Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 24401350,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_NAM_husab_uranium_mine|NAM|uranium",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_BWA_jwaneng_diamond_mine",
+      "countryId": "BWA",
+      "resourceId": "diamond",
+      "siteName": "Jwaneng Diamond Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 15325336,
+        "unit": "CARATS",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_BWA_jwaneng_diamond_mine|BWA|diamond",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_MOZ_moatize_coal_mine",
+      "countryId": "MOZ",
+      "resourceId": "coal",
+      "siteName": "Moatize Coal Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 10225984931,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_MOZ_moatize_coal_mine|MOZ|coal",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_LSO_letseng_diamond_mine",
+      "countryId": "LSO",
+      "resourceId": "diamond",
+      "siteName": "Letseng Diamond Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 139662614,
+        "unit": "CARATS",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_LSO_letseng_diamond_mine|LSO|diamond",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_SWZ_ngwenya_iron_mine",
+      "countryId": "SWZ",
+      "resourceId": "iron_ore",
+      "siteName": "Ngwenya Iron Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 1985740267,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_SWZ_ngwenya_iron_mine|SWZ|iron_ore",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_SAU_ad_duwayhi_gold_mine",
+      "countryId": "SAU",
+      "resourceId": "gold",
+      "siteName": "Ad Duwayhi Gold Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 123842293,
+        "unit": "TROY_OUNCES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_SAU_ad_duwayhi_gold_mine|SAU|gold",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_ARE_fujairah_aggregate_quarries",
+      "countryId": "ARE",
+      "resourceId": "construction_aggregate",
+      "siteName": "Fujairah Aggregate Quarries",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 2519697258,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_ARE_fujairah_aggregate_quarries|ARE|construction_aggregate",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_QAT_north_field_gas",
+      "countryId": "QAT",
+      "resourceId": "natural_gas",
+      "siteName": "North Field Gas",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 236,
+        "unit": "BCM",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_QAT_north_field_gas|QAT|natural_gas",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_KWT_greater_burgan_oilfield",
+      "countryId": "KWT",
+      "resourceId": "crude_oil",
+      "siteName": "Greater Burgan Oilfield",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 37408563719,
+        "unit": "BBL",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_KWT_greater_burgan_oilfield|KWT|crude_oil",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_OMN_lasail_copper_mine",
+      "countryId": "OMN",
+      "resourceId": "copper",
+      "siteName": "Lasail Copper Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 350565267,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_OMN_lasail_copper_mine|OMN|copper",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_BHR_awali_oil_field",
+      "countryId": "BHR",
+      "resourceId": "crude_oil",
+      "siteName": "Awali Oil Field",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 2985846937,
+        "unit": "BBL",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_BHR_awali_oil_field|BHR|crude_oil",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_YEM_marib_jawf_oil_fields",
+      "countryId": "YEM",
+      "resourceId": "crude_oil",
+      "siteName": "Marib-Jawf Oil Fields",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 10944613470,
+        "unit": "BBL",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_YEM_marib_jawf_oil_fields|YEM|crude_oil",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_IRQ_rumaila_oil_field",
+      "countryId": "IRQ",
+      "resourceId": "crude_oil",
+      "siteName": "Rumaila Oil Field",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 14786662263,
+        "unit": "BBL",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_IRQ_rumaila_oil_field|IRQ|crude_oil",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_IRN_sarcheshmeh_copper_mine",
+      "countryId": "IRN",
+      "resourceId": "copper",
+      "siteName": "Sarcheshmeh Copper Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 1107854193,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_IRN_sarcheshmeh_copper_mine|IRN|copper",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_TUR_k_rka_boron_mining_complex",
+      "countryId": "TUR",
+      "resourceId": "boron",
+      "siteName": "Kırka Boron Mining Complex",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 789398147,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_TUR_k_rka_boron_mining_complex|TUR|boron",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_SYR_al_omar_oil_field",
+      "countryId": "SYR",
+      "resourceId": "crude_oil",
+      "siteName": "Al-Omar Oil Field",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 29819073314,
+        "unit": "BBL",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_SYR_al_omar_oil_field|SYR|crude_oil",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_JOR_eshidiya_phosphate_mine",
+      "countryId": "JOR",
+      "resourceId": "phosphate",
+      "siteName": "Eshidiya Phosphate Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 3056234497,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_JOR_eshidiya_phosphate_mine|JOR|phosphate",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_LBN_chekka_limestone_quarry_zone",
+      "countryId": "LBN",
+      "resourceId": "limestone",
+      "siteName": "Chekka Limestone Quarry Zone",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 3995973361,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_LBN_chekka_limestone_quarry_zone|LBN|limestone",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_ISR_leviathan_gas_field",
+      "countryId": "ISR",
+      "resourceId": "natural_gas",
+      "siteName": "Leviathan Gas Field",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 316,
+        "unit": "BCM",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_ISR_leviathan_gas_field|ISR|natural_gas",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_PSE_gaza_marine_gas_field",
+      "countryId": "PSE",
+      "resourceId": "natural_gas",
+      "siteName": "Gaza Marine Gas Field",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 333,
+        "unit": "BCM",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_PSE_gaza_marine_gas_field|PSE|natural_gas",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_CHN_jinchuan_nickel_mine_complex",
+      "countryId": "CHN",
+      "resourceId": "nickel",
+      "siteName": "Jinchuan Nickel Mine Complex",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 683578825,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_CHN_jinchuan_nickel_mine_complex|CHN|nickel",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_JPN_kushiro_coal_mine",
+      "countryId": "JPN",
+      "resourceId": "coal",
+      "siteName": "Kushiro Coal Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 14450212984,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_JPN_kushiro_coal_mine|JPN|coal",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_KOR_samcheok_limestone_mining_district",
+      "countryId": "KOR",
+      "resourceId": "limestone",
+      "siteName": "Samcheok Limestone Mining District",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 2063306523,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_KOR_samcheok_limestone_mining_district|KOR|limestone",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_PRK_musan_iron_mine",
+      "countryId": "PRK",
+      "resourceId": "iron_ore",
+      "siteName": "Musan Iron Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 2784687438,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_PRK_musan_iron_mine|PRK|iron_ore",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_MNG_oyu_tolgoi_copper_gold_mine",
+      "countryId": "MNG",
+      "resourceId": "copper",
+      "siteName": "Oyu Tolgoi Copper-Gold Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 850277951,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_MNG_oyu_tolgoi_copper_gold_mine|MNG|copper",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_TWN_hualien_marble_quarry_zone",
+      "countryId": "TWN",
+      "resourceId": "marble",
+      "siteName": "Hualien Marble Quarry Zone",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 1233621068,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_TWN_hualien_marble_quarry_zone|TWN|marble",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_IDN_batu_hijau_copper_gold_mine",
+      "countryId": "IDN",
+      "resourceId": "copper",
+      "siteName": "Batu Hijau Copper-Gold Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 1906223167,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_IDN_batu_hijau_copper_gold_mine|IDN|copper",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_MYS_penjom_gold_mine",
+      "countryId": "MYS",
+      "resourceId": "gold",
+      "siteName": "Penjom Gold Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 32430106,
+        "unit": "TROY_OUNCES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_MYS_penjom_gold_mine|MYS|gold",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_VNM_nui_phao_polymetallic_mine",
+      "countryId": "VNM",
+      "resourceId": "tungsten",
+      "siteName": "Nui Phao Polymetallic Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 99940740,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_VNM_nui_phao_polymetallic_mine|VNM|tungsten",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_THA_mae_moh_lignite_mine",
+      "countryId": "THA",
+      "resourceId": "coal",
+      "siteName": "Mae Moh Lignite Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 12332374472,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_THA_mae_moh_lignite_mine|THA|coal",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_PHL_didipio_gold_copper_mine",
+      "countryId": "PHL",
+      "resourceId": "gold",
+      "siteName": "Didipio Gold-Copper Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 5190235,
+        "unit": "TROY_OUNCES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_PHL_didipio_gold_copper_mine|PHL|gold",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_MMR_letpadaung_copper_mine",
+      "countryId": "MMR",
+      "resourceId": "copper",
+      "siteName": "Letpadaung Copper Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 442331872,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_MMR_letpadaung_copper_mine|MMR|copper",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_SGP_pulau_ubin_granite_quarry_sites",
+      "countryId": "SGP",
+      "resourceId": "granite",
+      "siteName": "Pulau Ubin Granite Quarry Sites",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 2659164104,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_SGP_pulau_ubin_granite_quarry_sites|SGP|granite",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_BRN_champion_west_oil_field",
+      "countryId": "BRN",
+      "resourceId": "crude_oil",
+      "siteName": "Champion West Oil Field",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 14615949845,
+        "unit": "BBL",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_BRN_champion_west_oil_field|BRN|crude_oil",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_KHM_okvau_gold_mine",
+      "countryId": "KHM",
+      "resourceId": "gold",
+      "siteName": "Okvau Gold Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 197172262,
+        "unit": "TROY_OUNCES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_KHM_okvau_gold_mine|KHM|gold",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_LAO_phu_kham_copper_gold_mine",
+      "countryId": "LAO",
+      "resourceId": "copper",
+      "siteName": "Phu Kham Copper-Gold Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 1285361561,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_LAO_phu_kham_copper_gold_mine|LAO|copper",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_TLS_bayu_undan_gas_and_condensate_field",
+      "countryId": "TLS",
+      "resourceId": "natural_gas",
+      "siteName": "Bayu-Undan Gas and Condensate Field",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 291,
+        "unit": "BCM",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_TLS_bayu_undan_gas_and_condensate_field|TLS|natural_gas",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_KAZ_bogatyr_komir_coal_mine",
+      "countryId": "KAZ",
+      "resourceId": "coal",
+      "siteName": "Bogatyr Komir Coal Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 9162340793,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_KAZ_bogatyr_komir_coal_mine|KAZ|coal",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_UZB_muruntau_gold_mine",
+      "countryId": "UZB",
+      "resourceId": "gold",
+      "siteName": "Muruntau Gold Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 189657239,
+        "unit": "TROY_OUNCES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_UZB_muruntau_gold_mine|UZB|gold",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_TKM_galkynysh_gas_field",
+      "countryId": "TKM",
+      "resourceId": "natural_gas",
+      "siteName": "Galkynysh Gas Field",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 417,
+        "unit": "BCM",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_TKM_galkynysh_gas_field|TKM|natural_gas",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_KGZ_kumtor_gold_mine",
+      "countryId": "KGZ",
+      "resourceId": "gold",
+      "siteName": "Kumtor Gold Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 142524873,
+        "unit": "TROY_OUNCES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_KGZ_kumtor_gold_mine|KGZ|gold",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_TJK_jilau_gold_mine",
+      "countryId": "TJK",
+      "resourceId": "gold",
+      "siteName": "Jilau Gold Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 122184565,
+        "unit": "TROY_OUNCES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_TJK_jilau_gold_mine|TJK|gold",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_GEO_chiatura_manganese_mining_district",
+      "countryId": "GEO",
+      "resourceId": "manganese",
+      "siteName": "Chiatura Manganese Mining District",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 3528808136,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_GEO_chiatura_manganese_mining_district|GEO|manganese",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_ARM_zangezur_copper_molybdenum_mine",
+      "countryId": "ARM",
+      "resourceId": "copper",
+      "siteName": "Zangezur Copper-Molybdenum Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 1420770191,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_ARM_zangezur_copper_molybdenum_mine|ARM|copper",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_AZE_azeri_chirag_gunashli_oil_field",
+      "countryId": "AZE",
+      "resourceId": "crude_oil",
+      "siteName": "Azeri-Chirag-Gunashli Oil Field",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 17719654582,
+        "unit": "BBL",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_AZE_azeri_chirag_gunashli_oil_field|AZE|crude_oil",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_RUS_lebedinsky_iron_ore_mine",
+      "countryId": "RUS",
+      "resourceId": "iron_ore",
+      "siteName": "Lebedinsky Iron Ore Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 5507842943,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_RUS_lebedinsky_iron_ore_mine|RUS|iron_ore",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_DEU_hambach_lignite_mine",
+      "countryId": "DEU",
+      "resourceId": "coal",
+      "siteName": "Hambach Lignite Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 6383822854,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_DEU_hambach_lignite_mine|DEU|coal",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_FRA_prasville_limestone_quarry",
+      "countryId": "FRA",
+      "resourceId": "limestone",
+      "siteName": "Prasville Limestone Quarry",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 1265145981,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_FRA_prasville_limestone_quarry|FRA|limestone",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_GBR_boulby_potash_mine",
+      "countryId": "GBR",
+      "resourceId": "potash",
+      "siteName": "Boulby Potash Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 8190984930,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_GBR_boulby_potash_mine|GBR|potash",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_ITA_carrara_marble_quarries",
+      "countryId": "ITA",
+      "resourceId": "marble",
+      "siteName": "Carrara Marble Quarries",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 1171315600,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_ITA_carrara_marble_quarries|ITA|marble",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_ESP_cobre_las_cruces_mine",
+      "countryId": "ESP",
+      "resourceId": "copper",
+      "siteName": "Cobre Las Cruces Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 427910334,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_ESP_cobre_las_cruces_mine|ESP|copper",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_POL_be_chat_w_lignite_mine",
+      "countryId": "POL",
+      "resourceId": "coal",
+      "siteName": "Bełchatów Lignite Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 5712852133,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_POL_be_chat_w_lignite_mine|POL|coal",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_UKR_kryvyi_rih_iron_ore_district",
+      "countryId": "UKR",
+      "resourceId": "iron_ore",
+      "siteName": "Kryvyi Rih Iron Ore District",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 23020966108,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_UKR_kryvyi_rih_iron_ore_district|UKR|iron_ore",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_NLD_veendam_salt_mine",
+      "countryId": "NLD",
+      "resourceId": "salt",
+      "siteName": "Veendam Salt Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 1702287135,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_NLD_veendam_salt_mine|NLD|salt",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_BEL_antoing_limestone_quarry",
+      "countryId": "BEL",
+      "resourceId": "limestone",
+      "siteName": "Antoing Limestone Quarry",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 8056787326,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_BEL_antoing_limestone_quarry|BEL|limestone",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_CHE_bex_salt_mine",
+      "countryId": "CHE",
+      "resourceId": "salt",
+      "siteName": "Bex Salt Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 3143238105,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_CHE_bex_salt_mine|CHE|salt",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_SWE_kiruna_iron_mine",
+      "countryId": "SWE",
+      "resourceId": "iron_ore",
+      "siteName": "Kiruna Iron Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 7093412422,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_SWE_kiruna_iron_mine|SWE|iron_ore",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_NOR_tellnes_ilmenite_mine",
+      "countryId": "NOR",
+      "resourceId": "ilmenite",
+      "siteName": "Tellnes Ilmenite Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 211962380,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_NOR_tellnes_ilmenite_mine|NOR|ilmenite",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_AUT_erzberg_iron_ore_mine",
+      "countryId": "AUT",
+      "resourceId": "iron_ore",
+      "siteName": "Erzberg Iron Ore Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 3833847279,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_AUT_erzberg_iron_ore_mine|AUT|iron_ore",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_FIN_kittil_gold_mine",
+      "countryId": "FIN",
+      "resourceId": "gold",
+      "siteName": "Kittilä Gold Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 23951453,
+        "unit": "TROY_OUNCES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_FIN_kittil_gold_mine|FIN|gold",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_DNK_faxe_limestone_quarry",
+      "countryId": "DNK",
+      "resourceId": "limestone",
+      "siteName": "Faxe Limestone Quarry",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 789981754,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_DNK_faxe_limestone_quarry|DNK|limestone",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_IRL_tara_zinc_mine",
+      "countryId": "IRL",
+      "resourceId": "zinc",
+      "siteName": "Tara Zinc Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 665912052,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_IRL_tara_zinc_mine|IRL|zinc",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_PRT_panasqueira_tungsten_mine",
+      "countryId": "PRT",
+      "resourceId": "tungsten",
+      "siteName": "Panasqueira Tungsten Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 71488608,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_PRT_panasqueira_tungsten_mine|PRT|tungsten",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_GRC_olympias_gold_mine",
+      "countryId": "GRC",
+      "resourceId": "gold",
+      "siteName": "Olympias Gold Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 203944578,
+        "unit": "TROY_OUNCES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_GRC_olympias_gold_mine|GRC|gold",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_CZE_doln_ro_nka_uranium_mine",
+      "countryId": "CZE",
+      "resourceId": "uranium",
+      "siteName": "Dolní Rožínka Uranium Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 40690206,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_CZE_doln_ro_nka_uranium_mine|CZE|uranium",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_ROU_ro_ia_poieni_copper_mine",
+      "countryId": "ROU",
+      "resourceId": "copper",
+      "siteName": "Roșia Poieni Copper Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 1059999815,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_ROU_ro_ia_poieni_copper_mine|ROU|copper",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_HUN_visonta_lignite_mine",
+      "countryId": "HUN",
+      "resourceId": "coal",
+      "siteName": "Visonta Lignite Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 178748315,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_HUN_visonta_lignite_mine|HUN|coal",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_SVK_jel_ava_magnesite_mine",
+      "countryId": "SVK",
+      "resourceId": "magnesite",
+      "siteName": "Jelšava Magnesite Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 245265816,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_SVK_jel_ava_magnesite_mine|SVK|magnesite",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_BGR_chelopech_copper_gold_mine",
+      "countryId": "BGR",
+      "resourceId": "copper",
+      "siteName": "Chelopech Copper-Gold Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 121485984,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_BGR_chelopech_copper_gold_mine|BGR|copper",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_SRB_majdanpek_copper_mine",
+      "countryId": "SRB",
+      "resourceId": "copper",
+      "siteName": "Majdanpek Copper Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 808271454,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_SRB_majdanpek_copper_mine|SRB|copper",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_HRV_koroma_no_limestone_quarry",
+      "countryId": "HRV",
+      "resourceId": "limestone",
+      "siteName": "Koromačno Limestone Quarry",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 1118577652,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_HRV_koroma_no_limestone_quarry|HRV|limestone",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_SVN_trbovlje_limestone_quarry_zone",
+      "countryId": "SVN",
+      "resourceId": "limestone",
+      "siteName": "Trbovlje Limestone Quarry Zone",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 2784297887,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_SVN_trbovlje_limestone_quarry_zone|SVN|limestone",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_EST_narva_oil_shale_mine",
+      "countryId": "EST",
+      "resourceId": "oil_shale",
+      "siteName": "Narva Oil Shale Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 616678552,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_EST_narva_oil_shale_mine|EST|oil_shale",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_LVA_saulkalne_dolomite_quarry",
+      "countryId": "LVA",
+      "resourceId": "dolomite",
+      "siteName": "Saulkalne Dolomite Quarry",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 1317042428,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_LVA_saulkalne_dolomite_quarry|LVA|dolomite",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_LTU_akmen_limestone_quarry",
+      "countryId": "LTU",
+      "resourceId": "limestone",
+      "siteName": "Akmenė Limestone Quarry",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 3682643950,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_LTU_akmen_limestone_quarry|LTU|limestone",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_BLR_soligorsk_potash_mine",
+      "countryId": "BLR",
+      "resourceId": "potash",
+      "siteName": "Soligorsk Potash Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 1034486309,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_BLR_soligorsk_potash_mine|BLR|potash",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_MDA_cricova_limestone_mine",
+      "countryId": "MDA",
+      "resourceId": "limestone",
+      "siteName": "Cricova Limestone Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 746853700,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_MDA_cricova_limestone_mine|MDA|limestone",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_ALB_bulqiz_chromite_mine",
+      "countryId": "ALB",
+      "resourceId": "chromite",
+      "siteName": "Bulqizë Chromite Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 55295473,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_ALB_bulqiz_chromite_mine|ALB|chromite",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_MKD_sasa_lead_zinc_mine",
+      "countryId": "MKD",
+      "resourceId": "zinc",
+      "siteName": "Sasa Lead-Zinc Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 1138850865,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_MKD_sasa_lead_zinc_mine|MKD|zinc",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_BIH_vare_silver_lead_zinc_mine",
+      "countryId": "BIH",
+      "resourceId": "silver",
+      "siteName": "Vareš Silver-Lead-Zinc Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 1621685245,
+        "unit": "TROY_OUNCES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_BIH_vare_silver_lead_zinc_mine|BIH|silver",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_MNE_pljevlja_coal_mine",
+      "countryId": "MNE",
+      "resourceId": "coal",
+      "siteName": "Pljevlja Coal Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 7263420183,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_MNE_pljevlja_coal_mine|MNE|coal",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_ISL_h_lasandur_aggregate_quarry",
+      "countryId": "ISL",
+      "resourceId": "construction_aggregate",
+      "siteName": "Hólasandur Aggregate Quarry",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 1155474317,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_ISL_h_lasandur_aggregate_quarry|ISL|construction_aggregate",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_LUX_rumelange_iron_mine",
+      "countryId": "LUX",
+      "resourceId": "iron_ore",
+      "siteName": "Rumelange Iron Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 351952527,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_LUX_rumelange_iron_mine|LUX|iron_ore",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_MLT_al_far_limestone_quarry",
+      "countryId": "MLT",
+      "resourceId": "limestone",
+      "siteName": "Ħal Far Limestone Quarry",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 1062735928,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_MLT_al_far_limestone_quarry|MLT|limestone",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_CYP_skouriotissa_copper_mine",
+      "countryId": "CYP",
+      "resourceId": "copper",
+      "siteName": "Skouriotissa Copper Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 226832853,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_CYP_skouriotissa_copper_mine|CYP|copper",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_AND_llorts_iron_mine",
+      "countryId": "AND",
+      "resourceId": "iron_ore",
+      "siteName": "Llorts Iron Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 6748300614,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_AND_llorts_iron_mine|AND|iron_ore",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_MCO_no_verified_commercial_mining_site",
+      "countryId": "MCO",
+      "resourceId": "",
+      "siteName": "No Verified Commercial Mining Site",
+      "commercialExtraction": false,
+      "reserve": {
+        "quantity": null,
+        "unit": null,
+        "status": "NOT_APPLICABLE"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_MCO_no_verified_commercial_mining_site|MCO|",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_SMR_no_verified_commercial_mining_site",
+      "countryId": "SMR",
+      "resourceId": "",
+      "siteName": "No Verified Commercial Mining Site",
+      "commercialExtraction": false,
+      "reserve": {
+        "quantity": null,
+        "unit": null,
+        "status": "NOT_APPLICABLE"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_SMR_no_verified_commercial_mining_site|SMR|",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_LIE_no_verified_commercial_mining_site",
+      "countryId": "LIE",
+      "resourceId": "",
+      "siteName": "No Verified Commercial Mining Site",
+      "commercialExtraction": false,
+      "reserve": {
+        "quantity": null,
+        "unit": null,
+        "status": "NOT_APPLICABLE"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_LIE_no_verified_commercial_mining_site|LIE|",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_VAT_no_verified_commercial_mining_site",
+      "countryId": "VAT",
+      "resourceId": "",
+      "siteName": "No Verified Commercial Mining Site",
+      "commercialExtraction": false,
+      "reserve": {
+        "quantity": null,
+        "unit": null,
+        "status": "NOT_APPLICABLE"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_VAT_no_verified_commercial_mining_site|VAT|",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_USA_morenci_copper_mine",
+      "countryId": "USA",
+      "resourceId": "copper",
+      "siteName": "Morenci Copper Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 1220224919,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_USA_morenci_copper_mine|USA|copper",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_CAN_voisey_s_bay_nickel_mine",
+      "countryId": "CAN",
+      "resourceId": "nickel",
+      "siteName": "Voisey's Bay Nickel Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 486561216,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_CAN_voisey_s_bay_nickel_mine|CAN|nickel",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_MEX_pe_asquito_gold_silver_mine",
+      "countryId": "MEX",
+      "resourceId": "gold",
+      "siteName": "Peñasquito Gold-Silver Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 132143550,
+        "unit": "TROY_OUNCES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_MEX_pe_asquito_gold_silver_mine|MEX|gold",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_BRA_s11d_iron_ore_mine",
+      "countryId": "BRA",
+      "resourceId": "iron_ore",
+      "siteName": "S11D Iron Ore Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 4646561101,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_BRA_s11d_iron_ore_mine|BRA|iron_ore",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_ARG_cerro_negro_gold_mine",
+      "countryId": "ARG",
+      "resourceId": "gold",
+      "siteName": "Cerro Negro Gold Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 5555566,
+        "unit": "TROY_OUNCES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_ARG_cerro_negro_gold_mine|ARG|gold",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_CHL_chuquicamata_copper_mine",
+      "countryId": "CHL",
+      "resourceId": "copper",
+      "siteName": "Chuquicamata Copper Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 1234989531,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_CHL_chuquicamata_copper_mine|CHL|copper",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_COL_cerrej_n_coal_mine",
+      "countryId": "COL",
+      "resourceId": "coal",
+      "siteName": "Cerrejón Coal Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 12201193292,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_COL_cerrej_n_coal_mine|COL|coal",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_PER_antamina_copper_zinc_mine",
+      "countryId": "PER",
+      "resourceId": "copper",
+      "siteName": "Antamina Copper-Zinc Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 1231335783,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_PER_antamina_copper_zinc_mine|PER|copper",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_VEN_bachaquero_lagunillas_oil_field",
+      "countryId": "VEN",
+      "resourceId": "crude_oil",
+      "siteName": "Bachaquero-Lagunillas Oil Field",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 5302460263,
+        "unit": "BBL",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_VEN_bachaquero_lagunillas_oil_field|VEN|crude_oil",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_ECU_mirador_copper_mine",
+      "countryId": "ECU",
+      "resourceId": "copper",
+      "siteName": "Mirador Copper Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 814120859,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_ECU_mirador_copper_mine|ECU|copper",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_BOL_san_crist_bal_silver_zinc_lead_mine",
+      "countryId": "BOL",
+      "resourceId": "silver",
+      "siteName": "San Cristóbal Silver-Zinc-Lead Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 565124879,
+        "unit": "TROY_OUNCES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_BOL_san_crist_bal_silver_zinc_lead_mine|BOL|silver",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_PRY_vallem_limestone_quarry",
+      "countryId": "PRY",
+      "resourceId": "limestone",
+      "siteName": "Vallemí Limestone Quarry",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 3202585202,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_PRY_vallem_limestone_quarry|PRY|limestone",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_URY_minas_de_corrales_gold_mining_district",
+      "countryId": "URY",
+      "resourceId": "gold",
+      "siteName": "Minas de Corrales Gold Mining District",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 207374614,
+        "unit": "TROY_OUNCES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_URY_minas_de_corrales_gold_mining_district|URY|gold",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_PAN_cobre_panam_mine",
+      "countryId": "PAN",
+      "resourceId": "copper",
+      "siteName": "Cobre Panamá Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 972356804,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_PAN_cobre_panam_mine|PAN|copper",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_CRI_bellavista_gold_mine",
+      "countryId": "CRI",
+      "resourceId": "gold",
+      "siteName": "Bellavista Gold Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 143469532,
+        "unit": "TROY_OUNCES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_CRI_bellavista_gold_mine|CRI|gold",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_NIC_el_lim_n_gold_mine",
+      "countryId": "NIC",
+      "resourceId": "gold",
+      "siteName": "El Limón Gold Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 82083131,
+        "unit": "TROY_OUNCES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_NIC_el_lim_n_gold_mine|NIC|gold",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_HND_el_mochito_mine",
+      "countryId": "HND",
+      "resourceId": "zinc",
+      "siteName": "El Mochito Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 2008247041,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_HND_el_mochito_mine|HND|zinc",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_SLV_el_dorado_gold_project",
+      "countryId": "SLV",
+      "resourceId": "gold",
+      "siteName": "El Dorado Gold Project",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 69085268,
+        "unit": "TROY_OUNCES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_SLV_el_dorado_gold_project|SLV|gold",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_GTM_fenix_nickel_mine",
+      "countryId": "GTM",
+      "resourceId": "nickel",
+      "siteName": "Fenix Nickel Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 406293087,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_GTM_fenix_nickel_mine|GTM|nickel",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_BLZ_hattieville_sand_and_aggregate_sites",
+      "countryId": "BLZ",
+      "resourceId": "construction_aggregate",
+      "siteName": "Hattieville Sand and Aggregate Sites",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 1038855624,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_BLZ_hattieville_sand_and_aggregate_sites|BLZ|construction_aggregate",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_CUB_moa_bay_nickel_mine",
+      "countryId": "CUB",
+      "resourceId": "nickel",
+      "siteName": "Moa Bay Nickel Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 343097314,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_CUB_moa_bay_nickel_mine|CUB|nickel",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_CUB_punta_gorda_extraction_facility",
+      "countryId": "CUB",
+      "resourceId": "nickel",
+      "siteName": "Punta Gorda Extraction Facility",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 386448448,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_CUB_punta_gorda_extraction_facility|CUB|nickel",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_CUB_nicaro_nickel_complex",
+      "countryId": "CUB",
+      "resourceId": "nickel",
+      "siteName": "Nicaro Nickel Complex",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 301233085,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_CUB_nicaro_nickel_complex|CUB|nickel",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_JAM_noranda_st_ann_bauxite_mine",
+      "countryId": "JAM",
+      "resourceId": "bauxite",
+      "siteName": "Noranda St Ann Bauxite Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 1430359828,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_JAM_noranda_st_ann_bauxite_mine|JAM|bauxite",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_HTI_gona_ves_limestone_quarry_zone",
+      "countryId": "HTI",
+      "resourceId": "limestone",
+      "siteName": "Gonaïves Limestone Quarry Zone",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 10057201116,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_HTI_gona_ves_limestone_quarry_zone|HTI|limestone",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_DOM_pueblo_viejo_gold_mine",
+      "countryId": "DOM",
+      "resourceId": "gold",
+      "siteName": "Pueblo Viejo Gold Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 10549173,
+        "unit": "TROY_OUNCES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_DOM_pueblo_viejo_gold_mine|DOM|gold",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_TTO_juniper_oil_field",
+      "countryId": "TTO",
+      "resourceId": "crude_oil",
+      "siteName": "Juniper Oil Field",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 23821012541,
+        "unit": "BBL",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_TTO_juniper_oil_field|TTO|crude_oil",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_BHS_ocean_cay_aragonite_site",
+      "countryId": "BHS",
+      "resourceId": "aragonite",
+      "siteName": "Ocean Cay Aragonite Site",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 1513119570,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_BHS_ocean_cay_aragonite_site|BHS|aragonite",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_BRB_arawak_cement_limestone_quarry",
+      "countryId": "BRB",
+      "resourceId": "limestone",
+      "siteName": "Arawak Cement Limestone Quarry",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 11629303741,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_BRB_arawak_cement_limestone_quarry|BRB|limestone",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_LCA_cul_de_sac_aggregate_quarry_zone",
+      "countryId": "LCA",
+      "resourceId": "construction_aggregate",
+      "siteName": "Cul de Sac Aggregate Quarry Zone",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 6285363981,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_LCA_cul_de_sac_aggregate_quarry_zone|LCA|construction_aggregate",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_VCT_diamond_quarry",
+      "countryId": "VCT",
+      "resourceId": "construction_aggregate",
+      "siteName": "Diamond Quarry",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 6213272633,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_VCT_diamond_quarry|VCT|construction_aggregate",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_GRD_telescope_quarry",
+      "countryId": "GRD",
+      "resourceId": "construction_aggregate",
+      "siteName": "Telescope Quarry",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 3731752109,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_GRD_telescope_quarry|GRD|construction_aggregate",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_ATG_gunthorpes_quarry",
+      "countryId": "ATG",
+      "resourceId": "limestone",
+      "siteName": "Gunthorpes Quarry",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 1581584824,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_ATG_gunthorpes_quarry|ATG|limestone",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_KNA_ross_lands_quarry_zone",
+      "countryId": "KNA",
+      "resourceId": "limestone",
+      "siteName": "Ross Lands Quarry Zone",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 8366456717,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_KNA_ross_lands_quarry_zone|KNA|limestone",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_DMA_pointe_michel_stone_quarry",
+      "countryId": "DMA",
+      "resourceId": "construction_aggregate",
+      "siteName": "Pointe Michel Stone Quarry",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 6553728691,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_DMA_pointe_michel_stone_quarry|DMA|construction_aggregate",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_SUR_merian_gold_mine",
+      "countryId": "SUR",
+      "resourceId": "gold",
+      "siteName": "Merian Gold Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 45956979,
+        "unit": "TROY_OUNCES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_SUR_merian_gold_mine|SUR|gold",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_GUY_aurora_gold_mine",
+      "countryId": "GUY",
+      "resourceId": "gold",
+      "siteName": "Aurora Gold Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 206337273,
+        "unit": "TROY_OUNCES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_GUY_aurora_gold_mine|GUY|gold",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_AUS_boddington_gold_mine",
+      "countryId": "AUS",
+      "resourceId": "gold",
+      "siteName": "Boddington Gold Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 29104425,
+        "unit": "TROY_OUNCES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_AUS_boddington_gold_mine|AUS|gold",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_NZL_macraes_gold_mine",
+      "countryId": "NZL",
+      "resourceId": "gold",
+      "siteName": "Macraes Gold Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 168609273,
+        "unit": "TROY_OUNCES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_NZL_macraes_gold_mine|NZL|gold",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_PNG_lihir_gold_mine",
+      "countryId": "PNG",
+      "resourceId": "gold",
+      "siteName": "Lihir Gold Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 19682535,
+        "unit": "TROY_OUNCES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_PNG_lihir_gold_mine|PNG|gold",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_FJI_vatukoula_gold_mine",
+      "countryId": "FJI",
+      "resourceId": "gold",
+      "siteName": "Vatukoula Gold Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 178439530,
+        "unit": "TROY_OUNCES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_FJI_vatukoula_gold_mine|FJI|gold",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_SLB_gold_ridge_mine",
+      "countryId": "SLB",
+      "resourceId": "gold",
+      "siteName": "Gold Ridge Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 8389893,
+        "unit": "TROY_OUNCES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_SLB_gold_ridge_mine|SLB|gold",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_VUT_luganville_aggregate_quarry_zone",
+      "countryId": "VUT",
+      "resourceId": "construction_aggregate",
+      "siteName": "Luganville Aggregate Quarry Zone",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 3622977564,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_VUT_luganville_aggregate_quarry_zone|VUT|construction_aggregate",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_WSM_lefaga_aggregate_quarry_zone",
+      "countryId": "WSM",
+      "resourceId": "construction_aggregate",
+      "siteName": "Lefaga Aggregate Quarry Zone",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 3841459556,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_WSM_lefaga_aggregate_quarry_zone|WSM|construction_aggregate",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_TON_nuku_alofa_aggregate_quarry_zone",
+      "countryId": "TON",
+      "resourceId": "construction_aggregate",
+      "siteName": "Nuku'alofa Aggregate Quarry Zone",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 3271903028,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_TON_nuku_alofa_aggregate_quarry_zone|TON|construction_aggregate",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_KIR_betio_coral_aggregate_extraction_sites",
+      "countryId": "KIR",
+      "resourceId": "coral_aggregate",
+      "siteName": "Betio Coral Aggregate Extraction Sites",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 1361140579,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_KIR_betio_coral_aggregate_extraction_sites|KIR|coral_aggregate",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_TUV_funafuti_borrow_pits",
+      "countryId": "TUV",
+      "resourceId": "construction_aggregate",
+      "siteName": "Funafuti Borrow Pits",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 3841099671,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_TUV_funafuti_borrow_pits|TUV|construction_aggregate",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_NRU_nauru_phosphate_mining_area",
+      "countryId": "NRU",
+      "resourceId": "phosphate",
+      "siteName": "Nauru Phosphate Mining Area",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 5522960889,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_NRU_nauru_phosphate_mining_area|NRU|phosphate",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_MHL_majuro_aggregate_extraction_sites",
+      "countryId": "MHL",
+      "resourceId": "construction_aggregate",
+      "siteName": "Majuro Aggregate Extraction Sites",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 4051777905,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_MHL_majuro_aggregate_extraction_sites|MHL|construction_aggregate",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_FSM_pohnpei_aggregate_quarry_zone",
+      "countryId": "FSM",
+      "resourceId": "construction_aggregate",
+      "siteName": "Pohnpei Aggregate Quarry Zone",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 3330357024,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_FSM_pohnpei_aggregate_quarry_zone|FSM|construction_aggregate",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_PLW_airai_limestone_quarry_zone",
+      "countryId": "PLW",
+      "resourceId": "limestone",
+      "siteName": "Airai Limestone Quarry Zone",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 4508840649,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_PLW_airai_limestone_quarry_zone|PLW|limestone",
+        "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
+        "realWorldDataRequired": false
+      }
+    }
+  ]
+}
