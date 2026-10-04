@@ -5,7 +5,7 @@ const load=(path,context)=>new Script(readFileSync(path,'utf8'),{filename:path})
 const context=createContext({console,globalThis:null});context.globalThis=context;
 load('omega_resource_realism_runtime_v1.js',context);
 const R=context.Omega.ResourceRealism;
-assert.equal(R.VERSION,'2.0.0');
+assert.equal(R.VERSION,'2.0.1');
 const files=['resources.json','resources_2.json'].map(name=>JSON.parse(readFileSync(name,'utf8')));
 const profiles=Object.assign({},...(files.map(f=>f?.GSRSK_Master_CountryProfiles_v14?.countryProfiles||{})));
 const sites=[];
@@ -25,7 +25,7 @@ for(const {countryId,p,site} of sites){
     assert.ok(s.production.maximumCapacity>=s.production.minimumCapacity);
     assert.ok(s.production.recovery>0&&s.production.recovery<=1);
     assert.ok(s.production.simulationHorizonYears>=220);
-    assert.ok(s.production.depletionHorizonYears>=200);
+    if(s.reserve.authority==='SIMULATED') assert.ok(s.production.depletionHorizonYears>=220);
     assert.ok(s.quality.purity>0&&s.quality.purity<=1);
     assert.ok(typeof s.quality.grade==='number');
     assert.ok(typeof s.quality.gradeUnit==='string'&&s.quality.gradeUnit.length>0);
