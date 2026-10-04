@@ -92,7 +92,7 @@ function canonicalReserveSpec(resourceId){const r=rid(resourceId);if(r==='crude_
 function convertReserve(value,sourceFamily,targetFamily){
  const v=Number(value);if(!Number.isFinite(v))return null;
  if(sourceFamily===targetFamily||sourceFamily===null||targetFamily===null)return v;
- if(sourceFamily==='TCF'&&targetFamily==='BCM')return v*28.316846592;
+ if((sourceFamily==='TCF'||sourceFamily==='TCF')&&(targetFamily==='BCM'||targetFamily==='GAS'))return v*28.316846592;
  if(sourceFamily==='BCF'&&targetFamily==='BCM')return v*0.028316846592;
  if(sourceFamily==='MCM'&&targetFamily==='BCM')return v*0.001;
  if(sourceFamily==='MCF'&&targetFamily==='BCM')return v*0.000000028316846592;
