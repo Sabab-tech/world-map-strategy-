@@ -48,8 +48,15 @@
     return simulationReservePromise;
   }
   function enrichSimulationReserve(site){
-    const s=clone(site||{}),key=String(s.siteReferenceKey||s.id||s.siteId||s.rawSiteReference?.id||'').trim();
-    const row=simulationReserveMap?.[key]||null;
+    const s=clone(site||{});
+    const candidates=[s.siteReferenceKey,s.id,s.siteId,s.rawSiteReference?.id].filter(Boolean).map(String);
+    let row=null;
+    for(const key of candidates){if(simulationReserveMap?.[key]){row=simulationReserveMap[key];break;}}
+    if(!row){
+      const country=canonical(s.countryCode||s.countryId||s.country||'');
+      const name=String(s.siteName||s.name||s.mineName||s.depositName||'').trim().toLowerCase();
+      row=Object.values(simulationReserveMap||{}).find(x=>canonical(x?.countryId||'')===country&&String(x?.siteName||'').trim().toLowerCase()===name)||null;
+    }
     if(row?.reserve?.status==='SIMULATED'&&row.reserve.quantity>0){
       s.simulationReserveQuantity=Number(row.reserve.quantity);
       s.simulationReserveUnit=row.reserve.unit||null;
