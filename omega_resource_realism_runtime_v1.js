@@ -5,7 +5,7 @@
  */
 (function(g){
 'use strict';
-const VERSION='2.0.0';
+const VERSION='2.0.1';
 const FAMILY={
  TONNES:['T','TON','TONS','TONNE','TONNES','MT','MILLION TONNES','METRIC TON','METRIC TONS'],
  TROY_OUNCES:['OZ','OZ.','OZT','TROY OZ','TROY OUNCE','TROY OUNCES'],
@@ -241,10 +241,11 @@ function siteModel(site,profile,countryId){
    const horizon=GAME_HORIZON_YEARS[resourceId]||[280,520];
    const life=horizon[0]+(horizon[1]-horizon[0])*u;
    const observedReserve=num(src?.reserveQuantity??src?.geologicalQuantity??src?.reservesQuantity);
-   const geologicalQuantity=observedReserve!==null?observedReserve:nominal*365*life;
-   const recoverableQuantity=Math.max(0,geologicalQuantity*recovery);
-   const reserveQuantity=geologicalQuantity;
    const reserveAuthority=observedReserve!==null?'OBSERVED':'SIMULATED';
+   const targetRecoverableQuantity=activeRate*365*life;
+   const geologicalQuantity=observedReserve!==null?observedReserve:targetRecoverableQuantity/Math.max(recovery,.01);
+   const recoverableQuantity=observedReserve!==null?Math.max(0,geologicalQuantity*recovery):targetRecoverableQuantity;
+   const reserveQuantity=geologicalQuantity;
    const rawGrade=src?.grade??src?.oreGrade??site?.grade??null;
    const gradeNumeric=rawGrade===null?null:(Number(String(rawGrade).match(/[-+]?\d+(?:\.\d+)?/)?.[0]));
    const grade=Number.isFinite(gradeNumeric)?gradeNumeric:simQuality.grade;
