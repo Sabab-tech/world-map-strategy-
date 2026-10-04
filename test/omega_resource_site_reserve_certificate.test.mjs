@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { createContext, Script } from 'node:vm';
 
 const load=name=>JSON.parse(readFileSync(name,'utf8'));
 const catalog=load('resource_site_canonical_catalog_v1.json');
@@ -42,3 +43,24 @@ assert.equal(data.commercialSiteCount,195);
 assert.equal(data.notApplicableSiteCount,4);
 
 console.log(JSON.stringify({certificate:'OMEGA-199-PER-SITE-RESERVE-DATA',status:'PASS',siteCount:199,commercialSiteCount:195,notApplicableSiteCount:4,uniqueSiteIds:reserveMap.size,countryBinding:'PASS',resourceBinding:'PASS',perIdentityReserve:'PASS'},null,2));
+
+const context=createContext({console,globalThis:null});
+context.globalThis=context;
+new Script(readFileSync('omega_resource_realism_runtime_v1.js','utf8'),{filename:'omega_resource_realism_runtime_v1.js'}).runInContext(context);
+const R=context.Omega.ResourceRealism;
+assert.equal(R.VERSION,'1.2.0');
+let runtimeChecked=0;
+for(const site of catalog.sites){
+  const r=reserveMap.get(site.siteId);
+  if(site.operation?.commercialExtraction===false||site.identity?.siteType==='NO_COMMERCIAL_EXTRACTION')continue;
+  const model=R.siteModel({...site,siteName:site.siteName,resourceId:site.identity?.resourceTypeId,simulationReserveQuantity:r.reserve.quantity,simulationReserveUnit:r.reserve.unit},site.countryId==='BGD'?{}:{},site.countryId);
+  assert.equal(model.status,'READY',site.siteId+': site model not ready');
+  const stream=model.commodityStreams.find(x=>x.resourceId===r.resourceId);
+  assert(stream,site.siteId+': resource stream missing');
+  assert.equal(stream.reserve.quantity,r.reserve.quantity,site.siteId+': scenario reserve not consumed');
+  assert.equal(stream.reserve.authority,'SIMULATED');
+  assert.equal(stream.reserve.unit,r.reserve.unit);
+  runtimeChecked++;
+}
+assert.equal(runtimeChecked,195);
+console.log('OMEGA RUNTIME PER-SITE RESERVE CONSUMPTION CERTIFICATE PASSED');
