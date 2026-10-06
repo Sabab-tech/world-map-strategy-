@@ -2,7 +2,7 @@
 import fs from 'node:fs';
 import { execFileSync } from 'node:child_process';
 
-const REVIEW_DATE = '2026-10-03';
+const REVIEW_DATE = '2026-10-06';
 const WIKI_API = 'https://en.wikipedia.org/w/api.php';
 const WD_API = 'https://www.wikidata.org/w/api.php';
 
@@ -650,6 +650,8 @@ await Promise.all(Array.from({ length: Math.min(concurrency, legacyTargets.lengt
 
 const report = {
   runDate: REVIEW_DATE,
+  methodologyFile: 'resource_research_standards_v1.json',
+  evidencePatchFile: 'resource_site_research_evidence_v1.json',
   totalSites: allSites.length,
   legacyTargets: legacyTargets.length,
   matchedByWebSearch: results.filter((x) => x.source?.type === 'WEB_SEARCH').length,
