@@ -107,7 +107,8 @@ test('resource realism consumes researched technology and keeps gold ore tonnes 
     simulationReserveUnit:'TONNES'
   },{},'AAA');
   assert.equal(model.commodityStreams[0].production.technologyAdjusted,true);
-  assert(model.commodityStreams[0].production.maintenance<0.12);
+  assert.equal(model.commodityStreams[0].production.technologyEffects.technologies.length,1);
+  assert.equal(model.commodityStreams[0].production.technologyEffects.maintenanceMultiplier,0.88);
   const parsed=globalThis.OmegaResourceRealism.parseReserve('10 million tonnes','gold');
   assert.equal(parsed.value,10000000);
   assert.equal(parsed.unit,'TONNES');
