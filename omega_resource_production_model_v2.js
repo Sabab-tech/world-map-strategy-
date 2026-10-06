@@ -4,7 +4,7 @@
  */
 (function(g){
 'use strict';
-const VERSION='2.0.0',DAY=24,HORIZON=100000;
+const VERSION='2.1.0',DAY=24,HORIZON=150000;
 const UNITS={
  TONNES:['T','TON','TONS','TONNE','TONNES','MT','METRIC_TON','METRIC_TONS'],
  KG:['KG','KILOGRAM','KILOGRAMS'],GRAMS:['G','GRAM','GRAMS'],
@@ -48,8 +48,9 @@ function parseReserve(text,resourceId,targetUnit){
 }
 const pick=(o,keys)=>{for(const k of keys)if(o?.[k]!==undefined&&o?.[k]!==null&&o?.[k]!=='')return o[k];return null};
 const frac=v=>{const n=num(v);return n===null?null:n>1?n/100:n};
-function productionModel(raw,reserve){
+function productionModel(raw,reserve,resourceId){
  const p=raw?.productionModel&&typeof raw.productionModel==='object'?raw.productionModel:{};
+ const targetResourceId=rid(resourceId??raw?.resourceId??raw?.resourceTypeId??raw?.resourceTypeKey??raw?.resId);
  const read=(scope,keys)=>pick(scope,keys);
  const nominal= num(read(p,['nominalRate','nominalCapacity'])??read(raw,['nominalRate','nominalCapacity']));
  const observedRate=num(read(p,['productionRate','dailyRate','outputRate'])??read(raw,['productionRate','dailyRate','outputRate']));
@@ -64,7 +65,7 @@ function productionModel(raw,reserve){
  const observed=nominal!==null||observedRate!==null||min!==null||max!==null;
  const simulatedRate=reserve>0?reserve/horizon:null;
  const nominalBase=nominal??observedRate??simulatedRate;
- const technology=g.Omega?.ResourceResearchRuntime?.getEngineeringEffect?.(raw?.countryId||raw?.countryCode||null,raw?.siteId||raw?.siteReferenceKey||raw?.id||null,rid(resourceId),raw?.siteType||raw?.assetType||null)||{capacityMultiplier:1,recoveryAdd:0,utilizationAdd:0,maintenanceMultiplier:1,declineMultiplier:1,outputMultiplier:1,technologies:[]};
+ const technology=g.Omega?.ResourceResearchRuntime?.getEngineeringEffect?.(raw?.countryId||raw?.countryCode||null,raw?.siteId||raw?.siteReferenceKey||raw?.id||null,targetResourceId,raw?.siteType||raw?.assetType||null)||{capacityMultiplier:1,recoveryAdd:0,utilizationAdd:0,maintenanceMultiplier:1,declineMultiplier:1,outputMultiplier:1,technologies:[]};
  const clamp01=v=>Math.min(1,Math.max(0,Number(v)||0));
  const finalUtilization=clamp01(utilization+(Number(technology.utilizationAdd)||0));
  const finalRecovery=clamp01(recovery+(Number(technology.recoveryAdd)||0));
