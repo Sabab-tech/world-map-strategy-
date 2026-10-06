@@ -24,45 +24,18 @@ const alias={
  chromite:['chromite','chromium'],silver:['silver','ag'],zinc:['zinc','zn'],platinum:['platinum','pgm'],basalt:['basalt'],construction_aggregate:['aggregate','sand','gravel','crushed stone'],
  coral_aggregate:['coral aggregate','coral'],salt:['salt','brine'],dolomite:['dolomite'],magnesite:['magnesite'],oil_shale:['oil shale'],marble:['marble'],boron:['boron','borate'],aragonite:['aragonite'],granite:['granite'],ilmenite:['ilmenite','titanium'],diatomite:['diatomite','diatomaceous earth']
 };
-const ranges={
- crude_oil:{unit:'BBL',min:5000,max:50000,lifeMin:12,lifeMax:35,gradeMin:20,gradeMax:50},
- natural_gas:{unit:'BCM',min:.005,max:.08,lifeMin:15,lifeMax:40,gradeMin:85,gradeMax:99},
- gold:{unit:'TROY_OUNCES',min:100,max:2500,lifeMin:10,lifeMax:30,gradeMin:.5,gradeMax:8},
- copper:{unit:'TONNES',min:500,max:5000,lifeMin:12,lifeMax:35,gradeMin:.2,gradeMax:4},
- iron_ore:{unit:'TONNES',min:5000,max:50000,lifeMin:10,lifeMax:40,gradeMin:25,gradeMax:68},
- bauxite:{unit:'TONNES',min:3000,max:30000,lifeMin:10,lifeMax:35,gradeMin:25,gradeMax:55},
- nickel:{unit:'TONNES',min:500,max:8000,lifeMin:10,lifeMax:35,gradeMin:.8,gradeMax:4},
- cobalt:{unit:'TONNES',min:50,max:1200,lifeMin:8,lifeMax:25,gradeMin:.05,gradeMax:1.5},
- lithium:{unit:'TONNES',min:500,max:7000,lifeMin:8,lifeMax:30,gradeMin:.3,gradeMax:3},
- rare_earth:{unit:'TONNES',min:200,max:4000,lifeMin:10,lifeMax:30,gradeMin:1,gradeMax:12},
- uranium:{unit:'TONNES',min:100,max:2500,lifeMin:10,lifeMax:30,gradeMin:.03,gradeMax:.5},
- coal:{unit:'TONNES',min:5000,max:70000,lifeMin:10,lifeMax:45,gradeMin:35,gradeMax:85},
- phosphate:{unit:'TONNES',min:5000,max:60000,lifeMin:10,lifeMax:40,gradeMin:15,gradeMax:35},
- potash:{unit:'TONNES',min:5000,max:60000,lifeMin:10,lifeMax:40,gradeMin:10,gradeMax:35},
- graphite:{unit:'TONNES',min:100,max:5000,lifeMin:8,lifeMax:30,gradeMin:70,gradeMax:98},
- rutile:{unit:'TONNES',min:1000,max:100000,lifeMin:10,lifeMax:40,gradeMin:.3,gradeMax:2},
- manganese:{unit:'TONNES',min:5000,max:200000,lifeMin:10,lifeMax:40,gradeMin:20,gradeMax:55},
- diamond:{unit:'CARATS',min:100000,max:2000000,lifeMin:8,lifeMax:25,gradeMin:0,gradeMax:1},
- tin:{unit:'TONNES',min:100,max:10000,lifeMin:8,lifeMax:30,gradeMin:.1,gradeMax:5},
- tungsten:{unit:'TONNES',min:100,max:10000,lifeMin:8,lifeMax:30,gradeMin:.1,gradeMax:2},
- chromite:{unit:'TONNES',min:1000,max:100000,lifeMin:10,lifeMax:35,gradeMin:20,gradeMax:55},
- silver:{unit:'TROY_OUNCES',min:100000,max:10000000,lifeMin:8,lifeMax:30,gradeMin:20,gradeMax:500},
- zinc:{unit:'TONNES',min:1000,max:100000,lifeMin:8,lifeMax:30,gradeMin:2,gradeMax:20},
- platinum:{unit:'TROY_OUNCES',min:100000,max:5000000,lifeMin:8,lifeMax:35,gradeMin:1,gradeMax:10},
- basalt:{unit:'TONNES',min:10000,max:500000,lifeMin:5,lifeMax:25,gradeMin:90,gradeMax:99},
- construction_aggregate:{unit:'TONNES',min:10000,max:500000,lifeMin:5,lifeMax:25,gradeMin:90,gradeMax:99},
- coral_aggregate:{unit:'TONNES',min:10000,max:300000,lifeMin:5,lifeMax:20,gradeMin:90,gradeMax:99},
- salt:{unit:'TONNES',min:10000,max:1000000,lifeMin:10,lifeMax:40,gradeMin:80,gradeMax:99},
- dolomite:{unit:'TONNES',min:10000,max:500000,lifeMin:10,lifeMax:30,gradeMin:70,gradeMax:98},
- magnesite:{unit:'TONNES',min:1000,max:100000,lifeMin:10,lifeMax:30,gradeMin:70,gradeMax:95},
- oil_shale:{unit:'TONNES',min:10000,max:500000,lifeMin:10,lifeMax:40,gradeMin:1,gradeMax:20},
- marble:{unit:'TONNES',min:5000,max:100000,lifeMin:10,lifeMax:30,gradeMin:90,gradeMax:99},
- boron:{unit:'TONNES',min:5000,max:100000,lifeMin:10,lifeMax:40,gradeMin:10,gradeMax:50},
- aragonite:{unit:'TONNES',min:10000,max:500000,lifeMin:5,lifeMax:20,gradeMin:90,gradeMax:99},
- granite:{unit:'TONNES',min:10000,max:500000,lifeMin:5,lifeMax:25,gradeMin:90,gradeMax:99},
- ilmenite:{unit:'TONNES',min:1000,max:100000,lifeMin:10,lifeMax:35,gradeMin:20,gradeMax:65},
- diatomite:{unit:'TONNES',min:1000,max:100000,lifeMin:10,lifeMax:35,gradeMin:50,gradeMax:95}
-};
+const scenarioData=()=>g.OmegaResourceScenarioEngineeringData||g.Omega?.ResourceScenarioEngineeringData||null;
+function scenarioEngineeringFor(site,resourceId){
+ const data=scenarioData(),rows=Array.isArray(data?.records)?data.records:[];
+ const wanted=rid(resourceId),siteId=String(site?.siteId||site?.siteReferenceKey||site?.id||'').trim();
+ let row=siteId?rows.find(x=>String(x?.siteId||'')===siteId&&rid(x?.resourceId)===wanted):null;
+ if(!row){
+   const country=String(site?.countryId||site?.countryCode||'').trim().toUpperCase();
+   const name=clean(site?.siteName||site?.name||site?.mineName||site?.depositName||site);
+   row=rows.find(x=>String(x?.countryId||'').toUpperCase()===country&&rid(x?.resourceId)===wanted&&clean(x?.siteName||'')===name)||null;
+ }
+ return row||null;
+}
 const modes={
  truck:{capacity:25000,speedKmh:55,costPerTonneKm:.055,defaultDistanceKm:120},
  rail:{capacity:150000,speedKmh:45,costPerTonneKm:.022,defaultDistanceKm:650},
@@ -190,8 +163,8 @@ function siteModel(site,profile,countryId){
  const productionInput=site?.productionModel&&typeof site.productionModel==='object'?site.productionModel:site||{};
  const streams=unique.map((resourceId,index)=>{
    const matchedStream=explicitStreams.find(x=>rid(typeof x==='string'?x:x?.resourceId||x?.resourceTypeId||x?.resId||x?.resource)===resourceId);const src=matchedStream&&typeof matchedStream==='object'?matchedStream:site||{};
-   const r=ranges[resourceId]||{unit:'TONNES',min:250,max:5000,lifeMin:8,lifeMax:30,gradeMin:1,gradeMax:50};
-   const seed=hash(String(countryId||'')+'|'+name+'|'+resourceId),u=seed/4294967296;
+   const scenario=scenarioEngineeringFor(site,resourceId);
+   const scenarioUnit=scenario?.unit||null;
    const qp=src?.quantitativeProfile&&typeof src.quantitativeProfile==='object'?src.quantitativeProfile:{};
    const ep=src?.extractionProfile&&typeof src.extractionProfile==='object'?src.extractionProfile:{};
    const nominalObs=num(src?.nominalCapacity??src?.nominalRate??productionInput?.nominalCapacity??productionInput?.nominalRate??qp?.production?.nominalCapacity??ep?.nominalCapacity);
@@ -205,35 +178,36 @@ function siteModel(site,profile,countryId){
    const declineRaw=src?.decline??src?.declineRate??productionInput?.decline??productionInput?.declineRate??ep?.decline;
    const maintenanceRaw=src?.maintenance??src?.maintenanceRate??productionInput?.maintenance??productionInput?.maintenanceRate??ep?.maintenance;
    const costObs=num(src?.operatingCost??src?.operatingCostPerUnit??productionInput?.operatingCost??productionInput?.operatingCostPerUnit??qp?.production?.operatingCost??ep?.operatingCost);
-   const utilization=utilRaw===undefined?(.65+.25*((seed>>>8)%100)/100):Number(utilRaw)>1?Number(utilRaw)/100:Number(utilRaw);
-   const recovery=recoveryRaw===undefined?(.65+.3*((seed>>>16)%100)/100):Number(recoveryRaw)>1?Number(recoveryRaw)/100:Number(recoveryRaw);
-   const decline=declineRaw===undefined?(.005+.02*((seed>>>4)%100)/100):Number(declineRaw)>1?Number(declineRaw)/100:Number(declineRaw);
-   const maintenance=maintenanceRaw===undefined?(.03+.12*((seed>>>24)%100)/100):Number(maintenanceRaw)>1?Number(maintenanceRaw)/100:Number(maintenanceRaw);
-   const modeledNominal=r.min+(r.max-r.min)*(.25+.7*u);
+   const utilization=utilRaw===undefined?(scenario?.utilization??null):Number(utilRaw)>1?Number(utilRaw)/100:Number(utilRaw);
+   const recovery=recoveryRaw===undefined?(scenario?.recovery??null):Number(recoveryRaw)>1?Number(recoveryRaw)/100:Number(recoveryRaw);
+   const decline=declineRaw===undefined?(scenario?.decline??null):Number(declineRaw)>1?Number(declineRaw)/100:Number(declineRaw);
+   const maintenance=maintenanceRaw===undefined?(scenario?.maintenance??null):Number(maintenanceRaw)>1?Number(maintenanceRaw)/100:Number(maintenanceRaw);
+   const modeledNominal=num(scenario?.nominalCapacity);
    const effectiveObservedRate=observedRate??annualRate;
    const technology=g.Omega?.ResourceResearchRuntime?.getEngineeringEffect?.(countryId,src?.siteId||src?.siteReferenceKey||src?.id||site?.siteId||site?.siteReferenceKey||site?.id||null,resourceId,src?.siteType||site?.siteType||null)||{capacityMultiplier:1,recoveryAdd:0,utilizationAdd:0,maintenanceMultiplier:1,declineMultiplier:1,outputMultiplier:1,technologies:[]};
    const clamp01=v=>Math.min(1,Math.max(0,Number(v)||0));
-   const utilizationFinal=clamp01(utilization+(Number(technology.utilizationAdd)||0));
-   const recoveryFinal=clamp01(recovery+(Number(technology.recoveryAdd)||0));
-   const maintenanceFinal=clamp01(maintenance*Math.max(.1,Number(technology.maintenanceMultiplier)||1));
-   const declineFinal=clamp01(decline*Math.max(.1,Number(technology.declineMultiplier)||1));
+   const utilizationFinal=utilization===null?null:clamp01(utilization+(Number(technology.utilizationAdd)||0));
+   const recoveryFinal=recovery===null?null:clamp01(recovery+(Number(technology.recoveryAdd)||0));
+   const maintenanceFinal=maintenance===null?null:clamp01(maintenance*Math.max(.1,Number(technology.maintenanceMultiplier)||1));
+   const declineFinal=decline===null?null:clamp01(decline*Math.max(.1,Number(technology.declineMultiplier)||1));
    const capacityFactor=Math.max(.1,Number(technology.capacityMultiplier)||1),outputFactor=Math.max(.1,Number(technology.outputMultiplier)||1);
    const nominalBase=nominalObs??effectiveObservedRate??modeledNominal;
-   const nominal=nominalBase*capacityFactor;
-   const minimumBase=minObs??(effectiveObservedRate!==null?effectiveObservedRate*.55:nominalBase*.55);
-   const maximumBase=maxObs??(effectiveObservedRate!==null?effectiveObservedRate*1.25:nominalBase*1.3);
-   const minimum=minimumBase*capacityFactor,maximum=maximumBase*capacityFactor;
-   const utilizationRatio=utilization>0?utilizationFinal/utilization:1;
-   const recoveryRatio=recovery>0?recoveryFinal/recovery:1;
-   const maintenanceRatio=maintenance<1?(1-maintenanceFinal)/(1-maintenance):1;
-   const declineRatio=decline<1?(1-declineFinal)/(1-decline):1;
-   const activeRate=effectiveObservedRate!==null?effectiveObservedRate*capacityFactor*outputFactor*utilizationRatio*recoveryRatio*maintenanceRatio*declineRatio:Math.max(0,nominal*utilizationFinal*(1-maintenanceFinal)*(1-declineFinal));
-   const life=r.lifeMin+(r.lifeMax-r.lifeMin)*u;
+   const nominal=nominalBase===null?null:nominalBase*capacityFactor;
+   const minimumBase=minObs??scenario?.minimumCapacity??(effectiveObservedRate!==null?effectiveObservedRate*.55:null);
+   const maximumBase=maxObs??scenario?.maximumCapacity??(effectiveObservedRate!==null?effectiveObservedRate*1.25:null);
+   const minimum=minimumBase===null?null:minimumBase*capacityFactor;
+   const maximum=maximumBase===null?null:maximumBase*capacityFactor;
+   const utilizationRatio=utilization!==null&&utilization>0&&utilizationFinal!==null?utilizationFinal/utilization:1;
+   const recoveryRatio=recovery!==null&&recovery>0&&recoveryFinal!==null?recoveryFinal/recovery:1;
+   const maintenanceRatio=maintenance!==null&&maintenance<1&&maintenanceFinal!==null?(1-maintenanceFinal)/(1-maintenance):1;
+   const declineRatio=decline!==null&&decline<1&&declineFinal!==null?(1-declineFinal)/(1-decline):1;
+   const activeRate=effectiveObservedRate!==null?effectiveObservedRate*capacityFactor*outputFactor*utilizationRatio*recoveryRatio*maintenanceRatio*declineRatio:(nominal===null||utilizationFinal===null||maintenanceFinal===null||declineFinal===null?null:Math.max(0,nominal*utilizationFinal*(1-maintenanceFinal)*(1-declineFinal)));
+   const life=num(scenario?.scenarioLifeYears);
    const scenarioReserve=num(src?.simulationReserveQuantity??src?.simulationReserve?.quantity??site?.simulationReserveQuantity??site?.simulationReserve?.quantity);
-   const scenarioReserveUnit=String(src?.simulationReserveUnit??src?.simulationReserve?.unit??site?.simulationReserveUnit??site?.simulationReserve?.unit??'').trim()||null;
+   const scenarioReserveUnit=String(src?.simulationReserveUnit??src?.simulationReserve?.unit??site?.simulationReserveUnit??site?.simulationReserve?.unit??scenarioUnit??'').trim()||null;
    const observedReserve=num(src?.reserveQuantity??src?.geologicalQuantity??src?.reservesQuantity);
-   const reserveQuantity=scenarioReserve!==null?scenarioReserve:(observedReserve!==null?observedReserve:nominal*365*life*recovery);
-   const reserveAuthority=scenarioReserve!==null?'SIMULATED':(observedReserve!==null?'OBSERVED':'SIMULATED');
+   const reserveQuantity=scenarioReserve!==null?scenarioReserve:observedReserve;
+   const reserveAuthority=scenarioReserve!==null?'SIMULATED':(observedReserve!==null?'OBSERVED':'UNOBSERVED');
    const gradeField=qp?.grade&&typeof qp.grade==='object'?qp.grade:null;
    const rawGrade=src?.grade??src?.oreGrade??site?.grade??gradeField?.value??null;
    const gradeNumeric=rawGrade===null?null:(typeof rawGrade==='number'?rawGrade:Number(String(rawGrade).match(/[-+]?\d+(?:\.\d+)?/)?.[0]));
