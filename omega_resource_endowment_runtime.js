@@ -799,15 +799,6 @@ function batchFromExtraction(x,record){
       const controller=mineSiteControllers[siteKey];
       const hasExecutable=Array.isArray(controller.linkedOccurrenceKeys)&&controller.linkedOccurrenceKeys.length>0;
       const pathId=controller.pathId||('MINE_PATH:'+c+':'+siteKey);
-      const path=minePaths[siteKey]&&typeof minePaths[siteKey]==='object'?clone(minePaths[siteKey]):{
-        pathId,siteReferenceKey:siteKey,siteName:controller.siteName,countryId:c,resourceId:null,
-        sourceCountryId:c,destinationCountryId:c,stages:[],status:hasExecutable?'READY':'BLOCKED_MISSING_QUANTITATIVE_DATA',
-        lastTurn:null,batchIds:[],inventoryAllocations:[]
-      };
-      if(!Array.isArray(path.stages))path.stages=[];
-      if(path.stages.length===0)path.stages.push({stage:'SITE_CONTROLLER_SCAN',turn:turn(),status:hasExecutable?'EXECUTABLE':'BLOCKED_MISSING_QUANTITATIVE_DATA'});
-      path.lastTurn=turn();
-      minePaths[siteKey]=path;
       if(!hasExecutable){
         mineOutputs[siteKey]={
           siteReferenceKey:siteKey,siteName:controller.siteName,countryId:c,simulationTurn:turn(),
@@ -815,7 +806,17 @@ function batchFromExtraction(x,record){
           blockReason:'SITE_REFERENCE_HAS_NO_QUANTITATIVE_MINE_RECORD',
           pathId
         };
+        continue;
       }
+      const path=minePaths[siteKey]&&typeof minePaths[siteKey]==='object'?clone(minePaths[siteKey]):{
+        pathId,siteReferenceKey:siteKey,siteName:controller.siteName,countryId:c,resourceId:null,
+        sourceCountryId:c,destinationCountryId:c,stages:[],status:'READY',
+        lastTurn:null,batchIds:[],inventoryAllocations:[]
+      };
+      if(!Array.isArray(path.stages))path.stages=[];
+      if(path.stages.length===0)path.stages.push({stage:'SITE_CONTROLLER_SCAN',turn:turn(),status:'EXECUTABLE'});
+      path.lastTurn=turn();
+      minePaths[siteKey]=path;
     }
     for(const x of selected){
       const pathId='MINE_PATH:'+c+':'+String(x.occurrenceKey);
