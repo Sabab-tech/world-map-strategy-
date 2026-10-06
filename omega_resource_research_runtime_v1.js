@@ -281,7 +281,15 @@ function countryIds(){
   try{const profiles=g.ResourceMinistryEngine?.countryProfiles||{};Object.keys(profiles).forEach(c=>out.add(canonicalCountry(c)));}catch(_){}
   return [...out].filter(Boolean).sort();
 }
-function processAll(){return{status:'COMPLETED',turn:turn(),countryCount:countryIds().length,results:countryIds().map(c=>({countryId:c,result:processCountry(c)}))};}
+function processAll(){
+  const s=state(),active=countryIds().filter(c=>{
+    const r=s.resource?.[c]||{};
+    const p=Array.isArray(r.technologyResearchProjects)&&r.technologyResearchProjects.some(x=>['REQUESTED','IN_PROGRESS'].includes(String(x?.status||'').toUpperCase()));
+    const t=Array.isArray(r.technologyTransfers)&&r.technologyTransfers.some(x=>['REQUESTED','IN_PROGRESS'].includes(String(x?.status||'').toUpperCase()));
+    return p||t;
+  });
+  return{status:'COMPLETED',turn:turn(),countryCount:active.length,results:active.map(c=>({countryId:c,result:processCountry(c)}))};
+}
 function diagnostics(){
   const cs=countryIds(),s=state();let projects=0,imports=0,caps=0;
   for(const c of cs){const r=s.resource?.[c]||{};projects+=Array.isArray(r.technologyResearchProjects)?r.technologyResearchProjects.filter(x=>['REQUESTED','IN_PROGRESS'].includes(String(x?.status||'').toUpperCase())).length:0;imports+=Array.isArray(r.technologyTransfers)?r.technologyTransfers.filter(x=>['REQUESTED','IN_PROGRESS'].includes(String(x?.status||'').toUpperCase())).length:0;caps+=Array.isArray(r.technologyCapabilities)?r.technologyCapabilities.length:0;}
@@ -296,6 +304,8 @@ const API=Object.freeze({
 g.Omega=g.Omega||{};g.Omega.ResourceResearchRuntime=API;g.OmegaResourceResearchRuntime=API;
 loadCatalog().catch(()=>{});
 if(typeof g.addEventListener==='function'){
+  g.addEventListener('OMEGA_RESOURCE_RESEARCH_REQUESTED',e=>{const d=e?.detail?.payload||e?.detail||e||{};const c=d?.countryId||e?.countryId;if(c)dispatch('OMEGA_RESOURCE_RESEARCH_START',c,d);});
+  g.addEventListener('OMEGA_RESOURCE_TECHNOLOGY_IMPORT_REQUESTED',e=>{const d=e?.detail?.payload||e?.detail||e||{};const c=d?.countryId||e?.countryId;if(c)dispatch('OMEGA_RESOURCE_TECHNOLOGY_IMPORT',c,d);});
   g.addEventListener('OMEGA_READY',()=>{register();loadCatalog().catch(()=>{});});
   g.addEventListener('OMEGA_GAME_SESSION_STARTED',()=>{register();loadCatalog().catch(()=>{});});
   g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED',()=>processAll());
