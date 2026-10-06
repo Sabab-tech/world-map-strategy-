@@ -932,7 +932,7 @@ function batchFromExtraction(x,record){
       mineOutputTotals[x.occurrenceKey].lastTurn=turn();
       mineOutputs[x.occurrenceKey]={
         occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,resourceId:resource,simulationTurn:turn(),
-        assetType:x.assetType||'STRUCTURED_MINE',simulationGenerated:!!x.isSimulationGenerated,effortUtilization:x.isSimulationGenerated?1:null,
+        assetType:x.assetType||'MINE_SITE',simulationGenerated:!!x.isSimulationGenerated,effortUtilization:x.isSimulationGenerated?1:null,
         producedQuantity:q,residualQuantity:n(result.reserveAfter.residualQuantity)||0,status:result.status,
         effortUtilization:record.effortUtilization,simulationGenerated:record.simulationGenerated,
         batchId:batch.batchId,purity:batch.purity,grade:batch.grade,quality:batch.quality,qualityState:clone(batch.qualityState),
