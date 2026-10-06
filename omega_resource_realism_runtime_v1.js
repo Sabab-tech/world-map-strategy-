@@ -293,7 +293,8 @@ function firewall(existing,incoming){
    return authorityRank(existing?.stateAuthority||existing?.authority)>authorityRank(incoming?.stateAuthority||incoming?.authority)?existing:incoming;
  }
  const objectExisting=authorityRank(existing.stateAuthority||existing.authority),objectIncoming=authorityRank(incoming.stateAuthority||incoming.authority);
- if(objectExisting>objectIncoming)return existing;
+ const hasNewField=Object.keys(incoming).some(k=>!Object.prototype.hasOwnProperty.call(existing,k));
+ if(objectExisting>objectIncoming&&!hasNewField)return existing;
  const out=JSON.parse(JSON.stringify(existing));
  for(const [k,v] of Object.entries(incoming)){
    if(k==='__proto__'||k==='constructor')continue;
@@ -307,9 +308,8 @@ function firewall(existing,incoming){
    if(ia>fa)out[k]=JSON.parse(JSON.stringify(v));
    else if(ia===fa&&ia<2&&v&&typeof v==='object'&&existing[k]&&typeof existing[k]==='object')out[k]=firewall(existing[k],v);
  }
- if(objectExisting>objectIncoming)return existing;
- if(objectIncoming>objectExisting)return incoming;
- out.stateAuthority=existing.stateAuthority||existing.authority||out.stateAuthority;
+ if(objectIncoming>objectExisting&&!hasNewField)return incoming;
+ out.stateAuthority=objectExisting>=objectIncoming?(existing.stateAuthority||existing.authority||out.stateAuthority):(incoming.stateAuthority||incoming.authority||out.stateAuthority);
  out.authority=out.stateAuthority||out.authority;
  return out;
 }
