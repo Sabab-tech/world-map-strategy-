@@ -333,6 +333,74 @@
       byCountry.get(countryId).push(occurrence);
     });
 
+    const occurrenceByIdentity=new Map(),occurrencesByName=new Map(),siteReferenceBindings=new Map();
+    const putIdentity=function(key,occ){
+      const k=String(key??'').trim();
+      if(k)occurrenceByIdentity.set(k,occ);
+    };
+    rows.forEach(function(occ){
+      putIdentity(occ.occurrenceKey,occ);
+      putIdentity(occ.depositKey,occ);
+      const raw=occ.rawDeposit||{};
+      putIdentity(raw.id,occ);putIdentity(raw.depositId,occ);putIdentity(raw.mineId,occ);
+      const nameKey=canonicalCountry(occ.countryId)+'|'+String(occ.resourceTypeId||'').trim().toLowerCase()+'|'+tok(occ.depositRawName);
+      const list=occurrencesByName.get(nameKey)||[];
+      list.push(occ);occurrencesByName.set(nameKey,list);
+    });
+    const resolveBinding=function(site){
+      const s=site&&typeof site==='object'?site:{};
+      const explicit=[
+        s.canonicalOccurrenceKey,s.linkedDepositId,s.depositKey,s.depositId,s.mineId,s.resourceInstanceId,s.instanceId,
+        s.occurrenceKey,s.rawSiteReference?.canonicalOccurrenceKey,s.rawSiteReference?.linkedDepositId,s.rawSiteReference?.depositKey,
+        s.rawSiteReference?.depositId,s.rawSiteReference?.mineId,s.rawSiteReference?.resourceInstanceId,s.rawSiteReference?.instanceId
+      ].filter(Boolean).map(String);
+      let hit=null,authority=null;
+      for(const key of explicit){
+        hit=occurrenceByIdentity.get(key);
+        if(hit){authority='EXPLICIT_SOURCE_LINK';break;}
+      }
+      if(!hit){
+        const country=canonicalCountry(s.countryId||s.countryCode||s.country);
+        const resource=String(s.resourceId||s.resourceTypeId||s.resourceTypeKey||s.resId||s.resourceAsset?.resourceTypeId||'').trim().toLowerCase();
+        const name=String(s.siteName||s.name||s.mineName||s.depositName||s.resourceAsset?.siteName||'').trim();
+        if(country&&resource&&name){
+          const list=occurrencesByName.get(country+'|'+resource+'|'+tok(name))||[];
+          if(list.length===1){hit=list[0];authority='UNIQUE_COUNTRY_RESOURCE_NAME';}
+        }
+      }
+      return hit?{
+        siteReferenceKey:String(s.siteReferenceKey||'')||null,
+        occurrenceKey:hit.occurrenceKey,
+        depositKey:hit.depositKey,
+        countryId:hit.countryId,
+        resourceId:hit.resourceTypeId,
+        authority:authority||'RUNTIME_RESOLVED',
+        physicalIdentity:true
+      }:{
+        siteReferenceKey:String(s.siteReferenceKey||'')||null,
+        occurrenceKey:null,depositKey:null,
+        countryId:canonicalCountry(s.countryId||s.countryCode||s.country)||null,
+        resourceId:String(s.resourceId||s.resourceTypeId||s.resourceTypeKey||s.resId||'').trim().toLowerCase()||null,
+        authority:'UNRESOLVED',
+        physicalIdentity:false
+      };
+    };
+    siteReferences.forEach(function(site){
+      const binding=resolveBinding(site);
+      if(binding.occurrenceKey){
+        site.canonicalOccurrenceKey=binding.occurrenceKey;
+        site.canonicalDepositKey=binding.depositKey;
+        site.bindingAuthority=binding.authority;
+        site.physicalIdentity=true;
+      }else{
+        site.canonicalOccurrenceKey=null;
+        site.canonicalDepositKey=null;
+        site.bindingAuthority=binding.authority;
+        site.physicalIdentity=false;
+      }
+      siteReferenceBindings.set(String(site.siteReferenceKey),binding);
+    });
+
     const registry={
       version:VERSION,
       authority:'RESOURCE_JSON',
@@ -341,6 +409,13 @@
       getOccurrencesByCountry:function(countryId){return clone(byCountry.get(canonicalCountry(countryId))||[]);},
       getMineSiteReferencesByCountry:function(countryId){return clone(siteRefsByCountry.get(canonicalCountry(countryId))||[]);},
       listMineSiteReferences:function(){return clone(siteReferences);},
+      getMineSiteReferenceBinding:function(siteReference){
+        const key=typeof siteReference==='string'?siteReference:siteReference?.siteReferenceKey;
+        const stored=siteReferenceBindings.get(String(key||'')); 
+        if(stored)return clone(stored);
+        return clone(resolveBinding(siteReference));
+      },
+      listMineSiteReferenceBindings:function(){return clone([...siteReferenceBindings.entries()].map(function(entry){return entry[1];}));},
       getDeposit:function(depositKey){
         const hit=byDeposit.get(String(depositKey||'').trim());
         if(!hit)return null;
