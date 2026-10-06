@@ -9,7 +9,7 @@
 (function(g){
   'use strict';
 
-  const VERSION='1.0.0';
+  const VERSION='1.1.0';
 
   function clone(v,seen){
     if(v===null||typeof v!=='object')return v;
@@ -108,9 +108,13 @@
       ref?.dataStatus?.grade||ref?.dataStatus?.quality||ref?.dataAuthority?.grade||ref?.dataAuthority?.quality
     );
 
-    const reserveQuantity=num(rs?.geologicalQuantity??raw.geologicalQuantity??raw.reserveQuantity);
-    const recoverableQuantity=num(rs?.recoverableQuantity??raw.recoverableQuantity);
-    const residualQuantity=num(rs?.residualQuantity??raw.residualQuantity);
+    const geologicalResourceQuantity=num(rs?.geologicalResourceQuantity??raw.geologicalResourceQuantity);
+    const technicallyRecoverableQuantity=num(rs?.technicallyRecoverableQuantity??raw.technicallyRecoverableQuantity);
+    const economicallyRecoverableQuantity=num(rs?.economicallyRecoverableQuantity??raw.economicallyRecoverableQuantity??rs?.recoverableQuantity??raw.recoverableQuantity);
+    const extractableReserveQuantity=num(rs?.extractableReserveQuantity??raw.extractableReserveQuantity??rs?.residualQuantity??raw.residualQuantity??rs?.recoverableQuantity??raw.recoverableQuantity??rs?.geologicalQuantity??raw.geologicalQuantity??raw.reserveQuantity);
+    const reserveQuantity=extractableReserveQuantity;
+    const recoverableQuantity=economicallyRecoverableQuantity;
+    const residualQuantity=extractableReserveQuantity;
     const unit=textOrNull(rs?.unit||raw.unit||cap?.unit);
     const productionRate=num(raw.productionRate??cap?.activeRate??cap?.dailyRate??cap?.nominalRate??prod?.activeRate??prod?.observedRate);
     const currentProduction=num(raw.currentProduction??raw.currentProductionRate??raw.lastOutputQuantity);
@@ -151,9 +155,11 @@
       resourceTypeId,
       location,
       reserve:{
-        geologicalQuantity:reserveQuantity,
+        geologicalQuantity:geologicalResourceQuantity,
         recoverableQuantity,
         residualQuantity,
+        geologicalResourceQuantity,technicallyRecoverableQuantity,economicallyRecoverableQuantity,extractableReserveQuantity,
+        quantityKind:textOrNull(rs?.quantityKind||raw.quantityKind)||'EXTRACTABLE_RESERVE',
         unit,
         rawText:textOrNull(raw.reserves||rs?.rawText||ref?.reserve?.rawText),
         authority:reserveAuthority,
@@ -258,8 +264,10 @@
     };
     const getStableIds=function(site){
       const s=site&&typeof site==='object'?site:{};
-      return [s.siteId,s.mineId,s.depositId,s.resourceInstanceId,s.canonicalOccurrenceKey,s.linkedDepositId,s.depositKey]
-        .filter(v=>v!==undefined&&v!==null&&String(v).trim()!=='').map(String);
+      return [
+        s.siteId,s.mineId,s.depositId,s.resourceInstanceId,s.canonicalOccurrenceKey,
+        s.linkedDepositId,s.depositKey
+      ].filter(v=>v!==undefined&&v!==null&&String(v).trim()!=='').map(String);
     };
     const getLocation=function(site){
       const s=site&&typeof site==='object'?site:{};
@@ -274,15 +282,14 @@
         .filter(v=>v!==undefined&&v!==null&&String(v).trim()!=='').map(String);
     };
     const resolveCanonicalDeposit=function(site,countryId,siteName){
-      const explicit=getStableIds(site);
-      const explicitHits=[];
+      const explicit=getStableIds(site),explicitHits=[];
       for(const key of explicit){
-        for(const dep of runtimeDeposits)if(depositKeys(dep).includes(key))explicitHits.push(dep);
+        for(const dep of runtimeDeposits){
+          if(depositKeys(dep).includes(key))explicitHits.push(dep);
+        }
       }
       const uniqueExplicit=[...new Map(explicitHits.map(dep=>[depositKeys(dep)[0]||JSON.stringify(dep),dep])).values()];
-      if(uniqueExplicit.length===1){
-        return depositKeys(uniqueExplicit[0])[0]||null;
-      }
+      if(uniqueExplicit.length===1)return depositKeys(uniqueExplicit[0])[0]||null;
       const wantedName=tok(siteName);
       const nameHits=runtimeDeposits.filter(dep=>
         canonicalCountry(dep?.countryCode||dep?.countryId||dep?.country||dep?.iso3||'')===countryId &&
@@ -360,23 +367,13 @@
           extractionExecutable:false
         });
         byPhysicalIdentity.set(physicalKey,{
-          siteReferenceKey,
-          countryId,
-          countryCode:countryId,
-          profileKey:String(profileKey),
-          siteName,
-          status:'ACTIVE_SITE_REFERENCE',
-          activationState:'ACTIVE_REFERENCE',
+          siteReferenceKey,countryId,countryCode:countryId,profileKey:String(profileKey),siteName,
+          status:'ACTIVE_SITE_REFERENCE',activationState:'ACTIVE_REFERENCE',
           extractionExecutable:false,
           quantitativeExtractionDataAvailable:resourceAsset.quantitativeExtractionDataAvailable===true,
-          sourceAuthority:'RESOURCE_JSON',
-          sourceDatasetId:sourceDatasetId,
-          sourcePath,
-          sourceDatasetIds:[sourceDatasetId],
-          sourcePaths:[sourcePath],
-          sourceIds:stableIds,
-          rawSiteReference:rawSiteObject,
-          resourceAsset
+          sourceAuthority:'RESOURCE_JSON',sourceDatasetId,sourcePath,
+          sourceDatasetIds:[sourceDatasetId],sourcePaths:[sourcePath],sourceIds:stableIds,
+          rawSiteReference:rawSiteObject,resourceAsset
         });
       }
     }
@@ -468,14 +465,9 @@
           s.siteName||s.name||s.mineName||s.depositName||s.resourceAsset?.siteName||
           s.rawSiteReference?.siteName||s.rawSiteReference?.name||s.rawSiteReference?.mineName||s.rawSiteReference?.depositName||''
         ).trim();
-        if(country&&name){
-          const list=resource
-            ? (occurrencesByName.get(country+'|'+resource+'|'+tok(name))||[])
-            : [...(byCountry.get(country)||[])].filter(x=>tok(x?.depositRawName)===tok(name));
-          if(list.length===1){
-            hit=list[0];
-            authority=resource?'UNIQUE_COUNTRY_RESOURCE_NAME':'UNIQUE_COUNTRY_NAME';
-          }
+        if(country&&resource&&name){
+          const list=occurrencesByName.get(country+'|'+resource+'|'+tok(name))||[];
+          if(list.length===1){hit=list[0];authority='UNIQUE_COUNTRY_RESOURCE_NAME';}
         }
       }
       return hit?{
@@ -484,12 +476,11 @@
         depositKey:hit.depositKey,
         countryId:hit.countryId,
         resourceId:hit.resourceTypeId,
-        authority,
+        authority:authority||'RUNTIME_RESOLVED',
         physicalIdentity:true
       }:{
         siteReferenceKey:String(s.siteReferenceKey||'')||null,
-        occurrenceKey:null,
-        depositKey:null,
+        occurrenceKey:null,depositKey:null,
         countryId:canonicalCountry(s.countryId||s.countryCode||s.country)||null,
         resourceId:String(s.resourceId||s.resourceTypeId||s.resourceTypeKey||s.resId||'').trim().toLowerCase()||null,
         authority:'UNRESOLVED',
@@ -525,9 +516,10 @@
         const dynamic=resolveBinding(siteReference);
         if(dynamic?.physicalIdentity)return clone(dynamic);
         const stored=siteReferenceBindings.get(String(key||''));
-        return stored?clone(stored):clone(dynamic);
+        if(stored)return clone(stored);
+        return clone(dynamic);
       },
-      listMineSiteReferenceBindings:function(){return clone([...siteReferenceBindings.values()]);},
+      listMineSiteReferenceBindings:function(){return clone([...siteReferenceBindings.entries()].map(function(entry){return entry[1];}));},
       getDeposit:function(depositKey){
         const hit=byDeposit.get(String(depositKey||'').trim());
         if(!hit)return null;
