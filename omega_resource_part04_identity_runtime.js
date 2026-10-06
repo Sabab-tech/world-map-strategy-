@@ -124,8 +124,10 @@
     const recoverableQuantity=economicallyRecoverableQuantity;
     const residualQuantity=extractableReserveQuantity;
     const unit=textOrNull(rs?.unit||raw.unit||cap?.unit||quantitativeReserve.unit);
-    const productionRate=num(raw.productionRate??cap?.activeRate??cap?.dailyRate??cap?.nominalRate??prod?.activeRate??prod?.observedRate);
-    const currentProduction=num(raw.currentProduction??raw.currentProductionRate??raw.lastOutputQuantity);
+    const productionRateRaw=num(raw.productionRate??cap?.activeRate??cap?.dailyRate??cap?.nominalRate??prod?.activeRate??prod?.observedRate);
+    const productionRate=productionRateRaw!==null&&productionRateRaw>0?productionRateRaw:null;
+    const currentProductionRaw=num(raw.currentProduction??raw.currentProductionRate??raw.lastOutputQuantity);
+    const currentProduction=currentProductionRaw!==null&&currentProductionRaw>0?currentProductionRaw:null;
     const recoveryRate=num(raw.recoveryRate??cap?.recovery??prod?.recovery);
     const grade=num(raw.gradePercent??q?.gradePercent??q?.normalized?.gradePercent);
     const gradeText=textOrNull(raw.grade??raw.oreGrade??q?.grade??q?.oreGrade);
