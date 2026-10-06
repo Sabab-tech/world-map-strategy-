@@ -52,11 +52,17 @@ await import('../omega_ministry_interoperability_system.js');
 const seen=[];
 globalThis.addEventListener('OMEGA_RESOURCE_FACTORY_INPUT_AVAILABLE',e=>seen.push(e.detail));
 
+console.error('RESOURCE_IMPORT_CHECKPOINT: before_part05');
 await import('../omega_resource_part05_reserve_extraction_runtime.js');
+console.error('RESOURCE_IMPORT_CHECKPOINT: after_part05');
 await import('../omega_resource_production_model_v2.js');
+console.error('RESOURCE_IMPORT_CHECKPOINT: after_production_model');
 await import('../omega_resource_realism_runtime_v1.js');
+console.error('RESOURCE_IMPORT_CHECKPOINT: after_realism');
 await import('../omega_resource_evidence_resolver_v1.js');
+console.error('RESOURCE_IMPORT_CHECKPOINT: after_evidence_resolver');
 await import('../omega_resource_endowment_runtime.js');
+console.error('RESOURCE_IMPORT_CHECKPOINT: after_endowment');
 const runtime=globalThis.OmegaResourceEndowmentRuntime;
 console.log('RESOURCE_ENDOWMENT_CHECKPOINT: before_initialize');
 const initialized=await runtime.initialize();
