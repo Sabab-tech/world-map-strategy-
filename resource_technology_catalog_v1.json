@@ -1,0 +1,287 @@
+{
+  "schemaVersion": "1.0.0",
+  "datasetId": "OMEGA_RESOURCE_TECHNOLOGY_CATALOG_V1",
+  "authority": "OMEGA_SCENARIO_TECHNOLOGY_RULES",
+  "note": "Technology definitions are game-rule capabilities. They do not assert that any specific country currently possesses the technology. Possession must be earned through research or imported from an already-unlocked country.",
+  "technologies": [
+    {
+      "technologyId": "ADVANCED_GEOPHYSICAL_EXPLORATION",
+      "name": "Advanced Geophysical Exploration",
+      "scope": "SITE",
+      "resourceIds": [
+        "crude_oil",
+        "natural_gas",
+        "coal",
+        "copper",
+        "gold",
+        "uranium",
+        "iron_ore"
+      ],
+      "siteTypes": [
+        "OIL_FIELD",
+        "GAS_FIELD",
+        "COAL_MINE",
+        "METAL_MINE",
+        "MINE_SITE"
+      ],
+      "researchTurns": 10,
+      "transferTurns": 4,
+      "effects": {
+        "explorationEfficiencyMultiplier": 1.25
+      }
+    },
+    {
+      "technologyId": "AUTONOMOUS_MINE_HAULAGE",
+      "name": "Autonomous Mine Haulage",
+      "scope": "SITE",
+      "resourceIds": [
+        "coal",
+        "copper",
+        "gold",
+        "iron_ore",
+        "bauxite",
+        "nickel",
+        "cobalt",
+        "manganese",
+        "chromite",
+        "zinc",
+        "phosphate"
+      ],
+      "siteTypes": [
+        "COAL_MINE",
+        "METAL_MINE",
+        "MINE_SITE"
+      ],
+      "researchTurns": 12,
+      "transferTurns": 4,
+      "effects": {
+        "capacityMultiplier": 1.08,
+        "utilizationAdd": 0.04,
+        "maintenanceMultiplier": 0.96
+      }
+    },
+    {
+      "technologyId": "ADVANCED_ORE_SORTING",
+      "name": "Advanced Ore Sorting",
+      "scope": "SITE",
+      "resourceIds": [
+        "copper",
+        "gold",
+        "iron_ore",
+        "bauxite",
+        "nickel",
+        "cobalt",
+        "manganese",
+        "chromite",
+        "zinc",
+        "tin",
+        "tungsten",
+        "uranium"
+      ],
+      "siteTypes": [
+        "METAL_MINE",
+        "MINE_SITE"
+      ],
+      "researchTurns": 9,
+      "transferTurns": 3,
+      "effects": {
+        "recoveryAdd": 0.04,
+        "utilizationAdd": 0.02
+      }
+    },
+    {
+      "technologyId": "ADVANCED_FLOTATION",
+      "name": "Advanced Flotation & Separation",
+      "scope": "SITE",
+      "resourceIds": [
+        "copper",
+        "gold",
+        "nickel",
+        "cobalt",
+        "zinc",
+        "lead",
+        "silver",
+        "platinum",
+        "tin"
+      ],
+      "siteTypes": [
+        "METAL_MINE",
+        "MINE_SITE"
+      ],
+      "researchTurns": 11,
+      "transferTurns": 4,
+      "effects": {
+        "recoveryAdd": 0.05,
+        "maintenanceMultiplier": 0.97
+      }
+    },
+    {
+      "technologyId": "ENHANCED_OIL_RECOVERY",
+      "name": "Enhanced Oil Recovery",
+      "scope": "SITE",
+      "resourceIds": [
+        "crude_oil"
+      ],
+      "siteTypes": [
+        "OIL_FIELD"
+      ],
+      "researchTurns": 14,
+      "transferTurns": 5,
+      "effects": {
+        "capacityMultiplier": 1.06,
+        "recoveryAdd": 0.07,
+        "declineMultiplier": 0.92
+      }
+    },
+    {
+      "technologyId": "ADVANCED_GAS_COMPRESSION",
+      "name": "Advanced Gas Compression & Recovery",
+      "scope": "SITE",
+      "resourceIds": [
+        "natural_gas"
+      ],
+      "siteTypes": [
+        "GAS_FIELD"
+      ],
+      "researchTurns": 10,
+      "transferTurns": 4,
+      "effects": {
+        "capacityMultiplier": 1.08,
+        "recoveryAdd": 0.04,
+        "maintenanceMultiplier": 0.95,
+        "declineMultiplier": 0.95
+      }
+    },
+    {
+      "technologyId": "DIGITAL_MAINTENANCE",
+      "name": "Digital Predictive Maintenance",
+      "scope": "SITE",
+      "resourceIds": [
+        "*"
+      ],
+      "siteTypes": [
+        "*"
+      ],
+      "researchTurns": 8,
+      "transferTurns": 3,
+      "effects": {
+        "maintenanceMultiplier": 0.88,
+        "utilizationAdd": 0.02
+      }
+    },
+    {
+      "technologyId": "WATER_RECYCLING",
+      "name": "Closed-Loop Process Water Recycling",
+      "scope": "SITE",
+      "resourceIds": [
+        "coal",
+        "copper",
+        "gold",
+        "iron_ore",
+        "bauxite",
+        "nickel",
+        "cobalt",
+        "lithium",
+        "phosphate",
+        "potash",
+        "uranium"
+      ],
+      "siteTypes": [
+        "COAL_MINE",
+        "METAL_MINE",
+        "MINE_SITE",
+        "PROCESSING_PLANT"
+      ],
+      "researchTurns": 7,
+      "transferTurns": 3,
+      "effects": {
+        "utilizationAdd": 0.03,
+        "maintenanceMultiplier": 0.97
+      }
+    },
+    {
+      "technologyId": "TAILINGS_REPROCESSING",
+      "name": "Tailings Reprocessing",
+      "scope": "SITE",
+      "resourceIds": [
+        "gold",
+        "copper",
+        "silver",
+        "uranium",
+        "zinc"
+      ],
+      "siteTypes": [
+        "METAL_MINE",
+        "MINE_SITE"
+      ],
+      "researchTurns": 13,
+      "transferTurns": 5,
+      "effects": {
+        "recoveryAdd": 0.03
+      }
+    },
+    {
+      "technologyId": "DEEP_MINING_ENGINEERING",
+      "name": "Advanced Deep-Mining Engineering",
+      "scope": "SITE",
+      "resourceIds": [
+        "coal",
+        "copper",
+        "gold",
+        "iron_ore",
+        "nickel",
+        "zinc",
+        "uranium"
+      ],
+      "siteTypes": [
+        "COAL_MINE",
+        "METAL_MINE",
+        "MINE_SITE"
+      ],
+      "researchTurns": 15,
+      "transferTurns": 5,
+      "effects": {
+        "capacityMultiplier": 1.05,
+        "recoveryAdd": 0.02,
+        "maintenanceMultiplier": 0.98
+      }
+    },
+    {
+      "technologyId": "IN_SITU_URANIUM_RECOVERY",
+      "name": "In-Situ Uranium Recovery",
+      "scope": "SITE",
+      "resourceIds": [
+        "uranium"
+      ],
+      "siteTypes": [
+        "URANIUM_MINE",
+        "MINE_SITE"
+      ],
+      "researchTurns": 12,
+      "transferTurns": 4,
+      "effects": {
+        "capacityMultiplier": 1.1,
+        "recoveryAdd": 0.08
+      }
+    },
+    {
+      "technologyId": "MINE_DIGITAL_TWIN",
+      "name": "Mine Digital Twin & Optimization",
+      "scope": "SITE",
+      "resourceIds": [
+        "*"
+      ],
+      "siteTypes": [
+        "*"
+      ],
+      "researchTurns": 16,
+      "transferTurns": 5,
+      "effects": {
+        "capacityMultiplier": 1.04,
+        "utilizationAdd": 0.05,
+        "maintenanceMultiplier": 0.9,
+        "declineMultiplier": 0.97
+      }
+    }
+  ]
+}
