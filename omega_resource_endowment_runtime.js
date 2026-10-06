@@ -1178,7 +1178,6 @@ function batchFromExtraction(x,record){
     const modeledSiteReferenceCount=Math.max(
       registrySiteReferenceCount,
       Number(g.__OmegaResourceSiteReferenceCount)||0,
-      Number(e?.mineSiteReferenceCount)||0,
       Object.values(e?.countryProfiles||{}).reduce((sum,p)=>{
         const sites=p?.resource_infrastructure_context?.mineSites||p?.infrastructure_context?.mineSites||[];
         return sum+(Array.isArray(sites)?sites.length:0);
