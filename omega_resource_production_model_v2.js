@@ -25,7 +25,7 @@ function parseReserve(text,resourceId,targetUnit){
    const family=x.sourceUnitFamily||x.sourceUnit||x.unitFamily||null;
    const resource=rid(resourceId);
    const canonicalTarget=resource==='natural_gas'?'BCM':
-     (resource==='gold'||resource==='silver'||resource==='platinum'?'TROY_OZ':family);
+     ((resource==='gold'||resource==='silver'||resource==='platinum')&&family!=='TONNES'?'TROY_OZ':family);
    const target=targetUnit||canonicalTarget;
    let value=x.value;
    if(family==='TCF'&&target==='BCM')value=Number(x.value)*28.316846592;
