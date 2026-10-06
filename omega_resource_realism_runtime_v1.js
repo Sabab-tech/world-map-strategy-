@@ -371,7 +371,7 @@ function planRoute(input={}){
  return {status:'PLANNED',transportMode:mode,routeId:'ROUTE:'+String(input.sourceNode||'SRC')+'>'+String(input.destinationNode||'DST')+':'+mode,
   sourceNode:input.sourceNode||null,destinationNode:input.destinationNode||null,distanceKm:distance,capacity,requestedQuantity:qty,dispatchQuantity:Math.min(qty,capacity),
   legs,travelTimeDays:timeDays,costEstimate:cost,costUnit:'SIMULATED_CURRENCY',capacityAuthority:'SIMULATED',costAuthority:'SIMULATED',timeAuthority:'SIMULATED',
-  routeAuthority:'SIMULATED',deliveryStatus:qty<=capacity?'READY':'MULTI_LEG_REQUIRED'};
+  routeAuthority:'SIMULATED',networkAuthority:'SIMULATED',capacityBasis:'SCENARIO_MODE_CAPACITY',distanceBasis:'SIMULATED_ROUTE_GRAPH',realWorldCapacityVerified:false,realWorldRouteVerified:false,deliveryExecutionMode:'SIMULATED_GAME_QUEUE',deliveryStatus:qty<=capacity?'READY':'MULTI_LEG_REQUIRED'};
 }
 function planFactoryRoutes(input={}){
  const ids=Array.isArray(input.factoryIds)?input.factoryIds.filter(Boolean):[];
