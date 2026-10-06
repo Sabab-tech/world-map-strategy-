@@ -9,7 +9,7 @@
 (function(g){
   'use strict';
 
-  const VERSION='1.0.0';
+  const VERSION='1.1.0';
 
   function clone(v,seen){
     if(v===null||typeof v!=='object')return v;
@@ -108,9 +108,13 @@
       ref?.dataStatus?.grade||ref?.dataStatus?.quality||ref?.dataAuthority?.grade||ref?.dataAuthority?.quality
     );
 
-    const reserveQuantity=num(rs?.geologicalQuantity??raw.geologicalQuantity??raw.reserveQuantity);
-    const recoverableQuantity=num(rs?.recoverableQuantity??raw.recoverableQuantity);
-    const residualQuantity=num(rs?.residualQuantity??raw.residualQuantity);
+    const geologicalResourceQuantity=num(rs?.geologicalResourceQuantity??raw.geologicalResourceQuantity);
+    const technicallyRecoverableQuantity=num(rs?.technicallyRecoverableQuantity??raw.technicallyRecoverableQuantity);
+    const economicallyRecoverableQuantity=num(rs?.economicallyRecoverableQuantity??raw.economicallyRecoverableQuantity??rs?.recoverableQuantity??raw.recoverableQuantity);
+    const extractableReserveQuantity=num(rs?.extractableReserveQuantity??raw.extractableReserveQuantity??rs?.residualQuantity??raw.residualQuantity??rs?.recoverableQuantity??raw.recoverableQuantity??rs?.geologicalQuantity??raw.geologicalQuantity??raw.reserveQuantity);
+    const reserveQuantity=extractableReserveQuantity;
+    const recoverableQuantity=economicallyRecoverableQuantity;
+    const residualQuantity=extractableReserveQuantity;
     const unit=textOrNull(rs?.unit||raw.unit||cap?.unit);
     const productionRate=num(raw.productionRate??cap?.activeRate??cap?.dailyRate??cap?.nominalRate??prod?.activeRate??prod?.observedRate);
     const currentProduction=num(raw.currentProduction??raw.currentProductionRate??raw.lastOutputQuantity);
@@ -151,9 +155,11 @@
       resourceTypeId,
       location,
       reserve:{
-        geologicalQuantity:reserveQuantity,
+        geologicalQuantity:geologicalResourceQuantity,
         recoverableQuantity,
         residualQuantity,
+        geologicalResourceQuantity,technicallyRecoverableQuantity,economicallyRecoverableQuantity,extractableReserveQuantity,
+        quantityKind:textOrNull(rs?.quantityKind||raw.quantityKind)||'EXTRACTABLE_RESERVE',
         unit,
         rawText:textOrNull(raw.reserves||rs?.rawText||ref?.reserve?.rawText),
         authority:reserveAuthority,
