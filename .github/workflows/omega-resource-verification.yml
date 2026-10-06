@@ -101,6 +101,7 @@ jobs:
           run_gate settlementCompatibility 15 node test/omega_resource_request_and_settlement.test.mjs
           run_gate resourceResearch 15 node test/omega_resource_research_runtime.test.mjs
           run_gate resourceResearchEvidence 15 node test/omega_resource_research_evidence.test.mjs
+          run_gate resourceResearchPolicy 15 node --test test/omega_resource_research_policy.test.mjs
 
           export OMEGA_GATE_SYNTAX="${GATES[syntax]}"
           export OMEGA_GATE_RESOURCEENDOWMENT="${GATES[resourceEndowment]}"
@@ -116,6 +117,7 @@ jobs:
           export OMEGA_GATE_SETTLEMENTCOMPATIBILITY="${GATES[settlementCompatibility]}"
           export OMEGA_GATE_RESOURCERESEARCH="${GATES[resourceResearch]}"
           export OMEGA_GATE_RESOURCERESEARCHEVIDENCE="${GATES[resourceResearchEvidence]}"
+          export OMEGA_GATE_RESOURCERESEARCHPOLICY="${GATES[resourceResearchPolicy]}"
 
           node --input-type=module <<'NODE'
           import fs from 'node:fs';
@@ -133,7 +135,8 @@ jobs:
             logisticsV1: process.env.OMEGA_GATE_LOGISTICSV1,
             settlementCompatibility: process.env.OMEGA_GATE_SETTLEMENTCOMPATIBILITY,
             resourceResearch: process.env.OMEGA_GATE_RESOURCERESEARCH,
-            resourceResearchEvidence: process.env.OMEGA_GATE_RESOURCERESEARCHEVIDENCE
+            resourceResearchEvidence: process.env.OMEGA_GATE_RESOURCERESEARCHEVIDENCE,
+            resourceResearchPolicy: process.env.OMEGA_GATE_RESOURCERESEARCHPOLICY
           };
           const status = Object.values(gates).every((value) => value === 'PASS') ? 'VERIFIED' : 'INCOMPLETE';
           const certificate = {
@@ -152,7 +155,12 @@ jobs:
             },
             authorityPolicy: {
               observedStateCanNotBeOverwrittenBySimulatedState: true,
-              simulatedValuesAreExplicit: true
+              simulatedValuesAreExplicit: true,
+              standardsPolicyDataset: 'OMEGA_RESOURCE_RESEARCH_POLICY_V1',
+              mineralFramework: 'CRIRSCO_STYLE',
+              petroleumFramework: 'SPE_PRMS_2018',
+              universalDeclineRateAllowed: false,
+              commodityCalibrationSource: 'USGS_MCS_2026'
             }
           };
           fs.writeFileSync('omega_resource_verification_certificate.json', JSON.stringify(certificate, null, 2)+'\n');
