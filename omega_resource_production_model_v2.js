@@ -4,7 +4,7 @@
  */
 (function(g){
 'use strict';
-const VERSION='2.1.0',DAY=24,HORIZON=150000;
+const VERSION='2.0.0',DAY=24,HORIZON=150000;
 const UNITS={
  TONNES:['T','TON','TONS','TONNE','TONNES','MT','METRIC_TON','METRIC_TONS'],
  KG:['KG','KILOGRAM','KILOGRAMS'],GRAMS:['G','GRAM','GRAMS'],
