@@ -38,7 +38,7 @@ assert.equal(route[0].realWorldCapacityVerified,false);
 assert.equal(route[0].realWorldRouteVerified,false);
 assert.equal(route[0].deliveryExecutionMode,'SIMULATED_GAME_QUEUE');
 
-const multi=Logistics.plan({countryId:'BGD',warehouseId:'WH-BGD-RAW',batchId:'BATCH-2',resourceId:'iron_ore',quantity:320000,unit:'TONNES',candidateFactoryIds:['FACTORY-BGD-01']});
+const multi=L.plan({countryId:'BGD',warehouseId:'WH-BGD-RAW',batchId:'BATCH-2',resourceId:'iron_ore',quantity:320000,unit:'TONNES',candidateFactoryIds:['FACTORY-BGD-01']});
 assert.equal(multi.length,3);
 assert.equal(multi[0].legCount,3);
 assert.equal(multi[2].legIndex,3);
