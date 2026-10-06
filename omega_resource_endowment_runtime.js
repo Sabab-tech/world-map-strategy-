@@ -497,6 +497,14 @@ function batchFromExtraction(x,record){
       if(assetType==='MINE_SITE'){
         const binding=(g.GSRSK_Part04||g.GSRSK_ResourceIdentityEngine)?.getMineSiteReferenceBinding?.(asset)||null;
         if(binding?.occurrenceKey)return;
+        const quantitative=asset?.simulationReserveRecordId||
+          asset?.simulationReserveQuantity!=null||
+          asset?.reserveQuantity!=null||asset?.reservesQuantity!=null||
+          asset?.productionRate!=null||asset?.dailyRate!=null||asset?.outputRate!=null||
+          asset?.nominalRate!=null||asset?.nominalCapacity!=null||
+          asset?.quantitativeProfile?.reserve||asset?.quantitativeProfile?.production||
+          asset?.extractionProfile?.nominalCapacity;
+        if(!quantitative)return;
       }
       const siteKey=String(asset?.siteReferenceKey||('SITE:'+canonical(c)+':'+tok(siteName))).trim();
       const baseOccurrenceKey=(assetType==='MINE_SITE'?'SITE_OCC:':'FIELD_OCC:')+canonical(c)+':'+tok(siteKey);
