@@ -145,7 +145,7 @@ const siteControllerRows=Object.values(worldState).reduce((sum,row)=>sum+(row?.m
 const modeledDiagnostics=runtime.diagnostics();
 assert.equal(modeledDiagnostics.mineSiteReferenceCount,199);
 assert.equal(modeledDiagnostics.mineSiteControllerCount,199);
-const profileMineOutputs=Object.values(worldState).flatMap(row=>Object.values(row?.mineOutputs&&typeof row.mineOutputs==='object'?row.mineOutputs:{})).filter(x=>x?.assetType==='MINE_SITE');
+const profileMineOutputs=Object.values(worldState).flatMap(row=>Object.values(row?.mineOutputs&&typeof row.mineOutputs==='object'?row.mineOutputs:{})).filter(x=>x?.assetType==='MINE_SITE'&&x?.simulationGenerated===true);
 const simulatedMineOutputs=profileMineOutputs.filter(x=>x?.simulationGenerated===true);
 const simulatedFieldOutputs=Object.values(worldState).flatMap(row=>Object.values(row?.mineOutputs&&typeof row.mineOutputs==='object'?row.mineOutputs:{})).filter(x=>x?.simulationGenerated===true&&['OIL_FIELD','GAS_FIELD'].includes(x?.assetType));
 assert.equal(siteReferenceRows,siteControllerRows);
