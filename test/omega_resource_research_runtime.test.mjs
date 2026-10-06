@@ -21,7 +21,7 @@ globalThis.Game={state:{
 }};
 
 const handlers=new Map();
-const deepClone=x=>JSON.parse(JSON.stringify(x));
+const deepClone=x=>x===undefined?undefined:JSON.parse(JSON.stringify(x));
 function makeTx(country){
   const state=globalThis.Game.state;
   const base=deepClone(state.resource[country]||{});
