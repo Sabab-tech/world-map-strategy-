@@ -179,7 +179,7 @@ function resourceFromSite(site,profile){
  if(Array.isArray(p?.hydrocarbon_resource_base?.oil))add('crude_oil');
  if(Array.isArray(p?.hydrocarbon_resource_base?.naturalGas))add('natural_gas');
  if(Array.isArray(p?.hydrocarbon_resource_base?.coal))add('coal');
- return candidates.length?candidates[hash(site?.siteName||site)%candidates.length]:null;
+ return candidates.length===1?candidates[0]:null;
 }
 function siteModel(site,profile,countryId){
  const name=String(site?.siteName||site?.name||site?.mineName||site?.depositName||site||'').trim();
@@ -192,39 +192,51 @@ function siteModel(site,profile,countryId){
    const matchedStream=explicitStreams.find(x=>rid(typeof x==='string'?x:x?.resourceId||x?.resourceTypeId||x?.resId||x?.resource)===resourceId);const src=matchedStream&&typeof matchedStream==='object'?matchedStream:site||{};
    const r=ranges[resourceId]||{unit:'TONNES',min:250,max:5000,lifeMin:8,lifeMax:30,gradeMin:1,gradeMax:50};
    const seed=hash(String(countryId||'')+'|'+name+'|'+resourceId),u=seed/4294967296;
-   const nominalObs=num(src?.nominalCapacity??src?.nominalRate??productionInput?.nominalCapacity??productionInput?.nominalRate);
-   const observedRate=num(src?.productionRate??src?.dailyRate??src?.outputRate??productionInput?.productionRate??productionInput?.dailyRate??productionInput?.outputRate);
-   const annualValue=num(src?.annualProduction?.value??productionInput?.annualProduction?.value);
+   const qp=src?.quantitativeProfile&&typeof src.quantitativeProfile==='object'?src.quantitativeProfile:{};
+   const ep=src?.extractionProfile&&typeof src.extractionProfile==='object'?src.extractionProfile:{};
+   const nominalObs=num(src?.nominalCapacity??src?.nominalRate??productionInput?.nominalCapacity??productionInput?.nominalRate??qp?.production?.nominalCapacity??ep?.nominalCapacity);
+   const observedRate=num(src?.productionRate??src?.dailyRate??src?.outputRate??productionInput?.productionRate??productionInput?.dailyRate??productionInput?.outputRate??qp?.production?.rate??qp?.production?.dailyRate);
+   const annualValue=num(src?.annualProduction?.value??productionInput?.annualProduction?.value??qp?.production?.annual?.value??qp?.production?.annual);
    const annualRate=annualValue!==null?annualValue/365:null;
-   const minObs=num(src?.minimumCapacity??src?.minimumRate??productionInput?.minimumCapacity??productionInput?.minimumRate);
-   const maxObs=num(src?.maximumCapacity??src?.maximumRate??productionInput?.maximumCapacity??productionInput?.maximumRate);
-   const utilRaw=src?.utilization??src?.utilisation??productionInput?.utilization??productionInput?.utilisation;
-   const recoveryRaw=src?.recovery??productionInput?.recovery;
-   const declineRaw=src?.decline??src?.declineRate??productionInput?.decline??productionInput?.declineRate;
-   const maintenanceRaw=src?.maintenance??src?.maintenanceRate??productionInput?.maintenance??productionInput?.maintenanceRate;
-   const costObs=num(src?.operatingCost??src?.operatingCostPerUnit??productionInput?.operatingCost??productionInput?.operatingCostPerUnit);
+   const minObs=num(src?.minimumCapacity??src?.minimumRate??productionInput?.minimumCapacity??productionInput?.minimumRate??ep?.minimumCapacity);
+   const maxObs=num(src?.maximumCapacity??src?.maximumRate??productionInput?.maximumCapacity??productionInput?.maximumRate??ep?.maximumCapacity);
+   const utilRaw=src?.utilization??src?.utilisation??productionInput?.utilization??productionInput?.utilisation??ep?.utilization;
+   const recoveryRaw=src?.recovery??productionInput?.recovery??ep?.recovery;
+   const declineRaw=src?.decline??src?.declineRate??productionInput?.decline??productionInput?.declineRate??ep?.decline;
+   const maintenanceRaw=src?.maintenance??src?.maintenanceRate??productionInput?.maintenance??productionInput?.maintenanceRate??ep?.maintenance;
+   const costObs=num(src?.operatingCost??src?.operatingCostPerUnit??productionInput?.operatingCost??productionInput?.operatingCostPerUnit??qp?.production?.operatingCost??ep?.operatingCost);
    const utilization=utilRaw===undefined?(.65+.25*((seed>>>8)%100)/100):Number(utilRaw)>1?Number(utilRaw)/100:Number(utilRaw);
    const recovery=recoveryRaw===undefined?(.65+.3*((seed>>>16)%100)/100):Number(recoveryRaw)>1?Number(recoveryRaw)/100:Number(recoveryRaw);
    const decline=declineRaw===undefined?(.005+.02*((seed>>>4)%100)/100):Number(declineRaw)>1?Number(declineRaw)/100:Number(declineRaw);
    const maintenance=maintenanceRaw===undefined?(.03+.12*((seed>>>24)%100)/100):Number(maintenanceRaw)>1?Number(maintenanceRaw)/100:Number(maintenanceRaw);
    const modeledNominal=r.min+(r.max-r.min)*(.25+.7*u);
    const effectiveObservedRate=observedRate??annualRate;
-   const nominal=nominalObs??effectiveObservedRate??modeledNominal;
-   const minimum=minObs??(effectiveObservedRate!==null?effectiveObservedRate*.55:nominal*.55);
-   const maximum=maxObs??(effectiveObservedRate!==null?effectiveObservedRate*1.25:nominal*1.3);
-   const activeRate=effectiveObservedRate!==null?effectiveObservedRate:Math.max(0,nominal*utilization*(1-maintenance)*(1-decline));
+   const technology=g.Omega?.ResourceResearchRuntime?.getEngineeringEffect?.(countryId,src?.siteId||src?.siteReferenceKey||src?.id||site?.siteId||site?.siteReferenceKey||site?.id||null,resourceId,src?.siteType||site?.siteType||null)||{capacityMultiplier:1,recoveryAdd:0,utilizationAdd:0,maintenanceMultiplier:1,declineMultiplier:1,outputMultiplier:1,technologies:[]};
+   const clamp01=v=>Math.min(1,Math.max(0,Number(v)||0));
+   const utilizationFinal=clamp01(utilization+(Number(technology.utilizationAdd)||0));
+   const recoveryFinal=clamp01(recovery+(Number(technology.recoveryAdd)||0));
+   const maintenanceFinal=clamp01(maintenance*Math.max(.1,Number(technology.maintenanceMultiplier)||1));
+   const declineFinal=clamp01(decline*Math.max(.1,Number(technology.declineMultiplier)||1));
+   const capacityFactor=Math.max(.1,Number(technology.capacityMultiplier)||1),outputFactor=Math.max(.1,Number(technology.outputMultiplier)||1);
+   const nominalBase=nominalObs??effectiveObservedRate??modeledNominal;
+   const nominal=nominalBase*capacityFactor;
+   const minimumBase=minObs??(effectiveObservedRate!==null?effectiveObservedRate*.55:nominalBase*.55);
+   const maximumBase=maxObs??(effectiveObservedRate!==null?effectiveObservedRate*1.25:nominalBase*1.3);
+   const minimum=minimumBase*capacityFactor,maximum=maximumBase*capacityFactor;
+   const activeRate=effectiveObservedRate!==null?effectiveObservedRate*outputFactor:Math.max(0,nominal*utilizationFinal*(1-maintenanceFinal)*(1-declineFinal));
    const life=r.lifeMin+(r.lifeMax-r.lifeMin)*u;
    const scenarioReserve=num(src?.simulationReserveQuantity??src?.simulationReserve?.quantity??site?.simulationReserveQuantity??site?.simulationReserve?.quantity);
    const scenarioReserveUnit=String(src?.simulationReserveUnit??src?.simulationReserve?.unit??site?.simulationReserveUnit??site?.simulationReserve?.unit??'').trim()||null;
    const observedReserve=num(src?.reserveQuantity??src?.geologicalQuantity??src?.reservesQuantity);
    const reserveQuantity=scenarioReserve!==null?scenarioReserve:(observedReserve!==null?observedReserve:nominal*365*life*recovery);
    const reserveAuthority=scenarioReserve!==null?'SIMULATED':(observedReserve!==null?'OBSERVED':'SIMULATED');
-   const rawGrade=src?.grade??src?.oreGrade??site?.grade??null;
-   const gradeNumeric=rawGrade===null?null:(Number(String(rawGrade).match(/[-+]?\d+(?:\.\d+)?/)?.[0]));
-   const grade=Number.isFinite(gradeNumeric)?gradeNumeric:(resourceId==='crude_oil'||resourceId==='natural_gas'?null:r.gradeMin+(r.gradeMax-r.gradeMin)*((seed>>>12)%10000)/10000);
-   const gradeAuthority=rawGrade!==null?'OBSERVED':'SIMULATED';
-   const purity=src?.purity??site?.purity??null,apiRaw=src?.APIGravity??src?.apiGravity??site?.APIGravity??null;
-   const api=apiRaw===null?(resourceId==='crude_oil'?20+25*u:null):Number(apiRaw);
+   const gradeField=qp?.grade&&typeof qp.grade==='object'?qp.grade:null;
+   const rawGrade=src?.grade??src?.oreGrade??site?.grade??gradeField?.value??null;
+   const gradeNumeric=rawGrade===null?null:(typeof rawGrade==='number'?rawGrade:Number(String(rawGrade).match(/[-+]?\d+(?:\.\d+)?/)?.[0]));
+   const grade=Number.isFinite(gradeNumeric)?gradeNumeric:null;
+   const gradeAuthority=rawGrade!==null?'OBSERVED':'UNOBSERVED';
+   const purity=src?.purity??site?.purity??qp?.purity?.value??null,apiRaw=src?.APIGravity??src?.apiGravity??site?.APIGravity??qp?.APIGravity?.value??null;
+   const api=apiRaw===null?null:Number(apiRaw);
    const productionObserved=nominalObs!==null||observedRate!==null||annualRate!==null||minObs!==null||maxObs!==null;
    const streamAuthority=productionObserved||reserveAuthority==='OBSERVED'||rawGrade!==null||costObs!==null?'OBSERVED':'SIMULATED';
    return{
@@ -235,8 +247,8 @@ function siteModel(site,profile,countryId){
        purityStatus:purity!==null?'OBSERVED':'UNOBSERVED',apiGravityStatus:apiRaw!==null?'OBSERVED':'SIMULATED',
        normalized:{gradePercent:grade,concentrationPercent:null,purityFraction:purity===null?null:(Number(purity)>1?Number(purity)/100:Number(purity)),APIGravity:api},
        resourceId},
-     production:{nominalCapacity:nominal,minimumCapacity:minimum,maximumCapacity:maximum,utilization,recovery,decline,maintenance,operatingCost:costObs??null,activeRate,observedRate,
-       authority:productionObserved?'OBSERVED':'SIMULATED',dataStatus:productionObserved?'AVAILABLE':'SIMULATED',
+     production:{nominalCapacity:nominal,minimumCapacity:minimum,maximumCapacity:maximum,utilization:utilizationFinal,recovery:recoveryFinal,decline:declineFinal,maintenance:maintenanceFinal,operatingCost:costObs??null,activeRate,observedRate,
+       authority:productionObserved?'OBSERVED':'SIMULATED',dataStatus:productionObserved?'AVAILABLE':'SIMULATED',technologyAdjusted:Array.isArray(technology.technologies)&&technology.technologies.length>0,technologyEffects:technology,
        annualProduction:src?.annualProduction??productionInput?.annualProduction??null,
        rangeDataStatus:minObs!==null&&maxObs!==null?'OBSERVED':productionObserved?'DERIVED_FROM_OBSERVED_RATE':'SIMULATED',
        operatingCostStatus:costObs!==null?'OBSERVED':'UNOBSERVED'}
