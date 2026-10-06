@@ -195,7 +195,19 @@
     const raw=String(value??'').trim(),direct=id(raw);
     if(/^[A-Z]{3}$/i.test(raw))return{id:direct,raw:null,authority:'OMEGA_RUNTIME_ISO3_INPUT'};
     const bridge=g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity;
-    try{const hit=bridge?.resolveCountry?.(value);if(hit?.id){const raw=clone(hit.raw||null);return{id:id(hit.id),raw,authority:'OMEGA_CANONICAL_COUNTRY_IDENTITY'};}}catch(_){}
+    try{
+      const hit=bridge?.resolveCountry?.(value);
+      if(hit?.id){
+        const rawRecord=hit.raw?.raw||hit.raw?.datasets?.['countries.json']||hit.raw||null;
+        const raw=clone(hit.raw||null);
+        // Opponent routing uses the ISO2 country namespace for legacy state surfaces.
+        // Preserve explicit ISO3 inputs above, but normalize name aliases through countries.json.
+        const iso2=id(rawRecord?.iso2||rawRecord?.code||'');
+        if(/^[A-Z]{2}$/.test(iso2))return{id:iso2,raw,authority:'OMEGA_CANONICAL_COUNTRY_IDENTITY'};
+        const hitId=id(hit.id);
+        if(/^[A-Z]{2}$|^[A-Z]{3}$/.test(hitId))return{id:hitId,raw,authority:'OMEGA_CANONICAL_COUNTRY_IDENTITY'};
+      }
+    }catch(_){}
     return direct?{id:direct,raw:null,authority:'UNVERIFIED_INPUT'}:null;
   }
   function canonicalId(value){const hit=canonicalCountry(value);return hit?.id||id(value);}
