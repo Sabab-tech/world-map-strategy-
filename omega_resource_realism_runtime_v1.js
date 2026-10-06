@@ -258,7 +258,7 @@ function siteModel(site,profile,countryId){
    const streamAuthority=productionObserved||reserveAuthority==='OBSERVED'||rawGrade!==null||costObs!==null?'OBSERVED':'SIMULATED';
    return{
      resourceId,
-     reserve:{quantity:reserveQuantity,unit:scenarioReserveUnit||calibration.unit,authority:reserveAuthority,status:reserveAuthority,basis:scenarioReserve!==null?'PER_SITE_SCENARIO_RESERVE_DATA':(reserveAuthority==='OBSERVED'?'RESOURCE_JSON_SITE_FIELD':'production_capacity_x_modeled_asset_life'),fieldAuthority:reserveAuthority,scenarioRecord:scenarioReserve!==null},
+     reserve:{quantity:reserveQuantity,unit:scenarioReserveUnit||(CALIBRATION_RANGES[resourceId]?.unit||'TONNES'),authority:reserveAuthority,status:reserveAuthority,basis:scenarioReserve!==null?'PER_SITE_SCENARIO_RESERVE_DATA':(reserveAuthority==='OBSERVED'?'RESOURCE_JSON_SITE_FIELD':'production_capacity_x_modeled_asset_life'),fieldAuthority:reserveAuthority,scenarioRecord:scenarioReserve!==null},
      quality:{grade:rawGrade??grade,oreGrade:src?.oreGrade??rawGrade??grade,concentration:src?.concentration??null,assay:src?.assay??null,metalContent:src?.metalContent??null,purity,
        APIGravity:api,gradeStatus:gradeAuthority,concentrationStatus:src?.concentration!=null?'OBSERVED':'UNOBSERVED',assayStatus:src?.assay!=null?'OBSERVED':'UNOBSERVED',metalContentStatus:src?.metalContent!=null?'OBSERVED':'UNOBSERVED',
        purityStatus:purity!==null?'OBSERVED':'UNOBSERVED',apiGravityStatus:apiRaw!==null?'OBSERVED':'UNOBSERVED',
