@@ -17,7 +17,7 @@ test('research policy separates mineral and petroleum classification',()=>{
 
 test('research policy forbids universal decline assumptions and unsafe simulation authority',()=>{
   assert.equal(policy.production.decline.petroleum.universalDeclineRateAllowed,false);
-  assert.equal(policy.domains.production.decline.minerals.universalDeclineRateAllowed,false);
+  assert.equal(policy.production.decline.minerals.universalDeclineRateAllowed,false);
   assert.deepEqual(policy.authority.precedence,['OBSERVED','SIMULATED','UNOBSERVED']);
   assert.equal(policy.calibration.coverage,'OVER_90_COMMODITIES');
   assert.ok(policy.sources.some(x=>x.id==='IEA_2025_DECLINE'));
