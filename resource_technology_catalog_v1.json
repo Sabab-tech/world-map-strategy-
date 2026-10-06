@@ -28,6 +28,17 @@
       "transferTurns": 4,
       "effects": {
         "explorationEfficiencyMultiplier": 1.25
+      },
+      "prerequisites": [],
+      "minimumRelation": 40,
+      "researchRequirements": {
+        "minimumResearchCapability": 1,
+        "requiresSuccessfulResearchOrForeignTechnologyTransfer": true
+      },
+      "transferPolicy": {
+        "transferableAfterUnlock": true,
+        "donorMustPossessCapability": true,
+        "minimumBilateralRelation": 40
       }
     },
     {
@@ -58,6 +69,19 @@
         "capacityMultiplier": 1.08,
         "utilizationAdd": 0.04,
         "maintenanceMultiplier": 0.96
+      },
+      "prerequisites": [
+        "DIGITAL_MAINTENANCE"
+      ],
+      "minimumRelation": 40,
+      "researchRequirements": {
+        "minimumResearchCapability": 1,
+        "requiresSuccessfulResearchOrForeignTechnologyTransfer": true
+      },
+      "transferPolicy": {
+        "transferableAfterUnlock": true,
+        "donorMustPossessCapability": true,
+        "minimumBilateralRelation": 40
       }
     },
     {
@@ -87,6 +111,19 @@
       "effects": {
         "recoveryAdd": 0.04,
         "utilizationAdd": 0.02
+      },
+      "prerequisites": [
+        "ADVANCED_GEOPHYSICAL_EXPLORATION"
+      ],
+      "minimumRelation": 40,
+      "researchRequirements": {
+        "minimumResearchCapability": 1,
+        "requiresSuccessfulResearchOrForeignTechnologyTransfer": true
+      },
+      "transferPolicy": {
+        "transferableAfterUnlock": true,
+        "donorMustPossessCapability": true,
+        "minimumBilateralRelation": 40
       }
     },
     {
@@ -113,6 +150,19 @@
       "effects": {
         "recoveryAdd": 0.05,
         "maintenanceMultiplier": 0.97
+      },
+      "prerequisites": [
+        "ADVANCED_ORE_SORTING"
+      ],
+      "minimumRelation": 40,
+      "researchRequirements": {
+        "minimumResearchCapability": 1,
+        "requiresSuccessfulResearchOrForeignTechnologyTransfer": true
+      },
+      "transferPolicy": {
+        "transferableAfterUnlock": true,
+        "donorMustPossessCapability": true,
+        "minimumBilateralRelation": 40
       }
     },
     {
@@ -131,6 +181,19 @@
         "capacityMultiplier": 1.06,
         "recoveryAdd": 0.07,
         "declineMultiplier": 0.92
+      },
+      "prerequisites": [
+        "ADVANCED_GEOPHYSICAL_EXPLORATION"
+      ],
+      "minimumRelation": 40,
+      "researchRequirements": {
+        "minimumResearchCapability": 1,
+        "requiresSuccessfulResearchOrForeignTechnologyTransfer": true
+      },
+      "transferPolicy": {
+        "transferableAfterUnlock": true,
+        "donorMustPossessCapability": true,
+        "minimumBilateralRelation": 40
       }
     },
     {
@@ -150,6 +213,19 @@
         "recoveryAdd": 0.04,
         "maintenanceMultiplier": 0.95,
         "declineMultiplier": 0.95
+      },
+      "prerequisites": [
+        "ADVANCED_GEOPHYSICAL_EXPLORATION"
+      ],
+      "minimumRelation": 40,
+      "researchRequirements": {
+        "minimumResearchCapability": 1,
+        "requiresSuccessfulResearchOrForeignTechnologyTransfer": true
+      },
+      "transferPolicy": {
+        "transferableAfterUnlock": true,
+        "donorMustPossessCapability": true,
+        "minimumBilateralRelation": 40
       }
     },
     {
@@ -167,6 +243,17 @@
       "effects": {
         "maintenanceMultiplier": 0.88,
         "utilizationAdd": 0.02
+      },
+      "prerequisites": [],
+      "minimumRelation": 40,
+      "researchRequirements": {
+        "minimumResearchCapability": 1,
+        "requiresSuccessfulResearchOrForeignTechnologyTransfer": true
+      },
+      "transferPolicy": {
+        "transferableAfterUnlock": true,
+        "donorMustPossessCapability": true,
+        "minimumBilateralRelation": 40
       }
     },
     {
@@ -197,6 +284,19 @@
       "effects": {
         "utilizationAdd": 0.03,
         "maintenanceMultiplier": 0.97
+      },
+      "prerequisites": [
+        "DIGITAL_MAINTENANCE"
+      ],
+      "minimumRelation": 40,
+      "researchRequirements": {
+        "minimumResearchCapability": 1,
+        "requiresSuccessfulResearchOrForeignTechnologyTransfer": true
+      },
+      "transferPolicy": {
+        "transferableAfterUnlock": true,
+        "donorMustPossessCapability": true,
+        "minimumBilateralRelation": 40
       }
     },
     {
@@ -218,6 +318,19 @@
       "transferTurns": 5,
       "effects": {
         "recoveryAdd": 0.03
+      },
+      "prerequisites": [
+        "ADVANCED_ORE_SORTING"
+      ],
+      "minimumRelation": 40,
+      "researchRequirements": {
+        "minimumResearchCapability": 1,
+        "requiresSuccessfulResearchOrForeignTechnologyTransfer": true
+      },
+      "transferPolicy": {
+        "transferableAfterUnlock": true,
+        "donorMustPossessCapability": true,
+        "minimumBilateralRelation": 40
       }
     },
     {
@@ -244,6 +357,19 @@
         "capacityMultiplier": 1.05,
         "recoveryAdd": 0.02,
         "maintenanceMultiplier": 0.98
+      },
+      "prerequisites": [
+        "AUTONOMOUS_MINE_HAULAGE"
+      ],
+      "minimumRelation": 40,
+      "researchRequirements": {
+        "minimumResearchCapability": 1,
+        "requiresSuccessfulResearchOrForeignTechnologyTransfer": true
+      },
+      "transferPolicy": {
+        "transferableAfterUnlock": true,
+        "donorMustPossessCapability": true,
+        "minimumBilateralRelation": 40
       }
     },
     {
@@ -262,6 +388,19 @@
       "effects": {
         "capacityMultiplier": 1.1,
         "recoveryAdd": 0.08
+      },
+      "prerequisites": [
+        "ADVANCED_GEOPHYSICAL_EXPLORATION"
+      ],
+      "minimumRelation": 40,
+      "researchRequirements": {
+        "minimumResearchCapability": 1,
+        "requiresSuccessfulResearchOrForeignTechnologyTransfer": true
+      },
+      "transferPolicy": {
+        "transferableAfterUnlock": true,
+        "donorMustPossessCapability": true,
+        "minimumBilateralRelation": 40
       }
     },
     {
@@ -281,6 +420,19 @@
         "utilizationAdd": 0.05,
         "maintenanceMultiplier": 0.9,
         "declineMultiplier": 0.97
+      },
+      "prerequisites": [
+        "DIGITAL_MAINTENANCE"
+      ],
+      "minimumRelation": 40,
+      "researchRequirements": {
+        "minimumResearchCapability": 1,
+        "requiresSuccessfulResearchOrForeignTechnologyTransfer": true
+      },
+      "transferPolicy": {
+        "transferableAfterUnlock": true,
+        "donorMustPossessCapability": true,
+        "minimumBilateralRelation": 40
       }
     }
   ]
