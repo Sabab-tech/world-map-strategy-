@@ -107,7 +107,6 @@ jobs:
           run_gate resourceSimulationIntegrityV3 15 node test/omega_resource_simulation_integrity_v3.test.mjs
 
           export OMEGA_GATE_SYNTAX="${GATES[syntax]}"
-          export OMEGA_GATE_RESOURCEENDOWMENT="${GATES[resourceEndowment]}"
           export OMEGA_GATE_SITEDATACOMPLETENESS="${GATES[siteDataCompleteness]}"
           export OMEGA_GATE_RESOURCEECONOMY="${GATES[resourceEconomy]}"
           export OMEGA_GATE_AUTHORITATIVEADAPTER="${GATES[authoritativeAdapter]}"
