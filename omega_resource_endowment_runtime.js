@@ -19,6 +19,7 @@
   const tok=v=>String(v??'').trim().toLowerCase().replace(/[\s-]+/g,'_');
   const n=v=>{const x=Number(v);return Number.isFinite(x)?x:null;};
   const state=()=>g.Game?.state||g.gameState||{};
+  const simulationYear=()=>{const d=state()?.simulation?.date;if(d){const y=Number(String(d).slice(0,4));if(Number.isFinite(y))return y;}const sy=Number(state()?.simulation?.startYear);return Number.isFinite(sy)?sy:2015;};
   let simulationReserveMap=null,simulationReservePromise=null,researchEvidenceMap=null,researchEvidencePromise=null;
   async function loadSimulationReserveData(){
     if(simulationReserveMap)return{status:'READY',count:Object.keys(simulationReserveMap).length,reused:true};
@@ -68,14 +69,18 @@
     let row=null;for(const key of keys){if(researchEvidenceMap?.[key]){row=researchEvidenceMap[key];break;}}
     if(!row){const wanted=canonical(s.countryId||s.countryCode||s.country||'');const name=String(s.siteName||s.name||s.mineName||s.depositName||'').trim().toLowerCase();row=Object.values(researchEvidenceMap||{}).find(x=>canonical(x?.countryId||'')===wanted&&String(x?.siteName||x?.name||'').trim().toLowerCase()===name)||null;}
     if(!row)return s;
+    const facts=clone(row.facts||{});
     s.researchEvidence=clone(row.evidence||[]);
-    s.researchFacts=clone(row.facts||{});
+    s.researchFacts=facts;
     s.researchEvidenceDataset='resource_site_research_evidence_v1.json';
     s.researchEvidenceAuthority='SITE_SPECIFIC_WEB_RESEARCH';
-    const facts=row.facts||{};
+    const evidenceYear=Math.max(...(row.evidence||[]).map(x=>Number(String(x?.accessed||'').slice(0,4))).filter(Number.isFinite),simulationYear());
     const put=(k,v)=>{if(v===undefined||v===null||v==='')return;if(s[k]===undefined||s[k]===null||s[k]===''||s[k]==='UNOBSERVED')s[k]=clone(v);};
-    put('owner',facts.owner);put('operator',facts.operator);put('extractionMethod',facts.extractionMethod);
-    if(facts.quantitativeProfile)s.quantitativeProfile={...(s.quantitativeProfile||{}),...clone(facts.quantitativeProfile)};
+    // Stable physical identity can be used immediately; time-sensitive control/status is gated by evidence year.
+    put('extractionMethod',facts.extractionMethod);
+    if(facts.owner&&simulationYear()>=evidenceYear)put('owner',facts.owner);
+    if(facts.operator&&simulationYear()>=evidenceYear)put('operator',facts.operator);
+    if(facts.status&&simulationYear()>=evidenceYear)put('status',facts.status);
     if(facts.resourceClassification)s.resourceClassification=clone(facts.resourceClassification);
     if(facts.infrastructure)s.infrastructure={...(s.infrastructure||{}),...clone(facts.infrastructure)};
     if(facts.processingDependency)s.processingDependency=clone(facts.processingDependency);
@@ -85,6 +90,17 @@
     if(facts.siteContext)s.siteContext={...(s.siteContext||{}),...clone(facts.siteContext)};
     if(facts.depositContext)s.depositContext=clone(facts.depositContext);
     if(facts.currentAgreement)s.currentAgreement=clone(facts.currentAgreement);
+    // Quantitative facts carry their own year when available. Only measurements effective by the game year are promoted.
+    if(facts.quantitativeProfile){
+      const qp={...(s.quantitativeProfile||{})};
+      for(const [k,v] of Object.entries(facts.quantitativeProfile)){
+        const vy=Number(v?.year);
+        if(!Number.isFinite(vy)||vy<=simulationYear())qp[k]=clone(v);
+      }
+      s.quantitativeProfile=qp;
+    }
+    s.researchEffectiveYear=evidenceYear;
+    s.researchEffectiveForSimulationYear=simulationYear()>=evidenceYear;
     return s;
   }
 
