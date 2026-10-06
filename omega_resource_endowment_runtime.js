@@ -554,12 +554,9 @@ function batchFromExtraction(x,record){
       }
     };
     mineSiteReferenceRows(c).forEach(ref=>add(ref,null,null,'MINE_SITE'));
-    const h=p?.hydrocarbon_resource_base||{};
-    for(const key of ['oil','naturalGas']){
-      const list=Array.isArray(h[key])?h[key]:[];
-      list.forEach(name=>add({name,sourcePath:'GSRSK_Master_CountryProfiles_v14.countryProfiles.'+canonical(c)+'.hydrocarbon_resource_base.'+key},
-        null,key==='oil'?'crude_oil':'natural_gas',key==='oil'?'OIL_FIELD':'GAS_FIELD'));
-    }
+    // Country-level hydrocarbon bases describe a resource domain, not a physical field identity.
+    // Physical OIL_FIELD/GAS_FIELD execution rows must originate from an identified site reference
+    // or canonical occurrence, never from a base/basin label alone.
     siteExecutionRowCache.set(cacheKey,rows);
     return rows;
   }
