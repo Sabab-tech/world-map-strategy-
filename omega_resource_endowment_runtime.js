@@ -21,6 +21,7 @@
   const state=()=>g.Game?.state||g.gameState||{};
   const simulationYear=()=>{const d=state()?.simulation?.date;if(d){const y=Number(String(d).slice(0,4));if(Number.isFinite(y))return y;}const sy=Number(state()?.simulation?.startYear);return Number.isFinite(sy)?sy:2015;};
   let simulationReserveMap=null,simulationReservePromise=null,researchEvidenceMap=null,researchEvidencePromise=null;
+  const siteReferenceRowCache=new Map(),siteExecutionRowCache=new Map();
   async function loadSimulationReserveData(){
     if(simulationReserveMap)return{status:'READY',count:Object.keys(simulationReserveMap).length,reused:true};
     if(simulationReservePromise)return simulationReservePromise;
@@ -126,6 +127,8 @@
       s.simulationReserveRecordId=row.siteId;
       s.simulationReserveAuthority='SCENARIO_SIMULATION_DATA';
       s.simulationReserveSourceDataset='resource_site_reserve_simulation_v1.json';
+      const simulationIdentity= row?.linkedDepositId||row?.depositKey||row?.depositId||row?.mineId||null;
+      if(simulationIdentity&&!s.linkedDepositId)s.linkedDepositId=simulationIdentity;
       const resourceId=rid(s.resourceId||s.resourceTypeId||s.resId||row.resourceId);
       const petroleum=resourceId==='crude_oil'||resourceId==='natural_gas';
       s.researchPolicyDataset='OMEGA_RESOURCE_RESEARCH_POLICY_V1';
@@ -265,6 +268,7 @@
     };
   }
   function compile(){
+    siteReferenceRowCache.clear();siteExecutionRowCache.clear();
     try{g.Omega?.ResourceProductionModelV2?.patch?.();}catch(_){}
     const p4=g.GSRSK_Part04||g.GSRSK_ResourceIdentityEngine;
     const p5=g.GSRSK_Part05||g.GSRSK_ResourceReserveExtractionEngine;
@@ -295,14 +299,16 @@
     }
   }
   function mineSiteReferenceRows(c){
-    const wanted=canonical(c),reg=g.__OmegaResourceIdentityRegistry;
+    const wanted=canonical(c),cacheKey=wanted+'|'+simulationYear();
+    if(siteReferenceRowCache.has(cacheKey))return siteReferenceRowCache.get(cacheKey);
+    const reg=g.__OmegaResourceIdentityRegistry;
     try{
       const primary=reg?.getMineSiteReferencesByCountry?.(wanted)||[];
-      if(Array.isArray(primary)&&primary.length)return primary.map(enrichSimulationReserve).map(enrichResearchEvidence);
+      if(Array.isArray(primary)&&primary.length){const resolved=primary.map(enrichSimulationReserve).map(enrichResearchEvidence);siteReferenceRowCache.set(cacheKey,resolved);return resolved;}
     }catch(_){}
     const refs=g.__OmegaResourceKnowledgeModel?.refCatalog?.allReferences;
-    if(Array.isArray(refs))return refs.filter(ref=>canonical(ref?.countryCode||ref?.countryId||ref?.country)===wanted).map(enrichSimulationReserve).map(enrichResearchEvidence);
-    return[];
+    if(Array.isArray(refs)){const resolved=refs.filter(ref=>canonical(ref?.countryCode||ref?.countryId||ref?.country)===wanted).map(enrichSimulationReserve).map(enrichResearchEvidence);siteReferenceRowCache.set(cacheKey,resolved);return resolved;}
+    siteReferenceRowCache.set(cacheKey,[]);return[];
   }
   function occurrenceRows(c){
     const reg=g.__OmegaResourceIdentityRegistry;const e=engine();const rr=g.__OmegaResourceReserveRegistry;if(!reg||!e||!rr)return[];
@@ -446,10 +452,14 @@ function batchFromExtraction(x,record){
       if(!siteKey)continue;
       const prior=old[siteKey]&&typeof old[siteKey]==='object'?clone(old[siteKey]):{};
       const pathId='MINE_PATH:'+canonical(c)+':'+siteKey;
+      const p4=g.GSRSK_Part04||g.GSRSK_ResourceIdentityEngine||null;
+      const binding=p4?.getMineSiteReferenceBinding?.(site)||null;
+      const boundKey=String(binding?.occurrenceKey||site?.canonicalOccurrenceKey||'').trim();
+      const gate=(g.Omega?.ResourceRealism||g.OmegaResourceRealism)?.operationalGate?.(site,simulationYear())||{executable:true,reason:'NO_SITE_GATE'};
       const existingLinked=Array.isArray(prior.linkedOccurrenceKeys)?prior.linkedOccurrenceKeys:[];
-      const attachedRows=(rows||[]).filter(x=>String(x?.siteReferenceKey||'')===siteKey);
+      const attachedRows=boundKey?(rows||[]).filter(x=>String(x?.occurrenceKey||'')===boundKey):(rows||[]).filter(x=>String(x?.siteReferenceKey||'')===siteKey);
       const attachedKeys=attachedRows.map(x=>String(x.occurrenceKey||'')).filter(Boolean);
-      const linked=[...new Set([...existingLinked,...attachedKeys])].filter(k=>executableKeys.has(String(k)));
+      const linked=(gate?.executable===false)?[]:[...new Set(boundKey?[boundKey,...existingLinked.filter(k=>String(k)===boundKey)]:[...existingLinked,...attachedKeys])].filter(k=>executableKeys.has(String(k)));
       controllers[siteKey]={
         ...prior,
         siteReferenceKey:siteKey,
@@ -464,6 +474,9 @@ function batchFromExtraction(x,record){
         extractionExecutable:linked.length>0,
         quantitativeDataState:linked.length>0?'AVAILABLE':(String(site?.operation?.extractionEligibility||'').toUpperCase()==='NON_EXECUTABLE'?'BLOCKED_BY_OPERATIONAL_GATE':'MISSING_FROM_SITE_REFERENCE'),
         linkedOccurrenceKeys:linked,
+        canonicalOccurrenceKey:boundKey||null,
+        bindingAuthority:binding?.authority||site?.bindingAuthority||'UNRESOLVED',
+        operationalGate:clone(gate),
         extractionGateAuthority:site?.evidenceResolution?.version?'FIELD_LEVEL_TEMPORAL_EVIDENCE':'RESOURCE_JSON',
         pathId,
         extractionPathStatus:linked.length>0?'EXECUTABLE_OCCURRENCE_ATTACHED':'BLOCKED_MISSING_QUANTITATIVE_DATA',
@@ -476,9 +489,15 @@ function batchFromExtraction(x,record){
 
 
   function siteExecutionRows(c,existing={}){
+    const cacheKey=canonical(c)+'|'+turn()+'|'+simulationYear();
+    if(siteExecutionRowCache.has(cacheKey))return siteExecutionRowCache.get(cacheKey);
     const p=profile(c)||{},rows=[],seen=new Set(),realism=g.Omega?.ResourceRealism||g.OmegaResourceRealism;
     const add=(asset,index,explicitResource=null,assetType='MINE_SITE')=>{
       const siteName=String(asset?.siteName||asset?.name||asset?.mineName||asset?.depositName||asset||'').trim();if(!siteName)return;
+      if(assetType==='MINE_SITE'){
+        const binding=(g.GSRSK_Part04||g.GSRSK_ResourceIdentityEngine)?.getMineSiteReferenceBinding?.(asset)||null;
+        if(binding?.occurrenceKey)return;
+      }
       const siteKey=String(asset?.siteReferenceKey||('SITE:'+canonical(c)+':'+tok(siteName))).trim();
       const baseOccurrenceKey=(assetType==='MINE_SITE'?'SITE_OCC:':'FIELD_OCC:')+canonical(c)+':'+tok(siteKey);
       const model=realism?.siteModel?.({...clone(asset||{}),siteReferenceKey:siteKey,resourceId:explicitResource||asset?.resourceId||asset?.resourceTypeId},p,canonical(c));
@@ -541,6 +560,7 @@ function batchFromExtraction(x,record){
       list.forEach(name=>add({name,sourcePath:'GSRSK_Master_CountryProfiles_v14.countryProfiles.'+canonical(c)+'.hydrocarbon_resource_base.'+key},
         null,key==='oil'?'crude_oil':'natural_gas',key==='oil'?'OIL_FIELD':'GAS_FIELD'));
     }
+    siteExecutionRowCache.set(cacheKey,rows);
     return rows;
   }
 
@@ -1068,7 +1088,17 @@ function batchFromExtraction(x,record){
     g.__omegaResourceExtractionTurn=t;
     install();
     const results=[];
+    const e=engine(),profileMap=e?.countryProfiles&&typeof e.countryProfiles==='object'?e.countryProfiles:{};
+    const structuredCountries=new Set((Array.isArray(e?.deposits)?e.deposits:[]).map(x=>canonical(x?.countryCode||x?.countryIso3||x?.countryId||x?.iso3||x?.country||'')));
     for(const c of countries()){
+      const p=profileMap[c]||{};
+      const sites=p?.resource_infrastructure_context?.mineSites||p?.infrastructure_context?.mineSites||[];
+      const hydro=p?.hydrocarbon_resource_base||{};
+      const hasProfileAssets=(Array.isArray(sites)&&sites.length>0)||(Array.isArray(hydro?.oil)&&hydro.oil.length>0)||(Array.isArray(hydro?.naturalGas)&&hydro.naturalGas.length>0);
+      if(!hasProfileAssets&&!structuredCountries.has(c)){
+        results.push({countryId:c,result:{status:'SKIPPED_NO_RESOURCE_ASSETS',countryId:c}});
+        continue;
+      }
       const existing=state()?.resource?.[c]||{};
       if(!Array.isArray(existing.mineSiteReferences)||!existing.mineSiteControllers){
         const hydrate=dispatch('OMEGA_RESOURCE_ENDOWMENT_HYDRATE',c,{correlationId:'RESOURCE-HYDRATE-LAZY-'+t+'-'+c});
