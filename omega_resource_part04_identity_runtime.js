@@ -231,7 +231,7 @@
         overall:overallAuthority(authorities),
         reserve:reserveQuantity===null?'UNOBSERVED':reserveAuthority,
         production:productionRate===null?'UNOBSERVED':productionAuthority,
-        quality:(grade===null&&purity===null&&concentration===null)?'UNOBSERVED':qualityAuthority
+        quality:(grade===null&&gradeText===null&&purity===null&&concentration===null)?'UNOBSERVED':qualityAuthority
       },
       extractionExecutable:executable,
       quantitativeExtractionDataAvailable:reserveQuantity!==null&&productionRate!==null&&Boolean(resourceTypeId)
