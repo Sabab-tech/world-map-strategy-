@@ -1056,7 +1056,7 @@
                 "legacyReferenceName": "Moa Bay Nickel Mine",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-10-03",
+                "reviewedAt": "2026-10-06",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "commercialExtraction": true,
@@ -1146,9 +1146,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "OBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "PARTIAL",
                   "structuredEvidence": false,
-                  "coreFieldCount": 1
+                  "coreFieldCount": 1,
+                  "overall": "PARTIAL"
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVALIDATED",
@@ -1263,9 +1263,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "OBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "PARTIAL",
                     "structuredEvidence": false,
-                    "coreFieldCount": 1
+                    "coreFieldCount": 1,
+                    "overall": "PARTIAL"
                   }
                 },
                 "verification": {
@@ -1332,7 +1332,7 @@
                 "legacyReferenceName": "Punta Gorda Extraction Facility",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-10-03",
+                "reviewedAt": "2026-10-06",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "mineralTarget": "limonite and serpentine",
@@ -1436,9 +1436,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED",
                   "structuredEvidence": false,
-                  "coreFieldCount": 0
+                  "coreFieldCount": 0,
+                  "overall": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -1538,9 +1538,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED",
                     "structuredEvidence": false,
-                    "coreFieldCount": 0
+                    "coreFieldCount": 0,
+                    "overall": "UNOBSERVED"
                   }
                 },
                 "verification": {
@@ -1607,7 +1607,7 @@
                 "legacyReferenceName": "Nicaro Nickel Complex",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-10-03",
+                "reviewedAt": "2026-10-06",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "closedYear": 2012,
@@ -1723,9 +1723,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED",
                   "structuredEvidence": false,
-                  "coreFieldCount": 0
+                  "coreFieldCount": 0,
+                  "overall": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -1825,9 +1825,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED",
                     "structuredEvidence": false,
-                    "coreFieldCount": 0
+                    "coreFieldCount": 0,
+                    "overall": "UNOBSERVED"
                   }
                 },
                 "verification": {
@@ -2288,7 +2288,7 @@
                 "legacyReferenceName": "Jamaica Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-10-03",
+                "reviewedAt": "2026-10-06",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "commercialExtraction": true,
@@ -2379,9 +2379,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED",
                   "structuredEvidence": false,
-                  "coreFieldCount": 0
+                  "coreFieldCount": 0,
+                  "overall": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -2484,9 +2484,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED",
                     "structuredEvidence": false,
-                    "coreFieldCount": 0
+                    "coreFieldCount": 0,
+                    "overall": "UNOBSERVED"
                   }
                 },
                 "verification": {
@@ -2972,7 +2972,7 @@
                 "legacyReferenceName": "Haiti Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-10-03",
+                "reviewedAt": "2026-10-06",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "commercialExtraction": true,
@@ -3066,9 +3066,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED",
                   "structuredEvidence": false,
-                  "coreFieldCount": 0
+                  "coreFieldCount": 0,
+                  "overall": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -3168,9 +3168,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED",
                     "structuredEvidence": false,
-                    "coreFieldCount": 0
+                    "coreFieldCount": 0,
+                    "overall": "UNOBSERVED"
                   }
                 },
                 "verification": {
@@ -3652,7 +3652,7 @@
                 "legacyReferenceName": "Dominican Republic Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-10-03",
+                "reviewedAt": "2026-10-06",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "commercialExtraction": true,
@@ -3740,9 +3740,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED",
                   "structuredEvidence": false,
-                  "coreFieldCount": 0
+                  "coreFieldCount": 0,
+                  "overall": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -3842,9 +3842,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED",
                     "structuredEvidence": false,
-                    "coreFieldCount": 0
+                    "coreFieldCount": 0,
+                    "overall": "UNOBSERVED"
                   }
                 },
                 "verification": {
@@ -4320,7 +4320,7 @@
                 "legacyReferenceName": "Trinidad and Tobago Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-10-03",
+                "reviewedAt": "2026-10-06",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "commercialExtraction": true,
@@ -4413,9 +4413,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED",
                   "structuredEvidence": false,
-                  "coreFieldCount": 0
+                  "coreFieldCount": 0,
+                  "overall": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -4520,9 +4520,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED",
                     "structuredEvidence": false,
-                    "coreFieldCount": 0
+                    "coreFieldCount": 0,
+                    "overall": "UNOBSERVED"
                   }
                 },
                 "verification": {
@@ -4988,7 +4988,7 @@
                 "legacyReferenceName": "Bahamas Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-10-03",
+                "reviewedAt": "2026-10-06",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "historicalUse": "Industrial aragonite sand mining; artificial-island and access-channel dredging",
@@ -5091,9 +5091,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED",
                   "structuredEvidence": false,
-                  "coreFieldCount": 0
+                  "coreFieldCount": 0,
+                  "overall": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -5192,9 +5192,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED",
                     "structuredEvidence": false,
-                    "coreFieldCount": 0
+                    "coreFieldCount": 0,
+                    "overall": "UNOBSERVED"
                   }
                 },
                 "verification": {
@@ -5641,7 +5641,7 @@
                 "legacyReferenceName": "Barbados Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-10-03",
+                "reviewedAt": "2026-10-06",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "commercialExtraction": true,
@@ -5729,9 +5729,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED",
                   "structuredEvidence": false,
-                  "coreFieldCount": 0
+                  "coreFieldCount": 0,
+                  "overall": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -5831,9 +5831,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED",
                     "structuredEvidence": false,
-                    "coreFieldCount": 0
+                    "coreFieldCount": 0,
+                    "overall": "UNOBSERVED"
                   }
                 },
                 "verification": {
@@ -6309,7 +6309,7 @@
                 "legacyReferenceName": "Saint Lucia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-10-03",
+                "reviewedAt": "2026-10-06",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "materialProducts": [
@@ -6415,9 +6415,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED",
                   "structuredEvidence": false,
-                  "coreFieldCount": 0
+                  "coreFieldCount": 0,
+                  "overall": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -6516,9 +6516,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED",
                     "structuredEvidence": false,
-                    "coreFieldCount": 0
+                    "coreFieldCount": 0,
+                    "overall": "UNOBSERVED"
                   }
                 },
                 "verification": {
@@ -6966,7 +6966,7 @@
                 "legacyReferenceName": "Saint Vincent and the Grenadines Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-10-03",
+                "reviewedAt": "2026-10-06",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "commercialExtraction": true,
@@ -7059,9 +7059,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED",
                   "structuredEvidence": false,
-                  "coreFieldCount": 0
+                  "coreFieldCount": 0,
+                  "overall": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -7160,9 +7160,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED",
                     "structuredEvidence": false,
-                    "coreFieldCount": 0
+                    "coreFieldCount": 0,
+                    "overall": "UNOBSERVED"
                   }
                 },
                 "verification": {
@@ -7632,7 +7632,7 @@
                 "legacyReferenceName": "Grenada Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-10-03",
+                "reviewedAt": "2026-10-06",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "materialSubtype": "Basalt aggregate",
@@ -7735,9 +7735,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED",
                   "structuredEvidence": false,
-                  "coreFieldCount": 0
+                  "coreFieldCount": 0,
+                  "overall": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -7836,9 +7836,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED",
                     "structuredEvidence": false,
-                    "coreFieldCount": 0
+                    "coreFieldCount": 0,
+                    "overall": "UNOBSERVED"
                   }
                 },
                 "verification": {
@@ -8286,7 +8286,7 @@
                 "legacyReferenceName": "Antigua and Barbuda Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-10-03",
+                "reviewedAt": "2026-10-06",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "commercialExtraction": true,
@@ -8380,9 +8380,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED",
                   "structuredEvidence": false,
-                  "coreFieldCount": 0
+                  "coreFieldCount": 0,
+                  "overall": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -8482,9 +8482,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED",
                     "structuredEvidence": false,
-                    "coreFieldCount": 0
+                    "coreFieldCount": 0,
+                    "overall": "UNOBSERVED"
                   }
                 },
                 "verification": {
@@ -8952,7 +8952,7 @@
                 "legacyReferenceName": "Saint Kitts and Nevis Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-10-03",
+                "reviewedAt": "2026-10-06",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "commercialExtraction": true,
@@ -9046,9 +9046,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED",
                   "structuredEvidence": false,
-                  "coreFieldCount": 0
+                  "coreFieldCount": 0,
+                  "overall": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -9148,9 +9148,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED",
                     "structuredEvidence": false,
-                    "coreFieldCount": 0
+                    "coreFieldCount": 0,
+                    "overall": "UNOBSERVED"
                   }
                 },
                 "verification": {
@@ -9620,7 +9620,7 @@
                 "legacyReferenceName": "Dominica Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-10-03",
+                "reviewedAt": "2026-10-06",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "materialSubtype": "Pumice",
@@ -9718,9 +9718,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED",
                   "structuredEvidence": false,
-                  "coreFieldCount": 0
+                  "coreFieldCount": 0,
+                  "overall": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -9819,9 +9819,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED",
                     "structuredEvidence": false,
-                    "coreFieldCount": 0
+                    "coreFieldCount": 0,
+                    "overall": "UNOBSERVED"
                   }
                 },
                 "verification": {
@@ -10272,7 +10272,7 @@
                 "legacyReferenceName": "Suriname Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-10-03",
+                "reviewedAt": "2026-10-06",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "commercialExtraction": true,
@@ -10310,7 +10310,7 @@
                 "reserve": {
                   "quantity": 4500000,
                   "unit": "troy_ounces_gold",
-                  "status": "OBSERVED_ATTRIBUTABLE",
+                  "status": "OBSERVED",
                   "year": 2025,
                   "sourceScope": "Newmont_75_percent_attributable_reserve"
                 },
@@ -10326,7 +10326,7 @@
                   "unit": null,
                   "status": "UNOBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false,
+                "quantitativeExtractionDataAvailable": true,
                 "quantitativeProvenance": {
                   "structuredSource": null,
                   "capacitySource": null,
@@ -10357,12 +10357,12 @@
                 "operation": "COMPLETE",
                 "ownership": "REPORTED",
                 "quantitative": {
-                  "reserve": "OBSERVED_ATTRIBUTABLE",
+                  "reserve": "OBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "PARTIAL",
                   "structuredEvidence": false,
-                  "coreFieldCount": 1
+                  "coreFieldCount": 1,
+                  "overall": "PARTIAL"
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -10417,7 +10417,7 @@
                   "reserve": {
                     "quantity": 4500000,
                     "unit": "troy_ounces_gold",
-                    "status": "OBSERVED_ATTRIBUTABLE",
+                    "status": "OBSERVED",
                     "year": 2025,
                     "sourceScope": "Newmont_75_percent_attributable_reserve"
                   },
@@ -10459,12 +10459,12 @@
                     "promotedAt": "2026-10-03"
                   },
                   "completeness": {
-                    "reserve": "OBSERVED_ATTRIBUTABLE",
+                    "reserve": "OBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "PARTIAL",
                     "structuredEvidence": false,
-                    "coreFieldCount": 1
+                    "coreFieldCount": 1,
+                    "overall": "PARTIAL"
                   }
                 },
                 "verification": {
@@ -10951,7 +10951,7 @@
                 "legacyReferenceName": "Guyana Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-10-03",
+                "reviewedAt": "2026-10-06",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "commercialExtraction": true,
@@ -11006,7 +11006,7 @@
                   "unit": null,
                   "status": "UNOBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false,
+                "quantitativeExtractionDataAvailable": true,
                 "quantitativeProvenance": {
                   "structuredSource": null,
                   "capacitySource": null,
@@ -11040,9 +11040,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "OBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "PARTIAL",
                   "structuredEvidence": false,
-                  "coreFieldCount": 1
+                  "coreFieldCount": 1,
+                  "overall": "PARTIAL"
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -11143,9 +11143,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "OBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "PARTIAL",
                     "structuredEvidence": false,
-                    "coreFieldCount": 1
+                    "coreFieldCount": 1,
+                    "overall": "PARTIAL"
                   }
                 },
                 "verification": {
@@ -11620,7 +11620,7 @@
                 "legacyReferenceName": "Australia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-10-03",
+                "reviewedAt": "2026-10-06",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "commercialExtraction": true,
@@ -11674,7 +11674,7 @@
                   "unit": null,
                   "status": "UNOBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false,
+                "quantitativeExtractionDataAvailable": true,
                 "quantitativeProvenance": {
                   "structuredSource": null,
                   "capacitySource": null,
@@ -11713,9 +11713,9 @@
                   "reserve": "OBSERVED",
                   "production": "REPORTED",
                   "grade": "UNOBSERVED",
-                  "overall": "PARTIAL",
                   "structuredEvidence": false,
-                  "coreFieldCount": 2
+                  "coreFieldCount": 2,
+                  "overall": "PARTIAL"
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -11816,9 +11816,9 @@
                     "reserve": "OBSERVED",
                     "production": "REPORTED",
                     "grade": "UNOBSERVED",
-                    "overall": "PARTIAL",
                     "structuredEvidence": false,
-                    "coreFieldCount": 2
+                    "coreFieldCount": 2,
+                    "overall": "PARTIAL"
                   }
                 },
                 "verification": {
@@ -12326,7 +12326,7 @@
                 "legacyReferenceName": "New Zealand Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-10-03",
+                "reviewedAt": "2026-10-06",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "commercialExtraction": true,
@@ -12381,7 +12381,7 @@
                   "unit": null,
                   "status": "UNOBSERVED"
                 },
-                "quantitativeExtractionDataAvailable": false,
+                "quantitativeExtractionDataAvailable": true,
                 "quantitativeProvenance": {
                   "structuredSource": null,
                   "capacitySource": null,
@@ -12415,9 +12415,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "OBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "PARTIAL",
                   "structuredEvidence": false,
-                  "coreFieldCount": 1
+                  "coreFieldCount": 1,
+                  "overall": "PARTIAL"
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -12518,9 +12518,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "OBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "PARTIAL",
                     "structuredEvidence": false,
-                    "coreFieldCount": 1
+                    "coreFieldCount": 1,
+                    "overall": "PARTIAL"
                   }
                 },
                 "verification": {
@@ -13015,7 +13015,7 @@
                 "legacyReferenceName": "Papua New Guinea Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-10-03",
+                "reviewedAt": "2026-10-06",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "commercialExtraction": true,
@@ -13103,9 +13103,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED",
                   "structuredEvidence": false,
-                  "coreFieldCount": 0
+                  "coreFieldCount": 0,
+                  "overall": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -13205,9 +13205,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED",
                     "structuredEvidence": false,
-                    "coreFieldCount": 0
+                    "coreFieldCount": 0,
+                    "overall": "UNOBSERVED"
                   }
                 },
                 "verification": {
@@ -13702,7 +13702,7 @@
                 "legacyReferenceName": "Fiji Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-10-03",
+                "reviewedAt": "2026-10-06",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "commercialExtraction": true,
@@ -13789,9 +13789,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED",
                   "structuredEvidence": false,
-                  "coreFieldCount": 0
+                  "coreFieldCount": 0,
+                  "overall": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -13890,9 +13890,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED",
                     "structuredEvidence": false,
-                    "coreFieldCount": 0
+                    "coreFieldCount": 0,
+                    "overall": "UNOBSERVED"
                   }
                 },
                 "verification": {
@@ -14390,7 +14390,7 @@
                 "legacyReferenceName": "Solomon Islands Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-10-03",
+                "reviewedAt": "2026-10-06",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "processingPath": "HEAP_LEACH_AND_FLOTATION",
@@ -14495,9 +14495,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED",
                   "structuredEvidence": false,
-                  "coreFieldCount": 0
+                  "coreFieldCount": 0,
+                  "overall": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -14597,9 +14597,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED",
                     "structuredEvidence": false,
-                    "coreFieldCount": 0
+                    "coreFieldCount": 0,
+                    "overall": "UNOBSERVED"
                   }
                 },
                 "verification": {
@@ -15047,7 +15047,7 @@
                 "legacyReferenceName": "Vanuatu Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-10-03",
+                "reviewedAt": "2026-10-06",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
                 "webReview": "Targeted authoritative repair rechecked 2026-10-02"
               },
@@ -15141,9 +15141,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED",
                   "structuredEvidence": false,
-                  "coreFieldCount": 0
+                  "coreFieldCount": 0,
+                  "overall": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -15242,9 +15242,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED",
                     "structuredEvidence": false,
-                    "coreFieldCount": 0
+                    "coreFieldCount": 0,
+                    "overall": "UNOBSERVED"
                   }
                 },
                 "verification": {
@@ -15715,7 +15715,7 @@
                 "legacyReferenceName": "Samoa Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-10-03",
+                "reviewedAt": "2026-10-06",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "operatorEvidenceStatus": "UNOBSERVED",
@@ -15825,9 +15825,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED",
                   "structuredEvidence": false,
-                  "coreFieldCount": 0
+                  "coreFieldCount": 0,
+                  "overall": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -15926,9 +15926,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED",
                     "structuredEvidence": false,
-                    "coreFieldCount": 0
+                    "coreFieldCount": 0,
+                    "overall": "UNOBSERVED"
                   }
                 },
                 "verification": {
@@ -16388,7 +16388,7 @@
                 "legacyReferenceName": "Tonga Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-10-03",
+                "reviewedAt": "2026-10-06",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
                 "webReview": "Targeted authoritative repair rechecked 2026-10-02"
               },
@@ -16502,9 +16502,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED",
                   "structuredEvidence": false,
-                  "coreFieldCount": 0
+                  "coreFieldCount": 0,
+                  "overall": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -16603,9 +16603,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED",
                     "structuredEvidence": false,
-                    "coreFieldCount": 0
+                    "coreFieldCount": 0,
+                    "overall": "UNOBSERVED"
                   }
                 },
                 "verification": {
@@ -17060,7 +17060,7 @@
                 "legacyReferenceName": "Kiribati Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-10-03",
+                "reviewedAt": "2026-10-06",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "sourceAreas": [
@@ -17179,9 +17179,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED",
                   "structuredEvidence": false,
-                  "coreFieldCount": 0
+                  "coreFieldCount": 0,
+                  "overall": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -17280,9 +17280,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED",
                     "structuredEvidence": false,
-                    "coreFieldCount": 0
+                    "coreFieldCount": 0,
+                    "overall": "UNOBSERVED"
                   }
                 },
                 "verification": {
@@ -17730,7 +17730,7 @@
                 "legacyReferenceName": "Tuvalu Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-10-03",
+                "reviewedAt": "2026-10-06",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "historicalUse": "WWII airstrip aggregate extraction",
@@ -17847,9 +17847,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED",
                   "structuredEvidence": false,
-                  "coreFieldCount": 0
+                  "coreFieldCount": 0,
+                  "overall": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -17948,9 +17948,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED",
                     "structuredEvidence": false,
-                    "coreFieldCount": 0
+                    "coreFieldCount": 0,
+                    "overall": "UNOBSERVED"
                   }
                 },
                 "verification": {
@@ -18409,7 +18409,7 @@
                 "legacyReferenceName": "Nauru Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-10-03",
+                "reviewedAt": "2026-10-06",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "annualProduction": 130000,
@@ -18514,9 +18514,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "OBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "PARTIAL",
                   "structuredEvidence": false,
-                  "coreFieldCount": 1
+                  "coreFieldCount": 1,
+                  "overall": "PARTIAL"
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -18619,9 +18619,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "OBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "PARTIAL",
                     "structuredEvidence": false,
-                    "coreFieldCount": 1
+                    "coreFieldCount": 1,
+                    "overall": "PARTIAL"
                   }
                 },
                 "verification": {
@@ -19069,7 +19069,7 @@
                 "legacyReferenceName": "Marshall Islands Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-10-03",
+                "reviewedAt": "2026-10-06",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "materialProducts": [
@@ -19171,9 +19171,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED",
                   "structuredEvidence": false,
-                  "coreFieldCount": 0
+                  "coreFieldCount": 0,
+                  "overall": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -19272,9 +19272,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED",
                     "structuredEvidence": false,
-                    "coreFieldCount": 0
+                    "coreFieldCount": 0,
+                    "overall": "UNOBSERVED"
                   }
                 },
                 "verification": {
@@ -19722,7 +19722,7 @@
                 "legacyReferenceName": "Micronesia Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-10-03",
+                "reviewedAt": "2026-10-06",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH",
                 "webReview": "Targeted authoritative repair rechecked 2026-10-02"
               },
@@ -19827,9 +19827,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED",
                   "structuredEvidence": false,
-                  "coreFieldCount": 0
+                  "coreFieldCount": 0,
+                  "overall": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -19928,9 +19928,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED",
                     "structuredEvidence": false,
-                    "coreFieldCount": 0
+                    "coreFieldCount": 0,
+                    "overall": "UNOBSERVED"
                   }
                 },
                 "verification": {
@@ -20384,7 +20384,7 @@
                 "legacyReferenceName": "Palau Primary Mining and Extraction Sites",
                 "quantitativeSourceStatus": "NO_SITE_LEVEL_QUANTITATIVE_VALUE_CAPTURED",
                 "note": "Core site identity, location and operating attributes were researched from public sources. Quantitative values are added only where an explicit public site-level figure was identified; otherwise the field remains UNOBSERVED rather than being invented.",
-                "reviewedAt": "2026-10-03",
+                "reviewedAt": "2026-10-06",
                 "webRevalidationMethod": "SITE_SPECIFIC_WEB_SEARCH"
               },
               "locationDetail": "Oikull, Airai, Palau",
@@ -20496,9 +20496,9 @@
                   "reserve": "UNOBSERVED",
                   "production": "UNOBSERVED",
                   "grade": "UNOBSERVED",
-                  "overall": "UNOBSERVED",
                   "structuredEvidence": false,
-                  "coreFieldCount": 0
+                  "coreFieldCount": 0,
+                  "overall": "UNOBSERVED"
                 },
                 "provenance": "PRESENT",
                 "webResearch": "SITE_SPECIFIC_WEB_REVIEWED",
@@ -20598,9 +20598,9 @@
                     "reserve": "UNOBSERVED",
                     "production": "UNOBSERVED",
                     "grade": "UNOBSERVED",
-                    "overall": "UNOBSERVED",
                     "structuredEvidence": false,
-                    "coreFieldCount": 0
+                    "coreFieldCount": 0,
+                    "overall": "UNOBSERVED"
                   }
                 },
                 "verification": {
