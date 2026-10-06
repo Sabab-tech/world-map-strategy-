@@ -1,0 +1,149 @@
+{
+  "schemaVersion": "1.0.0",
+  "datasetId": "OMEGA_RESOURCE_RESEARCH_STANDARDS_V1",
+  "effectiveDate": "2026-10-06",
+  "purpose": "Defines authoritative reporting and data-source policy for OMEGA resource research. It is a rulebook, not a second resource database.",
+  "mineral": {
+    "primary": "CRIRSCO International Reporting Template",
+    "references": [
+      {
+        "name": "CRIRSCO International Reporting Template",
+        "effective": "2024-06",
+        "url": "https://crirsco.com/documentation/crirsco-international-reporting-template/"
+      },
+      {
+        "name": "JORC Code 2012",
+        "url": "https://crirsco.com/documentation/jorc/"
+      },
+      {
+        "name": "NI 43-101 / Technical Report framework",
+        "url": "https://www.osc.ca/sites/default/files/pdfs/irps/ni_20110624_43-101_mineral-projects.pdf"
+      }
+    ],
+    "resourceClasses": [
+      "INFERRED",
+      "INDICATED",
+      "MEASURED"
+    ],
+    "reserveClasses": [
+      "PROBABLE",
+      "PROVEN"
+    ],
+    "requiredPrinciples": [
+      "quantity_and_grade",
+      "classification",
+      "effective_date",
+      "technical_basis",
+      "modifying_factors",
+      "risks_and_uncertainty",
+      "source_evidence"
+    ]
+  },
+  "petroleum": {
+    "primary": "SPE Petroleum Resources Management System",
+    "version": "2018 v1.03",
+    "references": [
+      {
+        "name": "2018 PRMS update",
+        "url": "https://jpt.spe.org/2018-prms-update-completed"
+      },
+      {
+        "name": "PRMS application guidance reference",
+        "url": "https://jpt.spe.org/guidelines-updated-for-application-of-the-prms"
+      }
+    ],
+    "classes": [
+      "PRODUCTION",
+      "RESERVES",
+      "CONTINGENT_RESOURCES",
+      "PROSPECTIVE_RESOURCES",
+      "UNRECOVERABLE"
+    ],
+    "reserveCategories": [
+      "1P",
+      "2P",
+      "3P"
+    ],
+    "principles": [
+      "project_based",
+      "chance_of_commerciality",
+      "technical_uncertainty",
+      "project_maturity_and_commerciality",
+      "production_measurement"
+    ]
+  },
+  "globalCalibration": {
+    "mineralProduction": "USGS Mineral Commodity Summaries 2026",
+    "mineralCountryReports": "USGS Minerals Yearbook Volume III 2024",
+    "petroleumDecline": "IEA The Implications of Oil and Gas Field Decline Rates dataset 2025",
+    "notes": [
+      "Global statistics calibrate commodity/country totals; they do not override site-specific evidence.",
+      "IEA decline observations are calibration evidence, not a universal site decline constant."
+    ]
+  },
+  "sourcePriority": [
+    {
+      "rank": 1,
+      "classes": [
+        "GOVERNMENT_REGULATOR",
+        "GEOLOGICAL_SURVEY",
+        "TECHNICAL_REPORT",
+        "OPERATOR_PRIMARY"
+      ]
+    },
+    {
+      "rank": 2,
+      "classes": [
+        "STOCK_EXCHANGE_FILING",
+        "NI_43_101_REPORT",
+        "JORC_REPORT",
+        "PRMS_REPORT"
+      ]
+    },
+    {
+      "rank": 3,
+      "classes": [
+        "USGS",
+        "IEA",
+        "EIA",
+        "OPEC",
+        "NATIONAL_STATISTICS"
+      ]
+    },
+    {
+      "rank": 4,
+      "classes": [
+        "REPUTABLE_INDUSTRY_PUBLICATION",
+        "ACADEMIC_PAPER"
+      ]
+    },
+    {
+      "rank": 5,
+      "classes": [
+        "SECONDARY_DATABASE",
+        "NEWS"
+      ]
+    },
+    {
+      "rank": 6,
+      "classes": [
+        "ENGINEERING_ESTIMATE"
+      ]
+    }
+  ],
+  "authorityRules": {
+    "observed": "Directly stated by source for the same asset and relevant date.",
+    "derived": "Computed only from observed fields with an auditable formula.",
+    "estimated": "Engineering/analogue estimate with explicit basis and confidence.",
+    "simulated": "Gameplay scenario value. Never presented as observed real-world data.",
+    "unobserved": "No sufficient evidence. Runtime must not silently fabricate it."
+  },
+  "simulationRules": {
+    "longHorizonScenarioReserve": true,
+    "scenarioReserveCanActAsGameEndowment": true,
+    "scenarioReserveMustRemainMarkedSimulated": true,
+    "researchCannotDirectlyIncreasePhysicalReserve": true,
+    "explorationCanChangeModeledResourceStateOnlyThroughExplicitResearchEvent": true,
+    "technologyChangesEngineeringAndRecoveryNotGeologicalExistence": true
+  }
+}
