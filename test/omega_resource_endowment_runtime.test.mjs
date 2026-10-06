@@ -134,11 +134,14 @@ const hydratedAssetRows=Object.values(worldState).reduce((sum,row)=>sum+(Array.i
 const structuredMineRows=Object.values(worldState).reduce((sum,row)=>sum+(Array.isArray(row?.mines)?row.mines.filter(x=>!x?.simulationGenerated).length:0),0);
 const siteReferenceRows=Object.values(worldState).reduce((sum,row)=>sum+(Array.isArray(row?.mineSiteReferences)?row.mineSiteReferences.length:0),0);
 const siteControllerRows=Object.values(worldState).reduce((sum,row)=>sum+(row?.mineSiteControllers&&typeof row.mineSiteControllers==='object'?Object.keys(row.mineSiteControllers).length:0),0);
+const modeledDiagnostics=runtime.diagnostics();
+assert.equal(modeledDiagnostics.mineSiteReferenceCount,199);
+assert.equal(modeledDiagnostics.mineSiteControllerCount,199);
 const profileMineOutputs=Object.values(worldState).flatMap(row=>Object.values(row?.mineOutputs&&typeof row.mineOutputs==='object'?row.mineOutputs:{})).filter(x=>x?.assetType==='MINE_SITE');
 const simulatedMineOutputs=profileMineOutputs.filter(x=>x?.simulationGenerated===true);
 const simulatedFieldOutputs=Object.values(worldState).flatMap(row=>Object.values(row?.mineOutputs&&typeof row.mineOutputs==='object'?row.mineOutputs:{})).filter(x=>x?.simulationGenerated===true&&['OIL_FIELD','GAS_FIELD'].includes(x?.assetType));
-assert.equal(siteReferenceRows,199);
-assert.equal(siteControllerRows,199);
+assert.equal(siteReferenceRows,siteControllerRows);
+assert.ok(siteControllerRows>0);
 assert.ok(structuredMineRows>=engine.deposits.length,'structured mine rows must include canonical runtime deposits plus profile-derived structured sites');
 const unifiedReferences=Object.values(worldState).flatMap(row=>Array.isArray(row?.mineSiteReferences)?row.mineSiteReferences:[]);
 assert.equal(unifiedReferences.length,199);
@@ -184,7 +187,10 @@ for(const [countryId,row] of Object.entries(worldState)){
 }
 assert.equal(profileMineOutputs.length,executableSiteControllerCount);
 
-const udayapurKey=Object.keys(worldState.NPL?.mineSiteControllers||{}).find(k=>k.toLowerCase().includes('udayapur'));
+const npl2015=runtime.hydrateCountry('NPL');
+assert.equal(npl2015.status,'APPLIED',JSON.stringify(npl2015));
+const npl2015State=runtime.countryResourceState('NPL');
+const udayapurKey=Object.keys(npl2015State?.mineSiteControllers||{}).find(k=>k.toLowerCase().includes('udayapur'));
 assert(udayapurKey,'Udayapur site controller must exist');
 assert.equal(worldState.NPL.mineSiteControllers[udayapurKey].extractionExecutable,false,'2015 must respect canonical suspended status');
 
