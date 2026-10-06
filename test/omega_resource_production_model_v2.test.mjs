@@ -68,10 +68,10 @@ assert.equal(copper.productionModel.maintenance,0.05);
 
 const simulated=P.productionModel({},1000000);
 assert.equal(simulated.authority,'SIMULATED');
-assert.equal(simulated.nominalCapacity,10);
-assert.equal(simulated.minimumCapacity,5.5);
-assert.equal(simulated.maximumCapacity,13);
-assert.equal(simulated.simulatedRate,10);
+assert.ok(Math.abs(simulated.nominalCapacity-(1000000/150000))<1e-12);
+assert.ok(Math.abs(simulated.minimumCapacity-(1000000/150000*.55))<1e-12);
+assert.ok(Math.abs(simulated.maximumCapacity-(1000000/150000*1.3))<1e-12);
+assert.ok(Math.abs(simulated.simulatedRate-(1000000/150000))<1e-12);
 assert.equal(simulated.dataStatus,'UNOBSERVED');
 
 const cap=compiled.registry.getCapacityForOccurrence('OCC:TEST:GRASBERG:COM:copper');
