@@ -70,6 +70,7 @@ jobs:
             omega_resource_production_model_v2.js
             omega_resource_realism_runtime_v1.js
             omega_resource_logistics_runtime_v1.js
+            omega_resource_research_runtime_v1.js
             omega_resource_country_boundary_guard.js
             omega_resource_action_execution_runtime.js
             omega_resource_economy_runtime_v2.js
@@ -97,6 +98,8 @@ jobs:
           run_gate realismV1 15 node test/omega_resource_realism_runtime_v1.test.mjs
           run_gate logisticsV1 15 node test/omega_resource_logistics_runtime_v1.test.mjs
           run_gate settlementCompatibility 15 node test/omega_resource_request_and_settlement.test.mjs
+          run_gate resourceResearch 15 node test/omega_resource_research_runtime.test.mjs
+          run_gate resourceResearchEvidence 15 node test/omega_resource_research_evidence.test.mjs
 
           export OMEGA_GATE_SYNTAX="${GATES[syntax]}"
           export OMEGA_GATE_RESOURCEENDOWMENT="${GATES[resourceEndowment]}"
@@ -110,6 +113,8 @@ jobs:
           export OMEGA_GATE_REALISMV1="${GATES[realismV1]}"
           export OMEGA_GATE_LOGISTICSV1="${GATES[logisticsV1]}"
           export OMEGA_GATE_SETTLEMENTCOMPATIBILITY="${GATES[settlementCompatibility]}"
+          export OMEGA_GATE_RESOURCERESEARCH="${GATES[resourceResearch]}"
+          export OMEGA_GATE_RESOURCERESEARCHEVIDENCE="${GATES[resourceResearchEvidence]}"
 
           node --input-type=module <<'NODE'
           import fs from 'node:fs';
@@ -125,7 +130,9 @@ jobs:
             productionModelV2: process.env.OMEGA_GATE_PRODUCTIONMODELV2,
             realismV1: process.env.OMEGA_GATE_REALISMV1,
             logisticsV1: process.env.OMEGA_GATE_LOGISTICSV1,
-            settlementCompatibility: process.env.OMEGA_GATE_SETTLEMENTCOMPATIBILITY
+            settlementCompatibility: process.env.OMEGA_GATE_SETTLEMENTCOMPATIBILITY,
+            resourceResearch: process.env.OMEGA_GATE_RESOURCERESEARCH,
+            resourceResearchEvidence: process.env.OMEGA_GATE_RESOURCERESEARCHEVIDENCE
           };
           const status = Object.values(gates).every((value) => value === 'PASS') ? 'VERIFIED' : 'INCOMPLETE';
           const certificate = {
