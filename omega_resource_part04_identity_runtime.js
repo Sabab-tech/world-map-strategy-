@@ -120,9 +120,9 @@
       raw.reserveQuantity??
       quantitativeReserve.quantity
     );
-    const reserveQuantity=extractableReserveQuantity;
-    const recoverableQuantity=economicallyRecoverableQuantity;
-    const residualQuantity=extractableReserveQuantity;
+    const reserveQuantity=extractableReserveQuantity!==null&&extractableReserveQuantity>0?extractableReserveQuantity:null;
+    const recoverableQuantity=economicallyRecoverableQuantity!==null&&economicallyRecoverableQuantity>0?economicallyRecoverableQuantity:null;
+    const residualQuantity=reserveQuantity;
     const unit=textOrNull(rs?.unit||raw.unit||cap?.unit||quantitativeReserve.unit);
     const productionRateRaw=num(raw.productionRate??cap?.activeRate??cap?.dailyRate??cap?.nominalRate??prod?.activeRate??prod?.observedRate);
     const productionRate=productionRateRaw!==null&&productionRateRaw>0?productionRateRaw:null;
