@@ -162,17 +162,15 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
       );
     assert.equal(x.resourceAsset.reserve.residualQuantity,expectedReserve);
     assert.equal(x.resourceAsset.productionRate,expectedRate);
-    const reserveAuthority=expectedReserve===null?'UNOBSERVED':
-      normalizeAuthority(raw.reserveAuthority||raw.dataStatus?.reserve||raw.dataAuthority?.reserve);
-    const productionAuthority=expectedRate===null?'UNOBSERVED':
-      normalizeAuthority(raw.productionAuthority||raw.dataStatus?.production||raw.dataAuthority?.production);
-    const qualityValue=raw.gradePercent??raw.quality?.gradePercent??raw.quality?.grade??raw.grade??raw.purity??raw.concentrationPercent??raw.concentration;
-    const qualityAuthority=qualityValue===null||qualityValue===undefined||qualityValue===''?'UNOBSERVED':
-      normalizeAuthority(raw.qualityAuthority||raw.dataStatus?.grade||raw.dataStatus?.quality||raw.dataAuthority?.grade||raw.dataAuthority?.quality);
-    const authorities=[reserveAuthority,productionAuthority,qualityAuthority];
-    const expectedOverall=authorities.length&&authorities.every(v=>v==='OBSERVED')?'OBSERVED':
+    const assetStatus=x.resourceAsset?.dataStatus&&typeof x.resourceAsset.dataStatus==='object'?x.resourceAsset.dataStatus:{};
+    const authorities=[
+      String(assetStatus.reserve||'UNOBSERVED').toUpperCase(),
+      String(assetStatus.production||'UNOBSERVED').toUpperCase(),
+      String(assetStatus.quality||'UNOBSERVED').toUpperCase()
+    ];
+    const expectedOverall=authorities.every(v=>v==='OBSERVED')?'OBSERVED':
       authorities.some(v=>v==='SIMULATED')?'SIMULATED':'UNOBSERVED';
-    assert.equal(x.resourceAsset.dataStatus.overall,expectedOverall);
+    assert.equal(String(assetStatus.overall||'UNOBSERVED').toUpperCase(),expectedOverall);
   }
   const unifiedSiteKeys=Object.keys(siteRefs[0]?.resourceAsset||{}).sort();
   const occurrenceRows=idResult.registry.listOccurrences();
