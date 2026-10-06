@@ -809,10 +809,11 @@ function batchFromExtraction(x,record){
         continue;
       }
       const path=minePaths[siteKey]&&typeof minePaths[siteKey]==='object'?clone(minePaths[siteKey]):{
-        pathId,siteReferenceKey:siteKey,siteName:controller.siteName,countryId:c,resourceId:null,
+        pathId,pathKind:'SITE_CONTROLLER',siteReferenceKey:siteKey,siteName:controller.siteName,countryId:c,resourceId:null,
         sourceCountryId:c,destinationCountryId:c,stages:[],status:'READY',
         lastTurn:null,batchIds:[],inventoryAllocations:[]
       };
+      path.pathKind=path.pathKind||'SITE_CONTROLLER';
       if(!Array.isArray(path.stages))path.stages=[];
       if(path.stages.length===0)path.stages.push({stage:'SITE_CONTROLLER_SCAN',turn:turn(),status:'EXECUTABLE'});
       path.lastTurn=turn();
@@ -821,9 +822,10 @@ function batchFromExtraction(x,record){
     for(const x of selected){
       const pathId='MINE_PATH:'+c+':'+String(x.occurrenceKey);
       const existingPath=minePaths[x.occurrenceKey]&&typeof minePaths[x.occurrenceKey]==='object'?clone(minePaths[x.occurrenceKey]):{
-        pathId,occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,countryId:c,resourceId:x.resourceId,
+        pathId,pathKind:'OCCURRENCE_EXTRACTION',occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,countryId:c,resourceId:x.resourceId,
         sourceCountryId:c,destinationCountryId:c,stages:[],status:'READY',lastTurn:null,batchIds:[],inventoryAllocations:[]
       };
+      existingPath.pathKind=existingPath.pathKind||'OCCURRENCE_EXTRACTION';
       if(!Array.isArray(existingPath.stages))existingPath.stages=[];
       if(!Array.isArray(existingPath.batchIds))existingPath.batchIds=[];
       if(!Array.isArray(existingPath.inventoryAllocations))existingPath.inventoryAllocations=[];
