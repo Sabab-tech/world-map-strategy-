@@ -19,7 +19,7 @@ function plan(payload){
  const r=realism();if(!r?.planRoute||!r?.dispatchFromWarehouse)return{status:'UNAVAILABLE',reason:'RESOURCE_REALISM_RUNTIME_UNAVAILABLE'};
  const ids=Array.isArray(payload?.candidateFactoryIds)?payload.candidateFactoryIds.filter(Boolean):[];
  const mode=payload?.transportMode||routeMode(payload?.resourceId||payload?.batch?.resourceId);
- const targets=ids.length?ids.slice(0,25):[null],out=[];
+ const targets=ids.length?[ids[0]]:[null],out=[];
  for(const factoryId of targets){
    const common={warehouseId:payload?.warehouseId||null,batchId:payload?.batchId||payload?.batch?.batchId||null,resourceId:payload?.resourceId||payload?.batch?.resourceId||null,
      quantity:Number(payload?.quantity)||0,unit:payload?.unit||payload?.batch?.unit||null,sourceNode:payload?.warehouseId||'WAREHOUSE',destinationNode:factoryId||'FACTORY',mode};
