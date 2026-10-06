@@ -37,10 +37,11 @@
         const map={};
         for(const row of rows)if(row?.siteId)map[String(row.siteId)]=clone(row);
         simulationReserveMap=map;
+        g.__OmegaResourceSiteReferenceCount=Number(data?.siteCount)||rows.length;
         g.OmegaResourceSiteReserveSimulationData=data;
         g.Omega=g.Omega||{};
         g.Omega.ResourceSiteReserveSimulationData=data;
-        return{status:'READY',count:rows.length};
+        return{status:'READY',count:rows.length,siteCount:Number(data?.siteCount)||rows.length};
       }catch(e){
         simulationReserveMap={};
         return{status:'FAILED',count:0,reason:String(e?.message||e)};
@@ -686,10 +687,19 @@ function batchFromExtraction(x,record){
     });
     const existingResourceState=ctx.stateTransaction.get('resource')||{};
     const persistedMineStates=ctx.stateTransaction.get('resource.mineStates')||{};
+    const canonicalRows=occurrenceRows(c);
+    const siteRows=siteExecutionRows(c,{mineStates:persistedMineStates});
+    const signature=row=>[
+      canonical(c),
+      String(row?.resourceId||'').toLowerCase(),
+      String(row?.depositName||row?.rawDeposit?.name||'').trim().toLowerCase().replace(/[^a-z0-9]+/g,'')
+    ].join('|');
+    const canonicalSignatures=new Set(canonicalRows.map(signature));
     const rowSeen=new Set(),rows=[];
-    for(const row of [...occurrenceRows(c),...siteExecutionRows(c,{mineStates:persistedMineStates})]){
+    for(const row of [...canonicalRows,...siteRows]){
       const key=String(row?.occurrenceKey||'');
       if(!key||rowSeen.has(key))continue;
+      if(row?.isSimulationGenerated===true&&canonicalSignatures.has(signature(row)))continue;
       rowSeen.add(key);rows.push(row);
     }
     const selected=Array.isArray(cmd?.payload?.occurrenceKeys)&&cmd.payload.occurrenceKeys.length
