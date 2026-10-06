@@ -32,6 +32,13 @@ assert.ok(sim.technicallyRecoverableQuantity>sim.economicallyRecoverableQuantity
 assert.ok(sim.economicallyRecoverableQuantity>sim.extractableReserveQuantity);
 assert.equal(sim.extractableReserveQuantity,10000000);
 
+// Reserve, capacity and mine-life semantics remain mathematically inspectable without mutating the reserve.
+const lifeCheck=R.siteModel({...baseSite,simulationYear:2015},{resource_domain:{knownResourceTypes:['copper']}},'TST').commodityStreams[0];
+assert.ok(lifeCheck.production.derivedDepletionLifeYears>0);
+assert.equal(lifeCheck.production.derivedDepletionLifeYears,lifeCheck.reserve.extractableReserveQuantity/(lifeCheck.production.activeRate*365));
+assert.equal(lifeCheck.reserve.derivedDepletionLifeYears,lifeCheck.production.derivedDepletionLifeYears);
+assert.equal(typeof lifeCheck.reserve.lifeConsistencyStatus,'string');
+ 
 // An observed reserve remains usable, but geology is null until an explicit geological quantity exists.
 const observed=R.siteModel({siteReferenceKey:'SITE:OBS:01',siteName:'Observed',resourceId:'copper',reserveQuantity:2000000,productionRate:500,grade:'1.8%',simulationYear:2026},{},'OBS');
 const obs=observed.commodityStreams[0].reserve;
