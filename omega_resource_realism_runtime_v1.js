@@ -24,6 +24,45 @@ const alias={
  chromite:['chromite','chromium'],silver:['silver','ag'],zinc:['zinc','zn'],platinum:['platinum','pgm'],basalt:['basalt'],construction_aggregate:['aggregate','sand','gravel','crushed stone'],
  coral_aggregate:['coral aggregate','coral'],salt:['salt','brine'],dolomite:['dolomite'],magnesite:['magnesite'],oil_shale:['oil shale'],marble:['marble'],boron:['boron','borate'],aragonite:['aragonite'],granite:['granite'],ilmenite:['ilmenite','titanium'],diatomite:['diatomite','diatomaceous earth']
 };
+const CALIBRATION_RANGES={
+ crude_oil:{unit:'BBL',min:5000,max:50000,lifeMin:12,lifeMax:35,gradeMin:20,gradeMax:50},
+ natural_gas:{unit:'BCM',min:.005,max:.08,lifeMin:15,lifeMax:40,gradeMin:85,gradeMax:99},
+ gold:{unit:'TROY_OUNCES',min:100,max:2500,lifeMin:10,lifeMax:30,gradeMin:.5,gradeMax:8},
+ copper:{unit:'TONNES',min:500,max:5000,lifeMin:12,lifeMax:35,gradeMin:.2,gradeMax:4},
+ iron_ore:{unit:'TONNES',min:5000,max:50000,lifeMin:10,lifeMax:40,gradeMin:25,gradeMax:68},
+ bauxite:{unit:'TONNES',min:3000,max:30000,lifeMin:10,lifeMax:35,gradeMin:25,gradeMax:55},
+ nickel:{unit:'TONNES',min:500,max:8000,lifeMin:10,lifeMax:35,gradeMin:.8,gradeMax:4},
+ cobalt:{unit:'TONNES',min:50,max:1200,lifeMin:8,lifeMax:25,gradeMin:.05,gradeMax:1.5},
+ lithium:{unit:'TONNES',min:500,max:7000,lifeMin:8,lifeMax:30,gradeMin:.3,gradeMax:3},
+ rare_earth:{unit:'TONNES',min:200,max:4000,lifeMin:10,lifeMax:30,gradeMin:1,gradeMax:12},
+ uranium:{unit:'TONNES',min:100,max:2500,lifeMin:10,lifeMax:30,gradeMin:.03,gradeMax:.5},
+ coal:{unit:'TONNES',min:5000,max:70000,lifeMin:10,lifeMax:45,gradeMin:35,gradeMax:85},
+ phosphate:{unit:'TONNES',min:5000,max:60000,lifeMin:10,lifeMax:40,gradeMin:15,gradeMax:35},
+ potash:{unit:'TONNES',min:5000,max:60000,lifeMin:10,lifeMax:40,gradeMin:10,gradeMax:35},
+ graphite:{unit:'TONNES',min:100,max:5000,lifeMin:8,lifeMax:30,gradeMin:70,gradeMax:98},
+ rutile:{unit:'TONNES',min:1000,max:100000,lifeMin:10,lifeMax:40,gradeMin:.3,gradeMax:2},
+ manganese:{unit:'TONNES',min:5000,max:200000,lifeMin:10,lifeMax:40,gradeMin:20,gradeMax:55},
+ diamond:{unit:'CARATS',min:100000,max:2000000,lifeMin:8,lifeMax:25,gradeMin:0,gradeMax:1},
+ tin:{unit:'TONNES',min:100,max:10000,lifeMin:8,lifeMax:30,gradeMin:.1,gradeMax:5},
+ tungsten:{unit:'TONNES',min:100,max:10000,lifeMin:8,lifeMax:30,gradeMin:.1,gradeMax:2},
+ chromite:{unit:'TONNES',min:1000,max:100000,lifeMin:10,lifeMax:35,gradeMin:20,gradeMax:55},
+ silver:{unit:'TROY_OUNCES',min:100000,max:10000000,lifeMin:8,lifeMax:30,gradeMin:20,gradeMax:500},
+ zinc:{unit:'TONNES',min:1000,max:100000,lifeMin:8,lifeMax:30,gradeMin:2,gradeMax:20},
+ platinum:{unit:'TROY_OUNCES',min:100000,max:5000000,lifeMin:8,lifeMax:35,gradeMin:1,gradeMax:10},
+ basalt:{unit:'TONNES',min:10000,max:500000,lifeMin:5,lifeMax:25,gradeMin:90,gradeMax:99},
+ construction_aggregate:{unit:'TONNES',min:10000,max:500000,lifeMin:5,lifeMax:25,gradeMin:90,gradeMax:99},
+ coral_aggregate:{unit:'TONNES',min:10000,max:300000,lifeMin:5,lifeMax:20,gradeMin:90,gradeMax:99},
+ salt:{unit:'TONNES',min:10000,max:1000000,lifeMin:10,lifeMax:40,gradeMin:80,gradeMax:99},
+ dolomite:{unit:'TONNES',min:10000,max:500000,lifeMin:10,lifeMax:30,gradeMin:70,gradeMax:98},
+ magnesite:{unit:'TONNES',min:1000,max:100000,lifeMin:10,lifeMax:30,gradeMin:70,gradeMax:95},
+ oil_shale:{unit:'TONNES',min:10000,max:500000,lifeMin:10,lifeMax:40,gradeMin:1,gradeMax:20},
+ marble:{unit:'TONNES',min:5000,max:100000,lifeMin:10,lifeMax:30,gradeMin:90,gradeMax:99},
+ boron:{unit:'TONNES',min:5000,max:100000,lifeMin:10,lifeMax:40,gradeMin:10,gradeMax:50},
+ aragonite:{unit:'TONNES',min:10000,max:500000,lifeMin:5,lifeMax:20,gradeMin:90,gradeMax:99},
+ granite:{unit:'TONNES',min:10000,max:500000,lifeMin:5,lifeMax:25,gradeMin:90,gradeMax:99},
+ ilmenite:{unit:'TONNES',min:1000,max:100000,lifeMin:10,lifeMax:35,gradeMin:20,gradeMax:65},
+ diatomite:{unit:'TONNES',min:1000,max:100000,lifeMin:10,lifeMax:35,gradeMin:50,gradeMax:95}
+};
 const scenarioData=()=>g.OmegaResourceScenarioEngineeringData||g.Omega?.ResourceScenarioEngineeringData||null;
 function scenarioEngineeringFor(site,resourceId){
  const data=scenarioData(),rows=Array.isArray(data?.records)?data.records:[];
@@ -65,7 +104,7 @@ function canonicalReserveSpec(resourceId){const r=rid(resourceId);if(r==='crude_
 function convertReserve(value,sourceFamily,targetFamily){
  const v=Number(value);if(!Number.isFinite(v))return null;
  if(sourceFamily===targetFamily||sourceFamily===null||targetFamily===null)return v;
- if((sourceFamily==='TCF'||sourceFamily==='TCF')&&(targetFamily==='BCM'||targetFamily==='GAS'))return v*28.316846592;
+ if(sourceFamily==='TCF'&&(targetFamily==='BCM'||targetFamily==='GAS'))return v*28.316846592;
  if(sourceFamily==='BCF'&&targetFamily==='BCM')return v*0.028316846592;
  if(sourceFamily==='MCM'&&targetFamily==='BCM')return v*0.001;
  if(sourceFamily==='MCF'&&targetFamily==='BCM')return v*0.000000028316846592;
@@ -81,10 +120,10 @@ function parseReserve(raw,resourceId){
  else if(r==='gold'){for(const f of ['TROY_OUNCES','TONNES']){x=extractMeasure(text,f);if(x)break;}}
  else x=extractMeasure(text,'TONNES');
  if(!x)return missing(text);
- const targetFamily=spec.family==='GOLD'?(x.unitFamily==='TONNES'?'TONNES':'TROY_OUNCES'):(spec.family==='GAS'?'BCM':(unitFamily(spec.unit)||spec.family));
- const value=convertReserve(x.value,x.unitFamily,targetFamily);
+ const targetMeasurementFamily=spec.family==='GOLD'?(x.unitFamily==='TONNES'?'TONNES':'TROY_OUNCES'):(spec.family==='GAS'?'BCM':(unitFamily(spec.unit)||spec.family));
+ const value=convertReserve(x.value,x.unitFamily,targetMeasurementFamily);
  if(value===null)return missing(text);
- return{status:'OBSERVED',value,unit:targetFamily==='TONNES'?'TONNES':spec.unit,unitFamily:targetFamily,sourceUnit:x.sourceUnit,sourceUnitFamily:x.unitFamily,raw:x.raw,resourceId:r};
+ return{status:'OBSERVED',value,unit:targetMeasurementFamily==='TONNES'?'TONNES':spec.unit,unitFamily:spec.family,measurementUnitFamily:targetMeasurementFamily,sourceUnit:x.sourceUnit,sourceUnitFamily:x.unitFamily,raw:x.raw,resourceId:r};
 }
 function missing(raw){return{status:'UNOBSERVED',value:null,unitFamily:null,sourceUnit:null,raw:String(raw??'')}}
 function commodityText(raw,resourceId){
@@ -146,7 +185,7 @@ function resourceFromSite(site,profile){
  const s=clean(site?.siteName||site?.name||site?.mineName||site?.depositName||site);
  for(const [r,words] of Object.entries(alias))if(words.some(w=>s.includes(clean(w))))return r;
  const candidates=[];
- const add=v=>{for(const z of Array.isArray(v)?v:[v]){const r=rid(z);if(r&&!candidates.includes(r)&&ranges[r])candidates.push(r)}};
+ const add=v=>{for(const z of Array.isArray(v)?v:[v]){const r=rid(z);if(r&&!candidates.includes(r)&&CALIBRATION_RANGES[r])candidates.push(r)}};
  const p=profile||{};add(p?.resource_domain?.knownResourceTypes);add(p?.resource_endowment?.known);
  const m=p?.mineral_resource_base||{};for(const k of ['metallic','nonMetallic','industrialMinerals','preciousMetals','rareEarths','criticalMinerals'])add(m[k]);
  if(Array.isArray(p?.hydrocarbon_resource_base?.oil))add('crude_oil');
@@ -219,7 +258,7 @@ function siteModel(site,profile,countryId){
    const streamAuthority=productionObserved||reserveAuthority==='OBSERVED'||rawGrade!==null||costObs!==null?'OBSERVED':'SIMULATED';
    return{
      resourceId,
-     reserve:{quantity:reserveQuantity,unit:scenarioReserveUnit||r.unit,authority:reserveAuthority,status:reserveAuthority,basis:scenarioReserve!==null?'PER_SITE_SCENARIO_RESERVE_DATA':(reserveAuthority==='OBSERVED'?'RESOURCE_JSON_SITE_FIELD':'production_capacity_x_modeled_asset_life'),fieldAuthority:reserveAuthority,scenarioRecord:scenarioReserve!==null},
+     reserve:{quantity:reserveQuantity,unit:scenarioReserveUnit||calibration.unit,authority:reserveAuthority,status:reserveAuthority,basis:scenarioReserve!==null?'PER_SITE_SCENARIO_RESERVE_DATA':(reserveAuthority==='OBSERVED'?'RESOURCE_JSON_SITE_FIELD':'production_capacity_x_modeled_asset_life'),fieldAuthority:reserveAuthority,scenarioRecord:scenarioReserve!==null},
      quality:{grade:rawGrade??grade,oreGrade:src?.oreGrade??rawGrade??grade,concentration:src?.concentration??null,assay:src?.assay??null,metalContent:src?.metalContent??null,purity,
        APIGravity:api,gradeStatus:gradeAuthority,concentrationStatus:src?.concentration!=null?'OBSERVED':'UNOBSERVED',assayStatus:src?.assay!=null?'OBSERVED':'UNOBSERVED',metalContentStatus:src?.metalContent!=null?'OBSERVED':'UNOBSERVED',
        purityStatus:purity!==null?'OBSERVED':'UNOBSERVED',apiGravityStatus:apiRaw!==null?'OBSERVED':'UNOBSERVED',
