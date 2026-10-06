@@ -238,8 +238,10 @@
   }
 
   function sourceMineSiteReferences(){
-    const e=engine(),sourceMaps=e?.countryProfileSources&&typeof e.countryProfileSources==='object'&&Object.keys(e.countryProfileSources).length
-      ?Object.entries(e.countryProfileSources):[['merged',e?.countryProfiles&&typeof e.countryProfiles==='object'?e.countryProfiles:{}]];
+    const e=engine();
+    // ResourceMinistryEngine.countryProfiles is already the canonical merged profile roster.
+    // Re-expanding countryProfileSources here reintroduced duplicate physical sites across source datasets.
+    const sourceMaps=[['resources.json.countryProfiles',e?.countryProfiles&&typeof e.countryProfiles==='object'?e.countryProfiles:{}]];
     const byPhysicalIdentity=new Map();
     const mergeDefined=function(base,incoming){
       const out=clone(base||{});
