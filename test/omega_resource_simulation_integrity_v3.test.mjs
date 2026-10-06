@@ -18,7 +18,7 @@ const y2015=R.siteModel({...baseSite,simulationYear:2015},{resource_domain:{know
 const y2025=R.siteModel({...baseSite,simulationYear:2025},{resource_domain:{knownResourceTypes:['copper']}},'TST');
 assert.equal(y2015.commodityStreams[0].production.activeRate,1000);
 assert.ok(y2025.commodityStreams[0].production.activeRate<1000);
-assert.equal(y2025.commodityStreams[0].production.temporalCurve,undefined);
+assert.equal(y2025.commodityStreams[0].production.temporalCurve.model,'EXPONENTIAL_POST_REFERENCE');
 assert.equal(y2025.commodityStreams[0].production.referenceYear,2015);
 assert.equal(y2025.commodityStreams[0].production.simulationYear,2025);
 assert.equal(y2025.commodityStreams[0].production.temporalCurve.factor,Math.pow(.95,10));
