@@ -108,10 +108,10 @@ function parseReserve(raw,resourceId){
  else if(r==='gold'){for(const f of ['TROY_OUNCES','TONNES']){x=extractMeasure(text,f);if(x)break;}}
  else x=extractMeasure(text,'TONNES');
  if(!x)return missing(text);
- const targetFamily=spec.family==='GOLD'?'TROY_OUNCES':(spec.family==='GAS'?'BCM':(unitFamily(spec.unit)||spec.family));
+ const targetFamily=spec.family==='GOLD'?(x.unitFamily==='TONNES'?'TONNES':'TROY_OUNCES'):(spec.family==='GAS'?'BCM':(unitFamily(spec.unit)||spec.family));
  const value=convertReserve(x.value,x.unitFamily,targetFamily);
  if(value===null)return missing(text);
- return{status:'OBSERVED',value,unit:spec.unit,unitFamily:spec.family,sourceUnit:x.sourceUnit,sourceUnitFamily:x.unitFamily,raw:x.raw,resourceId:r};
+ return{status:'OBSERVED',value,unit:targetFamily==='TONNES'?'TONNES':spec.unit,unitFamily:targetFamily,sourceUnit:x.sourceUnit,sourceUnitFamily:x.unitFamily,raw:x.raw,resourceId:r};
 }
 function missing(raw){return{status:'UNOBSERVED',value:null,unitFamily:null,sourceUnit:null,raw:String(raw??'')}}
 function commodityText(raw,resourceId){
@@ -244,7 +244,7 @@ function siteModel(site,profile,countryId){
      reserve:{quantity:reserveQuantity,unit:scenarioReserveUnit||r.unit,authority:reserveAuthority,status:reserveAuthority,basis:scenarioReserve!==null?'PER_SITE_SCENARIO_RESERVE_DATA':(reserveAuthority==='OBSERVED'?'RESOURCE_JSON_SITE_FIELD':'production_capacity_x_modeled_asset_life'),fieldAuthority:reserveAuthority,scenarioRecord:scenarioReserve!==null},
      quality:{grade:rawGrade??grade,oreGrade:src?.oreGrade??rawGrade??grade,concentration:src?.concentration??null,assay:src?.assay??null,metalContent:src?.metalContent??null,purity,
        APIGravity:api,gradeStatus:gradeAuthority,concentrationStatus:src?.concentration!=null?'OBSERVED':'UNOBSERVED',assayStatus:src?.assay!=null?'OBSERVED':'UNOBSERVED',metalContentStatus:src?.metalContent!=null?'OBSERVED':'UNOBSERVED',
-       purityStatus:purity!==null?'OBSERVED':'UNOBSERVED',apiGravityStatus:apiRaw!==null?'OBSERVED':'SIMULATED',
+       purityStatus:purity!==null?'OBSERVED':'UNOBSERVED',apiGravityStatus:apiRaw!==null?'OBSERVED':'UNOBSERVED',
        normalized:{gradePercent:grade,concentrationPercent:null,purityFraction:purity===null?null:(Number(purity)>1?Number(purity)/100:Number(purity)),APIGravity:api},
        resourceId},
      production:{nominalCapacity:nominal,minimumCapacity:minimum,maximumCapacity:maximum,utilization:utilizationFinal,recovery:recoveryFinal,decline:declineFinal,maintenance:maintenanceFinal,operatingCost:costObs??null,activeRate,observedRate,
