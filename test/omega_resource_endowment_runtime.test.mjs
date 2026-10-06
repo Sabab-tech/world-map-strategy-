@@ -148,7 +148,8 @@ assert.deepEqual(Object.keys(unifiedReferences[0]?.resourceAsset||{}).sort(),uni
 const executableSiteControllerCount=Object.values(worldState).reduce((sum,row)=>sum+Object.values(row?.mineSiteControllers||{}).filter(c=>c?.extractionExecutable===true).length,0);
 assert.equal(profileMineOutputs.length,executableSiteControllerCount);
 assert.ok(executableSiteControllerCount<199,'historical/non-executable site references must not all become executable');
-assert(simulatedFieldOutputs.length>0,'expected hydrocarbon field execution assets');
+assert.equal(simulatedFieldOutputs.length,0,'country-level hydrocarbon bases must not become synthetic physical field assets');
+assert(profileMineOutputs.every(x=>!['OIL_FIELD','GAS_FIELD'].includes(x?.assetType)),'hydrocarbon field assets must originate from identified site/occurrence identity');
 assert(profileMineOutputs.every(x=>(x?.producedQuantity||0)>0&&x?.effortUtilization>0&&x?.effortUtilization<=1),'some profile mine site did not execute with valid utilization');
 assert(simulatedFieldOutputs.every(x=>(x?.producedQuantity||0)>0&&x?.effortUtilization>0&&x?.effortUtilization<=1),'some hydrocarbon field did not execute with modeled utilization');
 
