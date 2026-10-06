@@ -292,6 +292,12 @@ function siteModel(site,profile,countryId){
    const economicallyRecoverableQuantity=reserveAuthority==='SIMULATED'?simulatedEconomic:explicitEconomic;
    const extractableReserveQuantity=reserveAuthority==='SIMULATED'?(explicitExtractable??simulatedExtractable):(explicitExtractable??observedReserve);
    const reserveClassification=clone(src?.reserveClassification??qp?.reserve?.classification??null);
+   const depletionRate=activeRate!==null&&activeRate>0?activeRate:0;
+   const depletionLifeYears=depletionRate>0&&extractableReserveQuantity!==null?extractableReserveQuantity/(depletionRate*365):null;
+   const scenarioLifeYears=life!==null&&life>0?life:null;
+   const lifeConsistencyStatus=depletionLifeYears===null?'UNOBSERVED':scenarioLifeYears===null?'DERIVED_FROM_RESERVE_AND_RATE':
+     Math.abs(depletionLifeYears-scenarioLifeYears)<=Math.max(0.5,scenarioLifeYears*0.15)?'CONSISTENT_WITH_SCENARIO':
+     depletionLifeYears>scenarioLifeYears?'CAPACITY_EXCEEDS_SCENARIO_LIFE':'SCENARIO_LIFE_EXCEEDS_CURRENT_CAPACITY';
    const gradeField=qp?.grade&&typeof qp.grade==='object'?qp.grade:null;
    const rawGrade=src?.grade??src?.oreGrade??site?.grade??gradeField?.value??null;
    const gradeNumeric=rawGrade===null?null:(typeof rawGrade==='number'?rawGrade:Number(String(rawGrade).match(/[-+]?\d+(?:\.\d+)?/)?.[0]));
@@ -306,7 +312,9 @@ function siteModel(site,profile,countryId){
      reserve:{quantity:extractableReserveQuantity,unit:scenarioReserveUnit||(CALIBRATION_RANGES[resourceId]?.unit||'TONNES'),authority:reserveAuthority,status:reserveAuthority,
        basis:scenarioReserve!==null?'PER_SITE_SCENARIO_EXTRACTABLE_RESERVE':(reserveAuthority==='OBSERVED'?'OBSERVED_QUANTITY_RECORD':'MODELED_EXTRACTABLE_RESERVE'),fieldAuthority:reserveAuthority,scenarioRecord:scenarioReserve!==null,
        quantityKind:'EXTRACTABLE_RESERVE',geologicalResourceQuantity,technicallyRecoverableQuantity,economicallyRecoverableQuantity,extractableReserveQuantity,residualExtractableReserveQuantity:extractableReserveQuantity,
-       technicalRecoveryFactor,economicRecoveryFactor,extractableConversionFactor,classification:reserveClassification,classificationState:reserveAuthority==='SIMULATED'?'SIMULATION_ONLY_NO_PUBLIC_RESERVE_CLASSIFICATION':'EVIDENCE_BACKED_CLASSIFICATION_ONLY'},
+       technicalRecoveryFactor,economicRecoveryFactor,extractableConversionFactor,classification:reserveClassification,
+       scenarioLifeYears,derivedDepletionLifeYears:depletionLifeYears,lifeConsistencyStatus,
+       classificationState:reserveAuthority==='SIMULATED'?'SIMULATION_ONLY_NO_PUBLIC_RESERVE_CLASSIFICATION':'EVIDENCE_BACKED_CLASSIFICATION_ONLY'},
      quality:{grade:rawGrade??grade,oreGrade:src?.oreGrade??rawGrade??grade,concentration:src?.concentration??null,assay:src?.assay??null,metalContent:src?.metalContent??null,purity,
        APIGravity:api,gradeStatus:gradeAuthority,concentrationStatus:src?.concentration!=null?'OBSERVED':'UNOBSERVED',assayStatus:src?.assay!=null?'OBSERVED':'UNOBSERVED',metalContentStatus:src?.metalContent!=null?'OBSERVED':'UNOBSERVED',
        purityStatus:purity!==null?'OBSERVED':'UNOBSERVED',apiGravityStatus:apiRaw!==null?'OBSERVED':'UNOBSERVED',
@@ -316,6 +324,8 @@ function siteModel(site,profile,countryId){
        authority:productionObserved?'OBSERVED':'SIMULATED',dataStatus:productionObserved?'AVAILABLE':'SIMULATED',technologyAdjusted:Array.isArray(technology.technologies)&&technology.technologies.length>0,technologyEffects:technology,
        annualProduction:src?.annualProduction??productionInput?.annualProduction??null,
        referenceYear,simulationYear,temporalCurve:temporal,declineSemantics:'TIME_DEPENDENT_YEAR_OVER_YEAR',
+       scenarioLifeYears,derivedDepletionLifeYears:depletionLifeYears,lifeConsistencyStatus,
+       annualizedActiveRate:depletionRate*365,
        rangeDataStatus:minObs!==null&&maxObs!==null?'OBSERVED':productionObserved?'DERIVED_FROM_OBSERVED_RATE':'SIMULATED',
        operatingCostStatus:costObs!==null?'OBSERVED':'UNOBSERVED'}
    };
