@@ -134,6 +134,101 @@
     });
   }
 
+  function simulationYear(){
+    var s=state(),d=s&&s.simulation&&s.simulation.date,y=num(d&&String(d).slice(0,4));
+    if(y!==null)return y;
+    y=num(s&&s.simulation&&s.simulation.startYear);
+    return y===null?2015:y;
+  }
+  function fiscalRuleCandidateMatches(rule,context){
+    if(!rule||typeof rule!=='object')return{match:false,score:-1};
+    var country=canonical(context.countryId||''),resource=tok(context.resourceId||''),company=String(context.companyId||context.ownerCompanyId||'').trim();
+    var ownership=tok(context.ownership||'');
+    var ruleCountry=canonical(rule.countryId||rule.countryCode||rule.country||'');
+    var ruleResource=tok(rule.resourceId||rule.resource||rule.commodityId||rule.commodity||'');
+    var ruleCompany=String(rule.companyId||rule.ownerCompanyId||rule.operatorId||'').trim();
+    var ruleOwnership=tok(rule.ownership||rule.ownershipClass||rule.ownerType||'');
+    var score=0;
+    if(ruleCountry){if(ruleCountry!==country)return{match:false,score:-1};score+=15;}
+    if(ruleResource){if(ruleResource!==resource)return{match:false,score:-1};score+=10;}
+    if(ruleCompany){if(ruleCompany!==company)return{match:false,score:-1};score+=50;}
+    if(ruleOwnership){
+      var wanted=ownership;
+      if(!wanted)wanted=/^STATE_|^GOVERNMENT_/i.test(company)?'sovereign':'private';
+      if(ruleOwnership!==wanted&&ruleOwnership!==tok(company))return{match:false,score:-1};
+      score+=8;
+    }
+    var project=String(rule.projectId||rule.projectKey||'').trim();
+    if(project){
+      if(project!==String(context.projectId||context.projectKey||'').trim())return{match:false,score:-1};
+      score+=45;
+    }
+    var year=simulationYear();
+    function yearOf(v){
+      if(v===null||v===undefined||v==='')return null;
+      var n1=num(v);if(n1!==null)return n1;
+      var m=String(v).match(/(?:^|[^0-9])(19|20)[0-9]{2}(?:[^0-9]|$)/);return m?Number(m[0].match(/(19|20)[0-9]{2}/)[0]):null;
+    }
+    var from=yearOf(rule.effectiveFromYear??rule.effectiveFrom??rule.startYear),to=yearOf(rule.effectiveToYear??rule.effectiveTo??rule.endYear);
+    if(from!==null){if(year<from)return{match:false,score:-1};score+=2;}
+    if(to!==null){if(year>to)return{match:false,score:-1};score+=2;}
+    return{match:true,score,from,to};
+  }
+  function collectFiscalRuleCandidates(root,out,sourceBase){
+    if(!root||typeof root!=='object')return;
+    var add=function(rule,source,base){
+      if(Array.isArray(rule))rule.forEach(function(x){add(x,source,base);});else if(rule&&typeof rule==='object'){
+        if(rule.rates||rule.royaltyRate!==undefined||rule.resourceTaxRate!==undefined||rule.corporateTaxRate!==undefined||rule.exportDutyRate!==undefined||rule.otherReceiptRate!==undefined)out.push({rule:rule,source:source,base:base||0});
+      }
+    };
+    add(root.overrides,sourceBase+'.overrides',60);
+    add(root.rules,sourceBase+'.rules',40);
+    add(root.countryResourceRules,sourceBase+'.countryResourceRules',35);
+    add(root.countryRules,sourceBase+'.countryRules',20);
+    add(root.resourceRules,sourceBase+'.resourceRules',10);
+    add(root.ownershipRules,sourceBase+'.ownershipRules',5);
+    add(root.default,sourceBase+'.default',0);
+    add(root,sourceBase,0);
+    Object.keys(root).forEach(function(k){
+      var v=root[k];
+      if(!v||typeof v!=='object'||Array.isArray(v))return;
+      if(/^([A-Z]{2,3})$/i.test(String(k))){
+        if(Array.isArray(v))v.forEach(function(x){add(Object.assign({countryId:k},x||{}),sourceBase+'.countryRules['+k+']',20);});
+        else if(v.royaltyRate!==undefined||v.resourceTaxRate!==undefined||v.corporateTaxRate!==undefined||v.exportDutyRate!==undefined) add(Object.assign({countryId:k},v),sourceBase+'.countryRules['+k+']',20);
+      }
+    });
+  }
+  function resolveFiscalRules(context){
+    var ctx=context&&typeof context==='object'?context:{},base=clone(rules().fiscal||DEFAULT_RULES.fiscal),candidates=[],best=null;
+    collectFiscalRuleCandidates(rules().fiscal,candidates,'resource_economy_rules.json:fiscal');
+    var country=canonical(ctx.countryId||''),stateRuleSets=[
+      read(country,'resource.fiscalRules'),
+      read(country,'resource.fiscalRegime'),
+      read(country,'finance.resourceFiscalRules')
+    ];
+    stateRuleSets.forEach(function(x,i){collectFiscalRuleCandidates(x,candidates,'RUNTIME_COUNTRY_RULES['+i+']');});
+    candidates.forEach(function(item){
+      var rule=item.rule||{},match=fiscalRuleCandidateMatches(rule,ctx);
+      if(!match.match)return;
+      var score=item.base+match.score;
+      if(!best||score>best.score||(score===best.score&&String(item.source)<String(best.source)))best={score,rule,source:item.source,from:match.from,to:match.to};
+    });
+    var selected=best?.rule||null;
+    if(selected){
+      var rates=selected.rates&&typeof selected.rates==='object'?selected.rates:selected;
+      ['royaltyRate','resourceTaxRate','corporateTaxRate','exportDutyRate','otherReceiptRate'].forEach(function(k){if(rates[k]!==undefined)base[k]=rates[k];});
+    }
+    return{
+      rates:base,
+      policySource:best?.source||'resource_economy_rules.json:fiscal.default',
+      specificity:best?.score??0,
+      fallback:!best,
+      effectiveFrom:best?.from??null,
+      effectiveTo:best?.to??null,
+      resolutionYear:simulationYear()
+    };
+  }
+
   function invObj(c){var x=read(c,'resource.inventory');return x&&typeof x==='object'?x:{};}
   function batches(c){var x=read(c,'resource.batches');return Array.isArray(x)?x:[];}
   function mineCompany(c,rid){
@@ -459,10 +554,11 @@
     ctx.stateTransaction.set('finance.resourceSettlementClearing',l);return{accepted:true,amount:a};
   }
 
-  function fiscalFor(gross,direction,companyId){
-    var r=rules().fiscal;
+  function fiscalFor(gross,direction,companyId,context){
+    var ctx=Object.assign({},context||{},{countryId:(context&&context.countryId)||null,resourceId:(context&&context.resourceId)||null,companyId:companyId,ownerCompanyId:companyId});
+    var resolved=resolveFiscalRules(ctx),r=resolved.rates||{};
     var royalty=gross*(num(r.royaltyRate)||0),resourceTax=gross*(num(r.resourceTaxRate)||0),corporate=sovereignCompany(companyId)?0:gross*(num(r.corporateTaxRate)||0),exportDuty=String(direction||'').toUpperCase()==='EXPORT'?gross*(num(r.exportDutyRate)||0):0,other=gross*(num(r.otherReceiptRate)||0);
-    return{gross:gross,royalty:royalty,resourceTax:resourceTax,corporateTax:corporate,exportDuty:exportDuty,other:other,total:royalty+resourceTax+corporate+exportDuty+other,policySource:'resource_economy_rules.json'};
+    return{gross:gross,royalty:royalty,resourceTax:resourceTax,corporateTax:corporate,exportDuty:exportDuty,other:other,total:royalty+resourceTax+corporate+exportDuty+other,policySource:resolved.policySource,policySpecificity:resolved.specificity,policyFallback:resolved.fallback,effectiveFrom:resolved.effectiveFrom,effectiveTo:resolved.effectiveTo,resolutionYear:resolved.resolutionYear};
   }
 
   function settleDomestic(c,rid,q,consumed,buyer,facility,tx){
@@ -477,7 +573,7 @@
     Object.keys(suppliers).forEach(function(companyId){
       var gross=sale.totalValue*(suppliers[companyId]/totalSource);
       dispatch('economy','OMEGA_RESOURCE_ECON_COMPANY_FLOW',c,{companyId:companyId,amount:gross,direction:'CREDIT',grossRevenue:gross,supplierRevenue:gross,category:'DOMESTIC_SUPPLY',saleId:sale.saleId});
-      var f=fiscalFor(gross,'DOMESTIC',companyId);
+      var f=fiscalFor(gross,'DOMESTIC',companyId,{countryId:c,resourceId:rid,ownership:sovereignCompany(companyId)?'sovereign':'private'});
       if(f.total>0)dispatch('finance','OMEGA_RESOURCE_ECON_FISCAL_RECEIPT',c,{receipt:Object.assign({},f,{saleId:sale.saleId,resourceId:rid,companyId:companyId,direction:'DOMESTIC'}),correlationId:sale.saleId});
       var w=gross*(num(rules().operatingAllocation.workerIncomeRate)||0),t=gross*(num(rules().operatingAllocation.transportRevenueRate)||0);
       if(w>0){dispatch('economy','OMEGA_RESOURCE_ECON_WORKER_FLOW',c,{amount:w,saleId:sale.saleId});dispatch('economy','OMEGA_RESOURCE_ECON_COMPANY_FLOW',c,{companyId:companyId,amount:w,direction:'DEBIT',category:'WORKER_INCOME',saleId:sale.saleId});}
@@ -561,7 +657,7 @@
     var econ=bucket(seller,'economy')||{},owners=econ.industrialRuntime&&econ.industrialRuntime.materialOwners||{},company=String(owners[rid]||mineCompany(seller,rid)),clear=dispatch('finance','OMEGA_RESOURCE_ECON_TRADE_CLEAR_TO_COMPANY',seller,{amount:gross,settlementId:sid,companyId:company,correlationId:sid});if(!clear||clear.status!=='APPLIED')return;
     g.__OmegaResourceFiscalizedSettlements[sid]=true;
     dispatch('economy','OMEGA_RESOURCE_ECON_COMPANY_FLOW',seller,{companyId:company,amount:gross,direction:'CREDIT',grossRevenue:gross,supplierRevenue:gross,category:'SUPPLIER_SALE',settlementId:sid});
-    var f=fiscalFor(gross,'EXPORT',company);if(f.total>0)dispatch('finance','OMEGA_RESOURCE_ECON_FISCAL_RECEIPT',seller,{receipt:Object.assign({},f,{settlementId:sid,sellerCountryId:seller,resourceId:rid,companyId:company}),correlationId:sid});
+    var f=fiscalFor(gross,'EXPORT',company,{countryId:seller,resourceId:rid,ownership:sovereignCompany(company)?'sovereign':'private'});if(f.total>0)dispatch('finance','OMEGA_RESOURCE_ECON_FISCAL_RECEIPT',seller,{receipt:Object.assign({},f,{settlementId:sid,sellerCountryId:seller,resourceId:rid,companyId:company}),correlationId:sid});
     var w=gross*(num(rules().operatingAllocation.workerIncomeRate)||0),t=gross*(num(rules().operatingAllocation.transportRevenueRate)||0);if(w>0){dispatch('economy','OMEGA_RESOURCE_ECON_WORKER_FLOW',seller,{amount:w,settlementId:sid});dispatch('economy','OMEGA_RESOURCE_ECON_COMPANY_FLOW',seller,{companyId:company,amount:w,direction:'DEBIT',category:'WORKER_INCOME',settlementId:sid});}if(t>0){dispatch('transport','OMEGA_RESOURCE_ECON_TRANSPORT_REVENUE',seller,{amount:t,settlementId:sid});dispatch('economy','OMEGA_RESOURCE_ECON_COMPANY_FLOW',seller,{companyId:company,amount:t,direction:'DEBIT',category:'TRANSPORT',settlementId:sid});}
     emit('OMEGA_RESOURCE_TRADE_RECONCILED',seller,{settlementId:sid,resourceId:rid,companyId:company,gross:gross,fiscal:f,status:'FISCALIZED'},'finance');
   }
@@ -772,7 +868,7 @@
     fetch('./resource_ontology.json',{cache:'no-store'}).then(function(r){return r&&r.ok?r.json():null;}).then(function(d){if(d)g.__OmegaResourceEconomyOntology=d.COMMODITY_ONTOLOGIES||d.commodity_ontologies||{};}).catch(function(e){g.__OmegaResourceEconomyOntologyError=String(e&&e.message||e);});
   }
 
-  var API={VERSION:VERSION,diagnostics:diagnostics,getCountryDashboard:dashboard,processCountry:processCountry,runTurn:runTurn,reconcileCountry:function(c){installHandlers();return dispatch('resource','OMEGA_RESOURCE_ECON_RECONCILE_INVENTORY',canonical(c),{correlationId:'MANUAL-RECON-'+turn()+'-'+canonical(c)});},executeCountryFactories:executeFactories};
+  var API={VERSION:VERSION,diagnostics:diagnostics,getCountryDashboard:dashboard,processCountry:processCountry,runTurn:runTurn,resolveFiscalRules:resolveFiscalRules,reconcileCountry:function(c){installHandlers();return dispatch('resource','OMEGA_RESOURCE_ECON_RECONCILE_INVENTORY',canonical(c),{correlationId:'MANUAL-RECON-'+turn()+'-'+canonical(c)});},executeCountryFactories:executeFactories};
   g.Omega=g.Omega||{};g.Omega.ResourceEconomy=API;g.OmegaResourceEconomy=API;boot();
 
 })(typeof window!=='undefined'?window:globalThis);

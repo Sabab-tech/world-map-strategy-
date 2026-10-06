@@ -181,6 +181,36 @@ function createContext(){
   return {context,worldState,handlers,events};
 }
 
+test('resource fiscal resolver applies most-specific effective country/resource/ownership rules', async()=>{
+  const {context,worldState}=createContext();
+  worldState.resource.BGD.fiscalRules={
+    countryRules:[
+      {countryId:'BGD',effectiveFrom:2015,royaltyRate:0.03,resourceTaxRate:0.015}
+    ],
+    overrides:[
+      {countryId:'BGD',resourceId:'iron_ore',ownership:'private',effectiveFrom:2020,royaltyRate:0.05,resourceTaxRate:0.02,corporateTaxRate:0.21,exportDutyRate:0.03}
+    ]
+  };
+  const code=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
+  vm.runInNewContext(code,context,{filename:'omega_resource_economy_runtime_v2.js'});
+  const resolved=context.OmegaResourceEconomy.resolveFiscalRules({
+    countryId:'BGD',resourceId:'iron_ore',companyId:'MINER_CO',ownership:'private'
+  });
+  assert.equal(resolved.fallback,false);
+  assert.equal(resolved.rates.royaltyRate,0.03);
+  assert.equal(resolved.rates.resourceTaxRate,0.015);
+  assert.equal(resolved.rates.corporateTaxRate,0.20);
+  assert.equal(resolved.rates.exportDutyRate,0);
+  assert.equal(resolved.resolutionYear,2015);
+  assert.equal(resolved.effectiveFrom,2015);
+  worldState.simulation.date='2020-01-01';
+  const resolved2020=context.OmegaResourceEconomy.resolveFiscalRules({
+    countryId:'BGD',resourceId:'iron_ore',companyId:'MINER_CO',ownership:'private'
+  });
+  assert.equal(resolved2020.rates.royaltyRate,0.05);
+  assert.equal(resolved2020.effectiveFrom,2020);
+});
+ 
 test('resource economy v2 completes mine-backed processing, domestic settlement and treasury receipt flow', async()=>{
   const {context,worldState}=createContext();
   const code=readFileSync('omega_resource_economy_runtime_v2.js','utf8');

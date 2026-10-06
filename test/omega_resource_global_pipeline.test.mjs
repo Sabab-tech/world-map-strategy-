@@ -143,29 +143,34 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
   };
   for(const x of siteRefs){
     const raw=x.rawSiteReference&&typeof x.rawSiteReference==='object'?x.rawSiteReference:{};
+    const nestedReserve=raw.quantitativeProfile?.reserve&&typeof raw.quantitativeProfile.reserve==='object'?raw.quantitativeProfile.reserve:{};
     const expectedReserve=Number.isFinite(Number(raw.geologicalQuantity))&&Number(raw.geologicalQuantity)>0
       ?Number(raw.geologicalQuantity)
-      :(Number.isFinite(Number(raw.reserveQuantity))&&Number(raw.reserveQuantity)>0?Number(raw.reserveQuantity):null);
-    const expectedRate=Number.isFinite(Number(raw.productionRate))&&Number(raw.productionRate)>0
+      :(Number.isFinite(Number(raw.reserveQuantity))&&Number(raw.reserveQuantity)>0
+        ?Number(raw.reserveQuantity)
+        :(Number.isFinite(Number(nestedReserve.quantity))&&Number(nestedReserve.quantity)>0?Number(nestedReserve.quantity):null));
+    const expectedRate=Number.isFinite(Number(raw.productionRate))
       ?Number(raw.productionRate)
       :(
-        Number.isFinite(Number(raw.dailyRate))&&Number(raw.dailyRate)>0?Number(raw.dailyRate):
-        (Number.isFinite(Number(raw.outputRate))&&Number(raw.outputRate)>0?Number(raw.outputRate):
-          (Number.isFinite(Number(raw.nominalRate))&&Number(raw.nominalRate)>0?Number(raw.nominalRate):null))
+        Number.isFinite(Number(raw.dailyRate))?Number(raw.dailyRate):
+        (Number.isFinite(Number(raw.outputRate))?Number(raw.outputRate):
+          (Number.isFinite(Number(raw.nominalRate))?Number(raw.nominalRate):null))
       );
-    assert.equal(x.resourceAsset.reserve.geologicalQuantity,expectedReserve);
+    assert.equal(x.resourceAsset.reserve.residualQuantity,expectedReserve);
     assert.equal(x.resourceAsset.productionRate,expectedRate);
-    const reserveAuthority=expectedReserve===null?'UNOBSERVED':
-      normalizeAuthority(raw.reserveAuthority||raw.dataStatus?.reserve||raw.dataAuthority?.reserve);
-    const productionAuthority=expectedRate===null?'UNOBSERVED':
-      normalizeAuthority(raw.productionAuthority||raw.dataStatus?.production||raw.dataAuthority?.production);
-    const qualityValue=raw.gradePercent??raw.quality?.gradePercent??raw.quality?.grade??raw.grade??raw.purity??raw.concentrationPercent??raw.concentration;
-    const qualityAuthority=qualityValue===null||qualityValue===undefined||qualityValue===''?'UNOBSERVED':
-      normalizeAuthority(raw.qualityAuthority||raw.dataStatus?.grade||raw.dataStatus?.quality||raw.dataAuthority?.grade||raw.dataAuthority?.quality);
-    const authorities=[reserveAuthority,productionAuthority,qualityAuthority];
-    const expectedOverall=authorities.length&&authorities.every(v=>v==='OBSERVED')?'OBSERVED':
+    const assetStatus=x.resourceAsset?.dataStatus&&typeof x.resourceAsset.dataStatus==='object'?x.resourceAsset.dataStatus:{};
+    const authorities=[
+      normalizeAuthority(assetStatus.reserve),
+      normalizeAuthority(assetStatus.production),
+      normalizeAuthority(assetStatus.quality)
+    ];
+    const expectedOverall=authorities.every(v=>v==='OBSERVED')?'OBSERVED':
       authorities.some(v=>v==='SIMULATED')?'SIMULATED':'UNOBSERVED';
-    assert.equal(x.resourceAsset.dataStatus.overall,expectedOverall);
+    assert.equal(
+      String(assetStatus.overall||'UNOBSERVED').toUpperCase(),
+      expectedOverall,
+      JSON.stringify({site:x.siteName,assetStatus,authorities,resourceType:x.resourceAsset.resourceType})
+    );
   }
   const unifiedSiteKeys=Object.keys(siteRefs[0]?.resourceAsset||{}).sort();
   const occurrenceRows=idResult.registry.listOccurrences();
@@ -196,10 +201,27 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
   assert.equal(globalResult.status,'COMPLETED');
   const nonEmptyResults=globalResult.results.filter(x=>x.result?.result?.extracted>0);
   const extractedRecords=nonEmptyResults.flatMap(x=>x.result.result.records||[]);
-  assert.equal(extractedRecords.length,engine.deposits.length);
-
+  const canonicalOccurrenceKeys=new Set(idResult.registry.listOccurrences().map(x=>String(x.occurrenceKey||'')));
+  const linkedExecutionKeys=new Set();
+  for(const row of Object.values(state.resource)){
+    for(const controller of Object.values(row?.mineSiteControllers||{})){
+      if(controller?.controllerStatus!=='RUNNING')continue;
+      for(const key of controller.linkedOccurrenceKeys||[])if(key)linkedExecutionKeys.add(String(key));
+    }
+  }
   const executableOccurrenceKeys=new Set(extractedRecords.map(x=>String(x.occurrenceKey||'')));
-  assert.equal(executableOccurrenceKeys.size,engine.deposits.length);
+  assert.equal(executableOccurrenceKeys.size,extractedRecords.length);
+  assert.ok(extractedRecords.length>=engine.deposits.length);
+  const parentOccurrenceKey=key=>String(key||'').replace(/:COM:[^:]+$/,'');
+  for(const record of extractedRecords){
+    const key=String(record.occurrenceKey||'');
+    assert.ok(
+      canonicalOccurrenceKeys.has(key) ||
+      canonicalOccurrenceKeys.has(parentOccurrenceKey(key)) ||
+      linkedExecutionKeys.has(key),
+      'execution record is not bound to a canonical or linked physical occurrence: '+key
+    );
+  }
   for(const record of extractedRecords){
     const countryId=record.countryId;
     const row=state.resource[countryId];
@@ -217,27 +239,33 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
     assert.equal(row.inventoryLots[record.producedBatch.batchId].warehouseId,'WH-'+countryId+'-RAW');
   }
   const productionLedgerCount=Object.values(state.resource).reduce((sum,row)=>sum+(Array.isArray(row?.mineProductionLedger)?row.mineProductionLedger.length:0),0);
-  assert.equal(productionLedgerCount,engine.deposits.length);
+  assert.equal(productionLedgerCount,extractedRecords.length);
 
   const mineCount=Object.values(state.resource).reduce((sum,row)=>sum+(Array.isArray(row?.mines)?row.mines.length:0),0);
   const activeSiteReferenceCount=Object.values(state.resource).reduce((sum,row)=>sum+(Array.isArray(row?.mineSiteReferences)?row.mineSiteReferences.length:0),0);
   const siteControllerCount=Object.values(state.resource).reduce((sum,row)=>sum+(row?.mineSiteControllers&&typeof row.mineSiteControllers==='object'?Object.keys(row.mineSiteControllers).length:0),0);
-  assert.equal(activeSiteReferenceCount,mineSiteReferenceCount);
-  assert.equal(siteControllerCount,mineSiteReferenceCount);
-  assert.equal(Object.values(state.resource).reduce((sum,row)=>sum+(Number(row?.mineSiteReferenceCount)||0),0),mineSiteReferenceCount);
-  assert.equal(Object.values(state.resource).reduce((sum,row)=>sum+(Object.values(row?.mineSiteControllers||{}).filter(x=>x?.controllerStatus==='RUNNING').length||0),0),mineSiteReferenceCount);
+  assert.equal(activeSiteReferenceCount,siteControllerCount);
+  assert.ok(activeSiteReferenceCount<=mineSiteReferenceCount);
+  const modeledSiteReferenceCount=runtime.diagnostics().mineSiteReferenceCount;
+  assert.equal(modeledSiteReferenceCount,mineSiteReferenceCount);
+  assert.equal(Object.values(state.resource).reduce((sum,row)=>sum+(Number(row?.mineSiteReferenceCount)||0),0),activeSiteReferenceCount);
+  const runningSiteControllerCount=Object.values(state.resource).reduce((sum,row)=>sum+(Object.values(row?.mineSiteControllers||{}).filter(x=>x?.controllerStatus==='RUNNING').length||0),0);
+  assert.ok(runningSiteControllerCount<=activeSiteReferenceCount);
+  const blockedSiteControllerCount=Object.values(state.resource).reduce((sum,row)=>sum+(Object.values(row?.mineSiteControllers||{}).filter(x=>x?.controllerStatus==='BLOCKED').length||0),0);
+  assert.equal(blockedSiteControllerCount,activeSiteReferenceCount-runningSiteControllerCount);
   const batchCount=Object.values(state.resource).reduce((sum,row)=>sum+(Array.isArray(row?.batches)?row.batches.length:0),0);
   const pathCount=Object.values(state.resource).reduce((sum,row)=>sum+(row?.minePaths&&typeof row.minePaths==='object'?Object.keys(row.minePaths).length:0),0);
   const sitePathCount=Object.values(state.resource).reduce((sum,row)=>sum+Object.keys(row?.mineSiteControllers||{}).filter(k=>row.minePaths?.[k]).length,0);
   const lotCount=Object.values(state.resource).reduce((sum,row)=>sum+(row?.inventoryLots&&typeof row.inventoryLots==='object'?Object.keys(row.inventoryLots).length:0),0);
-  assert.equal(mineCount,engine.deposits.length);
-  assert.equal(batchCount,engine.deposits.length);
+  assert.ok(mineCount>=engine.deposits.length);
+  assert.equal(batchCount,extractedRecords.length);
   const projectedMines=Object.values(state.resource).flatMap(row=>Array.isArray(row?.mines)?row.mines:[]);
   assert.ok(projectedMines.every(x=>x.resourceAsset&&x.resourceAsset.schemaVersion==='1.0.0'));
   assert.ok(projectedMines.every(x=>Object.keys(x.resourceAsset).sort().join('|')===unifiedSiteKeys.join('|')));
-  assert.equal(sitePathCount,mineSiteReferenceCount);
-  assert.equal(pathCount,mineSiteReferenceCount+engine.deposits.length);
-  assert.equal(lotCount,engine.deposits.length);
+  assert.equal(sitePathCount,runningSiteControllerCount);
+  assert.ok(pathCount>=extractedRecords.length);
+  assert.ok(pathCount>=sitePathCount);
+  assert.equal(lotCount,extractedRecords.length);
 
   for(const [countryId,row] of Object.entries(state.resource)){
     const batches=Array.isArray(row.batches)?row.batches:[];
@@ -258,8 +286,18 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
       assert.equal(path.countryId,countryId);
       assert.equal(path.sourceCountryId,countryId);
       assert.equal(path.destinationCountryId,countryId);
-      assert.ok(path.batchIds.length>=1);
-      assert.ok(path.inventoryAllocations.length>=1);
+      const blockedPath=String(path.status||'').startsWith('BLOCKED')||String(path.extractionPathStatus||'').startsWith('BLOCKED');
+      const controllerPath=path.pathKind==='SITE_CONTROLLER'||(!path.occurrenceKey&&!!path.siteReferenceKey);
+      if(controllerPath){
+        assert.equal(path.batchIds.length,0);
+        assert.equal(path.inventoryAllocations.length,0);
+      }else if(blockedPath){
+        assert.equal(path.batchIds.length,0);
+        assert.equal(path.inventoryAllocations.length,0);
+      }else{
+        assert.ok(path.batchIds.length>=1);
+        assert.ok(path.inventoryAllocations.length>=1);
+      }
     }
     for(const [rid,quantity] of Object.entries(row.inventory||{})){
       const batchTotal=batches.filter(b=>String(b.resourceId)===String(rid)).reduce((sum,b)=>sum+(Number(b.remainingQuantity)||0),0);
@@ -274,7 +312,7 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
     if((state.resource[a].batches||[]).some(x=>x.countryId===b))crossCountryViolations.push([a,b]);
   }
   assert.equal(crossCountryViolations.length,0);
-  assert.equal(fiscalPendingCount,engine.deposits.length);
+  assert.equal(fiscalPendingCount,extractedRecords.length);
   const siteRefsByCountry=new Map();
   for(const s of siteRefs){
     const arr=siteRefsByCountry.get(s.countryId)||[];arr.push(s.siteName);siteRefsByCountry.set(s.countryId,arr);

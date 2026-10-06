@@ -4,7 +4,7 @@
  */
 (function(g){
 'use strict';
-const VERSION='1.0.0',MAX=2048;
+const VERSION='1.1.0',MAX=2048;
 const clone=v=>v===null||typeof v!=='object'?v:Array.isArray(v)?v.map(clone):Object.fromEntries(Object.entries(v).map(([k,x])=>[k,clone(x)]));
 const interop=()=>g.OmegaMinistryInteroperability||g.Omega?.MinistryInteroperability||null;
 const turn=()=>Number(g.Game?.state?.simulation?.turn??g.gameState?.simulation?.turn??0)||0;
@@ -16,15 +16,31 @@ function routeMode(resourceId,destinationType='FACTORY'){
  return'truck';
 }
 function plan(payload){
- const r=realism();if(!r?.dispatchFromWarehouse)return{status:'UNAVAILABLE',reason:'RESOURCE_REALISM_RUNTIME_UNAVAILABLE'};
+ const r=realism();if(!r?.planRoute||!r?.dispatchFromWarehouse)return{status:'UNAVAILABLE',reason:'RESOURCE_REALISM_RUNTIME_UNAVAILABLE'};
  const ids=Array.isArray(payload?.candidateFactoryIds)?payload.candidateFactoryIds.filter(Boolean):[];
- const mode=payload?.transportMode||routeMode(payload?.resourceId);
- const targetIds=ids.length?ids.slice(0,1):[null];
- return targetIds.slice(0,25).map(factoryId=>{
-   const x=r.dispatchFromWarehouse({warehouseId:payload?.warehouseId||null,batchId:payload?.batchId||payload?.batch?.batchId||null,resourceId:payload?.resourceId||payload?.batch?.resourceId||null,
-     quantity:Number(payload?.quantity)||0,unit:payload?.unit||payload?.batch?.unit||null,sourceNode:payload?.warehouseId||'WAREHOUSE',destinationNode:factoryId||'FACTORY',mode});
-   return {...x,factoryId:factoryId||null,resourceId:payload?.resourceId||payload?.batch?.resourceId||null,countryId:canonical(payload?.countryId),stage:'WAREHOUSE_TO_INDUSTRY',deliveryStatus:x.delivery?.status||x.deliveryStatus||'READY_FOR_DELIVERY'};
- });
+ const mode=payload?.transportMode||routeMode(payload?.resourceId||payload?.batch?.resourceId);
+ const targets=ids.length?[ids[0]]:[null],out=[];
+ for(const factoryId of targets){
+   const common={warehouseId:payload?.warehouseId||null,batchId:payload?.batchId||payload?.batch?.batchId||null,resourceId:payload?.resourceId||payload?.batch?.resourceId||null,
+     quantity:Number(payload?.quantity)||0,unit:payload?.unit||payload?.batch?.unit||null,sourceNode:payload?.warehouseId||'WAREHOUSE',destinationNode:factoryId||'FACTORY',mode};
+   const base=r.planRoute(common);
+   const total=Math.max(0,Number(common.quantity)||0),capacity=Math.max(1,Number(base.capacity)||1),legCount=Math.max(1,Number(base.legs)||Math.ceil(total/capacity)||1);
+   const groupId='SHIPGROUP:'+String(base.routeId||'ROUTE')+':'+String(total)+'|'+String(common.batchId||'BATCH')+'|'+String(turn());
+   let remaining=total;
+   for(let i=1;i<=legCount&&remaining>0;i++){
+     const legQuantity=Math.min(capacity,remaining);
+     const x=r.dispatchFromWarehouse({...common,quantity:legQuantity,legIndex:i,legCount,shipmentGroupId:groupId});
+     out.push({...x,factoryId:factoryId||null,resourceId:common.resourceId,countryId:canonical(payload?.countryId),stage:'WAREHOUSE_TO_INDUSTRY',
+       shipmentGroupId:groupId,legIndex:i,legCount,groupRequestedQuantity:total,legQuantity,remainingAfterLeg:Math.max(0,remaining-legQuantity),
+       deliveryStatus:x.delivery?.status||x.deliveryStatus||'READY_FOR_DELIVERY'});
+     remaining-=legQuantity;
+   }
+   if(total===0){
+     const x=r.dispatchFromWarehouse({...common,quantity:0,legIndex:1,legCount:1,shipmentGroupId:groupId});
+     out.push({...x,factoryId:factoryId||null,resourceId:common.resourceId,countryId:canonical(payload?.countryId),stage:'WAREHOUSE_TO_INDUSTRY',shipmentGroupId:groupId,legIndex:1,legCount:1,groupRequestedQuantity:0,legQuantity:0,remainingAfterLeg:0,deliveryStatus:'BLOCKED'});
+   }
+ }
+ return out;
 }
 function handler(cmd,ctx){
  const p=cmd?.payload||{},c=canonical(ctx.countryId),rs=clone(ctx.stateTransaction.get('resource')||{}),log=clone(rs.logistics||{});
@@ -34,10 +50,13 @@ function handler(cmd,ctx){
    if(shipments.some(s=>String(s?.shipmentId)===String(shipmentId)))continue;
    shipments.push({shipmentId,routeId:x.routeId,warehouseId:p.warehouseId||x.delivery?.warehouseId||null,batchId:p.batchId||p.batch?.batchId||x.delivery?.batchId||null,
      factoryId:x.factoryId,resourceId:x.resourceId,quantity:x.dispatchQuantity,unit:p.unit||p.batch?.unit||null,transportMode:x.transportMode,
-     route:{sourceNode:x.sourceNode,destinationNode:x.destinationNode,distanceKm:x.distanceKm,capacity:x.capacity},
+     shipmentGroupId:x.shipmentGroupId||null,legIndex:x.legIndex||1,legCount:x.legCount||1,groupRequestedQuantity:x.groupRequestedQuantity??x.requestedQuantity,remainingAfterLeg:x.remainingAfterLeg??0,
+     route:{sourceNode:x.sourceNode,destinationNode:x.destinationNode,distanceKm:x.distanceKm,capacity:x.capacity,capacityAuthority:x.capacityAuthority,networkAuthority:x.networkAuthority,distanceBasis:x.distanceBasis},
      economics:{costEstimate:x.costEstimate,costUnit:x.costUnit,costAuthority:x.costAuthority},
      timing:{travelTimeDays:x.travelTimeDays,timeAuthority:x.timeAuthority,plannedTurn:turn(),etaTurn:turn()+Math.max(1,Math.ceil(x.travelTimeDays))},
      status:x.dispatchQuantity>0?'IN_TRANSIT':'BLOCKED',deliveryStatus:x.dispatchQuantity>0?'IN_TRANSIT':'BLOCKED',
+     networkAuthority:x.networkAuthority||'SIMULATED',realWorldRouteVerified:x.realWorldRouteVerified===true,
+     realWorldCapacityVerified:x.realWorldCapacityVerified===true,capacityBasis:x.capacityBasis||'SCENARIO_MODE_CAPACITY',
      sourceAuthority:p.sourceAuthority||p.batch?.stateAuthority||'UNOBSERVED',simulationTurn:turn(),createdTurn:turn()});
  }
  while(shipments.length>MAX)shipments.shift();

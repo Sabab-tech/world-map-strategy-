@@ -147,10 +147,10 @@ function commodities(occ,typeMap=new Map()){
  const raw=occ?.rawDeposit||{},out=[];
  const arr=pick(raw,['commodities','resources','resourceStreams','commodityDeposits']);
  if(Array.isArray(arr))for(const x of arr)out.push(typeof x==='string'?{resourceId:rid(x)}:{...clone(x),resourceId:rid(x?.resourceId||x?.resourceTypeId||x?.resId||x?.resource)});
- if(!out.length&&g.Omega?.ResourceRealism?.splitCommodities){
-   const ids=[...typeMap.keys()].filter(Boolean);
-   for(const x of g.Omega.ResourceRealism.splitCommodities(raw,ids))if(x?.resourceId)out.push(clone(x));
- }
+ // Do not infer a second physical commodity merely because its name appears in free-form reserve text.
+ // Multi-commodity physical execution requires an explicit structured stream declaration.
+ // This preserves genuine polymetallic deposits when they are explicitly represented while
+ // preventing one canonical deposit from becoming two physical execution assets by text matching.
  const primary=rid(occ?.resourceTypeId||occ?.resourceTypeKey||raw.resId||raw.resourceId||raw.resourceType);
  if(primary&&!out.some(x=>x.resourceId===primary))out.unshift({resourceId:primary});
  return [...new Map(out.filter(x=>x.resourceId).map(x=>[x.resourceId,x])).values()];
