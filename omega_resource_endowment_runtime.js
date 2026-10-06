@@ -509,6 +509,10 @@ function batchFromExtraction(x,record){
           asset?.quantitativeProfile?.reserve||asset?.quantitativeProfile?.production||
           asset?.extractionProfile?.nominalCapacity;
         if(!quantitative)return;
+        // Non-executable/historical sites stay in the 199 reference/controller layer.
+        // They do not become physical execution rows until their time-gated operational state permits it.
+        const quickGate=realism?.operationalGate?.(asset,simulationYear())||null;
+        if(quickGate&&quickGate.executable===false)return;
       }
       const siteKey=String(asset?.siteReferenceKey||('SITE:'+canonical(c)+':'+tok(siteName))).trim();
       const baseOccurrenceKey=(assetType==='MINE_SITE'?'SITE_OCC:':'FIELD_OCC:')+canonical(c)+':'+tok(siteKey);
