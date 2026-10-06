@@ -281,14 +281,15 @@ function siteModel(site,profile,countryId){
    const reserveQuantity=scenarioReserve!==null?scenarioReserve:(observedReserve!==null?observedReserve:fallbackReserve);
    const reserveAuthority=scenarioReserve!==null?'SIMULATED':(observedReserve!==null?'OBSERVED':'SIMULATED');
    const technicalRecoveryFactor=clamp01(Number(src?.technicalRecoveryFactor??src?.recoveryFactor??recoveryFinal??0.75))||0.75;
-   const economicConversionFactor=clamp01(Number(src?.economicConversionFactor??src?.economicRecoveryFactor??(0.82+0.12*(utilizationFinal??0.75)-0.16*(maintenanceFinal??0.05))))||0.8;
+   const economicRecoveryFactor=clamp01(Number(src?.economicRecoveryFactor??src?.economicConversionFactor??(0.75+0.15*(utilizationFinal??0.75)-0.12*(maintenanceFinal??0.05))))||0.8;
+   const extractableConversionFactor=clamp01(Number(src?.extractableConversionFactor??src?.miningExtractionFactor??0.95))||0.95;
    const simulatedExtractable=reserveQuantity;
-   const simulatedEconomic=simulatedExtractable/Math.max(economicConversionFactor,0.55);
-   const simulatedTechnical=simulatedEconomic/Math.max(economicConversionFactor,0.55);
+   const simulatedEconomic=simulatedExtractable/Math.max(extractableConversionFactor,0.55);
+   const simulatedTechnical=simulatedEconomic/Math.max(economicRecoveryFactor,0.25);
    const simulatedGeological=simulatedTechnical/Math.max(technicalRecoveryFactor,0.25);
    const geologicalResourceQuantity=reserveAuthority==='SIMULATED'?simulatedGeological:explicitGeological;
    const technicallyRecoverableQuantity=reserveAuthority==='SIMULATED'?simulatedTechnical:explicitTechnical;
-   const economicallyRecoverableQuantity=reserveAuthority==='SIMULATED'?simulatedEconomic:(explicitEconomic??observedReserve);
+   const economicallyRecoverableQuantity=reserveAuthority==='SIMULATED'?simulatedEconomic:explicitEconomic;
    const extractableReserveQuantity=reserveAuthority==='SIMULATED'?(explicitExtractable??simulatedExtractable):(explicitExtractable??observedReserve);
    const reserveClassification=clone(src?.reserveClassification??qp?.reserve?.classification??null);
    const gradeField=qp?.grade&&typeof qp.grade==='object'?qp.grade:null;
@@ -305,7 +306,7 @@ function siteModel(site,profile,countryId){
      reserve:{quantity:extractableReserveQuantity,unit:scenarioReserveUnit||(CALIBRATION_RANGES[resourceId]?.unit||'TONNES'),authority:reserveAuthority,status:reserveAuthority,
        basis:scenarioReserve!==null?'PER_SITE_SCENARIO_EXTRACTABLE_RESERVE':(reserveAuthority==='OBSERVED'?'OBSERVED_QUANTITY_RECORD':'MODELED_EXTRACTABLE_RESERVE'),fieldAuthority:reserveAuthority,scenarioRecord:scenarioReserve!==null,
        quantityKind:'EXTRACTABLE_RESERVE',geologicalResourceQuantity,technicallyRecoverableQuantity,economicallyRecoverableQuantity,extractableReserveQuantity,residualExtractableReserveQuantity:extractableReserveQuantity,
-       technicalRecoveryFactor,economicConversionFactor,classification:reserveClassification,classificationState:reserveAuthority==='SIMULATED'?'SIMULATION_ONLY_NO_PUBLIC_RESERVE_CLASSIFICATION':'EVIDENCE_BACKED_CLASSIFICATION_ONLY'},
+       technicalRecoveryFactor,economicRecoveryFactor,extractableConversionFactor,classification:reserveClassification,classificationState:reserveAuthority==='SIMULATED'?'SIMULATION_ONLY_NO_PUBLIC_RESERVE_CLASSIFICATION':'EVIDENCE_BACKED_CLASSIFICATION_ONLY'},
      quality:{grade:rawGrade??grade,oreGrade:src?.oreGrade??rawGrade??grade,concentration:src?.concentration??null,assay:src?.assay??null,metalContent:src?.metalContent??null,purity,
        APIGravity:api,gradeStatus:gradeAuthority,concentrationStatus:src?.concentration!=null?'OBSERVED':'UNOBSERVED',assayStatus:src?.assay!=null?'OBSERVED':'UNOBSERVED',metalContentStatus:src?.metalContent!=null?'OBSERVED':'UNOBSERVED',
        purityStatus:purity!==null?'OBSERVED':'UNOBSERVED',apiGravityStatus:apiRaw!==null?'OBSERVED':'UNOBSERVED',
