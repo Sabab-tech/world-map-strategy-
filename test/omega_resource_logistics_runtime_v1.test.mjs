@@ -31,6 +31,10 @@ assert.ok(route[0].capacity>0);
 assert.ok(route[0].costEstimate>0);
 assert.ok(route[0].travelTimeDays>0);
 assert.equal(route[0].deliveryStatus,'READY_FOR_DELIVERY');
+assert.equal(route[0].networkAuthority,'SIMULATED');
+assert.equal(route[0].realWorldCapacityVerified,false);
+assert.equal(route[0].realWorldRouteVerified,false);
+assert.equal(route[0].deliveryExecutionMode,'SIMULATED_GAME_QUEUE');
 
 const state={resource:{logistics:{shipments:[]}}};
 const tx={get(path){return path==='resource'?state.resource:null;},set(path,value){if(path==='resource.logistics')state.resource.logistics=value;}};
@@ -38,6 +42,8 @@ const planned=handlers.get('OMEGA_RESOURCE_LOGISTICS_PLAN')({payload:{countryId:
 assert.equal(planned.accepted,true);
 assert.equal(state.resource.logistics.shipments.length,1);
 assert.equal(state.resource.logistics.shipments[0].status,'IN_TRANSIT');
+assert.equal(state.resource.logistics.shipments[0].networkAuthority,'SIMULATED');
+assert.equal(state.resource.logistics.shipments[0].realWorldCapacityVerified,false);
 
 context.Game.state.simulation.turn=3;
 const advanced=handlers.get('OMEGA_RESOURCE_LOGISTICS_ADVANCE')({payload:{countryId:'BGD'}},{countryId:'BGD',stateTransaction:tx});
