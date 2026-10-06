@@ -699,7 +699,7 @@ function batchFromExtraction(x,record){
     for(const row of [...canonicalRows,...siteRows]){
       const key=String(row?.occurrenceKey||'');
       if(!key||rowSeen.has(key))continue;
-      if(row?.isSimulationGenerated===true&&canonicalSignatures.has(signature(row)))continue;
+      if(row?.assetType==='MINE_SITE'&&canonicalSignatures.has(signature(row)))continue;
       rowSeen.add(key);rows.push(row);
     }
     const selected=Array.isArray(cmd?.payload?.occurrenceKeys)&&cmd.payload.occurrenceKeys.length
