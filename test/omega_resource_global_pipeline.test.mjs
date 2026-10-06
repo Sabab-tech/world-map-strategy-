@@ -166,7 +166,11 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
     ];
     const expectedOverall=authorities.every(v=>v==='OBSERVED')?'OBSERVED':
       authorities.some(v=>v==='SIMULATED')?'SIMULATED':'UNOBSERVED';
-    assert.equal(String(assetStatus.overall||'UNOBSERVED').toUpperCase(),expectedOverall);
+    assert.equal(
+      String(assetStatus.overall||'UNOBSERVED').toUpperCase(),
+      expectedOverall,
+      JSON.stringify({site:x.siteName,assetStatus,authorities,resourceType:x.resourceAsset.resourceType})
+    );
   }
   const unifiedSiteKeys=Object.keys(siteRefs[0]?.resourceAsset||{}).sort();
   const occurrenceRows=idResult.registry.listOccurrences();
