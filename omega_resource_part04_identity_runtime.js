@@ -294,7 +294,7 @@
           const physicalKey=stableId
             ? countryId+'|ID:'+tok(stableId)
             : countryId+'|R:'+tok(resourceId||'unknown')+'|N:'+tok(siteName)+'|L:'+tok(locationKey||'');
-          const sourcePath='GSRSK_Master_CountryProfiles_v14.countryProfiles.'+String(profileKey)+'.resource_infrastructure_context.mineSites['+index+'];
+          const sourcePath=`GSRSK_Master_CountryProfiles_v14.countryProfiles.${String(profileKey)}.resource_infrastructure_context.mineSites[${index}]`;
           const existing=byPhysicalIdentity.get(physicalKey);
           if(existing){
             existing.rawSiteReference=mergeDefined(existing.rawSiteReference,rawSiteObject);
