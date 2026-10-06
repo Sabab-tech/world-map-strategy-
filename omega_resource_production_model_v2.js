@@ -21,20 +21,30 @@ const scale=s=>{const x=String(s||'').toLowerCase();return x.includes('trillion'
 function measure(text,allowed){const m=String(text??'').match(new RegExp('([0-9]+(?:\\.[0-9]+)?)\\s*(trillion|billion|million|thousand)?\\s*('+allowed.join('|')+')\\b','i'));if(!m)return{status:'UNOBSERVED',value:null,unit:null,raw:String(text??'')};return{status:'OBSERVED',value:Number(m[1])*scale(m[2]),unit:unit(m[3]),sourceUnit:m[3].toUpperCase(),raw:String(text??'')}}
 function parseReserve(text,resourceId,targetUnit){
  const external=g.Omega?.ResourceRealism?.parseReserve;
- if(typeof external==='function'){const x=external(text,resourceId);if(x?.status){
-   const family=x.sourceUnitFamily||x.sourceUnit||x.unitFamily||null;
-   const resource=rid(resourceId);
-   const canonicalTarget=resource==='natural_gas'?'BCM':
-     ((resource==='gold'||resource==='silver'||resource==='platinum')&&family!=='TONNES'?'TROY_OZ':family);
-   const target=targetUnit||canonicalTarget;
-   let value=x.value;
-   if(family==='TCF'&&target==='BCM')value=Number(x.value)*28.316846592;
-   else if(family==='BCF'&&target==='BCM')value=Number(x.value)*0.028316846592;
-   else if(family==='MCM'&&target==='BCM')value=Number(x.value)*0.001;
-   else if(family==='MCF'&&target==='BCM')value=Number(x.value)*0.000000028316846592;
-   else if(family==='TONNES'&&target==='TROY_OZ')value=Number(x.value)*32150.74656862745;
-   return{...x,value,unit:target,targetUnit:target};
- }}
+ if(typeof external==='function'){
+   const x=external(text,resourceId);
+   if(x?.status){
+     const resource=rid(resourceId);
+     const detectedUnit=String(x.unit||'').toUpperCase();
+     const target=String(targetUnit||(
+       resource==='natural_gas'?'BCM':
+       (['gold','silver','platinum'].includes(resource)&&detectedUnit!=='TONNES'?'TROY_OZ':detectedUnit)
+     )).toUpperCase();
+     const convert=(value,source,targetUnitName)=>{
+       const v=Number(value);if(!Number.isFinite(v))return null;
+       if(source===targetUnitName)return v;
+       if(source==='TCF'&&targetUnitName==='BCM')return v*28.316846592;
+       if(source==='BCF'&&targetUnitName==='BCM')return v*0.028316846592;
+       if(source==='MCM'&&targetUnitName==='BCM')return v*0.001;
+       if(source==='MCF'&&targetUnitName==='BCM')return v*0.000000028316846592;
+       if((source==='METRIC_TONS'||source==='TONNES')&&targetUnitName==='TROY_OZ')return v*32150.74656862745;
+       if((source==='TROY_OUNCES'||source==='TROY_OZ')&&targetUnitName==='TONNES')return v/32150.74656862745;
+       return v;
+     };
+     const value=convert(x.value,detectedUnit,target);
+     return{...x,value,unit:target,targetUnit:target};
+   }
+ }
  const r=rid(resourceId),t=String(text??''),u=r==='crude_oil'?UNITS.BBL:r==='natural_gas'?[...UNITS.TCF,...UNITS.BCF,...UNITS.BCM,...UNITS.MCM,...UNITS.MCF]:r==='gold'?[...UNITS.TROY_OZ,...UNITS.TONNES]:UNITS.TONNES;
  const x=measure(t,u);if(x.status!=='OBSERVED')return{status:'UNOBSERVED',value:null,unit:targetUnit||null,raw:t};
  const target=targetUnit||(r==='natural_gas'?'BCM':(r==='gold'&&x.unit!=='TONNES'?'TROY_OZ':x.unit));
