@@ -686,7 +686,12 @@ function batchFromExtraction(x,record){
     });
     const existingResourceState=ctx.stateTransaction.get('resource')||{};
     const persistedMineStates=ctx.stateTransaction.get('resource.mineStates')||{};
-    const rows=[...occurrenceRows(c),...siteExecutionRows(c,{mineStates:persistedMineStates})];
+    const rowSeen=new Set(),rows=[];
+    for(const row of [...occurrenceRows(c),...siteExecutionRows(c,{mineStates:persistedMineStates})]){
+      const key=String(row?.occurrenceKey||'');
+      if(!key||rowSeen.has(key))continue;
+      rowSeen.add(key);rows.push(row);
+    }
     const selected=Array.isArray(cmd?.payload?.occurrenceKeys)&&cmd.payload.occurrenceKeys.length
       ?rows.filter(x=>cmd.payload.occurrenceKeys.includes(x.occurrenceKey)):rows;
     const extracted=[];
@@ -1067,7 +1072,7 @@ function batchFromExtraction(x,record){
       minePathCount+=rs.minePaths&&typeof rs.minePaths==='object'?Object.keys(rs.minePaths).length:0;
       if(Array.isArray(rs.mines)){structuredMineCount+=rs.mines.filter(x=>!x?.simulationGenerated).length;executableAssetCount+=rs.mines.filter(x=>x?.simulationGenerated===true).length;fieldAssetCount+=rs.mines.filter(x=>x?.simulationGenerated===true&&['OIL_FIELD','GAS_FIELD'].includes(x?.assetType)).length;}
     }
-    const modeledSiteReferenceCount=Number(e?.mineSiteReferenceCount)||Object.values(e?.countryProfiles||{}).reduce((sum,p)=>{
+    const modeledSiteReferenceCount=Number(g.__OmegaResourceSiteReferenceCount)||Number(e?.mineSiteReferenceCount)||Object.values(e?.countryProfiles||{}).reduce((sum,p)=>{
       const sites=p?.resource_infrastructure_context?.mineSites||p?.infrastructure_context?.mineSites||[];
       return sum+(Array.isArray(sites)?sites.length:0);
     },0)||Number(g.__OmegaResourceKnowledgeModel?.refCatalog?.allReferences?.length)||0;
