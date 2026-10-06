@@ -131,6 +131,17 @@
       ]
     }
   ],
+  "evidenceResolution": {
+    "resolver": "OMEGA_RESOURCE_EVIDENCE_RESOLVER_V1",
+    "fieldLevel": true,
+    "precedence": ["SOURCE_QUALITY","CONFIDENCE","EFFECTIVE_DATE","PUBLICATION_OR_ACCESS_DATE"],
+    "supersession": "An applicable newer field-level observation may supersede stale canonical data while historical simulation years retain the older applicable state.",
+    "accessDateFallback": "When a source lacks a declared effective date, access date may be used as a temporal lower-confidence fallback and is recorded as such."
+  },
+  "certificateSemantics": {
+    "siteCoverageCertificateProves": ["identity_mapping","schema_integrity","runtime_consumption","boundary_integrity","simulation_provenance"],
+    "doesNotProve": ["real_world_reserve_accuracy","real_world_production_accuracy","real_world_logistics_capacity"]
+  },
   "authorityRules": {
     "observed": "Directly stated by source for the same asset and relevant date.",
     "derived": "Computed only from observed fields with an auditable formula.",
