@@ -7,7 +7,7 @@
  */
 (function(g){
   'use strict';
-  const VERSION='2.0.0',DAY_HOURS=24,MAX_LEDGER=2048,MAX_MINE_HISTORY=4096;
+  const VERSION='2.1.0',DAY_HOURS=24,MAX_LEDGER=2048,MAX_MINE_HISTORY=4096;
   const clone=(v,seen=new WeakMap())=>{
     if(v===null||typeof v!=='object')return v;
     if(seen.has(v))return seen.get(v);
@@ -65,11 +65,14 @@
     })();
     return researchEvidencePromise;
   }
+  const evidenceResolver=()=>g.Omega?.ResourceEvidenceResolver||g.OmegaResourceEvidenceResolver||null;
   function enrichResearchEvidence(site){
     const s=clone(site||{}),keys=[s.siteReferenceKey,s.id,s.siteId,s.rawSiteReference?.id].filter(Boolean).map(String);
     let row=null;for(const key of keys){if(researchEvidenceMap?.[key]){row=researchEvidenceMap[key];break;}}
     if(!row){const wanted=canonical(s.countryId||s.countryCode||s.country||'');const name=String(s.siteName||s.name||s.mineName||s.depositName||'').trim().toLowerCase();row=Object.values(researchEvidenceMap||{}).find(x=>canonical(x?.countryId||'')===wanted&&String(x?.siteName||x?.name||'').trim().toLowerCase()===name)||null;}
     if(!row)return s;
+    const resolved=evidenceResolver()?.apply?.(s,row,simulationYear());
+    if(resolved&&typeof resolved==='object')Object.assign(s,resolved);
     const facts=clone(row.facts||{});
     s.researchEvidence=clone(row.evidence||[]);
     s.researchFacts=facts;
@@ -100,8 +103,10 @@
       }
       s.quantitativeProfile=qp;
     }
-    s.researchEffectiveYear=evidenceYear;
-    s.researchEffectiveForSimulationYear=simulationYear()>=evidenceYear;
+    s.researchEffectiveYear=Number.isFinite(Number(row?.effectiveFrom))?Number(row.effectiveFrom):evidenceYear;
+    s.researchEvidenceEffectiveDate=row?.effectiveFrom||null;
+    s.researchEffectiveForSimulationYear=simulationYear()>=s.researchEffectiveYear;
+    s.researchResolutionVersion=evidenceResolver()?.VERSION||'LEGACY_FIELD_FIREWALL';
     return s;
   }
 
@@ -433,7 +438,7 @@ function batchFromExtraction(x,record){
   }
   function buildMineSiteControllers(c,rows,existing={}){
     const refs=mineSiteReferenceRows(c);
-    const executableKeys=new Set((rows||[]).map(x=>String(x.occurrenceKey)));
+    const executableKeys=new Set((rows||[]).filter(x=>x?.extractionExecutable!==false&&x?.operationalGate?.executable!==false).map(x=>String(x.occurrenceKey)));
     const old=existing&&typeof existing.mineSiteControllers==='object'&&existing.mineSiteControllers?existing.mineSiteControllers:{};
     const controllers={};
     for(const site of refs){
@@ -459,6 +464,7 @@ function batchFromExtraction(x,record){
         extractionExecutable:linked.length>0,
         quantitativeDataState:linked.length>0?'AVAILABLE':'MISSING_FROM_SITE_REFERENCE',
         linkedOccurrenceKeys:linked,
+        extractionGateAuthority:site?.evidenceResolution?.version?'FIELD_LEVEL_TEMPORAL_EVIDENCE':'RESOURCE_JSON',
         pathId,
         extractionPathStatus:linked.length>0?'EXECUTABLE_OCCURRENCE_ATTACHED':'BLOCKED_MISSING_QUANTITATIVE_DATA',
         lastEvaluationTurn:turn(),
@@ -476,6 +482,8 @@ function batchFromExtraction(x,record){
       const siteKey=String(asset?.siteReferenceKey||('SITE:'+canonical(c)+':'+tok(siteName))).trim();
       const baseOccurrenceKey=(assetType==='MINE_SITE'?'SITE_OCC:':'FIELD_OCC:')+canonical(c)+':'+tok(siteKey);
       const model=realism?.siteModel?.({...clone(asset||{}),siteReferenceKey:siteKey,resourceId:explicitResource||asset?.resourceId||asset?.resourceTypeId},p,canonical(c));
+      const gate=model?.executionGate||realism?.operationalGate?.(asset,simulationYear())||{executable:true,reason:'LEGACY_GATE'};
+      if(assetType==='MINE_SITE'&&!gate.executable)return;
       const streams=Array.isArray(model?.commodityStreams)?model.commodityStreams:[];if(!streams.length)return;
       const p5=g.GSRSK_Part05||g.GSRSK_ResourceReserveExtractionEngine;if(!p5?.ReserveState)return;
       for(const stream of streams){
@@ -484,7 +492,8 @@ function batchFromExtraction(x,record){
         if(seen.has(occurrenceKey))continue;seen.add(occurrenceKey);
         const old=existing?.mineStates?.[occurrenceKey],unit=stream.reserve.unit,prod=stream.production,q=stream.quality;
         const generated={occurrenceKey,countryId:canonical(c),depositKey:'SIM_'+tok(occurrenceKey),resourceId:stream.resourceId,
-          geologicalQuantity:stream.reserve.quantity,recoverableQuantity:stream.reserve.quantity,residualQuantity:stream.reserve.quantity,unit,
+          geologicalQuantity:stream.reserve.geologicalResourceQuantity??null,recoverableQuantity:stream.reserve.economicallyRecoverableQuantity??stream.reserve.quantity,residualQuantity:stream.reserve.residualExtractableReserveQuantity??stream.reserve.extractableReserveQuantity??stream.reserve.quantity,unit,
+          geologicalResourceQuantity:stream.reserve.geologicalResourceQuantity??null,technicallyRecoverableQuantity:stream.reserve.technicallyRecoverableQuantity??null,economicallyRecoverableQuantity:stream.reserve.economicallyRecoverableQuantity??stream.reserve.quantity,extractableReserveQuantity:stream.reserve.extractableReserveQuantity??stream.reserve.quantity,
           operationalStatus:'ACTIVE_EXTRACTION',stateVersion:1,quality:q,productionModel:prod,
           provenance:{sourceAuthority:'RESOURCE_JSON.countryProfiles',stateAuthority:'SIMULATED',sourceDatasetId:'resources.json.countryProfiles',sourcePath:asset?.sourcePath||null,
             quantityAuthority:stream.reserve.authority||'SIMULATED',productionAuthority:prod.authority||'SIMULATED',qualityAuthority:q.gradeStatus==='OBSERVED'?'OBSERVED':'SIMULATED',simulationRuleVersion:realism?.VERSION||null}};
@@ -492,7 +501,8 @@ function batchFromExtraction(x,record){
         const previous=merged?new p5.ReserveState(clone(merged)):null;
         const reserve=previous||new p5.ReserveState({
           occurrenceKey,countryId:canonical(c),depositKey:'SIM_'+tok(occurrenceKey),resourceId:stream.resourceId,
-          geologicalQuantity:stream.reserve.quantity,recoverableQuantity:stream.reserve.quantity,residualQuantity:stream.reserve.quantity,unit,
+          geologicalQuantity:stream.reserve.geologicalResourceQuantity??null,recoverableQuantity:stream.reserve.economicallyRecoverableQuantity??stream.reserve.quantity,residualQuantity:stream.reserve.residualExtractableReserveQuantity??stream.reserve.extractableReserveQuantity??stream.reserve.quantity,unit,
+          geologicalResourceQuantity:stream.reserve.geologicalResourceQuantity??null,technicallyRecoverableQuantity:stream.reserve.technicallyRecoverableQuantity??null,economicallyRecoverableQuantity:stream.reserve.economicallyRecoverableQuantity??stream.reserve.quantity,extractableReserveQuantity:stream.reserve.extractableReserveQuantity??stream.reserve.quantity,
           operationalStatus:'ACTIVE_EXTRACTION',stateVersion:1,quality:q,productionModel:prod,
           provenance:{sourceAuthority:'RESOURCE_JSON.countryProfiles',stateAuthority:'SIMULATED',sourceDatasetId:'resources.json.countryProfiles',sourcePath:asset?.sourcePath||null,
             quantityAuthority:stream.reserve.authority||'SIMULATED',productionAuthority:prod.authority||'SIMULATED',qualityAuthority:q.gradeStatus==='OBSERVED'?'OBSERVED':'SIMULATED',simulationRuleVersion:realism?.VERSION||null}
@@ -513,13 +523,13 @@ function batchFromExtraction(x,record){
           computeWindowCapacity(hours){const h=n(hours);return{windowCapacity:(this.activeRate||this.nominalRate||0)*(h===null?1:Math.max(0,h/24))};}};
         rows.push({
           occurrenceKey,parentOccurrenceKey:streams.length>1?baseOccurrenceKey:null,siteReferenceKey:siteKey,depositKey:'SIM_'+tok(occurrenceKey),linkedDepositId:asset?.linkedDepositId||asset?.depositKey||null,depositName:siteName,resourceId:stream.resourceId,countryId:canonical(c),resourceTypeKey:stream.resourceId,
-          locationNodeKey:'ASSET:'+canonical(c)+':'+tok(siteName),ownerKey:null,operatorKey:null,status:'ACTIVE_PRODUCING',
+          locationNodeKey:'ASSET:'+canonical(c)+':'+tok(siteName),ownerKey:asset?.owner||asset?.ownerKey||null,operatorKey:asset?.operator||asset?.operatorKey||null,status:String(asset?.operation?.status||asset?.status||'ACTIVE_PRODUCING').toUpperCase(),
           rawDeposit:{id:occurrenceKey,name:siteName,linkedDepositId:asset?.linkedDepositId||asset?.depositKey||null,countryCode:canonical(c),resId:stream.resourceId,status:'ACTIVE_PRODUCING',assetType,simulation:true,stateAuthority:reserve.provenance?.stateAuthority||'SIMULATED',
             sourceDatasetId:'RESOURCE_JSON.countryProfiles',sourcePath:asset?.sourcePath||null,productionModel:prod,quality:q,reserveModel:stream.reserve},
           sourceDatasetId:'RESOURCE_JSON.countryProfiles',
-          lifecycle:{status:'ACTIVE_EXTRACTION',mode:'PROFILE_DERIVED_SITE_MODEL',assetType,authority:prod.authority||'SIMULATED'},
+          lifecycle:{status:'ACTIVE_EXTRACTION',mode:'PROFILE_DERIVED_SITE_MODEL',assetType,authority:prod.authority||'SIMULATED',gate:clone(gate),sourceOperationalStatus:String(asset?.operation?.status||asset?.status||'UNKNOWN').toUpperCase()},
           accessibility:{state:'AVAILABLE',sourceAuthority:'RESOURCE_JSON_PROFILE',stateAuthority:reserve.provenance?.stateAuthority||'SIMULATED'},
-          reserveState:reserve,capacity,isSimulationGenerated:(prod.authority||'SIMULATED')!=='OBSERVED'||stream.reserve.authority!=='OBSERVED',assetType,siteModel:model,
+          reserveState:reserve,capacity,isSimulationGenerated:true,extractionExecutable:true,operationalGate:clone(gate),(prod.authority||'SIMULATED')!=='OBSERVED'||stream.reserve.authority!=='OBSERVED',assetType,siteModel:model,
           dataAuthority:{reserve:stream.reserve.authority||'SIMULATED',production:prod.authority||'SIMULATED',quality:q.gradeStatus==='OBSERVED'?'OBSERVED':'SIMULATED'}
         });
       }
@@ -535,15 +545,22 @@ function batchFromExtraction(x,record){
   }
 
   function buildCountryProjection(c,rows,existing={}){
-    const byResource={},mines=[],mineSiteReferences=mineSiteReferenceRows(c),mineSiteReferenceCount=mineSiteReferences.length;
+    const byResource={},mines=[],mineSiteReferences=mineSiteReferenceRows(c),mineSiteReferenceCount=mineSiteReferences.length,resourceOntology={};
     const mineSiteControllers=buildMineSiteControllers(c,rows,existing);
     for(const x of rows){
       const rs=x.reserveState,raw=x.rawDeposit;if(!rs)continue;
       const resource=x.resourceId;
       if(!byResource[resource])byResource[resource]={declared:0,recoverable:0,residual:0,mineCount:0};
-      byResource[resource].declared+=n(rs.geologicalQuantity)||0;
-      byResource[resource].recoverable+=n(rs.recoverableQuantity)||0;
-      byResource[resource].residual+=n(rs.residualQuantity)||0;
+      byResource[resource].declared+=n(rs.geologicalResourceQuantity??rs.geologicalQuantity)||0;
+      byResource[resource].recoverable+=n(rs.economicallyRecoverableQuantity??rs.recoverableQuantity)||0;
+      byResource[resource].residual+=n(rs.extractableReserveQuantity??rs.residualQuantity)||0;
+      if(!resourceOntology[resource])resourceOntology[resource]={unit:rs.unit||x.capacity?.unit||null,geologicalResourceQuantity:0,technicallyRecoverableQuantity:0,economicallyRecoverableQuantity:0,extractableReserveQuantity:0,residualExtractableReserveQuantity:0,siteCount:0};
+      resourceOntology[resource].geologicalResourceQuantity+=n(rs.geologicalResourceQuantity??rs.geologicalQuantity)||0;
+      resourceOntology[resource].technicallyRecoverableQuantity+=n(rs.technicallyRecoverableQuantity)||0;
+      resourceOntology[resource].economicallyRecoverableQuantity+=n(rs.economicallyRecoverableQuantity??rs.recoverableQuantity)||0;
+      resourceOntology[resource].extractableReserveQuantity+=n(rs.extractableReserveQuantity??rs.residualQuantity)||0;
+      resourceOntology[resource].residualExtractableReserveQuantity+=n(rs.extractableReserveQuantity??rs.residualQuantity)||0;
+      resourceOntology[resource].siteCount+=1;
       byResource[resource].mineCount+=1;
       const quality=mineQuality(x);
       const productionModel={
@@ -581,7 +598,7 @@ function batchFromExtraction(x,record){
         outputRatePerDay:n(x.capacity?.activeRate)||n(x.capacity?.nominalRate)||n(x.capacity?.dailyRate)||null,
         productionModel,
         resourceAsset,
-        sourceDatasetId:x.sourceDatasetId||raw?.sourceDatasetId||null,provenance:clone(rs.provenance||raw?.provenance||null),
+        sourceDatasetId:x.sourceDatasetId||raw?.sourceDatasetId||null,provenance:clone(rs.provenance||raw?.provenance||null),resourceOntology:clone({geologicalResourceQuantity:rs.geologicalResourceQuantity??null,technicallyRecoverableQuantity:rs.technicallyRecoverableQuantity??null,economicallyRecoverableQuantity:rs.economicallyRecoverableQuantity??null,extractableReserveQuantity:rs.extractableReserveQuantity??rs.residualQuantity??null}),
         stateAuthority:x.capacity?.stateAuthority||rs.provenance?.stateAuthority||raw?.stateAuthority||'UNOBSERVED',
         reserveAuthority:rs.provenance?.quantityAuthority||raw?.reserveAuthority||'UNOBSERVED',
         productionAuthority:x.capacity?.authority||'UNOBSERVED',
@@ -603,6 +620,7 @@ function batchFromExtraction(x,record){
     for(const x of rows)mineStates[x.occurrenceKey]=clone(x.reserveState.toJSON?.()||x.reserveState);
     return{
       ...clone(existing),countryResourceProfile:clone(profile(c)),resourceDomain:clone(profile(c)?.resource_domain||null),
+      resourceOntology,
       mines,mineSiteReferences,mineSiteReferenceCount,mineSiteControllers,
       endowment,reserves:merge(reserves,existing.reserves),inventory,production,consumption,tradeAvailability,mineStates,
       strategicReserve,
@@ -616,12 +634,14 @@ function batchFromExtraction(x,record){
       extractionLedger:Array.isArray(existing.extractionLedger)?existing.extractionLedger.slice(-MAX_LEDGER):[],
       resourceAuthority:{
         source:'RESOURCE_JSON->PART04->PART05->RESOURCE_RUNTIME',
+        ontologyVersion:'RESOURCE_RESERVE_ONTOLOGY_V2',
         knowledgeSources:['resources.json','resources_2.json','resource_site_reserve_simulation_v1.json'],
         mineSource:'RESOURCE_JSON.runtime_deposits + PROFILE_DERIVED_SIMULATION_ASSETS',
         mineSiteSource:'RESOURCE_JSON.countryProfiles.*.resource_infrastructure_context.mineSites',
         executableMineCount:rows.length,
         structuredExecutableMineCount:occurrenceRows(c).length,
         profileDerivedExecutableAssetCount:rows.filter(x=>x.isSimulationGenerated).length,
+        researchEvidenceCount:Object.keys(researchEvidenceMap||{}).length,researchEvidenceCoverageRatio:mineSiteReferenceCount?Object.keys(researchEvidenceMap||{}).length/mineSiteReferenceCount:0,
         mineSiteReferenceCount,
         reserveSource:'GSRSK_Part05.ResourceReserveExtractionEngine',
         countryScoped:true,fullEffortPolicy:'MODEL_DRIVEN',simulationTurn:turn(),dataLoadReport:eDataReport()
