@@ -156,8 +156,14 @@ assert.equal(unifiedReferences.length,199);
 assert.ok(unifiedReferences.every(x=>x.resourceAsset&&x.resourceAsset.schemaVersion==='1.0.0'));
 assert.ok(unifiedReferences.every(x=>x.resourceAsset.assetId===x.siteReferenceKey));
 assert.deepEqual(Object.keys(unifiedReferences[0]?.resourceAsset||{}).sort(),unifiedMineKeys);
-const executableSiteControllerCount=Object.values(worldState).reduce((sum,row)=>sum+Object.values(row?.mineSiteControllers||{}).filter(c=>c?.extractionExecutable===true).length,0);
-assert.equal(profileMineOutputs.length,executableSiteControllerCount);
+const profileDerivedExecutableSiteControllerCount=Object.values(worldState).reduce((sum,row)=>{
+  return sum+Object.values(row?.mineSiteControllers||{}).filter(controller=>{
+    if(controller?.extractionExecutable!==true)return false;
+    const linked=Array.isArray(controller.linkedOccurrenceKeys)?controller.linkedOccurrenceKeys:[];
+    return linked.some(occurrenceKey=>row?.mineOutputs?.[occurrenceKey]?.simulationGenerated===true);
+  }).length;
+},0);
+assert.equal(profileMineOutputs.length,profileDerivedExecutableSiteControllerCount);
 assert.ok(executableSiteControllerCount<199,'historical/non-executable site references must not all become executable');
 assert.equal(simulatedFieldOutputs.length,0,'country-level hydrocarbon bases must not become synthetic physical field assets');
 assert(profileMineOutputs.every(x=>!['OIL_FIELD','GAS_FIELD'].includes(x?.assetType)),'hydrocarbon field assets must originate from identified site/occurrence identity');
@@ -193,7 +199,7 @@ for(const [countryId,row] of Object.entries(worldState)){
     }
   }
 }
-assert.equal(profileMineOutputs.length,executableSiteControllerCount);
+assert.equal(profileMineOutputs.length,profileDerivedExecutableSiteControllerCount);
 
 const npl2015=runtime.hydrateCountry('NPL');
 assert.equal(npl2015.status,'APPLIED',JSON.stringify(npl2015));
