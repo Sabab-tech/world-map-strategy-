@@ -143,9 +143,13 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
   };
   for(const x of siteRefs){
     const raw=x.rawSiteReference&&typeof x.rawSiteReference==='object'?x.rawSiteReference:{};
-    const expectedReserve=Number.isFinite(Number(raw.geologicalQuantity))&&Number(raw.geologicalQuantity)>0
+    const explicitReserve=Number.isFinite(Number(raw.geologicalQuantity))&&Number(raw.geologicalQuantity)>0
       ?Number(raw.geologicalQuantity)
       :(Number.isFinite(Number(raw.reserveQuantity))&&Number(raw.reserveQuantity)>0?Number(raw.reserveQuantity):null);
+    const parsedReserve=explicitReserve===null
+      ?part05.parseReserve?.(raw,x.resourceAsset.resourceType||x.resourceAsset.resourceTypeId,raw.unit)?.value??null
+      :explicitReserve;
+    const expectedReserve=parsedReserve;
     const expectedRate=Number.isFinite(Number(raw.productionRate))&&Number(raw.productionRate)>0
       ?Number(raw.productionRate)
       :(
