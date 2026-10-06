@@ -529,7 +529,7 @@ function batchFromExtraction(x,record){
           sourceDatasetId:'RESOURCE_JSON.countryProfiles',
           lifecycle:{status:extractionExecutable?'ACTIVE_EXTRACTION':'BLOCKED_BY_OPERATIONAL_GATE',mode:'PROFILE_DERIVED_SITE_MODEL',assetType,authority:prod.authority||'SIMULATED',gate:clone(gate),sourceOperationalStatus:String(asset?.operation?.status||asset?.status||'UNKNOWN').toUpperCase()},
           accessibility:{state:'AVAILABLE',sourceAuthority:'RESOURCE_JSON_PROFILE',stateAuthority:reserve.provenance?.stateAuthority||'SIMULATED'},
-          reserveState:reserve,capacity,isSimulationGenerated:true,extractionExecutable,operationalGate:clone(gate),(prod.authority||'SIMULATED')!=='OBSERVED'||stream.reserve.authority!=='OBSERVED',assetType,siteModel:model,
+          reserveState:reserve,capacity,isSimulationGenerated:true,extractionExecutable,operationalGate:clone(gate),assetType,siteModel:model,
           dataAuthority:{reserve:stream.reserve.authority||'SIMULATED',production:prod.authority||'SIMULATED',quality:q.gradeStatus==='OBSERVED'?'OBSERVED':'SIMULATED'}
         });
       }
