@@ -257,7 +257,7 @@ function emit(type,c,payload){
 function dispatch(type,c,payload={}){
   const m=interop();if(!m?.dispatchCommand)return{status:'UNAVAILABLE',reason:'MINISTRY_INTEROPERABILITY_UNAVAILABLE'};
   try{return m.dispatchCommand('resource',type,canonicalCountry(c),clone(payload),{turn:turn(),commandType:type,correlationId:payload?.requestId||null});}
-  catch(e){return{status:'FAILED',reason:String(e?.message||e)};}
+  catch(e){return{status:'FAILED',reason:String(e?.message||e),errorName:String(e?.name||'Error'),errorStack:String(e?.stack||'')};}
 }
 function register(){
   const m=interop();if(!m?.registerCommandHandler)return false;
@@ -302,8 +302,8 @@ function diagnostics(){
 }
 const API=Object.freeze({
   VERSION,loadCatalog,technology,technologies,register,processCountry,processAll,diagnostics,
-  startResearch:(countryId,payload={})=>{register();const r=dispatch('OMEGA_RESOURCE_RESEARCH_START',countryId,payload);return r?.result&&['APPLIED','REJECTED'].includes(String(r?.status||''))?r.result:r;},
-  importTechnology:(countryId,payload={})=>{register();const r=dispatch('OMEGA_RESOURCE_TECHNOLOGY_IMPORT',countryId,payload);return r?.result&&['APPLIED','REJECTED'].includes(String(r?.status||''))?r.result:r;},
+  startResearch:(countryId,payload={})=>{register();const r=dispatch('OMEGA_RESOURCE_RESEARCH_START',countryId,payload);if(r?.status==='FAILED'&&typeof console?.error==='function')console.error('OMEGA_RESOURCE_RESEARCH_START_FAILED',r);return r?.result&&['APPLIED','REJECTED'].includes(String(r?.status||''))?r.result:r;},
+  importTechnology:(countryId,payload={})=>{register();const r=dispatch('OMEGA_RESOURCE_TECHNOLOGY_IMPORT',countryId,payload);if(r?.status==='FAILED'&&typeof console?.error==='function')console.error('OMEGA_RESOURCE_TECHNOLOGY_IMPORT_FAILED',r);return r?.result&&['APPLIED','REJECTED'].includes(String(r?.status||''))?r.result:r;},
   getEngineeringEffect
 });
 g.Omega=g.Omega||{};g.Omega.ResourceResearchRuntime=API;g.OmegaResourceResearchRuntime=API;
