@@ -34,7 +34,7 @@ const SOURCE_RANK=Object.freeze({
 const STATUS_EXECUTABLE=new Set(['ACTIVE_PRODUCING','ACTIVE','OPERATING','RUNNING','PRODUCING','RESTARTING','LIMITED_RAMP_UP','LIMITED','ARTISANAL_AND_LIMITED']);
 const STATUS_BLOCKED=new Set(['SUSPENDED','HISTORICAL_INACTIVE','CLOSED','ABANDONED','CARE_AND_MAINTENANCE','CESSATION_OF_PRODUCTION','NO_CURRENT_CONCESSION','PRESERVATION_AND_SAFE_MANAGEMENT','DISPUTED_OPERATION','RESOURCE_IDENTITY_UNVERIFIED','NOT_APPLICABLE']);
 const clone=v=>v===null||typeof v!=='object'?v:Array.isArray(v)?v.map(clone):Object.fromEntries(Object.entries(v).map(([k,x])=>[k,clone(x)]));
-const year=v=>{if(v===null||v===undefined||v==='')return null;const m=String(v).match(/(?:^|[-/])((?:19|20)\\d{2})(?:[-/]|$)/);if(m)return Number(m[1]);const n=Number(v);return Number.isFinite(n)&&n>1800&&n<2500?n:null;};
+const year=v=>{if(v===null||v===undefined||v==='')return null;const m=String(v).match(/(?:^|[-/])((?:19|20)\d{2})(?:[-/]|$)/);if(m)return Number(m[1]);const n=Number(v);return Number.isFinite(n)&&n>1800&&n<2500?n:null;};
 const sourceRank=v=>SOURCE_RANK[String(v||'').trim().toUpperCase()]??20;
 const confidence=v=>{const x=String(v??'').trim().toUpperCase();if(x==='HIGH'||x==='0.9'||x==='0.95'||x==='1')return 1;if(x==='MEDIUM'||x==='MODERATE'||x==='0.7')return .7;if(x==='LOW'||x==='0.4')return .4;const n=Number(v);return Number.isFinite(n)?Math.max(0,Math.min(1,n)):.6;};
 const evidenceDate=e=>year(e?.effectiveDate??e?.effectiveFrom??e?.observedAsOf??e?.published??e?.publicationDate??e?.accessed);
