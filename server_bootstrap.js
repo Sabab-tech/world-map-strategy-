@@ -110,6 +110,7 @@ const CANONICAL_AI_SCRIPTS = Object.freeze([
   'omega_resource_part04_identity_runtime.js',
   'omega_resource_part05_reserve_extraction_runtime.js',
   'omega_resource_realism_runtime_v1.js',
+  'omega_resource_evidence_resolver_v1.js',
   'omega_resource_production_model_v2.js',
   'omega_minister_runtime_v2.js',
   'omega_ai_integrity_layer.js',
