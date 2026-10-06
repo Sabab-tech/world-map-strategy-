@@ -4,6 +4,9 @@
   "generatedDate": "2026-10-06",
   "authority": "SITE_SPECIFIC_WEB_RESEARCH",
   "note": "Evidence overlay only. It does not replace the raw resource database or long-horizon scenario reserve dataset.",
+  "resolutionPolicyVersion": "OMEGA_RESOURCE_EVIDENCE_RESOLVER_V1",
+  "fieldPrecedence": ["SOURCE_QUALITY","CONFIDENCE","EFFECTIVE_DATE","PUBLICATION_OR_ACCESS_DATE"],
+  "futureEvidenceSupersession": "Newer applicable evidence may supersede stale canonical fields without rewriting historical simulation years.",
   "records": [
     {
       "siteId": "SITE_SLE_sierra_rutile_area_1",
