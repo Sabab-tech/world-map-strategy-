@@ -100,6 +100,9 @@
     {
       "siteId": "SITE_NPL_udayapur_limestone_mine",
       "countryId": "NPL",
+      "effectiveFrom": "2026-10-06",
+      "observedAsOf": "2026-10-06",
+      "factsAuthority": "OPERATOR_PRIMARY_CURRENT_SNAPSHOT",
       "evidence": [
         {
           "url": "https://ucil.org.np/page/3/about-udayapur-cement?lang=en",
