@@ -717,6 +717,23 @@ function batchFromExtraction(x,record){
     },cmd.commandId);
     return{accepted:true,countryId:c,mineCount:rows.length,mineSiteReferenceCount,resourceCount:Object.keys(projection.endowment).length};
   }
+  function referenceIndexHandler(cmd,ctx){
+    const c=canonical(ctx.countryId);
+    const existing=clone(state()?.resource?.[c]||{});
+    const refs=mineSiteReferenceRows(c);
+    const controllers=buildMineSiteControllers(c,[],existing);
+    ctx.stateTransaction.set('resource.mineSiteReferences',refs);
+    ctx.stateTransaction.set('resource.mineSiteReferenceCount',refs.length);
+    ctx.stateTransaction.set('resource.mineSiteControllers',controllers);
+    return{
+      accepted:true,
+      countryId:c,
+      mineSiteReferenceCount:refs.length,
+      mineSiteControllerCount:Object.keys(controllers).length,
+      mode:'REFERENCE_ONLY_LAZY_INDEX'
+    };
+  }
+
   function extractHandler(cmd,ctx){
     const c=canonical(ctx.countryId),r=g.__OmegaResourceReserveRegistry,p5=g.GSRSK_Part05||g.GSRSK_ResourceReserveExtractionEngine;
     if(!r||!p5?.ExtractionRequest||!p5?.executeExtraction)return{accepted:false,reason:'PART05_RESOURCE_EXTRACTION_UNAVAILABLE'};
@@ -1058,6 +1075,10 @@ function batchFromExtraction(x,record){
       handlersRegistered=true;
     }catch(_){}
     try{
+      m.registerCommandHandler('OMEGA_RESOURCE_ENDOWMENT_REFERENCE_INDEX','resource',referenceIndexHandler);
+      handlersRegistered=true;
+    }catch(_){}
+    try{
       m.registerCommandHandler('OMEGA_RESOURCE_EXTRACT_TICK','resource',extractHandler);
       handlersRegistered=true;
     }catch(_){}
@@ -1117,7 +1138,8 @@ function batchFromExtraction(x,record){
       const executableProfileRows=siteExecutionRows(c,existing);
       const hasExecutableProfileAssets=executableProfileRows.length>0;
       if(!structuredCountries.has(c)&&!hasExecutableProfileAssets){
-        results.push({countryId:c,result:{status:'SKIPPED_NO_EXECUTABLE_ASSETS',countryId:c}});
+        const indexed=dispatch('OMEGA_RESOURCE_ENDOWMENT_REFERENCE_INDEX',c,{correlationId:'RESOURCE-REFERENCE-INDEX-'+t+'-'+c});
+        results.push({countryId:c,result:indexed?.status==='APPLIED'?indexed.result||indexed:{status:'FAILED',reason:'REFERENCE_INDEX_NOT_APPLIED',detail:indexed}});
         continue;
       }
       if(!Array.isArray(existing.mineSiteReferences)||!existing.mineSiteControllers){
