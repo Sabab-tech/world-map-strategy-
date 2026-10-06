@@ -827,18 +827,28 @@ function batchFromExtraction(x,record){
       if(!Array.isArray(existingPath.stages))existingPath.stages=[];
       if(!Array.isArray(existingPath.batchIds))existingPath.batchIds=[];
       if(!Array.isArray(existingPath.inventoryAllocations))existingPath.inventoryAllocations=[];
+      const blockPath=(reason,status='BLOCKED')=>{
+        existingPath.status=status;
+        existingPath.stages.push({stage:'EXTRACTION_BLOCKED',turn:turn(),reason:String(reason||'EXTRACTION_BLOCKED')});
+        existingPath.lastTurn=turn();
+        minePaths[x.occurrenceKey]=existingPath;
+      };
       existingPath.stages.push({stage:'EXTRACTION_SCAN',turn:turn()});
       existingPath.lastTurn=turn();
       minePaths[x.occurrenceKey]=existingPath;
       const reserve=r.getReserveState(x.occurrenceKey)||x.reserveState;
       if(!reserve){
         const reason={occurrenceKey:x.occurrenceKey,resourceId:x.resourceId,reason:'RESERVE_STATE_UNAVAILABLE'};
+        blockPath(reason.reason,'BLOCKED_RESERVE_STATE_UNAVAILABLE');
         blocked.push(reason);
         mineOutputs[x.occurrenceKey]={occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,resourceId:x.resourceId,simulationTurn:turn(),producedQuantity:0,status:'BLOCKED',blockReason:reason.reason};
         continue;
       }
       if(reserve.residualQuantity<=0){
         const reason={occurrenceKey:x.occurrenceKey,resourceId:x.resourceId,reason:'RESERVE_EXHAUSTED'};
+        blockPath(reason.reason,'BLOCKED_RESERVE_EXHAUSTED');
+        blockPath(reason.reason,'BLOCKED_CAPACITY_UNAVAILABLE');
+        blockPath(reason.reason,'BLOCKED_OUTPUT_RATE_UNAVAILABLE');
         blocked.push(reason);
         mineOutputs[x.occurrenceKey]={occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,resourceId:x.resourceId,simulationTurn:turn(),producedQuantity:0,status:'BLOCKED',blockReason:reason.reason,residualQuantity:n(reserve.residualQuantity)||0};
         continue;
@@ -849,6 +859,7 @@ function batchFromExtraction(x,record){
         (/(ACTIVE|OPERATING|RUNNING|PRODUCING)/.test(sourceStatus) && !/(SUSPEND|BLOCK|CLOSED|ABANDON|DEPLET)/.test(sourceStatus));
       if(!operational){
         const reason={occurrenceKey:x.occurrenceKey,resourceId:x.resourceId,reason:'MINE_NOT_OPERATIONAL',operationalStatus:operationalStatus||'UNKNOWN',sourceStatus:sourceStatus||null};
+        blockPath(reason.reason,'BLOCKED_MINE_NOT_OPERATIONAL');
         blocked.push(reason);
         mineOutputs[x.occurrenceKey]={occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,resourceId:x.resourceId,simulationTurn:turn(),producedQuantity:0,status:'BLOCKED',blockReason:reason.reason,operationalStatus:operationalStatus||'UNKNOWN',sourceStatus:sourceStatus||null,residualQuantity:n(reserve.residualQuantity)||0};
         continue;
@@ -893,11 +904,15 @@ function batchFromExtraction(x,record){
           overdrawPolicy:p5.OverdrawPolicyEnum?.CAP||'CAP'
         });
       }catch(error){
-        blocked.push({occurrenceKey:x.occurrenceKey,resourceId:x.resourceId,reason:String(error?.message||error)});
+        const reason=String(error?.message||error);
+        blockPath(reason,'BLOCKED_EXTRACTION_ERROR');
+        blocked.push({occurrenceKey:x.occurrenceKey,resourceId:x.resourceId,reason});
         continue;
       }
       if(!result||![p5.ExtractionResultStatus?.APPROVED||'APPROVED',p5.ExtractionResultStatus?.PARTIALLY_APPROVED||'PARTIALLY_APPROVED'].includes(result.status)){
-        blocked.push({occurrenceKey:x.occurrenceKey,resourceId:x.resourceId,reason:result?.diagnostics?.[0]?.message||result?.status||'EXTRACTION_NOT_APPROVED'});
+        const reason=result?.diagnostics?.[0]?.message||result?.status||'EXTRACTION_NOT_APPROVED';
+        blockPath(reason,'BLOCKED_EXTRACTION_NOT_APPROVED');
+        blocked.push({occurrenceKey:x.occurrenceKey,resourceId:x.resourceId,reason});
         continue;
       }
       r.registerReserveState(result.reserveAfter);
