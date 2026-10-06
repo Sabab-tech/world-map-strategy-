@@ -217,12 +217,12 @@ function siteModel(site,profile,countryId){
    const declineRaw=src?.decline??src?.declineRate??productionInput?.decline??productionInput?.declineRate??ep?.decline;
    const maintenanceRaw=src?.maintenance??src?.maintenanceRate??productionInput?.maintenance??productionInput?.maintenanceRate??ep?.maintenance;
    const costObs=num(src?.operatingCost??src?.operatingCostPerUnit??productionInput?.operatingCost??productionInput?.operatingCostPerUnit??qp?.production?.operatingCost??ep?.operatingCost);
-   const utilization=utilRaw===undefined?(scenario?.utilization??(0.65+0.2*deterministicSeed)):Number(utilRaw)>1?Number(utilRaw)/100:Number(utilRaw);
-   const recovery=recoveryRaw===undefined?(scenario?.recovery??(0.65+0.25*deterministicSeed)):Number(recoveryRaw)>1?Number(recoveryRaw)/100:Number(recoveryRaw);
-   const decline=declineRaw===undefined?(scenario?.decline??(0.02+0.03*deterministicSeed)):Number(declineRaw)>1?Number(declineRaw)/100:Number(declineRaw);
-   const maintenance=maintenanceRaw===undefined?(scenario?.maintenance??(0.03+0.04*deterministicSeed)):Number(maintenanceRaw)>1?Number(maintenanceRaw)/100:Number(maintenanceRaw);
    const calibration=CALIBRATION_RANGES[resourceId]||{unit:'TONNES',min:1000,max:100000,lifeMin:10,lifeMax:30,gradeMin:1,gradeMax:50};
    const deterministicSeed=fracHash([countryId,site?.siteReferenceKey||site?.id||name,resourceId].join('|'));
+   const utilization=utilRaw==null?(scenario?.utilization??(0.65+0.2*deterministicSeed)):Number(utilRaw)>1?Number(utilRaw)/100:Number(utilRaw);
+   const recovery=recoveryRaw==null?(scenario?.recovery??(0.65+0.25*deterministicSeed)):Number(recoveryRaw)>1?Number(recoveryRaw)/100:Number(recoveryRaw);
+   const decline=declineRaw==null?(scenario?.decline??(0.02+0.03*deterministicSeed)):Number(declineRaw)>1?Number(declineRaw)/100:Number(declineRaw);
+   const maintenance=maintenanceRaw==null?(scenario?.maintenance??(0.03+0.04*deterministicSeed)):Number(maintenanceRaw)>1?Number(maintenanceRaw)/100:Number(maintenanceRaw);
    const fallbackLifeYears=calibration.lifeMin+deterministicSeed*(calibration.lifeMax-calibration.lifeMin);
    const fallbackReserve=calibration.min+deterministicSeed*(calibration.max-calibration.min);
    const fallbackNominal=Math.max(fallbackReserve/Math.max(365*fallbackLifeYears,1),calibration.min/Math.max(365*fallbackLifeYears,1));
@@ -237,8 +237,8 @@ function siteModel(site,profile,countryId){
    const capacityFactor=Math.max(.1,Number(technology.capacityMultiplier)||1),outputFactor=Math.max(.1,Number(technology.outputMultiplier)||1);
    const nominalBase=nominalObs??effectiveObservedRate??modeledNominal;
    const nominal=nominalBase===null?null:nominalBase*capacityFactor;
-   const minimumBase=minObs??scenario?.minimumCapacity??(effectiveObservedRate!==null?effectiveObservedRate*.55:null);
-   const maximumBase=maxObs??scenario?.maximumCapacity??(effectiveObservedRate!==null?effectiveObservedRate*1.25:null);
+   const minimumBase=minObs??scenario?.minimumCapacity??(effectiveObservedRate!==null?effectiveObservedRate*.55:nominalBase!==null?nominalBase*.55:null);
+   const maximumBase=maxObs??scenario?.maximumCapacity??(effectiveObservedRate!==null?effectiveObservedRate*1.25:nominalBase!==null?nominalBase*1.3:null);
    const minimum=minimumBase===null?null:minimumBase*capacityFactor;
    const maximum=maximumBase===null?null:maximumBase*capacityFactor;
    const utilizationRatio=utilization!==null&&utilization>0&&utilizationFinal!==null?utilizationFinal/utilization:1;
@@ -251,7 +251,7 @@ function siteModel(site,profile,countryId){
    const scenarioReserveUnit=String(src?.simulationReserveUnit??src?.simulationReserve?.unit??site?.simulationReserveUnit??site?.simulationReserve?.unit??scenarioUnit??'').trim()||null;
    const observedReserve=num(src?.reserveQuantity??src?.geologicalQuantity??src?.reservesQuantity);
    const reserveQuantity=scenarioReserve!==null?scenarioReserve:(observedReserve!==null?observedReserve:fallbackReserve);
-   const reserveAuthority=scenarioReserve!==null?'SIMULATED':(observedReserve!==null?'OBSERVED':'UNOBSERVED');
+   const reserveAuthority=scenarioReserve!==null?'SIMULATED':(observedReserve!==null?'OBSERVED':'SIMULATED');
    const gradeField=qp?.grade&&typeof qp.grade==='object'?qp.grade:null;
    const rawGrade=src?.grade??src?.oreGrade??site?.grade??gradeField?.value??null;
    const gradeNumeric=rawGrade===null?null:(typeof rawGrade==='number'?rawGrade:Number(String(rawGrade).match(/[-+]?\d+(?:\.\d+)?/)?.[0]));
