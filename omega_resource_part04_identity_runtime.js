@@ -314,7 +314,7 @@
               sourcePath:existing.sourcePath,
               extractionExecutable:false
             });
-            continue;
+            return;
           }
           const siteReferenceKey=stableId
             ? 'SITE:'+countryId+':ID:'+tok(stableId)
