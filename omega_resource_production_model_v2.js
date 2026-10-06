@@ -77,7 +77,11 @@ function productionModel(raw,reserve){
  const derivedMaxBase=max!==null?max:(observedRate!==null?observedRate*1.25:(nominalBase!==null?nominalBase*1.3:null));
  const finalMin=derivedMinBase===null?null:derivedMinBase*capacityFactor;
  const finalMax=derivedMaxBase===null?null:derivedMaxBase*capacityFactor;
- const baselineRate=observedRate!==null?observedRate*outputFactor:(finalNominal===null?null:Math.max(0,finalNominal*finalUtilization*(1-finalMaintenance)*(1-finalDecline)));
+ const utilizationRatio=utilization>0?finalUtilization/utilization:1;
+ const recoveryRatio=recovery>0?finalRecovery/recovery:1;
+ const maintenanceRatio=maintenance<1?(1-finalMaintenance)/(1-maintenance):1;
+ const declineRatio=decline<1?(1-finalDecline)/(1-decline):1;
+ const baselineRate=observedRate!==null?observedRate*capacityFactor*outputFactor*utilizationRatio*recoveryRatio*maintenanceRatio*declineRatio:(finalNominal===null?null:Math.max(0,finalNominal*finalUtilization*(1-finalMaintenance)*(1-finalDecline)));
  const activeRate=baselineRate;
  return{nominalCapacity:finalNominal,minimumCapacity:finalMin,maximumCapacity:finalMax,utilization:finalUtilization,recovery:finalRecovery,decline:finalDecline,maintenance:finalMaintenance,operatingCost:cost,observedRate,simulatedRate,activeRate,authority:observed?'OBSERVED':'SIMULATED',dataStatus:observed?'AVAILABLE':'UNOBSERVED',rangeDataStatus:min!==null&&max!==null?'OBSERVED':observedRate!==null?'DERIVED_FROM_OBSERVED_RATE':'UNOBSERVED',simulationHorizonDays:horizon,modelVersion:VERSION,technologyAdjusted:Array.isArray(technology.technologies)&&technology.technologies.length>0,technologyEffects:clone(technology)};
 }
