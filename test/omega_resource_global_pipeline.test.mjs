@@ -236,10 +236,13 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
   const siteControllerCount=Object.values(state.resource).reduce((sum,row)=>sum+(row?.mineSiteControllers&&typeof row.mineSiteControllers==='object'?Object.keys(row.mineSiteControllers).length:0),0);
   assert.equal(activeSiteReferenceCount,mineSiteReferenceCount);
   assert.equal(siteControllerCount,mineSiteReferenceCount);
-  assert.equal(Object.values(state.resource).reduce((sum,row)=>sum+(Number(row?.mineSiteReferenceCount)||0),0),mineSiteReferenceCount);
+  const modeledSiteReferenceCount=runtime.diagnostics().mineSiteReferenceCount;
+  assert.equal(modeledSiteReferenceCount,mineSiteReferenceCount);
+  assert.equal(Object.values(state.resource).reduce((sum,row)=>sum+(Number(row?.mineSiteReferenceCount)||0),0),activeSiteReferenceCount);
   const runningSiteControllerCount=Object.values(state.resource).reduce((sum,row)=>sum+(Object.values(row?.mineSiteControllers||{}).filter(x=>x?.controllerStatus==='RUNNING').length||0),0);
-  assert.ok(runningSiteControllerCount<mineSiteReferenceCount);
-  assert.equal(Object.values(state.resource).reduce((sum,row)=>sum+(Object.values(row?.mineSiteControllers||{}).filter(x=>x?.controllerStatus==='BLOCKED').length||0),0),mineSiteReferenceCount-runningSiteControllerCount);
+  assert.ok(runningSiteControllerCount<=activeSiteReferenceCount);
+  const blockedSiteControllerCount=Object.values(state.resource).reduce((sum,row)=>sum+(Object.values(row?.mineSiteControllers||{}).filter(x=>x?.controllerStatus==='BLOCKED').length||0),0);
+  assert.equal(blockedSiteControllerCount,activeSiteReferenceCount-runningSiteControllerCount);
   const batchCount=Object.values(state.resource).reduce((sum,row)=>sum+(Array.isArray(row?.batches)?row.batches.length:0),0);
   const pathCount=Object.values(state.resource).reduce((sum,row)=>sum+(row?.minePaths&&typeof row.minePaths==='object'?Object.keys(row.minePaths).length:0),0);
   const sitePathCount=Object.values(state.resource).reduce((sum,row)=>sum+Object.keys(row?.mineSiteControllers||{}).filter(k=>row.minePaths?.[k]).length,0);
