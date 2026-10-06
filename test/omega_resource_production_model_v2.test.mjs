@@ -27,7 +27,7 @@ const gasReserve=P.parseReserve('1 TCF','natural_gas');
 assert.equal(gasReserve.unit,'BCM');
 assert.ok(Math.abs(gasReserve.value-28.316846592)<1e-9);
 const goldReserve=P.parseReserve('1 tonne','gold');
-assert.equal(goldReserve.unit,'TROY_OUNCES');
+assert.equal(goldReserve.unit,'TROY_OZ');
 assert.ok(Math.abs(goldReserve.value-32150.74656862745)<1e-6);
 
 const identity={
