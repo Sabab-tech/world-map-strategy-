@@ -231,6 +231,12 @@
           "sourceType": "GOVERNMENT_NEWS_AGENCY",
           "accessed": "2026-10-06",
           "scope": "2025_nationalisation_current_state"
+        },
+        {
+          "url": "https://www.world-nuclear-news.org/articles/niger-awards-arlit-uranium-mining-permit-to-state-owned-company",
+          "sourceType": "INDUSTRY_PRIMARY_REPORTING",
+          "accessed": "2026-10-06",
+          "scope": "2026_successor_permit"
         }
       ],
       "facts": {
@@ -256,7 +262,12 @@
           "status": "OBSERVED"
         },
         "extractionMethod": "OPEN_PIT",
-        "note": "2025 nationalisation/current control changes must be modeled temporally; do not carry the 2024 Orano ownership/control state into later turns."
+        "note": "2025 nationalisation/current control changes must be modeled temporally; do not carry the 2024 Orano ownership/control state into later turns.",
+        "currentTransition": {
+          "successorPermitHolder": "TSUMCO SA",
+          "eventYear": 2026,
+          "commercialRestartObserved": false
+        }
       }
     },
     {
@@ -274,6 +285,12 @@
           "sourceType": "OPERATOR_PRIMARY",
           "accessed": "2026-10-06",
           "scope": "historical_operator_interest_field"
+        },
+        {
+          "url": "https://www.guineaecuatorialpress.com/noticias/el_jefe_de_estado_en_el_acto_de_traspaso_de_los_activos_del_bloque_b_zafiro_a_gepetrol",
+          "sourceType": "GOVERNMENT",
+          "accessed": "2026-10-06",
+          "scope": "current_operatorship_and_current_production"
         }
       ],
       "facts": {
@@ -298,7 +315,27 @@
           "waterDepthFtMax": 2800,
           "block": "B"
         },
-        "note": "Current steady-state production is deliberately left unobserved unless a current site-level source is available."
+        "note": "Current steady-state production is deliberately left unobserved unless a current site-level source is available.",
+        "currentProduction": {
+          "quantity": 26000,
+          "unit": "BBL_PER_DAY",
+          "status": "OBSERVED",
+          "effectiveDate": "2024-06-01",
+          "source": "Equatorial Guinea Government"
+        },
+        "redevelopment": {
+          "partners": [
+            "Baker Hughes",
+            "Hunt Oil",
+            "GEPetrol"
+          ],
+          "sourceType": "GOVERNMENT_2025",
+          "objective": [
+            "increase production",
+            "optimize recovery",
+            "extend operational life"
+          ]
+        }
       }
     },
     {
