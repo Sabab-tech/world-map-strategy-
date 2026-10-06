@@ -27,14 +27,14 @@ function makeTx(country){
   const base=deepClone(state.resource[country]||{});
   return {
     get(path){
-      const key=String(path).replace(/^resource\\./,'');
+      const key=String(path).replace(/^resource\./,'');
       if(key==='resource')return deepClone(base);
       if(key==='technology')return deepClone(state.technology?.[country]||{});
       if(key==='foreign')return deepClone(state.foreign?.[country]||{});
       return deepClone(base[key]);
     },
     set(path,value){
-      const key=String(path).replace(/^resource\\./,'');
+      const key=String(path).replace(/^resource\./,'');
       if(key==='resource')Object.assign(base,deepClone(value)); else base[key]=deepClone(value);
     },
     commit(){state.resource[country]=base;}
