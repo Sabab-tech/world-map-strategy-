@@ -1,0 +1,509 @@
+{
+  "schemaVersion": "1.0.0",
+  "datasetId": "OMEGA_RESOURCE_SITE_RESEARCH_EVIDENCE_PATCH_V1",
+  "generatedDate": "2026-10-06",
+  "authority": "SITE_SPECIFIC_WEB_RESEARCH",
+  "note": "Evidence overlay only. It does not replace the raw resource database or long-horizon scenario reserve dataset.",
+  "records": [
+    {
+      "siteId": "SITE_SLE_sierra_rutile_area_1",
+      "countryId": "SLE",
+      "evidence": [
+        {
+          "url": "https://www.sierra-rutile.com/area-1/",
+          "sourceType": "OPERATOR_PRIMARY",
+          "accessed": "2026-10-06",
+          "scope": "identity_status_reserve_resource_grade_mining_method"
+        }
+      ],
+      "facts": {
+        "owner": "Leonoil Company Limited",
+        "operator": "Sierra Rutile Limited",
+        "status": "OPERATING",
+        "extractionMethod": "DRY_MINING_TRUCK_EXCAVATOR_DOZER",
+        "quantitativeProfile": {
+          "reserve": {
+            "quantity": 137000000,
+            "unit": "TONNES_ORE",
+            "year": 2024,
+            "status": "OBSERVED"
+          },
+          "grade": {
+            "value": 0.93,
+            "unit": "PERCENT_RUTILE",
+            "status": "OBSERVED"
+          },
+          "containedCommodity": {
+            "quantity": 1270000,
+            "unit": "TONNES_RUTILE",
+            "year": 2024,
+            "status": "OBSERVED"
+          }
+        },
+        "resourceClassification": {
+          "framework": "JORC_2012",
+          "categories": [
+            "MEASURED",
+            "INDICATED"
+          ],
+          "resourceNotes": [
+            "Ndendemoia 17.2 Mt ore at 1.0% rutile Indicated",
+            "Mogbwemo 14.95 Mt ore at 0.78% rutile Indicated"
+          ]
+        },
+        "siteContext": {
+          "location": "Moyamba and Bonthe districts, Sierra Leone",
+          "products": [
+            "standard grade rutile",
+            "industrial grade rutile",
+            "high-grade ilmenite",
+            "zircon-in-concentrate"
+          ],
+          "mineLifeProgram": "Ndendemoia and Mogbwemo conversion work ongoing"
+        }
+      }
+    },
+    {
+      "siteId": "SITE_MAR_khouribga_phosphate_mine",
+      "countryId": "MAR",
+      "evidence": [
+        {
+          "url": "https://www.ocpgroup.ma/en/opening-sidi-chennane-mine",
+          "sourceType": "OPERATOR_PRIMARY",
+          "accessed": "2026-10-06",
+          "scope": "mine_identity_start_year_open_pit_status"
+        },
+        {
+          "url": "https://www.ocpgroup.ma/en/what-we-do/industrial-operations",
+          "sourceType": "OPERATOR_PRIMARY",
+          "accessed": "2026-10-06",
+          "scope": "khouribga_operations_logistics"
+        }
+      ],
+      "facts": {
+        "owner": "OCP Group",
+        "operator": "OCP Group",
+        "status": "OPERATING",
+        "extractionMethod": "OPEN_PIT",
+        "siteContext": {
+          "zone": "Khouribga",
+          "openPitMine": "Sidi Chennane",
+          "operationStartYear": 1994,
+          "transport": {
+            "slurryPipelineDistanceKm": 235,
+            "mode": "SLURRY_PIPELINE"
+          },
+          "strategicRole": "majority_of_OCP_phosphate_output"
+        }
+      }
+    },
+    {
+      "siteId": "SITE_NPL_udayapur_limestone_mine",
+      "countryId": "NPL",
+      "evidence": [
+        {
+          "url": "https://ucil.org.np/page/3/about-udayapur-cement?lang=en",
+          "sourceType": "OPERATOR_PRIMARY",
+          "accessed": "2026-10-06",
+          "scope": "mine_method_crushing_transport_route"
+        },
+        {
+          "url": "https://ucil.org.np/?lang=en",
+          "sourceType": "OPERATOR_PRIMARY",
+          "accessed": "2026-10-06",
+          "scope": "plant_capacity_raw_material_requirement"
+        }
+      ],
+      "facts": {
+        "owner": "Udayapur Cement Industries Limited",
+        "operator": "Udayapur Cement Industries Limited",
+        "status": "OPERATING",
+        "extractionMethod": "OPEN_CAST_DRILL_BLAST_LOAD_DUMP_TRUCK",
+        "infrastructure": {
+          "mineToPlantDistanceKm": 27,
+          "ropewayDistanceKm": 13.8,
+          "routeType": "BICABLE_ROPEWAY"
+        },
+        "processingDependency": {
+          "cementPlantCapacityTonnesPerDay": 800,
+          "annualLimestoneRequirementTonnes": 330000
+        }
+      }
+    },
+    {
+      "siteId": "SITE_BEN_onigbolo_limestone_quarry",
+      "countryId": "BEN",
+      "evidence": [
+        {
+          "url": "https://eau-mines.gouv.bj/web/public/index.php/potentialites-minieres/",
+          "sourceType": "GOVERNMENT",
+          "accessed": "2026-10-06",
+          "scope": "deposit_location_operator_reserve_context"
+        },
+        {
+          "url": "https://www.ajol.info/index.php/jrsul/article/view/134814",
+          "sourceType": "ACADEMIC",
+          "accessed": "2026-10-06",
+          "scope": "historical_reserve_mining_start_operator_processing"
+        }
+      ],
+      "facts": {
+        "owner": "SCB-Lafarge",
+        "operator": "SCB-Lafarge",
+        "status": "OPERATING",
+        "extractionMethod": "OPEN_PIT",
+        "historicalReserve": {
+          "quantity": 90000000,
+          "unit": "TONNES_PLUS",
+          "year": null,
+          "status": "OBSERVED_HISTORICAL_ESTIMATE",
+          "qualifier": "more_than"
+        },
+        "siteContext": {
+          "location": "Pobè, south-eastern Benin",
+          "areaHa": 1924,
+          "mineStartYear": 1983,
+          "SCBLafargeOperationStartYear": 2000,
+          "processingRoute": [
+            "extraction",
+            "crushing",
+            "cement_production"
+          ]
+        }
+      }
+    },
+    {
+      "siteId": "SITE_TGO_hahoto_kpogam_phosphate_mine",
+      "countryId": "TGO",
+      "evidence": [
+        {
+          "url": "https://snptogo.com/mine.php?lang=en",
+          "sourceType": "OPERATOR_PRIMARY",
+          "accessed": "2026-10-06",
+          "scope": "deposit_geometry_mining_method"
+        },
+        {
+          "url": "https://snptogo.com/social_details_relocalisation.php?lang=fr",
+          "sourceType": "OPERATOR_PRIMARY",
+          "accessed": "2026-10-06",
+          "scope": "active_mines_processing_export_route"
+        },
+        {
+          "url": "https://snptogo.com/historique.php?lang=fr",
+          "sourceType": "OPERATOR_PRIMARY",
+          "accessed": "2026-10-06",
+          "scope": "production_history"
+        }
+      ],
+      "facts": {
+        "owner": "State of Togo / SNPT",
+        "operator": "SNPT",
+        "status": "OPERATING",
+        "extractionMethod": "OPEN_PIT",
+        "productionHistory": {
+          "averageAnnualProductionTonnes": 1100000,
+          "periodQualifier": "company stated average",
+          "siteScope": "Hahotoe/Kpogame installations, not a single-seat figure"
+        },
+        "depositContext": {
+          "lengthKm": 35,
+          "maxWidthKm": 2.5,
+          "thicknessMinM": 4,
+          "thicknessMaxM": 6,
+          "processingSite": "Kpémé",
+          "exportWharfLengthKm": 1.2
+        },
+        "note": "Do not interpret company-wide Hahotoe/Kpogame production as a single-site production rate."
+      }
+    },
+    {
+      "siteId": "SITE_NER_soma_r_uranium_mine",
+      "countryId": "NER",
+      "evidence": [
+        {
+          "url": "https://www.orano.group/finance-raa2024/en/33/",
+          "sourceType": "FORMER_OPERATOR_PRIMARY",
+          "accessed": "2026-10-06",
+          "scope": "historical_ownership_capacity_production_operational_control"
+        },
+        {
+          "url": "https://anp.ne/visite-du-ministre-des-mines-dans-les-societes-sous-tutelle-le-bilan-de-lannee-2025-et-les-perspectives-pour-le-nouvel-an-au-centre-des-discussions/",
+          "sourceType": "GOVERNMENT_NEWS_AGENCY",
+          "accessed": "2026-10-06",
+          "scope": "2025_nationalisation_current_state"
+        }
+      ],
+      "facts": {
+        "owner": "State of Niger",
+        "operator": "TSUMCO SA",
+        "status": "CARE_AND_MAINTENANCE",
+        "historicalOwnership": {
+          "OranoMiningPercent": 63.4,
+          "SOPAMINPercent": 36.6,
+          "effectiveThrough": "2024"
+        },
+        "historicalProductionCapacity": {
+          "quantity": 2000,
+          "unit": "TONNES_U_PER_YEAR",
+          "status": "OBSERVED",
+          "basis": "current characteristics of processed ore"
+        },
+        "historicalProduction": {
+          "quantity": 959,
+          "unit": "TONNES_U",
+          "year": 2024,
+          "period": "through November",
+          "status": "OBSERVED"
+        },
+        "extractionMethod": "OPEN_PIT",
+        "note": "2025 nationalisation/current control changes must be modeled temporally; do not carry the 2024 Orano ownership/control state into later turns."
+      }
+    },
+    {
+      "siteId": "SITE_GNQ_zafiro_oil_field",
+      "countryId": "GNQ",
+      "evidence": [
+        {
+          "url": "https://investor.exxonmobil.com/sec-filings/all-sec-filings/content/0001193125-15-101332/0001193125-15-101332.pdf",
+          "sourceType": "OPERATOR_FILING",
+          "accessed": "2026-10-06",
+          "scope": "historical_production_ownership_field_depth"
+        },
+        {
+          "url": "https://investor.exxonmobil.com/company-information/press-releases/detail/353/exxonmobil-acquires-exploration-acreage-in-equatorial-guinea",
+          "sourceType": "OPERATOR_PRIMARY",
+          "accessed": "2026-10-06",
+          "scope": "historical_operator_interest_field"
+        }
+      ],
+      "facts": {
+        "owner": "Equatorial Guinea / GEPetrol",
+        "operator": "GEPetrol",
+        "status": "REDEVELOPMENT_RESTARTING",
+        "historicalProduction": {
+          "cumulativeQuantity": 1000000000,
+          "unit": "BBL_PLUS",
+          "period": "by 2014",
+          "status": "OBSERVED_HISTORICAL",
+          "qualifier": "more than"
+        },
+        "historicalNetProduction": {
+          "quantity": 32000,
+          "unit": "BBL_PER_DAY",
+          "year": 2014,
+          "status": "OBSERVED"
+        },
+        "fieldContext": {
+          "waterDepthFtMin": 400,
+          "waterDepthFtMax": 2800,
+          "block": "B"
+        },
+        "note": "Current steady-state production is deliberately left unobserved unless a current site-level source is available."
+      }
+    },
+    {
+      "siteId": "SITE_AGO_catoca_diamond_mine",
+      "countryId": "AGO",
+      "evidence": [
+        {
+          "url": "https://www.catoca.com/sobre-nos/",
+          "sourceType": "OPERATOR_PRIMARY",
+          "accessed": "2026-10-06",
+          "scope": "ownership_open_pit_scale"
+        },
+        {
+          "url": "https://www.catoca.com/catoca-celebra-31-anos-de-existencia-e-afirma-se-como-o-segundo-maior-contribuinte-em-receitas-cambias/",
+          "sourceType": "OPERATOR_PRIMARY",
+          "accessed": "2026-10-06",
+          "scope": "2025_status_national_contribution"
+        },
+        {
+          "url": "https://www.usgs.gov/centers/national-minerals-information-center/angola",
+          "sourceType": "GOVERNMENT_GEOLOGICAL_SURVEY",
+          "accessed": "2026-10-06",
+          "scope": "2024_diamond_production"
+        }
+      ],
+      "facts": {
+        "ownerShares": [
+          {
+            "entity": "Endiama E.P.",
+            "percent": 59
+          },
+          {
+            "entity": "Taadeen Investment LLC",
+            "percent": 41
+          }
+        ],
+        "operator": "Sociedade Mineira de Catoca, Lda.",
+        "status": "OPERATING",
+        "extractionMethod": "OPEN_PIT_KIMBERLITE",
+        "historicalProduction": {
+          "quantity": 6500000,
+          "unit": "CARATS",
+          "year": 2024,
+          "status": "OBSERVED"
+        },
+        "siteContext": {
+          "discoveredYear": 1995,
+          "province": "Lunda Sul",
+          "cityReference": "Saurimo",
+          "futureMiningDirection": "transition toward underground mining"
+        }
+      }
+    },
+    {
+      "siteId": "SITE_LBR_yekepa_iron_ore_mine",
+      "countryId": "LBR",
+      "evidence": [
+        {
+          "url": "https://www.sec.gov/Archives/edgar/data/1243429/000124342926000020/mt-20251231.htm",
+          "sourceType": "SEC_FILING",
+          "accessed": "2026-10-06",
+          "scope": "rail_port_exploration_mining_rights_2026"
+        },
+        {
+          "url": "https://www.woodmac.com/reports/metals-nimba-yekepa-iron-ore-mine-16554538/",
+          "sourceType": "INDUSTRY_DATABASE",
+          "accessed": "2026-10-06",
+          "scope": "operations_production_expansion_context"
+        },
+        {
+          "url": "https://doi.org/10.1016/j.oregeorev.2018.07.021",
+          "sourceType": "ACADEMIC",
+          "accessed": "2026-10-06",
+          "scope": "historical_reserves_grade_production"
+        }
+      ],
+      "facts": {
+        "owner": "ArcelorMittal Liberia / Liberia concession framework",
+        "operator": "ArcelorMittal Liberia",
+        "status": "OPERATING",
+        "extractionMethod": "OPEN_PIT_DSO_PLUS_CONCENTRATION",
+        "historicalReserve": {
+          "quantity": 501000000,
+          "unit": "TONNES_ORE",
+          "grade": {
+            "value": 48.3,
+            "unit": "PERCENT_FE"
+          },
+          "effectiveYear": 2015,
+          "status": "OBSERVED_HISTORICAL"
+        },
+        "historicalDirectShippingGrade": {
+          "value": 60,
+          "unit": "PERCENT_FE_APPROX",
+          "qualifier": "average range 60–62%"
+        },
+        "infrastructure": {
+          "railDistanceKm": 250,
+          "destination": "Buchanan Port"
+        },
+        "expansion": {
+          "phase": "Phase II",
+          "targetCapacity": {
+            "quantity": 20000000,
+            "unit": "TONNES_PER_YEAR"
+          },
+          "status": "EXPANSION_TARGET_NOT_CURRENT_OBSERVED_OUTPUT"
+        }
+      }
+    },
+    {
+      "siteId": "SITE_BDI_musongati_nickel_project",
+      "countryId": "BDI",
+      "evidence": [
+        {
+          "url": "https://ir.lifezonemetals.com/news/press-releases/news-details/2026/Lifezone-Metals-Announces-Exclusivity-Agreement-over-the-Musongati-Nickel-Project-in-Burundi/default.aspx",
+          "sourceType": "PROJECT_OWNER_PRIMARY",
+          "accessed": "2026-10-06",
+          "scope": "current_exclusivity_evaluation_status"
+        },
+        {
+          "url": "https://www.sec.gov/Archives/edgar/data/1958217/000162828026050324/lzm-20260630_d2.htm",
+          "sourceType": "SEC_FILING",
+          "accessed": "2026-10-06",
+          "scope": "historical_resource_current_evaluation_and_possible_processing_route"
+        }
+      ],
+      "facts": {
+        "projectController": "Lifezone Metals",
+        "status": "EVALUATION_EXCLUSIVITY",
+        "currentAgreement": {
+          "startDate": "2026-03-10",
+          "durationMonths": 14,
+          "counterparty": "Government of Burundi"
+        },
+        "historicalResource": {
+          "quantity": 140000000,
+          "unit": "TONNES_ORE_PLUS",
+          "year": 2011,
+          "grade": {
+            "value": 1.31,
+            "unit": "PERCENT_NICKEL"
+          },
+          "status": "OBSERVED_HISTORICAL_ESTIMATE",
+          "qualifier": "more than"
+        },
+        "extractionMethod": "OPEN_PITTABLE_NICKEL_LATERITE",
+        "possibleByProducts": [
+          "copper",
+          "cobalt",
+          "platinum_group_metals",
+          "scandium"
+        ],
+        "note": "No current commercial production is asserted."
+      }
+    },
+    {
+      "siteId": "SITE_FARIM_phosphate_project",
+      "countryId": "GNB",
+      "evidence": [
+        {
+          "url": "https://itafos.com/projects/itafos-farim/",
+          "sourceType": "PROJECT_OWNER_PRIMARY",
+          "accessed": "2026-10-06",
+          "scope": "current_project_reserve_resource_status_capacity"
+        },
+        {
+          "url": "https://itafos.com/news/2023/itafos-completes-updated-feasibility-study-for-the-farim-phosphate-project/",
+          "sourceType": "PROJECT_OWNER_PRIMARY",
+          "accessed": "2026-10-06",
+          "scope": "NI_43_101_reserve_processing_operating_cost"
+        }
+      ],
+      "facts": {
+        "owner": "Itafos Inc.",
+        "status": "CONSTRUCTION_READY",
+        "extractionMethod": "FREE_DIG_OPEN_PIT",
+        "resourceClassification": {
+          "framework": "NI_43_101",
+          "reserves": {
+            "provenTonnes": 43800000,
+            "probableTonnes": 0,
+            "totalTonnes": 43800000,
+            "gradeP2O5Percent": 30
+          },
+          "measuredAndIndicatedTonnes": 102500000,
+          "measuredAndIndicatedGradeP2O5Percent": 28.53,
+          "inferredTonnes": 31100000,
+          "inferredGradeP2O5Percent": 28.1
+        },
+        "minePlan": {
+          "mineLifeYears": 25,
+          "annualProductionCapacityTonnes": 1350000
+        },
+        "processing": {
+          "plantThroughputTonnesPerYear": 1750000,
+          "likelyMassRecoveryPercent": 77.5,
+          "P2O5RecoveryPercent": 81.8,
+          "likelyConcentrateGradeP2O5Percent": 33.6
+        },
+        "economics": {
+          "lifeOfMineOperatingCostUSDPerTonneConcentrate": 70.9
+        },
+        "note": "2026 owner disclosure states alternative phased-development options and strategic drilling; do not assume immediate construction or production."
+      }
+    }
+  ]
+}
