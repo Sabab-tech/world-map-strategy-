@@ -411,9 +411,11 @@
       listMineSiteReferences:function(){return clone(siteReferences);},
       getMineSiteReferenceBinding:function(siteReference){
         const key=typeof siteReference==='string'?siteReference:siteReference?.siteReferenceKey;
-        const stored=siteReferenceBindings.get(String(key||'')); 
+        const dynamic=resolveBinding(siteReference);
+        if(dynamic?.physicalIdentity)return clone(dynamic);
+        const stored=siteReferenceBindings.get(String(key||''));
         if(stored)return clone(stored);
-        return clone(resolveBinding(siteReference));
+        return clone(dynamic);
       },
       listMineSiteReferenceBindings:function(){return clone([...siteReferenceBindings.entries()].map(function(entry){return entry[1];}));},
       getDeposit:function(depositKey){
