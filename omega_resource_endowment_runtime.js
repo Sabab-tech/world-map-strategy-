@@ -1114,6 +1114,12 @@ function batchFromExtraction(x,record){
         continue;
       }
       const existing=state()?.resource?.[c]||{};
+      const executableProfileRows=siteExecutionRows(c,existing);
+      const hasExecutableProfileAssets=executableProfileRows.length>0;
+      if(!structuredCountries.has(c)&&!hasExecutableProfileAssets){
+        results.push({countryId:c,result:{status:'SKIPPED_NO_EXECUTABLE_ASSETS',countryId:c}});
+        continue;
+      }
       if(!Array.isArray(existing.mineSiteReferences)||!existing.mineSiteControllers){
         const hydrate=dispatch('OMEGA_RESOURCE_ENDOWMENT_HYDRATE',c,{correlationId:'RESOURCE-HYDRATE-LAZY-'+t+'-'+c});
         if(hydrate?.status!=='APPLIED'){
