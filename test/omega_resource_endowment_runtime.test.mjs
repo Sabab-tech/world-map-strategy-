@@ -58,6 +58,7 @@ await import('../omega_resource_endowment_runtime.js');
 const runtime=globalThis.OmegaResourceEndowmentRuntime;
 const initialized=await runtime.initialize();
 assert.equal(initialized.status,'READY',JSON.stringify(initialized));
+assert.equal(initialized.countries,Object.keys(engine.countryProfiles||{}).length);
 const reserveScenario=JSON.parse(fs.readFileSync(new URL('../resource_site_reserve_simulation_v1.json',import.meta.url),'utf8'));
 assert.equal(reserveScenario.siteCount,199);
 assert.equal(reserveScenario.commercialSiteCount,195);
