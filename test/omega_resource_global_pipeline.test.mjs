@@ -160,9 +160,9 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
     assert.equal(x.resourceAsset.productionRate,expectedRate);
     const assetStatus=x.resourceAsset?.dataStatus&&typeof x.resourceAsset.dataStatus==='object'?x.resourceAsset.dataStatus:{};
     const authorities=[
-      String(assetStatus.reserve||'UNOBSERVED').toUpperCase(),
-      String(assetStatus.production||'UNOBSERVED').toUpperCase(),
-      String(assetStatus.quality||'UNOBSERVED').toUpperCase()
+      normalizeAuthority(assetStatus.reserve),
+      normalizeAuthority(assetStatus.production),
+      normalizeAuthority(assetStatus.quality)
     ];
     const expectedOverall=authorities.every(v=>v==='OBSERVED')?'OBSERVED':
       authorities.some(v=>v==='SIMULATED')?'SIMULATED':'UNOBSERVED';
