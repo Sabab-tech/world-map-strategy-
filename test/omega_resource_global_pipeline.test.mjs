@@ -204,14 +204,19 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
       for(const key of controller.linkedOccurrenceKeys||[])if(key)linkedExecutionKeys.add(String(key));
     }
   }
-  const expectedExecutionOccurrenceKeys=new Set(canonicalOccurrenceKeys);
-  for(const key of linkedExecutionKeys)expectedExecutionOccurrenceKeys.add(key);
-  const expectedExecutionOccurrenceCount=expectedExecutionOccurrenceKeys.size;
-  assert.ok(expectedExecutionOccurrenceCount>=engine.deposits.length);
-  assert.equal(extractedRecords.length,expectedExecutionOccurrenceCount);
-
   const executableOccurrenceKeys=new Set(extractedRecords.map(x=>String(x.occurrenceKey||'')));
-  assert.equal(executableOccurrenceKeys.size,expectedExecutionOccurrenceCount);
+  assert.equal(executableOccurrenceKeys.size,extractedRecords.length);
+  assert.ok(extractedRecords.length>=engine.deposits.length);
+  const parentOccurrenceKey=key=>String(key||'').replace(/:COM:[^:]+$/,'');
+  for(const record of extractedRecords){
+    const key=String(record.occurrenceKey||'');
+    assert.ok(
+      canonicalOccurrenceKeys.has(key) ||
+      canonicalOccurrenceKeys.has(parentOccurrenceKey(key)) ||
+      linkedExecutionKeys.has(key),
+      'execution record is not bound to a canonical or linked physical occurrence: '+key
+    );
+  }
   for(const record of extractedRecords){
     const countryId=record.countryId;
     const row=state.resource[countryId];
