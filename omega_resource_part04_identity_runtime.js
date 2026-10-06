@@ -128,11 +128,12 @@
     const currentProduction=num(raw.currentProduction??raw.currentProductionRate??raw.lastOutputQuantity);
     const recoveryRate=num(raw.recoveryRate??cap?.recovery??prod?.recovery);
     const grade=num(raw.gradePercent??q?.gradePercent??q?.normalized?.gradePercent);
+    const gradeText=textOrNull(raw.grade??raw.oreGrade??q?.grade??q?.oreGrade);
     const purity=num(raw.purity??q?.purity??q?.normalized?.purityFraction);
     const concentration=num(raw.concentrationPercent??q?.concentrationPercent??q?.normalized?.concentrationPercent);
     const reserveAuthority=reserveQuantity===null?'UNOBSERVED':reserveAuthorityCandidate;
     const productionAuthority=productionRate===null?'UNOBSERVED':productionAuthorityCandidate;
-    const qualityPresent=grade!==null||purity!==null||concentration!==null;
+    const qualityPresent=grade!==null||gradeText!==null||purity!==null||concentration!==null;
     const qualityAuthority=qualityPresent?qualityAuthorityCandidate:'UNOBSERVED';
 
     const location={
