@@ -629,6 +629,20 @@ function batchFromExtraction(x,record){
     const mineOutputs=clone(ctx.stateTransaction.get('resource.mineOutputs')||{});
     const mineSiteControllers=clone(ctx.stateTransaction.get('resource.mineSiteControllers')||{});
     const mines=clone(ctx.stateTransaction.get('resource.mines')||[]);
+    // Prevent every active site from extracting its full capacity when the country has a finite daily demand.
+    // When no demand record exists for a commodity, preserve the existing scenario-production behavior.
+    const consumption=ctx.stateTransaction.get('resource.consumption')||{};
+    const exportDemand=ctx.stateTransaction.get('resource.exportDemand')||ctx.stateTransaction.get('trade.exportDemand')||{};
+    const valueForResource=(obj,resourceId)=>{if(!obj||typeof obj!=='object')return null;if(Object.prototype.hasOwnProperty.call(obj,resourceId))return n(obj[resourceId]);const wanted=tok(resourceId);for(const k of Object.keys(obj))if(tok(k)===wanted)return n(obj[k]);return null;};
+    const demandTargetByResource={},windowCapacityByOccurrence={},totalWindowByResource={};
+    for(const row of selected){
+      let capWindow=0;try{capWindow=n(row?.capacity?.computeWindowCapacity?.(DAY_HOURS)?.windowCapacity)||0;}catch(_){capWindow=n(row?.capacity?.activeRate)||n(row?.capacity?.nominalRate)||0;}
+      windowCapacityByOccurrence[row.occurrenceKey]=Math.max(0,capWindow);
+      const rr=rid(row?.resourceId);totalWindowByResource[rr]=(totalWindowByResource[rr]||0)+Math.max(0,capWindow);
+      const domestic=valueForResource(consumption,rr),foreign=valueForResource(exportDemand,rr);
+      if(domestic!==null||foreign!==null)demandTargetByResource[rr]=Math.max(0,(domestic||0)+(foreign||0));
+    }
+    let remainingDemandByResource={...demandTargetByResource};
     const allSiteKeys=Object.keys(mineSiteControllers);
     for(const siteKey of allSiteKeys){
       const controller=mineSiteControllers[siteKey];
@@ -695,6 +709,14 @@ function batchFromExtraction(x,record){
         continue;
       }
       let windowQuantity=0;try{windowQuantity=n(capacity.computeWindowCapacity(DAY_HOURS)?.windowCapacity)||0;}catch(_){windowQuantity=n(capacity.nominalRate)||0;}
+      const resourceKey=rid(x.resourceId),demandConstrained=Object.prototype.hasOwnProperty.call(demandTargetByResource,resourceKey);
+      if(demandConstrained){
+        const aggregateCapacity=Math.max(totalWindowByResource[resourceKey]||0,0);
+        const turnDemand=Math.max(0,remainingDemandByResource[resourceKey]||0);
+        const allocation=aggregateCapacity>0?Math.min(windowQuantity,turnDemand*(windowQuantity/aggregateCapacity)):0;
+        windowQuantity=Math.max(0,allocation);
+        remainingDemandByResource[resourceKey]=Math.max(0,turnDemand-windowQuantity);
+      }
       if(windowQuantity<=0){
         const reason={occurrenceKey:x.occurrenceKey,resourceId:x.resourceId,reason:'EXTRACTION_OUTPUT_RATE_UNAVAILABLE'};
         blocked.push(reason);
