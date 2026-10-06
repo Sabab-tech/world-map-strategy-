@@ -287,7 +287,11 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
       assert.equal(path.sourceCountryId,countryId);
       assert.equal(path.destinationCountryId,countryId);
       const blockedPath=String(path.status||'').startsWith('BLOCKED')||String(path.extractionPathStatus||'').startsWith('BLOCKED');
-      if(blockedPath){
+      const controllerPath=path.pathKind==='SITE_CONTROLLER'||(!path.occurrenceKey&&!!path.siteReferenceKey);
+      if(controllerPath){
+        assert.equal(path.batchIds.length,0);
+        assert.equal(path.inventoryAllocations.length,0);
+      }else if(blockedPath){
         assert.equal(path.batchIds.length,0);
         assert.equal(path.inventoryAllocations.length,0);
       }else{
