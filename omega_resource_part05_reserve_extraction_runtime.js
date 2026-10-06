@@ -14,7 +14,7 @@
 (function(g){
   'use strict';
 
-  const VERSION='1.0.0';
+  const VERSION='1.1.0';
   const DEFAULT_DEPLETION_HORIZON_DAYS=100000;
 
   function clone(v,seen){
@@ -170,9 +170,16 @@
         countryId:canonicalCountry(occ.countryId),
         depositKey:occ.depositKey,
         resourceId:occ.resourceTypeId,
-        geologicalQuantity:declared,
-        recoverableQuantity:declared,
-        residualQuantity:declared,
+        geologicalResourceQuantity:raw.geologicalResourceQuantity??raw.geologicalQuantity??null,
+        technicallyRecoverableQuantity:raw.technicallyRecoverableQuantity??raw.technicalRecoverableQuantity??null,
+        economicallyRecoverableQuantity:raw.economicallyRecoverableQuantity??raw.economicRecoverableQuantity??null,
+        extractableReserveQuantity:raw.extractableReserveQuantity??raw.extractableQuantity??declared,
+        residualExtractableReserveQuantity:raw.extractableReserveQuantity??raw.extractableQuantity??declared,
+        geologicalQuantity:raw.geologicalResourceQuantity??raw.geologicalQuantity??null,
+        recoverableQuantity:raw.economicallyRecoverableQuantity??raw.economicRecoverableQuantity??null,
+        residualQuantity:raw.extractableReserveQuantity??raw.extractableQuantity??declared,
+        quantityKind:'EXTRACTABLE_RESERVE',
+        classificationState:raw.classificationState||'EVIDENCE_BACKED_OR_SIMULATION_CLASSIFICATION_REQUIRED',
         unit:parsed.targetUnit||type.unit||null,
         operationalStatus:active?'ACTIVE_EXTRACTION':'BLOCKED',
         stateVersion:1,
@@ -181,6 +188,7 @@
           sourceDatasetId:raw.sourceDatasetId||'resources.json',
           reserveField:raw.reserveQuantity!=null?'site.reserveQuantity':'runtime_deposits.reserves',
           reserveText:String(raw.reserves||''),
+          quantitySemantics:'INPUT_IS_EXTRACTABLE_RESERVE_UNLESS_EXPLICIT_LAYER_FIELDS_EXIST',
           effortUtilization:utilization,
           utilization,
           minimumCapacity:nominalRate*0.55,
@@ -262,11 +270,24 @@
       );
       if(q<=0)return{status:'BLOCKED',diagnostics:[{message:'EXTRACTION_QUANTITY_ZERO'}]};
       const before=new ReserveState(reserve.toJSON?.()||reserve);
+      const beforeResidual=Math.max(0,num(before.residualQuantity??before.extractableReserveQuantity)||0);
+      const beforeExtractable=Math.max(0,num(before.extractableReserveQuantity??beforeResidual)||0);
+      const beforeEconomic=Math.max(0,num(before.economicallyRecoverableQuantity??before.recoverableQuantity??beforeExtractable)||0);
+      const beforeTechnical=num(before.technicallyRecoverableQuantity);
+      const afterExtractable=Math.max(0,beforeExtractable-q);
+      const afterEconomic=Math.max(0,beforeEconomic-q);
+      const afterTechnical=beforeTechnical===null?null:Math.max(0,beforeTechnical-q);
+      const afterResidual=Math.max(0,beforeResidual-q);
       const after=new ReserveState({
         ...before,
-        residualQuantity:Math.max(0,(num(before.residualQuantity)||0)-q),
+        residualQuantity:afterResidual,
+        extractableReserveQuantity:afterExtractable,
+        residualExtractableReserveQuantity:afterExtractable,
+        economicallyRecoverableQuantity:afterEconomic,
+        recoverableQuantity:afterEconomic,
+        technicallyRecoverableQuantity:afterTechnical,
         stateVersion:(num(before.stateVersion)||1)+1,
-        operationalStatus:(num(before.residualQuantity)||0)-q<=0?'EXHAUSTED':'DEPLETING'
+        operationalStatus:afterExtractable<=0?'EXHAUSTED':'DEPLETING'
       });
       const extractedBatch={
         batchId:'P5:'+String(before.occurrenceKey).replace(/[^A-Z0-9:_-]/gi,'')+':T'+String(request?.simulationTick||0),

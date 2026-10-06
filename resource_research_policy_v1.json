@@ -24,6 +24,19 @@
   },
   "status": "ACTIVE",
   "purpose": "Separate mineral reporting semantics, petroleum resource classification, site engineering simulation, decline calibration, and commodity-level validation.",
+  "evidenceResolution": {
+    "resolver": "OMEGA_RESOURCE_EVIDENCE_RESOLVER_V1",
+    "fieldLevel": true,
+    "precedence": ["SOURCE_QUALITY","CONFIDENCE","EFFECTIVE_DATE","PUBLICATION_OR_ACCESS_DATE"],
+    "futureEvidenceMaySupersedeStaleCanonicalFields": true,
+    "historicalSimulationIsProtectedByEffectiveDate": true,
+    "unanchoredLegacyCanonicalData": "LOWER_DATE_CONFIDENCE_UNTIL_FIELD_LEVEL_EFFECTIVE_DATE_EXISTS"
+  },
+  "operationalGate": {
+    "requiredForProfileDerivedExtraction": ["operationalStatus","extractionEligibility","chronology"],
+    "unknownOrNonExecutable": "BLOCK",
+    "conditional": "BLOCK_UNLESS_CONDITION_SATISFIED_OR_ALLOWED_RAMP_STATUS"
+  },
   "domains": {
     "minerals": {
       "framework": "CRIRSCO_STYLE",

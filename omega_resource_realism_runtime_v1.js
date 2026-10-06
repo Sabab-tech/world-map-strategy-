@@ -5,7 +5,8 @@
  */
 (function(g){
 'use strict';
-const VERSION='1.2.0';
+const VERSION='1.3.0';
+const clone=v=>v===null||typeof v!=='object'?v:Array.isArray(v)?v.map(clone):Object.fromEntries(Object.entries(v).map(([k,x])=>[k,clone(x)]));
 const FAMILY={
  TONNES:['T','TON','TONS','TONNE','TONNES','MT','MILLION TONNES','METRIC TON','METRIC TONS'],
  TROY_OUNCES:['OZ','OZ.','OZT','TROY OZ','TROY OUNCE','TROY OUNCES'],
@@ -86,6 +87,27 @@ const rid=v=>String(v??'').replace(/^RES_TYPE:/i,'').trim().toLowerCase();
 const clean=v=>String(v??'').normalize?.('NFKC').trim().toLowerCase()||'';
 function hash(seed){let h=2166136261;for(const ch of String(seed||'')){h^=ch.charCodeAt(0);h=Math.imul(h,16777619);}return h>>>0}
 const fracHash=(s)=>hash(s)/4294967296;
+const simulationYearFrom=site=>{
+ const explicit=num(site?.simulationYear??site?.gameYear);
+ if(explicit!==null)return Math.floor(explicit);
+ const d=site?.simulationDate??g.Game?.state?.simulation?.date;
+ const dy=d?Number(String(d).slice(0,4)):null;
+ if(Number.isFinite(dy))return dy;
+ const sy=Number(g.Game?.state?.simulation?.startYear);
+ return Number.isFinite(sy)?Math.floor(sy):2015;
+};
+const clamp01=v=>Math.min(1,Math.max(0,Number(v)||0));
+function declineCurve(input={}){
+ const annual=clamp01(Number(input.annualDeclineRate)||0);
+ const simulationYear=Math.floor(Number(input.simulationYear)||2015);
+ const referenceYear=Math.floor(Number(input.referenceYear)||2015);
+ const elapsed=Math.max(0,simulationYear-referenceYear);
+ const rawFactor=Math.pow(Math.max(0,1-annual),elapsed);
+ const terminalFactor=Math.max(0,Math.min(1,Number(input.terminalFactor??0.02)));
+ const factor=elapsed>0?Math.max(terminalFactor,rawFactor):1;
+ const baseRate=Math.max(0,Number(input.baseRate)||0);
+ return{model:'EXPONENTIAL_POST_REFERENCE',referenceYear,simulationYear,elapsedYears:elapsed,annualDeclineRate:annual,rawFactor,factor,baseRate,rate:baseRate*factor};
+}
 const scale=s=>{const x=clean(s);return x.includes('trillion')?1e12:x.includes('billion')?1e9:x.includes('million')?1e6:x.includes('thousand')?1e3:1};
 function unitFamily(unit){
  const u=clean(unit).toUpperCase(); for(const[k,vals] of Object.entries(FAMILY))if(vals.some(v=>String(v).toUpperCase()===u))return k; return null;
@@ -229,7 +251,6 @@ function siteModel(site,profile,countryId){
    const modeledNominal=num(scenario?.nominalCapacity)??fallbackNominal;
    const effectiveObservedRate=observedRate??annualRate;
    const technology=g.Omega?.ResourceResearchRuntime?.getEngineeringEffect?.(countryId,src?.siteId||src?.siteReferenceKey||src?.id||site?.siteId||site?.siteReferenceKey||site?.id||null,resourceId,src?.siteType||site?.siteType||null)||{capacityMultiplier:1,recoveryAdd:0,utilizationAdd:0,maintenanceMultiplier:1,declineMultiplier:1,outputMultiplier:1,technologies:[]};
-   const clamp01=v=>Math.min(1,Math.max(0,Number(v)||0));
    const utilizationFinal=utilization===null?null:clamp01(utilization+(Number(technology.utilizationAdd)||0));
    const recoveryFinal=recovery===null?null:clamp01(recovery+(Number(technology.recoveryAdd)||0));
    const maintenanceFinal=maintenance===null?null:clamp01(maintenance*Math.max(.1,Number(technology.maintenanceMultiplier)||1));
@@ -244,14 +265,33 @@ function siteModel(site,profile,countryId){
    const utilizationRatio=utilization!==null&&utilization>0&&utilizationFinal!==null?utilizationFinal/utilization:1;
    const recoveryRatio=recovery!==null&&recovery>0&&recoveryFinal!==null?recoveryFinal/recovery:1;
    const maintenanceRatio=maintenance!==null&&maintenance<1&&maintenanceFinal!==null?(1-maintenanceFinal)/(1-maintenance):1;
-   const declineRatio=decline!==null&&decline<1&&declineFinal!==null?(1-declineFinal)/(1-decline):1;
-   const activeRate=effectiveObservedRate!==null?effectiveObservedRate*capacityFactor*outputFactor*utilizationRatio*recoveryRatio*maintenanceRatio*declineRatio:(nominal===null||utilizationFinal===null||maintenanceFinal===null||declineFinal===null?null:Math.max(0,nominal*utilizationFinal*(1-maintenanceFinal)*(1-declineFinal)));
+   const referenceYear=Math.floor(num(src?.productionYear??src?.annualProduction?.year??productionInput?.productionYear??productionInput?.referenceYear??src?.referenceYear??site?.startYear??site?.operation?.startYear??2015)??2015);
+   const simulationYear=simulationYearFrom(site);
+   const activeRateBeforeTemporalDecline=effectiveObservedRate!==null?effectiveObservedRate*capacityFactor*outputFactor*utilizationRatio*recoveryRatio*maintenanceRatio:(nominal===null||utilizationFinal===null||maintenanceFinal===null?null:Math.max(0,nominal*utilizationFinal*(1-maintenanceFinal)));
+   const temporal=declineCurve({baseRate:activeRateBeforeTemporalDecline,annualDeclineRate:declineFinal??0,referenceYear,simulationYear,terminalFactor:0.02});
+   const activeRate=activeRateBeforeTemporalDecline===null?null:temporal.rate;
    const life=num(scenario?.scenarioLifeYears);
    const scenarioReserve=num(src?.simulationReserveQuantity??src?.simulationReserve?.quantity??site?.simulationReserveQuantity??site?.simulationReserve?.quantity);
    const scenarioReserveUnit=String(src?.simulationReserveUnit??src?.simulationReserve?.unit??site?.simulationReserveUnit??site?.simulationReserve?.unit??scenarioUnit??'').trim()||null;
-   const observedReserve=num(src?.reserveQuantity??src?.geologicalQuantity??src?.reservesQuantity);
+   const observedReserve=num(src?.reserveQuantity??src?.reservesQuantity);
+   const explicitGeological=num(src?.geologicalResourceQuantity??src?.geologicalQuantity??qp?.reserve?.geologicalResourceQuantity);
+   const explicitTechnical=num(src?.technicallyRecoverableQuantity??src?.technicalRecoverableQuantity??qp?.reserve?.technicallyRecoverableQuantity);
+   const explicitEconomic=num(src?.economicallyRecoverableQuantity??src?.economicRecoverableQuantity??qp?.reserve?.economicallyRecoverableQuantity);
+   const explicitExtractable=num(src?.extractableReserveQuantity??src?.extractableQuantity??qp?.reserve?.extractableReserveQuantity);
    const reserveQuantity=scenarioReserve!==null?scenarioReserve:(observedReserve!==null?observedReserve:fallbackReserve);
    const reserveAuthority=scenarioReserve!==null?'SIMULATED':(observedReserve!==null?'OBSERVED':'SIMULATED');
+   const technicalRecoveryFactor=clamp01(Number(src?.technicalRecoveryFactor??src?.recoveryFactor??recoveryFinal??0.75))||0.75;
+   const economicRecoveryFactor=clamp01(Number(src?.economicRecoveryFactor??src?.economicConversionFactor??(0.75+0.15*(utilizationFinal??0.75)-0.12*(maintenanceFinal??0.05))))||0.8;
+   const extractableConversionFactor=clamp01(Number(src?.extractableConversionFactor??src?.miningExtractionFactor??0.95))||0.95;
+   const simulatedExtractable=reserveQuantity;
+   const simulatedEconomic=simulatedExtractable/Math.max(extractableConversionFactor,0.55);
+   const simulatedTechnical=simulatedEconomic/Math.max(economicRecoveryFactor,0.25);
+   const simulatedGeological=simulatedTechnical/Math.max(technicalRecoveryFactor,0.25);
+   const geologicalResourceQuantity=reserveAuthority==='SIMULATED'?simulatedGeological:explicitGeological;
+   const technicallyRecoverableQuantity=reserveAuthority==='SIMULATED'?simulatedTechnical:explicitTechnical;
+   const economicallyRecoverableQuantity=reserveAuthority==='SIMULATED'?simulatedEconomic:explicitEconomic;
+   const extractableReserveQuantity=reserveAuthority==='SIMULATED'?(explicitExtractable??simulatedExtractable):(explicitExtractable??observedReserve);
+   const reserveClassification=clone(src?.reserveClassification??qp?.reserve?.classification??null);
    const gradeField=qp?.grade&&typeof qp.grade==='object'?qp.grade:null;
    const rawGrade=src?.grade??src?.oreGrade??site?.grade??gradeField?.value??null;
    const gradeNumeric=rawGrade===null?null:(typeof rawGrade==='number'?rawGrade:Number(String(rawGrade).match(/[-+]?\d+(?:\.\d+)?/)?.[0]));
@@ -263,27 +303,40 @@ function siteModel(site,profile,countryId){
    const streamAuthority=productionObserved||reserveAuthority==='OBSERVED'||rawGrade!==null||costObs!==null?'OBSERVED':'SIMULATED';
    return{
      resourceId,
-     reserve:{quantity:reserveQuantity,unit:scenarioReserveUnit||(CALIBRATION_RANGES[resourceId]?.unit||'TONNES'),authority:reserveAuthority,status:reserveAuthority,basis:scenarioReserve!==null?'PER_SITE_SCENARIO_RESERVE_DATA':(reserveAuthority==='OBSERVED'?'RESOURCE_JSON_SITE_FIELD':'production_capacity_x_modeled_asset_life'),fieldAuthority:reserveAuthority,scenarioRecord:scenarioReserve!==null},
+     reserve:{quantity:extractableReserveQuantity,unit:scenarioReserveUnit||(CALIBRATION_RANGES[resourceId]?.unit||'TONNES'),authority:reserveAuthority,status:reserveAuthority,
+       basis:scenarioReserve!==null?'PER_SITE_SCENARIO_EXTRACTABLE_RESERVE':(reserveAuthority==='OBSERVED'?'OBSERVED_QUANTITY_RECORD':'MODELED_EXTRACTABLE_RESERVE'),fieldAuthority:reserveAuthority,scenarioRecord:scenarioReserve!==null,
+       quantityKind:'EXTRACTABLE_RESERVE',geologicalResourceQuantity,technicallyRecoverableQuantity,economicallyRecoverableQuantity,extractableReserveQuantity,residualExtractableReserveQuantity:extractableReserveQuantity,
+       technicalRecoveryFactor,economicRecoveryFactor,extractableConversionFactor,classification:reserveClassification,classificationState:reserveAuthority==='SIMULATED'?'SIMULATION_ONLY_NO_PUBLIC_RESERVE_CLASSIFICATION':'EVIDENCE_BACKED_CLASSIFICATION_ONLY'},
      quality:{grade:rawGrade??grade,oreGrade:src?.oreGrade??rawGrade??grade,concentration:src?.concentration??null,assay:src?.assay??null,metalContent:src?.metalContent??null,purity,
        APIGravity:api,gradeStatus:gradeAuthority,concentrationStatus:src?.concentration!=null?'OBSERVED':'UNOBSERVED',assayStatus:src?.assay!=null?'OBSERVED':'UNOBSERVED',metalContentStatus:src?.metalContent!=null?'OBSERVED':'UNOBSERVED',
        purityStatus:purity!==null?'OBSERVED':'UNOBSERVED',apiGravityStatus:apiRaw!==null?'OBSERVED':'UNOBSERVED',
        normalized:{gradePercent:grade,concentrationPercent:null,purityFraction:purity===null?null:(Number(purity)>1?Number(purity)/100:Number(purity)),APIGravity:api},
        resourceId},
-     production:{nominalCapacity:nominal,minimumCapacity:minimum,maximumCapacity:maximum,utilization:utilizationFinal,recovery:recoveryFinal,decline:declineFinal,maintenance:maintenanceFinal,operatingCost:costObs??null,activeRate,observedRate,
+     production:{nominalCapacity:nominal,minimumCapacity:minimum,maximumCapacity:maximum,utilization:utilizationFinal,recovery:recoveryFinal,decline:declineFinal,maintenance:maintenanceFinal,operatingCost:costObs??null,activeRate,activeRateBeforeTemporalDecline,observedRate,
        authority:productionObserved?'OBSERVED':'SIMULATED',dataStatus:productionObserved?'AVAILABLE':'SIMULATED',technologyAdjusted:Array.isArray(technology.technologies)&&technology.technologies.length>0,technologyEffects:technology,
        annualProduction:src?.annualProduction??productionInput?.annualProduction??null,
+       referenceYear,simulationYear,temporalCurve:temporal,declineSemantics:'TIME_DEPENDENT_YEAR_OVER_YEAR',
        rangeDataStatus:minObs!==null&&maxObs!==null?'OBSERVED':productionObserved?'DERIVED_FROM_OBSERVED_RATE':'SIMULATED',
        operatingCostStatus:costObs!==null?'OBSERVED':'UNOBSERVED'}
    };
  });
  if(!streams.length)return{status:'UNOBSERVED',siteName:name,resourceId:null,authority:'SIMULATED',stateAuthority:'SIMULATED',dataStatus:'UNOBSERVED'};
  const allObserved=streams.every(s=>s.reserve.authority==='OBSERVED'&&s.production.authority==='OBSERVED');
- return{status:'READY',siteReferenceKey:site?.siteReferenceKey||null,siteName:name,countryId:String(countryId||'').toUpperCase(),commodityStreams:streams,
+ return{status:'READY',siteReferenceKey:site?.siteReferenceKey||null,siteName:name,countryId:String(countryId||'').toUpperCase(),simulationYear:simulationYearFrom(site),commodityStreams:streams,
+   executionGate:(evidenceResolver()?.gate?evidenceResolver().gate(site,simulationYearFrom(site)):operationalGateFallback(site,simulationYearFrom(site))),
    location:{nodeKey:site?.locationNodeKey||null,status:site?.locationNodeKey?'OBSERVED':'UNOBSERVED'},
    authority:allObserved?'OBSERVED':'SIMULATED',stateAuthority:allObserved?'OBSERVED':'SIMULATED',
    dataStatus:allObserved?'OBSERVED':'SIMULATED',
    provenance:{sourceAuthority:'RESOURCE_JSON.countryProfiles.mineSites',simulationRuleVersion:VERSION,sourcePath:site?.sourcePath||null,
      fieldAuthority:{reserve:streams.map(s=>s.reserve.authority),production:streams.map(s=>s.production.authority),quality:streams.map(s=>s.quality.gradeStatus)}}};
+}
+const evidenceResolver=()=>g.Omega?.ResourceEvidenceResolver||g.OmegaResourceEvidenceResolver||null;
+function operationalGateFallback(site,simYear){
+ const op=site?.operation||{},status=String(op.operationalStatus||op.status||site?.status||site?.operationalStatus||'UNKNOWN').toUpperCase();
+ const eligibility=String(op.extractionEligibility||site?.extractionEligibility||'UNKNOWN').toUpperCase();
+ const blocked=new Set(['SUSPENDED','HISTORICAL_INACTIVE','CLOSED','ABANDONED','CARE_AND_MAINTENANCE','CESSATION_OF_PRODUCTION','NO_CURRENT_CONCESSION','PRESERVATION_AND_SAFE_MANAGEMENT','DISPUTED_OPERATION','RESOURCE_IDENTITY_UNVERIFIED','NOT_APPLICABLE']);
+ if(eligibility==='NON_EXECUTABLE'||blocked.has(status)||status==='UNKNOWN'&&eligibility!=='EXECUTABLE')return{executable:false,reason:'OPERATIONAL_STATUS_BLOCKED',status,eligibility};
+ return{executable:true,reason:'OPERATIONAL_GATE_PASSED',status,eligibility};
 }
 function authorityRank(v){return String(v||'UNOBSERVED').toUpperCase()==='OBSERVED'?2:String(v||'').toUpperCase()==='SIMULATED'?1:0}
 function firewall(existing,incoming){
@@ -320,7 +373,7 @@ function planRoute(input={}){
  return {status:'PLANNED',transportMode:mode,routeId:'ROUTE:'+String(input.sourceNode||'SRC')+'>'+String(input.destinationNode||'DST')+':'+mode,
   sourceNode:input.sourceNode||null,destinationNode:input.destinationNode||null,distanceKm:distance,capacity,requestedQuantity:qty,dispatchQuantity:Math.min(qty,capacity),
   legs,travelTimeDays:timeDays,costEstimate:cost,costUnit:'SIMULATED_CURRENCY',capacityAuthority:'SIMULATED',costAuthority:'SIMULATED',timeAuthority:'SIMULATED',
-  routeAuthority:'SIMULATED',deliveryStatus:qty<=capacity?'READY':'MULTI_LEG_REQUIRED'};
+  routeAuthority:'SIMULATED',networkAuthority:'SIMULATED',capacityBasis:'SCENARIO_MODE_CAPACITY',distanceBasis:'SIMULATED_ROUTE_GRAPH',realWorldCapacityVerified:false,realWorldRouteVerified:false,deliveryExecutionMode:'SIMULATED_GAME_QUEUE',deliveryStatus:qty<=capacity?'READY':'MULTI_LEG_REQUIRED'};
 }
 function planFactoryRoutes(input={}){
  const ids=Array.isArray(input.factoryIds)?input.factoryIds.filter(Boolean):[];
@@ -329,6 +382,6 @@ function planFactoryRoutes(input={}){
 function dispatchFromWarehouse(input={}){
  const route=planRoute(input);return {...route,delivery:{shipmentId:'SHIP:'+hash(JSON.stringify(input)+'|'+route.routeId),warehouseId:input.warehouseId||null,batchId:input.batchId||null,stage:'WAREHOUSE_DISPATCH',status:'READY_FOR_DELIVERY',quantity:route.dispatchQuantity}};
 }
-const API={VERSION,unitFamily,resourceFamily,parseReserve,commodityText,splitCommodities,quality,siteModel,firewall,authorityRank,planRoute,dispatchFromWarehouse,planFactoryRoutes,transportModes:modes};
+const API={VERSION,unitFamily,resourceFamily,parseReserve,commodityText,splitCommodities,quality,siteModel,firewall,authorityRank,declineCurve,operationalGate:(site,y)=>evidenceResolver()?.gate?.(site,y)||operationalGateFallback(site,y),planRoute,dispatchFromWarehouse,planFactoryRoutes,transportModes:modes};
 g.Omega=g.Omega||{};g.Omega.ResourceRealism=API;g.OmegaResourceRealism=API;
 })(typeof window!=='undefined'?window:globalThis);

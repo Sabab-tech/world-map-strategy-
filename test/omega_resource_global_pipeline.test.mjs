@@ -153,7 +153,7 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
         (Number.isFinite(Number(raw.outputRate))&&Number(raw.outputRate)>0?Number(raw.outputRate):
           (Number.isFinite(Number(raw.nominalRate))&&Number(raw.nominalRate)>0?Number(raw.nominalRate):null))
       );
-    assert.equal(x.resourceAsset.reserve.geologicalQuantity,expectedReserve);
+    assert.equal(x.resourceAsset.reserve.residualQuantity,expectedReserve);
     assert.equal(x.resourceAsset.productionRate,expectedRate);
     const reserveAuthority=expectedReserve===null?'UNOBSERVED':
       normalizeAuthority(raw.reserveAuthority||raw.dataStatus?.reserve||raw.dataAuthority?.reserve);
@@ -225,7 +225,9 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
   assert.equal(activeSiteReferenceCount,mineSiteReferenceCount);
   assert.equal(siteControllerCount,mineSiteReferenceCount);
   assert.equal(Object.values(state.resource).reduce((sum,row)=>sum+(Number(row?.mineSiteReferenceCount)||0),0),mineSiteReferenceCount);
-  assert.equal(Object.values(state.resource).reduce((sum,row)=>sum+(Object.values(row?.mineSiteControllers||{}).filter(x=>x?.controllerStatus==='RUNNING').length||0),0),mineSiteReferenceCount);
+  const runningSiteControllerCount=Object.values(state.resource).reduce((sum,row)=>sum+(Object.values(row?.mineSiteControllers||{}).filter(x=>x?.controllerStatus==='RUNNING').length||0),0);
+  assert.ok(runningSiteControllerCount<mineSiteReferenceCount);
+  assert.equal(Object.values(state.resource).reduce((sum,row)=>sum+(Object.values(row?.mineSiteControllers||{}).filter(x=>x?.controllerStatus==='BLOCKED').length||0),0),mineSiteReferenceCount-runningSiteControllerCount);
   const batchCount=Object.values(state.resource).reduce((sum,row)=>sum+(Array.isArray(row?.batches)?row.batches.length:0),0);
   const pathCount=Object.values(state.resource).reduce((sum,row)=>sum+(row?.minePaths&&typeof row.minePaths==='object'?Object.keys(row.minePaths).length:0),0);
   const sitePathCount=Object.values(state.resource).reduce((sum,row)=>sum+Object.keys(row?.mineSiteControllers||{}).filter(k=>row.minePaths?.[k]).length,0);
@@ -235,8 +237,8 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
   const projectedMines=Object.values(state.resource).flatMap(row=>Array.isArray(row?.mines)?row.mines:[]);
   assert.ok(projectedMines.every(x=>x.resourceAsset&&x.resourceAsset.schemaVersion==='1.0.0'));
   assert.ok(projectedMines.every(x=>Object.keys(x.resourceAsset).sort().join('|')===unifiedSiteKeys.join('|')));
-  assert.equal(sitePathCount,mineSiteReferenceCount);
-  assert.equal(pathCount,mineSiteReferenceCount+engine.deposits.length);
+  assert.equal(sitePathCount,runningSiteControllerCount);
+  assert.equal(pathCount,runningSiteControllerCount+engine.deposits.length);
   assert.equal(lotCount,engine.deposits.length);
 
   for(const [countryId,row] of Object.entries(state.resource)){

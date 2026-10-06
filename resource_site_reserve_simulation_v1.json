@@ -1,12 +1,20 @@
 {
-  "schemaVersion": "1.0.0",
+  "schemaVersion": "1.1.0",
   "datasetId": "OMEGA_RESOURCE_SITE_RESERVE_SIMULATION_V1",
   "generatedAt": "2026-10-04",
   "siteCount": 199,
   "commercialSiteCount": 195,
   "notApplicableSiteCount": 4,
   "authority": "SCENARIO_SIMULATION_DATA",
-  "note": "Gameplay-only quantitative reserve layer. It does not claim real-world reserve figures and does not modify source datasets.",
+  "note": "Gameplay-only quantitative reserve layer. Each record reserve.quantity is an EXTRACTABLE_RESERVE simulation baseline used by runtime depletion. It does not claim real-world reserve figures and does not modify source datasets.",
+  "quantitySemantics": "EXTRACTABLE_RESERVE_SCENARIO_BASELINE",
+  "ontology": {
+    "geologicalResource": "Not supplied by this scenario dataset; runtime derives only a clearly-marked simulation layer when needed.",
+    "technicallyRecoverable": "Runtime-derived simulation quantity above geologicalResource when the scenario baseline requires an accounting bridge.",
+    "economicallyRecoverable": "Runtime-derived simulation quantity before the final extractable reserve baseline.",
+    "extractableReserve": "The per-site scenario quantity stored in reserve.quantity and consumed by extraction.",
+    "classification": "SIMULATION_ONLY_NO_PUBLIC_RESERVE_CLASSIFICATION"
+  },
   "records": [
     {
       "siteId": "SITE_BGD_barapukuria_coal_mine",
