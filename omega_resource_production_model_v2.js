@@ -64,10 +64,22 @@ function productionModel(raw,reserve){
  const observed=nominal!==null||observedRate!==null||min!==null||max!==null;
  const simulatedRate=reserve>0?reserve/horizon:null;
  const nominalBase=nominal??observedRate??simulatedRate;
- const activeRate=observedRate!==null?observedRate:(nominalBase===null?null:Math.max(0,nominalBase*utilization*(1-maintenance)*(1-decline)));
- const derivedMin=min!==null?min:(observedRate!==null?observedRate*.55:(nominalBase!==null?nominalBase*.55:null));
- const derivedMax=max!==null?max:(observedRate!==null?observedRate*1.25:(nominalBase!==null?nominalBase*1.3:null));
- return{nominalCapacity:nominal??observedRate??simulatedRate,minimumCapacity:derivedMin,maximumCapacity:derivedMax,utilization,recovery,decline,maintenance,operatingCost:cost,observedRate,simulatedRate,activeRate,authority:observed?'OBSERVED':'SIMULATED',dataStatus:observed?'AVAILABLE':'UNOBSERVED',rangeDataStatus:min!==null&&max!==null?'OBSERVED':observedRate!==null?'DERIVED_FROM_OBSERVED_RATE':'UNOBSERVED',simulationHorizonDays:horizon,modelVersion:VERSION};
+ const technology=g.Omega?.ResourceResearchRuntime?.getEngineeringEffect?.(raw?.countryId||raw?.countryCode||null,raw?.siteId||raw?.siteReferenceKey||raw?.id||null,rid(resourceId),raw?.siteType||raw?.assetType||null)||{capacityMultiplier:1,recoveryAdd:0,utilizationAdd:0,maintenanceMultiplier:1,declineMultiplier:1,outputMultiplier:1,technologies:[]};
+ const clamp01=v=>Math.min(1,Math.max(0,Number(v)||0));
+ const finalUtilization=clamp01(utilization+(Number(technology.utilizationAdd)||0));
+ const finalRecovery=clamp01(recovery+(Number(technology.recoveryAdd)||0));
+ const finalMaintenance=clamp01(maintenance*Math.max(.1,Number(technology.maintenanceMultiplier)||1));
+ const finalDecline=clamp01(decline*Math.max(.1,Number(technology.declineMultiplier)||1));
+ const capacityFactor=Math.max(.1,Number(technology.capacityMultiplier)||1),outputFactor=Math.max(.1,Number(technology.outputMultiplier)||1);
+ const baseNominal=nominal??observedRate??simulatedRate;
+ const finalNominal=baseNominal===null?null:baseNominal*capacityFactor;
+ const derivedMinBase=min!==null?min:(observedRate!==null?observedRate*.55:(nominalBase!==null?nominalBase*.55:null));
+ const derivedMaxBase=max!==null?max:(observedRate!==null?observedRate*1.25:(nominalBase!==null?nominalBase*1.3:null));
+ const finalMin=derivedMinBase===null?null:derivedMinBase*capacityFactor;
+ const finalMax=derivedMaxBase===null?null:derivedMaxBase*capacityFactor;
+ const baselineRate=observedRate!==null?observedRate*outputFactor:(finalNominal===null?null:Math.max(0,finalNominal*finalUtilization*(1-finalMaintenance)*(1-finalDecline)));
+ const activeRate=baselineRate;
+ return{nominalCapacity:finalNominal,minimumCapacity:finalMin,maximumCapacity:finalMax,utilization:finalUtilization,recovery:finalRecovery,decline:finalDecline,maintenance:finalMaintenance,operatingCost:cost,observedRate,simulatedRate,activeRate,authority:observed?'OBSERVED':'SIMULATED',dataStatus:observed?'AVAILABLE':'UNOBSERVED',rangeDataStatus:min!==null&&max!==null?'OBSERVED':observedRate!==null?'DERIVED_FROM_OBSERVED_RATE':'UNOBSERVED',simulationHorizonDays:horizon,modelVersion:VERSION,technologyAdjusted:Array.isArray(technology.technologies)&&technology.technologies.length>0,technologyEffects:clone(technology)};
 }
 function quality(raw,resourceId){
  const external=g.Omega?.ResourceRealism?.quality;
