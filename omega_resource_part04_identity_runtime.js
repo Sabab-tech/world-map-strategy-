@@ -293,9 +293,11 @@
           const resourceId=getResource(rawSiteObject);
           const stableId=getStableId(rawSiteObject);
           const locationKey=getLocation(rawSiteObject);
+          // A physical mine/field is identified independently of commodity.
+          // Multi-commodity deposits must remain one site identity and split into commodity streams downstream.
           const physicalKey=stableId
             ? countryId+'|ID:'+tok(stableId)
-            : countryId+'|R:'+tok(resourceId||'unknown')+'|N:'+tok(siteName)+'|L:'+tok(locationKey||'');
+            : countryId+'|N:'+tok(siteName)+'|L:'+tok(locationKey||'');
           const sourcePath=`GSRSK_Master_CountryProfiles_v14.countryProfiles.${String(profileKey)}.resource_infrastructure_context.mineSites[${index}]`;
           const existing=byPhysicalIdentity.get(physicalKey);
           if(existing){
@@ -320,7 +322,7 @@
           }
           const siteReferenceKey=stableId
             ? 'SITE:'+countryId+':ID:'+tok(stableId)
-            : 'SITE:'+countryId+':'+tok(resourceId||'unknown')+':'+tok(siteName)+(locationKey?':'+tok(locationKey):'');
+            : 'SITE:'+countryId+':'+tok(siteName)+(locationKey?':'+tok(locationKey):'');
           const resourceAsset=normalizeUnifiedAsset({
             ...clone(rawSiteObject),
             assetType:'MINE_SITE',
