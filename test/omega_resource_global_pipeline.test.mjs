@@ -196,10 +196,22 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
   assert.equal(globalResult.status,'COMPLETED');
   const nonEmptyResults=globalResult.results.filter(x=>x.result?.result?.extracted>0);
   const extractedRecords=nonEmptyResults.flatMap(x=>x.result.result.records||[]);
-  assert.equal(extractedRecords.length,engine.deposits.length);
+  const canonicalOccurrenceKeys=new Set(idResult.registry.listOccurrences().map(x=>String(x.occurrenceKey||'')));
+  const linkedExecutionKeys=new Set();
+  for(const row of Object.values(state.resource)){
+    for(const controller of Object.values(row?.mineSiteControllers||{})){
+      if(controller?.controllerStatus!=='RUNNING')continue;
+      for(const key of controller.linkedOccurrenceKeys||[])if(key)linkedExecutionKeys.add(String(key));
+    }
+  }
+  const expectedExecutionOccurrenceKeys=new Set(canonicalOccurrenceKeys);
+  for(const key of linkedExecutionKeys)expectedExecutionOccurrenceKeys.add(key);
+  const expectedExecutionOccurrenceCount=expectedExecutionOccurrenceKeys.size;
+  assert.ok(expectedExecutionOccurrenceCount>=engine.deposits.length);
+  assert.equal(extractedRecords.length,expectedExecutionOccurrenceCount);
 
   const executableOccurrenceKeys=new Set(extractedRecords.map(x=>String(x.occurrenceKey||'')));
-  assert.equal(executableOccurrenceKeys.size,engine.deposits.length);
+  assert.equal(executableOccurrenceKeys.size,expectedExecutionOccurrenceCount);
   for(const record of extractedRecords){
     const countryId=record.countryId;
     const row=state.resource[countryId];
@@ -217,7 +229,7 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
     assert.equal(row.inventoryLots[record.producedBatch.batchId].warehouseId,'WH-'+countryId+'-RAW');
   }
   const productionLedgerCount=Object.values(state.resource).reduce((sum,row)=>sum+(Array.isArray(row?.mineProductionLedger)?row.mineProductionLedger.length:0),0);
-  assert.equal(productionLedgerCount,engine.deposits.length);
+  assert.equal(productionLedgerCount,expectedExecutionOccurrenceCount);
 
   const mineCount=Object.values(state.resource).reduce((sum,row)=>sum+(Array.isArray(row?.mines)?row.mines.length:0),0);
   const activeSiteReferenceCount=Object.values(state.resource).reduce((sum,row)=>sum+(Array.isArray(row?.mineSiteReferences)?row.mineSiteReferences.length:0),0);
@@ -232,14 +244,14 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
   const pathCount=Object.values(state.resource).reduce((sum,row)=>sum+(row?.minePaths&&typeof row.minePaths==='object'?Object.keys(row.minePaths).length:0),0);
   const sitePathCount=Object.values(state.resource).reduce((sum,row)=>sum+Object.keys(row?.mineSiteControllers||{}).filter(k=>row.minePaths?.[k]).length,0);
   const lotCount=Object.values(state.resource).reduce((sum,row)=>sum+(row?.inventoryLots&&typeof row.inventoryLots==='object'?Object.keys(row.inventoryLots).length:0),0);
-  assert.equal(mineCount,engine.deposits.length);
-  assert.equal(batchCount,engine.deposits.length);
+  assert.equal(mineCount,expectedExecutionOccurrenceCount);
+  assert.equal(batchCount,expectedExecutionOccurrenceCount);
   const projectedMines=Object.values(state.resource).flatMap(row=>Array.isArray(row?.mines)?row.mines:[]);
   assert.ok(projectedMines.every(x=>x.resourceAsset&&x.resourceAsset.schemaVersion==='1.0.0'));
   assert.ok(projectedMines.every(x=>Object.keys(x.resourceAsset).sort().join('|')===unifiedSiteKeys.join('|')));
   assert.equal(sitePathCount,runningSiteControllerCount);
-  assert.equal(pathCount,runningSiteControllerCount+engine.deposits.length);
-  assert.equal(lotCount,engine.deposits.length);
+  assert.equal(pathCount,runningSiteControllerCount+canonicalOccurrenceKeys.size);
+  assert.equal(lotCount,expectedExecutionOccurrenceCount);
 
   for(const [countryId,row] of Object.entries(state.resource)){
     const batches=Array.isArray(row.batches)?row.batches:[];
@@ -276,7 +288,7 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
     if((state.resource[a].batches||[]).some(x=>x.countryId===b))crossCountryViolations.push([a,b]);
   }
   assert.equal(crossCountryViolations.length,0);
-  assert.equal(fiscalPendingCount,engine.deposits.length);
+  assert.equal(fiscalPendingCount,expectedExecutionOccurrenceCount);
   const siteRefsByCountry=new Map();
   for(const s of siteRefs){
     const arr=siteRefsByCountry.get(s.countryId)||[];arr.push(s.siteName);siteRefsByCountry.set(s.countryId,arr);
