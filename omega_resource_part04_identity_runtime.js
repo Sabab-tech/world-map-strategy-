@@ -1,72 +1,3 @@
-/* ============================================================================
- * OMEGA RESOURCE PART 04 - CANONICAL MINE / DEPOSIT IDENTITY RUNTIME
- *
- * Purpose:
- *   Build one authoritative occurrence registry directly from RESOURCE_JSON
- *   runtime_deposits. No country is selected by the player here.
- *   Every occurrence carries its sovereign country identity.
- * ========================================================================== */
-(function(g){
-  'use strict';
-
-  const VERSION='1.0.0';
-
-  function clone(v,seen){
-    if(v===null||typeof v!=='object')return v;
-    seen=seen||new WeakMap();
-    if(seen.has(v))return seen.get(v);
-    if(Array.isArray(v)){const a=[];seen.set(v,a);for(const x of v)a.push(clone(x,seen));return a;}
-    const o={};seen.set(v,o);
-    for(const k of Object.keys(v)){
-      if(k==='__proto__'||k==='constructor'||typeof v[k]==='function'||v[k]===undefined)continue;
-      o[k]=clone(v[k],seen);
-    }
-    return o;
-  }
-
-  function id(v){return String(v??'').trim().toUpperCase();}
-  function tok(v){return String(v??'').normalize('NFKC').trim().toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');}
-
-  function canonicalCountry(v){
-    const raw=String(v??'').trim();
-    if(!raw)return null;
-    try{
-      const bridge=g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity;
-      const profiles=engine()?.countryProfiles&&typeof engine().countryProfiles==='object'?engine().countryProfiles:{};
-      const direct=profiles[raw]||profiles[raw.toUpperCase()];
-      const directIdentity=direct?.identity||direct;
-      if(directIdentity?.iso3)return id(directIdentity.iso3);
-      const hit=bridge?.resolveCountry?.(raw);
-      const source=hit?.raw?.raw||hit?.raw?.datasets?.['countries.json']||hit?.raw;
-      const resolvedIso3=source?.iso3||source?.iso3Code||source?.countryCode||source?.countryId;
-      if(resolvedIso3)return id(resolvedIso3);
-      if(hit?.id)return id(hit.id);
-    }catch(_){}
-    return id(raw);
-  }
-
-  function engine(){
-    return g.ResourceMinistryEngine||null;
-  }
-
-  const UNIFIED_ASSET_SCHEMA_VERSION='1.0.0';
-
-  function num(v){
-    const x=Number(v);
-    return Number.isFinite(x)?x:null;
-  }
-
-  function textOrNull(v){
-    const s=String(v??'').trim();
-    return s?s:null;
-  }
-
-  function authorityRank(v){
-    const a=String(v||'UNOBSERVED').toUpperCase();
-    return a==='OBSERVED'||a==='WEB_SOURCE_BACKED'||a==='WEB_RESEARCHED'||a==='WEB_RESEARCHED_CURATED'?2:a==='SIMULATED'?1:0;
-  }
-
-  function normalizeAuthority(v){
     const a=String(v||'UNOBSERVED').toUpperCase();
     if(a==='OBSERVED'||a==='WEB_SOURCE_BACKED'||a==='WEB_RESEARCHED'||a==='WEB_RESEARCHED_CURATED')return'OBSERVED';
     if(a==='SIMULATED')return'SIMULATED';
@@ -96,15 +27,14 @@
     const cap=raw.capacity||ref.productionCapacity||{};
     const prod=raw.productionModel||raw.siteModel?.commodityStreams?.find?.(x=>String(x?.resourceId||'')===String(resourceTypeId||''))?.production||ref.production||{};
     const q=raw.qualityState||raw.quality||ref.quality||{};
-    const reserveAuthority=normalizeAuthority(
+    const reserveAuthorityCandidate=normalizeAuthority(
       raw.reserveAuthority||rs?.provenance?.quantityAuthority||raw.dataStatus?.reserve||raw.dataAuthority?.reserve||ref?.dataStatus?.reserve||ref?.dataAuthority?.reserve
     );
-    const productionAuthority=normalizeAuthority(
+    const productionAuthorityCandidate=normalizeAuthority(
       raw.productionAuthority||cap?.authority||prod?.authority||raw.dataStatus?.production||raw.dataAuthority?.production||ref?.dataStatus?.production||ref?.dataAuthority?.production
     );
-    const qualityAuthority=normalizeAuthority(
-      raw.qualityAuthority||q?.qualityAuthority||
-      q?.gradeStatus||q?.concentrationStatus||q?.purityStatus||
+    const qualityAuthorityCandidate=normalizeAuthority(
+      raw.qualityAuthority||
       raw.dataStatus?.grade||raw.dataStatus?.quality||raw.dataAuthority?.grade||raw.dataAuthority?.quality||
       ref?.dataStatus?.grade||ref?.dataStatus?.quality||ref?.dataAuthority?.grade||ref?.dataAuthority?.quality
     );
@@ -119,6 +49,10 @@
     const grade=num(raw.gradePercent??q?.gradePercent??q?.normalized?.gradePercent);
     const purity=num(raw.purity??q?.purity??q?.normalized?.purityFraction);
     const concentration=num(raw.concentrationPercent??q?.concentrationPercent??q?.normalized?.concentrationPercent);
+    const reserveAuthority=reserveQuantity===null?'UNOBSERVED':reserveAuthorityCandidate;
+    const productionAuthority=productionRate===null?'UNOBSERVED':productionAuthorityCandidate;
+    const qualityPresent=grade!==null||purity!==null||concentration!==null;
+    const qualityAuthority=qualityPresent?qualityAuthorityCandidate:'UNOBSERVED';
 
     const location={
       nodeKey:textOrNull(raw.locationNodeKey||ref.location?.nodeKey),
@@ -143,220 +77,3 @@
       occurrenceKey,
       siteName,
       countryId,
-      countryCode:countryId,
-      resourceType:resourceTypeId,
-      resourceTypeId,
-      location,
-      reserve:{
-        geologicalQuantity:reserveQuantity,
-        recoverableQuantity,
-        residualQuantity,
-        unit,
-        rawText:textOrNull(raw.reserves||rs?.rawText||ref?.reserve?.rawText),
-        authority:reserveAuthority,
-        status:reserveQuantity===null?'UNOBSERVED':'AVAILABLE'
-      },
-      recoverableReserve:recoverableQuantity,
-      productionRate,
-      productionCapacity:{
-        nominal:num(cap?.nominalCapacity??cap?.nominalRate??prod?.nominalCapacity),
-        minimum:num(cap?.minimumCapacity??prod?.minimumCapacity),
-        maximum:num(cap?.maximumCapacity??prod?.maximumCapacity),
-        unit,
-        rateUnit:textOrNull(cap?.rateUnit||(unit?unit+'/DAY':null)),
-        utilization:num(cap?.utilization??cap?.effortUtilization??prod?.utilization),
-        authority:productionAuthority
-      },
-      operatingStatus:textOrNull(raw.operationalStatus||raw.status||ref.operatingStatus),
-      grade,
-      purity,
-      concentration,
-      recoveryRate,
-      owner:textOrNull(raw.owner||raw.ownerKey||ref.owner||ref.ownerKey),
-      operator:textOrNull(raw.operator||raw.operatorKey||ref.operator||ref.operatorKey),
-      extractionMethod:textOrNull(raw.extractionMethod||raw.extraction_method||ref.extractionMethod),
-      startYear:num(raw.startYear??raw.start_year??ref.startYear),
-      currentProduction,
-      annualProduction:raw.annualProduction||ref.annualProduction||null,
-      recoveryRate,
-      warehouse:{
-        id:warehouseId,
-        status:warehouseId?'RUNTIME_READY':'UNAVAILABLE',
-        countryId
-      },
-      inventory:{
-        quantity:num(raw.inventoryQuantity??raw.inventory?.quantity??ref.inventory?.quantity),
-        unit,
-        status:textOrNull(raw.inventoryStatus||raw.inventory?.status||ref.inventory?.status)||'NOT_YET_EXTRACTED'
-      },
-      factoryInputRoute:{
-        routeId,
-        status:factoryInputStatus,
-        destinationCountryId:countryId,
-        warehouseId
-      },
-      provenance:{
-        ...(raw.provenance&&typeof raw.provenance==='object'?clone(raw.provenance):{}),
-        sourceAuthority:raw.sourceAuthority||raw.provenance?.sourceAuthority||ref.sourceAuthority||'UNOBSERVED',
-        sourceDatasetId:raw.sourceDatasetId||raw.provenance?.sourceDatasetId||ref.sourceDatasetId||null,
-        sourcePath:raw.sourcePath||raw.provenance?.sourcePath||ref.sourcePath||null
-      },
-      dataAuthority:{
-        overall:overallAuthority(authorities),
-        reserve:reserveAuthority,
-        production:productionAuthority,
-        quality:qualityAuthority
-      },
-      dataStatus:{
-        overall:overallAuthority(authorities),
-        reserve:reserveQuantity===null?'UNOBSERVED':reserveAuthority,
-        production:productionRate===null?'UNOBSERVED':productionAuthority,
-        quality:(grade===null&&purity===null&&concentration===null)?'UNOBSERVED':qualityAuthority
-      },
-      extractionExecutable:executable,
-      quantitativeExtractionDataAvailable:reserveQuantity!==null&&productionRate!==null&&Boolean(resourceTypeId)
-    };
-  }
-
-  function sourceDeposits(){
-    const e=engine();
-    const runtime=Array.isArray(e?.deposits)?e.deposits.slice():[];
-    return runtime.filter(row=>row&&typeof row==='object').map(row=>clone(row));
-  }
-
-  function depositKeyFor(row,index){
-    return String(row?.id||row?.depositId||row?.mineId||('DEP-'+index+'-'+tok(row?.name||row?.resId||'unknown'))).trim();
-  }
-
-  function sourceMineSiteReferences(){
-    const e=engine(),sourceMaps=e?.countryProfileSources&&typeof e.countryProfileSources==='object'&&Object.keys(e.countryProfileSources).length
-      ?Object.entries(e.countryProfileSources):[['merged',e?.countryProfiles&&typeof e.countryProfiles==='object'?e.countryProfiles:{}]];
-    const rows=[],seen=new Set();
-    for(const [sourceDatasetId,profiles] of sourceMaps){
-      for(const [profileKey,profile] of Object.entries(profiles||{})){
-        const identity=profile?.identity||profile||{};
-        const countryId=canonicalCountry(identity.countryId||identity.iso3||profileKey);
-        if(!countryId)continue;
-        const sites=profile?.resource_infrastructure_context?.mineSites||
-          profile?.infrastructure_context?.mineSites||
-          profile?.resourceInfrastructureContext?.mineSites||[];
-        if(!Array.isArray(sites))continue;
-        sites.forEach(function(rawSite,index){
-          const siteName=String(
-            typeof rawSite==='string'
-              ? rawSite
-              : rawSite?.name||rawSite?.siteName||rawSite?.mineName||rawSite?.depositName||
-                rawSite?.siteId||rawSite?.mineId||rawSite?.depositId||('UNNAMED_SITE_'+countryId+'_'+index)
-          ).trim();
-          if(!siteName)return;
-          const siteReferenceKey='SITE:'+String(sourceDatasetId)+':'+countryId+':'+tok(siteName)+':'+index;
-          const dedupeKey=sourceDatasetId+'|'+countryId+'|'+index+'|'+siteName.toUpperCase();
-          if(seen.has(dedupeKey))return;seen.add(dedupeKey);
-          const sourcePath='GSRSK_Master_CountryProfiles_v14.countryProfiles.'+String(profileKey)+'.resource_infrastructure_context.mineSites['+index+']';
-          const rawSiteObject=rawSite&&typeof rawSite==='object'?clone(rawSite):{name:siteName};
-          const resourceAsset=normalizeUnifiedAsset({
-            ...rawSiteObject,
-            assetType:'MINE_SITE',
-            assetId:siteReferenceKey,siteReferenceKey,
-            siteName,countryId,countryCode:countryId,
-            sourceAuthority:'RESOURCE_JSON',sourceDatasetId,sourcePath,
-            extractionExecutable:false
-          });
-          rows.push({
-            siteReferenceKey,countryId,countryCode:countryId,profileKey:String(profileKey),siteName,
-            status:'ACTIVE_SITE_REFERENCE',activationState:'ACTIVE_REFERENCE',
-            extractionExecutable:false,
-            quantitativeExtractionDataAvailable:resourceAsset.quantitativeExtractionDataAvailable===true,
-            sourceAuthority:'RESOURCE_JSON',sourceDatasetId,sourcePath,
-            rawSiteReference:clone(rawSite),
-            resourceAsset
-          });
-        });
-      }
-    }
-    return rows;
-  }
-
-  function compileIdentities(){
-    const deposits=sourceDeposits();
-    const byCountry=new Map(),byDeposit=new Map(),rows=[];
-    const siteReferences=sourceMineSiteReferences();
-    const siteRefsByCountry=new Map();
-    siteReferences.forEach(function(site){
-      if(!siteRefsByCountry.has(site.countryId))siteRefsByCountry.set(site.countryId,[]);
-      siteRefsByCountry.get(site.countryId).push(site);
-    });
-    deposits.forEach(function(raw,index){
-      const countryId=canonicalCountry(raw?.countryCode||raw?.countryIso3||raw?.countryId||raw?.iso3||raw?.country);
-      const resourceId=String(raw?.resourceTypeId||raw?.resourceTypeKey||raw?.resId||raw?.resourceId||'').replace(/^RES_TYPE:/i,'').trim().toLowerCase();
-      const depositKey=depositKeyFor(raw,index);
-      if(!countryId||!resourceId)return;
-      const occurrenceKey='OCC:'+countryId+':'+depositKey;
-      const occurrence={
-        occurrenceKey,
-        depositKey,
-        depositRawName:String(raw?.name||depositKey),
-        resourceTypeId:resourceId,
-        resourceTypeKey:resourceId,
-        countryId,
-        countryCode:countryId,
-        ownerKey:String(raw?.owner||raw?.ownerKey||'').trim()||null,
-        operatorKey:String(raw?.operator||raw?.operatorKey||'').trim()||null,
-        locationNodeKey:'MINE:'+countryId+':'+depositKey,
-        status:String(raw?.status||'UNKNOWN').trim().toUpperCase(),
-        sourceDatasetId:raw?.sourceDatasetId||raw?.provenance?.sourceDatasetId||'resources.json',
-        rawDeposit:clone(raw),
-        resourceAsset:normalizeUnifiedAsset({
-          ...clone(raw),
-          assetType:'RESOURCE_MINE',
-          assetId:occurrenceKey,
-          occurrenceKey,siteName:String(raw?.name||depositKey),
-          countryId,countryCode:countryId,resourceId:resourceId,resourceTypeId:resourceId,
-          locationNodeKey:'MINE:'+countryId+':'+depositKey,
-          sourceDatasetId:raw?.sourceDatasetId||raw?.provenance?.sourceDatasetId||'resources.json',
-          extractionExecutable:true,
-          quantitativeExtractionDataAvailable:true
-        })
-      };
-      rows.push(occurrence);
-      byDeposit.set(depositKey,occurrence);
-      if(!byCountry.has(countryId))byCountry.set(countryId,[]);
-      byCountry.get(countryId).push(occurrence);
-    });
-
-    const registry={
-      version:VERSION,
-      authority:'RESOURCE_JSON',
-      occurrenceCount:rows.length,
-      siteReferenceCount:siteReferences.length,
-      getOccurrencesByCountry:function(countryId){return clone(byCountry.get(canonicalCountry(countryId))||[]);},
-      getMineSiteReferencesByCountry:function(countryId){return clone(siteRefsByCountry.get(canonicalCountry(countryId))||[]);},
-      listMineSiteReferences:function(){return clone(siteReferences);},
-      getDeposit:function(depositKey){
-        const hit=byDeposit.get(String(depositKey||'').trim());
-        if(!hit)return null;
-        const out=clone(hit);
-        out.resourceTypeId=hit.resourceTypeId;
-        out.resourceTypeKey=hit.resourceTypeKey;
-        out.depositRawName=hit.depositRawName;
-        out.locationNodeKey=hit.rawDeposit?.locationNodeKey||hit.locationNodeKey;
-        return out;
-      },
-      listOccurrences:function(){return clone(rows);}
-    };
-    return{status:'READY',registry,occurrenceCount:rows.length,siteReferenceCount:siteReferences.length};
-  }
-
-  const API=Object.freeze({
-    VERSION,
-    UNIFIED_ASSET_SCHEMA_VERSION,
-    normalizeUnifiedAsset,
-    compileIdentities
-  });
-
-  g.Omega=g.Omega||{};
-  g.GSRSK_Part04=API;
-  g.GSRSK_ResourceIdentityEngine=API;
-  g.Omega.ResourcePart04IdentityRuntime=API;
-  g.OmegaResourcePart04IdentityRuntime=API;
-})(typeof window!=='undefined'?window:globalThis);
