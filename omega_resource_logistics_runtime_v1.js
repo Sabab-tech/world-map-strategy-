@@ -34,10 +34,12 @@ function handler(cmd,ctx){
    if(shipments.some(s=>String(s?.shipmentId)===String(shipmentId)))continue;
    shipments.push({shipmentId,routeId:x.routeId,warehouseId:p.warehouseId||x.delivery?.warehouseId||null,batchId:p.batchId||p.batch?.batchId||x.delivery?.batchId||null,
      factoryId:x.factoryId,resourceId:x.resourceId,quantity:x.dispatchQuantity,unit:p.unit||p.batch?.unit||null,transportMode:x.transportMode,
-     route:{sourceNode:x.sourceNode,destinationNode:x.destinationNode,distanceKm:x.distanceKm,capacity:x.capacity},
+     route:{sourceNode:x.sourceNode,destinationNode:x.destinationNode,distanceKm:x.distanceKm,capacity:x.capacity,capacityAuthority:x.capacityAuthority,networkAuthority:x.networkAuthority,distanceBasis:x.distanceBasis},
      economics:{costEstimate:x.costEstimate,costUnit:x.costUnit,costAuthority:x.costAuthority},
      timing:{travelTimeDays:x.travelTimeDays,timeAuthority:x.timeAuthority,plannedTurn:turn(),etaTurn:turn()+Math.max(1,Math.ceil(x.travelTimeDays))},
      status:x.dispatchQuantity>0?'IN_TRANSIT':'BLOCKED',deliveryStatus:x.dispatchQuantity>0?'IN_TRANSIT':'BLOCKED',
+     networkAuthority:x.networkAuthority||'SIMULATED',realWorldRouteVerified:x.realWorldRouteVerified===true,
+     realWorldCapacityVerified:x.realWorldCapacityVerified===true,capacityBasis:x.capacityBasis||'SCENARIO_MODE_CAPACITY',
      sourceAuthority:p.sourceAuthority||p.batch?.stateAuthority||'UNOBSERVED',simulationTurn:turn(),createdTurn:turn()});
  }
  while(shipments.length>MAX)shipments.shift();
