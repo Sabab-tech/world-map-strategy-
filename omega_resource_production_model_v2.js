@@ -4,7 +4,7 @@
  */
 (function(g){
 'use strict';
-const VERSION='2.0.0',DAY=24,HORIZON=100000;
+const VERSION='2.1.0',DAY=24,HORIZON=150000;
 const UNITS={
  TONNES:['T','TON','TONS','TONNE','TONNES','MT','METRIC_TON','METRIC_TONS'],
  KG:['KG','KILOGRAM','KILOGRAMS'],GRAMS:['G','GRAM','GRAMS'],
@@ -48,8 +48,10 @@ function parseReserve(text,resourceId,targetUnit){
 }
 const pick=(o,keys)=>{for(const k of keys)if(o?.[k]!==undefined&&o?.[k]!==null&&o?.[k]!=='')return o[k];return null};
 const frac=v=>{const n=num(v);return n===null?null:n>1?n/100:n};
-function productionModel(raw,reserve){
+function productionModel(raw,reserve,resourceId){
  const p=raw?.productionModel&&typeof raw.productionModel==='object'?raw.productionModel:{};
+ const targetResourceId=rid(resourceId??raw?.resourceId??raw?.resourceTypeId??raw?.resourceTypeKey??raw?.resId);
+ const petroleum=targetResourceId==='crude_oil'||targetResourceId==='natural_gas';
  const read=(scope,keys)=>pick(scope,keys);
  const nominal= num(read(p,['nominalRate','nominalCapacity'])??read(raw,['nominalRate','nominalCapacity']));
  const observedRate=num(read(p,['productionRate','dailyRate','outputRate'])??read(raw,['productionRate','dailyRate','outputRate']));
@@ -83,7 +85,7 @@ function productionModel(raw,reserve){
  const declineRatio=decline<1?(1-finalDecline)/(1-decline):1;
  const baselineRate=observedRate!==null?observedRate*capacityFactor*outputFactor*utilizationRatio*recoveryRatio*maintenanceRatio*declineRatio:(finalNominal===null?null:Math.max(0,finalNominal*finalUtilization*(1-finalMaintenance)*(1-finalDecline)));
  const activeRate=baselineRate;
- return{nominalCapacity:finalNominal,minimumCapacity:finalMin,maximumCapacity:finalMax,utilization:finalUtilization,recovery:finalRecovery,decline:finalDecline,maintenance:finalMaintenance,operatingCost:cost,observedRate,simulatedRate,activeRate,authority:observed?'OBSERVED':'SIMULATED',dataStatus:observed?'AVAILABLE':'UNOBSERVED',rangeDataStatus:min!==null&&max!==null?'OBSERVED':observedRate!==null?'DERIVED_FROM_OBSERVED_RATE':'UNOBSERVED',simulationHorizonDays:horizon,modelVersion:VERSION,technologyAdjusted:Array.isArray(technology.technologies)&&technology.technologies.length>0,technologyEffects:clone(technology)};
+ return{nominalCapacity:finalNominal,minimumCapacity:finalMin,maximumCapacity:finalMax,utilization:finalUtilization,recovery:finalRecovery,decline:finalDecline,maintenance:finalMaintenance,operatingCost:cost,observedRate,simulatedRate,activeRate,authority:observed?'OBSERVED':'SIMULATED',dataStatus:observed?'AVAILABLE':'UNOBSERVED',rangeDataStatus:min!==null&&max!==null?'OBSERVED':observedRate!==null?'DERIVED_FROM_OBSERVED_RATE':'UNOBSERVED',simulationHorizonDays:horizon,modelVersion:VERSION,declinePolicy:petroleum?'FIELD_SPECIFIC_DECLINE':'SITE_ENGINEERING_CAPACITY_DEPLETION',universalDeclineRateAllowed:false,classificationFramework:petroleum?'SPE_PRMS_2018':'CRIRSCO_STYLE',technologyAdjusted:Array.isArray(technology.technologies)&&technology.technologies.length>0,technologyEffects:clone(technology)};
 }
 function quality(raw,resourceId){
  const external=g.Omega?.ResourceRealism?.quality;
