@@ -42,13 +42,13 @@ for(const [siteId,site] of catalogMap){
 assert.equal(data.commercialSiteCount,195);
 assert.equal(data.notApplicableSiteCount,4);
 
-console.log(JSON.stringify({certificate:'OMEGA-199-PER-SITE-RESERVE-DATA',status:'PASS',siteCount:199,commercialSiteCount:195,notApplicableSiteCount:4,uniqueSiteIds:reserveMap.size,countryBinding:'PASS',resourceBinding:'PASS',perIdentityReserve:'PASS'},null,2));
+console.log(JSON.stringify({certificate:'OMEGA-199-PER-SITE-RESERVE-DATA',status:'PASS',siteCount:199,commercialSiteCount:195,notApplicableSiteCount:4,uniqueSiteIds:reserveMap.size,countryBinding:'PASS',resourceBinding:'PASS',perIdentityReserve:'PASS',realWorldCorrectness:'NOT_CERTIFIED'},null,2));
 
 const context=createContext({console,globalThis:null});
 context.globalThis=context;
 new Script(readFileSync('omega_resource_realism_runtime_v1.js','utf8'),{filename:'omega_resource_realism_runtime_v1.js'}).runInContext(context);
 const R=context.Omega.ResourceRealism;
-assert.equal(R.VERSION,'1.2.0');
+assert.equal(R.VERSION,'1.3.0');
 let runtimeChecked=0;
 for(const site of catalog.sites){
   const r=reserveMap.get(site.siteId);
@@ -60,6 +60,11 @@ for(const site of catalog.sites){
   assert.equal(stream.reserve.quantity,r.reserve.quantity,site.siteId+': scenario reserve not consumed');
   assert.equal(stream.reserve.authority,'SIMULATED');
   assert.equal(stream.reserve.unit,r.reserve.unit);
+  assert.equal(stream.reserve.quantityKind,'EXTRACTABLE_RESERVE');
+  assert.equal(stream.reserve.classificationState,'SIMULATION_ONLY_NO_PUBLIC_RESERVE_CLASSIFICATION');
+  assert.ok(stream.reserve.geologicalResourceQuantity>stream.reserve.technicallyRecoverableQuantity);
+  assert.ok(stream.reserve.technicallyRecoverableQuantity>stream.reserve.economicallyRecoverableQuantity);
+  assert.ok(stream.reserve.economicallyRecoverableQuantity>stream.reserve.extractableReserveQuantity);
   runtimeChecked++;
 }
 assert.equal(runtimeChecked,195);
