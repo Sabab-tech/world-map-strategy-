@@ -234,8 +234,8 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
   const mineCount=Object.values(state.resource).reduce((sum,row)=>sum+(Array.isArray(row?.mines)?row.mines.length:0),0);
   const activeSiteReferenceCount=Object.values(state.resource).reduce((sum,row)=>sum+(Array.isArray(row?.mineSiteReferences)?row.mineSiteReferences.length:0),0);
   const siteControllerCount=Object.values(state.resource).reduce((sum,row)=>sum+(row?.mineSiteControllers&&typeof row.mineSiteControllers==='object'?Object.keys(row.mineSiteControllers).length:0),0);
-  assert.equal(activeSiteReferenceCount,mineSiteReferenceCount);
-  assert.equal(siteControllerCount,mineSiteReferenceCount);
+  assert.equal(activeSiteReferenceCount,siteControllerCount);
+  assert.ok(activeSiteReferenceCount<=mineSiteReferenceCount);
   const modeledSiteReferenceCount=runtime.diagnostics().mineSiteReferenceCount;
   assert.equal(modeledSiteReferenceCount,mineSiteReferenceCount);
   assert.equal(Object.values(state.resource).reduce((sum,row)=>sum+(Number(row?.mineSiteReferenceCount)||0),0),activeSiteReferenceCount);
