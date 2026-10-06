@@ -120,6 +120,14 @@
       s.simulationReserveRecordId=row.siteId;
       s.simulationReserveAuthority='SCENARIO_SIMULATION_DATA';
       s.simulationReserveSourceDataset='resource_site_reserve_simulation_v1.json';
+      const resourceId=rid(s.resourceId||s.resourceTypeId||s.resId||row.resourceId);
+      const petroleum=resourceId==='crude_oil'||resourceId==='natural_gas';
+      s.researchPolicyDataset='OMEGA_RESOURCE_RESEARCH_POLICY_V1';
+      s.researchFramework=petroleum?'SPE_PRMS_2018':'CRIRSCO_STYLE';
+      s.classificationState='SIMULATION_ONLY_NO_PUBLIC_RESERVE_CLASSIFICATION';
+      s.declinePolicy=petroleum?'FIELD_SPECIFIC_DECLINE':'SITE_ENGINEERING_CAPACITY_DEPLETION';
+      s.universalDeclineRateAllowed=false;
+      s.calibrationPolicy='USGS_MCS_2026_COMMODITY_LEVEL_VALIDATION';
     }
     return s;
   }
