@@ -122,6 +122,10 @@
       row=Object.values(simulationReserveMap||{}).find(x=>canonical(x?.countryId||'')===country&&String(x?.siteName||'').trim().toLowerCase()===name)||null;
     }
     if(row?.reserve?.status==='SIMULATED'&&row.reserve.quantity>0){
+      if((s.resourceId==null||s.resourceId==='')&&row.resourceId)s.resourceId=rid(row.resourceId);
+      if((s.resourceTypeId==null||s.resourceTypeId==='')&&row.resourceId)s.resourceTypeId=rid(row.resourceId);
+      if((s.resourceTypeKey==null||s.resourceTypeKey==='')&&row.resourceId)s.resourceTypeKey=rid(row.resourceId);
+      if((s.siteId==null||s.siteId==='')&&row.siteId)s.siteId=String(row.siteId);
       s.simulationReserveQuantity=Number(row.reserve.quantity);
       s.simulationReserveUnit=row.reserve.unit||null;
       s.simulationReserveRecordId=row.siteId;
