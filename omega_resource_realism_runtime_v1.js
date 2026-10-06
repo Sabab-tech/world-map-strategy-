@@ -223,7 +223,11 @@ function siteModel(site,profile,countryId){
    const minimumBase=minObs??(effectiveObservedRate!==null?effectiveObservedRate*.55:nominalBase*.55);
    const maximumBase=maxObs??(effectiveObservedRate!==null?effectiveObservedRate*1.25:nominalBase*1.3);
    const minimum=minimumBase*capacityFactor,maximum=maximumBase*capacityFactor;
-   const activeRate=effectiveObservedRate!==null?effectiveObservedRate*outputFactor:Math.max(0,nominal*utilizationFinal*(1-maintenanceFinal)*(1-declineFinal));
+   const utilizationRatio=utilization>0?utilizationFinal/utilization:1;
+   const recoveryRatio=recovery>0?recoveryFinal/recovery:1;
+   const maintenanceRatio=maintenance<1?(1-maintenanceFinal)/(1-maintenance):1;
+   const declineRatio=decline<1?(1-declineFinal)/(1-decline):1;
+   const activeRate=effectiveObservedRate!==null?effectiveObservedRate*capacityFactor*outputFactor*utilizationRatio*recoveryRatio*maintenanceRatio*declineRatio:Math.max(0,nominal*utilizationFinal*(1-maintenanceFinal)*(1-declineFinal));
    const life=r.lifeMin+(r.lifeMax-r.lifeMin)*u;
    const scenarioReserve=num(src?.simulationReserveQuantity??src?.simulationReserve?.quantity??site?.simulationReserveQuantity??site?.simulationReserve?.quantity);
    const scenarioReserveUnit=String(src?.simulationReserveUnit??src?.simulationReserve?.unit??site?.simulationReserveUnit??site?.simulationReserve?.unit??'').trim()||null;
