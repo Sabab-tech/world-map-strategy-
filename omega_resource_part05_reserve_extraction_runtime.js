@@ -262,11 +262,24 @@
       );
       if(q<=0)return{status:'BLOCKED',diagnostics:[{message:'EXTRACTION_QUANTITY_ZERO'}]};
       const before=new ReserveState(reserve.toJSON?.()||reserve);
+      const beforeResidual=Math.max(0,num(before.residualQuantity??before.extractableReserveQuantity)||0);
+      const beforeExtractable=Math.max(0,num(before.extractableReserveQuantity??beforeResidual)||0);
+      const beforeEconomic=Math.max(0,num(before.economicallyRecoverableQuantity??before.recoverableQuantity??beforeExtractable)||0);
+      const beforeTechnical=num(before.technicallyRecoverableQuantity);
+      const afterExtractable=Math.max(0,beforeExtractable-q);
+      const afterEconomic=Math.max(0,beforeEconomic-q);
+      const afterTechnical=beforeTechnical===null?null:Math.max(0,beforeTechnical-q);
+      const afterResidual=Math.max(0,beforeResidual-q);
       const after=new ReserveState({
         ...before,
-        residualQuantity:Math.max(0,(num(before.residualQuantity)||0)-q),
+        residualQuantity:afterResidual,
+        extractableReserveQuantity:afterExtractable,
+        residualExtractableReserveQuantity:afterExtractable,
+        economicallyRecoverableQuantity:afterEconomic,
+        recoverableQuantity:afterEconomic,
+        technicallyRecoverableQuantity:afterTechnical,
         stateVersion:(num(before.stateVersion)||1)+1,
-        operationalStatus:(num(before.residualQuantity)||0)-q<=0?'EXHAUSTED':'DEPLETING'
+        operationalStatus:afterExtractable<=0?'EXHAUSTED':'DEPLETING'
       });
       const extractedBatch={
         batchId:'P5:'+String(before.occurrenceKey).replace(/[^A-Z0-9:_-]/gi,'')+':T'+String(request?.simulationTick||0),
