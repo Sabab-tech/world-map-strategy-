@@ -19,7 +19,7 @@
   const tok=v=>String(v??'').trim().toLowerCase().replace(/[\s-]+/g,'_');
   const n=v=>{const x=Number(v);return Number.isFinite(x)?x:null;};
   const state=()=>g.Game?.state||g.gameState||{};
-  let simulationReserveMap=null,simulationReservePromise=null;
+  let simulationReserveMap=null,simulationReservePromise=null,researchEvidenceMap=null,researchEvidencePromise=null;
   async function loadSimulationReserveData(){
     if(simulationReserveMap)return{status:'READY',count:Object.keys(simulationReserveMap).length,reused:true};
     if(simulationReservePromise)return simulationReservePromise;
@@ -47,6 +47,47 @@
     })();
     return simulationReservePromise;
   }
+  async function loadResearchEvidenceData(){
+    if(researchEvidenceMap)return{status:'READY',count:Object.keys(researchEvidenceMap).length,reused:true};
+    if(researchEvidencePromise)return researchEvidencePromise;
+    researchEvidencePromise=(async()=>{
+      try{
+        const inline=g.OmegaResourceSiteResearchEvidenceData||g.Omega?.ResourceSiteResearchEvidenceData;
+        let data=inline||null;
+        if(!data){const res=await fetch('resource_site_research_evidence_v1.json',{cache:'no-store'});if(!res?.ok)throw new Error('RESOURCE_SITE_RESEARCH_EVIDENCE_FETCH_FAILED');data=await res.json();}
+        const rows=Array.isArray(data?.records)?data.records:[],map={};for(const row of rows)if(row?.siteId)map[String(row.siteId)]=clone(row);
+        researchEvidenceMap=map;g.OmegaResourceSiteResearchEvidenceData=data;g.Omega=g.Omega||{};g.Omega.ResourceSiteResearchEvidenceData=data;
+        return{status:'READY',count:rows.length};
+      }catch(e){researchEvidenceMap={};return{status:'FAILED',count:0,reason:String(e?.message||e)}}
+      finally{researchEvidencePromise=null;}
+    })();
+    return researchEvidencePromise;
+  }
+  function enrichResearchEvidence(site){
+    const s=clone(site||{}),keys=[s.siteReferenceKey,s.id,s.siteId,s.rawSiteReference?.id].filter(Boolean).map(String);
+    let row=null;for(const key of keys){if(researchEvidenceMap?.[key]){row=researchEvidenceMap[key];break;}}
+    if(!row){const wanted=canonical(s.countryId||s.countryCode||s.country||'');const name=String(s.siteName||s.name||s.mineName||s.depositName||'').trim().toLowerCase();row=Object.values(researchEvidenceMap||{}).find(x=>canonical(x?.countryId||'')===wanted&&String(x?.siteName||x?.name||'').trim().toLowerCase()===name)||null;}
+    if(!row)return s;
+    s.researchEvidence=clone(row.evidence||[]);
+    s.researchFacts=clone(row.facts||{});
+    s.researchEvidenceDataset='resource_site_research_evidence_v1.json';
+    s.researchEvidenceAuthority='SITE_SPECIFIC_WEB_RESEARCH';
+    const facts=row.facts||{};
+    const put=(k,v)=>{if(v===undefined||v===null||v==='')return;if(s[k]===undefined||s[k]===null||s[k]===''||s[k]==='UNOBSERVED')s[k]=clone(v);};
+    put('owner',facts.owner);put('operator',facts.operator);put('extractionMethod',facts.extractionMethod);
+    if(facts.quantitativeProfile)s.quantitativeProfile={...(s.quantitativeProfile||{}),...clone(facts.quantitativeProfile)};
+    if(facts.resourceClassification)s.resourceClassification=clone(facts.resourceClassification);
+    if(facts.infrastructure)s.infrastructure={...(s.infrastructure||{}),...clone(facts.infrastructure)};
+    if(facts.processingDependency)s.processingDependency=clone(facts.processingDependency);
+    if(facts.processing)s.processing={...(s.processing||{}),...clone(facts.processing)};
+    if(facts.minePlan)s.minePlan=clone(facts.minePlan);
+    if(facts.economics)s.economics=clone(facts.economics);
+    if(facts.siteContext)s.siteContext={...(s.siteContext||{}),...clone(facts.siteContext)};
+    if(facts.depositContext)s.depositContext=clone(facts.depositContext);
+    if(facts.currentAgreement)s.currentAgreement=clone(facts.currentAgreement);
+    return s;
+  }
+
   function enrichSimulationReserve(site){
     const s=clone(site||{});
     const candidates=[s.siteReferenceKey,s.id,s.siteId,s.rawSiteReference?.id].filter(Boolean).map(String);
@@ -227,10 +268,10 @@
     const wanted=canonical(c),reg=g.__OmegaResourceIdentityRegistry;
     try{
       const primary=reg?.getMineSiteReferencesByCountry?.(wanted)||[];
-      if(Array.isArray(primary)&&primary.length)return primary.map(enrichSimulationReserve);
+      if(Array.isArray(primary)&&primary.length)return primary.map(enrichSimulationReserve).map(enrichResearchEvidence);
     }catch(_){}
     const refs=g.__OmegaResourceKnowledgeModel?.refCatalog?.allReferences;
-    if(Array.isArray(refs))return refs.filter(ref=>canonical(ref?.countryCode||ref?.countryId||ref?.country)===wanted).map(enrichSimulationReserve);
+    if(Array.isArray(refs))return refs.filter(ref=>canonical(ref?.countryCode||ref?.countryId||ref?.country)===wanted).map(enrichSimulationReserve).map(enrichResearchEvidence);
     return[];
   }
   function occurrenceRows(c){
@@ -938,7 +979,7 @@ function batchFromExtraction(x,record){
     g.__omegaResourceEndowmentPromise=(async function(){
       try{
         for(let i=0;i<400&&!engine()?.isReady;i++)await new Promise(r=>setTimeout(r,0));
-        const reserveData=await loadSimulationReserveData();
+        const [reserveData,researchData]=await Promise.all([loadSimulationReserveData(),loadResearchEvidenceData()]);
         if(reserveData.status!=='READY'||reserveData.count!==199)return{status:'FAILED',reason:'PER_SITE_RESERVE_DATASET_INCOMPLETE',detail:reserveData};
         if(!engine()?.isReady)return{status:'FAILED',reason:'RESOURCE_MINISTRY_ENGINE_NOT_READY'};
         const compiled=compile();
