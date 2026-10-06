@@ -145,5 +145,20 @@
     "researchCannotDirectlyIncreasePhysicalReserve": true,
     "explorationCanChangeModeledResourceStateOnlyThroughExplicitResearchEvent": true,
     "technologyChangesEngineeringAndRecoveryNotGeologicalExistence": true
+  },
+  "pipeline": {
+    "automated199SiteEnrichment": {
+      "workflow": ".github/workflows/omega-resource-site-enrichment.yml",
+      "script": "scripts/omega_revalidate_199_resource_sites.mjs",
+      "correctionScript": "scripts/omega_apply_authoritative_resource_corrections.mjs",
+      "timeboxMinutes": 5,
+      "mode": "BOUNDED_SITE_SPECIFIC_WEB_RESEARCH"
+    },
+    "verification": {
+      "workflow": ".github/workflows/omega-resource-verification.yml",
+      "researchRuntimeGate": "test/omega_resource_research_runtime.test.mjs",
+      "evidenceGate": "test/omega_resource_research_evidence.test.mjs"
+    },
+    "implementationRule": "Never replace observed resource data with simulated values; scenario reserve remains explicit game-world endowment."
   }
 }
