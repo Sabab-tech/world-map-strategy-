@@ -149,12 +149,12 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
       :(Number.isFinite(Number(raw.reserveQuantity))&&Number(raw.reserveQuantity)>0
         ?Number(raw.reserveQuantity)
         :(Number.isFinite(Number(nestedReserve.quantity))&&Number(nestedReserve.quantity)>0?Number(nestedReserve.quantity):null));
-    const expectedRate=Number.isFinite(Number(raw.productionRate))&&Number(raw.productionRate)>0
+    const expectedRate=Number.isFinite(Number(raw.productionRate))
       ?Number(raw.productionRate)
       :(
-        Number.isFinite(Number(raw.dailyRate))&&Number(raw.dailyRate)>0?Number(raw.dailyRate):
-        (Number.isFinite(Number(raw.outputRate))&&Number(raw.outputRate)>0?Number(raw.outputRate):
-          (Number.isFinite(Number(raw.nominalRate))&&Number(raw.nominalRate)>0?Number(raw.nominalRate):null))
+        Number.isFinite(Number(raw.dailyRate))?Number(raw.dailyRate):
+        (Number.isFinite(Number(raw.outputRate))?Number(raw.outputRate):
+          (Number.isFinite(Number(raw.nominalRate))?Number(raw.nominalRate):null))
       );
     assert.equal(x.resourceAsset.reserve.residualQuantity,expectedReserve);
     assert.equal(x.resourceAsset.productionRate,expectedRate);
