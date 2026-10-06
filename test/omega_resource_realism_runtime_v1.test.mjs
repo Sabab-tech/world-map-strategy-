@@ -10,7 +10,7 @@ context.globalThis=context;
 
 load('omega_resource_realism_runtime_v1.js',context);
 const R=context.Omega.ResourceRealism;
-assert.equal(R.VERSION,'1.2.0');
+assert.equal(R.VERSION,'1.3.0');
 
 // Priority 3: separate unit families.
 assert.equal(R.parseReserve('120 million BBL','crude_oil').unitFamily,'BBL');
@@ -64,6 +64,20 @@ assert.equal(stream.reserve.authority,'SIMULATED');
 assert.equal(typeof stream.quality.grade,'number');
 assert.ok(stream.reserve.quantity>0);
 assert.notEqual(stream.production.activeRate,1000);
+assert.equal(stream.reserve.quantityKind,'EXTRACTABLE_RESERVE');
+assert.equal(stream.reserve.classificationState,'SIMULATION_ONLY_NO_PUBLIC_RESERVE_CLASSIFICATION');
+assert.ok(stream.reserve.geologicalResourceQuantity>stream.reserve.technicallyRecoverableQuantity);
+assert.ok(stream.reserve.technicallyRecoverableQuantity>stream.reserve.economicallyRecoverableQuantity);
+assert.ok(stream.reserve.economicallyRecoverableQuantity>stream.reserve.extractableReserveQuantity);
+const year2015=R.siteModel({siteReferenceKey:'SITE:TIME:01',siteName:'Time Curve',resourceId:'copper',productionRate:1000,decline:0.04,simulationReserveQuantity:1000000,simulationYear:2015}, {}, 'TST');
+const year2025=R.siteModel({siteReferenceKey:'SITE:TIME:01',siteName:'Time Curve',resourceId:'copper',productionRate:1000,decline:0.04,simulationReserveQuantity:1000000,simulationYear:2025}, {}, 'TST');
+assert.equal(year2015.commodityStreams[0].production.activeRate,1000);
+assert.ok(year2025.commodityStreams[0].production.activeRate<1000);
+assert.equal(year2025.commodityStreams[0].production.temporalCurve.elapsedYears,10);
+
+const observedNoGeology=R.siteModel({siteReferenceKey:'SITE:OBS:GEO',siteName:'Observed Reserve',resourceId:'copper',reserveQuantity:2000000,productionRate:500}, {}, 'OBS');
+assert.equal(observedNoGeology.commodityStreams[0].reserve.authority,'OBSERVED');
+assert.equal(observedNoGeology.commodityStreams[0].reserve.geologicalResourceQuantity,null);
 
 const observedSite=R.siteModel({
   siteReferenceKey:'SITE:OBS:01',siteName:'Observed Multi Commodity',
