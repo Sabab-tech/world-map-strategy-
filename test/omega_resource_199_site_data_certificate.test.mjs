@@ -132,6 +132,10 @@ for (const { countryId, index, site } of sites) {
 assert.equal(ids.size, 199);
 assert.equal(packageCount, 199);
 
+const scenarioSource = readFileSync('omega_resource_scenario_engineering_data_v1.js', 'utf8');
+assert(scenarioSource.includes('"recordCount": 199'));
+assert.equal((scenarioSource.match(/"siteId":/g) || []).length, 199);
+
 const catalog = load('resource_site_canonical_catalog_v1.json');
 assert.equal(catalog.siteCount, 199);
 assert(Array.isArray(catalog.sites) && catalog.sites.length === 199);
