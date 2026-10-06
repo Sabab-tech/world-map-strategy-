@@ -37,7 +37,7 @@ function parseReserve(text,resourceId,targetUnit){
  }}
  const r=rid(resourceId),t=String(text??''),u=r==='crude_oil'?UNITS.BBL:r==='natural_gas'?[...UNITS.TCF,...UNITS.BCF,...UNITS.BCM,...UNITS.MCM,...UNITS.MCF]:r==='gold'?[...UNITS.TROY_OZ,...UNITS.TONNES]:UNITS.TONNES;
  const x=measure(t,u);if(x.status!=='OBSERVED')return{status:'UNOBSERVED',value:null,unit:targetUnit||null,raw:t};
- const target=targetUnit||(r==='natural_gas'?'BCM':r==='gold'?'TROY_OZ':x.unit);
+ const target=targetUnit||(r==='natural_gas'?'BCM':(r==='gold'&&x.unit!=='TONNES'?'TROY_OZ':x.unit));
  let value=x.value;
  if(x.unit==='TCF'&&target==='BCM')value*=28.316846592;
  else if(x.unit==='BCF'&&target==='BCM')value*=0.028316846592;
