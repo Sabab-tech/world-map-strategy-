@@ -96,15 +96,14 @@
     const cap=raw.capacity||ref.productionCapacity||{};
     const prod=raw.productionModel||raw.siteModel?.commodityStreams?.find?.(x=>String(x?.resourceId||'')===String(resourceTypeId||''))?.production||ref.production||{};
     const q=raw.qualityState||raw.quality||ref.quality||{};
-    const reserveAuthority=normalizeAuthority(
+    const reserveAuthorityCandidate=normalizeAuthority(
       raw.reserveAuthority||rs?.provenance?.quantityAuthority||raw.dataStatus?.reserve||raw.dataAuthority?.reserve||ref?.dataStatus?.reserve||ref?.dataAuthority?.reserve
     );
-    const productionAuthority=normalizeAuthority(
+    const productionAuthorityCandidate=normalizeAuthority(
       raw.productionAuthority||cap?.authority||prod?.authority||raw.dataStatus?.production||raw.dataAuthority?.production||ref?.dataStatus?.production||ref?.dataAuthority?.production
     );
-    const qualityAuthority=normalizeAuthority(
-      raw.qualityAuthority||q?.qualityAuthority||
-      q?.gradeStatus||q?.concentrationStatus||q?.purityStatus||
+    const qualityAuthorityCandidate=normalizeAuthority(
+      raw.qualityAuthority||
       raw.dataStatus?.grade||raw.dataStatus?.quality||raw.dataAuthority?.grade||raw.dataAuthority?.quality||
       ref?.dataStatus?.grade||ref?.dataStatus?.quality||ref?.dataAuthority?.grade||ref?.dataAuthority?.quality
     );
@@ -119,6 +118,10 @@
     const grade=num(raw.gradePercent??q?.gradePercent??q?.normalized?.gradePercent);
     const purity=num(raw.purity??q?.purity??q?.normalized?.purityFraction);
     const concentration=num(raw.concentrationPercent??q?.concentrationPercent??q?.normalized?.concentrationPercent);
+    const reserveAuthority=reserveQuantity===null?'UNOBSERVED':reserveAuthorityCandidate;
+    const productionAuthority=productionRate===null?'UNOBSERVED':productionAuthorityCandidate;
+    const qualityPresent=grade!==null||purity!==null||concentration!==null;
+    const qualityAuthority=qualityPresent?qualityAuthorityCandidate:'UNOBSERVED';
 
     const location={
       nodeKey:textOrNull(raw.locationNodeKey||ref.location?.nodeKey),
