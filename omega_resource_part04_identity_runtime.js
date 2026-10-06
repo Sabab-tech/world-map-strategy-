@@ -108,14 +108,22 @@
       ref?.dataStatus?.grade||ref?.dataStatus?.quality||ref?.dataAuthority?.grade||ref?.dataAuthority?.quality
     );
 
+    const quantitativeReserve=raw.quantitativeProfile?.reserve&&typeof raw.quantitativeProfile.reserve==='object'?raw.quantitativeProfile.reserve:{};
     const geologicalResourceQuantity=num(rs?.geologicalResourceQuantity??raw.geologicalResourceQuantity);
     const technicallyRecoverableQuantity=num(rs?.technicallyRecoverableQuantity??raw.technicallyRecoverableQuantity);
     const economicallyRecoverableQuantity=num(rs?.economicallyRecoverableQuantity??raw.economicallyRecoverableQuantity??rs?.recoverableQuantity??raw.recoverableQuantity);
-    const extractableReserveQuantity=num(rs?.extractableReserveQuantity??raw.extractableReserveQuantity??rs?.residualQuantity??raw.residualQuantity??rs?.recoverableQuantity??raw.recoverableQuantity??rs?.geologicalQuantity??raw.geologicalQuantity??raw.reserveQuantity);
+    const extractableReserveQuantity=num(
+      rs?.extractableReserveQuantity??raw.extractableReserveQuantity??
+      rs?.residualQuantity??raw.residualQuantity??
+      rs?.recoverableQuantity??raw.recoverableQuantity??
+      rs?.geologicalQuantity??raw.geologicalQuantity??
+      raw.reserveQuantity??
+      quantitativeReserve.quantity
+    );
     const reserveQuantity=extractableReserveQuantity;
     const recoverableQuantity=economicallyRecoverableQuantity;
     const residualQuantity=extractableReserveQuantity;
-    const unit=textOrNull(rs?.unit||raw.unit||cap?.unit);
+    const unit=textOrNull(rs?.unit||raw.unit||cap?.unit||quantitativeReserve.unit);
     const productionRate=num(raw.productionRate??cap?.activeRate??cap?.dailyRate??cap?.nominalRate??prod?.activeRate??prod?.observedRate);
     const currentProduction=num(raw.currentProduction??raw.currentProductionRate??raw.lastOutputQuantity);
     const recoveryRate=num(raw.recoveryRate??cap?.recovery??prod?.recovery);
