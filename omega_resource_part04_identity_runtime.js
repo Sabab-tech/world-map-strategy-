@@ -240,7 +240,36 @@
   function sourceMineSiteReferences(){
     const e=engine(),sourceMaps=e?.countryProfileSources&&typeof e.countryProfileSources==='object'&&Object.keys(e.countryProfileSources).length
       ?Object.entries(e.countryProfileSources):[['merged',e?.countryProfiles&&typeof e.countryProfiles==='object'?e.countryProfiles:{}]];
-    const rows=[],seen=new Set();
+    const byPhysicalIdentity=new Map();
+    const mergeDefined=function(base,incoming){
+      const out=clone(base||{});
+      for(const [k,v] of Object.entries(incoming||{})){
+        if(v===undefined||v===null||v==='')continue;
+        if(out[k]===undefined||out[k]===null||out[k]==='')out[k]=clone(v);
+        else if(Array.isArray(out[k])&&Array.isArray(v)){
+          const seen=new Set(out[k].map(x=>JSON.stringify(x)));
+          for(const item of v){const sig=JSON.stringify(item);if(!seen.has(sig)){out[k].push(clone(item));seen.add(sig);}}
+        }else if(out[k]&&typeof out[k]==='object'&&v&&typeof v==='object'&&!Array.isArray(out[k])&&!Array.isArray(v)){
+          out[k]=mergeDefined(out[k],v);
+        }
+      }
+      return out;
+    };
+    const getResource=function(site){
+      const s=site&&typeof site==='object'?site:{};
+      return String(s.resourceId||s.resourceTypeId||s.resourceTypeKey||s.resId||s.resource||'').trim().toLowerCase();
+    };
+    const getStableId=function(site){
+      const s=site&&typeof site==='object'?site:{};
+      return [s.siteId,s.mineId,s.depositId,s.resourceInstanceId,s.canonicalOccurrenceKey,s.linkedDepositId,s.depositKey]
+        .find(v=>v!==undefined&&v!==null&&String(v).trim()!=='')||null;
+    };
+    const getLocation=function(site){
+      const s=site&&typeof site==='object'?site:{};
+      return s.locationNodeKey||s.location||s.coordinates||s.lat!==undefined||s.latitude!==undefined
+        ?JSON.stringify({locationNodeKey:s.locationNodeKey||null,location:s.location||null,lat:s.lat??s.latitude??null,long:s.long??s.longitude??null})
+        :'';
+    };
     for(const [sourceDatasetId,profiles] of sourceMaps){
       for(const [profileKey,profile] of Object.entries(profiles||{})){
         const identity=profile?.identity||profile||{};
@@ -258,32 +287,61 @@
                 rawSite?.siteId||rawSite?.mineId||rawSite?.depositId||('UNNAMED_SITE_'+countryId+'_'+index)
           ).trim();
           if(!siteName)return;
-          const siteReferenceKey='SITE:'+String(sourceDatasetId)+':'+countryId+':'+tok(siteName)+':'+index;
-          const dedupeKey=sourceDatasetId+'|'+countryId+'|'+index+'|'+siteName.toUpperCase();
-          if(seen.has(dedupeKey))return;seen.add(dedupeKey);
-          const sourcePath='GSRSK_Master_CountryProfiles_v14.countryProfiles.'+String(profileKey)+'.resource_infrastructure_context.mineSites['+index+']';
           const rawSiteObject=rawSite&&typeof rawSite==='object'?clone(rawSite):{name:siteName};
+          const resourceId=getResource(rawSiteObject);
+          const stableId=getStableId(rawSiteObject);
+          const locationKey=getLocation(rawSiteObject);
+          const physicalKey=stableId
+            ? countryId+'|ID:'+tok(stableId)
+            : countryId+'|R:'+tok(resourceId||'unknown')+'|N:'+tok(siteName)+'|L:'+tok(locationKey||'');
+          const sourcePath='GSRSK_Master_CountryProfiles_v14.countryProfiles.'+String(profileKey)+'.resource_infrastructure_context.mineSites['+index+'];
+          const existing=byPhysicalIdentity.get(physicalKey);
+          if(existing){
+            existing.rawSiteReference=mergeDefined(existing.rawSiteReference,rawSiteObject);
+            existing.sourceDatasetIds=[...new Set([...(existing.sourceDatasetIds||[]),String(sourceDatasetId)])];
+            existing.sourcePaths=[...new Set([...(existing.sourcePaths||[]),sourcePath])];
+            existing.provenanceSources=[...new Set([...(existing.provenanceSources||[]),String(sourceDatasetId)])];
+            existing.resourceAsset=normalizeUnifiedAsset({
+              ...clone(existing.rawSiteReference),
+              assetType:'MINE_SITE',
+              assetId:existing.siteReferenceKey,
+              siteReferenceKey:existing.siteReferenceKey,
+              siteName:existing.siteName,
+              countryId,
+              countryCode:countryId,
+              sourceAuthority:'RESOURCE_JSON',
+              sourceDatasetId:existing.sourceDatasetId,
+              sourcePath:existing.sourcePath,
+              extractionExecutable:false
+            });
+            continue;
+          }
+          const siteReferenceKey=stableId
+            ? 'SITE:'+countryId+':ID:'+tok(stableId)
+            : 'SITE:'+countryId+':'+tok(resourceId||'unknown')+':'+tok(siteName)+(locationKey?':'+tok(locationKey):'');
           const resourceAsset=normalizeUnifiedAsset({
-            ...rawSiteObject,
+            ...clone(rawSiteObject),
             assetType:'MINE_SITE',
-            assetId:siteReferenceKey,siteReferenceKey,
+            assetId:siteReferenceKey,
+            siteReferenceKey,
             siteName,countryId,countryCode:countryId,
-            sourceAuthority:'RESOURCE_JSON',sourceDatasetId,sourcePath,
+            sourceAuthority:'RESOURCE_JSON',sourceDatasetId:String(sourceDatasetId),sourcePath,
             extractionExecutable:false
           });
-          rows.push({
+          byPhysicalIdentity.set(physicalKey,{
             siteReferenceKey,countryId,countryCode:countryId,profileKey:String(profileKey),siteName,
             status:'ACTIVE_SITE_REFERENCE',activationState:'ACTIVE_REFERENCE',
             extractionExecutable:false,
             quantitativeExtractionDataAvailable:resourceAsset.quantitativeExtractionDataAvailable===true,
-            sourceAuthority:'RESOURCE_JSON',sourceDatasetId,sourcePath,
-            rawSiteReference:clone(rawSite),
+            sourceAuthority:'RESOURCE_JSON',sourceDatasetId:String(sourceDatasetId),sourcePath,
+            sourceDatasetIds:[String(sourceDatasetId)],sourcePaths:[sourcePath],provenanceSources:[String(sourceDatasetId)],
+            rawSiteReference:rawSiteObject,
             resourceAsset
           });
         });
       }
     }
-    return rows;
+    return [...byPhysicalIdentity.values()];
   }
 
   function compileIdentities(){
