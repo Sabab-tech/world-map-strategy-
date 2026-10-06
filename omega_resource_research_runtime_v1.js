@@ -16,7 +16,7 @@ const clone=(v,seen=new WeakMap())=>{
 };
 const num=v=>{if(typeof v==='number'&&Number.isFinite(v))return v;if(typeof v==='string'&&v.trim()!==''&&Number.isFinite(Number(v)))return Number(v);return null;};
 const id=v=>String(v??'').trim().toUpperCase();
-const tok=v=>String(v??'').trim().toLowerCase().replace(/[\\s-]+/g,'_');
+const tok=v=>String(v??'').trim().toLowerCase().replace(/[\s-]+/g,'_');
 const state=()=>g.Game?.state||g.gameState||{};
 const turn=()=>num(state()?.simulation?.turn??state()?.turn??state()?.simulationTurn??g.Omega?.Simulation?.clock?.turn)??0;
 const canonicalCountry=v=>{
@@ -261,15 +261,20 @@ function dispatch(type,c,payload={}){
 }
 function register(){
   const m=interop();if(!m?.registerCommandHandler)return false;
-  try{
-    m.registerAction?.('OMEGA_RESOURCE_RESEARCH_START',{actionId:'OMEGA_RESOURCE_RESEARCH_START',stateOwnerMinistry:'resource',authority:'OMEGA_RESOURCE_RESEARCH_RUNTIME'});
-    m.registerAction?.('OMEGA_RESOURCE_TECHNOLOGY_IMPORT',{actionId:'OMEGA_RESOURCE_TECHNOLOGY_IMPORT',stateOwnerMinistry:'resource',authority:'OMEGA_RESOURCE_RESEARCH_RUNTIME'});
-    m.registerAction?.('OMEGA_RESOURCE_RESEARCH_TICK',{actionId:'OMEGA_RESOURCE_RESEARCH_TICK',stateOwnerMinistry:'resource',authority:'OMEGA_RESOURCE_RESEARCH_RUNTIME'});
-    m.registerCommandHandler('OMEGA_RESOURCE_RESEARCH_START','resource',(cmd,ctx)=>startResearchTx({...ctx,payload:cmd?.payload||cmd?.data||{}}));
-    m.registerCommandHandler('OMEGA_RESOURCE_TECHNOLOGY_IMPORT','resource',(cmd,ctx)=>importTechnologyTx({...ctx,payload:cmd?.payload||cmd?.data||{}}));
-    m.registerCommandHandler('OMEGA_RESOURCE_RESEARCH_TICK','resource',(cmd,ctx)=>tickTx(ctx));
-    g.__omegaResourceResearchHandlers=true;return true;
-  }catch(_){return false;}
+  let ok=false;
+  for(const [type,meta] of [
+    ['OMEGA_RESOURCE_RESEARCH_START',{actionId:'OMEGA_RESOURCE_RESEARCH_START',stateOwnerMinistry:'resource',authority:'OMEGA_RESOURCE_RESEARCH_RUNTIME'}],
+    ['OMEGA_RESOURCE_TECHNOLOGY_IMPORT',{actionId:'OMEGA_RESOURCE_TECHNOLOGY_IMPORT',stateOwnerMinistry:'resource',authority:'OMEGA_RESOURCE_RESEARCH_RUNTIME'}],
+    ['OMEGA_RESOURCE_RESEARCH_TICK',{actionId:'OMEGA_RESOURCE_RESEARCH_TICK',stateOwnerMinistry:'resource',authority:'OMEGA_RESOURCE_RESEARCH_RUNTIME'}]
+  ]){try{m.registerAction?.(type,meta);}catch(e){g.__omegaResourceResearchActionErrors=g.__omegaResourceResearchActionErrors||{};g.__omegaResourceResearchActionErrors[type]=String(e?.message||e);}}
+  const handlers=[
+    ['OMEGA_RESOURCE_RESEARCH_START',(cmd,ctx)=>startResearchTx({...ctx,payload:cmd?.payload||cmd?.data||{}})],
+    ['OMEGA_RESOURCE_TECHNOLOGY_IMPORT',(cmd,ctx)=>importTechnologyTx({...ctx,payload:cmd?.payload||cmd?.data||{}})],
+    ['OMEGA_RESOURCE_RESEARCH_TICK',(cmd,ctx)=>tickTx(ctx)]
+  ];
+  for(const [type,handler] of handlers){try{m.registerCommandHandler(type,'resource',handler);ok=true;}catch(e){g.__omegaResourceResearchHandlerErrors=g.__omegaResourceResearchHandlerErrors||{};g.__omegaResourceResearchHandlerErrors[type]=String(e?.message||e);}}
+  g.__omegaResourceResearchHandlers=ok;
+  return ok;
 }
 function processCountry(c){
   register();return dispatch('OMEGA_RESOURCE_RESEARCH_TICK',c,{countryId:canonicalCountry(c),correlationId:'RESOURCE-RESEARCH-TICK-'+turn()+'-'+canonicalCountry(c)});
@@ -297,8 +302,8 @@ function diagnostics(){
 }
 const API=Object.freeze({
   VERSION,loadCatalog,technology,technologies,register,processCountry,processAll,diagnostics,
-  startResearch:(countryId,payload={})=>dispatch('OMEGA_RESOURCE_RESEARCH_START',countryId,payload),
-  importTechnology:(countryId,payload={})=>dispatch('OMEGA_RESOURCE_TECHNOLOGY_IMPORT',countryId,payload),
+  startResearch:(countryId,payload={})=>{register();const r=dispatch('OMEGA_RESOURCE_RESEARCH_START',countryId,payload);return r?.result&&['APPLIED','REJECTED'].includes(String(r?.status||''))?r.result:r;},
+  importTechnology:(countryId,payload={})=>{register();const r=dispatch('OMEGA_RESOURCE_TECHNOLOGY_IMPORT',countryId,payload);return r?.result&&['APPLIED','REJECTED'].includes(String(r?.status||''))?r.result:r;},
   getEngineeringEffect
 });
 g.Omega=g.Omega||{};g.Omega.ResourceResearchRuntime=API;g.OmegaResourceResearchRuntime=API;
