@@ -71,6 +71,7 @@ jobs:
             omega_resource_realism_runtime_v1.js
             omega_resource_logistics_runtime_v1.js
             omega_resource_research_runtime_v1.js
+            omega_resource_scenario_engineering_data_v1.js
             omega_resource_country_boundary_guard.js
             omega_resource_action_execution_runtime.js
             omega_resource_economy_runtime_v2.js
