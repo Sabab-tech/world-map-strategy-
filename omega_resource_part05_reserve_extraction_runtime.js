@@ -14,7 +14,7 @@
 (function(g){
   'use strict';
 
-  const VERSION='1.0.0';
+  const VERSION='1.1.0';
   const DEFAULT_DEPLETION_HORIZON_DAYS=100000;
 
   function clone(v,seen){
@@ -170,9 +170,16 @@
         countryId:canonicalCountry(occ.countryId),
         depositKey:occ.depositKey,
         resourceId:occ.resourceTypeId,
-        geologicalQuantity:declared,
-        recoverableQuantity:declared,
-        residualQuantity:declared,
+        geologicalResourceQuantity:raw.geologicalResourceQuantity??raw.geologicalQuantity??null,
+        technicallyRecoverableQuantity:raw.technicallyRecoverableQuantity??raw.technicalRecoverableQuantity??null,
+        economicallyRecoverableQuantity:raw.economicallyRecoverableQuantity??raw.economicRecoverableQuantity??declared,
+        extractableReserveQuantity:raw.extractableReserveQuantity??raw.extractableQuantity??declared,
+        residualExtractableReserveQuantity:raw.extractableReserveQuantity??raw.extractableQuantity??declared,
+        geologicalQuantity:raw.geologicalResourceQuantity??raw.geologicalQuantity??declared,
+        recoverableQuantity:raw.economicallyRecoverableQuantity??raw.economicRecoverableQuantity??declared,
+        residualQuantity:raw.extractableReserveQuantity??raw.extractableQuantity??declared,
+        quantityKind:'EXTRACTABLE_RESERVE',
+        classificationState:raw.classificationState||'EVIDENCE_BACKED_OR_SIMULATION_CLASSIFICATION_REQUIRED',
         unit:parsed.targetUnit||type.unit||null,
         operationalStatus:active?'ACTIVE_EXTRACTION':'BLOCKED',
         stateVersion:1,
@@ -181,6 +188,7 @@
           sourceDatasetId:raw.sourceDatasetId||'resources.json',
           reserveField:raw.reserveQuantity!=null?'site.reserveQuantity':'runtime_deposits.reserves',
           reserveText:String(raw.reserves||''),
+          quantitySemantics:'INPUT_IS_EXTRACTABLE_RESERVE_UNLESS_EXPLICIT_LAYER_FIELDS_EXIST',
           effortUtilization:utilization,
           utilization,
           minimumCapacity:nominalRate*0.55,
