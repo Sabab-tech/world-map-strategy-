@@ -71,6 +71,8 @@ const hydrated=runtime.hydrateCountry('BGD');
 const indDiag=runtime.hydrateCountry('IND');
 const indState=runtime.countryResourceState('IND')||{};
 console.log('ENDOWMENT_GEVRA_HYDRATE '+JSON.stringify({status:indDiag.status,controllers:Object.values(indState.mineSiteControllers||{}).filter(x=>x.siteReferenceKey==='SITE_IND_gevra_oc_mine'),mineOutputs:Object.values(indState.mineOutputs||{}).filter(x=>x.siteReferenceKey==='SITE_IND_gevra_oc_mine')}));
+const gevraRef=(indState.mineSiteReferences||[]).find(x=>x.siteReferenceKey==='SITE_IND_gevra_oc_mine');
+console.log('ENDOWMENT_GEVRA_MODEL '+JSON.stringify(globalThis.Omega?.ResourceRealism?.siteModel?.(gevraRef,engine.countryProfiles?.IND,'IND')));
 __markPhase('HYDRATE_BGD_DONE');
 assert.equal(hydrated.status,'APPLIED', JSON.stringify(hydrated));
 
