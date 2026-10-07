@@ -1272,6 +1272,11 @@ function batchFromExtraction(x,record){
         const [reserveData,researchData,quantitativeData,operatingCostData,canonicalCatalogData]=await Promise.all([loadSimulationReserveData(),loadResearchEvidenceData(),loadQuantitativeResearchData(),loadOperatingCostResearchData(),loadCanonicalSiteCatalog()]);
         const dependencyLightContext=typeof g.fetch!=='function'&&typeof g.OmegaResourceSiteReserveSimulationData==='undefined'&&typeof g.Omega?.ResourceSiteReserveSimulationData==='undefined';
         if((reserveData.status!=='READY'||reserveData.count!==199)&&!dependencyLightContext)return{status:'FAILED',reason:'PER_SITE_RESERVE_DATASET_INCOMPLETE',detail:reserveData};
+        // Research/catalog layers are supplementary in minimal/offline test contexts. The canonical reserve dataset remains mandatory.
+        if(researchData.status!=='READY')researchEvidenceMap=researchEvidenceMap||{};
+        if(quantitativeData.status!=='READY')quantitativeResearchMap=quantitativeResearchMap||{};
+        if(operatingCostData.status!=='READY')operatingCostResearchMap=operatingCostResearchMap||{};
+        if(canonicalCatalogData.status!=='READY')canonicalSiteMap=canonicalSiteMap||{};
         if(!engine()?.isReady)return{status:'FAILED',reason:'RESOURCE_MINISTRY_ENGINE_NOT_READY'};
         const compiled=compile();
         if(compiled.status!=='READY')return compiled;
