@@ -100,7 +100,11 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
     addEventListener(){},dispatchEvent(){return true},
     Game:{state},gameState:state,
     OmegaCanonicalIdentityRegistry:identity,
-    Omega:{MinistryInteroperability:interop,CanonicalIdentity:identity},
+    Omega:{MinistryInteroperability:interop,CanonicalIdentity:identity,ResourceCanonicalSiteCatalogData:loadJson('resource_site_canonical_catalog_v1.json'),ResourceSiteReserveSimulationData:loadJson('resource_site_reserve_simulation_v1.json'),ResourceSiteQuantitativeResearchData:loadJson('resource_site_quantitative_research_v1.json'),ResourceSiteOperatingCostResearchData:loadJson('resource_site_operating_cost_research_v1.json')},
+    OmegaResourceCanonicalSiteCatalogData:loadJson('resource_site_canonical_catalog_v1.json'),
+    OmegaResourceSiteReserveSimulationData:loadJson('resource_site_reserve_simulation_v1.json'),
+    OmegaResourceSiteQuantitativeResearchData:loadJson('resource_site_quantitative_research_v1.json'),
+    OmegaResourceSiteOperatingCostResearchData:loadJson('resource_site_operating_cost_research_v1.json'),
     ResourceMinistryEngine:engine
   };
   context.globalThis=context;
