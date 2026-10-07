@@ -585,6 +585,7 @@ function batchFromExtraction(x,record){
       const observedLinked=attachedRows.filter(x=>String(x?.dataAuthority?.reserve||x?.reserveAuthority||'').toUpperCase()==='OBSERVED' && String(x?.dataAuthority?.production||x?.productionAuthority||'').toUpperCase()==='OBSERVED');
       const simulatedLinked=attachedRows.filter(x=>String(x?.dataAuthority?.reserve||x?.reserveAuthority||'').toUpperCase()==='SIMULATED' || String(x?.dataAuthority?.production||x?.productionAuthority||'').toUpperCase()==='SIMULATED');
       const quantitativeDataState=observedLinked.length>0?'AVAILABLE_OBSERVED':(simulatedLinked.length>0?'SIMULATED_ONLY':'MISSING_FROM_SITE_REFERENCE');
+      const extractionExecutable=quantitativeDataState==='AVAILABLE_OBSERVED';
       controllers[siteKey]={
         ...prior,
         siteReferenceKey:siteKey,
@@ -596,11 +597,11 @@ function batchFromExtraction(x,record){
         sourceAuthority:site.sourceAuthority||'UNOBSERVED',
         activationState:'ACTIVE_SITE_CONTROLLER',
         controllerStatus:'RUNNING',
-        extractionExecutable:linked.length>0,
+        extractionExecutable,
         quantitativeDataState,
         linkedOccurrenceKeys:linked,
         pathId,
-        extractionPathStatus:linked.length>0?'EXECUTABLE_OCCURRENCE_ATTACHED':'BLOCKED_MISSING_QUANTITATIVE_DATA',
+        extractionPathStatus:extractionExecutable?'EXECUTABLE_OCCURRENCE_ATTACHED':'BLOCKED_MISSING_QUANTITATIVE_DATA',
         lastEvaluationTurn:turn(),
         rawSiteReference:clone(site.rawSiteReference||site.rawSite||null)
       };
