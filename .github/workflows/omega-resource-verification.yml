@@ -90,7 +90,7 @@ jobs:
 
           run_gate resourceEndowmentBootProfile 60 node test/omega_resource_endowment_boot_profile.test.mjs
           OMEGA_PHASE_TIMEOUT=30; for phase in initialize hydrate extract-one extract-all; do run_gate resourcePhase_$phase 30 env OMEGA_PHASE="$phase" node test/omega_resource_endowment_phase_diagnosis.test.mjs "$phase"; done
-          run_gate resourceEndowment 120 node test/omega_resource_endowment_runtime.test.mjs
+          run_gate resourceEndowment 30 node test/omega_resource_endowment_runtime.test.mjs
           run_gate siteDataCompleteness 15 node test/omega_resource_site_data_completeness.test.mjs
           run_gate resourceEconomy 15 node --test test/omega_resource_economy_runtime_v2.test.mjs
           run_gate authoritativeAdapter 15 node --test test/omega_resource_authoritative_adapter.test.mjs
