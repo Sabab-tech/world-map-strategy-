@@ -329,6 +329,12 @@ function planFactoryRoutes(input={}){
 function dispatchFromWarehouse(input={}){
  const route=planRoute(input);return {...route,delivery:{shipmentId:'SHIP:'+hash(JSON.stringify(input)+'|'+route.routeId),warehouseId:input.warehouseId||null,batchId:input.batchId||null,stage:'WAREHOUSE_DISPATCH',status:'READY_FOR_DELIVERY',quantity:route.dispatchQuantity}};
 }
-const API={VERSION,unitFamily,resourceFamily,parseReserve,commodityText,splitCommodities,quality,siteModel,firewall,authorityRank,planRoute,dispatchFromWarehouse,planFactoryRoutes,transportModes:modes};
+const __omegaTruthSiteModel=siteModel;
+function siteModelWithTruthContract(site,profile,countryId){
+ const raw=__omegaTruthSiteModel(site,profile,countryId);
+ const contract=g.Omega?.ResourceTruthContract||g.OmegaResourceTruthContract;
+ return contract?.sanitizeSiteModel?contract.sanitizeSiteModel(raw,{...site,siteId:site?.siteId||site?.siteReferenceKey||site?.id||null,countryId:countryId||site?.countryId||site?.countryCode||null}):raw;
+}
+const API={VERSION,unitFamily,resourceFamily,parseReserve,commodityText,splitCommodities,quality,siteModel:siteModelWithTruthContract,firewall,authorityRank,planRoute,dispatchFromWarehouse,planFactoryRoutes,transportModes:modes};
 g.Omega=g.Omega||{};g.Omega.ResourceRealism=API;g.OmegaResourceRealism=API;
 })(typeof window!=='undefined'?window:globalThis);
