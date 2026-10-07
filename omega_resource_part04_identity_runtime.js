@@ -307,7 +307,7 @@
         operatorKey:String(raw?.operator||raw?.operatorKey||'').trim()||null,
         locationNodeKey:'MINE:'+countryId+':'+depositKey,
         status:String(raw?.status||'UNKNOWN').trim().toUpperCase(),
-        sourceDatasetId:raw?.sourceDatasetId||raw?.provenance?.sourceDatasetId||'resources.json',
+        sourceDatasetId:raw?.sourceDatasetId||raw?.provenance?.sourceDatasetId||null,
         rawDeposit:clone(raw),
         resourceAsset:normalizeUnifiedAsset({
           ...clone(raw),
