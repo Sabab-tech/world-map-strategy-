@@ -409,9 +409,10 @@
   function compile(){
     const p4=g.GSRSK_Part04||g.GSRSK_ResourceIdentityEngine;
     const p5=g.GSRSK_Part05||g.GSRSK_ResourceReserveExtractionEngine;
+    if(!p4?.compileIdentities)return{status:'WAITING_DEPENDENCIES',reason:'RESOURCE_IDENTITY_RUNTIME_NOT_READY'};
+    if(!p5?.compileReserves)return{status:'WAITING_DEPENDENCIES',reason:'RESOURCE_RESERVE_RUNTIME_NOT_READY'};
     const productionModel=g.Omega?.ResourceProductionModelV2||g.OmegaResourceProductionModelV2;
-    if(!productionModel?.patch)return{status:'WAITING_DEPENDENCIES',reason:'RESOURCE_PRODUCTION_MODEL_V2_NOT_READY'};
-    try{productionModel.patch();}catch(e){return{status:'FAILED',reason:'RESOURCE_PRODUCTION_MODEL_V2_PATCH_FAILED',detail:String(e?.message||e)}}
+    if(productionModel?.patch){try{productionModel.patch();}catch(_){}}
     const knowledge=buildKnowledge();
     if(!knowledge||!p4?.compileIdentities||!p5?.compileReserves)return{status:'WAITING_DEPENDENCIES'};
     const identityResult=p4.compileIdentities(knowledge,null,null);
