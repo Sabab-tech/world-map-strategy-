@@ -288,7 +288,8 @@ assert.ok(nonCommercialSites.every(site =>
 ));
 assert.ok(scenarioCatalog.records.every(site =>
   site.siteId &&
-  site.status === 'SIMULATED'
+  site.reserve?.status === 'SIMULATED' &&
+  site.provenance?.authority === 'SCENARIO_SIMULATION_DATA'
 ));
 
 console.log('OMEGA RESOURCE TRUTH BOUNDARY REGRESSION PASSED');
