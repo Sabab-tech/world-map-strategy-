@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.0.1",
+  "schemaVersion": "1.0.2",
   "datasetId": "OMEGA_RESOURCE_SITE_QUANTITATIVE_RESEARCH_V1",
   "generatedDate": "2026-10-07",
   "authority": "SITE_SPECIFIC_RESEARCH_CATALOG_DERIVED",
@@ -222,13 +222,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -291,11 +285,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -424,13 +414,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -510,11 +494,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -522,13 +502,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -536,11 +510,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -597,11 +567,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -609,13 +575,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -623,11 +583,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -683,11 +639,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -695,13 +647,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -709,11 +655,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -789,13 +731,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -997,11 +933,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -1009,13 +941,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -1023,11 +949,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -1078,11 +1000,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -1090,13 +1008,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "REPORTED",
@@ -1109,11 +1021,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -1187,11 +1095,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -1199,13 +1103,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -1213,11 +1111,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -1275,11 +1169,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -1287,13 +1177,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -1301,11 +1185,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -1357,11 +1237,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -1369,13 +1245,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -1532,11 +1402,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -1544,13 +1410,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -1558,11 +1418,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -1625,13 +1481,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "REPORTED",
@@ -1700,11 +1550,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -1712,13 +1558,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -1726,11 +1566,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -1903,11 +1739,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -1915,13 +1747,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "REPORTED_DESIGN_CAPACITY",
@@ -1935,11 +1761,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -2019,11 +1841,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -2046,11 +1864,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -2225,11 +2039,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -2237,13 +2047,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -2251,11 +2055,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -2325,11 +2125,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -2337,13 +2133,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "GOVERNMENT_MINISTRY_ESTIMATE",
@@ -2356,11 +2146,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -2423,11 +2209,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -2544,11 +2326,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -2556,13 +2334,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -2570,11 +2342,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -2649,13 +2417,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -2663,11 +2425,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -2774,11 +2532,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -2829,11 +2583,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -2841,13 +2591,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -2855,11 +2599,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -2911,11 +2651,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -2923,13 +2659,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -2937,11 +2667,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -2992,11 +2718,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -3004,13 +2726,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -3018,11 +2734,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -3073,11 +2785,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -3085,13 +2793,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -3099,11 +2801,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -3161,11 +2859,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -3173,13 +2867,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -3187,11 +2875,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -3249,11 +2933,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -3261,13 +2941,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -3275,11 +2949,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -3337,11 +3007,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -3365,11 +3031,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -3593,11 +3255,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -3648,11 +3306,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -3660,13 +3314,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -3674,11 +3322,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -3748,11 +3392,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -3760,13 +3400,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -3774,11 +3408,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -3830,11 +3460,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -3842,13 +3468,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -3856,11 +3476,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -3920,11 +3536,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -3932,13 +3544,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -3946,11 +3552,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -4110,11 +3712,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -4122,13 +3720,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -4136,11 +3728,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -4210,13 +3798,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -4284,11 +3866,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -4296,13 +3874,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -4310,11 +3882,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -4382,11 +3950,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -4394,13 +3958,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -4408,11 +3966,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -4470,11 +4024,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -4482,13 +4032,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -4496,11 +4040,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -4551,11 +4091,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -4646,11 +4182,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -4658,13 +4190,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -4672,11 +4198,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -4728,11 +4250,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -4740,13 +4258,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -4754,11 +4266,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -4809,11 +4317,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -4821,13 +4325,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "REPORTED_OPERATIONAL_DESIGN",
@@ -4843,11 +4341,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -4898,11 +4392,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -4910,13 +4400,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -4924,11 +4408,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -4996,11 +4476,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -5008,13 +4484,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -5022,11 +4492,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -5082,11 +4548,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -5094,13 +4556,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -5108,11 +4564,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -5164,11 +4616,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -5176,13 +4624,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -5190,11 +4632,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -5345,11 +4783,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -5357,13 +4791,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -5371,11 +4799,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -5431,11 +4855,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -5443,13 +4863,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -5457,11 +4871,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -5512,11 +4922,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -5542,11 +4948,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -5597,11 +4999,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -5609,13 +5007,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -5623,11 +5015,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -5685,11 +5073,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -5773,11 +5157,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -5785,13 +5165,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -5799,11 +5173,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -5867,11 +5237,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -5879,13 +5245,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -5893,11 +5253,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -5955,11 +5311,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -5967,13 +5319,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -5981,11 +5327,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -6048,11 +5390,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -6060,13 +5398,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -6074,11 +5406,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -6136,11 +5464,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -6148,13 +5472,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -6162,11 +5480,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -6218,11 +5532,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -6230,13 +5540,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -6244,11 +5548,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -6306,11 +5606,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -6318,13 +5614,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -6332,11 +5622,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -6394,11 +5680,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -6406,13 +5688,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -6420,11 +5696,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -6482,11 +5754,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -6509,11 +5777,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -6571,11 +5835,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -6660,11 +5920,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -6672,13 +5928,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -6686,11 +5936,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -6742,11 +5988,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -6754,13 +5996,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -6768,11 +6004,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -6852,11 +6084,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -6919,11 +6147,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -6931,13 +6155,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -6945,11 +6163,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -7022,11 +6236,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -7034,13 +6244,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -7048,11 +6252,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -7122,13 +6322,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -7136,11 +6330,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -7214,11 +6404,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -7226,13 +6412,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -7240,11 +6420,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -7296,11 +6472,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -7308,13 +6480,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -7322,11 +6488,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -7384,11 +6546,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -7396,13 +6554,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -7410,11 +6562,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -7472,11 +6620,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -7484,13 +6628,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -7498,11 +6636,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -7556,11 +6690,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -7568,13 +6698,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -7582,11 +6706,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -7674,11 +6794,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -7686,13 +6802,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -7700,11 +6810,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -7768,11 +6874,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -7780,13 +6882,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -7794,11 +6890,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -7863,13 +6955,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -7877,11 +6963,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -7967,11 +7049,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -8034,11 +7112,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -8046,13 +7120,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "REPORTED",
@@ -8066,11 +7134,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -8121,11 +7185,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -8211,11 +7271,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -8223,13 +7279,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -8237,11 +7287,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -8293,11 +7339,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -8305,13 +7347,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -8319,11 +7355,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -8375,11 +7407,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -8387,13 +7415,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -8401,11 +7423,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -8542,11 +7560,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -8571,11 +7585,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -8633,11 +7643,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -8645,13 +7651,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -8659,11 +7659,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -8714,11 +7710,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -8747,11 +7739,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -8816,13 +7804,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -8830,11 +7812,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -8912,11 +7890,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -8924,13 +7898,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "REPORTED",
@@ -8948,11 +7916,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -9009,11 +7973,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -9036,11 +7996,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -9091,11 +8047,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -9103,13 +8055,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -9117,11 +8063,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -9172,11 +8114,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -9184,13 +8122,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -9198,11 +8130,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -9254,11 +8182,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -9266,13 +8190,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -9280,11 +8198,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -9335,11 +8249,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -9347,13 +8257,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -9361,11 +8265,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -9416,11 +8316,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -9428,13 +8324,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -9442,11 +8332,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -9498,11 +8384,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -9510,13 +8392,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -9524,11 +8400,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -9580,11 +8452,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -9592,13 +8460,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -9606,11 +8468,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -9668,11 +8526,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -9680,13 +8534,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -9694,11 +8542,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -9750,11 +8594,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -9762,13 +8602,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -9776,11 +8610,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -9838,11 +8668,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -9850,13 +8676,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -9864,11 +8684,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -9926,11 +8742,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -9938,13 +8750,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -9952,11 +8758,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -10010,11 +8812,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -10022,13 +8820,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -10036,11 +8828,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -10098,11 +8886,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -10110,13 +8894,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -10124,11 +8902,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -10180,11 +8954,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -10192,13 +8962,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -10206,11 +8970,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -10262,11 +9022,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -10274,13 +9030,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -10288,11 +9038,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -10364,13 +9110,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -10435,11 +9175,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -10447,13 +9183,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -10461,11 +9191,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -10517,11 +9243,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -10529,13 +9251,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -10543,11 +9259,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -10599,11 +9311,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -10611,13 +9319,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -10625,11 +9327,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -10681,11 +9379,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -10693,13 +9387,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -10707,11 +9395,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -10763,11 +9447,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -10792,11 +9472,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -11065,11 +9741,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -11077,13 +9749,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -11091,11 +9757,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -11147,11 +9809,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -11159,13 +9817,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -11173,11 +9825,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -11235,11 +9883,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -11247,13 +9891,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -11261,11 +9899,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -11317,11 +9951,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -11346,11 +9976,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -11402,11 +10028,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -11414,13 +10036,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -11428,11 +10044,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -11484,11 +10096,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -11496,13 +10104,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -11510,11 +10112,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -11566,11 +10164,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -11578,13 +10172,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -11592,11 +10180,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -11654,11 +10238,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -11666,13 +10246,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -11680,11 +10254,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -11741,11 +10311,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -11753,13 +10319,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -11767,11 +10327,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -11823,11 +10379,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -11835,13 +10387,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -11849,11 +10395,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -11905,11 +10447,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -11917,13 +10455,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -11931,11 +10463,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -11987,11 +10515,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -11999,13 +10523,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -12013,11 +10531,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -12083,13 +10597,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -12097,11 +10605,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -12153,11 +10657,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -12165,13 +10665,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -12179,11 +10673,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -12241,11 +10731,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -12253,13 +10739,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -12267,11 +10747,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -12323,11 +10799,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -12335,13 +10807,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -12349,11 +10815,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -12405,11 +10867,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -12417,13 +10875,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -12431,11 +10883,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -12487,11 +10935,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -12499,13 +10943,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -12513,11 +10951,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -12569,11 +11003,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -12581,13 +11011,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -12595,11 +11019,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -12651,11 +11071,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -12663,13 +11079,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -12677,11 +11087,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -12744,11 +11150,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -12756,13 +11158,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -12770,11 +11166,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -12832,11 +11224,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -12844,13 +11232,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -12858,11 +11240,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -12914,11 +11292,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -12926,13 +11300,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -12940,11 +11308,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -12989,11 +11353,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -13001,13 +11361,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -13015,11 +11369,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -13064,11 +11414,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -13076,13 +11422,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -13090,11 +11430,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -13139,11 +11475,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -13151,13 +11483,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -13165,11 +11491,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -13214,11 +11536,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -13243,11 +11561,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -13305,11 +11619,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -13333,11 +11643,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -13388,11 +11694,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -13416,11 +11718,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -13471,11 +11769,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -13499,11 +11793,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -13567,13 +11857,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -13581,11 +11865,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -13637,11 +11917,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -13665,11 +11941,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -13720,11 +11992,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -13732,13 +12000,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -13746,11 +12008,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -13802,11 +12060,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -13814,13 +12068,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -13828,11 +12076,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -13884,11 +12128,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -13896,13 +12136,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -13910,11 +12144,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -13966,11 +12196,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -13978,13 +12204,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -13992,11 +12212,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -14048,11 +12264,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -14060,13 +12272,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -14074,11 +12280,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -14129,11 +12331,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -14141,13 +12339,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -14155,11 +12347,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -14217,11 +12405,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -14229,13 +12413,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -14243,11 +12421,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -14299,11 +12473,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -14311,13 +12481,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -14325,11 +12489,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -14387,11 +12547,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -14399,13 +12555,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -14413,11 +12563,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -14479,11 +12625,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -14508,11 +12650,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -14570,11 +12708,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -14582,13 +12716,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -14596,11 +12724,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -14658,11 +12782,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -14670,13 +12790,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -14684,11 +12798,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -14769,13 +12879,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -14845,11 +12949,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -14857,13 +12957,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -14871,11 +12965,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -14927,11 +13017,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -14955,11 +13041,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -15010,11 +13092,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -15022,13 +13100,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -15036,11 +13108,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -15091,11 +13159,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -15103,13 +13167,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -15117,11 +13175,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -15189,11 +13243,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -15201,13 +13251,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -15215,11 +13259,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -15283,11 +13323,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -15295,13 +13331,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -15309,11 +13339,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -15365,11 +13391,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -15377,13 +13399,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -15391,11 +13407,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -15447,11 +13459,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -15459,13 +13467,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -15473,11 +13475,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -15529,11 +13527,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -15541,13 +13535,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -15555,11 +13543,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -15615,11 +13599,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -15627,13 +13607,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -15641,11 +13615,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -15703,11 +13673,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -15715,13 +13681,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -15729,11 +13689,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -15784,11 +13740,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -15796,13 +13748,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -15810,11 +13756,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -15866,11 +13808,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -15878,13 +13816,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -15892,11 +13824,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -15952,11 +13880,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -15964,13 +13888,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -15978,11 +13896,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -16034,11 +13948,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -16046,13 +13956,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -16060,11 +13964,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -16116,11 +14016,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -16128,13 +14024,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -16142,11 +14032,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -16211,13 +14097,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -16225,11 +14105,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -16293,11 +14169,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -16322,11 +14194,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -16406,11 +14274,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -16462,11 +14326,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -16491,11 +14351,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -16553,11 +14409,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -16565,13 +14417,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -16579,11 +14425,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -16635,11 +14477,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -16647,13 +14485,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -16661,11 +14493,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -16723,11 +14551,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -16735,13 +14559,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -16749,11 +14567,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -16809,11 +14623,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -16821,13 +14631,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -16835,11 +14639,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -16897,11 +14697,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -16909,13 +14705,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -16923,11 +14713,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -16990,11 +14776,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -17002,13 +14784,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -17016,11 +14792,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -17082,11 +14854,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -17094,13 +14862,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -17108,11 +14870,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -17173,11 +14931,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -17185,13 +14939,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -17199,11 +14947,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -17271,11 +15015,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -17297,11 +15037,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -17352,11 +15088,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -17364,13 +15096,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -17378,11 +15104,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -17433,11 +15155,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -17445,13 +15163,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -17459,11 +15171,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
@@ -17520,11 +15228,7 @@
       },
       "reserve": {
         "status": "UNOBSERVED",
-        "value": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "recoverableReserve": {
         "status": "UNOBSERVED",
@@ -17532,13 +15236,7 @@
       },
       "production": {
         "status": "UNOBSERVED",
-        "value": {
-          "annual": null,
-          "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "capacity": {
         "status": "UNOBSERVED",
@@ -17546,11 +15244,7 @@
       },
       "grade": {
         "status": "UNOBSERVED",
-        "value": {
-          "value": null,
-          "unit": null,
-          "status": "UNOBSERVED"
-        }
+        "value": null
       },
       "purity": {
         "status": "UNOBSERVED",
