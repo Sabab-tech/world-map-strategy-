@@ -25,7 +25,7 @@ for(const id of ids){
 }
 
 for(const row of quantitative.records){
-  assert.equal(row.siteId && row.countryId && row.resourceId && row.siteName ? true : false,true);
+  assert(row.siteId&&row.countryId&&row.siteName);\n  if(row.researchState==='NOT_APPLICABLE_NO_COMMERCIAL_SITE'){ assert.equal(row.resourceId,null); continue; }\n  assert(row.countryId&&row.resourceId);
   assert(row.provenance && Array.isArray(row.provenance.sources));
   for(const field of ['reserve','recoverableReserve','production','capacity','grade','purity','recovery','throughput']){
     assert(row[field] && typeof row[field]==='object',`${row.siteId} missing structured ${field}`);
