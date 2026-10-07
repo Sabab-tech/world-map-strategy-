@@ -1,13 +1,13 @@
 {
-  "schemaVersion": "1.0.0",
+  "schemaVersion": "1.0.1",
   "datasetId": "OMEGA_RESOURCE_SITE_OPERATING_COST_RESEARCH_V1",
   "generatedDate": "2026-10-07",
   "authority": "SITE_SPECIFIC_COST_RESEARCH_LAYER",
   "rule": "Observed cost evidence has higher authority. Missing numeric costs are explicitly MODELED and remain separate from observed facts.",
   "coverage": {
     "siteCount": 199,
-    "observedNumericCost": 0,
-    "modeledWithoutNumericClaim": 199
+    "observedNumericCost": 1,
+    "modeledWithoutNumericClaim": 198
   },
   "records": [
     {
@@ -45,11 +45,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -93,11 +93,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -137,11 +137,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -183,11 +183,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -227,11 +227,11 @@
             "status": "SUSPENDED",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": "SITE_NPL_udayapur_limestone_mine",
+        "linkedEvidenceSiteId": "SITE_NPL_udayapur_limestone_mine",
         "sourceUrls": [
           "https://ucil.org.np/page/3/about-udayapur-cement?lang=en",
           "https://ucil.org.np/?lang=en"
@@ -274,11 +274,11 @@
             "status": "HISTORICAL_INACTIVE",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -318,12 +318,15 @@
             "status": "DEVELOPMENT",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
-        "sourceUrls": [],
+        "linkedEvidenceSiteId": "SITE_NPL_udayapur_limestone_mine",
+        "sourceUrls": [
+          "https://ucil.org.np/page/3/about-udayapur-cement?lang=en",
+          "https://ucil.org.np/?lang=en"
+        ],
         "observedEvidence": null
       }
     },
@@ -362,11 +365,11 @@
             "status": "RESTRICTED",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -408,11 +411,11 @@
             "status": "LIMITED",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -454,11 +457,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -498,11 +501,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -547,11 +550,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": "SITE_MAR_khouribga_phosphate_mine",
+        "linkedEvidenceSiteId": "SITE_MAR_khouribga_phosphate_mine",
         "sourceUrls": [
           "https://www.ocpgroup.ma/en/opening-sidi-chennane-mine",
           "https://www.ocpgroup.ma/en/what-we-do/industrial-operations"
@@ -594,11 +597,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -638,11 +641,11 @@
             "status": "DISRUPTED",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -682,11 +685,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -732,11 +735,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -776,11 +779,11 @@
             "status": "LIMITED",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -791,48 +794,22 @@
       "resourceId": "phosphate",
       "siteName": "Farim Phosphate Project",
       "cost": {
-        "status": "MODELED",
+        "status": "OBSERVED",
         "currency": "USD",
-        "unit": "USD_PER_OUTPUT_UNIT",
-        "value": null,
-        "basis": "SITE_SPECIFIC_DRIVER_MODEL",
-        "model": {
-          "formulaId": "OMEGA_SITE_DRIVER_COST_V1",
-          "numericValueIncluded": false,
-          "inputs": {
-            "resourceId": "phosphate",
-            "extractionClass": "SURFACE",
-            "production": {
-              "annual": null,
-              "rate": null,
-              "unit": null,
-              "year": null,
-              "status": "UNOBSERVED"
-            },
-            "capacity": {
-              "annualProductionAndSalesCapacity": 1300000,
-              "unit": "metric_tons_per_year",
-              "status": "REPORTED",
-              "annualProductionAndSalesCapacityUnit": null,
-              "annualProductionAndSalesCapacityStatus": "REPORTED"
-            },
-            "grade": {
-              "value": 30,
-              "unit": "percent_P2O5",
-              "status": "OBSERVED"
-            },
-            "recovery": null,
-            "throughput": null,
-            "status": "DEVELOPMENT",
-            "processing": null
-          },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
-        }
+        "unit": "USD_PER_TONNE_CONCENTRATE",
+        "value": 70.9,
+        "basis": "SITE_SPECIFIC_OWNER_FEASIBILITY_EVIDENCE",
+        "model": null
       },
       "provenance": {
-        "researchRecord": null,
-        "sourceUrls": [],
-        "observedEvidence": null
+        "linkedEvidenceSiteId": "SITE_FARIM_phosphate_project",
+        "sourceUrls": [
+          "https://itafos.com/projects/itafos-farim/",
+          "https://itafos.com/news/2023/itafos-completes-updated-feasibility-study-for-the-farim-phosphate-project/"
+        ],
+        "observedEvidence": {
+          "lifeOfMineOperatingCostUSDPerTonneConcentrate": 70.9
+        }
       }
     },
     {
@@ -870,11 +847,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -924,11 +901,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": "SITE_SLE_sierra_rutile_area_1",
+        "linkedEvidenceSiteId": "SITE_SLE_sierra_rutile_area_1",
         "sourceUrls": [
           "https://www.sierra-rutile.com/area-1/"
         ],
@@ -976,11 +953,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": "SITE_LBR_yekepa_iron_ore_mine",
+        "linkedEvidenceSiteId": "SITE_LBR_yekepa_iron_ore_mine",
         "sourceUrls": [
           "https://www.sec.gov/Archives/edgar/data/1243429/000124342926000020/mt-20251231.htm",
           "https://www.woodmac.com/reports/metals-nimba-yekepa-iron-ore-mine-16554538/",
@@ -1025,11 +1002,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -1077,11 +1054,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -1121,11 +1098,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": "SITE_TGO_hahoto_kpogam_phosphate_mine",
+        "linkedEvidenceSiteId": "SITE_TGO_hahoto_kpogam_phosphate_mine",
         "sourceUrls": [
           "https://snptogo.com/mine.php?lang=en",
           "https://snptogo.com/social_details_relocalisation.php?lang=fr",
@@ -1174,11 +1151,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": "SITE_BEN_onigbolo_limestone_quarry",
+        "linkedEvidenceSiteId": "SITE_BEN_onigbolo_limestone_quarry",
         "sourceUrls": [
           "https://eau-mines.gouv.bj/web/public/index.php/potentialites-minieres/",
           "https://www.ajol.info/index.php/jrsul/article/view/134814"
@@ -1233,11 +1210,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -1277,11 +1254,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -1321,11 +1298,11 @@
             "status": "CARE_AND_MAINTENANCE",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": "SITE_NER_soma_r_uranium_mine",
+        "linkedEvidenceSiteId": "SITE_NER_soma_r_uranium_mine",
         "sourceUrls": [
           "https://www.orano.group/finance-raa2024/en/33/",
           "https://anp.ne/visite-du-ministre-des-mines-dans-les-societes-sous-tutelle-le-bilan-de-lannee-2025-et-les-perspectives-pour-le-nouvel-an-au-centre-des-discussions/",
@@ -1369,11 +1346,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -1413,11 +1390,11 @@
             "status": "DEVELOPMENT",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -1457,11 +1434,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -1501,11 +1478,11 @@
             "status": "DEVELOPMENT",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -1545,11 +1522,11 @@
             "status": "DEVELOPMENT",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -1589,11 +1566,11 @@
             "status": "ARTISANAL_AND_LIMITED",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -1633,11 +1610,11 @@
             "status": "SUSPENDED",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -1679,11 +1656,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": "SITE_AGO_catoca_diamond_mine",
+        "linkedEvidenceSiteId": "SITE_AGO_catoca_diamond_mine",
         "sourceUrls": [
           "https://www.catoca.com/sobre-nos/",
           "https://www.catoca.com/catoca-celebra-31-anos-de-existencia-e-afirma-se-como-o-segundo-maior-contribuinte-em-receitas-cambias/",
@@ -1735,11 +1712,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -1783,11 +1760,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -1827,11 +1804,11 @@
             "status": "RESTARTING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": "SITE_GNQ_zafiro_oil_field",
+        "linkedEvidenceSiteId": "SITE_GNQ_zafiro_oil_field",
         "sourceUrls": [
           "https://investor.exxonmobil.com/sec-filings/all-sec-filings/content/0001193125-15-101332/0001193125-15-101332.pdf",
           "https://investor.exxonmobil.com/company-information/press-releases/detail/353/exxonmobil-acquires-exploration-acreage-in-equatorial-guinea",
@@ -1875,11 +1852,11 @@
             "status": "LIMITED",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -1919,11 +1896,11 @@
             "status": "SUSPENDED",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -1963,11 +1940,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -2015,11 +1992,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -2059,11 +2036,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -2103,11 +2080,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -2147,11 +2124,11 @@
             "status": "DEVELOPMENT",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": "SITE_BDI_musongati_nickel_project",
+        "linkedEvidenceSiteId": "SITE_BDI_musongati_nickel_project",
         "sourceUrls": [
           "https://ir.lifezonemetals.com/news/press-releases/news-details/2026/Lifezone-Metals-Announces-Exclusivity-Agreement-over-the-Musongati-Nickel-Project-in-Burundi/default.aspx",
           "https://www.sec.gov/Archives/edgar/data/1958217/000162828026050324/lzm-20260630_d2.htm"
@@ -2194,12 +2171,16 @@
             "status": "RESOURCE_IDENTITY_UNVERIFIED",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
-        "sourceUrls": [],
+        "linkedEvidenceSiteId": "SITE_GNQ_zafiro_oil_field",
+        "sourceUrls": [
+          "https://investor.exxonmobil.com/sec-filings/all-sec-filings/content/0001193125-15-101332/0001193125-15-101332.pdf",
+          "https://investor.exxonmobil.com/company-information/press-releases/detail/353/exxonmobil-acquires-exploration-acreage-in-equatorial-guinea",
+          "https://www.guineaecuatorialpress.com/noticias/el_jefe_de_estado_en_el_acto_de_traspaso_de_los_activos_del_bloque_b_zafiro_a_gepetrol"
+        ],
         "observedEvidence": null
       }
     },
@@ -2238,11 +2219,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -2290,11 +2271,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -2334,11 +2315,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -2378,11 +2359,11 @@
             "status": "RESTARTING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -2430,11 +2411,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -2474,11 +2455,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -2518,11 +2499,11 @@
             "status": "LIMITED",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -2562,11 +2543,11 @@
             "status": "LIMITED",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -2606,11 +2587,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -2656,11 +2637,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -2700,11 +2681,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -2744,11 +2725,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -2792,11 +2773,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -2836,11 +2817,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -2887,11 +2868,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -2931,11 +2912,11 @@
             "status": "HISTORICAL_INACTIVE",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -2975,11 +2956,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -3019,11 +3000,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -3063,11 +3044,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -3107,11 +3088,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -3151,11 +3132,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -3195,11 +3176,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -3239,11 +3220,11 @@
             "status": "DISRUPTED",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -3284,11 +3265,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -3336,11 +3317,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -3380,11 +3361,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -3424,11 +3405,11 @@
             "status": "DISPUTED_OPERATION",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -3468,11 +3449,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -3512,11 +3493,11 @@
             "status": "LIMITED",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -3556,11 +3537,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -3600,11 +3581,11 @@
             "status": "DEVELOPMENT",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -3644,11 +3625,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -3688,11 +3669,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -3732,11 +3713,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -3776,11 +3757,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -3820,11 +3801,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -3864,11 +3845,11 @@
             "status": "LIMITED",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -3908,11 +3889,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -3952,11 +3933,11 @@
             "status": "LIMITED",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -3996,11 +3977,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -4046,11 +4027,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -4094,11 +4075,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -4138,11 +4119,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -4182,11 +4163,11 @@
             "status": "HISTORICAL_INACTIVE",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -4226,11 +4207,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -4274,11 +4255,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -4321,11 +4302,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -4365,11 +4346,11 @@
             "status": "CESSATION_OF_PRODUCTION",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -4416,11 +4397,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -4460,11 +4441,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -4514,11 +4495,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -4559,11 +4540,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -4603,11 +4584,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -4647,11 +4628,11 @@
             "status": "LIMITED",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -4691,11 +4672,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -4735,11 +4716,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -4779,11 +4760,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -4823,11 +4804,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -4867,11 +4848,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -4911,11 +4892,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -4955,11 +4936,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -4999,11 +4980,11 @@
             "status": "CARE_AND_MAINTENANCE",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -5043,11 +5024,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -5087,11 +5068,11 @@
             "status": "DISRUPTED",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -5131,11 +5112,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -5175,11 +5156,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -5219,11 +5200,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -5265,11 +5246,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -5309,11 +5290,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -5353,11 +5334,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -5397,11 +5378,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -5441,11 +5422,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -5488,11 +5469,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -5534,11 +5515,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -5583,11 +5564,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -5627,11 +5608,11 @@
             "status": "HISTORICAL_INACTIVE",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -5671,11 +5652,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -5715,11 +5696,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -5762,11 +5743,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -5806,11 +5787,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -5850,11 +5831,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -5894,11 +5875,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -5938,11 +5919,11 @@
             "status": "NO_CURRENT_CONCESSION",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -5982,11 +5963,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -6026,11 +6007,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -6070,11 +6051,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -6114,11 +6095,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -6158,11 +6139,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -6202,11 +6183,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -6246,11 +6227,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -6290,11 +6271,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -6334,11 +6315,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -6378,11 +6359,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -6422,11 +6403,11 @@
             "status": "HISTORICAL_INACTIVE",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -6466,11 +6447,11 @@
             "status": "PERMIT_PROCESSING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -6510,11 +6491,11 @@
             "status": "HISTORICAL_INACTIVE",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -6554,11 +6535,11 @@
             "status": "HISTORICAL_INACTIVE",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -6598,11 +6579,11 @@
             "status": "NOT_APPLICABLE",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -6642,11 +6623,11 @@
             "status": "NOT_APPLICABLE",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -6686,11 +6667,11 @@
             "status": "NOT_APPLICABLE",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -6730,11 +6711,11 @@
             "status": "NOT_APPLICABLE",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -6777,11 +6758,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -6823,11 +6804,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -6869,11 +6850,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -6915,11 +6896,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -6959,11 +6940,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -7005,11 +6986,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -7049,11 +7030,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -7093,11 +7074,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -7137,11 +7118,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -7181,11 +7162,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -7225,11 +7206,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -7269,11 +7250,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -7313,11 +7294,11 @@
             "status": "RESTARTING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -7357,11 +7338,11 @@
             "status": "SUSPENDED",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -7401,11 +7382,11 @@
             "status": "HISTORICAL_INACTIVE",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -7448,12 +7429,16 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
-        "sourceUrls": [],
+        "linkedEvidenceSiteId": "SITE_GNQ_zafiro_oil_field",
+        "sourceUrls": [
+          "https://investor.exxonmobil.com/sec-filings/all-sec-filings/content/0001193125-15-101332/0001193125-15-101332.pdf",
+          "https://investor.exxonmobil.com/company-information/press-releases/detail/353/exxonmobil-acquires-exploration-acreage-in-equatorial-guinea",
+          "https://www.guineaecuatorialpress.com/noticias/el_jefe_de_estado_en_el_acto_de_traspaso_de_los_activos_del_bloque_b_zafiro_a_gepetrol"
+        ],
         "observedEvidence": null
       }
     },
@@ -7492,12 +7477,16 @@
             "status": "LIMITED",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
-        "sourceUrls": [],
+        "linkedEvidenceSiteId": "SITE_GNQ_zafiro_oil_field",
+        "sourceUrls": [
+          "https://investor.exxonmobil.com/sec-filings/all-sec-filings/content/0001193125-15-101332/0001193125-15-101332.pdf",
+          "https://investor.exxonmobil.com/company-information/press-releases/detail/353/exxonmobil-acquires-exploration-acreage-in-equatorial-guinea",
+          "https://www.guineaecuatorialpress.com/noticias/el_jefe_de_estado_en_el_acto_de_traspaso_de_los_activos_del_bloque_b_zafiro_a_gepetrol"
+        ],
         "observedEvidence": null
       }
     },
@@ -7536,12 +7525,16 @@
             "status": "HISTORICAL_INACTIVE",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
-        "sourceUrls": [],
+        "linkedEvidenceSiteId": "SITE_GNQ_zafiro_oil_field",
+        "sourceUrls": [
+          "https://investor.exxonmobil.com/sec-filings/all-sec-filings/content/0001193125-15-101332/0001193125-15-101332.pdf",
+          "https://investor.exxonmobil.com/company-information/press-releases/detail/353/exxonmobil-acquires-exploration-acreage-in-equatorial-guinea",
+          "https://www.guineaecuatorialpress.com/noticias/el_jefe_de_estado_en_el_acto_de_traspaso_de_los_activos_del_bloque_b_zafiro_a_gepetrol"
+        ],
         "observedEvidence": null
       }
     },
@@ -7580,11 +7573,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -7624,11 +7617,11 @@
             "status": "LIMITED",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -7670,11 +7663,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -7714,11 +7707,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -7758,11 +7751,11 @@
             "status": "HISTORICAL_INACTIVE",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -7802,11 +7795,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -7846,11 +7839,11 @@
             "status": "LIMITED",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -7890,11 +7883,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -7934,11 +7927,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -7978,11 +7971,11 @@
             "status": "HISTORICAL_INACTIVE",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -8022,11 +8015,11 @@
             "status": "LIMITED",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -8066,11 +8059,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -8110,12 +8103,16 @@
             "status": "RESOURCE_IDENTITY_UNVERIFIED",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
-        "sourceUrls": [],
+        "linkedEvidenceSiteId": "SITE_AGO_catoca_diamond_mine",
+        "sourceUrls": [
+          "https://www.catoca.com/sobre-nos/",
+          "https://www.catoca.com/catoca-celebra-31-anos-de-existencia-e-afirma-se-como-o-segundo-maior-contribuinte-em-receitas-cambias/",
+          "https://www.usgs.gov/centers/national-minerals-information-center/angola"
+        ],
         "observedEvidence": null
       }
     },
@@ -8154,11 +8151,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -8198,11 +8195,11 @@
             "status": "RESOURCE_IDENTITY_UNVERIFIED",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -8242,11 +8239,11 @@
             "status": "LIMITED",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -8286,11 +8283,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -8330,11 +8327,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -8377,11 +8374,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -8421,11 +8418,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -8468,11 +8465,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -8512,11 +8509,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -8556,11 +8553,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -8600,11 +8597,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -8644,11 +8641,11 @@
             "status": "LIMITED",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -8688,11 +8685,11 @@
             "status": "LIMITED",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -8732,11 +8729,11 @@
             "status": "LIMITED",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -8776,11 +8773,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -8820,11 +8817,11 @@
             "status": "HISTORICAL_INACTIVE",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -8864,11 +8861,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -8908,11 +8905,11 @@
             "status": "ACTIVE_PRODUCING",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -8952,11 +8949,11 @@
             "status": "LIMITED",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
@@ -8996,11 +8993,11 @@
             "status": "LIMITED",
             "processing": null
           },
-          "rule": "Do not substitute a universal dollar value. Runtime may calculate a modeled cost only from site-specific inputs and explicit calibration rules."
+          "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
       },
       "provenance": {
-        "researchRecord": null,
+        "linkedEvidenceSiteId": null,
         "sourceUrls": [],
         "observedEvidence": null
       }
