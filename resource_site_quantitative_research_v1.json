@@ -1,9 +1,9 @@
 {
-  "schemaVersion": "1.0.0",
+  "schemaVersion": "1.0.1",
   "datasetId": "OMEGA_RESOURCE_SITE_QUANTITATIVE_RESEARCH_V1",
   "generatedDate": "2026-10-07",
   "authority": "SITE_SPECIFIC_RESEARCH_CATALOG_DERIVED",
-  "rule": "Observed/source-backed facts are preserved exactly where present. Missing facts remain UNOBSERVED and are never filled with universal site values.",
+  "rule": "Each field has a normalized outer status/value pair. UNOBSERVED fields always use value=null; observed fields preserve the source-shaped value object. Missing facts remain missing and are not simulated in the research layer.",
   "standards": {
     "minerals": "CRIRSCO_STYLE",
     "petroleum": "SPE_PRMS_2018",
