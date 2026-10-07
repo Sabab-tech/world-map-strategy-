@@ -141,11 +141,15 @@
     return {ok:true,basis,family:unitFamily(unit)};
   }
 
-  function chooseCandidate(resourceId,candidates){
-    const rows=(Array.isArray(candidates)?candidates:[]).filter(x=>x&&norm(x.authority)!==AUTHORITY.UNOBSERVED);
+  function chooseCandidate(resourceId,candidates,{allowSimulated=false}={}){
+    const allowed=allowSimulated
+      ? new Set([AUTHORITY.OBSERVED,AUTHORITY.MODELED,AUTHORITY.SIMULATED])
+      : new Set([AUTHORITY.OBSERVED,AUTHORITY.MODELED]);
+    const rows=(Array.isArray(candidates)?candidates:[])
+      .filter(x=>x&&allowed.has(norm(x.authority)));
     const observed=rows.filter(x=>norm(x.authority)===AUTHORITY.OBSERVED);
     const modeled=rows.filter(x=>norm(x.authority)===AUTHORITY.MODELED);
-    const simulated=rows.filter(x=>norm(x.authority)===AUTHORITY.SIMULATED);
+    const simulated=allowSimulated?rows.filter(x=>norm(x.authority)===AUTHORITY.SIMULATED):[];
     const ordered=[...observed,...modeled,...simulated];
     for(const row of ordered){
       const check=measurementCompatible(resourceId,row);
@@ -161,17 +165,18 @@
 
   function resolveReserve(resourceId,{observed=[],modeled=[],scenario=[]}={}){
     const observedRows=(Array.isArray(observed)?observed:[]).filter(Boolean);
+    const modeledRows=(Array.isArray(modeled)?modeled:[]).filter(Boolean);
     const scenarioRows=(Array.isArray(scenario)?scenario:[]).filter(Boolean);
     const observedChecks=observedRows.map(row=>measurementCompatible(resourceId,row));
     const hasObservedIncompatibility=observedRows.length>0&&observedChecks.some(check=>!check.ok);
-    const selected=hasObservedIncompatibility?null:chooseCandidate(resourceId,[...observedRows,...(Array.isArray(modeled)?modeled:[]),...scenarioRows]);
-    const result={
+    const authoritativeInputs=[...observedRows,...modeledRows];
+    const selected=hasObservedIncompatibility?null:chooseCandidate(resourceId,authoritativeInputs);
+    return {
       resourceId:rid(resourceId),
       authoritative:selected,
       scenario:scenarioRows.length?clone(scenarioRows[0]):null,
       status:selected?STATUS.AVAILABLE:(hasObservedIncompatibility?STATUS.INCOMPATIBLE:STATUS.UNOBSERVED)
     };
-    return result;
   }
 
   function siteIdentity(site={}){
