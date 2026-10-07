@@ -116,6 +116,25 @@ assert.equal(
   'SIMULATED'
 );
 
+const missingProduction = Truth.classifyCurrentProduction({
+  observedRate: null,
+  modeledRate: null,
+  simulatedRate: null,
+  unit: 'TONNES'
+});
+assert.equal(missingProduction.current, null);
+assert.equal(missingProduction.modeled, null);
+assert.equal(missingProduction.simulation, null);
+
+const explicitZeroProduction = Truth.classifyCurrentProduction({
+  observedRate: 0,
+  modeledRate: null,
+  simulatedRate: null,
+  unit: 'TONNES'
+});
+assert.equal(explicitZeroProduction.current?.value, 0);
+assert.equal(explicitZeroProduction.current?.authority, 'OBSERVED');
+
 const precedenceCases = [
   {
     name: 'observed dominates modeled and simulated',
