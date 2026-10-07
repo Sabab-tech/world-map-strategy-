@@ -97,8 +97,7 @@ const explicitIdentity={listOccurrences(){return[{
   resourceTypeId:'copper',
   status:'OPERATING',
   rawDeposit:{name:'Explicit Recoverable',resId:'copper',reserves:'100 million tonnes',recoverableQuantity:60000000}
-}]}}
-};
+}]}};
 const explicitCompiled=P.compileReserves(explicitIdentity,null,{sovereignEntities:{resourceTypes:[{id:'copper',unit:'TONNES'}]}});
 const explicitReserve=explicitCompiled.registry.getReserveState('OCC:TEST:EXPLICIT');
 assert.equal(explicitReserve.recoverableQuantity,60000000);
