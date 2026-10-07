@@ -268,11 +268,23 @@ assert.equal(new Set(siteCatalog.sites.map(site => site.siteId)).size, 199);
 assert.equal(scenarioCatalog.siteCount, 199);
 assert.equal(scenarioCatalog.records.length, 199);
 assert.equal(new Set(scenarioCatalog.records.map(site => site.siteId)).size, 199);
+const commercialSites = siteCatalog.sites.filter(site => site.operation?.commercialExtraction === true);
+const nonCommercialSites = siteCatalog.sites.filter(site => site.operation?.commercialExtraction !== true);
+
+assert.equal(commercialSites.length, 195);
+assert.equal(nonCommercialSites.length, 4);
+
 assert.ok(siteCatalog.sites.every(site =>
   site.siteId &&
   site.identity?.countryIso3 &&
-  site.identity?.resourceTypeId &&
   site.siteName
+));
+assert.ok(commercialSites.every(site =>
+  site.identity?.resourceTypeId
+));
+assert.ok(nonCommercialSites.every(site =>
+  site.identity?.siteType === 'NO_COMMERCIAL_EXTRACTION' &&
+  site.identity?.resourceTypeId === null
 ));
 assert.ok(scenarioCatalog.records.every(site =>
   site.siteId &&
