@@ -658,7 +658,7 @@ function batchFromExtraction(x,record){
         });
       }
     };
-    mineSiteReferenceRows(c).forEach(ref=>add(ref,null,null,'MINE_SITE'));
+    mineSiteReferenceRows(c).forEach(ref=>add(ref,null,ref.resourceId||ref.resourceTypeId||ref.resourceTypeKey||null,'MINE_SITE'));
     const h=p?.hydrocarbon_resource_base||{};
     for(const key of ['oil','naturalGas']){
       const list=Array.isArray(h[key])?h[key]:[];
