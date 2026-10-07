@@ -20,7 +20,7 @@
   const n=v=>{const x=Number(v);return Number.isFinite(x)?x:null;};
   const state=()=>g.Game?.state||g.gameState||{};
   const simulationYear=()=>{const d=state()?.simulation?.date;if(d){const y=Number(String(d).slice(0,4));if(Number.isFinite(y))return y;}const sy=Number(state()?.simulation?.startYear);return Number.isFinite(sy)?sy:2015;};
-  let simulationReserveMap=null,simulationReservePromise=null,researchEvidenceMap=null,researchEvidencePromise=null,quantitativeResearchMap=null,quantitativeResearchPromise=null,operatingCostResearchMap=null,operatingCostResearchPromise=null,canonicalSiteMap=null,canonicalSitePromise=null;
+  let simulationReserveMap=null,simulationReservePromise=null,researchEvidenceMap=null,researchEvidencePromise=null,quantitativeResearchMap=null,quantitativeResearchPromise=null,operatingCostResearchMap=null,operatingCostResearchPromise=null,canonicalSiteMap=null,canonicalSitePromise=null,siteReferenceCache=new Map(),siteReferenceCacheSignature='',canonicalSiteByIdentity=new Map(),canonicalSiteByLinkedId=new Map();
   async function loadSimulationReserveData(){
     if(simulationReserveMap)return{status:'READY',count:Object.keys(simulationReserveMap).length,reused:true};
     if(simulationReservePromise)return simulationReservePromise;
@@ -74,8 +74,18 @@
         let data=inline||null;
         if(!data){const res=await fetch('resource_site_canonical_catalog_v1.json',{cache:'no-store'});if(!res?.ok)throw new Error('RESOURCE_CANONICAL_SITE_CATALOG_FETCH_FAILED');data=await res.json();}
         const rows=Array.isArray(data?.sites)?data.sites:[],map={};
-        for(const row of rows)if(row?.siteId)map[String(row.siteId)]=clone(row);
-        canonicalSiteMap=map;g.OmegaResourceCanonicalSiteCatalogData=data;g.Omega=g.Omega||{};g.Omega.ResourceCanonicalSiteCatalogData=data;
+        canonicalSiteByIdentity=new Map();canonicalSiteByLinkedId=new Map();
+        const normalizeKey=v=>String(v??'').normalize('NFKC').trim().toLowerCase().replace(/[^a-z0-9]+/g,' ').replace(/\\b(mine|field|area|site|zone|project|quarry)\\b/g,'').replace(/\\s+/g,' ').trim();
+        for(const row of rows){
+          if(!row?.siteId)continue;
+          const key=String(row.siteId);map[key]=clone(row);
+          const country=canonical(row.countryId||row.countryCode||row.country||'');
+          const resource=rid(row.identity?.resourceTypeId||row.resourceTypeId||row.resourceId||'');
+          const name=normalizeKey(row.siteName||row.name||'');
+          if(country&&name)canonicalSiteByIdentity.set(country+'|'+resource+'|'+name,row);
+          for(const linked of [row.linkedDepositId,row.identity?.linkedDepositId,row.depositKey,row.identity?.depositId].filter(Boolean))canonicalSiteByLinkedId.set(country+'|'+String(linked).trim(),row);
+        }
+        canonicalSiteMap=map;siteReferenceCache.clear();siteReferenceCacheSignature='';g.OmegaResourceCanonicalSiteCatalogData=data;g.Omega=g.Omega||{};g.Omega.ResourceCanonicalSiteCatalogData=data;
         return{status:'READY',count:rows.length,siteCount:Number(data?.siteCount)||rows.length};
       }catch(e){canonicalSiteMap={};return{status:'FAILED',count:0,reason:String(e?.message||e)}}
       finally{canonicalSitePromise=null;}
@@ -89,19 +99,12 @@
     const explicit=String(site?.siteId||site?.rawSiteReference?.siteId||site?.rawSiteReference?.id||'').trim();
     if(explicit&&canonicalSiteMap?.[explicit])return canonicalSiteMap[explicit];
     const linked=String(site?.linkedDepositId||site?.rawSiteReference?.linkedDepositId||site?.rawSiteReference?.depositKey||'').trim();
-    if(linked){
-      const hit=Object.values(canonicalSiteMap||{}).find(x=>String(x?.linkedDepositId||x?.depositKey||x?.identity?.depositId||'').trim()===linked&&canonical(x?.countryId)===country);
-      if(hit)return hit;
-    }
+    if(linked){const hit=canonicalSiteByLinkedId.get(country+'|'+linked);if(hit)return hit;}
     const name=normalizeSiteNameKey(site?.siteName||site?.name||site?.mineName||site?.depositName);
     if(!country||!name)return null;
-    const matches=Object.values(canonicalSiteMap||{}).filter(x=>{
-      const sameCountry=canonical(x?.countryId)===country;
-      const sameName=normalizeSiteNameKey(x?.siteName)===name;
-      const r=rid(x?.identity?.resourceTypeId||x?.resourceTypeId||x?.resourceId||'');
-      return sameCountry&&sameName&&(!resource||!r||resource===r);
-    });
-    return matches.length===1?matches[0]:null;
+    return canonicalSiteByIdentity.get(country+'|'+resource+'|'+name)
+      ||canonicalSiteByIdentity.get(country+'||'+name)
+      ||null;
   }
   async function loadQuantitativeResearchData(){
     if(quantitativeResearchMap)return{status:'READY',count:Object.keys(quantitativeResearchMap).length,reused:true};
@@ -440,14 +443,19 @@
     }
   }
   function mineSiteReferenceRows(c){
-    const wanted=canonical(c),reg=g.__OmegaResourceIdentityRegistry;
+    const wanted=canonical(c),reg=g.__OmegaResourceIdentityRegistry,cacheKey=wanted;
+    const signature=String(Object.keys(reg?.siteRefsByCountry||{}).length||g.__OmegaResourceKnowledgeModel?.refCatalog?.allReferences?.length||'READY')+'|'+Object.keys(canonicalSiteMap||{}).length;
+    if(siteReferenceCacheSignature===signature&&siteReferenceCache.has(cacheKey))return clone(siteReferenceCache.get(cacheKey));
+    let rows=[];
     try{
       const primary=reg?.getMineSiteReferencesByCountry?.(wanted)||[];
-      if(Array.isArray(primary)&&primary.length)return primary.map(enrichSimulationReserve).map(enrichResearchEvidence);
+      if(Array.isArray(primary)&&primary.length)rows=primary.map(enrichSimulationReserve).map(enrichResearchEvidence);
     }catch(_){}
-    const refs=g.__OmegaResourceKnowledgeModel?.refCatalog?.allReferences;
-    if(Array.isArray(refs))return refs.filter(ref=>canonical(ref?.countryCode||ref?.countryId||ref?.country)===wanted).map(enrichSimulationReserve).map(enrichResearchEvidence);
-    return[];
+    if(!rows.length){
+      const refs=g.__OmegaResourceKnowledgeModel?.refCatalog?.allReferences;
+      if(Array.isArray(refs))rows=refs.filter(ref=>canonical(ref?.countryCode||ref?.countryId||ref?.country)===wanted).map(enrichSimulationReserve).map(enrichResearchEvidence);
+    }
+    siteReferenceCacheSignature=signature;siteReferenceCache.set(cacheKey,clone(rows));return clone(rows);
   }
   function occurrenceRows(c){
     const reg=g.__OmegaResourceIdentityRegistry;const e=engine();const rr=g.__OmegaResourceReserveRegistry;if(!reg||!e||!rr)return[];
