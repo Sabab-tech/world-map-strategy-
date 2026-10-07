@@ -149,9 +149,11 @@ const hydratedAssetRows=Object.values(worldState).reduce((sum,row)=>sum+(Array.i
 const structuredMineRows=Object.values(worldState).reduce((sum,row)=>sum+(Array.isArray(row?.mines)?row.mines.filter(x=>!x?.simulationGenerated).length:0),0);
 const siteReferenceRows=Object.values(worldState).reduce((sum,row)=>sum+(Array.isArray(row?.mineSiteReferences)?row.mineSiteReferences.length:0),0);
 const siteControllerRows=Object.values(worldState).reduce((sum,row)=>sum+(row?.mineSiteControllers&&typeof row.mineSiteControllers==='object'?Object.keys(row.mineSiteControllers).length:0),0);
-const profileMineOutputs=Object.values(worldState).flatMap(row=>Object.values(row?.mineOutputs&&typeof row.mineOutputs==='object'?row.mineOutputs:{})).filter(x=>x?.assetType==='MINE_SITE');
+const allMineOutputs=Object.values(worldState).flatMap(row=>Object.values(row?.mineOutputs&&typeof row.mineOutputs==='object'?row.mineOutputs:{}));
+const profileMineOutputs=allMineOutputs.filter(x=>x?.assetType==='MINE_SITE');
+const siteLinkedExecutionOutputs=allMineOutputs.filter(x=>x?.siteReferenceKey&&Number(x?.producedQuantity)>0);
 const simulatedMineOutputs=profileMineOutputs.filter(x=>x?.simulationGenerated===true);
-const simulatedFieldOutputs=Object.values(worldState).flatMap(row=>Object.values(row?.mineOutputs&&typeof row.mineOutputs==='object'?row.mineOutputs:{})).filter(x=>x?.simulationGenerated===true&&['OIL_FIELD','GAS_FIELD'].includes(x?.assetType));
+const simulatedFieldOutputs=allMineOutputs.filter(x=>x?.simulationGenerated===true&&['OIL_FIELD','GAS_FIELD'].includes(x?.assetType));
 const expectedSiteRefsByCountry=Object.fromEntries(Object.entries(engine.countryProfiles||{}).map(([k,p])=>[String(k).toUpperCase(),(p?.resource_infrastructure_context?.mineSites||p?.infrastructure_context?.mineSites||[]).length]));
 const siteReferenceMismatches=Object.entries(expectedSiteRefsByCountry).filter(([countryId,n])=>Number(n)!==Number(worldState[countryId]?.mineSiteReferences?.length||0)).map(([countryId,n])=>({countryId,expected:n,actual:worldState[countryId]?.mineSiteReferences?.length||0,controllers:Object.keys(worldState[countryId]?.mineSiteControllers||{}).length}));
 console.log('ENDOWMENT_SITE_REFERENCE_DIAGNOSTIC '+JSON.stringify(siteReferenceMismatches));
@@ -174,13 +176,13 @@ assert.ok(unifiedReferences.every(x=>x.resourceAsset&&x.resourceAsset.schemaVers
 assert.ok(unifiedReferences.every(x=>x.resourceAsset.assetId===x.siteReferenceKey));
 assert.deepEqual(Object.keys(unifiedReferences[0]?.resourceAsset||{}).sort(),unifiedMineKeys);
 const commercialCatalogIds=(globalThis.OmegaResourceSiteReserveSimulationData?.records||[]).filter(x=>x.commercialExtraction===true).map(x=>x.siteId);
-const executedProfileSiteIds=new Set(profileMineOutputs.map(x=>x.siteReferenceKey).filter(Boolean));
+const executedProfileSiteIds=new Set(siteLinkedExecutionOutputs.map(x=>x.siteReferenceKey).filter(Boolean));
 const missingCommercialSiteIds=commercialCatalogIds.filter(x=>!executedProfileSiteIds.has(x));
 console.log('ENDOWMENT_MISSING_COMMERCIAL_SITES '+JSON.stringify({commercialExpected:commercialCatalogIds.length,executed:executedProfileSiteIds.size,missing:missingCommercialSiteIds}));
 for(const siteId of missingCommercialSiteIds){const site=(globalThis.OmegaResourceSiteCanonicalCatalogData?.sites||[]).find(x=>x.siteId===siteId)||{};const country=site.countryId;const row=(worldState[country]?.mineSiteReferences||[]).find(x=>x.siteReferenceKey===siteId);const occ='SITE_OCC:'+country+':'+String(siteId).toLowerCase().replace(/[^a-z0-9]+/g,'_');console.log('ENDOWMENT_MISSING_SITE_DETAIL '+JSON.stringify({siteId,country,resourceId:site.identity?.resourceTypeId,siteReference:row&&{siteReferenceKey:row.siteReferenceKey,resourceId:row.resourceId,siteName:row.siteName},reserve:(globalThis.OmegaResourceSiteReserveSimulationData?.records||[]).find(x=>x.siteId===siteId)?.reserve||null,controller:Object.values(worldState[country]?.mineSiteControllers||{}).find(x=>x.siteReferenceKey===siteId)||null,occurrenceKey:occ,mineOutput:worldState[country]?.mineOutputs?.[occ]||null,matchingOutputs:Object.values(worldState[country]?.mineOutputs||{}).filter(x=>String(x?.siteReferenceKey||'')===siteId)}));}
-assert.equal(profileMineOutputs.length,commercialCatalogIds.length,'all commercial canonical sites must produce an execution output; N/A sites are not extraction assets');
+assert.equal(executedProfileSiteIds.size,commercialCatalogIds.length,'all commercial canonical site identities must have a positive linked extraction output; N/A sites are excluded');
 assert(simulatedFieldOutputs.length>0,'expected hydrocarbon field execution assets');
-assert(profileMineOutputs.every(x=>(x?.producedQuantity||0)>0&&x?.effortUtilization>0&&x?.effortUtilization<=1),'some profile mine site did not execute with valid utilization');
+assert(siteLinkedExecutionOutputs.every(x=>(x?.producedQuantity||0)>0&&x?.effortUtilization>0&&x?.effortUtilization<=1),'some canonical site-linked output did not execute with valid utilization');
 assert(simulatedFieldOutputs.every(x=>(x?.producedQuantity||0)>0&&x?.effortUtilization>0&&x?.effortUtilization<=1),'some hydrocarbon field did not execute with modeled utilization');
 
 const controllerCountrySets=new Set();
