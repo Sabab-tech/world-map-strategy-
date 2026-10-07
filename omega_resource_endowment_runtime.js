@@ -829,7 +829,7 @@ function batchFromExtraction(x,record){
     const mineStates=existing.mineStates&&typeof existing.mineStates==='object'?clone(existing.mineStates):{};
     for(const x of rows)mineStates[x.occurrenceKey]=clone(x.reserveState.toJSON?.()||x.reserveState);
     return{
-      ...clone(existing),countryResourceProfile:clone(profile(c)),resourceDomain:clone(profile(c)?.resource_domain||null),
+      ...clone(existing),countryResourceProfile:(()=>{const p=profile(c)||{};return{identity:clone(p.identity||{}),resource_domain:clone(p.resource_domain||null),resource_infrastructure_context:clone(p.resource_infrastructure_context||p.infrastructure_context||null),hydrocarbon_resource_base:clone(p.hydrocarbon_resource_base||null)}})(),resourceDomain:clone(profile(c)?.resource_domain||null),
       mines,mineSiteReferences,mineSiteReferenceCount,mineSiteControllers,
       endowment,reserves:merge(reserves,existing.reserves),inventory,production,consumption,tradeAvailability,mineStates,
       strategicReserve,
