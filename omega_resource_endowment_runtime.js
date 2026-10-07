@@ -654,13 +654,15 @@ function batchFromExtraction(x,record){
     const canonicalByIdentity=new Set(canonicalRows.map(x=>rid(x?.resourceId)+'|'+canonicalNameKey(x?.depositName||x?.depositRawName)));
     const add=(asset,index,explicitResource=null,assetType='MINE_SITE')=>{
       const siteName=String(asset?.siteName||asset?.name||asset?.mineName||asset?.depositName||asset||'').trim();if(!siteName)return;
-      const canonicalSite=canonicalSiteForReference(asset);
+      const canonicalSite=assetType==='MINE_SITE'?canonicalSiteForReference(asset):null;
       const eligibility=String(asset?.extractionEligibility||canonicalSite?.operation?.extractionEligibility||'').trim().toUpperCase();
-      const commercial=asset?.commercialExtraction!==false&&canonicalSite?.operation?.commercialExtraction!==false;
-      if(!commercial||eligibility==='NON_EXECUTABLE'||eligibility==='CONDITIONAL')return;
-      if(eligibility!=='EXECUTABLE'){
-        const sourceStatus=String(asset?.status||asset?.operationalStatus||canonicalSite?.operation?.status||'').toUpperCase();
-        if(!/ACTIVE_PRODUCING|ACTIVE|OPERATING|RUNNING|RESTARTING/.test(sourceStatus)||/SUSPEND|CLOSED|HISTORICAL|DEVELOPMENT|DISPUTED|CESSATION|CARE_AND_MAINTENANCE|NO_CURRENT|PERMIT/.test(sourceStatus))return;
+      const commercial=assetType==='MINE_SITE'?asset?.commercialExtraction!==false&&canonicalSite?.operation?.commercialExtraction!==false:true;
+      if(assetType==='MINE_SITE'){
+        if(!commercial||eligibility==='NON_EXECUTABLE'||eligibility==='CONDITIONAL')return;
+        if(eligibility!=='EXECUTABLE'){
+          const sourceStatus=String(asset?.status||asset?.operationalStatus||canonicalSite?.operation?.status||'').toUpperCase();
+          if(!/ACTIVE_PRODUCING|ACTIVE|OPERATING|RUNNING|RESTARTING/.test(sourceStatus)||/SUSPEND|CLOSED|HISTORICAL|DEVELOPMENT|DISPUTED|CESSATION|CARE_AND_MAINTENANCE|NO_CURRENT|PERMIT/.test(sourceStatus))return;
+        }
       }
       const siteKey=String(asset?.siteReferenceKey||('SITE:'+canonical(c)+':'+tok(siteName))).trim();
       const explicitLinked=String(asset?.linkedDepositId||asset?.depositKey||asset?.rawSiteReference?.linkedDepositId||'').trim();
