@@ -26,6 +26,8 @@
   const profileCache=new Map();
   const mineSiteReferenceCache=new Map();
   const siteExecutionRowsCache=new Map();
+  let siteExecutionRowsCacheTurn=null;
+  let mineSiteReferenceCacheYear=null;
   async function loadSimulationReserveData(){
     if(simulationReserveMap)return{status:'READY',count:Object.keys(simulationReserveMap).length,reused:true};
     if(simulationReservePromise)return simulationReservePromise;
@@ -301,6 +303,11 @@
   }
   function mineSiteReferenceRows(c){
     const wanted=canonical(c);
+    const currentYear=simulationYear();
+    if(mineSiteReferenceCacheYear!==currentYear){
+      mineSiteReferenceCache.clear();
+      mineSiteReferenceCacheYear=currentYear;
+    }
     const cached=mineSiteReferenceCache.get(wanted);
     if(cached)return cached;
     const reg=g.__OmegaResourceIdentityRegistry;
@@ -488,6 +495,11 @@ function batchFromExtraction(x,record){
 
   function siteExecutionRows(c,existing={}){
     const cid=canonical(c);
+    const currentTurn=turn();
+    if(siteExecutionRowsCacheTurn!==currentTurn){
+      siteExecutionRowsCache.clear();
+      siteExecutionRowsCacheTurn=currentTurn;
+    }
     const cached=siteExecutionRowsCache.get(cid);
     if(cached){
       const saved=existing?.mineStates&&typeof existing.mineStates==='object'?existing.mineStates:{};
