@@ -406,7 +406,9 @@
         extractionExecutable:false
       })||rawSite;
       canonicalRows.push({
-        siteReferenceKey:siteId,siteId,countryId:wanted,countryCode:wanted,profileKey:'CANONICAL_SITE_CATALOG',
+        siteReferenceKey:siteId,siteId,countryId:wanted,countryCode:wanted,resourceId:identity.resourceTypeId||profile?.resourceId||null,
+        resourceTypeId:identity.resourceTypeId||profile?.resourceTypeId||null,resourceTypeKey:identity.resourceTypeId||profile?.resourceTypeKey||null,
+        profileKey:'CANONICAL_SITE_CATALOG',
         siteName,status:'ACTIVE_SITE_REFERENCE',activationState:'ACTIVE_REFERENCE',extractionExecutable:false,
         quantitativeExtractionDataAvailable:resourceAsset.quantitativeExtractionDataAvailable===true,
         sourceAuthority:'RESOURCE_JSON',sourceDatasetId:'resource_site_canonical_catalog_v1.json',
