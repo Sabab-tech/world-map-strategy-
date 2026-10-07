@@ -1085,7 +1085,7 @@ function batchFromExtraction(x,record){
       current[x.occurrenceKey]=clone(result.reserveAfter.toJSON?.()||result.reserveAfter);
       const record={
         extractionId:'EXT-'+turn()+'-'+c+'-'+String(x.occurrenceKey).replace(/[^A-Z0-9:_-]/gi,''),
-        countryId:c,simulationTurn:turn(),occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,resourceId:resource,
+        countryId:c,simulationTurn:turn(),occurrenceKey:x.occurrenceKey,siteReferenceKey:x.siteReferenceKey||null,canonicalSiteId:x.canonicalSiteId||null,extractionEligibility:x.extractionEligibility||null,depositKey:x.depositKey,resourceId:resource,
         requestedQuantity:request.requestedQuantity,approvedQuantity:q,status:result.status,
         effortUtilization:n(x.capacity?.utilization??x.capacity?.effortUtilization??0.85),simulationGenerated:!!x.isSimulationGenerated,
         reserveBefore:clone(result.reserveBefore?.toJSON?.()||result.reserveBefore),
@@ -1134,7 +1134,7 @@ function batchFromExtraction(x,record){
       mineOutputTotals[x.occurrenceKey].turnCount=(n(mineOutputTotals[x.occurrenceKey].turnCount)||0)+1;
       mineOutputTotals[x.occurrenceKey].lastTurn=turn();
       mineOutputs[x.occurrenceKey]={
-        occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,resourceId:resource,simulationTurn:turn(),
+        occurrenceKey:x.occurrenceKey,siteReferenceKey:x.siteReferenceKey||null,canonicalSiteId:x.canonicalSiteId||null,extractionEligibility:x.extractionEligibility||null,depositKey:x.depositKey,resourceId:resource,simulationTurn:turn(),
         assetType:x.assetType||'STRUCTURED_MINE',simulationGenerated:!!x.isSimulationGenerated,effortUtilization:x.isSimulationGenerated?1:null,
         producedQuantity:q,residualQuantity:n(result.reserveAfter.residualQuantity)||0,status:result.status,
         effortUtilization:record.effortUtilization,simulationGenerated:record.simulationGenerated,
