@@ -21,6 +21,10 @@
   const state=()=>g.Game?.state||g.gameState||{};
   const simulationYear=()=>{const d=state()?.simulation?.date;if(d){const y=Number(String(d).slice(0,4));if(Number.isFinite(y))return y;}const sy=Number(state()?.simulation?.startYear);return Number.isFinite(sy)?sy:2015;};
   let simulationReserveMap=null,simulationReservePromise=null,researchEvidenceMap=null,researchEvidencePromise=null;
+  // Runtime indexes: these datasets are immutable during a simulation turn. Reusing the indexes avoids rebuilding and deep-enriching the same country/site rows for every gate and extraction pass.
+  let countryListCache=null;
+  const profileCache=new Map();
+  const mineSiteReferenceCache=new Map();
   async function loadSimulationReserveData(){
     if(simulationReserveMap)return{status:'READY',count:Object.keys(simulationReserveMap).length,reused:true};
     if(simulationReservePromise)return simulationReservePromise;
@@ -176,6 +180,7 @@
   const turn=()=>n(state()?.simulation?.turn??state()?.turn??state()?.simulationTurn??g.Omega?.Simulation?.clock?.turn)??0;
   const engine=()=>g.ResourceMinistryEngine||null;
   function countries(){
+    if(Array.isArray(countryListCache))return countryListCache.slice();
     const out=new Set(),authoritative=new Set(),allowedExtras=new Set();
     try{
       const e=engine(),profiles=e?.countryProfiles&&typeof e.countryProfiles==='object'?e.countryProfiles:{};
@@ -200,7 +205,8 @@
     try{
       Object.keys(state()?.resource||{}).forEach(function(x){const c=canonical(x);if(c&&(authoritative.has(c)||allowedExtras.has(c)))out.add(c);});
     }catch(_){}
-    return[...out].filter(function(c){return authoritative.has(c)||allowedExtras.has(c);}).sort();
+    countryListCache=[...out].filter(function(c){return authoritative.has(c)||allowedExtras.has(c);}).sort();
+    return countryListCache.slice();
   }
   function countryState(c){
     const cid=canonical(c),s=state();if(!s.resource)s.resource={};if(!s.resource[cid])s.resource[cid]={};
@@ -217,8 +223,11 @@
     catch(_){return null;}
   }
   function profile(c){
-    const e=engine(),cid=canonical(c);
-    return e?.countryProfiles?.[cid]||e?.countryProfiles?.[Object.keys(e?.countryProfiles||{}).find(k=>id(k)===cid)]||null;
+    const cid=canonical(c);
+    if(profileCache.has(cid))return profileCache.get(cid);
+    const e=engine(),value=e?.countryProfiles?.[cid]||e?.countryProfiles?.[Object.keys(e?.countryProfiles||{}).find(k=>id(k)===cid)]||null;
+    profileCache.set(cid,value||null);
+    return value||null;
   }
   function buildKnowledge(){
     const e=engine();if(!e?.isReady)return null;
@@ -290,14 +299,21 @@
     }
   }
   function mineSiteReferenceRows(c){
-    const wanted=canonical(c),reg=g.__OmegaResourceIdentityRegistry;
+    const wanted=canonical(c);
+    const cached=mineSiteReferenceCache.get(wanted);
+    if(cached)return cached;
+    const reg=g.__OmegaResourceIdentityRegistry;
+    let rows=[];
     try{
       const primary=reg?.getMineSiteReferencesByCountry?.(wanted)||[];
-      if(Array.isArray(primary)&&primary.length)return primary.map(enrichSimulationReserve).map(enrichResearchEvidence);
+      if(Array.isArray(primary)&&primary.length)rows=primary.map(enrichSimulationReserve).map(enrichResearchEvidence);
     }catch(_){}
-    const refs=g.__OmegaResourceKnowledgeModel?.refCatalog?.allReferences;
-    if(Array.isArray(refs))return refs.filter(ref=>canonical(ref?.countryCode||ref?.countryId||ref?.country)===wanted).map(enrichSimulationReserve).map(enrichResearchEvidence);
-    return[];
+    if(!rows.length){
+      const refs=g.__OmegaResourceKnowledgeModel?.refCatalog?.allReferences;
+      if(Array.isArray(refs))rows=refs.filter(ref=>canonical(ref?.countryCode||ref?.countryId||ref?.country)===wanted).map(enrichSimulationReserve).map(enrichResearchEvidence);
+    }
+    mineSiteReferenceCache.set(wanted,rows);
+    return rows;
   }
   function occurrenceRows(c){
     const reg=g.__OmegaResourceIdentityRegistry;const e=engine();const rr=g.__OmegaResourceReserveRegistry;if(!reg||!e||!rr)return[];
@@ -1022,10 +1038,12 @@ function batchFromExtraction(x,record){
         const dependencyLightContext=typeof g.fetch!=='function'&&typeof g.OmegaResourceSiteReserveSimulationData==='undefined'&&typeof g.Omega?.ResourceSiteReserveSimulationData==='undefined';
         if((reserveData.status!=='READY'||reserveData.count!==199)&&!dependencyLightContext)return{status:'FAILED',reason:'PER_SITE_RESERVE_DATASET_INCOMPLETE',detail:reserveData};
         if(!engine()?.isReady)return{status:'FAILED',reason:'RESOURCE_MINISTRY_ENGINE_NOT_READY'};
+        // Build the immutable country index once before any per-country extraction work.
+        countryListCache=countries();
         const compiled=compile();
         if(compiled.status!=='READY')return compiled;
         applyPersistedReserveStates();install();
-        const countryList=countries();
+        const countryList=countryListCache?countryListCache.slice():countries();
         const stateRoot=state();
         if(!stateRoot.resource)stateRoot.resource={};
         for(const countryId of countryList)if(!stateRoot.resource[countryId])stateRoot.resource[countryId]={};
