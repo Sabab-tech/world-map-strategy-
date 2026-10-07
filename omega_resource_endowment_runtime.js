@@ -547,7 +547,10 @@ function batchFromExtraction(x,record){
         rows.push({
           occurrenceKey,parentOccurrenceKey:streams.length>1?baseOccurrenceKey:null,siteReferenceKey:siteKey,depositKey:'SIM_'+tok(occurrenceKey),linkedDepositId:asset?.linkedDepositId||asset?.depositKey||null,depositName:siteName,resourceId:stream.resourceId,countryId:canonical(c),resourceTypeKey:stream.resourceId,
           locationNodeKey:'ASSET:'+canonical(c)+':'+tok(siteName),ownerKey:null,operatorKey:null,status:'ACTIVE_PRODUCING',
-          rawDeposit:{id:occurrenceKey,name:siteName,linkedDepositId:asset?.linkedDepositId||asset?.depositKey||null,countryCode:canonical(c),resId:stream.resourceId,status:'ACTIVE_PRODUCING',assetType,simulation:true,stateAuthority:reserve.provenance?.stateAuthority||'SIMULATED',
+          rawDeposit:{id:occurrenceKey,name:siteName,linkedDepositId:asset?.linkedDepositId||asset?.depositKey||null,countryCode:canonical(c),resId:stream.resourceId,status:'ACTIVE_PRODUCING',assetType,simulation:true,
+            assetStatus:assetType==='OIL_FIELD'||assetType==='GAS_FIELD'?'MODELED':'SIMULATED',
+            verifiedPhysicalAsset:false,verificationStatus:'UNVERIFIED_BASE_REFERENCE',
+            stateAuthority:reserve.provenance?.stateAuthority||'SIMULATED',
             sourceDatasetId:'RESOURCE_JSON.countryProfiles',sourcePath:asset?.sourcePath||null,productionModel:prod,quality:q,reserveModel:stream.reserve},
           sourceDatasetId:'RESOURCE_JSON.countryProfiles',
           lifecycle:{status:'ACTIVE_EXTRACTION',mode:'PROFILE_DERIVED_SITE_MODEL',assetType,authority:prod.authority||'SIMULATED'},
@@ -836,6 +839,20 @@ function batchFromExtraction(x,record){
         mineOutputs[x.occurrenceKey]={occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,resourceId:x.resourceId,simulationTurn:turn(),producedQuantity:0,status:'BLOCKED',blockReason:reason.reason,residualQuantity:n(reserve.residualQuantity)||0};
         continue;
       }
+      const classification=String(
+        x?.rawDeposit?.reserveClassification||
+        x?.rawDeposit?.resourceClassification?.classification||
+        x?.rawDeposit?.classificationState||
+        x?.rawDeposit?.classification||
+        ''
+      ).trim().toUpperCase();
+      const nonEconomicClassification=/^(EXPLORATION_RESULT|EXPLORATION_RESULTS|MINERAL_RESOURCE|INFERRED_RESOURCE|INDICATED_RESOURCE|MEASURED_RESOURCE|CONTINGENT_RESOURCE|PROSPECTIVE_RESOURCE|PROSPECT|LEAD|PLAY)$/.test(classification);
+      if(!x.isSimulationGenerated&&nonEconomicClassification){
+        const reason={occurrenceKey:x.occurrenceKey,resourceId:x.resourceId,reason:'NON_ECONOMIC_RESERVE_CLASSIFICATION',classification};
+        blocked.push(reason);
+        mineOutputs[x.occurrenceKey]={occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,resourceId:x.resourceId,simulationTurn:turn(),producedQuantity:0,status:'BLOCKED',blockReason:reason.reason,reserveClassification:classification};
+        continue;
+      }
       const request=new p5.ExtractionRequest({
         occurrenceKey:x.occurrenceKey,requestedQuantity:windowQuantity,requestedUnit:reserve.unit,
         requestedPeriod:p5.TemporalWindowUnit?.PER_DAY||'PER_DAY',assetReference:capacity.assetReference,
@@ -843,7 +860,9 @@ function batchFromExtraction(x,record){
         extractionMethod:p5.ExtractionMethodEnum?.UNKNOWN||'UNKNOWN',
         provenance:{sourceSubsystem:'OMEGA_RESOURCE_ENDOWMENT_RUNTIME',sourceId:x.depositKey,timestamp:0,
           sourceAuthority:x.isSimulationGenerated?'SIMULATED':'OBSERVED',sourceDatasetId:x.sourceDatasetId||x.rawDeposit?.sourceDatasetId||null,
-          quantityAuthority:x.isSimulationGenerated?'SIMULATED':'OBSERVED',effortUtilization:n(x.capacity?.utilization??x.capacity?.effortUtilization??0.85)}
+          quantityAuthority:x.isSimulationGenerated?'SIMULATED':'OBSERVED',
+          reserveSemanticState:x.isSimulationGenerated?'SIMULATION_ONLY':(classification||'UNCLASSIFIED'),
+          effortUtilization:n(x.capacity?.utilization??x.capacity?.effortUtilization??0.85)}
       });
       let result;
       try{
