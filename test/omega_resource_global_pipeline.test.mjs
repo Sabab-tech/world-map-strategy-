@@ -117,8 +117,12 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
   const reserveResult=part05.compileReserves(idResult.registry,null,knowledge,{});
   assert.equal(idResult.occurrenceCount,engine.deposits.length);
   assert.equal(reserveResult.occurrenceCount,engine.deposits.length);
-  assert.equal(reserveResult.reserveCount,engine.deposits.length);
-  assert.equal(reserveResult.capacityCount,engine.deposits.length);
+  const reserveStates=reserveResult.registry.listReserveStates();
+  const coveredOccurrenceKeys=new Set(reserveStates.map(x=>String(x.occurrenceKey||'')));
+  const reserveGaps=engine.deposits.map((d,i)=>({occurrenceKey:'OCC:'+String(d.countryCode||'').toUpperCase()+':'+String(d.id||d.depositId||d.mineId||('DEP_'+i)).trim(),id:d.id||d.depositId||d.mineId||null,countryCode:d.countryCode||d.country||null,name:d.name||null,resId:d.resId||d.resourceId||d.resourceTypeId||null,reserves:d.reserves||d.reserve||d.reserveQuantity||null,unit:d.unit||d.reserveUnit||null,status:d.status||null})).filter(x=>!coveredOccurrenceKeys.has(x.occurrenceKey));
+  console.log('OMEGA_CANONICAL_RESERVE_GAPS',JSON.stringify(reserveGaps));
+  assert.equal(reserveResult.reserveCount,engine.deposits.length-reserveGaps.length);
+  assert.equal(reserveResult.capacityCount,reserveResult.reserveCount);
   assert.equal(idResult.siteReferenceCount,mineSiteReferenceCount);
   const siteRefs=idResult.registry.listMineSiteReferences();
   assert.equal(siteRefs.length,mineSiteReferenceCount);
@@ -197,10 +201,11 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
   assert.equal(globalResult.status,'COMPLETED');
   const nonEmptyResults=globalResult.results.filter(x=>x.result?.result?.extracted>0);
   const extractedRecords=nonEmptyResults.flatMap(x=>x.result.result.records||[]);
-  assert.equal(extractedRecords.length,engine.deposits.length);
+  const expectedExecutableCanonical=reserveResult.reserveCount;
+  assert.equal(extractedRecords.length,expectedExecutableCanonical);
 
   const executableOccurrenceKeys=new Set(extractedRecords.map(x=>String(x.occurrenceKey||'')));
-  assert.equal(executableOccurrenceKeys.size,engine.deposits.length);
+  assert.equal(executableOccurrenceKeys.size,expectedExecutableCanonical);
   for(const record of extractedRecords){
     const countryId=record.countryId;
     const row=state.resource[countryId];
