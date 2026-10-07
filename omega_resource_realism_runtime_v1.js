@@ -310,7 +310,7 @@ function advanceProductionState(production={},temporalState={},reserveState={},c
  const recovery=clamp01(p.recovery??1);
  const decline=clamp01(p.decline??0);
  const maintenance=clamp01(p.maintenance??0);
- const startTurn=finite(ts.startTurn)??Number(currentTurn)||0;
+ const startTurn=(finite(ts.startTurn)??Number(currentTurn)??0);
  const elapsedHours=Math.max(0,(Number(currentTurn)||0-startTurn)*Math.max(.01,Number(turnHours)||24));
  const elapsedYears=elapsedHours/(24*365.25);
  const declineFactor=Math.pow(Math.max(0,1-decline),elapsedYears);
@@ -328,7 +328,7 @@ function advanceProductionState(production={},temporalState={},reserveState={},c
  const status=String(ts.operationalCommand||reserveState?.operationalStatus||p.operatingStatus||'').toUpperCase();
  if(status==='SHUTDOWN'||status==='SUSPENDED'||status==='BLOCKED')restartFactor=0;
  if(status==='RESTARTING'){
-   const restartStart=finite(ts.restartStartTurn)??Number(currentTurn)||0;
+   const restartStart=(finite(ts.restartStartTurn)??Number(currentTurn)??0);
    const restartTurns=Math.max(1,finite(ts.restartTurns)??Math.ceil(720/Math.max(.01,Number(turnHours)||24)));
    restartFactor=clamp01(((Number(currentTurn)||0)-restartStart+1)/restartTurns);
  }
