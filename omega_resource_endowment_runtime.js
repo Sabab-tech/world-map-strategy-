@@ -1124,7 +1124,7 @@ function batchFromExtraction(x,record){
         if(!stateRoot.resource)stateRoot.resource={};
         for(const countryId of countryList)if(!stateRoot.resource[countryId])stateRoot.resource[countryId]={};
         g.__omegaResourceEndowmentReady=true;
-        return{status:'READY',countries:countryList.length,reused:false,hydrationMode:'LAZY_ON_EXTRACTION'};
+        return{status:'READY',countries:countryList.length,reused:false,hydrationMode:'LAZY_ON_EXTRACTION',researchData:{quantitativeSiteCount:quantitativeData?.count||Object.keys(quantitativeResearchMap||{}).length,operatingCostSiteCount:operatingCostData?.count||Object.keys(operatingCostResearchMap||{}).length}};
       }catch(e){
         return{status:'FAILED',reason:String(e?.message||e)};
       }finally{
