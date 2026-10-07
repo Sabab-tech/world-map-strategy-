@@ -592,8 +592,8 @@ function batchFromExtraction(x,record){
         countryId:canonical(c),
         countryCode:canonical(c),
         sourcePath:site.sourcePath||null,
-        sourceDatasetId:site.sourceDatasetId||'RESOURCE_JSON.countryProfiles',
-        sourceAuthority:'RESOURCE_JSON',
+        sourceDatasetId:site.sourceDatasetId||null,
+        sourceAuthority:site.sourceAuthority||'UNOBSERVED',
         activationState:'ACTIVE_SITE_CONTROLLER',
         controllerStatus:'RUNNING',
         extractionExecutable:linked.length>0,
@@ -645,7 +645,7 @@ function batchFromExtraction(x,record){
         const generated={occurrenceKey,countryId:canonical(c),depositKey:'SIM_'+tok(occurrenceKey),resourceId:stream.resourceId,
           geologicalQuantity:simulationQuantity,recoverableQuantity:simulationQuantity,residualQuantity:simulationQuantity,unit,
           operationalStatus:'ACTIVE_EXTRACTION',stateVersion:1,quality:q,productionModel:prod,
-          provenance:{sourceAuthority:'RESOURCE_JSON.countryProfiles',stateAuthority:'SIMULATED',sourceDatasetId:'resources.json.countryProfiles',sourcePath:asset?.sourcePath||null,
+          provenance:{sourceAuthority:'SIMULATED',stateAuthority:'SIMULATED',sourceDatasetId:null,sourcePath:asset?.sourcePath||null,
             quantityAuthority:stream.reserve.authority==='OBSERVED'?'OBSERVED':simulationReserveAuthority,productionAuthority:prod.authority||'SIMULATED',qualityAuthority:q.gradeStatus==='OBSERVED'?'OBSERVED':'SIMULATED',simulationRuleVersion:realism?.VERSION||null}};
         const merged=realism?.firewall&&old&&typeof old==='object'?realism.firewall(clone(old),generated):generated;
         const previous=merged?new p5.ReserveState(clone(merged)):null;
@@ -653,7 +653,7 @@ function batchFromExtraction(x,record){
           occurrenceKey,countryId:canonical(c),depositKey:'SIM_'+tok(occurrenceKey),resourceId:stream.resourceId,
           geologicalQuantity:stream.reserve.quantity,recoverableQuantity:stream.reserve.quantity,residualQuantity:stream.reserve.quantity,unit,
           operationalStatus:'ACTIVE_EXTRACTION',stateVersion:1,quality:q,productionModel:prod,
-          provenance:{sourceAuthority:'RESOURCE_JSON.countryProfiles',stateAuthority:'SIMULATED',sourceDatasetId:'resources.json.countryProfiles',sourcePath:asset?.sourcePath||null,
+          provenance:{sourceAuthority:'SIMULATED',stateAuthority:'SIMULATED',sourceDatasetId:null,sourcePath:asset?.sourcePath||null,
             quantityAuthority:stream.reserve.authority==='OBSERVED'?'OBSERVED':simulationReserveAuthority,productionAuthority:prod.authority||'SIMULATED',qualityAuthority:q.gradeStatus==='OBSERVED'?'OBSERVED':'SIMULATED',simulationRuleVersion:realism?.VERSION||null}
         });
         const capacity=p5?.Capacity?new p5.Capacity({
