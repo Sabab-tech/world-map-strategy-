@@ -1134,7 +1134,7 @@ function batchFromExtraction(x,record){
     return handlersRegistered;
   }
   async function initialize(){
-    if(g.__omegaResourceEndowmentReady)return{status:'READY',countries:countries().length,reused:true};
+    if(g.__omegaResourceEndowmentReady)return{status:'READY',countries:countries().length,reused:true,researchData:{quantitativeSiteCount:Object.keys(quantitativeResearchMap||{}).length,operatingCostSiteCount:Object.keys(operatingCostResearchMap||{}).length}};
     if(g.__omegaResourceEndowmentPromise)return g.__omegaResourceEndowmentPromise;
     g.__omegaResourceEndowmentInitializing=true;
     g.__omegaResourceEndowmentPromise=(async function(){
