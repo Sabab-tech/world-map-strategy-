@@ -142,7 +142,12 @@
       if(!quantitative)quantitative=Object.values(quantitativeResearchMap||{}).find(x=>canonical(x?.countryId||'')===wantedCountry&&String(x?.siteName||'').trim().toLowerCase()===wantedName)||null;
       if(!operatingCost)operatingCost=Object.values(operatingCostResearchMap||{}).find(x=>canonical(x?.countryId||'')===wantedCountry&&String(x?.siteName||'').trim().toLowerCase()===wantedName)||null;
     }
-    if(quantitative){s.quantitativeResearch=clone(quantitative);s.quantitativeResearchDataset='resource_site_quantitative_research_v1.json';}
+    if(quantitative){
+      s.quantitativeResearch=clone(quantitative);s.quantitativeResearchDataset='resource_site_quantitative_research_v1.json';
+      if(!s.resourceId&&quantitative.resourceId)s.resourceId=rid(quantitative.resourceId);
+      if(!s.resourceTypeId&&quantitative.resourceId)s.resourceTypeId=rid(quantitative.resourceId);
+      if(!s.siteName&&quantitative.siteName)s.siteName=quantitative.siteName;
+    }
     if(operatingCost){s.researchOperatingCost=clone(operatingCost.cost||null);s.researchOperatingCostDataset='resource_site_operating_cost_research_v1.json';}
     return s;
   }
@@ -417,6 +422,23 @@
         }
       }
     }catch(_){}
+    const refs=mineSiteReferenceRows(wanted);
+    const canonicalNameKey=v=>String(v??'').trim().toLowerCase().replace(/[\\s_-]+/g,' ').replace(/[^a-z0-9 ]/g,'').trim();
+    const linkedByDeposit=new Map(),linkedByIdentity=new Map();
+    for(const ref of refs){
+      const rawRef=ref?.rawSiteReference&&typeof ref.rawSiteReference==='object'?ref.rawSiteReference:{};
+      for(const key of [rawRef.linkedDepositId,rawRef.depositKey,rawRef.linkedOccurrenceKey,ref.linkedDepositId,ref.depositKey].filter(Boolean)){
+        const k=String(key).trim();if(k&&!linkedByDeposit.has(k))linkedByDeposit.set(k,ref.siteReferenceKey);
+      }
+      const rk=rid(ref.resourceId||ref.resourceTypeId||rawRef.resourceId||rawRef.resourceTypeId||rawRef.resId);
+      const nk=canonicalNameKey(ref.siteName||rawRef.siteName||rawRef.name);
+      if(rk&&nk&&!linkedByIdentity.has(rk+'|'+nk))linkedByIdentity.set(rk+'|'+nk,ref.siteReferenceKey);
+    }
+    for(const row of out){
+      const depositKey=String(row?.depositKey||'').trim();
+      const linkedSite=linkedByDeposit.get(depositKey)||linkedByIdentity.get(rid(row?.resourceId)+'|'+canonicalNameKey(row?.depositName||row?.depositRawName));
+      if(linkedSite)row.siteReferenceKey=linkedSite;
+    }
     return out;
   }
 
@@ -546,9 +568,15 @@ function batchFromExtraction(x,record){
 
   function siteExecutionRows(c,existing={}){
     const p=profile(c)||{},rows=[],seen=new Set(),realism=g.Omega?.ResourceRealism||g.OmegaResourceRealism;
+    const canonicalRows=occurrenceRows(c),canonicalBySiteRef=new Set(canonicalRows.map(x=>String(x?.siteReferenceKey||'')).filter(Boolean));
+    const canonicalNameKey=v=>String(v??'').trim().toLowerCase().replace(/[\\s_-]+/g,' ').replace(/[^a-z0-9 ]/g,'').trim();
+    const canonicalByIdentity=new Set(canonicalRows.map(x=>rid(x?.resourceId)+'|'+canonicalNameKey(x?.depositName||x?.depositRawName)));
     const add=(asset,index,explicitResource=null,assetType='MINE_SITE')=>{
       const siteName=String(asset?.siteName||asset?.name||asset?.mineName||asset?.depositName||asset||'').trim();if(!siteName)return;
       const siteKey=String(asset?.siteReferenceKey||('SITE:'+canonical(c)+':'+tok(siteName))).trim();
+      const explicitLinked=String(asset?.linkedDepositId||asset?.depositKey||asset?.rawSiteReference?.linkedDepositId||'').trim();
+      const boundCanonical=canonicalBySiteRef.has(siteKey)||canonicalRows.some(x=>explicitLinked&&String(x?.depositKey||'')===explicitLinked)||canonicalByIdentity.has(rid(explicitResource||asset?.resourceId||asset?.resourceTypeId)+'|'+canonicalNameKey(siteName));
+      if(boundCanonical)return;
       const baseOccurrenceKey=(assetType==='MINE_SITE'?'SITE_OCC:':'FIELD_OCC:')+canonical(c)+':'+tok(siteKey);
       const model=realism?.siteModel?.({...clone(asset||{}),siteReferenceKey:siteKey,resourceId:explicitResource||asset?.resourceId||asset?.resourceTypeId},p,canonical(c));
       const streams=Array.isArray(model?.commodityStreams)?model.commodityStreams:[];if(!streams.length)return;
