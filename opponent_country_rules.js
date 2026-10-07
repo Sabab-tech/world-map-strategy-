@@ -608,7 +608,13 @@ class Runtime{
     this.idr.rebuild();this.actors.rebuild();return this.idr.list();
   }
   async evaluate(c,t=TURN(),options={}){
-    const s=this.kernel.snap(c,t);s.rawState=WORLD();this.graph.build();
+    const s=this.kernel.snap(c,t);
+    if(s?.status!=='RESOLVED'){
+      this.tr.add({layer:'L03_WORLD_STATE_KERNEL',countryId:null,turn:t,status:'UNRESOLVED_COUNTRY_IDENTITY',input:CLONE(c)});
+      return{status:'UNRESOLVED_COUNTRY_IDENTITY',countryId:null,turn:t,mode:'BLOCKED'};
+    }
+    s.rawState=WORLD();
+    this.graph.build();
     const demand=this.demand.run(s),supply=this.supply.run(s),gap=this.gap.run(s),events=this.events.run(s.countryId),scenarios=this.scenario.run(s,gap,events),runtimeAnalysis=this.runtimeFlow.analyze(s.countryId,s);
     const mode=this.scheduler.mode(gap,scenarios);
     if(!this.scheduler.should(s.countryId,t,mode)&&options.forceFull!==true){const heartbeat={countryId:s.countryId,turn:t,observed:true,scheduled:false,mode};this.tr.add({layer:'L24_MULTI_RATE_SCHEDULER',countryId:s.countryId,turn:t,action:'COUNTRY_TICK_HEARTBEAT',observed:true});return{status:'SKIPPED',countryId:s.countryId,turn:t,mode,heartbeat,last:this.runs.get(s.countryId)||null};}
