@@ -148,6 +148,7 @@ const simulatedFieldOutputs=Object.values(worldState).flatMap(row=>Object.values
 const expectedSiteRefsByCountry=Object.fromEntries(Object.entries(engine.countryProfiles||{}).map(([k,p])=>[String(k).toUpperCase(),(p?.resource_infrastructure_context?.mineSites||p?.infrastructure_context?.mineSites||[]).length]));
 const siteReferenceMismatches=Object.entries(expectedSiteRefsByCountry).filter(([countryId,n])=>Number(n)!==Number(worldState[countryId]?.mineSiteReferences?.length||0)).map(([countryId,n])=>({countryId,expected:n,actual:worldState[countryId]?.mineSiteReferences?.length||0,controllers:Object.keys(worldState[countryId]?.mineSiteControllers||{}).length}));
 console.log('ENDOWMENT_SITE_REFERENCE_DIAGNOSTIC '+JSON.stringify(siteReferenceMismatches));
+for(const d of siteReferenceMismatches){console.log('ENDOWMENT_SITE_REFERENCE_DETAIL '+JSON.stringify({countryId:d.countryId,actual:worldState[d.countryId]?.mineSiteReferences?.map(x=>({siteReferenceKey:x.siteReferenceKey,siteName:x.siteName,resourceId:x.resourceId})),canonical:(globalThis.OmegaResourceSiteCanonicalCatalogData?.sites||[]).filter(x=>x.countryId===d.countryId).map(x=>({siteId:x.siteId,siteName:x.siteName,resourceId:x.identity?.resourceTypeId}))}));}
 assert.equal(siteReferenceRows,199);
 assert.equal(siteControllerRows,199);
 assert.ok(structuredMineRows>=engine.deposits.length,'structured mine rows must include canonical runtime deposits plus profile-derived structured sites');
