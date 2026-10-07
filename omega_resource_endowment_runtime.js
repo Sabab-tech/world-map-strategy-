@@ -25,6 +25,7 @@
   let countryListCache=null;
   const profileCache=new Map();
   const mineSiteReferenceCache=new Map();
+  const siteExecutionRowsCache=new Map();
   async function loadSimulationReserveData(){
     if(simulationReserveMap)return{status:'READY',count:Object.keys(simulationReserveMap).length,reused:true};
     if(simulationReservePromise)return simulationReservePromise;
@@ -486,7 +487,17 @@ function batchFromExtraction(x,record){
 
 
   function siteExecutionRows(c,existing={}){
-    const p=profile(c)||{},rows=[],seen=new Set(),realism=g.Omega?.ResourceRealism||g.OmegaResourceRealism;
+    const cid=canonical(c);
+    const cached=siteExecutionRowsCache.get(cid);
+    if(cached){
+      const saved=existing?.mineStates&&typeof existing.mineStates==='object'?existing.mineStates:{};
+      for(const row of cached){
+        const persisted=saved[row.occurrenceKey];
+        if(persisted)row.reserveState=new (g.GSRSK_Part05||g.GSRSK_ResourceReserveExtractionEngine).ReserveState(clone(persisted));
+      }
+      return cached;
+    }
+    const p=profile(cid)||{},rows=[],seen=new Set(),realism=g.Omega?.ResourceRealism||g.OmegaResourceRealism;
     const add=(asset,index,explicitResource=null,assetType='MINE_SITE')=>{
       const siteName=String(asset?.siteName||asset?.name||asset?.mineName||asset?.depositName||asset||'').trim();if(!siteName)return;
       const siteKey=String(asset?.siteReferenceKey||('SITE:'+canonical(c)+':'+tok(siteName))).trim();
@@ -547,6 +558,7 @@ function batchFromExtraction(x,record){
       list.forEach(name=>add({name,sourcePath:'GSRSK_Master_CountryProfiles_v14.countryProfiles.'+canonical(c)+'.hydrocarbon_resource_base.'+key},
         null,key==='oil'?'crude_oil':'natural_gas',key==='oil'?'OIL_FIELD':'GAS_FIELD'));
     }
+    siteExecutionRowsCache.set(cid,rows);
     return rows;
   }
 
