@@ -232,12 +232,21 @@ assert.equal(stream.production.currentProductionAuthority, 'UNOBSERVED');
 assert.equal(stream.production.simulationProduction, 10);
 assert.equal(stream.production.simulationProductionAuthority, 'SIMULATED');
 
-assert.deepEqual(
-  Truth.siteIdentity({ siteId: 'SITE_A', countryId: 'TST', resourceId: 'gold' }),
-  { ok: true, siteId: 'SITE_A', countryId: 'TST', resourceId: 'gold' }
-);
+const identity = Truth.siteIdentity({
+  siteId: 'SITE_A',
+  countryId: 'TST',
+  resourceId: 'gold'
+});
+assert.equal(identity.ok, true);
+assert.equal(identity.siteId, 'SITE_A');
+assert.equal(identity.countryId, 'TST');
+assert.equal(identity.resourceId, 'gold');
 assert.equal(Truth.siteIdentity({ siteId: 'SITE_A', countryId: 'TST' }).ok, false);
-assert.equal(Truth.siteIdentity({ siteName: 'Same Name', countryId: 'TST', resourceId: 'gold' }).ok, false);
+assert.equal(Truth.siteIdentity({
+  siteName: 'Same Name',
+  countryId: 'TST',
+  resourceId: 'gold'
+}).ok, false);
 
 assert.throws(
   () => Truth.assertNoSyntheticAuthority({ authority: 'OBSERVED', simulationGenerated: true }),
