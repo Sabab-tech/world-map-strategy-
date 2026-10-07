@@ -105,6 +105,13 @@
           if(quantity!==null){quantity*=32150.74656862745;sourceUnit='METRIC_TONS';outputUnit='TROY_OUNCES';}
         }
       }
+    }else if(rid==='uranium'){
+      quantity=firstNumber(text,/([\d,.]+)\s*(?:trillion|billion|million|thousand)?\s*(?:METRIC\s+TONS?|TONNES?|TONS?)\s+U3O8\b/i);
+      sourceUnit='METRIC_TONS';outputUnit=targetUnit||'METRIC_TONS';
+      if(quantity===null){
+        quantity=firstNumber(text,/([\d,.]+)\s*(?:trillion|billion|million|thousand)?\s*(?:M|MT|MN)?\s*T(?:ONS?)?\b/i);
+        if(quantity===null)quantity=firstNumber(text,/([\d,.]+)\s*(?:trillion|billion|million|thousand)?\s*M\s*T\b/i);
+      }
     }else{
       quantity=firstNumber(text,/([\d,.]+)\s*(?:trillion|billion|million|thousand)?\s*(?:M|MT|MN)?\s*T(?:ONS?)?\b/i);
       if(quantity===null)quantity=firstNumber(text,/([\d,.]+)\s*(?:trillion|billion|million|thousand)?\s*M\s*T\b/i);
