@@ -50,7 +50,7 @@
   }
 
   function field(input={}){
-    const authority=norm(input.authority||input.status===AUTHORITY.OBSERVED?AUTHORITY.OBSERVED:AUTHORITY.UNOBSERVED);
+    const authority=norm(input.authority||(norm(input.status)===AUTHORITY.OBSERVED?AUTHORITY.OBSERVED:AUTHORITY.UNOBSERVED));
     const status=input.status?norm(input.status):(authority===AUTHORITY.UNOBSERVED?STATUS.UNOBSERVED:STATUS.AVAILABLE);
     const basis=input.measurementBasis||input.basis||null;
     if(authority!==AUTHORITY.UNOBSERVED&&!validAuthority(authority))throw new Error('RESOURCE_TRUTH_INVALID_AUTHORITY');
@@ -211,7 +211,7 @@
       const observedReserveValue=site?.reserveQuantity??site?.geologicalQuantity??site?.reservesQuantity??researchReserve?.quantity??parsedObservedReserve?.quantity??null;
       const observedReserveUnit=site?.reserveUnit||researchReserve?.unit||parsedObservedReserve?.unit||reserve.unit||null;
       const reserveObserved=finite(Number(observedReserveValue))&&Number(observedReserveValue)>0;
-      const observedReserve=reserveObserved?{value:Number(observedReserveValue),unit:observedReserveUnit,measurementBasis:site?.reserveBasis||'MINERAL_RESERVE',commodity:resourceId,authority:AUTHORITY.OBSERVED,status:STATUS.AVAILABLE,provenance:{sourceDatasetId:site?.sourceDatasetId||DATASETS.RESOURCES_JSON,sourceRecordId:siteId,sourceAuthority:'RESOURCE_JSON',effectiveDate:site?.effectiveDate||null}}:null;
+      const observedReserve=reserveObserved?{value:Number(observedReserveValue),unit:observedReserveUnit,measurementBasis:site?.reserveBasis||'MINERAL_RESERVE',commodity:resourceId,authority:AUTHORITY.OBSERVED,status:STATUS.AVAILABLE,provenance:{sourceDatasetId:site?.sourceDatasetId||DATASETS.QUANTITATIVE_RESEARCH,sourceRecordId:siteId,sourceAuthority:'RESEARCH_EVIDENCE',effectiveDate:site?.effectiveDate||null}}:null;
       stream.reserve={quantity:reserveObserved?Number(observedReserveValue):null,unit:reserveObserved?observedReserveUnit:(reserve.unit||null),
         authority:reserveObserved?AUTHORITY.OBSERVED:AUTHORITY.UNOBSERVED,status:reserveObserved?STATUS.AVAILABLE:STATUS.UNOBSERVED,
         measurementBasis:reserveObserved?(site?.reserveBasis||'MINERAL_RESERVE'):null,
@@ -234,7 +234,7 @@
     }
     const observedCount=out.authorityLayers.OBSERVED.length;
     const simulatedCount=out.authorityLayers.SIMULATED.length;
-    out.authority=simulatedCount||out.authorityLayers.UNOBSERVED.length?'SIMULATED':(observedCount?'OBSERVED':'UNOBSERVED');
+    out.authority=observedCount?'OBSERVED':(simulatedCount?'SIMULATED':'UNOBSERVED');
     out.dataStatus=out.authorityLayers.UNOBSERVED.length?'PARTIAL':'AVAILABLE';
     return out;
   }
