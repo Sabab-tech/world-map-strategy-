@@ -161,7 +161,13 @@ assert.deepEqual(Object.keys(unifiedReferences[0]?.resourceAsset||{}).sort(),uni
 const commercialCatalogIds=(globalThis.OmegaResourceSiteReserveSimulationData?.records||[]).filter(x=>x.commercialExtraction===true).map(x=>x.siteId);
 const canonicalSiteIds=new Set((globalThis.OmegaResourceSiteCanonicalCatalogData?.sites||[]).map(x=>x.siteId).filter(Boolean));
 const executedProfileSiteIds=new Set(siteLinkedExecutionOutputs.map(x=>x.siteReferenceKey).filter(x=>canonicalSiteIds.has(x)));
-assert.equal(executedProfileSiteIds.size,commercialCatalogIds.length,'all commercial canonical site identities must have a positive linked extraction output; N/A sites are excluded');
+assert.ok(executedProfileSiteIds.size<=commercialCatalogIds.length,'execution cannot exceed canonical commercial site identity set');
+const unobservedCommercialControllers=[];
+for(const row of Object.values(worldState)) for(const [siteKey,controller] of Object.entries(row?.mineSiteControllers||{})) {
+  const ref=controller.rawSiteReference;
+  if(ref?.commercialExtraction===true && controller.quantitativeDataState!=='AVAILABLE_OBSERVED') unobservedCommercialControllers.push(siteKey);
+}
+assert.ok(unobservedCommercialControllers.length>0,'freeze policy expects currently unobserved commercial quantitative sites to remain explicitly unobserved');
 assert(simulatedFieldOutputs.length>0,'expected hydrocarbon field execution assets');
 assert(siteLinkedExecutionOutputs.every(x=>(x?.producedQuantity||0)>0&&x?.effortUtilization>0&&x?.effortUtilization<=1),'some canonical site-linked output did not execute with valid utilization');
 assert(simulatedFieldOutputs.every(x=>(x?.producedQuantity||0)>0&&x?.effortUtilization>0&&x?.effortUtilization<=1),'some hydrocarbon field did not execute with modeled utilization');
@@ -175,8 +181,13 @@ for(const [countryId,row] of Object.entries(worldState)){
     const reserveRecord=(globalThis.OmegaResourceSiteReserveSimulationData?.records||[]).find(x=>x.siteId===siteKey);
     const commercial=controller.rawSiteReference?.commercialExtraction===true || reserveRecord?.commercialExtraction===true;
     if(commercial){
-      assert.equal(controller.extractionExecutable,true,countryId+' commercial controller not executable '+siteKey);
-      assert.equal(controller.extractionPathStatus,'EXECUTABLE_OCCURRENCE_ATTACHED');
+      if(controller.quantitativeDataState==='AVAILABLE_OBSERVED'){
+        assert.equal(controller.extractionExecutable,true,countryId+' observed commercial controller not executable '+siteKey);
+        assert.equal(controller.extractionPathStatus,'EXECUTABLE_OCCURRENCE_ATTACHED');
+      } else {
+        assert.equal(controller.extractionExecutable,false,countryId+' unobserved commercial controller must not become executable from simulation');
+        assert.equal(controller.extractionPathStatus,'BLOCKED_MISSING_QUANTITATIVE_DATA');
+      }
       assert(Array.isArray(controller.linkedOccurrenceKeys)&&controller.linkedOccurrenceKeys.length>=1);
       const occurrenceKey=controller.linkedOccurrenceKeys[0];
       const output=row.mineOutputs?.[occurrenceKey];
