@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "1.0.0",
+  "baselineType": "IMMUTABLE_RESOURCE_TRUTH_BASELINE",
+  "capturedAt": "2026-10-07",
+  "commit": "d8da8ebeb958c0786bbef6c407c9efba2ba72fda",
+  "branch": "main",
+  "repository": "Sabab-tech/world-map-strategy-",
+  "importantFiles": {
+    "resources.json": "8d158c5b1c23727a3ab16f2b14dd2601dfe7be39",
+    "resources_2.json": "b3a464b59bb1ef5a6b0c311f99642614a688b1b4",
+    "resource_site_canonical_catalog_v1.json": "7c857fdbba6639bdbb552c4d5d6a7472df642848",
+    "resource_site_research_evidence_v1.json": "4fd1e2680f23135c76c6af3726a9074b1c994ebe",
+    "resource_site_reserve_simulation_v1.json": "9f313ee03ca8f89ba232b332eb999821c484db91",
+    "omega_resource_realism_runtime_v1.js": "98e47e0d77ec91786624a463cf760dd3588343e9",
+    "omega_resource_endowment_runtime.js": "3566ee460517d7073aa9ccd4caa8259c0fd70f26",
+    "omega_resource_part04_identity_runtime.js": "f1b9e0d6042fcea36cf83dffcc380e45f12d243e",
+    "omega_resource_part05_reserve_extraction_runtime.js": "f3426a81732522ce90b54bd76e045765a5c3c39e"
+  },
+  "observedRepositoryFacts": {
+    "canonicalSiteCount": 199,
+    "scenarioReserveSiteCount": 199,
+    "scenarioCommercialSiteCount": 195,
+    "scenarioNotApplicableSiteCount": 4,
+    "resourceJsonIsPresentAndNonEmpty": true,
+    "resources2JsonIsPresentAndNonEmpty": true,
+    "quantitativeResearchDatasetPresent": false
+  },
+  "freezeRules": [
+    "Do not overwrite observed values with simulation values.",
+    "Do not create synthetic quantitative values to repair missing observed data.",
+    "Scenario reserve data remains simulation-only.",
+    "Every promoted quantitative field requires sourceDatasetId, sourceRecordId, sourceAuthority and effectiveDate.",
+    "Runtime site identity is siteId-based, never name-fuzzy."
+  ]
+}

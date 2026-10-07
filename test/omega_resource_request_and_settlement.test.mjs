@@ -2,13 +2,13 @@ import assert from 'node:assert/strict';
 
 globalThis.Game={state:{
   simulation:{turn:1},
-  cabinet:{BDG:{autonomyReservations:[]},SAU:{autonomyReservations:[]}},
-  finance:{BDG:{available:200000,reserves:200000,currencyCode:'USD'},SAU:{available:100000,reserves:100000,currencyCode:'USD'}},
-  resource:{BDG:{inventory:{crude_oil:0},production:{crude_oil:0},consumption:{crude_oil:1000},reserves:{crude_oil:0},tradeAvailability:{crude_oil:0}},
-            SAU:{inventory:{crude_oil:5000},production:{crude_oil:0},consumption:{crude_oil:0},reserves:{crude_oil:1000},tradeAvailability:{crude_oil:5000}}},
-  foreign:{BDG:{relations:{SAU:{overall:80,trade:85,trust:75,political:80,trade_agreement:true,sanctions:false,war_state:false}},treaties:{}},
-          SAU:{relations:{BDG:{overall:80,trade:85,trust:75,political:80,trade_agreement:true,sanctions:false,war_state:false}},treaties:{}}},
-  trade:{BDG:{marketPrice:{crude_oil:100},routeCapacity:{crude_oil:10000}},SAU:{marketPrice:{crude_oil:100},routeCapacity:{crude_oil:10000}}}
+  cabinet:{BD:{autonomyReservations:[]},SA:{autonomyReservations:[]}},
+  finance:{BD:{available:200000,reserves:200000,currencyCode:'USD'},SA:{available:100000,reserves:100000,currencyCode:'USD'}},
+  resource:{BD:{inventory:{crude_oil:0},production:{crude_oil:0},consumption:{crude_oil:1000},reserves:{crude_oil:0},tradeAvailability:{crude_oil:0}},
+            SA:{inventory:{crude_oil:5000},production:{crude_oil:0},consumption:{crude_oil:0},reserves:{crude_oil:1000},tradeAvailability:{crude_oil:5000}}},
+  foreign:{BD:{relations:{SA:{overall:80,trade:85,trust:75,political:80,trade_agreement:true,sanctions:false,war_state:false}},treaties:{}},
+          SA:{relations:{BD:{overall:80,trade:85,trust:75,political:80,trade_agreement:true,sanctions:false,war_state:false}},treaties:{}}},
+  trade:{BD:{marketPrice:{crude_oil:100},routeCapacity:{crude_oil:10000}},SA:{marketPrice:{crude_oil:100},routeCapacity:{crude_oil:10000}}}
 }};
 globalThis.CustomEvent=globalThis.CustomEvent||class{constructor(type,init={}){this.type=String(type);this.detail=init.detail;}};
 if(typeof globalThis.dispatchEvent!=='function'){const t=new EventTarget();globalThis.dispatchEvent=t.dispatchEvent.bind(t);globalThis.addEventListener=t.addEventListener.bind(t);}
@@ -29,30 +29,30 @@ await import('../omega_opponent_autonomy_system.js');
 await import('../omega_global_trade_system.js');
 
 const autonomy=globalThis.OmegaOpponentAutonomy;
-const plan=autonomy.importPlan('BDG','crude_oil',1000);
+const plan=autonomy.importPlan('BD','crude_oil',1000);
 assert(plan);
-assert(plan.countryId==='BDG');
+assert(plan.countryId==='BD');
 assert(plan.runtimeMeasurement?.selected?.action==='IMPORT');
 
-const supplier=autonomy.chooseImportSupplier('BDG',{runtimeMeasurement:{resourceId:'crude_oil',selected:{quantity:1000}}});
-assert.equal(supplier.countryId,'SAU');
+const supplier=autonomy.chooseImportSupplier('BD',{runtimeMeasurement:{resourceId:'crude_oil',selected:{quantity:1000}}});
+assert.equal(supplier.countryId,'SA');
 assert.equal(supplier.supply,5000);
 assert.equal(supplier.agreementObserved,true);
 
-const sent=autonomy.dispatch('OMEGA_AUTO_RESOURCE_IMPORT_REQUEST','BDG',{
-  requestId:'REQ-LIVE-1',targetCountryId:'SAU',resourceId:'crude_oil',quantity:1000,unitPrice:100,reservationId:'RES-REQ-1',decisionId:'REQ-DEC-1'
+const sent=autonomy.dispatch('OMEGA_AUTO_RESOURCE_IMPORT_REQUEST','BD',{
+  requestId:'REQ-LIVE-1',targetCountryId:'SA',resourceId:'crude_oil',quantity:1000,unitPrice:100,reservationId:'RES-REQ-1',decisionId:'REQ-DEC-1'
 });
 assert.equal(sent.status,'APPLIED');
-assert.equal(globalThis.Game.state.trade.BDG.importRequests[0].status,'SENT');
+assert.equal(globalThis.Game.state.trade.BD.importRequests[0].status,'SENT');
 
 const trade=globalThis.OmegaGlobalTrade;
-console.log('REVIEW_DIAG', JSON.stringify(trade.reviewRequest(globalThis.Game.state.trade.BDG.importRequests[0]), null, 2));
+console.log('REVIEW_DIAG', JSON.stringify(trade.reviewRequest(globalThis.Game.state.trade.BD.importRequests[0]), null, 2));
 trade.processAll();
 console.log('PROCESS_TRACE', JSON.stringify(globalThis.__OMEGA_LAST_TRADE_PROCESS_TRACE, null, 2));
-const req=globalThis.Game.state.trade.BDG.importRequests[0];
+const req=globalThis.Game.state.trade.BD.importRequests[0];
 assert.equal(req.status,'SETTLED');
-assert.equal(globalThis.Game.state.resource.BDG.inventory.crude_oil,1000);
-assert.equal(globalThis.Game.state.resource.SAU.inventory.crude_oil,4000);
-assert.equal(globalThis.Game.state.finance.BDG.available,100000);
-assert.equal(globalThis.Game.state.finance.SAU.available,200000);
+assert.equal(globalThis.Game.state.resource.BD.inventory.crude_oil,1000);
+assert.equal(globalThis.Game.state.resource.SA.inventory.crude_oil,4000);
+assert.equal(globalThis.Game.state.finance.BD.available,100000);
+assert.equal(globalThis.Game.state.finance.SA.available,200000);
 console.log('OMEGA AUTONOMOUS RESOURCE REQUEST AND SETTLEMENT TEST PASSED');

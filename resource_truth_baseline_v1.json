@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "OMEGA_RESOURCE_TRUTH_BASELINE_V1",
+  "capturedFromMainCommit": "d8da8ebeb958c0786bbef6c407c9efba2ba72fda",
+  "capturedAt": "2026-10-07",
+  "canonicalSiteCount": 199,
+  "rule": "Reference-only baseline evidence. It never authorizes overwriting observed data.",
+  "sourceFiles": [
+    "resources.json",
+    "resources_2.json",
+    "resource_site_canonical_catalog_v1.json",
+    "resource_site_research_evidence_v1.json",
+    "resource_site_quantitative_research_v1.json",
+    "resource_site_reserve_simulation_v1.json"
+  ],
+  "authorityLayers": [
+    "OBSERVED",
+    "MODELED",
+    "SIMULATED",
+    "UNOBSERVED"
+  ],
+  "preservationRule": "Existing observed values must not be replaced by synthetic/model values."
+}

@@ -102,6 +102,7 @@ try {
 await import('./omega_server_ai_gateway.js');
 
 const CANONICAL_AI_SCRIPTS = Object.freeze([
+  'omega_resource_truth_contract.js',
   'omega_language_system.js',
   'omega_language_batch03_semantic_extension.js',
   'omega_country_semantic_bridge.js',
