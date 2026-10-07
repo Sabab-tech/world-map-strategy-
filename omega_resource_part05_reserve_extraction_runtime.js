@@ -165,14 +165,18 @@
       const activeRate=observedRate!==null?observedRate:nominalRate*utilization;
       const capacityAuthority=observedRate!==null?'OBSERVED':'SIMULATION_DEFAULT_NO_DATA_RATE';
 
+      const explicitRecoverable=num(raw.recoverableQuantity),recoverableQuantity=explicitRecoverable!==null?explicitRecoverable:declared;
       const reserve=new ReserveState({
         occurrenceKey:occ.occurrenceKey,
         countryId:canonicalCountry(occ.countryId),
         depositKey:occ.depositKey,
         resourceId:occ.resourceTypeId,
         geologicalQuantity:declared,
-        recoverableQuantity:declared,
-        residualQuantity:declared,
+        recoverableQuantity,
+        residualQuantity:num(raw.residualQuantity)??recoverableQuantity,
+        recoverabilityStatus:explicitRecoverable!==null?'OBSERVED':'MODELED',
+        recoverabilityAuthority:explicitRecoverable!==null?'OBSERVED':'SIMULATED',
+        recoverabilityBasis:explicitRecoverable!==null?'EXPLICIT_SOURCE_RECOVERABLE_QUANTITY':'MODELED_STOCK_PROXY_FROM_GEOLOGICAL_QUANTITY',
         unit:parsed.targetUnit||type.unit||null,
         operationalStatus:active?'ACTIVE_EXTRACTION':'BLOCKED',
         stateVersion:1,
@@ -208,6 +212,8 @@
         authority:capacityAuthority,
         productionAuthority:capacityAuthority,
         stateAuthority:capacityAuthority,
+        recoverabilityAuthority:explicitRecoverable!==null?'OBSERVED':'SIMULATED',
+        recoverabilityStatus:explicitRecoverable!==null?'OBSERVED':'MODELED',
         dataStatus:capacityAuthority==='OBSERVED'?'OBSERVED':'SIMULATED',
         simulationExtractionHorizonDays:horizon
       });
