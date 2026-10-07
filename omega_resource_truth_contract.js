@@ -22,7 +22,7 @@
     SCENARIO_RESERVE:'resource_site_reserve_simulation_v1.json'
   });
 
-  const clone=(v,seen=new WeakMap())=>{
+  const numberOrNull=v=>{\n    if(v===null||v===undefined||(typeof v==='string'&&!v.trim()))return null;\n    const n=typeof v==='number'?v:Number(String(v).replace(/,/g,''));\n    return Number.isFinite(n)?n:null;\n  };\n\n  const clone=(v,seen=new WeakMap())=>{
     if(v===null||typeof v!=='object')return v;
     if(seen.has(v))return seen.get(v);
     if(Array.isArray(v)){const a=[];seen.set(v,a);for(const x of v)a.push(clone(x,seen));return a;}
@@ -213,18 +213,18 @@
         provenance:{sourceDatasetId:DATASETS.SCENARIO_RESERVE,sourceRecordId:siteId,sourceAuthority:'SCENARIO_SIMULATION_DATA',effectiveDate:null}
       }:null;
       const researchReserve=site?.quantitativeProfile?.reserve||site?.researchFacts?.quantitativeProfile?.reserve||null;
-      const parsedObservedReserve=norm(reserve.authority)==='OBSERVED'&&finite(Number(reserve.quantity))&&Number(reserve.quantity)>0?reserve:null;
+      const parsedObservedReserve=norm(reserve.authority)==='OBSERVED'&&finite(numberOrNull(reserve.quantity))&&numberOrNull(reserve.quantity)>0?reserve:null;
       const observedReserveValue=site?.reserveQuantity??site?.geologicalQuantity??site?.reservesQuantity??researchReserve?.quantity??parsedObservedReserve?.quantity??null;
       const observedReserveUnit=site?.reserveUnit||researchReserve?.unit||parsedObservedReserve?.unit||reserve.unit||null;
-      const reserveObserved=finite(Number(observedReserveValue))&&Number(observedReserveValue)>0;
-      const observedReserve=reserveObserved?{value:Number(observedReserveValue),unit:observedReserveUnit,measurementBasis:site?.reserveBasis||'MINERAL_RESERVE',commodity:resourceId,authority:AUTHORITY.OBSERVED,status:STATUS.AVAILABLE,provenance:{sourceDatasetId:site?.sourceDatasetId||DATASETS.QUANTITATIVE_RESEARCH,sourceRecordId:siteId,sourceAuthority:'RESEARCH_EVIDENCE',effectiveDate:site?.effectiveDate||null}}:null;
-      stream.reserve={quantity:reserveObserved?Number(observedReserveValue):null,unit:reserveObserved?observedReserveUnit:(reserve.unit||null),
+      const reserveObserved=finite(numberOrNull(observedReserveValue))&&numberOrNull(observedReserveValue)>0;
+      const observedReserve=reserveObserved?{value:numberOrNull(observedReserveValue),unit:observedReserveUnit,measurementBasis:site?.reserveBasis||'MINERAL_RESERVE',commodity:resourceId,authority:AUTHORITY.OBSERVED,status:STATUS.AVAILABLE,provenance:{sourceDatasetId:site?.sourceDatasetId||DATASETS.QUANTITATIVE_RESEARCH,sourceRecordId:siteId,sourceAuthority:'RESEARCH_EVIDENCE',effectiveDate:site?.effectiveDate||null}}:null;
+      stream.reserve={quantity:reserveObserved?numberOrNull(observedReserveValue):null,unit:reserveObserved?observedReserveUnit:(reserve.unit||null),
         authority:reserveObserved?AUTHORITY.OBSERVED:AUTHORITY.UNOBSERVED,status:reserveObserved?STATUS.AVAILABLE:STATUS.UNOBSERVED,
         measurementBasis:reserveObserved?(site?.reserveBasis||'MINERAL_RESERVE'):null,
         scenario:scenarioReserve,fieldAuthority:reserveObserved?AUTHORITY.OBSERVED:AUTHORITY.UNOBSERVED};
       const researchRate=site?.quantitativeProfile?.production?.dailyRate??site?.quantitativeProfile?.production?.rate??site?.researchFacts?.quantitativeProfile?.production?.dailyRate??site?.researchFacts?.quantitativeProfile?.production?.rate??null;
-      const observedRate=finite(Number(production.observedRate))?Number(production.observedRate):(finite(Number(researchRate))?Number(researchRate):null);
-      const simulatedRate=finite(Number(production.activeRate))?Number(production.activeRate):null;
+      const observedRate=finite(numberOrNull(production.observedRate))?numberOrNull(production.observedRate):(finite(numberOrNull(researchRate))?numberOrNull(researchRate):null);
+      const simulatedRate=finite(numberOrNull(production.activeRate))?numberOrNull(production.activeRate):null;
       const layers=classifyCurrentProduction({observedRate,simulatedRate,unit:production.unit||reserve.unit,provenance:{sourceDatasetId:site?.sourceDatasetId||null,sourcePath:site?.sourcePath||null,sourceRecordId:site?.sourceRecordId||siteId,sourceAuthority:site?.sourceAuthority||null,effectiveDate:site?.effectiveDate||null}});
       stream.production={...production,currentProduction:layers.current?.value??null,currentProductionAuthority:layers.current?.authority||AUTHORITY.UNOBSERVED,
         currentProductionStatus:layers.current?STATUS.AVAILABLE:STATUS.UNOBSERVED,simulationProduction:layers.simulation?.value??null,simulationProductionAuthority:layers.simulation?.authority||AUTHORITY.UNOBSERVED};
