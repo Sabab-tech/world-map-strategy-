@@ -20,7 +20,7 @@
   const n=v=>{const x=Number(v);return Number.isFinite(x)?x:null;};
   const state=()=>g.Game?.state||g.gameState||{};
   const simulationYear=()=>{const d=state()?.simulation?.date;if(d){const y=Number(String(d).slice(0,4));if(Number.isFinite(y))return y;}const sy=Number(state()?.simulation?.startYear);return Number.isFinite(sy)?sy:2015;};
-  let simulationReserveMap=null,simulationReservePromise=null,researchEvidenceMap=null,researchEvidencePromise=null,quantitativeResearchMap=null,quantitativeResearchPromise=null,operatingCostResearchMap=null,operatingCostResearchPromise=null,canonicalSiteMap=null,canonicalSitePromise=null,siteReferenceCache=new Map(),siteReferenceCacheSignature='',canonicalSiteByIdentity=new Map(),canonicalSiteByLinkedId=new Map();
+  let simulationReserveMap=null,simulationReservePromise=null,researchEvidenceMap=null,researchEvidencePromise=null,quantitativeResearchMap=null,quantitativeResearchPromise=null,operatingCostResearchMap=null,operatingCostResearchPromise=null,canonicalSiteMap=null,canonicalSitePromise=null,siteReferenceCache=new Map(),siteReferenceCacheSignature='',canonicalSiteByIdentity=new Map(),canonicalSiteByLinkedId=new Map(),resourceExecutionCountryCache=[],resourceExecutionCountrySignature='';
   async function loadSimulationReserveData(){
     if(simulationReserveMap)return{status:'READY',count:Object.keys(simulationReserveMap).length,reused:true};
     if(simulationReservePromise)return simulationReservePromise;
@@ -351,6 +351,22 @@
     countriesCache=result.slice();
     countriesCacheProfileSignature=Object.keys(profiles).join('|');
     return result;
+  }
+  function resourceExecutionCountries(){
+    const all=countries(),sig=all.join('|')+'|'+String(Object.keys(canonicalSiteMap||{}).length)+'|'+String(Array.isArray(engine()?.deposits)?engine().deposits.length:0);
+    if(resourceExecutionCountryCache.length&&resourceExecutionCountrySignature===sig)return resourceExecutionCountryCache.slice();
+    const active=new Set();
+    const e=engine(),deposits=Array.isArray(e?.deposits)?e.deposits:[];
+    for(const d of deposits){const cc=canonical(d?.countryCode||d?.countryId||d?.country||'');if(cc)active.add(cc);}
+    for(const cc of all){
+      const refs=mineSiteReferenceRows(cc);
+      if(refs.some(x=>String(x?.extractionEligibility||'').toUpperCase()==='EXECUTABLE'||x?.commercialExtraction!==false))active.add(cc);
+      const p=profile(cc),h=p?.hydrocarbon_resource_base||{};
+      if((Array.isArray(h?.oil)&&h.oil.length)||(Array.isArray(h?.naturalGas)&&h.naturalGas.length))active.add(cc);
+    }
+    resourceExecutionCountryCache=all.filter(cc=>active.has(cc));
+    resourceExecutionCountrySignature=sig;
+    return resourceExecutionCountryCache.slice();
   }
   function countryState(c){
     const cid=canonical(c),s=state();if(!s.resource)s.resource={};if(!s.resource[cid])s.resource[cid]={};
@@ -1314,7 +1330,12 @@ function batchFromExtraction(x,record){
     g.__omegaResourceExtractionTurn=t;
     install();
     const results=[];
-    for(const c of countries()){
+    const allCountries=countries(),executionCountries=new Set(resourceExecutionCountries());
+    for(const c of allCountries){
+      if(!executionCountries.has(c)){
+        results.push({countryId:c,result:{status:'NO_RESOURCE_ACTIVITY',extracted:0,blocked:0,records:[]}});
+        continue;
+      }
       const existing=state()?.resource?.[c]||{};
       if(!Array.isArray(existing.mineSiteReferences)||!existing.mineSiteControllers){
         const hydrate=dispatch('OMEGA_RESOURCE_ENDOWMENT_HYDRATE',c,{correlationId:'RESOURCE-HYDRATE-LAZY-'+t+'-'+c});
