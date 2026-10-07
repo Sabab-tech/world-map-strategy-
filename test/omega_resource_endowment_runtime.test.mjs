@@ -74,7 +74,7 @@ assert.equal(hydrated.status,'APPLIED', JSON.stringify(hydrated));
 const before=runtime.countryResourceState('BGD');
 assert(before);
 assert(Array.isArray(before.mines));
-assert(before.mines.length>=4);
+assert(before.mines.length>=4,JSON.stringify({mineCount:before.mines.length,names:before.mines.map(x=>({site:x.depositName,assetType:x.assetType,resourceId:x.resourceId,sim:x.simulationGenerated}))}));
 assert((before.reserves.natural_gas||0)>0);
 assert((before.endowment.natural_gas||0)>0);
 assert(before.resourceAuthority);
