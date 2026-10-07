@@ -22,7 +22,13 @@
     SCENARIO_RESERVE:'resource_site_reserve_simulation_v1.json'
   });
 
-  const numberOrNull=v=>{\n    if(v===null||v===undefined||(typeof v==='string'&&!v.trim()))return null;\n    const n=typeof v==='number'?v:Number(String(v).replace(/,/g,''));\n    return Number.isFinite(n)?n:null;\n  };\n\n  const clone=(v,seen=new WeakMap())=>{
+  const numberOrNull=v=>{
+    if(v===null||v===undefined||(typeof v==='string'&&!v.trim()))return null;
+    const n=typeof v==='number'?v:Number(String(v).replace(/,/g,''));
+    return Number.isFinite(n)?n:null;
+  };
+
+  const clone=(v,seen=new WeakMap())=>{
     if(v===null||typeof v!=='object')return v;
     if(seen.has(v))return seen.get(v);
     if(Array.isArray(v)){const a=[];seen.set(v,a);for(const x of v)a.push(clone(x,seen));return a;}
