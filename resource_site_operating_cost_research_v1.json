@@ -1,9 +1,9 @@
 {
-  "schemaVersion": "1.0.1",
+  "schemaVersion": "1.0.2",
   "datasetId": "OMEGA_RESOURCE_SITE_OPERATING_COST_RESEARCH_V1",
   "generatedDate": "2026-10-07",
   "authority": "SITE_SPECIFIC_COST_RESEARCH_LAYER",
-  "rule": "Observed cost evidence has higher authority. Missing numeric costs are explicitly MODELED and remain separate from observed facts.",
+  "rule": "Observed cost evidence has higher authority. Missing numeric costs are explicitly MODELED and remain separate from observed facts. Modeled cost states expose site-specific driver fields; unknown drivers remain null rather than being fabricated.",
   "coverage": {
     "siteCount": 199,
     "observedNumericCost": 1,
@@ -43,7 +43,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "underground longwall",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -91,7 +96,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "open-cast dragline and shovel",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -135,7 +145,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "open-pit truck and shovel",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -181,7 +196,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "deep underground vein mining",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -225,7 +245,12 @@
             "recovery": null,
             "throughput": null,
             "status": "SUSPENDED",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "open-cast limestone quarrying with drilling, blasting, loading and truck haulage",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -272,7 +297,12 @@
             "recovery": null,
             "throughput": null,
             "status": "HISTORICAL_INACTIVE",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "SURFACE_MINING_QUARRYING",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -316,7 +346,12 @@
             "recovery": null,
             "throughput": null,
             "status": "DEVELOPMENT",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "planned open-pit mining",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -363,7 +398,12 @@
             "recovery": null,
             "throughput": null,
             "status": "RESTRICTED",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "LAGOON_CORAL_AND_SAND_EXTRACTION",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -409,7 +449,12 @@
             "recovery": null,
             "throughput": null,
             "status": "LIMITED",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Open-pit iron-ore mining with primary crushing, screening and dry separation; downstream beneficiation under development",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -455,7 +500,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "open-pit and underground",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -499,7 +549,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "onshore wells and gathering",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -548,7 +603,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "open-pit phosphate mining with beneficiation and slurry transport integration",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -595,7 +655,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "surface and underground phosphate mining",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -639,7 +704,12 @@
             "recovery": null,
             "throughput": null,
             "status": "DISRUPTED",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "open-pit and underground",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -683,7 +753,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "open-pit and beneficiation",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -733,7 +808,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "open-pit and processing",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -777,7 +857,12 @@
             "recovery": null,
             "throughput": null,
             "status": "LIMITED",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "surface quarrying",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -799,7 +884,21 @@
         "unit": "USD_PER_TONNE_CONCENTRATE",
         "value": 70.9,
         "basis": "SITE_SPECIFIC_OWNER_FEASIBILITY_EVIDENCE",
-        "model": null
+        "model": null,
+        "observedDriverContext": {
+          "extractionMethod": "planned open-pit phosphate mining with beneficiation",
+          "depth": null,
+          "energy": null,
+          "maintenance": null,
+          "transport": null,
+          "grade": {
+            "value": 30,
+            "unit": "percent_P2O5",
+            "status": "OBSERVED"
+          },
+          "recovery": null,
+          "throughput": null
+        }
       },
       "provenance": {
         "linkedEvidenceSiteId": "SITE_FARIM_phosphate_project",
@@ -845,7 +944,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "open-pit truck and shovel",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -899,7 +1003,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "mineral-sands mining feeding wet concentrator plants and mineral separation facilities",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -951,7 +1060,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "open-pit iron ore mining with crushing and screening of DSO and concentration of lower-grade ore",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -1000,7 +1114,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "open-pit and CIL",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -1052,7 +1171,12 @@
               "status": "OBSERVED"
             },
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "open-pit",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -1096,7 +1220,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "surface phosphate mining",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -1149,7 +1278,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "industrial limestone quarrying for cement manufacture",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -1208,7 +1342,12 @@
               "status": "OBSERVED"
             },
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "open-pit",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -1252,7 +1391,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "open-pit and underground",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -1296,7 +1440,12 @@
             "recovery": null,
             "throughput": null,
             "status": "CARE_AND_MAINTENANCE",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "open-pit uranium mining",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -1344,7 +1493,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "SURFACE_MINING",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -1388,7 +1542,12 @@
             "recovery": null,
             "throughput": null,
             "status": "DEVELOPMENT",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Surface extraction of volcanic pozzolana for construction-material use",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -1432,7 +1591,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "large-scale open-cast phosphate mining with beneficiation and long-distance conveyor transport to Laayoune",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -1476,7 +1640,12 @@
             "recovery": null,
             "throughput": null,
             "status": "DEVELOPMENT",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "planned large-scale iron ore mining with beneficiation and export infrastructure",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -1520,7 +1689,12 @@
             "recovery": null,
             "throughput": null,
             "status": "DEVELOPMENT",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Open-pit and underground project development",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -1564,7 +1738,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ARTISANAL_AND_LIMITED",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "surface small-scale mining",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -1608,7 +1787,12 @@
             "recovery": null,
             "throughput": null,
             "status": "SUSPENDED",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "open-pit",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -1654,7 +1838,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "open-pit kimberlite mining using large excavators and haul trucks, followed by diamond recovery and sorting",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -1710,7 +1899,12 @@
               "status": "OBSERVED"
             },
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "underground mechanized",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -1758,7 +1952,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "open-pit",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -1802,7 +2001,12 @@
             "recovery": null,
             "throughput": null,
             "status": "RESTARTING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "offshore platforms and subsea wells",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -1850,7 +2054,12 @@
             "recovery": null,
             "throughput": null,
             "status": "LIMITED",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "surface quarrying",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -1894,7 +2103,12 @@
             "recovery": null,
             "throughput": null,
             "status": "SUSPENDED",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Open-pit and underground mining; ROM ore crushing followed by cyanide processing",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -1938,7 +2152,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "surface extraction and processing of diatomaceous earth",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -1990,7 +2209,12 @@
             },
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "open-pit and underground",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -2034,7 +2258,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "surface quarrying",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -2078,7 +2307,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "underground tin mining across six mines with ore concentration",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -2122,7 +2356,12 @@
             "recovery": null,
             "throughput": null,
             "status": "DEVELOPMENT",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "planned open-pit laterite nickel mining with drilling, resource definition and future beneficiation",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -2169,7 +2408,12 @@
             "recovery": null,
             "throughput": null,
             "status": "RESOURCE_IDENTITY_UNVERIFIED",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Unverified small-scale mineral extraction; gold-specific commercial operation not established",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -2217,7 +2461,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "LARGE_SCALE_LIMESTONE_QUARRYING",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -2269,7 +2518,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "open-pit and underground mining with flotation processing",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -2313,7 +2567,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "onshore production wells",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -2357,7 +2616,12 @@
             "recovery": null,
             "throughput": null,
             "status": "RESTARTING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "open-pit uranium mining",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -2409,7 +2673,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "surface lateritic nickel mining using hydraulic excavators and articulated haulage",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -2453,7 +2722,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Surface basalt extraction, crushing and aggregate production",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -2497,7 +2771,12 @@
             "recovery": null,
             "throughput": null,
             "status": "LIMITED",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "GRANITE_QUARRYING_AND_CRUSHING",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -2541,7 +2820,12 @@
             "recovery": null,
             "throughput": null,
             "status": "LIMITED",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Basalt quarrying with crushing and aggregate production",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -2585,7 +2869,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "large open-pit PGM mining",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -2635,7 +2924,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "open-pit and flotation",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -2679,7 +2973,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "open-pit and underground",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -2723,7 +3022,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "large-scale open-pit uranium mining with conventional truck-and-shovel excavation and ore processing",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -2771,7 +3075,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "open-pit kimberlite",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -2815,7 +3124,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "open-pit",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -2866,7 +3180,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "open-pit diamond mining from Main Pipe and Satellite Pipe kimberlite followed by ore treatment and diamond recovery",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -2910,7 +3229,12 @@
             "recovery": null,
             "throughput": null,
             "status": "HISTORICAL_INACTIVE",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "historical surface workings",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -2954,7 +3278,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "open-pit and CIL",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -2998,7 +3327,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Hard-rock gabbro quarrying with blasting, crushing, sizing and marine export logistics",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -3042,7 +3376,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "offshore platforms and subsea wells",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -3086,7 +3425,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "onshore drilling and gathering",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -3130,7 +3474,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Open-pit copper mining with beneficiation/concentration",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -3174,7 +3523,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "onshore well-field",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -3218,7 +3572,12 @@
             "recovery": null,
             "throughput": null,
             "status": "DISRUPTED",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "onshore drilling",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -3263,7 +3622,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "wells and water injection",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -3315,7 +3679,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "open-pit and concentrator",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -3359,7 +3728,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "open-pit and solution mining",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -3403,7 +3777,12 @@
             "recovery": null,
             "throughput": null,
             "status": "DISPUTED_OPERATION",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "onshore production wells",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -3447,7 +3826,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "open-pit phosphate mining",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -3491,7 +3875,12 @@
             "recovery": null,
             "throughput": null,
             "status": "LIMITED",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Limestone quarrying subject to quarry licensing and environmental controls",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -3535,7 +3924,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "offshore subsea wells",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -3579,7 +3973,12 @@
             "recovery": null,
             "throughput": null,
             "status": "DEVELOPMENT",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "offshore subsea wells; subsea pipeline to Al-Arish, Egypt",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -3623,7 +4022,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "underground/open-pit and concentration",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -3667,7 +4071,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "underground longwall",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -3711,7 +4120,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Limestone mining using open-pit/glory-hole and underground methods depending on the mine seat",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -3755,7 +4169,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "open-pit and beneficiation",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -3799,7 +4218,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "open-pit and block cave",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -3843,7 +4267,12 @@
             "recovery": null,
             "throughput": null,
             "status": "LIMITED",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Surface marble/stone quarrying with cutting and stone processing",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -3887,7 +4316,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "open-pit truck and shovel",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -3931,7 +4365,12 @@
             "recovery": null,
             "throughput": null,
             "status": "LIMITED",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Conventional open-pit mining with resin-in-leach processing",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -3975,7 +4414,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "open-pit polymetallic mining with ore processing and recovery of tungsten and other minerals",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -4025,7 +4469,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "large-scale lignite open-pit mining with excavation and coal transport to Mae Moh Power Plant",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -4073,7 +4522,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "underground/open-pit",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -4117,7 +4571,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "open-pit and processing",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -4161,7 +4620,12 @@
             "recovery": null,
             "throughput": null,
             "status": "HISTORICAL_INACTIVE",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Historical granite quarrying",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -4205,7 +4669,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "offshore platform drilling",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -4253,7 +4722,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "open-pit and CIL",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -4300,7 +4774,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Open-pit mining feeding conventional milling and flotation",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -4344,7 +4823,12 @@
             "recovery": null,
             "throughput": null,
             "status": "CESSATION_OF_PRODUCTION",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "offshore production, gas reinjection and condensate recovery",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -4395,7 +4879,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "open-pit coal mining in the Bogatyr and Severny mines",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -4439,7 +4928,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "large-scale open-pit mining with drilling, blasting, haulage and ore delivery to processing plants",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -4493,7 +4987,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "deep gas-well drilling and phased natural-gas field development",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -4538,7 +5037,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "open-pit",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -4582,7 +5086,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "open-pit mining with CIL processing",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -4626,7 +5135,12 @@
             "recovery": null,
             "throughput": null,
             "status": "LIMITED",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "underground and surface",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -4670,7 +5184,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "large open-pit",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -4714,7 +5233,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "offshore platforms and subsea",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -4758,7 +5282,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "large open-pit and beneficiation",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -4802,7 +5331,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "bucket-wheel open-pit",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -4846,7 +5380,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Limestone quarry extraction with crushing and mineral processing",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -4890,7 +5429,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "underground room-and-pillar",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -4934,7 +5478,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Open-air and underground dimension-stone quarrying",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -4978,7 +5527,12 @@
             "recovery": null,
             "throughput": null,
             "status": "CARE_AND_MAINTENANCE",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Open-pit mining was historical; current project is being advanced as a polymetallic mining-metallurgical development",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -5022,7 +5576,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "bucket-wheel open-pit",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -5066,7 +5625,12 @@
             "recovery": null,
             "throughput": null,
             "status": "DISRUPTED",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Open-pit and underground iron-ore mining with crushing and beneficiation",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -5110,7 +5674,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Solution mining of magnesium salt/brine with processing at the Veendam site",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -5154,7 +5723,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Open-pit limestone quarrying",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -5198,7 +5772,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Underground salt extraction",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -5244,7 +5823,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "large-scale underground iron ore mining with drilling, blasting, haulage and processing",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -5288,7 +5872,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Open-pit ilmenite mining",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -5332,7 +5921,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Open-pit iron ore mining with drilling, blasting, loading and transport",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -5376,7 +5970,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "underground mining",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -5420,7 +6019,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Open-pit limestone quarrying",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -5467,7 +6071,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Underground mining",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -5513,7 +6122,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Underground tungsten mining with gravity-based milling and concentrate production",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -5562,7 +6176,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Underground mining",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -5606,7 +6225,12 @@
             "recovery": null,
             "throughput": null,
             "status": "HISTORICAL_INACTIVE",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Historical underground uranium mining",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -5650,7 +6274,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Large open-pit copper mining with crushing and flotation processing",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -5694,7 +6323,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Open-pit lignite mining supplying the Mátra power plant",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -5741,7 +6375,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Magnesite mining with beneficiation/concentrate production",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -5785,7 +6424,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Underground sub-level long-hole open stoping with paste backfill",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -5829,7 +6473,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Open-pit copper mining with crushing, flotation and integrated smelting within the Bor operation",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -5873,7 +6522,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Open-pit quarrying of limestone/technical stone and industrial mineral aggregate",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -5917,7 +6571,12 @@
             "recovery": null,
             "throughput": null,
             "status": "NO_CURRENT_CONCESSION",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Historical industrial limestone extraction; no current concession verified",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -5961,7 +6620,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Surface oil-shale mining supplying oil-shale processing and power-generation value chains",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -6005,7 +6669,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Quarrying and crushing of dolomite for aggregates",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -6049,7 +6718,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Open-pit limestone quarrying feeding the Akmenės cement plant",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -6093,7 +6767,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Underground potash mining with beneficiation into K2O-equivalent potash fertilizer products",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -6137,7 +6816,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Limestone/chalk quarrying for cutting-block raw material",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -6181,7 +6865,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Underground and surface chromite mining with ore beneficiation",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -6225,7 +6914,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Underground zinc-lead mining with paste backfill, dry-stack tailings and flotation",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -6269,7 +6963,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Underground mining at Rupice with crushing, flotation and concentrate production",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -6313,7 +7012,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Open-pit lignite/coal mining supplying thermal power generation",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -6357,7 +7061,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "surface aggregate extraction",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -6401,7 +7110,12 @@
             "recovery": null,
             "throughput": null,
             "status": "HISTORICAL_INACTIVE",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Historical underground iron-ore mining",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -6445,7 +7159,12 @@
             "recovery": null,
             "throughput": null,
             "status": "PERMIT_PROCESSING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Hardstone extraction, inert-waste recycling and quarry backfilling",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -6489,7 +7208,12 @@
             "recovery": null,
             "throughput": null,
             "status": "HISTORICAL_INACTIVE",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Historical underground/surface mining; later leaching and SX-EW processing",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -6533,7 +7257,12 @@
             "recovery": null,
             "throughput": null,
             "status": "HISTORICAL_INACTIVE",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Historical underground iron-ore extraction",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -6577,7 +7306,12 @@
             "recovery": null,
             "throughput": null,
             "status": "NOT_APPLICABLE",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "no commercial mineral extraction",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -6621,7 +7355,12 @@
             "recovery": null,
             "throughput": null,
             "status": "NOT_APPLICABLE",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "no commercial mineral extraction",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -6665,7 +7404,12 @@
             "recovery": null,
             "throughput": null,
             "status": "NOT_APPLICABLE",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "no commercial mineral extraction",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -6709,7 +7453,12 @@
             "recovery": null,
             "throughput": null,
             "status": "NOT_APPLICABLE",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "no commercial mineral extraction",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -6756,7 +7505,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Large-scale open-pit porphyry copper mining with concentration, heap leaching and SX-EW",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -6802,7 +7556,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "open-pit and underground nickel mining with processing of nickel-bearing ore",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -6848,7 +7607,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "large-scale open-pit polymetallic mining with processing circuits",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -6894,7 +7658,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "large-scale open-pit iron ore mining with high-capacity haulage and processing",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -6938,7 +7707,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "open-pit and underground",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -6984,7 +7758,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "open-pit and underground copper mining with concentration and processing",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -7028,7 +7807,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Large-scale open-pit thermal coal mining with rail and port logistics",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -7072,7 +7856,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "open-pit and concentration",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -7116,7 +7905,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Onshore and shallow-water oil wells with gathering and field processing",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -7160,7 +7954,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Large open-pit copper mining with crushing, grinding and flotation concentration",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -7204,7 +8003,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "open-pit polymetallic mining with crushing, milling, flotation and concentrate transport",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -7248,7 +8052,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Quarrying of limestone and associated cement raw materials feeding the Vallemí plant",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -7292,7 +8101,12 @@
             "recovery": null,
             "throughput": null,
             "status": "RESTARTING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Gold mining district with ore-processing plant rehabilitation and restart",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -7336,7 +8150,12 @@
             "recovery": null,
             "throughput": null,
             "status": "SUSPENDED",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "large open-pit copper mining",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -7380,7 +8199,12 @@
             "recovery": null,
             "throughput": null,
             "status": "HISTORICAL_INACTIVE",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Historical gold mining",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -7427,7 +8251,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Combination of open-pit and underground gold mining feeding the Limon mill",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -7475,7 +8304,12 @@
             "recovery": null,
             "throughput": null,
             "status": "LIMITED",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Underground zinc-lead-silver mining with crushing and flotation",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -7523,7 +8357,12 @@
             "recovery": null,
             "throughput": null,
             "status": "HISTORICAL_INACTIVE",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Historical underground gold mining and exploration; no confirmed current commercial operation",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -7571,7 +8410,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "open-pit laterite mining",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -7615,7 +8459,12 @@
             "recovery": null,
             "throughput": null,
             "status": "LIMITED",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "surface sand and aggregate",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -7661,7 +8510,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "open-pit lateritic nickel mining feeding pressure-acid-leach processing",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -7705,7 +8559,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "laterite mining and processing",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -7749,7 +8608,12 @@
             "recovery": null,
             "throughput": null,
             "status": "HISTORICAL_INACTIVE",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "LATERITIC_NICKEL_MINING_AND_CARON_PROCESS_HISTORY",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -7793,7 +8657,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Surface bauxite mining, rail haulage to port, drying and export",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -7837,7 +8706,12 @@
             "recovery": null,
             "throughput": null,
             "status": "LIMITED",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "surface quarrying",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -7881,7 +8755,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Open-pit truck-and-shovel mining with CIL processing and stockpile blending",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -7925,7 +8804,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Offshore oil and gas wells with subsea/wellhead gathering and field processing",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -7969,7 +8853,12 @@
             "recovery": null,
             "throughput": null,
             "status": "HISTORICAL_INACTIVE",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "MARINE_DREDGING",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -8013,7 +8902,12 @@
             "recovery": null,
             "throughput": null,
             "status": "LIMITED",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "No current quarry extraction at Checker Hall is established; current site operation is cement grinding",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -8057,7 +8951,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "surface aggregate quarrying",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -8101,7 +9000,12 @@
             "recovery": null,
             "throughput": null,
             "status": "RESOURCE_IDENTITY_UNVERIFIED",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "surface aggregate quarrying",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -8149,7 +9053,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "HARD_ROCK_BASALT_QUARRYING_AND_CRUSHING",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -8193,7 +9102,12 @@
             "recovery": null,
             "throughput": null,
             "status": "RESOURCE_IDENTITY_UNVERIFIED",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "surface quarrying",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -8237,7 +9151,12 @@
             "recovery": null,
             "throughput": null,
             "status": "LIMITED",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "surface quarrying",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -8281,7 +9200,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "QUARRYING_AND_CRUSHING",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -8325,7 +9249,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Open-pit gold mining with conventional milling, gravity and carbon-in-leach processing",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -8372,7 +9301,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Open-pit and underground gold mining with gravity separation and cyanide leaching",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -8416,7 +9350,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Large open-pit gold-copper mining with concentrator and processing plant",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -8463,7 +9402,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Open-pit and underground gold mining with carbon-in-leach and pressure oxidation processing",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -8507,7 +9451,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Large open-pit gold mining with stockpile processing and conventional gold recovery",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -8551,7 +9500,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Underground gold mining with concentration; limited doré also recovered from tailings retreatment",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -8595,7 +9549,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "OPEN_PIT_MINING",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -8639,7 +9598,12 @@
             "recovery": null,
             "throughput": null,
             "status": "LIMITED",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Rock quarrying with crushing and aggregate production",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -8683,7 +9647,12 @@
             "recovery": null,
             "throughput": null,
             "status": "LIMITED",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "VOLCANIC_BASALT_QUARRYING_AND_CRUSHING",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -8727,7 +9696,12 @@
             "recovery": null,
             "throughput": null,
             "status": "LIMITED",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Quarry extraction, crushing and aggregate/gravel supply",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -8771,7 +9745,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "LAGOON_DREDGING_AND_CORAL_CRUSHING",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -8815,7 +9794,12 @@
             "recovery": null,
             "throughput": null,
             "status": "HISTORICAL_INACTIVE",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "CORAL_AGGREGATE_BORROW_PITS",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -8859,7 +9843,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "secondary surface extraction",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -8903,7 +9892,12 @@
             "recovery": null,
             "throughput": null,
             "status": "ACTIVE_PRODUCING",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "QUARRYING_AND_AGGREGATE_CRUSHING",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -8947,7 +9941,12 @@
             "recovery": null,
             "throughput": null,
             "status": "LIMITED",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Hard-rock basalt quarrying with aggregate production",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
@@ -8991,7 +9990,12 @@
             "recovery": null,
             "throughput": null,
             "status": "LIMITED",
-            "processing": null
+            "processing": null,
+            "extractionMethod": "Limestone quarrying with crushing and aggregate-product production",
+            "depth": null,
+            "energy": null,
+            "maintenance": null,
+            "transport": null
           },
           "rule": "No universal dollar value is asserted. Numeric modeled cost requires explicit site-specific inputs and calibration."
         }
