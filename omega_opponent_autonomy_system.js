@@ -192,13 +192,31 @@
   }
 
   function canonicalCountry(value){
-    const raw=String(value??'').trim(),direct=id(raw);
-    if(/^[A-Z]{3}$/i.test(raw))return{id:direct,raw:null,authority:'OMEGA_RUNTIME_ISO3_INPUT'};
-    const bridge=g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity;
-    try{const hit=bridge?.resolveCountry?.(value);if(hit?.id){const raw=clone(hit.raw||null);return{id:id(hit.id),raw,authority:'OMEGA_CANONICAL_COUNTRY_IDENTITY'};}}catch(_){}
-    return direct?{id:direct,raw:null,authority:'UNVERIFIED_INPUT'}:null;
+    const raw=String(value??'').trim();
+    if(!raw)return null;
+
+    const bridge=g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity||null;
+    try{
+      const hit=bridge?.resolveCountry?.(raw);
+      if(hit?.id){
+        return{id:id(hit.id),raw:clone(hit.raw||null),authority:'OMEGA_CANONICAL_COUNTRY_IDENTITY'};
+      }
+    }catch(_){}
+
+    const universal=g.OmegaUniversalEntityIdentityEngine||g.OmegaUnifiedIdentity||null;
+    try{
+      const hit=universal?.resolve?.(raw,'COUNTRY');
+      if(hit?.status==='RESOLVED'&&hit?.id){
+        return{id:id(hit.id),raw:clone(hit.raw||null),authority:'OMEGA_UNIVERSAL_ENTITY_IDENTITY'};
+      }
+    }catch(_){}
+
+    return null;
   }
-  function canonicalId(value){const hit=canonicalCountry(value);return hit?.id||id(value);}
+  function canonicalId(value){
+    const hit=canonicalCountry(value);
+    return hit?.id||null;
+  }
 
   function surfaces(countryId){
     const c=canonicalCountry(countryId),r=c?.raw||{};
