@@ -20,7 +20,7 @@
   const n=v=>{const x=Number(v);return Number.isFinite(x)?x:null;};
   const state=()=>g.Game?.state||g.gameState||{};
   const simulationYear=()=>{const d=state()?.simulation?.date;if(d){const y=Number(String(d).slice(0,4));if(Number.isFinite(y))return y;}const sy=Number(state()?.simulation?.startYear);return Number.isFinite(sy)?sy:2015;};
-  let simulationReserveMap=null,simulationReservePromise=null,researchEvidenceMap=null,researchEvidencePromise=null;
+  let simulationReserveMap=null,simulationReservePromise=null,researchEvidenceMap=null,researchEvidencePromise=null,quantitativeResearchMap=null,quantitativeResearchPromise=null,operatingCostResearchMap=null,operatingCostResearchPromise=null;
   async function loadSimulationReserveData(){
     if(simulationReserveMap)return{status:'READY',count:Object.keys(simulationReserveMap).length,reused:true};
     if(simulationReservePromise)return simulationReservePromise;
@@ -65,6 +65,38 @@
     })();
     return researchEvidencePromise;
   }
+  async function loadQuantitativeResearchData(){
+    if(quantitativeResearchMap)return{status:'READY',count:Object.keys(quantitativeResearchMap).length,reused:true};
+    if(quantitativeResearchPromise)return quantitativeResearchPromise;
+    quantitativeResearchPromise=(async()=>{
+      try{
+        const inline=g.OmegaResourceSiteQuantitativeResearchData||g.Omega?.ResourceSiteQuantitativeResearchData;
+        let data=inline||null;
+        if(!data){const res=await fetch('resource_site_quantitative_research_v1.json',{cache:'no-store'});if(!res?.ok)throw new Error('RESOURCE_SITE_QUANTITATIVE_RESEARCH_FETCH_FAILED');data=await res.json();}
+        const rows=Array.isArray(data?.records)?data.records:[],map={};for(const row of rows)if(row?.siteId)map[String(row.siteId)]=clone(row);
+        quantitativeResearchMap=map;g.OmegaResourceSiteQuantitativeResearchData=data;g.Omega=g.Omega||{};g.Omega.ResourceSiteQuantitativeResearchData=data;
+        return{status:'READY',count:rows.length,siteCount:Number(data?.coverage?.siteCount)||rows.length};
+      }catch(e){quantitativeResearchMap={};return{status:'FAILED',count:0,reason:String(e?.message||e)}}
+      finally{quantitativeResearchPromise=null;}
+    })();
+    return quantitativeResearchPromise;
+  }
+  async function loadOperatingCostResearchData(){
+    if(operatingCostResearchMap)return{status:'READY',count:Object.keys(operatingCostResearchMap).length,reused:true};
+    if(operatingCostResearchPromise)return operatingCostResearchPromise;
+    operatingCostResearchPromise=(async()=>{
+      try{
+        const inline=g.OmegaResourceSiteOperatingCostResearchData||g.Omega?.ResourceSiteOperatingCostResearchData;
+        let data=inline||null;
+        if(!data){const res=await fetch('resource_site_operating_cost_research_v1.json',{cache:'no-store'});if(!res?.ok)throw new Error('RESOURCE_SITE_OPERATING_COST_RESEARCH_FETCH_FAILED');data=await res.json();}
+        const rows=Array.isArray(data?.records)?data.records:[],map={};for(const row of rows)if(row?.siteId)map[String(row.siteId)]=clone(row);
+        operatingCostResearchMap=map;g.OmegaResourceSiteOperatingCostResearchData=data;g.Omega=g.Omega||{};g.Omega.ResourceSiteOperatingCostResearchData=data;
+        return{status:'READY',count:rows.length,siteCount:Number(data?.coverage?.siteCount)||rows.length};
+      }catch(e){operatingCostResearchMap={};return{status:'FAILED',count:0,reason:String(e?.message||e)}}
+      finally{operatingCostResearchPromise=null;}
+    })();
+    return operatingCostResearchPromise;
+  }
   function enrichResearchEvidence(site){
     const s=clone(site||{}),keys=[s.siteReferenceKey,s.id,s.siteId,s.rawSiteReference?.id].filter(Boolean).map(String);
     let row=null;for(const key of keys){if(researchEvidenceMap?.[key]){row=researchEvidenceMap[key];break;}}
@@ -102,6 +134,16 @@
     }
     s.researchEffectiveYear=evidenceYear;
     s.researchEffectiveForSimulationYear=simulationYear()>=evidenceYear;
+    const exactKeys=[s.siteReferenceKey,s.id,s.siteId,s.rawSiteReference?.id].filter(Boolean).map(String);
+    let quantitative=null,operatingCost=null;
+    for(const key of exactKeys){if(!quantitative&&quantitativeResearchMap?.[key])quantitative=quantitativeResearchMap[key];if(!operatingCost&&operatingCostResearchMap?.[key])operatingCost=operatingCostResearchMap[key];}
+    if(!quantitative||!operatingCost){
+      const wantedCountry=canonical(s.countryId||s.countryCode||s.country||''),wantedName=String(s.siteName||s.name||s.mineName||s.depositName||'').trim().toLowerCase();
+      if(!quantitative)quantitative=Object.values(quantitativeResearchMap||{}).find(x=>canonical(x?.countryId||'')===wantedCountry&&String(x?.siteName||'').trim().toLowerCase()===wantedName)||null;
+      if(!operatingCost)operatingCost=Object.values(operatingCostResearchMap||{}).find(x=>canonical(x?.countryId||'')===wantedCountry&&String(x?.siteName||'').trim().toLowerCase()===wantedName)||null;
+    }
+    if(quantitative){s.quantitativeResearch=clone(quantitative);s.quantitativeResearchDataset='resource_site_quantitative_research_v1.json';}
+    if(operatingCost){s.researchOperatingCost=clone(operatingCost.cost||null);s.researchOperatingCostDataset='resource_site_operating_cost_research_v1.json';}
     return s;
   }
 
@@ -652,7 +694,7 @@ function batchFromExtraction(x,record){
       extractionLedger:Array.isArray(existing.extractionLedger)?existing.extractionLedger.slice(-MAX_LEDGER):[],
       resourceAuthority:{
         source:'RESOURCE_JSON->PART04->PART05->RESOURCE_RUNTIME',
-        knowledgeSources:['resources.json','resources_2.json','resource_site_reserve_simulation_v1.json'],
+        knowledgeSources:['resources.json','resources_2.json','resource_site_reserve_simulation_v1.json','resource_site_quantitative_research_v1.json','resource_site_operating_cost_research_v1.json'],
         mineSource:'RESOURCE_JSON.runtime_deposits + PROFILE_DERIVED_SIMULATION_ASSETS',
         mineSiteSource:'RESOURCE_JSON.countryProfiles.*.resource_infrastructure_context.mineSites',
         executableMineCount:rows.length,
@@ -1070,7 +1112,7 @@ function batchFromExtraction(x,record){
     g.__omegaResourceEndowmentPromise=(async function(){
       try{
         for(let i=0;i<400&&!engine()?.isReady;i++)await new Promise(r=>setTimeout(r,0));
-        const [reserveData,researchData]=await Promise.all([loadSimulationReserveData(),loadResearchEvidenceData()]);
+        const [reserveData,researchData,quantitativeData,operatingCostData]=await Promise.all([loadSimulationReserveData(),loadResearchEvidenceData(),loadQuantitativeResearchData(),loadOperatingCostResearchData()]);
         const dependencyLightContext=typeof g.fetch!=='function'&&typeof g.OmegaResourceSiteReserveSimulationData==='undefined'&&typeof g.Omega?.ResourceSiteReserveSimulationData==='undefined';
         if((reserveData.status!=='READY'||reserveData.count!==199)&&!dependencyLightContext)return{status:'FAILED',reason:'PER_SITE_RESERVE_DATASET_INCOMPLETE',detail:reserveData};
         if(!engine()?.isReady)return{status:'FAILED',reason:'RESOURCE_MINISTRY_ENGINE_NOT_READY'};
