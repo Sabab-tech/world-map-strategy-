@@ -103,6 +103,7 @@ jobs:
           run_gate resourceResearch 15 node test/omega_resource_research_runtime.test.mjs
           run_gate resourceResearchEvidence 15 node test/omega_resource_research_evidence.test.mjs
           run_gate resourceResearchDataContract 15 node test/omega_resource_research_data_contract.test.mjs
+          run_gate resourceSystemInvariants 15 node test/omega_resource_system_invariants.test.mjs
           run_gate resourceResearchPolicy 15 node --test test/omega_resource_research_policy.test.mjs
 
           export OMEGA_GATE_SYNTAX="${GATES[syntax]}"
