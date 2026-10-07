@@ -82,6 +82,8 @@ assert(autonomy.diagnostics().queueBridgeInstalled===true,'opponent queue bridge
 const canonical=autonomy.canonicalCountry('Bangladesh');
 assert.equal(canonical.id,'BD');
 assert.equal(canonical.authority,'OMEGA_CANONICAL_COUNTRY_IDENTITY');
+const unknownCountry=autonomy.canonicalCountry('Neverland 999');
+assert.equal(unknownCountry, null);
 const namedRoute=autonomy.routeSubject('import','Bangladesh','Saudi Arabia');
 assert.equal(namedRoute.countryId,'BD');
 assert.equal(namedRoute.targetCountryId,'SA');
