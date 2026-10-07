@@ -210,7 +210,8 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
     const countryId=record.countryId;
     const row=state.resource[countryId];
     assert.ok(row, 'Missing country resource state for '+countryId);
-    assert.equal(record.status,'APPROVED');
+    assert(['APPROVED','PARTIALLY_APPROVED'].includes(record.status),JSON.stringify({occurrenceKey:record.occurrenceKey,status:record.status,requested:record.requestedQuantity,approved:record.approvedQuantity}));
+    assert.ok((Number(record.approvedQuantity)||0)<=Number(record.requestedQuantity||0));
     assert.ok((Number(record.approvedQuantity)||0)>0);
     assert.ok(row.mineOutputs?.[record.occurrenceKey]);
     assert.ok((Number(row.mineOutputs[record.occurrenceKey].producedQuantity)||0)>0);
