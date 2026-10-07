@@ -166,7 +166,7 @@ assert.equal(unifiedReferences.length,siteReferenceRows);
 assert.ok(unifiedReferences.every(x=>x.resourceAsset&&x.resourceAsset.schemaVersion==='1.0.0'));
 assert.ok(unifiedReferences.every(x=>x.resourceAsset.assetId===x.siteReferenceKey));
 assert.deepEqual(Object.keys(unifiedReferences[0]?.resourceAsset||{}).sort(),unifiedMineKeys);
-const commercialCatalogIds=(globalThis.OmegaResourceSiteCanonicalCatalogData?.sites||[]).filter(x=>x.commercialExtraction===true).map(x=>x.siteId);
+const commercialCatalogIds=(globalThis.OmegaResourceSiteReserveSimulationData?.records||[]).filter(x=>x.commercialExtraction===true).map(x=>x.siteId);
 const executedProfileSiteIds=new Set(profileMineOutputs.map(x=>x.siteReferenceKey).filter(Boolean));
 const missingCommercialSiteIds=commercialCatalogIds.filter(x=>!executedProfileSiteIds.has(x));
 console.log('ENDOWMENT_MISSING_COMMERCIAL_SITES '+JSON.stringify({commercialExpected:commercialCatalogIds.length,executed:executedProfileSiteIds.size,missing:missingCommercialSiteIds}));
