@@ -216,7 +216,8 @@ function siteModel(site,profile,countryId){
    const recoveryRaw=src?.recovery??productionInput?.recovery??ep?.recovery;
    const declineRaw=src?.decline??src?.declineRate??productionInput?.decline??productionInput?.declineRate??ep?.decline;
    const maintenanceRaw=src?.maintenance??src?.maintenanceRate??productionInput?.maintenance??productionInput?.maintenanceRate??ep?.maintenance;
-   const costObs=num(src?.operatingCost??src?.operatingCostPerUnit??productionInput?.operatingCost??productionInput?.operatingCostPerUnit??qp?.production?.operatingCost??ep?.operatingCost);
+   const researchCost=src?.researchOperatingCost&&typeof src.researchOperatingCost==='object'?src.researchOperatingCost:null;
+   const costObs=num(src?.operatingCost??src?.operatingCostPerUnit??productionInput?.operatingCost??productionInput?.operatingCostPerUnit??qp?.production?.operatingCost??ep?.operatingCost??(researchCost?.status==='OBSERVED'?researchCost?.value:null));
    const calibration=CALIBRATION_RANGES[resourceId]||{unit:'TONNES',min:1000,max:100000,lifeMin:10,lifeMax:30,gradeMin:1,gradeMax:50};
    const deterministicSeed=fracHash([countryId,site?.siteReferenceKey||site?.id||name,resourceId].join('|'));
    const utilization=utilRaw==null?(scenario?.utilization??(0.65+0.2*deterministicSeed)):Number(utilRaw)>1?Number(utilRaw)/100:Number(utilRaw);
@@ -280,7 +281,10 @@ function siteModel(site,profile,countryId){
        authority:productionObserved?'OBSERVED':'SIMULATED',dataStatus:productionObserved?'AVAILABLE':'SIMULATED',technologyAdjusted:Array.isArray(technology.technologies)&&technology.technologies.length>0,technologyEffects:technology,
        annualProduction:src?.annualProduction??productionInput?.annualProduction??null,
        rangeDataStatus:minObs!==null&&maxObs!==null?'OBSERVED':productionObserved?'DERIVED_FROM_OBSERVED_RATE':'SIMULATED',
-       operatingCostStatus:costObs!==null?'OBSERVED':'UNOBSERVED'}
+       operatingCostStatus:costObs!==null?'OBSERVED':(researchCost?.status==='MODELED'?'MODELED':'UNOBSERVED'),
+       operatingCostUnit:researchCost?.unit||null,
+       operatingCostBasis:researchCost?.basis||null,
+       operatingCostDataset:src?.researchOperatingCostDataset||null}
    };
  });
  if(!streams.length)return{status:'UNOBSERVED',siteName:name,resourceId:null,authority:'SIMULATED',stateAuthority:'SIMULATED',dataStatus:'UNOBSERVED'};
