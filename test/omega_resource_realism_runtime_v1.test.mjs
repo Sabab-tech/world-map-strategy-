@@ -80,6 +80,39 @@ assert.equal(observedSite.commodityStreams[0].production.activeRate,900);
 assert.equal(observedSite.commodityStreams[1].reserve.quantity,120000);
 assert.equal(observedSite.commodityStreams[1].production.activeRate,600);
 
+const researchedObservedCost=R.siteModel({
+  siteReferenceKey:'SITE:GNB:FARIM',
+  siteName:'Farim Phosphate Project',
+  resourceId:'phosphate',
+  researchOperatingCost:{
+    status:'OBSERVED',
+    currency:'USD',
+    unit:'USD_PER_TONNE_CONCENTRATE',
+    value:70.9,
+    basis:'SITE_SPECIFIC_OWNER_FEASIBILITY_EVIDENCE'
+  }
+},{resource_domain:{knownResourceTypes:['phosphate']}},'GNB');
+assert.equal(researchedObservedCost.commodityStreams[0].production.operatingCost,70.9);
+assert.equal(researchedObservedCost.commodityStreams[0].production.operatingCostStatus,'OBSERVED');
+assert.equal(researchedObservedCost.commodityStreams[0].production.operatingCostUnit,'USD_PER_TONNE_CONCENTRATE');
+
+const researchedModeledCost=R.siteModel({
+  siteReferenceKey:'SITE:GNB:MODELED',
+  siteName:'Modeled Phosphate Site',
+  resourceId:'phosphate',
+  researchOperatingCost:{
+    status:'MODELED',
+    currency:'USD',
+    unit:'USD_PER_OUTPUT_UNIT',
+    value:null,
+    basis:'SITE_SPECIFIC_DRIVER_MODEL',
+    model:{formulaId:'OMEGA_SITE_DRIVER_COST_V1',numericValueIncluded:false}
+  }
+},{resource_domain:{knownResourceTypes:['phosphate']}},'GNB');
+assert.equal(researchedModeledCost.commodityStreams[0].production.operatingCost,null);
+assert.equal(researchedModeledCost.commodityStreams[0].production.operatingCostStatus,'MODELED');
+assert.equal(researchedModeledCost.commodityStreams[0].production.operatingCostDataset,null);
+
 const gasQuality=R.quality({grade:'96.2% Pure Methane Gas'},'natural_gas');
 assert.equal(gasQuality.grade,'96.2% Pure Methane Gas');
 assert.equal(gasQuality.gradeStatus,'OBSERVED');
