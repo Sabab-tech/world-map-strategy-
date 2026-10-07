@@ -68,6 +68,9 @@ const reserveScenario=JSON.parse(fs.readFileSync(new URL('../resource_site_reser
 assert.equal(reserveScenario.siteCount,199);
 assert.equal(reserveScenario.commercialSiteCount,195);
 const hydrated=runtime.hydrateCountry('BGD');
+const indDiag=runtime.hydrateCountry('IND');
+const indState=runtime.countryResourceState('IND')||{};
+console.log('ENDOWMENT_GEVRA_HYDRATE '+JSON.stringify({status:indDiag.status,controllers:Object.values(indState.mineSiteControllers||{}).filter(x=>x.siteReferenceKey==='SITE_IND_gevra_oc_mine'),mineOutputs:Object.values(indState.mineOutputs||{}).filter(x=>x.siteReferenceKey==='SITE_IND_gevra_oc_mine')}));
 __markPhase('HYDRATE_BGD_DONE');
 assert.equal(hydrated.status,'APPLIED', JSON.stringify(hydrated));
 
@@ -130,8 +133,6 @@ const expectedResourceCountries=Object.keys(engine.countryProfiles||{});
 assert.equal(preGlobal.countryCount,expectedResourceCountries.length);
 assert.equal(preGlobal.mineSiteReferenceCount,199);
 assert.equal(preGlobal.mineSiteControllerCount,199);
-const missingDiagnosticCountries=[...new Set(missingCommercialSiteIds.map(siteId=>(globalThis.OmegaResourceSiteCanonicalCatalogData?.sites||[]).find(x=>x.siteId===siteId)?.countryId).filter(Boolean))];
-for(const countryId of missingDiagnosticCountries){const h=runtime.hydrateCountry(countryId);const s=runtime.countryResourceState(countryId)||{};console.log('ENDOWMENT_MISSING_HYDRATE '+JSON.stringify({countryId,status:h.status,mines:(s.mines||[]).filter(x=>missingCommercialSiteIds.includes(x.siteReferenceKey)||missingCommercialSiteIds.includes(x.siteId)).map(x=>({siteReferenceKey:x.siteReferenceKey,resourceId:x.resourceId,occurrenceKey:x.occurrenceKey,isSimulationGenerated:x.isSimulationGenerated})),controllers:Object.values(s.mineSiteControllers||{}).filter(x=>missingCommercialSiteIds.includes(x.siteReferenceKey)).map(x=>({siteReferenceKey:x.siteReferenceKey,linkedOccurrenceKeys:x.linkedOccurrenceKeys,extractionExecutable:x.extractionExecutable,quantitativeDataState:x.quantitativeDataState}))}));}
 globalThis.__OmegaResourceExtractionTrace=true;
 const globalExtraction=await runtime.extractAll();
 globalThis.__OmegaResourceExtractionTrace=false;
