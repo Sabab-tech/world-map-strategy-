@@ -349,47 +349,72 @@
       const refs=g.__OmegaResourceKnowledgeModel?.refCatalog?.allReferences;
       if(Array.isArray(refs))rows=refs.filter(ref=>canonical(ref?.countryCode||ref?.countryId||ref?.country)===wanted).map(enrichSimulationReserve).map(enrichResearchEvidence);
     }
-    // The engine's merged country profiles are not the complete 199-site canonical catalog.
-    // Add any catalog identities missing from RESOURCE_JSON profile references without
-    // inventing quantitative data. Reserve/production layers enrich these identities later.
-    const seenIdentity=new Set(rows.map(x=>String(x?.siteReferenceKey||x?.siteId||x?.resourceAsset?.siteId||'').toUpperCase()).filter(Boolean));
-    const seenNames=new Set(rows.map(x=>String(x?.siteName||x?.name||'').trim().toLowerCase()).filter(Boolean));
-    for(const site of Object.values(canonicalSiteCatalogMap||{})){
-      if(canonical(site?.countryId||site?.identity?.countryIso3||'')!==wanted)continue;
-      const siteId=String(site?.siteId||'').trim();
-      const siteName=String(site?.siteName||'').trim();
+    // Canonical catalog is the identity authority. RESOURCE_JSON profile rows are
+    // legacy/source evidence and may use corrected/older names, so they are merged only
+    // when identity matching is sufficiently strong. This guarantees exactly the 199
+    // canonical physical sites without fabricating additional deposits.
+    const profileRows=rows.slice();
+    const tokens=value=>new Set(String(value||'').toLowerCase().normalize('NFKC').replace(/[^a-z0-9]+/g,' ').trim().split(/\s+/).filter(x=>x.length>2&&!['site','mine','area','zone','facility','quarry','sites'].includes(x)));
+    const similarity=(a,b)=>{
+      const A=tokens(a),B=tokens(b);if(!A.size||!B.size)return 0;
+      let common=0;for(const x of A)if(B.has(x))common++;
+      return common/Math.max(A.size,B.size);
+    };
+    const catalogSites=Object.values(canonicalSiteCatalogMap||{}).filter(site=>canonical(site?.countryId||site?.identity?.countryIso3||'')===wanted);
+    const usedProfile=new Set(),canonicalRows=[];
+    for(const site of catalogSites){
+      const siteId=String(site?.siteId||'').trim(),siteName=String(site?.siteName||'').trim(),identity=site?.identity||{};
       if(!siteId||!siteName)continue;
-      if(seenIdentity.has(siteId.toUpperCase())||seenNames.has(siteName.toLowerCase()))continue;
-      const identity=site.identity||{};
-      const operation=site.operation||{};
-      const location=site.location||{};
-      const ownership=site.ownership||{};
+      let best=null,bestScore=0;
+      for(let i=0;i<profileRows.length;i++){
+        if(usedProfile.has(i))continue;
+        const candidate=profileRows[i];
+        const candidateId=String(candidate?.siteId||candidate?.rawSiteReference?.siteId||'').trim();
+        const candidateName=String(candidate?.siteName||candidate?.name||'').trim();
+        const candidateResource=rid(candidate?.resourceId||candidate?.resourceTypeId||candidate?.rawSiteReference?.resourceId);
+        const catalogResource=rid(identity?.resourceTypeId);
+        let score=0;
+        if(candidateId&&candidateId===siteId)score=100;
+        else if(candidateName&&candidateName.toLowerCase()===siteName.toLowerCase())score=90;
+        else if(candidateResource&&catalogResource&&candidateResource===catalogResource){
+          score=similarity(candidateName,siteName);
+          if(score<0.34)continue;
+          score+=0.01;
+        }else continue;
+        if(score>bestScore){bestScore=score;best={index:i,row:candidate};}
+      }
+      if(best)usedProfile.add(best.index);
+      const location=site.location||{},ownership=site.ownership||{},operation=site.operation||{};
+      const profile=best?.row||{};
       const rawSite={
+        ...clone(profile?.rawSiteReference||profile||{}),
         siteId,siteReferenceKey:siteId,siteName,name:siteName,
         countryId:wanted,countryCode:wanted,
-        resourceId:identity.resourceTypeId||null,resourceTypeId:identity.resourceTypeId||null,
-        siteType:identity.siteType||null,
-        status:operation.status||'ACTIVE_SITE_REFERENCE',
-        owner:ownership.owner||null,operator:ownership.operator||null,
-        lat:location.coordinates?.lat??null,lon:location.coordinates?.lng??null,
-        sourceAuthority:'RESOURCE_JSON',
-        sourceDatasetId:'resource_site_canonical_catalog_v1.json',
-        sourcePath:'resource_site_canonical_catalog_v1.sites['+Object.keys(canonicalSiteCatalogMap||{}).indexOf(siteId)+']'
+        resourceId:identity.resourceTypeId||profile?.resourceId||null,
+        resourceTypeId:identity.resourceTypeId||profile?.resourceTypeId||null,
+        siteType:identity.siteType||profile?.siteType||null,
+        status:operation.status||profile?.status||'ACTIVE_SITE_REFERENCE',
+        owner:ownership.owner||profile?.owner||null,operator:ownership.operator||profile?.operator||null,
+        lat:location.coordinates?.lat??profile?.lat??null,lon:location.coordinates?.lng??profile?.lon??null,
+        sourceAuthority:'RESOURCE_JSON',sourceDatasetId:'resource_site_canonical_catalog_v1.json',
+        sourcePath:'resource_site_canonical_catalog_v1.sites['+Object.keys(canonicalSiteCatalogMap||{}).indexOf(siteId)+']',
+        sourceProfileReferenceKey:profile?.siteReferenceKey||null
       };
       const resourceAsset=g.GSRSK_Part04?.normalizeUnifiedAsset?.({
         ...rawSite,assetType:'MINE_SITE',assetId:siteId,siteReferenceKey:siteId,siteName,countryId:wanted,countryCode:wanted,
         sourceAuthority:'RESOURCE_JSON',sourceDatasetId:'resource_site_canonical_catalog_v1.json',
         extractionExecutable:false
       })||rawSite;
-      rows.push({
-        siteReferenceKey:siteId,countryId:wanted,countryCode:wanted,profileKey:'CANONICAL_SITE_CATALOG',
+      canonicalRows.push({
+        siteReferenceKey:siteId,siteId,countryId:wanted,countryCode:wanted,profileKey:'CANONICAL_SITE_CATALOG',
         siteName,status:'ACTIVE_SITE_REFERENCE',activationState:'ACTIVE_REFERENCE',extractionExecutable:false,
         quantitativeExtractionDataAvailable:resourceAsset.quantitativeExtractionDataAvailable===true,
         sourceAuthority:'RESOURCE_JSON',sourceDatasetId:'resource_site_canonical_catalog_v1.json',
-        sourcePath:rawSite.sourcePath,rawSiteReference:clone(rawSite),resourceAsset
+        sourcePath:rawSite.sourcePath,sourceProfileReferenceKey:rawSite.sourceProfileReferenceKey,
+        rawSiteReference:clone(rawSite),resourceAsset
       });
-      seenIdentity.add(siteId.toUpperCase());seenNames.add(siteName.toLowerCase());
     }
+    rows=canonicalRows.map(enrichSimulationReserve).map(enrichResearchEvidence);
     mineSiteReferenceCache.set(wanted,rows);
     return rows;
   }
