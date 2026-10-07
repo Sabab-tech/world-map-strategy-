@@ -419,7 +419,7 @@
         rawSiteReference:clone(rawSite),resourceAsset
       });
     }
-    rows=canonicalRows.map(enrichSimulationReserve).map(enrichResearchEvidence);
+    rows=(catalogSites.length>0?canonicalRows:profileRows).map(enrichSimulationReserve).map(enrichResearchEvidence);
     mineSiteReferenceCache.set(wanted,rows);
     return rows;
   }
