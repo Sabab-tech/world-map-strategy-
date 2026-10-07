@@ -1212,7 +1212,6 @@ function batchFromExtraction(x,record){
     install();
     const results=[];
     for(const c of countries()){
-      const countryStartedAt=Date.now();
       const existing=state()?.resource?.[c]||{};
       if(!Array.isArray(existing.mineSiteReferences)||!existing.mineSiteControllers){
         const hydrate=dispatch('OMEGA_RESOURCE_ENDOWMENT_HYDRATE',c,{correlationId:'RESOURCE-HYDRATE-LAZY-'+t+'-'+c});
@@ -1223,9 +1222,6 @@ function batchFromExtraction(x,record){
       }
       const result=dispatch('OMEGA_RESOURCE_EXTRACT_TICK',c,{correlationId:'RESOURCE-EXTRACT-'+t+'-'+c});
       publishCommittedExtractionEvents(c,result);
-      if(g.__OmegaResourceExtractionTrace===true){
-        try{console.log('OMEGA_RESOURCE_EXTRACT_TRACE '+JSON.stringify({countryId:c,elapsedMs:Date.now()-countryStartedAt,status:result?.status,extracted:result?.result?.extracted||result?.extracted||0,blocked:result?.result?.blocked||result?.blocked||0}));}catch(_){}
-      }
       results.push({countryId:c,result});
     }
     return{status:'COMPLETED',turn:t,results};
