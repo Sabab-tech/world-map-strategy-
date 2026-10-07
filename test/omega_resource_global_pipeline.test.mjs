@@ -251,7 +251,7 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
   const sitePathCount=Object.values(state.resource).reduce((sum,row)=>sum+Object.keys(row?.mineSiteControllers||{}).filter(k=>row.minePaths?.[k]).length,0);
   const lotCount=Object.values(state.resource).reduce((sum,row)=>sum+(row?.inventoryLots&&typeof row.inventoryLots==='object'?Object.keys(row.inventoryLots).length:0),0);
   console.log('GLOBAL_PIPELINE_COUNTS '+JSON.stringify({engineDeposits:engine.deposits.length,executableCanonical:executableCanonicalKeys.size,extractedRecords:extractedRecords.length,mineCount,batchCount,pathCount,lotCount,perCountry:Object.fromEntries(Object.entries(state.resource).map(([k,v])=>[k,{batches:Array.isArray(v?.batches)?v.batches.length:0,records:Array.isArray(v?.mineProductionLedger)?v.mineProductionLedger.length:0}]))}));
-  assert.equal(mineCount,engine.deposits.length);
+  assert.ok(mineCount>=engine.deposits.length,'projected mine rows must include canonical deposits and may include separate profile-derived site models');
   assert.equal(batchCount,executableCanonicalKeys.size);
   const projectedMines=Object.values(state.resource).flatMap(row=>Array.isArray(row?.mines)?row.mines:[]);
   assert.ok(projectedMines.every(x=>x.resourceAsset&&x.resourceAsset.schemaVersion==='1.0.0'));
