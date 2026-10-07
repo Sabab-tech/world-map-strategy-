@@ -135,7 +135,6 @@ assert.equal(globalExtraction.status,'COMPLETED');
 assert.equal(globalExtraction.results.length,expectedResourceCountries.length);
 
 const worldState=globalThis.Game.state.resource;
-console.log('ENDOWMENT_KWT_OUTPUTS_AFTER '+JSON.stringify(Object.values(worldState.KWT?.mineOutputs||{})));
 const hydratedAssetRows=Object.values(worldState).reduce((sum,row)=>sum+(Array.isArray(row?.mines)?row.mines.length:0),0);
 const structuredMineRows=Object.values(worldState).reduce((sum,row)=>sum+(Array.isArray(row?.mines)?row.mines.filter(x=>!x?.simulationGenerated).length:0),0);
 const siteReferenceRows=Object.values(worldState).reduce((sum,row)=>sum+(Array.isArray(row?.mineSiteReferences)?row.mineSiteReferences.length:0),0);
@@ -145,9 +144,6 @@ const profileMineOutputs=allMineOutputs.filter(x=>x?.assetType==='MINE_SITE');
 const siteLinkedExecutionOutputs=allMineOutputs.filter(x=>x?.siteReferenceKey&&Number(x?.producedQuantity)>0);
 const simulatedMineOutputs=profileMineOutputs.filter(x=>x?.simulationGenerated===true);
 const simulatedFieldOutputs=allMineOutputs.filter(x=>x?.simulationGenerated===true&&['OIL_FIELD','GAS_FIELD'].includes(x?.assetType));
-const expectedSiteRefsByCountry=Object.fromEntries(Object.entries(engine.countryProfiles||{}).map(([k,p])=>[String(k).toUpperCase(),(p?.resource_infrastructure_context?.mineSites||p?.infrastructure_context?.mineSites||[]).length]));
-const siteReferenceMismatches=Object.entries(expectedSiteRefsByCountry).filter(([countryId,n])=>Number(n)!==Number(worldState[countryId]?.mineSiteReferences?.length||0)).map(([countryId,n])=>({countryId,expected:n,actual:worldState[countryId]?.mineSiteReferences?.length||0,controllers:Object.keys(worldState[countryId]?.mineSiteControllers||{}).length}));
-console.log('ENDOWMENT_SITE_REFERENCE_DIAGNOSTIC '+JSON.stringify(siteReferenceMismatches));
 assert.equal(siteReferenceRows,199);
 assert.equal(siteControllerRows,199);
 assert.ok(structuredMineRows>=engine.deposits.length,'structured mine rows must include canonical runtime deposits plus profile-derived structured sites');
@@ -159,7 +155,6 @@ for(const row of Object.values(worldState)){
   siteReferenceHoleCount+=refs.length-Object.keys(refs).length;
   for(let i=0;i<refs.length;i++)if(refs[i]!==undefined)unifiedReferences.push(refs[i]);
 }
-console.log('ENDOWMENT_SITE_REFERENCE_DENSITY '+JSON.stringify({declaredLength:siteReferenceRows,materializedEntries:unifiedReferences.length,holes:siteReferenceHoleCount}));
 assert.equal(siteReferenceHoleCount,0,'site reference arrays must be dense');
 assert.equal(unifiedReferences.length,siteReferenceRows);
 assert.ok(unifiedReferences.every(x=>x.resourceAsset&&x.resourceAsset.schemaVersion==='1.0.0'));
@@ -168,8 +163,6 @@ assert.deepEqual(Object.keys(unifiedReferences[0]?.resourceAsset||{}).sort(),uni
 const commercialCatalogIds=(globalThis.OmegaResourceSiteReserveSimulationData?.records||[]).filter(x=>x.commercialExtraction===true).map(x=>x.siteId);
 const canonicalSiteIds=new Set((globalThis.OmegaResourceSiteCanonicalCatalogData?.sites||[]).map(x=>x.siteId).filter(Boolean));
 const executedProfileSiteIds=new Set(siteLinkedExecutionOutputs.map(x=>x.siteReferenceKey).filter(x=>canonicalSiteIds.has(x)));
-const missingCommercialSiteIds=commercialCatalogIds.filter(x=>!executedProfileSiteIds.has(x));
-console.log('ENDOWMENT_MISSING_COMMERCIAL_SITES '+JSON.stringify({commercialExpected:commercialCatalogIds.length,executed:executedProfileSiteIds.size,missing:missingCommercialSiteIds}));
 assert.equal(executedProfileSiteIds.size,commercialCatalogIds.length,'all commercial canonical site identities must have a positive linked extraction output; N/A sites are excluded');
 assert(simulatedFieldOutputs.length>0,'expected hydrocarbon field execution assets');
 assert(siteLinkedExecutionOutputs.every(x=>(x?.producedQuantity||0)>0&&x?.effortUtilization>0&&x?.effortUtilization<=1),'some canonical site-linked output did not execute with valid utilization');
