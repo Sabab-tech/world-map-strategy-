@@ -760,6 +760,7 @@ function batchFromExtraction(x,record){
       if(x.assetType==='OIL_FIELD'||x.assetType==='GAS_FIELD'||x.assetType==='MINE_SITE'||x.assetType==='RESOURCE_MINE'){
       mines.push({
         occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,resourceId:resource,depositName:x.depositName,
+        assetType:x.assetType||'RESOURCE_MINE',simulationGenerated:!!x.isSimulationGenerated,
         countryId:canonical(c),locationNodeKey:x.locationNodeKey,resourceTypeKey:x.resourceTypeKey,
         ownerKey:x.ownerKey,operatorKey:x.operatorKey,rawDeposit:raw,
         reserveState:clone(rs.toJSON?.()||rs),operationalStatus:rs.operationalStatus,unit:rs.unit,
