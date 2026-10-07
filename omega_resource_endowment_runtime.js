@@ -362,9 +362,11 @@
     };
   }
   function compile(){
-    try{g.Omega?.ResourceProductionModelV2?.patch?.();}catch(_){}
     const p4=g.GSRSK_Part04||g.GSRSK_ResourceIdentityEngine;
     const p5=g.GSRSK_Part05||g.GSRSK_ResourceReserveExtractionEngine;
+    const productionModel=g.Omega?.ResourceProductionModelV2||g.OmegaResourceProductionModelV2;
+    if(!productionModel?.patch)return{status:'WAITING_DEPENDENCIES',reason:'RESOURCE_PRODUCTION_MODEL_V2_NOT_READY'};
+    try{productionModel.patch();}catch(e){return{status:'FAILED',reason:'RESOURCE_PRODUCTION_MODEL_V2_PATCH_FAILED',detail:String(e?.message||e)}}
     const knowledge=buildKnowledge();
     if(!knowledge||!p4?.compileIdentities||!p5?.compileReserves)return{status:'WAITING_DEPENDENCIES'};
     const identityResult=p4.compileIdentities(knowledge,null,null);
