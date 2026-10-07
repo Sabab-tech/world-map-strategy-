@@ -177,8 +177,8 @@
         operationalStatus:active?'ACTIVE_EXTRACTION':'BLOCKED',
         stateVersion:1,
         provenance:{
-          sourceAuthority:'RESOURCE_JSON',
-          sourceDatasetId:raw.sourceDatasetId||'resources.json',
+          sourceAuthority:raw.sourceAuthority||raw.provenance?.sourceAuthority||'UNOBSERVED',
+          sourceDatasetId:raw.sourceDatasetId||null,
           reserveField:raw.reserveQuantity!=null?'site.reserveQuantity':'runtime_deposits.reserves',
           reserveText:String(raw.reserves||''),
           effortUtilization:utilization,
