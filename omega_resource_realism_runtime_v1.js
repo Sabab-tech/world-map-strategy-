@@ -300,6 +300,55 @@ function siteModel(site,profile,countryId){
    provenance:{sourceAuthority:'RESOURCE_JSON.countryProfiles.mineSites',simulationRuleVersion:VERSION,sourcePath:site?.sourcePath||null,
      fieldAuthority:{reserve:streams.map(s=>s.reserve.authority),production:streams.map(s=>s.production.authority),quality:streams.map(s=>s.quality.gradeStatus)}}};
 }
+function advanceProductionState(production={},temporalState={},reserveState={},currentTurn=0,turnHours=24){
+ const p=production||{},ts=temporalState&&typeof temporalState==='object'?temporalState:{};
+ const clamp01=v=>Math.max(0,Math.min(1,Number(v)||0));
+ const finite=v=>{const n=Number(v);return Number.isFinite(n)?n:null;};
+ const baseNominal=finite(p.nominalCapacity??p.activeRate??p.observedRate);
+ const minimum=finite(p.minimumCapacity),maximum=finite(p.maximumCapacity);
+ const baseUtil=clamp01(p.utilization??0);
+ const recovery=clamp01(p.recovery??1);
+ const decline=clamp01(p.decline??0);
+ const maintenance=clamp01(p.maintenance??0);
+ const startTurn=finite(ts.startTurn)??Number(currentTurn)||0;
+ const elapsedHours=Math.max(0,(Number(currentTurn)||0-startTurn)*Math.max(.01,Number(turnHours)||24));
+ const elapsedYears=elapsedHours/(24*365.25);
+ const declineFactor=Math.pow(Math.max(0,1-decline),elapsedYears);
+ const initialRecoverable=finite(ts.initialRecoverableQuantity??reserveState?.recoverableQuantity??reserveState?.geologicalQuantity);
+ const residual=finite(reserveState?.residualQuantity);
+ const depletionRatio=initialRecoverable!==null&&initialRecoverable>0&&residual!==null?clamp01(residual/initialRecoverable):1;
+ const depletionFactor=0.55+0.45*Math.sqrt(depletionRatio);
+ const seed=fracHash(String(ts.seedKey||p.siteReferenceKey||reserveState?.occurrenceKey||'RESOURCE_TEMPORAL'));
+ const cycleYears=Math.max(2,Number(ts.utilizationCycleYears)||5);
+ const cyclePhase=(elapsedYears/cycleYears)*Math.PI*2+seed*Math.PI*2;
+ const utilization=clamp01(baseUtil*(0.92+0.08*Math.sin(cyclePhase)));
+ const maintenanceFactor=1-maintenance;
+ const recoveryFactor=0.90+0.10*recovery;
+ let restartFactor=1;
+ const status=String(ts.operationalCommand||reserveState?.operationalStatus||p.operatingStatus||'').toUpperCase();
+ if(status==='SHUTDOWN'||status==='SUSPENDED'||status==='BLOCKED')restartFactor=0;
+ if(status==='RESTARTING'){
+   const restartStart=finite(ts.restartStartTurn)??Number(currentTurn)||0;
+   const restartTurns=Math.max(1,finite(ts.restartTurns)??Math.ceil(720/Math.max(.01,Number(turnHours)||24)));
+   restartFactor=clamp01(((Number(currentTurn)||0)-restartStart+1)/restartTurns);
+ }
+ let rate=baseNominal===null?null:baseNominal*utilization*maintenanceFactor*recoveryFactor*declineFactor*depletionFactor*restartFactor;
+ if(rate!==null&&depletionRatio<=0)rate=0;
+ if(rate!==null&&rate>0){
+   if(maximum!==null)rate=Math.min(rate,Math.max(0,maximum));
+   if(minimum!==null&&depletionRatio>0.05)rate=Math.max(rate,Math.max(0,minimum));
+ }
+ const state={
+   startTurn,startTimeMs:finite(ts.startTimeMs)??null,lastTurn:Number(currentTurn)||0,
+   elapsedYears,declineFactor,depletionRatio,depletionFactor,utilization,maintenanceFactor,recoveryFactor,restartFactor,
+   initialRecoverableQuantity:initialRecoverable,initialResidualQuantity:finite(ts.initialResidualQuantity)??initialRecoverable,
+   cumulativeOutputQuantity:finite(ts.cumulativeOutputQuantity)??0,
+   seedKey:String(ts.seedKey||p.siteReferenceKey||reserveState?.occurrenceKey||'RESOURCE_TEMPORAL'),
+   utilizationCycleYears:cycleYears,
+   operationalCommand:status||'RUNNING'
+ };
+ return{activeRate:rate,utilization,recovery,decline,maintenance,elapsedYears,declineFactor,depletionRatio,depletionFactor,restartFactor,state};
+}
 function authorityRank(v){return String(v||'UNOBSERVED').toUpperCase()==='OBSERVED'?2:String(v||'').toUpperCase()==='SIMULATED'?1:0}
 function firewall(existing,incoming){
  if(incoming===undefined)return existing;
@@ -344,6 +393,6 @@ function planFactoryRoutes(input={}){
 function dispatchFromWarehouse(input={}){
  const route=planRoute(input);return {...route,delivery:{shipmentId:'SHIP:'+hash(JSON.stringify(input)+'|'+route.routeId),warehouseId:input.warehouseId||null,batchId:input.batchId||null,stage:'WAREHOUSE_DISPATCH',status:'READY_FOR_DELIVERY',quantity:route.dispatchQuantity}};
 }
-const API={VERSION,unitFamily,resourceFamily,parseReserve,commodityText,splitCommodities,quality,siteModel,firewall,authorityRank,planRoute,dispatchFromWarehouse,planFactoryRoutes,transportModes:modes};
+const API={VERSION,unitFamily,resourceFamily,parseReserve,commodityText,splitCommodities,quality,siteModel,advanceProductionState,firewall,authorityRank,planRoute,dispatchFromWarehouse,planFactoryRoutes,transportModes:modes};
 g.Omega=g.Omega||{};g.Omega.ResourceRealism=API;g.OmegaResourceRealism=API;
 })(typeof window!=='undefined'?window:globalThis);
