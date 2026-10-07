@@ -42,9 +42,9 @@ function parseReserve(text,resourceId,targetUnit){
  }}
  const r=rid(resourceId),t=String(text??'');
  if(r==='uranium'){
-   const u3o8=t.match(/([0-9]+(?:\.[0-9]+)?)\s*(trillion|billion|million|thousand)?\s*(?:metric\s+tons?|tonnes?|tons?)\s+U3O8\b/i);
+   const u3o8=t.match(/([0-9][0-9,]*(?:\.[0-9]+)?)\s*(trillion|billion|million|thousand)?\s*(?:metric\s+tons?|tonnes?|tons?)\s+U3O8\b/i);
    if(u3o8){
-     const value=Number(u3o8[1])*scale(u3o8[2]),target=targetUnit||'TONNES';
+     const value=Number(u3o8[1].replace(/,/g,''))*scale(u3o8[2]),target=targetUnit||'TONNES';
      return{status:'OBSERVED',value:convertReserveValue(value,'TONNES',target),unit:target,targetUnit:target,sourceUnit:'TONNES_U3O8',raw:t};
    }
  }
