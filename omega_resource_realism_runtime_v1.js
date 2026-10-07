@@ -118,7 +118,11 @@ function parseReserve(raw,resourceId){
  if(r==='crude_oil')x=extractMeasure(text,'BBL');
  else if(r==='natural_gas'){for(const f of ['TCF','BCF','BCM','MCM','MCF']){x=extractMeasure(text,f);if(x)break;}}
  else if(r==='gold'){for(const f of ['TROY_OUNCES','TONNES']){x=extractMeasure(text,f);if(x)break;}}
- else x=extractMeasure(text,'TONNES');
+ else if(r==='uranium'){
+   const m=String(text).match(/([0-9][0-9,]*(?:\.[0-9]+)?)\s*(trillion|billion|million|thousand)?\s*(?:metric\s+tons?|tonnes?|tons?)\s+U3O8\b/i);
+   if(m)x={value:Number(m[1].replace(/,/g,''))*scale(m[2]),unitFamily:'TONNES',sourceUnit:'TONNES_U3O8',raw:String(text)};
+   else x=extractMeasure(text,'TONNES');
+ }else x=extractMeasure(text,'TONNES');
  if(!x)return missing(text);
  const targetMeasurementFamily=spec.family==='GOLD'?(x.unitFamily==='TONNES'?'TONNES':'TROY_OUNCES'):(spec.family==='GAS'?'BCM':(unitFamily(spec.unit)||spec.family));
  const value=convertReserve(x.value,x.unitFamily,targetMeasurementFamily);
