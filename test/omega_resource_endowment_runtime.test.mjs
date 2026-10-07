@@ -11,6 +11,8 @@ const resourceFiles=new Map([
   ['resource_site_operating_cost_research_v1.json',new URL('../resource_site_operating_cost_research_v1.json',import.meta.url)],
   ['resource_site_canonical_catalog_v1.json',new URL('../resource_site_canonical_catalog_v1.json',import.meta.url)]
 ]);
+const withTimeout=(label,promise,ms=12000)=>Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(new Error(label+'_TIMEOUT')),ms))]);
+const mark=label=>console.log(JSON.stringify({phase:label,at:new Date().toISOString()}));
 const nativeFetch=globalThis.fetch;
 globalThis.fetch=async function(input){
   const name=String(input).split('?')[0].replace(/^\.\//,'');
@@ -59,7 +61,9 @@ await import('../omega_resource_production_model_v2.js');
 await import('../omega_resource_realism_runtime_v1.js');
 await import('../omega_resource_endowment_runtime.js');
 const runtime=globalThis.OmegaResourceEndowmentRuntime;
-const initialized=await runtime.initialize();
+mark('BEFORE_INITIALIZE');
+const initialized=await withTimeout('INITIALIZE',runtime.initialize());
+mark('AFTER_INITIALIZE');
 assert.equal(initialized.status,'READY',JSON.stringify(initialized));
 assert.equal(initialized.countries,Object.keys(engine.countryProfiles||{}).length);
 assert.equal(initialized.researchData?.quantitativeSiteCount,199);
@@ -68,7 +72,9 @@ assert.equal(initialized.researchData?.canonicalSiteCount,199);
 const reserveScenario=JSON.parse(fs.readFileSync(new URL('../resource_site_reserve_simulation_v1.json',import.meta.url),'utf8'));
 assert.equal(reserveScenario.siteCount,199);
 assert.equal(reserveScenario.commercialSiteCount,195);
+mark('BEFORE_HYDRATE_BGD');
 const hydrated=runtime.hydrateCountry('BGD');
+mark('AFTER_HYDRATE_BGD');
 assert.equal(hydrated.status,'APPLIED', JSON.stringify(hydrated));
 
 const before=runtime.countryResourceState('BGD');
@@ -94,7 +100,9 @@ assert.equal(gasMine.purity,null);
 assert.ok(Math.abs(gasMine.qualityState.normalized.concentrationPercent-96.2)<1e-9);
 assert.equal(gasMine.qualityState.concentrationStatus,'OBSERVED');
 
-const extraction=await runtime.extractCountry('BGD',[gasMine.occurrenceKey]);
+mark('BEFORE_EXTRACT_BGD');
+const extraction=await withTimeout('EXTRACT_BGD',runtime.extractCountry('BGD',[gasMine.occurrenceKey]));
+mark('AFTER_EXTRACT_BGD');
 assert.equal(extraction.status,'APPLIED');
 const after=runtime.countryResourceState('BGD');
 const output=after.mineOutputs[gasMine.occurrenceKey];
@@ -129,7 +137,9 @@ const expectedResourceCountries=Object.keys(engine.countryProfiles||{});
 assert.equal(preGlobal.countryCount,expectedResourceCountries.length);
 assert.equal(preGlobal.mineSiteReferenceCount,199);
 assert.equal(preGlobal.mineSiteControllerCount,199);
-const globalExtraction=await runtime.extractAll();
+mark('BEFORE_EXTRACT_ALL');
+const globalExtraction=await withTimeout('EXTRACT_ALL',runtime.extractAll());
+mark('AFTER_EXTRACT_ALL');
 assert.equal(globalExtraction.status,'COMPLETED');
 assert.equal(globalExtraction.results.length,expectedResourceCountries.length);
 
@@ -209,4 +219,5 @@ for(const [countryId,row] of Object.entries(worldState)){
 }
 
 if(nativeFetch)globalThis.fetch=nativeFetch;
+mark('TEST_ASSERTIONS_COMPLETE');
 console.log('OMEGA RESOURCE JSON -> MINE -> BATCH -> WAREHOUSE -> FACTORY EVENT TEST PASSED');
