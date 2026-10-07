@@ -144,6 +144,9 @@ const siteControllerRows=Object.values(worldState).reduce((sum,row)=>sum+(row?.m
 const profileMineOutputs=Object.values(worldState).flatMap(row=>Object.values(row?.mineOutputs&&typeof row.mineOutputs==='object'?row.mineOutputs:{})).filter(x=>x?.assetType==='MINE_SITE');
 const simulatedMineOutputs=profileMineOutputs.filter(x=>x?.simulationGenerated===true);
 const simulatedFieldOutputs=Object.values(worldState).flatMap(row=>Object.values(row?.mineOutputs&&typeof row.mineOutputs==='object'?row.mineOutputs:{})).filter(x=>x?.simulationGenerated===true&&['OIL_FIELD','GAS_FIELD'].includes(x?.assetType));
+const expectedSiteRefsByCountry=Object.fromEntries(Object.entries(engine.countryProfiles||{}).map(([k,p])=>[String(k).toUpperCase(),(p?.resource_infrastructure_context?.mineSites||p?.infrastructure_context?.mineSites||[]).length]));
+const siteReferenceMismatches=Object.entries(expectedSiteRefsByCountry).filter(([countryId,n])=>Number(n)!==Number(worldState[countryId]?.mineSiteReferences?.length||0)).map(([countryId,n])=>({countryId,expected:n,actual:worldState[countryId]?.mineSiteReferences?.length||0,controllers:Object.keys(worldState[countryId]?.mineSiteControllers||{}).length}));
+console.log('ENDOWMENT_SITE_REFERENCE_DIAGNOSTIC '+JSON.stringify(siteReferenceMismatches));
 assert.equal(siteReferenceRows,199);
 assert.equal(siteControllerRows,199);
 assert.ok(structuredMineRows>=engine.deposits.length,'structured mine rows must include canonical runtime deposits plus profile-derived structured sites');
