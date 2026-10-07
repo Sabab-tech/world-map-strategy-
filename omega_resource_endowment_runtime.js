@@ -20,7 +20,7 @@
   const n=v=>{const x=Number(v);return Number.isFinite(x)?x:null;};
   const state=()=>g.Game?.state||g.gameState||{};
   const simulationYear=()=>{const d=state()?.simulation?.date;if(d){const y=Number(String(d).slice(0,4));if(Number.isFinite(y))return y;}const sy=Number(state()?.simulation?.startYear);return Number.isFinite(sy)?sy:2015;};
-  let simulationReserveMap=null,simulationReservePromise=null,researchEvidenceMap=null,researchEvidencePromise=null,quantitativeResearchMap=null,quantitativeResearchPromise=null,operatingCostResearchMap=null,operatingCostResearchPromise=null,canonicalSiteMap=null,canonicalSitePromise=null,siteReferenceCache=new Map(),siteReferenceCacheSignature='',canonicalSiteByIdentity=new Map(),canonicalSiteByLinkedId=new Map(),resourceExecutionCountryCache=[],resourceExecutionCountrySignature='';
+  let simulationReserveMap=null,simulationReservePromise=null,researchEvidenceMap=null,researchEvidencePromise=null,quantitativeResearchMap=null,quantitativeResearchPromise=null,operatingCostResearchMap=null,operatingCostResearchPromise=null,canonicalSiteMap=null,canonicalSitePromise=null,siteReferenceCache=new Map(),siteReferenceCacheSignature='',canonicalSiteByIdentity=new Map(),canonicalSiteByCountryName=new Map(),canonicalSiteByLinkedId=new Map(),resourceExecutionCountryCache=[],resourceExecutionCountrySignature='';
   async function loadSimulationReserveData(){
     if(simulationReserveMap)return{status:'READY',count:Object.keys(simulationReserveMap).length,reused:true};
     if(simulationReservePromise)return simulationReservePromise;
@@ -74,7 +74,7 @@
         let data=inline||null;
         if(!data){const res=await fetch('resource_site_canonical_catalog_v1.json',{cache:'no-store'});if(!res?.ok)throw new Error('RESOURCE_CANONICAL_SITE_CATALOG_FETCH_FAILED');data=await res.json();}
         const rows=Array.isArray(data?.sites)?data.sites:[],map={};
-        canonicalSiteByIdentity=new Map();canonicalSiteByLinkedId=new Map();
+        canonicalSiteByIdentity=new Map();canonicalSiteByCountryName=new Map();canonicalSiteByLinkedId=new Map();
         const normalizeKey=v=>String(v??'').normalize('NFKC').trim().toLowerCase().replace(/[^a-z0-9]+/g,' ').replace(/\\b(mine|field|area|site|zone|project|quarry)\\b/g,'').replace(/\\s+/g,' ').trim();
         for(const row of rows){
           if(!row?.siteId)continue;
@@ -82,7 +82,7 @@
           const country=canonical(row.countryId||row.countryCode||row.country||'');
           const resource=rid(row.identity?.resourceTypeId||row.resourceTypeId||row.resourceId||'');
           const name=normalizeKey(row.siteName||row.name||'');
-          if(country&&name)canonicalSiteByIdentity.set(country+'|'+resource+'|'+name,row);
+          if(country&&name){canonicalSiteByIdentity.set(country+'|'+resource+'|'+name,row);if(!canonicalSiteByCountryName.has(country+'|'+name))canonicalSiteByCountryName.set(country+'|'+name,row);}
           for(const linked of [row.linkedDepositId,row.identity?.linkedDepositId,row.depositKey,row.identity?.depositId].filter(Boolean))canonicalSiteByLinkedId.set(country+'|'+String(linked).trim(),row);
         }
         canonicalSiteMap=map;siteReferenceCache.clear();siteReferenceCacheSignature='';g.OmegaResourceCanonicalSiteCatalogData=data;g.Omega=g.Omega||{};g.Omega.ResourceCanonicalSiteCatalogData=data;
@@ -103,7 +103,7 @@
     const name=normalizeSiteNameKey(site?.siteName||site?.name||site?.mineName||site?.depositName);
     if(!country||!name)return null;
     return canonicalSiteByIdentity.get(country+'|'+resource+'|'+name)
-      ||canonicalSiteByIdentity.get(country+'||'+name)
+      ||canonicalSiteByCountryName.get(country+'|'+name)
       ||null;
   }
   async function loadQuantitativeResearchData(){
