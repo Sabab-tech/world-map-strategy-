@@ -88,6 +88,7 @@ jobs:
           done
           GATES[syntax]="$syntax_status"
 
+          echo "FINAL_RESOURCE_VERIFICATION=true"
           run_gate resourceEndowment 120 node test/omega_resource_endowment_runtime.test.mjs
           run_gate siteDataCompleteness 15 node test/omega_resource_site_data_completeness.test.mjs
           run_gate resourceEconomy 15 node --test test/omega_resource_economy_runtime_v2.test.mjs
