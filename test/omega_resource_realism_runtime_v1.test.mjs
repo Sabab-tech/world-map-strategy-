@@ -80,6 +80,28 @@ assert.equal(observedSite.commodityStreams[0].production.activeRate,900);
 assert.equal(observedSite.commodityStreams[1].reserve.quantity,120000);
 assert.equal(observedSite.commodityStreams[1].production.activeRate,600);
 
+const researchedSite=R.siteModel({
+  siteReferenceKey:'SITE:RESEARCH:01',
+  siteName:'Researched Copper Site',
+  resourceId:'copper',
+  quantitativeResearch:{
+    reserve:{status:'OBSERVED',value:{quantity:2000000,unit:'TONNES'}},
+    production:{status:'OBSERVED',value:{rate:750}},
+    capacity:{status:'OBSERVED',value:{minimumCapacity:400,maximumCapacity:1000}},
+    recovery:{status:'OBSERVED',value:0.92}
+  },
+  researchOperatingCost:{status:'OBSERVED',currency:'USD',unit:'USD_PER_TONNE_CONCENTRATE',value:42.5,basis:'SITE_SPECIFIC_OWNER_FEASIBILITY_EVIDENCE'}
+},{resource_domain:{knownResourceTypes:['copper']}},'RES');
+assert.equal(researchedSite.commodityStreams[0].reserve.authority,'OBSERVED');
+assert.equal(researchedSite.commodityStreams[0].reserve.quantity,2000000);
+assert.equal(researchedSite.commodityStreams[0].production.authority,'OBSERVED');
+assert.equal(researchedSite.commodityStreams[0].production.activeRate,750);
+assert.equal(researchedSite.commodityStreams[0].production.minimumCapacity,400);
+assert.equal(researchedSite.commodityStreams[0].production.maximumCapacity,1000);
+assert.equal(researchedSite.commodityStreams[0].production.recovery,0.92);
+assert.equal(researchedSite.commodityStreams[0].production.operatingCost,42.5);
+
+
 const researchedObservedCost=R.siteModel({
   siteReferenceKey:'SITE:GNB:FARIM',
   siteName:'Farim Phosphate Project',
