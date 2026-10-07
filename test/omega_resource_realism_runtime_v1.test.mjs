@@ -142,4 +142,36 @@ for(const k of ['transportMode','routeId','capacity','costEstimate','travelTimeD
 assert.equal(route.transportMode,'rail');
 assert.ok(route.dispatchQuantity>0);
 
+const temporalBase={
+  nominalCapacity:1000,
+  minimumCapacity:300,
+  maximumCapacity:1200,
+  utilization:0.8,
+  recovery:0.9,
+  decline:0.08,
+  maintenance:0.05
+};
+const t0=R.advanceProductionState(temporalBase,{startTurn:0,initialRecoverableQuantity:1000000},{
+  residualQuantity:1000000,
+  recoverableQuantity:1000000,
+  operationalStatus:'ACTIVE_EXTRACTION'
+},0,24);
+const t1=R.advanceProductionState(temporalBase,t0.state,{
+  residualQuantity:900000,
+  recoverableQuantity:1000000,
+  operationalStatus:'ACTIVE_EXTRACTION'
+},8760,24);
+assert.equal(t0.activeRate>0,true);
+assert.equal(t1.activeRate<t0.activeRate,true,'temporal decline/depletion must reduce rate');
+assert.equal(t1.state.elapsedYears>0,true);
+assert.equal(t1.state.lastTurn,8760);
+
+const shutdown=R.advanceProductionState(temporalBase,t1.state,{
+  residualQuantity:900000,
+  recoverableQuantity:1000000,
+  operationalStatus:'SHUTDOWN'
+},8761,24);
+assert.equal(shutdown.activeRate,0,'shutdown must stop extraction rate');
+
+
 console.log('OMEGA RESOURCE REALISM V1 TEST PASSED');
