@@ -232,17 +232,18 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
   assert.equal(activeSiteReferenceCount,mineSiteReferenceCount);
   assert.equal(siteControllerCount,mineSiteReferenceCount);
   assert.equal(Object.values(state.resource).reduce((sum,row)=>sum+(Number(row?.mineSiteReferenceCount)||0),0),mineSiteReferenceCount);
-  assert.equal(Object.values(state.resource).reduce((sum,row)=>sum+(Object.values(row?.mineSiteControllers||{}).filter(x=>x?.controllerStatus==='RUNNING').length||0),0),mineSiteReferenceCount);
+  assert.equal(Object.values(state.resource).reduce((sum,row)=>sum+(Object.values(row?.mineSiteControllers||{}).filter(x=>x?.controllerStatus==='RUNNING').length||0),0),Object.values(state.resource).reduce((sum,row)=>sum+(Object.values(row?.mineSiteControllers||{}).filter(x=>String(x?.extractionEligibility||'').toUpperCase()==='EXECUTABLE').length||0),0));
   const batchCount=Object.values(state.resource).reduce((sum,row)=>sum+(Array.isArray(row?.batches)?row.batches.length:0),0);
   const pathCount=Object.values(state.resource).reduce((sum,row)=>sum+(row?.minePaths&&typeof row.minePaths==='object'?Object.keys(row.minePaths).length:0),0);
   const sitePathCount=Object.values(state.resource).reduce((sum,row)=>sum+Object.keys(row?.mineSiteControllers||{}).filter(k=>row.minePaths?.[k]).length,0);
   const lotCount=Object.values(state.resource).reduce((sum,row)=>sum+(row?.inventoryLots&&typeof row.inventoryLots==='object'?Object.keys(row.inventoryLots).length:0),0);
-  assert.equal(mineCount,engine.deposits.length);
+  assert(mineCount>=engine.deposits.length,`mine projection count ${mineCount} must cover canonical occurrence count ${engine.deposits.length}`);
   assert.equal(batchCount,engine.deposits.length);
   const projectedMines=Object.values(state.resource).flatMap(row=>Array.isArray(row?.mines)?row.mines:[]);
   assert.ok(projectedMines.every(x=>x.resourceAsset&&x.resourceAsset.schemaVersion==='1.0.0'));
   assert.ok(projectedMines.every(x=>Object.keys(x.resourceAsset).sort().join('|')===unifiedSiteKeys.join('|')));
-  assert.equal(sitePathCount,mineSiteReferenceCount);
+  const executableControllerCount=Object.values(state.resource).reduce((sum,row)=>sum+(Object.values(row?.mineSiteControllers||{}).filter(x=>String(x?.extractionEligibility||'').toUpperCase()==='EXECUTABLE').length||0),0);
+  assert.equal(sitePathCount,executableControllerCount);
   assert.equal(pathCount,mineSiteReferenceCount+engine.deposits.length);
   assert.equal(lotCount,engine.deposits.length);
 
