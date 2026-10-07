@@ -22,6 +22,24 @@ assert.equal(P.canonicalUnit('g/t'),'G_T');
 assert.equal(P.canonicalUnit('mg/L'),'MG_L');
 assert.equal(P.canonicalUnit('%'),'PERCENT');
 assert.equal(P.canonicalUnit('API'),'API_GRAVITY');
+const uraniumReserveFromSharedParser=P.parseReserve('165,000 Tons U3O8','uranium');
+assert.equal(uraniumReserveFromSharedParser.status,'OBSERVED');
+assert.equal(uraniumReserveFromSharedParser.unit,'TONNES');
+assert.equal(uraniumReserveFromSharedParser.value,165000);
+
+const uraniumReserveFromPart05=P.compileReserves({
+  listOccurrences(){return[{
+    occurrenceKey:'OCC:TEST:CIGAR',
+    countryId:'CAN',
+    depositKey:'dep-cigar-lake-u',
+    resourceTypeId:'uranium',
+    status:'ACTIVE_PRODUCING',
+    rawDeposit:{name:'Cigar Lake High-Grade Mine',resId:'uranium',reserves:'165,000 Tons U3O8'}
+  }]}
+},null,{sovereignEntities:{resourceTypes:[{id:'uranium',unit:'TONNES'}]}});
+assert.equal(uraniumReserveFromPart05.reserveCount,1);
+assert.equal(uraniumReserveFromPart05.registry.getReserveState('OCC:TEST:CIGAR').geologicalQuantity,165000);
+
 
 const gasReserve=P.parseReserve('1 TCF','natural_gas');
 assert.equal(gasReserve.unit,'BCM');
