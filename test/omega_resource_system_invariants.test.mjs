@@ -40,7 +40,9 @@ assert(reserve.records.filter(x=>x.commercialExtraction===false).every(x=>x.rese
 assert.equal(new Set(reserve.records.map(x=>x.reserve?.quantity).filter(v=>v!=null)).size,195);
 
 for(const row of quantitative.records){
-  assert(row.siteId&&row.countryId&&row.siteName);\n  if(row.researchState==='NOT_APPLICABLE_NO_COMMERCIAL_SITE'){ assert.equal(row.resourceId,null); continue; }\n  assert(row.resourceId);
+  assert(row.siteId&&row.countryId&&row.siteName);
+  if(row.researchState==='NOT_APPLICABLE_NO_COMMERCIAL_SITE'){ assert.equal(row.resourceId,null); continue; }
+  assert(row.resourceId);
   for(const field of ['reserve','recoverableReserve','production','capacity','grade','purity','recovery','throughput']){
     const f=row[field];
     assert(f&&typeof f==='object',`${row.siteId}: ${field} must be structured`);
