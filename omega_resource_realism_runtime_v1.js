@@ -328,7 +328,7 @@ function advanceProductionState(production={},temporalState={},reserveState={},c
  const maintenanceFactor=1-maintenance;
  const recoveryFactor=0.90+0.10*recovery;
  let restartFactor=1;
- const status=String(ts.operationalCommand||reserveState?.operationalStatus||p.operatingStatus||'').toUpperCase();
+ const status=String(reserveState?.operationalStatus??ts.operationalCommand??p.operatingStatus??'').toUpperCase();
  if(status==='SHUTDOWN'||status==='SUSPENDED'||status==='BLOCKED')restartFactor=0;
  if(status==='RESTARTING'){
    const restartStart=(finite(ts.restartStartTurn)??Number(currentTurn)??0);
