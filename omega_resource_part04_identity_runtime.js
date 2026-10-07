@@ -236,12 +236,15 @@
       ?Object.entries(e.countryProfileSources):[['merged',e?.countryProfiles&&typeof e.countryProfiles==='object'?e.countryProfiles:{}]];
     const canonicalDeposits=Array.isArray(e?.deposits)?e.deposits:[];
     const normalizeSiteName=v=>String(v??'').normalize('NFKC').trim().toLowerCase().replace(/[^a-z0-9]+/g,' ').replace(/\b(mine|field|area|site|zone|project|quarry)\b/g,'').replace(/\s+/g,' ').trim();
-    const depositIdentity=new Map();
+    const depositIdentity=new Map(),depositByCountryName=new Map();
     for(const dep of canonicalDeposits){
       const country=canonicalCountry(dep?.countryCode||dep?.countryIso3||dep?.countryId||dep?.country);
       const resource=String(dep?.resourceTypeId||dep?.resourceTypeKey||dep?.resId||dep?.resourceId||'').replace(/^RES_TYPE:/i,'').trim().toLowerCase();
       const name=normalizeSiteName(dep?.name||dep?.depositName);
       if(country&&resource&&name&&!depositIdentity.has(country+'|'+resource+'|'+name))depositIdentity.set(country+'|'+resource+'|'+name,dep);
+      if(country&&name){
+        const k=country+'|'+name,arr=depositByCountryName.get(k)||[];arr.push(dep);depositByCountryName.set(k,arr);
+      }
     }
     const rows=[],seen=new Set();
     for(const [sourceDatasetId,profiles] of sourceMaps){
@@ -262,13 +265,20 @@
           ).trim();
           if(!siteName)return;
           const siteReferenceKey='SITE:'+String(sourceDatasetId)+':'+countryId+':'+tok(siteName)+':'+index;
-          const dedupeKey=sourceDatasetId+'|'+countryId+'|'+index+'|'+siteName.toUpperCase();
+          const resourceIdForDedupe=String(rawSite?.resourceTypeId||rawSite?.resourceTypeKey||rawSite?.resourceId||rawSite?.resId||'').replace(/^RES_TYPE:/i,'').trim().toLowerCase();
+          const explicitSiteId=String(rawSite?.siteId||rawSite?.id||rawSite?.mineId||rawSite?.depositId||'').trim().toLowerCase();
+          const dedupeKey=explicitSiteId
+            ? countryId+'|'+explicitSiteId
+            : countryId+'|'+resourceIdForDedupe+'|'+normalizeSiteName(siteName);
           if(seen.has(dedupeKey))return;seen.add(dedupeKey);
           const sourcePath='GSRSK_Master_CountryProfiles_v14.countryProfiles.'+String(profileKey)+'.resource_infrastructure_context.mineSites['+index+']';
           const rawSiteObject=rawSite&&typeof rawSite==='object'?clone(rawSite):{name:siteName};
           const resourceId=String(rawSiteObject.resourceTypeId||rawSiteObject.resourceTypeKey||rawSiteObject.resourceId||rawSiteObject.resId||'').replace(/^RES_TYPE:/i,'').trim().toLowerCase();
           const explicitDepositId=String(rawSiteObject.linkedDepositId||rawSiteObject.depositKey||rawSiteObject.depositId||rawSiteObject.mineId||'').trim();
-          const matchedDeposit=explicitDepositId ? canonicalDeposits.find(d=>String(d?.id||d?.depositId||d?.mineId||'').trim()===explicitDepositId&&canonicalCountry(d?.countryCode||d?.countryId||d?.country)===countryId) : depositIdentity.get(countryId+'|'+resourceId+'|'+normalizeSiteName(siteName))||null;
+          const sameCountryName=depositByCountryName.get(countryId+'|'+normalizeSiteName(siteName))||[];
+          const matchedDeposit=explicitDepositId ? canonicalDeposits.find(d=>String(d?.id||d?.depositId||d?.mineId||'').trim()===explicitDepositId&&canonicalCountry(d?.countryCode||d?.countryId||d?.country)===countryId) :
+            (depositIdentity.get(countryId+'|'+resourceId+'|'+normalizeSiteName(siteName))||
+              (sameCountryName.length===1?sameCountryName[0]:null));
           const resourceAsset=normalizeUnifiedAsset({
             ...rawSiteObject,
             assetType:'MINE_SITE',
