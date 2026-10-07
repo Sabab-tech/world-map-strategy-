@@ -54,7 +54,15 @@ globalThis.Game={
 
 await import('../omega_country_semantic_bridge.js');
 const countryBridge=globalThis.OmegaCanonicalIdentityRegistry||globalThis.OmegaCountrySemanticBridge;
-await countryBridge.init();
+const countryInit=await countryBridge.init();
+assert.equal(countryInit,true);
+const preAutonomyCountryIdentity=countryBridge.resolveCountry('Bangladesh');
+console.log('COUNTRY_IDENTITY_PRE_AUTONOMY',JSON.stringify({
+  sameRegistry:globalThis.OmegaCanonicalIdentityRegistry===countryBridge,
+  id:preAutonomyCountryIdentity?.id||null,
+  source:preAutonomyCountryIdentity?.source||null,
+  authority:countryBridge.diagnostics?.().authority||null
+}));
 globalThis.ResourceMinistryEngine={
   getIntegratedResourceState(countryId){
     return {countryId,inventory:{crude_oil:1000000},production:{crude_oil:500000},reserves:{crude_oil:5000000}};
@@ -74,6 +82,15 @@ await import('../omega_ministry_interoperability_system.js');
 await import('../omega_simulation_runtime.js');
 await import('../opponent_country_rules.js');
 await import('../omega_opponent_autonomy_system.js');
+
+const postAutonomyRegistry=globalThis.OmegaCanonicalIdentityRegistry||globalThis.OmegaCountrySemanticBridge;
+const postAutonomyIdentity=postAutonomyRegistry?.resolveCountry?.('Bangladesh');
+console.log('COUNTRY_IDENTITY_POST_IMPORTS',JSON.stringify({
+  sameObject:postAutonomyRegistry===countryBridge,
+  id:postAutonomyIdentity?.id||null,
+  source:postAutonomyIdentity?.source||null,
+  authority:postAutonomyRegistry?.diagnostics?.().authority||null
+}));
 
 const autonomy=globalThis.OmegaOpponentAutonomy;
 assert(autonomy,'autonomy API missing');
