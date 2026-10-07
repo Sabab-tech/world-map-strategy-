@@ -334,6 +334,7 @@ function advanceProductionState(production={},temporalState={},reserveState={},c
  }
  let rate=baseNominal===null?null:baseNominal*utilization*maintenanceFactor*recoveryFactor*declineFactor*depletionFactor*restartFactor;
  if(rate!==null&&depletionRatio<=0)rate=0;
+ if(rate!==null&&restartFactor===0)rate=0;
  if(rate!==null&&rate>0){
    if(maximum!==null)rate=Math.min(rate,Math.max(0,maximum));
    if(minimum!==null&&depletionRatio>0.05)rate=Math.max(rate,Math.max(0,minimum));
