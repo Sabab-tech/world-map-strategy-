@@ -32,7 +32,6 @@ await import('../resource_ministry_engine.js');
 await import('../omega_resource_part04_identity_runtime.js');
 const engine=globalThis.ResourceMinistryEngine;
 await engine.init();
-__markPhase('ENGINE_READY');
 const source=JSON.parse(fs.readFileSync(new URL('../resources.json',import.meta.url),'utf8'));
 
 assert.equal(engine.isReady,true);
@@ -61,7 +60,6 @@ await import('../omega_resource_realism_runtime_v1.js');
 await import('../omega_resource_endowment_runtime.js');
 const runtime=globalThis.OmegaResourceEndowmentRuntime;
 const initialized=await runtime.initialize();
-__markPhase('INITIALIZE_DONE');
 assert.equal(initialized.status,'READY',JSON.stringify(initialized));
 assert.equal(initialized.countries,Object.keys(engine.countryProfiles||{}).length);
 const reserveScenario=JSON.parse(fs.readFileSync(new URL('../resource_site_reserve_simulation_v1.json',import.meta.url),'utf8'));
@@ -74,7 +72,6 @@ console.log('ENDOWMENT_GEVRA_HYDRATE '+JSON.stringify({status:indDiag.status,con
 const gevraRef=(indState.mineSiteReferences||[]).find(x=>x.siteReferenceKey==='SITE_IND_gevra_oc_mine');
 console.log('ENDOWMENT_GEVRA_MODEL '+JSON.stringify(globalThis.Omega?.ResourceRealism?.siteModel?.(gevraRef,engine.countryProfiles?.IND,'IND')));
 const kwtDiag=runtime.hydrateCountry('KWT');const kwtState=runtime.countryResourceState('KWT')||{};const kwtRef=(kwtState.mineSiteReferences||[]).find(x=>x.siteReferenceKey==='SITE_KWT_greater_burgan_oilfield');console.log('ENDOWMENT_KWT_MODEL '+JSON.stringify({hydrate:kwtDiag.status,ref:kwtRef&&{siteReferenceKey:kwtRef.siteReferenceKey,resourceId:kwtRef.resourceId,commercialExtraction:kwtRef.commercialExtraction,simulationReserveQuantity:kwtRef.simulationReserveQuantity},model:globalThis.Omega?.ResourceRealism?.siteModel?.(kwtRef,engine.countryProfiles?.KWT,'KWT'),controller:Object.values(kwtState.mineSiteControllers||{}).find(x=>x.siteReferenceKey==='SITE_KWT_greater_burgan_oilfield')}));
-__markPhase('HYDRATE_BGD_DONE');
 assert.equal(hydrated.status,'APPLIED', JSON.stringify(hydrated));
 
 const before=runtime.countryResourceState('BGD');
@@ -101,7 +98,6 @@ assert.ok(Math.abs(gasMine.qualityState.normalized.concentrationPercent-96.2)<1e
 assert.equal(gasMine.qualityState.concentrationStatus,'OBSERVED');
 
 const extraction=await runtime.extractCountry('BGD',[gasMine.occurrenceKey]);
-__markPhase('EXTRACT_ONE_DONE');
 assert.equal(extraction.status,'APPLIED');
 const after=runtime.countryResourceState('BGD');
 const output=after.mineOutputs[gasMine.occurrenceKey];
@@ -136,10 +132,7 @@ const expectedResourceCountries=Object.keys(engine.countryProfiles||{});
 assert.equal(preGlobal.countryCount,expectedResourceCountries.length);
 assert.equal(preGlobal.mineSiteReferenceCount,199);
 assert.equal(preGlobal.mineSiteControllerCount,199);
-globalThis.__OmegaResourceExtractionTrace=true;
 const globalExtraction=await runtime.extractAll();
-globalThis.__OmegaResourceExtractionTrace=false;
-__markPhase('EXTRACT_ALL_DONE');
 assert.equal(globalExtraction.status,'COMPLETED');
 assert.equal(globalExtraction.results.length,expectedResourceCountries.length);
 
