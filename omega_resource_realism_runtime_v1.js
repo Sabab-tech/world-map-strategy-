@@ -265,8 +265,11 @@ function siteModel(site,profile,countryId){
    const gradeField=qp?.grade&&typeof qp.grade==='object'?qp.grade:null;
    const rawGrade=src?.grade??src?.oreGrade??site?.grade??gradeField?.value??null;
    const gradeNumeric=rawGrade===null?null:(typeof rawGrade==='number'?rawGrade:Number(String(rawGrade).match(/[-+]?\d+(?:\.\d+)?/)?.[0]));
-   const grade=Number.isFinite(gradeNumeric)?gradeNumeric:(calibration.gradeMin+deterministicSeed*(calibration.gradeMax-calibration.gradeMin));
-   const gradeAuthority=rawGrade!==null?'OBSERVED':'SIMULATED';
+   const modeledGrade=calibration.gradeMin+deterministicSeed*(calibration.gradeMax-calibration.gradeMin);
+   const numericGradeObserved=Number.isFinite(gradeNumeric)&&typeof rawGrade==='number'||(Number.isFinite(gradeNumeric)&&rawGrade!==null&&/[0-9]/.test(String(rawGrade)));
+   const grade=rawGrade!==null?rawGrade:modeledGrade;
+   const normalizedGradePercent=numericGradeObserved?gradeNumeric:(rawGrade===null?modeledGrade:null);
+   const gradeAuthority=numericGradeObserved?'OBSERVED':(rawGrade!==null?'OBSERVED_TEXT_ONLY':'SIMULATED');
    const purity=src?.purity??site?.purity??qp?.purity?.value??null,apiRaw=src?.APIGravity??src?.apiGravity??site?.APIGravity??qp?.APIGravity?.value??null;
    const api=apiRaw===null?null:Number(apiRaw);
    const productionObserved=nominalObs!==null||observedRate!==null||annualRate!==null||minObs!==null||maxObs!==null;
@@ -278,7 +281,7 @@ function siteModel(site,profile,countryId){
      quality:{grade:rawGrade??grade,oreGrade:src?.oreGrade??rawGrade??grade,concentration:src?.concentration??null,assay:src?.assay??null,metalContent:src?.metalContent??null,purity,
        APIGravity:api,gradeStatus:gradeAuthority,concentrationStatus:src?.concentration!=null?'OBSERVED':'UNOBSERVED',assayStatus:src?.assay!=null?'OBSERVED':'UNOBSERVED',metalContentStatus:src?.metalContent!=null?'OBSERVED':'UNOBSERVED',
        purityStatus:purity!==null?'OBSERVED':'UNOBSERVED',apiGravityStatus:apiRaw!==null?'OBSERVED':'UNOBSERVED',
-       normalized:{gradePercent:grade,concentrationPercent:null,purityFraction:purity===null?null:(Number(purity)>1?Number(purity)/100:Number(purity)),APIGravity:api},
+       normalized:{gradePercent:normalizedGradePercent,concentrationPercent:null,purityFraction:purity===null?null:(Number(purity)>1?Number(purity)/100:Number(purity)),APIGravity:api},
        resourceId},
      production:{nominalCapacity:nominal,minimumCapacity:minimum,maximumCapacity:maximum,utilization:utilizationFinal,recovery:recoveryFinal,decline:declineFinal,maintenance:maintenanceFinal,operatingCost:costObs??null,activeRate,observedRate,
        temporalModel:{decline:declineFinal,maintenance:maintenanceFinal,utilization:utilizationFinal,recovery:recoveryFinal,restartShutdownSupported:true,deterministic:true},
