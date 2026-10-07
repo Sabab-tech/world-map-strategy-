@@ -252,6 +252,11 @@ function siteModel(site,profile,countryId){
    const observedReserve=num(src?.reserveQuantity??src?.geologicalQuantity??src?.reservesQuantity);
    const reserveQuantity=scenarioReserve!==null?scenarioReserve:(observedReserve!==null?observedReserve:fallbackReserve);
    const reserveAuthority=scenarioReserve!==null?'SIMULATED':(observedReserve!==null?'OBSERVED':'SIMULATED');
+   const annualRateForLife=activeRate===null?null:Math.max(0,activeRate)*365;
+   const impliedLifeYears=annualRateForLife&&reserveQuantity!==null?reserveQuantity/annualRateForLife:null;
+   const lifeReconciliation=life===null||impliedLifeYears===null
+     ?'UNRESOLVED'
+     :(Math.abs(impliedLifeYears-life)<=Math.max(1,life*0.05)?'RECONCILED':'EXPLICITLY_DIVERGENT');
    const gradeField=qp?.grade&&typeof qp.grade==='object'?qp.grade:null;
    const rawGrade=src?.grade??src?.oreGrade??site?.grade??gradeField?.value??null;
    const gradeNumeric=rawGrade===null?null:(typeof rawGrade==='number'?rawGrade:Number(String(rawGrade).match(/[-+]?\d+(?:\.\d+)?/)?.[0]));
@@ -263,13 +268,15 @@ function siteModel(site,profile,countryId){
    const streamAuthority=productionObserved||reserveAuthority==='OBSERVED'||rawGrade!==null||costObs!==null?'OBSERVED':'SIMULATED';
    return{
      resourceId,
-     reserve:{quantity:reserveQuantity,unit:scenarioReserveUnit||(CALIBRATION_RANGES[resourceId]?.unit||'TONNES'),authority:reserveAuthority,status:reserveAuthority,basis:scenarioReserve!==null?'PER_SITE_SCENARIO_RESERVE_DATA':(reserveAuthority==='OBSERVED'?'RESOURCE_JSON_SITE_FIELD':'production_capacity_x_modeled_asset_life'),fieldAuthority:reserveAuthority,scenarioRecord:scenarioReserve!==null},
+     reserve:{quantity:reserveQuantity,unit:scenarioReserveUnit||(CALIBRATION_RANGES[resourceId]?.unit||'TONNES'),authority:reserveAuthority,status:reserveAuthority,basis:scenarioReserve!==null?'PER_SITE_SCENARIO_RESERVE_DATA':(reserveAuthority==='OBSERVED'?'RESOURCE_JSON_SITE_FIELD':'production_capacity_x_modeled_asset_life'),fieldAuthority:reserveAuthority,scenarioRecord:scenarioReserve!==null,
+       lifeModel:{scenarioLifeYears:life,impliedLifeYears,annualRate:annualRateForLife,reconciliationStatus:lifeReconciliation,semantics:life===null?'UNDECLARED_PROJECT_LIFE':'EXPLICIT_SCENARIO_PROJECT_LIFE'}},
      quality:{grade:rawGrade??grade,oreGrade:src?.oreGrade??rawGrade??grade,concentration:src?.concentration??null,assay:src?.assay??null,metalContent:src?.metalContent??null,purity,
        APIGravity:api,gradeStatus:gradeAuthority,concentrationStatus:src?.concentration!=null?'OBSERVED':'UNOBSERVED',assayStatus:src?.assay!=null?'OBSERVED':'UNOBSERVED',metalContentStatus:src?.metalContent!=null?'OBSERVED':'UNOBSERVED',
        purityStatus:purity!==null?'OBSERVED':'UNOBSERVED',apiGravityStatus:apiRaw!==null?'OBSERVED':'UNOBSERVED',
        normalized:{gradePercent:grade,concentrationPercent:null,purityFraction:purity===null?null:(Number(purity)>1?Number(purity)/100:Number(purity)),APIGravity:api},
        resourceId},
      production:{nominalCapacity:nominal,minimumCapacity:minimum,maximumCapacity:maximum,utilization:utilizationFinal,recovery:recoveryFinal,decline:declineFinal,maintenance:maintenanceFinal,operatingCost:costObs??null,activeRate,observedRate,
+       temporalModel:{decline:declineFinal,maintenance:maintenanceFinal,utilization:utilizationFinal,recovery:recoveryFinal,restartShutdownSupported:true,deterministic:true},
        authority:productionObserved?'OBSERVED':'SIMULATED',dataStatus:productionObserved?'AVAILABLE':'SIMULATED',technologyAdjusted:Array.isArray(technology.technologies)&&technology.technologies.length>0,technologyEffects:technology,
        annualProduction:src?.annualProduction??productionInput?.annualProduction??null,
        rangeDataStatus:minObs!==null&&maxObs!==null?'OBSERVED':productionObserved?'DERIVED_FROM_OBSERVED_RATE':'SIMULATED',
