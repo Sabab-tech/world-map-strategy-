@@ -80,7 +80,6 @@ test('resource country boundary guard rejects foreign ownership, destination and
   const sandbox={console,Map,Set,WeakMap,Object,Array,Number,String,JSON};
   vm.createContext(sandbox);
   vm.runInContext(readFileSync('omega_resource_country_boundary_guard.js','utf8'),sandbox,{filename:'omega_resource_country_boundary_guard.js'});
-  vm.runInContext(readFileSync('omega_resource_production_model_v2.js','utf8'),sandbox,{filename:'omega_resource_production_model_v2.js'});
   const guard=sandbox.OmegaResourceCountryBoundaryGuard;
   assert.ok(guard);
   assert.equal(guard.validateLocalBatch({
@@ -183,7 +182,6 @@ test('global extraction evaluates every modeled country and keeps each mine outp
   context.globalThis=context;
   vm.createContext(context);
   vm.runInContext(readFileSync('omega_resource_country_boundary_guard.js','utf8'),context,{filename:'omega_resource_country_boundary_guard.js'});
-  vm.runInContext(readFileSync('omega_resource_production_model_v2.js','utf8'),context,{filename:'omega_resource_production_model_v2.js'});
   vm.runInContext(readFileSync('omega_resource_endowment_runtime.js','utf8'),context,{filename:'omega_resource_endowment_runtime.js'});
   const runtime=context.OmegaResourceEndowmentRuntime;
   const initialized=await runtime.initialize();
