@@ -617,7 +617,8 @@ function batchFromExtraction(x,record){
       const existingLinked=Array.isArray(prior.linkedOccurrenceKeys)?prior.linkedOccurrenceKeys:[];
       const attachedRows=(rows||[]).filter(x=>String(x?.siteReferenceKey||'')===siteKey);
       const attachedKeys=attachedRows.map(x=>String(x.occurrenceKey||'')).filter(Boolean);
-      const linked=[...new Set([...existingLinked,...attachedKeys])].filter(k=>executableKeys.has(String(k)));
+      const eligible=String(site.extractionEligibility||'').toUpperCase()==='EXECUTABLE';
+      const linked=eligible?[...new Set([...existingLinked,...attachedKeys])].filter(k=>executableKeys.has(String(k))):[];
       controllers[siteKey]={
         ...prior,
         siteReferenceKey:siteKey,
@@ -632,12 +633,12 @@ function batchFromExtraction(x,record){
         commercialExtraction:site.commercialExtraction!==false,
         operation:site.operation?clone(site.operation):null,
         activationState:'ACTIVE_SITE_CONTROLLER',
-        controllerStatus:'RUNNING',
-        extractionExecutable:linked.length>0&&String(site.extractionEligibility||'').toUpperCase()==='EXECUTABLE',
+        controllerStatus:eligible?(linked.length>0?'RUNNING':'BLOCKED_MISSING_QUANTITATIVE_DATA'):(String(site.extractionEligibility||'').toUpperCase()==='CONDITIONAL'?'CONDITIONAL_PENDING':'STANDBY'),
+        extractionExecutable:eligible&&linked.length>0,
         quantitativeDataState:linked.length>0?'AVAILABLE':'MISSING_FROM_SITE_REFERENCE',
         linkedOccurrenceKeys:linked,
         pathId,
-        extractionPathStatus:linked.length>0?'EXECUTABLE_OCCURRENCE_ATTACHED':'BLOCKED_MISSING_QUANTITATIVE_DATA',
+        extractionPathStatus:eligible&&linked.length>0?'EXECUTABLE_OCCURRENCE_ATTACHED':(String(site.extractionEligibility||'').toUpperCase()==='CONDITIONAL'?'CONDITIONAL_PENDING':'BLOCKED_SITE_ELIGIBILITY'),
         lastEvaluationTurn:turn(),
         rawSiteReference:clone(site.rawSiteReference||site.rawSite||null)
       };
