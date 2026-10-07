@@ -20,7 +20,7 @@
   const n=v=>{const x=Number(v);return Number.isFinite(x)?x:null;};
   const state=()=>g.Game?.state||g.gameState||{};
   const simulationYear=()=>{const d=state()?.simulation?.date;if(d){const y=Number(String(d).slice(0,4));if(Number.isFinite(y))return y;}const sy=Number(state()?.simulation?.startYear);return Number.isFinite(sy)?sy:2015;};
-  let simulationReserveMap=null,simulationReservePromise=null,researchEvidenceMap=null,researchEvidencePromise=null;
+  let simulationReserveMap=null,simulationReservePromise=null,researchEvidenceMap=null,researchEvidencePromise=null;\n  let canonicalSiteCatalogMap=null,canonicalSiteCatalogPromise=null;
   // Runtime indexes: these datasets are immutable during a simulation turn. Reusing the indexes avoids rebuilding and deep-enriching the same country/site rows for every gate and extraction pass.
   let countryListCache=null;
   const profileCache=new Map();
@@ -56,6 +56,34 @@
     })();
     return simulationReservePromise;
   }
+  async function loadCanonicalSiteCatalogData(){
+    if(canonicalSiteCatalogMap)return{status:'READY',count:Object.keys(canonicalSiteCatalogMap).length,reused:true};
+    if(canonicalSiteCatalogPromise)return canonicalSiteCatalogPromise;
+    canonicalSiteCatalogPromise=(async()=>{
+      try{
+        const inline=g.OmegaResourceSiteCanonicalCatalogData||g.Omega?.ResourceSiteCanonicalCatalogData;
+        let data=inline||null;
+        if(!data){
+          const res=await fetch('resource_site_canonical_catalog_v1.json',{cache:'no-store'});
+          if(!res?.ok)throw new Error('RESOURCE_SITE_CANONICAL_CATALOG_FETCH_FAILED');
+          data=await res.json();
+        }
+        const rows=Array.isArray(data?.sites)?data.sites:[];
+        const map={};
+        for(const row of rows)if(row?.siteId)map[String(row.siteId)]=clone(row);
+        canonicalSiteCatalogMap=map;
+        g.OmegaResourceSiteCanonicalCatalogData=data;
+        g.Omega=g.Omega||{};
+        g.Omega.ResourceSiteCanonicalCatalogData=data;
+        return{status:'READY',count:rows.length,siteCount:Number(data?.siteCount)||rows.length};
+      }catch(e){
+        canonicalSiteCatalogMap={};
+        return{status:'FAILED',count:0,reason:String(e?.message||e)};
+      }finally{canonicalSiteCatalogPromise=null;}
+    })();
+    return canonicalSiteCatalogPromise;
+  }
+
   async function loadResearchEvidenceData(){
     if(researchEvidenceMap)return{status:'READY',count:Object.keys(researchEvidenceMap).length,reused:true};
     if(researchEvidencePromise)return researchEvidencePromise;
@@ -319,6 +347,47 @@
     if(!rows.length){
       const refs=g.__OmegaResourceKnowledgeModel?.refCatalog?.allReferences;
       if(Array.isArray(refs))rows=refs.filter(ref=>canonical(ref?.countryCode||ref?.countryId||ref?.country)===wanted).map(enrichSimulationReserve).map(enrichResearchEvidence);
+    }
+    // The engine's merged country profiles are not the complete 199-site canonical catalog.
+    // Add any catalog identities missing from RESOURCE_JSON profile references without
+    // inventing quantitative data. Reserve/production layers enrich these identities later.
+    const seenIdentity=new Set(rows.map(x=>String(x?.siteReferenceKey||x?.siteId||x?.resourceAsset?.siteId||'').toUpperCase()).filter(Boolean));
+    const seenNames=new Set(rows.map(x=>String(x?.siteName||x?.name||'').trim().toLowerCase()).filter(Boolean));
+    for(const site of Object.values(canonicalSiteCatalogMap||{})){
+      if(canonical(site?.countryId||site?.identity?.countryIso3||'')!==wanted)continue;
+      const siteId=String(site?.siteId||'').trim();
+      const siteName=String(site?.siteName||'').trim();
+      if(!siteId||!siteName)continue;
+      if(seenIdentity.has(siteId.toUpperCase())||seenNames.has(siteName.toLowerCase()))continue;
+      const identity=site.identity||{};
+      const operation=site.operation||{};
+      const location=site.location||{};
+      const ownership=site.ownership||{};
+      const rawSite={
+        siteId,siteReferenceKey:siteId,siteName,name:siteName,
+        countryId:wanted,countryCode:wanted,
+        resourceId:identity.resourceTypeId||null,resourceTypeId:identity.resourceTypeId||null,
+        siteType:identity.siteType||null,
+        status:operation.status||'ACTIVE_SITE_REFERENCE',
+        owner:ownership.owner||null,operator:ownership.operator||null,
+        lat:location.coordinates?.lat??null,lon:location.coordinates?.lng??null,
+        sourceAuthority:'RESOURCE_JSON',
+        sourceDatasetId:'resource_site_canonical_catalog_v1.json',
+        sourcePath:'resource_site_canonical_catalog_v1.sites['+Object.keys(canonicalSiteCatalogMap||{}).indexOf(siteId)+']'
+      };
+      const resourceAsset=g.GSRSK_Part04?.normalizeUnifiedAsset?.({
+        ...rawSite,assetType:'MINE_SITE',assetId:siteId,siteReferenceKey:siteId,siteName,countryId:wanted,countryCode:wanted,
+        sourceAuthority:'RESOURCE_JSON',sourceDatasetId:'resource_site_canonical_catalog_v1.json',
+        extractionExecutable:false
+      })||rawSite;
+      rows.push({
+        siteReferenceKey:siteId,countryId:wanted,countryCode:wanted,profileKey:'CANONICAL_SITE_CATALOG',
+        siteName,status:'ACTIVE_SITE_REFERENCE',activationState:'ACTIVE_REFERENCE',extractionExecutable:false,
+        quantitativeExtractionDataAvailable:resourceAsset.quantitativeExtractionDataAvailable===true,
+        sourceAuthority:'RESOURCE_JSON',sourceDatasetId:'resource_site_canonical_catalog_v1.json',
+        sourcePath:rawSite.sourcePath,rawSiteReference:clone(rawSite),resourceAsset
+      });
+      seenIdentity.add(siteId.toUpperCase());seenNames.add(siteName.toLowerCase());
     }
     mineSiteReferenceCache.set(wanted,rows);
     return rows;
@@ -1058,9 +1127,9 @@ function batchFromExtraction(x,record){
     g.__omegaResourceEndowmentPromise=(async function(){
       try{
         for(let i=0;i<400&&!engine()?.isReady;i++)await new Promise(r=>setTimeout(r,0));
-        const [reserveData,researchData]=await Promise.all([loadSimulationReserveData(),loadResearchEvidenceData()]);
+        const [reserveData,researchData,canonicalCatalogData]=await Promise.all([loadSimulationReserveData(),loadResearchEvidenceData(),loadCanonicalSiteCatalogData()]);
         const dependencyLightContext=typeof g.fetch!=='function'&&typeof g.OmegaResourceSiteReserveSimulationData==='undefined'&&typeof g.Omega?.ResourceSiteReserveSimulationData==='undefined';
-        if((reserveData.status!=='READY'||reserveData.count!==199)&&!dependencyLightContext)return{status:'FAILED',reason:'PER_SITE_RESERVE_DATASET_INCOMPLETE',detail:reserveData};
+        if((reserveData.status!=='READY'||reserveData.count!==199)&&!dependencyLightContext)return{status:'FAILED',reason:'PER_SITE_RESERVE_DATASET_INCOMPLETE',detail:reserveData};\n        if((canonicalCatalogData.status!=='READY'||canonicalCatalogData.count!==199)&&!dependencyLightContext)return{status:'FAILED',reason:'CANONICAL_SITE_CATALOG_INCOMPLETE',detail:canonicalCatalogData};
         if(!engine()?.isReady)return{status:'FAILED',reason:'RESOURCE_MINISTRY_ENGINE_NOT_READY'};
         // Build the immutable country index once before any per-country extraction work.
         countryListCache=countries();
