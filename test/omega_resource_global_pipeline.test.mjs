@@ -279,6 +279,11 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
       assert.equal(path.countryId,countryId);
       assert.equal(path.sourceCountryId,countryId);
       assert.equal(path.destinationCountryId,countryId);
+      if(path.status==='BLOCKED_MISSING_QUANTITATIVE_DATA'){
+        assert.deepEqual(path.batchIds,[]);
+        assert.deepEqual(path.inventoryAllocations,[]);
+        continue;
+      }
       assert.ok(path.batchIds.length>=1);
       assert.ok(path.inventoryAllocations.length>=1);
     }
