@@ -1000,9 +1000,14 @@ function batchFromExtraction(x,record){
         blocked.push({occurrenceKey:x.occurrenceKey,resourceId:x.resourceId,reason:result?.diagnostics?.[0]?.message||result?.status||'EXTRACTION_NOT_APPROVED'});
         continue;
       }
-      r.registerReserveState(result.reserveAfter);
-
       const q=n(result.approvedQuantity)||0,resource=x.resourceId;
+      if(result.reserveAfter&&typeof result.reserveAfter==='object'){
+        const temporalState=clone(capacity?.temporalState||result.reserveAfter.productionModel?.temporalState||{});
+        temporalState.lastTurn=turn();
+        temporalState.cumulativeOutputQuantity=(n(temporalState.cumulativeOutputQuantity)||0)+q;
+        result.reserveAfter.productionModel={...(result.reserveAfter.productionModel||{}),temporalState};
+      }
+      r.registerReserveState(result.reserveAfter);
       production[resource]=(n(production[resource])||0)+q;
       inventory[resource]=(n(inventory[resource])||0)+q;
       reserves[resource]=n(result.reserveAfter.residualQuantity)||0;
