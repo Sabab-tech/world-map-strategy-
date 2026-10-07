@@ -163,9 +163,9 @@ for(const [countryId,row] of Object.entries(worldState)){
     assert.equal(controller.countryId,countryId);
     const eligibility=String(controller.extractionEligibility||'').toUpperCase();
     const shouldExecute=eligibility==='EXECUTABLE';
-    assert.equal(controller.controllerStatus,'RUNNING');
     assert.equal(controller.extractionExecutable,shouldExecute,countryId+' controller eligibility mismatch '+siteKey);
     if(shouldExecute){
+      assert.equal(controller.controllerStatus,'RUNNING');
       assert.equal(controller.extractionPathStatus,'EXECUTABLE_OCCURRENCE_ATTACHED');
       assert(Array.isArray(controller.linkedOccurrenceKeys)&&controller.linkedOccurrenceKeys.length>=1);
       for(const occurrenceKey of controller.linkedOccurrenceKeys){
@@ -184,6 +184,8 @@ for(const [countryId,row] of Object.entries(worldState)){
       controllerCountrySets.add(countryId);
     }else{
       assert.equal(controller.linkedOccurrenceKeys.length,0,countryId+' non-executable site has linked occurrence '+siteKey);
+      if(eligibility==='CONDITIONAL')assert.equal(controller.controllerStatus,'CONDITIONAL_PENDING');
+      else assert.equal(controller.controllerStatus,'STANDBY');
     }
   }
 }
