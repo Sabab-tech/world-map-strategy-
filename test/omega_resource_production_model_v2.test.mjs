@@ -66,6 +66,27 @@ assert.equal(copper.productionModel.maximumCapacity,1200);
 assert.equal(copper.productionModel.recovery,0.9);
 assert.equal(copper.productionModel.maintenance,0.05);
 
+const modeledRecoverability=compiled.registry.getReserveState('OCC:TEST:GRASBERG:COM:copper');
+assert.equal(modeledRecoverability.recoverableQuantity,100000000);
+assert.equal(modeledRecoverability.provenance.recoverabilityStatus,'MODELED');
+assert.equal(modeledRecoverability.provenance.recoverabilityAuthority,'SIMULATED');
+assert.equal(modeledRecoverability.provenance.recoverabilityBasis,'MODELED_STOCK_PROXY_FROM_GEOLOGICAL_QUANTITY');
+
+const explicitIdentity={listOccurrences(){return[{
+  occurrenceKey:'OCC:TEST:EXPLICIT',
+  countryId:'TEST',
+  depositKey:'EXPLICIT',
+  resourceTypeId:'copper',
+  status:'OPERATING',
+  rawDeposit:{name:'Explicit Recoverable',resId:'copper',reserves:'100 million tonnes',recoverableQuantity:60000000}
+}]}}
+};
+const explicitCompiled=P.compileReserves(explicitIdentity,null,{sovereignEntities:{resourceTypes:[{id:'copper',unit:'TONNES'}]}});
+const explicitReserve=explicitCompiled.registry.getReserveState('OCC:TEST:EXPLICIT');
+assert.equal(explicitReserve.recoverableQuantity,60000000);
+assert.equal(explicitReserve.provenance.recoverabilityStatus,'OBSERVED');
+assert.equal(explicitReserve.provenance.recoverabilityAuthority,'OBSERVED');
+
 const simulated=P.productionModel({},1000000);
 assert.equal(simulated.authority,'SIMULATED');
 assert.ok(Math.abs(simulated.nominalCapacity-(1000000/150000))<1e-12);
