@@ -8,7 +8,8 @@ const resourceFiles=new Map([
   ['resources_2.json',new URL('../resources_2.json',import.meta.url)],
   ['resource_site_reserve_simulation_v1.json',new URL('../resource_site_reserve_simulation_v1.json',import.meta.url)],
   ['resource_site_quantitative_research_v1.json',new URL('../resource_site_quantitative_research_v1.json',import.meta.url)],
-  ['resource_site_operating_cost_research_v1.json',new URL('../resource_site_operating_cost_research_v1.json',import.meta.url)]
+  ['resource_site_operating_cost_research_v1.json',new URL('../resource_site_operating_cost_research_v1.json',import.meta.url)],
+  ['resource_site_canonical_catalog_v1.json',new URL('../resource_site_canonical_catalog_v1.json',import.meta.url)]
 ]);
 const nativeFetch=globalThis.fetch;
 globalThis.fetch=async function(input){
@@ -63,6 +64,7 @@ assert.equal(initialized.status,'READY',JSON.stringify(initialized));
 assert.equal(initialized.countries,Object.keys(engine.countryProfiles||{}).length);
 assert.equal(initialized.researchData?.quantitativeSiteCount,199);
 assert.equal(initialized.researchData?.operatingCostSiteCount,199);
+assert.equal(initialized.researchData?.canonicalSiteCount,199);
 const reserveScenario=JSON.parse(fs.readFileSync(new URL('../resource_site_reserve_simulation_v1.json',import.meta.url),'utf8'));
 assert.equal(reserveScenario.siteCount,199);
 assert.equal(reserveScenario.commercialSiteCount,195);
@@ -144,10 +146,12 @@ assert.equal(siteControllerRows,199);
 assert.ok(structuredMineRows>=engine.deposits.length,'structured mine rows must include canonical runtime deposits plus profile-derived structured sites');
 const unifiedReferences=Object.values(worldState).flatMap(row=>Array.isArray(row?.mineSiteReferences)?row.mineSiteReferences:[]);
 assert.equal(unifiedReferences.length,199);
+const executableSiteIds=new Set(unifiedReferences.filter(x=>String(x?.extractionEligibility||'').toUpperCase()==='EXECUTABLE').map(x=>x.canonicalSiteId||x.siteReferenceKey));
+const outputSiteIds=new Set(Object.values(worldState).flatMap(row=>Object.values(row?.mineOutputs&&typeof row.mineOutputs==='object'?row.mineOutputs:{})).filter(x=>(Number(x?.producedQuantity)||0)>0&&x?.siteReferenceKey).map(x=>x.canonicalSiteId||x.siteReferenceKey));
 assert.ok(unifiedReferences.every(x=>x.resourceAsset&&x.resourceAsset.schemaVersion==='1.0.0'));
 assert.ok(unifiedReferences.every(x=>x.resourceAsset.assetId===x.siteReferenceKey));
 assert.deepEqual(Object.keys(unifiedReferences[0]?.resourceAsset||{}).sort(),unifiedMineKeys);
-assert.equal(profileMineOutputs.length,199);
+assert.equal(outputSiteIds.size,executableSiteIds.size);
 assert(simulatedFieldOutputs.length>0,'expected hydrocarbon field execution assets');
 assert(profileMineOutputs.every(x=>(x?.producedQuantity||0)>0&&x?.effortUtilization>0&&x?.effortUtilization<=1),'some profile mine site did not execute with valid utilization');
 assert(simulatedFieldOutputs.every(x=>(x?.producedQuantity||0)>0&&x?.effortUtilization>0&&x?.effortUtilization<=1),'some hydrocarbon field did not execute with modeled utilization');
@@ -157,26 +161,33 @@ for(const [countryId,row] of Object.entries(worldState)){
   if(!row)continue;
   for(const [siteKey,controller] of Object.entries(row.mineSiteControllers||{})){
     assert.equal(controller.countryId,countryId);
+    const eligibility=String(controller.extractionEligibility||'').toUpperCase();
+    const shouldExecute=eligibility==='EXECUTABLE';
     assert.equal(controller.controllerStatus,'RUNNING');
-    assert.equal(controller.extractionExecutable,true,countryId+' controller not executable '+siteKey);
-    assert.equal(controller.extractionPathStatus,'EXECUTABLE_OCCURRENCE_ATTACHED');
-    assert(Array.isArray(controller.linkedOccurrenceKeys)&&controller.linkedOccurrenceKeys.length===1);
-    const occurrenceKey=controller.linkedOccurrenceKeys[0];
-    const output=row.mineOutputs?.[occurrenceKey];
-    assert(output,countryId+' missing site output '+siteKey);
-    assert.equal(output.assetType,'MINE_SITE');
-    assert.ok(output.stateAuthority||output.sourceAuthority||output.simulationGenerated!==undefined);
-    assert(output.batchId,countryId+' missing site batch '+siteKey);
-    assert.ok(output.effortUtilization>0&&output.effortUtilization<=1);
-    const lot=row.inventoryLots?.[output.batchId];
-    assert(lot,countryId+' missing site inventory lot '+siteKey);
-    assert.equal(lot.countryId,countryId);
-    assert.equal(lot.warehouseId,'WH-'+countryId+'-RAW');
-    assert(row.mineProductionLedger.some(x=>x.batchId===output.batchId&&x.mineId===occurrenceKey),countryId+' missing site production ledger '+siteKey);
-    controllerCountrySets.add(countryId);
+    assert.equal(controller.extractionExecutable,shouldExecute,countryId+' controller eligibility mismatch '+siteKey);
+    if(shouldExecute){
+      assert.equal(controller.extractionPathStatus,'EXECUTABLE_OCCURRENCE_ATTACHED');
+      assert(Array.isArray(controller.linkedOccurrenceKeys)&&controller.linkedOccurrenceKeys.length>=1);
+      for(const occurrenceKey of controller.linkedOccurrenceKeys){
+        const output=row.mineOutputs?.[occurrenceKey];
+        assert(output,countryId+' missing site output '+siteKey+' '+occurrenceKey);
+        assert.equal(output.assetType,'MINE_SITE');
+        assert.ok(output.stateAuthority||output.sourceAuthority||output.simulationGenerated!==undefined);
+        assert(output.batchId,countryId+' missing site batch '+siteKey+' '+occurrenceKey);
+        assert.ok(output.effortUtilization>0&&output.effortUtilization<=1);
+        const lot=row.inventoryLots?.[output.batchId];
+        assert(lot,countryId+' missing site inventory lot '+siteKey+' '+occurrenceKey);
+        assert.equal(lot.countryId,countryId);
+        assert.equal(lot.warehouseId,'WH-'+countryId+'-RAW');
+        assert(row.mineProductionLedger.some(x=>x.batchId===output.batchId&&x.mineId===occurrenceKey),countryId+' missing site production ledger '+siteKey+' '+occurrenceKey);
+      }
+      controllerCountrySets.add(countryId);
+    }else{
+      assert.equal(controller.linkedOccurrenceKeys.length,0,countryId+' non-executable site has linked occurrence '+siteKey);
+    }
   }
 }
-assert.equal(profileMineOutputs.length,199);
+assert.equal(outputSiteIds.size,executableSiteIds.size);
 
 for(const [countryId,row] of Object.entries(worldState)){
   if(!row||!Array.isArray(row.mines))continue;
