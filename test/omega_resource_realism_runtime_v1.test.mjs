@@ -80,6 +80,61 @@ assert.equal(observedSite.commodityStreams[0].production.activeRate,900);
 assert.equal(observedSite.commodityStreams[1].reserve.quantity,120000);
 assert.equal(observedSite.commodityStreams[1].production.activeRate,600);
 
+const researchedSite=R.siteModel({
+  siteReferenceKey:'SITE:RESEARCH:01',
+  siteName:'Researched Copper Site',
+  resourceId:'copper',
+  quantitativeResearch:{
+    reserve:{status:'OBSERVED',value:{quantity:2000000,unit:'TONNES'}},
+    production:{status:'OBSERVED',value:{rate:750}},
+    capacity:{status:'OBSERVED',value:{minimumCapacity:400,maximumCapacity:1000}},
+    recovery:{status:'OBSERVED',value:0.92}
+  },
+  researchOperatingCost:{status:'OBSERVED',currency:'USD',unit:'USD_PER_TONNE_CONCENTRATE',value:42.5,basis:'SITE_SPECIFIC_OWNER_FEASIBILITY_EVIDENCE'}
+},{resource_domain:{knownResourceTypes:['copper']}},'RES');
+assert.equal(researchedSite.commodityStreams[0].reserve.authority,'OBSERVED');
+assert.equal(researchedSite.commodityStreams[0].reserve.quantity,2000000);
+assert.equal(researchedSite.commodityStreams[0].production.authority,'OBSERVED');
+assert.equal(researchedSite.commodityStreams[0].production.activeRate,750);
+assert.equal(researchedSite.commodityStreams[0].production.minimumCapacity,400);
+assert.equal(researchedSite.commodityStreams[0].production.maximumCapacity,1000);
+assert.equal(researchedSite.commodityStreams[0].production.recovery,0.92);
+assert.equal(researchedSite.commodityStreams[0].production.operatingCost,42.5);
+
+
+const researchedObservedCost=R.siteModel({
+  siteReferenceKey:'SITE:GNB:FARIM',
+  siteName:'Farim Phosphate Project',
+  resourceId:'phosphate',
+  researchOperatingCost:{
+    status:'OBSERVED',
+    currency:'USD',
+    unit:'USD_PER_TONNE_CONCENTRATE',
+    value:70.9,
+    basis:'SITE_SPECIFIC_OWNER_FEASIBILITY_EVIDENCE'
+  }
+},{resource_domain:{knownResourceTypes:['phosphate']}},'GNB');
+assert.equal(researchedObservedCost.commodityStreams[0].production.operatingCost,70.9);
+assert.equal(researchedObservedCost.commodityStreams[0].production.operatingCostStatus,'OBSERVED');
+assert.equal(researchedObservedCost.commodityStreams[0].production.operatingCostUnit,'USD_PER_TONNE_CONCENTRATE');
+
+const researchedModeledCost=R.siteModel({
+  siteReferenceKey:'SITE:GNB:MODELED',
+  siteName:'Modeled Phosphate Site',
+  resourceId:'phosphate',
+  researchOperatingCost:{
+    status:'MODELED',
+    currency:'USD',
+    unit:'USD_PER_OUTPUT_UNIT',
+    value:null,
+    basis:'SITE_SPECIFIC_DRIVER_MODEL',
+    model:{formulaId:'OMEGA_SITE_DRIVER_COST_V1',numericValueIncluded:false}
+  }
+},{resource_domain:{knownResourceTypes:['phosphate']}},'GNB');
+assert.equal(researchedModeledCost.commodityStreams[0].production.operatingCost,null);
+assert.equal(researchedModeledCost.commodityStreams[0].production.operatingCostStatus,'MODELED');
+assert.equal(researchedModeledCost.commodityStreams[0].production.operatingCostDataset,null);
+
 const gasQuality=R.quality({grade:'96.2% Pure Methane Gas'},'natural_gas');
 assert.equal(gasQuality.grade,'96.2% Pure Methane Gas');
 assert.equal(gasQuality.gradeStatus,'OBSERVED');
@@ -108,5 +163,37 @@ const route=R.planRoute({
 for(const k of ['transportMode','routeId','capacity','costEstimate','travelTimeDays','deliveryStatus'])assert.ok(route[k]!==undefined,k);
 assert.equal(route.transportMode,'rail');
 assert.ok(route.dispatchQuantity>0);
+
+const temporalBase={
+  nominalCapacity:1000,
+  minimumCapacity:300,
+  maximumCapacity:1200,
+  utilization:0.8,
+  recovery:0.9,
+  decline:0.08,
+  maintenance:0.05
+};
+const t0=R.advanceProductionState(temporalBase,{startTurn:0,initialRecoverableQuantity:1000000},{
+  residualQuantity:1000000,
+  recoverableQuantity:1000000,
+  operationalStatus:'ACTIVE_EXTRACTION'
+},0,24);
+const t1=R.advanceProductionState(temporalBase,t0.state,{
+  residualQuantity:900000,
+  recoverableQuantity:1000000,
+  operationalStatus:'ACTIVE_EXTRACTION'
+},8760,24);
+assert.equal(t0.activeRate>0,true);
+assert.equal(t1.activeRate<t0.activeRate,true,'temporal decline/depletion must reduce rate');
+assert.equal(t1.state.elapsedYears>0,true);
+assert.equal(t1.state.lastTurn,8760);
+
+const shutdown=R.advanceProductionState(temporalBase,t1.state,{
+  residualQuantity:900000,
+  recoverableQuantity:1000000,
+  operationalStatus:'SHUTDOWN'
+},8761,24);
+assert.equal(shutdown.activeRate,0,'shutdown must stop extraction rate');
+
 
 console.log('OMEGA RESOURCE REALISM V1 TEST PASSED');

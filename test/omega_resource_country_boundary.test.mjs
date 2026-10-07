@@ -184,7 +184,8 @@ test('global extraction evaluates every modeled country and keeps each mine outp
   vm.runInContext(readFileSync('omega_resource_country_boundary_guard.js','utf8'),context,{filename:'omega_resource_country_boundary_guard.js'});
   vm.runInContext(readFileSync('omega_resource_endowment_runtime.js','utf8'),context,{filename:'omega_resource_endowment_runtime.js'});
   const runtime=context.OmegaResourceEndowmentRuntime;
-  assert.equal((await runtime.initialize()).status,'READY');
+  const initialized=await runtime.initialize();
+  assert.equal(initialized.status,'READY',JSON.stringify(initialized));
   const globalResult=await runtime.extractAll();
   assert.equal(globalResult.status,'COMPLETED');
   assert.equal(globalResult.results.length,2);

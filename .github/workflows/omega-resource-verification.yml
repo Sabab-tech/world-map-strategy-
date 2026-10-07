@@ -88,7 +88,10 @@ jobs:
           done
           GATES[syntax]="$syntax_status"
 
-          run_gate resourceEndowment 120 node test/omega_resource_endowment_runtime.test.mjs
+          run_gate resourceEndowmentBootProfile 60 node test/omega_resource_endowment_boot_profile.test.mjs
+          OMEGA_PHASE_TIMEOUT=30; for phase in initialize hydrate extract-one extract-all; do run_gate resourcePhase_$phase 30 env OMEGA_PHASE="$phase" node test/omega_resource_endowment_phase_diagnosis.test.mjs "$phase"; done
+          run_gate resourceCountryLatency 90 node test/omega_resource_endowment_per_country_diagnosis.test.mjs
+          run_gate resourceEndowment 30 node test/omega_resource_endowment_runtime.test.mjs
           run_gate siteDataCompleteness 15 node test/omega_resource_site_data_completeness.test.mjs
           run_gate resourceEconomy 15 node --test test/omega_resource_economy_runtime_v2.test.mjs
           run_gate authoritativeAdapter 15 node --test test/omega_resource_authoritative_adapter.test.mjs
@@ -101,6 +104,11 @@ jobs:
           run_gate settlementCompatibility 15 node test/omega_resource_request_and_settlement.test.mjs
           run_gate resourceResearch 15 node test/omega_resource_research_runtime.test.mjs
           run_gate resourceResearchEvidence 15 node test/omega_resource_research_evidence.test.mjs
+          run_gate resourceResearchDataContract 15 node test/omega_resource_research_data_contract.test.mjs
+          run_gate resourceSystemInvariants 15 node test/omega_resource_system_invariants.test.mjs
+          run_gate resourceSiteBindingContract 30 node test/omega_resource_site_binding_contract.test.mjs
+          run_gate resourceCanonicalBindingDiagnosis 30 node test/omega_resource_canonical_binding_diagnosis.test.mjs
+          run_gate resourceLongHorizonLife 15 node test/omega_resource_long_horizon_life.test.mjs
           run_gate resourceResearchPolicy 15 node --test test/omega_resource_research_policy.test.mjs
 
           export OMEGA_GATE_SYNTAX="${GATES[syntax]}"

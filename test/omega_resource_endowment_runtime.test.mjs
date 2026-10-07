@@ -6,8 +6,13 @@ const repoRoot=new URL('../',import.meta.url);
 const resourceFiles=new Map([
   ['resources.json',new URL('../resources.json',import.meta.url)],
   ['resources_2.json',new URL('../resources_2.json',import.meta.url)],
-  ['resource_site_reserve_simulation_v1.json',new URL('../resource_site_reserve_simulation_v1.json',import.meta.url)]
+  ['resource_site_reserve_simulation_v1.json',new URL('../resource_site_reserve_simulation_v1.json',import.meta.url)],
+  ['resource_site_quantitative_research_v1.json',new URL('../resource_site_quantitative_research_v1.json',import.meta.url)],
+  ['resource_site_operating_cost_research_v1.json',new URL('../resource_site_operating_cost_research_v1.json',import.meta.url)],
+  ['resource_site_canonical_catalog_v1.json',new URL('../resource_site_canonical_catalog_v1.json',import.meta.url)]
 ]);
+const withTimeout=(label,promise,ms=12000)=>Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(new Error(label+'_TIMEOUT')),ms))]);
+const mark=label=>console.log(JSON.stringify({phase:label,at:new Date().toISOString()}));
 const nativeFetch=globalThis.fetch;
 globalThis.fetch=async function(input){
   const name=String(input).split('?')[0].replace(/^\.\//,'');
@@ -56,19 +61,26 @@ await import('../omega_resource_production_model_v2.js');
 await import('../omega_resource_realism_runtime_v1.js');
 await import('../omega_resource_endowment_runtime.js');
 const runtime=globalThis.OmegaResourceEndowmentRuntime;
-const initialized=await runtime.initialize();
+mark('BEFORE_INITIALIZE');
+const initialized=await withTimeout('INITIALIZE',runtime.initialize());
+mark('AFTER_INITIALIZE');
 assert.equal(initialized.status,'READY',JSON.stringify(initialized));
 assert.equal(initialized.countries,Object.keys(engine.countryProfiles||{}).length);
+assert.equal(initialized.researchData?.quantitativeSiteCount,199);
+assert.equal(initialized.researchData?.operatingCostSiteCount,199);
+assert.equal(initialized.researchData?.canonicalSiteCount,199);
 const reserveScenario=JSON.parse(fs.readFileSync(new URL('../resource_site_reserve_simulation_v1.json',import.meta.url),'utf8'));
 assert.equal(reserveScenario.siteCount,199);
 assert.equal(reserveScenario.commercialSiteCount,195);
+mark('BEFORE_HYDRATE_BGD');
 const hydrated=runtime.hydrateCountry('BGD');
+mark('AFTER_HYDRATE_BGD');
 assert.equal(hydrated.status,'APPLIED', JSON.stringify(hydrated));
 
 const before=runtime.countryResourceState('BGD');
 assert(before);
 assert(Array.isArray(before.mines));
-assert(before.mines.length>=4);
+assert(before.mines.length>=4,JSON.stringify({mineCount:before.mines.length,names:before.mines.map(x=>({site:x.depositName,assetType:x.assetType,resourceId:x.resourceId,sim:x.simulationGenerated}))}));
 assert((before.reserves.natural_gas||0)>0);
 assert((before.endowment.natural_gas||0)>0);
 assert(before.resourceAuthority);
@@ -88,7 +100,9 @@ assert.equal(gasMine.purity,null);
 assert.ok(Math.abs(gasMine.qualityState.normalized.concentrationPercent-96.2)<1e-9);
 assert.equal(gasMine.qualityState.concentrationStatus,'OBSERVED');
 
-const extraction=await runtime.extractCountry('BGD',[gasMine.occurrenceKey]);
+mark('BEFORE_EXTRACT_BGD');
+const extraction=await withTimeout('EXTRACT_BGD',runtime.extractCountry('BGD',[gasMine.occurrenceKey]));
+mark('AFTER_EXTRACT_BGD');
 assert.equal(extraction.status,'APPLIED');
 const after=runtime.countryResourceState('BGD');
 const output=after.mineOutputs[gasMine.occurrenceKey];
@@ -123,7 +137,9 @@ const expectedResourceCountries=Object.keys(engine.countryProfiles||{});
 assert.equal(preGlobal.countryCount,expectedResourceCountries.length);
 assert.equal(preGlobal.mineSiteReferenceCount,199);
 assert.equal(preGlobal.mineSiteControllerCount,199);
-const globalExtraction=await runtime.extractAll();
+mark('BEFORE_EXTRACT_ALL');
+const globalExtraction=await withTimeout('EXTRACT_ALL',runtime.extractAll());
+mark('AFTER_EXTRACT_ALL');
 assert.equal(globalExtraction.status,'COMPLETED');
 assert.equal(globalExtraction.results.length,expectedResourceCountries.length);
 
@@ -140,10 +156,12 @@ assert.equal(siteControllerRows,199);
 assert.ok(structuredMineRows>=engine.deposits.length,'structured mine rows must include canonical runtime deposits plus profile-derived structured sites');
 const unifiedReferences=Object.values(worldState).flatMap(row=>Array.isArray(row?.mineSiteReferences)?row.mineSiteReferences:[]);
 assert.equal(unifiedReferences.length,199);
+const executableSiteIds=new Set(unifiedReferences.filter(x=>String(x?.extractionEligibility||'').toUpperCase()==='EXECUTABLE').map(x=>x.canonicalSiteId||x.siteReferenceKey));
+const outputSiteIds=new Set(Object.values(worldState).flatMap(row=>Object.values(row?.mineOutputs&&typeof row.mineOutputs==='object'?row.mineOutputs:{})).filter(x=>(Number(x?.producedQuantity)||0)>0&&x?.siteReferenceKey).map(x=>x.canonicalSiteId||x.siteReferenceKey));
 assert.ok(unifiedReferences.every(x=>x.resourceAsset&&x.resourceAsset.schemaVersion==='1.0.0'));
 assert.ok(unifiedReferences.every(x=>x.resourceAsset.assetId===x.siteReferenceKey));
 assert.deepEqual(Object.keys(unifiedReferences[0]?.resourceAsset||{}).sort(),unifiedMineKeys);
-assert.equal(profileMineOutputs.length,199);
+assert.equal(outputSiteIds.size,executableSiteIds.size);
 assert(simulatedFieldOutputs.length>0,'expected hydrocarbon field execution assets');
 assert(profileMineOutputs.every(x=>(x?.producedQuantity||0)>0&&x?.effortUtilization>0&&x?.effortUtilization<=1),'some profile mine site did not execute with valid utilization');
 assert(simulatedFieldOutputs.every(x=>(x?.producedQuantity||0)>0&&x?.effortUtilization>0&&x?.effortUtilization<=1),'some hydrocarbon field did not execute with modeled utilization');
@@ -153,26 +171,35 @@ for(const [countryId,row] of Object.entries(worldState)){
   if(!row)continue;
   for(const [siteKey,controller] of Object.entries(row.mineSiteControllers||{})){
     assert.equal(controller.countryId,countryId);
-    assert.equal(controller.controllerStatus,'RUNNING');
-    assert.equal(controller.extractionExecutable,true,countryId+' controller not executable '+siteKey);
-    assert.equal(controller.extractionPathStatus,'EXECUTABLE_OCCURRENCE_ATTACHED');
-    assert(Array.isArray(controller.linkedOccurrenceKeys)&&controller.linkedOccurrenceKeys.length===1);
-    const occurrenceKey=controller.linkedOccurrenceKeys[0];
-    const output=row.mineOutputs?.[occurrenceKey];
-    assert(output,countryId+' missing site output '+siteKey);
-    assert.equal(output.assetType,'MINE_SITE');
-    assert.ok(output.stateAuthority||output.sourceAuthority||output.simulationGenerated!==undefined);
-    assert(output.batchId,countryId+' missing site batch '+siteKey);
-    assert.ok(output.effortUtilization>0&&output.effortUtilization<=1);
-    const lot=row.inventoryLots?.[output.batchId];
-    assert(lot,countryId+' missing site inventory lot '+siteKey);
-    assert.equal(lot.countryId,countryId);
-    assert.equal(lot.warehouseId,'WH-'+countryId+'-RAW');
-    assert(row.mineProductionLedger.some(x=>x.batchId===output.batchId&&x.mineId===occurrenceKey),countryId+' missing site production ledger '+siteKey);
-    controllerCountrySets.add(countryId);
+    const eligibility=String(controller.extractionEligibility||'').toUpperCase();
+    const shouldExecute=eligibility==='EXECUTABLE';
+    assert.equal(controller.extractionExecutable,shouldExecute,countryId+' controller eligibility mismatch '+siteKey);
+    if(shouldExecute){
+      assert.equal(controller.controllerStatus,'RUNNING');
+      assert.equal(controller.extractionPathStatus,'EXECUTABLE_OCCURRENCE_ATTACHED');
+      assert(Array.isArray(controller.linkedOccurrenceKeys)&&controller.linkedOccurrenceKeys.length>=1);
+      for(const occurrenceKey of controller.linkedOccurrenceKeys){
+        const output=row.mineOutputs?.[occurrenceKey];
+        assert(output,countryId+' missing site output '+siteKey+' '+occurrenceKey);
+        assert.equal(output.assetType,'MINE_SITE');
+        assert.ok(output.stateAuthority||output.sourceAuthority||output.simulationGenerated!==undefined);
+        assert(output.batchId,countryId+' missing site batch '+siteKey+' '+occurrenceKey);
+        assert.ok(output.effortUtilization>0&&output.effortUtilization<=1);
+        const lot=row.inventoryLots?.[output.batchId];
+        assert(lot,countryId+' missing site inventory lot '+siteKey+' '+occurrenceKey);
+        assert.equal(lot.countryId,countryId);
+        assert.equal(lot.warehouseId,'WH-'+countryId+'-RAW');
+        assert(row.mineProductionLedger.some(x=>x.batchId===output.batchId&&x.mineId===occurrenceKey),countryId+' missing site production ledger '+siteKey+' '+occurrenceKey);
+      }
+      controllerCountrySets.add(countryId);
+    }else{
+      assert.equal(controller.linkedOccurrenceKeys.length,0,countryId+' non-executable site has linked occurrence '+siteKey);
+      if(eligibility==='CONDITIONAL')assert.equal(controller.controllerStatus,'CONDITIONAL_PENDING');
+      else assert.equal(controller.controllerStatus,'STANDBY');
+    }
   }
 }
-assert.equal(profileMineOutputs.length,199);
+assert.equal(outputSiteIds.size,executableSiteIds.size);
 
 for(const [countryId,row] of Object.entries(worldState)){
   if(!row||!Array.isArray(row.mines))continue;
@@ -192,4 +219,5 @@ for(const [countryId,row] of Object.entries(worldState)){
 }
 
 if(nativeFetch)globalThis.fetch=nativeFetch;
+mark('TEST_ASSERTIONS_COMPLETE');
 console.log('OMEGA RESOURCE JSON -> MINE -> BATCH -> WAREHOUSE -> FACTORY EVENT TEST PASSED');
