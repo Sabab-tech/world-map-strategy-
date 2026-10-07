@@ -286,10 +286,20 @@ assert.ok(nonCommercialSites.every(site =>
   site.identity?.siteType === 'NO_COMMERCIAL_EXTRACTION' &&
   site.identity?.resourceTypeId === null
 ));
+const simulatedScenarioRecords = scenarioCatalog.records.filter(site => site.reserve?.status === 'SIMULATED');
+const notApplicableScenarioRecords = scenarioCatalog.records.filter(site => site.reserve?.status === 'NOT_APPLICABLE');
+
+assert.equal(simulatedScenarioRecords.length, 195);
+assert.equal(notApplicableScenarioRecords.length, 4);
 assert.ok(scenarioCatalog.records.every(site =>
   site.siteId &&
-  site.reserve?.status === 'SIMULATED' &&
+  ['SIMULATED', 'NOT_APPLICABLE'].includes(site.reserve?.status) &&
   site.provenance?.authority === 'SCENARIO_SIMULATION_DATA'
+));
+assert.ok(notApplicableScenarioRecords.every(site =>
+  site.commercialExtraction === false &&
+  site.reserve?.quantity === null &&
+  site.reserve?.unit === null
 ));
 
 console.log('OMEGA RESOURCE TRUTH BOUNDARY REGRESSION PASSED');
