@@ -423,6 +423,26 @@
     mineSiteReferenceCache.set(wanted,rows);
     return rows;
   }
+  function canonicalSiteReferenceForOccurrence(countryId,resourceId,rawDeposit,depositName){
+    const wanted=canonical(countryId),ridWanted=rid(resourceId);
+    const direct=String(rawDeposit?.siteId||rawDeposit?.siteReferenceKey||rawDeposit?.resourceSiteId||'').trim();
+    if(direct&&canonicalSiteCatalogMap?.[direct])return direct;
+    const normalizeName=v=>String(v||'').toLowerCase().replace(/oilfield/g,'oil field').replace(/[^a-z0-9]+/g,' ').trim();
+    const target=normalizeName(rawDeposit?.siteName||rawDeposit?.siteName||depositName||rawDeposit?.name);
+    if(!target)return null;
+    const tt=new Set(target.split(/\s+/).filter(x=>x.length>2&&!['site','mine','field','area','zone','facility','complex'].includes(x)));
+    let best=null,bestScore=0;
+    for(const site of Object.values(canonicalSiteCatalogMap||{})){
+      if(canonical(site?.countryId||site?.identity?.countryIso3||'')!==wanted)continue;
+      if(rid(site?.identity?.resourceTypeId)!==ridWanted)continue;
+      const name=normalizeName(site?.siteName),st=new Set(name.split(/\s+/).filter(x=>x.length>2&&!['site','mine','field','area','zone','facility','complex'].includes(x)));
+      let common=0;for(const t of tt)if(st.has(t))common++;
+      const score=common/Math.max(tt.size,st.size,1);
+      if(score>bestScore){bestScore=score;best=site;}
+    }
+    return bestScore>=0.25?String(best?.siteId||''):null;
+  }
+
   function occurrenceRows(c){
     const reg=g.__OmegaResourceIdentityRegistry;const e=engine();const rr=g.__OmegaResourceReserveRegistry;if(!reg||!e||!rr)return[];
     const wanted=canonical(c),out=[],seen=new Set();
@@ -454,7 +474,7 @@
             /* parent record may be a legacy single-commodity stream */
           }
           out.push({
-            occurrenceKey:key,parentOccurrenceKey:reserve.parentOccurrenceKey||occ.occurrenceKey,depositKey:occ.depositKey,resourceId,countryId:wanted,
+            occurrenceKey:key,parentOccurrenceKey:reserve.parentOccurrenceKey||occ.occurrenceKey,depositKey:occ.depositKey,resourceId,countryId:wanted,siteReferenceKey:canonicalSiteReferenceForOccurrence(wanted,resourceId,raw,dep.depositRawName),
             depositName:dep.depositRawName,locationNodeKey:dep.locationNodeKey||occ.locationNodeKey||null,
             resourceTypeKey:resourceId,reserveState:reserve,capacity,
             rawDeposit:clone(raw||null),ownerKey:occ.ownerKey||null,operatorKey:occ.operatorKey||null,
