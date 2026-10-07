@@ -147,6 +147,28 @@
       if(!s.resourceId&&quantitative.resourceId)s.resourceId=rid(quantitative.resourceId);
       if(!s.resourceTypeId&&quantitative.resourceId)s.resourceTypeId=rid(quantitative.resourceId);
       if(!s.siteName&&quantitative.siteName)s.siteName=quantitative.siteName;
+      const qProfile={...(s.quantitativeProfile&&typeof s.quantitativeProfile==='object'?clone(s.quantitativeProfile):{})};
+      const promoteObserved=(key)=>{
+        const field=quantitative?.[key];
+        if(!field||String(field.status||'').toUpperCase()!=='OBSERVED'||field.value===null||field.value===undefined)return;
+        qProfile[key]=clone(field.value);
+      };
+      ['reserve','production','capacity','grade','purity','recovery','throughput'].forEach(promoteObserved);
+      s.quantitativeProfile=qProfile;
+      if(quantitative.reserve?.status==='OBSERVED'&&quantitative.reserve?.value?.quantity!=null){
+        s.reserveQuantity=Number(quantitative.reserve.value.quantity);
+        s.reserveUnit=quantitative.reserve.value.unit||s.reserveUnit||null;
+      }
+      if(quantitative.production?.status==='OBSERVED'&&quantitative.production?.value){
+        const pv=quantitative.production.value;
+        if(pv.rate!=null)s.productionRate=Number(pv.rate);
+        else if(pv.annual?.value!=null)s.annualProduction=clone(pv.annual);
+        else if(pv.annual!=null)s.annualProduction=clone(pv.annual);
+      }
+      if(quantitative.classification&&typeof quantitative.classification==='object'){
+        s.resourceClassification=clone(quantitative.classification);
+        if(quantitative.classification.value)s.reserveClassification=String(quantitative.classification.value);
+      }
     }
     if(operatingCost){s.researchOperatingCost=clone(operatingCost.cost||null);s.researchOperatingCostDataset='resource_site_operating_cost_research_v1.json';}
     return s;
@@ -626,6 +648,9 @@ function batchFromExtraction(x,record){
           lifecycle:{status:'ACTIVE_EXTRACTION',mode:'PROFILE_DERIVED_SITE_MODEL',assetType,authority:prod.authority||'SIMULATED'},
           accessibility:{state:'AVAILABLE',sourceAuthority:'RESOURCE_JSON_PROFILE',stateAuthority:reserve.provenance?.stateAuthority||'SIMULATED'},
           reserveState:reserve,capacity,isSimulationGenerated:(prod.authority||'SIMULATED')!=='OBSERVED'||stream.reserve.authority!=='OBSERVED',assetType,siteModel:model,
+          resourceClassification:clone(asset?.resourceClassification||asset?.quantitativeResearch?.classification||asset?.classification||null),
+          reserveClassification:asset?.reserveClassification||null,
+          quantitativeResearch:clone(asset?.quantitativeResearch||null),
           dataAuthority:{reserve:stream.reserve.authority||'SIMULATED',production:prod.authority||'SIMULATED',quality:q.gradeStatus==='OBSERVED'?'OBSERVED':'SIMULATED'}
         });
       }
@@ -909,13 +934,18 @@ function batchFromExtraction(x,record){
         mineOutputs[x.occurrenceKey]={occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,resourceId:x.resourceId,simulationTurn:turn(),producedQuantity:0,status:'BLOCKED',blockReason:reason.reason,residualQuantity:n(reserve.residualQuantity)||0};
         continue;
       }
-      const classification=String(
-        x?.rawDeposit?.reserveClassification||
-        x?.rawDeposit?.resourceClassification?.classification||
-        x?.rawDeposit?.classificationState||
-        x?.rawDeposit?.classification||
-        ''
-      ).trim().toUpperCase();
+      const classificationCandidates=[
+        x?.rawDeposit?.reserveClassification,
+        x?.rawDeposit?.resourceClassification?.classification,
+        x?.rawDeposit?.classificationState,
+        x?.rawDeposit?.classification,
+        x?.resourceClassification?.classification,
+        x?.resourceClassification?.classificationState,
+        x?.reserveClassification,
+        x?.quantitativeResearch?.classification?.value,
+        x?.quantitativeResearch?.classification?.classification
+      ].filter(v=>v!==undefined&&v!==null&&String(v).trim()!=='').map(v=>String(v).trim().toUpperCase());
+      const classification=classificationCandidates[0]||'';
       const nonEconomicClassification=/^(EXPLORATION_RESULT|EXPLORATION_RESULTS|MINERAL_RESOURCE|INFERRED_RESOURCE|INDICATED_RESOURCE|MEASURED_RESOURCE|CONTINGENT_RESOURCE|PROSPECTIVE_RESOURCE|PROSPECT|LEAD|PLAY)$/.test(classification);
       if(!x.isSimulationGenerated&&nonEconomicClassification){
         const reason={occurrenceKey:x.occurrenceKey,resourceId:x.resourceId,reason:'NON_ECONOMIC_RESERVE_CLASSIFICATION',classification};
