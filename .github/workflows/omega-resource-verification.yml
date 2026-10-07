@@ -107,6 +107,7 @@ jobs:
           run_gate resourceSystemInvariants 15 node test/omega_resource_system_invariants.test.mjs
           run_gate resourceSiteBindingContract 30 node test/omega_resource_site_binding_contract.test.mjs
           run_gate resourceCanonicalBindingDiagnosis 30 node test/omega_resource_canonical_binding_diagnosis.test.mjs
+          run_gate resourceLongHorizonLife 15 node test/omega_resource_long_horizon_life.test.mjs
           run_gate resourceResearchPolicy 15 node --test test/omega_resource_research_policy.test.mjs
 
           export OMEGA_GATE_SYNTAX="${GATES[syntax]}"
