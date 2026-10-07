@@ -160,16 +160,17 @@
   }
 
   function resolveReserve(resourceId,{observed=[],modeled=[],scenario=[]}={}){
-    const selected=chooseCandidate(resourceId,[...observed,...modeled,...scenario]);
     const observedRows=(Array.isArray(observed)?observed:[]).filter(Boolean);
     const scenarioRows=(Array.isArray(scenario)?scenario:[]).filter(Boolean);
+    const observedChecks=observedRows.map(row=>measurementCompatible(resourceId,row));
+    const hasObservedIncompatibility=observedRows.length>0&&observedChecks.some(check=>!check.ok);
+    const selected=hasObservedIncompatibility?null:chooseCandidate(resourceId,[...observedRows,...(Array.isArray(modeled)?modeled:[]),...scenarioRows]);
     const result={
       resourceId:rid(resourceId),
       authoritative:selected,
       scenario:scenarioRows.length?clone(scenarioRows[0]):null,
-      status:selected?STATUS.AVAILABLE:STATUS.UNOBSERVED
+      status:selected?STATUS.AVAILABLE:(hasObservedIncompatibility?STATUS.INCOMPATIBLE:STATUS.UNOBSERVED)
     };
-    if(observedRows.length&&!selected)result.status=STATUS.INCOMPATIBLE;
     return result;
   }
 
