@@ -130,6 +130,8 @@ const expectedResourceCountries=Object.keys(engine.countryProfiles||{});
 assert.equal(preGlobal.countryCount,expectedResourceCountries.length);
 assert.equal(preGlobal.mineSiteReferenceCount,199);
 assert.equal(preGlobal.mineSiteControllerCount,199);
+const missingDiagnosticCountries=[...new Set(missingCommercialSiteIds.map(siteId=>(globalThis.OmegaResourceSiteCanonicalCatalogData?.sites||[]).find(x=>x.siteId===siteId)?.countryId).filter(Boolean))];
+for(const countryId of missingDiagnosticCountries){const h=runtime.hydrateCountry(countryId);const s=runtime.countryResourceState(countryId)||{};console.log('ENDOWMENT_MISSING_HYDRATE '+JSON.stringify({countryId,status:h.status,mines:(s.mines||[]).filter(x=>missingCommercialSiteIds.includes(x.siteReferenceKey)||missingCommercialSiteIds.includes(x.siteId)).map(x=>({siteReferenceKey:x.siteReferenceKey,resourceId:x.resourceId,occurrenceKey:x.occurrenceKey,isSimulationGenerated:x.isSimulationGenerated})),controllers:Object.values(s.mineSiteControllers||{}).filter(x=>missingCommercialSiteIds.includes(x.siteReferenceKey)).map(x=>({siteReferenceKey:x.siteReferenceKey,linkedOccurrenceKeys:x.linkedOccurrenceKeys,extractionExecutable:x.extractionExecutable,quantitativeDataState:x.quantitativeDataState}))}));}
 globalThis.__OmegaResourceExtractionTrace=true;
 const globalExtraction=await runtime.extractAll();
 globalThis.__OmegaResourceExtractionTrace=false;
