@@ -87,6 +87,7 @@
   const UNIT_COMPATIBILITY=Object.freeze({
     TONNES:new Set(['TONNES']),
     TROY_OUNCES:new Set(['TROY_OUNCES']),
+    PRECIOUS_METAL:new Set(['TONNES','TROY_OUNCES']),
     BBL:new Set(['BBL']),
     GAS:new Set(['TCF','BCF','BCM','MCM','MCF']),
     CARATS:new Set(['CARATS']),
@@ -99,7 +100,7 @@
     const r=rid(resourceId);
     if(r==='crude_oil')return 'BBL';
     if(r==='natural_gas')return 'GAS';
-    if(['gold','silver','platinum'].includes(r))return 'TROY_OUNCES';
+    if(['gold','silver','platinum'].includes(r))return 'PRECIOUS_METAL';
     if(r==='diamond')return 'CARATS';
     return 'TONNES';
   }
