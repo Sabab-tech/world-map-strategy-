@@ -38,13 +38,12 @@
     const sourceDatasetId=input.sourceDatasetId||input.datasetId||null;
     const sourcePath=input.sourcePath||null;
     const sourceRecordId=input.sourceRecordId||input.recordId||input.siteId||null;
-    const sourceAuthority=input.sourceAuthority||input.authority||AUTHORITY.UNOBSERVED;
-    if(!validAuthority(sourceAuthority))throw new Error('RESOURCE_TRUTH_INVALID_AUTHORITY');
+    const sourceAuthority=input.sourceAuthority||null;
     return {
       sourceDatasetId:sourceDatasetId?String(sourceDatasetId):null,
       sourcePath:sourcePath?String(sourcePath):null,
       sourceRecordId:sourceRecordId?String(sourceRecordId):null,
-      sourceAuthority:norm(sourceAuthority),
+      sourceAuthority:sourceAuthority?norm(sourceAuthority):null,
       effectiveDate:input.effectiveDate||input.date||null
     };
   }
@@ -219,7 +218,7 @@
       const researchRate=site?.quantitativeProfile?.production?.dailyRate??site?.quantitativeProfile?.production?.rate??site?.researchFacts?.quantitativeProfile?.production?.dailyRate??site?.researchFacts?.quantitativeProfile?.production?.rate??null;
       const observedRate=finite(Number(production.observedRate))?Number(production.observedRate):(finite(Number(researchRate))?Number(researchRate):null);
       const simulatedRate=finite(Number(production.activeRate))?Number(production.activeRate):null;
-      const layers=classifyCurrentProduction({observedRate,simulatedRate,unit:production.unit||reserve.unit,provenance:{sourceDatasetId:site?.sourceDatasetId||DATASETS.RESOURCES_JSON,sourceRecordId:siteId,sourceAuthority:'RESOURCE_JSON'}});
+      const layers=classifyCurrentProduction({observedRate,simulatedRate,unit:production.unit||reserve.unit,provenance:{sourceDatasetId:site?.sourceDatasetId||null,sourcePath:site?.sourcePath||null,sourceRecordId:site?.sourceRecordId||siteId,sourceAuthority:site?.sourceAuthority||null,effectiveDate:site?.effectiveDate||null}});
       stream.production={...production,currentProduction:layers.current?.value??null,currentProductionAuthority:layers.current?.authority||AUTHORITY.UNOBSERVED,
         currentProductionStatus:layers.current?STATUS.AVAILABLE:STATUS.UNOBSERVED,simulationProduction:layers.simulation?.value??null,simulationProductionAuthority:layers.simulation?.authority||AUTHORITY.UNOBSERVED};
       if(stream.quality){
