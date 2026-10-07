@@ -134,6 +134,7 @@
     const executable=raw.extractionExecutable===true||
       Boolean(raw.occurrenceKey&&resourceTypeId&&reserveQuantity!==null&&productionRate!==null);
     const factoryInputStatus=executable?'AVAILABLE_AFTER_EXTRACTION':'BLOCKED_MISSING_QUANTITATIVE_DATA';
+    const physicalRouteEvidence=raw.physicalRouteEvidence||raw.routeEvidence||raw.processingDependency?.routeEvidence||raw.processingDependency||ref.processingDependency||null;
     const routeId=warehouseId&&assetId?
       'MINE:'+assetId+'->'+warehouseId+'->FACTORY_INPUT':null;
     const authorities=[reserveAuthority,productionAuthority,qualityAuthority];
@@ -194,9 +195,12 @@
       },
       factoryInputRoute:{
         routeId,
-        status:factoryInputStatus,
+        status:!routeId?'UNVERIFIED':(physicalRouteEvidence?'VERIFIED_PHYSICAL_ROUTE':'MODELED_LOGICAL_ROUTE'),
+        authority:!routeId?'UNOBSERVED':(physicalRouteEvidence?'SITE_SPECIFIC_EVIDENCE':'SIMULATION_LOGIC'),
+        physicalRouteVerified:Boolean(routeId&&physicalRouteEvidence),
         destinationCountryId:countryId,
-        warehouseId
+        warehouseId,
+        evidence:physicalRouteEvidence?clone(physicalRouteEvidence):null
       },
       provenance:{
         ...(raw.provenance&&typeof raw.provenance==='object'?clone(raw.provenance):{}),
