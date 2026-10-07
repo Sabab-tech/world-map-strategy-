@@ -205,8 +205,8 @@
   const engine=()=>g.ResourceMinistryEngine||null;
   function countries(){
     const out=new Set(),authoritative=new Set(),allowedExtras=new Set();
+    const e=engine(),profiles=e?.countryProfiles&&typeof e.countryProfiles==='object'?e.countryProfiles:{};
     try{
-      const e=engine(),profiles=e?.countryProfiles&&typeof e.countryProfiles==='object'?e.countryProfiles:{};
       const profileSignature=Object.keys(profiles).join('|');
       if(countriesCache&&countriesCacheProfileSignature===profileSignature)return countriesCache.slice();
       Object.entries(profiles).forEach(function(entry){
