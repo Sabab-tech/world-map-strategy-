@@ -70,6 +70,12 @@
       return p;
     }
 
+    _ownedScopeSnapshot(){
+      const root=this.state?.[this.ownerMinistry];
+      if(!root||typeof root!=='object')return null;
+      return root[this.countryId]===undefined?null:root[this.countryId];
+    }
+
     _countryContainer(path,create){
       const parts=String(path).split('.');
       const domain=parts.shift();
@@ -117,7 +123,15 @@
 
     commit(){
       this._assertOpen();
-      const beforeDigest=hash(this.state);
+      // Transactions are sovereign/country scoped. Hash only the owned country
+      // state instead of the entire global Game.state. The previous global hash made
+      // every country commit scan all already-materialized countries, producing O(N²)
+      // extraction cost during world-scale resource simulation.
+      const beforeDigest=hash({
+        ownerMinistry:this.ownerMinistry,
+        countryId:this.countryId,
+        scope:this._ownedScopeSnapshot()
+      });
       const applied=[];
       for(const operation of this.operations){
         const ref=this._countryContainer(operation.path,true);
@@ -137,7 +151,11 @@
           after:clone(operation.after)
         });
       }
-      const afterDigest=hash(this.state);
+      const afterDigest=hash({
+        ownerMinistry:this.ownerMinistry,
+        countryId:this.countryId,
+        scope:this._ownedScopeSnapshot()
+      });
       this.closed=true;
       return Object.freeze({
         transactionId:this.transactionId,
