@@ -850,8 +850,24 @@ function batchFromExtraction(x,record){
     const valueForResource=(obj,resourceId)=>{if(!obj||typeof obj!=='object')return null;if(Object.prototype.hasOwnProperty.call(obj,resourceId))return n(obj[resourceId]);const wanted=tok(resourceId);for(const k of Object.keys(obj))if(tok(k)===wanted)return n(obj[k]);return null;};
     const demandTargetByResource={},windowCapacityByOccurrence={},totalWindowByResource={};
     const turnHours=Math.max(0,simulationStepHours());
+    const currentCapacityByOccurrence={};
+    const realismRuntime=g.Omega?.ResourceRealism||g.OmegaResourceRealism;
+    const buildTemporalCapacity=(row,reserve)=>{
+      const base=clone(row?.capacity||{});
+      const model=row?.siteModel?.commodityStreams?.find?.(x=>rid(x?.resourceId)===rid(row?.resourceId))?.production||base.productionModel||base;
+      const temporalState=reserve?.productionModel?.temporalState||base.temporalState||{};
+      if(realismRuntime?.advanceProductionState){
+        const temporal=realismRuntime.advanceProductionState(model,temporalState,reserve,turn(),turnHours);
+        Object.assign(base,{activeRate:temporal.activeRate,dailyRate:temporal.activeRate,temporalState:temporal.state,utilization:temporal.utilization,recovery:temporal.recovery,decline:temporal.decline,maintenance:temporal.maintenance,temporalElapsedYears:temporal.elapsedYears});
+        if(reserve?.productionModel&&typeof reserve.productionModel==='object')reserve.productionModel.temporalState=temporal.state;
+      }
+      return base;
+    };
     for(const row of selected){
-      let capWindow=0;try{capWindow=n(row?.capacity?.computeWindowCapacity?.(turnHours)?.windowCapacity)||0;}catch(_){capWindow=n(row?.capacity?.activeRate)||n(row?.capacity?.nominalRate)||0;}
+      const reserve=r.getReserveState(row?.occurrenceKey)||row?.reserveState||null;
+      const effectiveCapacity=buildTemporalCapacity(row,reserve);
+      currentCapacityByOccurrence[row.occurrenceKey]=effectiveCapacity;
+      let capWindow=0;try{capWindow=n(effectiveCapacity?.computeWindowCapacity?.(turnHours)?.windowCapacity)||n(effectiveCapacity?.activeRate)||0;}catch(_){capWindow=n(effectiveCapacity?.activeRate)||n(effectiveCapacity?.nominalRate)||0;}
       windowCapacityByOccurrence[row.occurrenceKey]=Math.max(0,capWindow);
       const rr=rid(row?.resourceId);totalWindowByResource[rr]=(totalWindowByResource[rr]||0)+Math.max(0,capWindow);
       const domestic=valueForResource(consumption,rr),foreign=valueForResource(exportDemand,rr);
@@ -916,14 +932,14 @@ function batchFromExtraction(x,record){
         mineOutputs[x.occurrenceKey]={occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,resourceId:x.resourceId,simulationTurn:turn(),producedQuantity:0,status:'BLOCKED',blockReason:reason.reason,operationalStatus:operationalStatus||'UNKNOWN',sourceStatus:sourceStatus||null,residualQuantity:n(reserve.residualQuantity)||0};
         continue;
       }
-      let capacity=x.isSimulationGenerated?x.capacity:null;try{if(!capacity)capacity=r.getCapacityForOccurrence(x.occurrenceKey);}catch(_){}
+      let capacity=currentCapacityByOccurrence[x.occurrenceKey]||null;try{if(!capacity)capacity=x.isSimulationGenerated?x.capacity:null;if(!capacity)capacity=r.getCapacityForOccurrence(x.occurrenceKey);}catch(_){}
       if(!capacity){
         const reason={occurrenceKey:x.occurrenceKey,resourceId:x.resourceId,reason:'EXTRACTION_CAPACITY_UNAVAILABLE'};
         blocked.push(reason);
         mineOutputs[x.occurrenceKey]={occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,resourceId:x.resourceId,simulationTurn:turn(),producedQuantity:0,status:'BLOCKED',blockReason:reason.reason,residualQuantity:n(reserve.residualQuantity)||0};
         continue;
       }
-      let windowQuantity=0;try{windowQuantity=n(capacity.computeWindowCapacity(DAY_HOURS)?.windowCapacity)||0;}catch(_){windowQuantity=n(capacity.nominalRate)||0;}
+      let windowQuantity=0;try{windowQuantity=n(capacity.computeWindowCapacity(turnHours)?.windowCapacity)||n(capacity.activeRate)||0;}catch(_){windowQuantity=n(capacity.activeRate)||n(capacity.nominalRate)||0;}
       const resourceKey=rid(x.resourceId),demandConstrained=Object.prototype.hasOwnProperty.call(demandTargetByResource,resourceKey);
       if(demandConstrained){
         const aggregateCapacity=Math.max(totalWindowByResource[resourceKey]||0,0);
@@ -966,7 +982,7 @@ function batchFromExtraction(x,record){
           sourceAuthority:x.isSimulationGenerated?'SIMULATED':'OBSERVED',sourceDatasetId:x.sourceDatasetId||x.rawDeposit?.sourceDatasetId||null,
           quantityAuthority:x.isSimulationGenerated?'SIMULATED':'OBSERVED',
           reserveSemanticState:x.isSimulationGenerated?'SIMULATION_ONLY':(classification||'UNCLASSIFIED'),
-          effortUtilization:n(x.capacity?.utilization??x.capacity?.effortUtilization??0.85)}
+          effortUtilization:n(capacity?.utilization??capacity?.effortUtilization??0.85),temporalModel:clone(capacity?.temporalState||null)}
       });
       let result;
       try{
