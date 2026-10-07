@@ -152,8 +152,17 @@ for(const d of siteReferenceMismatches){console.log('ENDOWMENT_SITE_REFERENCE_DE
 assert.equal(siteReferenceRows,199);
 assert.equal(siteControllerRows,199);
 assert.ok(structuredMineRows>=engine.deposits.length,'structured mine rows must include canonical runtime deposits plus profile-derived structured sites');
-const unifiedReferences=Object.values(worldState).flatMap(row=>Array.isArray(row?.mineSiteReferences)?row.mineSiteReferences:[]);
-assert.equal(unifiedReferences.length,199);
+const unifiedReferences=[];
+let siteReferenceHoleCount=0;
+for(const row of Object.values(worldState)){
+  const refs=row?.mineSiteReferences;
+  if(!Array.isArray(refs))continue;
+  siteReferenceHoleCount+=refs.length-Object.keys(refs).length;
+  for(let i=0;i<refs.length;i++)if(refs[i]!==undefined)unifiedReferences.push(refs[i]);
+}
+console.log('ENDOWMENT_SITE_REFERENCE_DENSITY '+JSON.stringify({declaredLength:siteReferenceRows,materializedEntries:unifiedReferences.length,holes:siteReferenceHoleCount}));
+assert.equal(siteReferenceHoleCount,0,'site reference arrays must be dense');
+assert.equal(unifiedReferences.length,siteReferenceRows);
 assert.ok(unifiedReferences.every(x=>x.resourceAsset&&x.resourceAsset.schemaVersion==='1.0.0'));
 assert.ok(unifiedReferences.every(x=>x.resourceAsset.assetId===x.siteReferenceKey));
 assert.deepEqual(Object.keys(unifiedReferences[0]?.resourceAsset||{}).sort(),unifiedMineKeys);
