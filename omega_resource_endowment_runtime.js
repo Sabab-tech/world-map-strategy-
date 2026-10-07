@@ -771,10 +771,11 @@ function batchFromExtraction(x,record){
         sourcePath:x.sourcePath||raw?.sourcePath||raw?.provenance?.sourcePath||null,
         extractionExecutable:true
       })||null;
-      if(x.assetType==='OIL_FIELD'||x.assetType==='GAS_FIELD'||x.assetType==='MINE_SITE'||x.assetType==='RESOURCE_MINE'){
+      const projectedAssetType=x.assetType||'RESOURCE_MINE';
+      if(projectedAssetType==='OIL_FIELD'||projectedAssetType==='GAS_FIELD'||projectedAssetType==='MINE_SITE'||projectedAssetType==='RESOURCE_MINE'){
       mines.push({
         occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,resourceId:resource,depositName:x.depositName,
-        assetType:x.assetType||'RESOURCE_MINE',simulationGenerated:!!x.isSimulationGenerated,
+        assetType:projectedAssetType,simulationGenerated:!!x.isSimulationGenerated,
         countryId:canonical(c),locationNodeKey:x.locationNodeKey,resourceTypeKey:x.resourceTypeKey,
         ownerKey:x.ownerKey,operatorKey:x.operatorKey,rawDeposit:raw,
         reserveState:clone(rs.toJSON?.()||rs),operationalStatus:rs.operationalStatus,unit:rs.unit,
