@@ -133,8 +133,36 @@
     return s;
   }
   const registry=()=>g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity||null;
+  let canonicalCache=null;
+  let canonicalCacheProfileSignature='';
+  let countriesCache=null;
+  let countriesCacheProfileSignature='';
+  function getCanonicalProfileCache(){
+    const e=engine(),profiles=e?.countryProfiles&&typeof e.countryProfiles==='object'?e.countryProfiles:{};
+    const keys=Object.keys(profiles);
+    const signature=keys.join('|');
+    if(canonicalCache&&canonicalCacheProfileSignature===signature)return canonicalCache;
+    const byToken=new Map();
+    const put=(value,key)=>{
+      const token=String(value??'').trim().toUpperCase();
+      if(token&&!byToken.has(token))byToken.set(token,key);
+    };
+    for(const key of keys){
+      const p=profiles[key]||{},i=p.identity||p;
+      const canonicalKey=id(i.iso3||i.countryId||key);
+      put(key,canonicalKey);put(i.iso3,canonicalKey);put(i.iso2,canonicalKey);
+      put(i.countryId,canonicalKey);put(i.countryCode,canonicalKey);
+      put(i.name,canonicalKey);put(i.countryName,canonicalKey);
+      put(i.officialName,canonicalKey);put(i.shortName,canonicalKey);put(i.displayName,canonicalKey);
+    }
+    canonicalCache=byToken;
+    canonicalCacheProfileSignature=signature;
+    return byToken;
+  }
   const canonical=v=>{
     const raw=String(v??'').trim(),u=raw.toUpperCase(),e=engine(),profiles=e?.countryProfiles&&typeof e.countryProfiles==='object'?e.countryProfiles:{};
+    const cached=getCanonicalProfileCache().get(u);
+    if(cached)return cached;
     if(profiles[u]){
       const identity=profiles[u]?.identity||profiles[u]||{};
       return id(identity.iso3||identity.countryId||u);
@@ -179,6 +207,8 @@
     const out=new Set(),authoritative=new Set(),allowedExtras=new Set();
     try{
       const e=engine(),profiles=e?.countryProfiles&&typeof e.countryProfiles==='object'?e.countryProfiles:{};
+      const profileSignature=Object.keys(profiles).join('|');
+      if(countriesCache&&countriesCacheProfileSignature===profileSignature)return countriesCache.slice();
       Object.entries(profiles).forEach(function(entry){
         const key=entry[0],profile=entry[1]||{},identity=profile.identity||profile;
         const c=canonical(identity.iso3||identity.countryCode||identity.country_code||key);
@@ -200,7 +230,10 @@
     try{
       Object.keys(state()?.resource||{}).forEach(function(x){const c=canonical(x);if(c&&(authoritative.has(c)||allowedExtras.has(c)))out.add(c);});
     }catch(_){}
-    return[...out].filter(function(c){return authoritative.has(c)||allowedExtras.has(c);}).sort();
+    const result=[...out].filter(function(c){return authoritative.has(c)||allowedExtras.has(c);}).sort();
+    countriesCache=result.slice();
+    countriesCacheProfileSignature=Object.keys(profiles).join('|');
+    return result;
   }
   function countryState(c){
     const cid=canonical(c),s=state();if(!s.resource)s.resource={};if(!s.resource[cid])s.resource[cid]={};
