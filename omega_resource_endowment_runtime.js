@@ -1260,7 +1260,7 @@ function batchFromExtraction(x,record){
     return handlersRegistered;
   }
   async function initialize(){
-    if(g.__omegaResourceEndowmentReady)return{status:'READY',countries:countries().length,reused:true,researchData:{quantitativeSiteCount:Object.keys(quantitativeResearchMap||{}).length,operatingCostSiteCount:Object.keys(operatingCostResearchMap||{}).length}};
+    if(g.__omegaResourceEndowmentReady)return{status:'READY',countries:countries().length,reused:true,researchData:{quantitativeSiteCount:Object.keys(quantitativeResearchMap||{}).length,operatingCostSiteCount:Object.keys(operatingCostResearchMap||{}).length,canonicalSiteCount:Object.keys(canonicalSiteMap||{}).length}};
     if(g.__omegaResourceEndowmentPromise)return g.__omegaResourceEndowmentPromise;
     g.__omegaResourceEndowmentInitializing=true;
     g.__omegaResourceEndowmentPromise=(async function(){
@@ -1278,7 +1278,7 @@ function batchFromExtraction(x,record){
         if(!stateRoot.resource)stateRoot.resource={};
         for(const countryId of countryList)if(!stateRoot.resource[countryId])stateRoot.resource[countryId]={};
         g.__omegaResourceEndowmentReady=true;
-        return{status:'READY',countries:countryList.length,reused:false,hydrationMode:'LAZY_ON_EXTRACTION',researchData:{quantitativeSiteCount:quantitativeData?.count||Object.keys(quantitativeResearchMap||{}).length,operatingCostSiteCount:operatingCostData?.count||Object.keys(operatingCostResearchMap||{}).length}};
+        return{status:'READY',countries:countryList.length,reused:false,hydrationMode:'LAZY_ON_EXTRACTION',researchData:{quantitativeSiteCount:quantitativeData?.count||Object.keys(quantitativeResearchMap||{}).length,operatingCostSiteCount:operatingCostData?.count||Object.keys(operatingCostResearchMap||{}).length,canonicalSiteCount:canonicalCatalogData?.count||Object.keys(canonicalSiteMap||{}).length}};
       }catch(e){
         return{status:'FAILED',reason:String(e?.message||e)};
       }finally{
