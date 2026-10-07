@@ -271,6 +271,7 @@
   const interop=()=>g.Omega?.MinistryInteroperability||g.OmegaMinistryInteroperability||null;
   const boundary=()=>g.Omega?.ResourceCountryBoundaryGuard||g.OmegaResourceCountryBoundaryGuard||null;
   const turn=()=>n(state()?.simulation?.turn??state()?.turn??state()?.simulationTurn??g.Omega?.Simulation?.clock?.turn)??0;
+  const simulationStepHours=()=>{const ms=n(state()?.simulation?.stepDurationMs);return ms!==null&&ms>0?ms/3600000:24;};
   const engine=()=>g.ResourceMinistryEngine||null;
   function countries(){
     const out=new Set(),authoritative=new Set(),allowedExtras=new Set();
@@ -848,8 +849,9 @@ function batchFromExtraction(x,record){
     const exportDemand=ctx.stateTransaction.get('resource.exportDemand')||ctx.stateTransaction.get('trade.exportDemand')||{};
     const valueForResource=(obj,resourceId)=>{if(!obj||typeof obj!=='object')return null;if(Object.prototype.hasOwnProperty.call(obj,resourceId))return n(obj[resourceId]);const wanted=tok(resourceId);for(const k of Object.keys(obj))if(tok(k)===wanted)return n(obj[k]);return null;};
     const demandTargetByResource={},windowCapacityByOccurrence={},totalWindowByResource={};
+    const turnHours=Math.max(0,simulationStepHours());
     for(const row of selected){
-      let capWindow=0;try{capWindow=n(row?.capacity?.computeWindowCapacity?.(DAY_HOURS)?.windowCapacity)||0;}catch(_){capWindow=n(row?.capacity?.activeRate)||n(row?.capacity?.nominalRate)||0;}
+      let capWindow=0;try{capWindow=n(row?.capacity?.computeWindowCapacity?.(turnHours)?.windowCapacity)||0;}catch(_){capWindow=n(row?.capacity?.activeRate)||n(row?.capacity?.nominalRate)||0;}
       windowCapacityByOccurrence[row.occurrenceKey]=Math.max(0,capWindow);
       const rr=rid(row?.resourceId);totalWindowByResource[rr]=(totalWindowByResource[rr]||0)+Math.max(0,capWindow);
       const domestic=valueForResource(consumption,rr),foreign=valueForResource(exportDemand,rr);
@@ -958,7 +960,7 @@ function batchFromExtraction(x,record){
       const request=new p5.ExtractionRequest({
         occurrenceKey:x.occurrenceKey,requestedQuantity:windowQuantity,requestedUnit:reserve.unit,
         requestedPeriod:p5.TemporalWindowUnit?.PER_DAY||'PER_DAY',assetReference:capacity.assetReference,
-        expectedStateVersion:n(reserve.stateVersion)||1,simulationTick:turn(),timeWindowDurationHours:DAY_HOURS,
+        expectedStateVersion:n(reserve.stateVersion)||1,simulationTick:turn(),timeWindowDurationHours:turnHours,
         extractionMethod:p5.ExtractionMethodEnum?.UNKNOWN||'UNKNOWN',
         provenance:{sourceSubsystem:'OMEGA_RESOURCE_ENDOWMENT_RUNTIME',sourceId:x.depositKey,timestamp:0,
           sourceAuthority:x.isSimulationGenerated?'SIMULATED':'OBSERVED',sourceDatasetId:x.sourceDatasetId||x.rawDeposit?.sourceDatasetId||null,
