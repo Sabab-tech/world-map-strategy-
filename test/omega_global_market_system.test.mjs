@@ -2,15 +2,15 @@ import assert from 'node:assert/strict';
 
 globalThis.Game={state:{
   simulation:{turn:1},
-  finance:{BGD:{currencyCode:'USD'},SAU:{currencyCode:'USD'}},
-  economy:{BGD:{currency_code:'USD',exchange_rate_usd:1},SAU:{currency_code:'USD',exchange_rate_usd:1}},
-  resource:{BGD:{inventory:{crude_oil:0},production:{crude_oil:0},consumption:{crude_oil:0}},
-            SAU:{inventory:{crude_oil:5000},production:{crude_oil:0},consumption:{crude_oil:0}}},
+  finance:{BD:{currencyCode:'USD'},SA:{currencyCode:'USD'}},
+  economy:{BD:{currency_code:'USD',exchange_rate_usd:1},SA:{currency_code:'USD',exchange_rate_usd:1}},
+  resource:{BD:{inventory:{crude_oil:0},production:{crude_oil:0},consumption:{crude_oil:0}},
+            SA:{inventory:{crude_oil:5000},production:{crude_oil:0},consumption:{crude_oil:0}}},
   trade:{
-    BGD:{importRequests:[{requestId:'BID-1',resourceId:'crude_oil',quantity:100,unitPrice:110,status:'SENT'}]},
-    SAU:{offerBook:{crude_oil:{offerId:'ASK-1',resourceId:'crude_oil',quantity:100,unitPrice:90}}}
+    BD:{importRequests:[{requestId:'BID-1',resourceId:'crude_oil',quantity:100,unitPrice:110,status:'SENT'}]},
+    SA:{offerBook:{crude_oil:{offerId:'ASK-1',resourceId:'crude_oil',quantity:100,unitPrice:90}}}
   },
-  foreign:{BGD:{relations:{SAU:{trade_agreement:true}}},SAU:{relations:{BGD:{trade_agreement:true}}}}
+  foreign:{BD:{relations:{SA:{trade_agreement:true}}},SA:{relations:{BD:{trade_agreement:true}}}}
 }};
 globalThis.CustomEvent=globalThis.CustomEvent||class{constructor(type,init={}){this.type=String(type);this.detail=init.detail;}};
 if(typeof globalThis.dispatchEvent!=='function'){const t=new EventTarget();globalThis.dispatchEvent=t.dispatchEvent.bind(t);globalThis.addEventListener=t.addEventListener.bind(t);}
@@ -33,5 +33,5 @@ const q=market.quote('crude_oil');
 assert.equal(q.status,'CLEARED');
 assert.equal(q.matchedQuantity,100);
 assert.equal(q.clearingPriceUsd,100);
-assert.equal(market.localPrice('BGD','crude_oil'),100);
+assert.equal(market.localPrice('BD','crude_oil'),100);
 console.log('OMEGA GLOBAL MARKET CLEARING TEST PASSED');
