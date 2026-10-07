@@ -928,7 +928,7 @@ function batchFromExtraction(x,record){
         continue;
       }
       let windowQuantity=0;try{windowQuantity=n(capacity.computeWindowCapacity(DAY_HOURS)?.windowCapacity)||0;}catch(_){windowQuantity=n(capacity.nominalRate)||0;}
-      const resourceKey=rid(x.resourceId),demandConstrained=Object.prototype.hasOwnProperty.call(demandTargetByResource,resourceKey);
+      const resourceKey=rid(x.resourceId),demandConstrained=Object.prototype.hasOwnProperty.call(demandTargetByResource,resourceKey)&&Number(demandTargetByResource[resourceKey])>0;
       if(demandConstrained){
         const aggregateCapacity=Math.max(totalWindowByResource[resourceKey]||0,0);
         const turnDemand=Math.max(0,remainingDemandByResource[resourceKey]||0);
