@@ -78,17 +78,20 @@ for (const id of extensionApi.SEED_IDS) {
   assert.ok(concept.reasoning_contract);
   assert.ok(concept.execution_boundary);
   assert.ok(typeof concept.description === 'string' && concept.description.length >= 120, `${id} lacks a substantive semantic description`);
-  assert.ok(concept.subsystem_contract);
-  assert.ok(concept.subsystem_contract.semantic_identity);
-  assert.ok(concept.subsystem_contract.measurement_semantics);
-  assert.ok(concept.subsystem_contract.temporal_semantics);
-  assert.ok(concept.subsystem_contract.causal_role);
-  assert.ok(concept.subsystem_contract.strategic_role);
-  assert.ok(concept.subsystem_contract.uncertainty_model);
-  assert.ok(concept.subsystem_contract.provenance_policy);
-  assert.ok(concept.subsystem_contract.comparison_behavior);
-  assert.ok(concept.subsystem_contract.forecast_behavior);
-  assert.ok(concept.subsystem_contract.mutation_authority);
+  assert.equal(typeof concept.execution_boundary, 'string');
+  assert.ok(concept.execution_boundary.length > 0);
+  assert.equal(typeof concept.diagnostics, 'object');
+  assert.ok(concept.diagnostics.missing_required_slot);
+  assert.ok(concept.diagnostics.invalid_type);
+  assert.ok(concept.diagnostics.unresolved_reference);
+  assert.ok(concept.diagnostics.invalid_composition);
+  assert.ok(concept.diagnostics.missing_provenance);
+  assert.ok(concept.diagnostics.unauthorized_mutation);
+  assert.equal(typeof concept.reasoning_contract, 'object');
+  for (const key of ['causal_graph','dependency_graph','uncertainty_graph','strategic_graph','counterfactual_graph','decision_graph']) {
+    assert.ok(Array.isArray(concept.reasoning_contract[key]), `${id} missing reasoning contract: ${key}`);
+    assert.ok(concept.reasoning_contract[key].length > 0);
+  }
 }
 
 const mustBePresent = ['ACTOR','TARGET','ATTRIBUTE','VALUE','CONDITION','CONSTRAINT','THRESHOLD','CAUSE','CONSEQUENCE','DEPENDENCY','RISK','PROBABILITY','GOAL','PRIORITY','SCENARIO','DECISION'];
