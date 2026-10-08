@@ -805,23 +805,46 @@ for (const site of allSites.map((x) => x.site)) {
 }
 
 // Enrich a machine-readable per-site catalog for downstream runtime consumers without inventing values.
-const enrichedCatalog = allSites.map(({ countryId, site }) => ({
-  countryId,
-  siteId: site.id,
-  siteName: site.siteName,
-  resourceTypeId: site.resourceTypeId,
-  siteType: site.siteType,
-  status: site.status,
-  owner: site.owner ?? 'UNOBSERVED',
-  operator: site.operator ?? 'UNOBSERVED',
-  extractionMethod: site.extractionMethod,
-  location: site.locationIdentity,
-  resourceIdentity: site.resourceIdentity,
-  quantitativeProfile: site.quantitativeProfile,
-  researchState: site.researchState,
-  researchMetadata: site.researchMetadata || {},
-  webResearchEvidence: site.webResearchEvidence || []
-}));
+const resourceTypeDefinitions = {};
+for (const data of loaded) {
+  for (const [key, value] of Object.entries(data?.resource_types || {})) resourceTypeDefinitions[String(key).toLowerCase()] = value;
+  for (const [key, value] of Object.entries(data?.GSRSK_Master_Resource_Data_v14?.resource_types || {})) resourceTypeDefinitions[String(key).toLowerCase()] = value;
+}
+
+const enrichedCatalog = allSites.map(({ countryId, site }) => {
+  const profile = profiles[countryId] || {};
+  const resourceId = String(site.resourceId || site.resourceTypeId || '').toLowerCase();
+  return {
+    countryId,
+    siteId: site.id,
+    siteName: site.siteName,
+    resourceTypeId: site.resourceTypeId,
+    siteType: site.siteType,
+    status: site.status,
+    owner: site.owner ?? 'UNOBSERVED',
+    operator: site.operator ?? 'UNOBSERVED',
+    extractionMethod: site.extractionMethod,
+    location: site.locationIdentity,
+    resourceIdentity: site.resourceIdentity,
+    quantitativeProfile: site.quantitativeProfile,
+    researchState: site.researchState,
+    researchMetadata: site.researchMetadata || {},
+    webResearchEvidence: site.webResearchEvidence || [],
+    // Preserve the complete authoritative site record. The previous catalog projection
+    // silently dropped many existing fields from resources.json/resources_2.json.
+    sourceDataset: 'resources.json|resources_2.json',
+    sourcePath: `GSRSK_Master_CountryProfiles_v14.countryProfiles.${countryId}.resource_infrastructure_context.mineSites[${site.__sourceIndex ?? allSites.find(x => x.site === site)?.index ?? -1}]`,
+    sourceSiteRecord: site,
+    siteDataPackage: site.siteDataPackage || null,
+    countryResourceContext: {
+      mineral_resource_base: profile.mineral_resource_base || {},
+      hydrocarbon_resource_base: profile.hydrocarbon_resource_base || {},
+      energy_resource_base: profile.energy_resource_base || {},
+      administrative_resource_regions: profile.administrative_resource_regions || []
+    },
+    resourceTypeDefinition: resourceTypeDefinitions[resourceId] || null
+  };
+});
 fs.writeFileSync('resource_site_enriched_catalog.json', JSON.stringify({
   version: '1.0.0',
   generatedAt: REVIEW_DATE,
