@@ -852,6 +852,63 @@ fs.writeFileSync('resource_site_enriched_catalog.json', JSON.stringify({
   sites: enrichedCatalog
 }, null, 2) + '\n');
 
+const expandedReferencePartSize = 50;
+const expandedReferenceParts = [];
+for (let start = 0; start < allSites.length; start += expandedReferencePartSize) {
+  const chunk = allSites.slice(start, start + expandedReferencePartSize);
+  const partNumber = String(Math.floor(start / expandedReferencePartSize) + 1).padStart(2, '0');
+  const fileName = `resource_site_reference_expanded_part_${partNumber}.json`;
+  const payload = {
+    version: '1.0.0',
+    generatedAt: REVIEW_DATE,
+    part: partNumber,
+    siteRange: [start + 1, Math.min(start + expandedReferencePartSize, allSites.length)],
+    siteCount: chunk.length,
+    sourceFiles: files,
+    purpose: 'Lossless site-level reference projection. Every source site record and its siteDataPackage are preserved; no country aggregate is copied into the site record.',
+    sites: chunk.map(({ countryId, index, site }) => ({
+      countryId,
+      siteId: site.id,
+      siteName: site.siteName,
+      sourcePath: `GSRSK_Master_CountryProfiles_v14.countryProfiles.${countryId}.resource_infrastructure_context.mineSites[${index}]`,
+      sourceSiteRecord: site,
+      siteDataPackage: site.siteDataPackage || null,
+      resourceTypeDefinition: resourceTypeDefinitions[String(site.resourceId || site.resourceTypeId || '').toLowerCase()] || null
+    }))
+  };
+  fs.writeFileSync(fileName, JSON.stringify(payload, null, 2) + '\n');
+  expandedReferenceParts.push({ file: fileName, siteRange: payload.siteRange, siteCount: payload.siteCount });
+}
+
+const countryResourceContextIndex = {
+  version: '1.0.0',
+  generatedAt: REVIEW_DATE,
+  countryCount: Object.keys(profiles).length,
+  purpose: 'Country-level resource context kept separate from site-level records so aggregate national data is never falsely attributed to one mine/site.',
+  sourceFiles: files,
+  countries: Object.fromEntries(Object.entries(profiles).map(([countryId, profile]) => [countryId, {
+    countryId,
+    countryName: profile?.identity?.countryName || profile?.countryName || null,
+    mineral_resource_base: profile?.mineral_resource_base || {},
+    hydrocarbon_resource_base: profile?.hydrocarbon_resource_base || {},
+    energy_resource_base: profile?.energy_resource_base || {},
+    administrative_resource_regions: profile?.administrative_resource_regions || []
+  }]))
+};
+fs.writeFileSync('resource_country_resource_context_index.json', JSON.stringify(countryResourceContextIndex, null, 2) + '\n');
+
+fs.writeFileSync('resource_site_reference_expanded_manifest.json', JSON.stringify({
+  version: '1.0.0',
+  generatedAt: REVIEW_DATE,
+  totalSites: allSites.length,
+  partSize: expandedReferencePartSize,
+  partCount: expandedReferenceParts.length,
+  parts: expandedReferenceParts,
+  countryContextFile: 'resource_country_resource_context_index.json',
+  authoritativeSources: files,
+  invariant: 'Each site reference preserves the complete source site record and siteDataPackage. Country-level aggregates remain in a separate country context index.'
+}, null, 2) + '\n');
+
 for (const file of files) {
   fs.writeFileSync(file, JSON.stringify(loaded[files.indexOf(file)], null, 2) + '\n');
 }
