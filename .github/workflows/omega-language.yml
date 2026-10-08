@@ -1,4 +1,4 @@
-# Canonical language + AI runtime verification. Full semantic/cognitive regression is required.
+# Canonical language runtime verification. Repository-wide regression is owned by global CI.
 name: OMEGA Language System
 
 on:
@@ -106,6 +106,12 @@ jobs:
         run: |
           set -euo pipefail
           npm run lint
+      - name: Language System deterministic regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run test:language
+
       - name: Deep Core authority gate
         shell: bash
         run: |
