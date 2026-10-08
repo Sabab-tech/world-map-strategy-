@@ -117,7 +117,7 @@ assert.equal(blocked.commodityStreams[0].production.activeRate,0);
 const constrained=hard.constrainedLogisticsPlan({
   quantity:100,terrainMultiplier:0.5,infrastructureMultiplier:0.5,atWar:true,sanctioned:true
 });
-assert.equal(constrained.logisticsConstraints.totalMultiplier,0.089375);
+assert.ok(Math.abs(constrained.logisticsConstraints.totalMultiplier-0.089375)<1e-12);
 assert(constrained.dispatchQuantity<=18);
 
 const copperModel=hard.processModel('copper');
