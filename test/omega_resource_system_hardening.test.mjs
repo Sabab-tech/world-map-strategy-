@@ -80,6 +80,32 @@ const multi=realism.siteModel({
 assert.equal(multi.commodityStreams.length,3);
 assert.deepEqual(multi.commodityStreams.map(x=>x.resourceId),['copper','gold','silver']);
 
+// Regression: simulation reserve/capacity must resolve per commodity stream, not inherit
+// the first commodity's reserve when a site has multiple modeled commodities.
+const syntheticMasterRows=context.OmegaResourceSiteMasterResearchData.sites;
+const syntheticReserveRows=context.OmegaResourceSiteReserveSimulationData.records;
+const masterLen=syntheticMasterRows.length;
+const reserveLen=syntheticReserveRows.length;
+for(const [resourceId,reserveQuantity,capacity] of [['copper',1000000,1000],['gold',9000000,100]]){
+  syntheticMasterRows.push({
+    siteId:'SITE_TEST_PER_STREAM',countryId:'CHL',siteName:'Per Stream Regression Site',
+    real:{resourceId},sourceSiteRecord:{resourceId,countryId:'CHL',commercialExtraction:true},
+    simulation:{simulationOnly:true,nominalDailyCapacity:capacity,minimumDailyCapacity:capacity*0.5,maximumDailyCapacity:capacity*1.2,utilization:0.7,recovery:0.8,decline:0,maintenance:0.05}
+  });
+  syntheticReserveRows.push({siteId:'SITE_TEST_PER_STREAM',countryId:'CHL',resourceId,reserve:{quantity:reserveQuantity,unit:'TONNES',status:'SIMULATED'}});
+}
+const perStream=context.Omega.ResourceRealism.siteModel({
+  siteId:'SITE_TEST_PER_STREAM',countryId:'CHL',siteName:'Per Stream Regression Site',
+  commodities:[{resourceId:'copper'},{resourceId:'gold'}]
+},null,'CHL');
+assert.equal(perStream.commodityStreams.length,2);
+const perStreamById=new Map(perStream.commodityStreams.map(x=>[x.resourceId,x]));
+assert(perStreamById.get('copper')?.production?.gameplayHorizonYears > 0);
+assert(perStreamById.get('gold')?.production?.gameplayHorizonYears > 0);
+assert.notEqual(perStreamById.get('copper').production.gameplayHorizonYears,perStreamById.get('gold').production.gameplayHorizonYears);
+syntheticMasterRows.length=masterLen;
+syntheticReserveRows.length=reserveLen;
+
 context.Game.state.resource.CHL={siteControls:{TEST_MULTI:{blocked:true}}};
 const blocked=realism.siteModel({
   siteId:'TEST_MULTI',countryId:'CHL',siteName:'Synthetic Multi Commodity',resourceId:'copper',
