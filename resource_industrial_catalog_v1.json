@@ -992,77 +992,220 @@
       "importTurns": 3,
       "researchCost": 800,
       "importCost": 550,
-      "foreignContractBonus": 0.12
+      "foreignContractBonus": 0.12,
+      "effects": {
+        "maintenanceMultiplier": 0.88,
+        "utilizationAdd": 0.02
+      },
+      "targetResourceIds": [
+        "*"
+      ],
+      "innovationMode": "RESEARCH_OR_IMPORT"
     },
     "AUTONOMOUS_MINE_HAULAGE": {
       "researchTurns": 6,
       "importTurns": 4,
       "researchCost": 1500,
       "importCost": 900,
-      "foreignContractBonus": 0.08
+      "foreignContractBonus": 0.08,
+      "effects": {
+        "capacityMultiplier": 1.08,
+        "utilizationAdd": 0.04,
+        "maintenanceMultiplier": 0.96
+      },
+      "targetResourceIds": [
+        "coal",
+        "copper",
+        "gold",
+        "iron_ore",
+        "bauxite",
+        "nickel",
+        "cobalt",
+        "manganese",
+        "chromite",
+        "zinc",
+        "phosphate"
+      ],
+      "innovationMode": "RESEARCH_OR_IMPORT"
     },
     "ADVANCED_ORE_SORTING": {
       "researchTurns": 5,
       "importTurns": 4,
       "researchCost": 1300,
       "importCost": 850,
-      "foreignContractBonus": 0.08
+      "foreignContractBonus": 0.08,
+      "effects": {
+        "recoveryAdd": 0.04,
+        "utilizationAdd": 0.02
+      },
+      "targetResourceIds": [
+        "copper",
+        "gold",
+        "iron_ore",
+        "bauxite",
+        "nickel",
+        "cobalt",
+        "manganese",
+        "chromite",
+        "zinc",
+        "tin",
+        "tungsten",
+        "uranium"
+      ],
+      "innovationMode": "RESEARCH_OR_IMPORT"
     },
     "ADVANCED_FLOTATION": {
       "researchTurns": 6,
       "importTurns": 5,
       "researchCost": 1600,
       "importCost": 1050,
-      "foreignContractBonus": 0.1
+      "foreignContractBonus": 0.1,
+      "effects": {
+        "recoveryAdd": 0.05,
+        "maintenanceMultiplier": 0.97
+      },
+      "targetResourceIds": [
+        "copper",
+        "gold",
+        "nickel",
+        "cobalt",
+        "zinc",
+        "lead",
+        "silver",
+        "platinum",
+        "tin"
+      ],
+      "innovationMode": "RESEARCH_OR_IMPORT"
     },
     "ENHANCED_OIL_RECOVERY": {
       "researchTurns": 6,
       "importTurns": 5,
       "researchCost": 1800,
       "importCost": 1200,
-      "foreignContractBonus": 0.1
+      "foreignContractBonus": 0.1,
+      "effects": {
+        "capacityMultiplier": 1.06,
+        "recoveryAdd": 0.07,
+        "declineMultiplier": 0.92
+      },
+      "targetResourceIds": [
+        "crude_oil"
+      ],
+      "innovationMode": "RESEARCH_OR_IMPORT"
     },
     "ADVANCED_GAS_COMPRESSION": {
       "researchTurns": 6,
       "importTurns": 5,
       "researchCost": 1800,
       "importCost": 1200,
-      "foreignContractBonus": 0.1
+      "foreignContractBonus": 0.1,
+      "effects": {
+        "capacityMultiplier": 1.08,
+        "recoveryAdd": 0.04,
+        "maintenanceMultiplier": 0.95,
+        "declineMultiplier": 0.95
+      },
+      "targetResourceIds": [
+        "natural_gas"
+      ],
+      "innovationMode": "RESEARCH_OR_IMPORT"
     },
     "WATER_RECYCLING": {
       "researchTurns": 5,
       "importTurns": 4,
       "researchCost": 1200,
       "importCost": 800,
-      "foreignContractBonus": 0.07
+      "foreignContractBonus": 0.07,
+      "effects": {
+        "utilizationAdd": 0.03,
+        "maintenanceMultiplier": 0.97
+      },
+      "targetResourceIds": [
+        "coal",
+        "copper",
+        "gold",
+        "iron_ore",
+        "bauxite",
+        "nickel",
+        "cobalt",
+        "lithium",
+        "phosphate",
+        "potash",
+        "uranium"
+      ],
+      "innovationMode": "RESEARCH_OR_IMPORT"
     },
     "TAILINGS_REPROCESSING": {
       "researchTurns": 5,
       "importTurns": 4,
       "researchCost": 1100,
       "importCost": 750,
-      "foreignContractBonus": 0.07
+      "foreignContractBonus": 0.07,
+      "effects": {
+        "recoveryAdd": 0.03
+      },
+      "targetResourceIds": [
+        "gold",
+        "copper",
+        "silver",
+        "uranium",
+        "zinc"
+      ],
+      "innovationMode": "RESEARCH_OR_IMPORT"
     },
     "DEEP_MINING_ENGINEERING": {
       "researchTurns": 8,
       "importTurns": 6,
       "researchCost": 2200,
       "importCost": 1450,
-      "foreignContractBonus": 0.12
+      "foreignContractBonus": 0.12,
+      "effects": {
+        "capacityMultiplier": 1.05,
+        "recoveryAdd": 0.02,
+        "maintenanceMultiplier": 0.98
+      },
+      "targetResourceIds": [
+        "coal",
+        "copper",
+        "gold",
+        "iron_ore",
+        "nickel",
+        "zinc",
+        "uranium"
+      ],
+      "innovationMode": "RESEARCH_OR_IMPORT"
     },
     "IN_SITU_URANIUM_RECOVERY": {
       "researchTurns": 8,
       "importTurns": 6,
       "researchCost": 2400,
       "importCost": 1600,
-      "foreignContractBonus": 0.15
+      "foreignContractBonus": 0.15,
+      "effects": {
+        "capacityMultiplier": 1.1,
+        "recoveryAdd": 0.08
+      },
+      "targetResourceIds": [
+        "uranium"
+      ],
+      "innovationMode": "RESEARCH_OR_IMPORT"
     },
     "MINE_DIGITAL_TWIN": {
       "researchTurns": 7,
       "importTurns": 5,
       "researchCost": 2000,
       "importCost": 1300,
-      "foreignContractBonus": 0.1
+      "foreignContractBonus": 0.1,
+      "effects": {
+        "capacityMultiplier": 1.04,
+        "utilizationAdd": 0.05,
+        "maintenanceMultiplier": 0.9,
+        "declineMultiplier": 0.97
+      },
+      "targetResourceIds": [
+        "*"
+      ],
+      "innovationMode": "RESEARCH_OR_IMPORT"
     }
   },
   "contractorTypes": {
