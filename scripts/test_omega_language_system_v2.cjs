@@ -113,7 +113,6 @@ const sandbox = {
   Promise,
   Error,
   TypeError,
-  TypeError,
   setTimeout,
   clearTimeout,
   setInterval,
