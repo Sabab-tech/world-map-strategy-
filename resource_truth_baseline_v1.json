@@ -1,0 +1,21 @@
+{
+  "schemaVersion":"1.0.0",
+  "baselineType":"RESOURCE_TRUTH_IMMUTABLE_EVIDENCE",
+  "capturedFrom":"main",
+  "capturedAt":"2026-10-08",
+  "canonicalSiteCount":199,
+  "simulationReserveSiteCount":199,
+  "researchEvidenceSiteCount":11,
+  "resourcesJson":{"sha":"8d158c5b1c23727a3ab16f2b14dd2601dfe7be39","bytes":0,"authorityStatus":"DATA_UNAVAILABLE"},
+  "resources2Json":{"sha":"b3a464b59bb1ef5a6b0c311f99642614a688b1b4","bytes":776601},
+  "canonicalCatalog":{"sha":"7c857fdbba6639bdbb552c4d5d6a7472df642848","siteCount":199},
+  "simulationReserveDataset":{"sha":"9f313ee03ca8f89ba232b332eb999821c484db91","siteCount":199},
+  "researchEvidenceDataset":{"sha":"4fd1e2680f23135c76c6af3726a9074b1c994ebe","siteCount":11},
+  "knownArchitecturalFindings":[
+    "resources.json is empty and cannot be an authority source",
+    "scenario reserve data must not override observed reserve",
+    "missing observed reserve/grade/capacity must remain UNOBSERVED",
+    "site identity is frozen by siteId, not siteName",
+    "linked execution is not proof of quantitative data availability"
+  ]
+}
