@@ -81,7 +81,7 @@ function patchSiteModel(){
    const s=clone(site||{}),c=country(countryId||s.countryId);
    const multiCommodity=Array.isArray(s.commodities)&&s.commodities.length>0;
    const siteResource=s.resourceId||s.resourceTypeId||s.resource;
-   const sim=multiCommodity?null:resolveSimulation(s,siteResource);
+   const sim=resolveSimulation(s,siteResource);
    const observed=k=>s[k]!==undefined&&s[k]!==null&&s[k]!=='';
    const inject=(k,e)=>{if(!observed(k)&&e?.value!==null){s[k]=e.value;s.__omegaSimulationInjected=true;}};
    if(!multiCommodity&&sim){
