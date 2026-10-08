@@ -50,7 +50,7 @@ const mod=(o,keys,d=1)=>{for(const k of keys){const v=num(o?.[k]);if(v!==null)re
 
 function adjustProduction(site,c,stream,sim){
  const p=stream?.production;if(!p)return p;
- const simulated=String(p.authority||'').toUpperCase()==='SIMULATED',ctrl=controlFor(site,c);
+ const simulated=String(p.authority||'').toUpperCase()==='SIMULATED'||site?.__omegaSimulationInjected===true||String(sim?.source||'').toUpperCase().includes('SIMULATION'),ctrl=controlFor(site,c);
  const cm=mod(ctrl,['productionMultiplier','outputMultiplier']),im=mod(ctrl,['infrastructureMultiplier','infrastructureFactor']),
        wm=mod(ctrl,['workforceMultiplier','workforceFactor']),em=mod(ctrl,['energyMultiplier','energyFactor']),
        gm=mod(ctrl,['geopoliticalMultiplier','controlMultiplier']),tm=mod(ctrl,['transportMultiplier','routeMultiplier']),
