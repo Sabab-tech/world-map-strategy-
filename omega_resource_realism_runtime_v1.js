@@ -251,6 +251,7 @@ function siteModel(site,profile,countryId){
     const productionObserved=nominalObs!==null||observedRate!==null||annualRate!==null||minObs!==null||maxObs!==null;
     const productionAuthority=productionObserved?'OBSERVED':'UNOBSERVED',qualityAuthority=rawGrade!==null?'OBSERVED':'UNOBSERVED';
     const simulation={reserveQuantity:scenarioReserve??fallbackReserve,reserveUnit:scenarioReserveUnit,nominalCapacity:simulationNominal,minimumCapacity:simulationMinimum,maximumCapacity:simulationMaximum,utilization:simulationUtil,recovery:simulationRecovery,decline:simulationDecline,maintenance:simulationMaintenance,activeRate:simulationActiveRate,grade:simulationGrade,lifeYears:num(scenario?.scenarioLifeYears)??fallbackLifeYears,authority:'SIMULATED',sourceDatasetId:scenarioReserve!==null?'resource_site_reserve_simulation_v1.json':'OMEGA_RESOURCE_CALIBRATION_RULESET',sourceRecordId:scenario?.siteId||site?.siteId||site?.siteReferenceKey||null};
+
    return{
      resourceId,
      reserve:{quantity:observedReserve?.quantity??null,unit:observedReserve?.unit??null,authority:observedReserve?'OBSERVED':'UNOBSERVED',status:observedReserve?'OBSERVED':'UNOBSERVED',basis:observedReserve?.measurementBasis??null,fieldAuthority:observedReserve?'OBSERVED':'UNOBSERVED',scenarioRecord:scenarioReserve!==null,provenance:observedReserve?{sourceDatasetId:observedReserve.sourceDatasetId,sourcePath:observedReserve.sourcePath,sourceRecordId:observedReserve.sourceRecordId,sourceAuthority:observedReserve.sourceAuthority,effectiveDate:observedReserve.effectiveDate}:null},
