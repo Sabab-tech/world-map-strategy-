@@ -263,7 +263,7 @@ function planShipment(input={}){
   const ordered=candidates.sort((a,b)=>String(a.asset?.priority??999)-String(b.asset?.priority??999));
   let best=null;
   for(const c of ordered.slice(0,16)){
-    const route=buildRoute(site,c.asset,rid,input.quantity,countryId=cid?{countryId:cid,transportMode:input.transportMode,unit:input.unit}:{});
+    const route=buildRoute(site,c.asset,rid,input.quantity,{countryId:cid,transportMode:input.transportMode,unit:input.unit});
     if(route.status==='PLANNED' && (!best||route.travelTimeDays<best.route.travelTimeDays))best={candidate:c,route};
   }
   if(!best)return{status:'BLOCKED',reason:'NO_USABLE_TRANSPORT_ROUTE',candidates:ordered.length};
@@ -351,7 +351,7 @@ function advanceProjects(c){
   return{status:'ADVANCED',countryId:cid,completed};
 }
 function inputCapacityFromFactory(p){
-  const r=processRules()[tok(p.resourceId)]||p.recipe||{};return Math.max(1,num(p.capacity)||1000);
+  return Math.max(1,num(p.capacityPerDay)||num(p.capacity)||1000);
 }
 
 function startTechnologyProject(input={}){
