@@ -113,8 +113,7 @@ assert(context.Game.state.resource.BGD.technologyCapabilities.some(x=>x.technolo
 
 const padma=N.startPadmaCorridorProject({countryId:'BGD'});
 assert.equal(padma.infrastructureType,'bridge');
-context.Game.state.simulation.turn=42;
-N.advanceProjects('BGD');
+for(let turn=13;turn<=42;turn++){context.Game.state.simulation.turn=turn;N.advanceProjects('BGD');}
 assert.equal(context.Game.state.resource.BGD.industrialNetwork.infrastructure.corridors.PADMA_EAST_WEST.status,'OPERATIONAL');
 
 const diag=N.diagnostics();
