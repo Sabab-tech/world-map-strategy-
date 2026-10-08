@@ -286,7 +286,7 @@
           countryCode:countryId,
           country:identity.name||countryId,
           metadata:{...(site&&typeof site==='object'&&site.metadata&&typeof site.metadata==='object'?clone(site.metadata):{}),subType:'mineSites'},
-          sourceAuthority:'RESOURCE_JSON',
+          sourceAuthority:site.sourceAuthority||'CANONICAL_SITE_CATALOG',
           sourceDatasetId:'resources.json.countryProfiles',
           sourcePath:'GSRSK_Master_CountryProfiles_v14.countryProfiles.'+String(profileKey)+'.resource_infrastructure_context.mineSites['+index+']'
         });
@@ -398,13 +398,13 @@
         status:operation.status||profile?.status||'ACTIVE_SITE_REFERENCE',commercialExtraction:operation.commercialExtraction!==false&&String(operation.status||'').toUpperCase()!=='NOT_APPLICABLE',
         owner:ownership.owner||profile?.owner||null,operator:ownership.operator||profile?.operator||null,
         lat:location.coordinates?.lat??profile?.lat??null,lon:location.coordinates?.lng??profile?.lon??null,
-        sourceAuthority:'RESOURCE_JSON',sourceDatasetId:'resource_site_canonical_catalog_v1.json',
+        sourceAuthority:site.sourceAuthority||'CANONICAL_SITE_CATALOG',sourceDatasetId:'resource_site_canonical_catalog_v1.json',
         sourcePath:'resource_site_canonical_catalog_v1.sites['+Object.keys(canonicalSiteCatalogMap||{}).indexOf(siteId)+']',
         sourceProfileReferenceKey:profile?.siteReferenceKey||null
       };
       const resourceAsset=g.GSRSK_Part04?.normalizeUnifiedAsset?.({
         ...rawSite,assetType:'MINE_SITE',assetId:siteId,siteReferenceKey:siteId,siteName,countryId:wanted,countryCode:wanted,
-        sourceAuthority:'RESOURCE_JSON',sourceDatasetId:'resource_site_canonical_catalog_v1.json',
+        sourceAuthority:site.sourceAuthority||'CANONICAL_SITE_CATALOG',sourceDatasetId:'resource_site_canonical_catalog_v1.json',
         extractionExecutable:false
       })||rawSite;
       canonicalRows.push({
@@ -414,7 +414,7 @@
         profileKey:'CANONICAL_SITE_CATALOG',
         siteName,status:'ACTIVE_SITE_REFERENCE',activationState:'ACTIVE_REFERENCE',extractionExecutable:false,
         quantitativeExtractionDataAvailable:resourceAsset.quantitativeExtractionDataAvailable===true,
-        sourceAuthority:'RESOURCE_JSON',sourceDatasetId:'resource_site_canonical_catalog_v1.json',
+        sourceAuthority:site.sourceAuthority||'CANONICAL_SITE_CATALOG',sourceDatasetId:'resource_site_canonical_catalog_v1.json',
         sourcePath:rawSite.sourcePath,sourceProfileReferenceKey:rawSite.sourceProfileReferenceKey,
         rawSiteReference:clone(rawSite),resourceAsset
       });
@@ -596,12 +596,12 @@ function batchFromExtraction(x,record){
         countryId:canonical(c),
         countryCode:canonical(c),
         sourcePath:site.sourcePath||null,
-        sourceDatasetId:site.sourceDatasetId||'RESOURCE_JSON.countryProfiles',
-        sourceAuthority:'RESOURCE_JSON',
+        sourceDatasetId:site.sourceDatasetId||'resource_site_canonical_catalog_v1.json',
+        sourceAuthority:site.sourceAuthority||'CANONICAL_SITE_CATALOG',
         activationState:'ACTIVE_SITE_CONTROLLER',
         controllerStatus:'RUNNING',
         extractionExecutable:linked.length>0,
-        quantitativeDataState:linked.length>0?'AVAILABLE':'MISSING_FROM_SITE_REFERENCE',
+        quantitativeDataState:linked.some(k=>{const row=(rows||[]).find(x=>String(x?.occurrenceKey||'')===String(k));return ['OBSERVED','MODELED'].includes(String(row?.dataAuthority?.reserve||'').toUpperCase())||['OBSERVED','MODELED'].includes(String(row?.dataAuthority?.production||'').toUpperCase());})?'AVAILABLE':(linked.length>0?'SIMULATION_ONLY':'MISSING_FROM_SITE_REFERENCE'),
         linkedOccurrenceKeys:linked,
         pathId,
         extractionPathStatus:linked.length>0?'EXECUTABLE_OCCURRENCE_ATTACHED':'BLOCKED_MISSING_QUANTITATIVE_DATA',
@@ -653,30 +653,29 @@ function batchFromExtraction(x,record){
           occurrenceKey,countryId:canonical(c),depositKey:'SIM_'+tok(occurrenceKey),resourceId:stream.resourceId,
           geologicalQuantity:stateQuantity,recoverableQuantity:stateQuantity,residualQuantity:stateQuantity,unit,
           operationalStatus:'ACTIVE_EXTRACTION',stateVersion:1,quality:q,productionModel:prod,
-          provenance:{sourceAuthority:'RESOURCE_JSON.countryProfiles',stateAuthority:'SIMULATED',sourceDatasetId:'resources.json.countryProfiles',sourcePath:asset?.sourcePath||null,
-            quantityAuthority:stream.reserve.authority||'SIMULATED',productionAuthority:prod.authority||'SIMULATED',qualityAuthority:q.gradeStatus==='OBSERVED'?'OBSERVED':'SIMULATED',simulationRuleVersion:realism?.VERSION||null}
+          provenance:{sourceAuthority:stream.reserve.authority==='OBSERVED'?'CANONICAL_SITE_CATALOG':'SIMULATION_ENGINE',stateAuthority:stream.reserve.authority==='OBSERVED'?'OBSERVED':'SIMULATED',sourceDatasetId:stream.reserve.authority==='OBSERVED'?(stream.reserve.provenance?.sourceDatasetId||'resource_site_canonical_catalog_v1.json'):(simulation.sourceDatasetId||'OMEGA_RESOURCE_CALIBRATION_RULESET'),sourcePath:stream.reserve.authority==='OBSERVED'?(stream.reserve.provenance?.sourcePath||asset?.sourcePath||null):asset?.sourcePath||null,quantityAuthority:stream.reserve.authority||'UNOBSERVED',productionAuthority:prod.authority||'UNOBSERVED',qualityAuthority:q.gradeStatus||'UNOBSERVED',simulationRuleVersion:realism?.VERSION||null}
         });
         const capacity=p5?.Capacity?new p5.Capacity({
           occurrenceKey,countryId:canonical(c),resourceId:stream.resourceId,unit,
           quantityUnit:unit,rateUnit:unit+'/DAY',
-          nominalCapacity:prod.nominalCapacity,minimumCapacity:prod.minimumCapacity,maximumCapacity:prod.maximumCapacity,
-          nominalRate:prod.activeRate,dailyRate:prod.activeRate,utilization:prod.utilization,recovery:prod.recovery,decline:prod.decline,
-          maintenance:prod.maintenance,operatingCost:prod.operatingCost,activeRate:prod.activeRate,observedRate:prod.observedRate||null,
-          assetReference:assetType+':'+occurrenceKey,authority:prod.authority||'SIMULATED',stateAuthority:prod.authority||'SIMULATED',
-          dataStatus:prod.dataStatus||'SIMULATED',quantityAuthority:stream.reserve.authority||'SIMULATED',productionAuthority:prod.authority||'SIMULATED',
+          nominalCapacity:prod.nominalCapacity??simulation.nominalCapacity,minimumCapacity:prod.minimumCapacity??simulation.minimumCapacity,maximumCapacity:prod.maximumCapacity??simulation.maximumCapacity,
+          nominalRate:prod.activeRate??simulation.activeRate,dailyRate:prod.activeRate??simulation.activeRate,utilization:prod.utilization??simulation.utilization,recovery:prod.recovery??simulation.recovery,decline:prod.decline??simulation.decline,
+          maintenance:prod.maintenance??simulation.maintenance,operatingCost:prod.operatingCost,activeRate:prod.activeRate??simulation.activeRate,observedRate:prod.observedRate||null,
+          assetReference:assetType+':'+occurrenceKey,authority:prod.authority||'UNOBSERVED',stateAuthority:prod.authority||'UNOBSERVED',
+          dataStatus:prod.authority==='OBSERVED'?'AVAILABLE':'SIMULATED',quantityAuthority:stream.reserve.authority||'UNOBSERVED',productionAuthority:prod.authority||'UNOBSERVED',
           simulationHorizonDays:Math.max(3650,Math.round(stream.reserve.quantity/Math.max(prod.activeRate,1)/365))
-        }):{occurrenceKey,countryId:canonical(c),resourceId:stream.resourceId,unit,quantityUnit:unit,rateUnit:unit+'/DAY',nominalRate:prod.activeRate,dailyRate:prod.activeRate,
-          nominalCapacity:prod.nominalCapacity,minimumCapacity:prod.minimumCapacity,maximumCapacity:prod.maximumCapacity,utilization:prod.utilization,recovery:prod.recovery,decline:prod.decline,maintenance:prod.maintenance,
-          operatingCost:prod.operatingCost,activeRate:prod.activeRate,authority:prod.authority||'SIMULATED',stateAuthority:prod.authority||'SIMULATED',
+        }):{occurrenceKey,countryId:canonical(c),resourceId:stream.resourceId,unit,quantityUnit:unit,rateUnit:unit+'/DAY',nominalRate:prod.activeRate??simulation.activeRate,dailyRate:prod.activeRate??simulation.activeRate,
+          nominalCapacity:prod.nominalCapacity??simulation.nominalCapacity,minimumCapacity:prod.minimumCapacity??simulation.minimumCapacity,maximumCapacity:prod.maximumCapacity??simulation.maximumCapacity,utilization:prod.utilization??simulation.utilization,recovery:prod.recovery??simulation.recovery,decline:prod.decline??simulation.decline,maintenance:prod.maintenance??simulation.maintenance,
+          operatingCost:prod.operatingCost,activeRate:prod.activeRate??simulation.activeRate,authority:prod.authority||'UNOBSERVED',stateAuthority:prod.authority||'UNOBSERVED',
           productionAuthority:prod.authority||'UNOBSERVED',dataStatus:prod.authority==='OBSERVED'?'AVAILABLE':'SIMULATED',assetReference:assetType+':'+occurrenceKey,
           computeWindowCapacity(hours){const h=n(hours);return{windowCapacity:(this.activeRate||this.nominalRate||0)*(h===null?1:Math.max(0,h/24))};}};
         rows.push({
           occurrenceKey,parentOccurrenceKey:streams.length>1?baseOccurrenceKey:null,siteReferenceKey:siteKey,depositKey:'SIM_'+tok(occurrenceKey),linkedDepositId:asset?.linkedDepositId||asset?.depositKey||null,depositName:siteName,resourceId:stream.resourceId,countryId:canonical(c),resourceTypeKey:stream.resourceId,
           locationNodeKey:'ASSET:'+canonical(c)+':'+tok(siteName),ownerKey:null,operatorKey:null,status:'ACTIVE_PRODUCING',
-          rawDeposit:{id:occurrenceKey,name:siteName,linkedDepositId:asset?.linkedDepositId||asset?.depositKey||null,countryCode:canonical(c),resId:stream.resourceId,status:'ACTIVE_PRODUCING',assetType,simulation:true,stateAuthority:reserve.provenance?.stateAuthority||'SIMULATED',
-            sourceDatasetId:'RESOURCE_JSON.countryProfiles',sourcePath:asset?.sourcePath||null,productionModel:prod,quality:q,reserveModel:stream.reserve},
-          sourceDatasetId:'RESOURCE_JSON.countryProfiles',
-          lifecycle:{status:'ACTIVE_EXTRACTION',mode:'PROFILE_DERIVED_SITE_MODEL',assetType,authority:prod.authority||'SIMULATED'},
+          rawDeposit:{id:occurrenceKey,name:siteName,linkedDepositId:asset?.linkedDepositId||asset?.depositKey||null,countryCode:canonical(c),resId:stream.resourceId,status:'ACTIVE_PRODUCING',assetType,simulation:stream.reserve.authority!=='OBSERVED'||prod.authority!=='OBSERVED',stateAuthority:reserve.provenance?.stateAuthority||'UNOBSERVED',
+            sourceDatasetId:stream.reserve.authority==='OBSERVED'?(stream.reserve.provenance?.sourceDatasetId||'resource_site_canonical_catalog_v1.json'):(simulation.sourceDatasetId||'OMEGA_RESOURCE_CALIBRATION_RULESET'),sourcePath:stream.reserve.authority==='OBSERVED'?(stream.reserve.provenance?.sourcePath||asset?.sourcePath||null):asset?.sourcePath||null,productionModel:prod,quality:q,reserveModel:stream.reserve,simulationModel:simulation},
+          sourceDatasetId:stream.reserve.authority==='OBSERVED'?(stream.reserve.provenance?.sourceDatasetId||'resource_site_canonical_catalog_v1.json'):(simulation.sourceDatasetId||'OMEGA_RESOURCE_CALIBRATION_RULESET'),
+          lifecycle:{status:'ACTIVE_EXTRACTION',mode:stream.reserve.authority==='OBSERVED'?'OBSERVED_SITE_MODEL':'SIMULATION_SITE_MODEL',assetType,authority:prod.authority||'UNOBSERVED'},
           accessibility:{state:stream.reserve.authority==='OBSERVED'||prod.authority==='OBSERVED'?'AVAILABLE':'SIMULATION_ONLY',sourceAuthority:stream.reserve.authority==='OBSERVED'?'CANONICAL_SITE_CATALOG':'SIMULATION_ENGINE',stateAuthority:reserve.provenance?.stateAuthority||'UNOBSERVED'},
           reserveState:reserve,capacity,isSimulationGenerated:(prod.authority||'SIMULATED')!=='OBSERVED'||stream.reserve.authority!=='OBSERVED',assetType,siteModel:model,
           dataAuthority:{reserve:stream.reserve.authority||'UNOBSERVED',production:prod.authority||'UNOBSERVED',quality:q.gradeStatus||'UNOBSERVED'}
