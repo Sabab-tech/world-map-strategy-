@@ -206,9 +206,9 @@ assert.equal(batch03.buildOntology(system).ontology.seed_concepts.length, 40);
   assert.equal(system.learnPhrase('test high confidence mapping', 'increase', 'PRODUCTION', 0.94), false);
   assert.equal(system.learnPhrase('test high confidence mapping', 'increase', 'PRODUCTION', 0.95), true);
 
-  const brainQuery = sandbox.OfflineSemanticBrain.parse('How many iron mines are in Bangladesh?');
+  const brainQuery = sandbox.OfflineSemanticBrain.parse('How many copper mines are in Bangladesh?');
   assert.equal(brainQuery.entities.country.id, 'BGD');
-  assert.equal(brainQuery.entities.resource.id, 'IRON_ORE');
+  assert.equal(brainQuery.entities.resource.id, 'COPPER');
   assert.equal(brainQuery.assetClass, 'MINE');
   assert.equal(brainQuery.operation, 'COUNT');
   assert.equal(brainQuery.executable, true);
