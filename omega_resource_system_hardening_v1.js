@@ -60,7 +60,7 @@ function adjustProduction(site,c,stream,sim){
  if(simulated&&decline!==null&&decline>0&&age>0)factor*=Math.pow(Math.max(0,1-decline),age);
  const reserve=num(stream?.reserve?.quantity),base=num(p.activeRate??p.nominalCapacity);
  if(simulated&&reserve!==null&&base!==null&&base>0){
-   const life=reserve/(base*365); if(life>0)factor*=Math.max(0.000001,TARGET_HORIZON_YEARS/life);
+   const life=reserve/(base*365); if(life>0)factor*=Math.max(0.000001,life/TARGET_HORIZON_YEARS);
  }
  const out={...p};
  for(const k of ['activeRate','nominalCapacity','minimumCapacity','maximumCapacity']){const v=num(out[k]);if(v!==null)out[k]=Math.max(0,v*factor);}
