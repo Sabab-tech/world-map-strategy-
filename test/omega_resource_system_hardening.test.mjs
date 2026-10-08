@@ -78,7 +78,7 @@ const multi=realism.siteModel({
   ]
 },null,'CHL');
 assert.equal(multi.commodityStreams.length,3);
-assert.deepEqual(multi.commodityStreams.map(x=>x.resourceId),['copper','gold','silver']);
+assert.deepEqual(Array.from(multi.commodityStreams, x=>x.resourceId),['copper','gold','silver']);
 
 // Regression: simulation reserve/capacity must resolve per commodity stream, not inherit
 // the first commodity's reserve when a site has multiple modeled commodities.
