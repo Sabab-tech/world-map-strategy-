@@ -1,0 +1,1082 @@
+{
+  "schemaVersion": "1.0.0",
+  "datasetId": "OMEGA_RESOURCE_INDUSTRIAL_CATALOG_V1",
+  "turnAssumption": {
+    "daysPerTurn": 30,
+    "note": "Production and construction are continuous; turns are the game's strategic planning clock."
+  },
+  "extractionMethods": {
+    "OPEN_PIT_DRILL_BLAST": {
+      "name": "Open-pit drill-blast",
+      "prepDays": 3,
+      "cycleDays": 1,
+      "crew": 3,
+      "equipment": [
+        "EXCAVATOR",
+        "HAUL_TRUCK",
+        "DRILL_RIG"
+      ],
+      "dailyHandlingHours": 18
+    },
+    "UNDERGROUND_ROOM_PILLAR": {
+      "name": "Underground room-and-pillar",
+      "prepDays": 7,
+      "cycleDays": 2,
+      "crew": 4,
+      "equipment": [
+        "JUMBO_DRILL",
+        "LHD",
+        "ROOF_BOLTER"
+      ],
+      "dailyHandlingHours": 16
+    },
+    "UNDERGROUND_LONGWALL": {
+      "name": "Underground longwall",
+      "prepDays": 14,
+      "cycleDays": 1,
+      "crew": 5,
+      "equipment": [
+        "LONGWALL_SHEARER",
+        "ARMOURED_FACE_CONVEYOR",
+        "SHIELD_SET"
+      ],
+      "dailyHandlingHours": 20
+    },
+    "BLOCK_CAVING": {
+      "name": "Block caving",
+      "prepDays": 45,
+      "cycleDays": 1,
+      "crew": 6,
+      "equipment": [
+        "CAVE_DRILL",
+        "LHD",
+        "CONVEYOR"
+      ],
+      "dailyHandlingHours": 20
+    },
+    "HYDRAULIC_BRINE": {
+      "name": "Brine pumping / evaporation or direct extraction",
+      "prepDays": 20,
+      "cycleDays": 1,
+      "crew": 4,
+      "equipment": [
+        "BRINE_PUMP",
+        "PONDS_OR_DLE_PLANT",
+        "REAGENT_SYSTEM"
+      ],
+      "dailyHandlingHours": 20
+    },
+    "HARD_ROCK_CRUSH_FLOTATION": {
+      "name": "Hard-rock drill, blast, crush and flotation",
+      "prepDays": 5,
+      "cycleDays": 1,
+      "crew": 4,
+      "equipment": [
+        "DRILL_RIG",
+        "EXCAVATOR",
+        "CRUSHER",
+        "FLOTATION_CELLS"
+      ],
+      "dailyHandlingHours": 18
+    },
+    "WELL_DRILL_PUMP": {
+      "name": "Well drilling and pressure-controlled pumping",
+      "prepDays": 20,
+      "cycleDays": 1,
+      "crew": 5,
+      "equipment": [
+        "DRILL_RIG",
+        "WELLHEAD",
+        "PUMP_OR_COMPRESSOR"
+      ],
+      "dailyHandlingHours": 24
+    },
+    "IN_SITU_LEACH": {
+      "name": "In-situ leach",
+      "prepDays": 30,
+      "cycleDays": 1,
+      "crew": 4,
+      "equipment": [
+        "INJECTION_WELLS",
+        "RECOVERY_WELLS",
+        "ION_EXCHANGE"
+      ],
+      "dailyHandlingHours": 24
+    },
+    "SOLUTION_MINING": {
+      "name": "Solution mining",
+      "prepDays": 25,
+      "cycleDays": 1,
+      "crew": 4,
+      "equipment": [
+        "INJECTION_WELLS",
+        "BRINE_PUMPS",
+        "SEPARATION_PLANT"
+      ],
+      "dailyHandlingHours": 24
+    },
+    "DREDGING": {
+      "name": "Marine or river dredging",
+      "prepDays": 10,
+      "cycleDays": 1,
+      "crew": 3,
+      "equipment": [
+        "DREDGER",
+        "PUMP",
+        "SCREENING_PLANT"
+      ],
+      "dailyHandlingHours": 20
+    },
+    "QUARRY_CRUSH_SCREEN": {
+      "name": "Quarry drilling, crushing and screening",
+      "prepDays": 3,
+      "cycleDays": 1,
+      "crew": 3,
+      "equipment": [
+        "DRILL_RIG",
+        "EXCAVATOR",
+        "CRUSHER",
+        "SCREEN"
+      ],
+      "dailyHandlingHours": 18
+    },
+    "ALLUVIAL_GRAVITY": {
+      "name": "Alluvial excavation and gravity concentration",
+      "prepDays": 4,
+      "cycleDays": 1,
+      "crew": 3,
+      "equipment": [
+        "EXCAVATOR",
+        "WASH_PLANT",
+        "GRAVITY_CIRCUIT"
+      ],
+      "dailyHandlingHours": 18
+    }
+  },
+  "resourceRules": {
+    "coal": {
+      "method": "UNDERGROUND_LONGWALL",
+      "fallbackMethod": "OPEN_PIT_DRILL_BLAST",
+      "preferredModes": [
+        "rail",
+        "truck"
+      ],
+      "batchDays": 3
+    },
+    "iron_ore": {
+      "method": "OPEN_PIT_DRILL_BLAST",
+      "preferredModes": [
+        "rail",
+        "ship",
+        "truck"
+      ],
+      "batchDays": 2
+    },
+    "copper": {
+      "method": "OPEN_PIT_DRILL_BLAST",
+      "fallbackMethod": "BLOCK_CAVING",
+      "preferredModes": [
+        "rail",
+        "ship",
+        "truck"
+      ],
+      "batchDays": 2
+    },
+    "gold": {
+      "method": "OPEN_PIT_DRILL_BLAST",
+      "fallbackMethod": "UNDERGROUND_ROOM_PILLAR",
+      "preferredModes": [
+        "truck",
+        "rail",
+        "ship"
+      ],
+      "batchDays": 2
+    },
+    "silver": {
+      "method": "UNDERGROUND_ROOM_PILLAR",
+      "fallbackMethod": "OPEN_PIT_DRILL_BLAST",
+      "preferredModes": [
+        "truck",
+        "rail",
+        "ship"
+      ],
+      "batchDays": 2
+    },
+    "bauxite": {
+      "method": "OPEN_PIT_DRILL_BLAST",
+      "preferredModes": [
+        "rail",
+        "ship",
+        "truck"
+      ],
+      "batchDays": 2
+    },
+    "nickel": {
+      "method": "OPEN_PIT_DRILL_BLAST",
+      "fallbackMethod": "UNDERGROUND_ROOM_PILLAR",
+      "preferredModes": [
+        "rail",
+        "ship",
+        "truck"
+      ],
+      "batchDays": 2
+    },
+    "cobalt": {
+      "method": "UNDERGROUND_ROOM_PILLAR",
+      "fallbackMethod": "OPEN_PIT_DRILL_BLAST",
+      "preferredModes": [
+        "truck",
+        "rail",
+        "ship"
+      ],
+      "batchDays": 2
+    },
+    "lithium": {
+      "method": "HYDRAULIC_BRINE",
+      "fallbackMethod": "HARD_ROCK_CRUSH_FLOTATION",
+      "preferredModes": [
+        "truck",
+        "rail",
+        "ship"
+      ],
+      "batchDays": 3
+    },
+    "natural_gas": {
+      "method": "WELL_DRILL_PUMP",
+      "preferredModes": [
+        "pipeline",
+        "ship",
+        "truck"
+      ],
+      "batchDays": 1
+    },
+    "crude_oil": {
+      "method": "WELL_DRILL_PUMP",
+      "preferredModes": [
+        "pipeline",
+        "ship",
+        "rail"
+      ],
+      "batchDays": 1
+    },
+    "uranium": {
+      "method": "IN_SITU_LEACH",
+      "fallbackMethod": "OPEN_PIT_DRILL_BLAST",
+      "preferredModes": [
+        "truck",
+        "rail",
+        "ship"
+      ],
+      "batchDays": 2
+    },
+    "phosphate": {
+      "method": "OPEN_PIT_DRILL_BLAST",
+      "preferredModes": [
+        "rail",
+        "ship",
+        "truck"
+      ],
+      "batchDays": 2
+    },
+    "potash": {
+      "method": "SOLUTION_MINING",
+      "fallbackMethod": "UNDERGROUND_ROOM_PILLAR",
+      "preferredModes": [
+        "rail",
+        "ship"
+      ],
+      "batchDays": 2
+    },
+    "graphite": {
+      "method": "OPEN_PIT_DRILL_BLAST",
+      "fallbackMethod": "UNDERGROUND_ROOM_PILLAR",
+      "preferredModes": [
+        "truck",
+        "rail",
+        "ship"
+      ],
+      "batchDays": 2
+    },
+    "manganese": {
+      "method": "OPEN_PIT_DRILL_BLAST",
+      "preferredModes": [
+        "rail",
+        "ship",
+        "truck"
+      ],
+      "batchDays": 2
+    },
+    "chromite": {
+      "method": "OPEN_PIT_DRILL_BLAST",
+      "fallbackMethod": "UNDERGROUND_ROOM_PILLAR",
+      "preferredModes": [
+        "rail",
+        "ship",
+        "truck"
+      ],
+      "batchDays": 2
+    },
+    "zinc": {
+      "method": "UNDERGROUND_ROOM_PILLAR",
+      "fallbackMethod": "OPEN_PIT_DRILL_BLAST",
+      "preferredModes": [
+        "truck",
+        "rail",
+        "ship"
+      ],
+      "batchDays": 2
+    },
+    "tin": {
+      "method": "ALLUVIAL_GRAVITY",
+      "fallbackMethod": "UNDERGROUND_ROOM_PILLAR",
+      "preferredModes": [
+        "truck",
+        "rail",
+        "ship"
+      ],
+      "batchDays": 2
+    },
+    "tungsten": {
+      "method": "UNDERGROUND_ROOM_PILLAR",
+      "preferredModes": [
+        "truck",
+        "rail",
+        "ship"
+      ],
+      "batchDays": 2
+    },
+    "platinum": {
+      "method": "UNDERGROUND_ROOM_PILLAR",
+      "fallbackMethod": "OPEN_PIT_DRILL_BLAST",
+      "preferredModes": [
+        "rail",
+        "ship",
+        "truck"
+      ],
+      "batchDays": 2
+    },
+    "diamond": {
+      "method": "OPEN_PIT_DRILL_BLAST",
+      "fallbackMethod": "ALLUVIAL_GRAVITY",
+      "preferredModes": [
+        "truck",
+        "rail",
+        "ship"
+      ],
+      "batchDays": 2
+    },
+    "rare_earth": {
+      "method": "OPEN_PIT_DRILL_BLAST",
+      "preferredModes": [
+        "rail",
+        "ship",
+        "truck"
+      ],
+      "batchDays": 2
+    },
+    "rutile": {
+      "method": "DREDGING",
+      "fallbackMethod": "OPEN_PIT_DRILL_BLAST",
+      "preferredModes": [
+        "truck",
+        "rail",
+        "ship"
+      ],
+      "batchDays": 2
+    },
+    "ilmenite": {
+      "method": "DREDGING",
+      "fallbackMethod": "OPEN_PIT_DRILL_BLAST",
+      "preferredModes": [
+        "truck",
+        "rail",
+        "ship"
+      ],
+      "batchDays": 2
+    },
+    "limestone": {
+      "method": "QUARRY_CRUSH_SCREEN",
+      "preferredModes": [
+        "truck",
+        "rail"
+      ],
+      "batchDays": 2
+    },
+    "gypsum": {
+      "method": "OPEN_PIT_DRILL_BLAST",
+      "preferredModes": [
+        "truck",
+        "rail",
+        "ship"
+      ],
+      "batchDays": 2
+    },
+    "marble": {
+      "method": "QUARRY_CRUSH_SCREEN",
+      "preferredModes": [
+        "truck",
+        "rail",
+        "ship"
+      ],
+      "batchDays": 2
+    },
+    "granite": {
+      "method": "QUARRY_CRUSH_SCREEN",
+      "preferredModes": [
+        "truck",
+        "rail",
+        "ship"
+      ],
+      "batchDays": 2
+    },
+    "silica_sand": {
+      "method": "DREDGING",
+      "fallbackMethod": "QUARRY_CRUSH_SCREEN",
+      "preferredModes": [
+        "truck",
+        "rail",
+        "ship"
+      ],
+      "batchDays": 2
+    },
+    "construction_aggregate": {
+      "method": "QUARRY_CRUSH_SCREEN",
+      "preferredModes": [
+        "truck",
+        "rail"
+      ],
+      "batchDays": 1
+    },
+    "basalt": {
+      "method": "QUARRY_CRUSH_SCREEN",
+      "preferredModes": [
+        "truck",
+        "rail"
+      ],
+      "batchDays": 1
+    },
+    "salt": {
+      "method": "SOLUTION_MINING",
+      "fallbackMethod": "QUARRY_CRUSH_SCREEN",
+      "preferredModes": [
+        "rail",
+        "ship",
+        "truck"
+      ],
+      "batchDays": 2
+    },
+    "dolomite": {
+      "method": "QUARRY_CRUSH_SCREEN",
+      "preferredModes": [
+        "truck",
+        "rail",
+        "ship"
+      ],
+      "batchDays": 2
+    },
+    "magnesite": {
+      "method": "OPEN_PIT_DRILL_BLAST",
+      "preferredModes": [
+        "truck",
+        "rail",
+        "ship"
+      ],
+      "batchDays": 2
+    },
+    "oil_shale": {
+      "method": "OPEN_PIT_DRILL_BLAST",
+      "fallbackMethod": "UNDERGROUND_ROOM_PILLAR",
+      "preferredModes": [
+        "rail",
+        "truck"
+      ],
+      "batchDays": 2
+    },
+    "boron": {
+      "method": "OPEN_PIT_DRILL_BLAST",
+      "preferredModes": [
+        "rail",
+        "ship",
+        "truck"
+      ],
+      "batchDays": 2
+    }
+  },
+  "processingRules": {
+    "coal": {
+      "factoryType": "COAL_PREPARATION_PLANT",
+      "inputs": {
+        "coal": 1
+      },
+      "outputs": {
+        "COAL_CONCENTRATE": 0.82,
+        "COAL_REJECT": 0.18
+      },
+      "cycleDays": 1
+    },
+    "iron_ore": {
+      "factoryType": "ORE_BENEFICIATION_PLANT",
+      "inputs": {
+        "iron_ore": 1
+      },
+      "outputs": {
+        "IRON_CONCENTRATE": 0.67,
+        "ORE_TAILINGS": 0.33
+      },
+      "cycleDays": 1
+    },
+    "copper": {
+      "factoryType": "COPPER_CONCENTRATOR",
+      "inputs": {
+        "copper": 1
+      },
+      "outputs": {
+        "COPPER_CONCENTRATE": 0.3,
+        "TAILINGS": 0.7
+      },
+      "cycleDays": 1
+    },
+    "gold": {
+      "factoryType": "GOLD_PROCESSING_PLANT",
+      "inputs": {
+        "gold": 1
+      },
+      "outputs": {
+        "DORÉ": 0.005,
+        "TAILINGS": 0.995
+      },
+      "cycleDays": 2
+    },
+    "bauxite": {
+      "factoryType": "ALUMINA_REFINERY",
+      "inputs": {
+        "bauxite": 1
+      },
+      "outputs": {
+        "ALUMINA": 0.45,
+        "BAUXITE_RESIDUE": 0.55
+      },
+      "cycleDays": 2
+    },
+    "nickel": {
+      "factoryType": "NICKEL_PROCESSING_PLANT",
+      "inputs": {
+        "nickel": 1
+      },
+      "outputs": {
+        "NICKEL_CONCENTRATE": 0.12,
+        "TAILINGS": 0.88
+      },
+      "cycleDays": 2
+    },
+    "cobalt": {
+      "factoryType": "COBALT_REFINERY",
+      "inputs": {
+        "cobalt": 1
+      },
+      "outputs": {
+        "COBALT_HYDROXIDE": 0.18,
+        "RESIDUE": 0.82
+      },
+      "cycleDays": 2
+    },
+    "lithium": {
+      "factoryType": "LITHIUM_CONVERSION_PLANT",
+      "inputs": {
+        "lithium": 1
+      },
+      "outputs": {
+        "LITHIUM_CARBONATE_OR_HYDROXIDE": 0.55,
+        "RESIDUE": 0.45
+      },
+      "cycleDays": 3
+    },
+    "crude_oil": {
+      "factoryType": "REFINERY",
+      "inputs": {
+        "crude_oil": 1
+      },
+      "outputs": {
+        "DIESEL": 0.28,
+        "GASOLINE": 0.25,
+        "JET_FUEL": 0.12,
+        "NAPHTHA": 0.12,
+        "HEAVY_FUEL_OIL": 0.08,
+        "OTHER_REFINERY_PRODUCTS": 0.15
+      },
+      "cycleDays": 1
+    },
+    "natural_gas": {
+      "factoryType": "GAS_PROCESSING_PLANT",
+      "inputs": {
+        "natural_gas": 1
+      },
+      "outputs": {
+        "PIPELINE_GAS": 0.88,
+        "NGL": 0.07,
+        "LOSS": 0.05
+      },
+      "cycleDays": 1
+    },
+    "uranium": {
+      "factoryType": "URANIUM_MILL",
+      "inputs": {
+        "uranium": 1
+      },
+      "outputs": {
+        "YELLOWCAKE": 0.09,
+        "MILL_TAILINGS": 0.91
+      },
+      "cycleDays": 2
+    },
+    "phosphate": {
+      "factoryType": "PHOSPHATE_BENEFICIATION_PLANT",
+      "inputs": {
+        "phosphate": 1
+      },
+      "outputs": {
+        "PHOSPHATE_CONCENTRATE": 0.72,
+        "TAILINGS": 0.28
+      },
+      "cycleDays": 1
+    },
+    "potash": {
+      "factoryType": "POTASH_PROCESSING_PLANT",
+      "inputs": {
+        "potash": 1
+      },
+      "outputs": {
+        "MOP_POTASH": 0.72,
+        "SALT_TAILINGS": 0.28
+      },
+      "cycleDays": 1
+    },
+    "graphite": {
+      "factoryType": "GRAPHITE_CONCENTRATOR",
+      "inputs": {
+        "graphite": 1
+      },
+      "outputs": {
+        "GRAPHITE_CONCENTRATE": 0.15,
+        "TAILINGS": 0.85
+      },
+      "cycleDays": 1
+    },
+    "manganese": {
+      "factoryType": "MANGANESE_BENEFICIATION_PLANT",
+      "inputs": {
+        "manganese": 1
+      },
+      "outputs": {
+        "MANGANESE_CONCENTRATE": 0.6,
+        "TAILINGS": 0.4
+      },
+      "cycleDays": 1
+    },
+    "chromite": {
+      "factoryType": "CHROMITE_CONCENTRATOR",
+      "inputs": {
+        "chromite": 1
+      },
+      "outputs": {
+        "CHROMITE_CONCENTRATE": 0.35,
+        "TAILINGS": 0.65
+      },
+      "cycleDays": 1
+    },
+    "zinc": {
+      "factoryType": "ZINC_CONCENTRATOR",
+      "inputs": {
+        "zinc": 1
+      },
+      "outputs": {
+        "ZINC_CONCENTRATE": 0.25,
+        "TAILINGS": 0.75
+      },
+      "cycleDays": 2
+    },
+    "tin": {
+      "factoryType": "TIN_CONCENTRATOR",
+      "inputs": {
+        "tin": 1
+      },
+      "outputs": {
+        "TIN_CONCENTRATE": 0.25,
+        "TAILINGS": 0.75
+      },
+      "cycleDays": 1
+    },
+    "tungsten": {
+      "factoryType": "TUNGSTEN_CONCENTRATOR",
+      "inputs": {
+        "tungsten": 1
+      },
+      "outputs": {
+        "TUNGSTEN_CONCENTRATE": 0.08,
+        "TAILINGS": 0.92
+      },
+      "cycleDays": 2
+    },
+    "platinum": {
+      "factoryType": "PGM_CONCENTRATOR",
+      "inputs": {
+        "platinum": 1
+      },
+      "outputs": {
+        "PGM_CONCENTRATE": 0.05,
+        "TAILINGS": 0.95
+      },
+      "cycleDays": 2
+    },
+    "diamond": {
+      "factoryType": "DIAMOND_RECOVERY_PLANT",
+      "inputs": {
+        "diamond": 1
+      },
+      "outputs": {
+        "SORTED_DIAMONDS": 0.001,
+        "GRAVEL_TAILINGS": 0.999
+      },
+      "cycleDays": 2
+    },
+    "rare_earth": {
+      "factoryType": "RARE_EARTH_BENEFICIATION_PLANT",
+      "inputs": {
+        "rare_earth": 1
+      },
+      "outputs": {
+        "RARE_EARTH_CONCENTRATE": 0.08,
+        "TAILINGS": 0.92
+      },
+      "cycleDays": 2
+    },
+    "rutile": {
+      "factoryType": "MINERAL_SANDS_PLANT",
+      "inputs": {
+        "rutile": 1
+      },
+      "outputs": {
+        "UPGRADED_RUTILE": 0.85,
+        "Tailings": 0.15
+      },
+      "cycleDays": 1
+    },
+    "ilmenite": {
+      "factoryType": "MINERAL_SANDS_PLANT",
+      "inputs": {
+        "ilmenite": 1
+      },
+      "outputs": {
+        "TITANIUM_FEED": 0.55,
+        "Tailings": 0.45
+      },
+      "cycleDays": 1
+    },
+    "limestone": {
+      "factoryType": "CEMENT_LIMESTONE_PLANT",
+      "inputs": {
+        "limestone": 1
+      },
+      "outputs": {
+        "CEMENT_FEED": 0.95,
+        "QUARRY_LOSS": 0.05
+      },
+      "cycleDays": 1
+    },
+    "gypsum": {
+      "factoryType": "GYPSUM_PROCESSING_PLANT",
+      "inputs": {
+        "gypsum": 1
+      },
+      "outputs": {
+        "CALCINED_GYPSUM": 0.78,
+        "LOSS": 0.22
+      },
+      "cycleDays": 1
+    },
+    "marble": {
+      "factoryType": "STONE_PROCESSING_PLANT",
+      "inputs": {
+        "marble": 1
+      },
+      "outputs": {
+        "MARBLE_BLOCK": 0.9,
+        "SAWING_LOSS": 0.1
+      },
+      "cycleDays": 2
+    },
+    "granite": {
+      "factoryType": "STONE_PROCESSING_PLANT",
+      "inputs": {
+        "granite": 1
+      },
+      "outputs": {
+        "GRANITE_BLOCK": 0.9,
+        "SAWING_LOSS": 0.1
+      },
+      "cycleDays": 2
+    },
+    "silica_sand": {
+      "factoryType": "GLASS_SILICA_PLANT",
+      "inputs": {
+        "silica_sand": 1
+      },
+      "outputs": {
+        "GLASS_SILICA_FEED": 0.93,
+        "LOSS": 0.07
+      },
+      "cycleDays": 1
+    },
+    "construction_aggregate": {
+      "factoryType": "AGGREGATE_CRUSHING_PLANT",
+      "inputs": {
+        "construction_aggregate": 1
+      },
+      "outputs": {
+        "GRADED_AGGREGATE": 0.97,
+        "LOSS": 0.03
+      },
+      "cycleDays": 1
+    },
+    "basalt": {
+      "factoryType": "AGGREGATE_CRUSHING_PLANT",
+      "inputs": {
+        "basalt": 1
+      },
+      "outputs": {
+        "BASALT_AGGREGATE": 0.96,
+        "LOSS": 0.04
+      },
+      "cycleDays": 1
+    },
+    "salt": {
+      "factoryType": "SALT_REFINERY",
+      "inputs": {
+        "salt": 1
+      },
+      "outputs": {
+        "REFINED_SALT": 0.9,
+        "BRINE_LOSS": 0.1
+      },
+      "cycleDays": 1
+    },
+    "dolomite": {
+      "factoryType": "DOLOMITE_PROCESSING_PLANT",
+      "inputs": {
+        "dolomite": 1
+      },
+      "outputs": {
+        "DOLOMITE_PRODUCT": 0.9,
+        "LOSS": 0.1
+      },
+      "cycleDays": 1
+    },
+    "magnesite": {
+      "factoryType": "MAGNESIA_PLANT",
+      "inputs": {
+        "magnesite": 1
+      },
+      "outputs": {
+        "MAGNESIA": 0.62,
+        "LOSS": 0.38
+      },
+      "cycleDays": 2
+    },
+    "oil_shale": {
+      "factoryType": "OIL_SHALE_RETORT",
+      "inputs": {
+        "oil_shale": 1
+      },
+      "outputs": {
+        "SHALE_OIL": 0.08,
+        "SHALE_GAS": 0.04,
+        "SOLID_RESIDUE": 0.88
+      },
+      "cycleDays": 2
+    },
+    "boron": {
+      "factoryType": "BORATE_PROCESSING_PLANT",
+      "inputs": {
+        "boron": 1
+      },
+      "outputs": {
+        "BORIC_ACID_OR_BORAX": 0.52,
+        "RESIDUE": 0.48
+      },
+      "cycleDays": 2
+    }
+  },
+  "transportModes": {
+    "truck": {
+      "vehicle": "HEAVY_HAUL_TRUCK",
+      "payloadTonnes": 25,
+      "speedKmh": 55,
+      "loadHours": 2,
+      "unloadHours": 1,
+      "costPerTonneKm": 0.055,
+      "maintenanceMultiplier": 1
+    },
+    "rail": {
+      "vehicle": "HEAVY_FREIGHT_TRAIN",
+      "payloadTonnes": 5000,
+      "speedKmh": 45,
+      "loadHours": 4,
+      "unloadHours": 3,
+      "costPerTonneKm": 0.022,
+      "maintenanceMultiplier": 1
+    },
+    "barge": {
+      "vehicle": "INLAND_BARGE",
+      "payloadTonnes": 1200,
+      "speedKmh": 18,
+      "loadHours": 6,
+      "unloadHours": 4,
+      "costPerTonneKm": 0.016,
+      "maintenanceMultiplier": 1.1
+    },
+    "ship": {
+      "vehicle": "BULK_CARRIER",
+      "payloadTonnes": 50000,
+      "speedKmh": 28,
+      "loadHours": 12,
+      "unloadHours": 12,
+      "costPerTonneKm": 0.009,
+      "maintenanceMultiplier": 1.2
+    },
+    "pipeline": {
+      "vehicle": "PIPELINE_STREAM",
+      "payloadTonnes": 25000,
+      "speedKmh": 30,
+      "loadHours": 0,
+      "unloadHours": 0,
+      "costPerTonneKm": 0.012,
+      "maintenanceMultiplier": 1
+    }
+  },
+  "infrastructureTypes": {
+    "road": {
+      "capacityPerDay": 20000,
+      "costPerKm": 1,
+      "buildDays": 180,
+      "constructionClass": "ROAD_CORRIDOR"
+    },
+    "rail": {
+      "capacityPerDay": 120000,
+      "costPerKm": 8,
+      "buildDays": 540,
+      "constructionClass": "HEAVY_RAIL"
+    },
+    "bridge": {
+      "capacityPerDay": 60000,
+      "costPerKm": 25,
+      "buildDays": 720,
+      "constructionClass": "RIVER_BRIDGE"
+    },
+    "port": {
+      "capacityPerDay": 200000,
+      "costPerKm": 0,
+      "costFixed": 8000,
+      "buildDays": 900,
+      "constructionClass": "PORT_TERMINAL"
+    },
+    "pipeline": {
+      "capacityPerDay": 500000,
+      "costPerKm": 4,
+      "buildDays": 720,
+      "constructionClass": "PIPELINE"
+    }
+  },
+  "technologyProjects": {
+    "DIGITAL_MAINTENANCE": {
+      "researchTurns": 4,
+      "importTurns": 3,
+      "researchCost": 800,
+      "importCost": 550,
+      "foreignContractBonus": 0.12
+    },
+    "AUTONOMOUS_MINE_HAULAGE": {
+      "researchTurns": 6,
+      "importTurns": 4,
+      "researchCost": 1500,
+      "importCost": 900,
+      "foreignContractBonus": 0.08
+    },
+    "ADVANCED_ORE_SORTING": {
+      "researchTurns": 5,
+      "importTurns": 4,
+      "researchCost": 1300,
+      "importCost": 850,
+      "foreignContractBonus": 0.08
+    },
+    "ADVANCED_FLOTATION": {
+      "researchTurns": 6,
+      "importTurns": 5,
+      "researchCost": 1600,
+      "importCost": 1050,
+      "foreignContractBonus": 0.1
+    },
+    "ENHANCED_OIL_RECOVERY": {
+      "researchTurns": 6,
+      "importTurns": 5,
+      "researchCost": 1800,
+      "importCost": 1200,
+      "foreignContractBonus": 0.1
+    },
+    "ADVANCED_GAS_COMPRESSION": {
+      "researchTurns": 6,
+      "importTurns": 5,
+      "researchCost": 1800,
+      "importCost": 1200,
+      "foreignContractBonus": 0.1
+    },
+    "WATER_RECYCLING": {
+      "researchTurns": 5,
+      "importTurns": 4,
+      "researchCost": 1200,
+      "importCost": 800,
+      "foreignContractBonus": 0.07
+    },
+    "TAILINGS_REPROCESSING": {
+      "researchTurns": 5,
+      "importTurns": 4,
+      "researchCost": 1100,
+      "importCost": 750,
+      "foreignContractBonus": 0.07
+    },
+    "DEEP_MINING_ENGINEERING": {
+      "researchTurns": 8,
+      "importTurns": 6,
+      "researchCost": 2200,
+      "importCost": 1450,
+      "foreignContractBonus": 0.12
+    },
+    "IN_SITU_URANIUM_RECOVERY": {
+      "researchTurns": 8,
+      "importTurns": 6,
+      "researchCost": 2400,
+      "importCost": 1600,
+      "foreignContractBonus": 0.15
+    },
+    "MINE_DIGITAL_TWIN": {
+      "researchTurns": 7,
+      "importTurns": 5,
+      "researchCost": 2000,
+      "importCost": 1300,
+      "foreignContractBonus": 0.1
+    }
+  },
+  "contractorTypes": {
+    "DOMESTIC_EPC": {
+      "constructionBonus": 0,
+      "techTransferBonus": 0
+    },
+    "FOREIGN_EPC": {
+      "constructionBonus": 0.15,
+      "techTransferBonus": 0.1
+    },
+    "SPECIALIST_FOREIGN_TECH_VENDOR": {
+      "constructionBonus": 0.05,
+      "techTransferBonus": 0.25
+    }
+  }
+}
