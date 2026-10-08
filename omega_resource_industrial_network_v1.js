@@ -402,10 +402,11 @@ function startTechnologyProject(input={}){
   if(mode==='IMPORT'&&!donor&&contractor!=='SPECIALIST_FOREIGN_TECH_VENDOR')return{status:'BLOCKED',reason:'DONOR_COUNTRY_OR_VENDOR_REQUIRED'};
   const donorCaps=donor?Array.isArray(resourceState(donor).technologyCapabilities)?resourceState(donor).technologyCapabilities:[]:[];
   if(mode==='IMPORT'&&!donorCaps.some(x=>tok(x?.technologyId).toUpperCase()===technologyId)&&contractor!=='SPECIALIST_FOREIGN_TECH_VENDOR')return{status:'BLOCKED',reason:'DONOR_TECHNOLOGY_NOT_AVAILABLE'};
+  const donorCapabilityVerified=mode==='IMPORT'&&(contractor==='SPECIALIST_FOREIGN_TECH_VENDOR'||donorCaps.some(x=>tok(x?.technologyId).toUpperCase()===technologyId));
   const contract={projectId:'TECH:'+cid+':'+technologyId+':T'+turn()+':'+h32(JSON.stringify(input)),countryId:cid,technologyId,mode,
     durationTurns:mode==='IMPORT'?spec.importTurns:spec.researchTurns,cost:mode==='IMPORT'?spec.importCost:spec.researchCost,donorCountryId:donor||null,
     contractorType:contractor,status:'IN_PROGRESS',startTurn:turn(),targetSiteId:input.targetSiteId||'*',targetResourceId:tok(input.resourceId||'*'),
-    targetSiteType:input.siteType||'*',effects:clone(spec.effects||{})};
+    targetSiteType:input.siteType||'*',effects:clone(spec.effects||{}),donorCapabilityVerified};
   netState(cid).technologyContracts.push(contract);emit('OMEGA_RESOURCE_TECHNOLOGY_PROJECT_STARTED',cid,contract);return contract;
 }
 function advanceTechnologyProjects(c){
@@ -415,12 +416,7 @@ function advanceTechnologyProjects(c){
     if(String(p.status).toUpperCase()!=='IN_PROGRESS')continue;
     const elapsed=turn()-Number(p.startTurn||turn());
     if(elapsed<Number(p.durationTurns||1))continue;
-    if(p.mode==='IMPORT'&&p.donorCountryId){
-      const donorCaps=Array.isArray(resourceState(p.donorCountryId).technologyCapabilities)?resourceState(p.donorCountryId).technologyCapabilities:[];
-      if(!donorCaps.some(x=>tok(x?.technologyId).toUpperCase()===tok(p.technologyId))&&p.contractorType!=='SPECIALIST_FOREIGN_TECH_VENDOR'){
-        p.status='BLOCKED';p.blockReason='DONOR_CAPABILITY_LOST';continue;
-      }
-    }
+    if(p.mode==='IMPORT'&&!p.donorCapabilityVerified){p.status='BLOCKED';p.blockReason='DONOR_CAPABILITY_NOT_VERIFIED';continue;}
     const capability={technologyId:p.technologyId,targetSiteId:p.targetSiteId,targetResourceId:p.targetResourceId,targetSiteType:p.targetSiteType,
       sourceType:p.mode==='IMPORT'?'IMPORTED':'RESEARCH',donorCountryId:p.donorCountryId||null,effects:clone(p.effects),status:'COMPLETE',completedTurn:turn()};
     if(!r.technologyCapabilities.some(x=>tok(x?.technologyId).toUpperCase()===tok(p.technologyId)&&String(x?.targetResourceId||'*')===String(p.targetResourceId||'*'))){
