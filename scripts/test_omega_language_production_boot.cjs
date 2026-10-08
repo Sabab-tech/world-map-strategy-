@@ -53,6 +53,17 @@ async function main() {
     assert.ok(batch03Index > languageIndex, 'production HTML must load Batch 03 after Language System');
     assert.ok(universalIndex > batch03Index, 'production HTML must load Universal AI after Batch 03');
 
+    for (const [path, label] of [
+      ['/omega_language_system.js', 'Language System'],
+      ['/omega_language_batch03_semantic_extension.js', 'Batch 03'],
+      ['/omega_universal_ai_runtime.js', 'Universal AI']
+    ]) {
+      const scriptResponse = await request(path);
+      assert.equal(scriptResponse.ok, true, `production-served ${label} script failed: HTTP ${scriptResponse.status}`);
+      const script = await scriptResponse.text();
+      assert.ok(script.length > 0, `production-served ${label} script is empty`);
+    }
+
     const statusResponse = await request('/api/ai/status');
     assert.equal(statusResponse.ok, true, `production AI status failed: HTTP ${statusResponse.status}`);
     const status = await statusResponse.json();
