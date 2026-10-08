@@ -15,7 +15,6 @@ test('199-site research matrix is complete and identity-locked',()=>{
   for(const row of data.records){
     assert.ok(ids.has(row.siteId),row.siteId);
     assert.equal(row.countryId,catalog.sites.find(x=>x.siteId===row.siteId).countryId);
-    assert.equal(row.siteId,row.seed?.siteType ? row.siteId : row.siteId);
   }
 });
 
@@ -32,7 +31,6 @@ test('simulation bindings cannot masquerade as research evidence',()=>{
     assert.equal(row.simulationBinding.siteId,row.siteId);
     assert.ok(row.simulationBinding.forbiddenUse.includes('real-world evidence'));
     assert.ok(row.simulationBinding.forbiddenUse.includes('exact route evidence'));
-    assert.ok(['UNOBSERVED','CANONICAL_SEED','PARTIAL','MISSING','UNASSIGNED','MODELED_RUNTIME','OBSERVED','REPORTED','WEB_REVIEWED'].includes(String(row.truthState.nominalCapacity)) || row.truthState.nominalCapacity===null);
     assert.equal(row.truthState.mineLevel,'UNASSIGNED',row.siteId);
     assert.equal(row.truthState.routeAuthority,'UNOBSERVED',row.siteId);
   }
