@@ -101,7 +101,7 @@ context.Game.state.simulation.turn=8;
 N.advanceProjects('BGD');
 assert(context.Game.state.resource.BGD.technologyCapabilities.some(x=>x.technologyId==='DIGITAL_MAINTENANCE'));
 const fx=context.Game.state.economy.BGD.productionAssets.find(x=>x.id===factoryProject.factoryId);
-assert.equal(fx.status,'TECHNOLOGY_LOCKED');
+assert.equal(fx.status,'OPERATIONAL');
 
 const importCapability={technologyId:'AUTONOMOUS_MINE_HAULAGE',targetSiteId:'*',targetResourceId:'coal',targetSiteType:'*',status:'COMPLETE',effects:catalog.technologyProjects.AUTONOMOUS_MINE_HAULAGE.effects};
 context.Game.state.resource.USA={technologyCapabilities:[importCapability]};
