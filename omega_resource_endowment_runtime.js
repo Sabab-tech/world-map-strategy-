@@ -22,6 +22,7 @@
   const simulationYear=()=>{const d=state()?.simulation?.date;if(d){const y=Number(String(d).slice(0,4));if(Number.isFinite(y))return y;}const sy=Number(state()?.simulation?.startYear);return Number.isFinite(sy)?sy:2015;};
   let simulationReserveMap=null,simulationReservePromise=null,researchEvidenceMap=null,researchEvidencePromise=null;
   let canonicalSiteCatalogMap=null,canonicalSiteCatalogPromise=null;
+  let losslessReferenceMap=null,losslessReferencePromise=null;
   // Runtime indexes: these datasets are immutable during a simulation turn. Reusing the indexes avoids rebuilding and deep-enriching the same country/site rows for every gate and extraction pass.
   let countryListCache=null;
   const profileCache=new Map();
@@ -83,6 +84,56 @@
       }finally{canonicalSiteCatalogPromise=null;}
     })();
     return canonicalSiteCatalogPromise;
+  }
+
+  async function loadLosslessResourceReferenceData(){
+    if(losslessReferenceMap)return{status:'READY',count:Object.keys(losslessReferenceMap).length,reused:true};
+    if(losslessReferencePromise)return losslessReferencePromise;
+    losslessReferencePromise=(async()=>{
+      try{
+        const inline=g.OmegaResourceLosslessReferenceData||g.Omega?.ResourceLosslessReferenceData;
+        const map={};
+        if(inline&&Array.isArray(inline.sites)){
+          for(const row of inline.sites)if(row?.siteId)map[String(row.siteId)]=clone(row);
+        }else{
+          const manifestRes=await fetch('resource_site_reference_expanded_manifest.json',{cache:'no-store'});
+          if(!manifestRes?.ok)throw new Error('RESOURCE_SITE_REFERENCE_MANIFEST_FETCH_FAILED');
+          const manifest=await manifestRes.json();
+          for(const part of (Array.isArray(manifest?.parts)?manifest.parts:[])){
+            const file=String(part?.file||'').trim();
+            if(!file)continue;
+            const res=await fetch(file,{cache:'no-store'});
+            if(!res?.ok)throw new Error('RESOURCE_SITE_REFERENCE_PART_FETCH_FAILED:'+file);
+            const data=await res.json();
+            for(const row of (Array.isArray(data?.sites)?data.sites:[]))if(row?.siteId)map[String(row.siteId)]=clone(row);
+          }
+        }
+        losslessReferenceMap=map;
+        g.OmegaResourceLosslessReferenceData={siteCount:Object.keys(map).length,sites:Object.values(map)};
+        g.Omega=g.Omega||{};
+        g.Omega.ResourceLosslessReferenceData=g.OmegaResourceLosslessReferenceData;
+        return{status:'READY',count:Object.keys(map).length};
+      }catch(e){losslessReferenceMap={};return{status:'FAILED',count:0,reason:String(e?.message||e)};}
+      finally{losslessReferencePromise=null;}
+    })();
+    return losslessReferencePromise;
+  }
+  function enrichLosslessResourceReference(site){
+    const s=clone(site||{}),idKey=String(s.siteId||s.siteReferenceKey||s.id||'').trim();
+    const row=losslessReferenceMap?.[idKey];
+    if(!row)return s;
+    s.resourceJsonReference=clone(row.sourceSiteRecord||null);
+    s.resourceJsonReferenceSiteDataPackage=clone(row.siteDataPackage||null);
+    s.resourceJsonReferencePath=row.sourcePath||null;
+    s.resourceJsonReferenceFile=row.expandedReferenceFile||null;
+    s.resourceJsonReferenceProvenance={
+      authority:'RESOURCE_JSON_LOSSLESS_REFERENCE',
+      sourceFiles:Array.isArray(row.sourceFiles)?clone(row.sourceFiles):['resources.json','resources_2.json'],
+      sourcePath:row.sourcePath||null,
+      expandedReferenceFile:row.expandedReferenceFile||null,
+      expandedReferenceSiteIndex:Number.isInteger(row.expandedReferenceSiteIndex)?row.expandedReferenceSiteIndex:null
+    };
+    return s;
   }
 
   async function loadResearchEvidenceData(){
@@ -374,7 +425,7 @@
     // legacy/source evidence and may use corrected/older names, so they are merged only
     // when identity matching is sufficiently strong. This guarantees exactly the 199
     // canonical physical sites without fabricating additional deposits.
-    const profileRows=rows.slice();
+    const profileRows=rows.map(enrichLosslessResourceReference);
     const tokens=value=>new Set(String(value||'').toLowerCase().normalize('NFKC').replace(/[^a-z0-9]+/g,' ').trim().split(/\s+/).filter(x=>x.length>2&&!['site','mine','area','zone','facility','quarry','sites'].includes(x)));
     const similarity=(a,b)=>{
       const A=tokens(a),B=tokens(b);if(!A.size||!B.size)return 0;
@@ -438,7 +489,7 @@
         rawSiteReference:clone(rawSite),resourceAsset
       });
     }
-    rows=(catalogSites.length>0?canonicalRows:profileRows).map(enrichSimulationReserve).map(enrichResearchEvidence);
+    rows=(catalogSites.length>0?canonicalRows:profileRows).map(enrichLosslessResourceReference).map(enrichSimulationReserve).map(enrichResearchEvidence);
     mineSiteReferenceCache.set(wanted,rows);
     return rows;
   }
@@ -1197,10 +1248,11 @@ function batchFromExtraction(x,record){
     g.__omegaResourceEndowmentPromise=(async function(){
       try{
         for(let i=0;i<400&&!engine()?.isReady;i++)await new Promise(r=>setTimeout(r,0));
-        const [reserveData,researchData,canonicalCatalogData]=await Promise.all([loadSimulationReserveData(),loadResearchEvidenceData(),loadCanonicalSiteCatalogData()]);
+        const [reserveData,researchData,canonicalCatalogData,losslessReferenceData]=await Promise.all([loadSimulationReserveData(),loadResearchEvidenceData(),loadCanonicalSiteCatalogData(),loadLosslessResourceReferenceData()]);
         const dependencyLightContext=typeof g.fetch!=='function'&&typeof g.OmegaResourceSiteReserveSimulationData==='undefined'&&typeof g.Omega?.ResourceSiteReserveSimulationData==='undefined';
         if((reserveData.status!=='READY'||reserveData.count!==199)&&!dependencyLightContext)return{status:'FAILED',reason:'PER_SITE_RESERVE_DATASET_INCOMPLETE',detail:reserveData};
         if((canonicalCatalogData.status!=='READY'||canonicalCatalogData.count!==199)&&!dependencyLightContext)return{status:'FAILED',reason:'CANONICAL_SITE_CATALOG_INCOMPLETE',detail:canonicalCatalogData};
+        if((losslessReferenceData.status!=='READY'||losslessReferenceData.count!==199)&&!dependencyLightContext)return{status:'FAILED',reason:'LOSSLESS_RESOURCE_REFERENCE_INCOMPLETE',detail:losslessReferenceData};
         if(!engine()?.isReady)return{status:'FAILED',reason:'RESOURCE_MINISTRY_ENGINE_NOT_READY'};
         // Build the immutable country index once before any per-country extraction work.
         countryListCache=countries();
