@@ -87,6 +87,16 @@ function resolveResource(surface) {
 
 const knowledge = json('offline_semantic_knowledge.json');
 const vocabulary = json('offline_language_vocabulary.json');
+const semanticPolicy = vocabulary.semantic_policy || vocabulary.languages?.conversation?.semantic_policy;
+for (const key of [
+  'world_entities_must_be_loaded_from_runtime_datasets',
+  'no_country_catalog_in_code',
+  'no_resource_catalog_in_code',
+  'no_asset_alias_catalog_in_code',
+  'no_answer_fact_catalog_in_code'
+]) {
+  assert.equal(semanticPolicy?.[key], true, `Required vocabulary policy missing: ${key}`);
+}
 
 const sandbox = {
   console,
