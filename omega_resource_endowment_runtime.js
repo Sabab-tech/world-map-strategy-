@@ -279,16 +279,35 @@
       sites.forEach((site,index)=>{
         const name=typeof site==='string'?site:String(site?.name||site?.siteName||site?.mineName||site?.depositName||('MINE_SITE_'+index)).trim();
         if(!name)return;
+        const sourceSiteId=String(
+          site&&typeof site==='object'
+            ? (site.siteId||site.id||site.resourceInstanceId||site.instanceId||site.depositId||site.mineId||'')
+            : ''
+        ).trim();
+        const stableSiteId=sourceSiteId||('SITE_REF_'+countryId+'_'+String(index+1).padStart(3,'0'));
         refs.push({
           ...(site&&typeof site==='object'?clone(site):{}),
-          id:'SITE_REF_'+countryId+'_'+String(index+1).padStart(3,'0'),
+          id:stableSiteId,
+          siteId:sourceSiteId||stableSiteId,
           name,
           countryCode:countryId,
           country:identity.name||countryId,
-          metadata:{...(site&&typeof site==='object'&&site.metadata&&typeof site.metadata==='object'?clone(site.metadata):{}),subType:'mineSites'},
+          metadata:{
+            ...(site&&typeof site==='object'&&site.metadata&&typeof site.metadata==='object'?clone(site.metadata):{}),
+            subType:'mineSites',
+            referenceIdentity:'SOURCE_RESOURCE_SITE_ID'
+          },
           sourceAuthority:'RESOURCE_JSON',
           sourceDatasetId:'resources.json.countryProfiles',
-          sourcePath:'GSRSK_Master_CountryProfiles_v14.countryProfiles.'+String(profileKey)+'.resource_infrastructure_context.mineSites['+index+']'
+          sourceProfileKey:String(profileKey),
+          sourcePath:'GSRSK_Master_CountryProfiles_v14.countryProfiles.'+String(profileKey)+'.resource_infrastructure_context.mineSites['+index+']',
+          sourceIdentity:{
+            siteId:stableSiteId,
+            countryId:countryId,
+            resourceId:site&&typeof site==='object'?(site.resourceId||site.resourceTypeId||site.resourceTypeKey||null):null,
+            siteType:site&&typeof site==='object'?(site.siteType||null):null,
+            sourceRecordPresent:!!(site&&typeof site==='object')
+          }
         });
       });
     }
