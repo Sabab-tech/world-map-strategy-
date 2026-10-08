@@ -409,6 +409,18 @@ function startTechnologyProject(input={}){
     targetSiteType:input.siteType||'*',effects:clone(spec.effects||{}),donorCapabilityVerified};
   netState(cid).technologyContracts.push(contract);emit('OMEGA_RESOURCE_TECHNOLOGY_PROJECT_STARTED',cid,contract);return contract;
 }
+function refreshTechnologyGatedFactories(c){
+  const cid=canonicalCountry(c),caps=Array.isArray(resourceState(cid).technologyCapabilities)?resourceState(cid).technologyCapabilities:[],
+    available=new Set(caps.map(x=>tok(x?.technologyId).toUpperCase()).filter(Boolean));
+  for(const asset of factoryAssets(cid)){
+    if(String(asset.status).toUpperCase()!=='TECHNOLOGY_LOCKED')continue;
+    const req=Array.isArray(asset.requiredTechnologyIds)?asset.requiredTechnologyIds.map(x=>tok(x).toUpperCase()).filter(Boolean):[];
+    if(req.length&&req.every(t=>available.has(t))){
+      asset.status='OPERATIONAL';asset.technologyUnlockedTurn=turn();
+      emit('OMEGA_FACTORY_TECHNOLOGY_UNLOCKED',cid,{factoryId:asset.id,requiredTechnologyIds:clone(req)});
+    }
+  }
+}
 function advanceTechnologyProjects(c){
   const cid=canonicalCountry(c),n=netState(cid),r=resourceState(cid),completed=[];
   r.technologyCapabilities=Array.isArray(r.technologyCapabilities)?r.technologyCapabilities:[];
@@ -423,14 +435,7 @@ function advanceTechnologyProjects(c){
       r.technologyCapabilities.push(capability);
     }
     p.status='COMPLETE';p.completedTurn=turn();completed.push(clone(capability));
-    const assets=factoryAssets(cid);
-    for(const asset of assets){
-      if(String(asset.status).toUpperCase()!=='TECHNOLOGY_LOCKED')continue;
-      const req=Array.isArray(asset.requiredTechnologyIds)?asset.requiredTechnologyIds:[];
-      if(req.every(t=>r.technologyCapabilities.some(x=>tok(x?.technologyId).toUpperCase()===tok(t)))){
-        asset.status='OPERATIONAL';asset.technologyUnlockedTurn=turn();emit('OMEGA_FACTORY_TECHNOLOGY_UNLOCKED',cid,{factoryId:asset.id,technologyId:p.technologyId});
-      }
-    }
+    refreshTechnologyGatedFactories(cid);
     emit('OMEGA_RESOURCE_TECHNOLOGY_COMPLETED',cid,capability);
   }
   return completed;
