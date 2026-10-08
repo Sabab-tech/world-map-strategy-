@@ -64,6 +64,11 @@ const CALIBRATION_RANGES={
  diatomite:{unit:'TONNES',min:1000,max:100000,lifeMin:10,lifeMax:35,gradeMin:50,gradeMax:95}
 };
 const scenarioData=()=>g.OmegaResourceScenarioEngineeringData||g.Omega?.ResourceScenarioEngineeringData||null;
+function simulationReserveFor(site,resourceId){
+  const data=g.OmegaResourceSiteReserveSimulationData||g.Omega?.ResourceSiteReserveSimulationData;
+  const rows=Array.isArray(data?.records)?data.records:[];
+  return rows.find(x=>String(x?.siteId||'')===String(site?.siteId||site?.siteReferenceKey||'')&&rid(x?.resourceId)===rid(resourceId))||null;
+}
 function scenarioEngineeringFor(site,resourceId){
  const data=scenarioData(),rows=Array.isArray(data?.records)?data.records:[];
  const wanted=rid(resourceId),siteId=String(site?.siteId||site?.siteReferenceKey||site?.id||'').trim();
@@ -203,7 +208,7 @@ function siteModel(site,profile,countryId){
  const streams=unique.map((resourceId,index)=>{
    const matchedStream=explicitStreams.find(x=>rid(typeof x==='string'?x:x?.resourceId||x?.resourceTypeId||x?.resId||x?.resource)===resourceId);const src=matchedStream&&typeof matchedStream==='object'?matchedStream:site||{};
    const scenario=scenarioEngineeringFor(site,resourceId);
-   const scenarioUnit=scenario?.unit||null;
+   const simulationReserve=simulationReserveFor(site,resourceId);const scenarioUnit=scenario?.unit||simulationReserve?.reserve?.unit||null;
    const qp=src?.quantitativeProfile&&typeof src.quantitativeProfile==='object'?src.quantitativeProfile:{};
    const ep=src?.extractionProfile&&typeof src.extractionProfile==='object'?src.extractionProfile:{};
    const nominalObs=num(src?.nominalCapacity??src?.nominalRate??productionInput?.nominalCapacity??productionInput?.nominalRate??qp?.production?.nominalCapacity??ep?.nominalCapacity);
@@ -247,7 +252,7 @@ function siteModel(site,profile,countryId){
    const declineRatio=decline!==null&&decline<1&&declineFinal!==null?(1-declineFinal)/(1-decline):1;
    const activeRate=effectiveObservedRate!==null?effectiveObservedRate*capacityFactor*outputFactor*utilizationRatio*recoveryRatio*maintenanceRatio*declineRatio:(nominal===null||utilizationFinal===null||maintenanceFinal===null||declineFinal===null?null:Math.max(0,nominal*utilizationFinal*(1-maintenanceFinal)*(1-declineFinal)));
    const life=num(scenario?.scenarioLifeYears);
-   const scenarioReserve=num(src?.simulationReserveQuantity??src?.simulationReserve?.quantity??site?.simulationReserveQuantity??site?.simulationReserve?.quantity);
+   const scenarioReserve=num(src?.simulationReserveQuantity??src?.simulationReserve?.quantity??site?.simulationReserveQuantity??site?.simulationReserve?.quantity??simulationReserve?.reserve?.quantity);
    const scenarioReserveUnit=String(src?.simulationReserveUnit??src?.simulationReserve?.unit??site?.simulationReserveUnit??site?.simulationReserve?.unit??scenarioUnit??'').trim()||null;
    const observedReserve=num(src?.reserveQuantity??src?.geologicalQuantity??src?.reservesQuantity);
    const reserveQuantity=scenarioReserve!==null?scenarioReserve:(observedReserve!==null?observedReserve:fallbackReserve);

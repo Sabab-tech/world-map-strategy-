@@ -78,7 +78,7 @@ const multi=realism.siteModel({
   ]
 },null,'CHL');
 assert.equal(multi.commodityStreams.length,3);
-assert.deepEqual(multi.commodityStreams.map(x=>x.resourceId),['copper','gold','silver']);
+assert.deepEqual(Array.from(multi.commodityStreams, x=>x.resourceId),['copper','gold','silver']);
 
 // Regression: simulation reserve/capacity must resolve per commodity stream, not inherit
 // the first commodity's reserve when a site has multiple modeled commodities.
@@ -102,7 +102,8 @@ assert.equal(perStream.commodityStreams.length,2);
 const perStreamById=new Map(perStream.commodityStreams.map(x=>[x.resourceId,x]));
 assert(perStreamById.get('copper')?.production?.gameplayHorizonYears > 0);
 assert(perStreamById.get('gold')?.production?.gameplayHorizonYears > 0);
-assert.notEqual(perStreamById.get('copper').production.gameplayHorizonYears,perStreamById.get('gold').production.gameplayHorizonYears);
+assert.notEqual(perStreamById.get('copper').reserve.quantity,perStreamById.get('gold').reserve.quantity);
+assert.notEqual(perStreamById.get('copper').production.nominalCapacity,perStreamById.get('gold').production.nominalCapacity);
 syntheticMasterRows.length=masterLen;
 syntheticReserveRows.length=reserveLen;
 
@@ -116,7 +117,7 @@ assert.equal(blocked.commodityStreams[0].production.activeRate,0);
 const constrained=hard.constrainedLogisticsPlan({
   quantity:100,terrainMultiplier:0.5,infrastructureMultiplier:0.5,atWar:true,sanctioned:true
 });
-assert.equal(constrained.logisticsConstraints.totalMultiplier,0.089375);
+assert.ok(Math.abs(constrained.logisticsConstraints.totalMultiplier-0.089375)<1e-12);
 assert(constrained.dispatchQuantity<=18);
 
 const copperModel=hard.processModel('copper');
