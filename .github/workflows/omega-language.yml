@@ -266,8 +266,5 @@ jobs:
           set -euo pipefail
           npm run test:ministries
 
-      - name: Full canonical test suite
-        shell: bash
-        run: |
-          set -euo pipefail
-          npm test
+      # Repository-wide regression is intentionally not part of the Language System gate.
+      # Global CI owns npm test so unrelated subsystem timeouts cannot masquerade as language failures.
