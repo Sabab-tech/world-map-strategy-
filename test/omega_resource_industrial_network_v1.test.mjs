@@ -86,6 +86,8 @@ assert.equal(advanced.shipments[0].destinationStatus,'FACTORY_RECEIVED');
 
 const factoryProject=N.startFactoryProject({countryId:'BGD',resourceId:'iron_ore',capacityPerDay:750,buildDays:60,requiredTechnologyIds:['DIGITAL_MAINTENANCE']});
 assert.equal(factoryProject.status,'UNDER_CONSTRUCTION');
+context.Game.state.simulation.turn=2;
+N.advanceProjects('BGD');
 context.Game.state.simulation.turn=3;
 let projectAdvance=N.advanceProjects('BGD');
 assert.equal(projectAdvance.status,'ADVANCED');
