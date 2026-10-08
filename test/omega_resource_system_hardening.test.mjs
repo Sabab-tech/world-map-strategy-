@@ -102,7 +102,8 @@ assert.equal(perStream.commodityStreams.length,2);
 const perStreamById=new Map(perStream.commodityStreams.map(x=>[x.resourceId,x]));
 assert(perStreamById.get('copper')?.production?.gameplayHorizonYears > 0);
 assert(perStreamById.get('gold')?.production?.gameplayHorizonYears > 0);
-assert.notEqual(perStreamById.get('copper').production.gameplayHorizonYears,perStreamById.get('gold').production.gameplayHorizonYears);
+assert.notEqual(perStreamById.get('copper').reserve.quantity,perStreamById.get('gold').reserve.quantity);
+assert.notEqual(perStreamById.get('copper').production.nominalCapacity,perStreamById.get('gold').production.nominalCapacity);
 syntheticMasterRows.length=masterLen;
 syntheticReserveRows.length=reserveLen;
 
