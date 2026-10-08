@@ -270,10 +270,11 @@ function siteModel(site,profile,countryId){
  });
  if(!streams.length)return{status:'UNOBSERVED',siteName:name,resourceId:null,authority:'UNOBSERVED',stateAuthority:'UNOBSERVED',dataStatus:'UNOBSERVED'};
  const allObserved=streams.every(s=>s.reserve.authority==='OBSERVED'&&s.production.authority==='OBSERVED');
+ const anyObserved=streams.some(s=>s.reserve.authority==='OBSERVED'||s.production.authority==='OBSERVED'||s.quality.gradeStatus==='OBSERVED');
  return{status:'READY',siteReferenceKey:site?.siteReferenceKey||null,siteName:name,countryId:String(countryId||'').toUpperCase(),commodityStreams:streams,
    location:{nodeKey:site?.locationNodeKey||null,status:site?.locationNodeKey?'OBSERVED':'UNOBSERVED'},
-   authority:allObserved?'OBSERVED':'SIMULATED',stateAuthority:allObserved?'OBSERVED':'SIMULATED',
-   dataStatus:allObserved?'OBSERVED':'SIMULATED',
+   authority:allObserved?'OBSERVED':anyObserved?'MODELED':'UNOBSERVED',stateAuthority:allObserved?'OBSERVED':anyObserved?'MODELED':'UNOBSERVED',
+   dataStatus:allObserved?'OBSERVED':anyObserved?'PARTIAL':'UNOBSERVED',
    provenance:{sourceAuthority:site?.sourceAuthority||null,sourceDatasetId:site?.sourceDatasetId||null,sourcePath:site?.sourcePath||null,
      fieldAuthority:{reserve:streams.map(s=>s.reserve.authority),production:streams.map(s=>s.production.authority),quality:streams.map(s=>s.quality.gradeStatus)}}};
 }
