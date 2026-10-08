@@ -165,7 +165,8 @@ assert.equal(batch03.buildOntology(system).ontology.seed_concepts.length, 40);
   assert.equal(loadDiag.ontologySeedCount, 24, 'Canonical system contract remains 24 seeds');
   assert.equal(bridge.match('actor', 'en').some(hit => hit.concept_id === 'ACTOR'), true, 'Canonical load must not erase the installed Batch 03 bridge');
   assert.equal(bridge.match('decision', 'en').some(hit => hit.concept_id === 'DECISION'), true, 'Batch 03 decision concept must survive canonical source load');
-  assert.equal(bridge.match('সম্পদ', 'bn').some(hit => hit.concept_id === 'RESOURCE'), true, 'Canonical Bengali resource vocabulary must remain resolvable');\n  assert.ok(batch03.discourseLexicon.intents.GRATITUDE.phrases.bn.includes('ধন্যবাদ'));
+  assert.equal(bridge.match('সম্পদ', 'bn').some(hit => hit.concept_id === 'RESOURCE'), true, 'Canonical Bengali resource vocabulary must remain resolvable');
+  assert.ok(batch03.discourseLexicon.intents.GRATITUDE.phrases.bn.includes('ধন্যবাদ'));
 
   const validation = system.validate();
   assert.equal(validation.ok, true, JSON.stringify(validation));
