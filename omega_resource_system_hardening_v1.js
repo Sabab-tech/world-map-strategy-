@@ -78,15 +78,38 @@ function patchSiteModel(){
  const r=g.Omega?.ResourceRealism||g.OmegaResourceRealism;if(!r?.siteModel||r.__resourceSystemHardeningSiteModel)return false;
  const original=r.siteModel;
  r.siteModel=function(site,profile,countryId){
-   const s=clone(site||{}),c=country(countryId||s.countryId),sim=resolveSimulation(s,s.resourceId||s.resourceTypeId||s.resource);
+   const s=clone(site||{}),c=country(countryId||s.countryId);
+   const multiCommodity=Array.isArray(s.commodities)&&s.commodities.length>0;
+   const siteResource=s.resourceId||s.resourceTypeId||s.resource;
+   const sim=multiCommodity?null:resolveSimulation(s,siteResource);
    const observed=k=>s[k]!==undefined&&s[k]!==null&&s[k]!=='';
    const inject=(k,e)=>{if(!observed(k)&&e?.value!==null){s[k]=e.value;s.__omegaSimulationInjected=true;}};
-   inject('nominalCapacity',sim.nominalCapacity);inject('minimumCapacity',sim.minimumCapacity);inject('maximumCapacity',sim.maximumCapacity);
-   inject('utilization',sim.utilization);inject('recovery',sim.recovery);inject('decline',sim.decline);inject('maintenance',sim.maintenance);
-   if(!observed('simulationReserveQuantity')&&sim.reserveQuantity!==undefined)s.simulationReserveQuantity=sim.reserveQuantity;
-   if(!observed('simulationReserveUnit')&&sim.reserveUnit)s.simulationReserveUnit=sim.reserveUnit;
-   const master=findSite(masterRows(),s,s.resourceId),ms=master?.simulation||{};
+   if(!multiCommodity&&sim){
+     inject('nominalCapacity',sim.nominalCapacity);inject('minimumCapacity',sim.minimumCapacity);inject('maximumCapacity',sim.maximumCapacity);
+     inject('utilization',sim.utilization);inject('recovery',sim.recovery);inject('decline',sim.decline);inject('maintenance',sim.maintenance);
+     if(!observed('simulationReserveQuantity')&&sim.reserveQuantity!==undefined)s.simulationReserveQuantity=sim.reserveQuantity;
+     if(!observed('simulationReserveUnit')&&sim.reserveUnit)s.simulationReserveUnit=sim.reserveUnit;
+   }
+   const master=findSite(masterRows(),s,siteResource),ms=master?.simulation||{};
    if(Array.isArray(ms.commodityStreams)&&!Array.isArray(s.commodities))s.commodities=clone(ms.commodityStreams);
+   if(Array.isArray(s.commodities)){
+     s.commodities=s.commodities.map(stream=>{
+       const rid=stream?.resourceId||stream?.resourceTypeId||stream?.resource;
+       const ss=resolveSimulation(s,rid);
+       const out=clone(stream||{});
+       if(!observed.call(out,'simulationReserveQuantity')&&ss.reserveQuantity!==undefined)out.simulationReserveQuantity=ss.reserveQuantity;
+       if(!out.simulationReserveUnit&&ss.reserveUnit)out.simulationReserveUnit=ss.reserveUnit;
+       if(out.nominalCapacity===undefined&&ss.nominalCapacity?.value!==null)out.nominalCapacity=ss.nominalCapacity.value;
+       if(out.minimumCapacity===undefined&&ss.minimumCapacity?.value!==null)out.minimumCapacity=ss.minimumCapacity.value;
+       if(out.maximumCapacity===undefined&&ss.maximumCapacity?.value!==null)out.maximumCapacity=ss.maximumCapacity.value;
+       if(out.utilization===undefined&&ss.utilization?.value!==null)out.utilization=ss.utilization.value;
+       if(out.recovery===undefined&&ss.recovery?.value!==null)out.recovery=ss.recovery.value;
+       if(out.decline===undefined&&ss.decline?.value!==null)out.decline=ss.decline.value;
+       if(out.maintenance===undefined&&ss.maintenance?.value!==null)out.maintenance=ss.maintenance.value;
+       if(out.simulationReserveQuantity!==undefined)out.__omegaSimulationInjected=true;
+       return out;
+     });
+   }
    const result=original(s,profile,countryId);if(!result?.commodityStreams)return result;
    const streams=result.commodityStreams.map(x=>{const streamSim=resolveSimulation(s,x?.resourceId||s.resourceId||s.resourceTypeId||s.resource);const y={...x,production:adjustProduction(s,c,x,streamSim)};if(s.__omegaSimulationInjected||String(x?.production?.authority||'').toUpperCase()==='SIMULATED'){y.production.authority='SIMULATED';y.production.dataStatus='SIMULATED';y.production.observedRate=x.production.observedRate??null;}return y;});
    return{...result,commodityStreams:streams,simulationProfile:{siteId:sim.siteId,source:sim.source,capacityModel:sim.capacityModel,scenarioLifeYears:sim.scenarioLifeYears,
