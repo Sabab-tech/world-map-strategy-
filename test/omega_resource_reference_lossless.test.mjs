@@ -52,6 +52,17 @@ for (const countryId of Object.keys(profiles)) {
   assert(countryContext.countries[countryId], countryId + ': missing country resource context');
 }
 
+const canonical = read('resource_site_canonical_catalog_v1.json');
+assert.equal(canonical.siteCount, 199);
+assert.equal(canonical.sites.length, 199);
+for (const [index, site] of canonical.sites.entries()) {
+  const part = Math.floor(index / 50) + 1;
+  const partIndex = index % 50;
+  assert.equal(site.sourceReference?.expandedReferenceFile, `resource_site_reference_expanded_part_${String(part).padStart(2, '0')}.json`);
+  assert.equal(site.sourceReference?.expandedReferenceSiteIndex, partIndex);
+  assert.equal(site.sourceReference?.countryContextFile, 'resource_country_resource_context_index.json');
+}
+
 const manifest = read('resource_site_reference_expanded_manifest.json');
 assert.equal(manifest.totalSites, 199);
 assert.equal(manifest.partCount, 4);
