@@ -75,14 +75,6 @@ const observedSite=R.siteModel({
   ],
   productionModel:{maintenance:0.05,recovery:0.9}
 },{} ,'OBS');
-const observedSite=R.siteModel({
-  siteReferenceKey:'SITE:OBS:01',siteName:'Observed Multi Commodity',
-  commodities:[
-    {resourceId:'copper',reservesQuantity:2000000,grade:'1.8%',productionRate:900,utilization:0.8},
-    {resourceId:'gold',reservesQuantity:120000,grade:'4.2 g/t',productionRate:600}
-  ],
-  productionModel:{maintenance:0.05,recovery:0.9}
-},{} ,'OBS');
 assert.equal(observedSite.commodityStreams.length,2);
 assert.equal(observedSite.commodityStreams[0].reserve.authority,'OBSERVED');
 assert.equal(observedSite.commodityStreams[0].production.authority,'OBSERVED');
