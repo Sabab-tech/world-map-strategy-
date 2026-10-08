@@ -811,7 +811,7 @@ for (const data of loaded) {
   for (const [key, value] of Object.entries(data?.GSRSK_Master_Resource_Data_v14?.resource_types || {})) resourceTypeDefinitions[String(key).toLowerCase()] = value;
 }
 
-const enrichedCatalog = allSites.map(({ countryId, site }) => {
+const enrichedCatalog = allSites.map(({ countryId, index, site }) => {
   const profile = profiles[countryId] || {};
   const resourceId = String(site.resourceId || site.resourceTypeId || '').toLowerCase();
   return {
