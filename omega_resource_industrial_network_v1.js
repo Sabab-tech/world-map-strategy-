@@ -426,7 +426,16 @@ function advanceTechnologyProjects(c){
     if(!r.technologyCapabilities.some(x=>tok(x?.technologyId).toUpperCase()===tok(p.technologyId)&&String(x?.targetResourceId||'*')===String(p.targetResourceId||'*'))){
       r.technologyCapabilities.push(capability);
     }
-    p.status='COMPLETE';p.completedTurn=turn();completed.push(clone(capability));emit('OMEGA_RESOURCE_TECHNOLOGY_COMPLETED',cid,capability);
+    p.status='COMPLETE';p.completedTurn=turn();completed.push(clone(capability));
+    const assets=factoryAssets(cid);
+    for(const asset of assets){
+      if(String(asset.status).toUpperCase()!=='TECHNOLOGY_LOCKED')continue;
+      const req=Array.isArray(asset.requiredTechnologyIds)?asset.requiredTechnologyIds:[];
+      if(req.every(t=>r.technologyCapabilities.some(x=>tok(x?.technologyId).toUpperCase()===tok(t)))){
+        asset.status='OPERATIONAL';asset.technologyUnlockedTurn=turn();emit('OMEGA_FACTORY_TECHNOLOGY_UNLOCKED',cid,{factoryId:asset.id,technologyId:p.technologyId});
+      }
+    }
+    emit('OMEGA_RESOURCE_TECHNOLOGY_COMPLETED',cid,capability);
   }
   return completed;
 }
