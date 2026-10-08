@@ -88,7 +88,7 @@ function patchSiteModel(){
    const master=findSite(masterRows(),s,s.resourceId),ms=master?.simulation||{};
    if(Array.isArray(ms.commodityStreams)&&!Array.isArray(s.commodities))s.commodities=clone(ms.commodityStreams);
    const result=original(s,profile,countryId);if(!result?.commodityStreams)return result;
-   const streams=result.commodityStreams.map(x=>{const y={...x,production:adjustProduction(s,c,x,sim)};if(s.__omegaSimulationInjected||String(x?.production?.authority||'').toUpperCase()==='SIMULATED'){y.production.authority='SIMULATED';y.production.dataStatus='SIMULATED';y.production.observedRate=x.production.observedRate??null;}return y;});
+   const streams=result.commodityStreams.map(x=>{const streamSim=resolveSimulation(s,x?.resourceId||s.resourceId||s.resourceTypeId||s.resource);const y={...x,production:adjustProduction(s,c,x,streamSim)};if(s.__omegaSimulationInjected||String(x?.production?.authority||'').toUpperCase()==='SIMULATED'){y.production.authority='SIMULATED';y.production.dataStatus='SIMULATED';y.production.observedRate=x.production.observedRate??null;}return y;});
    return{...result,commodityStreams:streams,simulationProfile:{siteId:sim.siteId,source:sim.source,capacityModel:sim.capacityModel,scenarioLifeYears:sim.scenarioLifeYears,
      nominalCapacity:sim.nominalCapacity,minimumCapacity:sim.minimumCapacity,maximumCapacity:sim.maximumCapacity,utilization:sim.utilization,recovery:sim.recovery,
      decline:sim.decline,maintenance:sim.maintenance,transportCapacityDaily:sim.transportCapacityDaily,transportRoute:sim.transportRoute,reserveQuantity:sim.reserveQuantity,reserveUnit:sim.reserveUnit}};
