@@ -116,6 +116,16 @@
           "GOVERNMENT"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.BGD.resource_infrastructure_context.mineSites[0]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_01.json",
+        "expandedReferenceSiteIndex": 0,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -231,6 +241,16 @@
         "sourceCount": 2,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.IND.resource_infrastructure_context.mineSites[1]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_01.json",
+        "expandedReferenceSiteIndex": 1,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -342,6 +362,16 @@
         "sourceCount": 1,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.PAK.resource_infrastructure_context.mineSites[2]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_01.json",
+        "expandedReferenceSiteIndex": 2,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -471,6 +501,16 @@
           "GOVERNMENT"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.LKA.resource_infrastructure_context.mineSites[3]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_01.json",
+        "expandedReferenceSiteIndex": 3,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -583,6 +623,16 @@
         "sourceCount": 2,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.NPL.resource_infrastructure_context.mineSites[4]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_01.json",
+        "expandedReferenceSiteIndex": 4,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -693,6 +743,16 @@
           "GOVERNMENT_AUDIT"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.BTN.resource_infrastructure_context.mineSites[5]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_01.json",
+        "expandedReferenceSiteIndex": 5,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -805,6 +865,16 @@
         "sourceCount": 2,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.AFG.resource_infrastructure_context.mineSites[6]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_01.json",
+        "expandedReferenceSiteIndex": 6,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -914,6 +984,16 @@
           "OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.MDV.resource_infrastructure_context.mineSites[7]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_01.json",
+        "expandedReferenceSiteIndex": 7,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -1030,6 +1110,16 @@
           "GEOLOGICAL_DATABASE"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.DZA.resource_infrastructure_context.mineSites[8]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_01.json",
+        "expandedReferenceSiteIndex": 8,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -1153,6 +1243,16 @@
           "OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.EGY.resource_infrastructure_context.mineSites[9]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_01.json",
+        "expandedReferenceSiteIndex": 9,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -1266,6 +1366,16 @@
         "sourceCount": 1,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.LBY.resource_infrastructure_context.mineSites[10]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_01.json",
+        "expandedReferenceSiteIndex": 10,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -1384,6 +1494,16 @@
           "OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.MAR.resource_infrastructure_context.mineSites[11]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_01.json",
+        "expandedReferenceSiteIndex": 11,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -1497,6 +1617,16 @@
           "GOVERNMENT"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.TUN.resource_infrastructure_context.mineSites[12]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_01.json",
+        "expandedReferenceSiteIndex": 12,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -1607,6 +1737,16 @@
           "OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.SDN.resource_infrastructure_context.mineSites[13]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_01.json",
+        "expandedReferenceSiteIndex": 13,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -1715,6 +1855,16 @@
         "sourceCount": 1,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.MRT.resource_infrastructure_context.mineSites[14]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_01.json",
+        "expandedReferenceSiteIndex": 14,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -1831,6 +1981,16 @@
         "sourceCount": 2,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.SEN.resource_infrastructure_context.mineSites[15]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_01.json",
+        "expandedReferenceSiteIndex": 15,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -1938,6 +2098,16 @@
         "sourceCount": 1,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.GMB.resource_infrastructure_context.mineSites[16]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_01.json",
+        "expandedReferenceSiteIndex": 16,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -2055,6 +2225,16 @@
         "sourceCount": 1,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.GNB.resource_infrastructure_context.mineSites[17]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_01.json",
+        "expandedReferenceSiteIndex": 17,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -2172,6 +2352,16 @@
         "sourceCount": 2,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.GIN.resource_infrastructure_context.mineSites[18]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_01.json",
+        "expandedReferenceSiteIndex": 18,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -2290,6 +2480,16 @@
           "OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.SLE.resource_infrastructure_context.mineSites[19]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_01.json",
+        "expandedReferenceSiteIndex": 19,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -2406,6 +2606,16 @@
           "OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.LBR.resource_infrastructure_context.mineSites[20]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_01.json",
+        "expandedReferenceSiteIndex": 20,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -2521,6 +2731,16 @@
         "sourceCount": 1,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.CIV.resource_infrastructure_context.mineSites[21]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_01.json",
+        "expandedReferenceSiteIndex": 21,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -2652,6 +2872,16 @@
           "REGULATORY_FILING"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.GHA.resource_infrastructure_context.mineSites[22]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_01.json",
+        "expandedReferenceSiteIndex": 22,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -2765,6 +2995,16 @@
           "OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.TGO.resource_infrastructure_context.mineSites[23]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_01.json",
+        "expandedReferenceSiteIndex": 23,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -2878,6 +3118,16 @@
         "sourceCount": 1,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.BEN.resource_infrastructure_context.mineSites[24]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_01.json",
+        "expandedReferenceSiteIndex": 24,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -3011,6 +3261,16 @@
         "sourceCount": 2,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.BFA.resource_infrastructure_context.mineSites[25]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_01.json",
+        "expandedReferenceSiteIndex": 25,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -3125,6 +3385,16 @@
         "sourceCount": 2,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.MLI.resource_infrastructure_context.mineSites[26]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_01.json",
+        "expandedReferenceSiteIndex": 26,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -3240,6 +3510,16 @@
           "FORMER_OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.NER.resource_infrastructure_context.mineSites[27]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_01.json",
+        "expandedReferenceSiteIndex": 27,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -3351,6 +3631,16 @@
         "sourceCount": 1,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.NGA.resource_infrastructure_context.mineSites[28]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_01.json",
+        "expandedReferenceSiteIndex": 28,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -3461,6 +3751,16 @@
           "GOVERNMENT"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.CPV.resource_infrastructure_context.mineSites[29]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_01.json",
+        "expandedReferenceSiteIndex": 29,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -3572,6 +3872,16 @@
         "sourceCount": 1,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.ESH.resource_infrastructure_context.mineSites[30]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_01.json",
+        "expandedReferenceSiteIndex": 30,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -3680,6 +3990,16 @@
         "sourceCount": 1,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.CMR.resource_infrastructure_context.mineSites[31]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_01.json",
+        "expandedReferenceSiteIndex": 31,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -3791,6 +4111,16 @@
           "EITI_VALIDATION"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.CAF.resource_infrastructure_context.mineSites[32]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_01.json",
+        "expandedReferenceSiteIndex": 32,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -3902,6 +4232,16 @@
           "USGS"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.TCD.resource_infrastructure_context.mineSites[33]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_01.json",
+        "expandedReferenceSiteIndex": 33,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -4013,6 +4353,16 @@
           "OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.COG.resource_infrastructure_context.mineSites[34]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_01.json",
+        "expandedReferenceSiteIndex": 34,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -4123,6 +4473,16 @@
         "sourceCount": 3,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.AGO.resource_infrastructure_context.mineSites[35]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_01.json",
+        "expandedReferenceSiteIndex": 35,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -4255,6 +4615,16 @@
           "OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.COD.resource_infrastructure_context.mineSites[36]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_01.json",
+        "expandedReferenceSiteIndex": 36,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -4366,6 +4736,16 @@
         "sourceCount": 1,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.GAB.resource_infrastructure_context.mineSites[37]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_01.json",
+        "expandedReferenceSiteIndex": 37,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -4481,6 +4861,16 @@
           "INDUSTRY_SOURCE"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.GNQ.resource_infrastructure_context.mineSites[38]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_01.json",
+        "expandedReferenceSiteIndex": 38,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -4590,6 +4980,16 @@
           "GOVERNMENT_GEOLOGICAL_SURVEY"
         ],
         "dataLimitations": "No site-specific commercial owner/operator is asserted without evidence."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.STP.resource_infrastructure_context.mineSites[39]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_01.json",
+        "expandedReferenceSiteIndex": 39,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -4701,6 +5101,16 @@
           "AUDIT"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.ETH.resource_infrastructure_context.mineSites[40]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_01.json",
+        "expandedReferenceSiteIndex": 40,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -4808,6 +5218,16 @@
         "sourceCount": 1,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.KEN.resource_infrastructure_context.mineSites[41]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_01.json",
+        "expandedReferenceSiteIndex": 41,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -4934,6 +5354,16 @@
         "sourceCount": 2,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.TZA.resource_infrastructure_context.mineSites[42]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_01.json",
+        "expandedReferenceSiteIndex": 42,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -5044,6 +5474,16 @@
           "OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.UGA.resource_infrastructure_context.mineSites[43]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_01.json",
+        "expandedReferenceSiteIndex": 43,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -5151,6 +5591,16 @@
         "sourceCount": 2,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.RWA.resource_infrastructure_context.mineSites[44]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_01.json",
+        "expandedReferenceSiteIndex": 44,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -5259,6 +5709,16 @@
         "sourceCount": 2,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.BDI.resource_infrastructure_context.mineSites[45]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_01.json",
+        "expandedReferenceSiteIndex": 45,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -5370,6 +5830,16 @@
           "SECONDARY_REFERENCE"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.SOM.resource_infrastructure_context.mineSites[46]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_01.json",
+        "expandedReferenceSiteIndex": 46,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -5478,6 +5948,16 @@
         "sourceCount": 1,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.DJI.resource_infrastructure_context.mineSites[47]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_01.json",
+        "expandedReferenceSiteIndex": 47,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -5594,6 +6074,16 @@
           "OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.ERI.resource_infrastructure_context.mineSites[48]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_01.json",
+        "expandedReferenceSiteIndex": 48,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -5709,6 +6199,16 @@
           "INDUSTRY_DATABASE"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.SSD.resource_infrastructure_context.mineSites[49]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_01.json",
+        "expandedReferenceSiteIndex": 49,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -5820,6 +6320,16 @@
         "sourceCount": 1,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.MWI.resource_infrastructure_context.mineSites[0]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_02.json",
+        "expandedReferenceSiteIndex": 0,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -5936,6 +6446,16 @@
         "sourceCount": 1,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.MDG.resource_infrastructure_context.mineSites[1]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_02.json",
+        "expandedReferenceSiteIndex": 1,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -6047,6 +6567,16 @@
           "REGULATORY_MARKET"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.MUS.resource_infrastructure_context.mineSites[2]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_02.json",
+        "expandedReferenceSiteIndex": 2,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -6154,6 +6684,16 @@
         "sourceCount": 2,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.SYC.resource_infrastructure_context.mineSites[3]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_02.json",
+        "expandedReferenceSiteIndex": 3,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -6264,6 +6804,16 @@
           "COMPANY"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.COM.resource_infrastructure_context.mineSites[4]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_02.json",
+        "expandedReferenceSiteIndex": 4,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -6372,6 +6922,16 @@
         "sourceCount": 1,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.ZAF.resource_infrastructure_context.mineSites[5]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_02.json",
+        "expandedReferenceSiteIndex": 5,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -6492,6 +7052,16 @@
           "REGULATORY_FILING"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.ZMB.resource_infrastructure_context.mineSites[6]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_02.json",
+        "expandedReferenceSiteIndex": 6,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -6600,6 +7170,16 @@
         "sourceCount": 2,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.ZWE.resource_infrastructure_context.mineSites[7]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_02.json",
+        "expandedReferenceSiteIndex": 7,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -6711,6 +7291,16 @@
         "sourceCount": 1,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.NAM.resource_infrastructure_context.mineSites[8]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_02.json",
+        "expandedReferenceSiteIndex": 8,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -6823,6 +7413,16 @@
         "sourceCount": 1,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.BWA.resource_infrastructure_context.mineSites[9]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_02.json",
+        "expandedReferenceSiteIndex": 9,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -6936,6 +7536,16 @@
           "OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.MOZ.resource_infrastructure_context.mineSites[10]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_02.json",
+        "expandedReferenceSiteIndex": 10,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -7051,6 +7661,16 @@
         "sourceCount": 1,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.LSO.resource_infrastructure_context.mineSites[11]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_02.json",
+        "expandedReferenceSiteIndex": 11,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -7161,6 +7781,16 @@
           "GOVERNMENT"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.SWZ.resource_infrastructure_context.mineSites[12]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_02.json",
+        "expandedReferenceSiteIndex": 12,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -7272,6 +7902,16 @@
           "OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.SAU.resource_infrastructure_context.mineSites[13]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_02.json",
+        "expandedReferenceSiteIndex": 13,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -7381,6 +8021,16 @@
           "OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.ARE.resource_infrastructure_context.mineSites[14]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_02.json",
+        "expandedReferenceSiteIndex": 14,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -7496,6 +8146,16 @@
           "NEWS"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.QAT.resource_infrastructure_context.mineSites[15]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_02.json",
+        "expandedReferenceSiteIndex": 15,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -7611,6 +8271,16 @@
           "SECONDARY_REFERENCE"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.KWT.resource_infrastructure_context.mineSites[16]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_02.json",
+        "expandedReferenceSiteIndex": 16,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -7725,6 +8395,16 @@
           "OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.OMN.resource_infrastructure_context.mineSites[17]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_02.json",
+        "expandedReferenceSiteIndex": 17,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -7841,6 +8521,16 @@
           "GOVERNMENT"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.BHR.resource_infrastructure_context.mineSites[18]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_02.json",
+        "expandedReferenceSiteIndex": 18,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -7956,6 +8646,16 @@
           "OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.YEM.resource_infrastructure_context.mineSites[19]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_02.json",
+        "expandedReferenceSiteIndex": 19,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -8072,6 +8772,16 @@
           "OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.IRQ.resource_infrastructure_context.mineSites[20]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_02.json",
+        "expandedReferenceSiteIndex": 20,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -8192,6 +8902,16 @@
         "sourceCount": 1,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.IRN.resource_infrastructure_context.mineSites[21]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_02.json",
+        "expandedReferenceSiteIndex": 21,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -8302,6 +9022,16 @@
           "OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.TUR.resource_infrastructure_context.mineSites[22]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_02.json",
+        "expandedReferenceSiteIndex": 22,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -8417,6 +9147,16 @@
           "SECONDARY_REFERENCE"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.SYR.resource_infrastructure_context.mineSites[23]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_02.json",
+        "expandedReferenceSiteIndex": 23,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -8532,6 +9272,16 @@
           "OPERATOR_GOVERNMENT"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.JOR.resource_infrastructure_context.mineSites[24]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_02.json",
+        "expandedReferenceSiteIndex": 24,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -8643,6 +9393,16 @@
           "NEWS"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.LBN.resource_infrastructure_context.mineSites[25]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_02.json",
+        "expandedReferenceSiteIndex": 25,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -8755,6 +9515,16 @@
         "sourceCount": 2,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.ISR.resource_infrastructure_context.mineSites[26]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_02.json",
+        "expandedReferenceSiteIndex": 26,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -8882,6 +9652,16 @@
         "sourceCount": 3,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.PSE.resource_infrastructure_context.mineSites[27]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_02.json",
+        "expandedReferenceSiteIndex": 27,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -8992,6 +9772,16 @@
           "SECONDARY_REFERENCE"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.CHN.resource_infrastructure_context.mineSites[28]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_02.json",
+        "expandedReferenceSiteIndex": 28,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -9105,6 +9895,16 @@
           "GOVERNMENT"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.JPN.resource_infrastructure_context.mineSites[29]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_02.json",
+        "expandedReferenceSiteIndex": 29,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -9216,6 +10016,16 @@
           "OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.KOR.resource_infrastructure_context.mineSites[30]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_02.json",
+        "expandedReferenceSiteIndex": 30,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -9326,6 +10136,16 @@
           "WIKIPEDIA"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.PRK.resource_infrastructure_context.mineSites[31]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_02.json",
+        "expandedReferenceSiteIndex": 31,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -9466,6 +10286,16 @@
           "REGULATORY_FILING"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.MNG.resource_infrastructure_context.mineSites[32]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_02.json",
+        "expandedReferenceSiteIndex": 32,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -9574,6 +10404,16 @@
           "GOVERNMENT_REGISTER"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.TWN.resource_infrastructure_context.mineSites[33]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_02.json",
+        "expandedReferenceSiteIndex": 33,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -9688,6 +10528,16 @@
           "OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.IDN.resource_infrastructure_context.mineSites[34]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_02.json",
+        "expandedReferenceSiteIndex": 34,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -9799,6 +10649,16 @@
           "OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.MYS.resource_infrastructure_context.mineSites[35]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_02.json",
+        "expandedReferenceSiteIndex": 35,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -9910,6 +10770,16 @@
           "OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.VNM.resource_infrastructure_context.mineSites[36]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_02.json",
+        "expandedReferenceSiteIndex": 36,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -10027,6 +10897,16 @@
         "sourceCount": 1,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.THA.resource_infrastructure_context.mineSites[37]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_02.json",
+        "expandedReferenceSiteIndex": 37,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -10139,6 +11019,16 @@
         "sourceCount": 2,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.PHL.resource_infrastructure_context.mineSites[38]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_02.json",
+        "expandedReferenceSiteIndex": 38,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -10253,6 +11143,16 @@
           "GOVERNMENT"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.MMR.resource_infrastructure_context.mineSites[39]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_02.json",
+        "expandedReferenceSiteIndex": 39,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -10362,6 +11262,16 @@
           "GOVERNMENT"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.SGP.resource_infrastructure_context.mineSites[40]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_02.json",
+        "expandedReferenceSiteIndex": 40,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -10477,6 +11387,16 @@
           "SECONDARY_REFERENCE"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.BRN.resource_infrastructure_context.mineSites[41]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_02.json",
+        "expandedReferenceSiteIndex": 41,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -10589,6 +11509,16 @@
         "sourceCount": 1,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.KHM.resource_infrastructure_context.mineSites[42]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_02.json",
+        "expandedReferenceSiteIndex": 42,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -10702,6 +11632,16 @@
           "OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.LAO.resource_infrastructure_context.mineSites[43]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_02.json",
+        "expandedReferenceSiteIndex": 43,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -10814,6 +11754,16 @@
         "sourceCount": 1,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.TLS.resource_infrastructure_context.mineSites[44]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_02.json",
+        "expandedReferenceSiteIndex": 44,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -10932,6 +11882,16 @@
         "sourceCount": 1,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.KAZ.resource_infrastructure_context.mineSites[45]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_02.json",
+        "expandedReferenceSiteIndex": 45,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -11060,6 +12020,16 @@
           "OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.UZB.resource_infrastructure_context.mineSites[46]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_02.json",
+        "expandedReferenceSiteIndex": 46,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -11184,6 +12154,16 @@
           "GOVERNMENT"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.TKM.resource_infrastructure_context.mineSites[47]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_02.json",
+        "expandedReferenceSiteIndex": 47,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -11293,6 +12273,16 @@
         "sourceCount": 1,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.KGZ.resource_infrastructure_context.mineSites[48]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_02.json",
+        "expandedReferenceSiteIndex": 48,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -11401,6 +12391,16 @@
         "sourceCount": 1,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.TJK.resource_infrastructure_context.mineSites[49]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_02.json",
+        "expandedReferenceSiteIndex": 49,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -11510,6 +12510,16 @@
           "OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.GEO.resource_infrastructure_context.mineSites[0]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_03.json",
+        "expandedReferenceSiteIndex": 0,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -11622,6 +12632,16 @@
         "sourceCount": 1,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.ARM.resource_infrastructure_context.mineSites[1]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_03.json",
+        "expandedReferenceSiteIndex": 1,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -11735,6 +12755,16 @@
         "sourceCount": 1,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.AZE.resource_infrastructure_context.mineSites[2]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_03.json",
+        "expandedReferenceSiteIndex": 2,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -11845,6 +12875,16 @@
           "OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.RUS.resource_infrastructure_context.mineSites[3]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_03.json",
+        "expandedReferenceSiteIndex": 3,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -11958,6 +12998,16 @@
           "OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.DEU.resource_infrastructure_context.mineSites[4]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_03.json",
+        "expandedReferenceSiteIndex": 4,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -12068,6 +13118,16 @@
           "GOVERNMENT_REGISTER"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.FRA.resource_infrastructure_context.mineSites[5]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_03.json",
+        "expandedReferenceSiteIndex": 5,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -12178,6 +13238,16 @@
           "SECONDARY_REFERENCE"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.GBR.resource_infrastructure_context.mineSites[6]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_03.json",
+        "expandedReferenceSiteIndex": 6,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -12285,6 +13355,16 @@
           "OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.ITA.resource_infrastructure_context.mineSites[7]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_03.json",
+        "expandedReferenceSiteIndex": 7,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -12400,6 +13480,16 @@
           "REGISTRY"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.ESP.resource_infrastructure_context.mineSites[8]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_03.json",
+        "expandedReferenceSiteIndex": 8,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -12513,6 +13603,16 @@
           "WIKIPEDIA"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.POL.resource_infrastructure_context.mineSites[9]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_03.json",
+        "expandedReferenceSiteIndex": 9,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -12624,6 +13724,16 @@
           "REGIONAL_GOVERNMENT"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.UKR.resource_infrastructure_context.mineSites[10]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_03.json",
+        "expandedReferenceSiteIndex": 10,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -12733,6 +13843,16 @@
           "OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.NLD.resource_infrastructure_context.mineSites[11]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_03.json",
+        "expandedReferenceSiteIndex": 11,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -12842,6 +13962,16 @@
           "SECONDARY_REFERENCE"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.BEL.resource_infrastructure_context.mineSites[12]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_03.json",
+        "expandedReferenceSiteIndex": 12,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -12951,6 +14081,16 @@
           "OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.CHE.resource_infrastructure_context.mineSites[13]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_03.json",
+        "expandedReferenceSiteIndex": 13,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -13062,6 +14202,16 @@
         "sourceCount": 1,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.SWE.resource_infrastructure_context.mineSites[14]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_03.json",
+        "expandedReferenceSiteIndex": 14,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -13168,6 +14318,16 @@
           "TECHNICAL_LITERATURE"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.NOR.resource_infrastructure_context.mineSites[15]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_03.json",
+        "expandedReferenceSiteIndex": 15,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -13278,6 +14438,16 @@
           "OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.AUT.resource_infrastructure_context.mineSites[16]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_03.json",
+        "expandedReferenceSiteIndex": 16,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -13388,6 +14558,16 @@
           "OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.FIN.resource_infrastructure_context.mineSites[17]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_03.json",
+        "expandedReferenceSiteIndex": 17,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -13498,6 +14678,16 @@
           "REGULATORY_FILING"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.DNK.resource_infrastructure_context.mineSites[18]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_03.json",
+        "expandedReferenceSiteIndex": 18,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -13610,6 +14800,16 @@
           "OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.IRL.resource_infrastructure_context.mineSites[19]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_03.json",
+        "expandedReferenceSiteIndex": 19,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -13722,6 +14922,16 @@
           "OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.PRT.resource_infrastructure_context.mineSites[20]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_03.json",
+        "expandedReferenceSiteIndex": 20,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -13841,6 +15051,16 @@
           "REGULATORY_FILING"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.GRC.resource_infrastructure_context.mineSites[21]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_03.json",
+        "expandedReferenceSiteIndex": 21,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -13954,6 +15174,16 @@
           "GOVERNMENT"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.CZE.resource_infrastructure_context.mineSites[22]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_03.json",
+        "expandedReferenceSiteIndex": 22,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -14069,6 +15299,16 @@
           "PUBLIC_COMPANY_PROFILE"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.ROU.resource_infrastructure_context.mineSites[23]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_03.json",
+        "expandedReferenceSiteIndex": 23,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -14182,6 +15422,16 @@
           "INDUSTRY_DATABASE"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.HUN.resource_infrastructure_context.mineSites[24]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_03.json",
+        "expandedReferenceSiteIndex": 24,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -14293,6 +15543,16 @@
           "GOVERNMENT_GEOLOGICAL_SURVEY"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.SVK.resource_infrastructure_context.mineSites[25]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_03.json",
+        "expandedReferenceSiteIndex": 25,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -14407,6 +15667,16 @@
           "OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.BGR.resource_infrastructure_context.mineSites[26]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_03.json",
+        "expandedReferenceSiteIndex": 26,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -14521,6 +15791,16 @@
           "OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.SRB.resource_infrastructure_context.mineSites[27]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_03.json",
+        "expandedReferenceSiteIndex": 27,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -14632,6 +15912,16 @@
           "OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.HRV.resource_infrastructure_context.mineSites[28]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_03.json",
+        "expandedReferenceSiteIndex": 28,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -14742,6 +16032,16 @@
           "GOVERNMENT_GEOLOGICAL_SURVEY"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.SVN.resource_infrastructure_context.mineSites[29]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_03.json",
+        "expandedReferenceSiteIndex": 29,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -14849,6 +16149,16 @@
           "OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.EST.resource_infrastructure_context.mineSites[30]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_03.json",
+        "expandedReferenceSiteIndex": 30,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -14958,6 +16268,16 @@
           "OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.LVA.resource_infrastructure_context.mineSites[31]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_03.json",
+        "expandedReferenceSiteIndex": 31,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -15067,6 +16387,16 @@
           "OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.LTU.resource_infrastructure_context.mineSites[32]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_03.json",
+        "expandedReferenceSiteIndex": 32,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -15176,6 +16506,16 @@
           "GOVERNMENT_GEOLOGICAL_SURVEY"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.BLR.resource_infrastructure_context.mineSites[33]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_03.json",
+        "expandedReferenceSiteIndex": 33,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -15288,6 +16628,16 @@
           "GOVERNMENT_MINERAL_REGISTRY"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.MDA.resource_infrastructure_context.mineSites[34]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_03.json",
+        "expandedReferenceSiteIndex": 34,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -15398,6 +16748,16 @@
           "INDUSTRY_INTERVIEW"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.ALB.resource_infrastructure_context.mineSites[35]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_03.json",
+        "expandedReferenceSiteIndex": 35,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -15506,6 +16866,16 @@
           "REGULATORY_FILING"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.MKD.resource_infrastructure_context.mineSites[36]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_03.json",
+        "expandedReferenceSiteIndex": 36,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -15615,6 +16985,16 @@
           "OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.BIH.resource_infrastructure_context.mineSites[37]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_03.json",
+        "expandedReferenceSiteIndex": 37,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -15728,6 +17108,16 @@
           "INDUSTRY_DATABASE"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.MNE.resource_infrastructure_context.mineSites[38]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_03.json",
+        "expandedReferenceSiteIndex": 38,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -15837,6 +17227,16 @@
           "PLANNING_DOCUMENT"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.ISL.resource_infrastructure_context.mineSites[39]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_03.json",
+        "expandedReferenceSiteIndex": 39,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -15947,6 +17347,16 @@
           "SECONDARY_REFERENCE"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.LUX.resource_infrastructure_context.mineSites[40]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_03.json",
+        "expandedReferenceSiteIndex": 40,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -16058,6 +17468,16 @@
           "NEWS"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.MLT.resource_infrastructure_context.mineSites[41]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_03.json",
+        "expandedReferenceSiteIndex": 41,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -16172,6 +17592,16 @@
           "GOVERNMENT"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.CYP.resource_infrastructure_context.mineSites[42]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_03.json",
+        "expandedReferenceSiteIndex": 42,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -16282,6 +17712,16 @@
           "GOVERNMENT"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.AND.resource_infrastructure_context.mineSites[43]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_03.json",
+        "expandedReferenceSiteIndex": 43,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -16383,6 +17823,16 @@
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.MCO.resource_infrastructure_context.mineSites[44]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_03.json",
+        "expandedReferenceSiteIndex": 44,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -16484,6 +17934,16 @@
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.SMR.resource_infrastructure_context.mineSites[45]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_03.json",
+        "expandedReferenceSiteIndex": 45,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -16585,6 +18045,16 @@
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.LIE.resource_infrastructure_context.mineSites[46]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_03.json",
+        "expandedReferenceSiteIndex": 46,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -16686,6 +18156,16 @@
         "sourceCount": 0,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.VAT.resource_infrastructure_context.mineSites[47]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_03.json",
+        "expandedReferenceSiteIndex": 47,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -16802,6 +18282,16 @@
           "OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.USA.resource_infrastructure_context.mineSites[48]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_03.json",
+        "expandedReferenceSiteIndex": 48,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -16912,6 +18402,16 @@
         "sourceCount": 1,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.CAN.resource_infrastructure_context.mineSites[49]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_03.json",
+        "expandedReferenceSiteIndex": 49,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -17022,6 +18522,16 @@
         "sourceCount": 1,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.MEX.resource_infrastructure_context.mineSites[0]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_04.json",
+        "expandedReferenceSiteIndex": 0,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -17132,6 +18642,16 @@
         "sourceCount": 1,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.BRA.resource_infrastructure_context.mineSites[1]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_04.json",
+        "expandedReferenceSiteIndex": 1,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -17243,6 +18763,16 @@
           "OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.ARG.resource_infrastructure_context.mineSites[2]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_04.json",
+        "expandedReferenceSiteIndex": 2,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -17357,6 +18887,16 @@
         "sourceCount": 1,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.CHL.resource_infrastructure_context.mineSites[3]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_04.json",
+        "expandedReferenceSiteIndex": 3,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -17470,6 +19010,16 @@
           "OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.COL.resource_infrastructure_context.mineSites[4]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_04.json",
+        "expandedReferenceSiteIndex": 4,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -17584,6 +19134,16 @@
           "REGULATORY_FILING"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.PER.resource_infrastructure_context.mineSites[5]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_04.json",
+        "expandedReferenceSiteIndex": 5,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -17699,6 +19259,16 @@
           "INDUSTRY_DATABASE"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.VEN.resource_infrastructure_context.mineSites[6]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_04.json",
+        "expandedReferenceSiteIndex": 6,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -17809,6 +19379,16 @@
           "OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.ECU.resource_infrastructure_context.mineSites[7]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_04.json",
+        "expandedReferenceSiteIndex": 7,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -17916,6 +19496,16 @@
         "sourceCount": 1,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.BOL.resource_infrastructure_context.mineSites[8]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_04.json",
+        "expandedReferenceSiteIndex": 8,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -18027,6 +19617,16 @@
           "GOVERNMENT"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.PRY.resource_infrastructure_context.mineSites[9]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_04.json",
+        "expandedReferenceSiteIndex": 9,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -18137,6 +19737,16 @@
           "GOVERNMENT"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.URY.resource_infrastructure_context.mineSites[10]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_04.json",
+        "expandedReferenceSiteIndex": 10,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -18251,6 +19861,16 @@
           "OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.PAN.resource_infrastructure_context.mineSites[11]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_04.json",
+        "expandedReferenceSiteIndex": 11,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -18361,6 +19981,16 @@
           "SECONDARY_REFERENCE"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.CRI.resource_infrastructure_context.mineSites[12]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_04.json",
+        "expandedReferenceSiteIndex": 12,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -18473,6 +20103,16 @@
           "REGULATORY_FILING"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.NIC.resource_infrastructure_context.mineSites[13]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_04.json",
+        "expandedReferenceSiteIndex": 13,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -18583,6 +20223,16 @@
           "REGULATORY_FILING"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.HND.resource_infrastructure_context.mineSites[14]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_04.json",
+        "expandedReferenceSiteIndex": 14,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -18693,6 +20343,16 @@
           "SEC_FILING"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.SLV.resource_infrastructure_context.mineSites[15]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_04.json",
+        "expandedReferenceSiteIndex": 15,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -18805,6 +20465,16 @@
           "PROJECT_OWNER"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.GTM.resource_infrastructure_context.mineSites[16]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_04.json",
+        "expandedReferenceSiteIndex": 16,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -18914,6 +20584,16 @@
           "DEVELOPMENT_AGENCY"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.BLZ.resource_infrastructure_context.mineSites[17]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_04.json",
+        "expandedReferenceSiteIndex": 17,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -19024,6 +20704,16 @@
         "sourceCount": 1,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.CUB.resource_infrastructure_context.mineSites[18]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_04.json",
+        "expandedReferenceSiteIndex": 18,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -19132,6 +20822,16 @@
         "sourceCount": 1,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.CUB.resource_infrastructure_context.mineSites[19]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_04.json",
+        "expandedReferenceSiteIndex": 19,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -19242,6 +20942,16 @@
           "GOVERNMENT"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.CUB.resource_infrastructure_context.mineSites[20]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_04.json",
+        "expandedReferenceSiteIndex": 20,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -19356,6 +21066,16 @@
           "GOVERNMENT_ENVIRONMENTAL_REPORT"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.JAM.resource_infrastructure_context.mineSites[21]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_04.json",
+        "expandedReferenceSiteIndex": 21,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -19466,6 +21186,16 @@
           "MINERAL_INVENTORY"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.HTI.resource_infrastructure_context.mineSites[22]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_04.json",
+        "expandedReferenceSiteIndex": 22,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -19576,6 +21306,16 @@
           "REGULATORY_FILING"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.DOM.resource_infrastructure_context.mineSites[23]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_04.json",
+        "expandedReferenceSiteIndex": 23,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -19691,6 +21431,16 @@
           "OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.TTO.resource_infrastructure_context.mineSites[24]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_04.json",
+        "expandedReferenceSiteIndex": 24,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -19798,6 +21548,16 @@
         "sourceCount": 2,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.BHS.resource_infrastructure_context.mineSites[25]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_04.json",
+        "expandedReferenceSiteIndex": 25,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -19909,6 +21669,16 @@
           "INDUSTRY_DATABASE"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.BRB.resource_infrastructure_context.mineSites[26]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_04.json",
+        "expandedReferenceSiteIndex": 26,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -20016,6 +21786,16 @@
         "sourceCount": 1,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.LCA.resource_infrastructure_context.mineSites[27]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_04.json",
+        "expandedReferenceSiteIndex": 27,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -20125,6 +21905,16 @@
           "PUBLIC_AUTHORITY_REPORT"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.VCT.resource_infrastructure_context.mineSites[28]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_04.json",
+        "expandedReferenceSiteIndex": 28,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -20232,6 +22022,16 @@
         "sourceCount": 2,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.GRD.resource_infrastructure_context.mineSites[29]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_04.json",
+        "expandedReferenceSiteIndex": 29,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -20342,6 +22142,16 @@
           "GOVERNMENT"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.ATG.resource_infrastructure_context.mineSites[30]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_04.json",
+        "expandedReferenceSiteIndex": 30,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -20452,6 +22262,16 @@
           "GOVERNMENT"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.KNA.resource_infrastructure_context.mineSites[31]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_04.json",
+        "expandedReferenceSiteIndex": 31,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -20559,6 +22379,16 @@
         "sourceCount": 1,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.DMA.resource_infrastructure_context.mineSites[32]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_04.json",
+        "expandedReferenceSiteIndex": 32,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -20670,6 +22500,16 @@
           "OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.SUR.resource_infrastructure_context.mineSites[33]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_04.json",
+        "expandedReferenceSiteIndex": 33,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -20781,6 +22621,16 @@
           "OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.GUY.resource_infrastructure_context.mineSites[34]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_04.json",
+        "expandedReferenceSiteIndex": 34,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -20892,6 +22742,16 @@
           "OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.AUS.resource_infrastructure_context.mineSites[35]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_04.json",
+        "expandedReferenceSiteIndex": 35,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -21003,6 +22863,16 @@
           "OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.NZL.resource_infrastructure_context.mineSites[36]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_04.json",
+        "expandedReferenceSiteIndex": 36,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -21113,6 +22983,16 @@
           "OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.PNG.resource_infrastructure_context.mineSites[37]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_04.json",
+        "expandedReferenceSiteIndex": 37,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -21223,6 +23103,16 @@
           "CENTRAL_BANK"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.FJI.resource_infrastructure_context.mineSites[38]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_04.json",
+        "expandedReferenceSiteIndex": 38,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -21331,6 +23221,16 @@
         "sourceCount": 2,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.SLB.resource_infrastructure_context.mineSites[39]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_04.json",
+        "expandedReferenceSiteIndex": 39,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -21441,6 +23341,16 @@
           "BUSINESS_DIRECTORY"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.VUT.resource_infrastructure_context.mineSites[40]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_04.json",
+        "expandedReferenceSiteIndex": 40,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -21551,6 +23461,16 @@
           "DEVELOPMENT_AGENCY"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.WSM.resource_infrastructure_context.mineSites[41]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_04.json",
+        "expandedReferenceSiteIndex": 41,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -21660,6 +23580,16 @@
           "OPERATOR"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.TON.resource_infrastructure_context.mineSites[42]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_04.json",
+        "expandedReferenceSiteIndex": 42,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -21767,6 +23697,16 @@
         "sourceCount": 3,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.KIR.resource_infrastructure_context.mineSites[43]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_04.json",
+        "expandedReferenceSiteIndex": 43,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -21876,6 +23816,16 @@
           "SOPAC"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.TUV.resource_infrastructure_context.mineSites[44]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_04.json",
+        "expandedReferenceSiteIndex": 44,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -21987,6 +23937,16 @@
         "sourceCount": 1,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.NRU.resource_infrastructure_context.mineSites[45]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_04.json",
+        "expandedReferenceSiteIndex": 45,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -22094,6 +24054,16 @@
         "sourceCount": 1,
         "sourceAuthorities": [],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.MHL.resource_infrastructure_context.mineSites[46]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_04.json",
+        "expandedReferenceSiteIndex": 46,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -22203,6 +24173,16 @@
           "SPC_SOPAC"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.FSM.resource_infrastructure_context.mineSites[47]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_04.json",
+        "expandedReferenceSiteIndex": 47,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     },
     {
@@ -22314,7 +24294,21 @@
           "GOVERNMENT_REGISTER"
         ],
         "dataLimitations": null
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resources.json",
+          "resources_2.json"
+        ],
+        "sourcePath": "GSRSK_Master_CountryProfiles_v14.countryProfiles.PLW.resource_infrastructure_context.mineSites[48]",
+        "expandedReferenceFile": "resource_site_reference_expanded_part_04.json",
+        "expandedReferenceSiteIndex": 48,
+        "countryContextFile": "resource_country_resource_context_index.json"
       }
     }
-  ]
+  ],
+  "sourceReferencePolicy": {
+    "version": "1.0.0",
+    "statement": "Canonical site records remain normalized for runtime. Complete source records and siteDataPackage are preserved in the expanded reference parts; country-level aggregates remain in the separate country context index."
+  }
 }
