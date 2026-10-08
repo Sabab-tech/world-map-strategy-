@@ -102,6 +102,7 @@ jobs:
           run_gate resourceResearch 15 node test/omega_resource_research_runtime.test.mjs
           run_gate resourceResearchEvidence 15 node test/omega_resource_research_evidence.test.mjs
           run_gate resourceResearchPolicy 15 node --test test/omega_resource_research_policy.test.mjs
+          run_gate resourceHighLevelResearch 15 node --test test/omega_resource_site_high_level_research.test.mjs
 
           export OMEGA_GATE_SYNTAX="${GATES[syntax]}"
           export OMEGA_GATE_RESOURCEENDOWMENT="${GATES[resourceEndowment]}"
@@ -118,6 +119,7 @@ jobs:
           export OMEGA_GATE_RESOURCERESEARCH="${GATES[resourceResearch]}"
           export OMEGA_GATE_RESOURCERESEARCHEVIDENCE="${GATES[resourceResearchEvidence]}"
           export OMEGA_GATE_RESOURCERESEARCHPOLICY="${GATES[resourceResearchPolicy]}"
+          export OMEGA_GATE_RESOURCEHIGHLEVELRESEARCH="${GATES[resourceHighLevelResearch]}"
 
           node --input-type=module <<'NODE'
           import fs from 'node:fs';
@@ -136,7 +138,8 @@ jobs:
             settlementCompatibility: process.env.OMEGA_GATE_SETTLEMENTCOMPATIBILITY,
             resourceResearch: process.env.OMEGA_GATE_RESOURCERESEARCH,
             resourceResearchEvidence: process.env.OMEGA_GATE_RESOURCERESEARCHEVIDENCE,
-            resourceResearchPolicy: process.env.OMEGA_GATE_RESOURCERESEARCHPOLICY
+            resourceResearchPolicy: process.env.OMEGA_GATE_RESOURCERESEARCHPOLICY,
+            resourceHighLevelResearch: process.env.OMEGA_GATE_RESOURCEHIGHLEVELRESEARCH
           };
           const status = Object.values(gates).every((value) => value === 'PASS') ? 'VERIFIED' : 'INCOMPLETE';
           const certificate = {

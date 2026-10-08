@@ -49,27 +49,29 @@ assert.equal(split.length,2);
 assert.equal(R.parseReserve(split.find(x=>x.resourceId==='copper').reserves,'copper').value,20000000);
 assert.equal(R.parseReserve(split.find(x=>x.resourceId==='gold').reserves,'gold').value,1800000);
 
-// Priority 1 + 2: normalized site model replaces site->hash->fixed daily rate.
+// Truth boundary: missing quantitative data is not promoted to simulation authority.
 const site=R.siteModel({siteReferenceKey:'SITE:IND:01',siteName:'Demo Copper Mine'},{
   resource_domain:{knownResourceTypes:['copper']},
   mineral_resource_base:{}
 },'IND');
-assert.equal(site.stateAuthority,'SIMULATED');
+assert.equal(site.stateAuthority,'UNOBSERVED');
 const stream=site.commodityStreams[0];
 for(const k of ['nominalCapacity','minimumCapacity','maximumCapacity','utilization','recovery','decline','maintenance','activeRate']){
-  assert.equal(typeof stream.production[k],'number',k);
+  assert.equal(stream.production[k],null,k);
 }
-assert.equal(stream.production.authority,'SIMULATED');
-assert.equal(stream.reserve.authority,'SIMULATED');
-assert.equal(typeof stream.quality.grade,'number');
-assert.ok(stream.reserve.quantity>0);
-assert.notEqual(stream.production.activeRate,1000);
+assert.equal(stream.production.authority,'UNOBSERVED');
+assert.equal(stream.reserve.authority,'UNOBSERVED');
+assert.equal(stream.quality.grade,null);
+assert.equal(typeof stream.simulation.nominalCapacity,'number');
+assert.equal(typeof stream.simulation.activeRate,'number');
+assert.equal(typeof stream.simulation.grade,'number');
+assert.ok(stream.simulation.reserveQuantity>0);
 
 const observedSite=R.siteModel({
   siteReferenceKey:'SITE:OBS:01',siteName:'Observed Multi Commodity',
   commodities:[
-    {resourceId:'copper',reservesQuantity:2000000,grade:'1.8%',productionRate:900,utilization:0.8},
-    {resourceId:'gold',reservesQuantity:120000,grade:'4.2 g/t',productionRate:600}
+    {resourceId:'copper',reserve:{quantity:2000000,unit:'TONNES',basis:'MINERAL_RESERVE',commodity:'copper',status:'OBSERVED'},grade:'1.8%',productionRate:900,utilization:0.8},
+    {resourceId:'gold',reserve:{quantity:120000,unit:'TROY_OUNCES',basis:'MINERAL_RESERVE',commodity:'gold',status:'OBSERVED'},grade:'4.2 g/t',productionRate:600}
   ],
   productionModel:{maintenance:0.05,recovery:0.9}
 },{} ,'OBS');

@@ -1,0 +1,36 @@
+#!/usr/bin/env node
+'use strict';
+const fs=require('node:fs');
+const vm=require('node:vm');
+const path=require('node:path');
+const root=process.cwd();
+const load=p=>vm.runInThisContext(fs.readFileSync(path.join(root,p),'utf8'),{filename:p});
+load('omega_resource_truth_contract.js');
+load('omega_resource_realism_runtime_v1.js');
+const R=globalThis.OmegaResourceRealism;
+const failures=[]; const ok=(v,m)=>{if(!v)failures.push(m)};
+const missingSite={siteId:'SITE_TEST_missing',siteReferenceKey:'SITE_TEST_missing',siteName:'Missing Reserve Test',countryId:'TST',resourceId:'gold',sourceDatasetId:'resource_site_canonical_catalog_v1.json',sourcePath:'resource_site_canonical_catalog_v1.json'};
+const m=R.siteModel(missingSite,{},'TST');
+const s=m.commodityStreams[0];
+ok(s.reserve.authority==='UNOBSERVED','MISSING_RESERVE_MUST_BE_UNOBSERVED');
+ok(s.reserve.quantity===null,'MISSING_RESERVE_QUANTITY_MUST_BE_NULL');
+ok(s.simulation?.reserveQuantity>0,'SIMULATION_RESERVE_MUST_BE_SEPARATE');
+ok(s.quality.gradeStatus==='UNOBSERVED'&&s.quality.grade===null,'MISSING_GRADE_MUST_BE_UNOBSERVED');
+ok(s.simulation?.grade!=null,'SIMULATION_GRADE_MUST_BE_SEPARATE');
+ok(s.production.authority==='UNOBSERVED'&&s.production.activeRate===null,'MISSING_PRODUCTION_MUST_BE_UNOBSERVED');
+ok(s.simulation?.activeRate>0,'SIMULATION_PRODUCTION_MUST_BE_SEPARATE');
+const observedSite={...missingSite,siteId:'SITE_TEST_observed',siteReferenceKey:'SITE_TEST_observed',reserve:{quantity:100000,unit:'TONNES',basis:'MINERAL_RESERVE',commodity:'gold',status:'OBSERVED'},grade:2.5,productionRate:100};
+const o=R.siteModel(observedSite,{},'TST').commodityStreams[0];
+ok(o.reserve.authority==='OBSERVED'&&o.reserve.quantity===100000,'OBSERVED_RESERVE_PRESERVED');
+ok(o.production.authority==='OBSERVED'&&o.production.activeRate!==null,'OBSERVED_PRODUCTION_PRESERVED');
+ok(o.quality.gradeStatus==='OBSERVED'&&o.quality.grade===2.5,'OBSERVED_GRADE_PRESERVED');
+ok(o.simulation?.reserveQuantity!==100000,'SIMULATION_MUST_NOT_OVERRIDE_OBSERVED');
+const bad={...missingSite,reserve:{quantity:100,unit:'BBL',basis:'PETROLEUM_RESERVE',commodity:'oil',status:'OBSERVED'}};
+const b=R.siteModel(bad,{},'TST').commodityStreams[0];
+ok(b.reserve.authority==='UNOBSERVED'&&b.reserve.quantity===null,'INCOMPATIBLE_MEASUREMENT_FAILS_CLOSED');
+if(failures.length){console.error(JSON.stringify({status:'INCOMPLETE',failures},null,2));process.exit(1);}
+console.log('RESOURCE TRUTH RUNTIME TEST PASSED');
+console.log('Observed preservation: PASS');
+console.log('Missing quantitative fields remain UNOBSERVED: PASS');
+console.log('Simulation isolated: PASS');
+console.log('Measurement incompatibility fail-closed: PASS');
