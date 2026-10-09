@@ -242,6 +242,33 @@ const api=Object.assign({},base,{
 });
 O.ResourceIndustrialNetwork=api;g.OmegaResourceIndustrialNetwork=api;
 g.OmegaStrategicLogisticsStatus={status:'READY',version:'1.0.0',routeModel:'STRATEGIC_NETWORK_GRAPH'};
+function settleDeliveryEvent(detail){
+ const p=detail?.payload||detail||{},c=country(p.countryId||detail?.countryId),r=resource(c),id=String(p.shipmentId||'');
+ const live=(r.industrialNetwork?.shipments||[]).find(s=>String(s.shipmentId)===id);
+ if(!live||live.strategicSettlementApplied)return false;
+ const qty=Math.max(0,n(live.quantity)),rid=String(live.resourceId||p.resourceId||'').toLowerCase(),wh=r.warehouse||(r.warehouse={availableByResource:{},reservedByResource:{}});
+ wh.availableByResource=wh.availableByResource||{};wh.reservedByResource=wh.reservedByResource||{};
+ wh.availableByResource[rid]=Math.max(0,n(wh.availableByResource[rid])-qty);
+ wh.reservedByResource[rid]=Math.max(0,n(wh.reservedByResource[rid])-qty);
+ r.inventory=r.inventory||{};r.inventory[rid]=n(r.inventory[rid])+qty;
+ live.strategicSettlementApplied=true;live.factoryInputDelivered=qty;live.deliveryTurn=turn();
+ event('OMEGA_STRATEGIC_FACTORY_INPUT_DELIVERED',{countryId:c,siteId:live.siteId,factoryId:live.factoryId,resourceId:rid,quantity:qty,turn:turn()});
+ return true;
+}
+function preflightCommittedTurn(){
+ for(const [c,r] of Object.entries(state().resource||{})){
+  for(const shipment of (r.industrialNetwork?.shipments||[])){
+   if(shipment.status!=='IN_TRANSIT'||shipment.route?.routeModel!=='STRATEGIC_NETWORK_GRAPH')continue;
+   const blocked=(shipment.route.legs||[]).find(leg=>{const edge=allEdges().find(e=>String(e.id)===String(leg.edgeId));return edge&&(['BLOCKED','CLOSED','DESTROYED','DISABLED','OCCUPIED'].includes(tok(edge.status))||n(edge.damage)>=1);});
+   if(blocked){shipment.routeDisruption={edgeId:blocked.edgeId,reason:tok(blocked.status)==='DESTROYED'?'ROUTE_DESTROYED':'ROUTE_BLOCKED',observedTurn:turn()};shipment.etaTurn=Math.max(n(shipment.etaTurn),turn()+1);}
+  }
+ }
+}
+if(typeof g.addEventListener==='function'){
+ g.addEventListener('OMEGA_RESOURCE_DELIVERY_COMPLETED',e=>settleDeliveryEvent(e?.detail));
+ // Capture phase runs before the industrial runtime's normal turn listener.
+ g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED',preflightCommittedTurn,true);
+}
 if(typeof g.addEventListener==='function')g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED',()=>{
  const rows=siteRegistry().sites||[];
  for(const s of rows){try{simulateExtractionTurn({countryId:s.countryId,siteId:s.siteId});}catch(_){}}
