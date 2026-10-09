@@ -193,3 +193,18 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 @media(prefers-reduced-motion:reduce),(pointer:coarse){
   *,*::before,*::after{scroll-behavior:auto!important;animation:none!important;transition:none!important;}
 }
+
+/* Reapply state and primary-action treatments after the legacy-button reset. */
+#ui-engine-root .speed-btn.active,#ui-engine-root .nav-btn.active,
+#ui-engine-root .icon-btn.active{
+  background:var(--ui-accent-soft)!important;border-color:var(--ui-accent)!important;color:#d9f1fc!important;
+}
+#resource-filter-box #btn-scope-nation.active,
+#resource-filter-box #btn-scope-world.active{
+  background:var(--ui-accent-soft)!important;border-color:var(--ui-accent)!important;color:#d9f1fc!important;
+}
+#resource-filter-box #btn-apply-res-filter{
+  background:var(--ui-accent-soft)!important;border-color:var(--ui-accent)!important;color:#d9f1fc!important;
+}
+#resource-filter-box #btn-clear-res-filter{color:var(--ui-warning)!important;}
+#resource-filter-box #btn-exit-res-filter{color:var(--ui-danger)!important;}
