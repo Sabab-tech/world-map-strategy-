@@ -208,3 +208,16 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 }
 #resource-filter-box #btn-clear-res-filter{color:var(--ui-warning)!important;}
 #resource-filter-box #btn-exit-res-filter{color:var(--ui-danger)!important;}
+
+
+/* Individual canonical mine/field sites: resource-specific compact glyphs, not identical brown dots. */
+.omega-individual-site-marker{background:transparent!important;border:0!important;}
+.omega-individual-site-marker span{
+ display:flex;align-items:center;justify-content:center;box-sizing:border-box;
+ width:26px;height:26px;border-radius:7px;
+ background:#101b2a;border:2px solid var(--site-color,#76b7d8);
+ color:var(--site-color,#76b7d8);font:800 10px/1 Arial,sans-serif;
+ box-shadow:0 1px 4px #000b;text-shadow:none;
+}
+.omega-individual-site-marker:focus-visible{outline:2px solid #fff;outline-offset:2px;}
+.omega-individual-site-marker span{position:relative;}
