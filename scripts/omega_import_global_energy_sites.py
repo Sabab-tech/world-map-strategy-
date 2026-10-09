@@ -49,7 +49,7 @@ def coordinate_pair(latitude_value, longitude_value):
     lat = as_float(latitude_value)
     lon = as_float(longitude_value)
     if lat is None or lon is None:
-        numbers = re.findall(r"[-+]?(?:\\d+(?:[.,]\\d*)?|[.,]\\d+)", str(latitude_value or ""))
+        numbers = re.findall(r"[-+]?(?:\d+(?:[.,]\d*)?|[.,]\d+)", str(latitude_value or ""))
         if lat is None and numbers:
             lat = as_float(numbers[0])
         if lon is None and len(numbers) > 1:
@@ -450,7 +450,7 @@ for csv_path, default_status in [(COAL_ACTIVE, "UNKNOWN"), (COAL_CLOSED, "CLOSED
             operator = next((candidate for candidate in operator_candidates if candidate and not re.fullmatch(r"[0-9]+(?:[.,][0-9]+)?", str(candidate).strip()) and norm(candidate) not in country_name_to_id and norm(candidate) not in {"LIGNITE", "BITUMINOUS", "SUBBITUMINOUS", "ANTHRACITE", "THERMAL", "METALLURGICAL", "MET", "ESTIMATE", "EXACT", "APPROXIMATE"}), None)
             year = first(row.get("Opening Year"), row.get("Year of Production"), row.get("Start Year"))
             if year is not None:
-                year_match = re.search(r"(?:17|18|19|20|21)\\d{2}", str(year))
+                year_match = re.search(r"(?:17|18|19|20|21)\d{2}", str(year))
                 year = year_match.group(0) if year_match else None
             production = first(row.get("Production (Mtpa)"), row.get("Production"), row.get("Annual Production"))
             if production is not None and as_float(production) is None:
