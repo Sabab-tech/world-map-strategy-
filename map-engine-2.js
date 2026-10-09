@@ -1182,64 +1182,49 @@ Game.Map.resourceState = {
 };
 
 Game.Map.resourceCatalog = [
-    { id: 'crude_oil', name: 'Crude Oil', icon: '🛢️', color: '#f59e0b' },
-    { id: 'natural_gas', name: 'Natural Gas', icon: '🔥', color: '#00e5ff' },
-    { id: 'coal', name: 'Coal', icon: '🪨', color: '#94a3b8' },
-    { id: 'iron_ore', name: 'Iron Ore & Steel', icon: '⛏️', color: '#38bdf8' },
-    { id: 'copper', name: 'Copper', icon: '🔌', color: '#f97316' },
-    { id: 'gold', name: 'Gold', icon: '🥇', color: '#ffd700' },
-    { id: 'uranium', name: 'Uranium', icon: '⚛️', color: '#22c55e' },
-    { id: 'lithium', name: 'Lithium', icon: '🔋', color: '#a855f7' },
-    { id: 'cobalt', name: 'Cobalt', icon: '🔋', color: '#3b82f6' },
-    { id: 'rare_earth', name: 'Rare Earth', icon: '💎', color: '#ec4899' },
-    { id: 'bauxite', name: 'Bauxite / Aluminum', icon: '📦', color: '#fb923c' },
-    { id: 'nickel', name: 'Nickel', icon: '🧪', color: '#10b981' },
-    { id: 'manganese', name: 'Manganese', icon: '⚙️', color: '#cbd5e1' },
-    { id: 'titanium', name: 'Titanium', icon: '🛡️', color: '#e2e8f0' },
-    { id: 'zinc', name: 'Zinc & Lead', icon: '🔩', color: '#64748b' },
-    { id: 'tin', name: 'Tin', icon: '🥫', color: '#94a3b8' },
-    { id: 'potash', name: 'Potash & Salt', icon: '🌾', color: '#eab308' },
-    { id: 'silver', name: 'Silver & Platinum', icon: '🥈', color: '#e2e8f0' },
-    { id: 'diamond', name: 'Diamond & Gems', icon: '💎', color: '#38bdf8' },
-    { id: 'semiconductor', name: 'Silicon / Chips', icon: '🔬', color: '#a855f7' }
+    { id: 'crude_oil', name: 'Crude Oil', icon: 'OIL', color: '#c9a96e' },
+    { id: 'natural_gas', name: 'Natural Gas', icon: 'NG', color: '#76b7d8' },
+    { id: 'coal', name: 'Coal', icon: 'C', color: '#8b98a8' },
+    { id: 'iron_ore', name: 'Iron Ore & Steel', icon: 'Fe', color: '#b77b61' },
+    { id: 'copper', name: 'Copper', icon: 'Cu', color: '#c68c68' },
+    { id: 'gold', name: 'Gold', icon: 'Au', color: '#d0b46a' },
+    { id: 'uranium', name: 'Uranium', icon: 'U', color: '#75b798' },
+    { id: 'lithium', name: 'Lithium', icon: 'Li', color: '#9e9bc9' },
+    { id: 'cobalt', name: 'Cobalt', icon: 'Co', color: '#79a6d8' },
+    { id: 'rare_earth', name: 'Rare Earth', icon: 'RE', color: '#b39acb' },
+    { id: 'bauxite', name: 'Bauxite / Aluminum', icon: 'Al', color: '#c58e69' },
+    { id: 'nickel', name: 'Nickel', icon: 'Ni', color: '#8ab4a5' },
+    { id: 'manganese', name: 'Manganese', icon: 'Mn', color: '#a6b3c2' },
+    { id: 'titanium', name: 'Titanium', icon: 'Ti', color: '#b7c5d4' },
+    { id: 'zinc', name: 'Zinc & Lead', icon: 'Zn', color: '#92a6b8' },
+    { id: 'tin', name: 'Tin', icon: 'Sn', color: '#9daab8' },
+    { id: 'potash', name: 'Potash & Salt', icon: 'K', color: '#b6b87a' },
+    { id: 'silver', name: 'Silver & Platinum', icon: 'Ag', color: '#c4ccd4' },
+    { id: 'diamond', name: 'Diamond & Gems', icon: 'C', color: '#9bc6d9' },
+    { id: 'semiconductor', name: 'Silicon / Chips', icon: 'Si', color: '#a9a1d3' }
 ];
 
 Game.Map.setResourceScope = function(scope) {
-    this.resourceState.scope = scope;
+    const normalizedScope = String(scope || 'NATION').toUpperCase() === 'WORLD' ? 'WORLD' : 'NATION';
+    this.resourceState.scope = normalizedScope;
     const btnNation = document.getElementById('btn-scope-nation');
     const btnWorld = document.getElementById('btn-scope-world');
     const scopeIndicator = document.getElementById('res-scope-target');
-
-    if (scope === 'NATION') {
-        if (btnNation) {
-            btnNation.style.background = 'rgba(0,229,255,0.2)';
-            btnNation.style.borderColor = '#00e5ff';
-            btnNation.style.color = '#00e5ff';
-        }
-        if (btnWorld) {
-            btnWorld.style.background = 'transparent';
-            btnWorld.style.borderColor = 'transparent';
-            btnWorld.style.color = '#94a3b8';
-        }
-        const activeCountry = Game.currentActiveCountry || 'BANGLADESH';
-        if (scopeIndicator) scopeIndicator.textContent = `${activeCountry.replace(/_/g, " ").toUpperCase()} (SELECTED NATION)`;
-    } else {
-        if (btnWorld) {
-            btnWorld.style.background = 'rgba(0,229,255,0.2)';
-            btnWorld.style.borderColor = '#00e5ff';
-            btnWorld.style.color = '#00e5ff';
-        }
-        if (btnNation) {
-            btnNation.style.background = 'transparent';
-            btnNation.style.borderColor = 'transparent';
-            btnNation.style.color = '#94a3b8';
-        }
-        if (scopeIndicator) scopeIndicator.textContent = `WORLDWIDE (ALL COUNTRIES)`;
+    if (btnNation) {
+        btnNation.classList.toggle('active', normalizedScope === 'NATION');
+        btnNation.setAttribute('aria-pressed', String(normalizedScope === 'NATION'));
     }
-
-    if (this.resourceState.enabled) {
-        this.renderResourceDeposits();
+    if (btnWorld) {
+        btnWorld.classList.toggle('active', normalizedScope === 'WORLD');
+        btnWorld.setAttribute('aria-pressed', String(normalizedScope === 'WORLD'));
     }
+    if (scopeIndicator) {
+        const activeCountry = Game.currentActiveCountry || (window.CountryIOS && window.CountryIOS.activeCountry) || '';
+        scopeIndicator.textContent = normalizedScope === 'WORLD'
+            ? 'WORLDWIDE (ALL COUNTRIES)'
+            : (activeCountry ? activeCountry.replace(/_/g, ' ').toUpperCase() + ' (SELECTED NATION)' : 'SELECT A COUNTRY FOR NATION SCOPE');
+    }
+    if (this.resourceState.enabled) this.renderResourceDeposits();
 };
 
 Game.Map.toggleResourceFilterMenu = function() {
@@ -1279,12 +1264,12 @@ Game.Map.renderResourceCheckboxesInPanel = function() {
     this.resourceCatalog.forEach(item => {
         const isChecked = this.resourceState.selectedResources.has(item.id);
         const label = document.createElement('label');
-        label.className = 'res-chip-item';
-        label.style.cssText = `display:flex; align-items:center; gap:6px; padding:4px 6px; background:${isChecked ? 'rgba(0,229,255,0.12)' : 'rgba(255,255,255,0.03)'}; border:1px solid ${isChecked ? '#00e5ff' : 'rgba(255,255,255,0.08)'}; border-radius:6px; font-size:10px; color:${isChecked ? '#ffffff' : '#cbd5e1'}; cursor:pointer; font-family:var(--font-mono); transition:all 0.15s ease;`;
-
+        label.className = 'res-chip-item' + (isChecked ? ' selected' : '');
+        label.style.setProperty('--ui-resource-color', item.color || '#76b7d8');
         label.innerHTML = `
-            <input type="checkbox" value="${item.id}" ${isChecked ? 'checked' : ''} onchange="Game.Map.handleResourceCheckboxChange('${item.id}', this.checked, this.parentElement)" style="accent-color:#00e5ff; cursor:pointer;">
-            <span>${item.icon} ${item.name}</span>
+            <input type="checkbox" value="${item.id}" ${isChecked ? 'checked' : ''} onchange="Game.Map.handleResourceCheckboxChange('${item.id}', this.checked, this.parentElement)">
+            <span class="omega-resource-glyph" data-resource="${item.id}">${item.icon}</span>
+            <span class="res-chip-name">${item.name}</span>
         `;
         grid.appendChild(label);
     });
@@ -1294,16 +1279,12 @@ Game.Map.handleResourceCheckboxChange = function(resId, isChecked, parentEl) {
     if (isChecked) {
         this.resourceState.selectedResources.add(resId);
         if (parentEl) {
-            parentEl.style.background = 'rgba(0,229,255,0.12)';
-            parentEl.style.borderColor = '#00e5ff';
-            parentEl.style.color = '#ffffff';
+            parentEl.classList.add('selected');
         }
     } else {
         this.resourceState.selectedResources.delete(resId);
         if (parentEl) {
-            parentEl.style.background = 'rgba(255,255,255,0.03)';
-            parentEl.style.borderColor = 'rgba(255,255,255,0.08)';
-            parentEl.style.color = '#cbd5e1';
+            parentEl.classList.remove('selected');
         }
     }
 };
@@ -1477,7 +1458,7 @@ Game.Map.renderResourceDeposits = function() {
             }
 
             const catalogItem = (Array.isArray(this.resourceCatalog) ? this.resourceCatalog.find(r => r.id === dep.resId) : null) || { icon: '⛏️', color: '#ffd700' };
-            const icon = catalogItem.icon || '⛏️';
+            const icon = catalogItem.icon || 'ORE';
             const color = catalogItem.color || '#38bdf8';
 
             // Visual Yield Intensity Rating (Low/Medium/High/Massive)
@@ -1526,7 +1507,7 @@ Game.Map.renderResourceDeposits = function() {
                 ">
                     ${auraHtml}
                     ${badgeHtml}
-                    <span style="z-index:2; line-height:1;">${icon}</span>
+                    <span class="omega-resource-glyph omega-resource-glyph--map" data-resource="${dep.resId}" style="--ui-resource-color:${color}; z-index:2;">${icon}</span>
                 </div>
             `;
 
@@ -1543,7 +1524,7 @@ Game.Map.renderResourceDeposits = function() {
             const popupContent = `
                 <div style="font-family:'Segoe UI', sans-serif; color:#f8fafc; width:250px; padding:8px; background:rgba(15,23,42,0.95); border:1px solid ${color}; border-radius:8px;">
                     <div style="font-size:13px; font-weight:bold; color:${color}; border-bottom:1px solid rgba(0,229,255,0.3); padding-bottom:4px; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
-                        <span>${icon}</span> <span>${(dep.name || '').toUpperCase()}</span>
+                        <span class="omega-resource-glyph omega-resource-glyph--popup" data-resource="${dep.resId}" style="--ui-resource-color:${color};">${icon}</span> <span>${(dep.name || '').toUpperCase()}</span>
                     </div>
                     <div style="font-size:11px; color:#cbd5e1; line-height:1.6; margin-bottom:8px;">
                         <div>🌍 Country: <strong style="color:#00e5ff;">${dep.country || dep.countryCode}</strong></div>
