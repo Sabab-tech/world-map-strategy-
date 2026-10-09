@@ -53,7 +53,7 @@ test('global oil/gas field and coal-mine catalog has broad country coverage and 
     assert.equal(site.identity.countryAssignmentStatus, site.countryId ? 'IDENTIFIED' : 'UNRESOLVED_COUNTRY_IDENTITY');
     if (!site.countryId) {
       assert.equal(site.operation?.commercialExtraction, false);
-      assert.equal(site.operation?.extractionEligibility, 'BLOCKED_MISSING_COORDINATES|BLOCKED_UNRESOLVED_COUNTRY_IDENTITY|BLOCKED_INCOMPLETE_SOURCE_IDENTITY');
+      assert.equal(site.operation?.extractionEligibility, 'BLOCKED_UNRESOLVED_COUNTRY_IDENTITY');
     } else if (!site.coordinates) {
       assert.equal(site.location?.coordinateStatus, 'MISSING_UPSTREAM_COORDINATES');
       assert.equal(site.operation?.commercialExtraction, false, 'unlocated site must not run as an executable extraction point');
