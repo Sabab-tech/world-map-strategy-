@@ -1212,14 +1212,14 @@ Game.Map.syncIndividualResourceMapState = function(resourceType) {
     const token = typeof resourceType === 'string' ? resourceType.trim().toUpperCase() : '';
     const normalizeResource = (value) => {
         const raw = String(value || '').trim().toLowerCase();
-        const compact = raw.replace(/[\\s_-]+/g, '');
+        const compact = raw.replace(/[\s_-]+/g, '');
         const aliases = {
             oil: 'crude_oil', crudeoil: 'crude_oil',
             gas: 'natural_gas', naturalgas: 'natural_gas',
             iron: 'iron_ore', ironore: 'iron_ore',
             rareearth: 'rare_earth'
         };
-        return aliases[compact] || raw.replace(/[\\s-]+/g, '_');
+        return aliases[compact] || raw.replace(/[\s-]+/g, '_');
     };
     const isNone = token === 'NONE' ||
         (Array.isArray(resourceType) && resourceType.length === 1 && String(resourceType[0]).trim().toUpperCase() === 'NONE');
