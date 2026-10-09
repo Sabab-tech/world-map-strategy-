@@ -417,10 +417,12 @@ async function init(){
    coordinateAudit[key]=(coordinateAudit[key]||0)+1;
   }
   const quarantinedCoordinates=sites.filter(s=>s.coordinateValidation?.status==='INSIDE_OTHER_COUNTRY');
+  const unresolvedOwnerGeometry=sites.filter(s=>s.coordinateValidation?.status==='OWNER_GEOMETRY_MISSING');
   g.__OMEGA_RESOURCE_COORDINATE_AUDIT__={
    status:countryGeometryIndex.size?'COMPLETE':'GEOMETRY_DATA_UNAVAILABLE',
    siteCount:sites.length,coordinateAudit,
-   quarantined:quarantinedCoordinates.map(s=>({siteId:s.siteId,countryId:s.countryId,siteName:s.siteName,coordinates:s.coordinates,...s.coordinateValidation}))
+   quarantined:quarantinedCoordinates.map(s=>({siteId:s.siteId,countryId:s.countryId,siteName:s.siteName,coordinates:s.coordinates,...s.coordinateValidation})),
+   unresolvedOwnerGeometry:unresolvedOwnerGeometry.map(s=>({siteId:s.siteId,countryId:s.countryId,siteName:s.siteName,coordinates:s.coordinates,...s.coordinateValidation}))
   };
   const mapApi=g.Game?.Map,resourceState=mapApi?.resourceState,resourceCatalog=mapApi?.resourceCatalog;
   if(Array.isArray(resourceCatalog)){
