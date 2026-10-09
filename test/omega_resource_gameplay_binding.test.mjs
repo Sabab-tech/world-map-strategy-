@@ -335,6 +335,56 @@ test('legacy and individual resource map modes share one activation state', () =
 });
 
 
+test('legacy resource filter selection synchronizes individual site scope and commodity filters', () => {
+  const mapEngine = read('map-engine-2.js');
+  const calls = [];
+  const context = {
+    document: { getElementById(){ return null; } },
+    window: { CountryIOS: null },
+    Game: {
+      currentActiveCountry: 'Saudi Arabia',
+      Map: {
+        isResourceModeActive: false,
+        resourceState: { enabled: false, scope: 'WORLD', selectedResources: new Set(['gold', 'coal']) },
+        resourceCatalog: [{id:'crude_oil'},{id:'natural_gas'},{id:'iron_ore'},{id:'copper'}],
+        resourceDepositsLayer: { clearLayers(){} },
+        renderResourceDeposits(value){ calls.push(value); },
+        renderCountryHubs(){}
+      }
+    }
+  };
+  vm.createContext(context);
+  const method = 'Game.Map.applyResourceMapFilter = function(resourceType)';
+  const start = mapEngine.indexOf(method);
+  assert.notEqual(start, -1, method + ' must exist');
+  const end = mapEngine.indexOf('\n};', start);
+  assert.notEqual(end, -1, 'applyResourceMapFilter must terminate');
+  vm.runInContext(mapEngine.slice(start, end + 3), context, { timeout: 1000 });
+
+  context.Game.Map.applyResourceMapFilter('crude-oil');
+  assert.equal(context.Game.Map.resourceState.enabled, true,
+    'choosing a resource filter must activate individual site markers');
+  assert.equal(context.Game.Map.isResourceModeActive, true,
+    'legacy and individual resource mode flags must stay synchronized');
+  assert.equal(context.Game.Map.resourceState.scope, 'NATION',
+    'an active country must restrict individual markers to that country');
+  assert.deepEqual(Array.from(context.Game.Map.resourceState.selectedResources), ['crude_oil'],
+    'the selected commodity must be applied to the individual marker layer');
+  assert.equal(calls.length, 1);
+
+  context.Game.currentActiveCountry = '';
+  context.Game.Map.applyResourceMapFilter(['iron-ore', 'copper']);
+  assert.equal(context.Game.Map.resourceState.scope, 'WORLD',
+    'without a selected country, resource filters must apply to the world scope');
+  assert.deepEqual(Array.from(context.Game.Map.resourceState.selectedResources), ['iron_ore', 'copper'],
+    'multi-resource selection must normalize IDs and apply all selected commodities');
+
+  context.Game.Map.applyResourceMapFilter('NONE');
+  assert.equal(context.Game.Map.resourceState.enabled, false,
+    'NONE must hide individual site markers as well as legacy deposits');
+  assert.equal(context.Game.Map.isResourceModeActive, false);
+});
+
 test('coordinate confidence is reported without claiming every stored point is exact', () => {
   const binding = read('omega_resource_gameplay_binding_v1.js');
   assert.match(binding, /coordinateStatusCounts/);

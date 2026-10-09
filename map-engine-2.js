@@ -1606,14 +1606,49 @@ Game.Map.toggleResourceOverlay = function() {
 Game.Map.applyResourceMapFilter = function(resourceType) {
     this.activeResourceFilter = resourceType;
     const btn = document.getElementById('btn-resource-overlay') || (Game.dom && Game.dom.btnResOverlay);
-
-    const isNone = (resourceType === 'NONE' || (Array.isArray(resourceType) && resourceType.length === 1 && resourceType[0] === 'NONE'));
+    const requested = Array.isArray(resourceType) ? resourceType : [resourceType];
+    const normalizedIds = requested.map(value => String(value ?? '').trim().toLowerCase()
+        .replace(/[\\s-]+/g, '_')).filter(Boolean);
+    const isNone = normalizedIds.length > 0 && normalizedIds.every(value => value === 'none');
+    const isAll = normalizedIds.includes('all');
+    const isCountrySentinel = normalizedIds.length > 0 && normalizedIds.every(value => value === 'country');
+    const aliasResourceId = value => {
+        const id = String(value ?? '').trim().toLowerCase().replace(/[\\s-]+/g, '_');
+        const compact = id.replace(/_/g, '');
+        return ({
+            oil: 'crude_oil', crudeoil: 'crude_oil', gas: 'natural_gas', naturalgas: 'natural_gas',
+            ironore: 'iron_ore', rareearth: 'rare_earth'
+        })[compact] || id;
+    };
+    const state = this.resourceState || (this.resourceState = {});
+    if (!(state.selectedResources instanceof Set)) {
+        state.selectedResources = new Set(Array.isArray(state.selectedResources) ? state.selectedResources : []);
+    }
+    const countrySelected = !!(Game.currentActiveCountry ||
+        (window.CountryIOS && window.CountryIOS.activeCountry));
+    state.scope = countrySelected ? 'NATION' : 'WORLD';
 
     if (isNone) {
+        state.enabled = false;
+        this.isResourceModeActive = false;
         if (btn) btn.classList.remove('active');
         if (this.resourceDepositsLayer) this.resourceDepositsLayer.clearLayers();
         if (this.renderCountryHubs) this.renderCountryHubs();
     } else {
+        state.enabled = true;
+        this.isResourceModeActive = true;
+        if (isAll) {
+            state.selectedResources = new Set((Array.isArray(this.resourceCatalog) ? this.resourceCatalog : [])
+                .map(item => aliasResourceId(item.id)).filter(Boolean));
+            state.selectedResources.add('all');
+        } else if (!isCountrySentinel) {
+            const ids = normalizedIds.filter(value => value !== 'none' && value !== 'country')
+                .map(aliasResourceId);
+            if (ids.length) state.selectedResources = new Set(ids);
+        } else if (state.selectedResources.size === 0) {
+            state.selectedResources = new Set((Array.isArray(this.resourceCatalog) ? this.resourceCatalog : [])
+                .map(item => aliasResourceId(item.id)).filter(Boolean));
+        }
         if (btn) btn.classList.add('active');
         if (this.renderResourceDeposits) {
             this.renderResourceDeposits(resourceType);
@@ -1628,7 +1663,7 @@ Game.Map.applyResourceMapFilter = function(resourceType) {
     }
 
     if (!Game.geojsonLayer) return;
-    if (resourceType === "NONE") { Game.geojsonLayer.resetStyle(); return; }
+    if (isNone) { Game.geojsonLayer.resetStyle(); return; }
 
     Game.geojsonLayer.eachLayer(layer => {
         const props = layer.feature.properties || {};
