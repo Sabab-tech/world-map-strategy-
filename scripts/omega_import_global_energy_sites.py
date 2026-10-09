@@ -189,7 +189,7 @@ def point_segment_distance_degrees(lon, lat, a, b):
     t = 0.0 if denom == 0 else max(0.0, min(1.0, -(x1 * dx + y1 * dy) / denom))
     return ((x1 + t * dx) ** 2 + (y1 + t * dy) ** 2) ** 0.5
 
-def country_boundary_distance(country_id, lat, lon, max_degrees=0.25):
+def country_boundary_distance(country_id, lat, lon, max_degrees=0.4):
     scale = max(0.01, math.cos(math.radians(lat)))
     for cid, geometry_type, coords, bbox in country_features:
         if cid != country_id:
@@ -325,6 +325,14 @@ def merge_coal_sites(first_site, second_site):
         primary_record["additionalSourceRecords"] = additional
     primary_coords = primary.get("coordinates")
     secondary_coords = secondary.get("coordinates")
+    if not primary_coords and not primary_record.get("coordinateQuarantineReason") and (secondary.get("sourceSiteRecord") or {}).get("coordinateQuarantineReason"):
+        secondary_source = secondary.get("sourceSiteRecord") or {}
+        primary_record["sourceReportedCoordinates"] = secondary_source.get("sourceReportedCoordinates")
+        primary_record["coordinateQuarantineReason"] = secondary_source.get("coordinateQuarantineReason")
+        primary.setdefault("location", {})["coordinateStatus"] = "REJECTED_COUNTRY_GEOMETRY_MISMATCH"
+        primary["location"]["coordinateReviewReason"] = "Duplicate source row carried coordinates that conflict with assigned country geometry; coordinates remain withheld"
+        primary.setdefault("operation", {})["commercialExtraction"] = False
+        primary["operation"]["extractionEligibility"] = "BLOCKED_MISSING_COORDINATES"
     if secondary_coords and secondary_coords != primary_coords:
         evidence = list(primary_record.get("additionalCoordinateEvidence") or [])
         item = {"coordinates": secondary_coords, "coordinateStatus": (secondary.get("location") or {}).get("coordinateStatus"), "coordinateSourceUrl": (secondary.get("location") or {}).get("coordinateSourceUrl"), "sourceRecordId": (secondary.get("sourceSiteRecord") or {}).get("sourceRecordId")}
@@ -492,7 +500,7 @@ for csv_path, default_status in [(COAL_ACTIVE, "UNKNOWN"), (COAL_CLOSED, "CLOSED
                 coordinate_accuracy = "SOURCE_COORDINATE_IN_DISPUTED_JURISDICTION"
             elif cid and lat is not None and lon is not None:
                 if point_country and point_country != cid:
-                    border_distance = country_boundary_distance(cid, lat, lon, 0.25) if source_country_authoritative else None
+                    border_distance = country_boundary_distance(cid, lat, lon, 0.4) if source_country_authoritative else None
                     if border_distance is not None:
                         coordinate_accuracy = "SOURCE_COORDINATE_NEAR_COUNTRY_BORDER_REVIEW_REQUIRED"
                     else:
@@ -500,7 +508,7 @@ for csv_path, default_status in [(COAL_ACTIVE, "UNKNOWN"), (COAL_CLOSED, "CLOSED
                 elif not point_country:
                     nearest_country, nearest_distance = nearest_country_within(lat, lon, 0.15)
                     if nearest_country != cid or nearest_distance is None:
-                        border_distance = country_boundary_distance(cid, lat, lon, 0.25) if source_country_authoritative else None
+                        border_distance = country_boundary_distance(cid, lat, lon, 0.4) if source_country_authoritative else None
                         if border_distance is not None:
                             coordinate_accuracy = "SOURCE_COORDINATE_NEAR_COUNTRY_BORDER_REVIEW_REQUIRED"
                         else:
@@ -530,6 +538,8 @@ for csv_path, default_status in [(COAL_ACTIVE, "UNKNOWN"), (COAL_CLOSED, "CLOSED
                 site = site_record("GLOBAL_COAL", cid, name, "coal", None, None, status, coal_source, coal_url, source_id, operator, year, coordinate_accuracy, production)
                 site["sourceSiteRecord"]["sourceReportedCoordinates"] = raw_source_coordinates
                 site["sourceSiteRecord"]["coordinateQuarantineReason"] = "COUNTRY_GEOMETRY_MISMATCH"
+                site["location"]["coordinateStatus"] = "REJECTED_COUNTRY_GEOMETRY_MISMATCH"
+                site["location"]["coordinateReviewReason"] = "Source coordinate conflicts with assigned country geometry beyond the review tolerance; pin is withheld until source evidence resolves the conflict"
             else:
                 site = site_record("GLOBAL_COAL", cid, name, "coal", lat, lon, status, coal_source, coal_url, source_id, operator, year, coordinate_accuracy, production)
             if country_method:
