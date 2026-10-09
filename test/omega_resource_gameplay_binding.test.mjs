@@ -257,7 +257,7 @@ test('runtime renders all global sites and applies nation/resource scope without
   assert.equal(markerCount(),2,'Saudi Arabia crude-oil filter must show both Ghawar and Safaniya, not one country aggregate');
   context.Game.Map.resourceState.selectedResources=vm.runInContext("new Set(['all'])",context);
   const diagnosticsAfterLoad=context.Omega.IndividualResourceSiteBinding.diagnostics();
-  assert.equal(diagnosticsAfterLoad.sourceRecordCounts.mineSites,199,'diagnostics must count all raw mine/site records');
+  assert.equal(diagnosticsAfterLoad.sourceRecordCounts.mineSites,201,'the 199 source mine/site records plus two test-only overlap fixtures must be counted');
   assert.equal(diagnosticsAfterLoad.sourceRecordCounts.runtimeDeposits,43,'diagnostics must count all raw runtime deposit records');
   assert.ok(Object.values(diagnosticsAfterLoad.coordinateStatusCounts).reduce((a,b)=>a+b,0)===diagnosticsAfterLoad.siteCount,
     'coordinate confidence reporting must cover every mapped site');
