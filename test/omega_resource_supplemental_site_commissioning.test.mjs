@@ -79,6 +79,36 @@ test('supplemental sites commission through the existing country resource runtim
   assert.equal(commissioned.sourceSiteRecord.upstreamRecordId, 'MIN-1', 'source provenance survives commissioning');
 });
 
+
+test('commissioning is not reported as complete when country runtime hydration fails', async () => {
+  const gameState = { simulation: { turn: 12 }, resource: {} };
+  const site = {
+    siteId: 'GLOBAL_DEP_USA_test_site', sourceType: 'GLOBAL_MINERAL_OCCURRENCE',
+    countryId: 'USA', siteName: 'Hydration Failure Test',
+    identity: { countryIso3: 'USA', resourceTypeId: 'copper' },
+    real: { resourceId: 'copper' },
+    coordinates: { lat: 37, lng: -80 }, location: { coordinates: { lat: 37, lng: -80 } },
+    operation: { status: 'UNKNOWN', commercialExtraction: false }
+  };
+  const original = {
+    registerSupplementalSiteCatalog() { return { status: 'READY' }; },
+    async hydrateCountry(countryId) { return { status: 'FAILED', countryId }; }
+  };
+  const context = {
+    console, Math, Number, String, Object, Array, Set, Map, Promise, JSON, Date,
+    structuredClone, Game: { state: gameState }, Omega: { ResourceEndowmentRuntime: original },
+    OmegaResourceEndowmentRuntime: original, addEventListener() {},
+    document: { getElementById() { return null; } }
+  };
+  context.globalThis = context;
+  vm.createContext(context);
+  vm.runInContext(read('omega_resource_supplemental_site_commissioning_v1.js'), context);
+  context.Omega.IndividualResourceSiteBinding = { sites: [site] };
+  const result = await context.Omega.ResourceEndowmentRuntime.commissionSupplementalSite(site.siteId);
+  assert.equal(result.status, 'COMMISSIONED_SIMULATION_HYDRATION_PENDING');
+  assert.equal(gameState.resource.USA.siteCommissioning[site.siteId].status, 'COMMISSIONED_SIMULATION');
+});
+
 test('commissioning bridge is loaded after Endowment and before the individual-site UI', () => {
   const html = read('index.html');
   const endowment = html.indexOf('src="omega_resource_endowment_runtime.js"');
