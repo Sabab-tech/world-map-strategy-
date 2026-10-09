@@ -14,21 +14,38 @@ const endowment=()=>g.Omega?.ResourceEndowmentRuntime||g.OmegaResourceEndowmentR
 const cid=v=>String(v||'').trim().toUpperCase();
 function setStatus(s){if(statusNode)statusNode.textContent=String(s||'');}
 function chosenSite(){return sites.find(s=>s.siteId===selected)||null;}
+function displayValue(value){
+ if(value===null||value===undefined||value==='')return 'Not specified';
+ if(Array.isArray(value))return value.length?value.map((item,i)=>'<div class="omega-site-list-item"><b>'+esc(typeof item==='object'?(item.name||item.routeName||item.id||('Item '+(i+1))):item)+'</b>'+(typeof item==='object'?'<pre>'+esc(JSON.stringify(item,null,2))+'</pre>':'')+'</div>').join(''):'None';
+ if(typeof value==='object')return '<pre>'+esc(JSON.stringify(value,null,2))+'</pre>';
+ return esc(value);
+}
 function detail(s){
  if(!detailNode)return;
  if(!s){detailNode.innerHTML='<p>Select an individual mine or field.</p>';return;}
  const sim=s.simulation||{},real=s.real||{},loc=s.location||{},coords=s.coordinates||loc.coordinates||{};
- detailNode.innerHTML=`<b>${esc(s.siteName)}</b><br><small>${esc(s.siteId)}</small>
- <p>Country: <b>${esc(s.countryId)}</b> · Commodity: <b>${esc(real.resourceId||s.sourceSiteRecord?.resourceId||'unknown')}</b></p>
- <p>Location: ${esc(loc.locality||loc.adminRegion||'unknown')} (${esc(coords.lat)}, ${esc(coords.lng)})</p>
- <p>Method: ${esc(real.extractionMethod||'UNSPECIFIED')} · Status: ${esc(real.operationStatus||s.sourceSiteRecord?.status||'UNKNOWN')}</p>
- <p>Gameplay reserve: ${Number(sim.reserve?.quantity||0).toLocaleString()} ${esc(sim.reserve?.unit||'units')} <small>(${esc(sim.reserve?.status||'UNAVAILABLE')})</small></p>
- <p>Site capacity: ${Number(sim.nominalDailyCapacity||0).toLocaleString()} / day · Utilization ${Math.round((Number(sim.utilization)||0)*100)}%</p>
- <p>Location evidence: ${esc(coords.coordinateStatus||loc.coordinateStatus||s.real?.coordinateStatus||'see provenance')} · Values labelled SIMULATED are gameplay values.</p>`;
+ const operation=s.operation||s.operationProfile||{},ownership=s.ownership||{},processing=s.processing||{};
+ const routes=sim.transportRoute||sim.transportRoutes||s.transportRoute||s.logistics?.routes||s.routes||[];
+ const reserve=sim.reserve||sim.recoverableReserve||s.quantitative?.reserve||{};
+ const routeRows=Array.isArray(routes)?routes:(routes?[routes]:[]);
+ const routeHtml=routeRows.length?routeRows.map((route,i)=>{
+  const row=route&&typeof route==='object'?route:{route};
+  const label=row.routeName||row.name||row.routeId||row.id||('Route '+(i+1));
+  return '<section class="omega-site-route"><b>'+esc(label)+'</b><pre>'+esc(JSON.stringify(row,null,2))+'</pre></section>';
+ }).join(''):'<p>No per-site transport route is recorded in the loaded site profile.</p>';
+ detailNode.innerHTML='<style>#omega-individual-detail .omega-site-section{border-top:1px solid #34465c;padding-top:8px;margin-top:9px}#omega-individual-detail .omega-site-section h4{margin:0 0 6px;color:#9fcbe0;font:700 11px/1.4 Arial,sans-serif;text-transform:uppercase;letter-spacing:.4px}#omega-individual-detail .omega-site-route{padding:7px;margin:6px 0;background:#172437;border:1px solid #34465c;border-radius:5px}#omega-individual-detail pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:150px;overflow:auto;margin:5px 0 0;color:#c7d3df;font:10px/1.4 monospace}#omega-individual-detail p{margin:5px 0}</style>'+
+ '<b>'+esc(s.siteName)+'</b><br><small>'+esc(s.siteId)+'</small>'+
+ '<p>Country: <b>'+esc(s.countryId)+'</b> · Commodity: <b>'+esc(real.resourceId||s.sourceSiteRecord?.resourceId||s.sourceSiteRecord?.resId||s.identity?.resourceTypeId||'unknown')+'</b></p>'+
+ '<p>Location: '+esc(loc.locality||loc.adminRegion||loc.countryName||'unknown')+' ('+esc(coords.lat)+', '+esc(coords.lng)+')</p>'+
+ '<div class="omega-site-section"><h4>Extraction & ownership</h4><p>Method: <b>'+esc(real.extractionMethod||operation.extractionMethod||operation.method||'UNSPECIFIED')+'</b></p><p>Status: '+esc(real.operationStatus||operation.status||operation.operationalStatus||s.sourceSiteRecord?.status||'UNKNOWN')+'</p><p>Owner: '+esc(ownership.owner||real.owner||'Not specified')+' · Operator: '+esc(ownership.operator||real.operator||'Not specified')+'</p></div>'+
+ '<div class="omega-site-section"><h4>Reserve & site capacity</h4><p>Gameplay reserve: '+displayValue(typeof reserve==='object'?((reserve.quantity??reserve.value??'')+' '+(reserve.unit||'')):reserve)+' <small>('+esc(reserve.status||sim.reserveStatus||'SIMULATION DATA')+')</small></p><p>Nominal capacity: '+esc(sim.nominalDailyCapacity??sim.capacityModel?.nominalDailyCapacity??'Not specified')+' / day</p><p>Utilization: '+esc(sim.utilization===undefined?'Not specified':Math.round(Number(sim.utilization)*100)+'%')+' · Recovery: '+esc(sim.recovery===undefined?'Not specified':Math.round(Number(sim.recovery)*100)+'%')+'</p><small>Simulation assumptions are gameplay values, not verified real-world production rates.</small></div>'+
+ '<div class="omega-site-section"><h4>Individual transport route & delivery</h4>'+routeHtml+'<p>Route data is taken from this site record; no country-average route is substituted.</p></div>'+
+ '<div class="omega-site-section"><h4>Processing & factory outputs</h4><p>Upstream: '+displayValue(processing.upstreamProcess||sim.upstreamProcess||'Not specified')+'</p><p>Midstream: '+displayValue(processing.midstreamProcess||sim.midstreamProcess||'Not specified')+'</p><p>Factory outputs: '+displayValue(processing.refinedOutputs||processing.factoryOutputs||sim.factoryOutputs||[])+'</p><p>Downstream sectors: '+displayValue(processing.downstreamSectors||[])+'</p></div>'+
+ '<div class="omega-site-section"><h4>Coordinate & data provenance</h4><p>'+esc(coords.coordinateStatus||loc.coordinateStatus||s.real?.coordinateStatus||'Coordinate status not supplied')+'</p><p>Source: '+esc(s.sourcePath||s.sourceReference?.source||s.sourceReference?.url||s.sourceSiteRecord?.source||'Existing OMEGA resource JSON / site registry')+'</p></div>';
 }
 function setSelected(id){
  const s=sites.find(x=>x.siteId===id);if(!s)return;
- selected=id;if(selectNode)selectNode.value=id;detail(s);
+ selected=id;if(selectNode)selectNode.value=id;detail(s);if(panel)panel.style.display='block';
  const c=s.coordinates||s.location?.coordinates||{};
  const map=g.Game?.Map?.map||g.map;
  if(map&&Number.isFinite(Number(c.lat))&&Number.isFinite(Number(c.lng))&&typeof map.setView==='function')map.setView([Number(c.lat),Number(c.lng)],Math.max(7,Number(map.getZoom?.()||4)));
@@ -95,22 +112,36 @@ function addMapMarkers(){
  if(markerLayer&&map.hasLayer?.(markerLayer))map.removeLayer(markerLayer);
  markerLayer=L.layerGroup();
  const mapApi=g.Game?.Map||{},resourceState=mapApi.resourceState||{};
+ // The legacy deposit layer duplicates many of these locations. The individual-site layer is authoritative while resource mode is active.
+ if(resourceState.enabled&&mapApi.resourceDepositsLayer?.clearLayers)mapApi.resourceDepositsLayer.clearLayers();
  if(!resourceState.enabled)return;
  const scope=String(resourceState.scope||'NATION').toUpperCase();
  const activeCountry=String(g.Game?.currentActiveCountry||g.CountryIOS?.activeCountry||'').trim();
  if(scope!=='WORLD'&&!activeCountry)return;
- const norm=v=>String(v||'').replace(/[_-]+/g,' ').replace(/\\s+/g,' ').trim().toUpperCase();
- const aliases={oil:'crude_oil',crudeoil:'crude_oil',crude_oil:'crude_oil',gas:'natural_gas',naturalgas:'natural_gas',natural_gas:'natural_gas',iron:'iron_ore',ironore:'iron_ore',iron_ore:'iron_ore',rareearth:'rare_earth',rare_earth:'rare_earth',lead:'zinc',platinum:'silver',palladium:'silver'};
- const canonical=id=>aliases[String(id||'').toLowerCase().replace(/[\\s-]+/g,'')]||aliases[String(id||'').toLowerCase()]||String(id||'').toLowerCase();
+ const norm=v=>String(v||'').replace(/[_-]+/g,' ').replace(/\s+/g,' ').trim().toUpperCase();
+ const aliases={oil:'crude_oil',crudeoil:'crude_oil',gas:'natural_gas',naturalgas:'natural_gas',iron:'iron_ore',ironore:'iron_ore',rareearth:'rare_earth'};
+ const canonical=id=>{const raw=String(id||'').trim().toLowerCase();const compact=raw.replace(/[\s_-]+/g,'');return aliases[compact]||raw.replace(/[\s-]+/g,'_');};
  const selected=resourceState.selectedResources instanceof Set?resourceState.selectedResources:new Set();
+ const selectedKeys=new Set(Array.from(selected,canonical));
+ const selectedAll=selectedKeys.has('all');
  const resourceCatalog=mapApi.resourceCatalog||g.Game?.resourceCatalog||[];
- let rendered=0;
+ const coordinateGroups=new Map();
+ for(const site of sites){
+  const c=site.coordinates||site.location?.coordinates||{};
+  const lat=Number(c.lat),lng=Number(c.lng);
+  if(!Number.isFinite(lat)||!Number.isFinite(lng)||lat < -90||lat > 90||lng < -180||lng > 180)continue;
+  const key=lat.toFixed(5)+'|'+lng.toFixed(5);
+  if(!coordinateGroups.has(key))coordinateGroups.set(key,[]);
+  coordinateGroups.get(key).push(site);
+ }
+ let rendered=0,offsetMarkerCount=0,overlapGroupCount=0;
+ const renderedCoordinateKeys=new Set();
  for(const s of sites){
   const c=s.coordinates||s.location?.coordinates||{},lat=Number(c.lat),lng=Number(c.lng);
   if(!Number.isFinite(lat)||!Number.isFinite(lng)||lat < -90||lat > 90||lng < -180||lng > 180)continue;
   const rawResource=String(s.real?.resourceId||s.sourceSiteRecord?.resourceId||s.sourceSiteRecord?.resourceTypeId||s.sourceSiteRecord?.resId||s.identity?.resourceTypeId||'').toLowerCase();
   const resourceId=canonical(rawResource);
-  if(selected.size>0&&!selected.has('all')&&!selected.has(resourceId)&&!selected.has(rawResource))continue;
+  if(selected.size>0&&!selectedAll&&!selectedKeys.has(resourceId)&&!selectedKeys.has(canonical(rawResource)))continue;
   if(scope!=='WORLD'){
    const candidateCountries=[s.countryId,s.countryName,s.location?.countryName,s.sourceSiteRecord?.country,s.sourceSiteRecord?.countryCode,s.sourceSiteRecord?.countryId].map(norm).filter(Boolean);
    if(!candidateCountries.includes(norm(activeCountry)))continue;
@@ -118,13 +149,21 @@ function addMapMarkers(){
   const resource=resourceCatalog.find(r=>canonical(r.id)===resourceId||String(r.id||'').toLowerCase()===rawResource);
   const glyph=String(resource?.icon||resourceId.slice(0,2).toUpperCase()||'RS').replace(/[<>&"]/g,'');
   const color=/^#[0-9a-f]{6}$/i.test(resource?.color||'')?resource.color:'#76b7d8';
-  const icon=L.divIcon({className:'omega-individual-site-marker',html:'<span style="--site-color:'+color+'">'+esc(glyph)+'</span>',iconSize:[26,26],iconAnchor:[13,13],tooltipAnchor:[0,-12]});
+  const coordKey=lat.toFixed(5)+'|'+lng.toFixed(5),group=coordinateGroups.get(coordKey)||[s],position=group.findIndex(x=>x.siteId===s.siteId);
+  let dx=0,dy=0;
+  if(group.length>1){
+   renderedCoordinateKeys.add(coordKey);
+   const radius=Math.max(20,14/Math.sin(Math.PI/group.length)+2);
+   const angle=(Math.max(0,position)*(2*Math.PI/group.length))-(Math.PI/2);
+   dx=Math.round(Math.cos(angle)*radius);dy=Math.round(Math.sin(angle)*radius);offsetMarkerCount++;
+  }
+  const icon=L.divIcon({className:'omega-individual-site-marker',html:'<span style="--site-color:'+color+'">'+esc(glyph)+'</span>',iconSize:[26,26],iconAnchor:[13-dx,13-dy],tooltipAnchor:[-dx,-12-dy]});
   const m=L.marker([lat,lng],{icon,title:String(s.siteName||s.siteId),keyboard:true,alt:String(s.siteName||s.siteId)});
   m.bindTooltip?.(String(s.siteName||s.siteId)+' · '+s.countryId+' · '+rawResource,{direction:'top',sticky:true});
   m.on('click',()=>setSelected(s.siteId));m.addTo(markerLayer);rendered++;
  }
  markerLayer.addTo(map);
- g.__OMEGA_INDIVIDUAL_RESOURCE_MARKER_DIAGNOSTICS__={loadedSiteCount:sites.length,renderedMarkerCount:rendered,scope,activeCountry:activeCountry||null,resourceFilterCount:selected.size};
+ g.__OMEGA_INDIVIDUAL_RESOURCE_MARKER_DIAGNOSTICS__={loadedSiteCount:sites.length,renderedMarkerCount:rendered,scope,activeCountry:activeCountry||null,resourceFilterCount:selected.size,overlapGroupCount:renderedCoordinateKeys.size,offsetMarkerCount};
 }
 function attachMapRefreshHooks(){
  const targets=[
@@ -181,7 +220,7 @@ function mount(){
  const btn=document.createElement('button');btn.id='omega-individual-resource-open';btn.textContent='INDIVIDUAL SITES';btn.style.cssText='position:fixed;left:12px;bottom:18px;z-index:1000001;padding:10px 12px;background:#172331;color:#e9d29a;border:1px solid #bca366;border-radius:6px;font:700 11px monospace;letter-spacing:.5px';
  btn.addEventListener('click',show);document.body.appendChild(btn);
  panel=document.createElement('section');panel.id='omega-individual-resource-panel';panel.style.cssText='display:none;position:fixed;left:12px;bottom:62px;z-index:1000002;width:min(390px,calc(100vw - 24px));max-height:72vh;overflow:auto;padding:14px;background:#101923;color:#e8edf2;border:1px solid #9b895b;border-radius:8px;box-shadow:0 10px 36px #000b;font:12px/1.5 monospace';
- panel.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center"><b>INDIVIDUAL RESOURCE SITE</b><button id="omega-individual-close" style="background:#293440;color:#fff;border:1px solid #66717b;padding:3px 8px">CLOSE</button></div><p id="omega-individual-status">Loading 199 site records…</p><label for="omega-individual-select">Exact site identity</label><select id="omega-individual-select" style="display:block;width:100%;padding:8px;margin:5px 0 10px;background:#202b37;color:#fff;border:1px solid #697887"></select><div id="omega-individual-detail"></div><div style="display:flex;gap:7px;margin-top:12px"><button id="omega-individual-plan" style="flex:1;padding:9px;background:#253c4b;color:#fff;border:1px solid #547c91">PLAN EXTRACTION</button><button id="omega-individual-execute" style="flex:1;padding:9px;background:#423a27;color:#f2d99a;border:1px solid #bca366">EXECUTE SITE</button></div><small style="display:block;margin-top:9px;color:#aab4bf">No country-average substitution. Execution is reported only when an exact occurrence binding is found and the runtime confirms a committed result.</small>';
+ panel.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center"><b>INDIVIDUAL RESOURCE SITE</b><button id="omega-individual-close" style="background:#293440;color:#fff;border:1px solid #66717b;padding:3px 8px">CLOSE</button></div><p id="omega-individual-status">Loading individual resource sites and route profiles…</p><label for="omega-individual-select">Exact site identity</label><select id="omega-individual-select" style="display:block;width:100%;padding:8px;margin:5px 0 10px;background:#202b37;color:#fff;border:1px solid #697887"></select><div id="omega-individual-detail"></div><div style="display:flex;gap:7px;margin-top:12px"><button id="omega-individual-plan" style="flex:1;padding:9px;background:#253c4b;color:#fff;border:1px solid #547c91">PLAN EXTRACTION</button><button id="omega-individual-execute" style="flex:1;padding:9px;background:#423a27;color:#f2d99a;border:1px solid #bca366">EXECUTE SITE</button></div><small style="display:block;margin-top:9px;color:#aab4bf">No country-average substitution. Execution is reported only when an exact occurrence binding is found and the runtime confirms a committed result.</small>';
  document.body.appendChild(panel);
  statusNode=panel.querySelector('#omega-individual-status');detailNode=panel.querySelector('#omega-individual-detail');selectNode=panel.querySelector('#omega-individual-select');
  panel.querySelector('#omega-individual-close').addEventListener('click',()=>panel.style.display='none');
