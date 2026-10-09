@@ -111,6 +111,20 @@ function buildCountryGeometryIndex(world){
  }
  return index;
 }
+function resolveCountryCode(site,index){
+ const raw=cid(site?.countryId);
+ if(index?.has(raw))return raw;
+ const source=site?.sourceSiteRecord||{};
+ const aliases=[site?.location?.countryName,site?.countryName,source?.countryName,source?.country,source?.countryCode,source?.location?.countryName]
+  .map(v=>String(v||'').replace(/[_-]+/g,' ').replace(/\\s+/g,' ').trim().toUpperCase()).filter(Boolean);
+ for(const feature of index?.values?.()||[]){
+  const names=[feature.name,feature.id].map(v=>String(v||'').replace(/[_-]+/g,' ').replace(/\\s+/g,' ').trim().toUpperCase());
+  if(aliases.some(alias=>names.includes(alias)))return feature.id;
+ }
+ const knownAliases={'KSA':'SAU','KINGDOM OF SAUDI ARABIA':'SAU','UNITED STATES':'USA','UNITED STATES OF AMERICA':'USA','UAE':'ARE','RUSSIA':'RUS','SOUTH KOREA':'KOR','NORTH KOREA':'PRK','VIETNAM':'VNM','IRAN':'IRN','BOLIVIA':'BOL','TANZANIA':'TZA','VENEZUELA':'VEN','SYRIA':'SYR','LAOS':'LAO','BRUNEI':'BRN','MOLDOVA':'MDA','CZECH REPUBLIC':'CZE','PALESTINE':'PSE','TAIWAN':'TWN'};
+ for(const alias of aliases)if(knownAliases[alias]&&index?.has(knownAliases[alias]))return knownAliases[alias];
+ return raw;
+}
 function validateSiteCoordinate(site,index){
  const c=site.coordinates||site.location?.coordinates||{},lat=Number(c.lat),lng=Number(c.lng);
  if(!Number.isFinite(lat)||!Number.isFinite(lng))return {status:'INVALID_COORDINATES'};
@@ -389,7 +403,16 @@ async function init(){
   const countryGeometryIndex=buildCountryGeometryIndex(getData('world.json'));
   const coordinateAudit={};
   for(const site of sites){
+   const sourceCountryId=site.countryId;
+   const resolvedCountryId=resolveCountryCode(site,countryGeometryIndex);
+   if(resolvedCountryId&&countryGeometryIndex.has(resolvedCountryId)&&resolvedCountryId!==sourceCountryId){
+    site.sourceCountryId=sourceCountryId;
+    site.countryId=resolvedCountryId;
+    site.identity={...(site.identity||{}),countryIso3:resolvedCountryId};
+    site.location={...(site.location||{}),countryName:site.location?.countryName||countryGeometryIndex.get(resolvedCountryId)?.name};
+   }
    site.coordinateValidation=validateSiteCoordinate(site,countryGeometryIndex);
+   if(site.sourceCountryId)site.coordinateValidation.sourceCountryId=site.sourceCountryId;
    const key=site.coordinateValidation.status;
    coordinateAudit[key]=(coordinateAudit[key]||0)+1;
   }
@@ -435,7 +458,7 @@ async function init(){
    return {status:'READY',siteCount:sites.length,uniqueSiteIds:new Set(sites.map(s=>s.siteId)).size,countryCount:new Set(sites.map(s=>s.countryId)).size,sourceFiles:sources.map(x=>x.url),sourceRecordCounts,coordinateStatusCounts,mergedDepositAliases,individualMapping:true};
   }};
   attachMapRefreshHooks();scheduleMarkerRender();setTimeout(()=>scheduleMarkerRender(),1000);setTimeout(()=>scheduleMarkerRender(),3000);
-  setStatus('READY · '+sites.length+' individual sites · '+new Set(sites.map(s=>s.countryId)).size+' countries · source coordinate confidence preserved');
+  setStatus('READY · '+sites.length+' individual sites · '+new Set(sites.map(s=>s.countryId)).size+' countries · '+quarantinedCoordinates.length+' wrong-country coordinate records quarantined');
  }catch(e){setStatus('FAILED · '+String(e?.message||e));g.OmegaIndividualResourceSiteBindingError=String(e?.message||e);g.__OMEGA_RESOURCE_SITE_BINDING_INIT__=false;}
 }
 g.addEventListener?.('OMEGA_READY',()=>void init());
