@@ -94,24 +94,52 @@ function addMapMarkers(){
  if(!map||!L||typeof L.marker!=='function'||typeof L.divIcon!=='function')return;
  if(markerLayer&&map.hasLayer?.(markerLayer))map.removeLayer(markerLayer);
  markerLayer=L.layerGroup();
+ const mapApi=g.Game?.Map||{},resourceState=mapApi.resourceState||{};
+ if(!resourceState.enabled)return;
+ const scope=String(resourceState.scope||'NATION').toUpperCase();
+ const activeCountry=String(g.Game?.currentActiveCountry||g.CountryIOS?.activeCountry||'').trim();
+ if(scope!=='WORLD'&&!activeCountry)return;
+ const norm=v=>String(v||'').replace(/[_-]+/g,' ').replace(/\\s+/g,' ').trim().toUpperCase();
+ const aliases={oil:'crude_oil',crudeoil:'crude_oil',crude_oil:'crude_oil',gas:'natural_gas',naturalgas:'natural_gas',natural_gas:'natural_gas',iron:'iron_ore',ironore:'iron_ore',iron_ore:'iron_ore',rareearth:'rare_earth',rare_earth:'rare_earth',lead:'zinc',platinum:'silver',palladium:'silver'};
+ const canonical=id=>aliases[String(id||'').toLowerCase().replace(/[\\s-]+/g,'')]||aliases[String(id||'').toLowerCase()]||String(id||'').toLowerCase();
+ const selected=resourceState.selectedResources instanceof Set?resourceState.selectedResources:new Set();
+ const resourceCatalog=mapApi.resourceCatalog||g.Game?.resourceCatalog||[];
+ let rendered=0;
  for(const s of sites){
   const c=s.coordinates||s.location?.coordinates||{},lat=Number(c.lat),lng=Number(c.lng);
-  if(!Number.isFinite(lat)||!Number.isFinite(lng))continue;
-  const resourceId=String(s.real?.resourceId||s.sourceSiteRecord?.resourceId||s.identity?.resourceTypeId||'').toLowerCase();
-  const resourceCatalog=g.Game?.Map?.resourceCatalog||g.Game?.resourceCatalog||[];
-  const resource=resourceCatalog.find(r=>String(r.id||'').toLowerCase()===resourceId);
+  if(!Number.isFinite(lat)||!Number.isFinite(lng)||lat < -90||lat > 90||lng < -180||lng > 180)continue;
+  const rawResource=String(s.real?.resourceId||s.sourceSiteRecord?.resourceId||s.sourceSiteRecord?.resourceTypeId||s.sourceSiteRecord?.resId||s.identity?.resourceTypeId||'').toLowerCase();
+  const resourceId=canonical(rawResource);
+  if(selected.size>0&&!selected.has('all')&&!selected.has(resourceId)&&!selected.has(rawResource))continue;
+  if(scope!=='WORLD'){
+   const candidateCountries=[s.countryId,s.countryName,s.location?.countryName,s.sourceSiteRecord?.country,s.sourceSiteRecord?.countryCode,s.sourceSiteRecord?.countryId].map(norm).filter(Boolean);
+   if(!candidateCountries.includes(norm(activeCountry))&&!candidateCountries.includes(norm(s.countryId)))continue;
+  }
+  const resource=resourceCatalog.find(r=>canonical(r.id)===resourceId||String(r.id||'').toLowerCase()===rawResource);
   const glyph=String(resource?.icon||resourceId.slice(0,2).toUpperCase()||'RS').replace(/[<>&"]/g,'');
   const color=/^#[0-9a-f]{6}$/i.test(resource?.color||'')?resource.color:'#76b7d8';
-  const icon=L.divIcon({
-   className:'omega-individual-site-marker',
-   html:'<span style="--site-color:'+color+'">'+esc(glyph)+'</span>',
-   iconSize:[26,26],iconAnchor:[13,13],tooltipAnchor:[0,-12]
-  });
+  const icon=L.divIcon({className:'omega-individual-site-marker',html:'<span style="--site-color:'+color+'">'+esc(glyph)+'</span>',iconSize:[26,26],iconAnchor:[13,13],tooltipAnchor:[0,-12]});
   const m=L.marker([lat,lng],{icon,title:String(s.siteName||s.siteId),keyboard:true,alt:String(s.siteName||s.siteId)});
-  m.bindTooltip?.(String(s.siteName||s.siteId)+' · '+s.countryId+' · '+resourceId,{direction:'top',sticky:true});
-  m.on('click',()=>setSelected(s.siteId));m.addTo(markerLayer);
+  m.bindTooltip?.(String(s.siteName||s.siteId)+' · '+s.countryId+' · '+rawResource,{direction:'top',sticky:true});
+  m.on('click',()=>setSelected(s.siteId));m.addTo(markerLayer);rendered++;
  }
  markerLayer.addTo(map);
+ g.__OMEGA_INDIVIDUAL_RESOURCE_MARKER_DIAGNOSTICS__={loadedSiteCount:sites.length,renderedMarkerCount:rendered,scope,activeCountry:activeCountry||null,resourceFilterCount:selected.size};
+}
+function attachMapRefreshHooks(){
+ const mapApi=g.Game?.Map;
+ if(!mapApi)return;
+ for(const name of ['renderResourceDeposits','setResourceScope','applyResourceMapFilter','toggleResourceMode']){
+  const original=mapApi[name];
+  if(typeof original!=='function'||original.__omegaSiteRefreshWrapped)continue;
+  const wrapped=function(...args){
+   const result=original.apply(this,args);
+   setTimeout(()=>addMapMarkers(),0);
+   return result;
+  };
+  wrapped.__omegaSiteRefreshWrapped=true;
+  mapApi[name]=wrapped;
+ }
 }
 function show(){
  if(!panel)return;panel.style.display=panel.style.display==='none'?'block':'none';
@@ -216,8 +244,8 @@ async function init(){
   selectNode.innerHTML=sites.map(s=>'<option value="'+esc(s.siteId)+'">'+esc(s.countryId+' · '+s.siteName+' · '+(s.real?.resourceId||'?'))+'</option>').join('');
   selected=sites[0].siteId;selectNode.value=selected;detail(chosenSite());
   g.Omega=g.Omega||{};
-  g.Omega.IndividualResourceSiteBinding={version:VERSION,sites,select:setSelected,diagnostics:()=>({status:'READY',siteCount:sites.length,uniqueSiteIds:new Set(sites.map(s=>s.siteId)).size,countryCount:new Set(sites.map(s=>s.countryId)).size,sourceFiles:sources.map(x=>x.url),mergedDepositAliases,individualMapping:true,missingCoordinates:0})};
-  scheduleMarkerRender();setTimeout(()=>scheduleMarkerRender(),1000);setTimeout(()=>scheduleMarkerRender(),3000);
+  g.Omega.IndividualResourceSiteBinding={version:VERSION,sites,select:setSelected,refresh:addMapMarkers,diagnostics:()=>({status:'READY',siteCount:sites.length,uniqueSiteIds:new Set(sites.map(s=>s.siteId)).size,countryCount:new Set(sites.map(s=>s.countryId)).size,sourceFiles:sources.map(x=>x.url),mergedDepositAliases,individualMapping:true,missingCoordinates:0})};
+  attachMapRefreshHooks();scheduleMarkerRender();setTimeout(()=>scheduleMarkerRender(),1000);setTimeout(()=>scheduleMarkerRender(),3000);
   setStatus('READY · '+sites.length+' individual sites · '+new Set(sites.map(s=>s.countryId)).size+' countries · exact coordinates');
  }catch(e){setStatus('FAILED · '+String(e?.message||e));g.OmegaIndividualResourceSiteBindingError=String(e?.message||e);g.__OMEGA_RESOURCE_SITE_BINDING_INIT__=false;}
 }
