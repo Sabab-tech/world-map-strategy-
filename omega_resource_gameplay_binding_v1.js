@@ -241,7 +241,7 @@ function addMapMarkers(){
  const visibleSites=sites.filter(s=>{
   const c=s.coordinates||s.location?.coordinates||{},lat=Number(c.lat),lng=Number(c.lng);
   if(!Number.isFinite(lat)||!Number.isFinite(lng)||lat < -90||lat > 90||lng < -180||lng > 180)return false;
-  if(bounds&&zoom>2&&!bounds.contains([lat,lng]))return false;
+  if(typeof map.getContainer==='function'&&bounds&&typeof bounds.contains==='function'&&zoom>2&&!bounds.contains([lat,lng]))return false;
   // Do not draw a site's marker inside another country's land polygon. Keep the source row
   // intact and expose the exact mismatch in diagnostics instead of inventing a new location.
   if(s.coordinateValidation?.status==='INSIDE_OTHER_COUNTRY')return false;
