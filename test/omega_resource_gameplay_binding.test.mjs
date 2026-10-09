@@ -67,7 +67,7 @@ console.log('Actual master-registry -> realism/hardening -> industrial runtime e
 test('individual site map markers use resource-specific catalog glyphs and accessible exact-site tooltips', () => {
   const binding = read('omega_resource_gameplay_binding_v1.js');
   const css = read('omega_ui_visual_system_v1.css');
-  assert.match(binding, /L\\.marker\\(\\[lat,?\\s*lng\\],\\{icon,title:/);
+  assert.match(binding, /L\.marker\(\[lat,?\s*lng\],\{icon,title:/);
   assert.match(binding, /resourceCatalog\.find/);
   assert.match(binding, /siteName\|\|s\.siteId/);
   assert.match(binding, /siteCount:sites\.length/);
