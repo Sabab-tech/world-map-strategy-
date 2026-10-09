@@ -366,9 +366,18 @@ async function execute(){
  if(s.operation?.commercialExtraction!==true){setStatus('BLOCKED · this is a deposit/occurrence, not a confirmed active mine or producing field. It is registered but not automatically executable.');return;}
  if(!occurrence){setStatus('BLOCKED · site identity is registered but its Part 05 reserve/extraction occurrence is not executable. No batch or inventory was created.');return;}
  const result=await e.extractCountry(s.countryId,[occurrence]);
- const ok=!['FAILED','UNAVAILABLE','BLOCKED'].includes(String(result?.status||'').toUpperCase())&&(result?.status==='COMMITTED'||result?.status==='EXECUTED'||result?.result?.status==='COMMITTED'||Array.isArray(result?.result?.records)&&result.result.records.length>0);
- setStatus(ok?'EXTRACTION COMMITTED · '+s.siteId+' · turn '+(state().simulation?.turn??state().turn??0):'EXTRACTION NOT CONFIRMED · '+JSON.stringify({status:result?.status,reason:result?.reason||result?.result?.reason||null,siteId:s.siteId}).slice(0,240));
- g.__OMEGA_LAST_INDIVIDUAL_SITE_EXTRACTION__={siteId:s.siteId,result};
+ const producedRows=Array.isArray(result?.result?.records)?result.result.records:(Array.isArray(result?.records)?result.records:[]);
+ const produced=producedRows.find(row=>String(row?.occurrenceKey||'')===String(occurrence))||producedRows[0]||null;
+ const ok=!['FAILED','UNAVAILABLE','BLOCKED'].includes(String(result?.status||'').toUpperCase())&&(result?.status==='COMMITTED'||result?.status==='EXECUTED'||result?.result?.status==='COMMITTED'||producedRows.length>0);
+ let shipmentResult=null;
+ if(ok&&produced?.producedBatch?.batchId){
+   const net=api();
+   if(net?.dispatchShipment)shipmentResult=net.dispatchShipment({countryId:s.countryId,siteId:s.siteId,resourceId:produced.resourceId||s.real?.resourceId,quantity:produced.approvedQuantity||produced.producedBatch.quantity,unit:produced.producedBatch.unit||'TONNES',batchId:produced.producedBatch.batchId,occurrenceKey:produced.occurrenceKey,transportMode:s.operation?.preferredTransportMode||undefined});
+   else shipmentResult={status:'BLOCKED',reason:'INDUSTRIAL_NETWORK_DISPATCH_API_UNAVAILABLE'};
+ }
+ const stage=shipmentResult?.status==='DISPATCHED'?'SHIPMENT DISPATCHED · '+shipmentResult.shipment?.shipmentId+' · ETA turn '+shipmentResult.shipment?.etaTurn:(shipmentResult?'SHIPMENT BLOCKED · '+(shipmentResult.reason||'NO_MATCHING_FACTORY_OR_ROUTE'):'BATCH RETAINED IN COUNTRY RAW WAREHOUSE · no shipment record returned');
+ setStatus(ok?'EXTRACTION COMMITTED · '+s.siteId+' · '+stage+' · turn '+(state().simulation?.turn??state().turn??0):'EXTRACTION NOT CONFIRMED · '+JSON.stringify({status:result?.status,reason:result?.reason||result?.result?.reason||null,siteId:s.siteId}).slice(0,240));
+ g.__OMEGA_LAST_INDIVIDUAL_SITE_EXTRACTION__={siteId:s.siteId,result,shipment:shipmentResult,siteReferenceKey:ref.siteReferenceKey||ref.siteId,occurrenceKey:occurrence,sourceBatchId:produced?.producedBatch?.batchId||null};
 }
 function mount(){
  if(document.getElementById('omega-individual-resource-open'))return;
