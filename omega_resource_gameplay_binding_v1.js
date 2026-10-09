@@ -60,7 +60,7 @@ function normalizeSourceSite(raw,countryHint){
  return {siteId:stableId,countryId,siteName:siteName||stableId,real:{...(raw.real||{}),resourceId},sourceSiteRecord:raw,coordinates:coords,
   location:{...loc,coordinates:coords,locality:loc.locality||raw.region||raw.adminRegion||''},
   identity:{...identity,countryIso3:countryId,resourceTypeId:resourceId,siteType:identity.siteType||raw.siteType||raw.type||'RESOURCE_SITE'},
-  operation:raw.operation||p.operation||raw.extractionProfile||{},processing:raw.processing||p.processing||{}};
+  operation:raw.operation||p.operation||raw.extractionProfile||null,processing:raw.processing||p.processing||null};
 }
 function discoverSourceSites(root){
  const found=[],seenObjects=new Set();
