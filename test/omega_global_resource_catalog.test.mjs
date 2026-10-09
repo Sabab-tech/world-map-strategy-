@@ -134,6 +134,9 @@ test('research-backed coal identity overrides resolve known missing country and 
   assert.equal(sibovc.location.coordinateStatus, 'SOURCE_COORDINATE_IN_DISPUTED_JURISDICTION');
   assert.equal(sibovc.location.coordinateJurisdiction, 'Kosovo');
   assert.equal(catalog.unresolvedCounts.siteRecordsWithoutCountry, 0, 'all sites with source country/province evidence must be assigned');
+  const morningstar = byName.get(key('Morningstar'));
+  assert.equal(morningstar.location.coordinateStatus, 'REJECTED_COUNTRY_GEOMETRY_MISMATCH', 'the far-offshore source point must stay quarantined with an explicit reason');
+  assert.ok(morningstar.sourceSiteRecord.sourceReportedCoordinates, 'retain the rejected source coordinates for audit');
   assert.ok(catalog.unresolvedCounts.siteRecordsWithoutCoordinates <= 1021, 'coordinate gaps must continue to shrink without inventing mine locations');
 });
 
