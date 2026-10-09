@@ -387,7 +387,8 @@ async function init(){
   const catalog=getData(CATALOG_URL),master=getData(MASTER_URL),globalCatalog=getData('resource_site_global_deposit_catalog_v1.json'),energyCatalog=getData('resource_site_global_energy_catalog_v1.json');
   const catalogSites=Array.isArray(catalog?.sites)?catalog.sites:[];
   const masterSites=Array.isArray(master?.sites)?master.sites:[];
-  const globalSites=Array.isArray(globalCatalog?.sites)?globalCatalog.sites:[];\n  const globalEnergySites=Array.isArray(energyCatalog?.sites)?energyCatalog.sites:[];
+  const globalSites=Array.isArray(globalCatalog?.sites)?globalCatalog.sites:[];
+  const globalEnergySites=Array.isArray(energyCatalog?.sites)?energyCatalog.sites:[];
   const masterById=new Map(masterSites.map(s=>[String(s.siteId),s]));
   const catalogById=new Map(catalogSites.map(s=>[String(s.siteId),s]));
   const discovered=sources.filter(x=>x.url==='resources.json'||x.url==='resources_2.json').flatMap(x=>discoverSourceSites(x.data));
@@ -477,7 +478,8 @@ async function init(){
    const coordinateStatusCounts={};
    for(const site of sites){const status=coordinateStatusOf(site);coordinateStatusCounts[status]=(coordinateStatusCounts[status]||0)+1;}
    const sourceRecordCounts=sources.reduce((counts,source)=>{
-     if(source.url==='resource_site_global_deposit_catalog_v1.json')counts.globalMineralDeposits=Array.isArray(source.data?.sites)?source.data.sites.length:0;\n     if(source.url==='resource_site_global_energy_catalog_v1.json')counts.globalEnergySites=Array.isArray(source.data?.sites)?source.data.sites.length:0;
+     if(source.url==='resource_site_global_deposit_catalog_v1.json')counts.globalMineralDeposits=Array.isArray(source.data?.sites)?source.data.sites.length:0;
+     if(source.url==='resource_site_global_energy_catalog_v1.json')counts.globalEnergySites=Array.isArray(source.data?.sites)?source.data.sites.length:0;
      if(source.url==='resource_site_global_deposit_catalog_v1.json')counts.globalMineralDeposits=Array.isArray(source.data?.sites)?source.data.sites.length:0;
     if(source.url==='resources.json'||source.url==='resources_2.json'){
      const profiles=source.data?.GSRSK_Master_CountryProfiles_v14?.countryProfiles||{};
