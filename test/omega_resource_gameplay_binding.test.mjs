@@ -190,6 +190,7 @@ test('runtime renders all global sites and applies nation/resource scope without
   };
   context.window = context;
   vm.createContext(context);
+  context.Game.Map.resourceState.selectedResources = vm.runInContext("new Set(['all'])",context);
   vm.runInContext(binding,context,{filename:'omega_resource_gameplay_binding_v1.js',timeout:3000});
   events.get('OMEGA_READY')();
   await new Promise(resolve => setImmediate(resolve));
@@ -205,7 +206,7 @@ test('runtime renders all global sites and applies nation/resource scope without
   context.Omega.IndividualResourceSiteBinding.refresh();
   assert.equal(markerCount(),4,'Bangladesh scope must show its four distinct physical resource locations, not all countries');
   context.Game.Map.resourceState.scope='WORLD';
-  context.Game.Map.resourceState.selectedResources=new Set(['coal']);
+  context.Game.Map.resourceState.selectedResources=vm.runInContext("new Set(['coal'])",context);
   context.Omega.IndividualResourceSiteBinding.refresh();
   assert.ok(markerCount()>0 && markerCount()<239,'resource filter must narrow the global site markers');
 });
