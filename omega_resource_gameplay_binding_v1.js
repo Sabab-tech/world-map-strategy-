@@ -6,6 +6,7 @@
 const VERSION='1.0.0';
 const CATALOG_URL='resource_site_canonical_catalog_v1.json';
 const MASTER_URL='resource_site_master_registry_v1.json';
+const ROUTE_MAP_URL='resource_site_factory_route_map_v1.json';
 let sites=[], selected=null, markers=[], markerLayer=null, panel=null, statusNode=null, detailNode=null, selectNode=null;
 const esc=v=>String(v??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const state=()=>g.Game?.state||g.gameState||{};
@@ -94,9 +95,17 @@ function mount(){
 async function init(){
  mount();
  try{
-  const [a,b]=await Promise.all([fetch(CATALOG_URL,{cache:'no-store'}),fetch(MASTER_URL,{cache:'no-store'})]);
-  if(!a.ok||!b.ok)throw new Error('SITE_DATA_FETCH_FAILED');
-  const catalog=await a.json(),master=await b.json();
+  const [a,b,c]=await Promise.all([fetch(CATALOG_URL,{cache:'no-store'}),fetch(MASTER_URL,{cache:'no-store'}),fetch(ROUTE_MAP_URL,{cache:'no-store'})]);
+  if(!a.ok||!b.ok||!c.ok)throw new Error('SITE_DATA_FETCH_FAILED');
+  const catalog=await a.json(),master=await b.json(),routeMap=await c.json();
+  if(!Array.isArray(routeMap.records)||routeMap.records.length!==199)throw new Error('SITE_FACTORY_ROUTE_MAP_COUNT_MISMATCH');
+  g.Omega=g.Omega||{};
+  g.OmegaResourceSiteMasterResearchData=master;
+  g.Omega.ResourceSiteMasterResearchData=master;
+  g.OmegaResourceSiteCanonicalCatalogData=catalog;
+  g.Omega.ResourceSiteCanonicalCatalogData=catalog;
+  g.OmegaResourceSiteFactoryRouteMapData=routeMap;
+  g.Omega.ResourceSiteFactoryRouteMapData=routeMap;
   if(!Array.isArray(catalog.sites)||catalog.sites.length!==199||!Array.isArray(master.sites)||master.sites.length!==199)throw new Error('SITE_REGISTRY_COUNT_MISMATCH');
   const map=new Map(master.sites.map(s=>[s.siteId,s]));
   sites=catalog.sites.map(s=>{const m=map.get(s.siteId);return m?Object.assign({},m,{location:s.location,coordinates:s.location?.coordinates,identity:s.identity,operation:s.operation,processing:s.processing}):null;}).filter(Boolean);
