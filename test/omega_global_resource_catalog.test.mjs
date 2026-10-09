@@ -105,6 +105,9 @@ test('research-backed coal identity overrides resolve known missing country and 
   assert.ok((miVina.sourceSiteRecord.additionalCoordinateEvidence || []).some(evidence => evidence.coordinateSourceUrl === 'https://www.boe.es/diario_boe/txt.php?id=BOE-B-2022-37429'), 'official mine-area centroid must remain auditable as alternate coordinate evidence');
   assert.equal(catalog.sites.filter(site => key(site.siteName) === key('Morningstar')).length, 1, 'duplicate name rows must merge after province-based identity resolution');
   assert.equal(catalog.unresolvedCounts.siteRecordsWithoutCountry, 0, 'province and source-name evidence should resolve the remaining country identities');
+  assert.equal(catalog.unresolvedCounts.coal_missing_name, 0, 'stable source IDs are valid identities even when a display name is absent');
+  const sourceIdOnly = catalog.sites.find(site => site.identity?.sourceIdentityStatus === 'SOURCE_ID_ONLY');
+  if (sourceIdOnly) assert.equal(sourceIdOnly.siteName, sourceIdOnly.sourceSiteRecord.sourceRecordId, 'source-ID-only sites must keep their stable source ID as the visible label');
   const sibovc = byName.get(key('Sibovc Coal Mine'));
   assert.equal(sibovc.identity.sourceReportedJurisdiction, 'Kosovo');
   assert.equal(sibovc.identity.jurisdictionCountryId, 'XKX');
