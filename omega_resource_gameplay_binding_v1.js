@@ -349,10 +349,13 @@ async function plan(){
 }
 async function execute(){
  const s=chosenSite();if(!s)return setStatus('BLOCKED: select a site first');
+ if(!s.countryId)return setStatus('BLOCKED · unresolved sovereign country identity. Record is retained for research but cannot mutate a country resource ledger.');
+ const coords=s.coordinates||s.location?.coordinates||{};
+ if(!Number.isFinite(Number(coords.lat))||!Number.isFinite(Number(coords.lng)))return setStatus('BLOCKED · upstream coordinates are missing. No site execution or inventory mutation occurred.');
+ if(s.operation?.commercialExtraction!==true)return setStatus('BLOCKED · deposit is not confirmed as an active commercial mine/field. It is registered but not auto-executable.');
  const e=endowment();if(!e?.hydrateCountry||!e?.extractCountry)return setStatus('BLOCKED: endowment runtime unavailable');
  setStatus('Loading country state for '+s.siteId+'…');
  await e.hydrateCountry(s.countryId);
- if(!s.countryId){setStatus('BLOCKED · unresolved sovereign country identity.');return;}
  const refs=e.countryMineSiteReferences?.(s.countryId)||[];
  const ref=findOccurrence(s,refs);
  if(!ref){setStatus('BLOCKED · No exact site-to-occurrence binding for '+s.siteId+'; no extraction was executed.');return;}
