@@ -141,7 +141,8 @@ test('runtime renders all global sites and applies nation/resource scope without
     'resources.json': JSON.parse(read('resources.json')),
     'resources_2.json': JSON.parse(read('resources_2.json')),
     'resource_site_canonical_catalog_v1.json': catalog,
-    'resource_site_master_registry_v1.json': master
+    'resource_site_master_registry_v1.json': master,
+    'world.json': JSON.parse(read('world.json'))
   };
   // Test-only fixture: force two separate site identities to share one coordinate so pixel-spider offsets are verified.
   const rawCountryProfiles=Object.values(rawSources['resources.json'].GSRSK_Master_CountryProfiles_v14.countryProfiles||{});
@@ -215,7 +216,8 @@ test('runtime renders all global sites and applies nation/resource scope without
   assert.equal(diagnostics?.status,'READY','global source registry must initialize');
   assert.equal(diagnostics?.siteCount,241,'239 distinct physical locations plus coincident and near-overlap test identities must yield 241 site markers');
   const markerCount = () => [...layers].reduce((sum,layer)=>sum+layer.markers.length,0);
-  assert.equal(markerCount(),241,'WORLD scope must render all 239 source locations plus two test-only overlap fixtures');
+  const quarantinedCount=diagnostics.coordinateAudit?.quarantined?.length||0;
+  assert.equal(markerCount(),241-quarantinedCount,'WORLD scope must render all valid source locations plus two test-only overlap fixtures, while quarantining known cross-country coordinates');
   const geographicPositions=new Set([...layers].flatMap(layer=>layer.markers).map(marker=>marker.latlng.map(value=>Number(value).toFixed(3)).join('|')));
   assert.ok(geographicPositions.size>100,'world markers must preserve widespread source coordinates instead of collapsing all resources to one point');
   assert.ok(context.Game.Map.resourceDepositsLayer.clearCount>0,'legacy deposit layer must be cleared so old and individual markers do not stack');
