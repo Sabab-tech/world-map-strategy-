@@ -113,7 +113,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   color:var(--ui-muted)!important;font-size:11px!important;line-height:1.25!important;
   transition:none!important;
 }
-.res-chip-item:has(input:checked){
+ .res-chip-item.selected{
   background:var(--ui-accent-soft)!important;border-color:var(--ui-accent)!important;color:var(--ui-text)!important;
 }
 .res-chip-item input[type="checkbox"]{
@@ -147,7 +147,8 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 #btn-exit-res-filter{color:var(--ui-danger)!important;}
 .resource-deposit-compact-icon{width:30px!important;height:30px!important;min-width:30px!important;min-height:30px!important;max-width:30px!important;max-height:30px!important;overflow:visible!important;}
 .resource-deposit-compact-icon>div{box-shadow:none!important;transition:none!important;}
-.resource-deposit-compact-icon [style*="animation"]{animation:none!important;display:none!important;}
+.resource-deposit-compact-icon *{box-shadow:none!important;animation:none!important;transition:none!important;}
+.resource-deposit-compact-icon [style*="animation"]{display:none!important;}
 .city-btn-marker{background:#101b2a!important;border:1px solid var(--ui-accent)!important;box-shadow:none!important;border-radius:5px!important;padding:2px 5px!important;}
 .city-btn-dot{box-shadow:none!important;}
 .city-btn-label{font:600 10px/1.2 var(--ui-font)!important;color:var(--ui-text)!important;text-shadow:0 1px 2px #000!important;}
