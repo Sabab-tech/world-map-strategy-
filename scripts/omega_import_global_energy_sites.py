@@ -65,6 +65,25 @@ for feature in WORLD.get("features", []):
         if name:
             country_name_to_id[norm(name)] = cid
             country_id_to_name[cid] = str(name)
+SITE_COUNTRY_OVERRIDES = {
+    # Exact source names cross-checked against authoritative or project-level records.
+    "ANGLESEA COAL MINE": ("AUS", "RESEARCHED_SITE_NAME_OVERRIDE", "https://www.gem.wiki/Anglesea_mine"),
+    "CHARLESTON COAL MINE": ("NZL", "RESEARCHED_SITE_NAME_OVERRIDE", "https://mapcarta.com/W501444171"),
+    "KNOX CREEK JAWBONE MINE": ("USA", "RESEARCHED_SITE_NAME_OVERRIDE", "https://www.sec.gov/Archives/edgar/data/1687187/000155837023003736/metc-20221231xex96d2.htm"),
+    "MI VINA COAL MINE": ("ESP", "RESEARCHED_SITE_NAME_OVERRIDE", "https://www.boe.es/diario_boe/txt.php?id=BOE-B-2022-37429"),
+    "SANTA MARIA COAL MINE": ("ESP", "RESEARCHED_SITE_NAME_OVERRIDE", "https://commons.wikimedia.org/wiki/File:Europelta_locality_map.jpg"),
+    "SIERRA DE ARCOS COAL MINE": ("ESP", "RESEARCHED_SITE_NAME_OVERRIDE", "https://www.sipca.es/censo/15-INM-TER-033-029-13/Mina/Sierra/de/Arcos.html"),
+    "PANIAN COAL MINE": ("PHL", "RESEARCHED_SITE_NAME_OVERRIDE", "https://nepis.epa.gov/Exe/ZyPURL.cgi?Dockey=P101CV2H.TXT"),
+    # OMEGA has no XKX country profile. Preserve Kosovo as the reported jurisdiction while
+    # routing the site through Serbia's existing game-state runtime, explicitly as a game mapping.
+    "SIBOVC COAL MINE": ("SRB", "DISPUTED_JURISDICTION_MAPPED_TO_EXISTING_GAME_PROFILE", "https://www.gem.wiki/Sibovc_Coal_Mine"),
+}
+SITE_COORDINATE_OVERRIDES = {
+    "ANGLESEA COAL MINE": (-38.39835, 144.16306, "WEB_RESEARCHED_SITE_POINT", "https://www.mindat.org/loc-342829.html"),
+    # Official BOE UTM boundary vertices for the Mi Viña mine waste/coal area converted from
+    # ETRS89 / UTM zone 30N to WGS84; the point is the area centroid, not an exact shaft.
+    "MI VINA COAL MINE": (40.8343215, -0.6257263, "OFFICIAL_MINE_AREA_CENTROID_APPROXIMATE", "https://www.boe.es/diario_boe/txt.php?id=BOE-B-2022-37429"),
+}
 ALIASES = {
     "UNITED STATES OF AMERICA": "USA", "UNITED STATES": "USA", "USA": "USA",
     "RUSSIAN FEDERATION": "RUS", "SOUTH KOREA": "KOR", "KOREA SOUTH": "KOR",
@@ -177,7 +196,7 @@ def site_record(prefix, cid, name, resource, lat, lon, status, source, source_ur
     }
 
 records = {}
-unresolved = {"energy_missing_coordinates": 0, "energy_missing_country": 0, "energy_missing_name": 0, "energy_missing_commodity": 0, "coal_missing_coordinates": 0, "coal_missing_country": 0, "coal_missing_name": 0, "coal_country_inferred_from_coordinates": 0}
+unresolved = {"energy_missing_coordinates": 0, "energy_missing_country": 0, "energy_missing_name": 0, "energy_missing_commodity": 0, "coal_missing_coordinates": 0, "coal_missing_country": 0, "coal_missing_name": 0, "coal_country_inferred_from_coordinates": 0, "coal_country_resolved_from_research": 0, "coal_coordinates_resolved_from_research": 0}
 energy_source = "Global Energy Monitor — Global Oil and Gas Extraction Tracker (March 2026)"
 energy_url = "https://web.archive.org/web/20260305063452id_/https://globalenergymonitor.org/wp-content/uploads/2026/03/Global-Oil-and-Gas-Extraction-Tracker-March-2026.xlsx"
 if not GOGET_XLSX.exists():
@@ -255,25 +274,53 @@ for csv_path, default_status in [(COAL_ACTIVE, "UNKNOWN"), (COAL_CLOSED, "CLOSED
     with csv_path.open("r", encoding="utf-8-sig", newline="") as handle:
         for row in csv.DictReader(handle):
             coal_source_rows_seen += 1
+            original_name = first(row.get("Mine Name"), row.get("Mine name"), row.get("name"))
+            source_id = first(row.get("Mine ID"), row.get("Mine Name"), row.get("Mine name"), row.get("name"))
+            name = original_name or source_id or f"Unidentified coal source row {coal_source_rows_seen}"
+            name_key = norm(name)
+            coordinate_override = SITE_COORDINATE_OVERRIDES.get(name_key)
             lat = as_float(first(row.get("Latitude"), row.get("latitude")))
             lon = as_float(first(row.get("Longitude"), row.get("longitude")))
+            coordinate_accuracy = "UPSTREAM_COORDINATE_NOT_INDEPENDENTLY_VALIDATED"
+            coordinate_source_url = None
             if lat is None or lon is None or not (-90 <= lat <= 90 and -180 <= lon <= 180):
-                unresolved["coal_missing_coordinates"] += 1
-                lat, lon = None, None
+                if coordinate_override:
+                    lat, lon, coordinate_accuracy, coordinate_source_url = coordinate_override
+                    unresolved["coal_coordinates_resolved_from_research"] += 1
+                else:
+                    unresolved["coal_missing_coordinates"] += 1
+                    lat, lon = None, None
             cid = country_id(row.get("Country / Area"), row.get("Country"), row.get("country"))
+            country_method = "SOURCE_COUNTRY_FIELD" if cid else None
+            country_override = SITE_COUNTRY_OVERRIDES.get(name_key)
+            if not cid and country_override:
+                cid, country_method, country_evidence_url = country_override
+                unresolved["coal_country_resolved_from_research"] += 1
+            else:
+                country_evidence_url = None
             if not cid and lat is not None and lon is not None:
                 cid = country_from_coordinates(lat, lon)
                 if cid:
+                    country_method = "POINT_IN_COUNTRY_POLYGON"
                     unresolved["coal_country_inferred_from_coordinates"] += 1
             if not cid:
                 unresolved["coal_missing_country"] += 1
-            original_name = first(row.get("Mine Name"), row.get("Mine name"), row.get("name"))
-            source_id = first(row.get("Mine ID"), row.get("Mine Name"), row.get("Mine name"), row.get("name"))
             if not original_name:
                 unresolved["coal_missing_name"] += 1
-            name = original_name or source_id or f"Unidentified coal source row {coal_source_rows_seen}"
             status = first(row.get("Status"), row.get("status"), default_status)
-            site = site_record("GLOBAL_COAL", cid, name, "coal", lat, lon, status, coal_source, coal_url, source_id, row.get("Parent Company"), row.get("Opening Year"), "UPSTREAM_COORDINATE_NOT_INDEPENDENTLY_VALIDATED", row.get("Production (Mtpa)"))
+            site = site_record("GLOBAL_COAL", cid, name, "coal", lat, lon, status, coal_source, coal_url, source_id, row.get("Parent Company"), row.get("Opening Year"), coordinate_accuracy, row.get("Production (Mtpa)"))
+            if country_method:
+                site["identity"]["countryAssignmentMethod"] = country_method
+            if country_evidence_url:
+                site["identity"]["countryAssignmentEvidenceUrl"] = country_evidence_url
+                site["provenance"]["countryAssignmentEvidenceUrl"] = country_evidence_url
+            if name_key == "SIBOVC COAL MINE":
+                site["identity"].update({"sourceReportedJurisdiction":"Kosovo","jurisdictionType":"DISPUTED_TERRITORY","jurisdictionCountryId":"XKX","jurisdictionAuthority":"Source identifies Kosovo; OMEGA currently routes this site through its existing SRB game profile"})
+                site["sourceSiteRecord"]["sourceReportedJurisdiction"] = "Kosovo"
+                site["provenance"]["countryAssignmentMethod"] = "DISPUTED_JURISDICTION_MAPPED_TO_EXISTING_GAME_PROFILE"
+            if coordinate_source_url:
+                site["location"]["coordinateSourceUrl"] = coordinate_source_url
+                site["provenance"]["coordinateSourceUrl"] = coordinate_source_url
             if not original_name:
                 site["identity"]["sourceIdentityStatus"] = "INCOMPLETE_SOURCE_IDENTITY"
                 site["operation"]["commercialExtraction"] = False
