@@ -1205,6 +1205,62 @@ Game.Map.resourceCatalog = [
     { id: 'semiconductor', name: 'Silicon / Chips', icon: 'Si', color: '#a9a1d3' }
 ];
 
+// One authoritative selection state for both legacy map presets and individual site markers.
+Game.Map.syncIndividualResourceMapState = function(resourceType) {
+    const state = this.resourceState;
+    if (!state) return;
+    const token = typeof resourceType === 'string' ? resourceType.trim().toUpperCase() : '';
+    const normalizeResource = (value) => {
+        const raw = String(value || '').trim().toLowerCase();
+        const compact = raw.replace(/[\\s_-]+/g, '');
+        const aliases = {
+            oil: 'crude_oil', crudeoil: 'crude_oil',
+            gas: 'natural_gas', naturalgas: 'natural_gas',
+            iron: 'iron_ore', ironore: 'iron_ore',
+            rareearth: 'rare_earth'
+        };
+        return aliases[compact] || raw.replace(/[\\s-]+/g, '_');
+    };
+    const isNone = token === 'NONE' ||
+        (Array.isArray(resourceType) && resourceType.length === 1 && String(resourceType[0]).trim().toUpperCase() === 'NONE');
+
+    if (isNone) {
+        state.enabled = false;
+        state.__omegaDefaultSelection = false;
+        if (state.selectedResources instanceof Set) state.selectedResources.clear();
+        this.isResourceModeActive = false;
+        return;
+    }
+
+    state.enabled = true;
+    this.isResourceModeActive = true;
+
+    let nextSelection = null;
+    if (token === 'COUNTRY') {
+        state.scope = 'NATION';
+        nextSelection = (this.resourceCatalog || []).map(item => item.id);
+        state.__omegaDefaultSelection = true;
+    } else if (token === 'ALL') {
+        state.scope = 'WORLD';
+        nextSelection = (this.resourceCatalog || []).map(item => item.id);
+        state.__omegaDefaultSelection = true;
+    } else if (Array.isArray(resourceType)) {
+        nextSelection = resourceType;
+        state.__omegaDefaultSelection = false;
+        const activeCountry = String(Game.currentActiveCountry || window.CountryIOS?.activeCountry || '').trim();
+        if (!activeCountry && state.scope !== 'WORLD') state.scope = 'WORLD';
+    } else if (typeof resourceType === 'string' && token) {
+        nextSelection = [resourceType];
+        state.__omegaDefaultSelection = false;
+        const activeCountry = String(Game.currentActiveCountry || window.CountryIOS?.activeCountry || '').trim();
+        if (!activeCountry && state.scope !== 'WORLD') state.scope = 'WORLD';
+    }
+
+    if (nextSelection) {
+        state.selectedResources = new Set(nextSelection.map(normalizeResource).filter(Boolean));
+    }
+};
+
 Game.Map.setResourceScope = function(scope) {
     const normalizedScope = String(scope || 'NATION').toUpperCase() === 'WORLD' ? 'WORLD' : 'NATION';
     this.resourceState.scope = normalizedScope;
@@ -1361,7 +1417,7 @@ Game.Map.renderResourceDeposits = function() {
     this.resourceDepositsLayer.clearLayers();
 
     // Auto-populate all catalog resources if selectedResources is empty but enabled
-    if (this.resourceState && this.resourceState.enabled && (!this.resourceState.selectedResources || this.resourceState.selectedResources.size === 0)) {
+    if (this.resourceState && this.resourceState.enabled && this.resourceState.__omegaDefaultSelection && (!this.resourceState.selectedResources || this.resourceState.selectedResources.size === 0)) {
         if (Array.isArray(this.resourceCatalog)) {
             this.resourceState.selectedResources = new Set(this.resourceCatalog.map(r => r.id.toLowerCase()));
         }
@@ -1599,6 +1655,7 @@ Game.Map.toggleResourceOverlay = function() {
         if (relBtn) relBtn.classList.remove('active');
 
         const activeFilter = this.activeResourceFilter || 'COUNTRY';
+        if (typeof this.syncIndividualResourceMapState === 'function') this.syncIndividualResourceMapState(activeFilter);
         this.renderResourceDeposits(activeFilter);
     }
 };
@@ -1608,6 +1665,7 @@ Game.Map.applyResourceMapFilter = function(resourceType) {
     const btn = document.getElementById('btn-resource-overlay') || (Game.dom && Game.dom.btnResOverlay);
 
     const isNone = (resourceType === 'NONE' || (Array.isArray(resourceType) && resourceType.length === 1 && resourceType[0] === 'NONE'));
+    if (typeof this.syncIndividualResourceMapState === 'function') this.syncIndividualResourceMapState(resourceType);
 
     if (isNone) {
         if (btn) btn.classList.remove('active');
@@ -1730,6 +1788,7 @@ Game.Map.toggleResourceMode = function() {
         } else if (this.selectedResourceChips && this.selectedResourceChips.size > 0) {
             filterVal = Array.from(this.selectedResourceChips);
         }
+        if (typeof this.syncIndividualResourceMapState === 'function') this.syncIndividualResourceMapState(filterVal);
         this.renderResourceDeposits(filterVal);
     } else {
         // Mode OFF: Hide Resources, Restore Cities
@@ -1758,11 +1817,14 @@ Game.Map.toggleResourceFilterMenu = function() {
     if (isHidden) {
         box.classList.remove('hidden');
         box.style.display = 'flex';
+        if (typeof this.renderResourceCheckboxesInPanel === 'function') this.renderResourceCheckboxesInPanel();
+        if (typeof this.setResourceScope === 'function') this.setResourceScope(this.resourceState?.scope || 'NATION');
     } else {
         box.classList.add('hidden');
         box.style.display = 'none';
     }
-};
+    if (window.updateGlobalBackButtonVisibility) window.updateGlobalBackButtonVisibility();
+}
 
 Game.Map.toggleMetricDropdown = function(e) {
     if (e && e.stopPropagation) e.stopPropagation();
