@@ -255,6 +255,33 @@ test('runtime renders all global sites and applies nation/resource scope without
   context.Game.Map.resourceState.selectedResources=vm.runInContext("new Set(['crude_oil'])",context);
   context.Omega.IndividualResourceSiteBinding.refresh();
   assert.equal(markerCount(),2,'Saudi Arabia crude-oil filter must show both Ghawar and Safaniya, not one country aggregate');
+
+  // Exercise the real CountryIOS selection path (upper-case country name), plus every country
+  // that has more than one source site/deposit. This catches records hidden by country scope.
+  context.Game.currentActiveCountry='';
+  context.Game.Map.resourceState.selectedResources=vm.runInContext("new Set(['all'])",context);
+  const groupsByCountry=new Map();
+  for(const site of context.Omega.IndividualResourceSiteBinding.sites){
+    if(!groupsByCountry.has(site.countryId))groupsByCountry.set(site.countryId,[]);
+    groupsByCountry.get(site.countryId).push(site);
+  }
+  let multiSiteCountryCount=0;
+  for(const [countryId,rows] of groupsByCountry){
+    if(rows.length<2)continue;
+    multiSiteCountryCount++;
+    const activeName=rows[0].location?.countryName||rows[0].sourceSiteRecord?.country||countryId;
+    context.CountryIOS.activeCountry=String(activeName).toUpperCase();
+    context.Game.Map.resourceState.scope='NATION';
+    context.Omega.IndividualResourceSiteBinding.refresh();
+    assert.equal(markerCount(),rows.length,
+      countryId+' must display every distinct source site/deposit in its country scope');
+  }
+  assert.ok(multiSiteCountryCount>=20,'country-scope integration must cover every currently multi-site country');
+  context.CountryIOS.activeCountry='SAUDI ARABIA';
+  context.Game.Map.resourceState.scope='NATION';
+  context.Omega.IndividualResourceSiteBinding.refresh();
+  assert.equal(markerCount(),3,'CountryIOS uppercase selection must display all Saudi mine/oilfield records');
+
   context.Game.Map.resourceState.selectedResources=vm.runInContext("new Set(['all'])",context);
   const diagnosticsAfterLoad=context.Omega.IndividualResourceSiteBinding.diagnostics();
   assert.equal(diagnosticsAfterLoad.sourceRecordCounts.mineSites,201,'the 199 source mine/site records plus two test-only overlap fixtures must be counted');
@@ -305,6 +332,7 @@ test('legacy and individual resource map modes share one activation state', () =
   };
   vm.createContext(context);
   for (const method of [
+    'Game.Map.syncIndividualResourceMapState = function(resourceType)',
     'Game.Map.clearAndResetResourceMode = function()',
     'Game.Map.applyResourceFilterAndClose = function()',
     'Game.Map.toggleResourceMode = function()'
@@ -341,4 +369,73 @@ test('coordinate confidence is reported without claiming every stored point is e
   assert.match(binding, /SOURCE_STATUS_UNSPECIFIED/);
   assert.doesNotMatch(binding, /exact coordinates/i,
     'estimated or unverified points must not be advertised as exact');
+});
+
+
+
+test('legacy resource presets synchronize individual-site selection and scope', () => {
+  const mapEngine=read('map-engine-2.js');
+  const context={
+    window:null,
+    document:{getElementById(){return null;}},
+    Game:{
+      currentActiveCountry:'',
+      Map:{
+        isResourceModeActive:false,
+        resourceState:{enabled:false,scope:'NATION',__omegaDefaultSelection:true,selectedResources:new Set(['coal'])},
+        resourceCatalog:[{id:'coal'},{id:'crude_oil'},{id:'natural_gas'},{id:'iron_ore'}],
+        selectedResourceChips:new Set(),
+        renderResourceDeposits(value){this.lastLegacyFilter=value;},
+        renderGlobalCapitalHubs(){},
+        renderCountryHubs(){}
+      }
+    }
+  };
+  context.window=context;
+  vm.createContext(context);
+  for(const method of [
+    'Game.Map.syncIndividualResourceMapState = function(resourceType)',
+    'Game.Map.applyResourceMapFilter = function(resourceType)'
+  ]){
+    const start=mapEngine.indexOf(method);
+    assert.notEqual(start,-1,method+' must exist');
+    const end=mapEngine.indexOf('\\n};',start);
+    assert.notEqual(end,-1,method+' must terminate');
+    vm.runInContext(mapEngine.slice(start,end+3),context,{timeout:1000});
+  }
+
+  context.Game.Map.applyResourceMapFilter('COUNTRY');
+  assert.equal(context.Game.Map.resourceState.enabled,true,'COUNTRY preset must enable individual sites');
+  assert.equal(context.Game.Map.isResourceModeActive,true);
+  assert.equal(context.Game.Map.resourceState.scope,'NATION');
+  assert.deepEqual([...context.Game.Map.resourceState.selectedResources].sort(),['coal','crude_oil','iron_ore','natural_gas']);
+
+  context.Game.Map.applyResourceMapFilter('ALL');
+  assert.equal(context.Game.Map.resourceState.enabled,true,'ALL preset must enable individual sites');
+  assert.equal(context.Game.Map.resourceState.scope,'WORLD','ALL preset must not stay trapped in nation scope');
+  assert.deepEqual([...context.Game.Map.resourceState.selectedResources].sort(),['coal','crude_oil','iron_ore','natural_gas']);
+
+  context.Game.currentActiveCountry='SAU';
+  context.Game.Map.applyResourceMapFilter(['crude-oil','natural-gas']);
+  assert.equal(context.Game.Map.resourceState.enabled,true);
+  assert.equal(context.Game.Map.resourceState.scope,'WORLD','manual multi-select preserves an explicitly selected WORLD scope');
+  assert.deepEqual([...context.Game.Map.resourceState.selectedResources].sort(),['crude_oil','natural_gas']);
+  assert.equal(context.Game.Map.resourceState.__omegaDefaultSelection,false,'manual selections must not be re-expanded as the default all-resource set');
+
+  context.Game.Map.applyResourceMapFilter('NONE');
+  assert.equal(context.Game.Map.resourceState.enabled,false,'NONE preset must disable individual sites');
+  assert.equal(context.Game.Map.isResourceModeActive,false);
+  assert.equal(context.Game.Map.resourceState.selectedResources.size,0);
+});
+
+
+test('effective resource filter menu renders the selector controls instead of the overridden legacy empty panel', () => {
+  const mapEngine=read('map-engine-2.js');
+  const index=read('index.html');
+  assert.match(index,/btn-resource-mode[^>]*onclick="if\(window\.Game && window\.Game\.Map\) \{ window\.Game\.Map\.toggleResourceFilterMenu\(\); \}"/);
+  const start=mapEngine.lastIndexOf('Game.Map.toggleResourceFilterMenu = function()');
+  assert.notEqual(start,-1);
+  const body=mapEngine.slice(start,mapEngine.indexOf('\\n};',start));
+  assert.match(body,/renderResourceCheckboxesInPanel/,'the effective menu handler must populate source-resource checkboxes');
+  assert.match(body,/setResourceScope/,'the effective menu handler must refresh NATION/WORLD scope controls');
 });
