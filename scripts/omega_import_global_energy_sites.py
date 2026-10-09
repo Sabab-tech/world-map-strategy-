@@ -189,6 +189,29 @@ def point_segment_distance_degrees(lon, lat, a, b):
     t = 0.0 if denom == 0 else max(0.0, min(1.0, -(x1 * dx + y1 * dy) / denom))
     return ((x1 + t * dx) ** 2 + (y1 + t * dy) ** 2) ** 0.5
 
+def country_boundary_distance(country_id, lat, lon, max_degrees=0.25):
+    scale = max(0.01, math.cos(math.radians(lat)))
+    for cid, geometry_type, coords, bbox in country_features:
+        if cid != country_id:
+            continue
+        min_lon, min_lat, max_lon, max_lat = bbox
+        if lon < min_lon - max_degrees / scale or lon > max_lon + max_degrees / scale or lat < min_lat - max_degrees or lat > max_lat + max_degrees:
+            return None
+        best = float("inf")
+        polygons = coords if geometry_type == "MultiPolygon" else [coords]
+        for polygon in polygons:
+            if not polygon:
+                continue
+            ring = polygon[0]
+            for index in range(len(ring) - 1):
+                best = min(best, point_segment_distance_degrees(lon, lat, ring[index], ring[index + 1]))
+                if best <= 0.002:
+                    break
+            if best <= 0.002:
+                break
+        return best if best <= max_degrees else None
+    return None
+
 def nearest_country_within(lat, lon, max_degrees=0.15):
     scale = max(0.01, math.cos(math.radians(lat)))
     candidates = []
