@@ -55,3 +55,13 @@ test('country-scoped city layer remains gated by country selection', () => {
   assert.match(js, /if \(scope === 'NATION' && !activeCountryRaw\)/);
   assert.doesNotMatch(js, /activeCountryNorm = normCountry\([^;]*'BANGLADESH'/);
 });
+
+
+test('health ministry logo fills the existing icon box, including already-mounted images', () => {
+  const js = read('health-ministry-logo.js');
+  assert.match(js, /objectFit:'fill'/);
+  assert.match(js, /if \(existingImg\) \{/);
+  assert.match(js, /width:'100%', height:'100%', minWidth:'0', minHeight:'0'/);
+  assert.match(js, /maxWidth:'100%', maxHeight:'100%', objectFit:'fill'/);
+  assert.match(js, /element\.replaceChildren\(makeLogo\(\)\)/);
+});
