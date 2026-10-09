@@ -303,7 +303,7 @@ test('legacy and individual resource map modes share one activation state', () =
   ]) {
     const start = mapEngine.indexOf(method);
     assert.notEqual(start, -1, method + ' must exist');
-    const end = mapEngine.indexOf('\\n};', start);
+    const end = mapEngine.indexOf('\n};', start);
     assert.notEqual(end, -1, method + ' must terminate');
     vm.runInContext(mapEngine.slice(start, end + 3), context, { timeout: 1000 });
   }
