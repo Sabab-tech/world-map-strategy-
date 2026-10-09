@@ -337,7 +337,7 @@ function planShipment(input={}){
 }
 
 function reserveInventoryForShipment(c,resourceId,quantity,shipmentId,details={}){
-  const cid=canonicalCountry(c),r=resourceState(cid),n=netState(cid);r.warehouse=r.warehouse||{availableByResource:{},reservedByResource:{}};const w=r.warehouse;
+  const cid=canonicalCountry(c),r=resourceState(cid),n=netState(cid);n.reservations=n.reservations||{};r.inventory=r.inventory||{};r.inventoryLots=r.inventoryLots||{};r.warehouse=r.warehouse||{availableByResource:{},reservedByResource:{}};const w=r.warehouse;
   w.availableByResource=w.availableByResource||{};w.reservedByResource=w.reservedByResource||{};
   const available=Math.max(0,num(w.availableByResource[resourceId])||0),reserved=Math.max(0,num(w.reservedByResource[resourceId])||0);
   if(available-reserved<quantity)return{ok:false,reason:'WAREHOUSE_AVAILABLE_AFTER_RESERVATIONS_TOO_LOW',available:available-reserved};
@@ -515,14 +515,72 @@ function executeFactoryCycle(input={}){
   const cid=canonicalCountry(input.countryId),fid=String(input.factoryId||''),assets=factoryAssets(cid),asset=assets.find(a=>String(a?.id||a?.assetId||a?.projectId)===fid);
   if(!asset)return{status:'BLOCKED',reason:'FACTORY_NOT_FOUND'};
   const rid=tok(input.resourceId),recipe=recipeFor(rid,asset),requested=Math.max(0,num(input.quantity)||num(asset.capacity)||0);
-  const r=resourceState(cid),inv=r.inventory||{},available=num(inv[rid])||0,need=requested*(num(recipe.inputs[rid])||1);
-  if(available<need)return{status:'BLOCKED',reason:'FACTORY_INPUT_SHORTAGE',required:need,available};
+  const r=resourceState(cid),inv=r.inventory||(r.inventory={}),n=netState(cid),routed=input.requireDeliveredShipment===true;
+  const inputRows=Object.keys(recipe.inputs||{}).length?Object.entries(recipe.inputs):[[rid,1]];
+  const consumption={},lotUsage=[];
+  if(routed){
+    n.factoryInputs=n.factoryInputs||{};
+    const perFactory=n.factoryInputs[fid]||{};
+    for(const [rawId,coefficient] of inputRows){
+      const inputId=tok(rawId),required=requested*Math.max(0,num(coefficient)||0);
+      const stock=perFactory[inputId],available=Math.max(0,num(stock?.availableQuantity)||0);
+      if(available+1e-9<required)return{status:'BLOCKED',reason:'FACTORY_DELIVERED_INPUT_SHORTAGE',factoryId:fid,resourceId:inputId,required,available,requestedResourceId:rid};
+      consumption[inputId]=required;
+    }
+    for(const [inputId,required] of Object.entries(consumption)){
+      const stock=perFactory[inputId];stock.availableQuantity=Math.max(0,(num(stock.availableQuantity)||0)-required);
+      let left=required;const nextLotIds=[];
+      for(const lotId of Array.isArray(stock.lotIds)?stock.lotIds:[]){
+        const lot=r.inventoryLots?.[lotId];if(!lot)continue;
+        const remaining=Math.max(0,num(lot.remainingQuantity)||0),take=Math.min(remaining,left);
+        if(take>0){
+          lot.remainingQuantity=Number((remaining-take).toFixed(6));lot.processedQuantity=(num(lot.processedQuantity)||0)+take;lot.lastProcessedTurn=turn();
+          lot.stage=lot.remainingQuantity>1e-9?'PARTIALLY_PROCESSED':'PROCESSED';
+          lotUsage.push({factoryInputLotId:lotId,sourceBatchId:lot.sourceBatchId||null,shipmentId:lot.shipmentId||null,sourceSiteId:lot.sourceSiteId||null,occurrenceKey:lot.occurrenceKey||null,resourceId:inputId,quantity:take});
+          left-=take;
+        }
+        if(lot.remainingQuantity>1e-9)nextLotIds.push(lotId);
+        if(left<=1e-9&&lot.remainingQuantity<=1e-9)continue;
+      }
+      stock.lotIds=nextLotIds;
+    }
+  }else{
+    const available=Math.max(0,num(inv[rid])||0),need=requested*(num(recipe.inputs[rid])||1);
+    if(available<need)return{status:'BLOCKED',reason:'FACTORY_INPUT_SHORTAGE',required:need,available};
+    consumption[rid]=need;inv[rid]=available-need;
+  }
   const output={};for(const k of Object.keys(recipe.outputs))output[k]=requested*(num(recipe.outputs[k])||0);
-  if(r.inventory)r.inventory[rid]=available-need;else r.inventory={[rid]:available-need};
-  for(const k of Object.keys(output))r.inventory[k]=(num(r.inventory[k])||0)+output[k];
-  const record={transactionId:'FACTORYRUN:'+cid+':'+fid+':T'+turn(),countryId:cid,factoryId:fid,resourceId:rid,inputQuantity:need,requestedProduction:requested,outputs:output,recipe:clone(recipe),cycleDays:recipe.cycleDays,turn:turn(),authority:'INDUSTRIAL_NETWORK_SIMULATION',status:'COMPLETED'};
-  const n=netState(cid);n.factoryRuntime[fid]=record;n.events.push(record);n.events=n.events.slice(-MAX_EVENTS);
+  for(const k of Object.keys(output))inv[k]=(num(inv[k])||0)+output[k];
+  const sourceShipments=[...new Set(lotUsage.map(x=>x.shipmentId).filter(Boolean))],sourceBatches=[...new Set(lotUsage.map(x=>x.sourceBatchId).filter(Boolean))],sourceSites=[...new Set(lotUsage.map(x=>x.sourceSiteId).filter(Boolean))];
+  const record={transactionId:'FACTORYRUN:'+cid+':'+fid+':T'+turn(),countryId:cid,factoryId:fid,resourceId:rid,inputQuantity:Object.values(consumption).reduce((sum,x)=>sum+x,0),inputConsumption:consumption,requestedProduction:requested,outputs:output,recipe:clone(recipe),cycleDays:recipe.cycleDays,turn:turn(),authority:'INDUSTRIAL_NETWORK_SIMULATION',status:'COMPLETED',
+    sourceAuthority:routed?'ROUTED_BATCH_DELIVERY':'COUNTRY_INVENTORY',sourceShipments,sourceBatches,sourceSites,sourceOccurrenceKeys:[...new Set(lotUsage.map(x=>x.occurrenceKey).filter(Boolean))],inputLotUsage:lotUsage};
+  n.factoryRuntime[fid]=record;n.events.push(record);n.events=n.events.slice(-MAX_EVENTS);
   emit('OMEGA_INDUSTRIAL_PRODUCTION_COMPLETED',cid,record);return record;
+}
+function processDeliveredFactoryInputs(c){
+  const cid=canonicalCountry(c),n=netState(cid),factoryMap=n.factoryInputs||{},results=[];
+  for(const [fid,resourceMap] of Object.entries(factoryMap)){
+    const asset=factoryAssets(cid).find(a=>String(a?.id||a?.assetId||a?.projectId)===fid);
+    if(!asset||asset.status==='CLOSED'||asset.status==='DECOMMISSIONED')continue;
+    const candidateResources=Object.keys(resourceMap||{}).filter(rid=>Math.max(0,num(resourceMap[rid]?.availableQuantity)||0)>1e-9);
+    const handled=new Set();
+    for(const rid of candidateResources){
+      const recipe=recipeFor(rid,asset),keys=(Object.keys(recipe.inputs||{}).length?Object.keys(recipe.inputs):[rid]).map(tok);
+      const signature=keys.slice().sort().join('|');if(handled.has(signature))continue;handled.add(signature);
+      const byFactory=n.factoryInputs[fid]||{};
+      const outputCapacity=keys.reduce((lim,key)=>{
+        const coefficient=Math.max(1e-9,num(recipe.inputs?.[key])??num(recipe.inputs?.[Object.keys(recipe.inputs||{}).find(k=>tok(k)===key)])??1);
+        const available=Math.max(0,num(byFactory[key]?.availableQuantity)||0);
+        return Math.min(lim,available/coefficient);
+      },Infinity);
+      if(!Number.isFinite(outputCapacity)||outputCapacity<=1e-9)continue;
+      const factoryCapacity=Math.max(1e-9,num(asset.capacityPerTurn)||num(asset.capacity)||outputCapacity);
+      const quantity=Math.min(outputCapacity,factoryCapacity);
+      const result=executeFactoryCycle({countryId:cid,factoryId:fid,resourceId:rid,quantity,requireDeliveredShipment:true});
+      results.push({factoryId:fid,resourceId:rid,...result});
+    }
+  }
+  return{status:'PROCESSED_ROUTED_INPUTS',countryId:cid,turn:turn(),results};
 }
 
 function diagnostics(countryId){
@@ -547,7 +605,7 @@ function boot(){
   if(typeof g.addEventListener==='function'){
     g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED',()=>{
       const countries=[...new Set(masterSites().map(s=>canonicalCountry(s.countryId)).filter(Boolean))];
-      countries.forEach(c=>{try{advanceShipments(c);advanceProjects(c)}catch(_){}});
+      countries.forEach(c=>{try{advanceShipments(c);advanceProjects(c);processDeliveredFactoryInputs(c)}catch(_){}});
     });
     g.addEventListener('OMEGA_READY',()=>loadCatalog());
     g.addEventListener('OMEGA_GAME_SESSION_STARTED',()=>loadCatalog());
