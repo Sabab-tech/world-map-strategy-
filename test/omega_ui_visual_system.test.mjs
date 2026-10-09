@@ -52,4 +52,6 @@ test('country-scoped city layer remains gated by country selection', () => {
   assert.match(body, /Game\.locationsRegistry\[countryId\]/);
   assert.match(js, /normalizedScope === 'WORLD'/);
   assert.match(js, /SELECT A COUNTRY FOR NATION SCOPE/);
+  assert.match(js, /if \(scope === 'NATION' && !activeCountryRaw\)/);
+  assert.doesNotMatch(js, /activeCountryNorm = normCountry\([^;]*'BANGLADESH'/);
 });
