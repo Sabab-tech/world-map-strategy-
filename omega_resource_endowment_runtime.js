@@ -27,6 +27,8 @@
   let countryListCache=null;
   const profileCache=new Map();
   const mineSiteReferenceCache=new Map();
+  const supplementalSiteCatalogByCountry=new Map();
+  const supplementalSiteCatalogById=new Map();
   const siteExecutionRowsCache=new Map();
   let siteExecutionRowsCacheTurn=null;
   let mineSiteReferenceCacheYear=null;
@@ -442,6 +444,45 @@
       }
     }
   }
+  function registerSupplementalSiteCatalog(inputRows){
+    const rows=Array.isArray(inputRows)?inputRows:[];
+    const nextById=new Map(),nextByCountry=new Map(),countriesSeen=new Set();
+    let skippedCount=0,unlocatedCount=0,unresolvedCountryCount=0;
+    for(const raw of rows){
+      if(!raw||typeof raw!=='object'){skippedCount++;continue;}
+      const siteId=String(raw.siteId||raw.siteReferenceKey||raw.id||'').trim();
+      const countryRaw=raw.countryId||raw.identity?.countryIso3||raw.countryCode||'';
+      const countryId=countryRaw?canonical(countryRaw):'';
+      const resourceId=rid(raw.real?.resourceId||raw.identity?.resourceTypeId||raw.resourceId||raw.resourceTypeId||raw.sourceSiteRecord?.resourceId||'');
+      if(!siteId||!resourceId){skippedCount++;continue;}
+      const rawCoords=raw.coordinates||raw.location?.coordinates||null;
+      const lat=Number(rawCoords?.lat??rawCoords?.latitude),lon=Number(rawCoords?.lng??rawCoords?.lon??rawCoords?.longitude);
+      const validCoordinates=Number.isFinite(lat)&&Number.isFinite(lon)&&lat>=-90&&lat<=90&&lon>=-180&&lon<=180;
+      const source=clone(raw);
+      const site={...source,siteId,siteReferenceKey:siteId,countryId:countryId||null,countryCode:countryId||null,
+        identity:{...(source.identity||{}),countryIso3:countryId||null,countryAssignmentStatus:countryId?'IDENTIFIED':'UNRESOLVED_COUNTRY_IDENTITY',resourceTypeId:resourceId},
+        real:{...(source.real||{}),resourceId},
+        coordinates:validCoordinates?{lat,lng:lon}:null,
+        location:{...(source.location||{}),coordinates:validCoordinates?{lat,lng:lon}:null,countryName:source.location?.countryName||source.countryName||(countryId?countryId:null),coordinateStatus:validCoordinates?(source.location?.coordinateStatus||'SOURCE_COORDINATE_NOT_INDEPENDENTLY_VERIFIED'):'MISSING_UPSTREAM_COORDINATES'},
+        operation:{...(source.operation||{}),commercialExtraction:Boolean(countryId&&validCoordinates&&source.operation?.commercialExtraction===true),extractionEligibility:!countryId?'BLOCKED_UNRESOLVED_COUNTRY_IDENTITY':(!validCoordinates?'BLOCKED_MISSING_COORDINATES':(source.operation?.extractionEligibility||'REQUIRES_EXACT_GAME_SITE_BINDING'))},
+        provenance:{...(source.provenance||{}),sourceAuthority:source.provenance?.sourceAuthority||source.sourceType||'SUPPLEMENTAL_GLOBAL_SOURCE',sourceDatasetId:source.sourceSiteRecord?.sourceDataset||source.sourceType||'SUPPLEMENTAL_GLOBAL_CATALOG'}};
+      if(!countryId)unresolvedCountryCount++;
+      if(!validCoordinates)unlocatedCount++;
+      nextById.set(siteId,site);
+      if(countryId){
+        if(!nextByCountry.has(countryId))nextByCountry.set(countryId,new Map());
+        nextByCountry.get(countryId).set(siteId,site);countriesSeen.add(countryId);
+      }
+    }
+    supplementalSiteCatalogById.clear();
+    supplementalSiteCatalogByCountry.clear();
+    for(const [siteId,site] of nextById)supplementalSiteCatalogById.set(siteId,site);
+    for(const [countryId,siteMap] of nextByCountry)supplementalSiteCatalogByCountry.set(countryId,siteMap);
+    for(const countryId of new Set([...mineSiteReferenceCache.keys(),...countriesSeen])){
+      mineSiteReferenceCache.delete(countryId);siteExecutionRowsCache.delete(countryId);
+    }
+    return{status:'READY',registeredCount:nextById.size,skippedCount,countriesRepresented:countriesSeen.size,unresolvedCountryCount,unlocatedCount,executableEligibleCount:[...nextById.values()].filter(s=>s.operation?.commercialExtraction===true).length};
+  }
   function mineSiteReferenceRows(c){
     const wanted=canonical(c);
     const currentYear=simulationYear();
@@ -472,7 +513,10 @@
       let common=0;for(const x of A)if(B.has(x))common++;
       return common/Math.max(A.size,B.size);
     };
-    const catalogSites=Object.values(canonicalSiteCatalogMap||{}).filter(site=>canonical(site?.countryId||site?.identity?.countryIso3||'')===wanted);
+    const canonicalSites=Object.values(canonicalSiteCatalogMap||{}).filter(site=>canonical(site?.countryId||site?.identity?.countryIso3||'')===wanted);
+    const supplementalSites=[...(supplementalSiteCatalogByCountry.get(wanted)?.values?.()||[])];
+    const canonicalIds=new Set(canonicalSites.map(site=>String(site?.siteId||'')));
+    const catalogSites=[...canonicalSites,...supplementalSites.filter(site=>!canonicalIds.has(String(site?.siteId||'')))];
     const usedProfile=new Set(),canonicalRows=[];
     for(const site of catalogSites){
       const siteId=String(site?.siteId||'').trim(),siteName=String(site?.siteName||'').trim(),identity=site?.identity||{};
@@ -498,6 +542,10 @@
       if(best)usedProfile.add(best.index);
       const location=site.location||{},ownership=site.ownership||{},operation=site.operation||{};
       const profile=best?.row||{};
+      const supplemental=String(site?.sourceType||'').startsWith('GLOBAL_');
+      const siteSourceAuthority=supplemental?(site?.provenance?.sourceAuthority||site?.sourceType||'SUPPLEMENTAL_GLOBAL_SOURCE'):'RESOURCE_JSON';
+      const siteSourceDataset=supplemental?(site?.sourceSiteRecord?.sourceDataset||site?.sourceType||'SUPPLEMENTAL_GLOBAL_CATALOG'):'resource_site_canonical_catalog_v1.json';
+      const siteSourcePath=supplemental?(site?.sourceSiteRecord?.sourceUrl||site?.sourceSiteRecord?.sourceDataset||site?.sourceType||null):('resource_site_canonical_catalog_v1.sites['+Object.keys(canonicalSiteCatalogMap||{}).indexOf(siteId)+']');
       const rawSite={
         ...clone(profile?.rawSiteReference||profile||{}),
         siteId,siteReferenceKey:siteId,siteName,name:siteName,
@@ -508,13 +556,13 @@
         status:operation.status||profile?.status||'ACTIVE_SITE_REFERENCE',commercialExtraction:operation.commercialExtraction!==false&&String(operation.status||'').toUpperCase()!=='NOT_APPLICABLE',
         owner:ownership.owner||profile?.owner||null,operator:ownership.operator||profile?.operator||null,
         lat:location.coordinates?.lat??profile?.lat??null,lon:location.coordinates?.lng??profile?.lon??null,
-        sourceAuthority:'RESOURCE_JSON',sourceDatasetId:'resource_site_canonical_catalog_v1.json',
-        sourcePath:'resource_site_canonical_catalog_v1.sites['+Object.keys(canonicalSiteCatalogMap||{}).indexOf(siteId)+']',
+        sourceAuthority:siteSourceAuthority,sourceDatasetId:siteSourceDataset,
+        sourcePath:siteSourcePath,
         sourceProfileReferenceKey:profile?.siteReferenceKey||null
       };
       const resourceAsset=g.GSRSK_Part04?.normalizeUnifiedAsset?.({
         ...rawSite,assetType:'MINE_SITE',assetId:siteId,siteReferenceKey:siteId,siteName,countryId:wanted,countryCode:wanted,
-        sourceAuthority:'RESOURCE_JSON',sourceDatasetId:'resource_site_canonical_catalog_v1.json',
+        sourceAuthority:siteSourceAuthority,sourceDatasetId:siteSourceDataset,
         extractionExecutable:false
       })||rawSite;
       canonicalRows.push({
@@ -524,7 +572,7 @@
         profileKey:'CANONICAL_SITE_CATALOG',
         siteName,status:'ACTIVE_SITE_REFERENCE',activationState:'ACTIVE_REFERENCE',extractionExecutable:false,
         quantitativeExtractionDataAvailable:resourceAsset.quantitativeExtractionDataAvailable===true,
-        sourceAuthority:'RESOURCE_JSON',sourceDatasetId:'resource_site_canonical_catalog_v1.json',
+        sourceAuthority:siteSourceAuthority,sourceDatasetId:siteSourceDataset,
         sourcePath:rawSite.sourcePath,sourceProfileReferenceKey:rawSite.sourceProfileReferenceKey,
         rawSiteReference:clone(rawSite),resourceAsset
       });
@@ -1373,7 +1421,7 @@ function batchFromExtraction(x,record){
     return diagnostics();
   }
   const API=Object.freeze({
-    VERSION,diagnostics,initialize,extractAll,extractCountry,hydrateCountry,countryResourceState,countryMines,
+    VERSION,diagnostics,initialize,extractAll,extractCountry,hydrateCountry,countryResourceState,countryMines,registerSupplementalSiteCatalog,
     countryMineSiteReferences:function(c){return clone(state()?.resource?.[canonical(c)]?.mineSiteReferences||mineSiteReferenceRows(c));},
     countryMineSiteControllers:function(c){return clone(state()?.resource?.[canonical(c)]?.mineSiteControllers||{});},
     compile
