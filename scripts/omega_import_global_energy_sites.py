@@ -468,7 +468,7 @@ for csv_path, default_status in [(COAL_ACTIVE, "UNKNOWN"), (COAL_CLOSED, "CLOSED
                     unresolved["coal_coordinates_quarantined_country_mismatch"] += 1
             if not cid:
                 unresolved["coal_missing_country"] += 1
-            if not original_name:
+            if not original_name and not source_id:
                 unresolved["coal_missing_name"] += 1
             status_candidates = [row.get("Status"), row.get("Mine Site Status"), row.get("status"), default_status]
             status = next((candidate for candidate in status_candidates if valid_status(candidate)), "UNKNOWN")
@@ -515,7 +515,10 @@ for csv_path, default_status in [(COAL_ACTIVE, "UNKNOWN"), (COAL_CLOSED, "CLOSED
                         "sourceRecordId": source_id,
                         "note": "ALTERNATE_RESEARCHED_POINT_RETAINED_NOT_USED_AS_PRIMARY"
                     }]
-            if not original_name:
+            if not original_name and source_id:
+                site["identity"]["sourceIdentityStatus"] = "SOURCE_ID_ONLY"
+                site["identity"]["sourceIdentityNote"] = "Source did not provide a display name; the stable source ID is retained as the site label"
+            elif not original_name:
                 site["identity"]["sourceIdentityStatus"] = "INCOMPLETE_SOURCE_IDENTITY"
                 site["operation"]["commercialExtraction"] = False
                 site["operation"]["extractionEligibility"] = (
