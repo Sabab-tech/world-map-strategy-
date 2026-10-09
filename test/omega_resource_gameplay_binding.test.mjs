@@ -131,3 +131,81 @@ test('global map source data preserves every coordinate-backed mine site and run
   assert.match(binding, /resourceState\.selectedResources/, 'individual markers must follow the resource filter');
   assert.match(binding, /toggleResourceChip/, 'resource filter changes must refresh individual markers');
 });
+
+
+test('runtime renders all global sites and applies nation/resource scope without country averages', async () => {
+  const rawSources = {
+    'resources.json': JSON.parse(read('resources.json')),
+    'resources_2.json': JSON.parse(read('resources_2.json')),
+    'resource_site_canonical_catalog_v1.json': catalog,
+    'resource_site_master_registry_v1.json': master
+  };
+  const events = new Map();
+  const nodes = new Map();
+  const makeNode = () => ({
+    style: {}, dataset: {}, classList: { add(){}, remove(){}, toggle(){} },
+    addEventListener(){}, appendChild(){}, setAttribute(){}, replaceChildren(){},
+    querySelector(selector){ return nodeFor(selector); }, value:'', innerHTML:'', textContent:''
+  });
+  const nodeFor = selector => {
+    if (!nodes.has(selector)) nodes.set(selector, makeNode());
+    return nodes.get(selector);
+  };
+  const layers = new Set();
+  const map = {
+    hasLayer(layer){ return layers.has(layer); },
+    removeLayer(layer){ layers.delete(layer); },
+    setView(){}, getZoom(){ return 4; },
+    whenReady(callback){ callback(); }
+  };
+  const resourceCatalog = [
+    {id:'coal',icon:'CO',color:'#8b98a8'},
+    {id:'crude_oil',icon:'OIL',color:'#c9a96e'},
+    {id:'natural_gas',icon:'NG',color:'#76b7d8'},
+    {id:'gold',icon:'Au',color:'#d0b46a'},
+    {id:'nickel',icon:'Ni',color:'#8ab4a5'},
+    {id:'copper',icon:'Cu',color:'#c68c68'},
+    {id:'phosphate',icon:'P',color:'#b6b87a'}
+  ];
+  const context = {
+    console:{log(){},warn(){},error(){}},
+    document:{
+      body:{appendChild(){}},
+      getElementById(){ return null; },
+      createElement(){ return makeNode(); }
+    },
+    Game:{currentActiveCountry:'',Map:{map,resourceCatalog,resourceState:{enabled:true,scope:'WORLD',selectedResources:new Set(['all'])}}},
+    CountryIOS:{activeCountry:''},
+    L:{
+      layerGroup(){ return {markers:[],addTo(){layers.add(this);return this;}}; },
+      divIcon(options){ return options; },
+      marker(latlng,options){ return {latlng,options,bindTooltip(){return this;},on(){return this;},addTo(layer){layer.markers.push(this);return this;}}; }
+    },
+    fetch:async url=>({ok:true,json:async()=>rawSources[url]}),
+    setTimeout(callback){ queueMicrotask(callback); return 1; },
+    addEventListener(name,callback){ events.set(name,callback); },
+    dispatchEvent(){},
+    CustomEvent:class { constructor(name,options){this.type=name;this.detail=options?.detail;} },
+    Omega:{}
+  };
+  context.window = context;
+  vm.createContext(context);
+  vm.runInContext(binding,context,{filename:'omega_resource_gameplay_binding_v1.js',timeout:3000});
+  events.get('OMEGA_READY')();
+  await new Promise(resolve => setImmediate(resolve));
+  await new Promise(resolve => setImmediate(resolve));
+
+  const diagnostics = context.Omega.IndividualResourceSiteBinding?.diagnostics();
+  assert.equal(diagnostics?.status,'READY','global source registry must initialize');
+  assert.equal(diagnostics?.siteCount,239,'199 mine sites + 43 deposits - 3 exact physical duplicates must yield 239 site markers');
+  const markerCount = () => [...layers].reduce((sum,layer)=>sum+layer.markers.length,0);
+  assert.equal(markerCount(),239,'WORLD scope must render all 239 distinct resource locations');
+  context.Game.Map.resourceState.scope='NATION';
+  context.Game.currentActiveCountry='BGD';
+  context.Omega.IndividualResourceSiteBinding.refresh();
+  assert.equal(markerCount(),4,'Bangladesh scope must show its four distinct physical resource locations, not all countries');
+  context.Game.Map.resourceState.scope='WORLD';
+  context.Game.Map.resourceState.selectedResources=new Set(['coal']);
+  context.Omega.IndividualResourceSiteBinding.refresh();
+  assert.ok(markerCount()>0 && markerCount()<239,'resource filter must narrow the global site markers');
+});
