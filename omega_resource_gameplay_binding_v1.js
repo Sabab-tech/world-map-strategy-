@@ -128,7 +128,7 @@ function addMapMarkers(){
 }
 function attachMapRefreshHooks(){
  const targets=[
-  {object:g.Game?.Map,names:['renderResourceDeposits','setResourceScope','applyResourceMapFilter','toggleResourceMode','toggleResourceOverlay','toggleResourceChip','selectResourcePreset','applyResourceFilterAndClose','clearAndResetResourceMode','toggleResourceType','toggleResourceCheckbox','selectAllResourceTypes','deselectAllResourceTypes','renderResourceCheckboxesInPanel']},
+  {object:g.Game?.Map,names:['renderResourceDeposits','setResourceScope','applyResourceMapFilter','applyMultiResourceFilter','handleResourceCheckboxChange','toggleResourceMode','toggleResourceOverlay','toggleResourceChip','selectResourcePreset','applyResourceFilterAndClose','clearAndResetResourceMode','toggleResourceType','toggleResourceCheckbox','selectAllResourceTypes','deselectAllResourceTypes','renderResourceCheckboxesInPanel']},
   {object:g.CountryIOS,names:['open']}
  ];
  for(const target of targets){
