@@ -106,6 +106,20 @@ test('research-backed coal identity overrides resolve known missing country and 
   assert.equal(catalog.sites.filter(site => key(site.siteName) === key('Morningstar')).length, 1, 'duplicate name rows must merge after province-based identity resolution');
   assert.equal(catalog.unresolvedCounts.siteRecordsWithoutCountry, 0, 'province and source-name evidence should resolve the remaining country identities');
   assert.equal(catalog.unresolvedCounts.coal_missing_name, 0, 'stable source IDs are valid identities even when a display name is absent');
+  for (const [name, countryId, lat, lng, correction] of [
+    ['Jellinbah Coal Mine', 'AUS', -22.285, 148.47, 'SOURCE_LATITUDE_SIGN_CORRECTED_BY_COUNTRY_GEOMETRY'],
+    ['Eight-Kay Deep Coal Mine', 'USA', 37.7, -81.809444, 'SOURCE_LONGITUDE_SIGN_CORRECTED_BY_COUNTRY_GEOMETRY'],
+    ['Hurricane Creek Mine #2', 'USA', 36.538333, -83.843889, 'SOURCE_LONGITUDE_SIGN_CORRECTED_BY_COUNTRY_GEOMETRY']
+  ]) {
+    const site = byName.get(key(name));
+    assert.ok(site, 'expected source site for coordinate correction: '+name);
+    assert.equal(site.countryId, countryId);
+    assert.ok(site.coordinates, name+' must regain a valid, source-grounded coordinate');
+    assert.ok(Math.abs(site.coordinates.lat - lat) < 0.002, name+' latitude correction');
+    assert.ok(Math.abs(site.coordinates.lng - lng) < 0.002, name+' longitude correction');
+    assert.equal(site.location.coordinateCorrection, correction);
+  }
+  assert.ok(catalog.unresolvedCounts.siteRecordsWithoutCoordinates <= 1029, 'provable sign errors must not remain quarantined as missing coordinates');
   const sourceIdOnly = catalog.sites.find(site => site.identity?.sourceIdentityStatus === 'SOURCE_ID_ONLY');
   if (sourceIdOnly) assert.equal(sourceIdOnly.siteName, sourceIdOnly.sourceSiteRecord.sourceRecordId, 'source-ID-only sites must keep their stable source ID as the visible label');
   const sibovc = byName.get(key('Sibovc Coal Mine'));
