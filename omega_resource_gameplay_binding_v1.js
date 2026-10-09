@@ -214,7 +214,7 @@ async function init(){
    const resourceId=normalized.real?.resourceId||source.resourceId||source.resourceTypeId||source.resourceTypeKey||source.resId||catalogRow.identity?.resourceTypeId||'unknown';
    const countryId=cid(normalized.countryId||masterRow.countryId||catalogRow.countryId);
    const physicalKey=[countryId,String(resourceId).toLowerCase(),coords.lat.toFixed(4),coords.lng.toFixed(4)].join('|');
-   const isDeposit=/^dep[-_]/i.test(String(source.id||''))||source.resId!=null;
+   const isDeposit=/^dep[-_]/i.test(String(source.id||id));
    const samePhysicalSite=isDeposit?physicalIndex.get(physicalKey):null;
    if(samePhysicalSite&&byId.has(samePhysicalSite)){
     const existing=byId.get(samePhysicalSite);
