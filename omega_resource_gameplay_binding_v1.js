@@ -6,7 +6,7 @@
 const VERSION='1.0.0';
 const CATALOG_URL='resource_site_canonical_catalog_v1.json';
 const MASTER_URL='resource_site_master_registry_v1.json';
-let sites=[], selected=null, markers=[], markerLayer=null, panel=null, statusNode=null, detailNode=null, selectNode=null;
+let sites=[], selected=null, markers=[], markerLayer=null, panel=null, statusNode=null, detailNode=null, selectNode=null, searchNode=null;
 const esc=v=>String(v??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const state=()=>g.Game?.state||g.gameState||{};
 const api=()=>g.Omega?.ResourceIndustrialNetwork||g.OmegaResourceIndustrialNetwork;
@@ -14,6 +14,15 @@ const endowment=()=>g.Omega?.ResourceEndowmentRuntime||g.OmegaResourceEndowmentR
 const cid=v=>String(v||'').trim().toUpperCase();
 function setStatus(s){if(statusNode)statusNode.textContent=String(s||'');}
 function chosenSite(){return sites.find(s=>s.siteId===selected)||null;}
+function renderSiteSearch(query=''){
+ if(!selectNode)return;
+ const q=String(query||'').trim().toLowerCase();
+ const matches=sites.filter(s=>!q||[s.siteName,s.siteId,s.countryId,s.location?.countryName,s.real?.resourceId,s.identity?.resourceTypeId,s.sourceSiteRecord?.rawCommodity].some(v=>String(v||'').toLowerCase().includes(q))).slice(0,100);
+ selectNode.innerHTML=matches.map(s=>'<option value="'+esc(s.siteId)+'">'+esc(s.countryId+' · '+s.siteName+' · '+(s.real?.resourceId||'?'))+'</option>').join('');
+ if(selected&&matches.some(s=>s.siteId===selected))selectNode.value=selected;
+ if(q&&matches.length===100)setStatus('Search is limited to the first 100 matches. Refine the search to narrow results.');
+ else if(q&&!matches.length)setStatus('No site matches this search.');
+}
 function displayValue(value){
  if(value===null||value===undefined||value==='')return 'Not specified';
  if(Array.isArray(value))return value.length?value.map((item,i)=>'<div class="omega-site-list-item"><b>'+esc(typeof item==='object'?(item.name||item.routeName||item.id||('Item '+(i+1))):item)+'</b>'+(typeof item==='object'?'<pre>'+esc(JSON.stringify(item,null,2))+'</pre>':'')+'</div>').join(''):'None';
@@ -45,7 +54,7 @@ function detail(s){
 }
 function setSelected(id){
  const s=sites.find(x=>x.siteId===id);if(!s)return;
- selected=id;if(selectNode)selectNode.value=id;detail(s);if(panel)panel.style.display='block';
+ selected=id;if(selectNode)selectNode.value=id;if(searchNode)searchNode.value=s.siteName+' ['+s.countryId+' · '+s.siteId+']';detail(s);if(panel)panel.style.display='block';
  const c=s.coordinates||s.location?.coordinates||{};
  const map=g.Game?.Map?.map||g.map;
  if(map&&Number.isFinite(Number(c.lat))&&Number.isFinite(Number(c.lng))&&typeof map.setView==='function')map.setView([Number(c.lat),Number(c.lng)],Math.max(7,Number(map.getZoom?.()||4)));
@@ -159,7 +168,7 @@ function normalizeSourceSite(raw,countryHint){
  const sourceRecord=nestedSource&&nestedSource.sourceSiteRecord&&typeof nestedSource.sourceSiteRecord==='object'
   ?nestedSource.sourceSiteRecord:(nestedSource||raw);
  const stableId=siteId||('SITE_'+countryId+'_'+siteName.toLowerCase().normalize('NFKD').replace(/[\\u0300-\\u036f]/g,'').replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,''));
- return {siteId:stableId,countryId,siteName:siteName||stableId,real:{...(raw.real||{}),resourceId},sourceSiteRecord:sourceRecord,coordinates:coords,
+ return {siteId:stableId,countryId,siteName:siteName||stableId,sourceType:raw.sourceType||p.sourceType||identity.siteType||null,real:{...(raw.real||{}),resourceId},sourceSiteRecord:sourceRecord,coordinates:coords,
   location:{
    ...loc,
    countryName:loc.countryName||raw.countryName||sourceRecord.countryName||(sourceRecord.country&&sourceRecord.country.length>3?sourceRecord.country:''),
@@ -232,6 +241,7 @@ function addMapMarkers(){
  const visibleSites=sites.filter(s=>{
   const c=s.coordinates||s.location?.coordinates||{},lat=Number(c.lat),lng=Number(c.lng);
   if(!Number.isFinite(lat)||!Number.isFinite(lng)||lat < -90||lat > 90||lng < -180||lng > 180)return false;
+  if(bounds&&zoom>2&&!bounds.contains([lat,lng]))return false;
   // Do not draw a site's marker inside another country's land polygon. Keep the source row
   // intact and expose the exact mismatch in diagnostics instead of inventing a new location.
   if(s.coordinateValidation?.status==='INSIDE_OTHER_COUNTRY')return false;
@@ -248,28 +258,43 @@ function addMapMarkers(){
   }
   return true;
  });
- // Cluster markers by their current screen-space proximity, not just identical coordinates.
- // The visual offsets never modify a site's true latitude or longitude.
- const collisionGroups=[],collisionGroupBySite=new Map();
+ // Cluster the global dataset in screen space. Individual records remain searchable and clusters zoom in.
+ const clusterMode=visibleSites.length>1200,collisionGroupBySite=new Map(),gridGroups=new Map();
  for(const site of visibleSites){
   const c=site.coordinates||site.location?.coordinates||{},lat=Number(c.lat),lng=Number(c.lng);
   const point=typeof map.latLngToLayerPoint==='function'?map.latLngToLayerPoint([lat,lng]):{x:lng,y:lat};
-  let group=collisionGroups.find(items=>items.some(item=>Math.hypot(item.point.x-point.x,item.point.y-point.y)<30));
-  if(!group){group=[];collisionGroups.push(group);}
+  let group;
+  if(clusterMode){
+   const key=Math.floor(point.x/34)+':'+Math.floor(point.y/34);
+   group=gridGroups.get(key);if(!group){group=[];gridGroups.set(key,group);}
+  }else{
+   group=[...collisionGroupBySite.values()].find(items=>items.some(item=>Math.hypot(item.point.x-point.x,item.point.y-point.y)<30);
+   if(!group)group=[];
+  }
   group.push({site,point});collisionGroupBySite.set(site.siteId,group);
  }
- let rendered=0,offsetMarkerCount=0,overlapGroupCount=0;
- const renderedCoordinateKeys=new Set();
+ let rendered=0,offsetMarkerCount=0,clusterMarkerCount=0;
+ const renderedCoordinateKeys=new Set(),renderedClusterKeys=new Set();
  for(const s of visibleSites){
   const c=s.coordinates||s.location?.coordinates||{},lat=Number(c.lat),lng=Number(c.lng);
   const rawResource=String(s.real?.resourceId||s.sourceSiteRecord?.resourceId||s.sourceSiteRecord?.resourceTypeId||s.sourceSiteRecord?.resId||s.identity?.resourceTypeId||'').toLowerCase();
-  const resourceId=canonical(rawResource);
-  const resource=resourceCatalog.find(r=>canonical(r.id)===resourceId||String(r.id||'').toLowerCase()===rawResource);
+  const resourceId=canonical(rawResource),resource=resourceCatalog.find(r=>canonical(r.id)===resourceId||String(r.id||'').toLowerCase()===rawResource);
+  const group=collisionGroupBySite.get(s.siteId)||[{site:s}],position=group.findIndex(item=>item.site.siteId===s.siteId);
+  const clusterKey=clusterMode?Math.floor((group[0]?.point?.x??0)/34)+':'+Math.floor((group[0]?.point?.y??0)/34):'';
+  if(clusterMode&&group.length>1){
+   if(renderedClusterKeys.has(clusterKey))continue;
+   renderedClusterKeys.add(clusterKey);
+   const count=group.length,clusterIcon=L.divIcon({className:'omega-individual-site-marker omega-resource-cluster',html:'<span style="display:flex;align-items:center;justify-content:center;min-width:28px;height:28px;padding:0 4px;border-radius:14px;background:#172b3d;border:2px solid #9fcbe0;color:#f3f7fb;font:700 11px Arial,sans-serif;box-shadow:0 1px 5px #0009">'+count+'</span>',iconSize:[Math.max(30,String(count).length*8+16),30],iconAnchor:[15,15]});
+   const cluster=L.marker([lat,lng],{icon:clusterIcon,title:count+' resource sites in this map area',keyboard:true,alt:count+' resource sites'});
+   cluster.bindTooltip?.(count+' resource sites · zoom in to separate sites',{direction:'top',sticky:true});
+   cluster.on('click',()=>{if(typeof map.setView==='function')map.setView([lat,lng],Math.min(10,Number(map.getZoom?.()||2)+2));});
+   cluster.addTo(markerLayer);clusterMarkerCount++;rendered++;continue;
+  }
+  if(clusterMode&&group.length>1)continue;
   const glyph=String(resource?.icon||resourceId.slice(0,2).toUpperCase()||'RS').replace(/[<>&"]/g,'');
   const color=/^#[0-9a-f]{6}$/i.test(resource?.color||'')?resource.color:'#76b7d8';
-  const group=collisionGroupBySite.get(s.siteId)||[{site:s}],position=group.findIndex(item=>item.site.siteId===s.siteId);
   let dx=0,dy=0;
-  if(group.length>1){
+  if(!clusterMode&&group.length>1){
    renderedCoordinateKeys.add(group.map(item=>item.site.siteId).sort().join('|'));
    const radius=Math.max(20,14/Math.sin(Math.PI/group.length)+2);
    const angle=(Math.max(0,position)*(2*Math.PI/group.length))-(Math.PI/2);
@@ -281,7 +306,7 @@ function addMapMarkers(){
   m.on('click',()=>setSelected(s.siteId));m.addTo(markerLayer);rendered++;
  }
  markerLayer.addTo(map);
- g.__OMEGA_INDIVIDUAL_RESOURCE_MARKER_DIAGNOSTICS__={loadedSiteCount:sites.length,renderedMarkerCount:rendered,scope,activeCountry:activeCountry||null,resourceFilterCount:selected.size,overlapGroupCount:renderedCoordinateKeys.size,offsetMarkerCount,coordinateAudit:g.__OMEGA_RESOURCE_COORDINATE_AUDIT__||null};
+ g.__OMEGA_INDIVIDUAL_RESOURCE_MARKER_DIAGNOSTICS__={loadedSiteCount:sites.length,visibleSiteCount:visibleSites.length,renderedMarkerCount:rendered,clusterMarkerCount,clusterMode,scope,activeCountry:activeCountry||null,resourceFilterCount:selected.size,overlapGroupCount:renderedCoordinateKeys.size,offsetMarkerCount,coordinateAudit:g.__OMEGA_RESOURCE_COORDINATE_AUDIT__||null};
 }
 function attachMapRefreshHooks(){
  const targets=[
@@ -338,11 +363,12 @@ function mount(){
  const btn=document.createElement('button');btn.id='omega-individual-resource-open';btn.textContent='INDIVIDUAL SITES';btn.style.cssText='position:fixed;left:12px;bottom:18px;z-index:1000001;padding:10px 12px;background:#172331;color:#e9d29a;border:1px solid #bca366;border-radius:6px;font:700 11px monospace;letter-spacing:.5px';
  btn.addEventListener('click',show);document.body.appendChild(btn);
  panel=document.createElement('section');panel.id='omega-individual-resource-panel';panel.style.cssText='display:none;position:fixed;left:12px;bottom:62px;z-index:1000002;width:min(390px,calc(100vw - 24px));max-height:72vh;overflow:auto;padding:14px;background:#101923;color:#e8edf2;border:1px solid #9b895b;border-radius:8px;box-shadow:0 10px 36px #000b;font:12px/1.5 monospace';
- panel.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center"><b>INDIVIDUAL RESOURCE SITE</b><button id="omega-individual-close" style="background:#293440;color:#fff;border:1px solid #66717b;padding:3px 8px">CLOSE</button></div><p id="omega-individual-status">Loading individual resource sites and route profiles…</p><label for="omega-individual-select">Exact site identity</label><select id="omega-individual-select" style="display:block;width:100%;padding:8px;margin:5px 0 10px;background:#202b37;color:#fff;border:1px solid #697887"></select><div id="omega-individual-detail"></div><div style="display:flex;gap:7px;margin-top:12px"><button id="omega-individual-plan" style="flex:1;padding:9px;background:#253c4b;color:#fff;border:1px solid #547c91">PLAN EXTRACTION</button><button id="omega-individual-execute" style="flex:1;padding:9px;background:#423a27;color:#f2d99a;border:1px solid #bca366">EXECUTE SITE</button></div><small style="display:block;margin-top:9px;color:#aab4bf">No country-average substitution. Execution is reported only when an exact occurrence binding is found and the runtime confirms a committed result.</small>';
+ panel.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center"><b>GLOBAL RESOURCE SITES</b><button id="omega-individual-close" style="background:#293440;color:#fff;border:1px solid #66717b;padding:3px 8px">CLOSE</button></div><p id="omega-individual-status">Loading worldwide mine and deposit records…</p><label for="omega-individual-search">Search site, country or commodity</label><input id="omega-individual-search" type="search" placeholder="e.g. Ghawar, Chile, copper" style="display:block;width:100%;box-sizing:border-box;padding:8px;margin:5px 0;background:#202b37;color:#fff;border:1px solid #697887"><label for="omega-individual-select">Matching individual sites</label><select id="omega-individual-select" size="6" style="display:block;width:100%;padding:8px;margin:5px 0 10px;background:#202b37;color:#fff;border:1px solid #697887"></select><div id="omega-individual-detail"></div><div style="display:flex;gap:7px;margin-top:12px"><button id="omega-individual-plan" style="flex:1;padding:9px;background:#253c4b;color:#fff;border:1px solid #547c91">PLAN EXTRACTION</button><button id="omega-individual-execute" style="flex:1;padding:9px;background:#423a27;color:#f2d99a;border:1px solid #bca366">EXECUTE SITE</button></div><small style="display:block;margin-top:9px;color:#aab4bf">No country-average substitution. Execution is reported only when an exact occurrence binding is found and the runtime confirms a committed result.</small>';
  document.body.appendChild(panel);
- statusNode=panel.querySelector('#omega-individual-status');detailNode=panel.querySelector('#omega-individual-detail');selectNode=panel.querySelector('#omega-individual-select');
+ statusNode=panel.querySelector('#omega-individual-status');detailNode=panel.querySelector('#omega-individual-detail');selectNode=panel.querySelector('#omega-individual-select');searchNode=panel.querySelector('#omega-individual-search');
  panel.querySelector('#omega-individual-close').addEventListener('click',()=>panel.style.display='none');
  selectNode.addEventListener('change',()=>setSelected(selectNode.value));
+  searchNode.addEventListener('input',()=>renderSiteSearch(searchNode.value));
  panel.querySelector('#omega-individual-plan').addEventListener('click',()=>void plan());
  panel.querySelector('#omega-individual-execute').addEventListener('click',()=>void execute());
 }
@@ -351,20 +377,21 @@ async function init(){
  g.__OMEGA_RESOURCE_SITE_BINDING_INIT__=true;
  mount();
  try{
-  const urls=['resources.json','resources_2.json',CATALOG_URL,MASTER_URL,'world.json'];
+  const urls=['resources.json','resources_2.json',CATALOG_URL,MASTER_URL,'resource_site_global_deposit_catalog_v1.json','world.json'];
   const loaded=await Promise.all(urls.map(async url=>{
    try{const response=await fetch(url,{cache:'no-store'});if(!response.ok)return null;return {url,data:await response.json()};}
    catch(_){return null;}
   }));
   const sources=loaded.filter(Boolean);
   const getData=url=>sources.find(x=>x.url===url)?.data||null;
-  const catalog=getData(CATALOG_URL),master=getData(MASTER_URL);
+  const catalog=getData(CATALOG_URL),master=getData(MASTER_URL),globalCatalog=getData('resource_site_global_deposit_catalog_v1.json');
   const catalogSites=Array.isArray(catalog?.sites)?catalog.sites:[];
   const masterSites=Array.isArray(master?.sites)?master.sites:[];
+  const globalSites=Array.isArray(globalCatalog?.sites)?globalCatalog.sites:[];
   const masterById=new Map(masterSites.map(s=>[String(s.siteId),s]));
   const catalogById=new Map(catalogSites.map(s=>[String(s.siteId),s]));
   const discovered=sources.filter(x=>x.url==='resources.json'||x.url==='resources_2.json').flatMap(x=>discoverSourceSites(x.data));
-  const candidates=[...catalogSites.map(s=>normalizeSourceSite(s,s.countryId)||s),...masterSites.map(s=>normalizeSourceSite(s,s.countryId)||s),...discovered];
+  const candidates=[...catalogSites.map(s=>normalizeSourceSite(s,s.countryId)||s),...masterSites.map(s=>normalizeSourceSite(s,s.countryId)||s),...globalSites.map(s=>normalizeSourceSite(s,s.countryId)||s),...discovered];
   const byId=new Map(),physicalIndex=new Map();
   let mergedDepositAliases=0;
   for(const candidate of candidates){
@@ -403,6 +430,7 @@ async function init(){
   const countryGeometryIndex=buildCountryGeometryIndex(getData('world.json'));
   const coordinateAudit={};
   for(const site of sites){
+   if(site.sourceType==='GLOBAL_MINERAL_OCCURRENCE'){site.coordinateValidation={status:'UPSTREAM_SOURCE_COORDINATE_NOT_INDEPENDENTLY_VALIDATED',ownerCountryId:site.countryId};coordinateAudit.UPSTREAM_SOURCE_COORDINATE_NOT_INDEPENDENTLY_VALIDATED=(coordinateAudit.UPSTREAM_SOURCE_COORDINATE_NOT_INDEPENDENTLY_VALIDATED||0)+1;continue;}
    const sourceCountryId=site.countryId;
    const resolvedCountryId=resolveCountryCode(site,countryGeometryIndex);
    if(resolvedCountryId&&countryGeometryIndex.has(resolvedCountryId)&&resolvedCountryId!==sourceCountryId){
@@ -443,13 +471,14 @@ async function init(){
   if(!countryGeometryIndex.size)throw new Error('COUNTRY_GEOMETRY_DATA_UNAVAILABLE_FOR_COORDINATE_AUDIT');
   if(new Set(sites.map(s=>s.siteId)).size!==sites.length)throw new Error('INDIVIDUAL_SITE_IDENTITY_NOT_UNIQUE');
   sites.sort((a,b)=>a.countryId.localeCompare(b.countryId)||a.siteName.localeCompare(b.siteName));
-  selectNode.innerHTML=sites.map(s=>'<option value="'+esc(s.siteId)+'">'+esc(s.countryId+' · '+s.siteName+' · '+(s.real?.resourceId||'?'))+'</option>').join('');
-  selected=sites[0].siteId;selectNode.value=selected;detail(chosenSite());
+  selected=sites[0].siteId;renderSiteSearch('');selectNode.value=selected;if(searchNode)searchNode.value=sites[0].siteName+' ['+sites[0].countryId+' · '+sites[0].siteId+']';detail(chosenSite());
   g.Omega=g.Omega||{};
   g.Omega.IndividualResourceSiteBinding={version:VERSION,sites,select:setSelected,refresh:addMapMarkers,diagnostics:()=>{
    const coordinateStatusCounts={};
    for(const site of sites){const status=coordinateStatusOf(site);coordinateStatusCounts[status]=(coordinateStatusCounts[status]||0)+1;}
    const sourceRecordCounts=sources.reduce((counts,source)=>{
+     if(source.url==='resource_site_global_deposit_catalog_v1.json')counts.globalMineralDeposits=Array.isArray(source.data?.sites)?source.data.sites.length:0;
+     if(source.url==='resource_site_global_deposit_catalog_v1.json')counts.globalMineralDeposits=Array.isArray(source.data?.sites)?source.data.sites.length:0;
     if(source.url==='resources.json'||source.url==='resources_2.json'){
      const profiles=source.data?.GSRSK_Master_CountryProfiles_v14?.countryProfiles||{};
      counts.mineSites+=Object.values(profiles).reduce((sum,profile)=>sum+(Array.isArray(profile?.resource_infrastructure_context?.mineSites)?profile.resource_infrastructure_context.mineSites.length:0),0);
@@ -457,10 +486,10 @@ async function init(){
     }
     return counts;
    },{mineSites:0,runtimeDeposits:0});
-   return {status:'READY',siteCount:sites.length,uniqueSiteIds:new Set(sites.map(s=>s.siteId)).size,countryCount:new Set(sites.map(s=>s.countryId)).size,sourceFiles:sources.map(x=>x.url),sourceRecordCounts,coordinateStatusCounts,mergedDepositAliases,individualMapping:true};
+   return {status:'READY',siteCount:sites.length,uniqueSiteIds:new Set(sites.map(s=>s.siteId)).size,countryCount:new Set(sites.map(s=>s.countryId)).size,globalMineralDepositCount:globalSites.length,sourceFiles:sources.map(x=>x.url),sourceRecordCounts,coordinateStatusCounts,mergedDepositAliases,individualMapping:true,searchableAllSites:true};
   }};
   attachMapRefreshHooks();scheduleMarkerRender();setTimeout(()=>scheduleMarkerRender(),1000);setTimeout(()=>scheduleMarkerRender(),3000);
-  setStatus('READY · '+sites.length+' individual sites · '+new Set(sites.map(s=>s.countryId)).size+' countries · '+quarantinedCoordinates.length+' wrong-country coordinate records quarantined');
+  setStatus('READY · '+sites.length+' sites · '+new Set(sites.map(s=>s.countryId)).size+' countries · '+globalSites.length+' global mineral records · '+quarantinedCoordinates.length+' verified wrong-country records quarantined');
  }catch(e){setStatus('FAILED · '+String(e?.message||e));g.OmegaIndividualResourceSiteBindingError=String(e?.message||e);g.__OMEGA_RESOURCE_SITE_BINDING_INIT__=false;}
 }
 g.addEventListener?.('OMEGA_READY',()=>void init());
