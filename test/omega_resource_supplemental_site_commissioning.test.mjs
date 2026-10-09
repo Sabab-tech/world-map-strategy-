@@ -109,6 +109,37 @@ test('commissioning is not reported as complete when country runtime hydration f
   assert.equal(gameState.resource.USA.siteCommissioning[site.siteId].status, 'COMMISSIONED_SIMULATION');
 });
 
+
+test('border-conflict coordinates remain visible but cannot be commissioned before jurisdiction review', async () => {
+  const gameState = { simulation: { turn: 12 }, resource: {} };
+  const site = {
+    siteId: 'GLOBAL_COAL_IDN_border_review', sourceType: 'GLOBAL_COAL_MINE',
+    countryId: 'IDN', siteName: 'Border Review Test',
+    identity: { countryIso3: 'IDN', resourceTypeId: 'coal' },
+    real: { resourceId: 'coal' },
+    coordinates: { lat: 4.2, lng: 117.3 },
+    location: { coordinates: { lat: 4.2, lng: 117.3 }, coordinateStatus: 'SOURCE_COORDINATE_NEAR_COUNTRY_BORDER_REVIEW_REQUIRED' },
+    operation: { status: 'UNKNOWN', commercialExtraction: false, extractionEligibility: 'BLOCKED_COORDINATE_COUNTRY_BORDER_REVIEW' }
+  };
+  const original = {
+    registerSupplementalSiteCatalog() { return { status: 'READY' }; },
+    async hydrateCountry(countryId) { return { status: 'APPLIED', countryId }; }
+  };
+  const context = {
+    console, Math, Number, String, Object, Array, Set, Map, Promise, JSON, Date,
+    structuredClone, Game: { state: gameState }, Omega: { ResourceEndowmentRuntime: original },
+    OmegaResourceEndowmentRuntime: original, addEventListener() {},
+    document: { getElementById() { return null; } }
+  };
+  context.globalThis = context;
+  vm.createContext(context);
+  vm.runInContext(read('omega_resource_supplemental_site_commissioning_v1.js'), context);
+  context.Omega.IndividualResourceSiteBinding = { sites: [site] };
+  const result = await context.Omega.ResourceEndowmentRuntime.commissionSupplementalSite(site.siteId);
+  assert.equal(result.status, 'BLOCKED_COORDINATE_COUNTRY_BORDER_REVIEW');
+  assert.equal(gameState.resource.IDN, undefined, 'blocked coordinates must not create a country commissioning ledger');
+});
+
 test('commissioning bridge is loaded after Endowment and before the individual-site UI', () => {
   const html = read('index.html');
   const endowment = html.indexOf('src="omega_resource_endowment_runtime.js"');
