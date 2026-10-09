@@ -155,9 +155,9 @@ const processed=N.executeFactoryCycle({
 });
 assert.equal(processed.status,'COMPLETED',JSON.stringify(processed));
 assert.equal(processed.sourceAuthority,'ROUTED_BATCH_DELIVERY');
-assert.deepEqual(processed.sourceSites,['SITE_BGD_COAL_01']);
-assert.deepEqual(processed.sourceBatches,['BATCH-E2E-COAL-01']);
-assert.deepEqual(processed.sourceOccurrenceKeys,['OCC_BGD_COAL_E2E']);
+assert.deepEqual(Array.from(processed.sourceSites),['SITE_BGD_COAL_01']);
+assert.deepEqual(Array.from(processed.sourceBatches),['BATCH-E2E-COAL-01']);
+assert.deepEqual(Array.from(processed.sourceOccurrenceKeys),['OCC_BGD_COAL_E2E']);
 assert.equal(processed.inputConsumption.coal,100);
 assert.equal(context.Game.state.resource.BGD.inventoryLots[receivedId].remainingQuantity,400);
 assert.equal(context.Game.state.resource.BGD.industrialNetwork.factoryInputs['FAC-COAL-PREP'].coal.availableQuantity,400);
