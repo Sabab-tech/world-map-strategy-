@@ -109,6 +109,9 @@ test('research-backed coal identity overrides resolve known missing country and 
   assert.equal(sibovc.identity.sourceReportedJurisdiction, 'Kosovo');
   assert.equal(sibovc.identity.jurisdictionCountryId, 'XKX');
   assert.equal(sibovc.identity.countryAssignmentMethod, 'DISPUTED_JURISDICTION_MAPPED_TO_EXISTING_GAME_PROFILE');
+  assert.ok(sibovc.coordinates, 'the source location in Kosovo must remain mappable even though the game routes its runtime through SRB');
+  assert.equal(sibovc.location.coordinateStatus, 'SOURCE_COORDINATE_IN_DISPUTED_JURISDICTION');
+  assert.equal(sibovc.location.coordinateJurisdiction, 'Kosovo');
   assert.ok(catalog.unresolvedCounts.siteRecordsWithoutCountry <= 2, 'only the two source-ambiguous sites should remain country-unresolved');
   assert.ok(catalog.unresolvedCounts.siteRecordsWithoutCoordinates <= 2772, 'researched mine-area coordinates must reduce coordinate gaps without inventing locations');
 });
