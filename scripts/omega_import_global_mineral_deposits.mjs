@@ -85,21 +85,58 @@ const countryIdOf = row => {
   const name = first(typeof row.country === 'string' ? row.country : row.country?.name,row.countryName,row.country_name,row.nation,row.admin0,row.ADMIN0,row.sovereign,row.location?.country,row.location?.countryName,row.properties?.country,row.properties?.ADMIN,row.properties?.NAME);
   return countryNameToId.get(norm(name)) || '';
 };
+const countryFeatures = [];
+for (const feature of world.features || []) {
+  const p = feature.properties || {};
+  const id = String(first(p.ISO_A3,p.ADM0_A3,p.iso_a3,p.ISO3,p.iso3,p.A3,p.SOV_A3,p.GID_0,feature.id)||'').toUpperCase();
+  const geometry = feature.geometry || {};
+  const coords = geometry.coordinates;
+  if (!knownIds.has(id) || !['Polygon','MultiPolygon'].includes(geometry.type) || !coords) continue;
+  try {
+    const polygons = geometry.type === 'MultiPolygon' ? coords : [coords];
+    const points = polygons.flatMap(polygon => polygon.flatMap(ring => ring));
+    if (!points.length) continue;
+    countryFeatures.push({id,geometryType:geometry.type,coords,bounds:[Math.min(...points.map(p=>p[0])),Math.min(...points.map(p=>p[1])),Math.max(...points.map(p=>p[0])),Math.max(...points.map(p=>p[1]))]});
+  } catch {}
+}
+function pointInRing(lng,lat,ring){
+ let inside=false;
+ for(let i=0,j=ring.length-1;i<ring.length;j=i++){
+  const xi=ring[i][0],yi=ring[i][1],xj=ring[j][0],yj=ring[j][1];
+  if(((yi>lat)!==(yj>lat))&&lng<(xj-xi)*(lat-yi)/((yj-yi)||1e-30)+xi)inside=!inside;
+ }
+ return inside;
+}
+function pointInPolygon(lng,lat,rings){
+ return !!rings?.length&&pointInRing(lng,lat,rings[0])&&!rings.slice(1).some(ring=>pointInRing(lng,lat,ring));
+}
+function countryFromCoordinates(c){
+ const matches=[];
+ for(const entry of countryFeatures){
+  const [minLng,minLat,maxLng,maxLat]=entry.bounds;
+  if(c.lng<minLng||c.lng>maxLng||c.lat<minLat||c.lat>maxLat)continue;
+  const polygons=entry.geometryType==='MultiPolygon'?entry.coords:[entry.coords];
+  if(polygons.some(polygon=>pointInPolygon(c.lng,c.lat,polygon)))matches.push(entry.id);
+ }
+ return new Set(matches).size===1?matches[0]:'';
+}
 const nameOf = row => first(row.name,row.depositName,row.deposit_name,row.siteName,row.site_name,row.title,row.label,row.occurrenceName,row.mineName,row.properties?.name,row.properties?.NAME,row.properties?.deposit_name);
 const commodityOf = row => first(row.commodities,row.commodity,row.primaryCommodity,row.primary_commodity,row.mineral,row.minerals,row.resource,row.resourceType,row.depositType,row.deposit_type,row.properties?.commodities,row.properties?.commodity,row.properties?.mineral);
 const sourceIdOf = row => first(row.id,row.depositId,row.deposit_id,row.siteId,row.site_id,row.recordId,row.record_id,row.uid,row.properties?.id,row.properties?.deposit_id);
 const rows = new Map();
-let rejectedCoordinates = 0, rejectedCountry = 0, rejectedIdentity = 0;
+let rejectedCoordinates = 0, rejectedCountry = 0, rejectedIdentity = 0, acceptedRecordCount = 0, coordinateCountryInferenceCount = 0;
 for (const row of rawRows) {
   if (!row || typeof row !== 'object') continue;
   const c = coord(row);
   if (!c) { rejectedCoordinates++; continue; }
-  const countryId = countryIdOf(row);
+  let countryId = countryIdOf(row);
+  if (!countryId) { countryId = countryFromCoordinates(c); if (countryId) coordinateCountryInferenceCount++; }
   if (!countryId) { rejectedCountry++; continue; }
   const siteName = String(nameOf(row) || '').trim();
   const rawCommodity = commodityOf(row);
   if (!siteName || !rawCommodity) { rejectedIdentity++; continue; }
   const rid = resourceId(rawCommodity);
+  acceptedRecordCount++;
   const upstreamId = String(sourceIdOf(row) || '').trim();
   const siteId = 'GLOBAL_DEP_' + countryId + '_' + rid + '_' + (slug(upstreamId) || slug(siteName)) + '_' + c.lat.toFixed(4) + '_' + c.lng.toFixed(4);
   const key = [countryId,rid,c.lat.toFixed(4),c.lng.toFixed(4)].join('|');
@@ -132,7 +169,9 @@ const output = {
   siteCount: sites.length,
   countriesRepresented: [...new Set(sites.map(s=>s.countryId))].length,
   sourceRecordCount: rawRows.length,
-  deduplicatedRecordCount: rawRows.length - sites.length,
+  acceptedRecordCount,
+  deduplicatedRecordCount: acceptedRecordCount - sites.length,
+  coordinateCountryInferenceCount,
   rejected: { coordinates: rejectedCoordinates, countryIdentity: rejectedCountry, missingNameOrCommodity: rejectedIdentity },
   operationalPolicy: 'Occurrence records are visible on the map but are not automatically treated as active or executable mines.',
   source: { name: 'Global Deposit Globe', url: 'https://github.com/Alexander-ai/global-deposit-globe', reportedCoverage: 'Approximately 89,000 deposits from twelve open geological databases', retrievedAtBuild: true },
