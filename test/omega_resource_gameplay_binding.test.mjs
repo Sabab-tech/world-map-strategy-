@@ -261,6 +261,14 @@ test('runtime renders all global sites and applies nation/resource scope without
   assert.equal(diagnosticsAfterLoad.sourceRecordCounts.runtimeDeposits,43,'diagnostics must count all raw runtime deposit records');
   assert.ok(Object.values(diagnosticsAfterLoad.coordinateStatusCounts).reduce((a,b)=>a+b,0)===diagnosticsAfterLoad.siteCount,
     'coordinate confidence reporting must cover every mapped site');
+  const loadedSaudiSites=context.Omega.IndividualResourceSiteBinding.sites.filter(site=>site.countryId==='SAU');
+  assert.equal(loadedSaudiSites.length,3,'Saudi Arabia must retain all three distinct existing source records');
+  assert.ok(loadedSaudiSites.every(site=>site.location.coordinateStatus),
+    'every mapped site must expose a coordinate confidence/status label in its location object');
+  assert.ok(loadedSaudiSites.some(site=>site.location.coordinateStatus==='ESTIMATED_SITE_POINT'),
+    'estimated coordinates must remain explicitly labeled rather than being advertised as exact');
+  assert.ok(loadedSaudiSites.some(site=>site.location.coordinateStatus==='SOURCE_STATUS_UNSPECIFIED'),
+    'coordinates without source confidence metadata must remain explicitly unverified');
 });
 
 
