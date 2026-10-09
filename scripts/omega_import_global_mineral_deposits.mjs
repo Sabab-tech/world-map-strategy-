@@ -124,34 +124,38 @@ const nameOf = row => first(row.name,row.depositName,row.deposit_name,row.siteNa
 const commodityOf = row => first(row.commodities,row.commodity,row.primaryCommodity,row.primary_commodity,row.mineral,row.minerals,row.resource,row.resourceType,row.depositType,row.deposit_type,row.properties?.commodities,row.properties?.commodity,row.properties?.mineral);
 const sourceIdOf = row => first(row.id,row.depositId,row.deposit_id,row.siteId,row.site_id,row.recordId,row.record_id,row.uid,row.properties?.id,row.properties?.deposit_id);
 const rows = new Map();
-let unresolvedCoordinates = 0, unresolvedCountry = 0, rejectedIdentity = 0, acceptedRecordCount = 0, coordinateCountryInferenceCount = 0;
-for (const row of rawRows) {
-  if (!row || typeof row !== 'object') continue;
+let unresolvedCoordinates = 0, unresolvedCountry = 0, unresolvedIdentity = 0, acceptedRecordCount = 0, coordinateCountryInferenceCount = 0;
+let sourceRowIndex = 0;
+for (const rawRow of rawRows) {
+  sourceRowIndex++;
+  const row = rawRow && typeof rawRow === 'object' ? rawRow : { rawSourceRecord: String(rawRow ?? '') };
   const c = coord(row);
   if (!c) unresolvedCoordinates++;
   let countryId = countryIdOf(row);
   if (!countryId && c) { countryId = countryFromCoordinates(c); if (countryId) coordinateCountryInferenceCount++; }
   if (!countryId) unresolvedCountry++;
-  const siteName = String(nameOf(row) || '').trim();
-  const rawCommodity = commodityOf(row);
-  if (!siteName || !rawCommodity) { rejectedIdentity++; continue; }
-  const rid = resourceId(rawCommodity);
-  acceptedRecordCount++;
   const upstreamId = String(sourceIdOf(row) || '').trim();
+  const sourceName = String(nameOf(row) || '').trim();
+  const rawCommodity = commodityOf(row);
+  const identityComplete = Boolean(sourceName && rawCommodity);
+  const siteName = sourceName || upstreamId || ('Unidentified mineral source record ' + sourceRowIndex);
+  if (!identityComplete) unresolvedIdentity++;
+  const rid = rawCommodity ? resourceId(rawCommodity) : 'unknown_mineral';
+  acceptedRecordCount++;
   const countryKey = countryId || 'UNRESOLVED_COUNTRY';
   const coordinateKey = c ? c.lat.toFixed(4) + '_' + c.lng.toFixed(4) : 'NO_COORDINATES';
   const siteId = 'GLOBAL_DEP_' + countryKey + '_' + rid + '_' + (slug(upstreamId) || slug(siteName)) + '_' + coordinateKey;
-  const key = c ? [countryKey,rid,c.lat.toFixed(4),c.lng.toFixed(4)].join('|') : [countryKey,rid,slug(upstreamId)||slug(siteName),'NO_COORDINATES'].join('|');
+  const key = c ? [countryKey,rid,slug(siteName),c.lat.toFixed(4),c.lng.toFixed(4)].join('|') : [countryKey,rid,slug(upstreamId)||slug(siteName),'NO_COORDINATES'].join('|');
   const record = {
     siteId, countryId, siteName,
     schemaVersion: '1.0.0',
     sourceType: 'GLOBAL_MINERAL_OCCURRENCE',
-    identity: { countryIso3: countryId || null, countryAssignmentStatus: countryId ? 'IDENTIFIED' : 'UNRESOLVED_COUNTRY_IDENTITY', siteType: 'MINERAL_DEPOSIT_OR_OCCURRENCE', resourceTypeId: rid, sourceRecordId: upstreamId || null },
+    identity: { countryIso3: countryId || null, countryAssignmentStatus: countryId ? 'IDENTIFIED' : 'UNRESOLVED_COUNTRY_IDENTITY', sourceIdentityStatus: identityComplete ? 'COMPLETE' : 'INCOMPLETE_SOURCE_IDENTITY', siteType: 'MINERAL_DEPOSIT_OR_OCCURRENCE', resourceTypeId: rid, sourceRecordId: upstreamId || null },
     real: { resourceId: rid, operationStatus: 'UNKNOWN', reserveStatus: 'UNOBSERVED', productionStatus: 'UNOBSERVED' },
     coordinates: c,
     location: { coordinates: c, countryName: countryId ? (countryIdToName.get(countryId) || countryId) : null, countryJurisdictionStatus: countryId ? 'IDENTIFIED' : 'UNRESOLVED', coordinateStatus: c ? 'UPSTREAM_GEOLOCATION_NOT_INDEPENDENTLY_VERIFIED' : 'MISSING_UPSTREAM_COORDINATES' },
-    operation: { status: 'UNKNOWN', extractionEligibility: countryId && c ? 'REQUIRES_SITE_SPECIFIC_VERIFICATION' : (!countryId ? 'BLOCKED_UNRESOLVED_COUNTRY_IDENTITY' : 'BLOCKED_MISSING_COORDINATES'), commercialExtraction: false },
-    sourceSiteRecord: { sourceDataset: 'Alexander-ai/global-deposit-globe', sourceUrl: 'https://github.com/Alexander-ai/global-deposit-globe', upstreamRecordId: upstreamId || null, rawCommodity, sourceAttributes: { name: siteName, id: upstreamId || null, country: first(row.country,row.countryName,row.country_name,row.countryCode,row.iso3) || null, depositType: first(row.depositType,row.deposit_type,row.type) || null, status: first(row.status,row.developmentStatus,row.development_status) || null, source: first(row.source,row.sources,row.database,row.dataset) || null } },
+    operation: { status: 'UNKNOWN', extractionEligibility: !countryId ? 'BLOCKED_UNRESOLVED_COUNTRY_IDENTITY' : (!c ? 'BLOCKED_MISSING_COORDINATES' : (!identityComplete ? 'BLOCKED_INCOMPLETE_SOURCE_IDENTITY' : 'REQUIRES_SITE_SPECIFIC_VERIFICATION')), commercialExtraction: false },
+    sourceSiteRecord: { sourceDataset: 'Alexander-ai/global-deposit-globe', sourceUrl: 'https://github.com/Alexander-ai/global-deposit-globe', upstreamRecordId: upstreamId || null, rawCommodity, sourceAttributes: { name: sourceName || null, displayNameFallbackUsed: !sourceName, id: upstreamId || null, country: first(row.country,row.countryName,row.country_name,row.countryCode,row.iso3) || null, depositType: first(row.depositType,row.deposit_type,row.type) || null, status: first(row.status,row.developmentStatus,row.development_status) || null, source: first(row.source,row.sources,row.database,row.dataset) || null } },
     provenance: { sourceAuthority: 'OPEN_MULTI_SOURCE_GEOLOGICAL_COMPILATION', sourceSnapshot: 'upstream-main-build-time', operationalStatus: 'NOT_INFERRED' }
   };
   if (rows.has(key)) {
@@ -171,17 +175,18 @@ const output = {
   siteCount: sites.length,
   countriesRepresented: [...new Set(sites.map(s=>s.countryId).filter(Boolean))].length,
   unresolvedIdentityCount: sites.filter(s=>!s.countryId).length,
+  unresolvedSourceIdentityCount: unresolvedIdentity,
   unresolvedCoordinateCount: sites.filter(s=>!s.coordinates).length,
   sourceRecordCount: rawRows.length,
   acceptedRecordCount,
   deduplicatedRecordCount: acceptedRecordCount - sites.length,
   coordinateCountryInferenceCount,
-  rejected: { coordinates: 0, countryIdentity: 0, missingNameOrCommodity: rejectedIdentity },
-  unresolved: { coordinates: unresolvedCoordinates, countryIdentity: unresolvedCountry },
+  rejected: { coordinates: 0, countryIdentity: 0, missingNameOrCommodity: 0, malformedSourceRows: 0 },
+  unresolved: { coordinates: unresolvedCoordinates, countryIdentity: unresolvedCountry, identityFields: unresolvedIdentity },
   operationalPolicy: 'Occurrence records are visible on the map but are not automatically treated as active or executable mines.',
   source: { name: 'Global Deposit Globe', url: 'https://github.com/Alexander-ai/global-deposit-globe', reportedCoverage: 'Approximately 89,000 deposits from twelve open geological databases', retrievedAtBuild: true },
   sites
 };
 fs.mkdirSync(path.dirname(OUT), { recursive: true });
 fs.writeFileSync(OUT, JSON.stringify(output) + '\n');
-console.log(JSON.stringify({ output: path.relative(ROOT,OUT), siteCount: sites.length, countriesRepresented: output.countriesRepresented, unresolvedIdentityCount: output.unresolvedIdentityCount, unresolvedCoordinateCount: output.unresolvedCoordinateCount, sourceRecordCount: rawRows.length, deduplicatedRecordCount: output.deduplicatedRecordCount, rejected: output.rejected, unresolved: output.unresolved }, null, 2));
+console.log(JSON.stringify({ output: path.relative(ROOT,OUT), siteCount: sites.length, countriesRepresented: output.countriesRepresented, unresolvedIdentityCount: output.unresolvedIdentityCount, unresolvedSourceIdentityCount: output.unresolvedSourceIdentityCount, unresolvedCoordinateCount: output.unresolvedCoordinateCount, sourceRecordCount: rawRows.length, deduplicatedRecordCount: output.deduplicatedRecordCount, rejected: output.rejected, unresolved: output.unresolved }, null, 2));
