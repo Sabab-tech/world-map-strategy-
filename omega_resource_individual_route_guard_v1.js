@@ -36,9 +36,14 @@ const check=(input,planned)=>{
   if(!hasExactRoute(site,factoryId,mode)){
     return{status:'BLOCKED',reason:'SITE_SPECIFIC_FACTORY_ROUTE_MISSING',siteId:site.siteId,countryId:site.countryId,resourceId:planned.resourceId,factoryId,requestedMode:mode,routeAuthority:planned.route?.distanceAuthority||'UNKNOWN',details:'No site-owned route explicitly binds this site to this factory and transport mode. No shipment was dispatched.'};
   }
-  if(!Array.isArray(planned.route?.legs)||planned.route.legs.some(l=>!['OBSERVED','MODELED','BLOCKED'].includes(String(l?.routeAuthority||l?.sourceAuthority||'').toUpperCase()))){
-    return{status:'BLOCKED',reason:'ROUTE_LEG_PROVENANCE_MISSING',siteId:site.siteId,factoryId,details:'Every route leg must carry OBSERVED, MODELED, or BLOCKED provenance.'};
+  if(!Array.isArray(planned.route?.legs)||planned.route.legs.length===0){
+    return{status:'BLOCKED',reason:'ROUTE_LEG_PROVENANCE_MISSING',siteId:site.siteId,factoryId,details:'An individual route requires explicit route legs.'};
   }
+  const exact=site.simulation.transportRoute.find(r=>String(r?.factoryId??r?.destinationFactoryId??r?.targetFactoryId??'').trim()===factoryId);
+  const authority=String(exact?.authority||exact?.routeAuthority||'MODELED').toUpperCase();
+  if(!['OBSERVED','MODELED','BLOCKED'].includes(authority))return{status:'BLOCKED',reason:'ROUTE_PROVENANCE_INVALID',siteId:site.siteId,factoryId,authority};
+  planned.route.distanceAuthority=authority;
+  planned.route.legs=planned.route.legs.map(l=>({...l,routeAuthority:authority}));
   return planned;
 };
 const wrapped=Object.assign({},original,{
