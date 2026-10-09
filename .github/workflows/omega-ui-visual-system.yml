@@ -1,0 +1,40 @@
+name: OMEGA UI Visual System
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'map-engine-2.js'
+      - 'omega_ui_visual_system_v1.css'
+      - 'test/omega_ui_visual_system.test.mjs'
+      - 'package.json'
+      - '.github/workflows/omega-ui-visual-system.yml'
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'map-engine-2.js'
+      - 'omega_ui_visual_system_v1.css'
+      - 'test/omega_ui_visual_system.test.mjs'
+      - 'package.json'
+      - '.github/workflows/omega-ui-visual-system.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ui-visual-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Syntax-check map UI
+        run: node --check map-engine-2.js
+      - name: Run UI visual and map-layer regression tests
+        run: npm run test:ui-visual
