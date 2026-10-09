@@ -82,3 +82,39 @@ test('individual site map markers use resource-specific catalog glyphs and acces
   assert.match(css, /\.omega-individual-site-marker span/);
   assert.match(css, /var\(--site-color/);
 });
+
+
+test('global map source data preserves every coordinate-backed mine site and runtime deposit', () => {
+  const sources = ['resources.json', 'resources_2.json'].map(file => JSON.parse(read(file)));
+  const mineSites = sources.flatMap(data =>
+    Object.values(data.GSRSK_Master_CountryProfiles_v14?.countryProfiles || {})
+      .flatMap(profile => profile.resource_infrastructure_context?.mineSites || [])
+  );
+  const deposits = sources.flatMap(data => data.runtime_deposits || []);
+  const ids = mineSites.map(site => site.siteId || site.id);
+  const depositIds = deposits.map(site => site.siteId || site.id);
+  assert.equal(mineSites.length, 199, 'both raw resource JSON files contain 199 distinct mine/site records');
+  assert.equal(new Set(ids).size, 199, 'mine/site source IDs must be unique across both files');
+  assert.equal(deposits.length, 43, 'both raw resource JSON files contain 43 individually identified runtime deposits');
+  assert.equal(new Set(depositIds).size, 43, 'runtime deposit IDs must be unique');
+  const validCoordinates = site => {
+    const lat = Number(site.lat ?? site.coordinates?.lat ?? site.location?.coordinates?.lat);
+    const lng = Number(site.lng ?? site.lon ?? site.coordinates?.lng ?? site.location?.coordinates?.lng);
+    return Number.isFinite(lat) && lat >= -90 && lat <= 90 &&
+      Number.isFinite(lng) && lng >= -180 && lng <= 180;
+  };
+  assert.ok(mineSites.every(validCoordinates), 'every source mine/site must have usable coordinates');
+  assert.ok(deposits.every(validCoordinates), 'every runtime deposit must have usable coordinates');
+  assert.match(read('omega_resource_gameplay_binding_v1.js'), /raw\.resId/,
+    'runtime deposits using the source schema resId field must resolve their commodity');
+  assert.match(read('omega_resource_gameplay_binding_v1.js'), /sourceDepositRecords/,
+    'an explicit deposit record at an already mapped physical site must be joined instead of stacked as a duplicate marker');
+  const countryCounts = [...mineSites, ...deposits].reduce((counts, site) => {
+    const country = site.countryId || site.countryCode || site.country;
+    counts[country] = (counts[country] || 0) + 1;
+    return counts;
+  }, {});
+  assert.ok(countryCounts.BGD >= 4, 'Bangladesh mine and multiple oil/gas/coal deposit records must remain individually discoverable');
+  assert.ok(countryCounts.CHN > 1 && countryCounts.CHL > 1 && countryCounts.USA > 1,
+    'global source discovery must include multiple distinct records outside Bangladesh');
+});
