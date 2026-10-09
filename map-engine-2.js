@@ -1457,7 +1457,7 @@ Game.Map.renderResourceDeposits = function() {
                 renderLng = dep.lng + (microOffset * Math.cos(angle)) / Math.max(0.2, Math.cos(dep.lat * Math.PI / 180));
             }
 
-            const catalogItem = (Array.isArray(this.resourceCatalog) ? this.resourceCatalog.find(r => r.id === dep.resId) : null) || { icon: '⛏️', color: '#ffd700' };
+            const catalogItem = (Array.isArray(this.resourceCatalog) ? this.resourceCatalog.find(r => r.id === dep.resId) : null) || { icon: 'ORE', color: '#9aabbe' };
             const icon = catalogItem.icon || 'ORE';
             const color = catalogItem.color || '#38bdf8';
 
@@ -1479,12 +1479,12 @@ Game.Map.renderResourceDeposits = function() {
                 size = 28;
                 glowStyle = `0 0 12px ${color}, 0 0 22px ${color}`;
                 auraHtml = `<div style="position:absolute; inset:-5px; border-radius:50%; border:1.5px solid ${color}; animation: resMarkerPulse 1.8s infinite ease-in-out; pointer-events:none;"></div>`;
-                badgeHtml = `<span style="position:absolute; top:-4px; right:-4px; background:#ef4444; color:#ffffff; font-size:8px; font-weight:900; line-height:1; width:12px; height:12px; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 0 5px #ef4444; z-index:10; border:1px solid #fff;">★</span>`;
+                badgeHtml = `<span style="position:absolute; top:-4px; right:-4px; background:#27384b; color:#e6edf5; font-size:7px; font-weight:800; line-height:1; width:12px; height:12px; border-radius:3px; display:flex; align-items:center; justify-content:center; box-shadow:none; z-index:10; border:1px solid #52677f;">M</span>`;
             } else if (quantityTier === 'HIGH') {
                 size = 26;
                 glowStyle = `0 0 10px ${color}`;
                 auraHtml = `<div style="position:absolute; inset:-3px; border-radius:50%; border:1px solid ${color}; animation: resMarkerPulse 2.5s infinite ease-in-out; pointer-events:none;"></div>`;
-                badgeHtml = `<span style="position:absolute; top:-3px; right:-3px; background:#eab308; color:#000; font-size:7px; font-weight:bold; width:10px; height:10px; border-radius:50%; display:flex; align-items:center; justify-content:center;">▲</span>`;
+                badgeHtml = `<span style="position:absolute; top:-3px; right:-3px; background:#27384b; color:#e6edf5; font-size:7px; font-weight:800; width:10px; height:10px; border-radius:3px; display:flex; align-items:center; justify-content:center; border:1px solid #52677f;">H</span>`;
             }
 
             const halfSize = Math.round(size / 2);
