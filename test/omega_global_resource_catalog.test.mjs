@@ -119,7 +119,11 @@ test('research-backed coal identity overrides resolve known missing country and 
     assert.ok(Math.abs(site.coordinates.lng - lng) < 0.002, name+' longitude correction');
     assert.equal(site.location.coordinateCorrection, correction);
   }
-  assert.ok(catalog.unresolvedCounts.siteRecordsWithoutCoordinates <= 1029, 'provable sign errors must not remain quarantined as missing coordinates');
+  assert.ok(catalog.unresolvedCounts.siteRecordsWithoutCoordinates <= 1021, 'verified source points near coarse country borders should remain visible with review status');
+  const borderReviewNames = ['Río Turbio Coal Mine','Donkin Coal Mine','DTSA Coal Mine','GTB Coal Mine','LIM Coal Mine','MIP Coal Mine','Ulaan Ovoo Coal Mine','Turow Coal Mine','Saebyol Coal Mining Complex','Guzn Coal Mine','Kiwira Coal Mine','Tuli Coal Mine'];
+  const borderReviewCount = borderReviewNames.filter(name => { const site = byName.get(key(name)); return site?.coordinates && site.location?.coordinateStatus === 'SOURCE_COORDINATE_NEAR_COUNTRY_BORDER_REVIEW_REQUIRED'; }).length;
+  assert.ok(borderReviewCount >= 8, 'retain source coordinates near the border as visible review markers rather than silently dropping them');
+  assert.ok(catalog.unresolvedCounts.coal_coordinates_quarantined_country_mismatch <= 6, 'only distant or unresolvable country-geometry conflicts should remain quarantined');
   const sourceIdOnly = catalog.sites.find(site => site.identity?.sourceIdentityStatus === 'SOURCE_ID_ONLY');
   if (sourceIdOnly) assert.equal(sourceIdOnly.siteName, sourceIdOnly.sourceSiteRecord.sourceRecordId, 'source-ID-only sites must keep their stable source ID as the visible label');
   const sibovc = byName.get(key('Sibovc Coal Mine'));
@@ -129,8 +133,8 @@ test('research-backed coal identity overrides resolve known missing country and 
   assert.ok(sibovc.coordinates, 'the source location in Kosovo must remain mappable even though the game routes its runtime through SRB');
   assert.equal(sibovc.location.coordinateStatus, 'SOURCE_COORDINATE_IN_DISPUTED_JURISDICTION');
   assert.equal(sibovc.location.coordinateJurisdiction, 'Kosovo');
-  assert.ok(catalog.unresolvedCounts.siteRecordsWithoutCountry <= 2, 'only the two source-ambiguous sites should remain country-unresolved');
-  assert.ok(catalog.unresolvedCounts.siteRecordsWithoutCoordinates <= 2772, 'researched mine-area coordinates must reduce coordinate gaps without inventing locations');
+  assert.equal(catalog.unresolvedCounts.siteRecordsWithoutCountry, 0, 'all sites with source country/province evidence must be assigned');
+  assert.ok(catalog.unresolvedCounts.siteRecordsWithoutCoordinates <= 1021, 'coordinate gaps must continue to shrink without inventing mine locations');
 });
 
 test('resource map loads global catalogs and wires them into the execution pipeline', () => {
