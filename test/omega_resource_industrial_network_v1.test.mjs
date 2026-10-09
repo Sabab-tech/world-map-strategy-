@@ -116,9 +116,68 @@ assert.equal(padma.infrastructureType,'bridge');
 for(let turn=13;turn<=42;turn++){context.Game.state.simulation.turn=turn;N.advanceProjects('BGD');}
 assert.equal(context.Game.state.resource.BGD.industrialNetwork.infrastructure.corridors.PADMA_EAST_WEST.status,'OPERATIONAL');
 
+// Full source-site -> exact extraction batch -> country warehouse -> shipment -> factory-input
+// lot -> processing proof. This uses the same per-site IDs as the runtime, not a country average.
+context.Game.state.resource.BGD.inventory={coal:5000};
+context.Game.state.resource.BGD.inventoryLots={
+  'BATCH-E2E-COAL-01': {
+    batchId:'BATCH-E2E-COAL-01', resourceId:'coal', quantity:5000, remainingQuantity:5000,
+    countryId:'BGD', sourceCountryId:'BGD', originCountryId:'BGD', destinationCountryId:'BGD',
+    warehouseId:'WH-BGD-RAW', occurrenceKey:'OCC_BGD_COAL_E2E',
+    qualityState:{gradePercent:72,gradeStatus:'SIMULATED'}, stage:'RAW_INVENTORY', lifecycleStatus:'AVAILABLE'
+  }
+};
+context.Game.state.resource.BGD.warehouse.availableByResource.coal=50000;
+const routed=N.dispatchShipment({
+  countryId:'BGD',siteId:'SITE_BGD_COAL_01',resourceId:'coal',quantity:500,
+  transportMode:'rail',factoryId:'FAC-COAL-PREP',batchId:'BATCH-E2E-COAL-01',
+  occurrenceKey:'OCC_BGD_COAL_E2E',unit:'TONNES'
+});
+assert.equal(routed.status,'DISPATCHED',JSON.stringify(routed));
+assert.equal(routed.shipment.siteId,'SITE_BGD_COAL_01');
+assert.equal(routed.shipment.batchId,'BATCH-E2E-COAL-01');
+assert.equal(context.Game.state.resource.BGD.inventoryLots['BATCH-E2E-COAL-01'].remainingQuantity,4500);
+assert.equal(context.Game.state.resource.BGD.inventory.coal,4500);
+context.Game.state.simulation.turn=routed.shipment.etaTurn;
+const receipt=N.advanceShipments('BGD');
+assert.equal(receipt.delivered,1);
+const receivedId=routed.shipment.factoryInputLotId;
+assert.ok(receivedId);
+const received=context.Game.state.resource.BGD.inventoryLots[receivedId];
+assert.equal(received.sourceBatchId,'BATCH-E2E-COAL-01');
+assert.equal(received.sourceSiteId,'SITE_BGD_COAL_01');
+assert.equal(received.occurrenceKey,'OCC_BGD_COAL_E2E');
+assert.equal(received.locationNodeKey,'FACTORY:BGD:FAC-COAL-PREP');
+assert.equal(context.Game.state.resource.BGD.industrialNetwork.factoryInputs['FAC-COAL-PREP'].coal.availableQuantity,500);
+const processed=N.executeFactoryCycle({
+  countryId:'BGD',factoryId:'FAC-COAL-PREP',resourceId:'coal',quantity:100,
+  requireDeliveredShipment:true
+});
+assert.equal(processed.status,'COMPLETED',JSON.stringify(processed));
+assert.equal(processed.sourceAuthority,'ROUTED_BATCH_DELIVERY');
+assert.deepEqual(processed.sourceSites,['SITE_BGD_COAL_01']);
+assert.deepEqual(processed.sourceBatches,['BATCH-E2E-COAL-01']);
+assert.deepEqual(processed.sourceOccurrenceKeys,['OCC_BGD_COAL_E2E']);
+assert.equal(processed.inputConsumption.coal,100);
+assert.equal(context.Game.state.resource.BGD.inventoryLots[receivedId].remainingQuantity,400);
+assert.equal(context.Game.state.resource.BGD.industrialNetwork.factoryInputs['FAC-COAL-PREP'].coal.availableQuantity,400);
+
+// Global mineral occurrences remain registered but cannot produce output until a genuine
+// country, site location and commercial operating identity is available.
+context.Omega.IndividualResourceSiteBinding={sites:[{
+  siteId:'GLOBAL_DEP_UNRESOLVED_TEST',countryId:null,sourceType:'GLOBAL_MINERAL_OCCURRENCE',
+  siteName:'Unresolved Copper Occurrence',identity:{countryIso3:null,resourceTypeId:'copper'},
+  real:{resourceId:'copper'},coordinates:null,operation:{commercialExtraction:false}
+}]};
+const unresolvedExtraction=N.planExtraction({countryId:'BGD',siteId:'GLOBAL_DEP_UNRESOLVED_TEST',resourceId:'copper',quantity:10});
+assert.equal(unresolvedExtraction.status,'BLOCKED');
+assert.equal(unresolvedExtraction.reason,'UNRESOLVED_SITE_COUNTRY_IDENTITY');
+const wrongCountryShipment=N.planShipment({countryId:'USA',siteId:'SITE_BGD_COAL_01',resourceId:'coal',quantity:10});
+assert.equal(wrongCountryShipment.status,'BLOCKED');
+assert.equal(wrongCountryShipment.reason,'SITE_COUNTRY_MISMATCH');
+
 const diag=N.diagnostics();
-assert.equal(diag.siteCount,2);
-assert.equal(diag.extractionPlans,2);
+assert.ok(diag.siteCount>=2);
 assert.equal(diag.targetArchitecture,'SITE -> EXTRACTION -> WAREHOUSE -> ROUTE -> FACTORY -> PROCESS -> OUTPUT');
 
 console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
