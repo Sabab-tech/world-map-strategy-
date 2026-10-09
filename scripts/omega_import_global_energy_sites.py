@@ -45,6 +45,17 @@ def as_float(value):
     except (TypeError, ValueError):
         return None
 
+def coordinate_pair(latitude_value, longitude_value):
+    lat = as_float(latitude_value)
+    lon = as_float(longitude_value)
+    if lat is None or lon is None:
+        numbers = re.findall(r"[-+]?(?:\\d+(?:[.,]\\d*)?|[.,]\\d+)", str(latitude_value or ""))
+        if lat is None and numbers:
+            lat = as_float(numbers[0])
+        if lon is None and len(numbers) > 1:
+            lon = as_float(numbers[1])
+    return lat, lon
+
 country_name_to_id = {}
 country_id_to_name = {}
 known_ids = set()
@@ -81,8 +92,15 @@ SITE_COUNTRY_OVERRIDES = {
 SITE_COORDINATE_OVERRIDES = {
     "ANGLESEA COAL MINE": (-38.39835, 144.16306, "WEB_RESEARCHED_SITE_POINT", "https://www.mindat.org/loc-342829.html"),
     # Official BOE UTM boundary vertices for the Mi Viña mine waste/coal area converted from
-    # ETRS89 / UTM zone 30N to WGS84; the point is the area centroid, not an exact shaft.
+    # ETRS89 / UTM zone 30N to WGS84; fallback point is the area centroid, not an exact shaft.
     "MI VINA COAL MINE": (40.8343215, -0.6257263, "OFFICIAL_MINE_AREA_CENTROID_APPROXIMATE", "https://www.boe.es/diario_boe/txt.php?id=BOE-B-2022-37429"),
+}
+PROVINCE_COUNTRY_OVERRIDES = {
+    "KEMEROVO": ("RUS", "SOURCE_PROVINCE_COUNTRY_OVERRIDE"),
+    "PENNSYLVANIA": ("USA", "SOURCE_PROVINCE_COUNTRY_OVERRIDE"),
+    "VICTORIA": ("AUS", "SOURCE_PROVINCE_COUNTRY_OVERRIDE"),
+    "WEST COAST": ("NZL", "SOURCE_PROVINCE_COUNTRY_OVERRIDE"),
+    "TERUEL": ("ESP", "SOURCE_PROVINCE_COUNTRY_OVERRIDE"),
 }
 ALIASES = {
     "UNITED STATES OF AMERICA": "USA", "UNITED STATES": "USA", "USA": "USA",
@@ -161,6 +179,44 @@ def country_from_coordinates(lat, lon):
             matches.append(cid)
     return matches[0] if len(set(matches)) == 1 else ""
 
+def point_segment_distance_degrees(lon, lat, a, b):
+    scale = max(0.01, __import__("math").cos(__import__("math").radians(lat)))
+    x1, y1 = (a[0] - lon) * scale, a[1] - lat
+    x2, y2 = (b[0] - lon) * scale, b[1] - lat
+    dx, dy = x2 - x1, y2 - y1
+    denom = dx * dx + dy * dy
+    t = 0.0 if denom == 0 else max(0.0, min(1.0, -(x1 * dx + y1 * dy) / denom))
+    return ((x1 + t * dx) ** 2 + (y1 + t * dy) ** 2) ** 0.5
+
+def nearest_country_within(lat, lon, max_degrees=0.15):
+    scale = max(0.01, __import__("math").cos(__import__("math").radians(lat)))
+    candidates = []
+    for cid, geometry_type, coords, bbox in country_features:
+        min_lon, min_lat, max_lon, max_lat = bbox
+        lon_margin = max_degrees / scale
+        if lon < min_lon - lon_margin or lon > max_lon + lon_margin or lat < min_lat - max_degrees or lat > max_lat + max_degrees:
+            continue
+        best = float("inf")
+        polygons = coords if geometry_type == "MultiPolygon" else [coords]
+        for polygon in polygons:
+            if not polygon:
+                continue
+            ring = polygon[0]
+            for index in range(len(ring) - 1):
+                best = min(best, point_segment_distance_degrees(lon, lat, ring[index], ring[index + 1]))
+                if best <= 0.002:
+                    break
+            if best <= 0.002:
+                break
+        if best <= max_degrees:
+            candidates.append((best, cid))
+    candidates.sort()
+    if not candidates:
+        return "", None
+    if len(candidates) > 1 and candidates[1][0] - candidates[0][0] < 0.02:
+        return "", candidates[0][0]
+    return candidates[0][1], candidates[0][0]
+
 def site_record(prefix, cid, name, resource, lat, lon, status, source, source_url, source_record_id=None, operator=None, year=None, accuracy=None, production=None):
     cid = str(cid).strip().upper() if cid else None
     valid_coordinates = lat is not None and lon is not None and -90 <= lat <= 90 and -180 <= lon <= 180
@@ -172,6 +228,9 @@ def site_record(prefix, cid, name, resource, lat, lon, status, source, source_ur
     identity_hash = hashlib.sha256(raw_identity.encode("utf-8")).hexdigest()[:10]
     site_id = f"{prefix}_{country_key}_{resource}_{slug(name)}_{source_key}_{coord_key}_{identity_hash}"
     status_text = str(status or "UNKNOWN").strip()
+    status_key = norm(status_text)
+    if status_key in country_name_to_id or status_key in {"LIGNITE", "BITUMINOUS", "SUBBITUMINOUS", "ANTHRACITE", "THERMAL", "METALLURGICAL", "MET", "ESTIMATE", "EXACT", "APPROXIMATE"} or re.fullmatch(r"[0-9]+(?:[.,][0-9]+)?", status_text):
+        status_text = "UNKNOWN"
     operation_status = status_text.upper()
     commercial = ("OPERAT" in operation_status or "PRODUC" in operation_status) and valid_coordinates and bool(cid)
     if not cid:
@@ -195,8 +254,62 @@ def site_record(prefix, cid, name, resource, lat, lon, status, source, source_ur
         "provenance": {"sourceAuthority": source, "sourceUrl": source_url, "operationalStatus": "PRESERVED_FROM_SOURCE_NOT_SYNTHESIZED"}
     }
 
+def valid_status(value):
+    if not value:
+        return False
+    key = norm(value)
+    return not (key in country_name_to_id or key in {"LIGNITE", "BITUMINOUS", "SUBBITUMINOUS", "ANTHRACITE", "THERMAL", "METALLURGICAL", "MET", "ESTIMATE", "EXACT", "APPROXIMATE"} or re.fullmatch(r"[0-9]+(?:[.,][0-9]+)?", str(value).strip()))
+
+def coal_site_quality(site):
+    quality = 100 if site.get("countryId") else 0
+    coords = site.get("coordinates")
+    if coords:
+        quality += 100
+        accuracy = norm((site.get("location") or {}).get("coordinateStatus"))
+        if accuracy == "EXACT":
+            quality += 35
+        elif accuracy == "APPROXIMATE":
+            quality += 20
+        elif accuracy == "WEB RESEARCHED SITE POINT":
+            quality += 10
+        elif accuracy == "OFFICIAL MINE AREA CENTROID APPROXIMATE":
+            quality += 8
+        elif accuracy == "UPSTREAM COORDINATE NOT INDEPENDENTLY VALIDATED":
+            quality += 12
+    status = norm((site.get("operation") or {}).get("status"))
+    if status and status != "UNKNOWN":
+        quality += 20
+    if (site.get("operation") or {}).get("operator"):
+        quality += 8
+    if (site.get("operation") or {}).get("startYear"):
+        quality += 5
+    if (site.get("identity") or {}).get("countryAssignmentMethod"):
+        quality += 3
+    return quality
+
+def merge_coal_sites(first_site, second_site):
+    if coal_site_quality(second_site) > coal_site_quality(first_site):
+        primary, secondary = second_site, first_site
+    else:
+        primary, secondary = first_site, second_site
+    primary_record = primary.setdefault("sourceSiteRecord", {})
+    secondary_record = dict(secondary.get("sourceSiteRecord") or {})
+    additional = list(primary_record.get("additionalSourceRecords") or [])
+    if secondary_record and secondary_record != {k: v for k, v in primary_record.items() if k != "additionalSourceRecords"}:
+        additional.append(secondary_record)
+    if additional:
+        primary_record["additionalSourceRecords"] = additional
+    primary_coords = primary.get("coordinates")
+    secondary_coords = secondary.get("coordinates")
+    if secondary_coords and secondary_coords != primary_coords:
+        evidence = list(primary_record.get("additionalCoordinateEvidence") or [])
+        evidence.append({"coordinates": secondary_coords, "coordinateStatus": (secondary.get("location") or {}).get("coordinateStatus"), "coordinateSourceUrl": (secondary.get("location") or {}).get("coordinateSourceUrl"), "sourceRecordId": (secondary.get("sourceSiteRecord") or {}).get("sourceRecordId")})
+        primary_record["additionalCoordinateEvidence"] = evidence
+    return primary
+
 records = {}
-unresolved = {"energy_missing_coordinates": 0, "energy_missing_country": 0, "energy_missing_name": 0, "energy_missing_commodity": 0, "coal_missing_coordinates": 0, "coal_missing_country": 0, "coal_missing_name": 0, "coal_country_inferred_from_coordinates": 0, "coal_country_resolved_from_research": 0, "coal_coordinates_resolved_from_research": 0}
+coal_identity_index = {}
+unresolved = {"energy_missing_coordinates": 0, "energy_missing_country": 0, "energy_missing_name": 0, "energy_missing_commodity": 0, "coal_missing_coordinates": 0, "coal_missing_country": 0, "coal_missing_name": 0, "coal_country_inferred_from_coordinates": 0, "coal_country_resolved_from_research": 0, "coal_country_resolved_from_province": 0, "coal_coordinates_resolved_from_research": 0, "coal_coordinates_quarantined_country_mismatch": 0, "coal_duplicate_source_rows_merged": 0}
 energy_source = "Global Energy Monitor — Global Oil and Gas Extraction Tracker (March 2026)"
 energy_url = "https://web.archive.org/web/20260305063452id_/https://globalenergymonitor.org/wp-content/uploads/2026/03/Global-Oil-and-Gas-Extraction-Tracker-March-2026.xlsx"
 if not GOGET_XLSX.exists():
@@ -275,13 +388,12 @@ for csv_path, default_status in [(COAL_ACTIVE, "UNKNOWN"), (COAL_CLOSED, "CLOSED
         for row in csv.DictReader(handle):
             coal_source_rows_seen += 1
             original_name = first(row.get("Mine Name"), row.get("Mine name"), row.get("name"))
-            source_id = first(row.get("Mine ID"), row.get("Mine Name"), row.get("Mine name"), row.get("name"))
+            source_id = first(row.get("Mine ID"), row.get("GEM Mine ID"), row.get("Mine Name"), row.get("Mine name"), row.get("name"))
             name = original_name or source_id or f"Unidentified coal source row {coal_source_rows_seen}"
             name_key = norm(name)
             coordinate_override = SITE_COORDINATE_OVERRIDES.get(name_key)
-            lat = as_float(first(row.get("Latitude"), row.get("latitude")))
-            lon = as_float(first(row.get("Longitude"), row.get("longitude")))
-            coordinate_accuracy = "UPSTREAM_COORDINATE_NOT_INDEPENDENTLY_VALIDATED"
+            lat, lon = coordinate_pair(first(row.get("Latitude"), row.get("latitude")), first(row.get("Longitude"), row.get("longitude")))
+            coordinate_accuracy = first(row.get("Location Accuracy"), row.get("Location accuracy"), "UPSTREAM_COORDINATE_NOT_INDEPENDENTLY_VALIDATED")
             coordinate_source_url = None
             if lat is None or lon is None or not (-90 <= lat <= 90 and -180 <= lon <= 180):
                 if coordinate_override:
@@ -290,25 +402,65 @@ for csv_path, default_status in [(COAL_ACTIVE, "UNKNOWN"), (COAL_CLOSED, "CLOSED
                 else:
                     unresolved["coal_missing_coordinates"] += 1
                     lat, lon = None, None
+            raw_source_coordinates = {"lat": lat, "lng": lon} if lat is not None and lon is not None else None
             cid = country_id(row.get("Country / Area"), row.get("Country"), row.get("country"))
             country_method = "SOURCE_COUNTRY_FIELD" if cid else None
+            country_evidence_url = None
+            province = norm(first(row.get("State, Province"), row.get("Province"), row.get("State")))
+            if not cid and province in PROVINCE_COUNTRY_OVERRIDES:
+                cid, country_method = PROVINCE_COUNTRY_OVERRIDES[province]
+                country_evidence_url = coal_url
+                unresolved["coal_country_resolved_from_province"] += 1
             country_override = SITE_COUNTRY_OVERRIDES.get(name_key)
             if not cid and country_override:
                 cid, country_method, country_evidence_url = country_override
                 unresolved["coal_country_resolved_from_research"] += 1
-            else:
-                country_evidence_url = None
+            point_country = country_from_coordinates(lat, lon) if lat is not None and lon is not None else ""
+            if not cid and point_country:
+                cid = point_country
+                country_method = "POINT_IN_COUNTRY_POLYGON"
+                unresolved["coal_country_inferred_from_coordinates"] += 1
             if not cid and lat is not None and lon is not None:
-                cid = country_from_coordinates(lat, lon)
-                if cid:
-                    country_method = "POINT_IN_COUNTRY_POLYGON"
+                nearest_country, nearest_distance = nearest_country_within(lat, lon, 0.15)
+                if nearest_country:
+                    cid = nearest_country
+                    country_method = "NEAREST_COUNTRY_GEOMETRY_WITHIN_0_15_DEG"
                     unresolved["coal_country_inferred_from_coordinates"] += 1
+            coordinate_quarantined = False
+            if cid and lat is not None and lon is not None:
+                if point_country and point_country != cid:
+                    coordinate_quarantined = True
+                elif not point_country:
+                    nearest_country, nearest_distance = nearest_country_within(lat, lon, 0.15)
+                    if nearest_country != cid or nearest_distance is None:
+                        coordinate_quarantined = True
+                    elif not coordinate_source_url:
+                        coordinate_accuracy = "UPSTREAM_NEAR_COUNTRY_BOUNDARY"
+                if coordinate_quarantined:
+                    lat, lon = None, None
+                    coordinate_accuracy = "REJECTED_COUNTRY_GEOMETRY_MISMATCH"
+                    unresolved["coal_coordinates_quarantined_country_mismatch"] += 1
             if not cid:
                 unresolved["coal_missing_country"] += 1
             if not original_name:
                 unresolved["coal_missing_name"] += 1
-            status = first(row.get("Status"), row.get("status"), default_status)
-            site = site_record("GLOBAL_COAL", cid, name, "coal", lat, lon, status, coal_source, coal_url, source_id, row.get("Parent Company"), row.get("Opening Year"), coordinate_accuracy, row.get("Production (Mtpa)"))
+            status_candidates = [row.get("Status"), row.get("Mine Site Status"), row.get("status"), default_status]
+            status = next((candidate for candidate in status_candidates if valid_status(candidate)), "UNKNOWN")
+            operator_candidates = [row.get("Parent Company"), row.get("Owners"), row.get("Owner"), row.get("Operator")]
+            operator = next((candidate for candidate in operator_candidates if candidate and not re.fullmatch(r"[0-9]+(?:[.,][0-9]+)?", str(candidate).strip()) and norm(candidate) not in country_name_to_id and norm(candidate) not in {"LIGNITE", "BITUMINOUS", "SUBBITUMINOUS", "ANTHRACITE", "THERMAL", "METALLURGICAL", "MET", "ESTIMATE", "EXACT", "APPROXIMATE"}), None)
+            year = first(row.get("Opening Year"), row.get("Year of Production"), row.get("Start Year"))
+            if year is not None:
+                year_match = re.search(r"(?:17|18|19|20|21)\\d{2}", str(year))
+                year = year_match.group(0) if year_match else None
+            production = first(row.get("Production (Mtpa)"), row.get("Production"), row.get("Annual Production"))
+            if production is not None and as_float(production) is None:
+                production = None
+            if coordinate_quarantined:
+                site = site_record("GLOBAL_COAL", cid, name, "coal", None, None, status, coal_source, coal_url, source_id, operator, year, coordinate_accuracy, production)
+                site["sourceSiteRecord"]["sourceReportedCoordinates"] = raw_source_coordinates
+                site["sourceSiteRecord"]["coordinateQuarantineReason"] = "COUNTRY_GEOMETRY_MISMATCH"
+            else:
+                site = site_record("GLOBAL_COAL", cid, name, "coal", lat, lon, status, coal_source, coal_url, source_id, operator, year, coordinate_accuracy, production)
             if country_method:
                 site["identity"]["countryAssignmentMethod"] = country_method
             if country_evidence_url:
@@ -328,12 +480,23 @@ for csv_path, default_status in [(COAL_ACTIVE, "UNKNOWN"), (COAL_CLOSED, "CLOSED
                     "BLOCKED_UNRESOLVED_COUNTRY_IDENTITY" if not cid else
                     ("BLOCKED_MISSING_COORDINATES" if not site["coordinates"] else "BLOCKED_INCOMPLETE_SOURCE_IDENTITY")
                 )
-            key = (cid or "UNRESOLVED_COUNTRY", "coal", norm(name), source_id or "", round(lat, 4) if lat is not None else None, round(lon, 4) if lon is not None else None)
-            if key in records:
-                prior = records[key]
-                prior["sourceSiteRecord"]["additionalSourceRecords"] = (prior["sourceSiteRecord"].get("additionalSourceRecords") or []) + [site["sourceSiteRecord"]]
+            base_key = ("COAL_IDENTITY", "coal", name_key, str(source_id or "").strip())
+            existing_key = coal_identity_index.get(base_key)
+            if existing_key is None:
+                records[base_key] = site
+                coal_identity_index[base_key] = base_key
             else:
-                records[key] = site
+                prior = records[existing_key]
+                prior_country, candidate_country = prior.get("countryId"), site.get("countryId")
+                if prior_country and candidate_country and prior_country != candidate_country:
+                    split_key = base_key + (candidate_country,)
+                    if split_key in records:
+                        records[split_key] = merge_coal_sites(records[split_key], site)
+                    else:
+                        records[split_key] = site
+                else:
+                    records[existing_key] = merge_coal_sites(prior, site)
+                unresolved["coal_duplicate_source_rows_merged"] += 1
             coal_count += 1
 
 sites = sorted(records.values(), key=lambda x: (str(x.get("countryId") or "UNRESOLVED_COUNTRY"), x["real"]["resourceId"], x["siteName"]))
