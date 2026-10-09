@@ -130,7 +130,10 @@ function infraQuality(c,mode){
 function resourceMethod(site,resourceId){
   const r=rules()[tok(resourceId)]||{};
   const explicit=String(site?.real?.extractionMethod||site?.sourceSiteRecord?.extractionMethod||site?.extractionMethod||'').trim();
-  if(explicit&&methodRules()[explicit])return{method:explicit,source:'OBSERVED_OR_MASTER'};
+  if(explicit){
+    const explicitKey=Object.keys(methodRules()).find(key=>tok(key)===tok(explicit));
+    if(explicitKey)return{method:explicitKey,source:'OBSERVED_OR_MASTER'};
+  }
   const siteType=tok(site?.siteType||site?.sourceSiteRecord?.siteType||'');
   if(resourceId==='crude_oil'||resourceId==='natural_gas')return{method:'WELL_DRILL_PUMP',source:'RESOURCE_ENGINEERING_RULE'};
   if(siteType.includes('underground')||siteType.includes('deep_mine'))return{method:r.fallbackMethod||r.method||'UNDERGROUND_ROOM_PILLAR',source:'SITE_TYPE_RULE'};

@@ -108,6 +108,7 @@ jobs:
           run_gate resourceResearchPolicy 15 node --test test/omega_resource_research_policy.test.mjs
           run_gate resourceSystemHardening 30 node test/omega_resource_system_hardening.test.mjs
           run_gate resourceIndustrialNetwork 30 node test/omega_resource_industrial_network_v1.test.mjs
+          run_gate resourceGameplayBinding 15 node test/omega_resource_gameplay_binding.test.mjs
 
           export OMEGA_GATE_SYNTAX="${GATES[syntax]}"
           export OMEGA_GATE_RESOURCEENDOWMENT="${GATES[resourceEndowment]}"
@@ -127,6 +128,7 @@ jobs:
           export OMEGA_GATE_RESOURCERESEARCHPOLICY="${GATES[resourceResearchPolicy]}"
           export OMEGA_GATE_RESOURCESYSTEMHARDENING="${GATES[resourceSystemHardening]}"
           export OMEGA_GATE_RESOURCEINDUSTRIALNETWORK="${GATES[resourceIndustrialNetwork]}"
+          export OMEGA_GATE_RESOURCEGAMEPLAYBINDING="${GATES[resourceGameplayBinding]}"
 
           node --input-type=module <<'NODE'
           import fs from 'node:fs';
@@ -148,7 +150,8 @@ jobs:
             resourceResearchEvidence: process.env.OMEGA_GATE_RESOURCERESEARCHEVIDENCE,
             resourceResearchPolicy: process.env.OMEGA_GATE_RESOURCERESEARCHPOLICY,
             resourceSystemHardening: process.env.OMEGA_GATE_RESOURCESYSTEMHARDENING,
-            resourceIndustrialNetwork: process.env.OMEGA_GATE_RESOURCEINDUSTRIALNETWORK
+            resourceIndustrialNetwork: process.env.OMEGA_GATE_RESOURCEINDUSTRIALNETWORK,
+            resourceGameplayBinding: process.env.OMEGA_GATE_RESOURCEGAMEPLAYBINDING
           };
           const status = Object.values(gates).every((value) => value === 'PASS') ? 'VERIFIED' : 'INCOMPLETE';
           const certificate = {
