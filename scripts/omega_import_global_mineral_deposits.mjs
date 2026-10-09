@@ -108,7 +108,7 @@ for (const row of rawRows) {
     coordinates: c,
     location: { coordinates: c, countryName: countryId, coordinateStatus: 'UPSTREAM_GEOLOCATION_NOT_INDEPENDENTLY_VERIFIED' },
     operation: { status: 'UNKNOWN', extractionEligibility: 'REQUIRES_SITE_SPECIFIC_VERIFICATION', commercialExtraction: false },
-    sourceSiteRecord: { sourceDataset: 'Alexander-ai/global-deposit-globe', sourceUrl: 'https://github.com/Alexander-ai/global-deposit-globe', upstreamRecordId: upstreamId || null, rawCommodity, sourceAttributes: row },
+    sourceSiteRecord: { sourceDataset: 'Alexander-ai/global-deposit-globe', sourceUrl: 'https://github.com/Alexander-ai/global-deposit-globe', upstreamRecordId: upstreamId || null, rawCommodity, sourceAttributes: { name: siteName, id: upstreamId || null, country: first(row.country,row.countryName,row.country_name,row.countryCode,row.iso3) || null, depositType: first(row.depositType,row.deposit_type,row.type) || null, status: first(row.status,row.developmentStatus,row.development_status) || null, source: first(row.source,row.sources,row.database,row.dataset) || null } },
     provenance: { sourceAuthority: 'OPEN_MULTI_SOURCE_GEOLOGICAL_COMPILATION', sourceSnapshot: 'upstream-main-build-time', operationalStatus: 'NOT_INFERRED' }
   };
   if (rows.has(key)) {
@@ -120,7 +120,7 @@ for (const row of rawRows) {
   rows.set(key, record);
 }
 const sites = [...rows.values()].sort((a,b)=>a.countryId.localeCompare(b.countryId)||a.siteName.localeCompare(b.siteName));
-if (sites.length < 1000) throw new Error('Global import yielded fewer than 1000 usable mineral records; refusing to silently ship a partial dataset');
+if (sites.length < (process.env.OMEGA_ALLOW_SMALL_IMPORT_FOR_TESTS === '1' ? 1 : 1000)) throw new Error('Global import yielded fewer than 1000 usable mineral records; refusing to silently ship a partial dataset');
 const output = {
   schemaVersion: '1.0.0',
   generatedAt: new Date().toISOString(),
