@@ -487,15 +487,24 @@ for csv_path, default_status in [(COAL_ACTIVE, "UNKNOWN"), (COAL_CLOSED, "CLOSED
                     unresolved["coal_country_inferred_from_coordinates"] += 1
             coordinate_quarantined = False
             disputed_site_mapping = name_key == "SIBOVC COAL MINE" and country_method == "DISPUTED_JURISDICTION_MAPPED_TO_EXISTING_GAME_PROFILE"
+            source_country_authoritative = country_method in {"SOURCE_COUNTRY_FIELD", "SOURCE_PROVINCE_COUNTRY_OVERRIDE", "RESEARCHED_SITE_NAME_OVERRIDE", "DISPUTED_JURISDICTION_MAPPED_TO_EXISTING_GAME_PROFILE"}
             if disputed_site_mapping and lat is not None and lon is not None:
                 coordinate_accuracy = "SOURCE_COORDINATE_IN_DISPUTED_JURISDICTION"
             elif cid and lat is not None and lon is not None:
                 if point_country and point_country != cid:
-                    coordinate_quarantined = True
+                    border_distance = country_boundary_distance(cid, lat, lon, 0.25) if source_country_authoritative else None
+                    if border_distance is not None:
+                        coordinate_accuracy = "SOURCE_COORDINATE_NEAR_COUNTRY_BORDER_REVIEW_REQUIRED"
+                    else:
+                        coordinate_quarantined = True
                 elif not point_country:
                     nearest_country, nearest_distance = nearest_country_within(lat, lon, 0.15)
                     if nearest_country != cid or nearest_distance is None:
-                        coordinate_quarantined = True
+                        border_distance = country_boundary_distance(cid, lat, lon, 0.25) if source_country_authoritative else None
+                        if border_distance is not None:
+                            coordinate_accuracy = "SOURCE_COORDINATE_NEAR_COUNTRY_BORDER_REVIEW_REQUIRED"
+                        else:
+                            coordinate_quarantined = True
                     elif not coordinate_source_url and not coordinate_order_corrected:
                         coordinate_accuracy = "UPSTREAM_NEAR_COUNTRY_BOUNDARY"
                 if coordinate_quarantined:
