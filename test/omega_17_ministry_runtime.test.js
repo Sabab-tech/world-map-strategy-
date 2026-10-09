@@ -96,7 +96,7 @@ test('OMEGA canonical 17-ministry runtime is independently engine-backed and bin
     CustomEvent:class CustomEvent{constructor(type,init={}){this.type=type;this.detail=init.detail;}},
     dispatchEvent(event){events.push({topic:event.type,payload:event.detail});},
     Omega:{Kernel:kernel},
-    GLOBAL_MINISTRY_MANIFEST:IDS.map(id=>({id,status:'READY'})),
+    GLOBAL_MINISTRY_MANIFEST:Object.freeze(IDS.map(id=>Object.freeze({id,status:'READY'}))),
     Game:{
       state:{
         economy:{BANGLADESH:{gdp:100,debt:20,budget:15,inflation:4,unemployment:5,production:80}},
@@ -147,6 +147,9 @@ test('OMEGA canonical 17-ministry runtime is independently engine-backed and bin
 
   assert.equal(runtime.init(kernel),true);
   assert.equal(registered.length,17);
+  assert.equal(sandbox.__OMEGA_MINISTRY_MANIFEST_STATUS__.cabinet,'ACTIVE');
+  assert.equal(sandbox.GLOBAL_MINISTRY_MANIFEST[0].status,'READY','runtime must not mutate frozen canonical manifest metadata');
+  assert.equal(Object.isFrozen(sandbox.__OMEGA_MINISTRY_MANIFEST_STATUS__),true);
 
   for(const id of IDS){
     const engine=runtime.getEngine(id);
