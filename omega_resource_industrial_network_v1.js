@@ -92,7 +92,16 @@ function dispatch(owner,type,c,payload){
 
 function masterSites(){
   const x=g.OmegaResourceSiteMasterResearchData||g.Omega?.ResourceSiteMasterResearchData;
-  return Array.isArray(x?.sites)?x.sites:[];
+  const base=Array.isArray(x?.sites)?x.sites:[];
+  const supplemental=Array.isArray(g.Omega?.IndividualResourceSiteBinding?.sites)?g.Omega.IndividualResourceSiteBinding.sites:[];
+  const byId=new Map();
+  for(const site of base)if(site?.siteId)byId.set(String(site.siteId),site);
+  for(const site of supplemental){
+    const siteId=String(site?.siteId||'').trim();
+    if(!siteId||byId.has(siteId))continue;
+    byId.set(siteId,site);
+  }
+  return [...byId.values()];
 }
 function siteById(siteId){
   const s=String(siteId||'').trim();
