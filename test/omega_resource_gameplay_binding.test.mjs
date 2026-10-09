@@ -205,6 +205,12 @@ test('runtime renders all global sites and applies nation/resource scope without
   context.Game.currentActiveCountry='BGD';
   context.Omega.IndividualResourceSiteBinding.refresh();
   assert.equal(markerCount(),4,'Bangladesh scope must show its four distinct physical resource locations, not all countries');
+  context.Game.Map.resourceState.selectedResources=vm.runInContext("new Set(['coal'])",context);
+  context.Omega.IndividualResourceSiteBinding.refresh();
+  assert.equal(markerCount(),1,'Bangladesh coal filter must show only the coal site');
+  context.Game.Map.resourceState.selectedResources=vm.runInContext('new Set()',context);
+  context.Omega.IndividualResourceSiteBinding.refresh();
+  assert.equal(markerCount(),4,'clearing the resource filter must restore every site in the selected country');
   context.Game.Map.resourceState.scope='WORLD';
   context.Game.Map.resourceState.selectedResources=vm.runInContext("new Set(['coal'])",context);
   context.Omega.IndividualResourceSiteBinding.refresh();
