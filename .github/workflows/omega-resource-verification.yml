@@ -106,6 +106,7 @@ jobs:
             omega_resource_industrial_network_v1.js
             scripts/omega_revalidate_199_resource_sites.mjs
             scripts/omega_import_global_mineral_deposits.mjs
+            omega_resource_supplemental_site_commissioning_v1.js
           )
           for file in "${syntax_files[@]}"; do
             run_gate "syntax:${file}" 3 node --check "$file"
