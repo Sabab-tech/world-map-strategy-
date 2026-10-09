@@ -113,7 +113,7 @@ function addMapMarkers(){
   if(selected.size>0&&!selected.has('all')&&!selected.has(resourceId)&&!selected.has(rawResource))continue;
   if(scope!=='WORLD'){
    const candidateCountries=[s.countryId,s.countryName,s.location?.countryName,s.sourceSiteRecord?.country,s.sourceSiteRecord?.countryCode,s.sourceSiteRecord?.countryId].map(norm).filter(Boolean);
-   if(!candidateCountries.includes(norm(activeCountry))&&!candidateCountries.includes(norm(s.countryId)))continue;
+   if(!candidateCountries.includes(norm(activeCountry)))continue;
   }
   const resource=resourceCatalog.find(r=>canonical(r.id)===resourceId||String(r.id||'').toLowerCase()===rawResource);
   const glyph=String(resource?.icon||resourceId.slice(0,2).toUpperCase()||'RS').replace(/[<>&"]/g,'');
