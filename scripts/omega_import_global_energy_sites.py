@@ -5,6 +5,7 @@ Inputs are downloaded only during CI/build. The Android app consumes the generat
 locally; it does not call these external sources at runtime.
 """
 import csv
+import hashlib
 import json
 import re
 import sys
@@ -148,7 +149,9 @@ def site_record(prefix, cid, name, resource, lat, lon, status, source, source_ur
     coord_key = f"{lat:.4f}_{lon:.4f}" if valid_coordinates else "NO_COORDINATES"
     country_key = cid or "UNRESOLVED_COUNTRY"
     source_key = slug(source_record_id or name) or "UNKEYED_SOURCE_RECORD"
-    site_id = f"{prefix}_{country_key}_{resource}_{slug(name)}_{source_key}_{coord_key}"
+    raw_identity = "|".join([str(source_record_id or ""), str(name or ""), str(country_key), str(resource), str(coord_key)])
+    identity_hash = hashlib.sha256(raw_identity.encode("utf-8")).hexdigest()[:10]
+    site_id = f"{prefix}_{country_key}_{resource}_{slug(name)}_{source_key}_{coord_key}_{identity_hash}"
     status_text = str(status or "UNKNOWN").strip()
     operation_status = status_text.upper()
     commercial = ("OPERAT" in operation_status or "PRODUC" in operation_status) and valid_coordinates and bool(cid)
