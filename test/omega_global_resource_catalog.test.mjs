@@ -96,7 +96,7 @@ test('research-backed coal identity overrides resolve known missing country and 
     assert.ok(site.identity?.countryAssignmentMethod, name+' must disclose the assignment method');
   }
   const anglesea = byName.get(key('Anglesea Coal Mine'));
-  assert.equal(anglesea.location.coordinateStatus, 'Exact', 'prefer the source-reported exact point over a fallback geocoding point');
+  assert.equal(anglesea.location.coordinateStatus, 'SOURCE_LAT_LON_ORDER_CORRECTED_EXACT', 'preserve the source accuracy while recording the validated latitude/longitude swap');
   assert.ok(Math.abs(anglesea.coordinates.lat - (-38.39175093)) < 0.001);
   assert.equal(catalog.sites.filter(site => key(site.siteName) === key('Anglesea Coal Mine')).length, 1, 'active/closed CSV duplicates must merge into one site identity');
   const miVina = byName.get(key('Mi Viña Coal Mine'));
