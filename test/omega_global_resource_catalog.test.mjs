@@ -14,7 +14,7 @@ test('global mineral catalogue contains many independently identified deposits a
   const ids = catalog.sites.map(site => site.siteId);
   assert.equal(new Set(ids).size, ids.length, 'global site IDs must be unique');
   const knownCountries = new Set(canonical.sites.map(site => site.countryId));
-  assert.equal(catalog.unresolvedIdentityCount, catalog.sites.filter(site => !site.countryId).length);
+  assert.equal(catalog.unresolvedIdentityCount, catalog.sites.filter(site => !site.countryId && site.identity?.countryAssignmentStatus !== 'INTERNATIONAL_WATERS').length, 'international seabed occurrences are jurisdiction-classified, not unresolved country identities');
   assert.equal(catalog.unresolvedCoordinateCount, catalog.sites.filter(site => !site.coordinates).length);
   assert.equal(catalog.rejected.coordinates, 0, 'coordinate gaps must be preserved as unresolved records rather than discarded');
   assert.equal(catalog.rejected.countryIdentity, 0, 'country gaps must be preserved as unresolved records rather than discarded');
