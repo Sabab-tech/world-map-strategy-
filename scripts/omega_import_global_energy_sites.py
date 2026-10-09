@@ -232,7 +232,11 @@ for row in iterator:
         if not original_name or not commodity_identified:
             site["identity"]["sourceIdentityStatus"] = "INCOMPLETE_SOURCE_IDENTITY" if not original_name else "INCOMPLETE_COMMODITY_IDENTITY"
             site["operation"]["commercialExtraction"] = False
-            site["operation"]["extractionEligibility"] = "BLOCKED_INCOMPLETE_SOURCE_IDENTITY" if not original_name else "BLOCKED_UNRESOLVED_COMMODITY_IDENTITY"
+            site["operation"]["extractionEligibility"] = (
+                "BLOCKED_UNRESOLVED_COUNTRY_IDENTITY" if not cid else
+                ("BLOCKED_MISSING_COORDINATES" if not site["coordinates"] else
+                 ("BLOCKED_INCOMPLETE_SOURCE_IDENTITY" if not original_name else "BLOCKED_UNRESOLVED_COMMODITY_IDENTITY"))
+            )
         dedup_key = (cid or "UNRESOLVED_COUNTRY", resource, norm(name), source_id or "", round(lat, 4) if lat is not None else None, round(lon, 4) if lon is not None else None)
         records[dedup_key] = site
         energy_count += 1
@@ -270,7 +274,10 @@ for csv_path, default_status in [(COAL_ACTIVE, "UNKNOWN"), (COAL_CLOSED, "CLOSED
             if not original_name:
                 site["identity"]["sourceIdentityStatus"] = "INCOMPLETE_SOURCE_IDENTITY"
                 site["operation"]["commercialExtraction"] = False
-                site["operation"]["extractionEligibility"] = "BLOCKED_INCOMPLETE_SOURCE_IDENTITY"
+                site["operation"]["extractionEligibility"] = (
+                    "BLOCKED_UNRESOLVED_COUNTRY_IDENTITY" if not cid else
+                    ("BLOCKED_MISSING_COORDINATES" if not site["coordinates"] else "BLOCKED_INCOMPLETE_SOURCE_IDENTITY")
+                )
             key = (cid or "UNRESOLVED_COUNTRY", "coal", norm(name), source_id or "", round(lat, 4) if lat is not None else None, round(lon, 4) if lon is not None else None)
             if key in records:
                 prior = records[key]
