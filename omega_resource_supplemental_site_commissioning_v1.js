@@ -34,6 +34,7 @@
   if(!/^[A-Z]{3}$/.test(cid))return{status:'BLOCKED',reason:'UNRESOLVED_COUNTRY_IDENTITY',siteId:key};
   const coords=site.coordinates||site.location?.coordinates||{};
   if(!Number.isFinite(Number(coords.lat))||!Number.isFinite(Number(coords.lng)))return{status:'BLOCKED',reason:'MISSING_UPSTREAM_COORDINATES',siteId:key,countryId:cid};
+  if(site.location?.coordinateStatus==='SOURCE_COORDINATE_NEAR_COUNTRY_BORDER_REVIEW_REQUIRED')return{status:'BLOCKED_COORDINATE_COUNTRY_BORDER_REVIEW',reason:'SOURCE_COUNTRY_GEOMETRY_CONFLICT_NEAR_BORDER',siteId:key,countryId:cid,coordinates:coords};
   const root=state();if(!root.resource)root.resource={};if(!root.resource[cid])root.resource[cid]={};
   const countryState=root.resource[cid];
   if(!countryState.siteCommissioning||typeof countryState.siteCommissioning!=='object')countryState.siteCommissioning={};
