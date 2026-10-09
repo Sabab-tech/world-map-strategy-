@@ -79,25 +79,31 @@ test('known onshore sites remain inside their assigned country', () => {
   }
 });
 
-test('wrong-country land coordinates are detected and must be quarantined from the map', () => {
-  const expected = [
+test('proven wrong-country land coordinates are quarantined; missing owner geometry is reported', () => {
+  const result = audit(byId.get('SITE_TLS_bayu_undan_gas_and_condensate_field'));
+  assert.equal(result.status, 'INSIDE_OTHER_COUNTRY', 'Bayu-Undan coordinates must not be attributed to Indonesia');
+  assert.equal(result.containingCountryId, 'IDN');
+
+  // The bundled GeoJSON omits several microstates and Singapore. Those sites cannot
+  // be declared wrong from this polygon alone; they must remain explicitly unresolved.
+  for (const [id, containingCountryId] of [
     ['SITE_SGP_pulau_ubin_granite_quarry_sites', 'MYS'],
-    ['SITE_TLS_bayu_undan_gas_and_condensate_field', 'IDN'],
     ['SITE_AND_llorts_iron_mine', 'FRA'],
     ['SITE_MCO_no_verified_commercial_mining_site', 'FRA'],
     ['SITE_SMR_no_verified_commercial_mining_site', 'ITA'],
     ['SITE_LIE_no_verified_commercial_mining_site', 'AUT'],
     ['SITE_VAT_no_verified_commercial_mining_site', 'ITA']
-  ];
-  for (const [id, containingCountryId] of expected) {
-    const result = audit(byId.get(id));
-    assert.equal(result.status, 'INSIDE_OTHER_COUNTRY', id);
-    assert.equal(result.containingCountryId, containingCountryId, id+' containing-country diagnosis');
+  ]) {
+    const unresolved = audit(byId.get(id));
+    assert.equal(unresolved.status, 'OWNER_GEOMETRY_MISSING', id+' owner polygon is absent');
+    assert.equal(unresolved.containingCountryId, containingCountryId, id+' containing-country diagnosis');
   }
   assert.match(binding, /s\.coordinateValidation\?\.status==='INSIDE_OTHER_COUNTRY'/,
-    'markers with known cross-country coordinates must not be drawn at a false location');
+    'markers with proven cross-country coordinates must not be drawn at a false location');
+  assert.match(binding, /unresolvedOwnerGeometry/,
+    'sites whose owner polygon is missing must remain explicitly listed in diagnostics');
   assert.match(binding, /__OMEGA_RESOURCE_COORDINATE_AUDIT__/,
-    'quarantined source records must remain visible in diagnostics instead of being silently discarded');
+    'quarantined and unresolved source records must remain visible in diagnostics instead of being silently discarded');
 });
 
 test('runtime loads world geometry and preserves offshore sites as a separate status', () => {
