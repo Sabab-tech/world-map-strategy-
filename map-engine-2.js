@@ -1305,6 +1305,7 @@ Game.Map.deselectAllResourceTypes = function() {
 
 Game.Map.clearAndResetResourceMode = function() {
     this.resourceState.enabled = false;
+    this.isResourceModeActive = false;
     this.resourceState.selectedResources.clear();
     this.hideResourceFilterMenu();
     
@@ -1331,6 +1332,7 @@ Game.Map.clearAndResetResourceMode = function() {
 };
 
 Game.Map.applyResourceFilterAndClose = function() {
+    this.isResourceModeActive = true;
     this.resourceState.enabled = true;
     this.hideResourceFilterMenu();
 
@@ -1703,6 +1705,10 @@ Game.Map.isResourceModeActive = false;
 
 Game.Map.toggleResourceMode = function() {
     this.isResourceModeActive = !this.isResourceModeActive;
+    // Keep the legacy resource controller and individual-site marker layer synchronized.
+    // The site layer reads resourceState.enabled; without this assignment the legacy layer
+    // can appear while the individual mine/field markers remain disabled.
+    if (this.resourceState) this.resourceState.enabled = this.isResourceModeActive;
     const btnMode = document.getElementById('btn-resource-mode') || document.getElementById('btn-resource-overlay');
     
     if (this.isResourceModeActive) {
