@@ -257,5 +257,5 @@ test('resource map defaults to all catalog resources and dynamically separates n
   assert.match(binding, /map\.latLngToLayerPoint\(\[lat,lng\]\)/,'marker overlap must be calculated in screen-space at the current zoom');
   assert.match(binding, /Math\.hypot\(item\.point\.x-point\.x,item\.point\.y-point\.y\)<30/,'nearby non-identical coordinates must be collision-grouped');
   assert.match(binding, /map\.on\('zoomend',addMapMarkers\);map\.on\('moveend',addMapMarkers\)/,'marker layout must refresh after map zoom and movement');
-  assert.match(binding, /resourceState\.__omegaDefaultSelection/,'existing resource types found in source records must join the initial default selection');
+  assert.match(binding, /resourceState\?\.__omegaDefaultSelection/,'existing resource types found in source records must join the initial default selection');
 });
