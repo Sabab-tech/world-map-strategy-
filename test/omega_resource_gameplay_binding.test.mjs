@@ -146,7 +146,10 @@ test('runtime renders all global sites and applies nation/resource scope without
   const overlapBase=rawMineSites.find(site=>(site.siteId||site.id)==='SITE_BGD_barapukuria_coal_mine')||rawMineSites[0];
   assert.ok(overlapBase,'test fixture needs one real source mine site');
   const overlapProfile=rawCountryProfiles.find(profile=>(profile.resource_infrastructure_context?.mineSites||[]).includes(overlapBase));
-  overlapProfile.resource_infrastructure_context.mineSites.push({...overlapBase,id:'SITE_TEST_PIXEL_OVERLAP',siteId:'SITE_TEST_PIXEL_OVERLAP',name:'Test-only overlap fixture',siteName:'Test-only overlap fixture'});
+  overlapProfile.resource_infrastructure_context.mineSites.push(
+    {...overlapBase,id:'SITE_TEST_PIXEL_OVERLAP',siteId:'SITE_TEST_PIXEL_OVERLAP',name:'Test-only overlap fixture',siteName:'Test-only overlap fixture'},
+    {...overlapBase,id:'SITE_TEST_NEAR_PIXEL_OVERLAP',siteId:'SITE_TEST_NEAR_PIXEL_OVERLAP',name:'Test-only near overlap fixture',siteName:'Test-only near overlap fixture',lat:Number(overlapBase.lat)+0.01,lng:Number(overlapBase.lng)+0.01}
+  );
   const events = new Map();
   const nodes = new Map();
   const makeNode = () => ({
@@ -163,6 +166,8 @@ test('runtime renders all global sites and applies nation/resource scope without
     hasLayer(layer){ return layers.has(layer); },
     removeLayer(layer){ layers.delete(layer); },
     setView(){}, getZoom(){ return 4; },
+    latLngToLayerPoint([lat,lng]){ return {x:Number(lng)*10,y:Number(lat)*10}; },
+    on(name,callback){ if(!events.has('map:'+name))events.set('map:'+name,callback); return this; },
     whenReady(callback){ callback(); }
   };
   const resourceCatalog = [
@@ -205,34 +210,52 @@ test('runtime renders all global sites and applies nation/resource scope without
 
   const diagnostics = context.Omega.IndividualResourceSiteBinding?.diagnostics();
   assert.equal(diagnostics?.status,'READY','global source registry must initialize');
-  assert.equal(diagnostics?.siteCount,240,'239 distinct physical locations plus one test-only coincident identity must yield 240 site markers');
+  assert.equal(diagnostics?.siteCount,241,'239 distinct physical locations plus coincident and near-overlap test identities must yield 241 site markers');
   const markerCount = () => [...layers].reduce((sum,layer)=>sum+layer.markers.length,0);
-  assert.equal(markerCount(),240,'WORLD scope must render all 239 source locations plus the test-only overlap fixture');
+  assert.equal(markerCount(),241,'WORLD scope must render all 239 source locations plus two test-only overlap fixtures');
   const geographicPositions=new Set([...layers].flatMap(layer=>layer.markers).map(marker=>marker.latlng.map(value=>Number(value).toFixed(3)).join('|')));
   assert.ok(geographicPositions.size>100,'world markers must preserve widespread source coordinates instead of collapsing all resources to one point');
   assert.ok(context.Game.Map.resourceDepositsLayer.clearCount>0,'legacy deposit layer must be cleared so old and individual markers do not stack');
   const activeMarkers=[...layers].flatMap(layer=>layer.markers);
   const overlapping=activeMarkers.filter(marker=>Math.abs(marker.latlng[0]-Number(overlapBase.lat??overlapBase.coordinates?.lat??overlapBase.location?.coordinates?.lat))<1e-7&&Math.abs(marker.latlng[1]-Number(overlapBase.lng??overlapBase.lon??overlapBase.coordinates?.lng??overlapBase.location?.coordinates?.lng))<1e-7);
-  assert.ok(overlapping.length>=2,'test fixture must produce two separate site markers at the same geographic coordinate');
+  assert.ok(overlapping.length>=2,'test fixture must produce separate site markers at the same geographic coordinate');
   assert.ok(new Set(overlapping.map(marker=>JSON.stringify(marker.options.icon.iconAnchor))).size>=2,'coincident sites must get distinct screen-space icon anchors without changing their true lat/lng');
+  const nearBaseLat=Number(overlapBase.lat??overlapBase.coordinates?.lat??overlapBase.location?.coordinates?.lat);
+  const nearBaseLng=Number(overlapBase.lng??overlapBase.lon??overlapBase.coordinates?.lng??overlapBase.location?.coordinates?.lng);
+  const nearMarkers=activeMarkers.filter(marker=>Math.abs(marker.latlng[0]-nearBaseLat)<0.02&&Math.abs(marker.latlng[1]-nearBaseLng)<0.02);
+  assert.ok(nearMarkers.length>=3,'nearby but non-identical source coordinates must also be separated on screen');
+  assert.ok(new Set(nearMarkers.map(marker=>JSON.stringify(marker.options.icon.iconAnchor))).size>=2,'nearby sites must not collapse to one visible marker anchor');
   assert.match(binding,/transportRoute/,'site detail UI must expose the per-site transport route profile');
   assert.match(binding,/Individual transport route & delivery/,'site detail UI must display logistics and delivery details');
   assert.match(binding,/panel.style.display='block'/,'clicking a site must open its detail panel');
   context.Game.Map.resourceState.scope='NATION';
   context.Game.currentActiveCountry='BGD';
   context.Omega.IndividualResourceSiteBinding.refresh();
-  assert.equal(markerCount(),5,'Bangladesh scope must show its four source locations plus the test-only overlap fixture, not all countries');
+  assert.equal(markerCount(),6,'Bangladesh scope must show its four source locations plus two test-only overlap fixtures, not all countries');
   context.Game.Map.resourceState.selectedResources=vm.runInContext("new Set(['coal'])",context);
   context.Omega.IndividualResourceSiteBinding.refresh();
-  assert.equal(markerCount(),2,'Bangladesh coal filter must show only the two matching coal site identities');
+  assert.equal(markerCount(),3,'Bangladesh coal filter must show the source coal site and its two test-only matching overlap identities');
   context.Game.Map.resourceState.selectedResources=vm.runInContext('new Set()',context);
   context.Omega.IndividualResourceSiteBinding.refresh();
-  assert.equal(markerCount(),5,'clearing the resource filter must restore every site in the selected country');
+  assert.equal(markerCount(),6,'clearing the resource filter must restore every site in the selected country');
   context.Game.Map.resourceState.scope='WORLD';
   context.Game.Map.resourceState.selectedResources=vm.runInContext("new Set(['coal'])",context);
   context.Omega.IndividualResourceSiteBinding.refresh();
-  assert.ok(markerCount()>0 && markerCount()<240,'resource filter must narrow the global site markers');
+  assert.ok(markerCount()>0 && markerCount()<241,'resource filter must narrow the global site markers');
   context.Game.Map.resourceState.selectedResources=vm.runInContext("new Set(['natural-gas'])",context);
   context.Omega.IndividualResourceSiteBinding.refresh();
-  assert.ok(markerCount()>0 && markerCount()<240,'hyphenated commodity filters must match canonical underscore resource IDs across the world');
+  assert.ok(markerCount()>0 && markerCount()<241,'hyphenated commodity filters must match canonical underscore resource IDs across the world');
+});
+
+
+test('resource map defaults to all catalog resources and dynamically separates nearby markers', () => {
+  const mapEngine = read('map-engine-2.js');
+  const binding = read('omega_resource_gameplay_binding_v1.js');
+  assert.match(mapEngine, /__omegaDefaultSelection:\s*true/,'initial resource filter must be identified as the default all-resource selection');
+  assert.match(mapEngine, /selectedResources:\s*new Set\(\['crude_oil','natural_gas','coal','iron_ore','copper','gold','uranium','lithium','cobalt','rare_earth','bauxite','nickel','manganese','titanium','zinc','tin','potash','silver','diamond','semiconductor'\]\)/,
+    'default filter must include every resource in the built-in map catalog, not a hard-coded subset');
+  assert.match(binding, /map\.latLngToLayerPoint\(\[lat,lng\]\)/,'marker overlap must be calculated in screen-space at the current zoom');
+  assert.match(binding, /Math\.hypot\(item\.point\.x-point\.x,item\.point\.y-point\.y\)<30/,'nearby non-identical coordinates must be collision-grouped');
+  assert.match(binding, /map\.on\('zoomend',addMapMarkers\);map\.on\('moveend',addMapMarkers\)/,'marker layout must refresh after map zoom and movement');
+  assert.match(binding, /resourceState\?\.__omegaDefaultSelection/,'existing resource types found in source records must join the initial default selection');
 });
