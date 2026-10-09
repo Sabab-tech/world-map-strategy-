@@ -58,11 +58,13 @@ if (!rawRows) throw new Error('Unsupported upstream source shape: expected an ar
 const canonical = readJson(CATALOG_PATH);
 const world = readJson(WORLD_PATH);
 const countryNameToId = new Map();
+const countryIdToName = new Map();
 const knownIds = new Set();
 for (const row of canonical.sites || []) {
   const id = String(row.countryId || row.identity?.countryIso3 || '').toUpperCase();
   if (id) knownIds.add(id);
   for (const name of [row.location?.countryName, row.countryName, row.countryId, row.identity?.countryIso3]) if (name && id) countryNameToId.set(norm(name), id);
+  if (id) countryIdToName.set(id, row.location?.countryName || row.countryName || id);
 }
 for (const feature of world.features || []) {
   const p = feature.properties || {};
@@ -71,6 +73,7 @@ for (const feature of world.features || []) {
   if (/^[A-Z]{3}$/.test(id) && id !== '-99') {
     knownIds.add(id);
     for (const name of names) if (name) countryNameToId.set(norm(name), id);
+    if (preferredName) countryIdToName.set(id, preferredName);
   }
 }
 const ISO2_TO_3 = {US:'USA',CA:'CAN',MX:'MEX',BR:'BRA',AR:'ARG',CL:'CHL',PE:'PER',CO:'COL',VE:'VEN',EC:'ECU',BO:'BOL',PY:'PRY',UY:'URY',GY:'GUY',SR:'SUR',GB:'GBR',UK:'GBR',FR:'FRA',DE:'DEU',ES:'ESP',IT:'ITA',NO:'NOR',SE:'SWE',FI:'FIN',PL:'POL',UA:'UKR',RU:'RUS',CN:'CHN',IN:'IND',PK:'PAK',BD:'BGD',NP:'NPL',LK:'LKA',AF:'AFG',IR:'IRN',IQ:'IRQ',SA:'SAU',AE:'ARE',QA:'QAT',KW:'KWT',OM:'OMN',YE:'YEM',TR:'TUR',ID:'IDN',MY:'MYS',TH:'THA',VN:'VNM',PH:'PHL',JP:'JPN',KR:'KOR',KP:'PRK',AU:'AUS',NZ:'NZL',ZA:'ZAF',ZM:'ZMB',ZW:'ZWE',NA:'NAM',BW:'BWA',MZ:'MOZ',CD:'COD',CG:'COG',GH:'GHA',NG:'NGA',KE:'KEN',TZ:'TZA',UG:'UGA',ET:'ETH',MA:'MAR',DZ:'DZA',EG:'EGY',LY:'LBY',SD:'SDN',SN:'SEN',CI:'CIV',ML:'MLI',NE:'NER',BF:'BFA',CM:'CMR',AO:'AGO',MG:'MDG',CA:'CAN'};
@@ -106,7 +109,7 @@ for (const row of rawRows) {
     identity: { countryIso3: countryId, siteType: 'MINERAL_DEPOSIT_OR_OCCURRENCE', resourceTypeId: rid, sourceRecordId: upstreamId || null },
     real: { resourceId: rid, operationStatus: 'UNKNOWN', reserveStatus: 'UNOBSERVED', productionStatus: 'UNOBSERVED' },
     coordinates: c,
-    location: { coordinates: c, countryName: countryId, coordinateStatus: 'UPSTREAM_GEOLOCATION_NOT_INDEPENDENTLY_VERIFIED' },
+    location: { coordinates: c, countryName: countryIdToName.get(countryId) || countryId, coordinateStatus: 'UPSTREAM_GEOLOCATION_NOT_INDEPENDENTLY_VERIFIED' },
     operation: { status: 'UNKNOWN', extractionEligibility: 'REQUIRES_SITE_SPECIFIC_VERIFICATION', commercialExtraction: false },
     sourceSiteRecord: { sourceDataset: 'Alexander-ai/global-deposit-globe', sourceUrl: 'https://github.com/Alexander-ai/global-deposit-globe', upstreamRecordId: upstreamId || null, rawCommodity, sourceAttributes: { name: siteName, id: upstreamId || null, country: first(row.country,row.countryName,row.country_name,row.countryCode,row.iso3) || null, depositType: first(row.depositType,row.deposit_type,row.type) || null, status: first(row.status,row.developmentStatus,row.development_status) || null, source: first(row.source,row.sources,row.database,row.dataset) || null } },
     provenance: { sourceAuthority: 'OPEN_MULTI_SOURCE_GEOLOGICAL_COMPILATION', sourceSnapshot: 'upstream-main-build-time', operationalStatus: 'NOT_INFERRED' }
