@@ -142,24 +142,39 @@ def country_from_coordinates(lat, lon):
     return matches[0] if len(set(matches)) == 1 else ""
 
 def site_record(prefix, cid, name, resource, lat, lon, status, source, source_url, source_record_id=None, operator=None, year=None, accuracy=None, production=None):
-    site_id = f"{prefix}_{cid}_{resource}_{slug(name)}_{lat:.4f}_{lon:.4f}"
+    cid = str(cid).strip().upper() if cid else None
+    valid_coordinates = lat is not None and lon is not None and -90 <= lat <= 90 and -180 <= lon <= 180
+    coords = {"lat": lat, "lng": lon} if valid_coordinates else None
+    coord_key = f"{lat:.4f}_{lon:.4f}" if valid_coordinates else "NO_COORDINATES"
+    country_key = cid or "UNRESOLVED_COUNTRY"
+    source_key = slug(source_record_id or name) or "UNKEYED_SOURCE_RECORD"
+    site_id = f"{prefix}_{country_key}_{resource}_{slug(name)}_{source_key}_{coord_key}"
+    status_text = str(status or "UNKNOWN").strip()
+    operation_status = status_text.upper()
+    commercial = ("OPERAT" in operation_status or "PRODUC" in operation_status) and valid_coordinates and bool(cid)
+    if not cid:
+        eligibility = "BLOCKED_UNRESOLVED_COUNTRY_IDENTITY"
+    elif not valid_coordinates:
+        eligibility = "BLOCKED_MISSING_COORDINATES"
+    else:
+        eligibility = "REQUIRES_EXACT_GAME_SITE_BINDING"
     return {
         "siteId": site_id,
         "countryId": cid,
         "siteName": str(name).strip(),
         "schemaVersion": "1.0.0",
         "sourceType": "GLOBAL_ENERGY_EXTRACTION" if prefix == "GLOBAL_ENERGY" else "GLOBAL_COAL_MINE",
-        "identity": {"countryIso3": cid, "siteType": "OIL_GAS_FIELD" if prefix == "GLOBAL_ENERGY" else "COAL_MINE", "resourceTypeId": resource, "sourceRecordId": str(source_record_id) if source_record_id else None},
-        "real": {"resourceId": resource, "operationStatus": str(status or "UNKNOWN").strip().upper(), "reserveStatus": "SOURCE_VALUE_ONLY_IF_PRESENT", "productionStatus": "SOURCE_VALUE_ONLY_IF_PRESENT"},
-        "coordinates": {"lat": lat, "lng": lon},
-        "location": {"coordinates": {"lat": lat, "lng": lon}, "countryName": country_id_to_name.get(cid, cid), "coordinateStatus": str(accuracy or "UPSTREAM_COORDINATE_NOT_INDEPENDENTLY_VALIDATED")},
-        "operation": {"status": str(status or "UNKNOWN").strip(), "operator": operator, "startYear": year, "production": production, "commercialExtraction": "OPERAT" in str(status or "").upper() or "PRODUC" in str(status or "").upper(), "extractionEligibility": "REQUIRES_EXACT_GAME_SITE_BINDING"},
-        "sourceSiteRecord": {"sourceDataset": source, "sourceUrl": source_url, "sourceRecordId": str(source_record_id) if source_record_id else None, "operator": operator, "status": str(status or "UNKNOWN").strip(), "production": production, "startYear": year},
+        "identity": {"countryIso3": cid, "countryAssignmentStatus": "IDENTIFIED" if cid else "UNRESOLVED_COUNTRY_IDENTITY", "siteType": "OIL_GAS_FIELD" if prefix == "GLOBAL_ENERGY" else "COAL_MINE", "resourceTypeId": resource, "sourceRecordId": str(source_record_id) if source_record_id else None},
+        "real": {"resourceId": resource, "operationStatus": operation_status, "reserveStatus": "SOURCE_VALUE_ONLY_IF_PRESENT", "productionStatus": "SOURCE_VALUE_ONLY_IF_PRESENT"},
+        "coordinates": coords,
+        "location": {"coordinates": coords, "countryName": country_id_to_name.get(cid, cid) if cid else None, "countryJurisdictionStatus": "IDENTIFIED" if cid else "UNRESOLVED", "coordinateStatus": str(accuracy or "UPSTREAM_COORDINATE_NOT_INDEPENDENTLY_VALIDATED") if valid_coordinates else "MISSING_UPSTREAM_COORDINATES"},
+        "operation": {"status": status_text, "operator": operator, "startYear": year, "production": production, "commercialExtraction": commercial, "extractionEligibility": eligibility},
+        "sourceSiteRecord": {"sourceDataset": source, "sourceUrl": source_url, "sourceRecordId": str(source_record_id) if source_record_id else None, "operator": operator, "status": status_text, "production": production, "startYear": year},
         "provenance": {"sourceAuthority": source, "sourceUrl": source_url, "operationalStatus": "PRESERVED_FROM_SOURCE_NOT_SYNTHESIZED"}
     }
 
 records = {}
-rejected = {"energy_missing_coordinates": 0, "energy_missing_country": 0, "coal_missing_coordinates": 0, "coal_missing_country": 0, "coal_country_inferred_from_coordinates": 0}
+unresolved = {"energy_missing_coordinates": 0, "energy_missing_country": 0, "coal_missing_coordinates": 0, "coal_missing_country": 0, "coal_country_inferred_from_coordinates": 0}
 energy_source = "Global Energy Monitor — Global Oil and Gas Extraction Tracker (March 2026)"
 energy_url = "https://web.archive.org/web/20260305063452id_/https://globalenergymonitor.org/wp-content/uploads/2026/03/Global-Oil-and-Gas-Extraction-Tracker-March-2026.xlsx"
 if not GOGET_XLSX.exists():
@@ -187,17 +202,18 @@ for row in iterator:
     lat = as_float(cell(row, "Latitude", "lat"))
     lon = as_float(cell(row, "Longitude", "lon", "lng"))
     if lat is None or lon is None or not (-90 <= lat <= 90 and -180 <= lon <= 180):
-        rejected["energy_missing_coordinates"] += 1
-        continue
+        unresolved["energy_missing_coordinates"] += 1
+        lat, lon = None, None
     cid = country_id(cell(row, "Country", "Country/Area", "country_iso3"))
+    if not cid and lat is not None and lon is not None:
+        cid = country_from_coordinates(lat, lon)
     if not cid:
-        rejected["energy_missing_country"] += 1
-        continue
+        unresolved["energy_missing_country"] += 1
     name = first(cell(row, "Unit name", "Unit Name", "name"), cell(row, "Unit ID", "asset_id"))
     if not name:
         continue
     fuel = norm(cell(row, "Fuel type", "Fuel", "commodity") or "")
-    resources = ["oil", "natural_gas"] if "OIL" in fuel and "GAS" in fuel else (["natural_gas"] if "GAS" in fuel else (["oil"] if "OIL" in fuel else []))
+    resources = ["crude_oil", "natural_gas"] if "OIL" in fuel and "GAS" in fuel else (["natural_gas"] if "GAS" in fuel else (["crude_oil"] if "OIL" in fuel else []))
     if not resources:
         continue
     status = first(cell(row, "Status", "status"), "UNKNOWN")
@@ -208,7 +224,8 @@ for row in iterator:
     production = first(cell(row, "Production", "Production (boe/d)", "Production (kboe/d)"))
     for resource in resources:
         site = site_record("GLOBAL_ENERGY", cid, name, resource, lat, lon, status, energy_source, energy_url, source_id, operator, year, accuracy, production)
-        records[(cid, resource, norm(name), round(lat, 4), round(lon, 4))] = site
+        dedup_key = (cid or "UNRESOLVED_COUNTRY", resource, norm(name), source_id or "", round(lat, 4) if lat is not None else None, round(lon, 4) if lon is not None else None)
+        records[dedup_key] = site
         energy_count += 1
 workbook.close()
 
@@ -223,22 +240,22 @@ for csv_path, default_status in [(COAL_ACTIVE, "UNKNOWN"), (COAL_CLOSED, "CLOSED
             lat = as_float(first(row.get("Latitude"), row.get("latitude")))
             lon = as_float(first(row.get("Longitude"), row.get("longitude")))
             if lat is None or lon is None or not (-90 <= lat <= 90 and -180 <= lon <= 180):
-                rejected["coal_missing_coordinates"] += 1
-                continue
+                unresolved["coal_missing_coordinates"] += 1
+                lat, lon = None, None
             cid = country_id(row.get("Country / Area"), row.get("Country"), row.get("country"))
-            if not cid:
+            if not cid and lat is not None and lon is not None:
                 cid = country_from_coordinates(lat, lon)
                 if cid:
-                    rejected["coal_country_inferred_from_coordinates"] += 1
+                    unresolved["coal_country_inferred_from_coordinates"] += 1
             if not cid:
-                rejected["coal_missing_country"] += 1
-                continue
+                unresolved["coal_missing_country"] += 1
             name = first(row.get("Mine Name"), row.get("Mine name"), row.get("name"))
             if not name:
                 continue
             status = first(row.get("Status"), row.get("status"), default_status)
             site = site_record("GLOBAL_COAL", cid, name, "coal", lat, lon, status, coal_source, coal_url, row.get("Mine Name"), row.get("Parent Company"), row.get("Opening Year"), "UPSTREAM_COORDINATE_NOT_INDEPENDENTLY_VALIDATED", row.get("Production (Mtpa)"))
-            key = (cid, "coal", norm(name), round(lat, 4), round(lon, 4))
+            source_id = first(row.get("Mine ID"), row.get("Mine Name"), row.get("Mine name"), row.get("name"))
+            key = (cid or "UNRESOLVED_COUNTRY", "coal", norm(name), source_id or "", round(lat, 4) if lat is not None else None, round(lon, 4) if lon is not None else None)
             if key in records:
                 prior = records[key]
                 prior["sourceSiteRecord"]["additionalSourceRecords"] = (prior["sourceSiteRecord"].get("additionalSourceRecords") or []) + [site["sourceSiteRecord"]]
@@ -246,7 +263,7 @@ for csv_path, default_status in [(COAL_ACTIVE, "UNKNOWN"), (COAL_CLOSED, "CLOSED
                 records[key] = site
             coal_count += 1
 
-sites = sorted(records.values(), key=lambda x: (x["countryId"], x["real"]["resourceId"], x["siteName"]))
+sites = sorted(records.values(), key=lambda x: (str(x.get("countryId") or "UNRESOLVED_COUNTRY"), x["real"]["resourceId"], x["siteName"]))
 if energy_count < 3000:
     raise RuntimeError(f"Global oil/gas import produced only {energy_count} records; refusing a partial field catalog")
 if coal_count < 1000:
@@ -256,9 +273,10 @@ output = {
     "generatedAt": __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat(),
     "datasetScope": "GLOBAL_OIL_GAS_EXTRACTION_AND_COAL_MINES",
     "siteCount": len(sites),
-    "countriesRepresented": len({site["countryId"] for site in sites}),
+    "countriesRepresented": len({site["countryId"] for site in sites if site.get("countryId")}),
     "sourceCounts": {"oilGasRowsExpandedToCommoditySites": energy_count, "coalSourceRows": coal_count},
-    "rejected": rejected,
+    "unresolvedCounts": {"siteRecordsWithoutCountry": sum(1 for site in sites if not site.get("countryId")), "siteRecordsWithoutCoordinates": sum(1 for site in sites if not site.get("coordinates")), **unresolved},
+    "rejected": {"siteRecords": 0, "coordinates": 0, "countryIdentity": 0}, 
     "operationalPolicy": "Source locations are visible but do not become executable extraction sites until OMEGA has an exact game site binding.",
     "sources": [
         {"name": "Global Energy Monitor GOGET via Global Energy Map", "url": energy_url, "asOf": "2026-03", "license": "CC BY 4.0", "attribution": "Data: Global Energy Monitor, CC BY 4.0"},
@@ -267,4 +285,4 @@ output = {
     "sites": sites
 }
 OUT.write_text(json.dumps(output, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
-print(json.dumps({"output": str(OUT), "siteCount": len(sites), "countriesRepresented": output["countriesRepresented"], "sourceCounts": output["sourceCounts"], "rejected": rejected}, indent=2))
+print(json.dumps({"output": str(OUT), "siteCount": len(sites), "countriesRepresented": output["countriesRepresented"], "sourceCounts": output["sourceCounts"], "unresolvedCounts": output["unresolvedCounts"], "rejected": output["rejected"]}, indent=2))
