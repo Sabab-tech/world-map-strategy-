@@ -67,6 +67,8 @@ jobs:
           unzip -l "$APK" > .cache/apk-file-list.txt
           grep -Fq 'assets/resource_site_global_deposit_catalog_v1.json' .cache/apk-file-list.txt
           grep -Fq 'assets/resource_site_global_energy_catalog_v1.json' .cache/apk-file-list.txt
+          grep -Fq 'assets/omega_resource_supplemental_site_commissioning_v1.js' .cache/apk-file-list.txt
+          unzip -p "$APK" assets/index.html | grep -Fq 'omega_resource_supplemental_site_commissioning_v1.js'
           echo "Verified both global catalogs are bundled under Android assets."
       - name: Report APK
         run: |
