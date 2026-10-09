@@ -31,6 +31,8 @@ for(const site of master.sites){
 assert.ok(master.sites.every(s=>catalogIds.has(s.siteId)),'master rows must map to individual canonical sites');
 assert.match(index,/omega_resource_gameplay_binding_v1\.js/,'playable shell must load site binding');
 assert.match(binding,/OMEGA_RESOURCE_SITE_SELECTED/,'site selection event must be emitted');
+assert.match(binding,/g\.OmegaResourceSiteMasterResearchData=master/,'the fetched 199-site registry must be published to the runtime resolver');
+assert.match(binding,/g\.OmegaResourceSiteCanonicalCatalogData=catalog/,'the canonical site catalog must be published to runtime consumers');
 assert.match(binding,/planExtraction/,'site selection UI must call industrial extraction planner');
 assert.match(binding,/extractCountry/,'site UI must connect to actual extraction executor');
 assert.match(binding,/No country-average substitution/,'UI must explicitly prevent average mapping');
