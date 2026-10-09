@@ -208,6 +208,8 @@ test('runtime renders all global sites and applies nation/resource scope without
   assert.equal(diagnostics?.siteCount,240,'239 distinct physical locations plus one test-only coincident identity must yield 240 site markers');
   const markerCount = () => [...layers].reduce((sum,layer)=>sum+layer.markers.length,0);
   assert.equal(markerCount(),240,'WORLD scope must render all 239 source locations plus the test-only overlap fixture');
+  const geographicPositions=new Set([...layers].flatMap(layer=>layer.markers).map(marker=>marker.latlng.map(value=>Number(value).toFixed(3)).join('|')));
+  assert.ok(geographicPositions.size>100,'world markers must preserve widespread source coordinates instead of collapsing all resources to one point');
   assert.ok(context.Game.Map.resourceDepositsLayer.clearCount>0,'legacy deposit layer must be cleared so old and individual markers do not stack');
   const activeMarkers=[...layers].flatMap(layer=>layer.markers);
   const overlapping=activeMarkers.filter(marker=>Math.abs(marker.latlng[0]-Number(overlapBase.lat??overlapBase.coordinates?.lat??overlapBase.location?.coordinates?.lat))<1e-7&&Math.abs(marker.latlng[1]-Number(overlapBase.lng??overlapBase.lon??overlapBase.coordinates?.lng??overlapBase.location?.coordinates?.lng))<1e-7);
