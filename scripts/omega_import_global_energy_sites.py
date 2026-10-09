@@ -428,6 +428,7 @@ for csv_path, default_status in [(COAL_ACTIVE, "UNKNOWN"), (COAL_CLOSED, "CLOSED
                 cid, country_method, country_evidence_url = country_override
                 unresolved["coal_country_resolved_from_research"] += 1
             point_country = country_from_coordinates(lat, lon) if lat is not None and lon is not None else ""
+            coordinate_sign_correction = None
             if lat is not None and lon is not None and -90 <= lat <= 90 and -180 <= lon <= 180:
                 swapped_point_country = country_from_coordinates(lon, lat) if -90 <= lon <= 90 and -180 <= lat <= 180 else ""
                 if (cid and point_country and point_country != cid and swapped_point_country == cid) or (not cid and not point_country and swapped_point_country):
@@ -439,6 +440,18 @@ for csv_path, default_status in [(COAL_ACTIVE, "UNKNOWN"), (COAL_CLOSED, "CLOSED
                         cid = swapped_point_country
                         country_method = "SOURCE_LAT_LON_ORDER_CORRECTED_BY_COUNTRY_GEOMETRY"
                         unresolved["coal_country_inferred_from_coordinates"] += 1
+            if cid and lat is not None and lon is not None and point_country != cid:
+                sign_candidates = [
+                    (lat, -lon, "SOURCE_LONGITUDE_SIGN_CORRECTED_BY_COUNTRY_GEOMETRY"),
+                    (-lat, lon, "SOURCE_LATITUDE_SIGN_CORRECTED_BY_COUNTRY_GEOMETRY"),
+                    (-lat, -lon, "SOURCE_LATITUDE_AND_LONGITUDE_SIGNS_CORRECTED_BY_COUNTRY_GEOMETRY")
+                ]
+                sign_matches = [(candidate_lat, candidate_lon, correction) for candidate_lat, candidate_lon, correction in sign_candidates
+                    if -90 <= candidate_lat <= 90 and -180 <= candidate_lon <= 180 and country_from_coordinates(candidate_lat, candidate_lon) == cid]
+                if len(sign_matches) == 1:
+                    lat, lon, coordinate_sign_correction = sign_matches[0]
+                    point_country = cid
+                    coordinate_accuracy = coordinate_sign_correction
             if not cid and point_country:
                 cid = point_country
                 country_method = "POINT_IN_COUNTRY_POLYGON"
@@ -502,6 +515,10 @@ for csv_path, default_status in [(COAL_ACTIVE, "UNKNOWN"), (COAL_CLOSED, "CLOSED
                 site["location"]["coordinateCorrection"] = "SOURCE_LAT_LON_ORDER_CORRECTED_BY_VALID_GEOGRAPHIC_RANGES"
                 site["sourceSiteRecord"]["sourceCoordinateFieldsBeforeCorrection"] = source_coordinates_before_correction
                 site["provenance"]["coordinateCorrection"] = "SOURCE_LAT_LON_ORDER_CORRECTED_BY_VALID_GEOGRAPHIC_RANGES"
+            if coordinate_sign_correction:
+                site["location"]["coordinateCorrection"] = coordinate_sign_correction
+                site["sourceSiteRecord"]["sourceReportedCoordinates"] = raw_source_coordinates
+                site["provenance"]["coordinateCorrection"] = coordinate_sign_correction
             if coordinate_source_url:
                 site["location"]["coordinateSourceUrl"] = coordinate_source_url
                 site["provenance"]["coordinateSourceUrl"] = coordinate_source_url
