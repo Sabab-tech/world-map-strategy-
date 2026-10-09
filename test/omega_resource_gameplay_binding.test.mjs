@@ -71,6 +71,13 @@ test('individual site map markers use resource-specific catalog glyphs and acces
   assert.match(binding, /resourceCatalog\.find/);
   assert.match(binding, /siteName\|\|s\.siteId/);
   assert.match(binding, /siteCount:sites\.length/);
+  assert.match(binding, /discoverSourceSites/,'raw resource JSONs must be scanned for individual site records');
+  assert.match(binding, /resources\.json/,'primary resource JSON must feed the global site map');
+  assert.match(binding, /resources_2\.json/,'secondary resource JSON must feed the global site map');
+  assert.match(binding, /SITE_COLLECTION_KEY/,'site discovery must identify mine, oil, gas, quarry and resource-site collections');
+  assert.match(binding, /scheduleMarkerRender/,'site markers must retry when the map layer initializes late');
+  assert.doesNotMatch(binding, /catalog\.sites\.length!==199\|\|!Array\.isArray\(master\.sites\)\|\|master\.sites\.length!==199/,
+    'global map must not hard-stop at the old 199-site catalog size');
   assert.match(css, /\.omega-individual-site-marker span/);
   assert.match(css, /var\(--site-color/);
 });
