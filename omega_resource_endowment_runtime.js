@@ -548,6 +548,7 @@
       const siteSourcePath=supplemental?(site?.sourceSiteRecord?.sourceUrl||site?.sourceSiteRecord?.sourceDataset||site?.sourceType||null):('resource_site_canonical_catalog_v1.sites['+Object.keys(canonicalSiteCatalogMap||{}).indexOf(siteId)+']');
       const rawSite={
         ...clone(profile?.rawSiteReference||profile||{}),
+        ...(supplemental?clone(site):{}),
         siteId,siteReferenceKey:siteId,siteName,name:siteName,
         countryId:wanted,countryCode:wanted,
         resourceId:identity.resourceTypeId||profile?.resourceId||null,
