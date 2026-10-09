@@ -304,7 +304,10 @@ def merge_coal_sites(first_site, second_site):
     secondary_coords = secondary.get("coordinates")
     if secondary_coords and secondary_coords != primary_coords:
         evidence = list(primary_record.get("additionalCoordinateEvidence") or [])
-        evidence.append({"coordinates": secondary_coords, "coordinateStatus": (secondary.get("location") or {}).get("coordinateStatus"), "coordinateSourceUrl": (secondary.get("location") or {}).get("coordinateSourceUrl"), "sourceRecordId": (secondary.get("sourceSiteRecord") or {}).get("sourceRecordId")})
+        item = {"coordinates": secondary_coords, "coordinateStatus": (secondary.get("location") or {}).get("coordinateStatus"), "coordinateSourceUrl": (secondary.get("location") or {}).get("coordinateSourceUrl"), "sourceRecordId": (secondary.get("sourceSiteRecord") or {}).get("sourceRecordId")}
+        signature = (item["coordinates"].get("lat"), item["coordinates"].get("lng"), item.get("coordinateSourceUrl"))
+        if not any((entry.get("coordinates") or {}).get("lat") == signature[0] and (entry.get("coordinates") or {}).get("lng") == signature[1] and entry.get("coordinateSourceUrl") == signature[2] for entry in evidence):
+            evidence.append(item)
         primary_record["additionalCoordinateEvidence"] = evidence
     return primary
 
@@ -447,7 +450,10 @@ for csv_path, default_status in [(COAL_ACTIVE, "UNKNOWN"), (COAL_CLOSED, "CLOSED
                     country_method = "NEAREST_COUNTRY_GEOMETRY_WITHIN_0_15_DEG"
                     unresolved["coal_country_inferred_from_coordinates"] += 1
             coordinate_quarantined = False
-            if cid and lat is not None and lon is not None:
+            disputed_site_mapping = name_key == "SIBOVC COAL MINE" and country_method == "DISPUTED_JURISDICTION_MAPPED_TO_EXISTING_GAME_PROFILE"
+            if disputed_site_mapping and lat is not None and lon is not None:
+                coordinate_accuracy = "SOURCE_COORDINATE_IN_DISPUTED_JURISDICTION"
+            elif cid and lat is not None and lon is not None:
                 if point_country and point_country != cid:
                     coordinate_quarantined = True
                 elif not point_country:
@@ -489,6 +495,8 @@ for csv_path, default_status in [(COAL_ACTIVE, "UNKNOWN"), (COAL_CLOSED, "CLOSED
             if name_key == "SIBOVC COAL MINE":
                 site["identity"].update({"sourceReportedJurisdiction":"Kosovo","jurisdictionType":"DISPUTED_TERRITORY","jurisdictionCountryId":"XKX","jurisdictionAuthority":"Source identifies Kosovo; OMEGA currently routes this site through its existing SRB game profile"})
                 site["sourceSiteRecord"]["sourceReportedJurisdiction"] = "Kosovo"
+                site["location"]["countryName"] = "Kosovo"
+                site["location"]["coordinateJurisdiction"] = "Kosovo"
                 site["provenance"]["countryAssignmentMethod"] = "DISPUTED_JURISDICTION_MAPPED_TO_EXISTING_GAME_PROFILE"
             if coordinate_order_corrected:
                 site["location"]["coordinateCorrection"] = "SOURCE_LAT_LON_ORDER_CORRECTED_BY_VALID_GEOGRAPHIC_RANGES"
