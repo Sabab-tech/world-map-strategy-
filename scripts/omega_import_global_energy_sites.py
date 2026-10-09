@@ -473,6 +473,16 @@ for csv_path, default_status in [(COAL_ACTIVE, "UNKNOWN"), (COAL_CLOSED, "CLOSED
             if coordinate_source_url:
                 site["location"]["coordinateSourceUrl"] = coordinate_source_url
                 site["provenance"]["coordinateSourceUrl"] = coordinate_source_url
+            elif coordinate_override and lat is not None and lon is not None:
+                alt_lat, alt_lon, alt_accuracy, alt_url = coordinate_override
+                if abs(float(lat) - float(alt_lat)) > 0.001 or abs(float(lon) - float(alt_lon)) > 0.001:
+                    site["sourceSiteRecord"]["additionalCoordinateEvidence"] = [{
+                        "coordinates": {"lat": alt_lat, "lng": alt_lon},
+                        "coordinateStatus": alt_accuracy,
+                        "coordinateSourceUrl": alt_url,
+                        "sourceRecordId": source_id,
+                        "note": "ALTERNATE_RESEARCHED_POINT_RETAINED_NOT_USED_AS_PRIMARY"
+                    }]
             if not original_name:
                 site["identity"]["sourceIdentityStatus"] = "INCOMPLETE_SOURCE_IDENTITY"
                 site["operation"]["commercialExtraction"] = False
