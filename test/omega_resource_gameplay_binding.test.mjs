@@ -245,6 +245,30 @@ test('runtime renders all global sites and applies nation/resource scope without
   context.Game.Map.resourceState.selectedResources=vm.runInContext("new Set(['natural-gas'])",context);
   context.Omega.IndividualResourceSiteBinding.refresh();
   assert.ok(markerCount()>0 && markerCount()<241,'hyphenated commodity filters must match canonical underscore resource IDs across the world');
+
+  // Regression fixture: Saudi Arabia has one source mine site plus two separate oilfield records.
+  context.Game.Map.resourceState.scope='NATION';
+  context.Game.currentActiveCountry='Saudi Arabia';
+  context.Game.Map.resourceState.selectedResources=vm.runInContext("new Set(['all'])",context);
+  context.Omega.IndividualResourceSiteBinding.refresh();
+  assert.equal(markerCount(),3,'Saudi Arabia must show the gold mine and both individually identified oilfields');
+  context.Game.Map.resourceState.selectedResources=vm.runInContext("new Set(['crude_oil'])",context);
+  context.Omega.IndividualResourceSiteBinding.refresh();
+  assert.equal(markerCount(),2,'Saudi Arabia crude-oil filter must show both Ghawar and Safaniya, not one country aggregate');
+  context.Game.Map.resourceState.selectedResources=vm.runInContext("new Set(['all'])",context);
+  const diagnosticsAfterLoad=context.Omega.IndividualResourceSiteBinding.diagnostics();
+  assert.equal(diagnosticsAfterLoad.sourceRecordCounts.mineSites,201,'the 199 source mine/site records plus two test-only overlap fixtures must be counted');
+  assert.equal(diagnosticsAfterLoad.sourceRecordCounts.runtimeDeposits,43,'diagnostics must count all raw runtime deposit records');
+  assert.ok(Object.values(diagnosticsAfterLoad.coordinateStatusCounts).reduce((a,b)=>a+b,0)===diagnosticsAfterLoad.siteCount,
+    'coordinate confidence reporting must cover every mapped site');
+  const loadedSaudiSites=context.Omega.IndividualResourceSiteBinding.sites.filter(site=>site.countryId==='SAU');
+  assert.equal(loadedSaudiSites.length,3,'Saudi Arabia must retain all three distinct existing source records');
+  assert.ok(loadedSaudiSites.every(site=>site.location.coordinateStatus),
+    'every mapped site must expose a coordinate confidence/status label in its location object');
+  assert.ok(loadedSaudiSites.some(site=>site.location.coordinateStatus==='ESTIMATED_SITE_POINT'),
+    'estimated coordinates must remain explicitly labeled rather than being advertised as exact');
+  assert.ok(loadedSaudiSites.some(site=>site.location.coordinateStatus==='SOURCE_STATUS_UNSPECIFIED'),
+    'coordinates without source confidence metadata must remain explicitly unverified');
 });
 
 
@@ -258,4 +282,63 @@ test('resource map defaults to all catalog resources and dynamically separates n
   assert.match(binding, /Math\.hypot\(item\.point\.x-point\.x,item\.point\.y-point\.y\)<30/,'nearby non-identical coordinates must be collision-grouped');
   assert.match(binding, /map\.on\('zoomend',addMapMarkers\);map\.on\('moveend',addMapMarkers\)/,'marker layout must refresh after map zoom and movement');
   assert.match(binding, /resourceState\?\.__omegaDefaultSelection/,'existing resource types found in source records must join the initial default selection');
+});
+
+
+
+test('legacy and individual resource map modes share one activation state', () => {
+  const mapEngine = read('map-engine-2.js');
+  const context = {
+    document: { getElementById(){ return null; } },
+    Game: {
+      currentActiveCountry: 'SAU',
+      Map: {
+        isResourceModeActive: false,
+        resourceState: { enabled: false, selectedResources: new Set(['crude_oil']) },
+        selectedResourceChips: new Set(),
+        hideResourceFilterMenu(){},
+        renderResourceDeposits(){},
+        renderGlobalCapitalHubs(){},
+        renderCountryHubs(){}
+      }
+    }
+  };
+  vm.createContext(context);
+  for (const method of [
+    'Game.Map.clearAndResetResourceMode = function()',
+    'Game.Map.applyResourceFilterAndClose = function()',
+    'Game.Map.toggleResourceMode = function()'
+  ]) {
+    const start = mapEngine.indexOf(method);
+    assert.notEqual(start, -1, method + ' must exist');
+    const end = mapEngine.indexOf('\n};', start);
+    assert.notEqual(end, -1, method + ' must terminate');
+    vm.runInContext(mapEngine.slice(start, end + 3), context, { timeout: 1000 });
+  }
+
+  context.Game.Map.toggleResourceMode();
+  assert.equal(context.Game.Map.isResourceModeActive, true);
+  assert.equal(context.Game.Map.resourceState.enabled, true,
+    'the legacy resource mode must enable individual site markers');
+  context.Game.Map.toggleResourceMode();
+  assert.equal(context.Game.Map.isResourceModeActive, false);
+  assert.equal(context.Game.Map.resourceState.enabled, false,
+    'turning the resource mode off must remove individual site markers');
+  context.Game.Map.applyResourceFilterAndClose();
+  assert.equal(context.Game.Map.isResourceModeActive, true,
+    'applying the resource filter must activate both map layers');
+  assert.equal(context.Game.Map.resourceState.enabled, true);
+  context.Game.Map.clearAndResetResourceMode();
+  assert.equal(context.Game.Map.isResourceModeActive, false,
+    'reset must clear both mode flags');
+  assert.equal(context.Game.Map.resourceState.enabled, false);
+});
+
+
+test('coordinate confidence is reported without claiming every stored point is exact', () => {
+  const binding = read('omega_resource_gameplay_binding_v1.js');
+  assert.match(binding, /coordinateStatusCounts/);
+  assert.match(binding, /SOURCE_STATUS_UNSPECIFIED/);
+  assert.doesNotMatch(binding, /exact coordinates/i,
+    'estimated or unverified points must not be advertised as exact');
 });

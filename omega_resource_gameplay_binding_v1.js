@@ -62,6 +62,14 @@ function coordsOf(s){
  const lng=Number(c.lng??c.lon??c.longitude??s?.lng??s?.lon??s?.longitude??s?.sourceSiteRecord?.lng);
  return Number.isFinite(lat)&&Number.isFinite(lng)&&lat>=-90&&lat<=90&&lng>=-180&&lng<=180?{lat,lng}:null;
 }
+function coordinateStatusOf(site){
+ const s=site||{},source=s.sourceSiteRecord||{},real=s.real||{},loc=s.location||{};
+ return String(
+  loc.coordinateStatus||real.location?.coordinateStatus||
+  source.locationIdentity?.coordinateStatus||source.dataStatus?.location||
+  source.provenance?.coordinateStatus||'SOURCE_STATUS_UNSPECIFIED'
+ ).trim().toUpperCase();
+}
 function normalizeSourceSite(raw,countryHint){
  if(!raw||typeof raw!=='object')return null;
  const p=raw.siteDataPackage||raw;
@@ -73,11 +81,22 @@ function normalizeSourceSite(raw,countryHint){
  const siteName=asText(raw.siteName||raw.name||raw.title||p.siteName||identity.siteName);
  const resourceId=asText(raw.resourceId||raw.resourceTypeId||raw.resourceTypeKey||raw.resId||raw.resource||raw.commodity||identity.resourceTypeId||identity.resourceId||p.resourceId||p.resourceTypeId);
  if(!coords||!countryId||!resourceId||(!siteId&&!siteName))return null;
+ // Source discovery returns a normalized candidate. Preserve its original JSON object
+ // instead of nesting the candidate as though it were a raw deposit/site record.
+ const nestedSource=raw.sourceSiteRecord&&typeof raw.sourceSiteRecord==='object'?raw.sourceSiteRecord:null;
+ const sourceRecord=nestedSource&&nestedSource.sourceSiteRecord&&typeof nestedSource.sourceSiteRecord==='object'
+  ?nestedSource.sourceSiteRecord:(nestedSource||raw);
  const stableId=siteId||('SITE_'+countryId+'_'+siteName.toLowerCase().normalize('NFKD').replace(/[\\u0300-\\u036f]/g,'').replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,''));
- return {siteId:stableId,countryId,siteName:siteName||stableId,real:{...(raw.real||{}),resourceId},sourceSiteRecord:raw,coordinates:coords,
-  location:{...loc,coordinates:coords,locality:loc.locality||raw.region||raw.adminRegion||''},
+ return {siteId:stableId,countryId,siteName:siteName||stableId,real:{...(raw.real||{}),resourceId},sourceSiteRecord:sourceRecord,coordinates:coords,
+  location:{
+   ...loc,
+   countryName:loc.countryName||raw.countryName||sourceRecord.countryName||(sourceRecord.country&&sourceRecord.country.length>3?sourceRecord.country:''),
+   coordinateStatus:loc.coordinateStatus||raw.real?.location?.coordinateStatus||sourceRecord.locationIdentity?.coordinateStatus||sourceRecord.dataStatus?.location||sourceRecord.provenance?.coordinateStatus||'SOURCE_STATUS_UNSPECIFIED',
+   coordinates:coords,
+   locality:loc.locality||raw.region||raw.adminRegion||sourceRecord.region||''
+  },
   identity:{...identity,countryIso3:countryId,resourceTypeId:resourceId,siteType:identity.siteType||raw.siteType||raw.type||'RESOURCE_SITE'},
-  operation:raw.operation||p.operation||raw.extractionProfile||null,processing:raw.processing||p.processing||null};
+  operation:raw.operation||p.operation||raw.extractionProfile||null,processing:raw.processing||p.processing||raw.extractionProfile?.processing||null};
 }
 function discoverSourceSites(root){
  const found=[],seenObjects=new Set();
@@ -314,9 +333,21 @@ async function init(){
   selectNode.innerHTML=sites.map(s=>'<option value="'+esc(s.siteId)+'">'+esc(s.countryId+' · '+s.siteName+' · '+(s.real?.resourceId||'?'))+'</option>').join('');
   selected=sites[0].siteId;selectNode.value=selected;detail(chosenSite());
   g.Omega=g.Omega||{};
-  g.Omega.IndividualResourceSiteBinding={version:VERSION,sites,select:setSelected,refresh:addMapMarkers,diagnostics:()=>({status:'READY',siteCount:sites.length,uniqueSiteIds:new Set(sites.map(s=>s.siteId)).size,countryCount:new Set(sites.map(s=>s.countryId)).size,sourceFiles:sources.map(x=>x.url),mergedDepositAliases,individualMapping:true,missingCoordinates:0})};
+  g.Omega.IndividualResourceSiteBinding={version:VERSION,sites,select:setSelected,refresh:addMapMarkers,diagnostics:()=>{
+   const coordinateStatusCounts={};
+   for(const site of sites){const status=coordinateStatusOf(site);coordinateStatusCounts[status]=(coordinateStatusCounts[status]||0)+1;}
+   const sourceRecordCounts=sources.reduce((counts,source)=>{
+    if(source.url==='resources.json'||source.url==='resources_2.json'){
+     const profiles=source.data?.GSRSK_Master_CountryProfiles_v14?.countryProfiles||{};
+     counts.mineSites+=Object.values(profiles).reduce((sum,profile)=>sum+(Array.isArray(profile?.resource_infrastructure_context?.mineSites)?profile.resource_infrastructure_context.mineSites.length:0),0);
+     counts.runtimeDeposits+=Array.isArray(source.data?.runtime_deposits)?source.data.runtime_deposits.length:0;
+    }
+    return counts;
+   },{mineSites:0,runtimeDeposits:0});
+   return {status:'READY',siteCount:sites.length,uniqueSiteIds:new Set(sites.map(s=>s.siteId)).size,countryCount:new Set(sites.map(s=>s.countryId)).size,sourceFiles:sources.map(x=>x.url),sourceRecordCounts,coordinateStatusCounts,mergedDepositAliases,individualMapping:true};
+  }};
   attachMapRefreshHooks();scheduleMarkerRender();setTimeout(()=>scheduleMarkerRender(),1000);setTimeout(()=>scheduleMarkerRender(),3000);
-  setStatus('READY · '+sites.length+' individual sites · '+new Set(sites.map(s=>s.countryId)).size+' countries · exact coordinates');
+  setStatus('READY · '+sites.length+' individual sites · '+new Set(sites.map(s=>s.countryId)).size+' countries · source coordinate confidence preserved');
  }catch(e){setStatus('FAILED · '+String(e?.message||e));g.OmegaIndividualResourceSiteBindingError=String(e?.message||e);g.__OMEGA_RESOURCE_SITE_BINDING_INIT__=false;}
 }
 g.addEventListener?.('OMEGA_READY',()=>void init());
