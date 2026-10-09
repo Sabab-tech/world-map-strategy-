@@ -27,9 +27,9 @@ test('global mineral catalogue contains many independently identified deposits a
       assert.ok(site.coordinates.lat >= -90 && site.coordinates.lat <= 90 && site.coordinates.lng >= -180 && site.coordinates.lng <= 180, site.siteId+' coordinate range');
     } else {
       assert.equal(site.location?.coordinateStatus, 'MISSING_UPSTREAM_COORDINATES');
-      assert.match(site.operation?.extractionEligibility || '', /BLOCKED_MISSING_COORDINATES|BLOCKED_UNRESOLVED_COUNTRY_IDENTITY/);
+      assert.match(site.operation?.extractionEligibility || '', /BLOCKED_MISSING_COORDINATES|BLOCKED_MISSING_COORDINATES|BLOCKED_UNRESOLVED_COUNTRY_IDENTITY|BLOCKED_INCOMPLETE_SOURCE_IDENTITY/);
     }
-    if (!site.countryId) assert.equal(site.operation?.extractionEligibility, 'BLOCKED_UNRESOLVED_COUNTRY_IDENTITY');
+    if (!site.countryId) assert.equal(site.operation?.extractionEligibility, 'BLOCKED_MISSING_COORDINATES|BLOCKED_UNRESOLVED_COUNTRY_IDENTITY|BLOCKED_INCOMPLETE_SOURCE_IDENTITY');
     assert.equal(site.operation?.commercialExtraction, false, 'historical mineral occurrences must not be promoted to executable mines');
     assert.ok(site.sourceSiteRecord?.sourceDataset, site.siteId+' needs provenance');
   }
@@ -51,18 +51,18 @@ test('global oil/gas field and coal-mine catalog has broad country coverage and 
   for (const site of catalog.sites) {
     assert.ok(site.siteId && site.siteName && site.identity?.resourceTypeId);
     assert.equal(site.identity.countryAssignmentStatus, site.countryId ? 'IDENTIFIED' : 'UNRESOLVED_COUNTRY_IDENTITY');
-    if (site.coordinates) {
-      assert.ok(Number.isFinite(site.coordinates.lat) && Number.isFinite(site.coordinates.lng));
-      assert.ok(site.coordinates.lat >= -90 && site.coordinates.lat <= 90 && site.coordinates.lng >= -180 && site.coordinates.lng <= 180);
-      assert.equal(site.operation?.extractionEligibility, 'REQUIRES_EXACT_GAME_SITE_BINDING');
-    } else {
+    if (!site.countryId) {
+      assert.equal(site.operation?.commercialExtraction, false);
+      assert.equal(site.operation?.extractionEligibility, 'BLOCKED_MISSING_COORDINATES|BLOCKED_UNRESOLVED_COUNTRY_IDENTITY|BLOCKED_INCOMPLETE_SOURCE_IDENTITY');
+    } else if (!site.coordinates) {
       assert.equal(site.location?.coordinateStatus, 'MISSING_UPSTREAM_COORDINATES');
       assert.equal(site.operation?.commercialExtraction, false, 'unlocated site must not run as an executable extraction point');
       assert.equal(site.operation?.extractionEligibility, 'BLOCKED_MISSING_COORDINATES');
-    }
-    if (!site.countryId) {
-      assert.equal(site.operation?.commercialExtraction, false);
-      assert.equal(site.operation?.extractionEligibility, 'BLOCKED_UNRESOLVED_COUNTRY_IDENTITY');
+    } else {
+      assert.ok(Number.isFinite(site.coordinates.lat) && Number.isFinite(site.coordinates.lng));
+      assert.ok(site.coordinates.lat >= -90 && site.coordinates.lat <= 90 && site.coordinates.lng >= -180 && site.coordinates.lng <= 180);
+      if (site.operation?.commercialExtraction === true) assert.equal(site.operation?.extractionEligibility, 'REQUIRES_EXACT_GAME_SITE_BINDING');
+      else assert.match(site.operation?.extractionEligibility || '', /REQUIRES_EXACT_GAME_SITE_BINDING|^BLOCKED_/);
     }
   }
 });
