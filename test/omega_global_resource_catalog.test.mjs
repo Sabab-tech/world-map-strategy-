@@ -29,7 +29,7 @@ test('global mineral catalogue contains many independently identified deposits a
       assert.equal(site.location?.coordinateStatus, 'MISSING_UPSTREAM_COORDINATES');
       assert.match(site.operation?.extractionEligibility || '', /BLOCKED_MISSING_COORDINATES|BLOCKED_MISSING_COORDINATES|BLOCKED_UNRESOLVED_COUNTRY_IDENTITY|BLOCKED_INCOMPLETE_SOURCE_IDENTITY/);
     }
-    if (!site.countryId) assert.equal(site.operation?.extractionEligibility, 'BLOCKED_MISSING_COORDINATES|BLOCKED_UNRESOLVED_COUNTRY_IDENTITY|BLOCKED_INCOMPLETE_SOURCE_IDENTITY');
+    if (!site.countryId) assert.equal(site.operation?.extractionEligibility, 'BLOCKED_UNRESOLVED_COUNTRY_IDENTITY');
     assert.equal(site.operation?.commercialExtraction, false, 'historical mineral occurrences must not be promoted to executable mines');
     assert.ok(site.sourceSiteRecord?.sourceDataset, site.siteId+' needs provenance');
   }
