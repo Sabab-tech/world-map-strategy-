@@ -116,9 +116,9 @@ function resolveCountryCode(site,index){
  if(index?.has(raw))return raw;
  const source=site?.sourceSiteRecord||{};
  const aliases=[site?.location?.countryName,site?.countryName,source?.countryName,source?.country,source?.countryCode,source?.location?.countryName]
-  .map(v=>String(v||'').replace(/[_-]+/g,' ').replace(/\\s+/g,' ').trim().toUpperCase()).filter(Boolean);
+  .map(v=>String(v||'').replace(/[_-]+/g,' ').replace(/\s+/g,' ').trim().toUpperCase()).filter(Boolean);
  for(const feature of index?.values?.()||[]){
-  const names=[feature.name,feature.id].map(v=>String(v||'').replace(/[_-]+/g,' ').replace(/\\s+/g,' ').trim().toUpperCase());
+  const names=[feature.name,feature.id].map(v=>String(v||'').replace(/[_-]+/g,' ').replace(/\s+/g,' ').trim().toUpperCase());
   if(aliases.some(alias=>names.includes(alias)))return feature.id;
  }
  const knownAliases={'KSA':'SAU','KINGDOM OF SAUDI ARABIA':'SAU','UNITED STATES':'USA','UNITED STATES OF AMERICA':'USA','UAE':'ARE','RUSSIA':'RUS','SOUTH KOREA':'KOR','NORTH KOREA':'PRK','VIETNAM':'VNM','IRAN':'IRN','BOLIVIA':'BOL','TANZANIA':'TZA','VENEZUELA':'VEN','SYRIA':'SYR','LAOS':'LAO','BRUNEI':'BRN','MOLDOVA':'MDA','CZECH REPUBLIC':'CZE','PALESTINE':'PSE','TAIWAN':'TWN'};
