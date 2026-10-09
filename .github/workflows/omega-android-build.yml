@@ -39,7 +39,7 @@ jobs:
           curl --fail --location --silent --show-error --retry 2 --max-time 90 \
             https://raw.githubusercontent.com/Alexander-ai/global-deposit-globe/main/public/deposits.json \
             -o .cache/global-deposits-source.json
-          curl --fail --location --silent --show-error --retry 2 --max-time 90 \\
+          curl --fail --location --silent --show-error --retry 2 --max-time 90 \
             https://web.archive.org/web/20260305063452id_/https://globalenergymonitor.org/wp-content/uploads/2026/03/Global-Oil-and-Gas-Extraction-Tracker-March-2026.xlsx \
             -o .cache/Global-Oil-and-Gas-Extraction-Tracker-March-2026.xlsx
           curl --fail --location --silent --show-error --retry 2 --max-time 90 \
