@@ -130,6 +130,7 @@ jobs:
           export OMEGA_GATE_RESOURCERESEARCHPOLICY="${GATES[resourceResearchPolicy]}"
           export OMEGA_GATE_RESOURCESYSTEMHARDENING="${GATES[resourceSystemHardening]}"
           export OMEGA_GATE_RESOURCEINDUSTRIALNETWORK="${GATES[resourceIndustrialNetwork]}"
+          export OMEGA_GATE_RESOURCEINDIVIDUALROUTEGUARD="${GATES[resourceIndividualRouteGuard]}"
           export OMEGA_GATE_RESOURCEGAMEPLAYBINDING="${GATES[resourceGameplayBinding]}"
 
           node --input-type=module <<'NODE'
