@@ -1178,7 +1178,8 @@ Game.Map.applyMultiResourceFilter = function() {
 Game.Map.resourceState = {
     enabled: false,              // true when resource mode active
     scope: "NATION",             // "NATION" or "WORLD"
-    selectedResources: new Set(['cobalt', 'lithium', 'rare_earth', 'crude_oil', 'natural_gas', 'gold', 'uranium', 'iron_ore', 'copper', 'bauxite']),
+    selectedResources: new Set(['crude_oil','natural_gas','coal','iron_ore','copper','gold','uranium','lithium','cobalt','rare_earth','bauxite','nickel','manganese','titanium','zinc','tin','potash','silver','diamond','semiconductor']),
+    __omegaDefaultSelection: true,
 };
 
 Game.Map.resourceCatalog = [
@@ -1276,6 +1277,7 @@ Game.Map.renderResourceCheckboxesInPanel = function() {
 };
 
 Game.Map.handleResourceCheckboxChange = function(resId, isChecked, parentEl) {
+    this.resourceState.__omegaDefaultSelection = false;
     if (isChecked) {
         this.resourceState.selectedResources.add(resId);
         if (parentEl) {
@@ -1290,11 +1292,13 @@ Game.Map.handleResourceCheckboxChange = function(resId, isChecked, parentEl) {
 };
 
 Game.Map.selectAllResourceTypes = function() {
+    this.resourceState.__omegaDefaultSelection = false;
     this.resourceCatalog.forEach(item => this.resourceState.selectedResources.add(item.id));
     this.renderResourceCheckboxesInPanel();
 };
 
 Game.Map.deselectAllResourceTypes = function() {
+    this.resourceState.__omegaDefaultSelection = false;
     this.resourceState.selectedResources.clear();
     this.renderResourceCheckboxesInPanel();
 };

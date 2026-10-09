@@ -109,6 +109,10 @@ function scheduleMarkerRender(attempt=0){
 function addMapMarkers(){
  const map=g.Game?.Map?.map||g.map,L=g.L;
  if(!map||!L||typeof L.marker!=='function'||typeof L.divIcon!=='function')return;
+ if(!map.__omegaIndividualCollisionRefreshBound&&typeof map.on==='function'){
+  map.on('zoomend',addMapMarkers);map.on('moveend',addMapMarkers);
+  map.__omegaIndividualCollisionRefreshBound=true;
+ }
  if(markerLayer&&map.hasLayer?.(markerLayer))map.removeLayer(markerLayer);
  markerLayer=L.layerGroup();
  const mapApi=g.Game?.Map||{},resourceState=mapApi.resourceState||{};
@@ -125,34 +129,41 @@ function addMapMarkers(){
  const selectedKeys=new Set(Array.from(selected,canonical));
  const selectedAll=selectedKeys.has('all');
  const resourceCatalog=mapApi.resourceCatalog||g.Game?.resourceCatalog||[];
- const coordinateGroups=new Map();
- for(const site of sites){
-  const c=site.coordinates||site.location?.coordinates||{};
-  const lat=Number(c.lat),lng=Number(c.lng);
-  if(!Number.isFinite(lat)||!Number.isFinite(lng)||lat < -90||lat > 90||lng < -180||lng > 180)continue;
-  const key=lat.toFixed(5)+'|'+lng.toFixed(5);
-  if(!coordinateGroups.has(key))coordinateGroups.set(key,[]);
-  coordinateGroups.get(key).push(site);
+ const visibleSites=sites.filter(s=>{
+  const c=s.coordinates||s.location?.coordinates||{},lat=Number(c.lat),lng=Number(c.lng);
+  if(!Number.isFinite(lat)||!Number.isFinite(lng)||lat < -90||lat > 90||lng < -180||lng > 180)return false;
+  const rawResource=String(s.real?.resourceId||s.sourceSiteRecord?.resourceId||s.sourceSiteRecord?.resourceTypeId||s.sourceSiteRecord?.resId||s.identity?.resourceTypeId||'').toLowerCase();
+  const resourceId=canonical(rawResource);
+  if(selected.size>0&&!selectedAll&&!selectedKeys.has(resourceId)&&!selectedKeys.has(canonical(rawResource)))return false;
+  if(scope!=='WORLD'){
+   const candidateCountries=[s.countryId,s.countryName,s.location?.countryName,s.sourceSiteRecord?.country,s.sourceSiteRecord?.countryCode,s.sourceSiteRecord?.countryId].map(norm).filter(Boolean);
+   if(!candidateCountries.includes(norm(activeCountry)))return false;
+  }
+  return true;
+ });
+ // Cluster markers by their current screen-space proximity, not just identical coordinates.
+ // The visual offsets never modify a site's true latitude or longitude.
+ const collisionGroups=[],collisionGroupBySite=new Map();
+ for(const site of visibleSites){
+  const c=site.coordinates||site.location?.coordinates||{},lat=Number(c.lat),lng=Number(c.lng);
+  const point=typeof map.latLngToLayerPoint==='function'?map.latLngToLayerPoint([lat,lng]):{x:lng,y:lat};
+  let group=collisionGroups.find(items=>items.some(item=>Math.hypot(item.point.x-point.x,item.point.y-point.y)<30));
+  if(!group){group=[];collisionGroups.push(group);}
+  group.push({site,point});collisionGroupBySite.set(site.siteId,group);
  }
  let rendered=0,offsetMarkerCount=0,overlapGroupCount=0;
  const renderedCoordinateKeys=new Set();
- for(const s of sites){
+ for(const s of visibleSites){
   const c=s.coordinates||s.location?.coordinates||{},lat=Number(c.lat),lng=Number(c.lng);
-  if(!Number.isFinite(lat)||!Number.isFinite(lng)||lat < -90||lat > 90||lng < -180||lng > 180)continue;
   const rawResource=String(s.real?.resourceId||s.sourceSiteRecord?.resourceId||s.sourceSiteRecord?.resourceTypeId||s.sourceSiteRecord?.resId||s.identity?.resourceTypeId||'').toLowerCase();
   const resourceId=canonical(rawResource);
-  if(selected.size>0&&!selectedAll&&!selectedKeys.has(resourceId)&&!selectedKeys.has(canonical(rawResource)))continue;
-  if(scope!=='WORLD'){
-   const candidateCountries=[s.countryId,s.countryName,s.location?.countryName,s.sourceSiteRecord?.country,s.sourceSiteRecord?.countryCode,s.sourceSiteRecord?.countryId].map(norm).filter(Boolean);
-   if(!candidateCountries.includes(norm(activeCountry)))continue;
-  }
   const resource=resourceCatalog.find(r=>canonical(r.id)===resourceId||String(r.id||'').toLowerCase()===rawResource);
   const glyph=String(resource?.icon||resourceId.slice(0,2).toUpperCase()||'RS').replace(/[<>&"]/g,'');
   const color=/^#[0-9a-f]{6}$/i.test(resource?.color||'')?resource.color:'#76b7d8';
-  const coordKey=lat.toFixed(5)+'|'+lng.toFixed(5),group=coordinateGroups.get(coordKey)||[s],position=group.findIndex(x=>x.siteId===s.siteId);
+  const group=collisionGroupBySite.get(s.siteId)||[{site:s}],position=group.findIndex(item=>item.site.siteId===s.siteId);
   let dx=0,dy=0;
   if(group.length>1){
-   renderedCoordinateKeys.add(coordKey);
+   renderedCoordinateKeys.add(group.map(item=>item.site.siteId).sort().join('|'));
    const radius=Math.max(20,14/Math.sin(Math.PI/group.length)+2);
    const angle=(Math.max(0,position)*(2*Math.PI/group.length))-(Math.PI/2);
    dx=Math.round(Math.cos(angle)*radius);dy=Math.round(Math.sin(angle)*radius);offsetMarkerCount++;
@@ -282,6 +293,21 @@ async function init(){
    if(!isDeposit)physicalIndex.set(physicalKey,id);
   }
   sites=[...byId.values()];
+  const mapApi=g.Game?.Map,resourceState=mapApi?.resourceState,resourceCatalog=mapApi?.resourceCatalog;
+  if(Array.isArray(resourceCatalog)){
+   const known=new Set(resourceCatalog.map(r=>String(r.id||'').toLowerCase()));
+   for(const resourceId of new Set(sites.map(s=>String(s.real?.resourceId||s.sourceSiteRecord?.resourceId||s.sourceSiteRecord?.resourceTypeId||s.sourceSiteRecord?.resId||s.identity?.resourceTypeId||'').trim().toLowerCase()).filter(Boolean))){
+    if(known.has(resourceId))continue;
+    resourceCatalog.push({id:resourceId,name:resourceId.replace(/[_-]+/g,' ').replace(/\b\w/g,c=>c.toUpperCase()),icon:resourceId.split(/[_-]+/).map(part=>part.slice(0,1)).join('').toUpperCase().slice(0,3)||'RS',color:'#76b7d8'});
+    known.add(resourceId);
+   }
+  }
+  if(resourceState?.__omegaDefaultSelection&&resourceState.selectedResources instanceof Set){
+   for(const s of sites){
+    const id=String(s.real?.resourceId||s.sourceSiteRecord?.resourceId||s.sourceSiteRecord?.resourceTypeId||s.sourceSiteRecord?.resId||s.identity?.resourceTypeId||'').trim().toLowerCase();
+    if(id)resourceState.selectedResources.add(id);
+   }
+  }
   if(!sites.length)throw new Error('NO_INDIVIDUAL_RESOURCE_SITES_WITH_VALID_COORDINATES');
   if(new Set(sites.map(s=>s.siteId)).size!==sites.length)throw new Error('INDIVIDUAL_SITE_IDENTITY_NOT_UNIQUE');
   sites.sort((a,b)=>a.countryId.localeCompare(b.countryId)||a.siteName.localeCompare(b.siteName));
