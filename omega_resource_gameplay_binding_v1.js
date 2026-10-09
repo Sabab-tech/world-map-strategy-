@@ -127,18 +127,23 @@ function addMapMarkers(){
  g.__OMEGA_INDIVIDUAL_RESOURCE_MARKER_DIAGNOSTICS__={loadedSiteCount:sites.length,renderedMarkerCount:rendered,scope,activeCountry:activeCountry||null,resourceFilterCount:selected.size};
 }
 function attachMapRefreshHooks(){
- const mapApi=g.Game?.Map;
- if(!mapApi)return;
- for(const name of ['renderResourceDeposits','setResourceScope','applyResourceMapFilter','toggleResourceMode','toggleResourceOverlay','toggleResourceChip','selectResourcePreset']){
-  const original=mapApi[name];
-  if(typeof original!=='function'||original.__omegaSiteRefreshWrapped)continue;
-  const wrapped=function(...args){
-   const result=original.apply(this,args);
-   setTimeout(()=>addMapMarkers(),0);
-   return result;
-  };
-  wrapped.__omegaSiteRefreshWrapped=true;
-  mapApi[name]=wrapped;
+ const targets=[
+  {object:g.Game?.Map,names:['renderResourceDeposits','setResourceScope','applyResourceMapFilter','toggleResourceMode','toggleResourceOverlay','toggleResourceChip','selectResourcePreset','applyResourceFilterAndClose','clearAndResetResourceMode','toggleResourceType','toggleResourceCheckbox','selectAllResourceTypes','deselectAllResourceTypes','renderResourceCheckboxesInPanel']},
+  {object:g.CountryIOS,names:['open']}
+ ];
+ for(const target of targets){
+  const object=target.object;if(!object)continue;
+  for(const name of target.names){
+   const original=object[name];
+   if(typeof original!=='function'||original.__omegaSiteRefreshWrapped)continue;
+   const wrapped=function(...args){
+    const result=original.apply(this,args);
+    setTimeout(()=>addMapMarkers(),0);
+    return result;
+   };
+   wrapped.__omegaSiteRefreshWrapped=true;
+   object[name]=wrapped;
+  }
  }
 }
 function show(){
