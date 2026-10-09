@@ -63,3 +63,14 @@ console.log('Canonical/master/reserve/scenario site identities: 199/199');
 console.log('Unique site IDs and exact per-site catalog joins: PASS');
 console.log('Playable index wiring + individual selection + extraction API binding: PASS');
 console.log('Actual master-registry -> realism/hardening -> industrial runtime extraction plan: PASS');
+
+test('individual site map markers use resource-specific catalog glyphs and accessible exact-site tooltips', () => {
+  const binding = read('omega_resource_gameplay_binding_v1.js');
+  const css = read('omega_ui_visual_system_v1.css');
+  assert.match(binding, /L\.marker\(\[lat, lng\],\{icon,title:/);
+  assert.match(binding, /resourceCatalog\.find/);
+  assert.match(binding, /siteName\|\|s\.siteId/);
+  assert.match(binding, /siteCount:sites\.length/);
+  assert.match(css, /\.omega-individual-site-marker span/);
+  assert.match(css, /var\(--site-color/);
+});
