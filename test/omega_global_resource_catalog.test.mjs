@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import vm from 'node:vm';
 
 const read = path => fs.readFileSync(new URL('../'+path, import.meta.url), 'utf8');
 
@@ -86,4 +87,90 @@ test('resource map loads global catalogs and wires them into the execution pipel
   assert.match(binding, /btn\.textContent='GLOBAL RESOURCE SITES'/);
   assert.match(binding, /position:fixed;left:12px;bottom:18px;z-index:1000001/);
   assert.match(binding, /id="omega-individual-search" type="search"/);
+});
+
+
+test('supplemental site identities enter country-scoped resource references without synthetic coordinates', () => {
+  const source = read('omega_resource_endowment_runtime.js');
+  const context = {
+    console, Math, Number, String, Object, Array, Set, Map, WeakMap, Promise, JSON, Date, Intl,
+    Game: { state: { simulation: { turn: 1, startYear: 2015, date: '2015-01-01' }, resource: {}, economy: {} } },
+    ResourceMinistryEngine: {
+      isReady: false,
+      countryProfiles: {
+        USA: { identity: { iso3: 'USA', name: 'United States' } },
+        BGD: { identity: { iso3: 'BGD', name: 'Bangladesh' } }
+      },
+      deposits: [],
+      resourceTypes: []
+    },
+    addEventListener() {},
+    dispatchEvent() { return true; }
+  };
+  context.globalThis = context;
+  vm.createContext(context);
+  vm.runInContext(source, context, { filename: 'omega_resource_endowment_runtime.js' });
+
+  const sites = [
+    {
+      siteId: 'GLOBAL_ENERGY_USA_crude_oil_test_field',
+      sourceType: 'GLOBAL_ENERGY_EXTRACTION',
+      countryId: 'USA',
+      siteName: 'Test Producing Field',
+      identity: { countryIso3: 'USA', resourceTypeId: 'crude_oil', sourceRecordId: 'GEM-US-001' },
+      real: { resourceId: 'crude_oil', operationStatus: 'ACTIVE_PRODUCING' },
+      coordinates: { lat: 29.1, lng: -95.2 },
+      location: { coordinates: { lat: 29.1, lng: -95.2 }, countryName: 'United States', coordinateStatus: 'SOURCE_APPROXIMATE' },
+      operation: { status: 'ACTIVE_PRODUCING', commercialExtraction: true, extractionEligibility: 'REQUIRES_EXACT_GAME_SITE_BINDING' },
+      sourceSiteRecord: { sourceDataset: 'TEST_GEM', sourceUrl: 'https://example.invalid/source', sourceRecordId: 'GEM-US-001' },
+      provenance: { sourceAuthority: 'TEST_SOURCE', sourceUrl: 'https://example.invalid/source' }
+    },
+    {
+      siteId: 'GLOBAL_ENERGY_USA_crude_oil_missing_coordinates',
+      sourceType: 'GLOBAL_ENERGY_EXTRACTION',
+      countryId: 'USA',
+      siteName: 'Unlocated Producing Field',
+      identity: { countryIso3: 'USA', resourceTypeId: 'crude_oil', sourceRecordId: 'GEM-US-002' },
+      real: { resourceId: 'crude_oil', operationStatus: 'ACTIVE_PRODUCING' },
+      coordinates: null,
+      location: { coordinates: null, countryName: 'United States', coordinateStatus: 'MISSING_UPSTREAM_COORDINATES' },
+      operation: { status: 'ACTIVE_PRODUCING', commercialExtraction: true },
+      sourceSiteRecord: { sourceDataset: 'TEST_GEM', sourceRecordId: 'GEM-US-002' },
+      provenance: { sourceAuthority: 'TEST_SOURCE' }
+    },
+    {
+      siteId: 'GLOBAL_DEP_UNRESOLVED_COUNTRY_copper_unknown',
+      sourceType: 'GLOBAL_MINERAL_OCCURRENCE',
+      countryId: null,
+      siteName: 'Unassigned Copper Occurrence',
+      identity: { countryIso3: null, countryAssignmentStatus: 'UNRESOLVED_COUNTRY_IDENTITY', resourceTypeId: 'copper' },
+      real: { resourceId: 'copper', operationStatus: 'UNKNOWN' },
+      coordinates: { lat: 0, lng: 0 },
+      location: { coordinates: { lat: 0, lng: 0 }, coordinateStatus: 'UPSTREAM_GEOLOCATION_NOT_INDEPENDENTLY_VERIFIED' },
+      operation: { status: 'UNKNOWN', commercialExtraction: false },
+      sourceSiteRecord: { sourceDataset: 'TEST_MINERALS', upstreamRecordId: 'UNRESOLVED-001' },
+      provenance: { sourceAuthority: 'TEST_SOURCE' }
+    }
+  ];
+
+  const registration = context.OmegaResourceEndowmentRuntime.registerSupplementalSiteCatalog(sites);
+  assert.equal(registration.status, 'READY');
+  assert.equal(registration.registeredCount, 3);
+  assert.equal(registration.countriesRepresented, 1);
+  assert.equal(registration.unresolvedCountryCount, 1);
+  assert.equal(registration.unlocatedCount, 1);
+  assert.equal(registration.executableEligibleCount, 1);
+
+  const refs = context.OmegaResourceEndowmentRuntime.countryMineSiteReferences('USA');
+  const located = refs.find(row => row.siteId === sites[0].siteId);
+  const unlocated = refs.find(row => row.siteId === sites[1].siteId);
+  assert.ok(located, 'global site must become a country-scoped site reference');
+  assert.equal(located.countryId, 'USA');
+  assert.equal(located.resourceId, 'crude_oil');
+  assert.equal(located.rawSiteReference.sourceSiteRecord.sourceRecordId, 'GEM-US-001');
+  assert.equal(located.sourceDatasetId, 'TEST_GEM');
+  assert.equal(located.commercialExtraction, true);
+  assert.ok(unlocated, 'unlocated record must remain in the country identity registry');
+  assert.equal(unlocated.commercialExtraction, false, 'no-coordinate record must be blocked from extraction');
+  assert.equal(unlocated.rawSiteReference.location.coordinateStatus, 'MISSING_UPSTREAM_COORDINATES');
 });
