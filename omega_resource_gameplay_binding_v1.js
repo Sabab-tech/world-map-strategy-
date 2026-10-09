@@ -88,7 +88,13 @@ function normalizeSourceSite(raw,countryHint){
   ?nestedSource.sourceSiteRecord:(nestedSource||raw);
  const stableId=siteId||('SITE_'+countryId+'_'+siteName.toLowerCase().normalize('NFKD').replace(/[\\u0300-\\u036f]/g,'').replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,''));
  return {siteId:stableId,countryId,siteName:siteName||stableId,real:{...(raw.real||{}),resourceId},sourceSiteRecord:sourceRecord,coordinates:coords,
-  location:{...loc,countryName:loc.countryName||raw.countryName||sourceRecord.countryName||(sourceRecord.country&&sourceRecord.country.length>3?sourceRecord.country:''),coordinates:coords,locality:loc.locality||raw.region||raw.adminRegion||sourceRecord.region||''},
+  location:{
+   ...loc,
+   countryName:loc.countryName||raw.countryName||sourceRecord.countryName||(sourceRecord.country&&sourceRecord.country.length>3?sourceRecord.country:''),
+   coordinateStatus:loc.coordinateStatus||raw.real?.location?.coordinateStatus||sourceRecord.locationIdentity?.coordinateStatus||sourceRecord.dataStatus?.location||sourceRecord.provenance?.coordinateStatus||'SOURCE_STATUS_UNSPECIFIED',
+   coordinates:coords,
+   locality:loc.locality||raw.region||raw.adminRegion||sourceRecord.region||''
+  },
   identity:{...identity,countryIso3:countryId,resourceTypeId:resourceId,siteType:identity.siteType||raw.siteType||raw.type||'RESOURCE_SITE'},
   operation:raw.operation||p.operation||raw.extractionProfile||null,processing:raw.processing||p.processing||raw.extractionProfile?.processing||null};
 }
