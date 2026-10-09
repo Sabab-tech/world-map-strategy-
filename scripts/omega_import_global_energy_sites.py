@@ -11,10 +11,10 @@ import sys
 import unicodedata
 from pathlib import Path
 
-import duckdb
+from openpyxl import load_workbook
 
 ROOT = Path.cwd()
-ASSETS = Path(sys.argv[1] if len(sys.argv) > 1 else ".cache/assets_open.parquet")
+GOGET_XLSX = Path(sys.argv[1] if len(sys.argv) > 1 else ".cache/Global-Oil-and-Gas-Extraction-Tracker-March-2026.xlsx")
 COAL_ACTIVE = Path(sys.argv[2] if len(sys.argv) > 2 else ".cache/non_closed_mines.csv")
 COAL_CLOSED = Path(sys.argv[3] if len(sys.argv) > 3 else ".cache/closed_mines.csv")
 OUT = Path(sys.argv[4] if len(sys.argv) > 4 else "resource_site_global_energy_catalog_v1.json")
@@ -88,6 +88,14 @@ def country_id(*values):
             return ALIASES[key]
         if key in country_name_to_id:
             return country_name_to_id[key]
+        for separator in ["-", " / ", "/", ";"]:
+            if separator in str(value):
+                first_part = str(value).split(separator, 1)[0]
+                first_key = norm(first_part)
+                if first_key in country_name_to_id:
+                    return country_name_to_id[first_key]
+                if first_key in ALIASES and ALIASES[first_key] in known_ids:
+                    return ALIASES[first_key]
     return ""
 
 def site_record(prefix, cid, name, resource, lat, lon, status, source, source_url, source_record_id=None, operator=None, year=None, accuracy=None, production=None):
@@ -109,43 +117,57 @@ def site_record(prefix, cid, name, resource, lat, lon, status, source, source_ur
 
 records = {}
 rejected = {"energy_missing_coordinates": 0, "energy_missing_country": 0, "coal_missing_coordinates": 0, "coal_missing_country": 0}
-energy_source = "Global Energy Monitor GOGET via Global Energy Map assets_open.parquet (March 2026 snapshot)"
-energy_url = "https://energymap.marain.space/data/assets_open.parquet?v=1c1b1fa7"
-con = duckdb.connect()
-asset_path = str(ASSETS.resolve()).replace("'", "''")
-description = con.execute(f"DESCRIBE SELECT * FROM read_parquet('{asset_path}')").fetchall()
-columns = [str(row[0]) for row in description]
-rows = con.execute(f"SELECT * FROM read_parquet('{asset_path}') WHERE lower(CAST(kind AS VARCHAR)) = 'extraction_site'").fetchall()
+energy_source = "Global Energy Monitor — Global Oil and Gas Extraction Tracker (March 2026)"
+energy_url = "https://web.archive.org/web/20260305063452id_/https://globalenergymonitor.org/wp-content/uploads/2026/03/Global-Oil-and-Gas-Extraction-Tracker-March-2026.xlsx"
+if not GOGET_XLSX.exists():
+    raise FileNotFoundError(f"Required GOGET workbook missing: {GOGET_XLSX}")
+workbook = load_workbook(GOGET_XLSX, read_only=True, data_only=True)
+sheet_name = "Field-level main data" if "Field-level main data" in workbook.sheetnames else ("Main data" if "Main data" in workbook.sheetnames else None)
+if not sheet_name:
+    raise RuntimeError(f"GOGET workbook sheet not found; available sheets: {workbook.sheetnames}")
+sheet = workbook[sheet_name]
+iterator = sheet.iter_rows(values_only=True)
+headers = next(iterator, None)
+if not headers:
+    raise RuntimeError("GOGET field-level sheet is empty")
+header_map = {norm(value): i for i, value in enumerate(headers) if value is not None}
+def cell(row, *names):
+    for name in names:
+        idx = header_map.get(norm(name))
+        if idx is not None and idx < len(row):
+            value = row[idx]
+            if value is not None and str(value).strip():
+                return value
+    return None
 energy_count = 0
-for values in rows:
-    row = {columns[i].lower(): values[i] for i in range(min(len(columns), len(values)))}
-    lat = as_float(first(row.get("lat"), row.get("latitude")))
-    lon = as_float(first(row.get("lon"), row.get("lng"), row.get("longitude")))
+for row in iterator:
+    lat = as_float(cell(row, "Latitude", "lat"))
+    lon = as_float(cell(row, "Longitude", "lon", "lng"))
     if lat is None or lon is None or not (-90 <= lat <= 90 and -180 <= lon <= 180):
         rejected["energy_missing_coordinates"] += 1
         continue
-    cid = country_id(row.get("country_iso3"), row.get("iso3"), row.get("country_code"), row.get("country"), row.get("country_name"))
+    cid = country_id(cell(row, "Country", "Country/Area", "country_iso3"))
     if not cid:
         rejected["energy_missing_country"] += 1
         continue
-    name = first(row.get("name"), row.get("asset_name"), row.get("field_name"), row.get("label"))
+    name = first(cell(row, "Unit name", "Unit Name", "name"), cell(row, "Unit ID", "asset_id"))
     if not name:
-        name = f"{str(row.get('fuel') or 'oil_gas').title()} field ({lat:.3f}, {lon:.3f})"
-    fuel = norm(first(row.get("fuel"), row.get("commodity"), row.get("resource"), row.get("fuel_type")) or "")
+        continue
+    fuel = norm(cell(row, "Fuel type", "Fuel", "commodity") or "")
     resources = ["oil", "natural_gas"] if "OIL" in fuel and "GAS" in fuel else (["natural_gas"] if "GAS" in fuel else (["oil"] if "OIL" in fuel else []))
     if not resources:
         continue
-    status = first(row.get("status"), row.get("operating_status"), "UNKNOWN")
-    source_id = first(row.get("id"), row.get("asset_id"), row.get("source_id"))
-    operator = first(row.get("operator"), row.get("owner"))
-    year = first(row.get("commissioned_year"), row.get("start_year"), row.get("year_commissioned"))
-    accuracy = first(row.get("location_accuracy"), row.get("accuracy"), "UPSTREAM_COORDINATE_NOT_INDEPENDENTLY_VALIDATED")
-    production = first(row.get("production"), row.get("production_value"))
+    status = first(cell(row, "Status", "status"), "UNKNOWN")
+    source_id = cell(row, "Unit ID", "asset_id")
+    operator = cell(row, "Operator", "operator")
+    year = cell(row, "Production start year", "commissioned_year")
+    accuracy = first(cell(row, "Location Accuracy", "Location accuracy"), "UPSTREAM_COORDINATE_NOT_INDEPENDENTLY_VALIDATED")
+    production = first(cell(row, "Production", "Production (boe/d)", "Production (kboe/d)"))
     for resource in resources:
         site = site_record("GLOBAL_ENERGY", cid, name, resource, lat, lon, status, energy_source, energy_url, source_id, operator, year, accuracy, production)
         records[(cid, resource, norm(name), round(lat, 4), round(lon, 4))] = site
         energy_count += 1
-con.close()
+workbook.close()
 
 coal_source = "Global Coal Mine Tracker derived CSV mirror (source dataset attributed to Global Energy Monitor, CC BY 4.0)"
 coal_url = "https://github.com/1ways/coal-mine-tracker"
