@@ -142,6 +142,15 @@ function addMapMarkers(){
  const activeCountry=String(g.Game?.currentActiveCountry||g.CountryIOS?.activeCountry||'').trim();
  if(scope!=='WORLD'&&!activeCountry)return;
  const norm=v=>String(v||'').replace(/[_-]+/g,' ').replace(/\s+/g,' ').trim().toUpperCase();
+ // Country selectors may expose an ISO code, display name, or internal underscored key.
+ // Resolve the selection against canonical identities already present in the loaded site registry.
+ const activeCountryNorm=norm(activeCountry);
+ const activeCountryResolved=String(g.Game?.getCountryId?.(activeCountry)||g.Game?.getCountryId?.(activeCountryNorm)||'').trim().toUpperCase();
+ const activeCountrySiteIds=new Set(sites.filter(site=>{
+  const names=[site.countryId,site.countryName,site.location?.countryName,site.sourceSiteRecord?.country,site.sourceSiteRecord?.countryName,site.sourceSiteRecord?.countryCode,site.sourceSiteRecord?.countryId].map(norm).filter(Boolean);
+  return names.includes(activeCountryNorm)||(activeCountryResolved&&names.includes(norm(activeCountryResolved)));
+ }).map(site=>String(site.countryId||'').trim().toUpperCase()).filter(Boolean));
+ const activeCountryCode=activeCountryResolved||[...activeCountrySiteIds][0]||'';
  const aliases={oil:'crude_oil',crudeoil:'crude_oil',gas:'natural_gas',naturalgas:'natural_gas',iron:'iron_ore',ironore:'iron_ore',rareearth:'rare_earth'};
  const canonical=id=>{const raw=String(id||'').trim().toLowerCase();const compact=raw.replace(/[\s_-]+/g,'');return aliases[compact]||raw.replace(/[\s-]+/g,'_');};
  const selected=resourceState.selectedResources instanceof Set?resourceState.selectedResources:new Set();
@@ -155,8 +164,12 @@ function addMapMarkers(){
   const resourceId=canonical(rawResource);
   if(selected.size>0&&!selectedAll&&!selectedKeys.has(resourceId)&&!selectedKeys.has(canonical(rawResource)))return false;
   if(scope!=='WORLD'){
-   const candidateCountries=[s.countryId,s.countryName,s.location?.countryName,s.sourceSiteRecord?.country,s.sourceSiteRecord?.countryCode,s.sourceSiteRecord?.countryId].map(norm).filter(Boolean);
-   if(!candidateCountries.includes(norm(activeCountry)))return false;
+   const siteCountryId=String(s.countryId||'').trim().toUpperCase();
+   const candidateCountries=[s.countryId,s.countryName,s.location?.countryName,s.sourceSiteRecord?.country,s.sourceSiteRecord?.countryName,s.sourceSiteRecord?.countryCode,s.sourceSiteRecord?.countryId].map(norm).filter(Boolean);
+   const selectedMatches=candidateCountries.includes(activeCountryNorm)||
+    (activeCountryCode&&siteCountryId===activeCountryCode)||
+    (activeCountrySiteIds.size>0&&activeCountrySiteIds.has(siteCountryId));
+   if(!selectedMatches)return false;
   }
   return true;
  });
