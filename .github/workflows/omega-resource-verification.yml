@@ -2,7 +2,7 @@ name: OMEGA Resource Verification Certificate
 
 concurrency:
   group: omega-resource-verification-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 on:
   push:
@@ -28,6 +28,45 @@ jobs:
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with:
           node-version: 24
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download and compact global mineral, oil/gas and coal site data
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .cache
+          python -m pip install --disable-pip-version-check openpyxl==3.1.5
+          set +e
+          curl --fail --location --silent --show-error --retry 1 --max-time 90 \
+            https://raw.githubusercontent.com/Alexander-ai/global-deposit-globe/main/public/deposits.json \
+            -o .cache/global-deposits-source.json &
+          mineral_pid=$!
+          curl --fail --location --silent --show-error --retry 1 --max-time 90 \
+            https://web.archive.org/web/20260305063452id_/https://globalenergymonitor.org/wp-content/uploads/2026/03/Global-Oil-and-Gas-Extraction-Tracker-March-2026.xlsx \
+            -o .cache/Global-Oil-and-Gas-Extraction-Tracker-March-2026.xlsx &
+          energy_pid=$!
+          curl --fail --location --silent --show-error --retry 1 --max-time 90 \
+            https://raw.githubusercontent.com/1ways/coal-mine-tracker/main/non_closed_mines.csv \
+            -o .cache/non_closed_mines.csv &
+          coal_active_pid=$!
+          curl --fail --location --silent --show-error --retry 1 --max-time 90 \
+            https://raw.githubusercontent.com/1ways/coal-mine-tracker/main/closed_mines.csv \
+            -o .cache/closed_mines.csv &
+          coal_closed_pid=$!
+          download_status=0
+          wait "$mineral_pid" || download_status=1
+          wait "$energy_pid" || download_status=1
+          wait "$coal_active_pid" || download_status=1
+          wait "$coal_closed_pid" || download_status=1
+          set -e
+          if [ "$download_status" -ne 0 ]; then
+            echo "::error::One or more source downloads failed within the bounded retry window."
+            exit 1
+          fi
+          node scripts/omega_import_global_mineral_deposits.mjs .cache/global-deposits-source.json resource_site_global_deposit_catalog_v1.json
+          python scripts/omega_import_global_energy_sites.py .cache/Global-Oil-and-Gas-Extraction-Tracker-March-2026.xlsx .cache/non_closed_mines.csv .cache/closed_mines.csv resource_site_global_energy_catalog_v1.json
       - name: Capture raw resource datasets for local audit
         if: always()
         uses: actions/upload-artifact@v4
@@ -36,6 +75,8 @@ jobs:
           path: |
             resources.json
             resources_2.json
+            resource_site_global_deposit_catalog_v1.json
+            resource_site_global_energy_catalog_v1.json
           retention-days: 1
       - name: Single-stage resource verification and certificate
         shell: bash
@@ -79,6 +120,8 @@ jobs:
             omega_resource_authoritative_adapter.js
             omega_resource_industrial_network_v1.js
             scripts/omega_revalidate_199_resource_sites.mjs
+            scripts/omega_import_global_mineral_deposits.mjs
+            omega_resource_supplemental_site_commissioning_v1.js
           )
           for file in "${syntax_files[@]}"; do
             run_gate "syntax:${file}" 3 node --check "$file"
@@ -109,6 +152,9 @@ jobs:
           run_gate resourceSystemHardening 30 node test/omega_resource_system_hardening.test.mjs
           run_gate resourceIndustrialNetwork 30 node test/omega_resource_industrial_network_v1.test.mjs
           run_gate resourceGameplayBinding 15 node test/omega_resource_gameplay_binding.test.mjs
+          run_gate globalResourceCatalog 20 node --test test/omega_global_resource_catalog.test.mjs
+          run_gate supplementalSiteCommissioning 15 node --test test/omega_resource_supplemental_site_commissioning.test.mjs
+          run_gate resourceCoordinateValidation 15 node --test test/omega_resource_site_coordinate_validation.test.mjs
 
           export OMEGA_GATE_SYNTAX="${GATES[syntax]}"
           export OMEGA_GATE_RESOURCEENDOWMENT="${GATES[resourceEndowment]}"
@@ -129,6 +175,9 @@ jobs:
           export OMEGA_GATE_RESOURCESYSTEMHARDENING="${GATES[resourceSystemHardening]}"
           export OMEGA_GATE_RESOURCEINDUSTRIALNETWORK="${GATES[resourceIndustrialNetwork]}"
           export OMEGA_GATE_RESOURCEGAMEPLAYBINDING="${GATES[resourceGameplayBinding]}"
+          export OMEGA_GATE_GLOBALRESOURCECATALOG="${GATES[globalResourceCatalog]}"
+          export OMEGA_GATE_SUPPLEMENTALSITECOMMISSIONING="${GATES[supplementalSiteCommissioning]}"
+          export OMEGA_GATE_RESOURCECOORDINATEVALIDATION="${GATES[resourceCoordinateValidation]}"
 
           node --input-type=module <<'NODE'
           import fs from 'node:fs';
@@ -151,7 +200,10 @@ jobs:
             resourceResearchPolicy: process.env.OMEGA_GATE_RESOURCERESEARCHPOLICY,
             resourceSystemHardening: process.env.OMEGA_GATE_RESOURCESYSTEMHARDENING,
             resourceIndustrialNetwork: process.env.OMEGA_GATE_RESOURCEINDUSTRIALNETWORK,
-            resourceGameplayBinding: process.env.OMEGA_GATE_RESOURCEGAMEPLAYBINDING
+            resourceGameplayBinding: process.env.OMEGA_GATE_RESOURCEGAMEPLAYBINDING,
+            globalResourceCatalog: process.env.OMEGA_GATE_GLOBALRESOURCECATALOG,
+            supplementalSiteCommissioning: process.env.OMEGA_GATE_SUPPLEMENTALSITECOMMISSIONING,
+            resourceCoordinateValidation: process.env.OMEGA_GATE_RESOURCECOORDINATEVALIDATION
           };
           const status = Object.values(gates).every((value) => value === 'PASS') ? 'VERIFIED' : 'INCOMPLETE';
           const certificate = {

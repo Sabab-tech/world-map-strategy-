@@ -128,6 +128,9 @@ test('global map source data preserves every coordinate-backed mine site and run
     '199 mine-site records plus 43 deposit records resolve to 239 distinct country/resource/coordinate locations after 3 exact duplicate joins');
   const binding = read('omega_resource_gameplay_binding_v1.js');
   assert.match(binding, /scope!=='WORLD'/, 'nation scope must not display sites from every country');
+  assert.match(binding, /activeCountryResolved/, 'country filter must resolve display names and internal country keys to a canonical country identity');
+  assert.match(binding, /activeCountrySiteIds/, 'country filter must derive canonical IDs from site registry country aliases');
+  assert.match(binding, /sourceSiteRecord\?\.countryName/, 'country filtering must consider source country names as well as codes');
   assert.match(binding, /resourceState\.selectedResources/, 'individual markers must follow the resource filter');
   assert.match(binding, /toggleResourceChip/, 'resource filter changes must refresh individual markers');
 });
@@ -138,7 +141,8 @@ test('runtime renders all global sites and applies nation/resource scope without
     'resources.json': JSON.parse(read('resources.json')),
     'resources_2.json': JSON.parse(read('resources_2.json')),
     'resource_site_canonical_catalog_v1.json': catalog,
-    'resource_site_master_registry_v1.json': master
+    'resource_site_master_registry_v1.json': master,
+    'world.json': JSON.parse(read('world.json'))
   };
   // Test-only fixture: force two separate site identities to share one coordinate so pixel-spider offsets are verified.
   const rawCountryProfiles=Object.values(rawSources['resources.json'].GSRSK_Master_CountryProfiles_v14.countryProfiles||{});
@@ -212,7 +216,8 @@ test('runtime renders all global sites and applies nation/resource scope without
   assert.equal(diagnostics?.status,'READY','global source registry must initialize');
   assert.equal(diagnostics?.siteCount,241,'239 distinct physical locations plus coincident and near-overlap test identities must yield 241 site markers');
   const markerCount = () => [...layers].reduce((sum,layer)=>sum+layer.markers.length,0);
-  assert.equal(markerCount(),241,'WORLD scope must render all 239 source locations plus two test-only overlap fixtures');
+  const quarantinedCount=context.__OMEGA_RESOURCE_COORDINATE_AUDIT__?.quarantined?.length||0;
+  assert.equal(markerCount(),241-quarantinedCount,'WORLD scope must render all valid source locations plus two test-only overlap fixtures, while quarantining known cross-country coordinates');
   const geographicPositions=new Set([...layers].flatMap(layer=>layer.markers).map(marker=>marker.latlng.map(value=>Number(value).toFixed(3)).join('|')));
   assert.ok(geographicPositions.size>100,'world markers must preserve widespread source coordinates instead of collapsing all resources to one point');
   assert.ok(context.Game.Map.resourceDepositsLayer.clearCount>0,'legacy deposit layer must be cleared so old and individual markers do not stack');
