@@ -98,6 +98,49 @@ def country_id(*values):
                     return ALIASES[first_key]
     return ""
 
+country_features = []
+for feature in WORLD.get("features", []):
+    props = feature.get("properties") or {}
+    cid = str(first(props.get("ISO_A3"), props.get("ADM0_A3"), props.get("iso_a3"), props.get("ISO3"), props.get("iso3"), props.get("A3"), feature.get("id")) or "").upper()
+    geometry = feature.get("geometry") or {}
+    coords = geometry.get("coordinates")
+    if cid in known_ids and geometry.get("type") in {"Polygon", "MultiPolygon"} and coords:
+        try:
+            flat = [point for polygon in (coords if geometry["type"] == "MultiPolygon" else [coords]) for ring in polygon for point in ring]
+            bbox = (min(p[0] for p in flat), min(p[1] for p in flat), max(p[0] for p in flat), max(p[1] for p in flat))
+            country_features.append((cid, geometry["type"], coords, bbox))
+        except (ValueError, TypeError, IndexError):
+            continue
+
+def point_in_ring(lon, lat, ring):
+    inside = False
+    if not ring:
+        return False
+    j = len(ring) - 1
+    for i in range(len(ring)):
+        xi, yi = ring[i][0], ring[i][1]
+        xj, yj = ring[j][0], ring[j][1]
+        if ((yi > lat) != (yj > lat)) and lon < (xj - xi) * (lat - yi) / ((yj - yi) or 1e-30) + xi:
+            inside = not inside
+        j = i
+    return inside
+
+def point_in_polygon(lon, lat, rings):
+    if not rings or not point_in_ring(lon, lat, rings[0]):
+        return False
+    return not any(point_in_ring(lon, lat, hole) for hole in rings[1:])
+
+def country_from_coordinates(lat, lon):
+    matches = []
+    for cid, geometry_type, coords, bbox in country_features:
+        min_lon, min_lat, max_lon, max_lat = bbox
+        if lon < min_lon or lon > max_lon or lat < min_lat or lat > max_lat:
+            continue
+        polygons = coords if geometry_type == "MultiPolygon" else [coords]
+        if any(point_in_polygon(lon, lat, polygon) for polygon in polygons):
+            matches.append(cid)
+    return matches[0] if len(set(matches)) == 1 else ""
+
 def site_record(prefix, cid, name, resource, lat, lon, status, source, source_url, source_record_id=None, operator=None, year=None, accuracy=None, production=None):
     site_id = f"{prefix}_{cid}_{resource}_{slug(name)}_{lat:.4f}_{lon:.4f}"
     return {
@@ -116,7 +159,7 @@ def site_record(prefix, cid, name, resource, lat, lon, status, source, source_ur
     }
 
 records = {}
-rejected = {"energy_missing_coordinates": 0, "energy_missing_country": 0, "coal_missing_coordinates": 0, "coal_missing_country": 0}
+rejected = {"energy_missing_coordinates": 0, "energy_missing_country": 0, "coal_missing_coordinates": 0, "coal_missing_country": 0, "coal_country_inferred_from_coordinates": 0}
 energy_source = "Global Energy Monitor — Global Oil and Gas Extraction Tracker (March 2026)"
 energy_url = "https://web.archive.org/web/20260305063452id_/https://globalenergymonitor.org/wp-content/uploads/2026/03/Global-Oil-and-Gas-Extraction-Tracker-March-2026.xlsx"
 if not GOGET_XLSX.exists():
@@ -183,6 +226,10 @@ for csv_path, default_status in [(COAL_ACTIVE, "UNKNOWN"), (COAL_CLOSED, "CLOSED
                 rejected["coal_missing_coordinates"] += 1
                 continue
             cid = country_id(row.get("Country / Area"), row.get("Country"), row.get("country"))
+            if not cid:
+                cid = country_from_coordinates(lat, lon)
+                if cid:
+                    rejected["coal_country_inferred_from_coordinates"] += 1
             if not cid:
                 rejected["coal_missing_country"] += 1
                 continue
