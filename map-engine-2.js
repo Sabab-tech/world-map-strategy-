@@ -1184,7 +1184,7 @@ Game.Map.resourceState = {
 Game.Map.resourceCatalog = [
     { id: 'crude_oil', name: 'Crude Oil', icon: 'OIL', color: '#c9a96e' },
     { id: 'natural_gas', name: 'Natural Gas', icon: 'NG', color: '#76b7d8' },
-    { id: 'coal', name: 'Coal', icon: 'C', color: '#8b98a8' },
+    { id: 'coal', name: 'Coal', icon: 'CO', color: '#8b98a8' },
     { id: 'iron_ore', name: 'Iron Ore & Steel', icon: 'Fe', color: '#b77b61' },
     { id: 'copper', name: 'Copper', icon: 'Cu', color: '#c68c68' },
     { id: 'gold', name: 'Gold', icon: 'Au', color: '#d0b46a' },
@@ -1200,7 +1200,7 @@ Game.Map.resourceCatalog = [
     { id: 'tin', name: 'Tin', icon: 'Sn', color: '#9daab8' },
     { id: 'potash', name: 'Potash & Salt', icon: 'K', color: '#b6b87a' },
     { id: 'silver', name: 'Silver & Platinum', icon: 'Ag', color: '#c4ccd4' },
-    { id: 'diamond', name: 'Diamond & Gems', icon: 'C', color: '#9bc6d9' },
+    { id: 'diamond', name: 'Diamond & Gems', icon: 'DIA', color: '#9bc6d9' },
     { id: 'semiconductor', name: 'Silicon / Chips', icon: 'Si', color: '#a9a1d3' }
 ];
 
