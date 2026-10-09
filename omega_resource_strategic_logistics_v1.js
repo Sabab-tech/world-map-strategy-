@@ -141,10 +141,34 @@ function simulateExtractionTurn(input={}){
  const result={status:recovered>0?'PRODUCED':'DEPLETED',countryId:c,siteId:site.siteId,resourceId:rid,turn:turn(),quantity:recovered,unit:p.unit||'TONNES',remainingReserve:old.remainingReserve,capacity,declineFactor,maintenanceFactor:1-maintenance,disruptionFactor:1-disruption,authority:'SCENARIO_SIMULATION_DATA',automatic:true};
  event('OMEGA_SITE_EXTRACTION_SIMULATED',clone(result));return result;
 }
+function planShipment(input={}){
+ const initial=base.planShipment(input);
+ if(initial?.status!=='PLANNED')return initial;
+ const route=planStrategicRoute({...input,siteId:initial.siteId,factoryId:initial.factoryId,resourceId:initial.resourceId,quantity:input.quantity||initial.route?.requestedQuantity,allowedModes:input.allowedModes});
+ if(route.status!=='PLANNED')return{status:'BLOCKED',reason:route.reason||'NO_CONTIGUOUS_STRATEGIC_ROUTE',siteId:initial.siteId,factoryId:initial.factoryId,route};
+ return{...initial,route:{...route,routeId:initial.route?.routeId||('STRATEGIC:'+initial.siteId+':'+initial.factoryId),crossBorderRequired:route.legs.some(l=>country(l.transitCountry)!==country(input.countryId)),crossBorderAllowed:true}};
+}
+function dispatchShipment(input={}){
+ const plan=planShipment(input);if(plan.status!=='PLANNED')return plan;
+ const sent=base.dispatchShipment(input);
+ if(sent?.status!=='DISPATCHED')return sent;
+ sent.shipment.route=clone(plan.route);
+ sent.shipment.etaTurn=plan.route.etaTurn;
+ sent.shipment.quantity=Math.min(n(sent.shipment.quantity),n(plan.route.dispatchQuantity));
+ sent.shipment.provenance={...(sent.shipment.provenance||{}),authority:'MODELED',routeModel:'STRATEGIC_NETWORK_GRAPH'};
+ const c=country(input.countryId),edges=net(c).edges;
+ for(const leg of plan.route.legs){const e=edges[leg.edgeId];if(e)e.reservedThisTurn=n(e.reservedThisTurn)+n(sent.shipment.quantity);}
+ return sent;
+}
 const api=Object.assign({},base,{
+ planShipment,dispatchShipment,
  planStrategicRoute,setEdgeCondition,requestTransitRights,resolveTransitRights,simulateExtractionTurn,
  strategicLogisticsDiagnostics(){return{status:'READY',routeModel:'STRATEGIC_NETWORK_GRAPH',routeModes:['ROAD','RAIL','BRIDGE','PIPELINE','SEA','PORT','BARGE'],supports:['WAR_DAMAGE','ROUTE_DESTRUCTION','NAVAL_BLOCKADE','TRANSIT_RIGHTS','ALTERNATE_ROUTE','CAPACITY','ETA','AUTOMATIC_EXTRACTION'],routeAuthority:'MODELED'};}
 });
 O.ResourceIndustrialNetwork=api;g.OmegaResourceIndustrialNetwork=api;
 g.OmegaStrategicLogisticsStatus={status:'READY',version:'1.0.0',routeModel:'STRATEGIC_NETWORK_GRAPH'};
+if(typeof g.addEventListener==='function')g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED',()=>{
+ const rows=siteRegistry().sites||[];
+ for(const s of rows){try{simulateExtractionTurn({countryId:s.countryId,siteId:s.siteId});}catch(_){}}
+});
 })(typeof window!=='undefined'?window:globalThis);
