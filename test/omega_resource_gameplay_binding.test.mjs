@@ -128,6 +128,9 @@ test('global map source data preserves every coordinate-backed mine site and run
     '199 mine-site records plus 43 deposit records resolve to 239 distinct country/resource/coordinate locations after 3 exact duplicate joins');
   const binding = read('omega_resource_gameplay_binding_v1.js');
   assert.match(binding, /scope!=='WORLD'/, 'nation scope must not display sites from every country');
+  assert.match(binding, /activeCountryResolved/, 'country filter must resolve display names and internal country keys to a canonical country identity');
+  assert.match(binding, /activeCountrySiteIds/, 'country filter must derive canonical IDs from site registry country aliases');
+  assert.match(binding, /sourceSiteRecord\?\.countryName/, 'country filtering must consider source country names as well as codes');
   assert.match(binding, /resourceState\.selectedResources/, 'individual markers must follow the resource filter');
   assert.match(binding, /toggleResourceChip/, 'resource filter changes must refresh individual markers');
 });
