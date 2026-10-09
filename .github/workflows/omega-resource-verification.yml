@@ -78,6 +78,7 @@ jobs:
             omega_resource_economy_runtime_v2.js
             omega_resource_authoritative_adapter.js
             omega_resource_industrial_network_v1.js
+            omega_resource_individual_route_guard_v1.js
             scripts/omega_revalidate_199_resource_sites.mjs
           )
           for file in "${syntax_files[@]}"; do
@@ -108,6 +109,7 @@ jobs:
           run_gate resourceResearchPolicy 15 node --test test/omega_resource_research_policy.test.mjs
           run_gate resourceSystemHardening 30 node test/omega_resource_system_hardening.test.mjs
           run_gate resourceIndustrialNetwork 30 node test/omega_resource_industrial_network_v1.test.mjs
+          run_gate resourceIndividualRouteGuard 15 node test/omega_resource_individual_route_guard.test.mjs
           run_gate resourceGameplayBinding 15 node test/omega_resource_gameplay_binding.test.mjs
 
           export OMEGA_GATE_SYNTAX="${GATES[syntax]}"
@@ -128,6 +130,7 @@ jobs:
           export OMEGA_GATE_RESOURCERESEARCHPOLICY="${GATES[resourceResearchPolicy]}"
           export OMEGA_GATE_RESOURCESYSTEMHARDENING="${GATES[resourceSystemHardening]}"
           export OMEGA_GATE_RESOURCEINDUSTRIALNETWORK="${GATES[resourceIndustrialNetwork]}"
+          export OMEGA_GATE_RESOURCEINDIVIDUALROUTEGUARD="${GATES[resourceIndividualRouteGuard]}"
           export OMEGA_GATE_RESOURCEGAMEPLAYBINDING="${GATES[resourceGameplayBinding]}"
 
           node --input-type=module <<'NODE'
@@ -151,6 +154,7 @@ jobs:
             resourceResearchPolicy: process.env.OMEGA_GATE_RESOURCERESEARCHPOLICY,
             resourceSystemHardening: process.env.OMEGA_GATE_RESOURCESYSTEMHARDENING,
             resourceIndustrialNetwork: process.env.OMEGA_GATE_RESOURCEINDUSTRIALNETWORK,
+            resourceIndividualRouteGuard: process.env.OMEGA_GATE_RESOURCEINDIVIDUALROUTEGUARD,
             resourceGameplayBinding: process.env.OMEGA_GATE_RESOURCEGAMEPLAYBINDING
           };
           const status = Object.values(gates).every((value) => value === 'PASS') ? 'VERIFIED' : 'INCOMPLETE';
