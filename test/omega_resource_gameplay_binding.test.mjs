@@ -357,7 +357,7 @@ test('legacy resource filter selection synchronizes individual site scope and co
   const method = 'Game.Map.applyResourceMapFilter = function(resourceType)';
   const start = mapEngine.indexOf(method);
   assert.notEqual(start, -1, method + ' must exist');
-  const end = mapEngine.indexOf('\\n};', start);
+  const end = mapEngine.indexOf('\n};', start);
   assert.notEqual(end, -1, 'applyResourceMapFilter must terminate');
   vm.runInContext(mapEngine.slice(start, end + 3), context, { timeout: 1000 });
 
