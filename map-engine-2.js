@@ -1388,9 +1388,18 @@ Game.Map.renderResourceDeposits = function() {
         return map[s] || s;
     };
 
-    const activeCountryNorm = normCountry(Game.currentActiveCountry || (window.CountryIOS && window.CountryIOS.activeCountry) || 'BANGLADESH');
-    const scope = this.resourceState.scope || 'WORLD'; // Default to global scope so all 197 countries show!
+    const activeCountryRaw = Game.currentActiveCountry || (window.CountryIOS && window.CountryIOS.activeCountry) || '';
+    const activeCountryNorm = normCountry(activeCountryRaw);
+    const scope = this.resourceState.scope || 'NATION';
     const selectedRes = this.resourceState.selectedResources;
+
+    // Nation scope is strictly bound to an explicitly active country. Never silently
+    // substitute Bangladesh or another country's deposits when nothing is selected.
+    if (scope === 'NATION' && !activeCountryRaw) {
+        const summaryCountElem = document.getElementById('resource-summary-count');
+        if (summaryCountElem) summaryCountElem.textContent = 'Select a country';
+        return;
+    }
 
     // Deduplication & Safety Validation Loop
     const seenKeys = new Set();
