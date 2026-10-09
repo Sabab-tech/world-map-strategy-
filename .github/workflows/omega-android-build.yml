@@ -20,6 +20,21 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Download and package global mineral occurrences for offline play
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .cache
+          curl --fail --location --silent --show-error --retry 2 --max-time 90 \
+            https://raw.githubusercontent.com/Alexander-ai/global-deposit-globe/main/public/deposits.json \
+            -o .cache/global-deposits-source.json
+          node scripts/omega_import_global_mineral_deposits.mjs .cache/global-deposits-source.json resource_site_global_deposit_catalog_v1.json
+
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
