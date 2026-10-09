@@ -59,6 +59,21 @@ jobs:
       - name: Build debug APK
         run: gradle -p android assembleDebug --no-daemon
 
+      - name: Verify global catalogs are packaged in the offline APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK=android/app/build/outputs/apk/debug/app-debug.apk
+          unzip -l "$APK" | grep -q 'assets/resource_site_global_deposit_catalog_v1.json'
+          unzip -l "$APK" | grep -q 'assets/resource_site_global_energy_catalog_v1.json'
+          echo "Verified both global catalogs are bundled under Android assets."
       - name: Report APK
         run: |
           ls -lh android/app/build/outputs/apk/debug/*.apk
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: omega-global-resource-app-${{ github.sha }}
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 7
