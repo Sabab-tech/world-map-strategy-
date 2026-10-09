@@ -107,6 +107,20 @@ function siteById(siteId){
   const s=String(siteId||'').trim();
   return masterSites().find(x=>String(x?.siteId||'')===s)||null;
 }
+function validateSiteCountryAndExecution(site,countryId){
+  if(!site?.siteId)return{status:'BLOCKED',reason:'SITE_NOT_FOUND'};
+  const cid=canonicalCountry(countryId),siteCountry=canonicalCountry(site.countryId||site.identity?.countryIso3||site.sourceSiteRecord?.countryId);
+  if(!cid)return{status:'BLOCKED',reason:'UNRESOLVED_REQUEST_COUNTRY_IDENTITY'};
+  if(!siteCountry)return{status:'BLOCKED',reason:'UNRESOLVED_SITE_COUNTRY_IDENTITY',siteId:site.siteId};
+  if(siteCountry!==cid)return{status:'BLOCKED',reason:'SITE_COUNTRY_MISMATCH',siteId:site.siteId,siteCountryId:siteCountry,requestedCountryId:cid};
+  if(String(site.sourceType||'').startsWith('GLOBAL_')){
+    const coords=site.coordinates||site.location?.coordinates||{};
+    const validCoordinates=Number.isFinite(Number(coords.lat))&&Number.isFinite(Number(coords.lng))&&Number(coords.lat)>=-90&&Number(coords.lat)<=90&&Number(coords.lng)>=-180&&Number(coords.lng)<=180;
+    if(!validCoordinates)return{status:'BLOCKED',reason:'GLOBAL_SITE_COORDINATES_UNRESOLVED',siteId:site.siteId};
+    if(site.operation?.commercialExtraction!==true)return{status:'BLOCKED',reason:'GLOBAL_SITE_NOT_CONFIRMED_ACTIVE_COMMERCIAL_OPERATION',siteId:site.siteId,extractionEligibility:site.operation?.extractionEligibility||null};
+  }
+  return null;
+}
 function scenarioFor(site,resourceId){
   const x=g.OmegaResourceScenarioEngineeringData||g.Omega?.ResourceScenarioEngineeringData;
   const rows=Array.isArray(x?.records)?x.records:[];
@@ -188,6 +202,7 @@ function getTechnologyEffect(countryId,siteId,resourceId,siteType){
 function planExtraction(input={}){
   const cid=canonicalCountry(input.countryId),site=siteById(input.siteId)||input.site;
   if(!site?.siteId)return{status:'BLOCKED',reason:'SITE_NOT_FOUND'};
+  const siteGate=validateSiteCountryAndExecution(site,cid);if(siteGate)return siteGate;
   const resourceId=tok(input.resourceId||site?.real?.resourceId||site?.sourceSiteRecord?.resourceId);
   if(!resourceId)return{status:'BLOCKED',reason:'RESOURCE_ID_MISSING'};
   const sr=scenarioFor(site,resourceId),model=g.Omega?.ResourceRealism?.siteModel?.({siteId:site.siteId,siteReferenceKey:site.siteId,siteName:site.siteName,siteType:site.siteType,resourceId,simulationReserveQuantity:sr?.reserve?.quantity||input.reserveQuantity,simulationReserveUnit:sr?.reserve?.unit||input.reserveUnit},null,cid);
@@ -303,6 +318,7 @@ function buildRoute(site,asset,resourceId,requestedQuantity,input={}){
 function planShipment(input={}){
   const cid=canonicalCountry(input.countryId),site=siteById(input.siteId)||input.site;
   if(!site?.siteId)return{status:'BLOCKED',reason:'SITE_NOT_FOUND'};
+  const siteGate=validateSiteCountryAndExecution(site,cid);if(siteGate)return siteGate;
   const rid=tok(input.resourceId||site?.real?.resourceId||site?.sourceSiteRecord?.resourceId);if(!rid)return{status:'BLOCKED',reason:'RESOURCE_ID_MISSING'};
   const candidates=candidateFactories(cid,rid);
   if(input.factoryId){const f=candidates.find(x=>String(x.asset?.id||x.asset?.assetId||x.asset?.projectId)===String(input.factoryId));if(!f)return{status:'BLOCKED',reason:'FACTORY_NOT_CAPABLE'};candidates.splice(0,candidates.length,f)}
