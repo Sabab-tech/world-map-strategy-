@@ -136,11 +136,20 @@ function addMapMarkers(){
  markerLayer=L.layerGroup();
  const mapApi=g.Game?.Map||{},resourceState=mapApi.resourceState||{};
  // The legacy deposit layer duplicates many of these locations. The individual-site layer is authoritative while resource mode is active.
+ const summaryNode=g.document?.getElementById?.('resource-summary-count')||null;
  if(resourceState.enabled&&mapApi.resourceDepositsLayer?.clearLayers)mapApi.resourceDepositsLayer.clearLayers();
- if(!resourceState.enabled)return;
+ if(!resourceState.enabled){
+  if(summaryNode)summaryNode.textContent='Resource mode off';
+  g.__OMEGA_INDIVIDUAL_RESOURCE_MARKER_DIAGNOSTICS__={loadedSiteCount:sites.length,renderedMarkerCount:0,scope:String(resourceState.scope||'NATION').toUpperCase(),activeCountry:null,hiddenReason:'RESOURCE_MODE_DISABLED'};
+  return;
+ }
  const scope=String(resourceState.scope||'NATION').toUpperCase();
  const activeCountry=String(g.Game?.currentActiveCountry||g.CountryIOS?.activeCountry||'').trim();
- if(scope!=='WORLD'&&!activeCountry)return;
+ if(scope!=='WORLD'&&!activeCountry){
+  if(summaryNode)summaryNode.textContent='Select a country';
+  g.__OMEGA_INDIVIDUAL_RESOURCE_MARKER_DIAGNOSTICS__={loadedSiteCount:sites.length,renderedMarkerCount:0,scope,activeCountry:null,hiddenReason:'COUNTRY_NOT_SELECTED'};
+  return;
+ }
  const norm=v=>String(v||'').replace(/[_-]+/g,' ').replace(/\s+/g,' ').trim().toUpperCase();
  const aliases={oil:'crude_oil',crudeoil:'crude_oil',gas:'natural_gas',naturalgas:'natural_gas',iron:'iron_ore',ironore:'iron_ore',rareearth:'rare_earth'};
  const canonical=id=>{const raw=String(id||'').trim().toLowerCase();const compact=raw.replace(/[\s_-]+/g,'');return aliases[compact]||raw.replace(/[\s-]+/g,'_');};
@@ -193,7 +202,14 @@ function addMapMarkers(){
   m.on('click',()=>setSelected(s.siteId));m.addTo(markerLayer);rendered++;
  }
  markerLayer.addTo(map);
- g.__OMEGA_INDIVIDUAL_RESOURCE_MARKER_DIAGNOSTICS__={loadedSiteCount:sites.length,renderedMarkerCount:rendered,scope,activeCountry:activeCountry||null,resourceFilterCount:selected.size,overlapGroupCount:renderedCoordinateKeys.size,offsetMarkerCount};
+ if(summaryNode)summaryNode.textContent=rendered+' individual site'+(rendered===1?'':'s');
+ const visibleSiteCountByCountry={};
+ for(const site of sites){visibleSiteCountByCountry[site.countryId]=(visibleSiteCountByCountry[site.countryId]||0)+1;}
+ g.__OMEGA_INDIVIDUAL_RESOURCE_MARKER_DIAGNOSTICS__={
+  loadedSiteCount:sites.length,renderedMarkerCount:rendered,scope,activeCountry:activeCountry||null,
+  resourceFilterCount:selected.size,overlapGroupCount:renderedCoordinateKeys.size,offsetMarkerCount,
+  visibleSiteCountByCountry,visibleSiteIds:visibleSites.map(site=>site.siteId),hiddenReason:null
+ };
 }
 function attachMapRefreshHooks(){
  const targets=[
@@ -344,7 +360,9 @@ async function init(){
     }
     return counts;
    },{mineSites:0,runtimeDeposits:0});
-   return {status:'READY',siteCount:sites.length,uniqueSiteIds:new Set(sites.map(s=>s.siteId)).size,countryCount:new Set(sites.map(s=>s.countryId)).size,sourceFiles:sources.map(x=>x.url),sourceRecordCounts,coordinateStatusCounts,mergedDepositAliases,individualMapping:true};
+   const siteCountByCountry={};
+   for(const site of sites){siteCountByCountry[site.countryId]=(siteCountByCountry[site.countryId]||0)+1;}
+   return {status:'READY',siteCount:sites.length,uniqueSiteIds:new Set(sites.map(s=>s.siteId)).size,countryCount:new Set(sites.map(s=>s.countryId)).size,siteCountByCountry,sourceFiles:sources.map(x=>x.url),sourceRecordCounts,coordinateStatusCounts,mergedDepositAliases,individualMapping:true};
   }};
   attachMapRefreshHooks();scheduleMarkerRender();setTimeout(()=>scheduleMarkerRender(),1000);setTimeout(()=>scheduleMarkerRender(),3000);
   setStatus('READY · '+sites.length+' individual sites · '+new Set(sites.map(s=>s.countryId)).size+' countries · source coordinate confidence preserved');
