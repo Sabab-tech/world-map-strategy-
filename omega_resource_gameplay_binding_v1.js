@@ -70,6 +70,64 @@ function coordinateStatusOf(site){
   source.provenance?.coordinateStatus||'SOURCE_STATUS_UNSPECIFIED'
  ).trim().toUpperCase();
 }
+// Build a light GeoJSON country index once. It is used to detect records whose coordinates
+// land inside a different country; offshore/outside-land points remain valid but unverified.
+function geometryBounds(geometry){
+ const b=[Infinity,Infinity,-Infinity,-Infinity];
+ function walk(node){
+  if(!Array.isArray(node))return;
+  if(node.length>=2&&typeof node[0]==='number'&&typeof node[1]==='number'){
+   b[0]=Math.min(b[0],node[0]);b[1]=Math.min(b[1],node[1]);
+   b[2]=Math.max(b[2],node[0]);b[3]=Math.max(b[3],node[1]);return;
+  }
+  for(const child of node)walk(child);
+ }
+ walk(geometry?.coordinates);
+ return b[0]===Infinity?null:b;
+}
+function pointInRing(lng,lat,ring){
+ let inside=false;
+ for(let i=0,j=ring.length-1;i<ring.length;j=i++){
+  const a=ring[i],b=ring[j];
+  if(!a||!b)continue;
+  if(((a[1]>lat)!==(b[1]>lat))&&(lng<(b[0]-a[0])*(lat-a[1])/(b[1]-a[1])+a[0]))inside=!inside;
+ }
+ return inside;
+}
+function pointInPolygon(lng,lat,rings){
+ return Array.isArray(rings)&&rings.length>0&&pointInRing(lng,lat,rings[0])&&!rings.slice(1).some(r=>pointInRing(lng,lat,r));
+}
+function pointInGeometry(lng,lat,geometry){
+ if(geometry?.type==='Polygon')return pointInPolygon(lng,lat,geometry.coordinates);
+ if(geometry?.type==='MultiPolygon')return geometry.coordinates.some(poly=>pointInPolygon(lng,lat,poly));
+ return false;
+}
+function buildCountryGeometryIndex(world){
+ const index=new Map();
+ for(const feature of world?.features||[]){
+  const id=cid(feature?.id||feature?.properties?.iso_a3||feature?.properties?.ISO_A3);
+  const bounds=geometryBounds(feature?.geometry);
+  if(id&&bounds)index.set(id,{id,name:feature.properties?.name||id,geometry:feature.geometry,bounds});
+ }
+ return index;
+}
+function validateSiteCoordinate(site,index){
+ const c=site.coordinates||site.location?.coordinates||{},lat=Number(c.lat),lng=Number(c.lng);
+ if(!Number.isFinite(lat)||!Number.isFinite(lng))return {status:'INVALID_COORDINATES'};
+ if(!index?.size)return {status:'GEOMETRY_DATA_UNAVAILABLE'};
+ const owner=cid(site.countryId),ownerFeature=index.get(owner);
+ const inOwner=ownerFeature&&lng>=ownerFeature.bounds[0]&&lng<=ownerFeature.bounds[2]&&lat>=ownerFeature.bounds[1]&&lat<=ownerFeature.bounds[3]&&pointInGeometry(lng,lat,ownerFeature.geometry);
+ if(inOwner)return {status:'INSIDE_OWNER',ownerCountryId:owner};
+ for(const feature of index.values()){
+  if(feature.id===owner)continue;
+  const b=feature.bounds;
+  if(lng<b[0]||lng>b[2]||lat<b[1]||lat>b[3])continue;
+  if(pointInGeometry(lng,lat,feature.geometry)){
+   return {status:ownerFeature?'INSIDE_OTHER_COUNTRY':'OWNER_GEOMETRY_MISSING',ownerCountryId:owner,containingCountryId:feature.id,containingCountryName:feature.name};
+  }
+ }
+ return {status:ownerFeature?'OFFSHORE_OR_OUTSIDE_LAND':'OWNER_GEOMETRY_MISSING',ownerCountryId:owner};
+}
 function normalizeSourceSite(raw,countryHint){
  if(!raw||typeof raw!=='object')return null;
  const p=raw.siteDataPackage||raw;
@@ -160,6 +218,9 @@ function addMapMarkers(){
  const visibleSites=sites.filter(s=>{
   const c=s.coordinates||s.location?.coordinates||{},lat=Number(c.lat),lng=Number(c.lng);
   if(!Number.isFinite(lat)||!Number.isFinite(lng)||lat < -90||lat > 90||lng < -180||lng > 180)return false;
+  // Do not draw a site's marker inside another country's land polygon. Keep the source row
+  // intact and expose the exact mismatch in diagnostics instead of inventing a new location.
+  if(s.coordinateValidation?.status==='INSIDE_OTHER_COUNTRY')return false;
   const rawResource=String(s.real?.resourceId||s.sourceSiteRecord?.resourceId||s.sourceSiteRecord?.resourceTypeId||s.sourceSiteRecord?.resId||s.identity?.resourceTypeId||'').toLowerCase();
   const resourceId=canonical(rawResource);
   if(selected.size>0&&!selectedAll&&!selectedKeys.has(resourceId)&&!selectedKeys.has(canonical(rawResource)))return false;
@@ -206,7 +267,7 @@ function addMapMarkers(){
   m.on('click',()=>setSelected(s.siteId));m.addTo(markerLayer);rendered++;
  }
  markerLayer.addTo(map);
- g.__OMEGA_INDIVIDUAL_RESOURCE_MARKER_DIAGNOSTICS__={loadedSiteCount:sites.length,renderedMarkerCount:rendered,scope,activeCountry:activeCountry||null,resourceFilterCount:selected.size,overlapGroupCount:renderedCoordinateKeys.size,offsetMarkerCount};
+ g.__OMEGA_INDIVIDUAL_RESOURCE_MARKER_DIAGNOSTICS__={loadedSiteCount:sites.length,renderedMarkerCount:rendered,scope,activeCountry:activeCountry||null,resourceFilterCount:selected.size,overlapGroupCount:renderedCoordinateKeys.size,offsetMarkerCount,coordinateAudit:g.__OMEGA_RESOURCE_COORDINATE_AUDIT__||null};
 }
 function attachMapRefreshHooks(){
  const targets=[
@@ -276,7 +337,7 @@ async function init(){
  g.__OMEGA_RESOURCE_SITE_BINDING_INIT__=true;
  mount();
  try{
-  const urls=['resources.json','resources_2.json',CATALOG_URL,MASTER_URL];
+  const urls=['resources.json','resources_2.json',CATALOG_URL,MASTER_URL,'world.json'];
   const loaded=await Promise.all(urls.map(async url=>{
    try{const response=await fetch(url,{cache:'no-store'});if(!response.ok)return null;return {url,data:await response.json()};}
    catch(_){return null;}
@@ -325,6 +386,19 @@ async function init(){
    if(!isDeposit)physicalIndex.set(physicalKey,id);
   }
   sites=[...byId.values()];
+  const countryGeometryIndex=buildCountryGeometryIndex(getData('world.json'));
+  const coordinateAudit={};
+  for(const site of sites){
+   site.coordinateValidation=validateSiteCoordinate(site,countryGeometryIndex);
+   const key=site.coordinateValidation.status;
+   coordinateAudit[key]=(coordinateAudit[key]||0)+1;
+  }
+  const quarantinedCoordinates=sites.filter(s=>s.coordinateValidation?.status==='INSIDE_OTHER_COUNTRY');
+  g.__OMEGA_RESOURCE_COORDINATE_AUDIT__={
+   status:countryGeometryIndex.size?'COMPLETE':'GEOMETRY_DATA_UNAVAILABLE',
+   siteCount:sites.length,coordinateAudit,
+   quarantined:quarantinedCoordinates.map(s=>({siteId:s.siteId,countryId:s.countryId,siteName:s.siteName,coordinates:s.coordinates,...s.coordinateValidation}))
+  };
   const mapApi=g.Game?.Map,resourceState=mapApi?.resourceState,resourceCatalog=mapApi?.resourceCatalog;
   if(Array.isArray(resourceCatalog)){
    const known=new Set(resourceCatalog.map(r=>String(r.id||'').toLowerCase()));
@@ -341,6 +415,7 @@ async function init(){
    }
   }
   if(!sites.length)throw new Error('NO_INDIVIDUAL_RESOURCE_SITES_WITH_VALID_COORDINATES');
+  if(!countryGeometryIndex.size)throw new Error('COUNTRY_GEOMETRY_DATA_UNAVAILABLE_FOR_COORDINATE_AUDIT');
   if(new Set(sites.map(s=>s.siteId)).size!==sites.length)throw new Error('INDIVIDUAL_SITE_IDENTITY_NOT_UNIQUE');
   sites.sort((a,b)=>a.countryId.localeCompare(b.countryId)||a.siteName.localeCompare(b.siteName));
   selectNode.innerHTML=sites.map(s=>'<option value="'+esc(s.siteId)+'">'+esc(s.countryId+' · '+s.siteName+' · '+(s.real?.resourceId||'?'))+'</option>').join('');
