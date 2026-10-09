@@ -44,7 +44,8 @@
   const registration=original.registerSupplementalSiteCatalog(rows);
   delete countryState.mineSiteReferences;delete countryState.mineSiteControllers;
   const hydration=await original.hydrateCountry(cid);
-  return{status:'COMMISSIONED_SIMULATION',siteId:key,countryId:cid,resourceId:site.real?.resourceId||site.identity?.resourceTypeId||null,turn:turn(),registration,hydration,
+  const hydrated=registration?.status==='READY'&&hydration?.status==='APPLIED';
+  return{status:hydrated?'COMMISSIONED_SIMULATION':'COMMISSIONED_SIMULATION_HYDRATION_PENDING',siteId:key,countryId:cid,resourceId:site.real?.resourceId||site.identity?.resourceTypeId||null,turn:turn(),registration,hydration,
    nextStep:'Use the existing per-site PLAN EXTRACTION / EXECUTE SITE actions. Extraction still succeeds only if the reserve/extraction runtime commits a result.'};
  };
  g.Omega=g.Omega||{};
@@ -71,10 +72,10 @@
    btn.disabled=true;btn.textContent='COMMISSIONING…';
    try{
     const result=await wrapper.commissionSupplementalSite(siteId);
-    if(result.status==='COMMISSIONED_SIMULATION'){
+    if(result.status==='COMMISSIONED_SIMULATION'||result.status==='COMMISSIONED_SIMULATION_HYDRATION_PENDING'){
      selected.operation={...(selected.operation||{}),status:'SIMULATED_ACTIVE_EXTRACTION',commercialExtraction:true,extractionEligibility:'SIMULATION_COMMISSIONED'};
      selected.simulation={...(selected.simulation||{}),activationAuthority:'GAMEPLAY_SIMULATION',commissionedTurn:turn()};
-     if(status)status.textContent='SIMULATION SITE COMMISSIONED · '+siteId+' · existing resource pipeline rehydrated';
+     if(status)status.textContent=result.status==='COMMISSIONED_SIMULATION'?'SIMULATION SITE COMMISSIONED · '+siteId+' · country runtime hydrated':'COMMISSION SAVED · '+siteId+' · country runtime hydration pending; extraction is not verified';
     }else if(status)status.textContent='COMMISSION BLOCKED · '+(result.reason||result.status);
    }catch(error){if(status)status.textContent='COMMISSION FAILED · '+String(error?.message||error);}
    finally{btn.disabled=false;btn.textContent='COMMISSION SIMULATION SITE';}
