@@ -10,7 +10,7 @@
         img.src = LOGO_SRC;
         img.alt = 'Health Ministry';
         img.draggable = false;
-        Object.assign(img.style, { width:'100%', height:'100%', maxWidth:'100%', maxHeight:'100%', objectFit:'cover', objectPosition:'center 32%', boxSizing:'border-box', display:'block', borderRadius:'0', margin:'0', padding:'0', pointerEvents:'none' });
+        Object.assign(img.style, { width:'100%', height:'100%', maxWidth:'100%', maxHeight:'100%', objectFit:'fill', objectPosition:'center', boxSizing:'border-box', display:'block', borderRadius:'0', margin:'0', padding:'0', pointerEvents:'none' });
         img.setAttribute('aria-hidden', 'true');
         return img;
     };
@@ -18,7 +18,15 @@
     const replaceElement = element => {
         if (!element) return;
         const existingImg = element.querySelector('img[src*="health.svg"]');
-        if (existingImg) return;
+        if (existingImg) {
+            Object.assign(existingImg.style, {
+                width:'100%', height:'100%', minWidth:'0', minHeight:'0',
+                maxWidth:'100%', maxHeight:'100%', objectFit:'fill',
+                objectPosition:'center', boxSizing:'border-box', display:'block',
+                borderRadius:'0', margin:'0', padding:'0', flex:'0 0 100%'
+            });
+            return;
+        }
         element.replaceChildren(makeLogo());
         element.dataset.healthLogoApplied = 'true';
     };
