@@ -56,6 +56,24 @@ button{ -webkit-tap-highlight-color:transparent; }
 button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{
   outline:2px solid var(--ui-accent)!important;outline-offset:2px!important;
 }
+/* Normalize legacy inline button styling across every major application surface. */
+#ui-engine-root button,.omega-modal button,#command-hub-modal button,
+#cabinet-full-window button,.country-info-card button,.city-detail-bar button,
+#resource-filter-box button,.dark-theme-popup button{
+  background:var(--ui-surface)!important;color:var(--ui-text)!important;
+  border-color:var(--ui-border)!important;border-radius:7px!important;
+  box-shadow:none!important;text-shadow:none!important;
+  font-family:var(--ui-font)!important;transition:background-color .12s ease,border-color .12s ease!important;
+}
+#ui-engine-root button:hover,.omega-modal button:hover,#command-hub-modal button:hover,
+#cabinet-full-window button:hover,.country-info-card button:hover,.city-detail-bar button:hover,
+#resource-filter-box button:hover,.dark-theme-popup button:hover{
+  background:var(--ui-surface-soft)!important;border-color:var(--ui-border-strong)!important;
+  color:#fff!important;box-shadow:none!important;transform:none!important;
+}
+#ui-engine-root button:disabled,.omega-modal button:disabled,#command-hub-modal button:disabled,
+#cabinet-full-window button:disabled{opacity:.5!important;cursor:not-allowed!important;}
+
 .metric-opt-btn,.layer-opt-btn,.drawer-close,.nav-btn,
 #btn-ministry-dock,#btn-view-map,#btn-card-cabinet,.ui-bottom-navigation .nav-btn{
   background:var(--ui-surface)!important;color:var(--ui-text)!important;
