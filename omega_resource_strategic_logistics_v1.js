@@ -119,6 +119,7 @@ function resolveTransitRights(input={}){
 function simulateExtractionTurn(input={}){
  const c=country(input.countryId),site=siteById(input.siteId)||input.site;if(!site)return{status:'BLOCKED',reason:'SITE_NOT_FOUND'};
  const rid=String(input.resourceId||site.real?.resourceId||site.sourceSiteRecord?.resourceId||'').toLowerCase();
+ if(site.sourceSiteRecord?.commercialExtraction===false||!rid||['n/a','na','none','unknown'].includes(rid))return{status:'BLOCKED',reason:'NON_COMMERCIAL_OR_UNMAPPED_SITE',siteId:site.siteId,resourceId:rid};
  const scenario=O.ResourceScenarioEngineeringData||g.OmegaResourceScenarioEngineeringData;
  const rows=scenario?.records||[],p=rows.find(x=>String(x.siteId)===String(site.siteId)&&String(x.resourceId).toLowerCase()===rid);
  if(!p)return{status:'BLOCKED',reason:'SITE_ENGINEERING_PROFILE_MISSING',siteId:site.siteId};
