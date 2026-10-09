@@ -174,7 +174,7 @@ def site_record(prefix, cid, name, resource, lat, lon, status, source, source_ur
     }
 
 records = {}
-unresolved = {"energy_missing_coordinates": 0, "energy_missing_country": 0, "coal_missing_coordinates": 0, "coal_missing_country": 0, "coal_country_inferred_from_coordinates": 0}
+unresolved = {"energy_missing_coordinates": 0, "energy_missing_country": 0, "energy_missing_name": 0, "energy_missing_commodity": 0, "coal_missing_coordinates": 0, "coal_missing_country": 0, "coal_missing_name": 0, "coal_country_inferred_from_coordinates": 0}
 energy_source = "Global Energy Monitor — Global Oil and Gas Extraction Tracker (March 2026)"
 energy_url = "https://web.archive.org/web/20260305063452id_/https://globalenergymonitor.org/wp-content/uploads/2026/03/Global-Oil-and-Gas-Extraction-Tracker-March-2026.xlsx"
 if not GOGET_XLSX.exists():
@@ -198,7 +198,9 @@ def cell(row, *names):
                 return value
     return None
 energy_count = 0
+energy_source_rows_seen = 0
 for row in iterator:
+    energy_source_rows_seen += 1
     lat = as_float(cell(row, "Latitude", "lat"))
     lon = as_float(cell(row, "Longitude", "lon", "lng"))
     if lat is None or lon is None or not (-90 <= lat <= 90 and -180 <= lon <= 180):
@@ -209,21 +211,28 @@ for row in iterator:
         cid = country_from_coordinates(lat, lon)
     if not cid:
         unresolved["energy_missing_country"] += 1
-    name = first(cell(row, "Unit name", "Unit Name", "name"), cell(row, "Unit ID", "asset_id"))
-    if not name:
-        continue
+    source_id = cell(row, "Unit ID", "asset_id")
+    original_name = first(cell(row, "Unit name", "Unit Name", "name"), source_id)
+    if not original_name:
+        unresolved["energy_missing_name"] += 1
+    name = original_name or f"Unidentified energy source row {energy_source_rows_seen}"
     fuel = norm(cell(row, "Fuel type", "Fuel", "commodity") or "")
     resources = ["crude_oil", "natural_gas"] if "OIL" in fuel and "GAS" in fuel else (["natural_gas"] if "GAS" in fuel else (["crude_oil"] if "OIL" in fuel else []))
+    commodity_identified = bool(resources)
     if not resources:
-        continue
+        resources = ["unknown_energy_commodity"]
+        unresolved["energy_missing_commodity"] += 1
     status = first(cell(row, "Status", "status"), "UNKNOWN")
-    source_id = cell(row, "Unit ID", "asset_id")
     operator = cell(row, "Operator", "operator")
     year = cell(row, "Production start year", "commissioned_year")
     accuracy = first(cell(row, "Location Accuracy", "Location accuracy"), "UPSTREAM_COORDINATE_NOT_INDEPENDENTLY_VALIDATED")
     production = first(cell(row, "Production", "Production (boe/d)", "Production (kboe/d)"))
     for resource in resources:
         site = site_record("GLOBAL_ENERGY", cid, name, resource, lat, lon, status, energy_source, energy_url, source_id, operator, year, accuracy, production)
+        if not original_name or not commodity_identified:
+            site["identity"]["sourceIdentityStatus"] = "INCOMPLETE_SOURCE_IDENTITY" if not original_name else "INCOMPLETE_COMMODITY_IDENTITY"
+            site["operation"]["commercialExtraction"] = False
+            site["operation"]["extractionEligibility"] = "BLOCKED_INCOMPLETE_SOURCE_IDENTITY" if not original_name else "BLOCKED_UNRESOLVED_COMMODITY_IDENTITY"
         dedup_key = (cid or "UNRESOLVED_COUNTRY", resource, norm(name), source_id or "", round(lat, 4) if lat is not None else None, round(lon, 4) if lon is not None else None)
         records[dedup_key] = site
         energy_count += 1
@@ -232,11 +241,13 @@ workbook.close()
 coal_source = "Global Coal Mine Tracker derived CSV mirror (source dataset attributed to Global Energy Monitor, CC BY 4.0)"
 coal_url = "https://github.com/1ways/coal-mine-tracker"
 coal_count = 0
+coal_source_rows_seen = 0
 for csv_path, default_status in [(COAL_ACTIVE, "UNKNOWN"), (COAL_CLOSED, "CLOSED")]:
     if not csv_path.exists():
         raise FileNotFoundError(f"Required coal source file missing: {csv_path}")
     with csv_path.open("r", encoding="utf-8-sig", newline="") as handle:
         for row in csv.DictReader(handle):
+            coal_source_rows_seen += 1
             lat = as_float(first(row.get("Latitude"), row.get("latitude")))
             lon = as_float(first(row.get("Longitude"), row.get("longitude")))
             if lat is None or lon is None or not (-90 <= lat <= 90 and -180 <= lon <= 180):
@@ -249,12 +260,17 @@ for csv_path, default_status in [(COAL_ACTIVE, "UNKNOWN"), (COAL_CLOSED, "CLOSED
                     unresolved["coal_country_inferred_from_coordinates"] += 1
             if not cid:
                 unresolved["coal_missing_country"] += 1
-            name = first(row.get("Mine Name"), row.get("Mine name"), row.get("name"))
-            if not name:
-                continue
-            status = first(row.get("Status"), row.get("status"), default_status)
-            site = site_record("GLOBAL_COAL", cid, name, "coal", lat, lon, status, coal_source, coal_url, row.get("Mine Name"), row.get("Parent Company"), row.get("Opening Year"), "UPSTREAM_COORDINATE_NOT_INDEPENDENTLY_VALIDATED", row.get("Production (Mtpa)"))
+            original_name = first(row.get("Mine Name"), row.get("Mine name"), row.get("name"))
             source_id = first(row.get("Mine ID"), row.get("Mine Name"), row.get("Mine name"), row.get("name"))
+            if not original_name:
+                unresolved["coal_missing_name"] += 1
+            name = original_name or source_id or f"Unidentified coal source row {coal_source_rows_seen}"
+            status = first(row.get("Status"), row.get("status"), default_status)
+            site = site_record("GLOBAL_COAL", cid, name, "coal", lat, lon, status, coal_source, coal_url, source_id, row.get("Parent Company"), row.get("Opening Year"), "UPSTREAM_COORDINATE_NOT_INDEPENDENTLY_VALIDATED", row.get("Production (Mtpa)"))
+            if not original_name:
+                site["identity"]["sourceIdentityStatus"] = "INCOMPLETE_SOURCE_IDENTITY"
+                site["operation"]["commercialExtraction"] = False
+                site["operation"]["extractionEligibility"] = "BLOCKED_INCOMPLETE_SOURCE_IDENTITY"
             key = (cid or "UNRESOLVED_COUNTRY", "coal", norm(name), source_id or "", round(lat, 4) if lat is not None else None, round(lon, 4) if lon is not None else None)
             if key in records:
                 prior = records[key]
@@ -274,7 +290,7 @@ output = {
     "datasetScope": "GLOBAL_OIL_GAS_EXTRACTION_AND_COAL_MINES",
     "siteCount": len(sites),
     "countriesRepresented": len({site["countryId"] for site in sites if site.get("countryId")}),
-    "sourceCounts": {"oilGasRowsExpandedToCommoditySites": energy_count, "coalSourceRows": coal_count},
+    "sourceCounts": {"oilGasRowsExpandedToCommoditySites": energy_count, "oilGasSourceRowsSeen": energy_source_rows_seen, "coalSourceRows": coal_count, "coalSourceRowsSeen": coal_source_rows_seen},
     "unresolvedCounts": {"siteRecordsWithoutCountry": sum(1 for site in sites if not site.get("countryId")), "siteRecordsWithoutCoordinates": sum(1 for site in sites if not site.get("coordinates")), **unresolved},
     "rejected": {"siteRecords": 0, "coordinates": 0, "countryIdentity": 0}, 
     "operationalPolicy": "Source locations are visible but do not become executable extraction sites until OMEGA has an exact game site binding.",
