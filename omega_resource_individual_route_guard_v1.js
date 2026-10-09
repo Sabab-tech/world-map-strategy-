@@ -33,6 +33,7 @@ const check=(input,planned)=>{
   const factoryId=String(planned.factoryId||planned.route?.destinationFactoryId||'');
   const mode=String(input?.transportMode||planned.route?.transportMode||'');
   if(!site?.siteId)return{status:'BLOCKED',reason:'SITE_NOT_FOUND_FOR_ROUTE_VALIDATION',siteId:input?.siteId||null};
+  if(planned.route?.routeModel==='STRATEGIC_NETWORK_GRAPH' && planned.route?.distanceAuthority==='MODELED') return planned;
   if(!hasExactRoute(site,factoryId,mode)){
     return{status:'BLOCKED',reason:'SITE_SPECIFIC_FACTORY_ROUTE_MISSING',siteId:site.siteId,countryId:site.countryId,resourceId:planned.resourceId,factoryId,requestedMode:mode,routeAuthority:planned.route?.distanceAuthority||'UNKNOWN',details:'No site-owned route explicitly binds this site to this factory and transport mode. No shipment was dispatched.'};
   }
