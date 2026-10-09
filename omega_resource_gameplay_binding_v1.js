@@ -161,7 +161,7 @@ function normalizeSourceSite(raw,countryHint){
  const siteId=asText(raw.siteId||raw.id||raw.assetId||raw.occurrenceKey||p.siteId||identity.siteId);
  const siteName=asText(raw.siteName||raw.name||raw.title||p.siteName||identity.siteName);
  const resourceId=asText(raw.resourceId||raw.resourceTypeId||raw.resourceTypeKey||raw.resId||raw.resource||raw.commodity||identity.resourceTypeId||identity.resourceId||p.resourceId||p.resourceTypeId);
- if(!coords||!countryId||!resourceId||(!siteId&&!siteName))return null;
+ if((!coords&&!String(raw.sourceType||p.sourceType||'').startsWith('GLOBAL_'))||(!countryId&&!String(raw.sourceType||p.sourceType||'').startsWith('GLOBAL_'))||!resourceId||(!siteId&&!siteName))return null;
  // Source discovery returns a normalized candidate. Preserve its original JSON object
  // instead of nesting the candidate as though it were a raw deposit/site record.
  const nestedSource=raw.sourceSiteRecord&&typeof raw.sourceSiteRecord==='object'?raw.sourceSiteRecord:null;
@@ -337,6 +337,10 @@ function findOccurrence(s,refs){
 }
 async function plan(){
  const s=chosenSite();if(!s)return setStatus('BLOCKED: select a site first');
+ if(!s.countryId)return setStatus('BLOCKED: unresolved sovereign country identity; site remains searchable but cannot enter a country-owned extraction pipeline');
+ const coords=s.coordinates||s.location?.coordinates||{};
+ if(!Number.isFinite(Number(coords.lat))||!Number.isFinite(Number(coords.lng)))return setStatus('BLOCKED: upstream coordinates are missing; no synthetic map point or extraction plan will be created');
+ if(s.operation?.commercialExtraction!==true)return setStatus('BLOCKED: source does not establish an active commercial operation; survey/development verification is required before extraction');
  const net=api();if(!net)return setStatus('BLOCKED: industrial runtime not loaded');
  const r=await net.loadCatalog?.();if(r?.status==='FAILED')return setStatus('BLOCKED: industrial catalog unavailable');
  const out=net.planExtraction({countryId:s.countryId,siteId:s.siteId,resourceId:s.real?.resourceId||s.sourceSiteRecord?.resourceId});
@@ -348,11 +352,16 @@ async function execute(){
  const e=endowment();if(!e?.hydrateCountry||!e?.extractCountry)return setStatus('BLOCKED: endowment runtime unavailable');
  setStatus('Loading country state for '+s.siteId+'…');
  await e.hydrateCountry(s.countryId);
+ if(!s.countryId){setStatus('BLOCKED · unresolved sovereign country identity.');return;}
  const refs=e.countryMineSiteReferences?.(s.countryId)||[];
  const ref=findOccurrence(s,refs);
  if(!ref){setStatus('BLOCKED · No exact site-to-occurrence binding for '+s.siteId+'; no extraction was executed.');return;}
- const occurrence=ref.occurrenceKey||ref.canonicalOccurrenceKey||ref.depositKey||ref.linkedDepositId||ref.siteId||ref.id;
- if(!occurrence){setStatus('BLOCKED · matched reference has no executable occurrence key.');return;}
+ const controllers=e.countryMineSiteControllers?.(s.countryId)||{};
+ const controller=controllers[String(ref.siteReferenceKey||ref.siteId||s.siteId)]||null;
+ const linked=Array.isArray(controller?.linkedOccurrenceKeys)?controller.linkedOccurrenceKeys:[];
+ const occurrence=linked[0]||ref.occurrenceKey||ref.canonicalOccurrenceKey||null;
+ if(s.operation?.commercialExtraction!==true){setStatus('BLOCKED · this is a deposit/occurrence, not a confirmed active mine or producing field. It is registered but not automatically executable.');return;}
+ if(!occurrence){setStatus('BLOCKED · site identity is registered but its Part 05 reserve/extraction occurrence is not executable. No batch or inventory was created.');return;}
  const result=await e.extractCountry(s.countryId,[occurrence]);
  const ok=!['FAILED','UNAVAILABLE','BLOCKED'].includes(String(result?.status||'').toUpperCase())&&(result?.status==='COMMITTED'||result?.status==='EXECUTED'||result?.result?.status==='COMMITTED'||Array.isArray(result?.result?.records)&&result.result.records.length>0);
  setStatus(ok?'EXTRACTION COMMITTED · '+s.siteId+' · turn '+(state().simulation?.turn??state().turn??0):'EXTRACTION NOT CONFIRMED · '+JSON.stringify({status:result?.status,reason:result?.reason||result?.result?.reason||null,siteId:s.siteId}).slice(0,240));
@@ -398,12 +407,13 @@ async function init(){
   for(const candidate of candidates){
    const normalized=normalizeSourceSite(candidate,candidate.countryId)||candidate;
    const id=String(normalized.siteId||'').trim(),coords=coordsOf(normalized);
-   if(!id||!coords||!normalized.countryId)continue;
+   const isGlobal=String(normalized.sourceType||candidate.sourceType||'').startsWith('GLOBAL_');
+   if(!id||(!isGlobal&&(!coords||!normalized.countryId)))continue;
    const masterRow=masterById.get(id)||{},catalogRow=catalogById.get(id)||{};
    const source=normalized.sourceSiteRecord||normalized;
    const resourceId=normalized.real?.resourceId||source.resourceId||source.resourceTypeId||source.resourceTypeKey||source.resId||catalogRow.identity?.resourceTypeId||'unknown';
    const countryId=cid(normalized.countryId||masterRow.countryId||catalogRow.countryId);
-   const physicalKey=[countryId,String(resourceId).toLowerCase(),coords.lat.toFixed(4),coords.lng.toFixed(4)].join('|');
+   const physicalKey=[countryId||'UNRESOLVED_COUNTRY',String(resourceId).toLowerCase(),coords?coords.lat.toFixed(4):'NO_LAT',coords?coords.lng.toFixed(4):'NO_LNG',coords?'':String(source.sourceRecordId||source.upstreamRecordId||source.id||id)].join('|');
    const isDeposit=/^dep[-_]/i.test(String(source.id||id));
    const samePhysicalSite=isDeposit?physicalIndex.get(physicalKey):null;
    if(samePhysicalSite&&byId.has(samePhysicalSite)){
@@ -420,7 +430,7 @@ async function init(){
     real:{...(catalogRow.real||{}),...(masterRow.real||{}),...(normalized.real||{}),resourceId},
     sourceSiteRecord:source,
     coordinates:coords,
-    location:{...(catalogRow.location||{}),...(masterRow.location||{}),...(normalized.location||{}),coordinates:coords},
+    location:{...(catalogRow.location||{}),...(masterRow.location||{}),...(normalized.location||{}),coordinates:coords,countryName:(normalized.location?.countryName||catalogRow.location?.countryName||masterRow.location?.countryName||(countryId||null))},
     identity:{...(catalogRow.identity||{}),...(masterRow.identity||{}),...(normalized.identity||{}),countryIso3:countryId,resourceTypeId:resourceId},
     operation:normalized.operation||masterRow.operation||catalogRow.operation||{},
     processing:normalized.processing||masterRow.processing||catalogRow.processing||{}
@@ -431,7 +441,12 @@ async function init(){
   const countryGeometryIndex=buildCountryGeometryIndex(getData('world.json'));
   const coordinateAudit={};
   for(const site of sites){
-   if(String(site.sourceType||'').startsWith('GLOBAL_')){site.coordinateValidation={status:'UPSTREAM_SOURCE_COORDINATE_NOT_INDEPENDENTLY_VALIDATED',ownerCountryId:site.countryId};coordinateAudit.UPSTREAM_SOURCE_COORDINATE_NOT_INDEPENDENTLY_VALIDATED=(coordinateAudit.UPSTREAM_SOURCE_COORDINATE_NOT_INDEPENDENTLY_VALIDATED||0)+1;continue;}
+   if(String(site.sourceType||'').startsWith('GLOBAL_')){
+   const c=site.coordinates||site.location?.coordinates||{};
+   const hasCoordinates=Number.isFinite(Number(c.lat))&&Number.isFinite(Number(c.lng))&&Number(c.lat)>=-90&&Number(c.lat)<=90&&Number(c.lng)>=-180&&Number(c.lng)<=180;
+   const status=hasCoordinates?'UPSTREAM_SOURCE_COORDINATE_NOT_INDEPENDENTLY_VALIDATED':(!site.countryId?'UNRESOLVED_COUNTRY_AND_COORDINATE':'MISSING_UPSTREAM_COORDINATES');
+   site.coordinateValidation={status,ownerCountryId:site.countryId||null};coordinateAudit[status]=(coordinateAudit[status]||0)+1;continue;
+  }
    const sourceCountryId=site.countryId;
    const resolvedCountryId=resolveCountryCode(site,countryGeometryIndex);
    if(resolvedCountryId&&countryGeometryIndex.has(resolvedCountryId)&&resolvedCountryId!==sourceCountryId){
@@ -471,7 +486,10 @@ async function init(){
   if(!sites.length)throw new Error('NO_INDIVIDUAL_RESOURCE_SITES_WITH_VALID_COORDINATES');
   if(!countryGeometryIndex.size)throw new Error('COUNTRY_GEOMETRY_DATA_UNAVAILABLE_FOR_COORDINATE_AUDIT');
   if(new Set(sites.map(s=>s.siteId)).size!==sites.length)throw new Error('INDIVIDUAL_SITE_IDENTITY_NOT_UNIQUE');
-  sites.sort((a,b)=>a.countryId.localeCompare(b.countryId)||a.siteName.localeCompare(b.siteName));
+  sites.sort((a,b)=>String(a.countryId||'UNRESOLVED_COUNTRY').localeCompare(String(b.countryId||'UNRESOLVED_COUNTRY'))||String(a.siteName||'').localeCompare(String(b.siteName||'')));
+  const supplementalRows=sites.filter(site=>String(site.sourceType||'').startsWith('GLOBAL_'));
+  const pipelineRegistration=endowment()?.registerSupplementalSiteCatalog?.(supplementalRows)||{status:'UNAVAILABLE',registeredCount:0,reason:'RESOURCE_ENDOWMENT_REGISTRATION_API_UNAVAILABLE'};
+  g.__OMEGA_GLOBAL_RESOURCE_PIPELINE_DIAGNOSTICS__={...pipelineRegistration,sourceSiteCount:supplementalRows.length,sourceCatalogs:['resource_site_global_deposit_catalog_v1.json','resource_site_global_energy_catalog_v1.json'],identityChain:'GLOBAL_CATALOG -> COUNTRY_SITE_REFERENCE -> PART04_IDENTITY -> PART05_RESERVE_EXTRACTION -> BATCH -> COUNTRY_RAW_WAREHOUSE -> INDUSTRIAL_NETWORK_ROUTE -> FACTORY'};
   selected=sites[0].siteId;renderSiteSearch('');selectNode.value=selected;if(searchNode)searchNode.value=sites[0].siteName+' ['+sites[0].countryId+' · '+sites[0].siteId+']';detail(chosenSite());
   g.Omega=g.Omega||{};
   g.Omega.IndividualResourceSiteBinding={version:VERSION,sites,select:setSelected,refresh:addMapMarkers,diagnostics:()=>{
