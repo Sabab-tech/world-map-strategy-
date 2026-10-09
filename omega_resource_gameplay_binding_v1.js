@@ -54,7 +54,7 @@ function normalizeSourceSite(raw,countryHint){
  const countryId=cid(raw.countryId||raw.countryCode||raw.country||identity.countryIso3||identity.countryId||loc.countryIso3||countryHint);
  const siteId=asText(raw.siteId||raw.id||raw.assetId||raw.occurrenceKey||p.siteId||identity.siteId);
  const siteName=asText(raw.siteName||raw.name||raw.title||p.siteName||identity.siteName);
- const resourceId=asText(raw.resourceId||raw.resourceTypeId||raw.resourceTypeKey||identity.resourceTypeId||identity.resourceId||p.resourceId||p.resourceTypeId);
+ const resourceId=asText(raw.resourceId||raw.resourceTypeId||raw.resourceTypeKey||raw.resId||raw.resource||raw.commodity||identity.resourceTypeId||identity.resourceId||p.resourceId||p.resourceTypeId);
  if(!coords||!countryId||!resourceId||(!siteId&&!siteName))return null;
  const stableId=siteId||('SITE_'+countryId+'_'+siteName.toLowerCase().normalize('NFKD').replace(/[\\u0300-\\u036f]/g,'').replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,''));
  return {siteId:stableId,countryId,siteName:siteName||stableId,real:{...(raw.real||{}),resourceId},sourceSiteRecord:raw,coordinates:coords,
@@ -175,26 +175,39 @@ async function init(){
   const catalogById=new Map(catalogSites.map(s=>[String(s.siteId),s]));
   const discovered=sources.filter(x=>x.url==='resources.json'||x.url==='resources_2.json').flatMap(x=>discoverSourceSites(x.data));
   const candidates=[...catalogSites.map(s=>normalizeSourceSite(s,s.countryId)||s),...masterSites.map(s=>normalizeSourceSite(s,s.countryId)||s),...discovered];
-  const byId=new Map();
+  const byId=new Map(),physicalIndex=new Map();
+  let mergedDepositAliases=0;
   for(const candidate of candidates){
    const normalized=normalizeSourceSite(candidate,candidate.countryId)||candidate;
    const id=String(normalized.siteId||'').trim(),coords=coordsOf(normalized);
    if(!id||!coords||!normalized.countryId)continue;
    const masterRow=masterById.get(id)||{},catalogRow=catalogById.get(id)||{};
    const source=normalized.sourceSiteRecord||normalized;
-   const resourceId=normalized.real?.resourceId||source.resourceId||source.resourceTypeId||catalogRow.identity?.resourceTypeId||'unknown';
+   const resourceId=normalized.real?.resourceId||source.resourceId||source.resourceTypeId||source.resourceTypeKey||source.resId||catalogRow.identity?.resourceTypeId||'unknown';
+   const countryId=cid(normalized.countryId||masterRow.countryId||catalogRow.countryId);
+   const physicalKey=[countryId,String(resourceId).toLowerCase(),coords.lat.toFixed(4),coords.lng.toFixed(4)].join('|');
+   const isDeposit=/^dep[-_]/i.test(String(source.id||''))||source.resId!=null;
+   const samePhysicalSite=isDeposit?physicalIndex.get(physicalKey):null;
+   if(samePhysicalSite&&byId.has(samePhysicalSite)){
+    const existing=byId.get(samePhysicalSite);
+    existing.sourceDepositRecords=[...(existing.sourceDepositRecords||[]),source];
+    existing.depositAliases=[...(existing.depositAliases||[]),id];
+    mergedDepositAliases++;
+    continue;
+   }
    byId.set(id,{
     ...catalogRow,...masterRow,...normalized,
-    siteId:id,countryId:cid(normalized.countryId||masterRow.countryId||catalogRow.countryId),
+    siteId:id,countryId,
     siteName:normalized.siteName||masterRow.siteName||catalogRow.siteName||id,
     real:{...(catalogRow.real||{}),...(masterRow.real||{}),...(normalized.real||{}),resourceId},
     sourceSiteRecord:source,
     coordinates:coords,
     location:{...(catalogRow.location||{}),...(masterRow.location||{}),...(normalized.location||{}),coordinates:coords},
-    identity:{...(catalogRow.identity||{}),...(masterRow.identity||{}),...(normalized.identity||{}),countryIso3:cid(normalized.countryId),resourceTypeId:resourceId},
+    identity:{...(catalogRow.identity||{}),...(masterRow.identity||{}),...(normalized.identity||{}),countryIso3:countryId,resourceTypeId:resourceId},
     operation:normalized.operation||masterRow.operation||catalogRow.operation||{},
     processing:normalized.processing||masterRow.processing||catalogRow.processing||{}
    });
+   if(!isDeposit)physicalIndex.set(physicalKey,id);
   }
   sites=[...byId.values()];
   if(!sites.length)throw new Error('NO_INDIVIDUAL_RESOURCE_SITES_WITH_VALID_COORDINATES');
@@ -203,7 +216,7 @@ async function init(){
   selectNode.innerHTML=sites.map(s=>'<option value="'+esc(s.siteId)+'">'+esc(s.countryId+' · '+s.siteName+' · '+(s.real?.resourceId||'?'))+'</option>').join('');
   selected=sites[0].siteId;selectNode.value=selected;detail(chosenSite());
   g.Omega=g.Omega||{};
-  g.Omega.IndividualResourceSiteBinding={version:VERSION,sites,select:setSelected,diagnostics:()=>({status:'READY',siteCount:sites.length,uniqueSiteIds:new Set(sites.map(s=>s.siteId)).size,countryCount:new Set(sites.map(s=>s.countryId)).size,sourceFiles:sources.map(x=>x.url),individualMapping:true,missingCoordinates:0})};
+  g.Omega.IndividualResourceSiteBinding={version:VERSION,sites,select:setSelected,diagnostics:()=>({status:'READY',siteCount:sites.length,uniqueSiteIds:new Set(sites.map(s=>s.siteId)).size,countryCount:new Set(sites.map(s=>s.countryId)).size,sourceFiles:sources.map(x=>x.url),mergedDepositAliases,individualMapping:true,missingCoordinates:0})};
   scheduleMarkerRender();setTimeout(()=>scheduleMarkerRender(),1000);setTimeout(()=>scheduleMarkerRender(),3000);
   setStatus('READY · '+sites.length+' individual sites · '+new Set(sites.map(s=>s.countryId)).size+' countries · exact coordinates');
  }catch(e){setStatus('FAILED · '+String(e?.message||e));g.OmegaIndividualResourceSiteBindingError=String(e?.message||e);g.__OMEGA_RESOURCE_SITE_BINDING_INIT__=false;}
