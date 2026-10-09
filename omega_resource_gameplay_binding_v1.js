@@ -129,7 +129,7 @@ function addMapMarkers(){
 function attachMapRefreshHooks(){
  const mapApi=g.Game?.Map;
  if(!mapApi)return;
- for(const name of ['renderResourceDeposits','setResourceScope','applyResourceMapFilter','toggleResourceMode']){
+ for(const name of ['renderResourceDeposits','setResourceScope','applyResourceMapFilter','toggleResourceMode','toggleResourceOverlay','toggleResourceChip','selectResourcePreset']){
   const original=mapApi[name];
   if(typeof original!=='function'||original.__omegaSiteRefreshWrapped)continue;
   const wrapped=function(...args){
