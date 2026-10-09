@@ -78,12 +78,20 @@ for (const feature of world.features || []) {
   }
 }
 const ISO2_TO_3 = {US:'USA',CA:'CAN',MX:'MEX',BR:'BRA',AR:'ARG',CL:'CHL',PE:'PER',CO:'COL',VE:'VEN',EC:'ECU',BO:'BOL',PY:'PRY',UY:'URY',GY:'GUY',SR:'SUR',GB:'GBR',UK:'GBR',FR:'FRA',DE:'DEU',ES:'ESP',IT:'ITA',NO:'NOR',SE:'SWE',FI:'FIN',PL:'POL',UA:'UKR',RU:'RUS',CN:'CHN',IN:'IND',PK:'PAK',BD:'BGD',NP:'NPL',LK:'LKA',AF:'AFG',IR:'IRN',IQ:'IRQ',SA:'SAU',AE:'ARE',QA:'QAT',KW:'KWT',OM:'OMN',YE:'YEM',TR:'TUR',ID:'IDN',MY:'MYS',TH:'THA',VN:'VNM',PH:'PHL',JP:'JPN',KR:'KOR',KP:'PRK',AU:'AUS',NZ:'NZL',ZA:'ZAF',ZM:'ZMB',ZW:'ZWE',NA:'NAM',BW:'BWA',MZ:'MOZ',CD:'COD',CG:'COG',GH:'GHA',NG:'NGA',KE:'KEN',TZ:'TZA',UG:'UGA',ET:'ETH',MA:'MAR',DZ:'DZA',EG:'EGY',LY:'LBY',SD:'SDN',SN:'SEN',CI:'CIV',ML:'MLI',NE:'NER',BF:'BFA',CM:'CMR',AO:'AGO',MG:'MDG',CA:'CAN'};
+const countryNameKey = value => norm(value).replace(/[^A-Z0-9]+/g,' ').replace(/\\s+/g,' ').trim();
+const SOURCE_COUNTRY_ALIASES = Object.freeze({
+  BURMA:'MMR', MYANMAR:'MMR', 'KOREA SOUTH':'KOR', 'KOREA REPUBLIC OF':'KOR', 'REPUBLIC OF KOREA':'KOR',
+  'KOREA NORTH':'PRK', 'DEMOCRATIC PEOPLE S REPUBLIC OF KOREA':'PRK', ENGLAND:'GBR', 'UNITED KINGDOM':'GBR',
+  KOSOVO:'XKX'
+});
 const countryIdOf = row => {
-  const direct = String(first(row.countryId,row.countryCode,row.iso3,row.ISO3,row.country_iso3,row.ISO_A3,row.ADM0_A3,row.nationCode,row.country?.iso3,row.country?.code) || '').toUpperCase();
+  const direct = String(first(row.countryId,row.countryCode,row.iso3,row.ISO3,row.country_iso3,row.ISO_A3,row.ADM0_A3,row.nationCode,row.country?.iso3,row.country?.code,row.country?.ISO3,row.country?.countryCode,row.properties?.country_iso3,row.properties?.ISO_A3,row.properties?.ADM0_A3,row.location?.countryIso3,row.location?.countryCode) || '').toUpperCase();
   if (knownIds.has(direct)) return direct;
   if (ISO2_TO_3[direct]) return ISO2_TO_3[direct];
-  const name = first(typeof row.country === 'string' ? row.country : row.country?.name,row.countryName,row.country_name,row.nation,row.admin0,row.ADMIN0,row.sovereign,row.location?.country,row.location?.countryName,row.properties?.country,row.properties?.ADMIN,row.properties?.NAME);
-  return countryNameToId.get(norm(name)) || '';
+  const name = first(typeof row.country === 'string' ? row.country : row.country?.name,row.country?.officialName,row.country?.official_name,row.country?.label,row.countryName,row.country_name,row.nation,row.admin0,row.ADMIN0,row.sovereign,row.location?.country,row.location?.countryName,row.location?.country_name,row.location?.admin0,row.properties?.country,row.properties?.country_name,row.properties?.countryName,row.properties?.ADMIN,row.properties?.NAME,row.properties?.NAME_EN,row.properties?.SOVEREIGNT);
+  const key=countryNameKey(name);
+  if(SOURCE_COUNTRY_ALIASES[key])return SOURCE_COUNTRY_ALIASES[key];
+  return countryNameToId.get(norm(name)) || countryNameToId.get(key) || '';
 };
 const countryFeatures = [];
 for (const feature of world.features || []) {
@@ -123,26 +131,42 @@ function countryFromCoordinates(c){
 const nameOf = row => first(row.name,row.depositName,row.deposit_name,row.siteName,row.site_name,row.title,row.label,row.occurrenceName,row.mineName,row.properties?.name,row.properties?.NAME,row.properties?.deposit_name);
 const commodityOf = row => first(row.commodities,row.commodity,row.primaryCommodity,row.primary_commodity,row.mineral,row.minerals,row.resource,row.resourceType,row.depositType,row.deposit_type,row.properties?.commodities,row.properties?.commodity,row.properties?.mineral);
 const sourceIdOf = row => first(row.id,row.depositId,row.deposit_id,row.siteId,row.site_id,row.recordId,row.record_id,row.uid,row.properties?.id,row.properties?.deposit_id);
+function marineJurisdictionOf(row,siteName,sourceCountry){
+ const source=String(first(row.source,row.sources,row.database,row.dataset,row.properties?.source,row.properties?.dataset)||'');
+ const type=String(first(row.depositType,row.deposit_type,row.type,row.properties?.depositType,row.properties?.deposit_type,row.properties?.type)||'');
+ const country=countryNameKey(sourceCountry),name=countryNameKey(siteName);
+ if(name.includes('COOK ISLANDS EEZ'))return{type:'EXCLUSIVE_ECONOMIC_ZONE',countryId:'COK',countryName:'Cook Islands',authority:'SOURCE_LABEL_EXPLICIT_EEZ',sourceName:source};
+ if(/^(PACIFIC OCEAN|ATLANTIC OCEAN|INDIAN OCEAN)$/.test(country)&&(/SEA FLOOR|SEAFLOOR|NODULE|CRUST|MID ATLANTIC|CLARION CLIPPERTON|PRIME CRUST|MTR/.test(countryNameKey(type+' '+siteName)))){
+  return{type:'INTERNATIONAL_SEABED_AREA',countryId:null,countryName:sourceCountry,authority:'SOURCE_IDENTIFIED_OCEAN_AREA; NATIONAL_SOVEREIGNTY_NOT_INFERRED',sourceName:source};
+ }
+ return null;
+}
 const rows = new Map();
-let unresolvedCoordinates = 0, unresolvedCountry = 0, unresolvedIdentity = 0, acceptedRecordCount = 0, coordinateCountryInferenceCount = 0;
+let unresolvedCoordinates = 0, unresolvedCountry = 0, unresolvedIdentity = 0, internationalWatersCount = 0, eezCount = 0, acceptedRecordCount = 0, coordinateCountryInferenceCount = 0;
 let sourceRowIndex = 0;
 for (const rawRow of rawRows) {
   sourceRowIndex++;
   const row = rawRow && typeof rawRow === 'object' ? rawRow : { rawSourceRecord: String(rawRow ?? '') };
   const c = coord(row);
   if (!c) unresolvedCoordinates++;
-  let countryId = countryIdOf(row);
-  if (!countryId && c) { countryId = countryFromCoordinates(c); if (countryId) coordinateCountryInferenceCount++; }
-  if (!countryId) unresolvedCountry++;
   const upstreamId = String(sourceIdOf(row) || '').trim();
   const sourceName = String(nameOf(row) || '').trim();
+  const sourceCountry=first(row.country,row.countryName,row.country_name,row.nation,row.admin0,row.ADMIN0,row.sovereign,row.location?.country,row.location?.countryName,row.properties?.country,row.properties?.country_name,row.properties?.countryName,row.properties?.ADMIN,row.properties?.NAME,row.properties?.NAME_EN)||null;
+  let countryId = countryIdOf(row);
+  if (!countryId && c) { countryId = countryFromCoordinates(c); if (countryId) coordinateCountryInferenceCount++; }
+  const marine=marineJurisdictionOf(row,sourceName,sourceCountry);
+  if(!countryId&&marine?.countryId)countryId=marine.countryId;
+  const countryAssignmentStatus=countryId?'IDENTIFIED':(marine?.type==='INTERNATIONAL_SEABED_AREA'?'INTERNATIONAL_WATERS':'UNRESOLVED_COUNTRY_IDENTITY');
+  if (!countryId&&countryAssignmentStatus==='UNRESOLVED_COUNTRY_IDENTITY') unresolvedCountry++;
+  if(countryAssignmentStatus==='INTERNATIONAL_WATERS')internationalWatersCount++;
+  if(marine?.type==='EXCLUSIVE_ECONOMIC_ZONE')eezCount++;
   const rawCommodity = commodityOf(row);
   const identityComplete = Boolean(sourceName && rawCommodity);
   const siteName = sourceName || upstreamId || ('Unidentified mineral source record ' + sourceRowIndex);
   if (!identityComplete) unresolvedIdentity++;
   const rid = rawCommodity ? resourceId(rawCommodity) : 'unknown_mineral';
   acceptedRecordCount++;
-  const countryKey = countryId || 'UNRESOLVED_COUNTRY';
+  const countryKey = countryId || (marine?.type==='INTERNATIONAL_SEABED_AREA'?'INTERNATIONAL_WATERS':'UNRESOLVED_COUNTRY');
   const coordinateKey = c ? c.lat.toFixed(4) + '_' + c.lng.toFixed(4) : 'NO_COORDINATES';
   const siteId = 'GLOBAL_DEP_' + countryKey + '_' + rid + '_' + (slug(upstreamId) || slug(siteName)) + '_' + coordinateKey;
   const key = c ? [countryKey,rid,slug(siteName),c.lat.toFixed(4),c.lng.toFixed(4)].join('|') : [countryKey,rid,slug(upstreamId)||slug(siteName),'NO_COORDINATES'].join('|');
@@ -150,11 +174,11 @@ for (const rawRow of rawRows) {
     siteId, countryId, siteName,
     schemaVersion: '1.0.0',
     sourceType: 'GLOBAL_MINERAL_OCCURRENCE',
-    identity: { countryIso3: countryId || null, countryAssignmentStatus: countryId ? 'IDENTIFIED' : 'UNRESOLVED_COUNTRY_IDENTITY', sourceIdentityStatus: identityComplete ? 'COMPLETE' : 'INCOMPLETE_SOURCE_IDENTITY', siteType: 'MINERAL_DEPOSIT_OR_OCCURRENCE', resourceTypeId: rid, sourceRecordId: upstreamId || null },
+    identity: { countryIso3: countryId || null, countryAssignmentStatus, jurisdictionType:marine?.type|| (countryId==='XKX'?'DISPUTED_OR_NON_UN_MEMBER_TERRITORY':null), jurisdictionCountryId:marine?.countryId||null, jurisdictionAuthority:marine?.authority||null, sourceIdentityStatus: identityComplete ? 'COMPLETE' : 'INCOMPLETE_SOURCE_IDENTITY', siteType: 'MINERAL_DEPOSIT_OR_OCCURRENCE', resourceTypeId: rid, sourceRecordId: upstreamId || null },
     real: { resourceId: rid, operationStatus: 'UNKNOWN', reserveStatus: 'UNOBSERVED', productionStatus: 'UNOBSERVED' },
     coordinates: c,
-    location: { coordinates: c, countryName: countryId ? (countryIdToName.get(countryId) || countryId) : null, countryJurisdictionStatus: countryId ? 'IDENTIFIED' : 'UNRESOLVED', coordinateStatus: c ? 'UPSTREAM_GEOLOCATION_NOT_INDEPENDENTLY_VERIFIED' : 'MISSING_UPSTREAM_COORDINATES' },
-    operation: { status: 'UNKNOWN', extractionEligibility: !countryId ? 'BLOCKED_UNRESOLVED_COUNTRY_IDENTITY' : (!c ? 'BLOCKED_MISSING_COORDINATES' : (!identityComplete ? 'BLOCKED_INCOMPLETE_SOURCE_IDENTITY' : 'REQUIRES_SITE_SPECIFIC_VERIFICATION')), commercialExtraction: false },
+    location: { coordinates: c, countryName: countryId ? (countryIdToName.get(countryId) || (countryId==='XKX'?'Kosovo':countryId==='COK'?'Cook Islands':countryId)) : null, countryJurisdictionStatus:countryId?'IDENTIFIED':(marine?.type==='INTERNATIONAL_SEABED_AREA'?'INTERNATIONAL_WATERS':'UNRESOLVED'), jurisdictionType:marine?.type||null, jurisdictionAuthority:marine?.authority||null, sourceReportedJurisdiction:sourceCountry, coordinateStatus: c ? 'UPSTREAM_GEOLOCATION_NOT_INDEPENDENTLY_VERIFIED' : 'MISSING_UPSTREAM_COORDINATES' },
+    operation: { status: 'UNKNOWN', extractionEligibility:marine?.type==='INTERNATIONAL_SEABED_AREA'?'BLOCKED_INTERNATIONAL_WATERS_NO_SOVEREIGN_GAME_OWNER':(!countryId?'BLOCKED_UNRESOLVED_COUNTRY_IDENTITY':(!c?'BLOCKED_MISSING_COORDINATES':(!identityComplete?'BLOCKED_INCOMPLETE_SOURCE_IDENTITY':'REQUIRES_SITE_SPECIFIC_VERIFICATION'))), commercialExtraction: false },
     sourceSiteRecord: { sourceDataset: 'Alexander-ai/global-deposit-globe', sourceUrl: 'https://github.com/Alexander-ai/global-deposit-globe', upstreamRecordId: upstreamId || null, rawCommodity, sourceAttributes: { name: sourceName || null, displayNameFallbackUsed: !sourceName, id: upstreamId || null, country: first(row.country,row.countryName,row.country_name,row.countryCode,row.iso3) || null, depositType: first(row.depositType,row.deposit_type,row.type) || null, status: first(row.status,row.developmentStatus,row.development_status) || null, source: first(row.source,row.sources,row.database,row.dataset) || null } },
     provenance: { sourceAuthority: 'OPEN_MULTI_SOURCE_GEOLOGICAL_COMPILATION', sourceSnapshot: 'upstream-main-build-time', operationalStatus: 'NOT_INFERRED' }
   };
@@ -174,7 +198,9 @@ const output = {
   datasetScope: 'GLOBAL_NONFUEL_MINERAL_DEPOSITS_AND_OCCURRENCES',
   siteCount: sites.length,
   countriesRepresented: [...new Set(sites.map(s=>s.countryId).filter(Boolean))].length,
-  unresolvedIdentityCount: sites.filter(s=>!s.countryId).length,
+  unresolvedIdentityCount: sites.filter(s=>!s.countryId&&s.identity?.countryAssignmentStatus==='UNRESOLVED_COUNTRY_IDENTITY').length,
+  internationalWatersCount:sites.filter(s=>s.identity?.countryAssignmentStatus==='INTERNATIONAL_WATERS').length,
+  eezSiteCount:sites.filter(s=>s.identity?.jurisdictionType==='EXCLUSIVE_ECONOMIC_ZONE').length,
   unresolvedSourceIdentityCount: unresolvedIdentity,
   unresolvedCoordinateCount: sites.filter(s=>!s.coordinates).length,
   sourceRecordCount: rawRows.length,
@@ -189,4 +215,4 @@ const output = {
 };
 fs.mkdirSync(path.dirname(OUT), { recursive: true });
 fs.writeFileSync(OUT, JSON.stringify(output) + '\n');
-console.log(JSON.stringify({ output: path.relative(ROOT,OUT), siteCount: sites.length, countriesRepresented: output.countriesRepresented, unresolvedIdentityCount: output.unresolvedIdentityCount, unresolvedSourceIdentityCount: output.unresolvedSourceIdentityCount, unresolvedCoordinateCount: output.unresolvedCoordinateCount, sourceRecordCount: rawRows.length, deduplicatedRecordCount: output.deduplicatedRecordCount, rejected: output.rejected, unresolved: output.unresolved }, null, 2));
+console.log(JSON.stringify({ output: path.relative(ROOT,OUT), siteCount: sites.length, countriesRepresented: output.countriesRepresented, unresolvedIdentityCount: output.unresolvedIdentityCount, internationalWatersCount:output.internationalWatersCount, eezSiteCount:output.eezSiteCount, unresolvedSourceIdentityCount: output.unresolvedSourceIdentityCount, unresolvedCoordinateCount: output.unresolvedCoordinateCount, sourceRecordCount: rawRows.length, deduplicatedRecordCount: output.deduplicatedRecordCount, rejected: output.rejected, unresolved: output.unresolved }, null, 2));
