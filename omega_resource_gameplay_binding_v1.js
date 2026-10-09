@@ -81,11 +81,16 @@ function normalizeSourceSite(raw,countryHint){
  const siteName=asText(raw.siteName||raw.name||raw.title||p.siteName||identity.siteName);
  const resourceId=asText(raw.resourceId||raw.resourceTypeId||raw.resourceTypeKey||raw.resId||raw.resource||raw.commodity||identity.resourceTypeId||identity.resourceId||p.resourceId||p.resourceTypeId);
  if(!coords||!countryId||!resourceId||(!siteId&&!siteName))return null;
+ // Source discovery returns a normalized candidate. Preserve its original JSON object
+ // instead of nesting the candidate as though it were a raw deposit/site record.
+ const nestedSource=raw.sourceSiteRecord&&typeof raw.sourceSiteRecord==='object'?raw.sourceSiteRecord:null;
+ const sourceRecord=nestedSource&&nestedSource.sourceSiteRecord&&typeof nestedSource.sourceSiteRecord==='object'
+  ?nestedSource.sourceSiteRecord:(nestedSource||raw);
  const stableId=siteId||('SITE_'+countryId+'_'+siteName.toLowerCase().normalize('NFKD').replace(/[\\u0300-\\u036f]/g,'').replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,''));
- return {siteId:stableId,countryId,siteName:siteName||stableId,real:{...(raw.real||{}),resourceId},sourceSiteRecord:raw,coordinates:coords,
-  location:{...loc,coordinates:coords,locality:loc.locality||raw.region||raw.adminRegion||''},
+ return {siteId:stableId,countryId,siteName:siteName||stableId,real:{...(raw.real||{}),resourceId},sourceSiteRecord:sourceRecord,coordinates:coords,
+  location:{...loc,countryName:loc.countryName||raw.countryName||sourceRecord.countryName||(sourceRecord.country&&sourceRecord.country.length>3?sourceRecord.country:''),coordinates:coords,locality:loc.locality||raw.region||raw.adminRegion||sourceRecord.region||''},
   identity:{...identity,countryIso3:countryId,resourceTypeId:resourceId,siteType:identity.siteType||raw.siteType||raw.type||'RESOURCE_SITE'},
-  operation:raw.operation||p.operation||raw.extractionProfile||null,processing:raw.processing||p.processing||null};
+  operation:raw.operation||p.operation||raw.extractionProfile||null,processing:raw.processing||p.processing||raw.extractionProfile?.processing||null};
 }
 function discoverSourceSites(root){
  const found=[],seenObjects=new Set();
