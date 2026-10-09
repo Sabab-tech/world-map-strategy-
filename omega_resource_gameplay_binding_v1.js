@@ -209,5 +209,5 @@ async function init(){
  }catch(e){setStatus('FAILED · '+String(e?.message||e));g.OmegaIndividualResourceSiteBindingError=String(e?.message||e);g.__OMEGA_RESOURCE_SITE_BINDING_INIT__=false;}
 }
 g.addEventListener?.('OMEGA_READY',()=>void init());
-g.addEventListener?.('load',()=>setTimeout(()=>{if(g.__OMEGA_DIAG__?.state==='RUNNING')void init();},500));
+g.addEventListener?.('load',()=>setTimeout(()=>{if(!g.__OMEGA_RESOURCE_SITE_BINDING_INIT__)void init();else scheduleMarkerRender();},500));
 })(typeof window!=='undefined'?window:globalThis);
