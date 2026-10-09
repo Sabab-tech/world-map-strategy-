@@ -454,7 +454,7 @@ for csv_path, default_status in [(COAL_ACTIVE, "UNKNOWN"), (COAL_CLOSED, "CLOSED
                     nearest_country, nearest_distance = nearest_country_within(lat, lon, 0.15)
                     if nearest_country != cid or nearest_distance is None:
                         coordinate_quarantined = True
-                    elif not coordinate_source_url:
+                    elif not coordinate_source_url and not coordinate_order_corrected:
                         coordinate_accuracy = "UPSTREAM_NEAR_COUNTRY_BOUNDARY"
                 if coordinate_quarantined:
                     lat, lon = None, None
