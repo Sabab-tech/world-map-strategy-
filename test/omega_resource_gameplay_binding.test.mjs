@@ -117,4 +117,17 @@ test('global map source data preserves every coordinate-backed mine site and run
   assert.ok(countryCounts.BGD >= 4, 'Bangladesh mine and multiple oil/gas/coal deposit records must remain individually discoverable');
   assert.ok(countryCounts.CHN > 1 && countryCounts.CHL > 1 && countryCounts.USA > 1,
     'global source discovery must include multiple distinct records outside Bangladesh');
+  const physicalKeys = new Set([...mineSites, ...deposits].map(site => {
+    const country = site.countryId || site.countryCode || site.country;
+    const resource = String(site.resourceId || site.resourceTypeId || site.resourceTypeKey || site.resId || '').toLowerCase();
+    const lat = Number(site.lat ?? site.coordinates?.lat ?? site.location?.coordinates?.lat).toFixed(4);
+    const lng = Number(site.lng ?? site.lon ?? site.coordinates?.lng ?? site.location?.coordinates?.lng).toFixed(4);
+    return [country, resource, lat, lng].join('|');
+  }));
+  assert.equal(physicalKeys.size, 239,
+    '199 mine-site records plus 43 deposit records resolve to 239 distinct country/resource/coordinate locations after 3 exact duplicate joins');
+  const binding = read('omega_resource_gameplay_binding_v1.js');
+  assert.match(binding, /scope!=='WORLD'/, 'nation scope must not display sites from every country');
+  assert.match(binding, /resourceState\.selectedResources/, 'individual markers must follow the resource filter');
+  assert.match(binding, /toggleResourceChip/, 'resource filter changes must refresh individual markers');
 });
