@@ -275,9 +275,14 @@
     function syncManifest(){
       const manifest=global.GLOBAL_MINISTRY_MANIFEST;
       if(!Array.isArray(manifest)) return;
+
+      // The manifest is canonical metadata and may be frozen/read-only.
+      // Never mutate its entries; publish runtime status in a separate sidecar.
+      const status=Object.create(null);
       for(const item of manifest){
-        if(item && IDS.includes(String(item.id))) item.status='ACTIVE';
+        if(item && IDS.includes(String(item.id))) status[String(item.id)]='ACTIVE';
       }
+      global.__OMEGA_MINISTRY_MANIFEST_STATUS__=Object.freeze(status);
     }
 
     function init(nextKernel){
