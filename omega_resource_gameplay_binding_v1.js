@@ -377,21 +377,21 @@ async function init(){
  g.__OMEGA_RESOURCE_SITE_BINDING_INIT__=true;
  mount();
  try{
-  const urls=['resources.json','resources_2.json',CATALOG_URL,MASTER_URL,'resource_site_global_deposit_catalog_v1.json','world.json'];
+  const urls=['resources.json','resources_2.json',CATALOG_URL,MASTER_URL,'resource_site_global_deposit_catalog_v1.json','resource_site_global_energy_catalog_v1.json','world.json'];
   const loaded=await Promise.all(urls.map(async url=>{
    try{const response=await fetch(url,{cache:'no-store'});if(!response.ok)return null;return {url,data:await response.json()};}
    catch(_){return null;}
   }));
   const sources=loaded.filter(Boolean);
   const getData=url=>sources.find(x=>x.url===url)?.data||null;
-  const catalog=getData(CATALOG_URL),master=getData(MASTER_URL),globalCatalog=getData('resource_site_global_deposit_catalog_v1.json');
+  const catalog=getData(CATALOG_URL),master=getData(MASTER_URL),globalCatalog=getData('resource_site_global_deposit_catalog_v1.json'),energyCatalog=getData('resource_site_global_energy_catalog_v1.json');
   const catalogSites=Array.isArray(catalog?.sites)?catalog.sites:[];
   const masterSites=Array.isArray(master?.sites)?master.sites:[];
-  const globalSites=Array.isArray(globalCatalog?.sites)?globalCatalog.sites:[];
+  const globalSites=Array.isArray(globalCatalog?.sites)?globalCatalog.sites:[];\n  const globalEnergySites=Array.isArray(energyCatalog?.sites)?energyCatalog.sites:[];
   const masterById=new Map(masterSites.map(s=>[String(s.siteId),s]));
   const catalogById=new Map(catalogSites.map(s=>[String(s.siteId),s]));
   const discovered=sources.filter(x=>x.url==='resources.json'||x.url==='resources_2.json').flatMap(x=>discoverSourceSites(x.data));
-  const candidates=[...catalogSites.map(s=>normalizeSourceSite(s,s.countryId)||s),...masterSites.map(s=>normalizeSourceSite(s,s.countryId)||s),...globalSites.map(s=>normalizeSourceSite(s,s.countryId)||s),...discovered];
+  const candidates=[...catalogSites.map(s=>normalizeSourceSite(s,s.countryId)||s),...masterSites.map(s=>normalizeSourceSite(s,s.countryId)||s),...globalSites.map(s=>normalizeSourceSite(s,s.countryId)||s),...globalEnergySites.map(s=>normalizeSourceSite(s,s.countryId)||s),...discovered];
   const byId=new Map(),physicalIndex=new Map();
   let mergedDepositAliases=0;
   for(const candidate of candidates){
@@ -430,7 +430,7 @@ async function init(){
   const countryGeometryIndex=buildCountryGeometryIndex(getData('world.json'));
   const coordinateAudit={};
   for(const site of sites){
-   if(site.sourceType==='GLOBAL_MINERAL_OCCURRENCE'){site.coordinateValidation={status:'UPSTREAM_SOURCE_COORDINATE_NOT_INDEPENDENTLY_VALIDATED',ownerCountryId:site.countryId};coordinateAudit.UPSTREAM_SOURCE_COORDINATE_NOT_INDEPENDENTLY_VALIDATED=(coordinateAudit.UPSTREAM_SOURCE_COORDINATE_NOT_INDEPENDENTLY_VALIDATED||0)+1;continue;}
+   if(String(site.sourceType||'').startsWith('GLOBAL_')){site.coordinateValidation={status:'UPSTREAM_SOURCE_COORDINATE_NOT_INDEPENDENTLY_VALIDATED',ownerCountryId:site.countryId};coordinateAudit.UPSTREAM_SOURCE_COORDINATE_NOT_INDEPENDENTLY_VALIDATED=(coordinateAudit.UPSTREAM_SOURCE_COORDINATE_NOT_INDEPENDENTLY_VALIDATED||0)+1;continue;}
    const sourceCountryId=site.countryId;
    const resolvedCountryId=resolveCountryCode(site,countryGeometryIndex);
    if(resolvedCountryId&&countryGeometryIndex.has(resolvedCountryId)&&resolvedCountryId!==sourceCountryId){
@@ -477,7 +477,7 @@ async function init(){
    const coordinateStatusCounts={};
    for(const site of sites){const status=coordinateStatusOf(site);coordinateStatusCounts[status]=(coordinateStatusCounts[status]||0)+1;}
    const sourceRecordCounts=sources.reduce((counts,source)=>{
-     if(source.url==='resource_site_global_deposit_catalog_v1.json')counts.globalMineralDeposits=Array.isArray(source.data?.sites)?source.data.sites.length:0;
+     if(source.url==='resource_site_global_deposit_catalog_v1.json')counts.globalMineralDeposits=Array.isArray(source.data?.sites)?source.data.sites.length:0;\n     if(source.url==='resource_site_global_energy_catalog_v1.json')counts.globalEnergySites=Array.isArray(source.data?.sites)?source.data.sites.length:0;
      if(source.url==='resource_site_global_deposit_catalog_v1.json')counts.globalMineralDeposits=Array.isArray(source.data?.sites)?source.data.sites.length:0;
     if(source.url==='resources.json'||source.url==='resources_2.json'){
      const profiles=source.data?.GSRSK_Master_CountryProfiles_v14?.countryProfiles||{};
@@ -486,10 +486,10 @@ async function init(){
     }
     return counts;
    },{mineSites:0,runtimeDeposits:0});
-   return {status:'READY',siteCount:sites.length,uniqueSiteIds:new Set(sites.map(s=>s.siteId)).size,countryCount:new Set(sites.map(s=>s.countryId)).size,globalMineralDepositCount:globalSites.length,sourceFiles:sources.map(x=>x.url),sourceRecordCounts,coordinateStatusCounts,mergedDepositAliases,individualMapping:true,searchableAllSites:true};
+   return {status:'READY',siteCount:sites.length,uniqueSiteIds:new Set(sites.map(s=>s.siteId)).size,countryCount:new Set(sites.map(s=>s.countryId)).size,globalMineralDepositCount:globalSites.length,globalEnergySiteCount:globalEnergySites.length,sourceFiles:sources.map(x=>x.url),sourceRecordCounts,coordinateStatusCounts,mergedDepositAliases,individualMapping:true,searchableAllSites:true};
   }};
   attachMapRefreshHooks();scheduleMarkerRender();setTimeout(()=>scheduleMarkerRender(),1000);setTimeout(()=>scheduleMarkerRender(),3000);
-  setStatus('READY · '+sites.length+' sites · '+new Set(sites.map(s=>s.countryId)).size+' countries · '+globalSites.length+' global mineral records · '+quarantinedCoordinates.length+' verified wrong-country records quarantined');
+  setStatus('READY · '+sites.length+' sites · '+new Set(sites.map(s=>s.countryId)).size+' countries · '+(globalSites.length+globalEnergySites.length)+' global mine/field records · '+quarantinedCoordinates.length+' verified wrong-country records quarantined');
  }catch(e){setStatus('FAILED · '+String(e?.message||e));g.OmegaIndividualResourceSiteBindingError=String(e?.message||e);g.__OMEGA_RESOURCE_SITE_BINDING_INIT__=false;}
 }
 g.addEventListener?.('OMEGA_READY',()=>void init());
