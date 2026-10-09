@@ -97,6 +97,11 @@ async function init(){
   const [a,b]=await Promise.all([fetch(CATALOG_URL,{cache:'no-store'}),fetch(MASTER_URL,{cache:'no-store'})]);
   if(!a.ok||!b.ok)throw new Error('SITE_DATA_FETCH_FAILED');
   const catalog=await a.json(),master=await b.json();
+  g.Omega=g.Omega||{};
+  g.OmegaResourceSiteMasterResearchData=master;
+  g.Omega.ResourceSiteMasterResearchData=master;
+  g.OmegaResourceSiteCanonicalCatalogData=catalog;
+  g.Omega.ResourceSiteCanonicalCatalogData=catalog;
   if(!Array.isArray(catalog.sites)||catalog.sites.length!==199||!Array.isArray(master.sites)||master.sites.length!==199)throw new Error('SITE_REGISTRY_COUNT_MISMATCH');
   const map=new Map(master.sites.map(s=>[s.siteId,s]));
   sites=catalog.sites.map(s=>{const m=map.get(s.siteId);return m?Object.assign({},m,{location:s.location,coordinates:s.location?.coordinates,identity:s.identity,operation:s.operation,processing:s.processing}):null;}).filter(Boolean);
