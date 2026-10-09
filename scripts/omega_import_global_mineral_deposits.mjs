@@ -69,7 +69,8 @@ for (const row of canonical.sites || []) {
 for (const feature of world.features || []) {
   const p = feature.properties || {};
   const id = String(first(p.ISO_A3, p.ADM0_A3, p.iso_a3, p.ISO3, p.iso3, p.A3, p.SOV_A3, p.GID_0, feature.id) || '').toUpperCase();
-  const names = [p.ADMIN,p.NAME,p.NAME_EN,p.name,p.NAME_LONG,p.SOVEREIGNT,p.FORMAL_EN,p.BRK_NAME,p.NAME_0,p.COUNTRY];
+  const names = [p.ADMIN,p.NAME_EN,p.NAME,p.name,p.NAME_LONG,p.SOVEREIGNT,p.FORMAL_EN,p.BRK_NAME,p.NAME_0,p.COUNTRY];
+  const preferredName = first(p.ADMIN,p.NAME_EN,p.NAME,p.name,p.NAME_LONG,p.SOVEREIGNT,p.FORMAL_EN,p.NAME_0,p.COUNTRY);
   if (/^[A-Z]{3}$/.test(id) && id !== '-99') {
     knownIds.add(id);
     for (const name of names) if (name) countryNameToId.set(norm(name), id);
