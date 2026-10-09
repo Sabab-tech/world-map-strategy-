@@ -34,7 +34,7 @@ function routeEdgesForSite(site){
   const legs=Array.isArray(r.legs)?r.legs:[r];
   let from=String(r.fromNode||('MINE:'+site.countryId+':'+site.siteId));
   for(let j=0;j<legs.length;j++){
-   const l=legs[j],to=String(l.toNode||(j===legs.length-1?(r.toNode||('FACTORY:'+r.countryId+':'+(r.factoryId||r.destinationFactoryId||''))):('ROUTE_NODE:'+site.siteId+':'+i+':'+j));
+   const l=legs[j],factoryId=String(r.factoryId||r.destinationFactoryId||''),assets=state().economy?.[country(site.countryId)]?.productionAssets||[],asset=assets.find(a=>String(a.id||a.assetId||a.projectId)===factoryId),to=String(l.toNode||(j===legs.length-1?(r.toNode||asset?.locationNodeKey||('FACTORY:'+site.countryId+':'+factoryId)):('ROUTE_NODE:'+site.siteId+':'+i+':'+j)));
    out.push({id:String(l.edgeId||r.routeId||site.siteId+':'+i+':'+j),countryId:country(l.countryId||r.countryId||site.countryId),fromNode:from,toNode:to,mode:tok(l.mode||l.transportMode||r.mode||r.transportMode||'ROAD'),distanceKm:Math.max(1,n(l.distanceKm??l.distance??r.distanceKm)),capacityPerTurn:Math.max(1,n(l.capacityPerTurn??l.capacity??r.capacityPerTurn)||10000),costPerUnit:Math.max(0,n(l.costPerUnit??r.costPerUnit)||.01),travelDays:Math.max(.1,n(l.travelDays??r.travelDays)||1),status:l.status||r.status||'OPEN',damage:Math.max(0,Math.min(1,n(l.damage??r.damage))),edgeClass:l.edgeClass||'MODELED_CORRIDOR',seaLane:tok(l.mode||r.mode||'').includes('SEA')||tok(l.mode||r.mode||'')==='SHIP',transitCountry:country(l.transitCountry||r.transitCountry||l.countryId||r.countryId||site.countryId),authority:'MODELED'});
    from=to;
   }
@@ -133,12 +133,14 @@ function simulateExtractionTurn(input={}){
  const utilization=Math.max(0,Math.min(1,n(p.utilization)));
  const maintenance=Math.max(0,Math.min(.95,n(p.maintenance)));
  const disruption=Math.max(0,Math.min(.95,n(input.disruption)||0));
- const capacity=Math.max(0,Math.min(n(p.maximumCapacity)||Infinity,Math.max(n(p.minimumCapacity),n(p.nominalCapacity)*utilization*declineFactor*(1-maintenance)*(1-disruption))));
+ const daysPerTurn=Math.max(1,n(state().simulation?.daysPerTurn)||30);
+ const dailyCapacity=Math.max(0,Math.min(n(p.maximumCapacity)||Infinity,Math.max(n(p.minimumCapacity),n(p.nominalCapacity)*utilization*declineFactor*(1-maintenance)*(1-disruption))));
+ const capacity=dailyCapacity*daysPerTurn;
  const recovered=Math.min(n(old.remainingReserve),capacity*Math.max(0,Math.min(1,n(p.recovery)||1)));
  old.remainingReserve=Math.max(0,n(old.remainingReserve)-recovered);old.produced=n(old.produced)+recovered;old.lastTurn=turn();old.lastRate=recovered;old.declineFactor=declineFactor;old.maintenanceFactor=1-maintenance;old.lastDisruption=disruption;
  r.siteProduction[key]=old;
  const warehouse=r.warehouse||(r.warehouse={availableByResource:{},reservedByResource:{}});warehouse.availableByResource=warehouse.availableByResource||{};warehouse.availableByResource[rid]=n(warehouse.availableByResource[rid])+recovered;
- const result={status:recovered>0?'PRODUCED':'DEPLETED',countryId:c,siteId:site.siteId,resourceId:rid,turn:turn(),quantity:recovered,unit:p.unit||'TONNES',remainingReserve:old.remainingReserve,capacity,declineFactor,maintenanceFactor:1-maintenance,disruptionFactor:1-disruption,authority:'SCENARIO_SIMULATION_DATA',automatic:true};
+ const result={status:recovered>0?'PRODUCED':'DEPLETED',countryId:c,siteId:site.siteId,resourceId:rid,turn:turn(),quantity:recovered,unit:p.unit||'TONNES',remainingReserve:old.remainingReserve,capacity,dailyCapacity,daysPerTurn,declineFactor,maintenanceFactor:1-maintenance,disruptionFactor:1-disruption,authority:'SCENARIO_SIMULATION_DATA',automatic:true};
  event('OMEGA_SITE_EXTRACTION_SIMULATED',clone(result));return result;
 }
 function planShipment(input={}){
