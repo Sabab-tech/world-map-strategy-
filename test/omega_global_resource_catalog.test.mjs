@@ -21,7 +21,8 @@ test('global mineral catalogue contains many independently identified deposits a
   for (const site of catalog.sites) {
     assert.ok(site.siteId && site.siteName, 'each deposit needs a stable source identity and site name');
     assert.ok(site.identity?.resourceTypeId, site.siteId+' must have a commodity identity');
-    assert.equal(site.identity.countryAssignmentStatus, site.countryId ? 'IDENTIFIED' : 'UNRESOLVED_COUNTRY_IDENTITY');
+    const internationalWaters = site.identity?.countryAssignmentStatus === 'INTERNATIONAL_WATERS';
+    assert.equal(site.identity.countryAssignmentStatus, site.countryId ? 'IDENTIFIED' : (internationalWaters ? 'INTERNATIONAL_WATERS' : 'UNRESOLVED_COUNTRY_IDENTITY'));
     if (site.coordinates) {
       assert.ok(Number.isFinite(site.coordinates.lat) && Number.isFinite(site.coordinates.lng), site.siteId+' must have valid coordinates');
       assert.ok(site.coordinates.lat >= -90 && site.coordinates.lat <= 90 && site.coordinates.lng >= -180 && site.coordinates.lng <= 180, site.siteId+' coordinate range');
@@ -29,7 +30,8 @@ test('global mineral catalogue contains many independently identified deposits a
       assert.equal(site.location?.coordinateStatus, 'MISSING_UPSTREAM_COORDINATES');
       assert.match(site.operation?.extractionEligibility || '', /BLOCKED_MISSING_COORDINATES|BLOCKED_MISSING_COORDINATES|BLOCKED_UNRESOLVED_COUNTRY_IDENTITY|BLOCKED_INCOMPLETE_SOURCE_IDENTITY/);
     }
-    if (!site.countryId) assert.equal(site.operation?.extractionEligibility, 'BLOCKED_UNRESOLVED_COUNTRY_IDENTITY');
+    if (!site.countryId && internationalWaters) assert.equal(site.operation?.extractionEligibility, 'BLOCKED_INTERNATIONAL_WATERS_NO_SOVEREIGN_GAME_OWNER');
+    else if (!site.countryId) assert.equal(site.operation?.extractionEligibility, 'BLOCKED_UNRESOLVED_COUNTRY_IDENTITY');
     assert.equal(site.operation?.commercialExtraction, false, 'historical mineral occurrences must not be promoted to executable mines');
     assert.ok(site.sourceSiteRecord?.sourceDataset, site.siteId+' needs provenance');
   }
@@ -50,12 +52,16 @@ test('global oil/gas field and coal-mine catalog has broad country coverage and 
   assert.equal(catalog.unresolvedCounts.siteRecordsWithoutCoordinates, catalog.sites.filter(site => !site.coordinates).length);
   for (const site of catalog.sites) {
     assert.ok(site.siteId && site.siteName && site.identity?.resourceTypeId);
-    assert.equal(site.identity.countryAssignmentStatus, site.countryId ? 'IDENTIFIED' : 'UNRESOLVED_COUNTRY_IDENTITY');
-    if (!site.countryId) {
+    const internationalWaters = site.identity?.countryAssignmentStatus === 'INTERNATIONAL_WATERS';
+    assert.equal(site.identity.countryAssignmentStatus, site.countryId ? 'IDENTIFIED' : (internationalWaters ? 'INTERNATIONAL_WATERS' : 'UNRESOLVED_COUNTRY_IDENTITY'));
+    if (!site.countryId && internationalWaters) {
+      assert.equal(site.operation?.commercialExtraction, false);
+      assert.equal(site.operation?.extractionEligibility, 'BLOCKED_INTERNATIONAL_WATERS_NO_SOVEREIGN_GAME_OWNER');
+    } else if (!site.countryId) {
       assert.equal(site.operation?.commercialExtraction, false);
       assert.equal(site.operation?.extractionEligibility, 'BLOCKED_UNRESOLVED_COUNTRY_IDENTITY');
     } else if (!site.coordinates) {
-      assert.equal(site.location?.coordinateStatus, 'MISSING_UPSTREAM_COORDINATES');
+      assert.ok(['MISSING_UPSTREAM_COORDINATES','REJECTED_COUNTRY_GEOMETRY_MISMATCH'].includes(site.location?.coordinateStatus));
       assert.equal(site.operation?.commercialExtraction, false, 'unlocated site must not run as an executable extraction point');
       assert.equal(site.operation?.extractionEligibility, 'BLOCKED_MISSING_COORDINATES');
     } else {
@@ -80,7 +86,9 @@ test('research-backed coal identity overrides resolve known missing country and 
     ['Santa Maria Coal Mine', 'ESP'],
     ['Sierra de Arcos Coal Mine', 'ESP'],
     ['Panian Coal Mine', 'PHL'],
-    ['Sibovc Coal Mine', 'SRB']
+    ['Sibovc Coal Mine', 'SRB'],
+    ['Konyukhtinskaya-South Coal Mine', 'RUS'],
+    ['Morningstar', 'USA']
   ]) {
     const site = byName.get(key(name));
     assert.ok(site, 'expected individually identified source site: '+name);
@@ -88,12 +96,15 @@ test('research-backed coal identity overrides resolve known missing country and 
     assert.ok(site.identity?.countryAssignmentMethod, name+' must disclose the assignment method');
   }
   const anglesea = byName.get(key('Anglesea Coal Mine'));
-  assert.equal(anglesea.location.coordinateStatus, 'WEB_RESEARCHED_SITE_POINT');
-  assert.ok(Math.abs(anglesea.coordinates.lat - (-38.39835)) < 0.001);
+  assert.equal(anglesea.location.coordinateStatus, 'Exact', 'prefer the source-reported exact point over a fallback geocoding point');
+  assert.ok(Math.abs(anglesea.coordinates.lat - (-38.39175093)) < 0.001);
+  assert.equal(catalog.sites.filter(site => key(site.siteName) === key('Anglesea Coal Mine')).length, 1, 'active/closed CSV duplicates must merge into one site identity');
   const miVina = byName.get(key('Mi Viña Coal Mine'));
-  assert.equal(miVina.location.coordinateStatus, 'OFFICIAL_MINE_AREA_CENTROID_APPROXIMATE');
-  assert.ok(Math.abs(miVina.coordinates.lat - 40.8343215) < 0.001);
-  assert.equal(miVina.identity.countryAssignmentEvidenceUrl, 'https://www.boe.es/diario_boe/txt.php?id=BOE-B-2022-37429');
+  assert.equal(miVina.location.coordinateStatus, 'Approximate', 'preserve the source mine point when available');
+  assert.ok(Math.abs(miVina.coordinates.lat - 40.8582068657) < 0.001);
+  assert.ok((miVina.sourceSiteRecord.additionalCoordinateEvidence || []).some(evidence => evidence.coordinateSourceUrl === 'https://www.boe.es/diario_boe/txt.php?id=BOE-B-2022-37429'), 'official mine-area centroid must remain auditable as alternate coordinate evidence');
+  assert.equal(catalog.sites.filter(site => key(site.siteName) === key('Morningstar')).length, 1, 'duplicate name rows must merge after province-based identity resolution');
+  assert.equal(catalog.unresolvedCounts.siteRecordsWithoutCountry, 0, 'province and source-name evidence should resolve the remaining country identities');
   const sibovc = byName.get(key('Sibovc Coal Mine'));
   assert.equal(sibovc.identity.sourceReportedJurisdiction, 'Kosovo');
   assert.equal(sibovc.identity.jurisdictionCountryId, 'XKX');
