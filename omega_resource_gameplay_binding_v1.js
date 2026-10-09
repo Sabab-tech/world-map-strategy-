@@ -268,7 +268,7 @@ function addMapMarkers(){
    const key=Math.floor(point.x/34)+':'+Math.floor(point.y/34);
    group=gridGroups.get(key);if(!group){group=[];gridGroups.set(key,group);}
   }else{
-   group=[...collisionGroupBySite.values()].find(items=>items.some(item=>Math.hypot(item.point.x-point.x,item.point.y-point.y)<30);
+   group=[...collisionGroupBySite.values()].find(items=>items.some(item=>Math.hypot(item.point.x-point.x,item.point.y-point.y)<30));
    if(!group)group=[];
   }
   group.push({site,point});collisionGroupBySite.set(site.siteId,group);
