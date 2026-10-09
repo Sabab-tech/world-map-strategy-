@@ -51,4 +51,7 @@ test('resource map loads global mineral, energy and coal catalogs and keeps all 
   assert.match(binding, /clusterMode=visibleSites\.length>1200/);
   assert.match(binding, /bounds\.contains\(\[lat,lng\]\)/);
   assert.match(binding, /startsWith\('GLOBAL_'\)/);
+  assert.match(binding, /btn\.textContent='GLOBAL RESOURCE SITES'/);
+  assert.match(binding, /position:fixed;left:12px;bottom:18px;z-index:1000001/);
+  assert.match(binding, /id="omega-individual-search" type="search"/);
 });
