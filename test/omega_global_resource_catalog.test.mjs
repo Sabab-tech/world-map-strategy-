@@ -67,6 +67,41 @@ test('global oil/gas field and coal-mine catalog has broad country coverage and 
   }
 });
 
+
+test('research-backed coal identity overrides resolve known missing country and coordinate fields', () => {
+  const catalog = JSON.parse(read('resource_site_global_energy_catalog_v1.json'));
+  const key = value => String(value || '').normalize('NFKD').replace(/[\\u0300-\\u036f]/g, '').replace(/[^a-zA-Z0-9]+/g, ' ').trim().toUpperCase();
+  const byName = new Map(catalog.sites.map(site => [key(site.siteName), site]));
+  for (const [name, countryId] of [
+    ['Anglesea Coal Mine', 'AUS'],
+    ['Charleston Coal Mine', 'NZL'],
+    ['Knox Creek Jawbone Mine', 'USA'],
+    ['Mi Viña Coal Mine', 'ESP'],
+    ['Santa Maria Coal Mine', 'ESP'],
+    ['Sierra de Arcos Coal Mine', 'ESP'],
+    ['Panian Coal Mine', 'PHL'],
+    ['Sibovc Coal Mine', 'SRB']
+  ]) {
+    const site = byName.get(key(name));
+    assert.ok(site, 'expected individually identified source site: '+name);
+    assert.equal(site.countryId, countryId, name+' must have its researched game-country mapping');
+    assert.ok(site.identity?.countryAssignmentMethod, name+' must disclose the assignment method');
+  }
+  const anglesea = byName.get(key('Anglesea Coal Mine'));
+  assert.equal(anglesea.location.coordinateStatus, 'WEB_RESEARCHED_SITE_POINT');
+  assert.ok(Math.abs(anglesea.coordinates.lat - (-38.39835)) < 0.001);
+  const miVina = byName.get(key('Mi Viña Coal Mine'));
+  assert.equal(miVina.location.coordinateStatus, 'OFFICIAL_MINE_AREA_CENTROID_APPROXIMATE');
+  assert.ok(Math.abs(miVina.coordinates.lat - 40.8343215) < 0.001);
+  assert.equal(miVina.identity.countryAssignmentEvidenceUrl, 'https://www.boe.es/diario_boe/txt.php?id=BOE-B-2022-37429');
+  const sibovc = byName.get(key('Sibovc Coal Mine'));
+  assert.equal(sibovc.identity.sourceReportedJurisdiction, 'Kosovo');
+  assert.equal(sibovc.identity.jurisdictionCountryId, 'XKX');
+  assert.equal(sibovc.identity.countryAssignmentMethod, 'DISPUTED_JURISDICTION_MAPPED_TO_EXISTING_GAME_PROFILE');
+  assert.ok(catalog.unresolvedCounts.siteRecordsWithoutCountry <= 2, 'only the two source-ambiguous sites should remain country-unresolved');
+  assert.ok(catalog.unresolvedCounts.siteRecordsWithoutCoordinates <= 2772, 'researched mine-area coordinates must reduce coordinate gaps without inventing locations');
+});
+
 test('resource map loads global catalogs and wires them into the execution pipeline', () => {
   const binding = read('omega_resource_gameplay_binding_v1.js');
   const endowment = read('omega_resource_endowment_runtime.js');
