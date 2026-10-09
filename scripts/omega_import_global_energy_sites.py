@@ -551,6 +551,10 @@ for csv_path, default_status in [(COAL_ACTIVE, "UNKNOWN"), (COAL_CLOSED, "CLOSED
                 site["location"]["coordinateCorrection"] = coordinate_sign_correction
                 site["sourceSiteRecord"]["sourceReportedCoordinates"] = raw_source_coordinates
                 site["provenance"]["coordinateCorrection"] = coordinate_sign_correction
+            if site["location"].get("coordinateStatus") == "SOURCE_COORDINATE_NEAR_COUNTRY_BORDER_REVIEW_REQUIRED":
+                site["operation"]["commercialExtraction"] = False
+                site["operation"]["extractionEligibility"] = "BLOCKED_COORDINATE_COUNTRY_BORDER_REVIEW"
+                site["location"]["coordinateReviewReason"] = "Source-reported country and coarse country geometry disagree near the boundary; coordinate is shown for review but cannot be commissioned for extraction yet"
             if coordinate_source_url:
                 site["location"]["coordinateSourceUrl"] = coordinate_source_url
                 site["provenance"]["coordinateSourceUrl"] = coordinate_source_url
