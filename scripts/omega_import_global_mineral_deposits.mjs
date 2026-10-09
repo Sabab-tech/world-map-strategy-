@@ -101,7 +101,7 @@ for (const row of rawRows) {
   if (!siteName || !rawCommodity) { rejectedIdentity++; continue; }
   const rid = resourceId(rawCommodity);
   const upstreamId = String(sourceIdOf(row) || '').trim();
-  const siteId = 'GLOBAL_DEP_' + (slug(upstreamId) || slug(siteName) + '_' + c.lat.toFixed(4) + '_' + c.lng.toFixed(4));
+  const siteId = 'GLOBAL_DEP_' + countryId + '_' + rid + '_' + (slug(upstreamId) || slug(siteName)) + '_' + c.lat.toFixed(4) + '_' + c.lng.toFixed(4);
   const key = [countryId,rid,c.lat.toFixed(4),c.lng.toFixed(4)].join('|');
   const record = {
     siteId, countryId, siteName,
