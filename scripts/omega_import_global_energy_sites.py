@@ -7,6 +7,7 @@ locally; it does not call these external sources at runtime.
 import csv
 import hashlib
 import json
+import math
 import re
 import sys
 import unicodedata
@@ -180,7 +181,7 @@ def country_from_coordinates(lat, lon):
     return matches[0] if len(set(matches)) == 1 else ""
 
 def point_segment_distance_degrees(lon, lat, a, b):
-    scale = max(0.01, __import__("math").cos(__import__("math").radians(lat)))
+    scale = max(0.01, math.cos(math.radians(lat)))
     x1, y1 = (a[0] - lon) * scale, a[1] - lat
     x2, y2 = (b[0] - lon) * scale, b[1] - lat
     dx, dy = x2 - x1, y2 - y1
@@ -189,7 +190,7 @@ def point_segment_distance_degrees(lon, lat, a, b):
     return ((x1 + t * dx) ** 2 + (y1 + t * dy) ** 2) ** 0.5
 
 def nearest_country_within(lat, lon, max_degrees=0.15):
-    scale = max(0.01, __import__("math").cos(__import__("math").radians(lat)))
+    scale = max(0.01, math.cos(math.radians(lat)))
     candidates = []
     for cid, geometry_type, coords, bbox in country_features:
         min_lon, min_lat, max_lon, max_lat = bbox
@@ -395,6 +396,14 @@ for csv_path, default_status in [(COAL_ACTIVE, "UNKNOWN"), (COAL_CLOSED, "CLOSED
             lat, lon = coordinate_pair(first(row.get("Latitude"), row.get("latitude")), first(row.get("Longitude"), row.get("longitude")))
             coordinate_accuracy = first(row.get("Location Accuracy"), row.get("Location accuracy"), "UPSTREAM_COORDINATE_NOT_INDEPENDENTLY_VALIDATED")
             coordinate_source_url = None
+            source_latitude_value = first(row.get("Latitude"), row.get("latitude"))
+            source_longitude_value = first(row.get("Longitude"), row.get("longitude"))
+            source_coordinates_before_correction = {"latitudeField": str(source_latitude_value), "longitudeField": str(source_longitude_value)}
+            coordinate_order_corrected = False
+            if lat is not None and lon is not None and not (-90 <= lat <= 90) and -90 <= lon <= 90 and -180 <= lat <= 180:
+                lat, lon = lon, lat
+                coordinate_order_corrected = True
+                coordinate_accuracy = "SOURCE_LAT_LON_ORDER_CORRECTED_EXACT" if norm(coordinate_accuracy) == "EXACT" else "SOURCE_LAT_LON_ORDER_CORRECTED"
             if lat is None or lon is None or not (-90 <= lat <= 90 and -180 <= lon <= 180):
                 if coordinate_override:
                     lat, lon, coordinate_accuracy, coordinate_source_url = coordinate_override
@@ -470,6 +479,10 @@ for csv_path, default_status in [(COAL_ACTIVE, "UNKNOWN"), (COAL_CLOSED, "CLOSED
                 site["identity"].update({"sourceReportedJurisdiction":"Kosovo","jurisdictionType":"DISPUTED_TERRITORY","jurisdictionCountryId":"XKX","jurisdictionAuthority":"Source identifies Kosovo; OMEGA currently routes this site through its existing SRB game profile"})
                 site["sourceSiteRecord"]["sourceReportedJurisdiction"] = "Kosovo"
                 site["provenance"]["countryAssignmentMethod"] = "DISPUTED_JURISDICTION_MAPPED_TO_EXISTING_GAME_PROFILE"
+            if coordinate_order_corrected:
+                site["location"]["coordinateCorrection"] = "SOURCE_LAT_LON_ORDER_CORRECTED_BY_VALID_GEOGRAPHIC_RANGES"
+                site["sourceSiteRecord"]["sourceCoordinateFieldsBeforeCorrection"] = source_coordinates_before_correction
+                site["provenance"]["coordinateCorrection"] = "SOURCE_LAT_LON_ORDER_CORRECTED_BY_VALID_GEOGRAPHIC_RANGES"
             if coordinate_source_url:
                 site["location"]["coordinateSourceUrl"] = coordinate_source_url
                 site["provenance"]["coordinateSourceUrl"] = coordinate_source_url
