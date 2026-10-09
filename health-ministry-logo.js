@@ -10,7 +10,7 @@
         img.src = LOGO_SRC;
         img.alt = 'Health Ministry';
         img.draggable = false;
-        Object.assign(img.style, { width:'100%', height:'100%', maxWidth:'100%', maxHeight:'100%', objectFit:'cover', display:'block', borderRadius:'8px', margin:'0', padding:'0', pointerEvents:'none' });
+        Object.assign(img.style, { width:'100%', height:'100%', maxWidth:'100%', maxHeight:'100%', objectFit:'contain', objectPosition:'center', boxSizing:'border-box', display:'block', borderRadius:'0', margin:'0', padding:'0', pointerEvents:'none' });
         img.setAttribute('aria-hidden', 'true');
         return img;
     };
