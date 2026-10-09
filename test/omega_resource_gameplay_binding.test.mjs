@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 
@@ -71,6 +72,147 @@ test('individual site map markers use resource-specific catalog glyphs and acces
   assert.match(binding, /resourceCatalog\.find/);
   assert.match(binding, /siteName\|\|s\.siteId/);
   assert.match(binding, /siteCount:sites\.length/);
+  assert.match(binding, /discoverSourceSites/,'raw resource JSONs must be scanned for individual site records');
+  assert.match(binding, /resources\.json/,'primary resource JSON must feed the global site map');
+  assert.match(binding, /resources_2\.json/,'secondary resource JSON must feed the global site map');
+  assert.match(binding, /SITE_COLLECTION_KEY/,'site discovery must identify mine, oil, gas, quarry and resource-site collections');
+  assert.match(binding, /scheduleMarkerRender/,'site markers must retry when the map layer initializes late');
+  assert.doesNotMatch(binding, /catalog\.sites\.length!==199\|\|!Array\.isArray\(master\.sites\)\|\|master\.sites\.length!==199/,
+    'global map must not hard-stop at the old 199-site catalog size');
   assert.match(css, /\.omega-individual-site-marker span/);
   assert.match(css, /var\(--site-color/);
+});
+
+
+test('global map source data preserves every coordinate-backed mine site and runtime deposit', () => {
+  const sources = ['resources.json', 'resources_2.json'].map(file => JSON.parse(read(file)));
+  const mineSites = sources.flatMap(data =>
+    Object.values(data.GSRSK_Master_CountryProfiles_v14?.countryProfiles || {})
+      .flatMap(profile => profile.resource_infrastructure_context?.mineSites || [])
+  );
+  const deposits = sources.flatMap(data => data.runtime_deposits || []);
+  const ids = mineSites.map(site => site.siteId || site.id);
+  const depositIds = deposits.map(site => site.siteId || site.id);
+  assert.equal(mineSites.length, 199, 'both raw resource JSON files contain 199 distinct mine/site records');
+  assert.equal(new Set(ids).size, 199, 'mine/site source IDs must be unique across both files');
+  assert.equal(deposits.length, 43, 'both raw resource JSON files contain 43 individually identified runtime deposits');
+  assert.equal(new Set(depositIds).size, 43, 'runtime deposit IDs must be unique');
+  const validCoordinates = site => {
+    const lat = Number(site.lat ?? site.coordinates?.lat ?? site.location?.coordinates?.lat);
+    const lng = Number(site.lng ?? site.lon ?? site.coordinates?.lng ?? site.location?.coordinates?.lng);
+    return Number.isFinite(lat) && lat >= -90 && lat <= 90 &&
+      Number.isFinite(lng) && lng >= -180 && lng <= 180;
+  };
+  assert.ok(mineSites.every(validCoordinates), 'every source mine/site must have usable coordinates');
+  assert.ok(deposits.every(validCoordinates), 'every runtime deposit must have usable coordinates');
+  assert.match(read('omega_resource_gameplay_binding_v1.js'), /raw\.resId/,
+    'runtime deposits using the source schema resId field must resolve their commodity');
+  assert.match(read('omega_resource_gameplay_binding_v1.js'), /sourceDepositRecords/,
+    'an explicit deposit record at an already mapped physical site must be joined instead of stacked as a duplicate marker');
+  const countryCounts = [...mineSites, ...deposits].reduce((counts, site) => {
+    const country = site.countryId || site.countryCode || site.country;
+    counts[country] = (counts[country] || 0) + 1;
+    return counts;
+  }, {});
+  assert.ok(countryCounts.BGD >= 4, 'Bangladesh mine and multiple oil/gas/coal deposit records must remain individually discoverable');
+  assert.ok(countryCounts.CHN > 1 && countryCounts.CHL > 1 && countryCounts.USA > 1,
+    'global source discovery must include multiple distinct records outside Bangladesh');
+  const physicalKeys = new Set([...mineSites, ...deposits].map(site => {
+    const country = site.countryId || site.countryCode || site.country;
+    const resource = String(site.resourceId || site.resourceTypeId || site.resourceTypeKey || site.resId || '').toLowerCase();
+    const lat = Number(site.lat ?? site.coordinates?.lat ?? site.location?.coordinates?.lat).toFixed(4);
+    const lng = Number(site.lng ?? site.lon ?? site.coordinates?.lng ?? site.location?.coordinates?.lng).toFixed(4);
+    return [country, resource, lat, lng].join('|');
+  }));
+  assert.equal(physicalKeys.size, 239,
+    '199 mine-site records plus 43 deposit records resolve to 239 distinct country/resource/coordinate locations after 3 exact duplicate joins');
+  const binding = read('omega_resource_gameplay_binding_v1.js');
+  assert.match(binding, /scope!=='WORLD'/, 'nation scope must not display sites from every country');
+  assert.match(binding, /resourceState\.selectedResources/, 'individual markers must follow the resource filter');
+  assert.match(binding, /toggleResourceChip/, 'resource filter changes must refresh individual markers');
+});
+
+
+test('runtime renders all global sites and applies nation/resource scope without country averages', async () => {
+  const rawSources = {
+    'resources.json': JSON.parse(read('resources.json')),
+    'resources_2.json': JSON.parse(read('resources_2.json')),
+    'resource_site_canonical_catalog_v1.json': catalog,
+    'resource_site_master_registry_v1.json': master
+  };
+  const events = new Map();
+  const nodes = new Map();
+  const makeNode = () => ({
+    style: {}, dataset: {}, classList: { add(){}, remove(){}, toggle(){} },
+    addEventListener(){}, appendChild(){}, setAttribute(){}, replaceChildren(){},
+    querySelector(selector){ return nodeFor(selector); }, value:'', innerHTML:'', textContent:''
+  });
+  const nodeFor = selector => {
+    if (!nodes.has(selector)) nodes.set(selector, makeNode());
+    return nodes.get(selector);
+  };
+  const layers = new Set();
+  const map = {
+    hasLayer(layer){ return layers.has(layer); },
+    removeLayer(layer){ layers.delete(layer); },
+    setView(){}, getZoom(){ return 4; },
+    whenReady(callback){ callback(); }
+  };
+  const resourceCatalog = [
+    {id:'coal',icon:'CO',color:'#8b98a8'},
+    {id:'crude_oil',icon:'OIL',color:'#c9a96e'},
+    {id:'natural_gas',icon:'NG',color:'#76b7d8'},
+    {id:'gold',icon:'Au',color:'#d0b46a'},
+    {id:'nickel',icon:'Ni',color:'#8ab4a5'},
+    {id:'copper',icon:'Cu',color:'#c68c68'},
+    {id:'phosphate',icon:'P',color:'#b6b87a'}
+  ];
+  const context = {
+    console:{log(){},warn(){},error(){}},
+    document:{
+      body:{appendChild(){}},
+      getElementById(){ return null; },
+      createElement(){ return makeNode(); }
+    },
+    Game:{currentActiveCountry:'',Map:{map,resourceCatalog,resourceState:{enabled:true,scope:'WORLD',selectedResources:new Set(['all'])}}},
+    CountryIOS:{activeCountry:''},
+    L:{
+      layerGroup(){ return {markers:[],addTo(){layers.add(this);return this;}}; },
+      divIcon(options){ return options; },
+      marker(latlng,options){ return {latlng,options,bindTooltip(){return this;},on(){return this;},addTo(layer){layer.markers.push(this);return this;}}; }
+    },
+    fetch:async url=>({ok:true,json:async()=>rawSources[url]}),
+    setTimeout(callback){ queueMicrotask(callback); return 1; },
+    addEventListener(name,callback){ events.set(name,callback); },
+    dispatchEvent(){},
+    CustomEvent:class { constructor(name,options){this.type=name;this.detail=options?.detail;} },
+    Omega:{}
+  };
+  context.window = context;
+  vm.createContext(context);
+  context.Game.Map.resourceState.selectedResources = vm.runInContext("new Set(['all'])",context);
+  vm.runInContext(binding,context,{filename:'omega_resource_gameplay_binding_v1.js',timeout:3000});
+  events.get('OMEGA_READY')();
+  await new Promise(resolve => setImmediate(resolve));
+  await new Promise(resolve => setImmediate(resolve));
+
+  const diagnostics = context.Omega.IndividualResourceSiteBinding?.diagnostics();
+  assert.equal(diagnostics?.status,'READY','global source registry must initialize');
+  assert.equal(diagnostics?.siteCount,239,'199 mine sites + 43 deposits - 3 exact physical duplicates must yield 239 site markers');
+  const markerCount = () => [...layers].reduce((sum,layer)=>sum+layer.markers.length,0);
+  assert.equal(markerCount(),239,'WORLD scope must render all 239 distinct resource locations');
+  context.Game.Map.resourceState.scope='NATION';
+  context.Game.currentActiveCountry='BGD';
+  context.Omega.IndividualResourceSiteBinding.refresh();
+  assert.equal(markerCount(),4,'Bangladesh scope must show its four distinct physical resource locations, not all countries');
+  context.Game.Map.resourceState.selectedResources=vm.runInContext("new Set(['coal'])",context);
+  context.Omega.IndividualResourceSiteBinding.refresh();
+  assert.equal(markerCount(),1,'Bangladesh coal filter must show only the coal site');
+  context.Game.Map.resourceState.selectedResources=vm.runInContext('new Set()',context);
+  context.Omega.IndividualResourceSiteBinding.refresh();
+  assert.equal(markerCount(),4,'clearing the resource filter must restore every site in the selected country');
+  context.Game.Map.resourceState.scope='WORLD';
+  context.Game.Map.resourceState.selectedResources=vm.runInContext("new Set(['coal'])",context);
+  context.Omega.IndividualResourceSiteBinding.refresh();
+  assert.ok(markerCount()>0 && markerCount()<239,'resource filter must narrow the global site markers');
 });
