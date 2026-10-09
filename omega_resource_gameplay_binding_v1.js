@@ -480,7 +480,6 @@ async function init(){
    const sourceRecordCounts=sources.reduce((counts,source)=>{
      if(source.url==='resource_site_global_deposit_catalog_v1.json')counts.globalMineralDeposits=Array.isArray(source.data?.sites)?source.data.sites.length:0;
      if(source.url==='resource_site_global_energy_catalog_v1.json')counts.globalEnergySites=Array.isArray(source.data?.sites)?source.data.sites.length:0;
-     if(source.url==='resource_site_global_deposit_catalog_v1.json')counts.globalMineralDeposits=Array.isArray(source.data?.sites)?source.data.sites.length:0;
     if(source.url==='resources.json'||source.url==='resources_2.json'){
      const profiles=source.data?.GSRSK_Master_CountryProfiles_v14?.countryProfiles||{};
      counts.mineSites+=Object.values(profiles).reduce((sum,profile)=>sum+(Array.isArray(profile?.resource_infrastructure_context?.mineSites)?profile.resource_infrastructure_context.mineSites.length:0),0);
