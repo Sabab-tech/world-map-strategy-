@@ -36,14 +36,24 @@ function setSelected(id){
 }
 function addMapMarkers(){
  const map=g.Game?.Map?.map||g.map,L=g.L;
- if(!map||!L||typeof L.circleMarker!=='function')return;
+ if(!map||!L||typeof L.marker!=='function'||typeof L.divIcon!=='function')return;
  if(markerLayer&&map.hasLayer?.(markerLayer))map.removeLayer(markerLayer);
  markerLayer=L.layerGroup();
  for(const s of sites){
   const c=s.coordinates||s.location?.coordinates||{},lat=Number(c.lat),lng=Number(c.lng);
   if(!Number.isFinite(lat)||!Number.isFinite(lng))continue;
-  const m=L.circleMarker([lat,lng],{radius:5,color:'#d6b76c',weight:1,fillColor:'#e6c878',fillOpacity:.85});
-  m.bindTooltip?.(String(s.siteName||s.siteId));
+  const resourceId=String(s.real?.resourceId||s.sourceSiteRecord?.resourceId||s.identity?.resourceTypeId||'').toLowerCase();
+  const resourceCatalog=g.Game?.Map?.resourceCatalog||g.Game?.resourceCatalog||[];
+  const resource=resourceCatalog.find(r=>String(r.id||'').toLowerCase()===resourceId);
+  const glyph=String(resource?.icon||resourceId.slice(0,2).toUpperCase()||'RS').replace(/[<>&"]/g,'');
+  const color=/^#[0-9a-f]{6}$/i.test(resource?.color||'')?resource.color:'#76b7d8';
+  const icon=L.divIcon({
+   className:'omega-individual-site-marker',
+   html:'<span style="--site-color:'+color+'">'+esc(glyph)+'</span>',
+   iconSize:[26,26],iconAnchor:[13,13],tooltipAnchor:[0,-12]
+  });
+  const m=L.marker([lat,lng],{icon,title:String(s.siteName||s.siteId),keyboard:true,alt:String(s.siteName||s.siteId)});
+  m.bindTooltip?.(String(s.siteName||s.siteId)+' · '+s.countryId+' · '+resourceId,{direction:'top',sticky:true});
   m.on('click',()=>setSelected(s.siteId));m.addTo(markerLayer);
  }
  markerLayer.addTo(map);
