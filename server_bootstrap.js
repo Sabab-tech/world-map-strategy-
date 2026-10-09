@@ -124,6 +124,7 @@ const CANONICAL_AI_SCRIPTS = Object.freeze([
   'omega_resource_logistics_runtime_v1.js',
   'omega_resource_economy_runtime_v2.js',
   'omega_resource_industrial_network_v1.js',
+  'omega_resource_strategic_logistics_v1.js',
   'omega_resource_individual_route_guard_v1.js',
   'omega_resource_authoritative_adapter.js',
   'omega_resource_action_execution_runtime.js',
