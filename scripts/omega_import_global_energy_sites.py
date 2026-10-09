@@ -24,7 +24,7 @@ WORLD = json.loads((ROOT / "world.json").read_text(encoding="utf-8"))
 def norm(value):
     value = unicodedata.normalize("NFKD", str(value or ""))
     value = "".join(c for c in value if not unicodedata.combining(c))
-    return re.sub(r"\\s+", " ", re.sub(r"[^a-zA-Z0-9]+", " ", value)).strip().upper()
+    return re.sub(r"\s+", " ", re.sub(r"[^a-zA-Z0-9]+", " ", value)).strip().upper()
 
 def slug(value):
     value = unicodedata.normalize("NFKD", str(value or ""))
