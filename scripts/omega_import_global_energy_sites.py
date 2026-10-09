@@ -267,7 +267,7 @@ def coal_site_quality(site):
     if coords:
         quality += 100
         accuracy = norm((site.get("location") or {}).get("coordinateStatus"))
-        if accuracy == "EXACT":
+        if accuracy == "EXACT" or "CORRECTED EXACT" in accuracy:
             quality += 35
         elif accuracy == "APPROXIMATE":
             quality += 20
@@ -425,6 +425,17 @@ for csv_path, default_status in [(COAL_ACTIVE, "UNKNOWN"), (COAL_CLOSED, "CLOSED
                 cid, country_method, country_evidence_url = country_override
                 unresolved["coal_country_resolved_from_research"] += 1
             point_country = country_from_coordinates(lat, lon) if lat is not None and lon is not None else ""
+            if lat is not None and lon is not None and -90 <= lat <= 90 and -180 <= lon <= 180:
+                swapped_point_country = country_from_coordinates(lon, lat) if -90 <= lon <= 90 and -180 <= lat <= 180 else ""
+                if (cid and point_country and point_country != cid and swapped_point_country == cid) or (not cid and not point_country and swapped_point_country):
+                    lat, lon = lon, lat
+                    point_country = swapped_point_country
+                    coordinate_order_corrected = True
+                    coordinate_accuracy = "SOURCE_LAT_LON_ORDER_CORRECTED_BY_COUNTRY_GEOMETRY"
+                    if not cid:
+                        cid = swapped_point_country
+                        country_method = "SOURCE_LAT_LON_ORDER_CORRECTED_BY_COUNTRY_GEOMETRY"
+                        unresolved["coal_country_inferred_from_coordinates"] += 1
             if not cid and point_country:
                 cid = point_country
                 country_method = "POINT_IN_COUNTRY_POLYGON"
