@@ -7,6 +7,7 @@ const read = p => fs.readFileSync(new URL('../'+p, import.meta.url), 'utf8');
 const catalog=JSON.parse(read('resource_site_canonical_catalog_v1.json'));
 const master=JSON.parse(read('resource_site_master_registry_v1.json'));
 const reserves=JSON.parse(read('resource_site_reserve_simulation_v1.json'));
+const expansion=JSON.parse(read('resource_site_country_expansion_v1.json'));
 const index=read('index.html');
 const binding=read('omega_resource_gameplay_binding_v1.js');
 const scenarioSource=read('omega_resource_scenario_engineering_data_v1.js');
@@ -41,6 +42,7 @@ const runtimeContext={
  Game:{state:{simulation:{turn:1,startYear:2015,date:'2015-01-01',daysPerTurn:30},resource:{},economy:{},transport:{}}},
  OmegaResourceSiteMasterResearchData:master,
  OmegaResourceSiteReserveSimulationData:reserves,
+  OmegaResourceSiteCountryExpansionData:expansion,
  OmegaResourceIndustrialCatalogData:JSON.parse(read('resource_industrial_catalog_v1.json')),
  OmegaMinistryInteroperability:{registerAction(){},registerCommandHandler(){},dispatchCommand(){return {status:'COMMITTED',records:[]}},emitEvent(){return true}},
  Omega:{}
@@ -59,8 +61,18 @@ assert.equal(plan.siteId,'SITE_BGD_barapukuria_coal_mine','runtime must retain e
 assert.equal(plan.countryId,'BGD','runtime must retain the site country');
 assert.equal(plan.method,'UNDERGROUND_LONGWALL','site-specific extraction method must normalize to the engineering catalog key');
 
+const expandedSite=expansion.records.find(s=>s.siteId==='SITE_CHL_escondida_copper_mine');
+assert.ok(expandedSite,'expansion catalog must include a named site with individual identity');
+const expandedPlan=liveApi.planExtraction({countryId:expandedSite.countryId,siteId:expandedSite.siteId,resourceId:expandedSite.identity.resourceTypeId});
+assert.equal(expandedPlan.status,'PLANNED','new expansion site must resolve through the same industrial extraction planner');
+assert.equal(expandedPlan.siteId,expandedSite.siteId,'expansion plan must retain exact individual site ID');
+assert.equal(expandedPlan.countryId,expandedSite.countryId,'expansion plan must preserve country isolation');
+assert.equal(expandedPlan.warehouseCountryId,expandedSite.countryId,'expansion extraction must bind to its own country warehouse');
+
+
 console.log('OMEGA INDIVIDUAL RESOURCE GAMEPLAY BINDING TEST PASSED');
-console.log('Canonical/master/reserve/scenario site identities: 199/199');
+console.log('Canonical/master/reserve/scenario base site identities: 199/199');
+console.log('Expansion sites resolved by existing extraction planner: PASS');
 console.log('Unique site IDs and exact per-site catalog joins: PASS');
 console.log('Playable index wiring + individual selection + extraction API binding: PASS');
 console.log('Actual master-registry -> realism/hardening -> industrial runtime extraction plan: PASS');
