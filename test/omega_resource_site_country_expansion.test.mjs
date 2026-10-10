@@ -11,9 +11,9 @@ const mapBinding = read('omega_resource_gameplay_binding_v1.js');
 assert.equal(base.siteCount, 199, 'base canonical catalog remains unchanged');
 assert.equal(base.sites.length, 199, 'base canonical rows remain unchanged');
 assert.equal(expansion.datasetId, 'OMEGA_RESOURCE_SITE_COUNTRY_EXPANSION_V1');
-assert.equal(expansion.siteCount, 34);
-assert.equal(expansion.records.length, 34);
-assert.equal(new Set(expansion.records.map(s => s.siteId)).size, 34, 'expansion site IDs unique');
+assert.equal(expansion.siteCount, 35);
+assert.equal(expansion.records.length, 35);
+assert.equal(new Set(expansion.records.map(s => s.siteId)).size, 35, 'expansion site IDs unique');
 const baseIds = new Set(base.sites.map(s => s.siteId));
 const baseNames = new Set(base.sites.map(s => s.siteName.toLowerCase()));
 const countries = new Set();
@@ -59,4 +59,4 @@ test('country site expansion keeps observed data separate from gameplay simulati
     if (site.quantitative.purity.status === 'UNOBSERVED') assert.equal(site.quantitative.purity.value, null);
   }
 });
-console.log('OMEGA COUNTRY SITE EXPANSION CERTIFICATE PASSED: 34 additive sites (12 tranche-2 + 6 tranche-3 records); 199-site base preserved.');
+console.log('OMEGA COUNTRY SITE EXPANSION CERTIFICATE PASSED: 35 additive sites (12 tranche-2 + 7 tranche-3 records); 199-site base preserved.');
