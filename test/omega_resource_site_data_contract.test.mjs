@@ -30,6 +30,9 @@ assert.match(runtime, /function normalizeSiteQuantitative\(row\)/);
 assert.match(runtime, /const normalizedRows=rows\.map\(normalizeSiteRecord\)/);
 assert.match(runtime, /g\.OmegaResourceSiteDataContract=/);
 assert.match(network, /quantitative:clone\(row\?\.quantitative\|\|\{\}\)/);
+assert.match(network, /function quantitativeEngineAdapter\(site, quantitative\)/);
+assert.match(network, /productionModel\.productionRate=dailyRate/);
+assert.match(network, /observedStatus\(p\)&&perDay\(p\.unit\)/);
 assert.match(network, /distanceStatus:'UNOBSERVED'/);
 
 test('all canonical and expansion sites share a typed runtime contract without fabricated observations', () => {
