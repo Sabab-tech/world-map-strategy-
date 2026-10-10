@@ -30,6 +30,65 @@
   const siteExecutionRowsCache=new Map();
   let siteExecutionRowsCacheTurn=null;
   let mineSiteReferenceCacheYear=null;
+  let siteExpansionData=null,siteExpansionPromise=null;
+  const emptySiteExpansion=()=>({schemaVersion:'1.0.0',datasetId:'OMEGA_RESOURCE_SITE_EXPANSION_OPTIONAL',siteCount:0,sites:[],reserveRecords:[],scenarioRecords:[],evidenceRecords:[]});
+  async function loadSiteExpansionData(){
+    if(siteExpansionData)return siteExpansionData;
+    if(siteExpansionPromise)return siteExpansionPromise;
+    siteExpansionPromise=(async()=>{
+      try{
+        let data=g.OmegaResourceSiteExpansionData||g.Omega?.ResourceSiteExpansionData||null;
+        if(!data){
+          const res=await fetch('resource_site_expansion_batch_chn_v1.json',{cache:'no-store'});
+          if(!res?.ok){siteExpansionData={...emptySiteExpansion(),loadStatus:'OPTIONAL_FILE_NOT_AVAILABLE'};return siteExpansionData;}
+          data=await res.json();
+        }
+        const sites=Array.isArray(data?.sites)?data.sites:[];
+        const reserveRecords=Array.isArray(data?.reserveRecords)?data.reserveRecords:[];
+        const scenarioRecords=Array.isArray(data?.scenarioRecords)?data.scenarioRecords:[];
+        const evidenceRecords=Array.isArray(data?.evidenceRecords)?data.evidenceRecords:[];
+        const ids=new Set();
+        for(const row of sites){
+          const siteId=String(row?.siteId||'').trim();
+          const countryId=canonical(row?.countryId||row?.identity?.countryIso3||'');
+          const coords=row?.location?.coordinates||{};
+          if(!siteId||!countryId||!row?.identity?.resourceTypeId)throw new Error('RESOURCE_EXPANSION_SITE_IDENTITY_INVALID:'+siteId);
+          if(ids.has(siteId))throw new Error('RESOURCE_EXPANSION_DUPLICATE_SITE_ID:'+siteId);
+          if(!Number.isFinite(Number(coords.lat))||!Number.isFinite(Number(coords.lng))||Number(coords.lat)<-90||Number(coords.lat)>90||Number(coords.lng)<-180||Number(coords.lng)>180)throw new Error('RESOURCE_EXPANSION_COORDINATES_INVALID:'+siteId);
+          ids.add(siteId);
+        }
+        for(const key of ['reserveRecords','scenarioRecords','evidenceRecords']){
+          const idSet=new Set((({reserveRecords,scenarioRecords,evidenceRecords})[key]||[]).map(x=>String(x?.siteId||'').trim()).filter(Boolean));
+          for(const siteId of ids)if(!idSet.has(siteId))throw new Error('RESOURCE_EXPANSION_DATASET_IDENTITY_GAP:'+key+':'+siteId);
+        }
+        siteExpansionData={...data,sites,reserveRecords,scenarioRecords,evidenceRecords,loadStatus:'READY'};
+        g.OmegaResourceSiteExpansionData=siteExpansionData;
+        g.Omega=g.Omega||{};
+        g.Omega.ResourceSiteExpansionData=siteExpansionData;
+        const scenario=g.OmegaResourceScenarioEngineeringData||g.Omega?.ResourceScenarioEngineeringData;
+        if(scenario&&Array.isArray(scenario.records)){
+          const rows=scenario.records.slice(),seen=new Set(rows.map(x=>String(x?.siteId||'')+'|'+rid(x?.resourceId)));
+          for(const row of scenarioRecords){
+            const key=String(row?.siteId||'')+'|'+rid(row?.resourceId);
+            if(!row?.siteId||!row?.resourceId||seen.has(key))continue;
+            rows.push(clone(row));seen.add(key);
+          }
+          scenario.records=rows;
+          scenario.recordCount=rows.length;
+          scenario.expandedSiteCount=rows.length;
+          g.OmegaResourceScenarioEngineeringData=scenario;
+          g.Omega.ResourceScenarioEngineeringData=scenario;
+        }
+        return siteExpansionData;
+      }catch(e){
+        siteExpansionData={...emptySiteExpansion(),loadStatus:'FAILED',loadError:String(e?.message||e)};
+        g.OmegaResourceSiteExpansionData=siteExpansionData;
+        g.Omega=g.Omega||{};g.Omega.ResourceSiteExpansionData=siteExpansionData;
+        return siteExpansionData;
+      }finally{siteExpansionPromise=null;}
+    })();
+    return siteExpansionPromise;
+  }
   async function loadSimulationReserveData(){
     if(simulationReserveMap)return{status:'READY',count:Object.keys(simulationReserveMap).length,reused:true};
     if(simulationReservePromise)return simulationReservePromise;
@@ -42,15 +101,23 @@
           if(!res?.ok)throw new Error('RESOURCE_SITE_RESERVE_DATA_FETCH_FAILED');
           data=await res.json();
         }
-        const rows=Array.isArray(data?.records)?data.records:[];
+        const baseRows=Array.isArray(data?.records)?data.records:[];
+        const extension=await loadSiteExpansionData();
+        const merged=new Map(baseRows.filter(row=>row?.siteId).map(row=>[String(row.siteId)+'|'+rid(row.resourceId),clone(row)]));
+        for(const row of (extension.reserveRecords||[])){
+          const key=String(row?.siteId||'')+'|'+rid(row?.resourceId);
+          if(row?.siteId&&row?.resourceId&&!merged.has(key))merged.set(key,clone(row));
+        }
+        const rows=[...merged.values()];
+        data={...data,records:rows,siteCount:rows.length,commercialSiteCount:rows.filter(x=>x.commercialExtraction===true).length,notApplicableSiteCount:rows.filter(x=>x.commercialExtraction===false).length,expansionDataset:extension.datasetId||null};
         const map={};
         for(const row of rows)if(row?.siteId)map[String(row.siteId)]=clone(row);
         simulationReserveMap=map;
-        g.__OmegaResourceSiteReferenceCount=Number(data?.siteCount)||rows.length;
+        g.__OmegaResourceSiteReferenceCount=rows.length;
         g.OmegaResourceSiteReserveSimulationData=data;
         g.Omega=g.Omega||{};
         g.Omega.ResourceSiteReserveSimulationData=data;
-        return{status:'READY',count:rows.length,siteCount:Number(data?.siteCount)||rows.length};
+        return{status:'READY',count:rows.length,siteCount:rows.length,baseCount:baseRows.length,expansionCount:rows.length-baseRows.length};
       }catch(e){
         simulationReserveMap={};
         return{status:'FAILED',count:0,reason:String(e?.message||e)};
@@ -70,14 +137,19 @@
           if(!res?.ok)throw new Error('RESOURCE_SITE_CANONICAL_CATALOG_FETCH_FAILED');
           data=await res.json();
         }
-        const rows=Array.isArray(data?.sites)?data.sites:[];
+        const baseRows=Array.isArray(data?.sites)?data.sites:[];
+        const extension=await loadSiteExpansionData();
+        const merged=new Map(baseRows.filter(row=>row?.siteId).map(row=>[String(row.siteId),clone(row)]));
+        for(const row of (extension.sites||[]))if(row?.siteId&&!merged.has(String(row.siteId)))merged.set(String(row.siteId),clone(row));
+        const rows=[...merged.values()];
         const map={};
         for(const row of rows)if(row?.siteId)map[String(row.siteId)]=clone(row);
         canonicalSiteCatalogMap=map;
+        data={...data,sites:rows,siteCount:rows.length,expansionDataset:extension.datasetId||null};
         g.OmegaResourceSiteCanonicalCatalogData=data;
         g.Omega=g.Omega||{};
         g.Omega.ResourceSiteCanonicalCatalogData=data;
-        return{status:'READY',count:rows.length,siteCount:Number(data?.siteCount)||rows.length};
+        return{status:'READY',count:rows.length,siteCount:rows.length,baseCount:baseRows.length,expansionCount:rows.length-baseRows.length};
       }catch(e){
         canonicalSiteCatalogMap={};
         return{status:'FAILED',count:0,reason:String(e?.message||e)};
@@ -184,9 +256,16 @@
         const inline=g.OmegaResourceSiteResearchEvidenceData||g.Omega?.ResourceSiteResearchEvidenceData;
         let data=inline||null;
         if(!data){const res=await fetch('resource_site_research_evidence_v1.json',{cache:'no-store'});if(!res?.ok)throw new Error('RESOURCE_SITE_RESEARCH_EVIDENCE_FETCH_FAILED');data=await res.json();}
-        const rows=Array.isArray(data?.records)?data.records:[],map={};for(const row of rows)if(row?.siteId)map[String(row.siteId)]=clone(row);
-        researchEvidenceMap=map;g.OmegaResourceSiteResearchEvidenceData=data;g.Omega=g.Omega||{};g.Omega.ResourceSiteResearchEvidenceData=data;
-        return{status:'READY',count:rows.length};
+        const baseRows=Array.isArray(data?.records)?data.records:[];
+        const extension=await loadSiteExpansionData();
+        const merged=new Map(baseRows.filter(row=>row?.siteId).map(row=>[String(row.siteId),clone(row)]));
+        for(const row of (extension.evidenceRecords||[]))if(row?.siteId&&!merged.has(String(row.siteId)))merged.set(String(row.siteId),clone(row));
+        const rows=[...merged.values()],map={};
+        for(const row of rows)if(row?.siteId)map[String(row.siteId)]=clone(row);
+        researchEvidenceMap=map;
+        data={...data,records:rows,recordCount:rows.length,expansionDataset:extension.datasetId||null};
+        g.OmegaResourceSiteResearchEvidenceData=data;g.Omega=g.Omega||{};g.Omega.ResourceSiteResearchEvidenceData=data;
+        return{status:'READY',count:rows.length,baseCount:baseRows.length,expansionCount:rows.length-baseRows.length};
       }catch(e){researchEvidenceMap={};return{status:'FAILED',count:0,reason:String(e?.message||e)}}
       finally{researchEvidencePromise=null;}
     })();
@@ -505,6 +584,15 @@
         resourceId:identity.resourceTypeId||profile?.resourceId||null,
         resourceTypeId:identity.resourceTypeId||profile?.resourceTypeId||null,
         siteType:identity.siteType||profile?.siteType||null,
+        identity:clone(identity),
+        location:clone(location),
+        coordinates:location.coordinates?clone(location.coordinates):null,
+        ownership:clone(ownership),
+        operation:clone(operation),
+        processing:clone(site.processing||{}),
+        quantitative:clone(site.quantitative||{}),
+        verification:clone(site.verification||{}),
+        sourceReference:clone(site.sourceReference||{}),
         status:operation.status||profile?.status||'ACTIVE_SITE_REFERENCE',commercialExtraction:operation.commercialExtraction!==false&&String(operation.status||'').toUpperCase()!=='NOT_APPLICABLE',
         owner:ownership.owner||profile?.owner||null,operator:ownership.operator||profile?.operator||null,
         lat:location.coordinates?.lat??profile?.lat??null,lon:location.coordinates?.lng??profile?.lon??null,
@@ -522,6 +610,10 @@
         countryId:wanted,countryCode:wanted,resourceId:identity.resourceTypeId||profile?.resourceId||null,
         resourceTypeId:identity.resourceTypeId||profile?.resourceTypeId||null,resourceTypeKey:identity.resourceTypeId||profile?.resourceTypeKey||null,
         profileKey:'CANONICAL_SITE_CATALOG',
+        identity:clone(identity),siteType:identity.siteType||null,location:clone(location),
+        ownership:clone(ownership),operation:clone(operation),processing:clone(site.processing||{}),
+        quantitative:clone(site.quantitative||{}),verification:clone(site.verification||{}),
+        sourceReference:clone(site.sourceReference||{}),
         siteName,status:'ACTIVE_SITE_REFERENCE',activationState:'ACTIVE_REFERENCE',extractionExecutable:false,
         quantitativeExtractionDataAvailable:resourceAsset.quantitativeExtractionDataAvailable===true,
         sourceAuthority:'RESOURCE_JSON',sourceDatasetId:'resource_site_canonical_catalog_v1.json',
@@ -1290,8 +1382,8 @@ function batchFromExtraction(x,record){
         for(let i=0;i<400&&!engine()?.isReady;i++)await new Promise(r=>setTimeout(r,0));
         const [reserveData,researchData,canonicalCatalogData,losslessReferenceData,masterResearchData]=await Promise.all([loadSimulationReserveData(),loadResearchEvidenceData(),loadCanonicalSiteCatalogData(),loadLosslessResourceReferenceData(),loadMasterResourceResearchData()]);
         const dependencyLightContext=typeof g.fetch!=='function'&&typeof g.OmegaResourceSiteReserveSimulationData==='undefined'&&typeof g.Omega?.ResourceSiteReserveSimulationData==='undefined';
-        if((reserveData.status!=='READY'||reserveData.count!==199)&&!dependencyLightContext)return{status:'FAILED',reason:'PER_SITE_RESERVE_DATASET_INCOMPLETE',detail:reserveData};
-        if((canonicalCatalogData.status!=='READY'||canonicalCatalogData.count!==199)&&!dependencyLightContext)return{status:'FAILED',reason:'CANONICAL_SITE_CATALOG_INCOMPLETE',detail:canonicalCatalogData};
+        if((reserveData.status!=='READY'||reserveData.count<199||reserveData.count<canonicalCatalogData.count)&&!dependencyLightContext)return{status:'FAILED',reason:'PER_SITE_RESERVE_DATASET_INCOMPLETE',detail:{reserveData,canonicalCatalogData}};
+        if((canonicalCatalogData.status!=='READY'||canonicalCatalogData.count<199)&&!dependencyLightContext)return{status:'FAILED',reason:'CANONICAL_SITE_CATALOG_INCOMPLETE',detail:canonicalCatalogData};
         if((losslessReferenceData.status!=='READY'||losslessReferenceData.count!==199)&&!dependencyLightContext)return{status:'FAILED',reason:'LOSSLESS_RESOURCE_REFERENCE_INCOMPLETE',detail:losslessReferenceData};
         if((masterResearchData.status!=='READY'||masterResearchData.count!==199)&&!dependencyLightContext)return{status:'FAILED',reason:'RESOURCE_SITE_MASTER_RESEARCH_INCOMPLETE',detail:masterResearchData};
         if(!engine()?.isReady)return{status:'FAILED',reason:'RESOURCE_MINISTRY_ENGINE_NOT_READY'};
