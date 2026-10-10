@@ -1616,8 +1616,8 @@
     },
     {
       "countryId": "PER",
-      "siteId": "SITE_PER_antamina_polymetallic_mine",
-      "siteName": "Antamina Mine",
+      "siteId": "SITE_PER_las_bambas_copper_mine",
+      "siteName": "Las Bambas Mine",
       "identity": {
         "countryIso3": "PER",
         "siteType": "OPEN_PIT_POLYMETALLIC_MINE",
@@ -1627,35 +1627,33 @@
       },
       "location": {
         "countryName": "Peru",
-        "adminRegion": "Huari Province, Ancash Region",
-        "locality": "Huari Province, Ancash Region",
+        "adminRegion": "Apurímac Region, Cotabambas Province",
+        "locality": "Las Bambas mining complex",
         "coordinates": {
-          "lat": -9.54,
-          "lng": -77.05
+          "lat": -14.1,
+          "lng": -72.3
         },
         "coordinateStatus": "SITE_POINT_APPROXIMATE",
-        "coordinateProvenance": "Operator or reputable public site location; point may represent complex centroid"
+        "coordinateProvenance": "Approximate mine-complex point; verify against operator GIS"
       },
       "ownership": {
-        "owner": "Compañía Minera Antamina joint venture",
-        "operator": "Compañía Minera Antamina joint venture",
+        "owner": "MMG",
+        "operator": "Minera Las Bambas S.A.",
         "ownerEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED",
         "operatorEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED"
       },
       "operation": {
         "status": "ACTIVE_SITE_REFERENCE",
         "operationalStatus": "ACTIVE_SITE_REFERENCE",
-        "extractionMethod": "open-pit mining and concentrator; copper-zinc polymetallic streams",
+        "extractionMethod": "open-pit copper mining",
         "extractionEligibility": "EXECUTABLE_SIMULATION",
         "commercialExtraction": true
       },
       "processing": {
-        "upstreamProcess": "open-pit mining and concentrator; copper-zinc polymetallic streams",
-        "midstreamProcess": "Site-specific processing route must be verified before production configuration",
+        "upstreamProcess": "Open-pit copper ore extraction",
+        "midstreamProcess": "Crushing, grinding and flotation; verify site-specific circuit configuration",
         "refinedOutputs": [
-          "COPPER_CONCENTRATE",
-          "COPPER_CATHODE",
-          "BYPRODUCTS_AS_CONFIGURED"
+          "COPPER_CONCENTRATE"
         ],
         "downstreamSectors": [
           "COPPER_SMELTING",
@@ -1679,7 +1677,7 @@
           "status": "UNOBSERVED"
         },
         "grade": {
-          "value": "Copper-zinc polymetallic deposit; commodity-specific assay grade not supplied in this record",
+          "value": "Copper ore; site-specific current assay grade not supplied in this record",
           "unit": null,
           "status": "QUALITATIVE_DEPOSIT_DESCRIPTION_NOT_ASSAY"
         },
@@ -1731,17 +1729,17 @@
         "sourceAuthorities": [
           "OPERATOR_OR_PUBLIC_SITE_REFERENCE"
         ],
-        "dataLimitations": "Do not treat approximate point as survey-grade; grade phrase is geological/commodity description, not a measured assay. Reserve, production, recovery, purity and capacity intentionally remain unobserved for separate gameplay simulation."
+        "dataLimitations": "Approximate location. Grade, reserve, production, recovery, purity and capacity are not asserted as observed."
       },
       "sourceReference": {
         "authoritativeDatasets": [
           "resource_site_country_expansion_v1.json"
         ],
-        "sourcePath": "resource_site_country_expansion_v1.sites",
+        "sourcePath": "resource_site_country_expansion_v1.records",
         "evidence": [
           {
-            "url": "https://www.antamina.com/",
-            "scope": "site identity, commodity, region and/or operator; revalidate field-level claims before promotion"
+            "url": "https://www.mmg.com/our-business/las-bambas/",
+            "scope": "operator reference for Las Bambas; site-specific fields require direct revalidation"
           }
         ]
       },
