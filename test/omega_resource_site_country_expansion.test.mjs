@@ -13,7 +13,7 @@ assert.equal(base.sites.length, 199, 'base canonical rows remain unchanged');
 assert.equal(expansion.datasetId, 'OMEGA_RESOURCE_SITE_COUNTRY_EXPANSION_V1');
 assert.equal(expansion.siteCount, 16);
 assert.equal(expansion.records.length, 16);
-assert.equal(new Set(expansion.records.map(s => s.siteId)).size, 12, 'expansion site IDs unique');
+assert.equal(new Set(expansion.records.map(s => s.siteId)).size, 16, 'expansion site IDs unique');
 const baseIds = new Set(base.sites.map(s => s.siteId));
 const baseNames = new Set(base.sites.map(s => s.siteName.toLowerCase()));
 const countries = new Set();
