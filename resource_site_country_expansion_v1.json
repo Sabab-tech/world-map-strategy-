@@ -3,7 +3,7 @@
   "datasetId": "OMEGA_RESOURCE_SITE_COUNTRY_EXPANSION_V1",
   "generatedAt": "2026-10-10",
   "authority": "SITE_IDENTITY_AND_LOCATION_REFERENCE_WITH_EXPLICIT_QUANTITATIVE_GAPS",
-  "siteCount": 28,
+  "siteCount": 35,
   "baseCatalogPreserved": true,
   "records": [
     {
@@ -4133,6 +4133,1070 @@
         "requiresSiteSpecificRoute": true,
         "requiresFactoryBinding": true
       }
+    },
+    {
+      "countryId": "NGA",
+      "siteId": "SITE_NGA_segilola_gold_mine",
+      "siteName": "Segilola Gold Mine",
+      "identity": {
+        "countryIso3": "NGA",
+        "siteType": "OPEN_PIT_GOLD_MINE",
+        "resourceTypeId": "gold",
+        "resourceName": "Gold",
+        "ontologyKey": "GOLD"
+      },
+      "location": {
+        "countryName": "Nigeria",
+        "adminRegion": "Osun State",
+        "locality": "Segilola project area near Ilesha",
+        "coordinates": {
+          "lat": 7.47,
+          "lng": 4.43
+        },
+        "coordinateStatus": "SITE_POINT_APPROXIMATE",
+        "coordinateProvenance": "Public operator location or map-referenced mine-complex point; not survey-grade GIS."
+      },
+      "ownership": {
+        "owner": "Thor Explorations",
+        "operator": "Thor Explorations",
+        "ownerEvidenceStatus": "OPERATOR_SOURCE_REFERENCED",
+        "operatorEvidenceStatus": "OPERATOR_SOURCE_REFERENCED"
+      },
+      "operation": {
+        "status": "ACTIVE_SITE_REFERENCE",
+        "operationalStatus": "ACTIVE_SITE_REFERENCE",
+        "extractionMethod": "Open-pit gold mining and on-site processing",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "Open-pit gold mining and on-site processing",
+        "midstreamProcess": "Site-specific ore handling and processing represented; exact current flows require operator-level configuration.",
+        "refinedOutputs": [
+          "GOLD_DORÉ"
+        ],
+        "downstreamSectors": [
+          "GOLD_REFINING",
+          "JEWELLERY",
+          "ELECTRONICS"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "status": "UNQUANTIFIED",
+          "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
+        },
+        "production": {
+          "annual": 91910,
+          "rate": null,
+          "unit": "troy_ounces_gold",
+          "year": 2025,
+          "status": "REPORTED"
+        },
+        "grade": {
+          "value": 4.2,
+          "unit": "g/t Au",
+          "year": null,
+          "status": "REPORTED_RESERVE_GRADE",
+          "basis": "DFS open-pit reserve grade"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": [
+            "https://thorexpl.com/projects-operations/segilola-gold-project",
+            "https://thorexpl.com/wp-content/uploads/2026/01/imc_q3_2025_rns_presentation_yj_19_11_25_1pm_sl_v2.pdf"
+          ],
+          "capacitySource": null,
+          "promotedAt": "2026-10-10"
+        },
+        "completeness": {
+          "reserve": "UNQUANTIFIED",
+          "production": "REPORTED",
+          "grade": "REPORTED_RESERVE_GRADE",
+          "recovery": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "UNOBSERVED",
+          "structuredEvidence": true,
+          "overall": "IDENTITY_LOCATION_AND_SOURCE_LINKED_SITE_RECORD"
+        }
+      },
+      "verification": {
+        "researchState": "SOURCE_LINKED_SITE_RECORD_FIELD_LEVEL_REVALIDATION_REQUIRED",
+        "reviewedAt": "2026-10-10",
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "MINE_OPERATOR_OR_TECHNICAL_REPORT"
+        ],
+        "dataLimitations": "4.2 g/t is a DFS reserve grade, not current feed grade; 2025 output is a reported historical-year result."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_country_expansion_v1.json"
+        ],
+        "sourcePath": "resource_site_country_expansion_v1.records",
+        "evidence": [
+          {
+            "url": "https://thorexpl.com/projects-operations/segilola-gold-project",
+            "scope": "operator mine identity and operating reference"
+          },
+          {
+            "url": "https://thorexpl.com/wp-content/uploads/2026/01/imc_q3_2025_rns_presentation_yj_19_11_25_1pm_sl_v2.pdf",
+            "scope": "2024 production, 2025 production and DFS reserve grade"
+          }
+        ]
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "NGA",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "SITE_EXPANSION_REFERENCE",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
+        "qualityAuthority": "SOURCE_REPORTED_GRADE_WITH_BASIS",
+        "countryWarehouseId": "WH-NGA-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      }
+    },
+    {
+      "countryId": "TUR",
+      "siteId": "SITE_TUR_kisladag_gold_mine",
+      "siteName": "Kışladağ Gold Mine",
+      "identity": {
+        "countryIso3": "TUR",
+        "siteType": "OPEN_PIT_GOLD_MINE",
+        "resourceTypeId": "gold",
+        "resourceName": "Gold",
+        "ontologyKey": "GOLD"
+      },
+      "location": {
+        "countryName": "Türkiye",
+        "adminRegion": "Uşak Province",
+        "locality": "Western Türkiye",
+        "coordinates": {
+          "lat": 38.53,
+          "lng": 28.18
+        },
+        "coordinateStatus": "SITE_POINT_APPROXIMATE",
+        "coordinateProvenance": "Public operator location or map-referenced mine-complex point; not survey-grade GIS."
+      },
+      "ownership": {
+        "owner": "Eldorado Gold",
+        "operator": "Tüprag Metal Madencilik / Eldorado Gold",
+        "ownerEvidenceStatus": "OPERATOR_SOURCE_REFERENCED",
+        "operatorEvidenceStatus": "OPERATOR_SOURCE_REFERENCED"
+      },
+      "operation": {
+        "status": "ACTIVE_SITE_REFERENCE",
+        "operationalStatus": "ACTIVE_SITE_REFERENCE",
+        "extractionMethod": "Open-pit gold mining and heap-leach processing",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "Open-pit gold mining and heap-leach processing",
+        "midstreamProcess": "Site-specific ore handling and processing represented; exact current flows require operator-level configuration.",
+        "refinedOutputs": [
+          "GOLD_DORÉ"
+        ],
+        "downstreamSectors": [
+          "GOLD_REFINING",
+          "JEWELLERY",
+          "ELECTRONICS"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "status": "UNQUANTIFIED",
+          "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
+        },
+        "production": {
+          "annual": 174080,
+          "rate": null,
+          "unit": "troy_ounces_gold",
+          "year": 2024,
+          "status": "REPORTED"
+        },
+        "grade": {
+          "value": 0.81,
+          "unit": "g/t Au",
+          "year": 2024,
+          "status": "REPORTED_AVERAGE_GRADE"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": [
+            "https://www.eldoradogold.com/investors/news-releases/eldorado-gold-delivers-strong-2024-full-year-and-fourth-quarter-financial"
+          ],
+          "capacitySource": null,
+          "promotedAt": "2026-10-10"
+        },
+        "completeness": {
+          "reserve": "UNQUANTIFIED",
+          "production": "REPORTED",
+          "grade": "REPORTED_AVERAGE_GRADE",
+          "recovery": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "UNOBSERVED",
+          "structuredEvidence": true,
+          "overall": "IDENTITY_LOCATION_AND_SOURCE_LINKED_SITE_RECORD"
+        }
+      },
+      "verification": {
+        "researchState": "SOURCE_LINKED_SITE_RECORD_FIELD_LEVEL_REVALIDATION_REQUIRED",
+        "reviewedAt": "2026-10-10",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "MINE_OPERATOR_OR_TECHNICAL_REPORT"
+        ],
+        "dataLimitations": "0.81 g/t is 2024 average grade; product purity and recovery are not reported here."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_country_expansion_v1.json"
+        ],
+        "sourcePath": "resource_site_country_expansion_v1.records",
+        "evidence": [
+          {
+            "url": "https://www.eldoradogold.com/investors/news-releases/eldorado-gold-delivers-strong-2024-full-year-and-fourth-quarter-financial",
+            "scope": "operator-reported 2024 gold production and average grade"
+          }
+        ]
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "TUR",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "SITE_EXPANSION_REFERENCE",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
+        "qualityAuthority": "SOURCE_REPORTED_GRADE_WITH_BASIS",
+        "countryWarehouseId": "WH-TUR-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      }
+    },
+    {
+      "countryId": "ECU",
+      "siteId": "SITE_ECU_fruta_del_norte_gold_mine",
+      "siteName": "Fruta del Norte Gold Mine",
+      "identity": {
+        "countryIso3": "ECU",
+        "siteType": "UNDERGROUND_GOLD_MINE",
+        "resourceTypeId": "gold",
+        "resourceName": "Gold",
+        "ontologyKey": "GOLD"
+      },
+      "location": {
+        "countryName": "Ecuador",
+        "adminRegion": "Zamora-Chinchipe Province",
+        "locality": "Cordillera del Cóndor, southeastern Ecuador",
+        "coordinates": {
+          "lat": -3.75,
+          "lng": -78.55
+        },
+        "coordinateStatus": "SITE_POINT_APPROXIMATE",
+        "coordinateProvenance": "Public operator location or map-referenced mine-complex point; not survey-grade GIS."
+      },
+      "ownership": {
+        "owner": "Lundin Gold",
+        "operator": "Lundin Gold",
+        "ownerEvidenceStatus": "OPERATOR_SOURCE_REFERENCED",
+        "operatorEvidenceStatus": "OPERATOR_SOURCE_REFERENCED"
+      },
+      "operation": {
+        "status": "ACTIVE_SITE_REFERENCE",
+        "operationalStatus": "ACTIVE_SITE_REFERENCE",
+        "extractionMethod": "Underground long-hole stoping with on-site gold processing",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "Underground long-hole stoping with on-site gold processing",
+        "midstreamProcess": "Site-specific ore handling and processing represented; exact current flows require operator-level configuration.",
+        "refinedOutputs": [
+          "GOLD_CONCENTRATE",
+          "GOLD_DORÉ"
+        ],
+        "downstreamSectors": [
+          "GOLD_REFINING",
+          "JEWELLERY",
+          "ELECTRONICS"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "status": "UNQUANTIFIED",
+          "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": "troy_ounces_gold_per_quarter",
+          "year": 2024,
+          "status": "REPORTED_Q1",
+          "quarter": "Q1",
+          "quantity": 111572
+        },
+        "grade": {
+          "value": 9.5,
+          "unit": "g/t Au",
+          "year": 2024,
+          "status": "REPORTED_Q1_MILL_FEED_GRADE",
+          "basis": "Q1 2024 average ore grade milled"
+        },
+        "recovery": {
+          "value": 88.3,
+          "unit": "%",
+          "year": 2024,
+          "status": "REPORTED_Q1_AVERAGE"
+        },
+        "throughput": {
+          "value": 4545,
+          "unit": "metric_tonnes_ore_per_day",
+          "year": 2024,
+          "status": "REPORTED_Q1_AVERAGE"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": 5000,
+          "minimum": null,
+          "maximum": null,
+          "unit": "metric_tonnes_ore_per_day",
+          "status": "OPERATOR_STATED_PLANT_CAPACITY"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": [
+            "https://lundingold.com/news/lundin-gold-reports-q1-2024-production-of-111-572-122762",
+            "https://lundingold.com/fruta-del-norte/fruta-del-norte/operational-overview"
+          ],
+          "capacitySource": [
+            "https://lundingold.com/news/lundin-gold-reports-q1-2024-production-of-111-572-122762",
+            "https://lundingold.com/fruta-del-norte/fruta-del-norte/operational-overview"
+          ],
+          "promotedAt": "2026-10-10"
+        },
+        "completeness": {
+          "reserve": "UNQUANTIFIED",
+          "production": "REPORTED_Q1",
+          "grade": "REPORTED_Q1_MILL_FEED_GRADE",
+          "recovery": "REPORTED_Q1_AVERAGE",
+          "purity": "UNOBSERVED",
+          "capacity": "OPERATOR_STATED_PLANT_CAPACITY",
+          "structuredEvidence": true,
+          "overall": "IDENTITY_LOCATION_AND_SOURCE_LINKED_SITE_RECORD"
+        }
+      },
+      "verification": {
+        "researchState": "SOURCE_LINKED_SITE_RECORD_FIELD_LEVEL_REVALIDATION_REQUIRED",
+        "reviewedAt": "2026-10-10",
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "MINE_OPERATOR_OR_TECHNICAL_REPORT"
+        ],
+        "dataLimitations": "Metrics are Q1 2024 operating results, not current daily operating state."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_country_expansion_v1.json"
+        ],
+        "sourcePath": "resource_site_country_expansion_v1.records",
+        "evidence": [
+          {
+            "url": "https://lundingold.com/news/lundin-gold-reports-q1-2024-production-of-111-572-122762",
+            "scope": "Q1 2024 feed grade, recovery, throughput and gold production"
+          },
+          {
+            "url": "https://lundingold.com/fruta-del-norte/fruta-del-norte/operational-overview",
+            "scope": "operator mining method and 5,000 tonnes/day plant capacity"
+          }
+        ]
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "ECU",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "SITE_EXPANSION_REFERENCE",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
+        "qualityAuthority": "SOURCE_REPORTED_GRADE_WITH_BASIS",
+        "countryWarehouseId": "WH-ECU-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      }
+    },
+    {
+      "countryId": "CAN",
+      "siteId": "SITE_CAN_cigar_lake_uranium_mine",
+      "siteName": "Cigar Lake Uranium Mine",
+      "identity": {
+        "countryIso3": "CAN",
+        "siteType": "UNDERGROUND_URANIUM_MINE",
+        "resourceTypeId": "uranium",
+        "resourceName": "Uranium (U3O8)",
+        "ontologyKey": "URANIUM"
+      },
+      "location": {
+        "countryName": "Canada",
+        "adminRegion": "Saskatchewan",
+        "locality": "Northern Saskatchewan",
+        "coordinates": {
+          "lat": 58.06,
+          "lng": -104.52
+        },
+        "coordinateStatus": "SITE_POINT_APPROXIMATE",
+        "coordinateProvenance": "Public operator location or map-referenced mine-complex point; not survey-grade GIS."
+      },
+      "ownership": {
+        "owner": "Cameco and joint-venture partners",
+        "operator": "Cameco",
+        "ownerEvidenceStatus": "OPERATOR_SOURCE_REFERENCED",
+        "operatorEvidenceStatus": "OPERATOR_SOURCE_REFERENCED"
+      },
+      "operation": {
+        "status": "ACTIVE_SITE_REFERENCE",
+        "operationalStatus": "ACTIVE_SITE_REFERENCE",
+        "extractionMethod": "Underground uranium mining; ore shipped to McClean Lake Mill",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "Underground uranium mining; ore shipped to McClean Lake Mill",
+        "midstreamProcess": "Site-specific ore handling and processing represented; exact current flows require operator-level configuration.",
+        "refinedOutputs": [
+          "URANIUM_CONCENTRATE_U3O8"
+        ],
+        "downstreamSectors": [
+          "NUCLEAR_FUEL_CYCLE",
+          "ENERGY"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "status": "UNQUANTIFIED",
+          "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": "million_pounds_U3O8_per_year",
+          "year": 2026,
+          "status": "GUIDANCE_RANGE_NOT_ACTUAL",
+          "guidanceMinimum": 17.5,
+          "guidanceMaximum": 18
+        },
+        "grade": {
+          "value": "Uranium (U3O8) deposit; site-specific numeric assay not established in this tranche",
+          "unit": null,
+          "status": "QUALITATIVE_ONLY"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": [
+            "https://www.cameco.com/businesses/uranium-operations/canada/cigar-lake",
+            "https://www.cameco.com/media/news/cigar-lake-mine-resumes-production"
+          ],
+          "capacitySource": null,
+          "promotedAt": "2026-10-10"
+        },
+        "completeness": {
+          "reserve": "UNQUANTIFIED",
+          "production": "GUIDANCE_RANGE_NOT_ACTUAL",
+          "grade": "QUALITATIVE_ONLY",
+          "recovery": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "UNOBSERVED",
+          "structuredEvidence": true,
+          "overall": "IDENTITY_LOCATION_AND_SOURCE_LINKED_SITE_RECORD"
+        }
+      },
+      "verification": {
+        "researchState": "SOURCE_LINKED_SITE_RECORD_FIELD_LEVEL_REVALIDATION_REQUIRED",
+        "reviewedAt": "2026-10-10",
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "MINE_OPERATOR_OR_TECHNICAL_REPORT"
+        ],
+        "dataLimitations": "Operator labels it high-grade, but no numeric assay grade is promoted; guidance is not actual output."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_country_expansion_v1.json"
+        ],
+        "sourcePath": "resource_site_country_expansion_v1.records",
+        "evidence": [
+          {
+            "url": "https://www.cameco.com/businesses/uranium-operations/canada/cigar-lake",
+            "scope": "operator identity, location and high-grade description"
+          },
+          {
+            "url": "https://www.cameco.com/media/news/cigar-lake-mine-resumes-production",
+            "scope": "2026 production restart and production outlook"
+          }
+        ]
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "CAN",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "SITE_EXPANSION_REFERENCE",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
+        "qualityAuthority": "QUALITATIVE_OR_UNOBSERVED",
+        "countryWarehouseId": "WH-CAN-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      }
+    },
+    {
+      "countryId": "MOZ",
+      "siteId": "SITE_MOZ_balama_graphite_operation",
+      "siteName": "Balama Graphite Operation",
+      "identity": {
+        "countryIso3": "MOZ",
+        "siteType": "OPEN_PIT_GRAPHITE_MINE",
+        "resourceTypeId": "graphite",
+        "resourceName": "Natural graphite",
+        "ontologyKey": "GRAPHITE"
+      },
+      "location": {
+        "countryName": "Mozambique",
+        "adminRegion": "Cabo Delgado Province",
+        "locality": "Balama District",
+        "coordinates": {
+          "lat": -12.95,
+          "lng": 38.55
+        },
+        "coordinateStatus": "SITE_POINT_APPROXIMATE",
+        "coordinateProvenance": "Public operator location or map-referenced mine-complex point; not survey-grade GIS."
+      },
+      "ownership": {
+        "owner": "Syrah Resources",
+        "operator": "Syrah Resources",
+        "ownerEvidenceStatus": "OPERATOR_SOURCE_REFERENCED",
+        "operatorEvidenceStatus": "OPERATOR_SOURCE_REFERENCED"
+      },
+      "operation": {
+        "status": "ACTIVE_SITE_REFERENCE",
+        "operationalStatus": "ACTIVE_SITE_REFERENCE",
+        "extractionMethod": "Open-pit graphite mining and beneficiation",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "Open-pit graphite mining and beneficiation",
+        "midstreamProcess": "Site-specific ore handling and processing represented; exact current flows require operator-level configuration.",
+        "refinedOutputs": [
+          "NATURAL_GRAPHITE_FLAKE"
+        ],
+        "downstreamSectors": [
+          "BATTERY_ANODES",
+          "REFRACTORIES",
+          "INDUSTRIAL_MATERIALS"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": 110000000,
+          "unit": "metric_tonnes_ore",
+          "status": "REPORTED_ORE_RESERVE_ESTIMATE",
+          "basis": "2024 annual report; 16% total graphitic carbon (TGC)"
+        },
+        "production": {
+          "annual": 35000,
+          "rate": null,
+          "unit": "metric_tonnes_natural_graphite",
+          "year": 2024,
+          "status": "REPORTED"
+        },
+        "grade": {
+          "value": 16,
+          "unit": "% TGC",
+          "year": 2024,
+          "status": "REPORTED_RESERVE_GRADE",
+          "basis": "Ore reserve estimate grade"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": 350000,
+          "minimum": null,
+          "maximum": null,
+          "unit": "metric_tonnes_graphite_per_year",
+          "status": "REPORTED_DESIGN_CAPACITY"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": [
+            "https://minedocs.com/29/Syrah-Resources-AR-2024.pdf"
+          ],
+          "capacitySource": [
+            "https://minedocs.com/29/Syrah-Resources-AR-2024.pdf"
+          ],
+          "promotedAt": "2026-10-10"
+        },
+        "completeness": {
+          "reserve": "REPORTED_ORE_RESERVE_ESTIMATE",
+          "production": "REPORTED",
+          "grade": "REPORTED_RESERVE_GRADE",
+          "recovery": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "REPORTED_DESIGN_CAPACITY",
+          "structuredEvidence": true,
+          "overall": "IDENTITY_LOCATION_AND_SOURCE_LINKED_SITE_RECORD"
+        }
+      },
+      "verification": {
+        "researchState": "SOURCE_LINKED_SITE_RECORD_FIELD_LEVEL_REVALIDATION_REQUIRED",
+        "reviewedAt": "2026-10-10",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "MINE_OPERATOR_OR_TECHNICAL_REPORT"
+        ],
+        "dataLimitations": "2024 annual-report values are historical; current operational status requires revalidation. 16% TGC is reserve grade, not product purity."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_country_expansion_v1.json"
+        ],
+        "sourcePath": "resource_site_country_expansion_v1.records",
+        "evidence": [
+          {
+            "url": "https://minedocs.com/29/Syrah-Resources-AR-2024.pdf",
+            "scope": "2024 annual report: graphite production, capacity and ore reserve estimate"
+          }
+        ]
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "MOZ",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "SITE_EXPANSION_REFERENCE",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
+        "qualityAuthority": "SOURCE_REPORTED_GRADE_WITH_BASIS",
+        "countryWarehouseId": "WH-MOZ-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      }
+    },
+    {
+      "countryId": "TZA",
+      "siteId": "SITE_TZA_north_mara_gold_mine",
+      "siteName": "North Mara Gold Mine",
+      "identity": {
+        "countryIso3": "TZA",
+        "siteType": "OPEN_PIT_AND_UNDERGROUND_GOLD_MINE",
+        "resourceTypeId": "gold",
+        "resourceName": "Gold",
+        "ontologyKey": "GOLD"
+      },
+      "location": {
+        "countryName": "Tanzania",
+        "adminRegion": "Mara Region",
+        "locality": "Tarime District near the Kenya border",
+        "coordinates": {
+          "lat": -1.52,
+          "lng": 34.58
+        },
+        "coordinateStatus": "SITE_POINT_APPROXIMATE",
+        "coordinateProvenance": "Public operator location or map-referenced mine-complex point; not survey-grade GIS."
+      },
+      "ownership": {
+        "owner": "Barrick Gold and Government of Tanzania",
+        "operator": "North Mara Gold Mine Limited / Barrick",
+        "ownerEvidenceStatus": "OPERATOR_SOURCE_REFERENCED",
+        "operatorEvidenceStatus": "OPERATOR_SOURCE_REFERENCED"
+      },
+      "operation": {
+        "status": "ACTIVE_SITE_REFERENCE",
+        "operationalStatus": "ACTIVE_SITE_REFERENCE",
+        "extractionMethod": "Combined open-pit and underground gold mining",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "Combined open-pit and underground gold mining",
+        "midstreamProcess": "Site-specific ore handling and processing represented; exact current flows require operator-level configuration.",
+        "refinedOutputs": [
+          "GOLD_DORÉ"
+        ],
+        "downstreamSectors": [
+          "GOLD_REFINING",
+          "JEWELLERY",
+          "ELECTRONICS"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "status": "UNQUANTIFIED",
+          "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": "Gold deposit; site-specific numeric assay not established in this tranche",
+          "unit": null,
+          "status": "QUALITATIVE_ONLY"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": [
+            "https://www.barrick.com/English/news/news-details/2023/tanzanian-assets-deliver-record-production-and-create-long-term-value/default.aspx"
+          ],
+          "capacitySource": null,
+          "promotedAt": "2026-10-10"
+        },
+        "completeness": {
+          "reserve": "UNQUANTIFIED",
+          "production": "UNOBSERVED",
+          "grade": "QUALITATIVE_ONLY",
+          "recovery": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "UNOBSERVED",
+          "structuredEvidence": false,
+          "overall": "IDENTITY_LOCATION_AND_SOURCE_LINKED_SITE_RECORD"
+        }
+      },
+      "verification": {
+        "researchState": "SOURCE_LINKED_SITE_RECORD_FIELD_LEVEL_REVALIDATION_REQUIRED",
+        "reviewedAt": "2026-10-10",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "MINE_OPERATOR_OR_TECHNICAL_REPORT"
+        ],
+        "dataLimitations": "Source provides combined North Mara+Bulyanhulu production; no combined production figure has been assigned to North Mara alone."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_country_expansion_v1.json"
+        ],
+        "sourcePath": "resource_site_country_expansion_v1.records",
+        "evidence": [
+          {
+            "url": "https://www.barrick.com/English/news/news-details/2023/tanzanian-assets-deliver-record-production-and-create-long-term-value/default.aspx",
+            "scope": "Barrick source confirming North Mara and Tanzanian operating context"
+          }
+        ]
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "TZA",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "SITE_EXPANSION_REFERENCE",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
+        "qualityAuthority": "QUALITATIVE_OR_UNOBSERVED",
+        "countryWarehouseId": "WH-TZA-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      }
+    },
+    {
+      "countryId": "MEX",
+      "siteId": "SITE_MEX_fresnillo_silver_mine",
+      "siteName": "Fresnillo Silver Mine",
+      "identity": {
+        "countryIso3": "MEX",
+        "siteType": "UNDERGROUND_SILVER_MINE",
+        "resourceTypeId": "silver",
+        "resourceName": "Silver with gold, lead and zinc",
+        "ontologyKey": "SILVER"
+      },
+      "location": {
+        "countryName": "Mexico",
+        "adminRegion": "Zacatecas State",
+        "locality": "Fresnillo District",
+        "coordinates": {
+          "lat": 23.23,
+          "lng": -102.87
+        },
+        "coordinateStatus": "SITE_POINT_APPROXIMATE",
+        "coordinateProvenance": "Public operator location or map-referenced mine-complex point; not survey-grade GIS."
+      },
+      "ownership": {
+        "owner": "Fresnillo plc",
+        "operator": "Fresnillo plc",
+        "ownerEvidenceStatus": "OPERATOR_SOURCE_REFERENCED",
+        "operatorEvidenceStatus": "OPERATOR_SOURCE_REFERENCED"
+      },
+      "operation": {
+        "status": "ACTIVE_SITE_REFERENCE",
+        "operationalStatus": "ACTIVE_SITE_REFERENCE",
+        "extractionMethod": "Underground silver mining and flotation processing",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "Underground silver mining and flotation processing",
+        "midstreamProcess": "Site-specific ore handling and processing represented; exact current flows require operator-level configuration.",
+        "refinedOutputs": [
+          "SILVER_CONCENTRATE",
+          "GOLD_BYPRODUCT",
+          "LEAD_CONCENTRATE",
+          "ZINC_CONCENTRATE"
+        ],
+        "downstreamSectors": [
+          "SILVER_REFINING",
+          "ELECTRONICS",
+          "JEWELLERY",
+          "GALVANIZING"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "status": "UNQUANTIFIED",
+          "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
+        },
+        "production": {
+          "annual": 10273,
+          "rate": null,
+          "unit": "thousand_troy_ounces_silver",
+          "year": 2025,
+          "status": "REPORTED"
+        },
+        "grade": {
+          "value": 821,
+          "unit": "g/t Ag",
+          "year": 2026,
+          "status": "REPORTED_1H_AVERAGE_ORE_GRADE",
+          "basis": "Operator-reported first-half 2026 silver ore grade"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": [
+            "https://www2.fresnilloplc.com/en/portfolio/mines-in-operation/fresnillo",
+            "https://www.fresnilloplc.com/media/02cl5zop/220726-fresnillo-plc-2q26-production-report.pdf"
+          ],
+          "capacitySource": null,
+          "promotedAt": "2026-10-10"
+        },
+        "completeness": {
+          "reserve": "UNQUANTIFIED",
+          "production": "REPORTED",
+          "grade": "REPORTED_1H_AVERAGE_ORE_GRADE",
+          "recovery": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "UNOBSERVED",
+          "structuredEvidence": true,
+          "overall": "IDENTITY_LOCATION_AND_SOURCE_LINKED_SITE_RECORD"
+        }
+      },
+      "verification": {
+        "researchState": "SOURCE_LINKED_SITE_RECORD_FIELD_LEVEL_REVALIDATION_REQUIRED",
+        "reviewedAt": "2026-10-10",
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "MINE_OPERATOR_OR_TECHNICAL_REPORT"
+        ],
+        "dataLimitations": "Silver ore grade 821 g/t is the operator's 1H26 metric; FY2025 production is reported by the operator. Concentrate grade/purity is not inferred."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_country_expansion_v1.json"
+        ],
+        "sourcePath": "resource_site_country_expansion_v1.records",
+        "evidence": [
+          {
+            "url": "https://www2.fresnilloplc.com/en/portfolio/mines-in-operation/fresnillo",
+            "scope": "operator mine identity, location and FY2025 production"
+          },
+          {
+            "url": "https://www.fresnilloplc.com/media/02cl5zop/220726-fresnillo-plc-2q26-production-report.pdf",
+            "scope": "operator 2026 ore-grade and production report"
+          }
+        ]
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "MEX",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "SITE_EXPANSION_REFERENCE",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
+        "qualityAuthority": "SOURCE_REPORTED_GRADE_WITH_BASIS",
+        "countryWarehouseId": "WH-MEX-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      }
     }
   ],
   "policy": {
@@ -4141,7 +5205,8 @@
     "reserveProductionRecoveryPurityAndCapacityRemainExplicitlyUnobserved": true,
     "simulationValuesMustBeSuppliedByExistingOmegaResourceRealismRuntime": true,
     "routeAndFactoryMustUseExistingPipeline": true,
-    "expansionTranche2": "12 additional source-linked mine records; the 199-row base catalog remains unchanged. Numeric values retain historical, forecast, resource-grade, target, capacity, and concentrate-grade distinctions."
+    "expansionTranche2": "12 additional source-linked mine records; the 199-row base catalog remains unchanged. Numeric values retain historical, forecast, resource-grade, target, capacity, and concentrate-grade distinctions.",
+    "expansionTranche3": "Six additional source-linked sites in Nigeria, Türkiye, Ecuador, Canada, Mozambique and Tanzania/Mexico; approximate coordinates and dated metrics remain explicitly labeled."
   },
   "sources": [
     "https://www.usgs.gov/programs/mineral-resources-program/mineral-resources-data",
