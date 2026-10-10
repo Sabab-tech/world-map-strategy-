@@ -150,7 +150,8 @@ test('runtime renders all global sites and applies nation/resource scope without
     'resources.json': JSON.parse(read('resources.json')),
     'resources_2.json': JSON.parse(read('resources_2.json')),
     'resource_site_canonical_catalog_v1.json': catalog,
-    'resource_site_master_registry_v1.json': master
+    'resource_site_master_registry_v1.json': master,
+    'resource_site_country_expansion_v1.json': expansion
   };
   // Test-only fixture: force two separate site identities to share one coordinate so pixel-spider offsets are verified.
   const rawCountryProfiles=Object.values(rawSources['resources.json'].GSRSK_Master_CountryProfiles_v14.countryProfiles||{});
