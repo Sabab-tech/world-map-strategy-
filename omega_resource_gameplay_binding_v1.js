@@ -272,6 +272,9 @@ async function init(){
   const sources=loaded.filter(Boolean);
   const getData=url=>sources.find(x=>x.url===url)?.data||null;
   const catalog=getData(CATALOG_URL),master=getData(MASTER_URL),expansion=getData(EXPANSION_URL);
+  if(expansion?.datasetId==='OMEGA_RESOURCE_SITE_COUNTRY_EXPANSION_V1'){
+   g.OmegaResourceSiteCountryExpansionData=expansion;g.Omega=g.Omega||{};g.Omega.ResourceSiteCountryExpansionData=expansion;
+  }
   const baseCatalogSites=Array.isArray(catalog?.sites)?catalog.sites:[];
   const expansionSites=expansion?.datasetId==='OMEGA_RESOURCE_SITE_COUNTRY_EXPANSION_V1'&&Array.isArray(expansion.records)?expansion.records:[];
   const catalogSites=[...baseCatalogSites,...expansionSites];
