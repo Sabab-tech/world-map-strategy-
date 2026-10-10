@@ -154,47 +154,46 @@
       }
     },
     {
-      "countryId": "USA",
-      "siteId": "SITE_USA_morenci_copper_mine",
-      "siteName": "Morenci Mine",
+      "countryId": "CHL",
+      "siteId": "SITE_CHL_el_teniente_copper_mine",
+      "siteName": "El Teniente Mine",
       "identity": {
-        "countryIso3": "USA",
-        "siteType": "OPEN_PIT_COPPER_MINE",
+        "countryIso3": "CHL",
+        "siteType": "UNDERGROUND_COPPER_MINE",
         "resourceTypeId": "copper",
         "resourceName": "Copper",
         "ontologyKey": "COPPER"
       },
       "location": {
-        "countryName": "United States",
-        "adminRegion": "Greenlee County, Arizona",
-        "locality": "Greenlee County, Arizona",
+        "countryName": "Chile",
+        "adminRegion": "Machalí, Cachapoal Province, O'Higgins Region",
+        "locality": "Andean foothills near Rancagua",
         "coordinates": {
-          "lat": 33.09056,
-          "lng": -109.36667
+          "lat": -34.09,
+          "lng": -70.35
         },
         "coordinateStatus": "SITE_POINT_APPROXIMATE",
-        "coordinateProvenance": "Operator or reputable public site location; point may represent complex centroid"
+        "coordinateProvenance": "Approximate mine-complex point; verify against operator GIS"
       },
       "ownership": {
-        "owner": "Freeport-McMoRan Morenci Inc.; Sumitomo Group minority interest",
-        "operator": "Freeport-McMoRan Morenci Inc.; Sumitomo Group minority interest",
+        "owner": "Codelco",
+        "operator": "Codelco",
         "ownerEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED",
         "operatorEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED"
       },
       "operation": {
         "status": "ACTIVE_SITE_REFERENCE",
         "operationalStatus": "ACTIVE_SITE_REFERENCE",
-        "extractionMethod": "open-pit; copper-molybdenum ore processing and leaching",
+        "extractionMethod": "underground copper mining",
         "extractionEligibility": "EXECUTABLE_SIMULATION",
         "commercialExtraction": true
       },
       "processing": {
-        "upstreamProcess": "open-pit; copper-molybdenum ore processing and leaching",
-        "midstreamProcess": "Site-specific processing route must be verified before production configuration",
+        "upstreamProcess": "Underground copper ore extraction",
+        "midstreamProcess": "Ore handling, concentration and copper processing; site-specific current flows require verification",
         "refinedOutputs": [
           "COPPER_CONCENTRATE",
-          "COPPER_CATHODE",
-          "BYPRODUCTS_AS_CONFIGURED"
+          "COPPER_CATHODE_AS_CONFIGURED"
         ],
         "downstreamSectors": [
           "COPPER_SMELTING",
@@ -218,7 +217,7 @@
           "status": "UNOBSERVED"
         },
         "grade": {
-          "value": "Copper-molybdenum ore; site-specific current assay grade not supplied in this record",
+          "value": "Copper ore; site-specific current assay grade not supplied in this record",
           "unit": null,
           "status": "QUALITATIVE_DEPOSIT_DESCRIPTION_NOT_ASSAY"
         },
@@ -270,24 +269,24 @@
         "sourceAuthorities": [
           "OPERATOR_OR_PUBLIC_SITE_REFERENCE"
         ],
-        "dataLimitations": "Do not treat approximate point as survey-grade; grade phrase is geological/commodity description, not a measured assay. Reserve, production, recovery, purity and capacity intentionally remain unobserved for separate gameplay simulation."
+        "dataLimitations": "Approximate location. Grade, reserve, production, recovery, purity and capacity are not asserted as observed."
       },
       "sourceReference": {
         "authoritativeDatasets": [
           "resource_site_country_expansion_v1.json"
         ],
-        "sourcePath": "resource_site_country_expansion_v1.sites",
+        "sourcePath": "resource_site_country_expansion_v1.records",
         "evidence": [
           {
-            "url": "https://www.sec.gov/Archives/edgar/data/831259/000083125926000012/a2025trsmorenci-finalxpubl.pdf",
-            "scope": "site identity, commodity, region and/or operator; revalidate field-level claims before promotion"
+            "url": "https://www.codelco.com/",
+            "scope": "operator reference for El Teniente; site-specific fields require direct revalidation"
           }
         ]
       },
       "map": {
         "markerEligible": true,
         "markerLayer": "RESOURCE_SITE",
-        "countryIsolationKey": "USA",
+        "countryIsolationKey": "CHL",
         "locationStatus": "APPROXIMATE"
       },
       "runtime": {
@@ -295,7 +294,7 @@
         "quantityAuthority": "SIMULATION_RUNTIME",
         "productionAuthority": "SIMULATION_RUNTIME",
         "qualityAuthority": "QUALITATIVE_DESCRIPTION_ONLY",
-        "countryWarehouseId": "WH-USA-RAW",
+        "countryWarehouseId": "WH-CHL-RAW",
         "requiresSiteSpecificRoute": true,
         "requiresFactoryBinding": true
       }
@@ -1034,46 +1033,44 @@
     },
     {
       "countryId": "ZMB",
-      "siteId": "SITE_ZMB_kansanshi_copper_gold_mine",
-      "siteName": "Kansanshi Mine",
+      "siteId": "SITE_ZMB_sentinel_copper_mine",
+      "siteName": "Sentinel Copper Mine",
       "identity": {
         "countryIso3": "ZMB",
-        "siteType": "OPEN_PIT_COPPER_GOLD_MINE",
+        "siteType": "OPEN_PIT_COPPER_MINE",
         "resourceTypeId": "copper",
         "resourceName": "Copper",
         "ontologyKey": "COPPER"
       },
       "location": {
         "countryName": "Zambia",
-        "adminRegion": "North-Western Province, near Solwezi",
-        "locality": "North-Western Province, near Solwezi",
+        "adminRegion": "North-Western Province, near Kalumbila",
+        "locality": "Kalumbila District",
         "coordinates": {
-          "lat": -12.095,
-          "lng": 26.427
+          "lat": -12.25,
+          "lng": 25.85
         },
         "coordinateStatus": "SITE_POINT_APPROXIMATE",
-        "coordinateProvenance": "Operator or reputable public site location; point may represent complex centroid"
+        "coordinateProvenance": "Approximate mine-complex point; verify against operator GIS"
       },
       "ownership": {
-        "owner": "Kansanshi Mining PLC / First Quantum Minerals",
-        "operator": "Kansanshi Mining PLC / First Quantum Minerals",
+        "owner": "First Quantum Minerals",
+        "operator": "First Quantum Minerals",
         "ownerEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED",
         "operatorEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED"
       },
       "operation": {
         "status": "ACTIVE_SITE_REFERENCE",
         "operationalStatus": "ACTIVE_SITE_REFERENCE",
-        "extractionMethod": "open-pit mining; copper flotation and oxide leaching",
+        "extractionMethod": "open-pit copper mining",
         "extractionEligibility": "EXECUTABLE_SIMULATION",
         "commercialExtraction": true
       },
       "processing": {
-        "upstreamProcess": "open-pit mining; copper flotation and oxide leaching",
-        "midstreamProcess": "Site-specific processing route must be verified before production configuration",
+        "upstreamProcess": "Open-pit copper ore extraction",
+        "midstreamProcess": "Ore crushing, grinding and flotation; verify site-specific circuit configuration",
         "refinedOutputs": [
-          "COPPER_CONCENTRATE",
-          "COPPER_CATHODE",
-          "BYPRODUCTS_AS_CONFIGURED"
+          "COPPER_CONCENTRATE"
         ],
         "downstreamSectors": [
           "COPPER_SMELTING",
@@ -1097,7 +1094,7 @@
           "status": "UNOBSERVED"
         },
         "grade": {
-          "value": "Copper-gold deposit; site-specific current assay grade not supplied in this record",
+          "value": "Copper ore; site-specific current assay grade not supplied in this record",
           "unit": null,
           "status": "QUALITATIVE_DEPOSIT_DESCRIPTION_NOT_ASSAY"
         },
@@ -1149,17 +1146,17 @@
         "sourceAuthorities": [
           "OPERATOR_OR_PUBLIC_SITE_REFERENCE"
         ],
-        "dataLimitations": "Do not treat approximate point as survey-grade; grade phrase is geological/commodity description, not a measured assay. Reserve, production, recovery, purity and capacity intentionally remain unobserved for separate gameplay simulation."
+        "dataLimitations": "Approximate location. Grade, reserve, production, recovery, purity and capacity are not asserted as observed."
       },
       "sourceReference": {
         "authoritativeDatasets": [
           "resource_site_country_expansion_v1.json"
         ],
-        "sourcePath": "resource_site_country_expansion_v1.sites",
+        "sourcePath": "resource_site_country_expansion_v1.records",
         "evidence": [
           {
             "url": "https://www.first-quantum.com/English/our-operations/default.aspx",
-            "scope": "site identity, commodity, region and/or operator; revalidate field-level claims before promotion"
+            "scope": "operator reference for Sentinel; site-specific fields require direct revalidation"
           }
         ]
       },
