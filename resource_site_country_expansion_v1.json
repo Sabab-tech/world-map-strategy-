@@ -1,0 +1,1779 @@
+{
+  "schemaVersion": "1.0.0",
+  "datasetId": "OMEGA_RESOURCE_SITE_COUNTRY_EXPANSION_V1",
+  "generatedAt": "2026-10-10",
+  "authority": "SITE_IDENTITY_AND_LOCATION_REFERENCE_WITH_EXPLICIT_QUANTITATIVE_GAPS",
+  "siteCount": 12,
+  "baseCatalogPreserved": true,
+  "records": [
+    {
+      "countryId": "CHL",
+      "siteId": "SITE_CHL_escondida_copper_mine",
+      "siteName": "Escondida Mine",
+      "identity": {
+        "countryIso3": "CHL",
+        "siteType": "OPEN_PIT_COPPER_MINE",
+        "resourceTypeId": "copper",
+        "resourceName": "Copper",
+        "ontologyKey": "COPPER"
+      },
+      "location": {
+        "countryName": "Chile",
+        "adminRegion": "Antofagasta Region, Atacama Desert",
+        "locality": "Antofagasta Region, Atacama Desert",
+        "coordinates": {
+          "lat": -24.26944,
+          "lng": -69.07056
+        },
+        "coordinateStatus": "SITE_POINT_APPROXIMATE",
+        "coordinateProvenance": "Operator or reputable public site location; point may represent complex centroid"
+      },
+      "ownership": {
+        "owner": "BHP (57.5%); Rio Tinto (30%); JECO (12.5%)",
+        "operator": "BHP (57.5%); Rio Tinto (30%); JECO (12.5%)",
+        "ownerEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED",
+        "operatorEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED"
+      },
+      "operation": {
+        "status": "ACTIVE_SITE_REFERENCE",
+        "operationalStatus": "ACTIVE_SITE_REFERENCE",
+        "extractionMethod": "open-pit; sulfide concentrators and oxide/sulfide leach operations",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "open-pit; sulfide concentrators and oxide/sulfide leach operations",
+        "midstreamProcess": "Site-specific processing route must be verified before production configuration",
+        "refinedOutputs": [
+          "COPPER_CONCENTRATE",
+          "COPPER_CATHODE",
+          "BYPRODUCTS_AS_CONFIGURED"
+        ],
+        "downstreamSectors": [
+          "COPPER_SMELTING",
+          "ELECTRICAL_EQUIPMENT",
+          "CONSTRUCTION",
+          "INDUSTRIAL_MANUFACTURING"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "status": "UNQUANTIFIED",
+          "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": "Porphyry copper deposit; site-specific assay grade not supplied in this record",
+          "unit": null,
+          "status": "QUALITATIVE_DEPOSIT_DESCRIPTION_NOT_ASSAY"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-10"
+        },
+        "completeness": {
+          "reserve": "UNQUANTIFIED",
+          "production": "UNOBSERVED",
+          "grade": "QUALITATIVE_ONLY",
+          "recovery": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "UNOBSERVED",
+          "structuredEvidence": false,
+          "overall": "IDENTITY_AND_LOCATION_ENRICHED_QUANTITATIVES_REQUIRE_RESEARCH"
+        }
+      },
+      "verification": {
+        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_REQUIRES_FIELD_REVALIDATION",
+        "reviewedAt": "2026-10-10",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "OPERATOR_OR_PUBLIC_SITE_REFERENCE"
+        ],
+        "dataLimitations": "Do not treat approximate point as survey-grade; grade phrase is geological/commodity description, not a measured assay. Reserve, production, recovery, purity and capacity intentionally remain unobserved for separate gameplay simulation."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_country_expansion_v1.json"
+        ],
+        "sourcePath": "resource_site_country_expansion_v1.sites",
+        "evidence": [
+          {
+            "url": "https://www.bhp.com/what-we-do/global-locations/chile/escondida",
+            "scope": "site identity, commodity, region and/or operator; revalidate field-level claims before promotion"
+          }
+        ]
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "CHL",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "SITE_EXPANSION_REFERENCE",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
+        "qualityAuthority": "QUALITATIVE_DESCRIPTION_ONLY",
+        "countryWarehouseId": "WH-CHL-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      }
+    },
+    {
+      "countryId": "USA",
+      "siteId": "SITE_USA_morenci_copper_mine",
+      "siteName": "Morenci Mine",
+      "identity": {
+        "countryIso3": "USA",
+        "siteType": "OPEN_PIT_COPPER_MINE",
+        "resourceTypeId": "copper",
+        "resourceName": "Copper",
+        "ontologyKey": "COPPER"
+      },
+      "location": {
+        "countryName": "United States",
+        "adminRegion": "Greenlee County, Arizona",
+        "locality": "Greenlee County, Arizona",
+        "coordinates": {
+          "lat": 33.09056,
+          "lng": -109.36667
+        },
+        "coordinateStatus": "SITE_POINT_APPROXIMATE",
+        "coordinateProvenance": "Operator or reputable public site location; point may represent complex centroid"
+      },
+      "ownership": {
+        "owner": "Freeport-McMoRan Morenci Inc.; Sumitomo Group minority interest",
+        "operator": "Freeport-McMoRan Morenci Inc.; Sumitomo Group minority interest",
+        "ownerEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED",
+        "operatorEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED"
+      },
+      "operation": {
+        "status": "ACTIVE_SITE_REFERENCE",
+        "operationalStatus": "ACTIVE_SITE_REFERENCE",
+        "extractionMethod": "open-pit; copper-molybdenum ore processing and leaching",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "open-pit; copper-molybdenum ore processing and leaching",
+        "midstreamProcess": "Site-specific processing route must be verified before production configuration",
+        "refinedOutputs": [
+          "COPPER_CONCENTRATE",
+          "COPPER_CATHODE",
+          "BYPRODUCTS_AS_CONFIGURED"
+        ],
+        "downstreamSectors": [
+          "COPPER_SMELTING",
+          "ELECTRICAL_EQUIPMENT",
+          "CONSTRUCTION",
+          "INDUSTRIAL_MANUFACTURING"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "status": "UNQUANTIFIED",
+          "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": "Copper-molybdenum ore; site-specific current assay grade not supplied in this record",
+          "unit": null,
+          "status": "QUALITATIVE_DEPOSIT_DESCRIPTION_NOT_ASSAY"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-10"
+        },
+        "completeness": {
+          "reserve": "UNQUANTIFIED",
+          "production": "UNOBSERVED",
+          "grade": "QUALITATIVE_ONLY",
+          "recovery": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "UNOBSERVED",
+          "structuredEvidence": false,
+          "overall": "IDENTITY_AND_LOCATION_ENRICHED_QUANTITATIVES_REQUIRE_RESEARCH"
+        }
+      },
+      "verification": {
+        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_REQUIRES_FIELD_REVALIDATION",
+        "reviewedAt": "2026-10-10",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "OPERATOR_OR_PUBLIC_SITE_REFERENCE"
+        ],
+        "dataLimitations": "Do not treat approximate point as survey-grade; grade phrase is geological/commodity description, not a measured assay. Reserve, production, recovery, purity and capacity intentionally remain unobserved for separate gameplay simulation."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_country_expansion_v1.json"
+        ],
+        "sourcePath": "resource_site_country_expansion_v1.sites",
+        "evidence": [
+          {
+            "url": "https://www.sec.gov/Archives/edgar/data/831259/000083125926000012/a2025trsmorenci-finalxpubl.pdf",
+            "scope": "site identity, commodity, region and/or operator; revalidate field-level claims before promotion"
+          }
+        ]
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "USA",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "SITE_EXPANSION_REFERENCE",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
+        "qualityAuthority": "QUALITATIVE_DESCRIPTION_ONLY",
+        "countryWarehouseId": "WH-USA-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      }
+    },
+    {
+      "countryId": "AUS",
+      "siteId": "SITE_AUS_olympic_dam_mine",
+      "siteName": "Olympic Dam",
+      "identity": {
+        "countryIso3": "AUS",
+        "siteType": "UNDERGROUND_POLYMETALLIC_MINE",
+        "resourceTypeId": "copper",
+        "resourceName": "Copper",
+        "ontologyKey": "COPPER"
+      },
+      "location": {
+        "countryName": "Australia",
+        "adminRegion": "South Australia, north-west of Adelaide",
+        "locality": "South Australia, north-west of Adelaide",
+        "coordinates": {
+          "lat": -30.438,
+          "lng": 136.879
+        },
+        "coordinateStatus": "SITE_POINT_APPROXIMATE",
+        "coordinateProvenance": "Operator or reputable public site location; point may represent complex centroid"
+      },
+      "ownership": {
+        "owner": "BHP",
+        "operator": "BHP",
+        "ownerEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED",
+        "operatorEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED"
+      },
+      "operation": {
+        "status": "ACTIVE_SITE_REFERENCE",
+        "operationalStatus": "ACTIVE_SITE_REFERENCE",
+        "extractionMethod": "underground mining; integrated ore handling and processing",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "underground mining; integrated ore handling and processing",
+        "midstreamProcess": "Site-specific processing route must be verified before production configuration",
+        "refinedOutputs": [
+          "COPPER_CONCENTRATE",
+          "COPPER_CATHODE",
+          "BYPRODUCTS_AS_CONFIGURED"
+        ],
+        "downstreamSectors": [
+          "COPPER_SMELTING",
+          "ELECTRICAL_EQUIPMENT",
+          "CONSTRUCTION",
+          "INDUSTRIAL_MANUFACTURING"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "status": "UNQUANTIFIED",
+          "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": "Polymetallic deposit containing copper, gold and uranium; assay grade not supplied in this record",
+          "unit": null,
+          "status": "QUALITATIVE_DEPOSIT_DESCRIPTION_NOT_ASSAY"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-10"
+        },
+        "completeness": {
+          "reserve": "UNQUANTIFIED",
+          "production": "UNOBSERVED",
+          "grade": "QUALITATIVE_ONLY",
+          "recovery": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "UNOBSERVED",
+          "structuredEvidence": false,
+          "overall": "IDENTITY_AND_LOCATION_ENRICHED_QUANTITATIVES_REQUIRE_RESEARCH"
+        }
+      },
+      "verification": {
+        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_REQUIRES_FIELD_REVALIDATION",
+        "reviewedAt": "2026-10-10",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "OPERATOR_OR_PUBLIC_SITE_REFERENCE"
+        ],
+        "dataLimitations": "Do not treat approximate point as survey-grade; grade phrase is geological/commodity description, not a measured assay. Reserve, production, recovery, purity and capacity intentionally remain unobserved for separate gameplay simulation."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_country_expansion_v1.json"
+        ],
+        "sourcePath": "resource_site_country_expansion_v1.sites",
+        "evidence": [
+          {
+            "url": "https://www.bhp.com/what-we-do/global-locations/australia/south-australia/south-australia-olympic-dam",
+            "scope": "site identity, commodity, region and/or operator; revalidate field-level claims before promotion"
+          }
+        ]
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "AUS",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "SITE_EXPANSION_REFERENCE",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
+        "qualityAuthority": "QUALITATIVE_DESCRIPTION_ONLY",
+        "countryWarehouseId": "WH-AUS-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      }
+    },
+    {
+      "countryId": "MNG",
+      "siteId": "SITE_MNG_oyu_tolgoi_mine",
+      "siteName": "Oyu Tolgoi Mine",
+      "identity": {
+        "countryIso3": "MNG",
+        "siteType": "OPEN_PIT_AND_UNDERGROUND_COPPER_GOLD_MINE",
+        "resourceTypeId": "copper",
+        "resourceName": "Copper",
+        "ontologyKey": "COPPER"
+      },
+      "location": {
+        "countryName": "Mongolia",
+        "adminRegion": "Umnugovi Province, South Gobi",
+        "locality": "Umnugovi Province, South Gobi",
+        "coordinates": {
+          "lat": 43,
+          "lng": 106.85
+        },
+        "coordinateStatus": "SITE_POINT_APPROXIMATE",
+        "coordinateProvenance": "Operator or reputable public site location; point may represent complex centroid"
+      },
+      "ownership": {
+        "owner": "Oyu Tolgoi LLC; Rio Tinto; Government of Mongolia",
+        "operator": "Oyu Tolgoi LLC; Rio Tinto; Government of Mongolia",
+        "ownerEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED",
+        "operatorEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED"
+      },
+      "operation": {
+        "status": "ACTIVE_SITE_REFERENCE",
+        "operationalStatus": "ACTIVE_SITE_REFERENCE",
+        "extractionMethod": "open-pit and underground block-cave mining",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "open-pit and underground block-cave mining",
+        "midstreamProcess": "Site-specific processing route must be verified before production configuration",
+        "refinedOutputs": [
+          "COPPER_CONCENTRATE",
+          "COPPER_CATHODE",
+          "BYPRODUCTS_AS_CONFIGURED"
+        ],
+        "downstreamSectors": [
+          "COPPER_SMELTING",
+          "ELECTRICAL_EQUIPMENT",
+          "CONSTRUCTION",
+          "INDUSTRIAL_MANUFACTURING"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "status": "UNQUANTIFIED",
+          "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": "Copper-gold deposit; site-specific current assay grade not supplied in this record",
+          "unit": null,
+          "status": "QUALITATIVE_DEPOSIT_DESCRIPTION_NOT_ASSAY"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-10"
+        },
+        "completeness": {
+          "reserve": "UNQUANTIFIED",
+          "production": "UNOBSERVED",
+          "grade": "QUALITATIVE_ONLY",
+          "recovery": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "UNOBSERVED",
+          "structuredEvidence": false,
+          "overall": "IDENTITY_AND_LOCATION_ENRICHED_QUANTITATIVES_REQUIRE_RESEARCH"
+        }
+      },
+      "verification": {
+        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_REQUIRES_FIELD_REVALIDATION",
+        "reviewedAt": "2026-10-10",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "OPERATOR_OR_PUBLIC_SITE_REFERENCE"
+        ],
+        "dataLimitations": "Do not treat approximate point as survey-grade; grade phrase is geological/commodity description, not a measured assay. Reserve, production, recovery, purity and capacity intentionally remain unobserved for separate gameplay simulation."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_country_expansion_v1.json"
+        ],
+        "sourcePath": "resource_site_country_expansion_v1.sites",
+        "evidence": [
+          {
+            "url": "https://www.riotinto.com/en/mn/oyu-tolgoi",
+            "scope": "site identity, commodity, region and/or operator; revalidate field-level claims before promotion"
+          }
+        ]
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "MNG",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "SITE_EXPANSION_REFERENCE",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
+        "qualityAuthority": "QUALITATIVE_DESCRIPTION_ONLY",
+        "countryWarehouseId": "WH-MNG-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      }
+    },
+    {
+      "countryId": "IDN",
+      "siteId": "SITE_IDN_grasberg_mine",
+      "siteName": "Grasberg Mine",
+      "identity": {
+        "countryIso3": "IDN",
+        "siteType": "UNDERGROUND_COPPER_GOLD_MINE",
+        "resourceTypeId": "copper",
+        "resourceName": "Copper",
+        "ontologyKey": "COPPER"
+      },
+      "location": {
+        "countryName": "Indonesia",
+        "adminRegion": "Mimika Regency, Central Papua",
+        "locality": "Mimika Regency, Central Papua",
+        "coordinates": {
+          "lat": -4.05278,
+          "lng": 137.11583
+        },
+        "coordinateStatus": "SITE_POINT_APPROXIMATE",
+        "coordinateProvenance": "Operator or reputable public site location; point may represent complex centroid"
+      },
+      "ownership": {
+        "owner": "PT Freeport Indonesia / Freeport-McMoRan",
+        "operator": "PT Freeport Indonesia / Freeport-McMoRan",
+        "ownerEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED",
+        "operatorEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED"
+      },
+      "operation": {
+        "status": "ACTIVE_SITE_REFERENCE",
+        "operationalStatus": "ACTIVE_SITE_REFERENCE",
+        "extractionMethod": "underground block-cave and other underground mining systems",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "underground block-cave and other underground mining systems",
+        "midstreamProcess": "Site-specific processing route must be verified before production configuration",
+        "refinedOutputs": [
+          "COPPER_CONCENTRATE",
+          "COPPER_CATHODE",
+          "BYPRODUCTS_AS_CONFIGURED"
+        ],
+        "downstreamSectors": [
+          "COPPER_SMELTING",
+          "ELECTRICAL_EQUIPMENT",
+          "CONSTRUCTION",
+          "INDUSTRIAL_MANUFACTURING"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "status": "UNQUANTIFIED",
+          "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": "Copper-gold deposit; commodity-specific assay grade not supplied in this record",
+          "unit": null,
+          "status": "QUALITATIVE_DEPOSIT_DESCRIPTION_NOT_ASSAY"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-10"
+        },
+        "completeness": {
+          "reserve": "UNQUANTIFIED",
+          "production": "UNOBSERVED",
+          "grade": "QUALITATIVE_ONLY",
+          "recovery": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "UNOBSERVED",
+          "structuredEvidence": false,
+          "overall": "IDENTITY_AND_LOCATION_ENRICHED_QUANTITATIVES_REQUIRE_RESEARCH"
+        }
+      },
+      "verification": {
+        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_REQUIRES_FIELD_REVALIDATION",
+        "reviewedAt": "2026-10-10",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "OPERATOR_OR_PUBLIC_SITE_REFERENCE"
+        ],
+        "dataLimitations": "Do not treat approximate point as survey-grade; grade phrase is geological/commodity description, not a measured assay. Reserve, production, recovery, purity and capacity intentionally remain unobserved for separate gameplay simulation."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_country_expansion_v1.json"
+        ],
+        "sourcePath": "resource_site_country_expansion_v1.sites",
+        "evidence": [
+          {
+            "url": "https://www.fcx.com/operations/indonesia",
+            "scope": "site identity, commodity, region and/or operator; revalidate field-level claims before promotion"
+          }
+        ]
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "IDN",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "SITE_EXPANSION_REFERENCE",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
+        "qualityAuthority": "QUALITATIVE_DESCRIPTION_ONLY",
+        "countryWarehouseId": "WH-IDN-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      }
+    },
+    {
+      "countryId": "BRA",
+      "siteId": "SITE_BRA_carajas_iron_ore_mine",
+      "siteName": "Carajás Mining Complex",
+      "identity": {
+        "countryIso3": "BRA",
+        "siteType": "OPEN_PIT_IRON_ORE_COMPLEX",
+        "resourceTypeId": "iron_ore",
+        "resourceName": "Iron Ore",
+        "ontologyKey": "IRON_ORE"
+      },
+      "location": {
+        "countryName": "Brazil",
+        "adminRegion": "Pará State, Carajás Mineral Province",
+        "locality": "Pará State, Carajás Mineral Province",
+        "coordinates": {
+          "lat": -6.0667,
+          "lng": -50.1667
+        },
+        "coordinateStatus": "SITE_POINT_APPROXIMATE",
+        "coordinateProvenance": "Operator or reputable public site location; point may represent complex centroid"
+      },
+      "ownership": {
+        "owner": "Vale",
+        "operator": "Vale",
+        "ownerEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED",
+        "operatorEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED"
+      },
+      "operation": {
+        "status": "ACTIVE_SITE_REFERENCE",
+        "operationalStatus": "ACTIVE_SITE_REFERENCE",
+        "extractionMethod": "open-pit iron-ore mining and beneficiation",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "open-pit iron-ore mining and beneficiation",
+        "midstreamProcess": "Site-specific processing route must be verified before production configuration",
+        "refinedOutputs": [
+          "IRON_ORE_CONCENTRATE",
+          "IRON_ORE_FINES"
+        ],
+        "downstreamSectors": [
+          "STEELMAKING",
+          "HEAVY_INDUSTRY"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "status": "UNQUANTIFIED",
+          "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": "Iron-ore operation; site-specific Fe grade not supplied in this record",
+          "unit": null,
+          "status": "QUALITATIVE_DEPOSIT_DESCRIPTION_NOT_ASSAY"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-10"
+        },
+        "completeness": {
+          "reserve": "UNQUANTIFIED",
+          "production": "UNOBSERVED",
+          "grade": "QUALITATIVE_ONLY",
+          "recovery": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "UNOBSERVED",
+          "structuredEvidence": false,
+          "overall": "IDENTITY_AND_LOCATION_ENRICHED_QUANTITATIVES_REQUIRE_RESEARCH"
+        }
+      },
+      "verification": {
+        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_REQUIRES_FIELD_REVALIDATION",
+        "reviewedAt": "2026-10-10",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "OPERATOR_OR_PUBLIC_SITE_REFERENCE"
+        ],
+        "dataLimitations": "Do not treat approximate point as survey-grade; grade phrase is geological/commodity description, not a measured assay. Reserve, production, recovery, purity and capacity intentionally remain unobserved for separate gameplay simulation."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_country_expansion_v1.json"
+        ],
+        "sourcePath": "resource_site_country_expansion_v1.sites",
+        "evidence": [
+          {
+            "url": "https://www.vale.com/",
+            "scope": "site identity, commodity, region and/or operator; revalidate field-level claims before promotion"
+          }
+        ]
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "BRA",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "SITE_EXPANSION_REFERENCE",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
+        "qualityAuthority": "QUALITATIVE_DESCRIPTION_ONLY",
+        "countryWarehouseId": "WH-BRA-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      }
+    },
+    {
+      "countryId": "PER",
+      "siteId": "SITE_PER_cerro_verde_copper_mine",
+      "siteName": "Cerro Verde Mine",
+      "identity": {
+        "countryIso3": "PER",
+        "siteType": "OPEN_PIT_COPPER_MINE",
+        "resourceTypeId": "copper",
+        "resourceName": "Copper",
+        "ontologyKey": "COPPER"
+      },
+      "location": {
+        "countryName": "Peru",
+        "adminRegion": "Arequipa Region, near Arequipa",
+        "locality": "Arequipa Region, near Arequipa",
+        "coordinates": {
+          "lat": -16.531,
+          "lng": -71.59
+        },
+        "coordinateStatus": "SITE_POINT_APPROXIMATE",
+        "coordinateProvenance": "Operator or reputable public site location; point may represent complex centroid"
+      },
+      "ownership": {
+        "owner": "Sociedad Minera Cerro Verde; Freeport-McMoRan majority interest",
+        "operator": "Sociedad Minera Cerro Verde; Freeport-McMoRan majority interest",
+        "ownerEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED",
+        "operatorEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED"
+      },
+      "operation": {
+        "status": "ACTIVE_SITE_REFERENCE",
+        "operationalStatus": "ACTIVE_SITE_REFERENCE",
+        "extractionMethod": "open-pit mining; concentrator and leach/SX-EW processing",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "open-pit mining; concentrator and leach/SX-EW processing",
+        "midstreamProcess": "Site-specific processing route must be verified before production configuration",
+        "refinedOutputs": [
+          "COPPER_CONCENTRATE",
+          "COPPER_CATHODE",
+          "BYPRODUCTS_AS_CONFIGURED"
+        ],
+        "downstreamSectors": [
+          "COPPER_SMELTING",
+          "ELECTRICAL_EQUIPMENT",
+          "CONSTRUCTION",
+          "INDUSTRIAL_MANUFACTURING"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "status": "UNQUANTIFIED",
+          "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": "Copper-molybdenum ore; site-specific current assay grade not supplied in this record",
+          "unit": null,
+          "status": "QUALITATIVE_DEPOSIT_DESCRIPTION_NOT_ASSAY"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-10"
+        },
+        "completeness": {
+          "reserve": "UNQUANTIFIED",
+          "production": "UNOBSERVED",
+          "grade": "QUALITATIVE_ONLY",
+          "recovery": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "UNOBSERVED",
+          "structuredEvidence": false,
+          "overall": "IDENTITY_AND_LOCATION_ENRICHED_QUANTITATIVES_REQUIRE_RESEARCH"
+        }
+      },
+      "verification": {
+        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_REQUIRES_FIELD_REVALIDATION",
+        "reviewedAt": "2026-10-10",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "OPERATOR_OR_PUBLIC_SITE_REFERENCE"
+        ],
+        "dataLimitations": "Do not treat approximate point as survey-grade; grade phrase is geological/commodity description, not a measured assay. Reserve, production, recovery, purity and capacity intentionally remain unobserved for separate gameplay simulation."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_country_expansion_v1.json"
+        ],
+        "sourcePath": "resource_site_country_expansion_v1.sites",
+        "evidence": [
+          {
+            "url": "https://www.fcx.com/operations/south-america",
+            "scope": "site identity, commodity, region and/or operator; revalidate field-level claims before promotion"
+          }
+        ]
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "PER",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "SITE_EXPANSION_REFERENCE",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
+        "qualityAuthority": "QUALITATIVE_DESCRIPTION_ONLY",
+        "countryWarehouseId": "WH-PER-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      }
+    },
+    {
+      "countryId": "ZMB",
+      "siteId": "SITE_ZMB_kansanshi_copper_gold_mine",
+      "siteName": "Kansanshi Mine",
+      "identity": {
+        "countryIso3": "ZMB",
+        "siteType": "OPEN_PIT_COPPER_GOLD_MINE",
+        "resourceTypeId": "copper",
+        "resourceName": "Copper",
+        "ontologyKey": "COPPER"
+      },
+      "location": {
+        "countryName": "Zambia",
+        "adminRegion": "North-Western Province, near Solwezi",
+        "locality": "North-Western Province, near Solwezi",
+        "coordinates": {
+          "lat": -12.095,
+          "lng": 26.427
+        },
+        "coordinateStatus": "SITE_POINT_APPROXIMATE",
+        "coordinateProvenance": "Operator or reputable public site location; point may represent complex centroid"
+      },
+      "ownership": {
+        "owner": "Kansanshi Mining PLC / First Quantum Minerals",
+        "operator": "Kansanshi Mining PLC / First Quantum Minerals",
+        "ownerEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED",
+        "operatorEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED"
+      },
+      "operation": {
+        "status": "ACTIVE_SITE_REFERENCE",
+        "operationalStatus": "ACTIVE_SITE_REFERENCE",
+        "extractionMethod": "open-pit mining; copper flotation and oxide leaching",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "open-pit mining; copper flotation and oxide leaching",
+        "midstreamProcess": "Site-specific processing route must be verified before production configuration",
+        "refinedOutputs": [
+          "COPPER_CONCENTRATE",
+          "COPPER_CATHODE",
+          "BYPRODUCTS_AS_CONFIGURED"
+        ],
+        "downstreamSectors": [
+          "COPPER_SMELTING",
+          "ELECTRICAL_EQUIPMENT",
+          "CONSTRUCTION",
+          "INDUSTRIAL_MANUFACTURING"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "status": "UNQUANTIFIED",
+          "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": "Copper-gold deposit; site-specific current assay grade not supplied in this record",
+          "unit": null,
+          "status": "QUALITATIVE_DEPOSIT_DESCRIPTION_NOT_ASSAY"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-10"
+        },
+        "completeness": {
+          "reserve": "UNQUANTIFIED",
+          "production": "UNOBSERVED",
+          "grade": "QUALITATIVE_ONLY",
+          "recovery": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "UNOBSERVED",
+          "structuredEvidence": false,
+          "overall": "IDENTITY_AND_LOCATION_ENRICHED_QUANTITATIVES_REQUIRE_RESEARCH"
+        }
+      },
+      "verification": {
+        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_REQUIRES_FIELD_REVALIDATION",
+        "reviewedAt": "2026-10-10",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "OPERATOR_OR_PUBLIC_SITE_REFERENCE"
+        ],
+        "dataLimitations": "Do not treat approximate point as survey-grade; grade phrase is geological/commodity description, not a measured assay. Reserve, production, recovery, purity and capacity intentionally remain unobserved for separate gameplay simulation."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_country_expansion_v1.json"
+        ],
+        "sourcePath": "resource_site_country_expansion_v1.sites",
+        "evidence": [
+          {
+            "url": "https://www.first-quantum.com/English/our-operations/default.aspx",
+            "scope": "site identity, commodity, region and/or operator; revalidate field-level claims before promotion"
+          }
+        ]
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "ZMB",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "SITE_EXPANSION_REFERENCE",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
+        "qualityAuthority": "QUALITATIVE_DESCRIPTION_ONLY",
+        "countryWarehouseId": "WH-ZMB-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      }
+    },
+    {
+      "countryId": "COD",
+      "siteId": "SITE_COD_tenke_fungurume_mine",
+      "siteName": "Tenke Fungurume Mine",
+      "identity": {
+        "countryIso3": "COD",
+        "siteType": "OPEN_PIT_COPPER_COBALT_MINE",
+        "resourceTypeId": "copper",
+        "resourceName": "Copper",
+        "ontologyKey": "COPPER"
+      },
+      "location": {
+        "countryName": "Democratic Republic of the Congo",
+        "adminRegion": "Lualaba Province",
+        "locality": "Lualaba Province",
+        "coordinates": {
+          "lat": -10.6,
+          "lng": 26.15
+        },
+        "coordinateStatus": "SITE_POINT_APPROXIMATE",
+        "coordinateProvenance": "Operator or reputable public site location; point may represent complex centroid"
+      },
+      "ownership": {
+        "owner": "Tenke Fungurume Mining; CMOC",
+        "operator": "Tenke Fungurume Mining; CMOC",
+        "ownerEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED",
+        "operatorEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED"
+      },
+      "operation": {
+        "status": "ACTIVE_SITE_REFERENCE",
+        "operationalStatus": "ACTIVE_SITE_REFERENCE",
+        "extractionMethod": "open-pit mining and hydrometallurgical copper/cobalt processing",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "open-pit mining and hydrometallurgical copper/cobalt processing",
+        "midstreamProcess": "Site-specific processing route must be verified before production configuration",
+        "refinedOutputs": [
+          "COPPER_CONCENTRATE",
+          "COPPER_CATHODE",
+          "BYPRODUCTS_AS_CONFIGURED"
+        ],
+        "downstreamSectors": [
+          "COPPER_SMELTING",
+          "ELECTRICAL_EQUIPMENT",
+          "CONSTRUCTION",
+          "INDUSTRIAL_MANUFACTURING"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "status": "UNQUANTIFIED",
+          "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": "Copper-cobalt deposit; site-specific current assay grade not supplied in this record",
+          "unit": null,
+          "status": "QUALITATIVE_DEPOSIT_DESCRIPTION_NOT_ASSAY"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-10"
+        },
+        "completeness": {
+          "reserve": "UNQUANTIFIED",
+          "production": "UNOBSERVED",
+          "grade": "QUALITATIVE_ONLY",
+          "recovery": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "UNOBSERVED",
+          "structuredEvidence": false,
+          "overall": "IDENTITY_AND_LOCATION_ENRICHED_QUANTITATIVES_REQUIRE_RESEARCH"
+        }
+      },
+      "verification": {
+        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_REQUIRES_FIELD_REVALIDATION",
+        "reviewedAt": "2026-10-10",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "OPERATOR_OR_PUBLIC_SITE_REFERENCE"
+        ],
+        "dataLimitations": "Do not treat approximate point as survey-grade; grade phrase is geological/commodity description, not a measured assay. Reserve, production, recovery, purity and capacity intentionally remain unobserved for separate gameplay simulation."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_country_expansion_v1.json"
+        ],
+        "sourcePath": "resource_site_country_expansion_v1.sites",
+        "evidence": [
+          {
+            "url": "https://en.cmoc.com/html/Business/CMOCMining/",
+            "scope": "site identity, commodity, region and/or operator; revalidate field-level claims before promotion"
+          }
+        ]
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "COD",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "SITE_EXPANSION_REFERENCE",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
+        "qualityAuthority": "QUALITATIVE_DESCRIPTION_ONLY",
+        "countryWarehouseId": "WH-COD-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      }
+    },
+    {
+      "countryId": "GHA",
+      "siteId": "SITE_GHA_ahafo_gold_mine",
+      "siteName": "Ahafo Mine",
+      "identity": {
+        "countryIso3": "GHA",
+        "siteType": "GOLD_MINE",
+        "resourceTypeId": "gold",
+        "resourceName": "Gold",
+        "ontologyKey": "GOLD"
+      },
+      "location": {
+        "countryName": "Ghana",
+        "adminRegion": "Ahafo Region, north-west of Sunyani",
+        "locality": "Ahafo Region, north-west of Sunyani",
+        "coordinates": {
+          "lat": 6.7,
+          "lng": -2.3
+        },
+        "coordinateStatus": "SITE_POINT_APPROXIMATE",
+        "coordinateProvenance": "Operator or reputable public site location; point may represent complex centroid"
+      },
+      "ownership": {
+        "owner": "Newmont",
+        "operator": "Newmont",
+        "ownerEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED",
+        "operatorEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED"
+      },
+      "operation": {
+        "status": "ACTIVE_SITE_REFERENCE",
+        "operationalStatus": "ACTIVE_SITE_REFERENCE",
+        "extractionMethod": "open-pit and underground gold mining with ore processing",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "open-pit and underground gold mining with ore processing",
+        "midstreamProcess": "Site-specific processing route must be verified before production configuration",
+        "refinedOutputs": [
+          "GOLD_DORE"
+        ],
+        "downstreamSectors": [
+          "GOLD_REFINING",
+          "ELECTRONICS",
+          "JEWELLERY"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "status": "UNQUANTIFIED",
+          "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": "Gold ore; site-specific current grade not supplied in this record",
+          "unit": null,
+          "status": "QUALITATIVE_DEPOSIT_DESCRIPTION_NOT_ASSAY"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-10"
+        },
+        "completeness": {
+          "reserve": "UNQUANTIFIED",
+          "production": "UNOBSERVED",
+          "grade": "QUALITATIVE_ONLY",
+          "recovery": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "UNOBSERVED",
+          "structuredEvidence": false,
+          "overall": "IDENTITY_AND_LOCATION_ENRICHED_QUANTITATIVES_REQUIRE_RESEARCH"
+        }
+      },
+      "verification": {
+        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_REQUIRES_FIELD_REVALIDATION",
+        "reviewedAt": "2026-10-10",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "OPERATOR_OR_PUBLIC_SITE_REFERENCE"
+        ],
+        "dataLimitations": "Do not treat approximate point as survey-grade; grade phrase is geological/commodity description, not a measured assay. Reserve, production, recovery, purity and capacity intentionally remain unobserved for separate gameplay simulation."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_country_expansion_v1.json"
+        ],
+        "sourcePath": "resource_site_country_expansion_v1.sites",
+        "evidence": [
+          {
+            "url": "https://www.newmont.com/operations-and-projects/global-presence/africa/ahafo-ghana/default.aspx",
+            "scope": "site identity, commodity, region and/or operator; revalidate field-level claims before promotion"
+          }
+        ]
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "GHA",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "SITE_EXPANSION_REFERENCE",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
+        "qualityAuthority": "QUALITATIVE_DESCRIPTION_ONLY",
+        "countryWarehouseId": "WH-GHA-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      }
+    },
+    {
+      "countryId": "USA",
+      "siteId": "SITE_USA_bingham_canyon_mine",
+      "siteName": "Bingham Canyon Mine (Kennecott)",
+      "identity": {
+        "countryIso3": "USA",
+        "siteType": "OPEN_PIT_COPPER_MINE",
+        "resourceTypeId": "copper",
+        "resourceName": "Copper",
+        "ontologyKey": "COPPER"
+      },
+      "location": {
+        "countryName": "United States",
+        "adminRegion": "Salt Lake County, Utah",
+        "locality": "Salt Lake County, Utah",
+        "coordinates": {
+          "lat": 40.523,
+          "lng": -112.151
+        },
+        "coordinateStatus": "SITE_POINT_APPROXIMATE",
+        "coordinateProvenance": "Operator or reputable public site location; point may represent complex centroid"
+      },
+      "ownership": {
+        "owner": "Kennecott / Rio Tinto",
+        "operator": "Kennecott / Rio Tinto",
+        "ownerEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED",
+        "operatorEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED"
+      },
+      "operation": {
+        "status": "ACTIVE_SITE_REFERENCE",
+        "operationalStatus": "ACTIVE_SITE_REFERENCE",
+        "extractionMethod": "open-pit copper mining with concentrator and smelter chain",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "open-pit copper mining with concentrator and smelter chain",
+        "midstreamProcess": "Site-specific processing route must be verified before production configuration",
+        "refinedOutputs": [
+          "COPPER_CONCENTRATE",
+          "COPPER_CATHODE",
+          "BYPRODUCTS_AS_CONFIGURED"
+        ],
+        "downstreamSectors": [
+          "COPPER_SMELTING",
+          "ELECTRICAL_EQUIPMENT",
+          "CONSTRUCTION",
+          "INDUSTRIAL_MANUFACTURING"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "status": "UNQUANTIFIED",
+          "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": "Porphyry copper deposit; site-specific current assay grade not supplied in this record",
+          "unit": null,
+          "status": "QUALITATIVE_DEPOSIT_DESCRIPTION_NOT_ASSAY"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-10"
+        },
+        "completeness": {
+          "reserve": "UNQUANTIFIED",
+          "production": "UNOBSERVED",
+          "grade": "QUALITATIVE_ONLY",
+          "recovery": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "UNOBSERVED",
+          "structuredEvidence": false,
+          "overall": "IDENTITY_AND_LOCATION_ENRICHED_QUANTITATIVES_REQUIRE_RESEARCH"
+        }
+      },
+      "verification": {
+        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_REQUIRES_FIELD_REVALIDATION",
+        "reviewedAt": "2026-10-10",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "OPERATOR_OR_PUBLIC_SITE_REFERENCE"
+        ],
+        "dataLimitations": "Do not treat approximate point as survey-grade; grade phrase is geological/commodity description, not a measured assay. Reserve, production, recovery, purity and capacity intentionally remain unobserved for separate gameplay simulation."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_country_expansion_v1.json"
+        ],
+        "sourcePath": "resource_site_country_expansion_v1.sites",
+        "evidence": [
+          {
+            "url": "https://www.riotinto.com/en/operations/us/kennecott",
+            "scope": "site identity, commodity, region and/or operator; revalidate field-level claims before promotion"
+          }
+        ]
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "USA",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "SITE_EXPANSION_REFERENCE",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
+        "qualityAuthority": "QUALITATIVE_DESCRIPTION_ONLY",
+        "countryWarehouseId": "WH-USA-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      }
+    },
+    {
+      "countryId": "PER",
+      "siteId": "SITE_PER_antamina_polymetallic_mine",
+      "siteName": "Antamina Mine",
+      "identity": {
+        "countryIso3": "PER",
+        "siteType": "OPEN_PIT_POLYMETALLIC_MINE",
+        "resourceTypeId": "copper",
+        "resourceName": "Copper",
+        "ontologyKey": "COPPER"
+      },
+      "location": {
+        "countryName": "Peru",
+        "adminRegion": "Huari Province, Ancash Region",
+        "locality": "Huari Province, Ancash Region",
+        "coordinates": {
+          "lat": -9.54,
+          "lng": -77.05
+        },
+        "coordinateStatus": "SITE_POINT_APPROXIMATE",
+        "coordinateProvenance": "Operator or reputable public site location; point may represent complex centroid"
+      },
+      "ownership": {
+        "owner": "Compañía Minera Antamina joint venture",
+        "operator": "Compañía Minera Antamina joint venture",
+        "ownerEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED",
+        "operatorEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED"
+      },
+      "operation": {
+        "status": "ACTIVE_SITE_REFERENCE",
+        "operationalStatus": "ACTIVE_SITE_REFERENCE",
+        "extractionMethod": "open-pit mining and concentrator; copper-zinc polymetallic streams",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "open-pit mining and concentrator; copper-zinc polymetallic streams",
+        "midstreamProcess": "Site-specific processing route must be verified before production configuration",
+        "refinedOutputs": [
+          "COPPER_CONCENTRATE",
+          "COPPER_CATHODE",
+          "BYPRODUCTS_AS_CONFIGURED"
+        ],
+        "downstreamSectors": [
+          "COPPER_SMELTING",
+          "ELECTRICAL_EQUIPMENT",
+          "CONSTRUCTION",
+          "INDUSTRIAL_MANUFACTURING"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "status": "UNQUANTIFIED",
+          "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": "Copper-zinc polymetallic deposit; commodity-specific assay grade not supplied in this record",
+          "unit": null,
+          "status": "QUALITATIVE_DEPOSIT_DESCRIPTION_NOT_ASSAY"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-10"
+        },
+        "completeness": {
+          "reserve": "UNQUANTIFIED",
+          "production": "UNOBSERVED",
+          "grade": "QUALITATIVE_ONLY",
+          "recovery": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "UNOBSERVED",
+          "structuredEvidence": false,
+          "overall": "IDENTITY_AND_LOCATION_ENRICHED_QUANTITATIVES_REQUIRE_RESEARCH"
+        }
+      },
+      "verification": {
+        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_REQUIRES_FIELD_REVALIDATION",
+        "reviewedAt": "2026-10-10",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "OPERATOR_OR_PUBLIC_SITE_REFERENCE"
+        ],
+        "dataLimitations": "Do not treat approximate point as survey-grade; grade phrase is geological/commodity description, not a measured assay. Reserve, production, recovery, purity and capacity intentionally remain unobserved for separate gameplay simulation."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_country_expansion_v1.json"
+        ],
+        "sourcePath": "resource_site_country_expansion_v1.sites",
+        "evidence": [
+          {
+            "url": "https://www.antamina.com/",
+            "scope": "site identity, commodity, region and/or operator; revalidate field-level claims before promotion"
+          }
+        ]
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "PER",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "SITE_EXPANSION_REFERENCE",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
+        "qualityAuthority": "QUALITATIVE_DESCRIPTION_ONLY",
+        "countryWarehouseId": "WH-PER-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      }
+    }
+  ],
+  "policy": {
+    "noSyntheticObservedValues": true,
+    "gradeIsNotPurity": true,
+    "reserveProductionRecoveryPurityAndCapacityRemainExplicitlyUnobserved": true,
+    "simulationValuesMustBeSuppliedByExistingOmegaResourceRealismRuntime": true,
+    "routeAndFactoryMustUseExistingPipeline": true
+  },
+  "sources": [
+    "https://www.usgs.gov/programs/mineral-resources-program/mineral-resources-data",
+    "https://mrdata.usgs.gov/"
+  ]
+}
