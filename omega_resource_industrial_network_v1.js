@@ -92,7 +92,20 @@ function dispatch(owner,type,c,payload){
 
 function masterSites(){
   const x=g.OmegaResourceSiteMasterResearchData||g.Omega?.ResourceSiteMasterResearchData;
-  const base=Array.isArray(x?.sites)?x.sites:[];
+  const catalog=g.OmegaResourceSiteCanonicalCatalogData||g.Omega?.ResourceSiteCanonicalCatalogData;
+  const canonicalRows=Array.isArray(catalog?.sites)?catalog.sites:[];
+  const canonicalById=new Map(canonicalRows.map(row=>[String(row?.siteId||''),row]));
+  // Preserve master research records, but attach the exact same canonical quantitative contract by site ID.
+  const base=Array.isArray(x?.sites)?x.sites.map(site=>{
+    const canonical=canonicalById.get(String(site?.siteId||''))||null;
+    if(!canonical)return site;
+    const normalized=g.OmegaResourceSiteDataContract?.normalizeSiteRecord?.(canonical)||canonical;
+    return {...site,canonicalSiteRecord:clone(normalized),identity:clone(normalized.identity||site.identity||{}),
+      quantitative:clone(normalized.quantitative||site.quantitative||{}),
+      quantitativeProvenance:clone(normalized.quantitative?.quantitativeProvenance||site.quantitativeProvenance||{}),
+      map:clone(normalized.map||site.map||{}),location:clone(site.location||normalized.location||{}),
+      sourceReference:clone(normalized.sourceReference||site.sourceReference||{})};
+  }):[];
   const expansion=g.OmegaResourceSiteCountryExpansionData||g.Omega?.ResourceSiteCountryExpansionData;
   const extra=Array.isArray(expansion?.records)?expansion.records.map(row=>{
     const resourceId=String(row?.identity?.resourceTypeId||'').trim();
