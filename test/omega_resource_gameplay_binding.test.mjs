@@ -222,7 +222,7 @@ test('runtime renders all global sites and applies nation/resource scope without
 
   const diagnostics = context.Omega.IndividualResourceSiteBinding?.diagnostics();
   assert.equal(diagnostics?.status,'READY','global source registry must initialize');
-  assert.equal(diagnostics?.siteCount,241,'239 distinct physical locations plus coincident and near-overlap test identities must yield 241 site markers');
+  assert.equal(diagnostics?.siteCount,239+expansion.records.length+2,'all source locations, expansion sites and test fixtures must render individually');
   const markerCount = () => [...layers].reduce((sum,layer)=>sum+layer.markers.length,0);
   assert.equal(markerCount(),239+expansion.records.length+2,'WORLD scope must render source locations, all expansion sites and two test-only overlap fixtures');
   const geographicPositions=new Set([...layers].flatMap(layer=>layer.markers).map(marker=>marker.latlng.map(value=>Number(value).toFixed(3)).join('|')));
