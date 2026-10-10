@@ -1,0 +1,3411 @@
+{
+  "schemaVersion": "1.0.0",
+  "datasetId": "OMEGA_RESOURCE_SITE_EXPANSION_CHN_V1",
+  "generatedAt": "2026-10-10",
+  "authority": "SOURCE_BACKED_CATALOG_WITH_SEPARATE_SCENARIO_ASSUMPTIONS",
+  "purpose": "Additive China resource-site expansion. Original 199-site files remain unchanged; runtime merges this extension into canonical catalog, reserve simulation, evidence index, scenario capacity and map binding.",
+  "baseCatalogSiteCount": 199,
+  "countryTargets": {
+    "CHN": {
+      "minimumTotalSites": 15,
+      "existingBaseSites": 1,
+      "addedSites": 14,
+      "resultingTotalSites": 15
+    }
+  },
+  "siteCount": 14,
+  "reserveRecordCount": 14,
+  "scenarioRecordCount": 14,
+  "evidenceRecordCount": 14,
+  "provenancePolicy": "Published facts retain sources and measurement year. Unknown grade, purity, recoverable reserve, real reserve, throughput and rates remain UNOBSERVED. ESTIMATED_* coordinates are map proxies, not surveyed points. reserveRecords/scenarioRecords are gameplay assumptions, not real-world quantities.",
+  "sites": [
+    {
+      "countryId": "CHN",
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_CHN_haerwusu_coal_mine",
+      "siteName": "Haerwusu Coal Mine",
+      "identity": {
+        "countryIso3": "CHN",
+        "countryName": "China",
+        "siteType": "COAL_MINE",
+        "resourceTypeId": "coal",
+        "resourceName": "Coal",
+        "ontologyKey": "COAL",
+        "commodities": [
+          "coal"
+        ]
+      },
+      "location": {
+        "countryName": "China",
+        "adminRegion": "Inner Mongolia Autonomous Region",
+        "locality": "Zhungeer Banner, Ordos",
+        "coordinates": {
+          "lat": 39.85,
+          "lng": 111.25
+        },
+        "coordinateStatus": "ESTIMATED_MAP_POINT",
+        "coordinateConfidence": "MEDIUM",
+        "coordinateReference": "WGS84",
+        "coordinateIsSurveyed": false
+      },
+      "ownership": {
+        "owner": "China Shenhua Energy Company Limited",
+        "operator": "China Shenhua Energy Company Limited",
+        "ownerEvidenceStatus": "REPORTED",
+        "operatorEvidenceStatus": "REPORTED"
+      },
+      "operation": {
+        "status": "OPERATING_REPORTED",
+        "operationalStatus": "OPERATING_REPORTED",
+        "extractionMethod": "OPEN_PIT",
+        "commercialExtraction": true,
+        "extractionEligibility": "EXECUTABLE",
+        "commissioningYear": null,
+        "startYear": null
+      },
+      "processing": {
+        "upstreamProcess": "open pit",
+        "midstreamProcess": "ore handling and processing",
+        "refinedOutputs": [
+          "run-of-mine coal",
+          "processed coal"
+        ],
+        "downstreamSectors": [
+          "power generation",
+          "steelmaking"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "production": {
+          "annual": 20000000,
+          "unit": "metric_tonnes_per_year",
+          "year": null,
+          "status": "OBSERVED_APPROXIMATE",
+          "basis": "OverWatts Atlas reports ~20 Mtpa"
+        },
+        "grade": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-10"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "OBSERVED_APPROXIMATE",
+          "grade": "UNOBSERVED",
+          "structuredEvidence": false,
+          "coreFieldCount": 1,
+          "overall": "PARTIAL"
+        }
+      },
+      "verification": {
+        "researchState": "PARTIAL",
+        "reviewedAt": "2026-10-10",
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "www.overwatts.com",
+          "www.mindat.org"
+        ],
+        "dataLimitations": "OverWatts map point is approximate and the source warns values are approximate, not for operational use.",
+        "coordinateVerified": false,
+        "quantitativeVerified": false
+      },
+      "sourceReference": {
+        "sourceDataset": "resource_site_expansion_batch_chn_v1.json",
+        "sourcePath": "sites/SITE_CHN_haerwusu_coal_mine",
+        "authoritativeSources": [
+          "https://www.overwatts.com/asset/mine-haerwusu",
+          "https://www.mindat.org/loc-302617.html"
+        ]
+      }
+    },
+    {
+      "countryId": "CHN",
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_CHN_heidaigou_coal_mine",
+      "siteName": "Heidaigou Coal Mine",
+      "identity": {
+        "countryIso3": "CHN",
+        "countryName": "China",
+        "siteType": "COAL_MINE",
+        "resourceTypeId": "coal",
+        "resourceName": "Coal",
+        "ontologyKey": "COAL",
+        "commodities": [
+          "coal"
+        ]
+      },
+      "location": {
+        "countryName": "China",
+        "adminRegion": "Inner Mongolia Autonomous Region",
+        "locality": "Zhungeer, Ordos",
+        "coordinates": {
+          "lat": 39.8,
+          "lng": 111.3
+        },
+        "coordinateStatus": "ESTIMATED_MAP_POINT",
+        "coordinateConfidence": "MEDIUM",
+        "coordinateReference": "WGS84",
+        "coordinateIsSurveyed": false
+      },
+      "ownership": {
+        "owner": "China Shenhua Energy Company Limited",
+        "operator": "China Shenhua Energy Company Limited",
+        "ownerEvidenceStatus": "REPORTED",
+        "operatorEvidenceStatus": "REPORTED"
+      },
+      "operation": {
+        "status": "OPERATING_REPORTED",
+        "operationalStatus": "OPERATING_REPORTED",
+        "extractionMethod": "OPEN_PIT",
+        "commercialExtraction": true,
+        "extractionEligibility": "EXECUTABLE",
+        "commissioningYear": null,
+        "startYear": null
+      },
+      "processing": {
+        "upstreamProcess": "open pit",
+        "midstreamProcess": "ore handling and processing",
+        "refinedOutputs": [
+          "run-of-mine coal",
+          "processed coal"
+        ],
+        "downstreamSectors": [
+          "power generation",
+          "steelmaking"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "production": {
+          "annual": 33100000,
+          "unit": "metric_tonnes_per_year",
+          "year": 2023,
+          "status": "REPORTED_ESTIMATE",
+          "basis": "Mining Technology / GlobalData estimate for 2023"
+        },
+        "grade": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-10"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "REPORTED_ESTIMATE",
+          "grade": "UNOBSERVED",
+          "structuredEvidence": false,
+          "coreFieldCount": 1,
+          "overall": "PARTIAL"
+        }
+      },
+      "verification": {
+        "researchState": "PARTIAL",
+        "reviewedAt": "2026-10-10",
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "www.overwatts.com",
+          "www.mining-technology.com"
+        ],
+        "dataLimitations": "Map point approximate; reported output ~33.1 Mt in 2023; source indicated expected mine life through 2030.",
+        "coordinateVerified": false,
+        "quantitativeVerified": false
+      },
+      "sourceReference": {
+        "sourceDataset": "resource_site_expansion_batch_chn_v1.json",
+        "sourcePath": "sites/SITE_CHN_heidaigou_coal_mine",
+        "authoritativeSources": [
+          "https://www.overwatts.com/asset/mine-heidaigou",
+          "https://www.mining-technology.com/marketdata/five-largest-coal-mines-china/"
+        ]
+      }
+    },
+    {
+      "countryId": "CHN",
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_CHN_daliuta_huojitu_coal_mine",
+      "siteName": "Daliuta-Huojitu Coal Mine",
+      "identity": {
+        "countryIso3": "CHN",
+        "countryName": "China",
+        "siteType": "COAL_MINE",
+        "resourceTypeId": "coal",
+        "resourceName": "Coal",
+        "ontologyKey": "COAL",
+        "commodities": [
+          "coal"
+        ]
+      },
+      "location": {
+        "countryName": "China",
+        "adminRegion": "Shaanxi Province",
+        "locality": "Daliuta, Shenmu, Yulin",
+        "coordinates": {
+          "lat": 39.263103,
+          "lng": 110.234325
+        },
+        "coordinateStatus": "EXACT_SITE_POINT",
+        "coordinateConfidence": "HIGH",
+        "coordinateReference": "WGS84",
+        "coordinateIsSurveyed": true
+      },
+      "ownership": {
+        "owner": "China Shenhua Energy Company Limited",
+        "operator": "China Shenhua Energy Company Limited",
+        "ownerEvidenceStatus": "REPORTED",
+        "operatorEvidenceStatus": "REPORTED"
+      },
+      "operation": {
+        "status": "OPERATING_REPORTED",
+        "operationalStatus": "OPERATING_REPORTED",
+        "extractionMethod": "UNDERGROUND",
+        "commercialExtraction": true,
+        "extractionEligibility": "EXECUTABLE",
+        "commissioningYear": null,
+        "startYear": null
+      },
+      "processing": {
+        "upstreamProcess": "underground",
+        "midstreamProcess": "ore handling and processing",
+        "refinedOutputs": [
+          "run-of-mine coal",
+          "processed coal"
+        ],
+        "downstreamSectors": [
+          "power generation",
+          "steelmaking"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "production": {
+          "annual": 30450000,
+          "unit": "metric_tonnes_per_year",
+          "year": 2023,
+          "status": "REPORTED_ESTIMATE",
+          "basis": "Mining Technology / GlobalData estimate for 2023"
+        },
+        "grade": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-10"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "REPORTED_ESTIMATE",
+          "grade": "UNOBSERVED",
+          "structuredEvidence": false,
+          "coreFieldCount": 1,
+          "overall": "PARTIAL"
+        }
+      },
+      "verification": {
+        "researchState": "PARTIAL",
+        "reviewedAt": "2026-10-10",
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "www.gem.wiki",
+          "www.mining-technology.com"
+        ],
+        "dataLimitations": "GEM lists these WGS84 coordinates as exact. 2023 output is an estimate, not a current measured rate.",
+        "coordinateVerified": true,
+        "quantitativeVerified": false
+      },
+      "sourceReference": {
+        "sourceDataset": "resource_site_expansion_batch_chn_v1.json",
+        "sourcePath": "sites/SITE_CHN_daliuta_huojitu_coal_mine",
+        "authoritativeSources": [
+          "https://www.gem.wiki/中国神华能源股份有限公司大柳塔煤矿大柳塔井",
+          "https://www.mining-technology.com/marketdata/ten-biggest-underground-mines-in-operation-inasia-pacific"
+        ]
+      }
+    },
+    {
+      "countryId": "CHN",
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_CHN_bulianta_coal_mine",
+      "siteName": "Bulianta Coal Mine",
+      "identity": {
+        "countryIso3": "CHN",
+        "countryName": "China",
+        "siteType": "COAL_MINE",
+        "resourceTypeId": "coal",
+        "resourceName": "Coal",
+        "ontologyKey": "COAL",
+        "commodities": [
+          "coal"
+        ]
+      },
+      "location": {
+        "countryName": "China",
+        "adminRegion": "Inner Mongolia Autonomous Region",
+        "locality": "Ordos region",
+        "coordinates": {
+          "lat": 39.43,
+          "lng": 110.17
+        },
+        "coordinateStatus": "ESTIMATED_REGION_POINT",
+        "coordinateConfidence": "LOW",
+        "coordinateReference": "WGS84",
+        "coordinateIsSurveyed": false
+      },
+      "ownership": {
+        "owner": "China Shenhua Energy Company Limited",
+        "operator": "China Shenhua Energy Company Limited",
+        "ownerEvidenceStatus": "REPORTED",
+        "operatorEvidenceStatus": "REPORTED"
+      },
+      "operation": {
+        "status": "OPERATING_REPORTED",
+        "operationalStatus": "OPERATING_REPORTED",
+        "extractionMethod": "UNDERGROUND",
+        "commercialExtraction": true,
+        "extractionEligibility": "EXECUTABLE",
+        "commissioningYear": null,
+        "startYear": null
+      },
+      "processing": {
+        "upstreamProcess": "underground",
+        "midstreamProcess": "ore handling and processing",
+        "refinedOutputs": [
+          "run-of-mine coal",
+          "processed coal"
+        ],
+        "downstreamSectors": [
+          "power generation",
+          "steelmaking"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "production": {
+          "annual": 29000000,
+          "unit": "metric_tonnes_per_year",
+          "year": 2023,
+          "status": "REPORTED_ESTIMATE",
+          "basis": "Mining Technology / GlobalData estimate for 2023"
+        },
+        "grade": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-10"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "REPORTED_ESTIMATE",
+          "grade": "UNOBSERVED",
+          "structuredEvidence": false,
+          "coreFieldCount": 1,
+          "overall": "PARTIAL"
+        }
+      },
+      "verification": {
+        "researchState": "PARTIAL",
+        "reviewedAt": "2026-10-10",
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "www.mining-technology.com",
+          "www.overwatts.com"
+        ],
+        "dataLimitations": "Mine identity and 2023 output are sourced; coordinates are low-confidence regional proxy needing exact site verification.",
+        "coordinateVerified": false,
+        "quantitativeVerified": false
+      },
+      "sourceReference": {
+        "sourceDataset": "resource_site_expansion_batch_chn_v1.json",
+        "sourcePath": "sites/SITE_CHN_bulianta_coal_mine",
+        "authoritativeSources": [
+          "https://www.mining-technology.com/marketdata/ten-biggest-underground-mines-in-operation-inasia-pacific",
+          "https://www.overwatts.com/country/cn/mine"
+        ]
+      }
+    },
+    {
+      "countryId": "CHN",
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_CHN_huolinhe_north_surface_mine_no3",
+      "siteName": "Huolinhe North Surface Mine No. 3",
+      "identity": {
+        "countryIso3": "CHN",
+        "countryName": "China",
+        "siteType": "COAL_MINE",
+        "resourceTypeId": "coal",
+        "resourceName": "Coal",
+        "ontologyKey": "COAL",
+        "commodities": [
+          "coal"
+        ]
+      },
+      "location": {
+        "countryName": "China",
+        "adminRegion": "Inner Mongolia Autonomous Region",
+        "locality": "Huolinguole, Tongliao",
+        "coordinates": {
+          "lat": 45.536522,
+          "lng": 119.609267
+        },
+        "coordinateStatus": "EXACT_SITE_POINT",
+        "coordinateConfidence": "HIGH",
+        "coordinateReference": "WGS84",
+        "coordinateIsSurveyed": true
+      },
+      "ownership": {
+        "owner": "State Power Investment Corporation / Inner Mongolia Huolinhe Coal Industry Group (reported stakes)",
+        "operator": "Huolinhe Opencut Coal Industry Corporation Limited of Inner Mongolia",
+        "ownerEvidenceStatus": "REPORTED",
+        "operatorEvidenceStatus": "REPORTED"
+      },
+      "operation": {
+        "status": "OPERATING_REPORTED",
+        "operationalStatus": "OPERATING_REPORTED",
+        "extractionMethod": "OPEN_PIT",
+        "commercialExtraction": true,
+        "extractionEligibility": "EXECUTABLE",
+        "commissioningYear": null,
+        "startYear": null
+      },
+      "processing": {
+        "upstreamProcess": "open pit",
+        "midstreamProcess": "ore handling and processing",
+        "refinedOutputs": [
+          "run-of-mine coal",
+          "processed coal"
+        ],
+        "downstreamSectors": [
+          "power generation",
+          "steelmaking"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "production": {
+          "annual": null,
+          "unit": "metric_tonnes_per_year",
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-10"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "structuredEvidence": false,
+          "coreFieldCount": 0,
+          "overall": "MINIMAL"
+        }
+      },
+      "verification": {
+        "researchState": "PARTIAL",
+        "reviewedAt": "2026-10-10",
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "www.gem.wiki",
+          "www.ourchinastory.com"
+        ],
+        "dataLimitations": "GEM reports exact WGS84 coordinates and operator; gameplay capacity simulated because site-specific published capacity was not verified.",
+        "coordinateVerified": true,
+        "quantitativeVerified": false
+      },
+      "sourceReference": {
+        "sourceDataset": "resource_site_expansion_batch_chn_v1.json",
+        "sourcePath": "sites/SITE_CHN_huolinhe_north_surface_mine_no3",
+        "authoritativeSources": [
+          "https://www.gem.wiki/内蒙古电投能源股份有限公司北露天煤矿",
+          "https://www.ourchinastory.com/en/12665/China's-first-modern-open-pit-coal-mine-put-in-operation"
+        ]
+      }
+    },
+    {
+      "countryId": "CHN",
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_CHN_antaibao_surface_coal_mine",
+      "siteName": "Antaibao Surface Coal Mine",
+      "identity": {
+        "countryIso3": "CHN",
+        "countryName": "China",
+        "siteType": "COAL_MINE",
+        "resourceTypeId": "coal",
+        "resourceName": "Coal",
+        "ontologyKey": "COAL",
+        "commodities": [
+          "coal"
+        ]
+      },
+      "location": {
+        "countryName": "China",
+        "adminRegion": "Shanxi Province",
+        "locality": "Pingshuo mining area, Shuozhou",
+        "coordinates": {
+          "lat": 39.42,
+          "lng": 112.31
+        },
+        "coordinateStatus": "ESTIMATED_REGION_POINT",
+        "coordinateConfidence": "LOW",
+        "coordinateReference": "WGS84",
+        "coordinateIsSurveyed": false
+      },
+      "ownership": {
+        "owner": "China Coal Pingshuo Group",
+        "operator": "China Coal Pingshuo Group",
+        "ownerEvidenceStatus": "REPORTED",
+        "operatorEvidenceStatus": "REPORTED"
+      },
+      "operation": {
+        "status": "OPERATING_REPORTED",
+        "operationalStatus": "OPERATING_REPORTED",
+        "extractionMethod": "OPEN_PIT",
+        "commercialExtraction": true,
+        "extractionEligibility": "EXECUTABLE",
+        "commissioningYear": null,
+        "startYear": null
+      },
+      "processing": {
+        "upstreamProcess": "open pit",
+        "midstreamProcess": "ore handling and processing",
+        "refinedOutputs": [
+          "run-of-mine coal",
+          "processed coal"
+        ],
+        "downstreamSectors": [
+          "power generation",
+          "steelmaking"
+        ],
+        "productSpecifications": {
+          "chemicalCoalCalorificValue": {
+            "value": 4800,
+            "unit": "kcal_per_kg",
+            "status": "REPORTED"
+          },
+          "powerCoalCalorificValue": {
+            "value": 4200,
+            "unit": "kcal_per_kg",
+            "status": "REPORTED"
+          },
+          "dryPreparationPlantThroughput": {
+            "value": 3000000,
+            "unit": "metric_tonnes_per_year",
+            "status": "REPORTED"
+          }
+        }
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "production": {
+          "annual": null,
+          "unit": "metric_tonnes_per_year",
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-10"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "structuredEvidence": false,
+          "coreFieldCount": 0,
+          "overall": "MINIMAL"
+        }
+      },
+      "verification": {
+        "researchState": "PARTIAL",
+        "reviewedAt": "2026-10-10",
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "sdsxdj.cn",
+          "www.overwatts.com"
+        ],
+        "dataLimitations": "A source reports a 3.0 Mt/a dry preparation plant and product calorific values 4,800/4,200 kcal/kg; these are product specs, not grade or purity. Map point approximate.",
+        "coordinateVerified": false,
+        "quantitativeVerified": false
+      },
+      "sourceReference": {
+        "sourceDataset": "resource_site_expansion_batch_chn_v1.json",
+        "sourcePath": "sites/SITE_CHN_antaibao_surface_coal_mine",
+        "authoritativeSources": [
+          "http://sdsxdj.cn/en/xinwen/BGpE3KjN",
+          "https://www.overwatts.com/country/cn/mine"
+        ]
+      }
+    },
+    {
+      "countryId": "CHN",
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_CHN_shengli_no1_open_pit_coal_mine",
+      "siteName": "Shengli No. 1 Open-Pit Coal Mine",
+      "identity": {
+        "countryIso3": "CHN",
+        "countryName": "China",
+        "siteType": "COAL_MINE",
+        "resourceTypeId": "coal",
+        "resourceName": "Coal",
+        "ontologyKey": "COAL",
+        "commodities": [
+          "coal"
+        ]
+      },
+      "location": {
+        "countryName": "China",
+        "adminRegion": "Inner Mongolia Autonomous Region",
+        "locality": "Near Xilinhot, ~6 km from city",
+        "coordinates": {
+          "lat": 43.93,
+          "lng": 116.08
+        },
+        "coordinateStatus": "ESTIMATED_LOCALITY_POINT",
+        "coordinateConfidence": "LOW",
+        "coordinateReference": "WGS84",
+        "coordinateIsSurveyed": false
+      },
+      "ownership": {
+        "owner": null,
+        "operator": null,
+        "ownerEvidenceStatus": "UNOBSERVED",
+        "operatorEvidenceStatus": "UNOBSERVED"
+      },
+      "operation": {
+        "status": "OPERATING_REPORTED",
+        "operationalStatus": "OPERATING_REPORTED",
+        "extractionMethod": "OPEN_PIT",
+        "commercialExtraction": true,
+        "extractionEligibility": "EXECUTABLE",
+        "commissioningYear": null,
+        "startYear": null
+      },
+      "processing": {
+        "upstreamProcess": "open pit",
+        "midstreamProcess": "ore handling and processing",
+        "refinedOutputs": [
+          "run-of-mine coal",
+          "processed coal"
+        ],
+        "downstreamSectors": [
+          "power generation",
+          "steelmaking"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "production": {
+          "annual": null,
+          "unit": "metric_tonnes_per_year",
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-10"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "structuredEvidence": false,
+          "coreFieldCount": 0,
+          "overall": "MINIMAL"
+        }
+      },
+      "verification": {
+        "researchState": "PARTIAL",
+        "reviewedAt": "2026-10-10",
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "cypherenvironmental.com",
+          "www.overwatts.com"
+        ],
+        "dataLimitations": "Mine is reported ~6 km from Xilinhot; the coordinate is a regional proxy, not a surveyed mine entrance.",
+        "coordinateVerified": false,
+        "quantitativeVerified": false
+      },
+      "sourceReference": {
+        "sourceDataset": "resource_site_expansion_batch_chn_v1.json",
+        "sourcePath": "sites/SITE_CHN_shengli_no1_open_pit_coal_mine",
+        "authoritativeSources": [
+          "https://cypherenvironmental.com/shenhua",
+          "https://www.overwatts.com/country/cn/mine"
+        ]
+      }
+    },
+    {
+      "countryId": "CHN",
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_CHN_bayan_obo_rare_earth_mine",
+      "siteName": "Bayan Obo Rare Earth Mine",
+      "identity": {
+        "countryIso3": "CHN",
+        "countryName": "China",
+        "siteType": "POLYMETALLIC_MINE",
+        "resourceTypeId": "rare_earth",
+        "resourceName": "Rare Earth Elements",
+        "ontologyKey": "RARE_EARTH",
+        "commodities": [
+          "rare_earth",
+          "iron_ore",
+          "niobium"
+        ]
+      },
+      "location": {
+        "countryName": "China",
+        "adminRegion": "Inner Mongolia Autonomous Region",
+        "locality": "Bayan Obo mining district, Baotou",
+        "coordinates": {
+          "lat": 41.77,
+          "lng": 109.97
+        },
+        "coordinateStatus": "ESTIMATED_DEPOSIT_POINT",
+        "coordinateConfidence": "MEDIUM",
+        "coordinateReference": "WGS84",
+        "coordinateIsSurveyed": false
+      },
+      "ownership": {
+        "owner": null,
+        "operator": null,
+        "ownerEvidenceStatus": "UNOBSERVED",
+        "operatorEvidenceStatus": "UNOBSERVED"
+      },
+      "operation": {
+        "status": "OPERATING_REPORTED",
+        "operationalStatus": "OPERATING_REPORTED",
+        "extractionMethod": "OPEN_PIT",
+        "commercialExtraction": true,
+        "extractionEligibility": "EXECUTABLE",
+        "commissioningYear": null,
+        "startYear": null
+      },
+      "processing": {
+        "upstreamProcess": "open pit",
+        "midstreamProcess": "ore handling and processing",
+        "refinedOutputs": [
+          "rare-earth-bearing concentrate",
+          "rare-earth oxides"
+        ],
+        "downstreamSectors": [
+          "magnets",
+          "electronics",
+          "defence"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": 48000000,
+          "unit": "metric_tonnes_REE_ORE",
+          "year": 1990,
+          "status": "REPORTED_HISTORICAL",
+          "basis": "USGS Bulletin 2143 citing Drew et al. 1990; not a current reserve statement"
+        },
+        "production": {
+          "annual": null,
+          "unit": "metric_tonnes_per_year",
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": 6,
+          "unit": "wt_percent_RE2O3",
+          "status": "REPORTED_HISTORICAL",
+          "year": 1990,
+          "basis": "USGS Bulletin 2143 cites a 1990 estimate"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-10"
+        },
+        "completeness": {
+          "reserve": "REPORTED_HISTORICAL",
+          "production": "UNOBSERVED",
+          "grade": "REPORTED_HISTORICAL",
+          "structuredEvidence": false,
+          "coreFieldCount": 2,
+          "overall": "PARTIAL"
+        }
+      },
+      "verification": {
+        "researchState": "PARTIAL",
+        "reviewedAt": "2026-10-10",
+        "sourceCount": 3,
+        "sourceAuthorities": [
+          "pubs.usgs.gov",
+          "www.nsenergybusiness.com",
+          "ejatlas.org"
+        ],
+        "dataLimitations": "Historical grade/reserve report refers to REO in ore, not a current reserve certificate. Map point is a district/deposit estimate.",
+        "coordinateVerified": false,
+        "quantitativeVerified": false
+      },
+      "sourceReference": {
+        "sourceDataset": "resource_site_expansion_batch_chn_v1.json",
+        "sourcePath": "sites/SITE_CHN_bayan_obo_rare_earth_mine",
+        "authoritativeSources": [
+          "https://pubs.usgs.gov/bul/b2143/intro.html",
+          "https://www.nsenergybusiness.com/projects/bayan-obo-rare-earth-mine/",
+          "https://ejatlas.org/conflict/bayan-obo-world-biggest-rare-earths-mine-baogang-group-baotou-inner-mongolia-china"
+        ]
+      }
+    },
+    {
+      "countryId": "CHN",
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_CHN_bayan_obo_east_iron_ore_mine",
+      "siteName": "Bayan Obo East Iron Ore Mine",
+      "identity": {
+        "countryIso3": "CHN",
+        "countryName": "China",
+        "siteType": "IRON_ORE_MINE",
+        "resourceTypeId": "iron_ore",
+        "resourceName": "Iron Ore",
+        "ontologyKey": "IRON_ORE",
+        "commodities": [
+          "iron_ore"
+        ]
+      },
+      "location": {
+        "countryName": "China",
+        "adminRegion": "Inner Mongolia Autonomous Region",
+        "locality": "Baotou, Bayan Obo mining district",
+        "coordinates": {
+          "lat": 41.801566,
+          "lng": 109.985565
+        },
+        "coordinateStatus": "EXACT_SITE_POINT",
+        "coordinateConfidence": "HIGH",
+        "coordinateReference": "WGS84",
+        "coordinateIsSurveyed": true
+      },
+      "ownership": {
+        "owner": "Baotou Iron and Steel Group (Baogang Group)",
+        "operator": "Baotou Iron and Steel Group (Baogang Group)",
+        "ownerEvidenceStatus": "REPORTED",
+        "operatorEvidenceStatus": "REPORTED"
+      },
+      "operation": {
+        "status": "OPERATING_REPORTED",
+        "operationalStatus": "OPERATING_REPORTED",
+        "extractionMethod": "OPEN_PIT",
+        "commercialExtraction": true,
+        "extractionEligibility": "EXECUTABLE",
+        "commissioningYear": null,
+        "startYear": null
+      },
+      "processing": {
+        "upstreamProcess": "open pit",
+        "midstreamProcess": "ore handling and processing",
+        "refinedOutputs": [
+          "iron ore concentrate"
+        ],
+        "downstreamSectors": [
+          "iron and steel"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "production": {
+          "annual": null,
+          "unit": "metric_tonnes_per_year",
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {
+          "resourceEstimate": {
+            "quantity": 580000000,
+            "unit": "metric_tonnes",
+            "status": "REPORTED",
+            "basis": "Global Energy Monitor lists total resource as 580,000 thousand tonnes; total reserves unknown"
+          }
+        },
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-10"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "structuredEvidence": false,
+          "coreFieldCount": 0,
+          "overall": "MINIMAL"
+        }
+      },
+      "verification": {
+        "researchState": "PARTIAL",
+        "reviewedAt": "2026-10-10",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "www.gem.wiki"
+        ],
+        "dataLimitations": "GEM reports exact WGS84 coordinates, design capacity 4.8 Mtpa, resource 580 Mt and reserve/2022-2023 production unknown.",
+        "coordinateVerified": true,
+        "quantitativeVerified": false
+      },
+      "sourceReference": {
+        "sourceDataset": "resource_site_expansion_batch_chn_v1.json",
+        "sourcePath": "sites/SITE_CHN_bayan_obo_east_iron_ore_mine",
+        "authoritativeSources": [
+          "https://www.gem.wiki/Bayan_Obo_East_Mine"
+        ]
+      }
+    },
+    {
+      "countryId": "CHN",
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_CHN_dexing_copper_mine",
+      "siteName": "Dexing Copper Mine",
+      "identity": {
+        "countryIso3": "CHN",
+        "countryName": "China",
+        "siteType": "COPPER_MINE",
+        "resourceTypeId": "copper",
+        "resourceName": "Copper",
+        "ontologyKey": "COPPER",
+        "commodities": [
+          "copper"
+        ]
+      },
+      "location": {
+        "countryName": "China",
+        "adminRegion": "Jiangxi Province",
+        "locality": "Dexing, Shangrao",
+        "coordinates": {
+          "lat": 28.95,
+          "lng": 117.75
+        },
+        "coordinateStatus": "ESTIMATED_MINE_AREA_POINT",
+        "coordinateConfidence": "LOW",
+        "coordinateReference": "WGS84",
+        "coordinateIsSurveyed": false
+      },
+      "ownership": {
+        "owner": "Jiangxi Copper Co., Ltd.",
+        "operator": "Jiangxi Copper Co., Ltd.",
+        "ownerEvidenceStatus": "REPORTED",
+        "operatorEvidenceStatus": "REPORTED"
+      },
+      "operation": {
+        "status": "OPERATING_REPORTED",
+        "operationalStatus": "OPERATING_REPORTED",
+        "extractionMethod": "OPEN_PIT",
+        "commercialExtraction": true,
+        "extractionEligibility": "EXECUTABLE",
+        "commissioningYear": null,
+        "startYear": null
+      },
+      "processing": {
+        "upstreamProcess": "open pit",
+        "midstreamProcess": "ore handling and processing",
+        "refinedOutputs": [
+          "copper concentrate"
+        ],
+        "downstreamSectors": [
+          "copper smelting",
+          "electric equipment"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "production": {
+          "annual": null,
+          "unit": "metric_tonnes_copper_per_year",
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-10"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "structuredEvidence": false,
+          "coreFieldCount": 0,
+          "overall": "MINIMAL"
+        }
+      },
+      "verification": {
+        "researchState": "PARTIAL",
+        "reviewedAt": "2026-10-10",
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "www.jxcc.com",
+          "en.wikipedia.org"
+        ],
+        "dataLimitations": "Mine/operator identity is identified; coordinate is a low-confidence mine-area point. Grade, reserve and output remain unobserved pending primary site report.",
+        "coordinateVerified": false,
+        "quantitativeVerified": false
+      },
+      "sourceReference": {
+        "sourceDataset": "resource_site_expansion_batch_chn_v1.json",
+        "sourcePath": "sites/SITE_CHN_dexing_copper_mine",
+        "authoritativeSources": [
+          "https://www.jxcc.com/",
+          "https://en.wikipedia.org/wiki/Dexing_Copper_Mine"
+        ]
+      }
+    },
+    {
+      "countryId": "CHN",
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_CHN_jiama_copper_gold_polymetallic_mine",
+      "siteName": "Jiama Copper-Gold Polymetallic Mine",
+      "identity": {
+        "countryIso3": "CHN",
+        "countryName": "China",
+        "siteType": "POLYMETALLIC_MINE",
+        "resourceTypeId": "copper",
+        "resourceName": "Copper",
+        "ontologyKey": "COPPER",
+        "commodities": [
+          "copper",
+          "gold",
+          "silver",
+          "molybdenum",
+          "lead",
+          "zinc"
+        ]
+      },
+      "location": {
+        "countryName": "China",
+        "adminRegion": "Xizang (Tibet) Autonomous Region",
+        "locality": "~12 km south of Maizhokunggar",
+        "coordinates": {
+          "lat": 29.68,
+          "lng": 91.75
+        },
+        "coordinateStatus": "ESTIMATED_SITE_POINT",
+        "coordinateConfidence": "MEDIUM",
+        "coordinateReference": "WGS84",
+        "coordinateIsSurveyed": false
+      },
+      "ownership": {
+        "owner": "China Gold International Resources Corp. Ltd.",
+        "operator": "China Gold International Resources Corp. Ltd.",
+        "ownerEvidenceStatus": "REPORTED",
+        "operatorEvidenceStatus": "REPORTED"
+      },
+      "operation": {
+        "status": "OPERATING_REPORTED",
+        "operationalStatus": "OPERATING_REPORTED",
+        "extractionMethod": "OPEN_PIT_AND_UNDERGROUND",
+        "commercialExtraction": true,
+        "extractionEligibility": "EXECUTABLE",
+        "commissioningYear": null,
+        "startYear": null
+      },
+      "processing": {
+        "upstreamProcess": "open pit and underground",
+        "midstreamProcess": "ore handling and processing",
+        "refinedOutputs": [
+          "copper concentrate"
+        ],
+        "downstreamSectors": [
+          "copper smelting",
+          "electric equipment"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "production": {
+          "annual": 47929,
+          "unit": "metric_tonnes_copper_per_year",
+          "year": 2024,
+          "status": "REPORTED",
+          "basis": "Operator reports approx. 47,929 tonnes copper production in 2024"
+        },
+        "grade": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-10"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "REPORTED",
+          "grade": "UNOBSERVED",
+          "structuredEvidence": false,
+          "coreFieldCount": 1,
+          "overall": "PARTIAL"
+        }
+      },
+      "verification": {
+        "researchState": "PARTIAL",
+        "reviewedAt": "2026-10-10",
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "www.chinagoldintl.com",
+          "miningdataonline.com"
+        ],
+        "dataLimitations": "Operator reports approx. 47,929 t copper production in 2024 and 50,000 t/day design ore-processing capacity. Map point approximate; by-products include gold, silver, molybdenum, lead and zinc.",
+        "coordinateVerified": false,
+        "quantitativeVerified": false
+      },
+      "sourceReference": {
+        "sourceDataset": "resource_site_expansion_batch_chn_v1.json",
+        "sourcePath": "sites/SITE_CHN_jiama_copper_gold_polymetallic_mine",
+        "authoritativeSources": [
+          "https://www.chinagoldintl.com/operations/jiama",
+          "https://miningdataonline.com/property/3100/Jiama-Mine.aspx"
+        ]
+      }
+    },
+    {
+      "countryId": "CHN",
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_CHN_daqing_oilfield",
+      "siteName": "Daqing Oilfield",
+      "identity": {
+        "countryIso3": "CHN",
+        "countryName": "China",
+        "siteType": "OIL_GAS_FIELD",
+        "resourceTypeId": "crude_oil",
+        "resourceName": "Crude Oil",
+        "ontologyKey": "CRUDE_OIL",
+        "commodities": [
+          "crude_oil"
+        ]
+      },
+      "location": {
+        "countryName": "China",
+        "adminRegion": "Heilongjiang Province",
+        "locality": "Songliao Plain, Northeast China",
+        "coordinates": {
+          "lat": 46.6,
+          "lng": 125
+        },
+        "coordinateStatus": "ESTIMATED_FIELD_POINT",
+        "coordinateConfidence": "MEDIUM",
+        "coordinateReference": "WGS84",
+        "coordinateIsSurveyed": false
+      },
+      "ownership": {
+        "owner": "China National Petroleum Corporation (CNPC)",
+        "operator": "Daqing Oilfield Company Limited (PetroChina/CNPC)",
+        "ownerEvidenceStatus": "REPORTED",
+        "operatorEvidenceStatus": "REPORTED"
+      },
+      "operation": {
+        "status": "OPERATING_REPORTED",
+        "operationalStatus": "OPERATING_REPORTED",
+        "extractionMethod": "ONSHORE_CONVENTIONAL",
+        "commercialExtraction": true,
+        "extractionEligibility": "EXECUTABLE",
+        "commissioningYear": null,
+        "startYear": null
+      },
+      "processing": {
+        "upstreamProcess": "wellhead extraction",
+        "midstreamProcess": "oil gathering and separation",
+        "refinedOutputs": [
+          "crude oil"
+        ],
+        "downstreamSectors": [
+          "energy",
+          "petrochemicals"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "production": {
+          "rate": 600000,
+          "unit": "barrels_oil_equivalent_per_day",
+          "year": null,
+          "status": "OBSERVED_APPROXIMATE",
+          "basis": "OverWatts map profile, operator/EIA-IEA attributed"
+        },
+        "grade": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-10"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "OBSERVED_APPROXIMATE",
+          "grade": "UNOBSERVED",
+          "structuredEvidence": false,
+          "coreFieldCount": 1,
+          "overall": "PARTIAL"
+        }
+      },
+      "verification": {
+        "researchState": "PARTIAL",
+        "reviewedAt": "2026-10-10",
+        "sourceCount": 3,
+        "sourceAuthorities": [
+          "www.overwatts.com",
+          "www.cnpc.com.cn",
+          "en.wikipedia.org"
+        ],
+        "dataLimitations": "The field output is approximate and expressed as barrels of oil equivalent/day; not a site-specific proved reserve.",
+        "coordinateVerified": false,
+        "quantitativeVerified": false
+      },
+      "sourceReference": {
+        "sourceDataset": "resource_site_expansion_batch_chn_v1.json",
+        "sourcePath": "sites/SITE_CHN_daqing_oilfield",
+        "authoritativeSources": [
+          "https://www.overwatts.com/asset/og-daqing",
+          "https://www.cnpc.com.cn/en/operatediol/202111/8e00f3d4212f4e1ebc8812df94c4752e.shtml",
+          "https://en.wikipedia.org/wiki/Daqing_Oil_Field"
+        ]
+      }
+    },
+    {
+      "countryId": "CHN",
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_CHN_changqing_oilfield_gas",
+      "siteName": "Changqing Oilfield Gas Production Area",
+      "identity": {
+        "countryIso3": "CHN",
+        "countryName": "China",
+        "siteType": "OIL_GAS_FIELD",
+        "resourceTypeId": "natural_gas",
+        "resourceName": "Natural Gas",
+        "ontologyKey": "NATURAL_GAS",
+        "commodities": [
+          "natural_gas"
+        ]
+      },
+      "location": {
+        "countryName": "China",
+        "adminRegion": "Ordos Basin / Shaanxi–Gansu–Ningxia region",
+        "locality": "Regional basin proxy; not a specific well or field boundary",
+        "coordinates": {
+          "lat": 37.95,
+          "lng": 108.5
+        },
+        "coordinateStatus": "ESTIMATED_BASIN_CENTROID",
+        "coordinateConfidence": "LOW",
+        "coordinateReference": "WGS84",
+        "coordinateIsSurveyed": false
+      },
+      "ownership": {
+        "owner": "China National Petroleum Corporation (CNPC)",
+        "operator": "PetroChina Changqing Oilfield Company",
+        "ownerEvidenceStatus": "REPORTED",
+        "operatorEvidenceStatus": "REPORTED"
+      },
+      "operation": {
+        "status": "OPERATING_REPORTED",
+        "operationalStatus": "OPERATING_REPORTED",
+        "extractionMethod": "ONSHORE_TIGHT_GAS_AND_CONVENTIONAL",
+        "commercialExtraction": true,
+        "extractionEligibility": "EXECUTABLE",
+        "commissioningYear": null,
+        "startYear": null
+      },
+      "processing": {
+        "upstreamProcess": "wellhead extraction",
+        "midstreamProcess": "gas gathering and processing",
+        "refinedOutputs": [
+          "natural gas"
+        ],
+        "downstreamSectors": [
+          "energy",
+          "petrochemicals"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "production": {
+          "rate": null,
+          "unit": "billion_cubic_metres_per_year",
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-10"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "structuredEvidence": false,
+          "coreFieldCount": 0,
+          "overall": "MINIMAL"
+        }
+      },
+      "verification": {
+        "researchState": "PARTIAL",
+        "reviewedAt": "2026-10-10",
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "www.petrochina.com.cn",
+          "en.wikipedia.org"
+        ],
+        "dataLimitations": "Multi-block regional asset; map point is a low-confidence Ordos Basin proxy. Site-specific reserve and grade are unknown.",
+        "coordinateVerified": false,
+        "quantitativeVerified": false
+      },
+      "sourceReference": {
+        "sourceDataset": "resource_site_expansion_batch_chn_v1.json",
+        "sourcePath": "sites/SITE_CHN_changqing_oilfield_gas",
+        "authoritativeSources": [
+          "https://www.petrochina.com.cn/ptr/ktysc/commonlist_norig.shtml",
+          "https://en.wikipedia.org/wiki/Ordos_Basin"
+        ]
+      }
+    },
+    {
+      "countryId": "CHN",
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_CHN_shengli_oilfield",
+      "siteName": "Shengli Oilfield",
+      "identity": {
+        "countryIso3": "CHN",
+        "countryName": "China",
+        "siteType": "OIL_GAS_FIELD",
+        "resourceTypeId": "crude_oil",
+        "resourceName": "Crude Oil",
+        "ontologyKey": "CRUDE_OIL",
+        "commodities": [
+          "crude_oil"
+        ]
+      },
+      "location": {
+        "countryName": "China",
+        "adminRegion": "Shandong Province / Bohai region",
+        "locality": "Dongying and surrounding eastern/western production areas",
+        "coordinates": {
+          "lat": 37.5,
+          "lng": 118.5
+        },
+        "coordinateStatus": "ESTIMATED_FIELD_POINT",
+        "coordinateConfidence": "MEDIUM",
+        "coordinateReference": "WGS84",
+        "coordinateIsSurveyed": false
+      },
+      "ownership": {
+        "owner": "China Petrochemical Corporation (Sinopec)",
+        "operator": "Shengli Oilfield Company (Sinopec)",
+        "ownerEvidenceStatus": "REPORTED",
+        "operatorEvidenceStatus": "REPORTED"
+      },
+      "operation": {
+        "status": "OPERATING_REPORTED",
+        "operationalStatus": "OPERATING_REPORTED",
+        "extractionMethod": "ONSHORE_AND_OFFSHORE",
+        "commercialExtraction": true,
+        "extractionEligibility": "EXECUTABLE",
+        "commissioningYear": null,
+        "startYear": null
+      },
+      "processing": {
+        "upstreamProcess": "wellhead extraction",
+        "midstreamProcess": "oil gathering and separation",
+        "refinedOutputs": [
+          "crude oil"
+        ],
+        "downstreamSectors": [
+          "energy",
+          "petrochemicals"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "production": {
+          "rate": 470000,
+          "unit": "barrels_oil_equivalent_per_day",
+          "year": null,
+          "status": "OBSERVED_APPROXIMATE",
+          "basis": "OverWatts map profile, operator/EIA-IEA attributed"
+        },
+        "grade": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {},
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-10"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "OBSERVED_APPROXIMATE",
+          "grade": "UNOBSERVED",
+          "structuredEvidence": false,
+          "coreFieldCount": 1,
+          "overall": "PARTIAL"
+        }
+      },
+      "verification": {
+        "researchState": "PARTIAL",
+        "reviewedAt": "2026-10-10",
+        "sourceCount": 3,
+        "sourceAuthorities": [
+          "www.overwatts.com",
+          "www.dongying.gov.cn",
+          "en.wikipedia.org"
+        ],
+        "dataLimitations": "Source gives approximate field-level oil-equivalent output. Coordinate is field-level, not an individual well.",
+        "coordinateVerified": false,
+        "quantitativeVerified": false
+      },
+      "sourceReference": {
+        "sourceDataset": "resource_site_expansion_batch_chn_v1.json",
+        "sourcePath": "sites/SITE_CHN_shengli_oilfield",
+        "authoritativeSources": [
+          "https://www.overwatts.com/asset/og-shengli",
+          "http://www.dongying.gov.cn/col/col41783/index.html",
+          "https://en.wikipedia.org/wiki/Shengli_Oil_Field"
+        ]
+      }
+    }
+  ],
+  "reserveRecords": [
+    {
+      "siteId": "SITE_CHN_haerwusu_coal_mine",
+      "countryId": "CHN",
+      "resourceId": "coal",
+      "siteName": "Haerwusu Coal Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 10000000000,
+        "unit": "TONNES",
+        "status": "SIMULATED_SCENARIO",
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "scenarioOnly": true
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "sourceDataset": "resource_site_expansion_batch_chn_v1.json",
+        "sourcePath": "scenarioReserve/SITE_CHN_haerwusu_coal_mine",
+        "realWorldReserveAuthority": "UNOBSERVED_OR_HISTORICAL_ONLY",
+        "note": "Gameplay-horizon assumption; not a real-world reserve estimate."
+      }
+    },
+    {
+      "siteId": "SITE_CHN_heidaigou_coal_mine",
+      "countryId": "CHN",
+      "resourceId": "coal",
+      "siteName": "Heidaigou Coal Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 16500000000,
+        "unit": "TONNES",
+        "status": "SIMULATED_SCENARIO",
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "scenarioOnly": true
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "sourceDataset": "resource_site_expansion_batch_chn_v1.json",
+        "sourcePath": "scenarioReserve/SITE_CHN_heidaigou_coal_mine",
+        "realWorldReserveAuthority": "UNOBSERVED_OR_HISTORICAL_ONLY",
+        "note": "Gameplay-horizon assumption; not a real-world reserve estimate."
+      }
+    },
+    {
+      "siteId": "SITE_CHN_daliuta_huojitu_coal_mine",
+      "countryId": "CHN",
+      "resourceId": "coal",
+      "siteName": "Daliuta-Huojitu Coal Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 15000000000,
+        "unit": "TONNES",
+        "status": "SIMULATED_SCENARIO",
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "scenarioOnly": true
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "sourceDataset": "resource_site_expansion_batch_chn_v1.json",
+        "sourcePath": "scenarioReserve/SITE_CHN_daliuta_huojitu_coal_mine",
+        "realWorldReserveAuthority": "UNOBSERVED_OR_HISTORICAL_ONLY",
+        "note": "Gameplay-horizon assumption; not a real-world reserve estimate."
+      }
+    },
+    {
+      "siteId": "SITE_CHN_bulianta_coal_mine",
+      "countryId": "CHN",
+      "resourceId": "coal",
+      "siteName": "Bulianta Coal Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 14500000000,
+        "unit": "TONNES",
+        "status": "SIMULATED_SCENARIO",
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "scenarioOnly": true
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "sourceDataset": "resource_site_expansion_batch_chn_v1.json",
+        "sourcePath": "scenarioReserve/SITE_CHN_bulianta_coal_mine",
+        "realWorldReserveAuthority": "UNOBSERVED_OR_HISTORICAL_ONLY",
+        "note": "Gameplay-horizon assumption; not a real-world reserve estimate."
+      }
+    },
+    {
+      "siteId": "SITE_CHN_huolinhe_north_surface_mine_no3",
+      "countryId": "CHN",
+      "resourceId": "coal",
+      "siteName": "Huolinhe North Surface Mine No. 3",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 6000000000,
+        "unit": "TONNES",
+        "status": "SIMULATED_SCENARIO",
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "scenarioOnly": true
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "sourceDataset": "resource_site_expansion_batch_chn_v1.json",
+        "sourcePath": "scenarioReserve/SITE_CHN_huolinhe_north_surface_mine_no3",
+        "realWorldReserveAuthority": "UNOBSERVED_OR_HISTORICAL_ONLY",
+        "note": "Gameplay-horizon assumption; not a real-world reserve estimate."
+      }
+    },
+    {
+      "siteId": "SITE_CHN_antaibao_surface_coal_mine",
+      "countryId": "CHN",
+      "resourceId": "coal",
+      "siteName": "Antaibao Surface Coal Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 12000000000,
+        "unit": "TONNES",
+        "status": "SIMULATED_SCENARIO",
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "scenarioOnly": true
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "sourceDataset": "resource_site_expansion_batch_chn_v1.json",
+        "sourcePath": "scenarioReserve/SITE_CHN_antaibao_surface_coal_mine",
+        "realWorldReserveAuthority": "UNOBSERVED_OR_HISTORICAL_ONLY",
+        "note": "Gameplay-horizon assumption; not a real-world reserve estimate."
+      }
+    },
+    {
+      "siteId": "SITE_CHN_shengli_no1_open_pit_coal_mine",
+      "countryId": "CHN",
+      "resourceId": "coal",
+      "siteName": "Shengli No. 1 Open-Pit Coal Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 8500000000,
+        "unit": "TONNES",
+        "status": "SIMULATED_SCENARIO",
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "scenarioOnly": true
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "sourceDataset": "resource_site_expansion_batch_chn_v1.json",
+        "sourcePath": "scenarioReserve/SITE_CHN_shengli_no1_open_pit_coal_mine",
+        "realWorldReserveAuthority": "UNOBSERVED_OR_HISTORICAL_ONLY",
+        "note": "Gameplay-horizon assumption; not a real-world reserve estimate."
+      }
+    },
+    {
+      "siteId": "SITE_CHN_bayan_obo_rare_earth_mine",
+      "countryId": "CHN",
+      "resourceId": "rare_earth",
+      "siteName": "Bayan Obo Rare Earth Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 3000000000,
+        "unit": "TONNES",
+        "status": "SIMULATED_SCENARIO",
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "scenarioOnly": true
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "sourceDataset": "resource_site_expansion_batch_chn_v1.json",
+        "sourcePath": "scenarioReserve/SITE_CHN_bayan_obo_rare_earth_mine",
+        "realWorldReserveAuthority": "UNOBSERVED_OR_HISTORICAL_ONLY",
+        "note": "Gameplay-horizon assumption; not a real-world reserve estimate."
+      }
+    },
+    {
+      "siteId": "SITE_CHN_bayan_obo_east_iron_ore_mine",
+      "countryId": "CHN",
+      "resourceId": "iron_ore",
+      "siteName": "Bayan Obo East Iron Ore Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 6200000000,
+        "unit": "TONNES",
+        "status": "SIMULATED_SCENARIO",
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "scenarioOnly": true
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "sourceDataset": "resource_site_expansion_batch_chn_v1.json",
+        "sourcePath": "scenarioReserve/SITE_CHN_bayan_obo_east_iron_ore_mine",
+        "realWorldReserveAuthority": "UNOBSERVED_OR_HISTORICAL_ONLY",
+        "note": "Gameplay-horizon assumption; not a real-world reserve estimate."
+      }
+    },
+    {
+      "siteId": "SITE_CHN_dexing_copper_mine",
+      "countryId": "CHN",
+      "resourceId": "copper",
+      "siteName": "Dexing Copper Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 9000000000,
+        "unit": "TONNES",
+        "status": "SIMULATED_SCENARIO",
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "scenarioOnly": true
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "sourceDataset": "resource_site_expansion_batch_chn_v1.json",
+        "sourcePath": "scenarioReserve/SITE_CHN_dexing_copper_mine",
+        "realWorldReserveAuthority": "UNOBSERVED_OR_HISTORICAL_ONLY",
+        "note": "Gameplay-horizon assumption; not a real-world reserve estimate."
+      }
+    },
+    {
+      "siteId": "SITE_CHN_jiama_copper_gold_polymetallic_mine",
+      "countryId": "CHN",
+      "resourceId": "copper",
+      "siteName": "Jiama Copper-Gold Polymetallic Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 7500000000,
+        "unit": "TONNES",
+        "status": "SIMULATED_SCENARIO",
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "scenarioOnly": true
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "sourceDataset": "resource_site_expansion_batch_chn_v1.json",
+        "sourcePath": "scenarioReserve/SITE_CHN_jiama_copper_gold_polymetallic_mine",
+        "realWorldReserveAuthority": "UNOBSERVED_OR_HISTORICAL_ONLY",
+        "note": "Gameplay-horizon assumption; not a real-world reserve estimate."
+      }
+    },
+    {
+      "siteId": "SITE_CHN_daqing_oilfield",
+      "countryId": "CHN",
+      "resourceId": "crude_oil",
+      "siteName": "Daqing Oilfield",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 100000000000,
+        "unit": "BBL",
+        "status": "SIMULATED_SCENARIO",
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "scenarioOnly": true
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "sourceDataset": "resource_site_expansion_batch_chn_v1.json",
+        "sourcePath": "scenarioReserve/SITE_CHN_daqing_oilfield",
+        "realWorldReserveAuthority": "UNOBSERVED_OR_HISTORICAL_ONLY",
+        "note": "Gameplay-horizon assumption; not a real-world reserve estimate."
+      }
+    },
+    {
+      "siteId": "SITE_CHN_changqing_oilfield_gas",
+      "countryId": "CHN",
+      "resourceId": "natural_gas",
+      "siteName": "Changqing Oilfield Gas Production Area",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 20000,
+        "unit": "BCM",
+        "status": "SIMULATED_SCENARIO",
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "scenarioOnly": true
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "sourceDataset": "resource_site_expansion_batch_chn_v1.json",
+        "sourcePath": "scenarioReserve/SITE_CHN_changqing_oilfield_gas",
+        "realWorldReserveAuthority": "UNOBSERVED_OR_HISTORICAL_ONLY",
+        "note": "Gameplay-horizon assumption; not a real-world reserve estimate."
+      }
+    },
+    {
+      "siteId": "SITE_CHN_shengli_oilfield",
+      "countryId": "CHN",
+      "resourceId": "crude_oil",
+      "siteName": "Shengli Oilfield",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 80000000000,
+        "unit": "BBL",
+        "status": "SIMULATED_SCENARIO",
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "scenarioOnly": true
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "sourceDataset": "resource_site_expansion_batch_chn_v1.json",
+        "sourcePath": "scenarioReserve/SITE_CHN_shengli_oilfield",
+        "realWorldReserveAuthority": "UNOBSERVED_OR_HISTORICAL_ONLY",
+        "note": "Gameplay-horizon assumption; not a real-world reserve estimate."
+      }
+    }
+  ],
+  "scenarioRecords": [
+    {
+      "siteId": "SITE_CHN_haerwusu_coal_mine",
+      "countryId": "CHN",
+      "resourceId": "coal",
+      "siteName": "Haerwusu Coal Mine",
+      "status": "SIMULATED_SCENARIO",
+      "unit": "TONNES",
+      "nominalCapacity": 55000,
+      "minimumCapacity": 35000,
+      "maximumCapacity": 75000,
+      "utilization": 0.71,
+      "recovery": 0.78,
+      "decline": 0.012,
+      "maintenance": 0.08,
+      "scenarioLifeYears": 498.13,
+      "authority": "SCENARIO_SIMULATION_DATA",
+      "generationMethod": "SOURCE_BACKED_SITE_ID_WITH_EXPLICIT_GAMEPLAY_CAPACITY_ASSUMPTION",
+      "seedKey": "SITE_CHN_haerwusu_coal_mine|CHN|coal",
+      "sourceObservedProduction": {
+        "annual": 20000000,
+        "unit": "metric_tonnes_per_year",
+        "year": null,
+        "status": "OBSERVED_APPROXIMATE",
+        "basis": "OverWatts Atlas reports ~20 Mtpa"
+      },
+      "capacityAuthority": "SCENARIO_SIMULATION_DATA",
+      "note": "Nominal rate/capacity is a gameplay assumption, not published site capacity unless separately stated in research."
+    },
+    {
+      "siteId": "SITE_CHN_heidaigou_coal_mine",
+      "countryId": "CHN",
+      "resourceId": "coal",
+      "siteName": "Heidaigou Coal Mine",
+      "status": "SIMULATED_SCENARIO",
+      "unit": "TONNES",
+      "nominalCapacity": 92000,
+      "minimumCapacity": 60000,
+      "maximumCapacity": 120000,
+      "utilization": 0.76,
+      "recovery": 0.8,
+      "decline": 0.014,
+      "maintenance": 0.09,
+      "scenarioLifeYears": 491.36,
+      "authority": "SCENARIO_SIMULATION_DATA",
+      "generationMethod": "SOURCE_BACKED_SITE_ID_WITH_EXPLICIT_GAMEPLAY_CAPACITY_ASSUMPTION",
+      "seedKey": "SITE_CHN_heidaigou_coal_mine|CHN|coal",
+      "sourceObservedProduction": {
+        "annual": 33100000,
+        "unit": "metric_tonnes_per_year",
+        "year": 2023,
+        "status": "REPORTED_ESTIMATE",
+        "basis": "Mining Technology / GlobalData estimate for 2023"
+      },
+      "capacityAuthority": "SCENARIO_SIMULATION_DATA",
+      "note": "Nominal rate/capacity is a gameplay assumption, not published site capacity unless separately stated in research."
+    },
+    {
+      "siteId": "SITE_CHN_daliuta_huojitu_coal_mine",
+      "countryId": "CHN",
+      "resourceId": "coal",
+      "siteName": "Daliuta-Huojitu Coal Mine",
+      "status": "SIMULATED_SCENARIO",
+      "unit": "TONNES",
+      "nominalCapacity": 83500,
+      "minimumCapacity": 50000,
+      "maximumCapacity": 100000,
+      "utilization": 0.74,
+      "recovery": 0.76,
+      "decline": 0.012,
+      "maintenance": 0.1,
+      "scenarioLifeYears": 492.17,
+      "authority": "SCENARIO_SIMULATION_DATA",
+      "generationMethod": "SOURCE_BACKED_SITE_ID_WITH_EXPLICIT_GAMEPLAY_CAPACITY_ASSUMPTION",
+      "seedKey": "SITE_CHN_daliuta_huojitu_coal_mine|CHN|coal",
+      "sourceObservedProduction": {
+        "annual": 30450000,
+        "unit": "metric_tonnes_per_year",
+        "year": 2023,
+        "status": "REPORTED_ESTIMATE",
+        "basis": "Mining Technology / GlobalData estimate for 2023"
+      },
+      "capacityAuthority": "SCENARIO_SIMULATION_DATA",
+      "note": "Nominal rate/capacity is a gameplay assumption, not published site capacity unless separately stated in research."
+    },
+    {
+      "siteId": "SITE_CHN_bulianta_coal_mine",
+      "countryId": "CHN",
+      "resourceId": "coal",
+      "siteName": "Bulianta Coal Mine",
+      "status": "SIMULATED_SCENARIO",
+      "unit": "TONNES",
+      "nominalCapacity": 79500,
+      "minimumCapacity": 50000,
+      "maximumCapacity": 95000,
+      "utilization": 0.73,
+      "recovery": 0.75,
+      "decline": 0.014,
+      "maintenance": 0.1,
+      "scenarioLifeYears": 499.7,
+      "authority": "SCENARIO_SIMULATION_DATA",
+      "generationMethod": "SOURCE_BACKED_SITE_ID_WITH_EXPLICIT_GAMEPLAY_CAPACITY_ASSUMPTION",
+      "seedKey": "SITE_CHN_bulianta_coal_mine|CHN|coal",
+      "sourceObservedProduction": {
+        "annual": 29000000,
+        "unit": "metric_tonnes_per_year",
+        "year": 2023,
+        "status": "REPORTED_ESTIMATE",
+        "basis": "Mining Technology / GlobalData estimate for 2023"
+      },
+      "capacityAuthority": "SCENARIO_SIMULATION_DATA",
+      "note": "Nominal rate/capacity is a gameplay assumption, not published site capacity unless separately stated in research."
+    },
+    {
+      "siteId": "SITE_CHN_huolinhe_north_surface_mine_no3",
+      "countryId": "CHN",
+      "resourceId": "coal",
+      "siteName": "Huolinhe North Surface Mine No. 3",
+      "status": "SIMULATED_SCENARIO",
+      "unit": "TONNES",
+      "nominalCapacity": 35000,
+      "minimumCapacity": 22000,
+      "maximumCapacity": 50000,
+      "utilization": 0.69,
+      "recovery": 0.74,
+      "decline": 0.011,
+      "maintenance": 0.1,
+      "scenarioLifeYears": 469.67,
+      "authority": "SCENARIO_SIMULATION_DATA",
+      "generationMethod": "SOURCE_BACKED_SITE_ID_WITH_EXPLICIT_GAMEPLAY_CAPACITY_ASSUMPTION",
+      "seedKey": "SITE_CHN_huolinhe_north_surface_mine_no3|CHN|coal",
+      "sourceObservedProduction": null,
+      "capacityAuthority": "SCENARIO_SIMULATION_DATA",
+      "note": "Nominal rate/capacity is a gameplay assumption, not published site capacity unless separately stated in research."
+    },
+    {
+      "siteId": "SITE_CHN_antaibao_surface_coal_mine",
+      "countryId": "CHN",
+      "resourceId": "coal",
+      "siteName": "Antaibao Surface Coal Mine",
+      "status": "SIMULATED_SCENARIO",
+      "unit": "TONNES",
+      "nominalCapacity": 60000,
+      "minimumCapacity": 35000,
+      "maximumCapacity": 80000,
+      "utilization": 0.7,
+      "recovery": 0.77,
+      "decline": 0.013,
+      "maintenance": 0.09,
+      "scenarioLifeYears": 547.95,
+      "authority": "SCENARIO_SIMULATION_DATA",
+      "generationMethod": "SOURCE_BACKED_SITE_ID_WITH_EXPLICIT_GAMEPLAY_CAPACITY_ASSUMPTION",
+      "seedKey": "SITE_CHN_antaibao_surface_coal_mine|CHN|coal",
+      "sourceObservedProduction": null,
+      "capacityAuthority": "SCENARIO_SIMULATION_DATA",
+      "note": "Nominal rate/capacity is a gameplay assumption, not published site capacity unless separately stated in research."
+    },
+    {
+      "siteId": "SITE_CHN_shengli_no1_open_pit_coal_mine",
+      "countryId": "CHN",
+      "resourceId": "coal",
+      "siteName": "Shengli No. 1 Open-Pit Coal Mine",
+      "status": "SIMULATED_SCENARIO",
+      "unit": "TONNES",
+      "nominalCapacity": 50000,
+      "minimumCapacity": 30000,
+      "maximumCapacity": 75000,
+      "utilization": 0.68,
+      "recovery": 0.73,
+      "decline": 0.012,
+      "maintenance": 0.11,
+      "scenarioLifeYears": 465.75,
+      "authority": "SCENARIO_SIMULATION_DATA",
+      "generationMethod": "SOURCE_BACKED_SITE_ID_WITH_EXPLICIT_GAMEPLAY_CAPACITY_ASSUMPTION",
+      "seedKey": "SITE_CHN_shengli_no1_open_pit_coal_mine|CHN|coal",
+      "sourceObservedProduction": null,
+      "capacityAuthority": "SCENARIO_SIMULATION_DATA",
+      "note": "Nominal rate/capacity is a gameplay assumption, not published site capacity unless separately stated in research."
+    },
+    {
+      "siteId": "SITE_CHN_bayan_obo_rare_earth_mine",
+      "countryId": "CHN",
+      "resourceId": "rare_earth",
+      "siteName": "Bayan Obo Rare Earth Mine",
+      "status": "SIMULATED_SCENARIO",
+      "unit": "TONNES",
+      "nominalCapacity": 20000,
+      "minimumCapacity": 12000,
+      "maximumCapacity": 30000,
+      "utilization": 0.66,
+      "recovery": 0.7,
+      "decline": 0.01,
+      "maintenance": 0.1,
+      "scenarioLifeYears": 410.96,
+      "authority": "SCENARIO_SIMULATION_DATA",
+      "generationMethod": "SOURCE_BACKED_SITE_ID_WITH_EXPLICIT_GAMEPLAY_CAPACITY_ASSUMPTION",
+      "seedKey": "SITE_CHN_bayan_obo_rare_earth_mine|CHN|rare_earth",
+      "sourceObservedProduction": null,
+      "capacityAuthority": "SCENARIO_SIMULATION_DATA",
+      "note": "Nominal rate/capacity is a gameplay assumption, not published site capacity unless separately stated in research."
+    },
+    {
+      "siteId": "SITE_CHN_bayan_obo_east_iron_ore_mine",
+      "countryId": "CHN",
+      "resourceId": "iron_ore",
+      "siteName": "Bayan Obo East Iron Ore Mine",
+      "status": "SIMULATED_SCENARIO",
+      "unit": "TONNES",
+      "nominalCapacity": 40000,
+      "minimumCapacity": 25000,
+      "maximumCapacity": 55000,
+      "utilization": 0.7,
+      "recovery": 0.77,
+      "decline": 0.012,
+      "maintenance": 0.08,
+      "scenarioLifeYears": 424.66,
+      "authority": "SCENARIO_SIMULATION_DATA",
+      "generationMethod": "SOURCE_BACKED_SITE_ID_WITH_EXPLICIT_GAMEPLAY_CAPACITY_ASSUMPTION",
+      "seedKey": "SITE_CHN_bayan_obo_east_iron_ore_mine|CHN|iron_ore",
+      "sourceObservedProduction": null,
+      "capacityAuthority": "SCENARIO_SIMULATION_DATA",
+      "note": "Nominal rate/capacity is a gameplay assumption, not published site capacity unless separately stated in research."
+    },
+    {
+      "siteId": "SITE_CHN_dexing_copper_mine",
+      "countryId": "CHN",
+      "resourceId": "copper",
+      "siteName": "Dexing Copper Mine",
+      "status": "SIMULATED_SCENARIO",
+      "unit": "TONNES",
+      "nominalCapacity": 65000,
+      "minimumCapacity": 40000,
+      "maximumCapacity": 90000,
+      "utilization": 0.69,
+      "recovery": 0.78,
+      "decline": 0.012,
+      "maintenance": 0.1,
+      "scenarioLifeYears": 379.35,
+      "authority": "SCENARIO_SIMULATION_DATA",
+      "generationMethod": "SOURCE_BACKED_SITE_ID_WITH_EXPLICIT_GAMEPLAY_CAPACITY_ASSUMPTION",
+      "seedKey": "SITE_CHN_dexing_copper_mine|CHN|copper",
+      "sourceObservedProduction": null,
+      "capacityAuthority": "SCENARIO_SIMULATION_DATA",
+      "note": "Nominal rate/capacity is a gameplay assumption, not published site capacity unless separately stated in research."
+    },
+    {
+      "siteId": "SITE_CHN_jiama_copper_gold_polymetallic_mine",
+      "countryId": "CHN",
+      "resourceId": "copper",
+      "siteName": "Jiama Copper-Gold Polymetallic Mine",
+      "status": "SIMULATED_SCENARIO",
+      "unit": "TONNES",
+      "nominalCapacity": 50000,
+      "minimumCapacity": 30000,
+      "maximumCapacity": 60000,
+      "utilization": 0.72,
+      "recovery": 0.79,
+      "decline": 0.012,
+      "maintenance": 0.1,
+      "scenarioLifeYears": 410.96,
+      "authority": "SCENARIO_SIMULATION_DATA",
+      "generationMethod": "SOURCE_BACKED_SITE_ID_WITH_EXPLICIT_GAMEPLAY_CAPACITY_ASSUMPTION",
+      "seedKey": "SITE_CHN_jiama_copper_gold_polymetallic_mine|CHN|copper",
+      "sourceObservedProduction": {
+        "annual": 47929,
+        "unit": "metric_tonnes_copper_per_year",
+        "year": 2024,
+        "status": "REPORTED",
+        "basis": "Operator reports approx. 47,929 tonnes copper production in 2024"
+      },
+      "capacityAuthority": "SCENARIO_SIMULATION_DATA",
+      "note": "Nominal rate/capacity is a gameplay assumption, not published site capacity unless separately stated in research."
+    },
+    {
+      "siteId": "SITE_CHN_daqing_oilfield",
+      "countryId": "CHN",
+      "resourceId": "crude_oil",
+      "siteName": "Daqing Oilfield",
+      "status": "SIMULATED_SCENARIO",
+      "unit": "BBL",
+      "nominalCapacity": 600000,
+      "minimumCapacity": 350000,
+      "maximumCapacity": 720000,
+      "utilization": 0.7,
+      "recovery": 0.73,
+      "decline": 0.015,
+      "maintenance": 0.12,
+      "scenarioLifeYears": 456.62,
+      "authority": "SCENARIO_SIMULATION_DATA",
+      "generationMethod": "SOURCE_BACKED_SITE_ID_WITH_EXPLICIT_GAMEPLAY_CAPACITY_ASSUMPTION",
+      "seedKey": "SITE_CHN_daqing_oilfield|CHN|crude_oil",
+      "sourceObservedProduction": {
+        "rate": 600000,
+        "unit": "barrels_oil_equivalent_per_day",
+        "year": null,
+        "status": "OBSERVED_APPROXIMATE",
+        "basis": "OverWatts map profile, operator/EIA-IEA attributed"
+      },
+      "capacityAuthority": "SCENARIO_SIMULATION_DATA",
+      "note": "Nominal rate/capacity is a gameplay assumption, not published site capacity unless separately stated in research."
+    },
+    {
+      "siteId": "SITE_CHN_changqing_oilfield_gas",
+      "countryId": "CHN",
+      "resourceId": "natural_gas",
+      "siteName": "Changqing Oilfield Gas Production Area",
+      "status": "SIMULATED_SCENARIO",
+      "unit": "BCM",
+      "nominalCapacity": 0.2,
+      "minimumCapacity": 0.11,
+      "maximumCapacity": 0.24,
+      "utilization": 0.7,
+      "recovery": 0.71,
+      "decline": 0.014,
+      "maintenance": 0.11,
+      "scenarioLifeYears": 273.97,
+      "authority": "SCENARIO_SIMULATION_DATA",
+      "generationMethod": "SOURCE_BACKED_SITE_ID_WITH_EXPLICIT_GAMEPLAY_CAPACITY_ASSUMPTION",
+      "seedKey": "SITE_CHN_changqing_oilfield_gas|CHN|natural_gas",
+      "sourceObservedProduction": null,
+      "capacityAuthority": "SCENARIO_SIMULATION_DATA",
+      "note": "Nominal rate/capacity is a gameplay assumption, not published site capacity unless separately stated in research."
+    },
+    {
+      "siteId": "SITE_CHN_shengli_oilfield",
+      "countryId": "CHN",
+      "resourceId": "crude_oil",
+      "siteName": "Shengli Oilfield",
+      "status": "SIMULATED_SCENARIO",
+      "unit": "BBL",
+      "nominalCapacity": 470000,
+      "minimumCapacity": 270000,
+      "maximumCapacity": 560000,
+      "utilization": 0.71,
+      "recovery": 0.72,
+      "decline": 0.016,
+      "maintenance": 0.12,
+      "scenarioLifeYears": 466.34,
+      "authority": "SCENARIO_SIMULATION_DATA",
+      "generationMethod": "SOURCE_BACKED_SITE_ID_WITH_EXPLICIT_GAMEPLAY_CAPACITY_ASSUMPTION",
+      "seedKey": "SITE_CHN_shengli_oilfield|CHN|crude_oil",
+      "sourceObservedProduction": {
+        "rate": 470000,
+        "unit": "barrels_oil_equivalent_per_day",
+        "year": null,
+        "status": "OBSERVED_APPROXIMATE",
+        "basis": "OverWatts map profile, operator/EIA-IEA attributed"
+      },
+      "capacityAuthority": "SCENARIO_SIMULATION_DATA",
+      "note": "Nominal rate/capacity is a gameplay assumption, not published site capacity unless separately stated in research."
+    }
+  ],
+  "evidenceRecords": [
+    {
+      "siteId": "SITE_CHN_haerwusu_coal_mine",
+      "countryId": "CHN",
+      "siteName": "Haerwusu Coal Mine",
+      "evidence": [
+        {
+          "url": "https://www.overwatts.com/asset/mine-haerwusu",
+          "sourceType": "SITE_OR_OPERATOR_PAGE",
+          "accessed": "2026-10-10",
+          "scope": "site identity, location or operating data",
+          "coordinateStatus": "ESTIMATED_MAP_POINT",
+          "notes": "OverWatts map point is approximate and the source warns values are approximate, not for operational use."
+        },
+        {
+          "url": "https://www.mindat.org/loc-302617.html",
+          "sourceType": "SUPPORTING_REFERENCE",
+          "accessed": "2026-10-10",
+          "scope": "supporting site or regional context",
+          "coordinateStatus": "ESTIMATED_MAP_POINT",
+          "notes": "OverWatts map point is approximate and the source warns values are approximate, not for operational use."
+        }
+      ],
+      "facts": {
+        "owner": "China Shenhua Energy Company Limited",
+        "operator": "China Shenhua Energy Company Limited",
+        "status": "OPERATING_REPORTED",
+        "extractionMethod": "OPEN_PIT",
+        "quantitativeProfile": {
+          "reserve": {
+            "quantity": null,
+            "unit": null,
+            "year": null,
+            "status": "UNOBSERVED"
+          },
+          "grade": {
+            "value": null,
+            "unit": null,
+            "status": "UNOBSERVED"
+          },
+          "purity": {
+            "value": null,
+            "status": "UNOBSERVED"
+          },
+          "production": {
+            "annual": 20000000,
+            "unit": "metric_tonnes_per_year",
+            "year": null,
+            "status": "OBSERVED_APPROXIMATE",
+            "basis": "OverWatts Atlas reports ~20 Mtpa"
+          }
+        },
+        "siteContext": {
+          "countryId": "CHN",
+          "region": "Inner Mongolia Autonomous Region",
+          "locality": "Zhungeer Banner, Ordos",
+          "siteType": "COAL_MINE",
+          "resourceId": "coal"
+        },
+        "infrastructure": {},
+        "processing": {}
+      }
+    },
+    {
+      "siteId": "SITE_CHN_heidaigou_coal_mine",
+      "countryId": "CHN",
+      "siteName": "Heidaigou Coal Mine",
+      "evidence": [
+        {
+          "url": "https://www.overwatts.com/asset/mine-heidaigou",
+          "sourceType": "SITE_OR_OPERATOR_PAGE",
+          "accessed": "2026-10-10",
+          "scope": "site identity, location or operating data",
+          "coordinateStatus": "ESTIMATED_MAP_POINT",
+          "notes": "Map point approximate; reported output ~33.1 Mt in 2023; source indicated expected mine life through 2030."
+        },
+        {
+          "url": "https://www.mining-technology.com/marketdata/five-largest-coal-mines-china/",
+          "sourceType": "SUPPORTING_REFERENCE",
+          "accessed": "2026-10-10",
+          "scope": "supporting site or regional context",
+          "coordinateStatus": "ESTIMATED_MAP_POINT",
+          "notes": "Map point approximate; reported output ~33.1 Mt in 2023; source indicated expected mine life through 2030."
+        }
+      ],
+      "facts": {
+        "owner": "China Shenhua Energy Company Limited",
+        "operator": "China Shenhua Energy Company Limited",
+        "status": "OPERATING_REPORTED",
+        "extractionMethod": "OPEN_PIT",
+        "quantitativeProfile": {
+          "reserve": {
+            "quantity": null,
+            "unit": null,
+            "year": null,
+            "status": "UNOBSERVED"
+          },
+          "grade": {
+            "value": null,
+            "unit": null,
+            "status": "UNOBSERVED"
+          },
+          "purity": {
+            "value": null,
+            "status": "UNOBSERVED"
+          },
+          "production": {
+            "annual": 33100000,
+            "unit": "metric_tonnes_per_year",
+            "year": 2023,
+            "status": "REPORTED_ESTIMATE",
+            "basis": "Mining Technology / GlobalData estimate for 2023"
+          }
+        },
+        "siteContext": {
+          "countryId": "CHN",
+          "region": "Inner Mongolia Autonomous Region",
+          "locality": "Zhungeer, Ordos",
+          "siteType": "COAL_MINE",
+          "resourceId": "coal"
+        },
+        "infrastructure": {},
+        "processing": {}
+      }
+    },
+    {
+      "siteId": "SITE_CHN_daliuta_huojitu_coal_mine",
+      "countryId": "CHN",
+      "siteName": "Daliuta-Huojitu Coal Mine",
+      "evidence": [
+        {
+          "url": "https://www.gem.wiki/中国神华能源股份有限公司大柳塔煤矿大柳塔井",
+          "sourceType": "SITE_OR_OPERATOR_PAGE",
+          "accessed": "2026-10-10",
+          "scope": "site identity, location or operating data",
+          "coordinateStatus": "EXACT_SITE_POINT",
+          "notes": "GEM lists these WGS84 coordinates as exact. 2023 output is an estimate, not a current measured rate."
+        },
+        {
+          "url": "https://www.mining-technology.com/marketdata/ten-biggest-underground-mines-in-operation-inasia-pacific",
+          "sourceType": "SUPPORTING_REFERENCE",
+          "accessed": "2026-10-10",
+          "scope": "supporting site or regional context",
+          "coordinateStatus": "EXACT_SITE_POINT",
+          "notes": "GEM lists these WGS84 coordinates as exact. 2023 output is an estimate, not a current measured rate."
+        }
+      ],
+      "facts": {
+        "owner": "China Shenhua Energy Company Limited",
+        "operator": "China Shenhua Energy Company Limited",
+        "status": "OPERATING_REPORTED",
+        "extractionMethod": "UNDERGROUND",
+        "quantitativeProfile": {
+          "reserve": {
+            "quantity": null,
+            "unit": null,
+            "year": null,
+            "status": "UNOBSERVED"
+          },
+          "grade": {
+            "value": null,
+            "unit": null,
+            "status": "UNOBSERVED"
+          },
+          "purity": {
+            "value": null,
+            "status": "UNOBSERVED"
+          },
+          "production": {
+            "annual": 30450000,
+            "unit": "metric_tonnes_per_year",
+            "year": 2023,
+            "status": "REPORTED_ESTIMATE",
+            "basis": "Mining Technology / GlobalData estimate for 2023"
+          }
+        },
+        "siteContext": {
+          "countryId": "CHN",
+          "region": "Shaanxi Province",
+          "locality": "Daliuta, Shenmu, Yulin",
+          "siteType": "COAL_MINE",
+          "resourceId": "coal"
+        },
+        "infrastructure": {},
+        "processing": {}
+      }
+    },
+    {
+      "siteId": "SITE_CHN_bulianta_coal_mine",
+      "countryId": "CHN",
+      "siteName": "Bulianta Coal Mine",
+      "evidence": [
+        {
+          "url": "https://www.mining-technology.com/marketdata/ten-biggest-underground-mines-in-operation-inasia-pacific",
+          "sourceType": "SITE_OR_OPERATOR_PAGE",
+          "accessed": "2026-10-10",
+          "scope": "site identity, location or operating data",
+          "coordinateStatus": "ESTIMATED_REGION_POINT",
+          "notes": "Mine identity and 2023 output are sourced; coordinates are low-confidence regional proxy needing exact site verification."
+        },
+        {
+          "url": "https://www.overwatts.com/country/cn/mine",
+          "sourceType": "SUPPORTING_REFERENCE",
+          "accessed": "2026-10-10",
+          "scope": "supporting site or regional context",
+          "coordinateStatus": "ESTIMATED_REGION_POINT",
+          "notes": "Mine identity and 2023 output are sourced; coordinates are low-confidence regional proxy needing exact site verification."
+        }
+      ],
+      "facts": {
+        "owner": "China Shenhua Energy Company Limited",
+        "operator": "China Shenhua Energy Company Limited",
+        "status": "OPERATING_REPORTED",
+        "extractionMethod": "UNDERGROUND",
+        "quantitativeProfile": {
+          "reserve": {
+            "quantity": null,
+            "unit": null,
+            "year": null,
+            "status": "UNOBSERVED"
+          },
+          "grade": {
+            "value": null,
+            "unit": null,
+            "status": "UNOBSERVED"
+          },
+          "purity": {
+            "value": null,
+            "status": "UNOBSERVED"
+          },
+          "production": {
+            "annual": 29000000,
+            "unit": "metric_tonnes_per_year",
+            "year": 2023,
+            "status": "REPORTED_ESTIMATE",
+            "basis": "Mining Technology / GlobalData estimate for 2023"
+          }
+        },
+        "siteContext": {
+          "countryId": "CHN",
+          "region": "Inner Mongolia Autonomous Region",
+          "locality": "Ordos region",
+          "siteType": "COAL_MINE",
+          "resourceId": "coal"
+        },
+        "infrastructure": {},
+        "processing": {}
+      }
+    },
+    {
+      "siteId": "SITE_CHN_huolinhe_north_surface_mine_no3",
+      "countryId": "CHN",
+      "siteName": "Huolinhe North Surface Mine No. 3",
+      "evidence": [
+        {
+          "url": "https://www.gem.wiki/内蒙古电投能源股份有限公司北露天煤矿",
+          "sourceType": "SITE_OR_OPERATOR_PAGE",
+          "accessed": "2026-10-10",
+          "scope": "site identity, location or operating data",
+          "coordinateStatus": "EXACT_SITE_POINT",
+          "notes": "GEM reports exact WGS84 coordinates and operator; gameplay capacity simulated because site-specific published capacity was not verified."
+        },
+        {
+          "url": "https://www.ourchinastory.com/en/12665/China's-first-modern-open-pit-coal-mine-put-in-operation",
+          "sourceType": "SUPPORTING_REFERENCE",
+          "accessed": "2026-10-10",
+          "scope": "supporting site or regional context",
+          "coordinateStatus": "EXACT_SITE_POINT",
+          "notes": "GEM reports exact WGS84 coordinates and operator; gameplay capacity simulated because site-specific published capacity was not verified."
+        }
+      ],
+      "facts": {
+        "owner": "State Power Investment Corporation / Inner Mongolia Huolinhe Coal Industry Group (reported stakes)",
+        "operator": "Huolinhe Opencut Coal Industry Corporation Limited of Inner Mongolia",
+        "status": "OPERATING_REPORTED",
+        "extractionMethod": "OPEN_PIT",
+        "quantitativeProfile": {
+          "reserve": {
+            "quantity": null,
+            "unit": null,
+            "year": null,
+            "status": "UNOBSERVED"
+          },
+          "grade": {
+            "value": null,
+            "unit": null,
+            "status": "UNOBSERVED"
+          },
+          "purity": {
+            "value": null,
+            "status": "UNOBSERVED"
+          },
+          "production": {
+            "annual": null,
+            "unit": "metric_tonnes_per_year",
+            "year": null,
+            "status": "UNOBSERVED"
+          }
+        },
+        "siteContext": {
+          "countryId": "CHN",
+          "region": "Inner Mongolia Autonomous Region",
+          "locality": "Huolinguole, Tongliao",
+          "siteType": "COAL_MINE",
+          "resourceId": "coal"
+        },
+        "infrastructure": {},
+        "processing": {}
+      }
+    },
+    {
+      "siteId": "SITE_CHN_antaibao_surface_coal_mine",
+      "countryId": "CHN",
+      "siteName": "Antaibao Surface Coal Mine",
+      "evidence": [
+        {
+          "url": "http://sdsxdj.cn/en/xinwen/BGpE3KjN",
+          "sourceType": "SITE_OR_OPERATOR_PAGE",
+          "accessed": "2026-10-10",
+          "scope": "site identity, location or operating data",
+          "coordinateStatus": "ESTIMATED_REGION_POINT",
+          "notes": "A source reports a 3.0 Mt/a dry preparation plant and product calorific values 4,800/4,200 kcal/kg; these are product specs, not grade or purity. Map point approximate."
+        },
+        {
+          "url": "https://www.overwatts.com/country/cn/mine",
+          "sourceType": "SUPPORTING_REFERENCE",
+          "accessed": "2026-10-10",
+          "scope": "supporting site or regional context",
+          "coordinateStatus": "ESTIMATED_REGION_POINT",
+          "notes": "A source reports a 3.0 Mt/a dry preparation plant and product calorific values 4,800/4,200 kcal/kg; these are product specs, not grade or purity. Map point approximate."
+        }
+      ],
+      "facts": {
+        "owner": "China Coal Pingshuo Group",
+        "operator": "China Coal Pingshuo Group",
+        "status": "OPERATING_REPORTED",
+        "extractionMethod": "OPEN_PIT",
+        "quantitativeProfile": {
+          "reserve": {
+            "quantity": null,
+            "unit": null,
+            "year": null,
+            "status": "UNOBSERVED"
+          },
+          "grade": {
+            "value": null,
+            "unit": null,
+            "status": "UNOBSERVED"
+          },
+          "purity": {
+            "value": null,
+            "status": "UNOBSERVED"
+          },
+          "production": {
+            "annual": null,
+            "unit": "metric_tonnes_per_year",
+            "year": null,
+            "status": "UNOBSERVED"
+          }
+        },
+        "siteContext": {
+          "countryId": "CHN",
+          "region": "Shanxi Province",
+          "locality": "Pingshuo mining area, Shuozhou",
+          "siteType": "COAL_MINE",
+          "resourceId": "coal"
+        },
+        "infrastructure": {
+          "preparationPlantThroughput": {
+            "value": 3000000,
+            "unit": "metric_tonnes_per_year",
+            "status": "REPORTED"
+          }
+        },
+        "processing": {
+          "productSpecifications": {
+            "chemicalCoalCalorificValue": {
+              "value": 4800,
+              "unit": "kcal_per_kg"
+            },
+            "powerCoalCalorificValue": {
+              "value": 4200,
+              "unit": "kcal_per_kg"
+            }
+          }
+        }
+      }
+    },
+    {
+      "siteId": "SITE_CHN_shengli_no1_open_pit_coal_mine",
+      "countryId": "CHN",
+      "siteName": "Shengli No. 1 Open-Pit Coal Mine",
+      "evidence": [
+        {
+          "url": "https://cypherenvironmental.com/shenhua",
+          "sourceType": "SITE_OR_OPERATOR_PAGE",
+          "accessed": "2026-10-10",
+          "scope": "site identity, location or operating data",
+          "coordinateStatus": "ESTIMATED_LOCALITY_POINT",
+          "notes": "Mine is reported ~6 km from Xilinhot; the coordinate is a regional proxy, not a surveyed mine entrance."
+        },
+        {
+          "url": "https://www.overwatts.com/country/cn/mine",
+          "sourceType": "SUPPORTING_REFERENCE",
+          "accessed": "2026-10-10",
+          "scope": "supporting site or regional context",
+          "coordinateStatus": "ESTIMATED_LOCALITY_POINT",
+          "notes": "Mine is reported ~6 km from Xilinhot; the coordinate is a regional proxy, not a surveyed mine entrance."
+        }
+      ],
+      "facts": {
+        "owner": null,
+        "operator": null,
+        "status": "OPERATING_REPORTED",
+        "extractionMethod": "OPEN_PIT",
+        "quantitativeProfile": {
+          "reserve": {
+            "quantity": null,
+            "unit": null,
+            "year": null,
+            "status": "UNOBSERVED"
+          },
+          "grade": {
+            "value": null,
+            "unit": null,
+            "status": "UNOBSERVED"
+          },
+          "purity": {
+            "value": null,
+            "status": "UNOBSERVED"
+          },
+          "production": {
+            "annual": null,
+            "unit": "metric_tonnes_per_year",
+            "year": null,
+            "status": "UNOBSERVED"
+          }
+        },
+        "siteContext": {
+          "countryId": "CHN",
+          "region": "Inner Mongolia Autonomous Region",
+          "locality": "Near Xilinhot, ~6 km from city",
+          "siteType": "COAL_MINE",
+          "resourceId": "coal"
+        },
+        "infrastructure": {},
+        "processing": {}
+      }
+    },
+    {
+      "siteId": "SITE_CHN_bayan_obo_rare_earth_mine",
+      "countryId": "CHN",
+      "siteName": "Bayan Obo Rare Earth Mine",
+      "evidence": [
+        {
+          "url": "https://pubs.usgs.gov/bul/b2143/intro.html",
+          "sourceType": "SITE_OR_OPERATOR_PAGE",
+          "accessed": "2026-10-10",
+          "scope": "site identity, location or operating data",
+          "coordinateStatus": "ESTIMATED_DEPOSIT_POINT",
+          "notes": "Historical grade/reserve report refers to REO in ore, not a current reserve certificate. Map point is a district/deposit estimate."
+        },
+        {
+          "url": "https://www.nsenergybusiness.com/projects/bayan-obo-rare-earth-mine/",
+          "sourceType": "SUPPORTING_REFERENCE",
+          "accessed": "2026-10-10",
+          "scope": "supporting site or regional context",
+          "coordinateStatus": "ESTIMATED_DEPOSIT_POINT",
+          "notes": "Historical grade/reserve report refers to REO in ore, not a current reserve certificate. Map point is a district/deposit estimate."
+        },
+        {
+          "url": "https://ejatlas.org/conflict/bayan-obo-world-biggest-rare-earths-mine-baogang-group-baotou-inner-mongolia-china",
+          "sourceType": "SUPPORTING_REFERENCE",
+          "accessed": "2026-10-10",
+          "scope": "supporting site or regional context",
+          "coordinateStatus": "ESTIMATED_DEPOSIT_POINT",
+          "notes": "Historical grade/reserve report refers to REO in ore, not a current reserve certificate. Map point is a district/deposit estimate."
+        }
+      ],
+      "facts": {
+        "owner": null,
+        "operator": null,
+        "status": "OPERATING_REPORTED",
+        "extractionMethod": "OPEN_PIT",
+        "quantitativeProfile": {
+          "reserve": {
+            "quantity": 48000000,
+            "unit": "metric_tonnes_REE_ORE",
+            "year": 1990,
+            "status": "REPORTED_HISTORICAL",
+            "basis": "USGS Bulletin 2143 citing Drew et al. 1990; not a current reserve statement"
+          },
+          "grade": {
+            "value": 6,
+            "unit": "wt_percent_RE2O3",
+            "status": "REPORTED_HISTORICAL",
+            "year": 1990,
+            "basis": "USGS Bulletin 2143 cites a 1990 estimate"
+          },
+          "purity": {
+            "value": null,
+            "status": "UNOBSERVED"
+          },
+          "production": {
+            "annual": null,
+            "unit": "metric_tonnes_per_year",
+            "year": null,
+            "status": "UNOBSERVED"
+          }
+        },
+        "siteContext": {
+          "countryId": "CHN",
+          "region": "Inner Mongolia Autonomous Region",
+          "locality": "Bayan Obo mining district, Baotou",
+          "siteType": "POLYMETALLIC_MINE",
+          "resourceId": "rare_earth"
+        },
+        "infrastructure": {},
+        "processing": {}
+      }
+    },
+    {
+      "siteId": "SITE_CHN_bayan_obo_east_iron_ore_mine",
+      "countryId": "CHN",
+      "siteName": "Bayan Obo East Iron Ore Mine",
+      "evidence": [
+        {
+          "url": "https://www.gem.wiki/Bayan_Obo_East_Mine",
+          "sourceType": "SITE_OR_OPERATOR_PAGE",
+          "accessed": "2026-10-10",
+          "scope": "site identity, location or operating data",
+          "coordinateStatus": "EXACT_SITE_POINT",
+          "notes": "GEM reports exact WGS84 coordinates, design capacity 4.8 Mtpa, resource 580 Mt and reserve/2022-2023 production unknown."
+        }
+      ],
+      "facts": {
+        "owner": "Baotou Iron and Steel Group (Baogang Group)",
+        "operator": "Baotou Iron and Steel Group (Baogang Group)",
+        "status": "OPERATING_REPORTED",
+        "extractionMethod": "OPEN_PIT",
+        "quantitativeProfile": {
+          "reserve": {
+            "quantity": null,
+            "unit": null,
+            "year": null,
+            "status": "UNOBSERVED"
+          },
+          "grade": {
+            "value": null,
+            "unit": null,
+            "status": "UNOBSERVED"
+          },
+          "purity": {
+            "value": null,
+            "status": "UNOBSERVED"
+          },
+          "production": {
+            "annual": null,
+            "unit": "metric_tonnes_per_year",
+            "year": null,
+            "status": "UNOBSERVED"
+          }
+        },
+        "siteContext": {
+          "countryId": "CHN",
+          "region": "Inner Mongolia Autonomous Region",
+          "locality": "Baotou, Bayan Obo mining district",
+          "siteType": "IRON_ORE_MINE",
+          "resourceId": "iron_ore"
+        },
+        "infrastructure": {},
+        "processing": {}
+      }
+    },
+    {
+      "siteId": "SITE_CHN_dexing_copper_mine",
+      "countryId": "CHN",
+      "siteName": "Dexing Copper Mine",
+      "evidence": [
+        {
+          "url": "https://www.jxcc.com/",
+          "sourceType": "SITE_OR_OPERATOR_PAGE",
+          "accessed": "2026-10-10",
+          "scope": "site identity, location or operating data",
+          "coordinateStatus": "ESTIMATED_MINE_AREA_POINT",
+          "notes": "Mine/operator identity is identified; coordinate is a low-confidence mine-area point. Grade, reserve and output remain unobserved pending primary site report."
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Dexing_Copper_Mine",
+          "sourceType": "SUPPORTING_REFERENCE",
+          "accessed": "2026-10-10",
+          "scope": "supporting site or regional context",
+          "coordinateStatus": "ESTIMATED_MINE_AREA_POINT",
+          "notes": "Mine/operator identity is identified; coordinate is a low-confidence mine-area point. Grade, reserve and output remain unobserved pending primary site report."
+        }
+      ],
+      "facts": {
+        "owner": "Jiangxi Copper Co., Ltd.",
+        "operator": "Jiangxi Copper Co., Ltd.",
+        "status": "OPERATING_REPORTED",
+        "extractionMethod": "OPEN_PIT",
+        "quantitativeProfile": {
+          "reserve": {
+            "quantity": null,
+            "unit": null,
+            "year": null,
+            "status": "UNOBSERVED"
+          },
+          "grade": {
+            "value": null,
+            "unit": null,
+            "status": "UNOBSERVED"
+          },
+          "purity": {
+            "value": null,
+            "status": "UNOBSERVED"
+          },
+          "production": {
+            "annual": null,
+            "unit": "metric_tonnes_copper_per_year",
+            "year": null,
+            "status": "UNOBSERVED"
+          }
+        },
+        "siteContext": {
+          "countryId": "CHN",
+          "region": "Jiangxi Province",
+          "locality": "Dexing, Shangrao",
+          "siteType": "COPPER_MINE",
+          "resourceId": "copper"
+        },
+        "infrastructure": {},
+        "processing": {}
+      }
+    },
+    {
+      "siteId": "SITE_CHN_jiama_copper_gold_polymetallic_mine",
+      "countryId": "CHN",
+      "siteName": "Jiama Copper-Gold Polymetallic Mine",
+      "evidence": [
+        {
+          "url": "https://www.chinagoldintl.com/operations/jiama",
+          "sourceType": "SITE_OR_OPERATOR_PAGE",
+          "accessed": "2026-10-10",
+          "scope": "site identity, location or operating data",
+          "coordinateStatus": "ESTIMATED_SITE_POINT",
+          "notes": "Operator reports approx. 47,929 t copper production in 2024 and 50,000 t/day design ore-processing capacity. Map point approximate; by-products include gold, silver, molybdenum, lead and zinc."
+        },
+        {
+          "url": "https://miningdataonline.com/property/3100/Jiama-Mine.aspx",
+          "sourceType": "SUPPORTING_REFERENCE",
+          "accessed": "2026-10-10",
+          "scope": "supporting site or regional context",
+          "coordinateStatus": "ESTIMATED_SITE_POINT",
+          "notes": "Operator reports approx. 47,929 t copper production in 2024 and 50,000 t/day design ore-processing capacity. Map point approximate; by-products include gold, silver, molybdenum, lead and zinc."
+        }
+      ],
+      "facts": {
+        "owner": "China Gold International Resources Corp. Ltd.",
+        "operator": "China Gold International Resources Corp. Ltd.",
+        "status": "OPERATING_REPORTED",
+        "extractionMethod": "OPEN_PIT_AND_UNDERGROUND",
+        "quantitativeProfile": {
+          "reserve": {
+            "quantity": null,
+            "unit": null,
+            "year": null,
+            "status": "UNOBSERVED"
+          },
+          "grade": {
+            "value": null,
+            "unit": null,
+            "status": "UNOBSERVED"
+          },
+          "purity": {
+            "value": null,
+            "status": "UNOBSERVED"
+          },
+          "production": {
+            "annual": 47929,
+            "unit": "metric_tonnes_copper_per_year",
+            "year": 2024,
+            "status": "REPORTED",
+            "basis": "Operator reports approx. 47,929 tonnes copper production in 2024"
+          }
+        },
+        "siteContext": {
+          "countryId": "CHN",
+          "region": "Xizang (Tibet) Autonomous Region",
+          "locality": "~12 km south of Maizhokunggar",
+          "siteType": "POLYMETALLIC_MINE",
+          "resourceId": "copper"
+        },
+        "infrastructure": {},
+        "processing": {}
+      }
+    },
+    {
+      "siteId": "SITE_CHN_daqing_oilfield",
+      "countryId": "CHN",
+      "siteName": "Daqing Oilfield",
+      "evidence": [
+        {
+          "url": "https://www.overwatts.com/asset/og-daqing",
+          "sourceType": "SITE_OR_OPERATOR_PAGE",
+          "accessed": "2026-10-10",
+          "scope": "site identity, location or operating data",
+          "coordinateStatus": "ESTIMATED_FIELD_POINT",
+          "notes": "The field output is approximate and expressed as barrels of oil equivalent/day; not a site-specific proved reserve."
+        },
+        {
+          "url": "https://www.cnpc.com.cn/en/operatediol/202111/8e00f3d4212f4e1ebc8812df94c4752e.shtml",
+          "sourceType": "SUPPORTING_REFERENCE",
+          "accessed": "2026-10-10",
+          "scope": "supporting site or regional context",
+          "coordinateStatus": "ESTIMATED_FIELD_POINT",
+          "notes": "The field output is approximate and expressed as barrels of oil equivalent/day; not a site-specific proved reserve."
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Daqing_Oil_Field",
+          "sourceType": "SUPPORTING_REFERENCE",
+          "accessed": "2026-10-10",
+          "scope": "supporting site or regional context",
+          "coordinateStatus": "ESTIMATED_FIELD_POINT",
+          "notes": "The field output is approximate and expressed as barrels of oil equivalent/day; not a site-specific proved reserve."
+        }
+      ],
+      "facts": {
+        "owner": "China National Petroleum Corporation (CNPC)",
+        "operator": "Daqing Oilfield Company Limited (PetroChina/CNPC)",
+        "status": "OPERATING_REPORTED",
+        "extractionMethod": "ONSHORE_CONVENTIONAL",
+        "quantitativeProfile": {
+          "reserve": {
+            "quantity": null,
+            "unit": null,
+            "year": null,
+            "status": "UNOBSERVED"
+          },
+          "grade": {
+            "value": null,
+            "unit": null,
+            "status": "UNOBSERVED"
+          },
+          "purity": {
+            "value": null,
+            "status": "UNOBSERVED"
+          },
+          "production": {
+            "rate": 600000,
+            "unit": "barrels_oil_equivalent_per_day",
+            "year": null,
+            "status": "OBSERVED_APPROXIMATE",
+            "basis": "OverWatts map profile, operator/EIA-IEA attributed"
+          }
+        },
+        "siteContext": {
+          "countryId": "CHN",
+          "region": "Heilongjiang Province",
+          "locality": "Songliao Plain, Northeast China",
+          "siteType": "OIL_GAS_FIELD",
+          "resourceId": "crude_oil"
+        },
+        "infrastructure": {},
+        "processing": {}
+      }
+    },
+    {
+      "siteId": "SITE_CHN_changqing_oilfield_gas",
+      "countryId": "CHN",
+      "siteName": "Changqing Oilfield Gas Production Area",
+      "evidence": [
+        {
+          "url": "https://www.petrochina.com.cn/ptr/ktysc/commonlist_norig.shtml",
+          "sourceType": "SITE_OR_OPERATOR_PAGE",
+          "accessed": "2026-10-10",
+          "scope": "site identity, location or operating data",
+          "coordinateStatus": "ESTIMATED_BASIN_CENTROID",
+          "notes": "Multi-block regional asset; map point is a low-confidence Ordos Basin proxy. Site-specific reserve and grade are unknown."
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Ordos_Basin",
+          "sourceType": "SUPPORTING_REFERENCE",
+          "accessed": "2026-10-10",
+          "scope": "supporting site or regional context",
+          "coordinateStatus": "ESTIMATED_BASIN_CENTROID",
+          "notes": "Multi-block regional asset; map point is a low-confidence Ordos Basin proxy. Site-specific reserve and grade are unknown."
+        }
+      ],
+      "facts": {
+        "owner": "China National Petroleum Corporation (CNPC)",
+        "operator": "PetroChina Changqing Oilfield Company",
+        "status": "OPERATING_REPORTED",
+        "extractionMethod": "ONSHORE_TIGHT_GAS_AND_CONVENTIONAL",
+        "quantitativeProfile": {
+          "reserve": {
+            "quantity": null,
+            "unit": null,
+            "year": null,
+            "status": "UNOBSERVED"
+          },
+          "grade": {
+            "value": null,
+            "unit": null,
+            "status": "UNOBSERVED"
+          },
+          "purity": {
+            "value": null,
+            "status": "UNOBSERVED"
+          },
+          "production": {
+            "rate": null,
+            "unit": "billion_cubic_metres_per_year",
+            "year": null,
+            "status": "UNOBSERVED"
+          }
+        },
+        "siteContext": {
+          "countryId": "CHN",
+          "region": "Ordos Basin / Shaanxi–Gansu–Ningxia region",
+          "locality": "Regional basin proxy; not a specific well or field boundary",
+          "siteType": "OIL_GAS_FIELD",
+          "resourceId": "natural_gas"
+        },
+        "infrastructure": {},
+        "processing": {}
+      }
+    },
+    {
+      "siteId": "SITE_CHN_shengli_oilfield",
+      "countryId": "CHN",
+      "siteName": "Shengli Oilfield",
+      "evidence": [
+        {
+          "url": "https://www.overwatts.com/asset/og-shengli",
+          "sourceType": "SITE_OR_OPERATOR_PAGE",
+          "accessed": "2026-10-10",
+          "scope": "site identity, location or operating data",
+          "coordinateStatus": "ESTIMATED_FIELD_POINT",
+          "notes": "Source gives approximate field-level oil-equivalent output. Coordinate is field-level, not an individual well."
+        },
+        {
+          "url": "http://www.dongying.gov.cn/col/col41783/index.html",
+          "sourceType": "SUPPORTING_REFERENCE",
+          "accessed": "2026-10-10",
+          "scope": "supporting site or regional context",
+          "coordinateStatus": "ESTIMATED_FIELD_POINT",
+          "notes": "Source gives approximate field-level oil-equivalent output. Coordinate is field-level, not an individual well."
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Shengli_Oil_Field",
+          "sourceType": "SUPPORTING_REFERENCE",
+          "accessed": "2026-10-10",
+          "scope": "supporting site or regional context",
+          "coordinateStatus": "ESTIMATED_FIELD_POINT",
+          "notes": "Source gives approximate field-level oil-equivalent output. Coordinate is field-level, not an individual well."
+        }
+      ],
+      "facts": {
+        "owner": "China Petrochemical Corporation (Sinopec)",
+        "operator": "Shengli Oilfield Company (Sinopec)",
+        "status": "OPERATING_REPORTED",
+        "extractionMethod": "ONSHORE_AND_OFFSHORE",
+        "quantitativeProfile": {
+          "reserve": {
+            "quantity": null,
+            "unit": null,
+            "year": null,
+            "status": "UNOBSERVED"
+          },
+          "grade": {
+            "value": null,
+            "unit": null,
+            "status": "UNOBSERVED"
+          },
+          "purity": {
+            "value": null,
+            "status": "UNOBSERVED"
+          },
+          "production": {
+            "rate": 470000,
+            "unit": "barrels_oil_equivalent_per_day",
+            "year": null,
+            "status": "OBSERVED_APPROXIMATE",
+            "basis": "OverWatts map profile, operator/EIA-IEA attributed"
+          }
+        },
+        "siteContext": {
+          "countryId": "CHN",
+          "region": "Shandong Province / Bohai region",
+          "locality": "Dongying and surrounding eastern/western production areas",
+          "siteType": "OIL_GAS_FIELD",
+          "resourceId": "crude_oil"
+        },
+        "infrastructure": {},
+        "processing": {}
+      }
+    }
+  ],
+  "validationExpectations": {
+    "uniqueSiteIds": true,
+    "allCountryIds": "CHN",
+    "minimumCountrySiteCount": 15,
+    "commercialSites": 14,
+    "requireSourceUrls": true,
+    "requireCoordinateProvenance": true,
+    "unknownGradePurityPreserved": true,
+    "scenarioSeparatedFromRealData": true
+  }
+}
