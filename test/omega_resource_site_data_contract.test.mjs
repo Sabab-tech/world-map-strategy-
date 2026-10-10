@@ -10,9 +10,9 @@ const network = read('omega_resource_industrial_network_v1.js');
 
 const rows = [...base.sites, ...expansion.records];
 assert.equal(base.siteCount, 199);
-assert.equal(expansion.siteCount, 35);
-assert.equal(rows.length, 234);
-assert.equal(new Set(rows.map(s => s.siteId)).size, 234, 'all 234 site IDs must be unique');
+assert.equal(expansion.siteCount, 51);
+assert.equal(rows.length, 250);
+assert.equal(new Set(rows.map(s => s.siteId)).size, 250, 'all 250 site IDs must be unique');
 
 const fields = ['reserve','production','grade','recovery','throughput','purity','capacity'];
 for (const site of rows) {
@@ -47,4 +47,4 @@ test('all canonical and expansion sites share a typed runtime contract without f
     }
   }
 });
-console.log('OMEGA SITE DATA CONTRACT: PASS - 199 base + 35 additive records; 234 unique site IDs; seven typed quantitative fields checked.');
+console.log('OMEGA SITE DATA CONTRACT: PASS - 199 base + 51 additive records; 250 unique site IDs; seven typed quantitative fields checked.');

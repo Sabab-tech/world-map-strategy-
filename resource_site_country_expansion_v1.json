@@ -1,9 +1,9 @@
 {
   "schemaVersion": "1.0.0",
   "datasetId": "OMEGA_RESOURCE_SITE_COUNTRY_EXPANSION_V1",
-  "generatedAt": "2026-10-10",
+  "generatedAt": "2026-10-11",
   "authority": "SITE_IDENTITY_AND_LOCATION_REFERENCE_WITH_EXPLICIT_QUANTITATIVE_GAPS",
-  "siteCount": 35,
+  "siteCount": 51,
   "baseCatalogPreserved": true,
   "records": [
     {
@@ -5204,6 +5204,2330 @@
         "requiresSiteSpecificRoute": true,
         "requiresFactoryBinding": true
       }
+    },
+    {
+      "countryId": "GIN",
+      "siteId": "SITE_GIN_simandou_iron_ore_mine",
+      "siteName": "Simandou Iron Ore Project",
+      "identity": {
+        "countryIso3": "GIN",
+        "siteType": "IRON_ORE_MINE_PROJECT",
+        "resourceTypeId": "iron_ore",
+        "resourceName": "Iron Ore",
+        "ontologyKey": "IRON_ORE"
+      },
+      "location": {
+        "countryName": "Guinea",
+        "adminRegion": "Nzérékoré Region, southeastern Guinea",
+        "locality": "Simandou mountain range",
+        "coordinates": {
+          "lat": 8.58,
+          "lng": -8.89
+        },
+        "coordinateStatus": "SITE_POINT_APPROXIMATE",
+        "coordinateProvenance": "Approximate public site location; not survey-grade GIS. Verify against operator GIS before engineering use."
+      },
+      "ownership": {
+        "owner": "Rio Tinto / Simfer; project ownership is consortium-based",
+        "operator": "Simfer / project consortium",
+        "ownerEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED",
+        "operatorEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED"
+      },
+      "operation": {
+        "status": "DEVELOPMENT_AND_CONSTRUCTION",
+        "operationalStatus": "DEVELOPMENT_AND_CONSTRUCTION",
+        "extractionMethod": "Open-pit iron ore development; construction and staged commissioning",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "Open-pit iron ore development; construction and staged commissioning",
+        "midstreamProcess": "Crushing, screening and beneficiation as configured",
+        "refinedOutputs": [
+          "IRON_ORE_FINES",
+          "IRON_ORE_LUMP"
+        ],
+        "downstreamSectors": [
+          "STEELMAKING",
+          "IRON_AND_STEEL"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": 1500000000,
+          "unit": "dry_metric_tonnes_ore",
+          "year": 2024,
+          "status": "REPORTED",
+          "basis": "JORC proved 0.2 Bt + probable 1.3 Bt ore reserves"
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": null,
+          "year": null,
+          "status": "NOT_YET_REPORTED_AS_OPERATING_MINE"
+        },
+        "grade": {
+          "value": "Proved 66.4% Fe; probable 65.0% Fe",
+          "unit": "% Fe",
+          "status": "REPORTED_RESERVE_GRADE"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": 60000000,
+          "minimum": null,
+          "maximum": null,
+          "unit": "dry_metric_tonnes_per_year",
+          "status": "REPORTED_LIFE_OF_MINE_CAPACITY"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": "https://www.riotinto.com/en/operations/africa/simandou",
+          "capacitySource": null,
+          "promotedAt": "2026-10-11"
+        },
+        "completeness": {
+          "reserve": "REPORTED",
+          "production": "REPORTED",
+          "grade": "REPORTED_RESERVE_GRADE",
+          "recovery": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "REPORTED_LIFE_OF_MINE_CAPACITY",
+          "structuredEvidence": true,
+          "overall": "SITE_IDENTITY_ENRICHED_FIELD_LEVEL_RESEARCH_PARTIAL"
+        }
+      },
+      "verification": {
+        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_FIELD_LEVEL_REVIEW_REQUIRED",
+        "reviewedAt": "2026-10-11",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "RIO_TINTO"
+        ],
+        "dataLimitations": "Reserve and capacity figures are project-level, not current annual production; not an operating mine output."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_country_expansion_v1.json"
+        ],
+        "sourcePath": "resource_site_country_expansion_v1.records",
+        "evidence": [
+          {
+            "url": "https://www.riotinto.com/en/operations/africa/simandou",
+            "scope": "Site identity and cited field(s); revalidate field-level claims and ownership/operating status before authoritative promotion."
+          }
+        ]
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "GIN",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "SITE_EXPANSION_REFERENCE",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
+        "qualityAuthority": "SOURCE_REPORTED_GRADE_WITH_BASIS",
+        "countryWarehouseId": "WH-GIN-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      }
+    },
+    {
+      "countryId": "BWA",
+      "siteId": "SITE_BWA_orapa_diamond_mine",
+      "siteName": "Orapa Diamond Mine",
+      "identity": {
+        "countryIso3": "BWA",
+        "siteType": "OPEN_PIT_DIAMOND_MINE",
+        "resourceTypeId": "diamond",
+        "resourceName": "Diamond",
+        "ontologyKey": "DIAMOND"
+      },
+      "location": {
+        "countryName": "Botswana",
+        "adminRegion": "Central District",
+        "locality": "Orapa, Central District",
+        "coordinates": {
+          "lat": -21.31,
+          "lng": 25.37
+        },
+        "coordinateStatus": "SITE_POINT_APPROXIMATE",
+        "coordinateProvenance": "Approximate public site location; not survey-grade GIS. Verify against operator GIS before engineering use."
+      },
+      "ownership": {
+        "owner": "Debswana Diamond Company (De Beers and Government of Botswana joint venture)",
+        "operator": "Debswana",
+        "ownerEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED",
+        "operatorEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED"
+      },
+      "operation": {
+        "status": "ACTIVE_SITE_REFERENCE",
+        "operationalStatus": "ACTIVE_SITE_REFERENCE",
+        "extractionMethod": "Open-pit diamond mining",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "Open-pit diamond mining",
+        "midstreamProcess": "Ore treatment and diamond recovery; exact current plant configuration requires source-specific validation",
+        "refinedOutputs": [
+          "ROUGH_DIAMONDS"
+        ],
+        "downstreamSectors": [
+          "GEMSTONE_PROCESSING",
+          "JEWELLERY"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "status": "UNQUANTIFIED",
+          "basis": null
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": "Site-specific measured ore/feed grade not supplied in this record",
+          "unit": null,
+          "status": "QUALITATIVE_ONLY"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": "https://www.debswana.com/operations/orapa",
+          "capacitySource": null,
+          "promotedAt": "2026-10-11"
+        },
+        "completeness": {
+          "reserve": "UNQUANTIFIED",
+          "production": "UNOBSERVED",
+          "grade": "QUALITATIVE_ONLY",
+          "recovery": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "UNOBSERVED",
+          "structuredEvidence": false,
+          "overall": "SITE_IDENTITY_ENRICHED_FIELD_LEVEL_RESEARCH_PARTIAL"
+        }
+      },
+      "verification": {
+        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_FIELD_LEVEL_REVIEW_REQUIRED",
+        "reviewedAt": "2026-10-11",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "DEBSWANA"
+        ],
+        "dataLimitations": "No site-specific current-year reserve or production metric promoted in this record."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_country_expansion_v1.json"
+        ],
+        "sourcePath": "resource_site_country_expansion_v1.records",
+        "evidence": [
+          {
+            "url": "https://www.debswana.com/operations/orapa",
+            "scope": "Site identity and cited field(s); revalidate field-level claims and ownership/operating status before authoritative promotion."
+          }
+        ]
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "BWA",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "SITE_EXPANSION_REFERENCE",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
+        "qualityAuthority": "QUALITATIVE_DESCRIPTION_ONLY",
+        "countryWarehouseId": "WH-BWA-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      }
+    },
+    {
+      "countryId": "ZAF",
+      "siteId": "SITE_ZAF_venetia_diamond_mine",
+      "siteName": "Venetia Diamond Mine",
+      "identity": {
+        "countryIso3": "ZAF",
+        "siteType": "UNDERGROUND_DIAMOND_MINE",
+        "resourceTypeId": "diamond",
+        "resourceName": "Diamond",
+        "ontologyKey": "DIAMOND"
+      },
+      "location": {
+        "countryName": "South Africa",
+        "adminRegion": "Limpopo Province",
+        "locality": "Near Musina, Limpopo",
+        "coordinates": {
+          "lat": -22.433,
+          "lng": 29.31
+        },
+        "coordinateStatus": "SITE_POINT_APPROXIMATE",
+        "coordinateProvenance": "Approximate public site location; not survey-grade GIS. Verify against operator GIS before engineering use."
+      },
+      "ownership": {
+        "owner": "De Beers Group",
+        "operator": "De Beers Group",
+        "ownerEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED",
+        "operatorEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED"
+      },
+      "operation": {
+        "status": "ACTIVE_SITE_REFERENCE",
+        "operationalStatus": "ACTIVE_SITE_REFERENCE",
+        "extractionMethod": "Underground diamond mining; transition from historical open pit",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "Underground diamond mining; transition from historical open pit",
+        "midstreamProcess": "Ore treatment and diamond recovery",
+        "refinedOutputs": [
+          "ROUGH_DIAMONDS"
+        ],
+        "downstreamSectors": [
+          "GEMSTONE_PROCESSING",
+          "JEWELLERY"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "status": "UNQUANTIFIED",
+          "basis": null
+        },
+        "production": {
+          "annual": 2004000,
+          "rate": null,
+          "unit": "carats_per_year",
+          "year": 2024,
+          "status": "REPORTED",
+          "basis": "De Beers reported production table; site production"
+        },
+        "grade": {
+          "value": "Site-specific measured ore/feed grade not supplied in this record",
+          "unit": null,
+          "status": "QUALITATIVE_ONLY"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": "https://www.debeersgroup.com/",
+          "capacitySource": null,
+          "promotedAt": "2026-10-11"
+        },
+        "completeness": {
+          "reserve": "UNQUANTIFIED",
+          "production": "REPORTED",
+          "grade": "QUALITATIVE_ONLY",
+          "recovery": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "UNOBSERVED",
+          "structuredEvidence": true,
+          "overall": "SITE_IDENTITY_ENRICHED_FIELD_LEVEL_RESEARCH_PARTIAL"
+        }
+      },
+      "verification": {
+        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_FIELD_LEVEL_REVIEW_REQUIRED",
+        "reviewedAt": "2026-10-11",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "DE_BEERS_GROUP"
+        ],
+        "dataLimitations": "2024 output is reported production, not reserve grade or capacity."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_country_expansion_v1.json"
+        ],
+        "sourcePath": "resource_site_country_expansion_v1.records",
+        "evidence": [
+          {
+            "url": "https://www.debeersgroup.com/",
+            "scope": "Site identity and cited field(s); revalidate field-level claims and ownership/operating status before authoritative promotion."
+          }
+        ]
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "ZAF",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "SITE_EXPANSION_REFERENCE",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
+        "qualityAuthority": "QUALITATIVE_DESCRIPTION_ONLY",
+        "countryWarehouseId": "WH-ZAF-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      }
+    },
+    {
+      "countryId": "CAN",
+      "siteId": "SITE_CAN_gahcho_kue_diamond_mine",
+      "siteName": "Gahcho Kué Diamond Mine",
+      "identity": {
+        "countryIso3": "CAN",
+        "siteType": "OPEN_PIT_DIAMOND_MINE",
+        "resourceTypeId": "diamond",
+        "resourceName": "Diamond",
+        "ontologyKey": "DIAMOND"
+      },
+      "location": {
+        "countryName": "Canada",
+        "adminRegion": "Northwest Territories",
+        "locality": "Kennady Lake area, Northwest Territories",
+        "coordinates": {
+          "lat": 63.43,
+          "lng": -109.2
+        },
+        "coordinateStatus": "SITE_POINT_APPROXIMATE",
+        "coordinateProvenance": "Approximate public site location; not survey-grade GIS. Verify against operator GIS before engineering use."
+      },
+      "ownership": {
+        "owner": "De Beers Group (51%) and Mountain Province Diamonds (49%)",
+        "operator": "Gahcho Kué Mine operator / joint venture",
+        "ownerEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED",
+        "operatorEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED"
+      },
+      "operation": {
+        "status": "ACTIVE_SITE_REFERENCE",
+        "operationalStatus": "ACTIVE_SITE_REFERENCE",
+        "extractionMethod": "Open-pit diamond mining",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "Open-pit diamond mining",
+        "midstreamProcess": "Ore processing and diamond recovery",
+        "refinedOutputs": [
+          "ROUGH_DIAMONDS"
+        ],
+        "downstreamSectors": [
+          "GEMSTONE_PROCESSING",
+          "JEWELLERY"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "status": "UNQUANTIFIED",
+          "basis": null
+        },
+        "production": {
+          "annual": 2377000,
+          "rate": null,
+          "unit": "carats_per_year",
+          "year": 2024,
+          "status": "REPORTED",
+          "basis": "De Beers 2024 production report; 51% attributable basis"
+        },
+        "grade": {
+          "value": "Site-specific measured ore/feed grade not supplied in this record",
+          "unit": null,
+          "status": "QUALITATIVE_ONLY"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": "https://www.debeersgroup.com/",
+          "capacitySource": null,
+          "promotedAt": "2026-10-11"
+        },
+        "completeness": {
+          "reserve": "UNQUANTIFIED",
+          "production": "REPORTED",
+          "grade": "QUALITATIVE_ONLY",
+          "recovery": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "UNOBSERVED",
+          "structuredEvidence": true,
+          "overall": "SITE_IDENTITY_ENRICHED_FIELD_LEVEL_RESEARCH_PARTIAL"
+        }
+      },
+      "verification": {
+        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_FIELD_LEVEL_REVIEW_REQUIRED",
+        "reviewedAt": "2026-10-11",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "DE_BEERS_GROUP"
+        ],
+        "dataLimitations": "Attributable production basis is 51%; do not compare directly with 100% basis without normalizing."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_country_expansion_v1.json"
+        ],
+        "sourcePath": "resource_site_country_expansion_v1.records",
+        "evidence": [
+          {
+            "url": "https://www.debeersgroup.com/",
+            "scope": "Site identity and cited field(s); revalidate field-level claims and ownership/operating status before authoritative promotion."
+          }
+        ]
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "CAN",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "SITE_EXPANSION_REFERENCE",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
+        "qualityAuthority": "QUALITATIVE_DESCRIPTION_ONLY",
+        "countryWarehouseId": "WH-CAN-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      }
+    },
+    {
+      "countryId": "MLI",
+      "siteId": "SITE_MLI_fekola_gold_mine",
+      "siteName": "Fekola Gold Mine",
+      "identity": {
+        "countryIso3": "MLI",
+        "siteType": "OPEN_PIT_GOLD_MINE",
+        "resourceTypeId": "gold",
+        "resourceName": "Gold",
+        "ontologyKey": "GOLD"
+      },
+      "location": {
+        "countryName": "Mali",
+        "adminRegion": "Kayes Region",
+        "locality": "Fekola, near the Mali–Senegal border",
+        "coordinates": {
+          "lat": 12.49,
+          "lng": -8.18
+        },
+        "coordinateStatus": "SITE_POINT_APPROXIMATE",
+        "coordinateProvenance": "Approximate public site location; not survey-grade GIS. Verify against operator GIS before engineering use."
+      },
+      "ownership": {
+        "owner": "B2Gold (80%); State of Mali (20%)",
+        "operator": "B2Gold",
+        "ownerEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED",
+        "operatorEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED"
+      },
+      "operation": {
+        "status": "ACTIVE_PRODUCING",
+        "operationalStatus": "ACTIVE_PRODUCING",
+        "extractionMethod": "Open-pit mining; milling and gold recovery",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "Open-pit mining; milling and gold recovery",
+        "midstreamProcess": "Crushing, milling, leaching and gold recovery",
+        "refinedOutputs": [
+          "GOLD_DORE"
+        ],
+        "downstreamSectors": [
+          "GOLD_REFINING",
+          "JEWELLERY",
+          "ELECTRONICS"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "status": "UNQUANTIFIED",
+          "basis": null
+        },
+        "production": {
+          "annual": 392946,
+          "rate": null,
+          "unit": "troy_ounces_gold_per_year",
+          "year": 2024,
+          "status": "REPORTED"
+        },
+        "grade": {
+          "value": 1.34,
+          "unit": "g/t Au mill feed",
+          "status": "REPORTED",
+          "year": 2024,
+          "basis": "Annual mill-feed grade"
+        },
+        "recovery": {
+          "value": 92.6,
+          "unit": "percent",
+          "year": 2024,
+          "status": "REPORTED",
+          "basis": "Annual average gold recovery"
+        },
+        "throughput": {
+          "value": 9890000,
+          "unit": "metric_tonnes_per_year",
+          "year": 2024,
+          "status": "REPORTED",
+          "basis": "Annual mill throughput"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": "https://www.b2gold.com/news-media/news-releases/news-details/2025/B2Gold-Reports-Q4-and-Full-Year-2024-Results-Achieved-2024-Total-Gold-Production-and-Consolidated-Cost-Guidance-Goose-Project-Remains-On-Track-for-First-Gold-in-Q2-2025-and-Total-Capital-Estimate-Remains-at-C1540-Million-Q1-2025-Dividend-of-US0.02-pe/default.aspx",
+          "capacitySource": null,
+          "promotedAt": "2026-10-11"
+        },
+        "completeness": {
+          "reserve": "UNQUANTIFIED",
+          "production": "REPORTED",
+          "grade": "REPORTED",
+          "recovery": "REPORTED",
+          "purity": "UNOBSERVED",
+          "capacity": "UNOBSERVED",
+          "structuredEvidence": true,
+          "overall": "SITE_IDENTITY_ENRICHED_FIELD_LEVEL_RESEARCH_PARTIAL",
+          "throughput": "REPORTED"
+        }
+      },
+      "verification": {
+        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_FIELD_LEVEL_REVIEW_REQUIRED",
+        "reviewedAt": "2026-10-11",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "B2GOLD"
+        ],
+        "dataLimitations": "Grade, recovery and throughput are 2024 operating metrics, not lifetime reserve values."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_country_expansion_v1.json"
+        ],
+        "sourcePath": "resource_site_country_expansion_v1.records",
+        "evidence": [
+          {
+            "url": "https://www.b2gold.com/news-media/news-releases/news-details/2025/B2Gold-Reports-Q4-and-Full-Year-2024-Results-Achieved-2024-Total-Gold-Production-and-Consolidated-Cost-Guidance-Goose-Project-Remains-On-Track-for-First-Gold-in-Q2-2025-and-Total-Capital-Estimate-Remains-at-C1540-Million-Q1-2025-Dividend-of-US0.02-pe/default.aspx",
+            "scope": "Site identity and cited field(s); revalidate field-level claims and ownership/operating status before authoritative promotion."
+          }
+        ]
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "MLI",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "SITE_EXPANSION_REFERENCE",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
+        "qualityAuthority": "SOURCE_REPORTED_GRADE_WITH_BASIS",
+        "countryWarehouseId": "WH-MLI-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      }
+    },
+    {
+      "countryId": "COD",
+      "siteId": "SITE_COD_kibali_gold_mine",
+      "siteName": "Kibali Gold Mine",
+      "identity": {
+        "countryIso3": "COD",
+        "siteType": "OPEN_PIT_AND_UNDERGROUND_GOLD_MINE",
+        "resourceTypeId": "gold",
+        "resourceName": "Gold",
+        "ontologyKey": "GOLD"
+      },
+      "location": {
+        "countryName": "Democratic Republic of the Congo",
+        "adminRegion": "Haut-Uele Province",
+        "locality": "Near Durba, Haut-Uele",
+        "coordinates": {
+          "lat": 3.1,
+          "lng": 29.58
+        },
+        "coordinateStatus": "SITE_POINT_APPROXIMATE",
+        "coordinateProvenance": "Approximate public site location; not survey-grade GIS. Verify against operator GIS before engineering use."
+      },
+      "ownership": {
+        "owner": "Barrick (45%), AngloGold Ashanti (45%), Société Minière de Kilo-Moto (10%)",
+        "operator": "Barrick / joint venture operator",
+        "ownerEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED",
+        "operatorEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED"
+      },
+      "operation": {
+        "status": "ACTIVE_PRODUCING",
+        "operationalStatus": "ACTIVE_PRODUCING",
+        "extractionMethod": "Combined open-pit and underground mining",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "Combined open-pit and underground mining",
+        "midstreamProcess": "Ore processing, milling and gold recovery",
+        "refinedOutputs": [
+          "GOLD_DORE"
+        ],
+        "downstreamSectors": [
+          "GOLD_REFINING",
+          "JEWELLERY",
+          "ELECTRONICS"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": 47000000,
+          "unit": "metric_tonnes_ore",
+          "year": 2024,
+          "status": "REPORTED",
+          "basis": "Barrick 2024 attributable mineral reserve table reports 47 Mt on 45% basis; see source before downstream interpretation"
+        },
+        "production": {
+          "annual": 309000,
+          "rate": null,
+          "unit": "troy_ounces_gold_per_year",
+          "year": 2024,
+          "status": "REPORTED",
+          "basis": "Barrick 45% attributable basis"
+        },
+        "grade": {
+          "value": 2.82,
+          "unit": "g/t Au processed",
+          "status": "REPORTED",
+          "year": 2024,
+          "basis": "Average grade processed"
+        },
+        "recovery": {
+          "value": 89,
+          "unit": "percent",
+          "year": 2024,
+          "status": "REPORTED",
+          "basis": "Average recovery"
+        },
+        "throughput": {
+          "value": 3827000,
+          "unit": "metric_tonnes_per_year",
+          "year": 2024,
+          "status": "REPORTED",
+          "basis": "Ore tonnes processed; Barrick reporting table"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": "https://www.barrick.com/files/doc_downloads/agm/2025/Barrick_2024_Annual_Information_Form.pdf",
+          "capacitySource": null,
+          "promotedAt": "2026-10-11"
+        },
+        "completeness": {
+          "reserve": "REPORTED",
+          "production": "REPORTED",
+          "grade": "REPORTED",
+          "recovery": "REPORTED",
+          "purity": "UNOBSERVED",
+          "capacity": "UNOBSERVED",
+          "structuredEvidence": true,
+          "overall": "SITE_IDENTITY_ENRICHED_FIELD_LEVEL_RESEARCH_PARTIAL",
+          "throughput": "REPORTED"
+        }
+      },
+      "verification": {
+        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_FIELD_LEVEL_REVIEW_REQUIRED",
+        "reviewedAt": "2026-10-11",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "BARRICK"
+        ],
+        "dataLimitations": "Reported figures use Barrick's attributable basis where specified; verify ownership-share treatment before financial aggregation."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_country_expansion_v1.json"
+        ],
+        "sourcePath": "resource_site_country_expansion_v1.records",
+        "evidence": [
+          {
+            "url": "https://www.barrick.com/files/doc_downloads/agm/2025/Barrick_2024_Annual_Information_Form.pdf",
+            "scope": "Site identity and cited field(s); revalidate field-level claims and ownership/operating status before authoritative promotion."
+          }
+        ]
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "COD",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "SITE_EXPANSION_REFERENCE",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
+        "qualityAuthority": "SOURCE_REPORTED_GRADE_WITH_BASIS",
+        "countryWarehouseId": "WH-COD-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      }
+    },
+    {
+      "countryId": "CHL",
+      "siteId": "SITE_CHL_sierra_gorda_copper_mine",
+      "siteName": "Sierra Gorda Copper Mine",
+      "identity": {
+        "countryIso3": "CHL",
+        "siteType": "OPEN_PIT_COPPER_MINE",
+        "resourceTypeId": "copper",
+        "resourceName": "Copper",
+        "ontologyKey": "COPPER"
+      },
+      "location": {
+        "countryName": "Chile",
+        "adminRegion": "Antofagasta Region",
+        "locality": "Sierra Gorda, Atacama Desert",
+        "coordinates": {
+          "lat": -22.89,
+          "lng": -69.32
+        },
+        "coordinateStatus": "SITE_POINT_APPROXIMATE",
+        "coordinateProvenance": "Approximate public site location; not survey-grade GIS. Verify against operator GIS before engineering use."
+      },
+      "ownership": {
+        "owner": "KGHM International (55%); South32 (45%)",
+        "operator": "Sierra Gorda SCM",
+        "ownerEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED",
+        "operatorEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED"
+      },
+      "operation": {
+        "status": "ACTIVE_PRODUCING",
+        "operationalStatus": "ACTIVE_PRODUCING",
+        "extractionMethod": "Open-pit mining; copper-molybdenum concentration",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "Open-pit mining; copper-molybdenum concentration",
+        "midstreamProcess": "Crushing, grinding and flotation concentration",
+        "refinedOutputs": [
+          "COPPER_CONCENTRATE",
+          "MOLYBDENUM_CONCENTRATE"
+        ],
+        "downstreamSectors": [
+          "COPPER_SMELTING",
+          "ELECTRICAL_EQUIPMENT",
+          "CONSTRUCTION"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "status": "UNQUANTIFIED",
+          "basis": null
+        },
+        "production": {
+          "annual": 146400,
+          "rate": null,
+          "unit": "metric_tonnes_copper_in_concentrate_per_year",
+          "year": 2024,
+          "status": "REPORTED",
+          "basis": "100% operation basis; KGHM report"
+        },
+        "grade": {
+          "value": "Site-specific measured ore/feed grade not supplied in this record",
+          "unit": null,
+          "status": "QUALITATIVE_ONLY"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": "https://kghm.com/sites/default/files/2025-08/MBs%20report%20on%20activities%20in%202024.pdf",
+          "capacitySource": null,
+          "promotedAt": "2026-10-11"
+        },
+        "completeness": {
+          "reserve": "UNQUANTIFIED",
+          "production": "REPORTED",
+          "grade": "QUALITATIVE_ONLY",
+          "recovery": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "UNOBSERVED",
+          "structuredEvidence": true,
+          "overall": "SITE_IDENTITY_ENRICHED_FIELD_LEVEL_RESEARCH_PARTIAL"
+        }
+      },
+      "verification": {
+        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_FIELD_LEVEL_REVIEW_REQUIRED",
+        "reviewedAt": "2026-10-11",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "KGHM"
+        ],
+        "dataLimitations": "Annual payable/contained copper in concentrate is not the same as ore throughput or refined cathode output."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_country_expansion_v1.json"
+        ],
+        "sourcePath": "resource_site_country_expansion_v1.records",
+        "evidence": [
+          {
+            "url": "https://kghm.com/sites/default/files/2025-08/MBs%20report%20on%20activities%20in%202024.pdf",
+            "scope": "Site identity and cited field(s); revalidate field-level claims and ownership/operating status before authoritative promotion."
+          }
+        ]
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "CHL",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "SITE_EXPANSION_REFERENCE",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
+        "qualityAuthority": "QUALITATIVE_DESCRIPTION_ONLY",
+        "countryWarehouseId": "WH-CHL-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      }
+    },
+    {
+      "countryId": "SWE",
+      "siteId": "SITE_SWE_aitik_copper_mine",
+      "siteName": "Aitik Copper Mine",
+      "identity": {
+        "countryIso3": "SWE",
+        "siteType": "OPEN_PIT_COPPER_MINE",
+        "resourceTypeId": "copper",
+        "resourceName": "Copper",
+        "ontologyKey": "COPPER"
+      },
+      "location": {
+        "countryName": "Sweden",
+        "adminRegion": "Norrbotten County",
+        "locality": "Near Gällivare",
+        "coordinates": {
+          "lat": 67.07,
+          "lng": 20.95
+        },
+        "coordinateStatus": "SITE_POINT_APPROXIMATE",
+        "coordinateProvenance": "Approximate public site location; not survey-grade GIS. Verify against operator GIS before engineering use."
+      },
+      "ownership": {
+        "owner": "Boliden",
+        "operator": "Boliden",
+        "ownerEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED",
+        "operatorEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED"
+      },
+      "operation": {
+        "status": "ACTIVE_SITE_REFERENCE",
+        "operationalStatus": "ACTIVE_SITE_REFERENCE",
+        "extractionMethod": "Large-scale open-pit mining",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "Large-scale open-pit mining",
+        "midstreamProcess": "Crushing, grinding and flotation concentration",
+        "refinedOutputs": [
+          "COPPER_CONCENTRATE",
+          "BYPRODUCTS_AS_CONFIGURED"
+        ],
+        "downstreamSectors": [
+          "COPPER_SMELTING",
+          "ELECTRICAL_EQUIPMENT",
+          "CONSTRUCTION"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "status": "UNQUANTIFIED",
+          "basis": null
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": "Site-specific measured ore/feed grade not supplied in this record",
+          "unit": null,
+          "status": "QUALITATIVE_ONLY"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": "https://www.boliden.com/operations/mines/boliden-aitik/",
+          "capacitySource": null,
+          "promotedAt": "2026-10-11"
+        },
+        "completeness": {
+          "reserve": "UNQUANTIFIED",
+          "production": "UNOBSERVED",
+          "grade": "QUALITATIVE_ONLY",
+          "recovery": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "UNOBSERVED",
+          "structuredEvidence": false,
+          "overall": "SITE_IDENTITY_ENRICHED_FIELD_LEVEL_RESEARCH_PARTIAL"
+        }
+      },
+      "verification": {
+        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_FIELD_LEVEL_REVIEW_REQUIRED",
+        "reviewedAt": "2026-10-11",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "BOLIDEN"
+        ],
+        "dataLimitations": "Site identity and method source-linked; quantitative fields not promoted without field-specific report verification."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_country_expansion_v1.json"
+        ],
+        "sourcePath": "resource_site_country_expansion_v1.records",
+        "evidence": [
+          {
+            "url": "https://www.boliden.com/operations/mines/boliden-aitik/",
+            "scope": "Site identity and cited field(s); revalidate field-level claims and ownership/operating status before authoritative promotion."
+          }
+        ]
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "SWE",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "SITE_EXPANSION_REFERENCE",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
+        "qualityAuthority": "QUALITATIVE_DESCRIPTION_ONLY",
+        "countryWarehouseId": "WH-SWE-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      }
+    },
+    {
+      "countryId": "USA",
+      "siteId": "SITE_USA_carlin_gold_complex",
+      "siteName": "Carlin Gold Complex",
+      "identity": {
+        "countryIso3": "USA",
+        "siteType": "MULTI_MINE_GOLD_COMPLEX",
+        "resourceTypeId": "gold",
+        "resourceName": "Gold",
+        "ontologyKey": "GOLD"
+      },
+      "location": {
+        "countryName": "United States",
+        "adminRegion": "Nevada",
+        "locality": "Carlin Trend, northeastern Nevada",
+        "coordinates": {
+          "lat": 40.72,
+          "lng": -116.1
+        },
+        "coordinateStatus": "SITE_POINT_APPROXIMATE",
+        "coordinateProvenance": "Approximate public site location; not survey-grade GIS. Verify against operator GIS before engineering use."
+      },
+      "ownership": {
+        "owner": "Nevada Gold Mines joint venture partners",
+        "operator": "Nevada Gold Mines",
+        "ownerEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED",
+        "operatorEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED"
+      },
+      "operation": {
+        "status": "ACTIVE_SITE_REFERENCE",
+        "operationalStatus": "ACTIVE_SITE_REFERENCE",
+        "extractionMethod": "Multiple open-pit and underground operations",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "Multiple open-pit and underground operations",
+        "midstreamProcess": "Ore-specific crushing, milling, leaching and gold recovery",
+        "refinedOutputs": [
+          "GOLD_DORE"
+        ],
+        "downstreamSectors": [
+          "GOLD_REFINING",
+          "JEWELLERY",
+          "ELECTRONICS"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "status": "UNQUANTIFIED",
+          "basis": null
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": "Site-specific measured ore/feed grade not supplied in this record",
+          "unit": null,
+          "status": "QUALITATIVE_ONLY"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": "https://www.nevadagoldmines.com/",
+          "capacitySource": null,
+          "promotedAt": "2026-10-11"
+        },
+        "completeness": {
+          "reserve": "UNQUANTIFIED",
+          "production": "UNOBSERVED",
+          "grade": "QUALITATIVE_ONLY",
+          "recovery": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "UNOBSERVED",
+          "structuredEvidence": false,
+          "overall": "SITE_IDENTITY_ENRICHED_FIELD_LEVEL_RESEARCH_PARTIAL"
+        }
+      },
+      "verification": {
+        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_FIELD_LEVEL_REVIEW_REQUIRED",
+        "reviewedAt": "2026-10-11",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "NEVADA_GOLD_MINES"
+        ],
+        "dataLimitations": "Complex-level reference; individual pit production and reserves must not be misrepresented as one deposit measurement."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_country_expansion_v1.json"
+        ],
+        "sourcePath": "resource_site_country_expansion_v1.records",
+        "evidence": [
+          {
+            "url": "https://www.nevadagoldmines.com/",
+            "scope": "Site identity and cited field(s); revalidate field-level claims and ownership/operating status before authoritative promotion."
+          }
+        ]
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "USA",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "SITE_EXPANSION_REFERENCE",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
+        "qualityAuthority": "QUALITATIVE_DESCRIPTION_ONLY",
+        "countryWarehouseId": "WH-USA-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      }
+    },
+    {
+      "countryId": "AUS",
+      "siteId": "SITE_AUS_murrin_murrin_nickel_mine",
+      "siteName": "Murrin Murrin Nickel-Cobalt Operation",
+      "identity": {
+        "countryIso3": "AUS",
+        "siteType": "LATERITE_NICKEL_COBALT_MINE",
+        "resourceTypeId": "nickel",
+        "resourceName": "Nickel and Cobalt",
+        "ontologyKey": "NICKEL"
+      },
+      "location": {
+        "countryName": "Australia",
+        "adminRegion": "Western Australia",
+        "locality": "Eastern Goldfields, near Leonora",
+        "coordinates": {
+          "lat": -28.75,
+          "lng": 121.9
+        },
+        "coordinateStatus": "SITE_POINT_APPROXIMATE",
+        "coordinateProvenance": "Approximate public site location; not survey-grade GIS. Verify against operator GIS before engineering use."
+      },
+      "ownership": {
+        "owner": "Glencore",
+        "operator": "Glencore",
+        "ownerEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED",
+        "operatorEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED"
+      },
+      "operation": {
+        "status": "ACTIVE_SITE_REFERENCE",
+        "operationalStatus": "ACTIVE_SITE_REFERENCE",
+        "extractionMethod": "Laterite mining and hydrometallurgical processing",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "Laterite mining and hydrometallurgical processing",
+        "midstreamProcess": "High-pressure acid leach and metal refining route as configured",
+        "refinedOutputs": [
+          "NICKEL_METAL",
+          "COBALT_PRODUCTS"
+        ],
+        "downstreamSectors": [
+          "STAINLESS_STEEL",
+          "BATTERIES",
+          "ALLOYS"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "status": "UNQUANTIFIED",
+          "basis": null
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": "Site-specific measured ore/feed grade not supplied in this record",
+          "unit": null,
+          "status": "QUALITATIVE_ONLY"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": "https://www.glencore.com/what-we-do/energy-products/nickel",
+          "capacitySource": null,
+          "promotedAt": "2026-10-11"
+        },
+        "completeness": {
+          "reserve": "UNQUANTIFIED",
+          "production": "UNOBSERVED",
+          "grade": "QUALITATIVE_ONLY",
+          "recovery": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "UNOBSERVED",
+          "structuredEvidence": false,
+          "overall": "SITE_IDENTITY_ENRICHED_FIELD_LEVEL_RESEARCH_PARTIAL"
+        }
+      },
+      "verification": {
+        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_FIELD_LEVEL_REVIEW_REQUIRED",
+        "reviewedAt": "2026-10-11",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "GLENCORE"
+        ],
+        "dataLimitations": "Official operator commodity reference; site-level reserve and operating metrics need the current operation report."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_country_expansion_v1.json"
+        ],
+        "sourcePath": "resource_site_country_expansion_v1.records",
+        "evidence": [
+          {
+            "url": "https://www.glencore.com/what-we-do/energy-products/nickel",
+            "scope": "Site identity and cited field(s); revalidate field-level claims and ownership/operating status before authoritative promotion."
+          }
+        ]
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "AUS",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "SITE_EXPANSION_REFERENCE",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
+        "qualityAuthority": "QUALITATIVE_DESCRIPTION_ONLY",
+        "countryWarehouseId": "WH-AUS-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      }
+    },
+    {
+      "countryId": "AUS",
+      "siteId": "SITE_AUS_cannington_silver_lead_mine",
+      "siteName": "Cannington Silver-Lead-Zinc Mine",
+      "identity": {
+        "countryIso3": "AUS",
+        "siteType": "UNDERGROUND_POLYMETALLIC_MINE",
+        "resourceTypeId": "silver",
+        "resourceName": "Silver, Lead and Zinc",
+        "ontologyKey": "SILVER"
+      },
+      "location": {
+        "countryName": "Australia",
+        "adminRegion": "Queensland",
+        "locality": "Northwest Queensland",
+        "coordinates": {
+          "lat": -21.88,
+          "lng": 140.9
+        },
+        "coordinateStatus": "SITE_POINT_APPROXIMATE",
+        "coordinateProvenance": "Approximate public site location; not survey-grade GIS. Verify against operator GIS before engineering use."
+      },
+      "ownership": {
+        "owner": "South32",
+        "operator": "South32",
+        "ownerEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED",
+        "operatorEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED"
+      },
+      "operation": {
+        "status": "ACTIVE_SITE_REFERENCE",
+        "operationalStatus": "ACTIVE_SITE_REFERENCE",
+        "extractionMethod": "Underground polymetallic mining",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "Underground polymetallic mining",
+        "midstreamProcess": "Ore concentration into metal-bearing concentrates",
+        "refinedOutputs": [
+          "SILVER_LEAD_CONCENTRATE",
+          "ZINC_CONCENTRATE_AS_CONFIGURED"
+        ],
+        "downstreamSectors": [
+          "SILVER_REFINING",
+          "LEAD_SMELTING",
+          "ZINC_SMELTING",
+          "ELECTRONICS"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "status": "UNQUANTIFIED",
+          "basis": null
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": "Site-specific measured ore/feed grade not supplied in this record",
+          "unit": null,
+          "status": "QUALITATIVE_ONLY"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": "https://www.south32.net/what-we-do/our-business/cannington",
+          "capacitySource": null,
+          "promotedAt": "2026-10-11"
+        },
+        "completeness": {
+          "reserve": "UNQUANTIFIED",
+          "production": "UNOBSERVED",
+          "grade": "QUALITATIVE_ONLY",
+          "recovery": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "UNOBSERVED",
+          "structuredEvidence": false,
+          "overall": "SITE_IDENTITY_ENRICHED_FIELD_LEVEL_RESEARCH_PARTIAL"
+        }
+      },
+      "verification": {
+        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_FIELD_LEVEL_REVIEW_REQUIRED",
+        "reviewedAt": "2026-10-11",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "SOUTH32"
+        ],
+        "dataLimitations": "Multi-commodity identity retained; production and grade require commodity-specific denominators."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_country_expansion_v1.json"
+        ],
+        "sourcePath": "resource_site_country_expansion_v1.records",
+        "evidence": [
+          {
+            "url": "https://www.south32.net/what-we-do/our-business/cannington",
+            "scope": "Site identity and cited field(s); revalidate field-level claims and ownership/operating status before authoritative promotion."
+          }
+        ]
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "AUS",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "SITE_EXPANSION_REFERENCE",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
+        "qualityAuthority": "QUALITATIVE_DESCRIPTION_ONLY",
+        "countryWarehouseId": "WH-AUS-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      }
+    },
+    {
+      "countryId": "CAN",
+      "siteId": "SITE_CAN_raglan_nickel_mine",
+      "siteName": "Raglan Nickel Mine",
+      "identity": {
+        "countryIso3": "CAN",
+        "siteType": "UNDERGROUND_NICKEL_COPPER_MINE",
+        "resourceTypeId": "nickel",
+        "resourceName": "Nickel and Copper",
+        "ontologyKey": "NICKEL"
+      },
+      "location": {
+        "countryName": "Canada",
+        "adminRegion": "Nunavik, Quebec",
+        "locality": "Ungava Peninsula, Nunavik",
+        "coordinates": {
+          "lat": 61.67,
+          "lng": -73.68
+        },
+        "coordinateStatus": "SITE_POINT_APPROXIMATE",
+        "coordinateProvenance": "Approximate public site location; not survey-grade GIS. Verify against operator GIS before engineering use."
+      },
+      "ownership": {
+        "owner": "Glencore",
+        "operator": "Glencore",
+        "ownerEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED",
+        "operatorEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED"
+      },
+      "operation": {
+        "status": "ACTIVE_SITE_REFERENCE",
+        "operationalStatus": "ACTIVE_SITE_REFERENCE",
+        "extractionMethod": "Underground mining; nickel-copper concentration",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "Underground mining; nickel-copper concentration",
+        "midstreamProcess": "Ore crushing, grinding and flotation",
+        "refinedOutputs": [
+          "NICKEL_CONCENTRATE",
+          "COPPER_CONCENTRATE_AS_CONFIGURED"
+        ],
+        "downstreamSectors": [
+          "STAINLESS_STEEL",
+          "BATTERIES",
+          "ALLOYS",
+          "COPPER_SMELTING"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "status": "UNQUANTIFIED",
+          "basis": null
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": "Site-specific measured ore/feed grade not supplied in this record",
+          "unit": null,
+          "status": "QUALITATIVE_ONLY"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": "https://www.glencore.com/what-we-do/metals-and-minerals/nickel",
+          "capacitySource": null,
+          "promotedAt": "2026-10-11"
+        },
+        "completeness": {
+          "reserve": "UNQUANTIFIED",
+          "production": "UNOBSERVED",
+          "grade": "QUALITATIVE_ONLY",
+          "recovery": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "UNOBSERVED",
+          "structuredEvidence": false,
+          "overall": "SITE_IDENTITY_ENRICHED_FIELD_LEVEL_RESEARCH_PARTIAL"
+        }
+      },
+      "verification": {
+        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_FIELD_LEVEL_REVIEW_REQUIRED",
+        "reviewedAt": "2026-10-11",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "GLENCORE"
+        ],
+        "dataLimitations": "Site-specific annual metrics not populated without a current site-level source."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_country_expansion_v1.json"
+        ],
+        "sourcePath": "resource_site_country_expansion_v1.records",
+        "evidence": [
+          {
+            "url": "https://www.glencore.com/what-we-do/metals-and-minerals/nickel",
+            "scope": "Site identity and cited field(s); revalidate field-level claims and ownership/operating status before authoritative promotion."
+          }
+        ]
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "CAN",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "SITE_EXPANSION_REFERENCE",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
+        "qualityAuthority": "QUALITATIVE_DESCRIPTION_ONLY",
+        "countryWarehouseId": "WH-CAN-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      }
+    },
+    {
+      "countryId": "COL",
+      "siteId": "SITE_COL_cerro_matoso_nickel_mine",
+      "siteName": "Cerro Matoso Nickel Mine",
+      "identity": {
+        "countryIso3": "COL",
+        "siteType": "LATERITE_NICKEL_MINE",
+        "resourceTypeId": "nickel",
+        "resourceName": "Nickel",
+        "ontologyKey": "NICKEL"
+      },
+      "location": {
+        "countryName": "Colombia",
+        "adminRegion": "Córdoba Department",
+        "locality": "Montelíbano, Córdoba",
+        "coordinates": {
+          "lat": 8.27,
+          "lng": -75.58
+        },
+        "coordinateStatus": "SITE_POINT_APPROXIMATE",
+        "coordinateProvenance": "Approximate public site location; not survey-grade GIS. Verify against operator GIS before engineering use."
+      },
+      "ownership": {
+        "owner": "South32 / ownership and operating structure subject to current reporting validation",
+        "operator": "Cerro Matoso",
+        "ownerEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED",
+        "operatorEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED"
+      },
+      "operation": {
+        "status": "SITE_REFERENCE_REVALIDATION_REQUIRED",
+        "operationalStatus": "SITE_REFERENCE_REVALIDATION_REQUIRED",
+        "extractionMethod": "Laterite mining and ferronickel production",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "Laterite mining and ferronickel production",
+        "midstreamProcess": "Ore preparation, smelting and ferronickel refining",
+        "refinedOutputs": [
+          "FERRONICKEL"
+        ],
+        "downstreamSectors": [
+          "STAINLESS_STEEL",
+          "ALLOYS"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "status": "UNQUANTIFIED",
+          "basis": null
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": "Site-specific measured ore/feed grade not supplied in this record",
+          "unit": null,
+          "status": "QUALITATIVE_ONLY"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": "https://www.south32.net/what-we-do/our-business/cerro-matoso",
+          "capacitySource": null,
+          "promotedAt": "2026-10-11"
+        },
+        "completeness": {
+          "reserve": "UNQUANTIFIED",
+          "production": "UNOBSERVED",
+          "grade": "QUALITATIVE_ONLY",
+          "recovery": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "UNOBSERVED",
+          "structuredEvidence": false,
+          "overall": "SITE_IDENTITY_ENRICHED_FIELD_LEVEL_RESEARCH_PARTIAL"
+        }
+      },
+      "verification": {
+        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_FIELD_LEVEL_REVIEW_REQUIRED",
+        "reviewedAt": "2026-10-11",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "SOUTH32"
+        ],
+        "dataLimitations": "Current ownership and operating status should be revalidated before production is enabled."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_country_expansion_v1.json"
+        ],
+        "sourcePath": "resource_site_country_expansion_v1.records",
+        "evidence": [
+          {
+            "url": "https://www.south32.net/what-we-do/our-business/cerro-matoso",
+            "scope": "Site identity and cited field(s); revalidate field-level claims and ownership/operating status before authoritative promotion."
+          }
+        ]
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "COL",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "SITE_EXPANSION_REFERENCE",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
+        "qualityAuthority": "QUALITATIVE_DESCRIPTION_ONLY",
+        "countryWarehouseId": "WH-COL-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      }
+    },
+    {
+      "countryId": "PER",
+      "siteId": "SITE_PER_mina_justa_copper_mine",
+      "siteName": "Mina Justa Copper Mine",
+      "identity": {
+        "countryIso3": "PER",
+        "siteType": "OPEN_PIT_COPPER_MINE",
+        "resourceTypeId": "copper",
+        "resourceName": "Copper",
+        "ontologyKey": "COPPER"
+      },
+      "location": {
+        "countryName": "Peru",
+        "adminRegion": "Ica Region",
+        "locality": "Marcona district, Ica",
+        "coordinates": {
+          "lat": -15.46,
+          "lng": -75.14
+        },
+        "coordinateStatus": "SITE_POINT_APPROXIMATE",
+        "coordinateProvenance": "Approximate public site location; not survey-grade GIS. Verify against operator GIS before engineering use."
+      },
+      "ownership": {
+        "owner": "Minsur / Marcobre joint venture structure; revalidate current ownership percentages",
+        "operator": "Marcobre",
+        "ownerEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED",
+        "operatorEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED"
+      },
+      "operation": {
+        "status": "ACTIVE_SITE_REFERENCE",
+        "operationalStatus": "ACTIVE_SITE_REFERENCE",
+        "extractionMethod": "Open-pit mining with concentrator and leach/cathode processing routes",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "Open-pit mining with concentrator and leach/cathode processing routes",
+        "midstreamProcess": "Concentration and leaching/electrowinning according to ore route",
+        "refinedOutputs": [
+          "COPPER_CONCENTRATE",
+          "COPPER_CATHODE"
+        ],
+        "downstreamSectors": [
+          "COPPER_SMELTING",
+          "ELECTRICAL_EQUIPMENT",
+          "CONSTRUCTION"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "status": "UNQUANTIFIED",
+          "basis": null
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": "Site-specific measured ore/feed grade not supplied in this record",
+          "unit": null,
+          "status": "QUALITATIVE_ONLY"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": "https://www.marcobre.com/",
+          "capacitySource": null,
+          "promotedAt": "2026-10-11"
+        },
+        "completeness": {
+          "reserve": "UNQUANTIFIED",
+          "production": "UNOBSERVED",
+          "grade": "QUALITATIVE_ONLY",
+          "recovery": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "UNOBSERVED",
+          "structuredEvidence": false,
+          "overall": "SITE_IDENTITY_ENRICHED_FIELD_LEVEL_RESEARCH_PARTIAL"
+        }
+      },
+      "verification": {
+        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_FIELD_LEVEL_REVIEW_REQUIRED",
+        "reviewedAt": "2026-10-11",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "MARCOBRE"
+        ],
+        "dataLimitations": "Multi-route output; do not combine concentrate and cathode tonnes without basis conversion."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_country_expansion_v1.json"
+        ],
+        "sourcePath": "resource_site_country_expansion_v1.records",
+        "evidence": [
+          {
+            "url": "https://www.marcobre.com/",
+            "scope": "Site identity and cited field(s); revalidate field-level claims and ownership/operating status before authoritative promotion."
+          }
+        ]
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "PER",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "SITE_EXPANSION_REFERENCE",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
+        "qualityAuthority": "QUALITATIVE_DESCRIPTION_ONLY",
+        "countryWarehouseId": "WH-PER-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      }
+    },
+    {
+      "countryId": "PHL",
+      "siteId": "SITE_PHL_masbate_gold_mine",
+      "siteName": "Masbate Gold Mine",
+      "identity": {
+        "countryIso3": "PHL",
+        "siteType": "OPEN_PIT_GOLD_MINE",
+        "resourceTypeId": "gold",
+        "resourceName": "Gold",
+        "ontologyKey": "GOLD"
+      },
+      "location": {
+        "countryName": "Philippines",
+        "adminRegion": "Masbate Province",
+        "locality": "Masbate Island",
+        "coordinates": {
+          "lat": 12.36,
+          "lng": 123.62
+        },
+        "coordinateStatus": "SITE_POINT_APPROXIMATE",
+        "coordinateProvenance": "Approximate public site location; not survey-grade GIS. Verify against operator GIS before engineering use."
+      },
+      "ownership": {
+        "owner": "B2Gold / Philippine operating subsidiary; revalidate current ownership percentages",
+        "operator": "Philippine Gold Processing & Refining Corporation",
+        "ownerEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED",
+        "operatorEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED"
+      },
+      "operation": {
+        "status": "ACTIVE_SITE_REFERENCE",
+        "operationalStatus": "ACTIVE_SITE_REFERENCE",
+        "extractionMethod": "Open-pit mining and gold processing",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "Open-pit mining and gold processing",
+        "midstreamProcess": "Crushing, milling and gold recovery",
+        "refinedOutputs": [
+          "GOLD_DORE"
+        ],
+        "downstreamSectors": [
+          "GOLD_REFINING",
+          "JEWELLERY",
+          "ELECTRONICS"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "status": "UNQUANTIFIED",
+          "basis": null
+        },
+        "production": {
+          "annual": 194046,
+          "rate": null,
+          "unit": "troy_ounces_gold_per_year",
+          "year": 2024,
+          "status": "REPORTED"
+        },
+        "grade": {
+          "value": "Site-specific measured ore/feed grade not supplied in this record",
+          "unit": null,
+          "status": "QUALITATIVE_ONLY"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": "https://www.b2gold.com/news-media/news-releases/news-details/2025/B2Gold-Reports-Q4-and-Full-Year-2024-Results-Achieved-2024-Total-Gold-Production-and-Consolidated-Cost-Guidance-Goose-Project-Remains-On-Track-for-First-Gold-in-Q2-2025-and-Total-Capital-Estimate-Remains-at-C1540-Million-Q1-2025-Dividend-of-US0.02-pe/default.aspx",
+          "capacitySource": null,
+          "promotedAt": "2026-10-11"
+        },
+        "completeness": {
+          "reserve": "UNQUANTIFIED",
+          "production": "REPORTED",
+          "grade": "QUALITATIVE_ONLY",
+          "recovery": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "UNOBSERVED",
+          "structuredEvidence": true,
+          "overall": "SITE_IDENTITY_ENRICHED_FIELD_LEVEL_RESEARCH_PARTIAL"
+        }
+      },
+      "verification": {
+        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_FIELD_LEVEL_REVIEW_REQUIRED",
+        "reviewedAt": "2026-10-11",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "B2GOLD"
+        ],
+        "dataLimitations": "Annual production from B2Gold FY2024 mine-by-mine table."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_country_expansion_v1.json"
+        ],
+        "sourcePath": "resource_site_country_expansion_v1.records",
+        "evidence": [
+          {
+            "url": "https://www.b2gold.com/news-media/news-releases/news-details/2025/B2Gold-Reports-Q4-and-Full-Year-2024-Results-Achieved-2024-Total-Gold-Production-and-Consolidated-Cost-Guidance-Goose-Project-Remains-On-Track-for-First-Gold-in-Q2-2025-and-Total-Capital-Estimate-Remains-at-C1540-Million-Q1-2025-Dividend-of-US0.02-pe/default.aspx",
+            "scope": "Site identity and cited field(s); revalidate field-level claims and ownership/operating status before authoritative promotion."
+          }
+        ]
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "PHL",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "SITE_EXPANSION_REFERENCE",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
+        "qualityAuthority": "QUALITATIVE_DESCRIPTION_ONLY",
+        "countryWarehouseId": "WH-PHL-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      }
+    },
+    {
+      "countryId": "NAM",
+      "siteId": "SITE_NAM_otjikoto_gold_mine",
+      "siteName": "Otjikoto Gold Mine",
+      "identity": {
+        "countryIso3": "NAM",
+        "siteType": "OPEN_PIT_GOLD_MINE",
+        "resourceTypeId": "gold",
+        "resourceName": "Gold",
+        "ontologyKey": "GOLD"
+      },
+      "location": {
+        "countryName": "Namibia",
+        "adminRegion": "Otjozondjupa Region",
+        "locality": "Near Otjiwarongo",
+        "coordinates": {
+          "lat": -20.43,
+          "lng": 17.09
+        },
+        "coordinateStatus": "SITE_POINT_APPROXIMATE",
+        "coordinateProvenance": "Approximate public site location; not survey-grade GIS. Verify against operator GIS before engineering use."
+      },
+      "ownership": {
+        "owner": "B2Gold",
+        "operator": "B2Gold",
+        "ownerEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED",
+        "operatorEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED"
+      },
+      "operation": {
+        "status": "ACTIVE_SITE_REFERENCE",
+        "operationalStatus": "ACTIVE_SITE_REFERENCE",
+        "extractionMethod": "Open-pit gold mining",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "Open-pit gold mining",
+        "midstreamProcess": "Ore processing and gold recovery",
+        "refinedOutputs": [
+          "GOLD_DORE"
+        ],
+        "downstreamSectors": [
+          "GOLD_REFINING",
+          "JEWELLERY",
+          "ELECTRONICS"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "status": "UNQUANTIFIED",
+          "basis": null
+        },
+        "production": {
+          "annual": 198142,
+          "rate": null,
+          "unit": "troy_ounces_gold_per_year",
+          "year": 2024,
+          "status": "REPORTED"
+        },
+        "grade": {
+          "value": "Site-specific measured ore/feed grade not supplied in this record",
+          "unit": null,
+          "status": "QUALITATIVE_ONLY"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": "https://www.b2gold.com/news-media/news-releases/news-details/2025/B2Gold-Announces-Total-Consolidated-Gold-Production-for-2024-of-804778-ozWithin-the-Revised-2024-Guidance-Range-Total-Gold-Production-for-2025-Anticipated-to-be-Between-970000-and-1075000-oz-Goose-Project-Remains-On-Track-for-First-Gold-in-Q2-2025-and-Total-Capital-Estimate-Remains-at-C1540-Million/default.aspx",
+          "capacitySource": null,
+          "promotedAt": "2026-10-11"
+        },
+        "completeness": {
+          "reserve": "UNQUANTIFIED",
+          "production": "REPORTED",
+          "grade": "QUALITATIVE_ONLY",
+          "recovery": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "UNOBSERVED",
+          "structuredEvidence": true,
+          "overall": "SITE_IDENTITY_ENRICHED_FIELD_LEVEL_RESEARCH_PARTIAL"
+        }
+      },
+      "verification": {
+        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_FIELD_LEVEL_REVIEW_REQUIRED",
+        "reviewedAt": "2026-10-11",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "B2GOLD"
+        ],
+        "dataLimitations": "Annual production from B2Gold FY2024 mine-by-mine table."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_country_expansion_v1.json"
+        ],
+        "sourcePath": "resource_site_country_expansion_v1.records",
+        "evidence": [
+          {
+            "url": "https://www.b2gold.com/news-media/news-releases/news-details/2025/B2Gold-Announces-Total-Consolidated-Gold-Production-for-2024-of-804778-ozWithin-the-Revised-2024-Guidance-Range-Total-Gold-Production-for-2025-Anticipated-to-be-Between-970000-and-1075000-oz-Goose-Project-Remains-On-Track-for-First-Gold-in-Q2-2025-and-Total-Capital-Estimate-Remains-at-C1540-Million/default.aspx",
+            "scope": "Site identity and cited field(s); revalidate field-level claims and ownership/operating status before authoritative promotion."
+          }
+        ]
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "NAM",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "SITE_EXPANSION_REFERENCE",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
+        "qualityAuthority": "QUALITATIVE_DESCRIPTION_ONLY",
+        "countryWarehouseId": "WH-NAM-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      }
     }
   ],
   "policy": {
@@ -5220,5 +7544,27 @@
   "sources": [
     "https://www.usgs.gov/programs/mineral-resources-program/mineral-resources-data",
     "https://mrdata.usgs.gov/"
-  ]
+  ],
+  "tranche4": {
+    "added": 16,
+    "siteIds": [
+      "SITE_GIN_simandou_iron_ore_mine",
+      "SITE_BWA_orapa_diamond_mine",
+      "SITE_ZAF_venetia_diamond_mine",
+      "SITE_CAN_gahcho_kue_diamond_mine",
+      "SITE_MLI_fekola_gold_mine",
+      "SITE_COD_kibali_gold_mine",
+      "SITE_CHL_sierra_gorda_copper_mine",
+      "SITE_SWE_aitik_copper_mine",
+      "SITE_USA_carlin_gold_complex",
+      "SITE_AUS_murrin_murrin_nickel_mine",
+      "SITE_AUS_cannington_silver_lead_mine",
+      "SITE_CAN_raglan_nickel_mine",
+      "SITE_COL_cerro_matoso_nickel_mine",
+      "SITE_PER_mina_justa_copper_mine",
+      "SITE_PHL_masbate_gold_mine",
+      "SITE_NAM_otjikoto_gold_mine"
+    ],
+    "note": "Sixteen additional site records. Each record has the shared seven-field quantitative schema; unverified measures remain null/UNOBSERVED. Reported metrics preserve year, unit, ownership basis and source."
+  }
 }
