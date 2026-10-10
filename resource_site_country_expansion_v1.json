@@ -2471,7 +2471,7 @@
         "sourcePath": "resource_site_country_expansion_v1.records",
         "evidence": [
           {
-            "url": "http://kazminerals.com/our-locations/aktogay",
+            "url": "https://kazminerals.com/our-locations/aktogay",
             "scope": "operator identity, location, processing capacity and 2024 production"
           },
           {
@@ -2489,7 +2489,7 @@
       "runtime": {
         "identityAuthority": "SITE_EXPANSION_REFERENCE",
         "quantityAuthority": "SIMULATION_RUNTIME",
-        "productionAuthority": "SOURCE_REPORTED_WHEN_AVAILABLE_OTHERWISE_SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
         "qualityAuthority": "SOURCE_REPORTED_GRADE_WITH_BASIS",
         "countryWarehouseId": "WH-KAZ-RAW",
         "requiresSiteSpecificRoute": true,
@@ -2639,7 +2639,7 @@
       "runtime": {
         "identityAuthority": "SITE_EXPANSION_REFERENCE",
         "quantityAuthority": "SIMULATION_RUNTIME",
-        "productionAuthority": "SOURCE_REPORTED_WHEN_AVAILABLE_OTHERWISE_SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
         "qualityAuthority": "SOURCE_REPORTED_GRADE_WITH_BASIS",
         "countryWarehouseId": "WH-KAZ-RAW",
         "requiresSiteSpecificRoute": true,
@@ -2793,7 +2793,7 @@
       "runtime": {
         "identityAuthority": "SITE_EXPANSION_REFERENCE",
         "quantityAuthority": "SIMULATION_RUNTIME",
-        "productionAuthority": "SOURCE_REPORTED_WHEN_AVAILABLE_OTHERWISE_SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
         "qualityAuthority": "SOURCE_REPORTED_GRADE_WITH_BASIS",
         "countryWarehouseId": "WH-COD-RAW",
         "requiresSiteSpecificRoute": true,
@@ -2938,7 +2938,7 @@
       "runtime": {
         "identityAuthority": "SITE_EXPANSION_REFERENCE",
         "quantityAuthority": "SIMULATION_RUNTIME",
-        "productionAuthority": "SOURCE_REPORTED_WHEN_AVAILABLE_OTHERWISE_SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
         "qualityAuthority": "QUALITATIVE_OR_UNOBSERVED",
         "countryWarehouseId": "WH-NAM-RAW",
         "requiresSiteSpecificRoute": true,
@@ -3084,7 +3084,7 @@
       "runtime": {
         "identityAuthority": "SITE_EXPANSION_REFERENCE",
         "quantityAuthority": "SIMULATION_RUNTIME",
-        "productionAuthority": "SOURCE_REPORTED_WHEN_AVAILABLE_OTHERWISE_SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
         "qualityAuthority": "QUALITATIVE_OR_UNOBSERVED",
         "countryWarehouseId": "WH-ZAF-RAW",
         "requiresSiteSpecificRoute": true,
@@ -3232,7 +3232,7 @@
       "runtime": {
         "identityAuthority": "SITE_EXPANSION_REFERENCE",
         "quantityAuthority": "SIMULATION_RUNTIME",
-        "productionAuthority": "SOURCE_REPORTED_WHEN_AVAILABLE_OTHERWISE_SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
         "qualityAuthority": "QUALITATIVE_OR_UNOBSERVED",
         "countryWarehouseId": "WH-CAN-RAW",
         "requiresSiteSpecificRoute": true,
@@ -3384,7 +3384,7 @@
       "runtime": {
         "identityAuthority": "SITE_EXPANSION_REFERENCE",
         "quantityAuthority": "SIMULATION_RUNTIME",
-        "productionAuthority": "SOURCE_REPORTED_WHEN_AVAILABLE_OTHERWISE_SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
         "qualityAuthority": "QUALITATIVE_OR_UNOBSERVED",
         "countryWarehouseId": "WH-POL-RAW",
         "requiresSiteSpecificRoute": true,
@@ -3530,7 +3530,7 @@
       "runtime": {
         "identityAuthority": "SITE_EXPANSION_REFERENCE",
         "quantityAuthority": "SIMULATION_RUNTIME",
-        "productionAuthority": "SOURCE_REPORTED_WHEN_AVAILABLE_OTHERWISE_SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
         "qualityAuthority": "QUALITATIVE_OR_UNOBSERVED",
         "countryWarehouseId": "WH-GHA-RAW",
         "requiresSiteSpecificRoute": true,
@@ -3680,7 +3680,7 @@
       "runtime": {
         "identityAuthority": "SITE_EXPANSION_REFERENCE",
         "quantityAuthority": "SIMULATION_RUNTIME",
-        "productionAuthority": "SOURCE_REPORTED_WHEN_AVAILABLE_OTHERWISE_SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
         "qualityAuthority": "QUALITATIVE_OR_UNOBSERVED",
         "countryWarehouseId": "WH-USA-RAW",
         "requiresSiteSpecificRoute": true,
@@ -3828,7 +3828,7 @@
       "runtime": {
         "identityAuthority": "SITE_EXPANSION_REFERENCE",
         "quantityAuthority": "SIMULATION_RUNTIME",
-        "productionAuthority": "SOURCE_REPORTED_WHEN_AVAILABLE_OTHERWISE_SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
         "qualityAuthority": "QUALITATIVE_OR_UNOBSERVED",
         "countryWarehouseId": "WH-PER-RAW",
         "requiresSiteSpecificRoute": true,
@@ -3980,7 +3980,7 @@
       "runtime": {
         "identityAuthority": "SITE_EXPANSION_REFERENCE",
         "quantityAuthority": "SIMULATION_RUNTIME",
-        "productionAuthority": "SOURCE_REPORTED_WHEN_AVAILABLE_OTHERWISE_SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
         "qualityAuthority": "QUALITATIVE_OR_UNOBSERVED",
         "countryWarehouseId": "WH-BRA-RAW",
         "requiresSiteSpecificRoute": true,
@@ -4127,7 +4127,7 @@
       "runtime": {
         "identityAuthority": "SITE_EXPANSION_REFERENCE",
         "quantityAuthority": "SIMULATION_RUNTIME",
-        "productionAuthority": "SOURCE_REPORTED_WHEN_AVAILABLE_OTHERWISE_SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
         "qualityAuthority": "QUALITATIVE_OR_UNOBSERVED",
         "countryWarehouseId": "WH-AUS-RAW",
         "requiresSiteSpecificRoute": true,
