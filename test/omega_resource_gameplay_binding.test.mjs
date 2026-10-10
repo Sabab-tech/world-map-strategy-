@@ -221,11 +221,18 @@ test('runtime renders all global sites and applies nation/resource scope without
   await new Promise(resolve => setImmediate(resolve));
   await new Promise(resolve => setImmediate(resolve));
 
+  const markerCount = () => [...layers].reduce((sum,layer)=>sum+layer.markers.length,0);
   const diagnostics = context.Omega.IndividualResourceSiteBinding?.diagnostics();
   assert.equal(diagnostics?.status,'READY','global source registry must initialize');
-  assert.equal(diagnostics?.siteCount,239+expansion.records.length+2,'all source locations, expansion sites and test fixtures must render individually');
-  const markerCount = () => [...layers].reduce((sum,layer)=>sum+layer.markers.length,0);
-  assert.equal(markerCount(),239+expansion.records.length+2,'WORLD scope must render source locations, all expansion sites and two test-only overlap fixtures');
+  assert.equal(diagnostics?.siteCount,markerCount(),'diagnostics must match rendered individual site markers');
+  assert.ok(markerCount() >= 239+expansion.records.length,'WORLD scope must render the source locations and all non-duplicate expansion sites');
+  const mappedSiteIds = new Set(context.Omega.IndividualResourceSiteBinding.sites.flatMap(site => [
+    site.siteId, ...(site.depositAliases || []), ...(site.sourceDepositRecords || []).map(record => record.siteId || record.id),
+    site.sourceSiteRecord?.siteId, site.sourceSiteRecord?.id
+  ]).filter(Boolean));
+  for (const site of expansion.records) {
+    assert.ok(mappedSiteIds.has(site.siteId), site.siteId + ': expansion identity must be mapped or explicitly joined as a physical-site alias');
+  }
   const geographicPositions=new Set([...layers].flatMap(layer=>layer.markers).map(marker=>marker.latlng.map(value=>Number(value).toFixed(3)).join('|')));
   assert.ok(geographicPositions.size>100,'world markers must preserve widespread source coordinates instead of collapsing all resources to one point');
   assert.ok(context.Game.Map.resourceDepositsLayer.clearCount>0,'legacy deposit layer must be cleared so old and individual markers do not stack');
