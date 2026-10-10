@@ -5547,12 +5547,12 @@
           "basis": null
         },
         "production": {
-          "annual": 2004000,
+          "annual": 2166000,
           "rate": null,
           "unit": "carats_per_year",
           "year": 2024,
           "status": "REPORTED",
-          "basis": "De Beers reported production table; site production"
+          "basis": "De Beers 2024 production report; site production"
         },
         "grade": {
           "value": "Site-specific measured ore/feed grade not supplied in this record",
@@ -5585,7 +5585,7 @@
         },
         "reportedMetrics": {},
         "quantitativeProvenance": {
-          "structuredSource": "https://www.debeersgroup.com/",
+          "structuredSource": "https://www.debeersgroup.com/news-insights/latest-group-news/2025/production-report-for-the-fourth-quarter-of-2024",
           "capacitySource": null,
           "promotedAt": "2026-10-11"
         },
@@ -5616,7 +5616,7 @@
         "sourcePath": "resource_site_country_expansion_v1.records",
         "evidence": [
           {
-            "url": "https://www.debeersgroup.com/",
+            "url": "https://www.debeersgroup.com/news-insights/latest-group-news/2025/production-report-for-the-fourth-quarter-of-2024",
             "scope": "Site identity and cited field(s); revalidate field-level claims and ownership/operating status before authoritative promotion."
           }
         ]
@@ -5729,7 +5729,7 @@
         },
         "reportedMetrics": {},
         "quantitativeProvenance": {
-          "structuredSource": "https://www.debeersgroup.com/",
+          "structuredSource": "https://www.debeersgroup.com/news-insights/latest-group-news/2025/production-report-for-the-fourth-quarter-of-2024",
           "capacitySource": null,
           "promotedAt": "2026-10-11"
         },
@@ -5760,7 +5760,7 @@
         "sourcePath": "resource_site_country_expansion_v1.records",
         "evidence": [
           {
-            "url": "https://www.debeersgroup.com/",
+            "url": "https://www.debeersgroup.com/news-insights/latest-group-news/2025/production-report-for-the-fourth-quarter-of-2024",
             "scope": "Site identity and cited field(s); revalidate field-level claims and ownership/operating status before authoritative promotion."
           }
         ]
@@ -7477,7 +7477,7 @@
         },
         "reportedMetrics": {},
         "quantitativeProvenance": {
-          "structuredSource": "https://www.b2gold.com/news-media/news-releases/news-details/2025/B2Gold-Announces-Total-Consolidated-Gold-Production-for-2024-of-804778-ozWithin-the-Revised-2024-Guidance-Range-Total-Gold-Production-for-2025-Anticipated-to-be-Between-970000-and-1075000-oz-Goose-Project-Remains-On-Track-for-First-Gold-in-Q2-2025-and-Total-Capital-Estimate-Remains-at-C1540-Million/default.aspx",
+          "structuredSource": "https://www.b2gold.com/news-media/news-releases/news-details/2025/B2Gold-Reports-Q4-and-Full-Year-2024-Results-Achieved-2024-Total-Gold-Production-and-Consolidated-Cost-Guidance-Goose-Project-Remains-On-Track-for-First-Gold-in-Q2-2025-and-Total-Capital-Estimate-Remains-at-C1540-Million-Q1-2025-Dividend-of-US0.02-pe/default.aspx",
           "capacitySource": null,
           "promotedAt": "2026-10-11"
         },
@@ -7508,7 +7508,7 @@
         "sourcePath": "resource_site_country_expansion_v1.records",
         "evidence": [
           {
-            "url": "https://www.b2gold.com/news-media/news-releases/news-details/2025/B2Gold-Announces-Total-Consolidated-Gold-Production-for-2024-of-804778-ozWithin-the-Revised-2024-Guidance-Range-Total-Gold-Production-for-2025-Anticipated-to-be-Between-970000-and-1075000-oz-Goose-Project-Remains-On-Track-for-First-Gold-in-Q2-2025-and-Total-Capital-Estimate-Remains-at-C1540-Million/default.aspx",
+            "url": "https://www.b2gold.com/news-media/news-releases/news-details/2025/B2Gold-Reports-Q4-and-Full-Year-2024-Results-Achieved-2024-Total-Gold-Production-and-Consolidated-Cost-Guidance-Goose-Project-Remains-On-Track-for-First-Gold-in-Q2-2025-and-Total-Capital-Estimate-Remains-at-C1540-Million-Q1-2025-Dividend-of-US0.02-pe/default.aspx",
             "scope": "Site identity and cited field(s); revalidate field-level claims and ownership/operating status before authoritative promotion."
           }
         ]
