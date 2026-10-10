@@ -29,6 +29,10 @@ jobs:
         run: |
           node --check omega_resource_endowment_runtime.js
           node --check omega_resource_gameplay_binding_v1.js
+          node --check omega_resource_industrial_network_v1.js
           node --check test/omega_resource_site_country_expansion.test.mjs
+          node --check test/omega_resource_gameplay_binding.test.mjs
       - name: Country site expansion certificate
-        run: node --test test/omega_resource_site_country_expansion.test.mjs
+        run: |
+          node --test test/omega_resource_site_country_expansion.test.mjs
+          node test/omega_resource_gameplay_binding.test.mjs
