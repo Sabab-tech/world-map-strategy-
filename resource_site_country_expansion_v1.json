@@ -3,7 +3,7 @@
   "datasetId": "OMEGA_RESOURCE_SITE_COUNTRY_EXPANSION_V1",
   "generatedAt": "2026-10-10",
   "authority": "SITE_IDENTITY_AND_LOCATION_REFERENCE_WITH_EXPLICIT_QUANTITATIVE_GAPS",
-  "siteCount": 12,
+  "siteCount": 16,
   "baseCatalogPreserved": true,
   "records": [
     {
@@ -1755,6 +1755,586 @@
         "productionAuthority": "SIMULATION_RUNTIME",
         "qualityAuthority": "QUALITATIVE_DESCRIPTION_ONLY",
         "countryWarehouseId": "WH-PER-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      }
+    },
+    {
+      "countryId": "CAN",
+      "siteId": "SITE_CAN_highland_valley_copper_mine",
+      "siteName": "Highland Valley Copper Operations",
+      "identity": {
+        "countryIso3": "CAN",
+        "siteType": "OPEN_PIT_COPPER_MOLYBDENUM_MINE",
+        "resourceTypeId": "copper",
+        "resourceName": "Copper",
+        "ontologyKey": "COPPER"
+      },
+      "location": {
+        "countryName": "Canada",
+        "adminRegion": "South-central British Columbia, west of Logan Lake",
+        "locality": "South-central British Columbia, west of Logan Lake",
+        "coordinates": {
+          "lat": 50.49,
+          "lng": -121
+        },
+        "coordinateStatus": "SITE_POINT_APPROXIMATE",
+        "coordinateProvenance": "Approximate mine-complex point; verify against operator GIS"
+      },
+      "ownership": {
+        "owner": "Teck Resources",
+        "operator": "Teck Resources",
+        "ownerEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED",
+        "operatorEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED"
+      },
+      "operation": {
+        "status": "ACTIVE_SITE_REFERENCE",
+        "operationalStatus": "ACTIVE_SITE_REFERENCE",
+        "extractionMethod": "open-pit mining; grinding and flotation for copper and molybdenum concentrates",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "open-pit mining; grinding and flotation for copper and molybdenum concentrates",
+        "midstreamProcess": "Site-specific processing details require operator-source revalidation",
+        "refinedOutputs": [
+          "COPPER_CONCENTRATE",
+          "COPPER_CATHODE_AS_CONFIGURED"
+        ],
+        "downstreamSectors": [
+          "COPPER_SMELTING",
+          "ELECTRICAL_EQUIPMENT",
+          "CONSTRUCTION",
+          "INDUSTRIAL_MANUFACTURING"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "status": "UNQUANTIFIED",
+          "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": "Low-grade porphyry copper deposit with molybdenum; no numeric assay assigned",
+          "unit": null,
+          "status": "QUALITATIVE_ONLY_NOT_ASSAY"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-10"
+        },
+        "completeness": {
+          "reserve": "UNQUANTIFIED",
+          "production": "UNOBSERVED",
+          "grade": "QUALITATIVE_ONLY",
+          "recovery": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "UNOBSERVED",
+          "structuredEvidence": false,
+          "overall": "IDENTITY_AND_LOCATION_ENRICHED_QUANTITATIVES_REQUIRE_RESEARCH"
+        }
+      },
+      "verification": {
+        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_REQUIRES_FIELD_REVALIDATION",
+        "reviewedAt": "2026-10-10",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "OPERATOR_OR_GOVERNMENT_REFERENCE"
+        ],
+        "dataLimitations": "Approximate location. Grade phrase is qualitative only; reserve, production, recovery, purity and capacity remain unobserved and are not real-world figures."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_country_expansion_v1.json"
+        ],
+        "sourcePath": "resource_site_country_expansion_v1.records",
+        "evidence": [
+          {
+            "url": "https://www.teck.com/operations/canada/operations/highland-valley-copper",
+            "scope": "site identity, commodity, region and/or operator; validate each field before marking verified"
+          }
+        ]
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "CAN",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "SITE_EXPANSION_REFERENCE",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
+        "qualityAuthority": "QUALITATIVE_DESCRIPTION_ONLY",
+        "countryWarehouseId": "WH-CAN-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      }
+    },
+    {
+      "countryId": "MEX",
+      "siteId": "SITE_MEX_buenavista_del_cobre_mine",
+      "siteName": "Buenavista del Cobre Mine",
+      "identity": {
+        "countryIso3": "MEX",
+        "siteType": "OPEN_PIT_COPPER_MINE",
+        "resourceTypeId": "copper",
+        "resourceName": "Copper",
+        "ontologyKey": "COPPER"
+      },
+      "location": {
+        "countryName": "Mexico",
+        "adminRegion": "Cananea, Sonora",
+        "locality": "Cananea, Sonora",
+        "coordinates": {
+          "lat": 30.98,
+          "lng": -110.3
+        },
+        "coordinateStatus": "SITE_POINT_APPROXIMATE",
+        "coordinateProvenance": "Approximate mine-complex point; verify against operator GIS"
+      },
+      "ownership": {
+        "owner": "Buenavista del Cobre / Grupo México",
+        "operator": "Buenavista del Cobre / Grupo México",
+        "ownerEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED",
+        "operatorEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED"
+      },
+      "operation": {
+        "status": "ACTIVE_SITE_REFERENCE",
+        "operationalStatus": "ACTIVE_SITE_REFERENCE",
+        "extractionMethod": "open-pit copper mining with concentrator and SX/EW processing",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "open-pit copper mining with concentrator and SX/EW processing",
+        "midstreamProcess": "Site-specific processing details require operator-source revalidation",
+        "refinedOutputs": [
+          "COPPER_CONCENTRATE",
+          "COPPER_CATHODE_AS_CONFIGURED"
+        ],
+        "downstreamSectors": [
+          "COPPER_SMELTING",
+          "ELECTRICAL_EQUIPMENT",
+          "CONSTRUCTION",
+          "INDUSTRIAL_MANUFACTURING"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "status": "UNQUANTIFIED",
+          "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": "Copper ore; no numeric assay assigned",
+          "unit": null,
+          "status": "QUALITATIVE_ONLY_NOT_ASSAY"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-10"
+        },
+        "completeness": {
+          "reserve": "UNQUANTIFIED",
+          "production": "UNOBSERVED",
+          "grade": "QUALITATIVE_ONLY",
+          "recovery": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "UNOBSERVED",
+          "structuredEvidence": false,
+          "overall": "IDENTITY_AND_LOCATION_ENRICHED_QUANTITATIVES_REQUIRE_RESEARCH"
+        }
+      },
+      "verification": {
+        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_REQUIRES_FIELD_REVALIDATION",
+        "reviewedAt": "2026-10-10",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "OPERATOR_OR_GOVERNMENT_REFERENCE"
+        ],
+        "dataLimitations": "Approximate location. Grade phrase is qualitative only; reserve, production, recovery, purity and capacity remain unobserved and are not real-world figures."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_country_expansion_v1.json"
+        ],
+        "sourcePath": "resource_site_country_expansion_v1.records",
+        "evidence": [
+          {
+            "url": "https://www.americasmining.com/eng/our-history",
+            "scope": "site identity, commodity, region and/or operator; validate each field before marking verified"
+          }
+        ]
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "MEX",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "SITE_EXPANSION_REFERENCE",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
+        "qualityAuthority": "QUALITATIVE_DESCRIPTION_ONLY",
+        "countryWarehouseId": "WH-MEX-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      }
+    },
+    {
+      "countryId": "IND",
+      "siteId": "SITE_IND_bailadila_kirandul_iron_ore_mine",
+      "siteName": "Bailadila Iron Ore Mine, Kirandul Complex",
+      "identity": {
+        "countryIso3": "IND",
+        "siteType": "IRON_ORE_MINE_COMPLEX",
+        "resourceTypeId": "iron_ore",
+        "resourceName": "Iron Ore",
+        "ontologyKey": "IRON_ORE"
+      },
+      "location": {
+        "countryName": "India",
+        "adminRegion": "Kirandul, Dantewada district, Chhattisgarh",
+        "locality": "Kirandul, Dantewada district, Chhattisgarh",
+        "coordinates": {
+          "lat": 18.67,
+          "lng": 81.25
+        },
+        "coordinateStatus": "SITE_POINT_APPROXIMATE",
+        "coordinateProvenance": "Approximate mine-complex point; verify against operator GIS"
+      },
+      "ownership": {
+        "owner": "NMDC Limited",
+        "operator": "NMDC Limited",
+        "ownerEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED",
+        "operatorEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED"
+      },
+      "operation": {
+        "status": "ACTIVE_SITE_REFERENCE",
+        "operationalStatus": "ACTIVE_SITE_REFERENCE",
+        "extractionMethod": "mechanized iron-ore mining; site-specific mine/beneficiation route requires verification",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "mechanized iron-ore mining; site-specific mine/beneficiation route requires verification",
+        "midstreamProcess": "Site-specific processing details require operator-source revalidation",
+        "refinedOutputs": [
+          "IRON_ORE_CONCENTRATE",
+          "IRON_ORE_FINES"
+        ],
+        "downstreamSectors": [
+          "STEELMAKING",
+          "HEAVY_INDUSTRY"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "status": "UNQUANTIFIED",
+          "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": "Iron ore; no numeric Fe assay assigned",
+          "unit": null,
+          "status": "QUALITATIVE_ONLY_NOT_ASSAY"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-10"
+        },
+        "completeness": {
+          "reserve": "UNQUANTIFIED",
+          "production": "UNOBSERVED",
+          "grade": "QUALITATIVE_ONLY",
+          "recovery": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "UNOBSERVED",
+          "structuredEvidence": false,
+          "overall": "IDENTITY_AND_LOCATION_ENRICHED_QUANTITATIVES_REQUIRE_RESEARCH"
+        }
+      },
+      "verification": {
+        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_REQUIRES_FIELD_REVALIDATION",
+        "reviewedAt": "2026-10-10",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "OPERATOR_OR_GOVERNMENT_REFERENCE"
+        ],
+        "dataLimitations": "Approximate location. Grade phrase is qualitative only; reserve, production, recovery, purity and capacity remain unobserved and are not real-world figures."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_country_expansion_v1.json"
+        ],
+        "sourcePath": "resource_site_country_expansion_v1.records",
+        "evidence": [
+          {
+            "url": "https://www.nmdc.co.in/about-nmdc/operating-mines/bailadila-iron-ore-mine-kirandul-complex",
+            "scope": "site identity, commodity, region and/or operator; validate each field before marking verified"
+          }
+        ]
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "IND",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "SITE_EXPANSION_REFERENCE",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
+        "qualityAuthority": "QUALITATIVE_DESCRIPTION_ONLY",
+        "countryWarehouseId": "WH-IND-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      }
+    },
+    {
+      "countryId": "BRA",
+      "siteId": "SITE_BRA_paracatu_gold_mine",
+      "siteName": "Paracatu Gold Mine",
+      "identity": {
+        "countryIso3": "BRA",
+        "siteType": "OPEN_PIT_GOLD_MINE",
+        "resourceTypeId": "gold",
+        "resourceName": "Gold",
+        "ontologyKey": "GOLD"
+      },
+      "location": {
+        "countryName": "Brazil",
+        "adminRegion": "Paracatu, Minas Gerais",
+        "locality": "Paracatu, Minas Gerais",
+        "coordinates": {
+          "lat": -17.22,
+          "lng": -46.88
+        },
+        "coordinateStatus": "SITE_POINT_APPROXIMATE",
+        "coordinateProvenance": "Approximate mine-complex point; verify against operator GIS"
+      },
+      "ownership": {
+        "owner": "Kinross Gold Corporation",
+        "operator": "Kinross Gold Corporation",
+        "ownerEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED",
+        "operatorEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED"
+      },
+      "operation": {
+        "status": "ACTIVE_SITE_REFERENCE",
+        "operationalStatus": "ACTIVE_SITE_REFERENCE",
+        "extractionMethod": "open-pit mining; milling and gravity processing",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "open-pit mining; milling and gravity processing",
+        "midstreamProcess": "Site-specific processing details require operator-source revalidation",
+        "refinedOutputs": [
+          "GOLD_DORE"
+        ],
+        "downstreamSectors": [
+          "GOLD_REFINING",
+          "ELECTRONICS",
+          "JEWELLERY"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "status": "UNQUANTIFIED",
+          "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": "Gold ore; no numeric assay assigned",
+          "unit": null,
+          "status": "QUALITATIVE_ONLY_NOT_ASSAY"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": null,
+          "capacitySource": null,
+          "promotedAt": "2026-10-10"
+        },
+        "completeness": {
+          "reserve": "UNQUANTIFIED",
+          "production": "UNOBSERVED",
+          "grade": "QUALITATIVE_ONLY",
+          "recovery": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "UNOBSERVED",
+          "structuredEvidence": false,
+          "overall": "IDENTITY_AND_LOCATION_ENRICHED_QUANTITATIVES_REQUIRE_RESEARCH"
+        }
+      },
+      "verification": {
+        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_REQUIRES_FIELD_REVALIDATION",
+        "reviewedAt": "2026-10-10",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "OPERATOR_OR_GOVERNMENT_REFERENCE"
+        ],
+        "dataLimitations": "Approximate location. Grade phrase is qualitative only; reserve, production, recovery, purity and capacity remain unobserved and are not real-world figures."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_country_expansion_v1.json"
+        ],
+        "sourcePath": "resource_site_country_expansion_v1.records",
+        "evidence": [
+          {
+            "url": "https://www.kinross.com/English/operations/americas/Paracatu-Brazil/default.aspx",
+            "scope": "site identity, commodity, region and/or operator; validate each field before marking verified"
+          }
+        ]
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "BRA",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "SITE_EXPANSION_REFERENCE",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
+        "qualityAuthority": "QUALITATIVE_DESCRIPTION_ONLY",
+        "countryWarehouseId": "WH-BRA-RAW",
         "requiresSiteSpecificRoute": true,
         "requiresFactoryBinding": true
       }
