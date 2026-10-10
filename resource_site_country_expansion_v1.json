@@ -3,7 +3,7 @@
   "datasetId": "OMEGA_RESOURCE_SITE_COUNTRY_EXPANSION_V1",
   "generatedAt": "2026-10-10",
   "authority": "SITE_IDENTITY_AND_LOCATION_REFERENCE_WITH_EXPLICIT_QUANTITATIVE_GAPS",
-  "siteCount": 16,
+  "siteCount": 28,
   "baseCatalogPreserved": true,
   "records": [
     {
@@ -2338,6 +2338,1801 @@
         "requiresSiteSpecificRoute": true,
         "requiresFactoryBinding": true
       }
+    },
+    {
+      "countryId": "KAZ",
+      "siteId": "SITE_KAZ_aktogay_copper_mine",
+      "siteName": "Aktogay Copper Mine",
+      "identity": {
+        "countryIso3": "KAZ",
+        "siteType": "OPEN_PIT_COPPER_MINE",
+        "resourceTypeId": "copper",
+        "resourceName": "Copper",
+        "ontologyKey": "COPPER"
+      },
+      "location": {
+        "countryName": "Kazakhstan",
+        "adminRegion": "Abay Region, eastern Kazakhstan",
+        "locality": "Aktogay area near the Chinese border",
+        "coordinates": {
+          "lat": 46.95,
+          "lng": 79.25
+        },
+        "coordinateStatus": "SITE_POINT_APPROXIMATE",
+        "coordinateProvenance": "Public operator location or map-referenced mine-complex point; not survey-grade GIS."
+      },
+      "ownership": {
+        "owner": "KAZ Minerals",
+        "operator": "KAZ Minerals",
+        "ownerEvidenceStatus": "OPERATOR_SOURCE_REFERENCED",
+        "operatorEvidenceStatus": "OPERATOR_SOURCE_REFERENCED"
+      },
+      "operation": {
+        "status": "ACTIVE_SITE_REFERENCE",
+        "operationalStatus": "ACTIVE_SITE_REFERENCE",
+        "extractionMethod": "Open-pit copper mining; sulphide concentrators and oxide leach/cathode processing",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "Open-pit copper mining; sulphide concentrators and oxide leach/cathode processing",
+        "midstreamProcess": "Site-specific ore handling and processing represented; exact current flows require operator-level configuration.",
+        "refinedOutputs": [
+          "COPPER_CONCENTRATE",
+          "COPPER_CATHODE"
+        ],
+        "downstreamSectors": [
+          "COPPER_SMELTING",
+          "ELECTRICAL_EQUIPMENT",
+          "CONSTRUCTION"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "status": "UNQUANTIFIED",
+          "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
+        },
+        "production": {
+          "annual": 229000,
+          "rate": null,
+          "unit": "metric_tonnes_copper",
+          "year": 2024,
+          "status": "REPORTED"
+        },
+        "grade": {
+          "value": 0.33,
+          "unit": "% Cu",
+          "year": 2020,
+          "status": "REPORTED_RESOURCE_GRADE",
+          "basis": "Mineral-resource average; not current feed assay"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": 50000000,
+          "minimum": null,
+          "maximum": null,
+          "unit": "metric_tonnes_ore_per_year",
+          "status": "REPORTED_PROCESSING_CAPACITY"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": [
+            "http://kazminerals.com/our-locations/aktogay",
+            "https://www.kazminerals.com/media/22033/kaz-minerals-ar-2020.pdf"
+          ],
+          "capacitySource": [
+            "http://kazminerals.com/our-locations/aktogay",
+            "https://www.kazminerals.com/media/22033/kaz-minerals-ar-2020.pdf"
+          ],
+          "promotedAt": "2026-10-10"
+        },
+        "completeness": {
+          "reserve": "UNQUANTIFIED",
+          "production": "REPORTED",
+          "grade": "REPORTED_RESOURCE_GRADE",
+          "recovery": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "REPORTED_PROCESSING_CAPACITY",
+          "structuredEvidence": true,
+          "overall": "IDENTITY_LOCATION_AND_SOURCE_LINKED_SITE_RECORD"
+        }
+      },
+      "verification": {
+        "researchState": "SOURCE_LINKED_SITE_RECORD_FIELD_LEVEL_REVALIDATION_REQUIRED",
+        "reviewedAt": "2026-10-10",
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "MINE_OPERATOR_OR_TECHNICAL_REPORT"
+        ],
+        "dataLimitations": "0.33% is a 2020 reported mineral-resource grade, not current feed assay."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_country_expansion_v1.json"
+        ],
+        "sourcePath": "resource_site_country_expansion_v1.records",
+        "evidence": [
+          {
+            "url": "http://kazminerals.com/our-locations/aktogay",
+            "scope": "operator identity, location, processing capacity and 2024 production"
+          },
+          {
+            "url": "https://www.kazminerals.com/media/22033/kaz-minerals-ar-2020.pdf",
+            "scope": "2020 resource grade and historical production metrics"
+          }
+        ]
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "KAZ",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "SITE_EXPANSION_REFERENCE",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SOURCE_REPORTED_WHEN_AVAILABLE_OTHERWISE_SIMULATION_RUNTIME",
+        "qualityAuthority": "SOURCE_REPORTED_GRADE_WITH_BASIS",
+        "countryWarehouseId": "WH-KAZ-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      }
+    },
+    {
+      "countryId": "KAZ",
+      "siteId": "SITE_KAZ_bozshakol_copper_mine",
+      "siteName": "Bozshakol Copper Mine",
+      "identity": {
+        "countryIso3": "KAZ",
+        "siteType": "OPEN_PIT_COPPER_MINE",
+        "resourceTypeId": "copper",
+        "resourceName": "Copper",
+        "ontologyKey": "COPPER"
+      },
+      "location": {
+        "countryName": "Kazakhstan",
+        "adminRegion": "Pavlodar Region",
+        "locality": "Bozshakol mining complex",
+        "coordinates": {
+          "lat": 52.15,
+          "lng": 76.9
+        },
+        "coordinateStatus": "SITE_POINT_APPROXIMATE",
+        "coordinateProvenance": "Public operator location or map-referenced mine-complex point; not survey-grade GIS."
+      },
+      "ownership": {
+        "owner": "KAZ Minerals",
+        "operator": "KAZ Minerals",
+        "ownerEvidenceStatus": "OPERATOR_SOURCE_REFERENCED",
+        "operatorEvidenceStatus": "OPERATOR_SOURCE_REFERENCED"
+      },
+      "operation": {
+        "status": "ACTIVE_SITE_REFERENCE",
+        "operationalStatus": "ACTIVE_SITE_REFERENCE",
+        "extractionMethod": "Open-pit copper mining and concentrator processing",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "Open-pit copper mining and concentrator processing",
+        "midstreamProcess": "Site-specific ore handling and processing represented; exact current flows require operator-level configuration.",
+        "refinedOutputs": [
+          "COPPER_CONCENTRATE",
+          "GOLD_BYPRODUCT",
+          "SILVER_BYPRODUCT"
+        ],
+        "downstreamSectors": [
+          "COPPER_SMELTING",
+          "ELECTRICAL_EQUIPMENT",
+          "INDUSTRIAL_MANUFACTURING"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "status": "UNQUANTIFIED",
+          "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
+        },
+        "production": {
+          "annual": 125000,
+          "rate": null,
+          "unit": "metric_tonnes_copper",
+          "year": 2020,
+          "status": "REPORTED_HISTORICAL"
+        },
+        "grade": {
+          "value": 0.35,
+          "unit": "% Cu",
+          "year": 2020,
+          "status": "REPORTED_RESOURCE_GRADE",
+          "basis": "Reported mineral-resource grade; not current feed assay"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": [
+            "https://www.kazminerals.com/media/22033/kaz-minerals-ar-2020.pdf"
+          ],
+          "capacitySource": null,
+          "promotedAt": "2026-10-10"
+        },
+        "completeness": {
+          "reserve": "UNQUANTIFIED",
+          "production": "REPORTED_HISTORICAL",
+          "grade": "REPORTED_RESOURCE_GRADE",
+          "recovery": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "UNOBSERVED",
+          "structuredEvidence": true,
+          "overall": "IDENTITY_LOCATION_AND_SOURCE_LINKED_SITE_RECORD"
+        }
+      },
+      "verification": {
+        "researchState": "SOURCE_LINKED_SITE_RECORD_FIELD_LEVEL_REVALIDATION_REQUIRED",
+        "reviewedAt": "2026-10-10",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "MINE_OPERATOR_OR_TECHNICAL_REPORT"
+        ],
+        "dataLimitations": "Grade and production are historical 2020 report values; current operating metrics are not inferred."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_country_expansion_v1.json"
+        ],
+        "sourcePath": "resource_site_country_expansion_v1.records",
+        "evidence": [
+          {
+            "url": "https://www.kazminerals.com/media/22033/kaz-minerals-ar-2020.pdf",
+            "scope": "2020 annual report: resource grade and 2020 production summary"
+          }
+        ]
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "KAZ",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "SITE_EXPANSION_REFERENCE",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SOURCE_REPORTED_WHEN_AVAILABLE_OTHERWISE_SIMULATION_RUNTIME",
+        "qualityAuthority": "SOURCE_REPORTED_GRADE_WITH_BASIS",
+        "countryWarehouseId": "WH-KAZ-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      }
+    },
+    {
+      "countryId": "COD",
+      "siteId": "SITE_COD_kipushi_zinc_copper_mine",
+      "siteName": "Kipushi Zinc-Copper Mine",
+      "identity": {
+        "countryIso3": "COD",
+        "siteType": "UNDERGROUND_ZINC_COPPER_MINE",
+        "resourceTypeId": "zinc",
+        "resourceName": "Zinc, with copper, germanium, silver and lead",
+        "ontologyKey": "ZINC"
+      },
+      "location": {
+        "countryName": "Democratic Republic of the Congo",
+        "adminRegion": "Haut-Katanga Province",
+        "locality": "Kipushi near Lubumbashi",
+        "coordinates": {
+          "lat": -11.76,
+          "lng": 27.25
+        },
+        "coordinateStatus": "SITE_POINT_APPROXIMATE",
+        "coordinateProvenance": "Public operator location or map-referenced mine-complex point; not survey-grade GIS."
+      },
+      "ownership": {
+        "owner": "Ivanhoe Mines (62%); Gécamines (38%)",
+        "operator": "Kipushi Corporation (KICO)",
+        "ownerEvidenceStatus": "OPERATOR_SOURCE_REFERENCED",
+        "operatorEvidenceStatus": "OPERATOR_SOURCE_REFERENCED"
+      },
+      "operation": {
+        "status": "ACTIVE_SITE_REFERENCE",
+        "operationalStatus": "ACTIVE_SITE_REFERENCE",
+        "extractionMethod": "Underground mining; dense-media separation, milling and flotation",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "Underground mining; dense-media separation, milling and flotation",
+        "midstreamProcess": "Site-specific ore handling and processing represented; exact current flows require operator-level configuration.",
+        "refinedOutputs": [
+          "ZINC_CONCENTRATE",
+          "COPPER_BYPRODUCT",
+          "GERMANIUM_BYPRODUCT",
+          "SILVER_BYPRODUCT"
+        ],
+        "downstreamSectors": [
+          "ZINC_SMELTING",
+          "GALVANIZING",
+          "ELECTRONICS",
+          "METALLURGY"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "status": "UNQUANTIFIED",
+          "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
+        },
+        "production": {
+          "annual": 203168,
+          "rate": null,
+          "unit": "metric_tonnes_zinc",
+          "year": 2025,
+          "status": "REPORTED"
+        },
+        "grade": {
+          "value": 35.34,
+          "unit": "% Zn",
+          "status": "REPORTED_OPERATOR_GRADE",
+          "basis": "Operator-reported average grade over first five years of production"
+        },
+        "recovery": {
+          "value": 96,
+          "unit": "%",
+          "year": null,
+          "status": "OPERATOR_TARGET_NOT_OBSERVED"
+        },
+        "throughput": {
+          "value": 960000,
+          "unit": "metric_tonnes_ore_per_year",
+          "year": 2025,
+          "status": "REPORTED_CAPACITY"
+        },
+        "purity": {
+          "value": 55,
+          "unit": "% Zn",
+          "status": "CONCENTRATE_GRADE_NOT_REFINED_PURITY",
+          "basis": "Operator-reported average zinc concentrate grade"
+        },
+        "capacity": {
+          "nominal": 960000,
+          "minimum": null,
+          "maximum": null,
+          "unit": "metric_tonnes_ore_per_year",
+          "status": "REPORTED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": [
+            "https://www.ivanhoemines.com/operations/kipushi-development-project/"
+          ],
+          "capacitySource": [
+            "https://www.ivanhoemines.com/operations/kipushi-development-project/"
+          ],
+          "promotedAt": "2026-10-10"
+        },
+        "completeness": {
+          "reserve": "UNQUANTIFIED",
+          "production": "REPORTED",
+          "grade": "REPORTED_OPERATOR_GRADE",
+          "recovery": "OPERATOR_TARGET_NOT_OBSERVED",
+          "purity": "CONCENTRATE_GRADE_NOT_REFINED_PURITY",
+          "capacity": "REPORTED",
+          "structuredEvidence": true,
+          "overall": "IDENTITY_LOCATION_AND_SOURCE_LINKED_SITE_RECORD"
+        }
+      },
+      "verification": {
+        "researchState": "SOURCE_LINKED_SITE_RECORD_FIELD_LEVEL_REVALIDATION_REQUIRED",
+        "reviewedAt": "2026-10-10",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "MINE_OPERATOR_OR_TECHNICAL_REPORT"
+        ],
+        "dataLimitations": "96% is an operator target, not a measured recovery result. 55% is zinc concentrate grade, not refined-metal purity."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_country_expansion_v1.json"
+        ],
+        "sourcePath": "resource_site_country_expansion_v1.records",
+        "evidence": [
+          {
+            "url": "https://www.ivanhoemines.com/operations/kipushi-development-project/",
+            "scope": "operator-reported zinc grade, throughput capacity, concentrate grade, recovery target and 2025 production"
+          }
+        ]
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "COD",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "SITE_EXPANSION_REFERENCE",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SOURCE_REPORTED_WHEN_AVAILABLE_OTHERWISE_SIMULATION_RUNTIME",
+        "qualityAuthority": "SOURCE_REPORTED_GRADE_WITH_BASIS",
+        "countryWarehouseId": "WH-COD-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      }
+    },
+    {
+      "countryId": "NAM",
+      "siteId": "SITE_NAM_rossing_uranium_mine",
+      "siteName": "Rössing Uranium Mine",
+      "identity": {
+        "countryIso3": "NAM",
+        "siteType": "OPEN_PIT_URANIUM_MINE",
+        "resourceTypeId": "uranium",
+        "resourceName": "Uranium oxide (U3O8)",
+        "ontologyKey": "URANIUM"
+      },
+      "location": {
+        "countryName": "Namibia",
+        "adminRegion": "Erongo Region",
+        "locality": "Arandis, Namib Desert",
+        "coordinates": {
+          "lat": -22.47,
+          "lng": 15.05
+        },
+        "coordinateStatus": "SITE_POINT_APPROXIMATE",
+        "coordinateProvenance": "Public operator location or map-referenced mine-complex point; not survey-grade GIS."
+      },
+      "ownership": {
+        "owner": "CNUC Namibia",
+        "operator": "Rössing Uranium",
+        "ownerEvidenceStatus": "OPERATOR_SOURCE_REFERENCED",
+        "operatorEvidenceStatus": "OPERATOR_SOURCE_REFERENCED"
+      },
+      "operation": {
+        "status": "ACTIVE_SITE_REFERENCE",
+        "operationalStatus": "ACTIVE_SITE_REFERENCE",
+        "extractionMethod": "Open-pit uranium mining and uranium-oxide processing",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "Open-pit uranium mining and uranium-oxide processing",
+        "midstreamProcess": "Site-specific ore handling and processing represented; exact current flows require operator-level configuration.",
+        "refinedOutputs": [
+          "URANIUM_OXIDE_U3O8"
+        ],
+        "downstreamSectors": [
+          "NUCLEAR_FUEL_CYCLE",
+          "ENERGY"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "status": "UNQUANTIFIED",
+          "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
+        },
+        "production": {
+          "annual": 2600,
+          "rate": null,
+          "unit": "metric_tonnes_uranium_oxide",
+          "year": 2024,
+          "status": "REPORTED"
+        },
+        "grade": {
+          "value": "Uranium oxide (U3O8) deposit; site-specific numeric assay not established in this tranche",
+          "unit": null,
+          "status": "QUALITATIVE_ONLY"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": [
+            "https://www.rossing.com/rossing-uraniums-2024-sustainability-and-performance-report-officially-launched"
+          ],
+          "capacitySource": null,
+          "promotedAt": "2026-10-10"
+        },
+        "completeness": {
+          "reserve": "UNQUANTIFIED",
+          "production": "REPORTED",
+          "grade": "QUALITATIVE_ONLY",
+          "recovery": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "UNOBSERVED",
+          "structuredEvidence": true,
+          "overall": "IDENTITY_LOCATION_AND_SOURCE_LINKED_SITE_RECORD"
+        }
+      },
+      "verification": {
+        "researchState": "SOURCE_LINKED_SITE_RECORD_FIELD_LEVEL_REVALIDATION_REQUIRED",
+        "reviewedAt": "2026-10-10",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "MINE_OPERATOR_OR_TECHNICAL_REPORT"
+        ],
+        "dataLimitations": "2024 production is reported as uranium oxide; ore grade, recovery, product purity and processing capacity are not established here."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_country_expansion_v1.json"
+        ],
+        "sourcePath": "resource_site_country_expansion_v1.records",
+        "evidence": [
+          {
+            "url": "https://www.rossing.com/rossing-uraniums-2024-sustainability-and-performance-report-officially-launched",
+            "scope": "operator-reported 2024 uranium oxide production, mine location and operating status"
+          }
+        ]
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "NAM",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "SITE_EXPANSION_REFERENCE",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SOURCE_REPORTED_WHEN_AVAILABLE_OTHERWISE_SIMULATION_RUNTIME",
+        "qualityAuthority": "QUALITATIVE_OR_UNOBSERVED",
+        "countryWarehouseId": "WH-NAM-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      }
+    },
+    {
+      "countryId": "ZAF",
+      "siteId": "SITE_ZAF_sishen_iron_ore_mine",
+      "siteName": "Sishen Iron Ore Mine",
+      "identity": {
+        "countryIso3": "ZAF",
+        "siteType": "OPEN_PIT_IRON_ORE_MINE",
+        "resourceTypeId": "iron_ore",
+        "resourceName": "Iron ore",
+        "ontologyKey": "IRON_ORE"
+      },
+      "location": {
+        "countryName": "South Africa",
+        "adminRegion": "Northern Cape",
+        "locality": "Near Kathu, central Northern Cape",
+        "coordinates": {
+          "lat": -27.8,
+          "lng": 23
+        },
+        "coordinateStatus": "SITE_POINT_APPROXIMATE",
+        "coordinateProvenance": "Public operator location or map-referenced mine-complex point; not survey-grade GIS."
+      },
+      "ownership": {
+        "owner": "Kumba Iron Ore / Anglo American",
+        "operator": "Kumba Iron Ore",
+        "ownerEvidenceStatus": "OPERATOR_SOURCE_REFERENCED",
+        "operatorEvidenceStatus": "OPERATOR_SOURCE_REFERENCED"
+      },
+      "operation": {
+        "status": "ACTIVE_SITE_REFERENCE",
+        "operationalStatus": "ACTIVE_SITE_REFERENCE",
+        "extractionMethod": "Large open-pit iron ore mining, crushing and beneficiation",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "Large open-pit iron ore mining, crushing and beneficiation",
+        "midstreamProcess": "Site-specific ore handling and processing represented; exact current flows require operator-level configuration.",
+        "refinedOutputs": [
+          "IRON_ORE_LUMP",
+          "IRON_ORE_FINE"
+        ],
+        "downstreamSectors": [
+          "STEELMAKING",
+          "IRONMAKING"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "status": "UNQUANTIFIED",
+          "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
+        },
+        "production": {
+          "annual": 35500000,
+          "rate": null,
+          "unit": "metric_tonnes_iron_ore",
+          "year": 2014,
+          "status": "REPORTED_HISTORICAL"
+        },
+        "grade": {
+          "value": "Iron ore deposit; site-specific numeric assay not established in this tranche",
+          "unit": null,
+          "status": "QUALITATIVE_ONLY"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": [
+            "https://www.angloamerican.com/our-stories/futuresmart-mining/mine-profile-sishen"
+          ],
+          "capacitySource": null,
+          "promotedAt": "2026-10-10"
+        },
+        "completeness": {
+          "reserve": "UNQUANTIFIED",
+          "production": "REPORTED_HISTORICAL",
+          "grade": "QUALITATIVE_ONLY",
+          "recovery": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "UNOBSERVED",
+          "structuredEvidence": true,
+          "overall": "IDENTITY_LOCATION_AND_SOURCE_LINKED_SITE_RECORD"
+        }
+      },
+      "verification": {
+        "researchState": "SOURCE_LINKED_SITE_RECORD_FIELD_LEVEL_REVALIDATION_REQUIRED",
+        "reviewedAt": "2026-10-10",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "MINE_OPERATOR_OR_TECHNICAL_REPORT"
+        ],
+        "dataLimitations": "35.5 Mt is historical 2014 output; it is not current production or a purity measurement."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_country_expansion_v1.json"
+        ],
+        "sourcePath": "resource_site_country_expansion_v1.records",
+        "evidence": [
+          {
+            "url": "https://www.angloamerican.com/our-stories/futuresmart-mining/mine-profile-sishen",
+            "scope": "operator-reported location, mine type, product description and historical 2014 output"
+          }
+        ]
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "ZAF",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "SITE_EXPANSION_REFERENCE",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SOURCE_REPORTED_WHEN_AVAILABLE_OTHERWISE_SIMULATION_RUNTIME",
+        "qualityAuthority": "QUALITATIVE_OR_UNOBSERVED",
+        "countryWarehouseId": "WH-ZAF-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      }
+    },
+    {
+      "countryId": "CAN",
+      "siteId": "SITE_CAN_detour_lake_gold_mine",
+      "siteName": "Detour Lake Gold Mine",
+      "identity": {
+        "countryIso3": "CAN",
+        "siteType": "OPEN_PIT_GOLD_MINE",
+        "resourceTypeId": "gold",
+        "resourceName": "Gold",
+        "ontologyKey": "GOLD"
+      },
+      "location": {
+        "countryName": "Canada",
+        "adminRegion": "Ontario",
+        "locality": "Northeastern Ontario, Abitibi region",
+        "coordinates": {
+          "lat": 50.02,
+          "lng": -79.72
+        },
+        "coordinateStatus": "SITE_POINT_APPROXIMATE",
+        "coordinateProvenance": "Public operator location or map-referenced mine-complex point; not survey-grade GIS."
+      },
+      "ownership": {
+        "owner": "Agnico Eagle Mines",
+        "operator": "Agnico Eagle Mines",
+        "ownerEvidenceStatus": "OPERATOR_SOURCE_REFERENCED",
+        "operatorEvidenceStatus": "OPERATOR_SOURCE_REFERENCED"
+      },
+      "operation": {
+        "status": "ACTIVE_SITE_REFERENCE",
+        "operationalStatus": "ACTIVE_SITE_REFERENCE",
+        "extractionMethod": "Open-pit gold mining and mill processing",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "Open-pit gold mining and mill processing",
+        "midstreamProcess": "Site-specific ore handling and processing represented; exact current flows require operator-level configuration.",
+        "refinedOutputs": [
+          "GOLD_DORÉ"
+        ],
+        "downstreamSectors": [
+          "GOLD_REFINING",
+          "JEWELLERY",
+          "ELECTRONICS"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "status": "UNQUANTIFIED",
+          "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": "Gold deposit; site-specific numeric assay not established in this tranche",
+          "unit": null,
+          "status": "QUALITATIVE_ONLY"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": 78000,
+          "minimum": null,
+          "maximum": null,
+          "unit": "metric_tonnes_ore_per_day",
+          "status": "REPORTED_DESIGN_CAPACITY"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": [
+            "https://s205.q4cdn.com/243646470/files/doc_presentation/2024/Detour-Lake-Mine.pdf"
+          ],
+          "capacitySource": [
+            "https://s205.q4cdn.com/243646470/files/doc_presentation/2024/Detour-Lake-Mine.pdf"
+          ],
+          "promotedAt": "2026-10-10"
+        },
+        "completeness": {
+          "reserve": "UNQUANTIFIED",
+          "production": "UNOBSERVED",
+          "grade": "QUALITATIVE_ONLY",
+          "recovery": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "REPORTED_DESIGN_CAPACITY",
+          "structuredEvidence": true,
+          "overall": "IDENTITY_LOCATION_AND_SOURCE_LINKED_SITE_RECORD"
+        }
+      },
+      "verification": {
+        "researchState": "SOURCE_LINKED_SITE_RECORD_FIELD_LEVEL_REVALIDATION_REQUIRED",
+        "reviewedAt": "2026-10-10",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "MINE_OPERATOR_OR_TECHNICAL_REPORT"
+        ],
+        "dataLimitations": "0.30–0.50 g/t in the source refers to reserve cut-off grades, not average ore grade; not stored as assay."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_country_expansion_v1.json"
+        ],
+        "sourcePath": "resource_site_country_expansion_v1.records",
+        "evidence": [
+          {
+            "url": "https://s205.q4cdn.com/243646470/files/doc_presentation/2024/Detour-Lake-Mine.pdf",
+            "scope": "operator technical presentation: daily mill capacity and reserve cut-off context"
+          }
+        ]
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "CAN",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "SITE_EXPANSION_REFERENCE",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SOURCE_REPORTED_WHEN_AVAILABLE_OTHERWISE_SIMULATION_RUNTIME",
+        "qualityAuthority": "QUALITATIVE_OR_UNOBSERVED",
+        "countryWarehouseId": "WH-CAN-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      }
+    },
+    {
+      "countryId": "POL",
+      "siteId": "SITE_POL_lubin_copper_silver_mine",
+      "siteName": "Lubin Copper-Silver Mine",
+      "identity": {
+        "countryIso3": "POL",
+        "siteType": "UNDERGROUND_COPPER_SILVER_MINE",
+        "resourceTypeId": "copper",
+        "resourceName": "Copper and silver",
+        "ontologyKey": "COPPER"
+      },
+      "location": {
+        "countryName": "Poland",
+        "adminRegion": "Lower Silesia",
+        "locality": "North of Lubin in the Polish Copper Belt",
+        "coordinates": {
+          "lat": 51.4,
+          "lng": 16.2
+        },
+        "coordinateStatus": "SITE_POINT_APPROXIMATE",
+        "coordinateProvenance": "Public operator location or map-referenced mine-complex point; not survey-grade GIS."
+      },
+      "ownership": {
+        "owner": "KGHM Polska Miedź",
+        "operator": "KGHM Polska Miedź",
+        "ownerEvidenceStatus": "OPERATOR_SOURCE_REFERENCED",
+        "operatorEvidenceStatus": "OPERATOR_SOURCE_REFERENCED"
+      },
+      "operation": {
+        "status": "ACTIVE_SITE_REFERENCE",
+        "operationalStatus": "ACTIVE_SITE_REFERENCE",
+        "extractionMethod": "Underground polymetallic ore mining and copper-silver beneficiation",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "Underground polymetallic ore mining and copper-silver beneficiation",
+        "midstreamProcess": "Site-specific ore handling and processing represented; exact current flows require operator-level configuration.",
+        "refinedOutputs": [
+          "COPPER_CONCENTRATE",
+          "SILVER_CONCENTRATE"
+        ],
+        "downstreamSectors": [
+          "COPPER_SMELTING",
+          "SILVER_REFINING",
+          "ELECTRONICS"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "status": "UNQUANTIFIED",
+          "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
+        },
+        "production": {
+          "annual": 67000,
+          "rate": null,
+          "unit": "metric_tonnes_copper",
+          "year": 2014,
+          "status": "REPORTED_HISTORICAL"
+        },
+        "grade": {
+          "value": "Copper and silver deposit; site-specific numeric assay not established in this tranche",
+          "unit": null,
+          "status": "QUALITATIVE_ONLY"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": [
+            "https://kghm.com/sites/default/files/mrmr_english.pdf",
+            "https://kghm.com/en/our-business/mining-and-enrichment/lubin"
+          ],
+          "capacitySource": null,
+          "promotedAt": "2026-10-10"
+        },
+        "completeness": {
+          "reserve": "UNQUANTIFIED",
+          "production": "REPORTED_HISTORICAL",
+          "grade": "QUALITATIVE_ONLY",
+          "recovery": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "UNOBSERVED",
+          "structuredEvidence": true,
+          "overall": "IDENTITY_LOCATION_AND_SOURCE_LINKED_SITE_RECORD"
+        }
+      },
+      "verification": {
+        "researchState": "SOURCE_LINKED_SITE_RECORD_FIELD_LEVEL_REVALIDATION_REQUIRED",
+        "reviewedAt": "2026-10-10",
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "MINE_OPERATOR_OR_TECHNICAL_REPORT"
+        ],
+        "dataLimitations": "Copper production value is historical 2014 data; current grade, recovery, capacity and purity are not inferred."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_country_expansion_v1.json"
+        ],
+        "sourcePath": "resource_site_country_expansion_v1.records",
+        "evidence": [
+          {
+            "url": "https://kghm.com/sites/default/files/mrmr_english.pdf",
+            "scope": "2014 mineral resources report with historical mine production"
+          },
+          {
+            "url": "https://kghm.com/en/our-business/mining-and-enrichment/lubin",
+            "scope": "operator mine identity and copper-silver description"
+          }
+        ]
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "POL",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "SITE_EXPANSION_REFERENCE",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SOURCE_REPORTED_WHEN_AVAILABLE_OTHERWISE_SIMULATION_RUNTIME",
+        "qualityAuthority": "QUALITATIVE_OR_UNOBSERVED",
+        "countryWarehouseId": "WH-POL-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      }
+    },
+    {
+      "countryId": "GHA",
+      "siteId": "SITE_GHA_obuasi_gold_mine",
+      "siteName": "Obuasi Gold Mine",
+      "identity": {
+        "countryIso3": "GHA",
+        "siteType": "UNDERGROUND_GOLD_MINE",
+        "resourceTypeId": "gold",
+        "resourceName": "Gold",
+        "ontologyKey": "GOLD"
+      },
+      "location": {
+        "countryName": "Ghana",
+        "adminRegion": "Ashanti Region",
+        "locality": "Obuasi concession area",
+        "coordinates": {
+          "lat": 6.2,
+          "lng": -1.67
+        },
+        "coordinateStatus": "SITE_POINT_APPROXIMATE",
+        "coordinateProvenance": "Public operator location or map-referenced mine-complex point; not survey-grade GIS."
+      },
+      "ownership": {
+        "owner": "AngloGold Ashanti",
+        "operator": "AngloGold Ashanti",
+        "ownerEvidenceStatus": "OPERATOR_SOURCE_REFERENCED",
+        "operatorEvidenceStatus": "OPERATOR_SOURCE_REFERENCED"
+      },
+      "operation": {
+        "status": "ACTIVE_SITE_REFERENCE",
+        "operationalStatus": "ACTIVE_SITE_REFERENCE",
+        "extractionMethod": "Underground gold mining; refractory sulphide ore treatment",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "Underground gold mining; refractory sulphide ore treatment",
+        "midstreamProcess": "Site-specific ore handling and processing represented; exact current flows require operator-level configuration.",
+        "refinedOutputs": [
+          "GOLD_DORÉ"
+        ],
+        "downstreamSectors": [
+          "GOLD_REFINING",
+          "JEWELLERY",
+          "ELECTRONICS"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "status": "UNQUANTIFIED",
+          "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": "Gold deposit; site-specific numeric assay not established in this tranche",
+          "unit": null,
+          "status": "QUALITATIVE_ONLY"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": [
+            "https://www.anglogoldashanti.com/portfolio/africa/obuasi/"
+          ],
+          "capacitySource": null,
+          "promotedAt": "2026-10-10"
+        },
+        "completeness": {
+          "reserve": "UNQUANTIFIED",
+          "production": "UNOBSERVED",
+          "grade": "QUALITATIVE_ONLY",
+          "recovery": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "UNOBSERVED",
+          "structuredEvidence": false,
+          "overall": "IDENTITY_LOCATION_AND_SOURCE_LINKED_SITE_RECORD"
+        }
+      },
+      "verification": {
+        "researchState": "SOURCE_LINKED_SITE_RECORD_FIELD_LEVEL_REVALIDATION_REQUIRED",
+        "reviewedAt": "2026-10-10",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "MINE_OPERATOR_OR_TECHNICAL_REPORT"
+        ],
+        "dataLimitations": "Numeric site-level grade, recovery, capacity and annual production were not verified in this source pass."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_country_expansion_v1.json"
+        ],
+        "sourcePath": "resource_site_country_expansion_v1.records",
+        "evidence": [
+          {
+            "url": "https://www.anglogoldashanti.com/portfolio/africa/obuasi/",
+            "scope": "operator site identity and mine operation reference"
+          }
+        ]
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "GHA",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "SITE_EXPANSION_REFERENCE",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SOURCE_REPORTED_WHEN_AVAILABLE_OTHERWISE_SIMULATION_RUNTIME",
+        "qualityAuthority": "QUALITATIVE_OR_UNOBSERVED",
+        "countryWarehouseId": "WH-GHA-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      }
+    },
+    {
+      "countryId": "USA",
+      "siteId": "SITE_USA_bagdad_copper_mine",
+      "siteName": "Bagdad Copper Mine",
+      "identity": {
+        "countryIso3": "USA",
+        "siteType": "OPEN_PIT_COPPER_MINE",
+        "resourceTypeId": "copper",
+        "resourceName": "Copper and molybdenum",
+        "ontologyKey": "COPPER"
+      },
+      "location": {
+        "countryName": "United States",
+        "adminRegion": "Yavapai County, Arizona",
+        "locality": "Bagdad mining district",
+        "coordinates": {
+          "lat": 34.58,
+          "lng": -113.18
+        },
+        "coordinateStatus": "SITE_POINT_APPROXIMATE",
+        "coordinateProvenance": "Public operator location or map-referenced mine-complex point; not survey-grade GIS."
+      },
+      "ownership": {
+        "owner": "Freeport-McMoRan",
+        "operator": "Freeport-McMoRan",
+        "ownerEvidenceStatus": "OPERATOR_SOURCE_REFERENCED",
+        "operatorEvidenceStatus": "OPERATOR_SOURCE_REFERENCED"
+      },
+      "operation": {
+        "status": "ACTIVE_SITE_REFERENCE",
+        "operationalStatus": "ACTIVE_SITE_REFERENCE",
+        "extractionMethod": "Open-pit copper mining, concentrator and SX/EW processing",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "Open-pit copper mining, concentrator and SX/EW processing",
+        "midstreamProcess": "Site-specific ore handling and processing represented; exact current flows require operator-level configuration.",
+        "refinedOutputs": [
+          "COPPER_CONCENTRATE",
+          "MOLYBDENUM_CONCENTRATE",
+          "COPPER_CATHODE"
+        ],
+        "downstreamSectors": [
+          "COPPER_SMELTING",
+          "ELECTRICAL_EQUIPMENT",
+          "STEEL_ALLOYS"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "status": "UNQUANTIFIED",
+          "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": "Copper and molybdenum deposit; site-specific numeric assay not established in this tranche",
+          "unit": null,
+          "status": "QUALITATIVE_ONLY"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": 77100,
+          "minimum": null,
+          "maximum": null,
+          "unit": "metric_tonnes_ore_per_day",
+          "status": "REPORTED_DESIGN_CAPACITY"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": [
+            "https://www.fcx.com/sites/fcx/files/documents/sustainability/2024-annual-report-on-sustainability.pdf"
+          ],
+          "capacitySource": [
+            "https://www.fcx.com/sites/fcx/files/documents/sustainability/2024-annual-report-on-sustainability.pdf"
+          ],
+          "promotedAt": "2026-10-10"
+        },
+        "completeness": {
+          "reserve": "UNQUANTIFIED",
+          "production": "UNOBSERVED",
+          "grade": "QUALITATIVE_ONLY",
+          "recovery": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "REPORTED_DESIGN_CAPACITY",
+          "structuredEvidence": true,
+          "overall": "IDENTITY_LOCATION_AND_SOURCE_LINKED_SITE_RECORD"
+        }
+      },
+      "verification": {
+        "researchState": "SOURCE_LINKED_SITE_RECORD_FIELD_LEVEL_REVALIDATION_REQUIRED",
+        "reviewedAt": "2026-10-10",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "MINE_OPERATOR_OR_TECHNICAL_REPORT"
+        ],
+        "dataLimitations": "77,100 t/day is design milling capacity, not current extraction or copper output."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_country_expansion_v1.json"
+        ],
+        "sourcePath": "resource_site_country_expansion_v1.records",
+        "evidence": [
+          {
+            "url": "https://www.fcx.com/sites/fcx/files/documents/sustainability/2024-annual-report-on-sustainability.pdf",
+            "scope": "operator annual report reference for Bagdad operation and concentrator capacity"
+          }
+        ]
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "USA",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "SITE_EXPANSION_REFERENCE",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SOURCE_REPORTED_WHEN_AVAILABLE_OTHERWISE_SIMULATION_RUNTIME",
+        "qualityAuthority": "QUALITATIVE_OR_UNOBSERVED",
+        "countryWarehouseId": "WH-USA-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      }
+    },
+    {
+      "countryId": "PER",
+      "siteId": "SITE_PER_quellaveco_copper_mine",
+      "siteName": "Quellaveco Copper Mine",
+      "identity": {
+        "countryIso3": "PER",
+        "siteType": "OPEN_PIT_COPPER_MINE",
+        "resourceTypeId": "copper",
+        "resourceName": "Copper",
+        "ontologyKey": "COPPER"
+      },
+      "location": {
+        "countryName": "Peru",
+        "adminRegion": "Moquegua Region",
+        "locality": "Quellaveco project area in southern Peru",
+        "coordinates": {
+          "lat": -17.09,
+          "lng": -70.61
+        },
+        "coordinateStatus": "SITE_POINT_APPROXIMATE",
+        "coordinateProvenance": "Public operator location or map-referenced mine-complex point; not survey-grade GIS."
+      },
+      "ownership": {
+        "owner": "Anglo American",
+        "operator": "Anglo American",
+        "ownerEvidenceStatus": "OPERATOR_SOURCE_REFERENCED",
+        "operatorEvidenceStatus": "OPERATOR_SOURCE_REFERENCED"
+      },
+      "operation": {
+        "status": "ACTIVE_SITE_REFERENCE",
+        "operationalStatus": "ACTIVE_SITE_REFERENCE",
+        "extractionMethod": "Open-pit copper mining and concentrator processing",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "Open-pit copper mining and concentrator processing",
+        "midstreamProcess": "Site-specific ore handling and processing represented; exact current flows require operator-level configuration.",
+        "refinedOutputs": [
+          "COPPER_CONCENTRATE"
+        ],
+        "downstreamSectors": [
+          "COPPER_SMELTING",
+          "ELECTRICAL_EQUIPMENT",
+          "CONSTRUCTION"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "status": "UNQUANTIFIED",
+          "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": "metric_tonnes_copper_per_year",
+          "year": 2024,
+          "status": "GUIDANCE_RANGE_NOT_ACTUAL",
+          "guidanceMinimum": 300000,
+          "guidanceMaximum": 330000
+        },
+        "grade": {
+          "value": "Copper deposit; site-specific numeric assay not established in this tranche",
+          "unit": null,
+          "status": "QUALITATIVE_ONLY"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": [
+            "https://www.angloamerican.com/our-portfolio/our-products/copper"
+          ],
+          "capacitySource": null,
+          "promotedAt": "2026-10-10"
+        },
+        "completeness": {
+          "reserve": "UNQUANTIFIED",
+          "production": "GUIDANCE_RANGE_NOT_ACTUAL",
+          "grade": "QUALITATIVE_ONLY",
+          "recovery": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "UNOBSERVED",
+          "structuredEvidence": true,
+          "overall": "IDENTITY_LOCATION_AND_SOURCE_LINKED_SITE_RECORD"
+        }
+      },
+      "verification": {
+        "researchState": "SOURCE_LINKED_SITE_RECORD_FIELD_LEVEL_REVALIDATION_REQUIRED",
+        "reviewedAt": "2026-10-10",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "MINE_OPERATOR_OR_TECHNICAL_REPORT"
+        ],
+        "dataLimitations": "300–330 kt is 2024 guidance, not actual output. Current assay grade, recovery, capacity and purity remain unobserved."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_country_expansion_v1.json"
+        ],
+        "sourcePath": "resource_site_country_expansion_v1.records",
+        "evidence": [
+          {
+            "url": "https://www.angloamerican.com/our-portfolio/our-products/copper",
+            "scope": "operator copper portfolio page: 2024 Quellaveco production guidance range"
+          }
+        ]
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "PER",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "SITE_EXPANSION_REFERENCE",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SOURCE_REPORTED_WHEN_AVAILABLE_OTHERWISE_SIMULATION_RUNTIME",
+        "qualityAuthority": "QUALITATIVE_OR_UNOBSERVED",
+        "countryWarehouseId": "WH-PER-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      }
+    },
+    {
+      "countryId": "BRA",
+      "siteId": "SITE_BRA_salobo_copper_mine",
+      "siteName": "Salobo Mining Complex",
+      "identity": {
+        "countryIso3": "BRA",
+        "siteType": "OPEN_PIT_COPPER_MINE",
+        "resourceTypeId": "copper",
+        "resourceName": "Copper",
+        "ontologyKey": "COPPER"
+      },
+      "location": {
+        "countryName": "Brazil",
+        "adminRegion": "Pará State",
+        "locality": "Marabá region, Carajás",
+        "coordinates": {
+          "lat": -5.8,
+          "lng": -50.53
+        },
+        "coordinateStatus": "SITE_POINT_APPROXIMATE",
+        "coordinateProvenance": "Public operator location or map-referenced mine-complex point; not survey-grade GIS."
+      },
+      "ownership": {
+        "owner": "Vale Base Metals",
+        "operator": "Vale Base Metals",
+        "ownerEvidenceStatus": "OPERATOR_SOURCE_REFERENCED",
+        "operatorEvidenceStatus": "OPERATOR_SOURCE_REFERENCED"
+      },
+      "operation": {
+        "status": "ACTIVE_SITE_REFERENCE",
+        "operationalStatus": "ACTIVE_SITE_REFERENCE",
+        "extractionMethod": "Open-pit copper mining and concentrator processing",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "Open-pit copper mining and concentrator processing",
+        "midstreamProcess": "Site-specific ore handling and processing represented; exact current flows require operator-level configuration.",
+        "refinedOutputs": [
+          "COPPER_CONCENTRATE"
+        ],
+        "downstreamSectors": [
+          "COPPER_SMELTING",
+          "ELECTRICAL_EQUIPMENT",
+          "CONSTRUCTION"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": 1150000000,
+          "unit": "metric_tonnes_copper_ore",
+          "status": "REPORTED_ESTIMATED_RESERVE",
+          "basis": "Operator-reported estimated copper-ore reserves"
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": "Copper deposit; site-specific numeric assay not established in this tranche",
+          "unit": null,
+          "status": "QUALITATIVE_ONLY"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": 36000000,
+          "unit": "metric_tonnes_ore_per_year",
+          "year": 2024,
+          "status": "REPORTED_CAPACITY"
+        },
+        "purity": {
+          "value": "36–40",
+          "unit": "% Cu",
+          "status": "CONCENTRATE_GRADE_NOT_REFINED_PURITY",
+          "basis": "Operator-reported copper concentrate grade range"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": [
+            "https://valebasemetals.com/our-operations/salobo/",
+            "https://www.vale.com/w/vale-informs-salobo-throughput-capacity-of-32-mtpa"
+          ],
+          "capacitySource": null,
+          "promotedAt": "2026-10-10"
+        },
+        "completeness": {
+          "reserve": "REPORTED_ESTIMATED_RESERVE",
+          "production": "UNOBSERVED",
+          "grade": "QUALITATIVE_ONLY",
+          "recovery": "UNOBSERVED",
+          "purity": "CONCENTRATE_GRADE_NOT_REFINED_PURITY",
+          "capacity": "UNOBSERVED",
+          "structuredEvidence": true,
+          "overall": "IDENTITY_LOCATION_AND_SOURCE_LINKED_SITE_RECORD"
+        }
+      },
+      "verification": {
+        "researchState": "SOURCE_LINKED_SITE_RECORD_FIELD_LEVEL_REVALIDATION_REQUIRED",
+        "reviewedAt": "2026-10-10",
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "MINE_OPERATOR_OR_TECHNICAL_REPORT"
+        ],
+        "dataLimitations": "36 Mtpa is the stated full-capacity target after ramp-up; concentrate grade is not refined copper purity."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_country_expansion_v1.json"
+        ],
+        "sourcePath": "resource_site_country_expansion_v1.records",
+        "evidence": [
+          {
+            "url": "https://valebasemetals.com/our-operations/salobo/",
+            "scope": "operator location, estimated ore reserves and concentrate grade"
+          },
+          {
+            "url": "https://www.vale.com/w/vale-informs-salobo-throughput-capacity-of-32-mtpa",
+            "scope": "operator throughput test and full-capacity target"
+          }
+        ]
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "BRA",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "SITE_EXPANSION_REFERENCE",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SOURCE_REPORTED_WHEN_AVAILABLE_OTHERWISE_SIMULATION_RUNTIME",
+        "qualityAuthority": "QUALITATIVE_OR_UNOBSERVED",
+        "countryWarehouseId": "WH-BRA-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      }
+    },
+    {
+      "countryId": "AUS",
+      "siteId": "SITE_AUS_cadia_east_gold_copper_mine",
+      "siteName": "Cadia East Gold-Copper Mine",
+      "identity": {
+        "countryIso3": "AUS",
+        "siteType": "UNDERGROUND_GOLD_COPPER_MINE",
+        "resourceTypeId": "copper",
+        "resourceName": "Copper and gold",
+        "ontologyKey": "COPPER"
+      },
+      "location": {
+        "countryName": "Australia",
+        "adminRegion": "New South Wales",
+        "locality": "Near Orange in Central West New South Wales",
+        "coordinates": {
+          "lat": -33.45,
+          "lng": 149.03
+        },
+        "coordinateStatus": "SITE_POINT_APPROXIMATE",
+        "coordinateProvenance": "Public operator location or map-referenced mine-complex point; not survey-grade GIS."
+      },
+      "ownership": {
+        "owner": "Newmont",
+        "operator": "Newmont",
+        "ownerEvidenceStatus": "OPERATOR_SOURCE_REFERENCED",
+        "operatorEvidenceStatus": "OPERATOR_SOURCE_REFERENCED"
+      },
+      "operation": {
+        "status": "ACTIVE_SITE_REFERENCE",
+        "operationalStatus": "ACTIVE_SITE_REFERENCE",
+        "extractionMethod": "Underground panel-caving mining with gold-copper processing",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "Underground panel-caving mining with gold-copper processing",
+        "midstreamProcess": "Site-specific ore handling and processing represented; exact current flows require operator-level configuration.",
+        "refinedOutputs": [
+          "GOLD_DORÉ",
+          "COPPER_CONCENTRATE"
+        ],
+        "downstreamSectors": [
+          "GOLD_REFINING",
+          "COPPER_SMELTING",
+          "ELECTRONICS"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "status": "UNQUANTIFIED",
+          "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": "Copper and gold deposit; site-specific numeric assay not established in this tranche",
+          "unit": null,
+          "status": "QUALITATIVE_ONLY"
+        },
+        "recovery": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": null,
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": [
+            "https://operations.newmont.com/australia/cadia"
+          ],
+          "capacitySource": null,
+          "promotedAt": "2026-10-10"
+        },
+        "completeness": {
+          "reserve": "UNQUANTIFIED",
+          "production": "UNOBSERVED",
+          "grade": "QUALITATIVE_ONLY",
+          "recovery": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "UNOBSERVED",
+          "structuredEvidence": false,
+          "overall": "IDENTITY_LOCATION_AND_SOURCE_LINKED_SITE_RECORD"
+        }
+      },
+      "verification": {
+        "researchState": "SOURCE_LINKED_SITE_RECORD_FIELD_LEVEL_REVALIDATION_REQUIRED",
+        "reviewedAt": "2026-10-10",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "MINE_OPERATOR_OR_TECHNICAL_REPORT"
+        ],
+        "dataLimitations": "The operator page describes annual output at complex level, but this record does not assign unsupported numeric grade or capacity to Cadia East alone."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_country_expansion_v1.json"
+        ],
+        "sourcePath": "resource_site_country_expansion_v1.records",
+        "evidence": [
+          {
+            "url": "https://operations.newmont.com/australia/cadia",
+            "scope": "operator identity, location, underground method and commodities"
+          }
+        ]
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "AUS",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "SITE_EXPANSION_REFERENCE",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SOURCE_REPORTED_WHEN_AVAILABLE_OTHERWISE_SIMULATION_RUNTIME",
+        "qualityAuthority": "QUALITATIVE_OR_UNOBSERVED",
+        "countryWarehouseId": "WH-AUS-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      }
     }
   ],
   "policy": {
@@ -2345,7 +4140,8 @@
     "gradeIsNotPurity": true,
     "reserveProductionRecoveryPurityAndCapacityRemainExplicitlyUnobserved": true,
     "simulationValuesMustBeSuppliedByExistingOmegaResourceRealismRuntime": true,
-    "routeAndFactoryMustUseExistingPipeline": true
+    "routeAndFactoryMustUseExistingPipeline": true,
+    "expansionTranche2": "12 additional source-linked mine records; the 199-row base catalog remains unchanged. Numeric values retain historical, forecast, resource-grade, target, capacity, and concentrate-grade distinctions."
   },
   "sources": [
     "https://www.usgs.gov/programs/mineral-resources-program/mineral-resources-data",

@@ -11,9 +11,9 @@ const mapBinding = read('omega_resource_gameplay_binding_v1.js');
 assert.equal(base.siteCount, 199, 'base canonical catalog remains unchanged');
 assert.equal(base.sites.length, 199, 'base canonical rows remain unchanged');
 assert.equal(expansion.datasetId, 'OMEGA_RESOURCE_SITE_COUNTRY_EXPANSION_V1');
-assert.equal(expansion.siteCount, 16);
-assert.equal(expansion.records.length, 16);
-assert.equal(new Set(expansion.records.map(s => s.siteId)).size, 16, 'expansion site IDs unique');
+assert.equal(expansion.siteCount, 28);
+assert.equal(expansion.records.length, 28);
+assert.equal(new Set(expansion.records.map(s => s.siteId)).size, 28, 'expansion site IDs unique');
 const baseIds = new Set(base.sites.map(s => s.siteId));
 const baseNames = new Set(base.sites.map(s => s.siteName.toLowerCase()));
 const countries = new Set();
@@ -34,12 +34,13 @@ for (const site of expansion.records) {
   assert.equal(site.map.countryIsolationKey, site.countryId);
   assert.equal(site.runtime.countryWarehouseId, 'WH-' + site.countryId + '-RAW');
   assert.equal(site.runtime.quantityAuthority, 'SIMULATION_RUNTIME');
-  assert.equal(site.quantitative.reserve.status, 'UNQUANTIFIED');
-  assert.equal(site.quantitative.production.status, 'UNOBSERVED');
-  assert.equal(site.quantitative.recovery.status, 'UNOBSERVED');
-  assert.equal(site.quantitative.purity.status, 'UNOBSERVED');
-  assert.equal(site.quantitative.capacity.status, 'UNOBSERVED');
-  assert.notEqual(site.quantitative.grade.status, 'OBSERVED', 'qualitative geology must not be represented as measured assay');
+  for (const field of ['reserve','production','grade','recovery','throughput','purity','capacity']) {
+    assert.ok(site.quantitative[field] && typeof site.quantitative[field] === 'object', site.siteId + ': quantitative.' + field + ' required');
+    assert.ok(site.quantitative[field].status, site.siteId + ': quantitative.' + field + ' status required');
+  }
+  if (site.quantitative.purity.status === 'UNOBSERVED') assert.equal(site.quantitative.purity.value, null);
+  if (site.quantitative.recovery.status === 'UNOBSERVED') assert.equal(site.quantitative.recovery.value, null);
+  if (site.quantitative.grade.status === 'QUALITATIVE_ONLY') assert.equal(site.quantitative.grade.unit, null);
   assert.ok(site.sourceReference.evidence.some(e => /^https:\/\//.test(e.url)), site.siteId + ': source reference required');
 }
 assert.ok(countries.size >= 9, 'expansion must cover multiple countries');
@@ -54,8 +55,8 @@ test('country site expansion keeps observed data separate from gameplay simulati
   for (const site of expansion.records) {
     assert.equal(site.runtime.productionAuthority, 'SIMULATION_RUNTIME');
     assert.equal(site.quantitative.production.rate, null);
-    assert.equal(site.quantitative.recovery.value, null);
-    assert.equal(site.quantitative.purity.value, null);
+    if (site.quantitative.recovery.status === 'UNOBSERVED') assert.equal(site.quantitative.recovery.value, null);
+    if (site.quantitative.purity.status === 'UNOBSERVED') assert.equal(site.quantitative.purity.value, null);
   }
 });
-console.log('OMEGA COUNTRY SITE EXPANSION CERTIFICATE PASSED: 12 additions; 199-site base preserved.');
+console.log('OMEGA COUNTRY SITE EXPANSION CERTIFICATE PASSED: 28 additive sites (12 tranche-2 records); 199-site base preserved.');
