@@ -70,14 +70,41 @@
           if(!res?.ok)throw new Error('RESOURCE_SITE_CANONICAL_CATALOG_FETCH_FAILED');
           data=await res.json();
         }
-        const rows=Array.isArray(data?.sites)?data.sites:[];
+        const baseRows=Array.isArray(data?.sites)?data.sites:[];
+        // Additive site expansion is merged in memory only. The canonical 199-site
+        // source file and its existing certificate remain unchanged.
+        let expansionRows=[];
+        try{
+          let expansion=g.OmegaResourceSiteCountryExpansionData||g.Omega?.ResourceSiteCountryExpansionData||null;
+          if(!expansion){
+            const er=await fetch('resource_site_country_expansion_v1.json',{cache:'no-store'});
+            if(er?.ok)expansion=await er.json();
+          }
+          if(expansion&&expansion.datasetId==='OMEGA_RESOURCE_SITE_COUNTRY_EXPANSION_V1'&&Array.isArray(expansion.records)){
+            expansionRows=expansion.records.filter(row=>{
+              const id=String(row?.siteId||'').trim();
+              const country=String(row?.countryId||row?.identity?.countryIso3||'').trim().toUpperCase();
+              const lat=Number(row?.location?.coordinates?.lat),lng=Number(row?.location?.coordinates?.lng);
+              return id&&/^[A-Z]{3}$/.test(country)&&Number.isFinite(lat)&&lat>=-90&&lat<=90&&Number.isFinite(lng)&&lng>=-180&&lng<=180;
+            });
+            g.OmegaResourceSiteCountryExpansionData=expansion;
+            g.Omega=g.Omega||{};
+            g.Omega.ResourceSiteCountryExpansionData=expansion;
+          }
+        }catch(_){ expansionRows=[]; }
+        const ids=new Set(baseRows.map(row=>String(row?.siteId||'')));
+        const acceptedExpansion=expansionRows.filter(row=>!ids.has(String(row.siteId))&&ids.add(String(row.siteId)));
+        const rows=baseRows.concat(acceptedExpansion);
         const map={};
         for(const row of rows)if(row?.siteId)map[String(row.siteId)]=clone(row);
         canonicalSiteCatalogMap=map;
+        data.sites=rows;
+        data.baseSiteCount=baseRows.length;
+        data.expansionSiteCount=acceptedExpansion.length;
         g.OmegaResourceSiteCanonicalCatalogData=data;
         g.Omega=g.Omega||{};
         g.Omega.ResourceSiteCanonicalCatalogData=data;
-        return{status:'READY',count:rows.length,siteCount:Number(data?.siteCount)||rows.length};
+        return{status:'READY',count:baseRows.length,siteCount:baseRows.length,totalSiteCount:rows.length,expansionSiteCount:acceptedExpansion.length};
       }catch(e){
         canonicalSiteCatalogMap={};
         return{status:'FAILED',count:0,reason:String(e?.message||e)};

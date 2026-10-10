@@ -92,7 +92,37 @@ function dispatch(owner,type,c,payload){
 
 function masterSites(){
   const x=g.OmegaResourceSiteMasterResearchData||g.Omega?.ResourceSiteMasterResearchData;
-  return Array.isArray(x?.sites)?x.sites:[];
+  const base=Array.isArray(x?.sites)?x.sites:[];
+  const expansion=g.OmegaResourceSiteCountryExpansionData||g.Omega?.ResourceSiteCountryExpansionData;
+  const extra=Array.isArray(expansion?.records)?expansion.records.map(row=>{
+    const resourceId=String(row?.identity?.resourceTypeId||'').trim();
+    const method=String(row?.operation?.extractionMethod||'').trim();
+    const siteType=String(row?.identity?.siteType||'RESOURCE_SITE').trim();
+    const countryId=canonicalCountry(row?.countryId||row?.identity?.countryIso3);
+    if(!row?.siteId||!countryId||!resourceId)return null;
+    return {
+      siteId:String(row.siteId),countryId,siteName:String(row.siteName||row.siteId),siteType,
+      real:{resourceId,extractionMethod:method,operationStatus:row?.operation?.status||'ACTIVE_SITE_REFERENCE',
+        owner:row?.ownership?.owner||null,operator:row?.ownership?.operator||null,location:clone(row?.location||{}),
+        coordinateStatus:row?.location?.coordinateStatus||row?.location?.coordinates?.coordinateStatus||'APPROXIMATE'},
+      sourceSiteRecord:{id:String(row.siteId),siteId:String(row.siteId),resourceId,siteType,extractionMethod:method,
+        status:row?.operation?.status||'ACTIVE_SITE_REFERENCE',commercialExtraction:row?.operation?.commercialExtraction!==false,
+        countryCode:countryId,lat:row?.location?.coordinates?.lat,lng:row?.location?.coordinates?.lng,
+        dataAuthority:'SITE_EXPANSION_REFERENCE',quantitativeAuthority:'SIMULATION_RUNTIME'},
+      location:clone(row?.location||{}),ownership:clone(row?.ownership||{}),operation:clone(row?.operation||{}),
+      processing:clone(row?.processing||{}),sourceReference:clone(row?.sourceReference||{}),
+      simulation:{simulationOnly:true,capacityModel:'SYNTHETIC_GAMEPLAY_CAPACITY_V1',
+        reserveStatus:'SIMULATION_REQUIRED',transportRoute:[{
+          routeId:'SIM_ROUTE:'+countryId+':'+String(row.siteId),
+          mode:'truck',transportMode:'truck',sourceNode:'MINE:'+String(row.siteId),
+          destinationNode:'WH-'+countryId+'-RAW',distanceKm:100,authority:'SIMULATED',
+          countryIsolationKey:countryId
+        }]}
+    };
+  }).filter(Boolean):[];
+  const byId=new Map(base.map(site=>[String(site?.siteId||''),site]));
+  for(const site of extra)if(!byId.has(site.siteId))byId.set(site.siteId,site);
+  return [...byId.values()];
 }
 function siteById(siteId){
   const s=String(siteId||'').trim();
