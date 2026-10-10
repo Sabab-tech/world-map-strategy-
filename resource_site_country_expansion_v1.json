@@ -448,51 +448,50 @@
     },
     {
       "countryId": "MNG",
-      "siteId": "SITE_MNG_oyu_tolgoi_mine",
-      "siteName": "Oyu Tolgoi Mine",
+      "siteId": "SITE_MNG_erdenet_copper_molybdenum_mine",
+      "siteName": "Erdenet Copper-Molybdenum Mine",
       "identity": {
         "countryIso3": "MNG",
-        "siteType": "OPEN_PIT_AND_UNDERGROUND_COPPER_GOLD_MINE",
+        "siteType": "OPEN_PIT_COPPER_MOLYBDENUM_MINE",
         "resourceTypeId": "copper",
-        "resourceName": "Copper",
-        "ontologyKey": "COPPER"
+        "resourceName": "Copper and molybdenum",
+        "ontologyKey": "COPPER_MOLYBDENUM"
       },
       "location": {
         "countryName": "Mongolia",
-        "adminRegion": "Umnugovi Province, South Gobi",
-        "locality": "Umnugovi Province, South Gobi",
+        "adminRegion": "Orkhon Province",
+        "locality": "Bayan-Undur soum, Erdenet Mining Corporation complex",
         "coordinates": {
-          "lat": 43,
-          "lng": 106.85
+          "lat": 49.03,
+          "lng": 104.04
         },
         "coordinateStatus": "SITE_POINT_APPROXIMATE",
-        "coordinateProvenance": "Operator or reputable public site location; point may represent complex centroid"
+        "coordinateProvenance": "Operator site location near Bayan-Undur soum; point is a map-referenced complex location, not survey-grade GIS."
       },
       "ownership": {
-        "owner": "Oyu Tolgoi LLC; Rio Tinto; Government of Mongolia",
-        "operator": "Oyu Tolgoi LLC; Rio Tinto; Government of Mongolia",
-        "ownerEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED",
-        "operatorEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED"
+        "owner": "Government of Mongolia (51%); Mongolian Copper Corporation (49%)",
+        "operator": "Erdenet Mining Corporation SOE",
+        "ownerEvidenceStatus": "OPERATOR_SOURCE_REFERENCED",
+        "operatorEvidenceStatus": "OPERATOR_SOURCE_REFERENCED"
       },
       "operation": {
         "status": "ACTIVE_SITE_REFERENCE",
         "operationalStatus": "ACTIVE_SITE_REFERENCE",
-        "extractionMethod": "open-pit and underground block-cave mining",
+        "extractionMethod": "Open-pit copper-molybdenum mining and ore beneficiation",
         "extractionEligibility": "EXECUTABLE_SIMULATION",
         "commercialExtraction": true
       },
       "processing": {
-        "upstreamProcess": "open-pit and underground block-cave mining",
-        "midstreamProcess": "Site-specific processing route must be verified before production configuration",
+        "upstreamProcess": "Open-pit copper-molybdenum mining",
+        "midstreamProcess": "Ore processing, copper and molybdenum concentrate production",
         "refinedOutputs": [
           "COPPER_CONCENTRATE",
-          "COPPER_CATHODE",
-          "BYPRODUCTS_AS_CONFIGURED"
+          "MOLYBDENUM_CONCENTRATE"
         ],
         "downstreamSectors": [
           "COPPER_SMELTING",
+          "MOLYBDENUM_PROCESSING",
           "ELECTRICAL_EQUIPMENT",
-          "CONSTRUCTION",
           "INDUSTRIAL_MANUFACTURING"
         ]
       },
@@ -504,16 +503,16 @@
           "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
         },
         "production": {
-          "annual": null,
+          "annual": 600000,
           "rate": null,
-          "unit": null,
+          "unit": "metric_tonnes_copper_concentrate",
           "year": null,
-          "status": "UNOBSERVED"
+          "status": "OPERATOR_REPORTED_APPROXIMATE_ANNUAL_OUTPUT"
         },
         "grade": {
-          "value": "Copper-gold deposit; site-specific current assay grade not supplied in this record",
+          "value": "Copper-molybdenum deposit; site-specific numeric assay not supplied in this record",
           "unit": null,
-          "status": "QUALITATIVE_DEPOSIT_DESCRIPTION_NOT_ASSAY"
+          "status": "QUALITATIVE_ONLY"
         },
         "recovery": {
           "value": null,
@@ -522,10 +521,10 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
-          "value": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
+          "value": 37200000,
+          "unit": "metric_tonnes_ore_processed_per_year",
+          "year": 2023,
+          "status": "REPORTED"
         },
         "purity": {
           "value": null,
@@ -533,47 +532,55 @@
           "status": "UNOBSERVED"
         },
         "capacity": {
-          "nominal": null,
+          "nominal": 37200000,
           "minimum": null,
           "maximum": null,
-          "unit": null,
-          "status": "UNOBSERVED"
+          "unit": "metric_tonnes_ore_processed_per_year",
+          "status": "REPORTED_2023_THROUGHPUT"
         },
         "reportedMetrics": {},
         "quantitativeProvenance": {
-          "structuredSource": null,
-          "capacitySource": null,
+          "structuredSource": [
+            "https://erdenetmc.mn/en/about"
+          ],
+          "capacitySource": [
+            "https://erdenetmc.mn/en/about"
+          ],
           "promotedAt": "2026-10-10"
         },
         "completeness": {
           "reserve": "UNQUANTIFIED",
-          "production": "UNOBSERVED",
+          "production": "OPERATOR_REPORTED_APPROXIMATE_ANNUAL_OUTPUT",
           "grade": "QUALITATIVE_ONLY",
           "recovery": "UNOBSERVED",
           "purity": "UNOBSERVED",
-          "capacity": "UNOBSERVED",
-          "structuredEvidence": false,
-          "overall": "IDENTITY_AND_LOCATION_ENRICHED_QUANTITATIVES_REQUIRE_RESEARCH"
+          "capacity": "REPORTED_2023_THROUGHPUT",
+          "structuredEvidence": true,
+          "overall": "IDENTITY_LOCATION_AND_SOURCE_LINKED_SITE_RECORD"
         }
       },
       "verification": {
-        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_REQUIRES_FIELD_REVALIDATION",
+        "researchState": "OPERATOR_SOURCE_LINKED_FIELD_LEVEL_REVALIDATION_REQUIRED",
         "reviewedAt": "2026-10-10",
-        "sourceCount": 1,
+        "sourceCount": 2,
         "sourceAuthorities": [
-          "OPERATOR_OR_PUBLIC_SITE_REFERENCE"
+          "MINE_OPERATOR"
         ],
-        "dataLimitations": "Do not treat approximate point as survey-grade; grade phrase is geological/commodity description, not a measured assay. Reserve, production, recovery, purity and capacity intentionally remain unobserved for separate gameplay simulation."
+        "dataLimitations": "Operator describes annual extraction/processing/output, but no numeric assay grade or refined-product purity was established. Coordinate is approximate."
       },
       "sourceReference": {
         "authoritativeDatasets": [
           "resource_site_country_expansion_v1.json"
         ],
-        "sourcePath": "resource_site_country_expansion_v1.sites",
+        "sourcePath": "resource_site_country_expansion_v1.records",
         "evidence": [
           {
-            "url": "https://www.riotinto.com/en/mn/oyu-tolgoi",
-            "scope": "site identity, commodity, region and/or operator; revalidate field-level claims before promotion"
+            "url": "https://www.erdenetmc.mn/en/operations/mining",
+            "scope": "operator mine identity, open-pit mining method and copper-molybdenum geology"
+          },
+          {
+            "url": "https://erdenetmc.mn/en/about",
+            "scope": "operator-reported 2023 ore throughput, annual ore extraction and approximate concentrate output"
           }
         ]
       },
@@ -587,7 +594,7 @@
         "identityAuthority": "SITE_EXPANSION_REFERENCE",
         "quantityAuthority": "SIMULATION_RUNTIME",
         "productionAuthority": "SIMULATION_RUNTIME",
-        "qualityAuthority": "QUALITATIVE_DESCRIPTION_ONLY",
+        "qualityAuthority": "QUALITATIVE_OR_UNOBSERVED",
         "countryWarehouseId": "WH-MNG-RAW",
         "requiresSiteSpecificRoute": true,
         "requiresFactoryBinding": true
@@ -5206,7 +5213,9 @@
     "simulationValuesMustBeSuppliedByExistingOmegaResourceRealismRuntime": true,
     "routeAndFactoryMustUseExistingPipeline": true,
     "expansionTranche2": "12 additional source-linked mine records; the 199-row base catalog remains unchanged. Numeric values retain historical, forecast, resource-grade, target, capacity, and concentrate-grade distinctions.",
-    "expansionTranche3": "Six additional source-linked sites in Nigeria, Türkiye, Ecuador, Canada, Mozambique and Tanzania/Mexico; approximate coordinates and dated metrics remain explicitly labeled."
+    "expansionTranche3": "Six additional source-linked sites in Nigeria, Türkiye, Ecuador, Canada, Mozambique and Tanzania/Mexico; approximate coordinates and dated metrics remain explicitly labeled.",
+    "expansionTranche1": "",
+    "duplicatePhysicalSiteCorrection": "Replaced the duplicate Oyu Tolgoi expansion marker with Erdenet, a distinct Mongolia copper-molybdenum complex already verified through operator sources."
   },
   "sources": [
     "https://www.usgs.gov/programs/mineral-resources-program/mineral-resources-data",

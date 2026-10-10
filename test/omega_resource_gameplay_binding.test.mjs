@@ -224,7 +224,7 @@ test('runtime renders all global sites and applies nation/resource scope without
   assert.equal(diagnostics?.status,'READY','global source registry must initialize');
   assert.equal(diagnostics?.siteCount,241,'239 distinct physical locations plus coincident and near-overlap test identities must yield 241 site markers');
   const markerCount = () => [...layers].reduce((sum,layer)=>sum+layer.markers.length,0);
-  assert.equal(markerCount(),241,'WORLD scope must render all 239 source locations plus two test-only overlap fixtures');
+  assert.equal(markerCount(),239+expansion.records.length+2,'WORLD scope must render source locations, all expansion sites and two test-only overlap fixtures');
   const geographicPositions=new Set([...layers].flatMap(layer=>layer.markers).map(marker=>marker.latlng.map(value=>Number(value).toFixed(3)).join('|')));
   assert.ok(geographicPositions.size>100,'world markers must preserve widespread source coordinates instead of collapsing all resources to one point');
   assert.ok(context.Game.Map.resourceDepositsLayer.clearCount>0,'legacy deposit layer must be cleared so old and individual markers do not stack');
@@ -253,10 +253,10 @@ test('runtime renders all global sites and applies nation/resource scope without
   context.Game.Map.resourceState.scope='WORLD';
   context.Game.Map.resourceState.selectedResources=vm.runInContext("new Set(['coal'])",context);
   context.Omega.IndividualResourceSiteBinding.refresh();
-  assert.ok(markerCount()>0 && markerCount()<241,'resource filter must narrow the global site markers');
+  assert.ok(markerCount()>0 && markerCount()<239+expansion.records.length+2,'resource filter must narrow the global site markers');
   context.Game.Map.resourceState.selectedResources=vm.runInContext("new Set(['natural-gas'])",context);
   context.Omega.IndividualResourceSiteBinding.refresh();
-  assert.ok(markerCount()>0 && markerCount()<241,'hyphenated commodity filters must match canonical underscore resource IDs across the world');
+  assert.ok(markerCount()>0 && markerCount()<239+expansion.records.length+2,'hyphenated commodity filters must match canonical underscore resource IDs across the world');
 
   // Regression fixture: Saudi Arabia has one source mine site plus two separate oilfield records.
   context.Game.Map.resourceState.scope='NATION';
