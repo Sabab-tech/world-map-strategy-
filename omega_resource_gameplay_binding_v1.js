@@ -6,6 +6,7 @@
 const VERSION='1.0.0';
 const CATALOG_URL='resource_site_canonical_catalog_v1.json';
 const MASTER_URL='resource_site_master_registry_v1.json';
+const EXPANSION_URL='resource_site_country_expansion_v1.json';
 let sites=[], selected=null, markers=[], markerLayer=null, panel=null, statusNode=null, detailNode=null, selectNode=null;
 const esc=v=>String(v??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const state=()=>g.Game?.state||g.gameState||{};
@@ -263,15 +264,17 @@ async function init(){
  g.__OMEGA_RESOURCE_SITE_BINDING_INIT__=true;
  mount();
  try{
-  const urls=['resources.json','resources_2.json',CATALOG_URL,MASTER_URL];
+  const urls=['resources.json','resources_2.json',CATALOG_URL,MASTER_URL,EXPANSION_URL];
   const loaded=await Promise.all(urls.map(async url=>{
    try{const response=await fetch(url,{cache:'no-store'});if(!response.ok)return null;return {url,data:await response.json()};}
    catch(_){return null;}
   }));
   const sources=loaded.filter(Boolean);
   const getData=url=>sources.find(x=>x.url===url)?.data||null;
-  const catalog=getData(CATALOG_URL),master=getData(MASTER_URL);
-  const catalogSites=Array.isArray(catalog?.sites)?catalog.sites:[];
+  const catalog=getData(CATALOG_URL),master=getData(MASTER_URL),expansion=getData(EXPANSION_URL);
+  const baseCatalogSites=Array.isArray(catalog?.sites)?catalog.sites:[];
+  const expansionSites=expansion?.datasetId==='OMEGA_RESOURCE_SITE_COUNTRY_EXPANSION_V1'&&Array.isArray(expansion.records)?expansion.records:[];
+  const catalogSites=[...baseCatalogSites,...expansionSites];
   const masterSites=Array.isArray(master?.sites)?master.sites:[];
   const masterById=new Map(masterSites.map(s=>[String(s.siteId),s]));
   const catalogById=new Map(catalogSites.map(s=>[String(s.siteId),s]));
