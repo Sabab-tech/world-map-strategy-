@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "1.0.0",
+  "datasetId": "OMEGA_RESOURCE_SITE_EXPANSION_2026_10_11_BATCH_01_CORRECTIONS",
+  "generatedAt": "2026-10-11",
+  "purpose": "Append-only correction overlay for two identity metadata errors in resource_site_expansion_batch_20261011_v1.json. Apply these corrections during import; do not alter source files.",
+  "corrections": [
+    {
+      "siteId": "SITE_MEX_cerro_san_pedro_gold_silver_mine",
+      "field": "siteId",
+      "correctedValue": "SITE_MEX_penasquito_polymetallic_mine",
+      "reason": "The original ID slug referenced Cerro San Pedro, which is not the site name represented by this record. The siteName is Peñasquito Mine.",
+      "preserveOriginalIdAsAlias": false
+    },
+    {
+      "siteId": "SITE_TUR_kiirunavaara_iron_ore_mine",
+      "field": "siteId",
+      "correctedValue": "SITE_SWE_kiirunavaara_iron_ore_mine",
+      "reason": "Country ISO-3 must be SWE for Sweden, not TUR.",
+      "preserveOriginalIdAsAlias": false
+    }
+  ],
+  "validationNotes": [
+    "The main supplemental file remains append-only and unchanged.",
+    "Runtime/map integration remains pending.",
+    "Reserve, grade, recovery, purity and capacity values left null remain unverified and must not be generated synthetically."
+  ]
+}
