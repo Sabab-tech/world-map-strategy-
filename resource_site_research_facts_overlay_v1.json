@@ -144,15 +144,16 @@
       },
       "geologicalFacts": {
         "reserve": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNQUANTIFIED",
-          "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
+          "quantity": 1057,
+          "unit": "million metric tonnes of ore",
+          "status": "REPORTED_PROVEN_AND_PROBABLE_RESERVE",
+          "basis": "Codelco Mineral Resources and Reserves as of 2024-12-31; reserve estimate, not a gameplay inventory"
         },
         "grade": {
-          "value": "Copper ore; site-specific current assay grade not supplied in this record",
-          "unit": null,
-          "status": "QUALITATIVE_DEPOSIT_DESCRIPTION_NOT_ASSAY"
+          "value": 0.83,
+          "unit": "% Cu",
+          "status": "REPORTED_AVERAGE_RESERVE_GRADE",
+          "basis": "Codelco Mineral Resources and Reserves as of 2024-12-31; reserve grade, not refined copper purity"
         },
         "purity": {
           "value": null,
@@ -160,17 +161,26 @@
           "status": "UNOBSERVED"
         },
         "classification": null,
-        "depositType": null
+        "depositType": null,
+        "mineralogy": [
+          "Copper-bearing ore; site-specific mineral species not asserted by this source"
+        ],
+        "gradeSourceDate": "2024-12-31"
       },
       "evidence": [
         {
           "url": "https://www.codelco.com/",
           "scope": "operator reference for El Teniente; site-specific fields require direct revalidation",
           "sourceType": null
+        },
+        {
+          "url": "https://www.codelco.com/prontus_codelco/site/docs/20200531/20200531230507/codelco_at_a_glance_december_31__2024.pdf",
+          "scope": "El Teniente mineral reserves: 1,057 million tonnes at 0.83% Cu as of 2024-12-31; source reports reserve tonnage and ore grade, not refined-product purity",
+          "sourceType": "OPERATOR_MINERAL_RESOURCES_AND_RESERVES_STATEMENT"
         }
       ],
       "evidencePolicy": "Only source-backed geological/site facts. Production, extraction rate, recovery, throughput, nominal/min/max capacity and gameplay output intentionally excluded from this research overlay.",
-      "dataLimitations": "Approximate location. Grade, reserve, production, recovery, purity and capacity are not asserted as observed."
+      "dataLimitations": "Reserve tonnage and copper grade are source-backed as of 2024-12-31. Ore grade is not copper-metal purity. Refined product purity is unobserved and must not be inferred. Reserve figure is a reported geological/economic classification, not a game warehouse stock."
     },
     {
       "siteId": "SITE_AUS_olympic_dam_mine",
@@ -3076,5 +3086,27 @@
       "evidencePolicy": "Only source-backed geological/site facts. Production, extraction rate, recovery, throughput, nominal/min/max capacity and gameplay output intentionally excluded from this research overlay.",
       "dataLimitations": "Annual production from B2Gold FY2024 mine-by-mine table."
     }
-  ]
+  ],
+  "researchAudit": {
+    "auditMethod": "Source-by-source fact extraction; only explicitly stated facts promoted; unknown values remain unobserved; no production rate, capacity, throughput, recovery, or gameplay output fields added.",
+    "batch1Completed": [
+      "SITE_CHL_escondida_copper_mine",
+      "SITE_CHL_el_teniente_copper_mine",
+      "SITE_AUS_olympic_dam_mine",
+      "SITE_MNG_erdenet_copper_molybdenum_mine",
+      "SITE_IDN_grasberg_mine",
+      "SITE_BRA_carajas_iron_ore_mine",
+      "SITE_PER_cerro_verde_copper_mine",
+      "SITE_ZMB_sentinel_copper_mine",
+      "SITE_COD_tenke_fungurume_mine",
+      "SITE_GHA_ahafo_gold_mine",
+      "SITE_USA_bingham_canyon_mine",
+      "SITE_PER_las_bambas_copper_mine",
+      "SITE_CAN_highland_valley_copper_mine",
+      "SITE_MEX_buenavista_del_cobre_mine",
+      "SITE_IND_bailadila_kirandul_iron_ore_mine"
+    ],
+    "batch1Status": "PARTIAL_SOURCE_REVIEW; only field-level facts with a direct usable citation are promoted; other 14 sites retain explicit unknowns pending further source extraction.",
+    "batch1ReviewedAt": "2026-10-11"
+  }
 }
