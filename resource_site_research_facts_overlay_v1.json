@@ -1029,17 +1029,16 @@
       },
       "geologicalFacts": {
         "reserve": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNQUANTIFIED",
-          "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
+          "quantity": 1516,
+          "unit": "million metric tonnes of ore",
+          "status": "HISTORICAL_PROVED_AND_PROBABLE_RESERVE",
+          "basis": "KAZ Minerals Annual Report 2014 figures reproduced by PorterGeo; historical estimate, not a current reserve statement"
         },
         "grade": {
-          "value": 0.33,
+          "value": 0.35,
           "unit": "% Cu",
-          "year": 2020,
-          "status": "REPORTED_RESOURCE_GRADE",
-          "basis": "Mineral-resource average; not current feed assay"
+          "status": "HISTORICAL_AVERAGE_RESERVE_GRADE",
+          "basis": "KAZ Minerals Annual Report 2014 figures reproduced by PorterGeo; 2014 reserve grade, not refined copper purity"
         },
         "purity": {
           "value": null,
@@ -1047,7 +1046,19 @@
           "status": "UNOBSERVED"
         },
         "classification": null,
-        "depositType": null
+        "depositType": null,
+        "associatedMinerals": [
+          {
+            "commodity": "molybdenum",
+            "value": 0.01,
+            "unit": "% Mo",
+            "basis": "Historical 2014 proved+probable reserve grade reported by PorterGeo"
+          }
+        ],
+        "gradeSourceDate": "2014",
+        "mineralogy": [
+          "Porphyry copper deposit"
+        ]
       },
       "evidence": [
         {
@@ -1059,10 +1070,15 @@
           "url": "https://www.kazminerals.com/media/22033/kaz-minerals-ar-2020.pdf",
           "scope": "2020 resource grade and historical production metrics",
           "sourceType": null
+        },
+        {
+          "url": "https://portergeo.com.au/database/mineinfo.php?mineid=mn976",
+          "scope": "Historical Aktogay proved+probable reserves and ore grades reported from KAZ Minerals Annual Report 2014: 1.516 Gt at 0.35% Cu and 0.01% Mo",
+          "sourceType": "GEOLOGICAL_DEPOSIT_DATABASE_CITING_OPERATOR_ANNUAL_REPORT"
         }
       ],
       "evidencePolicy": "Only source-backed geological/site facts. Production, extraction rate, recovery, throughput, nominal/min/max capacity and gameplay output intentionally excluded from this research overlay.",
-      "dataLimitations": "0.33% is a 2020 reported mineral-resource grade, not current feed assay."
+      "dataLimitations": "Historical reserve/grade figures from 2014; do not present as current estimate. Cu ore grade is not refined copper purity. Current reserve figures need a newer technical statement."
     },
     {
       "siteId": "SITE_KAZ_bozshakol_copper_mine",
@@ -1102,9 +1118,8 @@
         "grade": {
           "value": 0.35,
           "unit": "% Cu",
-          "year": 2020,
-          "status": "REPORTED_RESOURCE_GRADE",
-          "basis": "Reported mineral-resource grade; not current feed assay"
+          "status": "REPORTED_AVERAGE_ORE_GRADE",
+          "basis": "KAZ Minerals public project description; dated historical statement, not refined copper purity"
         },
         "purity": {
           "value": null,
@@ -1112,17 +1127,26 @@
           "status": "UNOBSERVED"
         },
         "classification": null,
-        "depositType": null
+        "depositType": null,
+        "gradeSourceDate": "2021-04-28",
+        "mineralogy": [
+          "Copper deposit; exact mineral species not added without a technical report citation"
+        ]
       },
       "evidence": [
         {
           "url": "https://www.kazminerals.com/media/22033/kaz-minerals-ar-2020.pdf",
           "scope": "2020 annual report: resource grade and 2020 production summary",
           "sourceType": null
+        },
+        {
+          "url": "https://www.kazminerals.com/media/22086/agm-adjournment-announcement-280421.pdf",
+          "scope": "Bozshakol reported average copper ore grade of 0.35%; the document also contains capacity/production material that is intentionally not imported into the game facts",
+          "sourceType": "OPERATOR_DISCLOSURE"
         }
       ],
       "evidencePolicy": "Only source-backed geological/site facts. Production, extraction rate, recovery, throughput, nominal/min/max capacity and gameplay output intentionally excluded from this research overlay.",
-      "dataLimitations": "Grade and production are historical 2020 report values; current operating metrics are not inferred."
+      "dataLimitations": "Reported 0.35% average Cu grade is from a 2021 operator document and may not represent current reserve grade or current mill feed. It is not refined copper purity. Reserve tonnage remains unobserved in this overlay."
     },
     {
       "siteId": "SITE_COD_kipushi_zinc_copper_mine",
@@ -3107,6 +3131,25 @@
       "SITE_IND_bailadila_kirandul_iron_ore_mine"
     ],
     "batch1Status": "PARTIAL_SOURCE_REVIEW; only field-level facts with a direct usable citation are promoted; other 14 sites retain explicit unknowns pending further source extraction.",
-    "batch1ReviewedAt": "2026-10-11"
+    "batch1ReviewedAt": "2026-10-11",
+    "batch2ReviewedAt": "2026-10-11",
+    "batch2Completed": [
+      "SITE_KAZ_aktogay_copper_mine",
+      "SITE_KAZ_bozshakol_copper_mine",
+      "SITE_COD_kipushi_zinc_copper_mine",
+      "SITE_NAM_rossing_uranium_mine",
+      "SITE_ZAF_sishen_iron_ore_mine",
+      "SITE_CAN_detour_lake_gold_mine",
+      "SITE_POL_lubin_copper_silver_mine",
+      "SITE_GHA_obuasi_gold_mine",
+      "SITE_USA_bagdad_copper_mine",
+      "SITE_PER_quellaveco_copper_mine",
+      "SITE_BRA_salobo_copper_mine",
+      "SITE_AUS_cadia_east_gold_copper_mine",
+      "SITE_NGA_segilola_gold_mine",
+      "SITE_TUR_kisladag_gold_mine",
+      "SITE_ECU_fruta_del_norte_gold_mine"
+    ],
+    "batch2Status": "PARTIAL_SOURCE_REVIEW; grade/reserve values promoted only where source and effective date can be stated; other sites retain unknowns pending exact report extraction."
   }
 }
