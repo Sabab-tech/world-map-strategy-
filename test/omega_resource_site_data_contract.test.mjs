@@ -10,8 +10,11 @@ const runtime = read('omega_resource_endowment_runtime.js');
 const network = read('omega_resource_industrial_network_v1.js');
 
 const rows = base.sites;
-assert.equal(base.siteCount, 250);
-assert.equal(rows.length, 250);
+const restoration = JSON.parse(read('resource_site_verified_legacy_restoration_v1.json'));
+const expectedSiteCount = 250 + restoration.records.length;
+
+assert.equal(base.siteCount, expectedSiteCount);
+assert.equal(rows.length, expectedSiteCount);
 assert.equal(new Set(rows.map(s => s.siteId)).size, 250);
 assert.equal(expansion.siteCount, 0);
 assert.equal(expansion.records.length, 0);
