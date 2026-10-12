@@ -26,8 +26,11 @@ function coordsOf(row) {
   const sources = [row?.coordinates, row?.location, row?.real?.coordinates,
     row?.sourceSiteRecord?.coordinates, row?.sourceSiteRecord, row?.rawLegacyRecord];
   for (const source of sources) {
-    const lat = Number(source?.lat ?? source?.latitude);
-    const lng = Number(source?.lng ?? source?.lon ?? source?.longitude);
+    const rawLat = source?.lat ?? source?.latitude;
+    const rawLng = source?.lng ?? source?.lon ?? source?.longitude;
+    if (rawLat === null || rawLat === undefined || rawLat === '' || rawLng === null || rawLng === undefined || rawLng === '') continue;
+    const lat = Number(rawLat);
+    const lng = Number(rawLng);
     if (Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180) {
       return { lat, lng };
     }
@@ -95,7 +98,7 @@ const reportRows = candidates.map(candidate => {
   const exact = candidate.normalizedName
     ? (byCountryName.get(candidate.countryId + '|' + candidate.normalizedName) || [])
     : [];
-  const sameNameOtherCountry = candidate.normalizedName
+  const sameNameOtherCountry = candidate.normalizedName && candidate.countryId
     ? (byName.get(candidate.normalizedName) || []).filter(site => site.countryId !== candidate.countryId)
     : [];
   let nearest = null;
