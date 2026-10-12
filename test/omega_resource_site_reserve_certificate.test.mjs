@@ -6,14 +6,14 @@ const load=name=>JSON.parse(readFileSync(name,'utf8'));
 const catalog=load('resource_site_canonical_catalog_v1.json');
 const data=load('resource_site_reserve_simulation_v1.json');
 
-assert.equal(catalog.siteCount,199);
-assert.equal(data.siteCount,199);
-assert.equal(data.records.length,199);
+assert.equal(catalog.siteCount,250);
+assert.equal(data.siteCount,250);
+assert.equal(data.records.length,250);
 
 const catalogMap=new Map(catalog.sites.map(s=>[s.siteId,s]));
 const reserveMap=new Map(data.records.map(r=>[r.siteId,r]));
-assert.equal(catalogMap.size,199);
-assert.equal(reserveMap.size,199);
+assert.equal(catalogMap.size,250);
+assert.equal(reserveMap.size,250);
 
 const sameResourceValues=new Map();
 for(const [siteId,site] of catalogMap){
@@ -39,10 +39,10 @@ for(const [siteId,site] of catalogMap){
   assert.equal(r.provenance.authority,'SCENARIO_SIMULATION_DATA');
   assert.equal(r.provenance.realWorldDataRequired,false);
 }
-assert.equal(data.commercialSiteCount,195);
+assert.equal(data.commercialSiteCount,246);
 assert.equal(data.notApplicableSiteCount,4);
 
-console.log(JSON.stringify({certificate:'OMEGA-199-PER-SITE-RESERVE-DATA',status:'PASS',siteCount:199,commercialSiteCount:195,notApplicableSiteCount:4,uniqueSiteIds:reserveMap.size,countryBinding:'PASS',resourceBinding:'PASS',perIdentityReserve:'PASS'},null,2));
+console.log(JSON.stringify({certificate:'OMEGA-250-PER-SITE-RESERVE-DATA',status:'PASS',siteCount:250,commercialSiteCount:246,notApplicableSiteCount:4,uniqueSiteIds:reserveMap.size,countryBinding:'PASS',resourceBinding:'PASS',perIdentityReserve:'PASS'},null,2));
 
 const context=createContext({console,globalThis:null});
 context.globalThis=context;
@@ -62,5 +62,5 @@ for(const site of catalog.sites){
   assert.equal(stream.reserve.unit,r.reserve.unit);
   runtimeChecked++;
 }
-assert.equal(runtimeChecked,195);
+assert.equal(runtimeChecked,246);
 console.log('OMEGA RUNTIME PER-SITE RESERVE CONSUMPTION CERTIFICATE PASSED');
