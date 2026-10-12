@@ -6894,11 +6894,12 @@
           "basis": null
         },
         "production": {
-          "annual": null,
+          "annual": 11183000,
           "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
+          "unit": "troy_ounces_silver_per_fiscal_year",
+          "year": 2024,
+          "status": "REPORTED_FISCAL_YEAR",
+          "basis": "South32 FY2024 production summary; fiscal year basis, payable silver production."
         },
         "grade": {
           "value": "Site-specific measured ore/feed grade not supplied in this record",
@@ -6929,27 +6930,49 @@
           "unit": null,
           "status": "UNOBSERVED"
         },
-        "reportedMetrics": {},
+        "reportedMetrics": {
+          "leadProduction": {
+            "annual": 101700,
+            "unit": "metric_tonnes_lead_per_fiscal_year",
+            "year": 2024,
+            "status": "REPORTED_FISCAL_YEAR",
+            "basis": "Payable lead production"
+          },
+          "zincProduction": {
+            "annual": 59200,
+            "unit": "metric_tonnes_zinc_per_fiscal_year",
+            "year": 2024,
+            "status": "REPORTED_FISCAL_YEAR",
+            "basis": "Payable zinc production"
+          },
+          "payableZincEquivalentProduction": {
+            "annual": 259600,
+            "unit": "metric_tonnes_zinc_equivalent_per_fiscal_year",
+            "year": 2024,
+            "status": "REPORTED_FISCAL_YEAR"
+          }
+        },
         "quantitativeProvenance": {
-          "structuredSource": "https://www.south32.net/what-we-do/our-business/cannington",
+          "structuredSource": "https://www.south32.net/docs/default-source/exchange-releases/quarterly-report-june-2024-0xe265265507ed180b.pdf?sfvrsn=cc0bc7eb_0",
           "capacitySource": null,
           "promotedAt": "2026-10-11"
         },
         "completeness": {
           "reserve": "UNQUANTIFIED",
-          "production": "UNOBSERVED",
+          "production": "REPORTED_FISCAL_YEAR",
           "grade": "QUALITATIVE_ONLY",
           "recovery": "UNOBSERVED",
           "purity": "UNOBSERVED",
           "capacity": "UNOBSERVED",
-          "structuredEvidence": false,
-          "overall": "SITE_IDENTITY_ENRICHED_FIELD_LEVEL_RESEARCH_PARTIAL"
+          "structuredEvidence": true,
+          "overall": "SITE_SPECIFIC_PRIMARY_SOURCE_RESEARCH_PARTIAL",
+          "throughput": "UNOBSERVED"
         }
       },
       "verification": {
-        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_FIELD_LEVEL_REVIEW_REQUIRED",
-        "reviewedAt": "2026-10-11",
-        "sourceCount": 1,
+        "researchState": "PRIMARY_SOURCE_QUANTITATIVE_RESEARCH_UPDATED",
+        "reviewedAt": "2026-10-12",
+        "sourceCount": 2,
         "sourceAuthorities": [
           "SOUTH32"
         ],
@@ -6964,6 +6987,10 @@
           {
             "url": "https://www.south32.net/what-we-do/our-business/cannington",
             "scope": "Site identity and cited field(s); revalidate field-level claims and ownership/operating status before authoritative promotion."
+          },
+          {
+            "url": "https://www.south32.net/docs/default-source/exchange-releases/quarterly-report-june-2024-0xe265265507ed180b.pdf?sfvrsn=cc0bc7eb_0",
+            "scope": "South32 FY2024 quarterly report: 11.183 Moz payable silver, 101.7 kt payable lead and 59.2 kt payable zinc; FY basis."
           }
         ]
       },
@@ -7165,8 +7192,8 @@
         "coordinateProvenance": "Approximate public site location; not survey-grade GIS. Verify against operator GIS before engineering use."
       },
       "ownership": {
-        "owner": "South32 / ownership and operating structure subject to current reporting validation",
-        "operator": "Cerro Matoso",
+        "owner": "CoreX Holding B.V. subsidiary (acquired from South32; sale completed December 2025)",
+        "operator": "Cerro Matoso operating entity; current legal operator requires revalidation after the ownership transfer",
         "ownerEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED",
         "operatorEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED"
       },
@@ -7196,11 +7223,12 @@
           "basis": null
         },
         "production": {
-          "annual": null,
+          "annual": 40800,
           "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
+          "unit": "metric_tonnes_payable_nickel_per_fiscal_year",
+          "year": 2024,
+          "status": "REPORTED_FISCAL_YEAR",
+          "basis": "South32 FY2024 report; payable nickel production, fiscal year ended June 2024."
         },
         "grade": {
           "value": "Site-specific measured ore/feed grade not supplied in this record",
@@ -7233,25 +7261,26 @@
         },
         "reportedMetrics": {},
         "quantitativeProvenance": {
-          "structuredSource": "https://www.south32.net/what-we-do/our-business/cerro-matoso",
+          "structuredSource": "https://www.south32.net/docs/default-source/exchange-releases/quarterly-report-june-2024-0xe265265507ed180b.pdf?sfvrsn=cc0bc7eb_0",
           "capacitySource": null,
           "promotedAt": "2026-10-11"
         },
         "completeness": {
           "reserve": "UNQUANTIFIED",
-          "production": "UNOBSERVED",
+          "production": "REPORTED_FISCAL_YEAR",
           "grade": "QUALITATIVE_ONLY",
           "recovery": "UNOBSERVED",
           "purity": "UNOBSERVED",
           "capacity": "UNOBSERVED",
-          "structuredEvidence": false,
-          "overall": "SITE_IDENTITY_ENRICHED_FIELD_LEVEL_RESEARCH_PARTIAL"
+          "structuredEvidence": true,
+          "overall": "SITE_SPECIFIC_PRIMARY_SOURCE_RESEARCH_PARTIAL",
+          "throughput": "UNOBSERVED"
         }
       },
       "verification": {
-        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_FIELD_LEVEL_REVIEW_REQUIRED",
-        "reviewedAt": "2026-10-11",
-        "sourceCount": 1,
+        "researchState": "PRIMARY_SOURCE_QUANTITATIVE_RESEARCH_UPDATED",
+        "reviewedAt": "2026-10-12",
+        "sourceCount": 3,
         "sourceAuthorities": [
           "SOUTH32"
         ],
@@ -7266,6 +7295,14 @@
           {
             "url": "https://www.south32.net/what-we-do/our-business/cerro-matoso",
             "scope": "Site identity and cited field(s); revalidate field-level claims and ownership/operating status before authoritative promotion."
+          },
+          {
+            "url": "https://www.south32.net/docs/default-source/exchange-releases/quarterly-report-june-2024-0xe265265507ed180b.pdf?sfvrsn=cc0bc7eb_0",
+            "scope": "South32 FY2024 quarterly report: 40.8 kt payable nickel production, FY basis."
+          },
+          {
+            "url": "https://www.south32.net/news-media/latest-news/sale-of-cerro-matoso-complete",
+            "scope": "South32 announced completion of the Cerro Matoso sale to a CoreX Holding subsidiary on 1 December 2025."
           }
         ]
       },
