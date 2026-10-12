@@ -76,6 +76,9 @@ assert.ok(plan.route.totalDistanceKm>0);
 assert.ok(plan.route.travelTimeDays>0);
 assert.ok(plan.route.vehiclePlan.every(x=>x.units>=1));
 assert.equal(plan.route.crossBorderRequired,false);
+assert.equal(plan.route.sourceSiteId,'SITE_BGD_COAL_01','shipment retains the originating mine identity');
+assert.equal(plan.route.sourceWarehouseId,'WH-BGD-RAW','factory transport must start from the sovereign raw warehouse');
+assert.equal(plan.route.sourceNode,'WAREHOUSE:BGD:RAW','mine-to-warehouse extraction must not be mislabeled as the warehouse-to-factory leg');
 
 const sent=N.dispatchShipment({countryId:'BGD',siteId:'SITE_BGD_COAL_01',resourceId:'coal',quantity:5000,transportMode:'rail'});
 assert.equal(sent.status,'DISPATCHED');
