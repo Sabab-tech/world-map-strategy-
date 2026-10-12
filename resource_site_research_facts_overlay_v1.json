@@ -115,13 +115,9 @@
     "migratedRecordCount": 51,
     "evidenceUrlsMerged": true,
     "date": "2026-10-12",
-    "numericProductionSites": 36,
-    "numericGradeSites": 18,
-    "numericRecoverySites": 7,
-    "numericThroughputSites": 19,
-    "numericPuritySites": 1,
-    "numericCapacitySites": 13,
+    "quantitativeCoverageAuthority": "resource_site_canonical_catalog_v1.json",
+    "coverageSummary": "Field-level numeric coverage and explicit source gaps are stored per canonical site row. Do not use a duplicate aggregate count from this migration manifest.",
     "explicitResearchGapSites": 8,
-    "notes": "Unknown values remain explicit; game simulation values are held separately."
+    "notes": "Unknown values remain explicit; gameplay-only capacity, reserve and production profiles are stored separately in SCENARIO_SIMULATION_DATA."
   }
 }
