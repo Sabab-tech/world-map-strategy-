@@ -601,11 +601,15 @@ async function executeSitePipeline(input={}){
   const mineStates=countryState.mineStates&&typeof countryState.mineStates==='object'?countryState.mineStates:{};
   const siteReference=(Array.isArray(countryState.mineSiteReferences)?countryState.mineSiteReferences:[]).find(x=>String(x?.siteReferenceKey||x?.siteId||'')===siteKey);
   const matchingKeys=linkedKeys.filter(key=>tok(mineStates[key]?.resourceId||mineStates[key]?.resourceTypeId)===rid);
-  // Some legacy occurrence keys predate per-key resourceId persistence. Fall back only when the
-  // canonical site reference itself proves the selected commodity; never borrow another site's key.
+  const stateBoundKeys=Object.entries(mineStates).filter(([key,row])=>{
+    const rowSite=String(row?.siteReferenceKey||row?.siteId||row?.sourceSiteId||'');
+    return rowSite===siteKey&&tok(row?.resourceId||row?.resourceTypeId)===rid&&key;
+  }).map(([key])=>String(key));
+  // Some legacy occurrence keys predate per-key resourceId persistence or controller materialization.
+  // Reuse a mine-state key only when its own site identity and commodity both match exactly.
   const referenceResource=tok(siteReference?.resourceId||siteReference?.resourceTypeId||siteReference?.rawSiteReference?.resourceId||siteReference?.rawSiteReference?.resourceTypeId);
-  const keys=matchingKeys.length?matchingKeys:(referenceResource===rid?linkedKeys:[]);
-  if(!keys.length)return{status:'BLOCKED',reason:linkedKeys.length?'SITE_RESOURCE_OCCURRENCE_NOT_FOUND':'SITE_HAS_NO_EXECUTABLE_OCCURRENCE',siteId:site.siteId,countryId:cid,resourceId:rid,controllerStatus:controller?.controllerStatus||null,linkedOccurrenceCount:linkedKeys.length,referenceResource:referenceResource||null};
+  const keys=matchingKeys.length?matchingKeys:(stateBoundKeys.length?stateBoundKeys:(referenceResource===rid?linkedKeys:[]));
+  if(!keys.length)return{status:'BLOCKED',reason:linkedKeys.length?'SITE_RESOURCE_OCCURRENCE_NOT_FOUND':'SITE_HAS_NO_EXECUTABLE_OCCURRENCE',siteId:site.siteId,countryId:cid,resourceId:rid,controllerStatus:controller?.controllerStatus||null,linkedOccurrenceCount:linkedKeys.length,siteStateOccurrenceCount:stateBoundKeys.length,referenceResource:referenceResource||null};
   const already=netState(cid).siteExecutions||[];
   const duplicate=already.find(x=>x.siteId===site.siteId&&Number(x.turn)===turn()&&x.status!=='FAILED');
   if(duplicate)return{status:'BLOCKED',reason:'SITE_ALREADY_EXECUTED_THIS_TURN',existingExecutionId:duplicate.executionId,siteId:site.siteId};
