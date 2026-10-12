@@ -91,8 +91,10 @@
           data=await res.json();
         }
         const rows=Array.isArray(data?.records)?data.records:[];
+        const rowIds=rows.map(row=>String(row?.siteId||'').trim()).filter(Boolean);
+        if(!rows.length||rowIds.length!==rows.length||new Set(rowIds).size!==rows.length||Number(data?.siteCount)!==rows.length)throw new Error('RESOURCE_SITE_RESERVE_REGISTRY_INVALID:'+rows.length);
         const map={};
-        for(const row of rows)if(row?.siteId)map[String(row.siteId)]=clone(row);
+        for(const row of rows)map[String(row.siteId)]=clone(row);
         simulationReserveMap=map;
         g.__OmegaResourceSiteReferenceCount=Number(data?.siteCount)||rows.length;
         g.OmegaResourceSiteReserveSimulationData=data;
@@ -119,6 +121,8 @@
           data=await res.json();
         }
         const baseRows=Array.isArray(data?.sites)?data.sites:[];
+        const baseIds=baseRows.map(row=>String(row?.siteId||'').trim()).filter(Boolean);
+        if(!baseRows.length||baseIds.length!==baseRows.length||new Set(baseIds).size!==baseRows.length||Number(data?.siteCount)!==baseRows.length)throw new Error('RESOURCE_SITE_CANONICAL_CATALOG_INVALID:'+baseRows.length);
         // Canonical catalog is the single site-identity authority. The expansion file is a migration manifest only.
         let expansionRows=[];
         try{
@@ -1368,6 +1372,13 @@ function batchFromExtraction(x,record){
         const dependencyLightContext=typeof g.fetch!=='function'&&typeof g.OmegaResourceSiteReserveSimulationData==='undefined'&&typeof g.Omega?.ResourceSiteReserveSimulationData==='undefined';
         if(!dependencyLightContext&&(reserveData.status!=='READY'||canonicalCatalogData.status!=='READY'||losslessReferenceData.status!=='READY'||losslessReferenceData.count!==199||masterResearchData.status!=='READY'))return{status:'FAILED',reason:'PER_SITE_RESOURCE_DATASET_INCOMPLETE',detail:{reserve:reserveData,catalog:canonicalCatalogData,losslessReferences:losslessReferenceData,master:masterResearchData}};
         if(!dependencyLightContext&&(reserveData.count!==canonicalCatalogData.count||masterResearchData.count!==canonicalCatalogData.count))return{status:'FAILED',reason:'PER_SITE_RESOURCE_DATASET_COUNT_MISMATCH',detail:{reserveCount:reserveData.count,catalogCount:canonicalCatalogData.count,masterCount:masterResearchData.count}};
+        if(!dependencyLightContext){
+          const canonicalIds=Object.keys(canonicalSiteCatalogMap||{}).sort();
+          const reserveIds=Object.keys(simulationReserveMap||{}).sort();
+          const masterIds=Object.keys(masterResearchMap||{}).sort();
+          const sameIds=(left,right)=>left.length===right.length&&left.every((value,index)=>value===right[index]);
+          if(!sameIds(canonicalIds,reserveIds)||!sameIds(canonicalIds,masterIds))return{status:'FAILED',reason:'PER_SITE_RESOURCE_DATASET_ID_MISMATCH',detail:{catalogCount:canonicalIds.length,reserveCount:reserveIds.length,masterCount:masterIds.length,catalogOnly:canonicalIds.filter(id=>!reserveIds.includes(id)||!masterIds.includes(id)).slice(0,20),reserveOnly:reserveIds.filter(id=>!canonicalIds.includes(id)).slice(0,20),masterOnly:masterIds.filter(id=>!canonicalIds.includes(id)).slice(0,20)}};
+        }
         if(!engine()?.isReady)return{status:'FAILED',reason:'RESOURCE_MINISTRY_ENGINE_NOT_READY'};
         // Build the immutable country index once before any per-country extraction work.
         countryListCache=countries();
