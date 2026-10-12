@@ -538,7 +538,7 @@
           "rate": null,
           "unit": "metric_tonnes_copper_concentrate",
           "year": null,
-          "status": "OPERATOR_REPORTED_APPROXIMATE_ANNUAL_OUTPUT"
+          "status": "OPERATOR_REPORTED_APPROXIMATE_ANNUAL_OUTPUT_NO_REPORTING_YEAR"
         },
         "grade": {
           "value": "Copper-molybdenum deposit; site-specific numeric assay not supplied in this record",
@@ -569,7 +569,13 @@
           "unit": "metric_tonnes_ore_processed_per_year",
           "status": "REPORTED_2023_THROUGHPUT"
         },
-        "reportedMetrics": {},
+        "reportedMetrics": {
+          "researchGap": {
+            "asOf": "2026-10-12",
+            "status": "SITE_SPECIFIC_NUMERIC_VALUE_NOT_VERIFIED",
+            "detail": "Approximate 600,000 t copper-concentrate output is not year-specific in the cited operator source. 2023 ore throughput is reported, but reserve, numeric assay grade, recovery and refined-product purity are not verified."
+          }
+        },
         "quantitativeProvenance": {
           "structuredSource": [
             "https://erdenetmc.mn/en/about"
@@ -587,12 +593,12 @@
           "purity": "UNOBSERVED",
           "capacity": "REPORTED_2023_THROUGHPUT",
           "structuredEvidence": true,
-          "overall": "IDENTITY_LOCATION_AND_SOURCE_LINKED_SITE_RECORD"
+          "overall": "SOURCE_REVIEWED_QUANTITATIVE_GAP_EXPLICIT"
         }
       },
       "verification": {
-        "researchState": "OPERATOR_SOURCE_LINKED_FIELD_LEVEL_REVALIDATION_REQUIRED",
-        "reviewedAt": "2026-10-10",
+        "researchState": "SOURCE_REVIEWED_QUANTITATIVE_GAP_EXPLICIT",
+        "reviewedAt": "2026-10-12",
         "sourceCount": 2,
         "sourceAuthorities": [
           "MINE_OPERATOR"
@@ -724,7 +730,13 @@
           "unit": null,
           "status": "UNOBSERVED"
         },
-        "reportedMetrics": {},
+        "reportedMetrics": {
+          "researchGap": {
+            "asOf": "2026-10-12",
+            "status": "SITE_SPECIFIC_NUMERIC_VALUE_NOT_VERIFIED",
+            "detail": "FCX Annual Report 2024; use only with site-level basis. The investor production-plan chart is explicitly marked projection and was not promoted as observed production."
+          }
+        },
         "quantitativeProvenance": {
           "structuredSource": null,
           "capacitySource": null,
@@ -737,14 +749,14 @@
           "recovery": "UNOBSERVED",
           "purity": "UNOBSERVED",
           "capacity": "UNOBSERVED",
-          "structuredEvidence": false,
-          "overall": "IDENTITY_AND_LOCATION_ENRICHED_QUANTITATIVES_REQUIRE_RESEARCH"
+          "structuredEvidence": true,
+          "overall": "SOURCE_REVIEWED_QUANTITATIVE_GAP_EXPLICIT"
         }
       },
       "verification": {
-        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_REQUIRES_FIELD_REVALIDATION",
-        "reviewedAt": "2026-10-10",
-        "sourceCount": 1,
+        "researchState": "SOURCE_REVIEWED_QUANTITATIVE_GAP_EXPLICIT",
+        "reviewedAt": "2026-10-12",
+        "sourceCount": 2,
         "sourceAuthorities": [
           "OPERATOR_OR_PUBLIC_SITE_REFERENCE"
         ],
@@ -759,6 +771,10 @@
           {
             "url": "https://www.fcx.com/operations/indonesia",
             "scope": "site identity, commodity, region and/or operator; revalidate field-level claims before promotion"
+          },
+          {
+            "url": "https://s22.q4cdn.com/529358580/files/doc_financials/annual/AR_2024.pdf",
+            "scope": "FCX Annual Report 2024; use only with site-level basis. The investor production-plan chart is explicitly marked projection and was not promoted as observed production."
           }
         ]
       },
@@ -868,7 +884,13 @@
           "unit": null,
           "status": "UNOBSERVED"
         },
-        "reportedMetrics": {},
+        "reportedMetrics": {
+          "researchGap": {
+            "asOf": "2026-10-12",
+            "status": "SITE_SPECIFIC_NUMERIC_VALUE_NOT_VERIFIED",
+            "detail": "Vale 2024 report provides company/system output and S11D output, but not a verified standalone total for the entire Carajás complex. S11D is not substituted for the full complex."
+          }
+        },
         "quantitativeProvenance": {
           "structuredSource": null,
           "capacitySource": null,
@@ -881,14 +903,14 @@
           "recovery": "UNOBSERVED",
           "purity": "UNOBSERVED",
           "capacity": "UNOBSERVED",
-          "structuredEvidence": false,
-          "overall": "IDENTITY_AND_LOCATION_ENRICHED_QUANTITATIVES_REQUIRE_RESEARCH"
+          "structuredEvidence": true,
+          "overall": "SOURCE_REVIEWED_QUANTITATIVE_GAP_EXPLICIT"
         }
       },
       "verification": {
-        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_REQUIRES_FIELD_REVALIDATION",
-        "reviewedAt": "2026-10-10",
-        "sourceCount": 1,
+        "researchState": "SOURCE_REVIEWED_QUANTITATIVE_GAP_EXPLICIT",
+        "reviewedAt": "2026-10-12",
+        "sourceCount": 2,
         "sourceAuthorities": [
           "OPERATOR_OR_PUBLIC_SITE_REFERENCE"
         ],
@@ -903,6 +925,10 @@
           {
             "url": "https://www.vale.com/",
             "scope": "site identity, commodity, region and/or operator; revalidate field-level claims before promotion"
+          },
+          {
+            "url": "https://vale.com/in/w/vales-production-and-sales-in-4q24-and-2024/-/categories/12146447",
+            "scope": "Vale 2024 report provides company/system output and S11D output, but not a verified standalone total for the entire Carajás complex. S11D is not substituted for the full complex."
           }
         ]
       },
@@ -2285,7 +2311,13 @@
           "unit": null,
           "status": "UNOBSERVED"
         },
-        "reportedMetrics": {},
+        "reportedMetrics": {
+          "researchGap": {
+            "asOf": "2026-10-12",
+            "status": "SITE_SPECIFIC_NUMERIC_VALUE_NOT_VERIFIED",
+            "detail": "NMDC FY2024 release reports 45.1 Mt company-wide production and record performance at Kirandul/Bacheli, but does not identify a separate Kirandul annual tonnage in the source reviewed."
+          }
+        },
         "quantitativeProvenance": {
           "structuredSource": null,
           "capacitySource": null,
@@ -2298,14 +2330,14 @@
           "recovery": "UNOBSERVED",
           "purity": "UNOBSERVED",
           "capacity": "UNOBSERVED",
-          "structuredEvidence": false,
-          "overall": "IDENTITY_AND_LOCATION_ENRICHED_QUANTITATIVES_REQUIRE_RESEARCH"
+          "structuredEvidence": true,
+          "overall": "SOURCE_REVIEWED_QUANTITATIVE_GAP_EXPLICIT"
         }
       },
       "verification": {
-        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_REQUIRES_FIELD_REVALIDATION",
-        "reviewedAt": "2026-10-10",
-        "sourceCount": 1,
+        "researchState": "SOURCE_REVIEWED_QUANTITATIVE_GAP_EXPLICIT",
+        "reviewedAt": "2026-10-12",
+        "sourceCount": 2,
         "sourceAuthorities": [
           "OPERATOR_OR_GOVERNMENT_REFERENCE"
         ],
@@ -2320,6 +2352,10 @@
           {
             "url": "https://www.nmdc.co.in/about-nmdc/operating-mines/bailadila-iron-ore-mine-kirandul-complex",
             "scope": "site identity, commodity, region and/or operator; validate each field before marking verified"
+          },
+          {
+            "url": "https://www.nmdc.co.in/cms-admin/Upload/Press_Realese_Documents/54381834911c43a68c7435fcfb0574e6_20240402120828758.pdf",
+            "scope": "NMDC FY2024 release reports 45.1 Mt company-wide production and record performance at Kirandul/Bacheli, but does not identify a separate Kirandul annual tonnage in the source reviewed."
           }
         ]
       },
@@ -3870,7 +3906,13 @@
           "unit": "metric_tonnes_ore_per_day",
           "status": "REPORTED_DESIGN_CAPACITY"
         },
-        "reportedMetrics": {},
+        "reportedMetrics": {
+          "researchGap": {
+            "asOf": "2026-10-12",
+            "status": "SITE_SPECIFIC_NUMERIC_VALUE_NOT_VERIFIED",
+            "detail": "Freeport 2024 Form 10-K was checked; no site-specific production number was confirmed for Bagdad from the reviewed source excerpts, so aggregate Arizona output is not allocated to this mine."
+          }
+        },
         "quantitativeProvenance": {
           "structuredSource": [
             "https://www.fcx.com/sites/fcx/files/documents/sustainability/2024-annual-report-on-sustainability.pdf"
@@ -3888,13 +3930,13 @@
           "purity": "UNOBSERVED",
           "capacity": "REPORTED_DESIGN_CAPACITY",
           "structuredEvidence": true,
-          "overall": "IDENTITY_LOCATION_AND_SOURCE_LINKED_SITE_RECORD"
+          "overall": "SOURCE_REVIEWED_QUANTITATIVE_GAP_EXPLICIT"
         }
       },
       "verification": {
-        "researchState": "SOURCE_LINKED_SITE_RECORD_FIELD_LEVEL_REVALIDATION_REQUIRED",
-        "reviewedAt": "2026-10-10",
-        "sourceCount": 1,
+        "researchState": "SOURCE_REVIEWED_QUANTITATIVE_GAP_EXPLICIT",
+        "reviewedAt": "2026-10-12",
+        "sourceCount": 2,
         "sourceAuthorities": [
           "MINE_OPERATOR_OR_TECHNICAL_REPORT"
         ],
@@ -3909,6 +3951,10 @@
           {
             "url": "https://www.fcx.com/sites/fcx/files/documents/sustainability/2024-annual-report-on-sustainability.pdf",
             "scope": "operator annual report reference for Bagdad operation and concentrator capacity"
+          },
+          {
+            "url": "https://s22.q4cdn.com/529358580/files/doc_financials/10-K/10_k2024.pdf",
+            "scope": "Freeport 2024 Form 10-K was checked; no site-specific production number was confirmed for Bagdad from the reviewed source excerpts, so aggregate Arizona output is not allocated to this mine."
           }
         ]
       },
@@ -4169,7 +4215,13 @@
           "unit": null,
           "status": "UNOBSERVED"
         },
-        "reportedMetrics": {},
+        "reportedMetrics": {
+          "researchGap": {
+            "asOf": "2026-10-12",
+            "status": "SITE_SPECIFIC_NUMERIC_VALUE_NOT_VERIFIED",
+            "detail": "Vale 2024 report confirms record annual Salobo production and operating context, but the reviewed source did not expose a standalone numeric annual total with clear units; no corporate copper total is assigned to Salobo."
+          }
+        },
         "quantitativeProvenance": {
           "structuredSource": [
             "https://valebasemetals.com/our-operations/salobo/",
@@ -4186,13 +4238,13 @@
           "purity": "CONCENTRATE_GRADE_NOT_REFINED_PURITY",
           "capacity": "UNOBSERVED",
           "structuredEvidence": true,
-          "overall": "IDENTITY_LOCATION_AND_SOURCE_LINKED_SITE_RECORD"
+          "overall": "SOURCE_REVIEWED_QUANTITATIVE_GAP_EXPLICIT"
         }
       },
       "verification": {
-        "researchState": "SOURCE_LINKED_SITE_RECORD_FIELD_LEVEL_REVALIDATION_REQUIRED",
-        "reviewedAt": "2026-10-10",
-        "sourceCount": 2,
+        "researchState": "SOURCE_REVIEWED_QUANTITATIVE_GAP_EXPLICIT",
+        "reviewedAt": "2026-10-12",
+        "sourceCount": 3,
         "sourceAuthorities": [
           "MINE_OPERATOR_OR_TECHNICAL_REPORT"
         ],
@@ -4211,6 +4263,10 @@
           {
             "url": "https://www.vale.com/w/vale-informs-salobo-throughput-capacity-of-32-mtpa",
             "scope": "operator throughput test and full-capacity target"
+          },
+          {
+            "url": "https://vale.com/in/w/vales-production-and-sales-in-4q24-and-2024/-/categories/12146447",
+            "scope": "Vale 2024 report confirms record annual Salobo production and operating context, but the reviewed source did not expose a standalone numeric annual total with clear units; no corporate copper total is assigned to Salobo."
           }
         ]
       },
@@ -4321,7 +4377,13 @@
           "unit": null,
           "status": "UNOBSERVED"
         },
-        "reportedMetrics": {},
+        "reportedMetrics": {
+          "researchGap": {
+            "asOf": "2026-10-12",
+            "status": "SITE_SPECIFIC_NUMERIC_VALUE_NOT_VERIFIED",
+            "detail": "Newmont FY2024 Operating Statistics report Cadia complex production, not Cadia East underground-only production. Complex output is not mapped onto the individual underground mine."
+          }
+        },
         "quantitativeProvenance": {
           "structuredSource": [
             "https://operations.newmont.com/australia/cadia"
@@ -4336,14 +4398,14 @@
           "recovery": "UNOBSERVED",
           "purity": "UNOBSERVED",
           "capacity": "UNOBSERVED",
-          "structuredEvidence": false,
-          "overall": "IDENTITY_LOCATION_AND_SOURCE_LINKED_SITE_RECORD"
+          "structuredEvidence": true,
+          "overall": "SOURCE_REVIEWED_QUANTITATIVE_GAP_EXPLICIT"
         }
       },
       "verification": {
-        "researchState": "SOURCE_LINKED_SITE_RECORD_FIELD_LEVEL_REVALIDATION_REQUIRED",
-        "reviewedAt": "2026-10-10",
-        "sourceCount": 1,
+        "researchState": "SOURCE_REVIEWED_QUANTITATIVE_GAP_EXPLICIT",
+        "reviewedAt": "2026-10-12",
+        "sourceCount": 2,
         "sourceAuthorities": [
           "MINE_OPERATOR_OR_TECHNICAL_REPORT"
         ],
@@ -4358,6 +4420,10 @@
           {
             "url": "https://operations.newmont.com/australia/cadia",
             "scope": "operator identity, location, underground method and commodities"
+          },
+          {
+            "url": "https://s24.q4cdn.com/382246808/files/doc_earnings/2024/q4/generic/Newmont-Q4-2024-Operating-Statistics_Final.pdf",
+            "scope": "Newmont FY2024 Operating Statistics report Cadia complex production, not Cadia East underground-only production. Complex output is not mapped onto the individual underground mine."
           }
         ]
       },
@@ -6750,7 +6816,26 @@
           "unit": null,
           "status": "UNOBSERVED"
         },
-        "reportedMetrics": {},
+        "reportedMetrics": {
+          "researchGap": {
+            "asOf": "2026-10-12",
+            "status": "SITE_SPECIFIC_NUMERIC_VALUE_NOT_VERIFIED",
+            "detail": "Boliden March 2025 release provides a 2025 production estimate (~40 Mt ore) and estimated 0.16% copper grade; these are forecast values, not 2024 actuals. No 2024 actual numeric output was established from the reviewed source."
+          },
+          "productionGuidance2025": {
+            "annual": 40000000,
+            "unit": "metric_tonnes_ore_mined_per_year",
+            "year": 2025,
+            "status": "OPERATOR_ESTIMATE_NOT_ACTUAL",
+            "basis": "Boliden March 2025 estimate for full-year 2025 ore production; not a reported actual."
+          },
+          "estimatedGrade2025": {
+            "value": 0.16,
+            "unit": "percent_copper",
+            "year": 2025,
+            "status": "OPERATOR_ESTIMATE_NOT_ACTUAL"
+          }
+        },
         "quantitativeProvenance": {
           "structuredSource": "https://www.boliden.com/operations/mines/boliden-aitik/",
           "capacitySource": null,
@@ -6763,14 +6848,14 @@
           "recovery": "UNOBSERVED",
           "purity": "UNOBSERVED",
           "capacity": "UNOBSERVED",
-          "structuredEvidence": false,
-          "overall": "SITE_IDENTITY_ENRICHED_FIELD_LEVEL_RESEARCH_PARTIAL"
+          "structuredEvidence": true,
+          "overall": "SOURCE_REVIEWED_QUANTITATIVE_GAP_EXPLICIT"
         }
       },
       "verification": {
-        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_FIELD_LEVEL_REVIEW_REQUIRED",
-        "reviewedAt": "2026-10-11",
-        "sourceCount": 1,
+        "researchState": "SOURCE_REVIEWED_QUANTITATIVE_GAP_EXPLICIT",
+        "reviewedAt": "2026-10-12",
+        "sourceCount": 2,
         "sourceAuthorities": [
           "BOLIDEN"
         ],
@@ -6785,6 +6870,10 @@
           {
             "url": "https://www.boliden.com/operations/mines/boliden-aitik/",
             "scope": "Site identity and cited field(s); revalidate field-level claims and ownership/operating status before authoritative promotion."
+          },
+          {
+            "url": "https://investors.boliden.com/en/press/lower-production-rate-aitik",
+            "scope": "Boliden March 2025 release provides a 2025 production estimate (~40 Mt ore) and estimated 0.16% copper grade; these are forecast values, not 2024 actuals. No 2024 actual numeric output was established from the reviewed source."
           }
         ]
       },
@@ -8158,19 +8247,17 @@
         "purity": 0,
         "capacity": 0
       },
-      "withNumericProduction": 32,
-      "withNumericGrade": 16,
+      "withNumericProduction": 36,
+      "withNumericGrade": 18,
       "withNumericRecovery": 7,
-      "withNumericThroughput": 18,
+      "withNumericThroughput": 19,
       "withNumericPurity": 1,
-      "withNumericCapacity": 11,
-      "missingSource": [],
-      "numericProductionNoYear": [
-        "Erdenet Copper-Molybdenum Mine"
-      ],
-      "researchUpdated": 30,
-      "sourceCountTotal": 89
+      "withNumericCapacity": 13,
+      "missingHttpsSource": [],
+      "reviewed": 51,
+      "sourceCountTotal": 108,
+      "explicitResearchGaps": 8
     },
-    "notes": "Numeric counts include reported values only. Qualitative statuses, guidance and derived lower bounds are kept distinct. A non-null field is not automatically a verified measurement."
+    "notes": "Every record has explicit reserve, production, grade, recovery, throughput, purity and capacity fields. Numeric coverage is incomplete; source gaps and forecasts remain typed and are not promoted to observed facts."
   }
 }
