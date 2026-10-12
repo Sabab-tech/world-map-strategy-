@@ -247,7 +247,7 @@ const realPipelineResourceId=String(realPipelineSite?.real?.resourceId||
   realPipelineSite?.sourceSiteRecord?.resourceId||
   realPipelineSite?.sourceSiteRecord?.resourceTypeId||
   realPipelineSite?.identity?.resourceTypeId||'').trim().toLowerCase();
-assert.equal(realPipelineResourceId,'coal','selected site's own commodity identity must be retained');
+assert.equal(realPipelineResourceId,'coal',"selected site commodity identity must be retained");
 
 globalThis.Game.state.transport=globalThis.Game.state.transport||{};
 globalThis.Game.state.transport.BGD=globalThis.Game.state.transport.BGD||{
