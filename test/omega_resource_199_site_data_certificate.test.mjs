@@ -133,7 +133,7 @@ assert.equal(ids.size, 199);
 assert.equal(packageCount, 199);
 
 const scenarioSource = readFileSync('omega_resource_scenario_engineering_data_v1.js', 'utf8');
-assert(scenarioSource.includes('"recordCount": 250'));
+assert(scenarioSource.includes('"recordCount":250'));
 assert.equal((scenarioSource.match(/"siteId":/g) || []).length, 250);
 
 const catalog = load('resource_site_canonical_catalog_v1.json');
