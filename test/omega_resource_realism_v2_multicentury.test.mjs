@@ -2,8 +2,8 @@ iconst restorationManifest=JSON.parse(fs.readFileSync(new URL('../resource_site_
 const expectedSiteCount=250+restorationManifest.records.length;
 const expectedCommercialSiteCount=246+restorationManifest.records.length;
 mport assert from 'node:assert/strict';
-import fs from 'node:fs';
 import { readFileSync } from 'node:fs';
+import fs from 'node:fs';
 const load=name=>JSON.parse(readFileSync(name,'utf8'));
 const catalog=load('resource_site_canonical_catalog_v1.json');
 const data=load('resource_site_reserve_simulation_v1.json');
