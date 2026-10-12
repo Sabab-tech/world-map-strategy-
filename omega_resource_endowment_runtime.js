@@ -119,8 +119,7 @@
           data=await res.json();
         }
         const baseRows=Array.isArray(data?.sites)?data.sites:[];
-        // Additive site expansion is merged in memory only. The canonical 199-site
-        // source file and its existing certificate remain unchanged.
+        // Canonical catalog is the single site-identity authority. The expansion file is a migration manifest only.
         let expansionRows=[];
         try{
           let expansion=g.OmegaResourceSiteCountryExpansionData||g.Omega?.ResourceSiteCountryExpansionData||null;
@@ -240,7 +239,7 @@
         const rows=Array.isArray(data?.sites)?data.sites:[];
         const map={};
         for(const row of rows)if(row?.siteId)map[String(row.siteId)]=clone(row);
-        if(rows.length!==199)throw new Error('RESOURCE_SITE_MASTER_REGISTRY_INCOMPLETE:'+rows.length);
+        if(rows.length!==250)throw new Error('RESOURCE_SITE_MASTER_REGISTRY_INCOMPLETE:'+rows.length);
         masterResearchMap=map;
         g.OmegaResourceSiteMasterResearchData=data;
         g.Omega=g.Omega||{};
