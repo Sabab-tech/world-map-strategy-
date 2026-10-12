@@ -4579,18 +4579,18 @@
       "commercialExtraction": true,
       "reserve": {
         "quantity": 4355400000,
-        "unit": "TONNES",
+        "unit": "TROY_OUNCES",
         "status": "SIMULATED"
       },
       "provenance": {
         "authority": "SCENARIO_SIMULATION_DATA",
         "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V2",
         "seedKey": "SITE_MEX_fresnillo_silver_mine|MEX|silver",
-        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate.",
+        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate. Silver output and simulated reserve are expressed in troy ounces, not tonnes.",
         "realWorldDataRequired": false,
         "targetGameplayLifeYears": 427,
         "annualOutputBasis": 10200000,
-        "annualOutputUnit": "TONNES",
+        "annualOutputUnit": "TROY_OUNCES",
         "annualOutputSource": "reported annual output or lower bound used only as scenario seed; simulation remains separate"
       }
     },
@@ -4832,18 +4832,18 @@
       "commercialExtraction": true,
       "reserve": {
         "quantity": 5009984000,
-        "unit": "TONNES",
+        "unit": "TROY_OUNCES",
         "status": "SIMULATED"
       },
       "provenance": {
         "authority": "SCENARIO_SIMULATION_DATA",
         "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V2",
         "seedKey": "SITE_AUS_cannington_silver_lead_mine|AUS|silver",
-        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate.",
+        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate. Silver output and simulated reserve are expressed in troy ounces, not tonnes.",
         "realWorldDataRequired": false,
         "targetGameplayLifeYears": 448,
         "annualOutputBasis": 11183000,
-        "annualOutputUnit": "TONNES",
+        "annualOutputUnit": "TROY_OUNCES",
         "annualOutputSource": "reported annual output or lower bound used only as scenario seed; simulation remains separate"
       }
     },
