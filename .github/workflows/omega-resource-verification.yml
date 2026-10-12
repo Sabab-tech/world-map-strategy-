@@ -110,6 +110,7 @@ jobs:
           run_gate resourceIndustrialNetwork 30 node test/omega_resource_industrial_network_v1.test.mjs
           run_gate resourceGameplayBinding 15 node test/omega_resource_gameplay_binding.test.mjs
           run_gate legacyMarkerRecovery 15 node test/omega_resource_legacy_marker_recovery.test.mjs
+          run_gate legacyCanonicalReconciliation 15 node test/omega_resource_legacy_canonical_reconciliation.test.mjs
 
           export OMEGA_GATE_SYNTAX="${GATES[syntax]}"
           export OMEGA_GATE_RESOURCEENDOWMENT="${GATES[resourceEndowment]}"
@@ -131,6 +132,7 @@ jobs:
           export OMEGA_GATE_RESOURCEINDUSTRIALNETWORK="${GATES[resourceIndustrialNetwork]}"
           export OMEGA_GATE_RESOURCEGAMEPLAYBINDING="${GATES[resourceGameplayBinding]}"
           export OMEGA_GATE_LEGACYMARKERRECOVERY="${GATES[legacyMarkerRecovery]}"
+          export OMEGA_GATE_LEGACYCANONICALRECONCILIATION="${GATES[legacyCanonicalReconciliation]}"
 
           node --input-type=module <<'NODE'
           import fs from 'node:fs';
@@ -154,7 +156,8 @@ jobs:
             resourceSystemHardening: process.env.OMEGA_GATE_RESOURCESYSTEMHARDENING,
             resourceIndustrialNetwork: process.env.OMEGA_GATE_RESOURCEINDUSTRIALNETWORK,
             resourceGameplayBinding: process.env.OMEGA_GATE_RESOURCEGAMEPLAYBINDING,
-            legacyMarkerRecovery: process.env.OMEGA_GATE_LEGACYMARKERRECOVERY
+            legacyMarkerRecovery: process.env.OMEGA_GATE_LEGACYMARKERRECOVERY,
+            legacyCanonicalReconciliation: process.env.OMEGA_GATE_LEGACYCANONICALRECONCILIATION
           };
           const status = Object.values(gates).every((value) => value === 'PASS') ? 'VERIFIED' : 'INCOMPLETE';
           const certificate = {
@@ -185,6 +188,13 @@ jobs:
           console.log(JSON.stringify(certificate, null, 2));
           if (status !== 'VERIFIED') process.exitCode = 2;
           NODE
+
+      - name: Upload historical marker reconciliation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: omega-resource-legacy-canonical-reconciliation
+          path: omega_resource_legacy_canonical_reconciliation_report.json
 
       - name: Upload verified certificate
         if: always()
