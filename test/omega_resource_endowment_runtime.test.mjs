@@ -242,7 +242,7 @@ assert.equal((await industrial.loadCatalog()).status,'READY');
 const realPipelineSiteId='SITE_KWT_greater_burgan_oilfield';
 const masterRows=globalThis.OmegaResourceSiteMasterResearchData?.sites||[];
 const realPipelineSite=masterRows.find(s=>String(s?.siteId||'')===realPipelineSiteId);
-assert.ok(realPipelineSite,'real Barapukuria record must exist in the authoritative 250-site master registry');
+assert.ok(realPipelineSite,'real Greater Burgan record must exist in the authoritative 250-site master registry');
 const realPipelineResourceId=String(realPipelineSite?.real?.resourceId||
   realPipelineSite?.sourceSiteRecord?.resourceId||
   realPipelineSite?.sourceSiteRecord?.resourceTypeId||
