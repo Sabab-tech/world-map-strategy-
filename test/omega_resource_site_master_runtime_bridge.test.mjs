@@ -23,4 +23,4 @@ for(const site of master.sites){
   assert.equal(site.simulation.capacityModel,"SYNTHETIC_GAMEPLAY_CAPACITY_V1");
 }
 
-console.log("PASS: ${expectedSiteCount}-site master registry + runtime promotion guard");
+console.log(`PASS: ${expectedSiteCount}-site master registry + runtime promotion guard`);
