@@ -76,7 +76,7 @@ const gevraRef=(indState.mineSiteReferences||[]).find(x=>x.siteReferenceKey==='S
 const kwtDiag=runtime.hydrateCountry('KWT');const kwtState=runtime.countryResourceState('KWT')||{};const kwtRef=(kwtState.mineSiteReferences||[]).find(x=>x.siteReferenceKey==='SITE_KWT_greater_burgan_oilfield');console.log('ENDOWMENT_KWT_MODEL '+JSON.stringify({hydrate:kwtDiag.status,ref:kwtRef&&{siteReferenceKey:kwtRef.siteReferenceKey,resourceId:kwtRef.resourceId,commercialExtraction:kwtRef.commercialExtraction,simulationReserveQuantity:kwtRef.simulationReserveQuantity},model:globalThis.Omega?.ResourceRealism?.siteModel?.(kwtRef,engine.countryProfiles?.KWT,'KWT'),controller:Object.values(kwtState.mineSiteControllers||{}).find(x=>x.siteReferenceKey==='SITE_KWT_greater_burgan_oilfield')}));
 assert.equal(hydrated.status,'APPLIED', JSON.stringify(hydrated));
 
-const before=runtime.countryResourceState('BGD');
+const before=runtime.countryResourceState('KWT');
 assert(before);
 assert(Array.isArray(before.mines));
 assert(before.mines.length>=4);
@@ -239,7 +239,7 @@ const industrial=globalThis.Omega?.ResourceIndustrialNetwork||globalThis.OmegaRe
 assert.ok(industrial?.executeSitePipeline,'industrial runtime must export the individual site pipeline');
 assert.equal((await industrial.loadCatalog()).status,'READY');
 
-const realPipelineSiteId='SITE_BGD_barapukuria_coal_mine';
+const realPipelineSiteId='SITE_KWT_greater_burgan_oilfield';
 const masterRows=globalThis.OmegaResourceSiteMasterResearchData?.sites||[];
 const realPipelineSite=masterRows.find(s=>String(s?.siteId||'')===realPipelineSiteId);
 assert.ok(realPipelineSite,'real Barapukuria record must exist in the authoritative 250-site master registry');
@@ -247,10 +247,10 @@ const realPipelineResourceId=String(realPipelineSite?.real?.resourceId||
   realPipelineSite?.sourceSiteRecord?.resourceId||
   realPipelineSite?.sourceSiteRecord?.resourceTypeId||
   realPipelineSite?.identity?.resourceTypeId||'').trim().toLowerCase();
-assert.equal(realPipelineResourceId,'coal',"selected site commodity identity must be retained");
+assert.equal(realPipelineResourceId,'crude_oil',"selected site commodity identity must be retained");
 
 globalThis.Game.state.transport=globalThis.Game.state.transport||{};
-globalThis.Game.state.transport.BGD=globalThis.Game.state.transport.BGD||{
+globalThis.Game.state.transport.KWT=globalThis.Game.state.transport.KWT||{
   infrastructure:{
     roads:{capacityPerDay:50000,quality:0.9},
     rail:{capacityPerDay:120000,quality:0.8},
@@ -261,7 +261,7 @@ globalThis.Game.state.transport.BGD=globalThis.Game.state.transport.BGD||{
 };
 globalThis.Game.state.simulation.turn=2;
 const realPipeline=await industrial.executeSitePipeline({
-  countryId:'BGD',siteId:realPipelineSiteId,resourceId:realPipelineResourceId,
+  countryId:'KWT',siteId:realPipelineSiteId,resourceId:realPipelineResourceId,
   autoCommissionFactory:true,transportMode:'rail'
 });
 assert.equal(realPipeline.status,'IN_TRANSIT',
@@ -285,7 +285,7 @@ assert.ok(beforeWarehouse>=deliveredQuantity,'real extraction batch must be in t
 assert.ok(beforeReserved>=deliveredQuantity,'shipment quantity must be reserved in the raw warehouse before arrival');
 
 globalThis.Game.state.simulation.turn=Number(realPipeline.shipment.etaTurn);
-const realDelivery=industrial.advanceShipments('BGD');
+const realDelivery=industrial.advanceShipments('KWT');
 assert.equal(realDelivery.delivered,1,'real site shipment must arrive through the turn-advance runtime');
 const delivered=realDelivery.shipments.find(x=>x.shipmentId===realPipeline.shipmentId);
 assert.ok(delivered,'arrival record must match the committed shipment');
