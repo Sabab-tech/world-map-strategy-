@@ -584,7 +584,8 @@ function ensureSimulationFactory(cid,site,resourceId,quantity){
   if(existing.length)return{status:'EXISTING',factory:existing[0].asset};
   const recipe=processRules()[tok(resourceId)];
   if(!recipe||!Object.keys(recipe.inputs||{}).length||!Object.keys(recipe.outputs||{}).length)return{status:'BLOCKED',reason:'NO_FACTORY_RECIPE'};
-  const assets=factoryAssets(cid),factoryId='FAC-SIM:'+cid+':'+String(site.siteId).replace(/[^A-Za-z0-9_-]/g,'_');
+  const economy=econState(cid);if(!Array.isArray(economy.productionAssets))economy.productionAssets=[];
+  const assets=economy.productionAssets,factoryId='FAC-SIM:'+cid+':'+String(site.siteId).replace(/[^A-Za-z0-9_-]/g,'_');
   let factory=assets.find(a=>String(a?.id||a?.assetId||a?.projectId)===factoryId);
   if(!factory){
     factory={id:factoryId,countryId:cid,siteId:null,sourceSiteId:site.siteId,stage:'PROCESSING',factoryType:recipe.factoryType||'RESOURCE_PROCESSING_PLANT',
