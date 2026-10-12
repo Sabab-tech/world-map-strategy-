@@ -44,7 +44,7 @@ for (const record of profileMarkers) {
   assert.equal(record.eligibleForCanonicalMinePipeline, false);
   assert.equal(record.authority, 'COUNTRY_PROFILE_RESOURCE_CONTEXT_ONLY');
   assert.equal(record.coordinates?.coordinateAuthority, 'SYNTHETIC_OFFSET_FROM_COUNTRY_PROFILE');
-  assert.ok(record.source?.engineCommit && record.source?.resourceDataBlob);
+  assert.ok(record.source?.engineCommit && record.source?.sourceDataBlob);
   assert.ok(Number.isFinite(record.coordinates?.lat) && Number.isFinite(record.coordinates?.lng));
 }
 const countryCounts = profileMarkers.reduce((out, row) => {
