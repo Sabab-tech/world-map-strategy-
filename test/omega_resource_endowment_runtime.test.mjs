@@ -300,6 +300,8 @@ assert.ok(realPipeline.batchId,'real extraction must return its own batch ID');
 assert.ok(realPipeline.occurrenceKey,'pipeline must retain the controller-linked occurrence key');
 assert.ok(realPipeline.shipmentId,'pipeline must persist a shipment ID');
 assert.ok(realPipeline.factoryId,'shipment must target a concrete country-scoped factory asset');
+assert.ok((globalThis.Game.state.economy?.KWT?.productionAssets||[]).some(x=>String(x?.id||x?.assetId||x?.projectId)===realPipeline.factoryId),
+  'auto-commissioned processing factory must persist in the Kuwait economy state');
 
 const preDeliveryState=runtime.countryResourceState('KWT');
 const beforeWarehouse=Number(preDeliveryState?.warehouse?.availableByResource?.[realPipelineResourceId]||0);
