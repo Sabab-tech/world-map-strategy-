@@ -14,7 +14,7 @@ assert.equal(master.sites.length, 250);
 assert.equal(canonical.sites.length, 250);
 
 const norm = value => String(value ?? '').toLowerCase().normalize('NFKD')
-  .replace(/[\\u0300-\\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+  .replace(/\p{M}/gu, '').replace(/[^a-z0-9]+/g, ' ').trim();
 
 function firstText(...values) {
   return values.find(value => typeof value === 'string' && value.trim()) || '';
@@ -166,7 +166,7 @@ const report = {
     noHistoricalCandidateWasAutomaticallyPromoted: true
   }
 };
-fs.writeFileSync(new URL('../omega_resource_legacy_canonical_reconciliation_report.json', import.meta.url), JSON.stringify(report, null, 2) + '\\n');
+fs.writeFileSync(new URL('../omega_resource_legacy_canonical_reconciliation_report.json', import.meta.url), JSON.stringify(report, null, 2) + String.fromCharCode(10));
 console.log(JSON.stringify({
   certificate: report.certificate,
   status: report.status,
