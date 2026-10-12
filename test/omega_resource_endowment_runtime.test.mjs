@@ -76,7 +76,7 @@ const gevraRef=(indState.mineSiteReferences||[]).find(x=>x.siteReferenceKey==='S
 const kwtDiag=runtime.hydrateCountry('KWT');const kwtState=runtime.countryResourceState('KWT')||{};const kwtRef=(kwtState.mineSiteReferences||[]).find(x=>x.siteReferenceKey==='SITE_KWT_greater_burgan_oilfield');console.log('ENDOWMENT_KWT_MODEL '+JSON.stringify({hydrate:kwtDiag.status,ref:kwtRef&&{siteReferenceKey:kwtRef.siteReferenceKey,resourceId:kwtRef.resourceId,commercialExtraction:kwtRef.commercialExtraction,simulationReserveQuantity:kwtRef.simulationReserveQuantity},model:globalThis.Omega?.ResourceRealism?.siteModel?.(kwtRef,engine.countryProfiles?.KWT,'KWT'),controller:Object.values(kwtState.mineSiteControllers||{}).find(x=>x.siteReferenceKey==='SITE_KWT_greater_burgan_oilfield')}));
 assert.equal(hydrated.status,'APPLIED', JSON.stringify(hydrated));
 
-const before=runtime.countryResourceState('KWT');
+const before=runtime.countryResourceState('BGD');
 assert(before);
 assert(Array.isArray(before.mines));
 assert(before.mines.length>=4);
@@ -261,7 +261,7 @@ globalThis.Game.state.transport.KWT=globalThis.Game.state.transport.KWT||{
 };
 globalThis.Game.state.simulation.turn=2;
 await runtime.hydrateCountry('BGD');
-const bindingState=runtime.countryResourceState('BGD')||{};
+const bindingState=runtime.countryResourceState('KWT')||{};
 const bindingController=bindingState.mineSiteControllers?.[realPipelineSiteId]||
   Object.values(bindingState.mineSiteControllers||{}).find(x=>String(x?.siteReferenceKey||'')===realPipelineSiteId);
 const bindingKeys=(bindingController?.linkedOccurrenceKeys||[]).map(k=>({
