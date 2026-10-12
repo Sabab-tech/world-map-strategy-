@@ -63,7 +63,11 @@ for (const [index, site] of canonical.sites.slice(0,199).entries()) {
   assert.equal(site.sourceReference?.countryContextFile, 'resource_country_resource_context_index.json');
 }
 
-const migrated = canonical.sites.slice(199);\nassert.equal(migrated.length, 51);\nassert(migrated.every(s => s.sourceReference?.sourcePath?.startsWith('resource_site_canonical_catalog_v1.sites[')));\n\nconst manifest = read('resource_site_reference_expanded_manifest.json');
+const migrated = canonical.sites.slice(199);
+assert.equal(migrated.length, 51);
+assert(migrated.every(s => s.sourceReference?.sourcePath?.startsWith('resource_site_canonical_catalog_v1.sites[')));
+
+const manifest = read('resource_site_reference_expanded_manifest.json');
 assert.equal(manifest.totalSites, 199);
 assert.equal(manifest.partCount, 4);
 assert.equal(manifest.parts.length, 4);
