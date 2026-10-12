@@ -239,7 +239,8 @@
         const rows=Array.isArray(data?.sites)?data.sites:[];
         const map={};
         for(const row of rows)if(row?.siteId)map[String(row.siteId)]=clone(row);
-        if(rows.length!==250)throw new Error('RESOURCE_SITE_MASTER_REGISTRY_INCOMPLETE:'+rows.length);
+        const rowIds=rows.map(row=>String(row?.siteId||'').trim()).filter(Boolean);
+        if(!rows.length||rowIds.length!==rows.length||new Set(rowIds).size!==rows.length||Number(data?.siteCount)!==rows.length)throw new Error('RESOURCE_SITE_MASTER_REGISTRY_INVALID:'+rows.length);
         masterResearchMap=map;
         g.OmegaResourceSiteMasterResearchData=data;
         g.Omega=g.Omega||{};
@@ -1365,10 +1366,8 @@ function batchFromExtraction(x,record){
         for(let i=0;i<400&&!engine()?.isReady;i++)await new Promise(r=>setTimeout(r,0));
         const [reserveData,researchData,canonicalCatalogData,losslessReferenceData,masterResearchData]=await Promise.all([loadSimulationReserveData(),loadResearchEvidenceData(),loadCanonicalSiteCatalogData(),loadLosslessResourceReferenceData(),loadMasterResourceResearchData()]);
         const dependencyLightContext=typeof g.fetch!=='function'&&typeof g.OmegaResourceSiteReserveSimulationData==='undefined'&&typeof g.Omega?.ResourceSiteReserveSimulationData==='undefined';
-        if((reserveData.status!=='READY'||reserveData.count!==250)&&!dependencyLightContext)return{status:'FAILED',reason:'PER_SITE_RESERVE_DATASET_INCOMPLETE',detail:reserveData};
-        if((canonicalCatalogData.status!=='READY'||canonicalCatalogData.count!==250)&&!dependencyLightContext)return{status:'FAILED',reason:'CANONICAL_SITE_CATALOG_INCOMPLETE',detail:canonicalCatalogData};
-        if((losslessReferenceData.status!=='READY'||losslessReferenceData.count!==199)&&!dependencyLightContext)return{status:'FAILED',reason:'LOSSLESS_RESOURCE_REFERENCE_INCOMPLETE',detail:losslessReferenceData};
-        if((masterResearchData.status!=='READY'||masterResearchData.count!==250)&&!dependencyLightContext)return{status:'FAILED',reason:'RESOURCE_SITE_MASTER_RESEARCH_INCOMPLETE',detail:masterResearchData};
+        if(!dependencyLightContext&&(reserveData.status!=='READY'||canonicalCatalogData.status!=='READY'||losslessReferenceData.status!=='READY'||losslessReferenceData.count!==199||masterResearchData.status!=='READY'))return{status:'FAILED',reason:'PER_SITE_RESOURCE_DATASET_INCOMPLETE',detail:{reserve:reserveData,catalog:canonicalCatalogData,losslessReferences:losslessReferenceData,master:masterResearchData}};
+        if(!dependencyLightContext&&(reserveData.count!==canonicalCatalogData.count||masterResearchData.count!==canonicalCatalogData.count))return{status:'FAILED',reason:'PER_SITE_RESOURCE_DATASET_COUNT_MISMATCH',detail:{reserveCount:reserveData.count,catalogCount:canonicalCatalogData.count,masterCount:masterResearchData.count}};
         if(!engine()?.isReady)return{status:'FAILED',reason:'RESOURCE_MINISTRY_ENGINE_NOT_READY'};
         // Build the immutable country index once before any per-country extraction work.
         countryListCache=countries();

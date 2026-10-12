@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0.0",
   "generatedAt": "2026-10-12",
-  "siteCount": 250,
+  "siteCount": 260,
   "sites": [
     {
       "countryId": "BGD",
@@ -34293,6 +34293,2169 @@
         },
         "evidencePolicy": "Only source-backed geological/site facts. Production, extraction rate, recovery, throughput, nominal/min/max capacity and gameplay output intentionally excluded from this research overlay.",
         "dataLimitations": "Annual production from B2Gold FY2024 mine-by-mine table."
+      }
+    },
+    {
+      "countryId": "BGD",
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_BGD_bibiyana_gas_field",
+      "siteName": "Bibiyana Gas Field",
+      "identity": {
+        "countryIso3": "BGD",
+        "siteType": "GAS_FIELD",
+        "resourceTypeId": "natural_gas",
+        "resourceName": "Natural Gas & Methane",
+        "ontologyKey": "NATURAL_GAS"
+      },
+      "location": {
+        "countryName": "Bangladesh",
+        "adminRegion": "Nabiganj, Habiganj",
+        "locality": "Nabiganj, Habiganj",
+        "coordinates": {
+          "lat": 24.63597,
+          "lng": 91.59367
+        },
+        "coordinateStatus": "PUBLIC_MAP_APPROXIMATE",
+        "coordinateProvenance": "SOURCE_REVIEWED_LEGACY_RECOVERY"
+      },
+      "ownership": {
+        "owner": "Chevron Bangladesh",
+        "operator": "Chevron Bangladesh",
+        "ownerEvidenceStatus": "SOURCE_REFERENCED_REVIEWED",
+        "operatorEvidenceStatus": "SOURCE_REFERENCED_REVIEWED"
+      },
+      "operation": {
+        "status": "ACTIVE_PRODUCING",
+        "operationalStatus": "ACTIVE_PRODUCING",
+        "extractionMethod": "conventional gas wells and gathering",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "conventional gas wells and gathering",
+        "midstreamProcess": "Cryogenic Liquefaction (LNG), Regasification Terminals, Pipeline Compression",
+        "refinedOutputs": [
+          "PIPELINE_QUALITY_NATURAL_GAS",
+          "CONDENSATE"
+        ],
+        "downstreamSectors": [
+          "ELECTRIC_GRID",
+          "FERTILIZER_AGRICULTURE",
+          "INDUSTRIAL_HEAT"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": null,
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": "PERCENT",
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": null,
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": "https://bangladesh.chevron.com/our-businesses/bibiyana",
+          "capacitySource": null,
+          "promotedAt": "2026-10-12"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "recovery": "UNOBSERVED",
+          "throughput": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "UNOBSERVED",
+          "structuredEvidence": true,
+          "overall": "SITE_SPECIFIC_SOURCE_REVIEWED_PARTIAL"
+        }
+      },
+      "verification": {
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+        "reviewedAt": "2026-10-12",
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "OPERATOR",
+          "PUBLIC_MAP"
+        ],
+        "dataLimitations": "Public map point is approximate; production rate and reserve remain unobserved."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_legacy_map_recovery_candidates_v1.json",
+          "resource_site_legacy_profile_marker_reconstruction_v1.json"
+        ],
+        "sourcePath": "verified historical-marker restoration",
+        "evidence": [
+          {
+            "url": "https://bangladesh.chevron.com/our-businesses/bibiyana",
+            "scope": "Operator identity, field location region and gas-field operations",
+            "sourceType": "OPERATOR"
+          },
+          {
+            "url": "https://www.openstreetmap.org/?mlat=24.63597&mlon=91.59367#map=14/24.63597/91.59367",
+            "scope": "Approximate mapped point, not a survey-grade field boundary",
+            "sourceType": "PUBLIC_MAP"
+          }
+        ],
+        "recoveryProvenance": {
+          "archiveRecordIds": [
+            "LEGACY_MAP_bibiyana_gas_field",
+            "LEGACY_JSON_DEPOSIT_bibiyana_gas_field"
+          ],
+          "restoredAt": "2026-10-12",
+          "decision": "MANUALLY_REVIEWED_SOURCE_BACKED_PROMOTION",
+          "coordinateProvenance": "REVIEWED_EXTERNAL_SOURCE",
+          "historicalCommodityLabelCorrected": false
+        }
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "BGD",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "CANONICAL_CATALOG",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
+        "qualityAuthority": "OBSERVED_OR_EXPLICITLY_UNOBSERVED",
+        "countryWarehouseId": "WH-BGD-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      },
+      "researchFacts": {
+        "authority": "SITE_SPECIFIC_WEB_RESEARCH",
+        "miningMethod": "conventional gas wells and gathering",
+        "lifecycleStatus": "ACTIVE_PRODUCING",
+        "geologicalFacts": {
+          "reserve": {
+            "quantity": null,
+            "unit": null,
+            "year": null,
+            "basis": null,
+            "status": "UNOBSERVED"
+          },
+          "grade": {
+            "value": null,
+            "unit": null,
+            "year": null,
+            "basis": null,
+            "status": "UNOBSERVED"
+          },
+          "purity": {
+            "value": null,
+            "unit": null,
+            "year": null,
+            "basis": null,
+            "status": "UNOBSERVED"
+          },
+          "classification": "GAS_FIELD",
+          "depositType": "GAS_FIELD"
+        },
+        "overlayOwnership": {
+          "owner": "Chevron Bangladesh",
+          "operator": "Chevron Bangladesh",
+          "status": "SOURCE_REFERENCED_REVIEWED"
+        },
+        "evidencePolicy": "Only source-backed facts; missing real-world values remain UNOBSERVED; gameplay reserves and capacities belong to the separate simulation authority.",
+        "dataLimitations": "Public map point is approximate; production rate and reserve remain unobserved."
+      }
+    },
+    {
+      "countryId": "BGD",
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_BGD_titas_gas_deposit",
+      "siteName": "Titas Gas Deposit",
+      "identity": {
+        "countryIso3": "BGD",
+        "siteType": "GAS_FIELD",
+        "resourceTypeId": "natural_gas",
+        "resourceName": "Natural Gas & Methane",
+        "ontologyKey": "NATURAL_GAS"
+      },
+      "location": {
+        "countryName": "Bangladesh",
+        "adminRegion": "Brahmanbaria District",
+        "locality": "Brahmanbaria District",
+        "coordinates": {
+          "lat": 23.9952,
+          "lng": 91.1188
+        },
+        "coordinateStatus": "WGS84_FIELD_LEVEL_COORDINATE",
+        "coordinateProvenance": "SOURCE_REVIEWED_LEGACY_RECOVERY"
+      },
+      "ownership": {
+        "owner": "Bangladesh Oil, Gas and Mineral Corporation (Petrobangla)",
+        "operator": "Bangladesh Gas Fields Company Limited (BGFCL)",
+        "ownerEvidenceStatus": "SOURCE_REFERENCED_REVIEWED",
+        "operatorEvidenceStatus": "SOURCE_REFERENCED_REVIEWED"
+      },
+      "operation": {
+        "status": "ACTIVE_PRODUCING",
+        "operationalStatus": "ACTIVE_PRODUCING",
+        "extractionMethod": "conventional gas wells and gathering",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "conventional gas wells and gathering",
+        "midstreamProcess": "Cryogenic Liquefaction (LNG), Regasification Terminals, Pipeline Compression",
+        "refinedOutputs": [
+          "PIPELINE_QUALITY_NATURAL_GAS",
+          "CONDENSATE"
+        ],
+        "downstreamSectors": [
+          "ELECTRIC_GRID",
+          "FERTILIZER_AGRICULTURE",
+          "INDUSTRIAL_HEAT"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": 214642.86,
+          "unit": "MILLION_CUBIC_METRES",
+          "year": 2020,
+          "basis": "Original recoverable reserve series reported for 2020; not remaining recoverable reserve.",
+          "status": "REPORTED"
+        },
+        "production": {
+          "annual": 4330.78,
+          "rate": null,
+          "unit": "MILLION_CUBIC_METRES_PER_YEAR",
+          "year": 2020,
+          "basis": "Field-level production series for 2020.",
+          "status": "REPORTED"
+        },
+        "grade": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": "PERCENT",
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": 4888.93,
+          "minimum": null,
+          "maximum": null,
+          "unit": "MILLION_CUBIC_METRES_PER_YEAR",
+          "year": 2020,
+          "basis": "Field-level production design capacity for 2020.",
+          "status": "REPORTED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": "https://www.gem.wiki/Titas_Gas_Field_(Bangladesh)",
+          "capacitySource": "https://www.gem.wiki/Titas_Gas_Field_(Bangladesh)",
+          "promotedAt": "2026-10-12"
+        },
+        "completeness": {
+          "reserve": "REPORTED",
+          "production": "REPORTED",
+          "grade": "UNOBSERVED",
+          "recovery": "UNOBSERVED",
+          "throughput": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "REPORTED",
+          "structuredEvidence": true,
+          "overall": "SITE_SPECIFIC_SOURCE_REVIEWED_PARTIAL"
+        }
+      },
+      "verification": {
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+        "reviewedAt": "2026-10-12",
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "GAS_TRACKER",
+          "PUBLIC_MAP"
+        ],
+        "dataLimitations": "Reported production/reserve numbers are from 2020, not current daily rates."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_legacy_map_recovery_candidates_v1.json",
+          "resource_site_legacy_profile_marker_reconstruction_v1.json"
+        ],
+        "sourcePath": "verified historical-marker restoration",
+        "evidence": [
+          {
+            "url": "https://www.gem.wiki/Titas_Gas_Field_(Bangladesh)",
+            "scope": "Operator, WGS84 coordinates and year-scoped reserve, production and design-capacity data",
+            "sourceType": "TRACKER"
+          },
+          {
+            "url": "https://www.petrobangla.org.bd/",
+            "scope": "Petrobangla state-corporation context",
+            "sourceType": "GOVERNMENT"
+          }
+        ],
+        "recoveryProvenance": {
+          "archiveRecordIds": [
+            "LEGACY_MAP_titas_gas_deposit",
+            "LEGACY_JSON_DEPOSIT_titas_gas_deposit"
+          ],
+          "restoredAt": "2026-10-12",
+          "decision": "MANUALLY_REVIEWED_SOURCE_BACKED_PROMOTION",
+          "coordinateProvenance": "REVIEWED_EXTERNAL_SOURCE",
+          "historicalCommodityLabelCorrected": false
+        }
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "BGD",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "CANONICAL_CATALOG",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
+        "qualityAuthority": "OBSERVED_OR_EXPLICITLY_UNOBSERVED",
+        "countryWarehouseId": "WH-BGD-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      },
+      "researchFacts": {
+        "authority": "SITE_SPECIFIC_WEB_RESEARCH",
+        "miningMethod": "conventional gas wells and gathering",
+        "lifecycleStatus": "ACTIVE_PRODUCING",
+        "geologicalFacts": {
+          "reserve": {
+            "quantity": 214642.86,
+            "unit": "MILLION_CUBIC_METRES",
+            "year": 2020,
+            "basis": "Original recoverable reserve series reported for 2020; not remaining recoverable reserve.",
+            "status": "REPORTED"
+          },
+          "grade": {
+            "value": null,
+            "unit": null,
+            "year": null,
+            "basis": null,
+            "status": "UNOBSERVED"
+          },
+          "purity": {
+            "value": null,
+            "unit": null,
+            "year": null,
+            "basis": null,
+            "status": "UNOBSERVED"
+          },
+          "classification": "GAS_FIELD",
+          "depositType": "GAS_FIELD"
+        },
+        "overlayOwnership": {
+          "owner": "Bangladesh Oil, Gas and Mineral Corporation (Petrobangla)",
+          "operator": "Bangladesh Gas Fields Company Limited (BGFCL)",
+          "status": "SOURCE_REFERENCED_REVIEWED"
+        },
+        "evidencePolicy": "Only source-backed facts; missing real-world values remain UNOBSERVED; gameplay reserves and capacities belong to the separate simulation authority.",
+        "dataLimitations": "Reported production/reserve numbers are from 2020, not current daily rates."
+      }
+    },
+    {
+      "countryId": "IND",
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_IND_jharia_coalfield",
+      "siteName": "Jharia Coal Field",
+      "identity": {
+        "countryIso3": "IND",
+        "siteType": "COALFIELD_CLUSTER",
+        "resourceTypeId": "coal",
+        "resourceName": "Thermal & Metallurgical Coal",
+        "ontologyKey": "COAL"
+      },
+      "location": {
+        "countryName": "India",
+        "adminRegion": "Dhanbad District, Jharkhand",
+        "locality": "Dhanbad District, Jharkhand",
+        "coordinates": {
+          "lat": 23.75167,
+          "lng": 86.42028
+        },
+        "coordinateStatus": "APPROXIMATE_COALFIELD_CENTROID",
+        "coordinateProvenance": "SOURCE_REVIEWED_LEGACY_RECOVERY"
+      },
+      "ownership": {
+        "owner": "Coal India Limited through Bharat Coking Coal Limited",
+        "operator": "Bharat Coking Coal Limited (BCCL)",
+        "ownerEvidenceStatus": "SOURCE_REFERENCED_REVIEWED",
+        "operatorEvidenceStatus": "SOURCE_REFERENCED_REVIEWED"
+      },
+      "operation": {
+        "status": "ACTIVE_PRODUCING",
+        "operationalStatus": "ACTIVE_PRODUCING",
+        "extractionMethod": "mixed underground and open-cast coal extraction",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "mixed underground and open-cast coal extraction",
+        "midstreamProcess": "Coal Beneficiation, Coking, Pulverization and Gasification",
+        "refinedOutputs": [
+          "THERMAL_COAL",
+          "COKING_COAL",
+          "COAL_WASHERY_FEED"
+        ],
+        "downstreamSectors": [
+          "POWER_GENERATION",
+          "STEELMAKING",
+          "HEAVY_INDUSTRY"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": null,
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": "PERCENT",
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": null,
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": "https://coal.gov.in/major-statistics/coal-reserves",
+          "capacitySource": null,
+          "promotedAt": "2026-10-12"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "recovery": "UNOBSERVED",
+          "throughput": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "UNOBSERVED",
+          "structuredEvidence": true,
+          "overall": "SITE_SPECIFIC_SOURCE_REVIEWED_PARTIAL"
+        }
+      },
+      "verification": {
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+        "reviewedAt": "2026-10-12",
+        "sourceCount": 3,
+        "sourceAuthorities": [
+          "GOVERNMENT",
+          "GEOLOGICAL_REFERENCE"
+        ],
+        "dataLimitations": "Regional production cluster, not an individual mine; coordinates are an approximate field centroid."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_legacy_map_recovery_candidates_v1.json",
+          "resource_site_legacy_profile_marker_reconstruction_v1.json"
+        ],
+        "sourcePath": "verified historical-marker restoration",
+        "evidence": [
+          {
+            "url": "https://coal.gov.in/major-statistics/coal-reserves",
+            "scope": "Official India coalfield and reserve context",
+            "sourceType": "GOVERNMENT"
+          },
+          {
+            "url": "https://www.mindat.org/loc-147189.html",
+            "scope": "Jharia coalfield geographic reference point",
+            "sourceType": "GEOLOGICAL_REFERENCE"
+          },
+          {
+            "url": "https://www.bcclweb.in/",
+            "scope": "BCCL coal operations and operator context",
+            "sourceType": "OPERATOR"
+          }
+        ],
+        "recoveryProvenance": {
+          "archiveRecordIds": [
+            "LEGACY_MAP_jharia_coal_field"
+          ],
+          "restoredAt": "2026-10-12",
+          "decision": "MANUALLY_REVIEWED_SOURCE_BACKED_PROMOTION",
+          "coordinateProvenance": "REVIEWED_EXTERNAL_SOURCE",
+          "historicalCommodityLabelCorrected": false
+        }
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "IND",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "CANONICAL_CATALOG",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
+        "qualityAuthority": "OBSERVED_OR_EXPLICITLY_UNOBSERVED",
+        "countryWarehouseId": "WH-IND-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      },
+      "researchFacts": {
+        "authority": "SITE_SPECIFIC_WEB_RESEARCH",
+        "miningMethod": "mixed underground and open-cast coal extraction",
+        "lifecycleStatus": "ACTIVE_PRODUCING",
+        "geologicalFacts": {
+          "reserve": {
+            "quantity": null,
+            "unit": null,
+            "year": null,
+            "basis": null,
+            "status": "UNOBSERVED"
+          },
+          "grade": {
+            "value": null,
+            "unit": null,
+            "year": null,
+            "basis": null,
+            "status": "UNOBSERVED"
+          },
+          "purity": {
+            "value": null,
+            "unit": null,
+            "year": null,
+            "basis": null,
+            "status": "UNOBSERVED"
+          },
+          "classification": "COALFIELD_CLUSTER",
+          "depositType": "COALFIELD_CLUSTER"
+        },
+        "overlayOwnership": {
+          "owner": "Coal India Limited through Bharat Coking Coal Limited",
+          "operator": "Bharat Coking Coal Limited (BCCL)",
+          "status": "SOURCE_REFERENCED_REVIEWED"
+        },
+        "evidencePolicy": "Only source-backed facts; missing real-world values remain UNOBSERVED; gameplay reserves and capacities belong to the separate simulation authority.",
+        "dataLimitations": "Regional production cluster, not an individual mine; coordinates are an approximate field centroid."
+      }
+    },
+    {
+      "countryId": "IND",
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_IND_mumbai_high_oil_field",
+      "siteName": "Mumbai High Offshore Oil Field",
+      "identity": {
+        "countryIso3": "IND",
+        "siteType": "OFFSHORE_OIL_FIELD",
+        "resourceTypeId": "crude_oil",
+        "resourceName": "Crude Petroleum & Hydrocarbons",
+        "ontologyKey": "CRUDE_OIL"
+      },
+      "location": {
+        "countryName": "India",
+        "adminRegion": "Arabian Sea, offshore Maharashtra",
+        "locality": "Arabian Sea, offshore Maharashtra",
+        "coordinates": {
+          "lat": 19.41667,
+          "lng": 71.33333
+        },
+        "coordinateStatus": "PUBLIC_MAP_APPROXIMATE",
+        "coordinateProvenance": "SOURCE_REVIEWED_LEGACY_RECOVERY"
+      },
+      "ownership": {
+        "owner": "Oil and Natural Gas Corporation (ONGC)",
+        "operator": "Oil and Natural Gas Corporation (ONGC)",
+        "ownerEvidenceStatus": "SOURCE_REFERENCED_REVIEWED",
+        "operatorEvidenceStatus": "SOURCE_REFERENCED_REVIEWED"
+      },
+      "operation": {
+        "status": "ACTIVE_PRODUCING",
+        "operationalStatus": "ACTIVE_PRODUCING",
+        "extractionMethod": "offshore wells, platforms and gathering",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "offshore wells, platforms and gathering",
+        "midstreamProcess": "Atmospheric & Vacuum Distillation, Fluid Catalytic Cracking, Hydrotreating",
+        "refinedOutputs": [
+          "CRUDE_OIL",
+          "ASSOCIATED_NATURAL_GAS"
+        ],
+        "downstreamSectors": [
+          "REFINING",
+          "LOGISTICS_TRANSPORT",
+          "PETROCHEMICALS"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": null,
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": "PERCENT",
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": null,
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": "https://ongcindia.com/zh/web/eng/detail?assetClassPK=69670154&assetEntry=69670160",
+          "capacitySource": null,
+          "promotedAt": "2026-10-12"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "recovery": "UNOBSERVED",
+          "throughput": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "UNOBSERVED",
+          "structuredEvidence": true,
+          "overall": "SITE_SPECIFIC_SOURCE_REVIEWED_PARTIAL"
+        }
+      },
+      "verification": {
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+        "reviewedAt": "2026-10-12",
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "OPERATOR",
+          "PUBLIC_MAP"
+        ],
+        "dataLimitations": "The old label said rig; the restored asset is the oil field, not one rig. Public map point is approximate."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_legacy_map_recovery_candidates_v1.json",
+          "resource_site_legacy_profile_marker_reconstruction_v1.json"
+        ],
+        "sourcePath": "verified historical-marker restoration",
+        "evidence": [
+          {
+            "url": "https://ongcindia.com/zh/web/eng/detail?assetClassPK=69670154&assetEntry=69670160",
+            "scope": "Mumbai High identity, offshore setting and history",
+            "sourceType": "OPERATOR"
+          },
+          {
+            "url": "https://mapcarta.com/15016626",
+            "scope": "Approximate public map point for the offshore field",
+            "sourceType": "PUBLIC_MAP"
+          }
+        ],
+        "recoveryProvenance": {
+          "archiveRecordIds": [
+            "LEGACY_MAP_mumbai_high_offshore_oil_rig"
+          ],
+          "restoredAt": "2026-10-12",
+          "decision": "MANUALLY_REVIEWED_SOURCE_BACKED_PROMOTION",
+          "coordinateProvenance": "REVIEWED_EXTERNAL_SOURCE",
+          "historicalCommodityLabelCorrected": false
+        }
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "IND",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "CANONICAL_CATALOG",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
+        "qualityAuthority": "OBSERVED_OR_EXPLICITLY_UNOBSERVED",
+        "countryWarehouseId": "WH-IND-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      },
+      "researchFacts": {
+        "authority": "SITE_SPECIFIC_WEB_RESEARCH",
+        "miningMethod": "offshore wells, platforms and gathering",
+        "lifecycleStatus": "ACTIVE_PRODUCING",
+        "geologicalFacts": {
+          "reserve": {
+            "quantity": null,
+            "unit": null,
+            "year": null,
+            "basis": null,
+            "status": "UNOBSERVED"
+          },
+          "grade": {
+            "value": null,
+            "unit": null,
+            "year": null,
+            "basis": null,
+            "status": "UNOBSERVED"
+          },
+          "purity": {
+            "value": null,
+            "unit": null,
+            "year": null,
+            "basis": null,
+            "status": "UNOBSERVED"
+          },
+          "classification": "OFFSHORE_OIL_FIELD",
+          "depositType": "OFFSHORE_OIL_FIELD"
+        },
+        "overlayOwnership": {
+          "owner": "Oil and Natural Gas Corporation (ONGC)",
+          "operator": "Oil and Natural Gas Corporation (ONGC)",
+          "status": "SOURCE_REFERENCED_REVIEWED"
+        },
+        "evidencePolicy": "Only source-backed facts; missing real-world values remain UNOBSERVED; gameplay reserves and capacities belong to the separate simulation authority.",
+        "dataLimitations": "The old label said rig; the restored asset is the oil field, not one rig. Public map point is approximate."
+      }
+    },
+    {
+      "countryId": "PAK",
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_PAK_saindak_copper_gold_mine",
+      "siteName": "Saindak Copper-Gold Deposit",
+      "identity": {
+        "countryIso3": "PAK",
+        "siteType": "COPPER_GOLD_MINE",
+        "resourceTypeId": "copper",
+        "resourceName": "Copper",
+        "ontologyKey": "COPPER"
+      },
+      "location": {
+        "countryName": "Pakistan",
+        "adminRegion": "Chagai District, Balochistan",
+        "locality": "Chagai District, Balochistan",
+        "coordinates": {
+          "lat": 29.25083,
+          "lng": 61.61167
+        },
+        "coordinateStatus": "PUBLIC_GEOLOGICAL_MAP_POINT",
+        "coordinateProvenance": "SOURCE_REVIEWED_LEGACY_RECOVERY"
+      },
+      "ownership": {
+        "owner": "Saindak Metals Limited (SML)",
+        "operator": "SML project with MCC/Chinese mining and processing involvement",
+        "ownerEvidenceStatus": "SOURCE_REFERENCED_REVIEWED",
+        "operatorEvidenceStatus": "SOURCE_REFERENCED_REVIEWED"
+      },
+      "operation": {
+        "status": "ACTIVE_PRODUCING",
+        "operationalStatus": "ACTIVE_PRODUCING",
+        "extractionMethod": "open-pit drilling, blasting and copper-gold ore processing",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "open-pit drilling, blasting and copper-gold ore processing",
+        "midstreamProcess": "Flash Smelting, Electro-Refining to Grade-A Cathode 99.99%",
+        "refinedOutputs": [
+          "COPPER_CONCENTRATE",
+          "BLISTER_COPPER",
+          "GOLD_BYPRODUCT",
+          "MAGNETITE_CONCENTRATE"
+        ],
+        "downstreamSectors": [
+          "COPPER_SMELTING",
+          "ELECTRICAL_EQUIPMENT",
+          "CONSTRUCTION",
+          "INDUSTRIAL_MANUFACTURING"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": null,
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": "PERCENT",
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": null,
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {
+          "eastOreBody": {
+            "mineableReserve": {
+              "quantity": 85600000,
+              "unit": "METRIC_TONNES_ORE",
+              "status": "REPORTED",
+              "basis": "East Ore Body only; not total deposit reserve."
+            },
+            "copperFeedGrade": {
+              "value": 0.364,
+              "unit": "PERCENT_CU_ROM_FEED",
+              "status": "REPORTED",
+              "basis": "ROM copper feed grade for the East Ore Body."
+            },
+            "oreProductionRate": {
+              "value": 12500,
+              "unit": "METRIC_TONNES_ORE_PER_DAY",
+              "status": "REPORTED",
+              "basis": "East Ore Body ore throughput."
+            }
+          }
+        },
+        "quantitativeProvenance": {
+          "structuredSource": "https://saindak.com.pk/current-projects/",
+          "capacitySource": null,
+          "promotedAt": "2026-10-12"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "recovery": "UNOBSERVED",
+          "throughput": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "UNOBSERVED",
+          "structuredEvidence": true,
+          "overall": "SITE_SPECIFIC_SOURCE_REVIEWED_PARTIAL"
+        }
+      },
+      "verification": {
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+        "reviewedAt": "2026-10-12",
+        "sourceCount": 3,
+        "sourceAuthorities": [
+          "OPERATOR",
+          "GEOLOGICAL_SURVEY",
+          "PUBLIC_GEOLOGICAL_MAP"
+        ],
+        "dataLimitations": "Official project data separates East, South and North ore bodies; reported figures are not collapsed into a false site-wide reserve."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_legacy_map_recovery_candidates_v1.json",
+          "resource_site_legacy_profile_marker_reconstruction_v1.json"
+        ],
+        "sourcePath": "verified historical-marker restoration",
+        "evidence": [
+          {
+            "url": "https://saindak.com.pk/current-projects/",
+            "scope": "Ore-body-specific geological resources, grades and ore throughput",
+            "sourceType": "OPERATOR"
+          },
+          {
+            "url": "https://gsp.gov.pk/gsp-achievements/",
+            "scope": "Geological Survey of Pakistan deposit context",
+            "sourceType": "GOVERNMENT"
+          },
+          {
+            "url": "https://www.mindat.org/loc-206624.html",
+            "scope": "Deposit coordinates and commodity occurrence",
+            "sourceType": "GEOLOGICAL_REFERENCE"
+          }
+        ],
+        "recoveryProvenance": {
+          "archiveRecordIds": [
+            "LEGACY_MAP_saindak_copper_gold_deposit"
+          ],
+          "restoredAt": "2026-10-12",
+          "decision": "MANUALLY_REVIEWED_SOURCE_BACKED_PROMOTION",
+          "coordinateProvenance": "REVIEWED_EXTERNAL_SOURCE",
+          "historicalCommodityLabelCorrected": false
+        }
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "PAK",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "CANONICAL_CATALOG",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
+        "qualityAuthority": "OBSERVED_OR_EXPLICITLY_UNOBSERVED",
+        "countryWarehouseId": "WH-PAK-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      },
+      "researchFacts": {
+        "authority": "SITE_SPECIFIC_WEB_RESEARCH",
+        "miningMethod": "open-pit drilling, blasting and copper-gold ore processing",
+        "lifecycleStatus": "ACTIVE_PRODUCING",
+        "geologicalFacts": {
+          "reserve": {
+            "quantity": null,
+            "unit": null,
+            "year": null,
+            "basis": null,
+            "status": "UNOBSERVED"
+          },
+          "grade": {
+            "value": null,
+            "unit": null,
+            "year": null,
+            "basis": null,
+            "status": "UNOBSERVED"
+          },
+          "purity": {
+            "value": null,
+            "unit": null,
+            "year": null,
+            "basis": null,
+            "status": "UNOBSERVED"
+          },
+          "classification": "COPPER_GOLD_MINE",
+          "depositType": "COPPER_GOLD_MINE"
+        },
+        "overlayOwnership": {
+          "owner": "Saindak Metals Limited (SML)",
+          "operator": "SML project with MCC/Chinese mining and processing involvement",
+          "status": "SOURCE_REFERENCED_REVIEWED"
+        },
+        "evidencePolicy": "Only source-backed facts; missing real-world values remain UNOBSERVED; gameplay reserves and capacities belong to the separate simulation authority.",
+        "dataLimitations": "Official project data separates East, South and North ore bodies; reported figures are not collapsed into a false site-wide reserve."
+      }
+    },
+    {
+      "countryId": "EGY",
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_EGY_zohr_gas_field",
+      "siteName": "Zohr Gas Field Mediterranean",
+      "identity": {
+        "countryIso3": "EGY",
+        "siteType": "OFFSHORE_GAS_FIELD",
+        "resourceTypeId": "natural_gas",
+        "resourceName": "Natural Gas & Methane",
+        "ontologyKey": "NATURAL_GAS"
+      },
+      "location": {
+        "countryName": "Egypt",
+        "adminRegion": "Eastern Mediterranean, Shorouk concession",
+        "locality": "Eastern Mediterranean, Shorouk concession",
+        "coordinates": {
+          "lat": 32.364,
+          "lng": 32.864
+        },
+        "coordinateStatus": "APPROXIMATE_FIELD_LOCATION",
+        "coordinateProvenance": "SOURCE_REVIEWED_LEGACY_RECOVERY"
+      },
+      "ownership": {
+        "owner": "Shorouk concession consortium",
+        "operator": "Eni (operator)",
+        "ownerEvidenceStatus": "SOURCE_REFERENCED_REVIEWED",
+        "operatorEvidenceStatus": "SOURCE_REFERENCED_REVIEWED"
+      },
+      "operation": {
+        "status": "ACTIVE_PRODUCING",
+        "operationalStatus": "ACTIVE_PRODUCING",
+        "extractionMethod": "offshore platforms and subsea gas wells",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "offshore platforms and subsea gas wells",
+        "midstreamProcess": "Cryogenic Liquefaction (LNG), Regasification Terminals, Pipeline Compression",
+        "refinedOutputs": [
+          "PIPELINE_QUALITY_NATURAL_GAS",
+          "CONDENSATE",
+          "LNG_FEED_GAS"
+        ],
+        "downstreamSectors": [
+          "ELECTRIC_GRID",
+          "INDUSTRIAL_HEAT",
+          "FERTILIZER_AGRICULTURE"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": null,
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": "PERCENT",
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": null,
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": "https://www.eni.com/en-IT/actions/global-activities/egypt/zohr.html",
+          "capacitySource": null,
+          "promotedAt": "2026-10-12"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "recovery": "UNOBSERVED",
+          "throughput": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "UNOBSERVED",
+          "structuredEvidence": true,
+          "overall": "SITE_SPECIFIC_SOURCE_REVIEWED_PARTIAL"
+        }
+      },
+      "verification": {
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+        "reviewedAt": "2026-10-12",
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "OPERATOR",
+          "GAS_TRACKER"
+        ],
+        "dataLimitations": "Offshore field point is approximate; source production figures are time-specific and not copied into a live daily rate."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_legacy_map_recovery_candidates_v1.json",
+          "resource_site_legacy_profile_marker_reconstruction_v1.json"
+        ],
+        "sourcePath": "verified historical-marker restoration",
+        "evidence": [
+          {
+            "url": "https://www.eni.com/en-IT/actions/global-activities/egypt/zohr.html",
+            "scope": "Field identity, operator/concession and production start",
+            "sourceType": "OPERATOR"
+          },
+          {
+            "url": "https://www.gem.wiki/Zohr_Gas_Field_(Egypt)",
+            "scope": "Field-level location and year-scoped production history",
+            "sourceType": "TRACKER"
+          }
+        ],
+        "recoveryProvenance": {
+          "archiveRecordIds": [
+            "LEGACY_MAP_zohr_gas_field_mediterranean"
+          ],
+          "restoredAt": "2026-10-12",
+          "decision": "MANUALLY_REVIEWED_SOURCE_BACKED_PROMOTION",
+          "coordinateProvenance": "REVIEWED_EXTERNAL_SOURCE",
+          "historicalCommodityLabelCorrected": false
+        }
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "EGY",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "CANONICAL_CATALOG",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
+        "qualityAuthority": "OBSERVED_OR_EXPLICITLY_UNOBSERVED",
+        "countryWarehouseId": "WH-EGY-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      },
+      "researchFacts": {
+        "authority": "SITE_SPECIFIC_WEB_RESEARCH",
+        "miningMethod": "offshore platforms and subsea gas wells",
+        "lifecycleStatus": "ACTIVE_PRODUCING",
+        "geologicalFacts": {
+          "reserve": {
+            "quantity": null,
+            "unit": null,
+            "year": null,
+            "basis": null,
+            "status": "UNOBSERVED"
+          },
+          "grade": {
+            "value": null,
+            "unit": null,
+            "year": null,
+            "basis": null,
+            "status": "UNOBSERVED"
+          },
+          "purity": {
+            "value": null,
+            "unit": null,
+            "year": null,
+            "basis": null,
+            "status": "UNOBSERVED"
+          },
+          "classification": "OFFSHORE_GAS_FIELD",
+          "depositType": "OFFSHORE_GAS_FIELD"
+        },
+        "overlayOwnership": {
+          "owner": "Shorouk concession consortium",
+          "operator": "Eni (operator)",
+          "status": "SOURCE_REFERENCED_REVIEWED"
+        },
+        "evidencePolicy": "Only source-backed facts; missing real-world values remain UNOBSERVED; gameplay reserves and capacities belong to the separate simulation authority.",
+        "dataLimitations": "Offshore field point is approximate; source production figures are time-specific and not copied into a live daily rate."
+      }
+    },
+    {
+      "countryId": "DZA",
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_DZA_hassi_rmel_gas_field",
+      "siteName": "Hassi R'Mel Natural Gas Basin",
+      "identity": {
+        "countryIso3": "DZA",
+        "siteType": "GAS_FIELD_BASIN",
+        "resourceTypeId": "natural_gas",
+        "resourceName": "Natural Gas & Methane",
+        "ontologyKey": "NATURAL_GAS"
+      },
+      "location": {
+        "countryName": "Algeria",
+        "adminRegion": "Laghouat Province",
+        "locality": "Laghouat Province",
+        "coordinates": {
+          "lat": 32.94722,
+          "lng": 3.17056
+        },
+        "coordinateStatus": "PUBLISHED_RESEARCH_FIELD_POINT",
+        "coordinateProvenance": "SOURCE_REVIEWED_LEGACY_RECOVERY"
+      },
+      "ownership": {
+        "owner": "Algerian state / Sonatrach (field-specific ownership share not stated)",
+        "operator": "Sonatrach (operator attribution; no site-specific rate inferred)",
+        "ownerEvidenceStatus": "SOURCE_REFERENCED_REVIEWED",
+        "operatorEvidenceStatus": "SOURCE_REFERENCED_REVIEWED"
+      },
+      "operation": {
+        "status": "ACTIVE_PRODUCING",
+        "operationalStatus": "ACTIVE_PRODUCING",
+        "extractionMethod": "conventional gas wells, gathering and gas treatment",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "conventional gas wells, gathering and gas treatment",
+        "midstreamProcess": "Cryogenic Liquefaction (LNG), Regasification Terminals, Pipeline Compression",
+        "refinedOutputs": [
+          "PIPELINE_QUALITY_NATURAL_GAS",
+          "CONDENSATE",
+          "LPG_FEEDSTOCK"
+        ],
+        "downstreamSectors": [
+          "ELECTRIC_GRID",
+          "FERTILIZER_AGRICULTURE",
+          "INDUSTRIAL_HEAT"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": null,
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": "PERCENT",
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": null,
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": "https://www.sciencedirect.com/science/article/pii/S1464343X20303009",
+          "capacitySource": null,
+          "promotedAt": "2026-10-12"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "recovery": "UNOBSERVED",
+          "throughput": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "UNOBSERVED",
+          "structuredEvidence": true,
+          "overall": "SITE_SPECIFIC_SOURCE_REVIEWED_PARTIAL"
+        }
+      },
+      "verification": {
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+        "reviewedAt": "2026-10-12",
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "ACADEMIC_RESEARCH",
+          "GOVERNMENT"
+        ],
+        "dataLimitations": "Published coordinate is a field reference point, not a surveyed boundary; current reserve, grade, production and capacity remain unobserved."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_legacy_map_recovery_candidates_v1.json",
+          "resource_site_legacy_profile_marker_reconstruction_v1.json"
+        ],
+        "sourcePath": "verified historical-marker restoration",
+        "evidence": [
+          {
+            "url": "https://www.sciencedirect.com/science/article/pii/S1464343X20303009",
+            "scope": "Field identity, geology and published field point",
+            "sourceType": "ACADEMIC_RESEARCH"
+          },
+          {
+            "url": "https://www.eia.gov/international/analysis/country/DZA",
+            "scope": "Algerian gas-sector state producer context",
+            "sourceType": "GOVERNMENT"
+          }
+        ],
+        "recoveryProvenance": {
+          "archiveRecordIds": [
+            "LEGACY_MAP_hassi_r_mel_natural_gas_basin",
+            "LEGACY_JSON_DEPOSIT_hassi_r_mel_natural_gas_basin"
+          ],
+          "restoredAt": "2026-10-12",
+          "decision": "MANUALLY_REVIEWED_SOURCE_BACKED_PROMOTION",
+          "coordinateProvenance": "REVIEWED_EXTERNAL_SOURCE",
+          "historicalCommodityLabelCorrected": false
+        }
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "DZA",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "CANONICAL_CATALOG",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
+        "qualityAuthority": "OBSERVED_OR_EXPLICITLY_UNOBSERVED",
+        "countryWarehouseId": "WH-DZA-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      },
+      "researchFacts": {
+        "authority": "SITE_SPECIFIC_WEB_RESEARCH",
+        "miningMethod": "conventional gas wells, gathering and gas treatment",
+        "lifecycleStatus": "ACTIVE_PRODUCING",
+        "geologicalFacts": {
+          "reserve": {
+            "quantity": null,
+            "unit": null,
+            "year": null,
+            "basis": null,
+            "status": "UNOBSERVED"
+          },
+          "grade": {
+            "value": null,
+            "unit": null,
+            "year": null,
+            "basis": null,
+            "status": "UNOBSERVED"
+          },
+          "purity": {
+            "value": null,
+            "unit": null,
+            "year": null,
+            "basis": null,
+            "status": "UNOBSERVED"
+          },
+          "classification": "GAS_FIELD_BASIN",
+          "depositType": "GAS_FIELD_BASIN"
+        },
+        "overlayOwnership": {
+          "owner": "Algerian state / Sonatrach (field-specific ownership share not stated)",
+          "operator": "Sonatrach (operator attribution; no site-specific rate inferred)",
+          "status": "SOURCE_REFERENCED_REVIEWED"
+        },
+        "evidencePolicy": "Only source-backed facts; missing real-world values remain UNOBSERVED; gameplay reserves and capacities belong to the separate simulation authority.",
+        "dataLimitations": "Published coordinate is a field reference point, not a surveyed boundary; current reserve, grade, production and capacity remain unobserved."
+      }
+    },
+    {
+      "countryId": "AUS",
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_AUS_greenbushes_lithium_mine",
+      "siteName": "Greenbushes Lithium Mine",
+      "identity": {
+        "countryIso3": "AUS",
+        "siteType": "LITHIUM_MINE",
+        "resourceTypeId": "lithium",
+        "resourceName": "Lithium-bearing spodumene",
+        "ontologyKey": "LITHIUM"
+      },
+      "location": {
+        "countryName": "Australia",
+        "adminRegion": "Greenbushes, Western Australia",
+        "locality": "Greenbushes, Western Australia",
+        "coordinates": {
+          "lat": -33.86946,
+          "lng": 116.0626
+        },
+        "coordinateStatus": "PUBLIC_MAP_APPROXIMATE",
+        "coordinateProvenance": "SOURCE_REVIEWED_LEGACY_RECOVERY"
+      },
+      "ownership": {
+        "owner": "Talison Lithium JV: Tianqi Lithium Energy Australia 51%; Albemarle 49%",
+        "operator": "Talison Lithium",
+        "ownerEvidenceStatus": "SOURCE_REFERENCED_REVIEWED",
+        "operatorEvidenceStatus": "SOURCE_REFERENCED_REVIEWED"
+      },
+      "operation": {
+        "status": "ACTIVE_PRODUCING",
+        "operationalStatus": "ACTIVE_PRODUCING",
+        "extractionMethod": "open-pit drill-blast mining, ore sorting and spodumene concentration",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "open-pit drill-blast mining, ore sorting and spodumene concentration",
+        "midstreamProcess": "Coal Beneficiation, Coking, Pulverization and Gasification",
+        "refinedOutputs": [
+          "SPODUMENE_CONCENTRATE",
+          "LITHIUM_CHEMICAL_FEED"
+        ],
+        "downstreamSectors": [
+          "BATTERY_MANUFACTURING",
+          "ENERGY_STORAGE",
+          "ELECTRIC_VEHICLES"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": 164500000,
+          "unit": "METRIC_TONNES_ORE",
+          "year": 2025,
+          "basis": "Greenbushes reserve statement effective 2025-06-30; 100% project total.",
+          "status": "REPORTED"
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": null,
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": 1.9,
+          "unit": "PERCENT_LI2O",
+          "year": 2025,
+          "basis": "Greenbushes probable reserve average Li2O grade, effective 2025-06-30.",
+          "status": "REPORTED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": "PERCENT",
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": null,
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": "https://www.talisonlithium.com/greenbushes-project",
+          "capacitySource": null,
+          "promotedAt": "2026-10-12"
+        },
+        "completeness": {
+          "reserve": "REPORTED",
+          "production": "UNOBSERVED",
+          "grade": "REPORTED",
+          "recovery": "UNOBSERVED",
+          "throughput": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "UNOBSERVED",
+          "structuredEvidence": true,
+          "overall": "SITE_SPECIFIC_SOURCE_REVIEWED_PARTIAL"
+        }
+      },
+      "verification": {
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+        "reviewedAt": "2026-10-12",
+        "sourceCount": 3,
+        "sourceAuthorities": [
+          "OPERATOR",
+          "REGULATORY_FILING",
+          "PUBLIC_MAP"
+        ],
+        "dataLimitations": "Coordinates indicate the mining complex, not the lease boundary; reserve and grade are 100% project values."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_legacy_map_recovery_candidates_v1.json",
+          "resource_site_legacy_profile_marker_reconstruction_v1.json"
+        ],
+        "sourcePath": "verified historical-marker restoration",
+        "evidence": [
+          {
+            "url": "https://www.talisonlithium.com/greenbushes-project",
+            "scope": "Operating status, location region, mining and concentration processes",
+            "sourceType": "OPERATOR"
+          },
+          {
+            "url": "https://www.sec.gov/Archives/edgar/data/915913/000091591326000018/ex961greenbushes2025trs.htm",
+            "scope": "June 30, 2025 reserve statement and Li2O grade, report filed February 2026",
+            "sourceType": "REGULATORY_FILING"
+          },
+          {
+            "url": "https://www.openstreetmap.org/?mlat=-33.86946&mlon=116.0626#map=12/-33.86946/116.0626",
+            "scope": "Approximate public map point for the mining complex",
+            "sourceType": "PUBLIC_MAP"
+          }
+        ],
+        "recoveryProvenance": {
+          "archiveRecordIds": [
+            "LEGACY_JSON_DEPOSIT_greenbushes_lithium_mine"
+          ],
+          "restoredAt": "2026-10-12",
+          "decision": "MANUALLY_REVIEWED_SOURCE_BACKED_PROMOTION",
+          "coordinateProvenance": "REVIEWED_EXTERNAL_SOURCE",
+          "historicalCommodityLabelCorrected": false
+        }
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "AUS",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "CANONICAL_CATALOG",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
+        "qualityAuthority": "OBSERVED_OR_EXPLICITLY_UNOBSERVED",
+        "countryWarehouseId": "WH-AUS-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      },
+      "researchFacts": {
+        "authority": "SITE_SPECIFIC_WEB_RESEARCH",
+        "miningMethod": "open-pit drill-blast mining, ore sorting and spodumene concentration",
+        "lifecycleStatus": "ACTIVE_PRODUCING",
+        "geologicalFacts": {
+          "reserve": {
+            "quantity": 164500000,
+            "unit": "METRIC_TONNES_ORE",
+            "year": 2025,
+            "basis": "Greenbushes reserve statement effective 2025-06-30; 100% project total.",
+            "status": "REPORTED"
+          },
+          "grade": {
+            "value": 1.9,
+            "unit": "PERCENT_LI2O",
+            "year": 2025,
+            "basis": "Greenbushes probable reserve average Li2O grade, effective 2025-06-30.",
+            "status": "REPORTED"
+          },
+          "purity": {
+            "value": null,
+            "unit": null,
+            "year": null,
+            "basis": null,
+            "status": "UNOBSERVED"
+          },
+          "classification": "LITHIUM_MINE",
+          "depositType": "LITHIUM_MINE"
+        },
+        "overlayOwnership": {
+          "owner": "Talison Lithium JV: Tianqi Lithium Energy Australia 51%; Albemarle 49%",
+          "operator": "Talison Lithium",
+          "status": "SOURCE_REFERENCED_REVIEWED"
+        },
+        "evidencePolicy": "Only source-backed facts; missing real-world values remain UNOBSERVED; gameplay reserves and capacities belong to the separate simulation authority.",
+        "dataLimitations": "Coordinates indicate the mining complex, not the lease boundary; reserve and grade are 100% project values."
+      }
+    },
+    {
+      "countryId": "CHL",
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_CHL_salar_de_atacama_lithium_brine_field",
+      "siteName": "Salar de Atacama Lithium Reserve",
+      "identity": {
+        "countryIso3": "CHL",
+        "siteType": "LITHIUM_BRINE_FIELD",
+        "resourceTypeId": "lithium",
+        "resourceName": "Lithium-bearing brine / lithium chemicals",
+        "ontologyKey": "LITHIUM"
+      },
+      "location": {
+        "countryName": "Chile",
+        "adminRegion": "Antofagasta Region, Atacama Desert",
+        "locality": "Antofagasta Region, Atacama Desert",
+        "coordinates": {
+          "lat": -23.551,
+          "lng": -68.41
+        },
+        "coordinateStatus": "SEC_REPORT_LOCATION_REFERENCE",
+        "coordinateProvenance": "SOURCE_REVIEWED_LEGACY_RECOVERY"
+      },
+      "ownership": {
+        "owner": "SQM and Albemarle (separate concessions, not one joint venture)",
+        "operator": "SQM and Albemarle respective brine operations",
+        "ownerEvidenceStatus": "SOURCE_REFERENCED_REVIEWED",
+        "operatorEvidenceStatus": "SOURCE_REFERENCED_REVIEWED"
+      },
+      "operation": {
+        "status": "ACTIVE_PRODUCING",
+        "operationalStatus": "ACTIVE_PRODUCING",
+        "extractionMethod": "brine pumping, concentration and lithium chemical processing",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "brine pumping, concentration and lithium chemical processing",
+        "midstreamProcess": "Coal Beneficiation, Coking, Pulverization and Gasification",
+        "refinedOutputs": [
+          "LITHIUM_CARBONATE",
+          "LITHIUM_HYDROXIDE_FEED"
+        ],
+        "downstreamSectors": [
+          "BATTERY_MANUFACTURING",
+          "ENERGY_STORAGE",
+          "ELECTRIC_VEHICLES"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": null,
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": null,
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": "PERCENT",
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": null,
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": "https://www.sec.gov/Archives/edgar/data/915913/000091591326000018/ex963salardeatacama2025t.htm",
+          "capacitySource": null,
+          "promotedAt": "2026-10-12"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "recovery": "UNOBSERVED",
+          "throughput": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "UNOBSERVED",
+          "structuredEvidence": true,
+          "overall": "SITE_SPECIFIC_SOURCE_REVIEWED_PARTIAL"
+        }
+      },
+      "verification": {
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+        "reviewedAt": "2026-10-12",
+        "sourceCount": 3,
+        "sourceAuthorities": [
+          "REGULATORY_FILING",
+          "PUBLIC_MAP"
+        ],
+        "dataLimitations": "Basin-level identity spans separate SQM and Albemarle concessions. Site-wide reserve remains unobserved to prevent double counting."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_legacy_map_recovery_candidates_v1.json",
+          "resource_site_legacy_profile_marker_reconstruction_v1.json"
+        ],
+        "sourcePath": "verified historical-marker restoration",
+        "evidence": [
+          {
+            "url": "https://www.sec.gov/Archives/edgar/data/915913/000091591326000018/ex963salardeatacama2025t.htm",
+            "scope": "Albemarle concession 2025 reserve statement, not basin-wide reserve",
+            "sourceType": "REGULATORY_FILING"
+          },
+          {
+            "url": "https://www.sec.gov/Archives/edgar/data/909037/000090903725000020/sqm-20241231.htm",
+            "scope": "SQM separate Salar operation and resource/reserve disclosure",
+            "sourceType": "REGULATORY_FILING"
+          },
+          {
+            "url": "https://www.openstreetmap.org/?mlat=-23.551&mlon=-68.410#map=9/-23.551/-68.410",
+            "scope": "Approximate basin-level point, not either concession boundary",
+            "sourceType": "PUBLIC_MAP"
+          }
+        ],
+        "recoveryProvenance": {
+          "archiveRecordIds": [
+            "LEGACY_JSON_DEPOSIT_salar_de_atacama_lithium_reserve"
+          ],
+          "restoredAt": "2026-10-12",
+          "decision": "MANUALLY_REVIEWED_SOURCE_BACKED_PROMOTION",
+          "coordinateProvenance": "REVIEWED_EXTERNAL_SOURCE",
+          "historicalCommodityLabelCorrected": false
+        }
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "CHL",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "CANONICAL_CATALOG",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
+        "qualityAuthority": "OBSERVED_OR_EXPLICITLY_UNOBSERVED",
+        "countryWarehouseId": "WH-CHL-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      },
+      "researchFacts": {
+        "authority": "SITE_SPECIFIC_WEB_RESEARCH",
+        "miningMethod": "brine pumping, concentration and lithium chemical processing",
+        "lifecycleStatus": "ACTIVE_PRODUCING",
+        "geologicalFacts": {
+          "reserve": {
+            "quantity": null,
+            "unit": null,
+            "year": null,
+            "basis": null,
+            "status": "UNOBSERVED"
+          },
+          "grade": {
+            "value": null,
+            "unit": null,
+            "year": null,
+            "basis": null,
+            "status": "UNOBSERVED"
+          },
+          "purity": {
+            "value": null,
+            "unit": null,
+            "year": null,
+            "basis": null,
+            "status": "UNOBSERVED"
+          },
+          "classification": "LITHIUM_BRINE_FIELD",
+          "depositType": "LITHIUM_BRINE_FIELD"
+        },
+        "overlayOwnership": {
+          "owner": "SQM and Albemarle (separate concessions, not one joint venture)",
+          "operator": "SQM and Albemarle respective brine operations",
+          "status": "SOURCE_REFERENCED_REVIEWED"
+        },
+        "evidencePolicy": "Only source-backed facts; missing real-world values remain UNOBSERVED; gameplay reserves and capacities belong to the separate simulation authority.",
+        "dataLimitations": "Basin-level identity spans separate SQM and Albemarle concessions. Site-wide reserve remains unobserved to prevent double counting."
+      }
+    },
+    {
+      "countryId": "CHN",
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_CHN_bayan_obo_main_iron_ore_mine",
+      "siteName": "Bayan Obo Main Iron Ore Mine",
+      "identity": {
+        "countryIso3": "CHN",
+        "siteType": "IRON_ORE_MINE",
+        "resourceTypeId": "iron_ore",
+        "resourceName": "Iron Ore & Concentrates",
+        "ontologyKey": "IRON_ORE"
+      },
+      "location": {
+        "countryName": "China",
+        "adminRegion": "Baotou, Inner Mongolia",
+        "locality": "Baotou, Inner Mongolia",
+        "coordinates": {
+          "lat": 41.798138,
+          "lng": 109.962814
+        },
+        "coordinateStatus": "WGS84_TRACKER_COORDINATE",
+        "coordinateProvenance": "SOURCE_REVIEWED_LEGACY_RECOVERY"
+      },
+      "ownership": {
+        "owner": "Baiyun'ebo Iron Ore Mine of Baosteel (Group) Co",
+        "operator": "Baosteel Group / Bayan Obo Main Mine operation",
+        "ownerEvidenceStatus": "SOURCE_REFERENCED_REVIEWED",
+        "operatorEvidenceStatus": "SOURCE_REFERENCED_REVIEWED"
+      },
+      "operation": {
+        "status": "ACTIVE_PRODUCING",
+        "operationalStatus": "ACTIVE_PRODUCING",
+        "extractionMethod": "open-pit iron-ore mining, crushing and beneficiation",
+        "extractionEligibility": "EXECUTABLE_SIMULATION",
+        "commercialExtraction": true
+      },
+      "processing": {
+        "upstreamProcess": "open-pit iron-ore mining, crushing and beneficiation",
+        "midstreamProcess": "Crushing, Beneficiation, Sinter/Pellet Preparation",
+        "refinedOutputs": [
+          "IRON_CONCENTRATE",
+          "RARE_EARTH_BEARING_BYPRODUCT_STREAM"
+        ],
+        "downstreamSectors": [
+          "STEELMAKING",
+          "CONSTRUCTION",
+          "MACHINERY",
+          "RARE_EARTH_PROCESSING"
+        ]
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": 193030000,
+          "unit": "METRIC_TONNES_IRON_ORE",
+          "year": null,
+          "basis": "Global Energy Monitor tracker reserve series; underlying reporting date not stated on summary page.",
+          "status": "REPORTED"
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": null,
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": "PERCENT",
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "basis": null,
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": 7200000,
+          "minimum": null,
+          "maximum": null,
+          "unit": "METRIC_TONNES_PER_YEAR",
+          "year": null,
+          "basis": "Global Energy Monitor tracker reported design capacity.",
+          "status": "REPORTED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": "https://www.gem.wiki/Bayan_Obo_Main_Mine",
+          "capacitySource": "https://www.gem.wiki/Bayan_Obo_Main_Mine",
+          "promotedAt": "2026-10-12"
+        },
+        "completeness": {
+          "reserve": "REPORTED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "recovery": "UNOBSERVED",
+          "throughput": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "capacity": "REPORTED",
+          "structuredEvidence": true,
+          "overall": "SITE_SPECIFIC_SOURCE_REVIEWED_PARTIAL"
+        }
+      },
+      "verification": {
+        "researchState": "SITE_SPECIFIC_WEB_REVIEWED",
+        "reviewedAt": "2026-10-12",
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "GLOBAL_ENERGY_TRACKER",
+          "GOVERNMENT_GEOLOGY"
+        ],
+        "dataLimitations": "The old marker label said rare-earth mine; current operating-asset tracking identifies this point as the main iron-ore mine. Commodity corrected to iron_ore; REE is not counted as a separate site."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [
+          "resource_site_legacy_map_recovery_candidates_v1.json",
+          "resource_site_legacy_profile_marker_reconstruction_v1.json"
+        ],
+        "sourcePath": "verified historical-marker restoration",
+        "evidence": [
+          {
+            "url": "https://www.gem.wiki/Bayan_Obo_Main_Mine",
+            "scope": "Operating asset, WGS84 coordinates, ownership, design capacity and reserve series",
+            "sourceType": "TRACKER"
+          },
+          {
+            "url": "https://pubs.usgs.gov/bul/b2143/intro.html",
+            "scope": "Bayan Obo polymetallic geology and rare-earth mineralization context",
+            "sourceType": "GOVERNMENT_GEOLOGY"
+          }
+        ],
+        "recoveryProvenance": {
+          "archiveRecordIds": [
+            "LEGACY_MAP_bayan_obo_rare_earth_mine"
+          ],
+          "restoredAt": "2026-10-12",
+          "decision": "PROMOTE_WITH_CORRECTED_COMMODITY_IDENTITY",
+          "coordinateProvenance": "REVIEWED_EXTERNAL_SOURCE",
+          "historicalCommodityLabelCorrected": true
+        }
+      },
+      "map": {
+        "markerEligible": true,
+        "markerLayer": "RESOURCE_SITE",
+        "countryIsolationKey": "CHN",
+        "locationStatus": "APPROXIMATE"
+      },
+      "runtime": {
+        "identityAuthority": "CANONICAL_CATALOG",
+        "quantityAuthority": "SIMULATION_RUNTIME",
+        "productionAuthority": "SIMULATION_RUNTIME",
+        "qualityAuthority": "OBSERVED_OR_EXPLICITLY_UNOBSERVED",
+        "countryWarehouseId": "WH-CHN-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true
+      },
+      "researchFacts": {
+        "authority": "SITE_SPECIFIC_WEB_RESEARCH",
+        "miningMethod": "open-pit iron-ore mining, crushing and beneficiation",
+        "lifecycleStatus": "ACTIVE_PRODUCING",
+        "geologicalFacts": {
+          "reserve": {
+            "quantity": 193030000,
+            "unit": "METRIC_TONNES_IRON_ORE",
+            "year": null,
+            "basis": "Global Energy Monitor tracker reserve series; underlying reporting date not stated on summary page.",
+            "status": "REPORTED"
+          },
+          "grade": {
+            "value": null,
+            "unit": null,
+            "year": null,
+            "basis": null,
+            "status": "UNOBSERVED"
+          },
+          "purity": {
+            "value": null,
+            "unit": null,
+            "year": null,
+            "basis": null,
+            "status": "UNOBSERVED"
+          },
+          "classification": "IRON_ORE_MINE",
+          "depositType": "IRON_ORE_MINE"
+        },
+        "overlayOwnership": {
+          "owner": "Baiyun'ebo Iron Ore Mine of Baosteel (Group) Co",
+          "operator": "Baosteel Group / Bayan Obo Main Mine operation",
+          "status": "SOURCE_REFERENCED_REVIEWED"
+        },
+        "evidencePolicy": "Only source-backed facts; missing real-world values remain UNOBSERVED; gameplay reserves and capacities belong to the separate simulation authority.",
+        "dataLimitations": "The old marker label said rare-earth mine; current operating-asset tracking identifies this point as the main iron-ore mine. Commodity corrected to iron_ore; REE is not counted as a separate site."
       }
     }
   ],
