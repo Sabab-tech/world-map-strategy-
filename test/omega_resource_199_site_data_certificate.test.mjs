@@ -133,20 +133,20 @@ assert.equal(ids.size, 199);
 assert.equal(packageCount, 199);
 
 const scenarioSource = readFileSync('omega_resource_scenario_engineering_data_v1.js', 'utf8');
-assert(scenarioSource.includes('"recordCount": 199'));
-assert.equal((scenarioSource.match(/"siteId":/g) || []).length, 199);
+assert(scenarioSource.includes('"recordCount":250'));
+assert.equal((scenarioSource.match(/"siteId":/g) || []).length, 250);
 
 const catalog = load('resource_site_canonical_catalog_v1.json');
-assert.equal(catalog.siteCount, 199);
-assert(Array.isArray(catalog.sites) && catalog.sites.length === 199);
-assert.equal(new Set(catalog.sites.map((x) => x.siteId)).size, 199);
+assert.equal(catalog.siteCount, 250);
+assert(Array.isArray(catalog.sites) && catalog.sites.length === 250);
+assert.equal(new Set(catalog.sites.map((x) => x.siteId)).size, 250);
 
 const currentLegacySites = sites.filter(({ site }) => site.researchState === 'LEGACY_CURATED_NOT_RECENTLY_REVALIDATED');
 assert.equal(currentLegacySites.length, 0, 'no legacy site should remain after the 199-site web-revalidation pass');
 
 const sourceIds = sites.map(({ site }) => site.id).sort();
 const catalogIds = catalog.sites.map((x) => x.siteId).sort();
-assert.deepEqual(catalogIds, sourceIds, 'canonical catalog site IDs must match the 199 source site IDs');
+assert(sourceIds.every(id => catalogIds.includes(id)), 'all 199 legacy source IDs must remain in the 250-site canonical catalog');
 
 const commercial = sites.filter(({ site }) => !(String(site.status).toUpperCase() === 'NOT_APPLICABLE' || site.commercialExtraction === false));
 const na = sites.length - commercial.length;
