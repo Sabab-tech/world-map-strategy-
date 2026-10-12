@@ -3180,11 +3180,21 @@ const catalog = sites.map(({countryId, site}) => ({
   countryId,
   ...site.siteDataPackage
 }));
+// Preserve additive canonical site rows that do not originate in the legacy 199-site source profiles.
+const previousCatalog = JSON.parse(fs.readFileSync('resource_site_canonical_catalog_v1.json', 'utf8'));
+const canonicalIds = new Set(catalog.map((site) => site.siteId));
+for (const site of (previousCatalog.sites || [])) {
+  if (site?.siteId && !canonicalIds.has(site.siteId)) {
+    catalog.push(site);
+    canonicalIds.add(site.siteId);
+  }
+}
 fs.writeFileSync('resource_site_canonical_catalog_v1.json', JSON.stringify({
   schemaVersion: '1.0.0',
   generatedAt: REVIEW_DATE,
   siteCount: catalog.length,
-  sites: catalog
+  sites: catalog,
+  sourceReferencePolicy: { canonicalAuthority: 'resource_site_canonical_catalog_v1.json', additiveRecordsPreserved: true }
 }, null, 2) + '\n');
 
 execFileSync('git', ['config', 'user.name', 'github-actions[bot]'], { stdio: 'inherit' });
