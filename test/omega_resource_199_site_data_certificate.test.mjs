@@ -139,7 +139,7 @@ assert.equal((scenarioSource.match(/"siteId":/g) || []).length, 250);
 const catalog = load('resource_site_canonical_catalog_v1.json');
 assert.equal(catalog.siteCount, 250);
 assert(Array.isArray(catalog.sites) && catalog.sites.length === 250);
-assert.equal(new Set(catalog.sites.map((x) => x.siteId)).size, 199);
+assert.equal(new Set(catalog.sites.map((x) => x.siteId)).size, 250);
 
 const currentLegacySites = sites.filter(({ site }) => site.researchState === 'LEGACY_CURATED_NOT_RECENTLY_REVALIDATED');
 assert.equal(currentLegacySites.length, 0, 'no legacy site should remain after the 199-site web-revalidation pass');
