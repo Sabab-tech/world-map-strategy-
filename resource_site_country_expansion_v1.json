@@ -387,9 +387,11 @@
           "status": "UNOBSERVED"
         },
         "grade": {
-          "value": "Polymetallic deposit containing copper, gold and uranium; assay grade not supplied in this record",
-          "unit": null,
-          "status": "QUALITATIVE_DEPOSIT_DESCRIPTION_NOT_ASSAY"
+          "value": 2.01,
+          "unit": "percent_copper",
+          "status": "REPORTED_AVERAGE_COPPER_GRADE",
+          "year": 2024,
+          "basis": "BHP FY2024 average copper grade for ore milled; fiscal year ended 30 June 2024."
         },
         "recovery": {
           "value": null,
@@ -398,10 +400,11 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
-          "value": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
+          "value": 10653000,
+          "unit": "metric_tonnes_ore_milled_per_fiscal_year",
+          "year": 2024,
+          "status": "REPORTED",
+          "basis": "BHP FY2024 operational review."
         },
         "purity": {
           "value": null,
@@ -417,25 +420,26 @@
         },
         "reportedMetrics": {},
         "quantitativeProvenance": {
-          "structuredSource": null,
+          "structuredSource": "https://www.bhp.com/-/media/documents/media/reports-and-presentations/2024/240717_bhpoperationalreviewfortheyearended30june2024.pdf",
           "capacitySource": null,
           "promotedAt": "2026-10-10"
         },
         "completeness": {
           "reserve": "UNQUANTIFIED",
           "production": "UNOBSERVED",
-          "grade": "QUALITATIVE_ONLY",
+          "grade": "REPORTED_AVERAGE_COPPER_GRADE",
           "recovery": "UNOBSERVED",
           "purity": "UNOBSERVED",
           "capacity": "UNOBSERVED",
-          "structuredEvidence": false,
-          "overall": "IDENTITY_AND_LOCATION_ENRICHED_QUANTITATIVES_REQUIRE_RESEARCH"
+          "structuredEvidence": true,
+          "overall": "SITE_SPECIFIC_PRIMARY_SOURCE_RESEARCH_PARTIAL",
+          "throughput": "REPORTED"
         }
       },
       "verification": {
-        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_REQUIRES_FIELD_REVALIDATION",
-        "reviewedAt": "2026-10-10",
-        "sourceCount": 1,
+        "researchState": "PRIMARY_SOURCE_QUANTITATIVE_RESEARCH_UPDATED",
+        "reviewedAt": "2026-10-12",
+        "sourceCount": 2,
         "sourceAuthorities": [
           "OPERATOR_OR_PUBLIC_SITE_REFERENCE"
         ],
@@ -450,6 +454,10 @@
           {
             "url": "https://www.bhp.com/what-we-do/global-locations/australia/south-australia/south-australia-olympic-dam",
             "scope": "site identity, commodity, region and/or operator; revalidate field-level claims before promotion"
+          },
+          {
+            "url": "https://www.bhp.com/-/media/documents/media/reports-and-presentations/2024/240717_bhpoperationalreviewfortheyearended30june2024.pdf",
+            "scope": "BHP FY2024 Operational Review: Olympic Dam milled 10.653 Mt ore at average copper grade 2.01%; copper output is not conflated with South Australia aggregate."
           }
         ]
       },
@@ -1318,33 +1326,46 @@
           "status": "UNOBSERVED"
         },
         "capacity": {
-          "nominal": null,
+          "nominal": 450000,
           "minimum": null,
           "maximum": null,
-          "unit": null,
-          "status": "UNOBSERVED"
+          "unit": "metric_tonnes_copper_per_year",
+          "status": "REPORTED_ANNUAL_METAL_CAPACITY",
+          "basis": "CMOC reports TFM annual copper production capacity 450 kt and cobalt by-product capacity 37 kt; capacity is not actual annual output."
         },
-        "reportedMetrics": {},
+        "reportedMetrics": {
+          "cobaltCapacity": {
+            "value": 37000,
+            "unit": "metric_tonnes_cobalt_per_year",
+            "status": "REPORTED_ANNUAL_METAL_CAPACITY"
+          },
+          "ownershipShare": {
+            "value": 80,
+            "unit": "percent",
+            "status": "REPORTED_OWNERSHIP_SHARE"
+          }
+        },
         "quantitativeProvenance": {
           "structuredSource": null,
-          "capacitySource": null,
+          "capacitySource": "https://www.cmoc.com/uploadfile/2024/0924/20240924120409455.pdf",
           "promotedAt": "2026-10-10"
         },
         "completeness": {
           "reserve": "UNQUANTIFIED",
           "production": "UNOBSERVED",
-          "grade": "QUALITATIVE_ONLY",
+          "grade": "QUALITATIVE_DEPOSIT_DESCRIPTION_NOT_ASSAY",
           "recovery": "UNOBSERVED",
           "purity": "UNOBSERVED",
-          "capacity": "UNOBSERVED",
-          "structuredEvidence": false,
-          "overall": "IDENTITY_AND_LOCATION_ENRICHED_QUANTITATIVES_REQUIRE_RESEARCH"
+          "capacity": "REPORTED_ANNUAL_METAL_CAPACITY",
+          "structuredEvidence": true,
+          "overall": "SITE_SPECIFIC_PRIMARY_SOURCE_RESEARCH_PARTIAL",
+          "throughput": "UNOBSERVED"
         }
       },
       "verification": {
-        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_REQUIRES_FIELD_REVALIDATION",
-        "reviewedAt": "2026-10-10",
-        "sourceCount": 1,
+        "researchState": "PRIMARY_SOURCE_QUANTITATIVE_RESEARCH_UPDATED",
+        "reviewedAt": "2026-10-12",
+        "sourceCount": 2,
         "sourceAuthorities": [
           "OPERATOR_OR_PUBLIC_SITE_REFERENCE"
         ],
@@ -1359,6 +1380,10 @@
           {
             "url": "https://en.cmoc.com/html/Business/CMOCMining/",
             "scope": "site identity, commodity, region and/or operator; revalidate field-level claims before promotion"
+          },
+          {
+            "url": "https://www.cmoc.com/uploadfile/2024/0924/20240924120409455.pdf",
+            "scope": "CMOC TFM brochure: annual capacity 450 kt copper and 37 kt cobalt; 80% equity. The source also labels its historical 2023 production separately."
           }
         ]
       },
@@ -2347,11 +2372,12 @@
           "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
         },
         "production": {
-          "annual": null,
+          "annual": 500000,
           "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
+          "unit": "troy_ounces_gold_per_year",
+          "year": 2024,
+          "status": "REPORTED_LOWER_BOUND",
+          "basis": "Kinross FY2024 results state Paracatu produced over 500,000 gold ounces for the seventh consecutive year; 500,000 is a lower bound, not exact output."
         },
         "grade": {
           "value": "Gold ore; no numeric assay assigned",
@@ -2384,25 +2410,26 @@
         },
         "reportedMetrics": {},
         "quantitativeProvenance": {
-          "structuredSource": null,
+          "structuredSource": "https://www.kinross.com/news-and-investors/news-releases/press-release-details/2025/Kinross-reports-2024-fourth-quarter-and-full-year-results/",
           "capacitySource": null,
           "promotedAt": "2026-10-10"
         },
         "completeness": {
           "reserve": "UNQUANTIFIED",
-          "production": "UNOBSERVED",
-          "grade": "QUALITATIVE_ONLY",
+          "production": "REPORTED_LOWER_BOUND",
+          "grade": "QUALITATIVE_ONLY_NOT_ASSAY",
           "recovery": "UNOBSERVED",
           "purity": "UNOBSERVED",
           "capacity": "UNOBSERVED",
-          "structuredEvidence": false,
-          "overall": "IDENTITY_AND_LOCATION_ENRICHED_QUANTITATIVES_REQUIRE_RESEARCH"
+          "structuredEvidence": true,
+          "overall": "SITE_SPECIFIC_PRIMARY_SOURCE_RESEARCH_PARTIAL",
+          "throughput": "UNOBSERVED"
         }
       },
       "verification": {
-        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_REQUIRES_FIELD_REVALIDATION",
-        "reviewedAt": "2026-10-10",
-        "sourceCount": 1,
+        "researchState": "PRIMARY_SOURCE_QUANTITATIVE_RESEARCH_UPDATED",
+        "reviewedAt": "2026-10-12",
+        "sourceCount": 2,
         "sourceAuthorities": [
           "OPERATOR_OR_GOVERNMENT_REFERENCE"
         ],
@@ -2417,6 +2444,10 @@
           {
             "url": "https://www.kinross.com/English/operations/americas/Paracatu-Brazil/default.aspx",
             "scope": "site identity, commodity, region and/or operator; validate each field before marking verified"
+          },
+          {
+            "url": "https://www.kinross.com/news-and-investors/news-releases/press-release-details/2025/Kinross-reports-2024-fourth-quarter-and-full-year-results/",
+            "scope": "Kinross FY2024 results: Paracatu produced over 500,000 oz gold in 2024; represented as lower bound, not exact total."
           }
         ]
       },
@@ -2825,17 +2856,19 @@
           "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
         },
         "production": {
-          "annual": 203168,
+          "annual": 50307,
           "rate": null,
-          "unit": "metric_tonnes_zinc",
-          "year": 2025,
-          "status": "REPORTED"
+          "unit": "metric_tonnes_zinc_in_concentrate_per_year",
+          "year": 2024,
+          "status": "REPORTED",
+          "basis": "Ivanhoe Mines FY2024 result; 100% project basis; zinc in concentrate before refining losses/deductions."
         },
         "grade": {
-          "value": 35.34,
-          "unit": "% Zn",
-          "status": "REPORTED_OPERATOR_GRADE",
-          "basis": "Operator-reported average grade over first five years of production"
+          "value": 29,
+          "unit": "percent_zinc",
+          "status": "REPORTED_AVERAGE_ORE_FEED_GRADE",
+          "year": 2024,
+          "basis": "Average zinc grade of ore milled during 2024."
         },
         "recovery": {
           "value": 96,
@@ -2844,10 +2877,11 @@
           "status": "OPERATOR_TARGET_NOT_OBSERVED"
         },
         "throughput": {
-          "value": 960000,
-          "unit": "metric_tonnes_ore_per_year",
-          "year": 2025,
-          "status": "REPORTED_CAPACITY"
+          "value": 228293,
+          "unit": "metric_tonnes_ore_milled_per_year",
+          "year": 2024,
+          "status": "REPORTED",
+          "basis": "Ivanhoe Mines FY2024 result."
         },
         "purity": {
           "value": 55,
@@ -2856,37 +2890,54 @@
           "basis": "Operator-reported average zinc concentrate grade"
         },
         "capacity": {
-          "nominal": 960000,
+          "nominal": 800000,
           "minimum": null,
           "maximum": null,
-          "unit": "metric_tonnes_ore_per_year",
-          "status": "REPORTED"
+          "unit": "metric_tonnes_ore_milled_per_year",
+          "status": "REPORTED_NAMEPLATE_CONCENTRATOR_CAPACITY",
+          "basis": "Kipushi concentrator nameplate 800,000 tonnes ore per year; commercial production declared in Q4 2024."
         },
-        "reportedMetrics": {},
+        "reportedMetrics": {
+          "concentrateGrade": {
+            "value": 50,
+            "unit": "percent_zinc",
+            "year": 2024,
+            "status": "REPORTED_APPROXIMATE"
+          },
+          "q4Recovery": {
+            "value": 84.85,
+            "unit": "percent",
+            "year": 2024,
+            "status": "REPORTED_Q4_ONLY_NOT_FULL_YEAR"
+          },
+          "q4OreMilled": {
+            "value": 135285,
+            "unit": "metric_tonnes",
+            "year": 2024,
+            "status": "REPORTED_Q4_ONLY"
+          }
+        },
         "quantitativeProvenance": {
-          "structuredSource": [
-            "https://www.ivanhoemines.com/operations/kipushi-development-project/"
-          ],
-          "capacitySource": [
-            "https://www.ivanhoemines.com/operations/kipushi-development-project/"
-          ],
+          "structuredSource": "https://www.ivanhoemines.com/news-stories/news-release/ivanhoe-mines-provides-2024-production-results-2025-production-guidance/",
+          "capacitySource": "https://www.ivanhoemines.com/news-stories/news-release/ivanhoe-mines-provides-2024-production-results-2025-production-guidance/",
           "promotedAt": "2026-10-10"
         },
         "completeness": {
           "reserve": "UNQUANTIFIED",
           "production": "REPORTED",
-          "grade": "REPORTED_OPERATOR_GRADE",
+          "grade": "REPORTED_AVERAGE_ORE_FEED_GRADE",
           "recovery": "OPERATOR_TARGET_NOT_OBSERVED",
           "purity": "CONCENTRATE_GRADE_NOT_REFINED_PURITY",
-          "capacity": "REPORTED",
+          "capacity": "REPORTED_NAMEPLATE_CONCENTRATOR_CAPACITY",
           "structuredEvidence": true,
-          "overall": "IDENTITY_LOCATION_AND_SOURCE_LINKED_SITE_RECORD"
+          "overall": "SITE_SPECIFIC_PRIMARY_SOURCE_RESEARCH_PARTIAL",
+          "throughput": "REPORTED"
         }
       },
       "verification": {
-        "researchState": "SOURCE_LINKED_SITE_RECORD_FIELD_LEVEL_REVALIDATION_REQUIRED",
-        "reviewedAt": "2026-10-10",
-        "sourceCount": 1,
+        "researchState": "PRIMARY_SOURCE_QUANTITATIVE_RESEARCH_UPDATED",
+        "reviewedAt": "2026-10-12",
+        "sourceCount": 2,
         "sourceAuthorities": [
           "MINE_OPERATOR_OR_TECHNICAL_REPORT"
         ],
@@ -2901,6 +2952,10 @@
           {
             "url": "https://www.ivanhoemines.com/operations/kipushi-development-project/",
             "scope": "operator-reported zinc grade, throughput capacity, concentrate grade, recovery target and 2025 production"
+          },
+          {
+            "url": "https://www.ivanhoemines.com/news-stories/news-release/ivanhoe-mines-provides-2024-production-results-2025-production-guidance/",
+            "scope": "Ivanhoe Mines FY2024 results: 50,307 t zinc in concentrate, 228,293 t ore milled at 29% Zn feed grade, ~50% Zn concentrate and 800 ktpa plant capacity."
           }
         ]
       },
@@ -5871,10 +5926,10 @@
         "production": {
           "annual": 2166000,
           "rate": null,
-          "unit": "carats_per_year",
+          "unit": "carats_recovered_per_year",
           "year": 2024,
           "status": "REPORTED",
-          "basis": "De Beers 2024 production report; site production"
+          "basis": "De Beers FY2024 production report; South Africa/Venetia output on 100% basis."
         },
         "grade": {
           "value": "Site-specific measured ore/feed grade not supplied in this record",
@@ -5919,12 +5974,13 @@
           "purity": "UNOBSERVED",
           "capacity": "UNOBSERVED",
           "structuredEvidence": true,
-          "overall": "SITE_IDENTITY_ENRICHED_FIELD_LEVEL_RESEARCH_PARTIAL"
+          "overall": "SITE_SPECIFIC_PRIMARY_SOURCE_RESEARCH_PARTIAL",
+          "throughput": "UNOBSERVED"
         }
       },
       "verification": {
-        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_FIELD_LEVEL_REVIEW_REQUIRED",
-        "reviewedAt": "2026-10-11",
+        "researchState": "PRIMARY_SOURCE_QUANTITATIVE_RESEARCH_UPDATED",
+        "reviewedAt": "2026-10-12",
         "sourceCount": 1,
         "sourceAuthorities": [
           "DE_BEERS_GROUP"
@@ -6531,12 +6587,13 @@
           "purity": "UNOBSERVED",
           "capacity": "UNOBSERVED",
           "structuredEvidence": true,
-          "overall": "SITE_IDENTITY_ENRICHED_FIELD_LEVEL_RESEARCH_PARTIAL"
+          "overall": "SITE_SPECIFIC_PRIMARY_SOURCE_RESEARCH_PARTIAL",
+          "throughput": "UNOBSERVED"
         }
       },
       "verification": {
-        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_FIELD_LEVEL_REVIEW_REQUIRED",
-        "reviewedAt": "2026-10-11",
+        "researchState": "PRIMARY_SOURCE_QUANTITATIVE_RESEARCH_UPDATED",
+        "reviewedAt": "2026-10-12",
         "sourceCount": 1,
         "sourceAuthorities": [
           "KGHM"
