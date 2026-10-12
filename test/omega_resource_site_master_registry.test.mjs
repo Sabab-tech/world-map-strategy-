@@ -25,4 +25,4 @@ for (const site of doc.sites) {
   assert.ok(Array.isArray(site.simulation.transportRoute));
 }
 
-console.log("PASS: ${expectedSiteCount}-site master registry integrity and real/simulation separation");
+console.log(`PASS: ${expectedSiteCount}-site master registry integrity and real/simulation separation`);
