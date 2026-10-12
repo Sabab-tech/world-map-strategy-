@@ -3,12 +3,12 @@ import { readFileSync } from 'node:fs';
 const load=name=>JSON.parse(readFileSync(name,'utf8'));
 const catalog=load('resource_site_canonical_catalog_v1.json');
 const data=load('resource_site_reserve_simulation_v1.json');
-assert.equal(catalog.siteCount,199);
-assert.equal(data.siteCount,199);
+assert.equal(catalog.siteCount,250);
+assert.equal(data.siteCount,250);
 const a=new Map(catalog.sites.map(s=>[s.siteId,s]));
 const b=new Map(data.records.map(s=>[s.siteId,s]));
-assert.equal(a.size,199);
-assert.equal(b.size,199);
+assert.equal(a.size,250);
+assert.equal(b.size,250);
 for(const [id,s] of a){
  const r=b.get(id);assert(r,id);
  assert.equal(r.countryId,s.countryId);
