@@ -134,6 +134,7 @@ context.Omega.ResourceEndowmentRuntime={
     const rs=context.Game.state.resource[countryId]||(context.Game.state.resource[countryId]={inventory:{},warehouse:{availableByResource:{},reservedByResource:{}},mineSiteControllers:{}});
     rs.mineSiteControllers=rs.mineSiteControllers||{};
     rs.mineSiteControllers.SITE_BGD_COPPER_01={siteReferenceKey:'SITE_BGD_COPPER_01',linkedOccurrenceKeys:['SITE_OCC:BGD:SITE_BGD_COPPER_01'],controllerStatus:'RUNNING'};
+    rs.mineStates=rs.mineStates||{};rs.mineStates['SITE_OCC:BGD:SITE_BGD_COPPER_01']={resourceId:'copper',countryId};
     return{status:'APPLIED',result:{accepted:true,countryId}};
   },
   async extractCountry(countryId,occurrenceKeys){
