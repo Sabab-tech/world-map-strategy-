@@ -8,19 +8,21 @@ const catalog=JSON.parse(read('resource_site_canonical_catalog_v1.json'));
 const master=JSON.parse(read('resource_site_master_registry_v1.json'));
 const reserves=JSON.parse(read('resource_site_reserve_simulation_v1.json'));
 const expansion=JSON.parse(read('resource_site_country_expansion_v1.json'));
+const restoration=JSON.parse(read('resource_site_verified_legacy_restoration_v1.json'));
+const expectedSiteCount=250+restoration.records.length;
 const index=read('index.html');
 const binding=read('omega_resource_gameplay_binding_v1.js');
 const scenarioSource=read('omega_resource_scenario_engineering_data_v1.js');
 const scenarioText=scenarioSource.slice(scenarioSource.indexOf('const DATA=')+'const DATA='.length,scenarioSource.indexOf(';\ng.OmegaResourceScenarioEngineeringData=DATA;'));
 const scenario=JSON.parse(scenarioText);
 
-assert.equal(catalog.sites.length,250,'canonical catalog must contain 250 individual sites');
-assert.equal(master.siteCount,250,'master registry count');
-assert.equal(master.sites.length,250,'master registry rows');
-assert.equal(reserves.records.length,250,'reserve simulation rows');
-assert.equal(scenario.records.length,250,'scenario engineering rows');
+assert.equal(catalog.sites.length,expectedSiteCount,'canonical catalog site count must follow restored-site manifest');
+assert.equal(master.siteCount,expectedSiteCount,'master registry count');
+assert.equal(master.sites.length,expectedSiteCount,'master registry rows');
+assert.equal(reserves.records.length,expectedSiteCount,'reserve simulation rows');
+assert.equal(scenario.records.length,expectedSiteCount,'scenario engineering rows');
 const ids=master.sites.map(x=>x.siteId);
-assert.equal(new Set(ids).size,250,'site IDs must be unique');
+assert.equal(new Set(ids).size,expectedSiteCount,'site IDs must be unique');
 const catalogIds=new Set(catalog.sites.map(x=>x.siteId));
 assert.ok(ids.every(x=>catalogIds.has(x)),'master registry IDs must map to canonical catalog');
 const reserveIds=new Set(reserves.records.map(x=>x.siteId));
@@ -226,7 +228,7 @@ test('runtime renders all global sites and applies nation/resource scope without
   const diagnostics = context.Omega.IndividualResourceSiteBinding?.diagnostics();
   assert.equal(diagnostics?.status,'READY','global source registry must initialize');
   assert.equal(diagnostics?.siteCount,markerCount(),'diagnostics must match rendered individual site markers');
-  assert.ok(markerCount() >= 239+expansion.migratedSiteCount,'WORLD scope must render the source locations and all non-duplicate expansion sites');
+  assert.ok(markerCount() >= 239+expansion.migratedSiteCount+restoration.records.length,'WORLD scope must render the source locations and all non-duplicate expansion sites');
   const mappedSiteIds = new Set(context.Omega.IndividualResourceSiteBinding.sites.flatMap(site => [
     site.siteId, ...(site.depositAliases || []), ...(site.sourceDepositRecords || []).map(record => record.siteId || record.id),
     site.sourceSiteRecord?.siteId, site.sourceSiteRecord?.id
@@ -252,17 +254,17 @@ test('runtime renders all global sites and applies nation/resource scope without
   context.Game.Map.resourceState.scope='NATION';
   context.Game.currentActiveCountry='BGD';
   context.Omega.IndividualResourceSiteBinding.refresh();
-  assert.equal(markerCount(),6,'Bangladesh scope must show its four source locations plus two test-only overlap fixtures, not all countries');
+  assert.equal(markerCount(),8,'Bangladesh scope must include the four source locations, two restored gas sites and two test-only overlap fixtures, not all countries');
   context.Game.Map.resourceState.selectedResources=vm.runInContext("new Set(['coal'])",context);
   context.Omega.IndividualResourceSiteBinding.refresh();
   assert.equal(markerCount(),3,'Bangladesh coal filter must show the source coal site and its two test-only matching overlap identities');
   context.Game.Map.resourceState.selectedResources=vm.runInContext('new Set()',context);
   context.Omega.IndividualResourceSiteBinding.refresh();
-  assert.equal(markerCount(),6,'clearing the resource filter must restore every site in the selected country');
+  assert.equal(markerCount(),8,'clearing the resource filter must restore every site in the selected country including restored gas sites');
   context.Game.Map.resourceState.scope='WORLD';
   context.Game.Map.resourceState.selectedResources=vm.runInContext("new Set(['coal'])",context);
   context.Omega.IndividualResourceSiteBinding.refresh();
-  assert.ok(markerCount()>0 && markerCount()<239+expansion.migratedSiteCount+2,'resource filter must narrow the global site markers');
+  assert.ok(markerCount()>0 && markerCount()<239+expansion.migratedSiteCount+restoration.records.length+2,'resource filter must narrow the global site markers');
   context.Game.Map.resourceState.selectedResources=vm.runInContext("new Set(['natural-gas'])",context);
   context.Omega.IndividualResourceSiteBinding.refresh();
   assert.ok(markerCount()>0 && markerCount()<239+expansion.migratedSiteCount+2,'hyphenated commodity filters must match canonical underscore resource IDs across the world');
