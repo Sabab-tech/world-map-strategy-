@@ -23,15 +23,28 @@ function firstText(...values) {
   return values.find(value => typeof value === 'string' && value.trim()) || '';
 }
 function coordsOf(row) {
-  const sources = [row?.coordinates, row?.location, row?.real?.coordinates,
-    row?.sourceSiteRecord?.coordinates, row?.sourceSiteRecord, row?.rawLegacyRecord];
+  // Canonical sites keep verified/estimated geometry under location.coordinates.
+  // Master-registry rows wrap that exact source record one level deeper.
+  const sources = [
+    row?.coordinates,
+    row?.location?.coordinates,
+    row?.real?.coordinates,
+    row?.real?.location?.coordinates,
+    row?.sourceSiteRecord?.coordinates,
+    row?.sourceSiteRecord?.location?.coordinates,
+    row?.location,
+    row?.sourceSiteRecord,
+    row?.rawLegacyRecord
+  ];
   for (const source of sources) {
     const rawLat = source?.lat ?? source?.latitude;
     const rawLng = source?.lng ?? source?.lon ?? source?.longitude;
-    if (rawLat === null || rawLat === undefined || rawLat === '' || rawLng === null || rawLng === undefined || rawLng === '') continue;
+    if (rawLat === null || rawLat === undefined || rawLat === '' ||
+        rawLng === null || rawLng === undefined || rawLng === '') continue;
     const lat = Number(rawLat);
     const lng = Number(rawLng);
-    if (Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180) {
+    if (Number.isFinite(lat) && Number.isFinite(lng) &&
+        Math.abs(lat) <= 90 && Math.abs(lng) <= 180) {
       return { lat, lng };
     }
   }
