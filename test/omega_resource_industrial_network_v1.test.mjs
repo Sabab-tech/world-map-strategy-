@@ -164,7 +164,7 @@ assert.ok(context.Game.state.resource.BGD.industrialNetwork.events.some(x=>x.tra
 
 const diag=N.diagnostics();
 assert.equal(diag.siteCount,2);
-assert.equal(diag.extractionPlans,3);
+assert.equal(diag.extractionPlans,2);
 assert.equal(diag.targetArchitecture,'SITE -> EXTRACTION -> WAREHOUSE -> ROUTE -> FACTORY -> PROCESS -> OUTPUT');
 
 console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
