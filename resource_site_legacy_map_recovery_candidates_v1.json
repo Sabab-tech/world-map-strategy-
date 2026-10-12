@@ -12,8 +12,11 @@
   "sourceInterpretation": {
     "entryCount": 114,
     "countryLabelCount": 45,
-    "status": "UNVERIFIED_LEGACY_CODE_SNAPSHOT",
-    "rationale": "The old engine separately synthesized additional country-profile markers with approximate offsets. Those generated markers are not included here because they were transient derivations rather than a stable independently researched site list."
+    "status": "UNVERIFIED_HISTORICAL_SOURCES_ARCHIVED_FOR_REVIEW",
+    "rationale": "The old engine separately synthesized additional country-profile markers with approximate offsets. Those generated markers are not included here because they were transient derivations rather than a stable independently researched site list.",
+    "embeddedMarkerCount": 114,
+    "resourcesJsonDepositCount": 62,
+    "archivedLegacySourceRecordCount": 176
   },
   "countsByCountry": {
     "BANGLADESH": 9,
@@ -3027,5 +3030,2115 @@
       "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
       "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
     }
-  ]
+  ],
+  "resourcesJsonDeposits": [
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_sylhet_chhatak_limestone_quarry",
+      "siteName": "Sylhet Chhatak Limestone Quarry",
+      "originalCountryLabel": "BANGLADESH",
+      "countryId": "BGD",
+      "resourceId": "limestone",
+      "coordinates": {
+        "lat": 25.04,
+        "lng": 91.67,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "High Grade Limestone",
+      "statusText": "Active Mine",
+      "rawLegacyRecord": {
+        "name": "Sylhet Chhatak Limestone Quarry",
+        "resId": "limestone",
+        "country": "BANGLADESH",
+        "lat": 25.04,
+        "lng": 91.67,
+        "reserve": "High Grade Limestone",
+        "status": "Active Mine"
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/0",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_bibiyana_gas_field",
+      "siteName": "Bibiyana Gas Field",
+      "originalCountryLabel": "BANGLADESH",
+      "countryId": "BGD",
+      "resourceId": "natural_gas",
+      "coordinates": {
+        "lat": 24.64,
+        "lng": 91.65,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "4.5 TCF",
+      "statusText": "Major Gas Field",
+      "rawLegacyRecord": {
+        "name": "Bibiyana Gas Field",
+        "resId": "natural_gas",
+        "country": "BANGLADESH",
+        "lat": 24.64,
+        "lng": 91.65,
+        "reserve": "4.5 TCF",
+        "status": "Major Gas Field"
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/1",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_titas_gas_deposit",
+      "siteName": "Titas Gas Deposit",
+      "originalCountryLabel": "BANGLADESH",
+      "countryId": "BGD",
+      "resourceId": "natural_gas",
+      "coordinates": {
+        "lat": 23.98,
+        "lng": 91.11,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "3.2 TCF",
+      "statusText": "Active Gas Field",
+      "rawLegacyRecord": {
+        "name": "Titas Gas Deposit",
+        "resId": "natural_gas",
+        "country": "BANGLADESH",
+        "lat": 23.98,
+        "lng": 91.11,
+        "reserve": "3.2 TCF",
+        "status": "Active Gas Field"
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/2",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_barapukuria_coal_mine",
+      "siteName": "Barapukuria Coal Mine",
+      "originalCountryLabel": "BANGLADESH",
+      "countryId": "BGD",
+      "resourceId": "coal",
+      "coordinates": {
+        "lat": 25.55,
+        "lng": 88.96,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "390M Tons",
+      "statusText": "Underground Mine",
+      "rawLegacyRecord": {
+        "name": "Barapukuria Coal Mine",
+        "resId": "coal",
+        "country": "BANGLADESH",
+        "lat": 25.55,
+        "lng": 88.96,
+        "reserve": "390M Tons",
+        "status": "Underground Mine"
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/3",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_ganges_padma_delta_rice_belt",
+      "siteName": "Ganges-Padma Delta Rice Belt",
+      "originalCountryLabel": "BANGLADESH",
+      "countryId": "BGD",
+      "resourceId": "rice",
+      "coordinates": {
+        "lat": 23.2,
+        "lng": 89.8,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "38M Tons/yr",
+      "statusText": "Agricultural Zone",
+      "rawLegacyRecord": {
+        "name": "Ganges-Padma Delta Rice Belt",
+        "resId": "rice",
+        "country": "BANGLADESH",
+        "lat": 23.2,
+        "lng": 89.8,
+        "reserve": "38M Tons/yr",
+        "status": "Agricultural Zone"
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/4",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_kaptai_hydro_power_dam",
+      "siteName": "Kaptai Hydro Power Dam",
+      "originalCountryLabel": "BANGLADESH",
+      "countryId": "BGD",
+      "resourceId": "electricity",
+      "coordinates": {
+        "lat": 22.49,
+        "lng": 92.22,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "230 MW",
+      "statusText": "Hydroelectric Dam",
+      "rawLegacyRecord": {
+        "name": "Kaptai Hydro Power Dam",
+        "resId": "electricity",
+        "country": "BANGLADESH",
+        "lat": 22.49,
+        "lng": 92.22,
+        "reserve": "230 MW",
+        "status": "Hydroelectric Dam"
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/5",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_cox_s_bazar_heavy_mineral_sands_rare_earths",
+      "siteName": "Cox's Bazar Heavy Mineral Sands (Rare Earths)",
+      "originalCountryLabel": "BANGLADESH",
+      "countryId": "BGD",
+      "resourceId": "rare_earth",
+      "coordinates": {
+        "lat": 21.43,
+        "lng": 91.97,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "4.2M Tons Monazite & Zircon",
+      "statusText": "Active Beach Extraction",
+      "rawLegacyRecord": {
+        "name": "Cox's Bazar Heavy Mineral Sands (Rare Earths)",
+        "resId": "rare_earth",
+        "country": "BANGLADESH",
+        "lat": 21.43,
+        "lng": 91.97,
+        "reserve": "4.2M Tons Monazite & Zircon",
+        "status": "Active Beach Extraction",
+        "rare_earth_elements": {
+          "Neodymium (Nd)": "28%",
+          "Cerium (Ce)": "45%",
+          "Lanthanum (La)": "20%",
+          "Thorium (Th)": "7%"
+        }
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/6",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_bayan_obo_vizag_rare_earth_belt",
+      "siteName": "Bayan Obo - Vizag Rare Earth Belt",
+      "originalCountryLabel": "INDIA",
+      "countryId": "IND",
+      "resourceId": "rare_earth",
+      "coordinates": {
+        "lat": 17.68,
+        "lng": 83.21,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "6.9M Tons Heavy Monazite",
+      "statusText": "Processing Plant",
+      "rawLegacyRecord": {
+        "name": "Bayan Obo - Vizag Rare Earth Belt",
+        "resId": "rare_earth",
+        "country": "INDIA",
+        "lat": 17.68,
+        "lng": 83.21,
+        "reserve": "6.9M Tons Heavy Monazite",
+        "status": "Processing Plant",
+        "rare_earth_elements": {
+          "Neodymium (Nd)": "32%",
+          "Praseodymium (Pr)": "18%",
+          "Dysprosium (Dy)": "12%",
+          "Samarium (Sm)": "10%",
+          "Lanthanum (La)": "28%"
+        }
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/7",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_reasi_jammu_lithium_reserve",
+      "siteName": "Reasi Jammu Lithium Reserve",
+      "originalCountryLabel": "INDIA",
+      "countryId": "IND",
+      "resourceId": "lithium",
+      "coordinates": {
+        "lat": 33.08,
+        "lng": 74.83,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "5.9M Tons Inferred",
+      "statusText": "Exploration Phase",
+      "rawLegacyRecord": {
+        "name": "Reasi Jammu Lithium Reserve",
+        "resId": "lithium",
+        "country": "INDIA",
+        "lat": 33.08,
+        "lng": 74.83,
+        "reserve": "5.9M Tons Inferred",
+        "status": "Exploration Phase"
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/8",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_jharia_coal_field",
+      "siteName": "Jharia Coal Field",
+      "originalCountryLabel": "INDIA",
+      "countryId": "IND",
+      "resourceId": "coal",
+      "coordinates": {
+        "lat": 23.75,
+        "lng": 86.42,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "19B Tons",
+      "statusText": "Active Mine",
+      "rawLegacyRecord": {
+        "name": "Jharia Coal Field",
+        "resId": "coal",
+        "country": "INDIA",
+        "lat": 23.75,
+        "lng": 86.42,
+        "reserve": "19B Tons",
+        "status": "Active Mine"
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/9",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_singhbhum_iron_ore_belt",
+      "siteName": "Singhbhum Iron Ore Belt",
+      "originalCountryLabel": "INDIA",
+      "countryId": "IND",
+      "resourceId": "iron_ore",
+      "coordinates": {
+        "lat": 22.5,
+        "lng": 85.8,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "5B Tons",
+      "statusText": "Major Mine",
+      "rawLegacyRecord": {
+        "name": "Singhbhum Iron Ore Belt",
+        "resId": "iron_ore",
+        "country": "INDIA",
+        "lat": 22.5,
+        "lng": 85.8,
+        "reserve": "5B Tons",
+        "status": "Major Mine"
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/10",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_punjab_wheat_granary",
+      "siteName": "Punjab Wheat Granary",
+      "originalCountryLabel": "INDIA",
+      "countryId": "IND",
+      "resourceId": "wheat",
+      "coordinates": {
+        "lat": 30.9,
+        "lng": 75.85,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "110M Tons/yr",
+      "statusText": "Agricultural Zone",
+      "rawLegacyRecord": {
+        "name": "Punjab Wheat Granary",
+        "resId": "wheat",
+        "country": "INDIA",
+        "lat": 30.9,
+        "lng": 75.85,
+        "reserve": "110M Tons/yr",
+        "status": "Agricultural Zone"
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/11",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_mumbai_high_offshore_oil_rig",
+      "siteName": "Mumbai High Offshore Oil Rig",
+      "originalCountryLabel": "INDIA",
+      "countryId": "IND",
+      "resourceId": "crude_oil",
+      "coordinates": {
+        "lat": 19.42,
+        "lng": 71.33,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "1.8B Barrels",
+      "statusText": "Offshore Rig",
+      "rawLegacyRecord": {
+        "name": "Mumbai High Offshore Oil Rig",
+        "resId": "crude_oil",
+        "country": "INDIA",
+        "lat": 19.42,
+        "lng": 71.33,
+        "reserve": "1.8B Barrels",
+        "status": "Offshore Rig"
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/12",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_mountain_pass_rare_earth_mine",
+      "siteName": "Mountain Pass Rare Earth Mine",
+      "originalCountryLabel": "USA",
+      "countryId": "USA",
+      "resourceId": "rare_earth",
+      "coordinates": {
+        "lat": 35.48,
+        "lng": -115.53,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "1.5M Tons Bastnäsite",
+      "statusText": "Active Mine",
+      "rawLegacyRecord": {
+        "name": "Mountain Pass Rare Earth Mine",
+        "resId": "rare_earth",
+        "country": "USA",
+        "lat": 35.48,
+        "lng": -115.53,
+        "reserve": "1.5M Tons Bastnäsite",
+        "status": "Active Mine",
+        "rare_earth_elements": {
+          "Neodymium (Nd)": "40%",
+          "Europium (Eu)": "8%",
+          "Dysprosium (Dy)": "14%",
+          "Cerium (Ce)": "38%"
+        }
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/13",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_thacker_pass_lithium_deposit",
+      "siteName": "Thacker Pass Lithium Deposit",
+      "originalCountryLabel": "USA",
+      "countryId": "USA",
+      "resourceId": "lithium",
+      "coordinates": {
+        "lat": 41.7,
+        "lng": -118.06,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "17.9M Tons LCE",
+      "statusText": "Open Pit Construction",
+      "rawLegacyRecord": {
+        "name": "Thacker Pass Lithium Deposit",
+        "resId": "lithium",
+        "country": "USA",
+        "lat": 41.7,
+        "lng": -118.06,
+        "reserve": "17.9M Tons LCE",
+        "status": "Open Pit Construction"
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/14",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_permian_basin_oil_fields",
+      "siteName": "Permian Basin Oil Fields",
+      "originalCountryLabel": "USA",
+      "countryId": "USA",
+      "resourceId": "crude_oil",
+      "coordinates": {
+        "lat": 31.85,
+        "lng": -102.36,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "20B Barrels",
+      "statusText": "Shale Basin",
+      "rawLegacyRecord": {
+        "name": "Permian Basin Oil Fields",
+        "resId": "crude_oil",
+        "country": "USA",
+        "lat": 31.85,
+        "lng": -102.36,
+        "reserve": "20B Barrels",
+        "status": "Shale Basin"
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/15",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_marcellus_shale_gas_basin",
+      "siteName": "Marcellus Shale Gas Basin",
+      "originalCountryLabel": "USA",
+      "countryId": "USA",
+      "resourceId": "natural_gas",
+      "coordinates": {
+        "lat": 41.2,
+        "lng": -77.2,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "85 TCF",
+      "statusText": "Active Gas Field",
+      "rawLegacyRecord": {
+        "name": "Marcellus Shale Gas Basin",
+        "resId": "natural_gas",
+        "country": "USA",
+        "lat": 41.2,
+        "lng": -77.2,
+        "reserve": "85 TCF",
+        "status": "Active Gas Field"
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/16",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_bayan_obo_ree_supermine",
+      "siteName": "Bayan Obo REE Supermine",
+      "originalCountryLabel": "CHINA",
+      "countryId": "CHN",
+      "resourceId": "rare_earth",
+      "coordinates": {
+        "lat": 41.78,
+        "lng": 109.97,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "40M Tons (World Leader)",
+      "statusText": "Active Supermine",
+      "rawLegacyRecord": {
+        "name": "Bayan Obo REE Supermine",
+        "resId": "rare_earth",
+        "country": "CHINA",
+        "lat": 41.78,
+        "lng": 109.97,
+        "reserve": "40M Tons (World Leader)",
+        "status": "Active Supermine",
+        "rare_earth_elements": {
+          "Neodymium (Nd)": "50%",
+          "Dysprosium (Dy)": "22%",
+          "Terbium (Tb)": "12%",
+          "Yttrium (Y)": "16%"
+        }
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/17",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_ganzhou_ionic_clay_ree_hub",
+      "siteName": "Ganzhou Ionic Clay REE Hub",
+      "originalCountryLabel": "CHINA",
+      "countryId": "CHN",
+      "resourceId": "rare_earth",
+      "coordinates": {
+        "lat": 25.85,
+        "lng": 114.93,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "8.5M Tons Heavy REE",
+      "statusText": "Active Extraction",
+      "rawLegacyRecord": {
+        "name": "Ganzhou Ionic Clay REE Hub",
+        "resId": "rare_earth",
+        "country": "CHINA",
+        "lat": 25.85,
+        "lng": 114.93,
+        "reserve": "8.5M Tons Heavy REE",
+        "status": "Active Extraction",
+        "rare_earth_elements": {
+          "Dysprosium (Dy)": "35%",
+          "Terbium (Tb)": "25%",
+          "Erbium (Er)": "20%",
+          "Yttrium (Y)": "20%"
+        }
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/18",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_yichang_lithium_brine_field",
+      "siteName": "Yichang Lithium Brine Field",
+      "originalCountryLabel": "CHINA",
+      "countryId": "CHN",
+      "resourceId": "lithium",
+      "coordinates": {
+        "lat": 30.69,
+        "lng": 111.28,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "6.8M Tons",
+      "statusText": "Active Refinery",
+      "rawLegacyRecord": {
+        "name": "Yichang Lithium Brine Field",
+        "resId": "lithium",
+        "country": "CHINA",
+        "lat": 30.69,
+        "lng": 111.28,
+        "reserve": "6.8M Tons",
+        "status": "Active Refinery"
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/19",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_shanxi_coal_superbasin",
+      "siteName": "Shanxi Coal Superbasin",
+      "originalCountryLabel": "CHINA",
+      "countryId": "CHN",
+      "resourceId": "coal",
+      "coordinates": {
+        "lat": 37.87,
+        "lng": 112.55,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "200B Tons",
+      "statusText": "Active Basin",
+      "rawLegacyRecord": {
+        "name": "Shanxi Coal Superbasin",
+        "resId": "coal",
+        "country": "CHINA",
+        "lat": 37.87,
+        "lng": 112.55,
+        "reserve": "200B Tons",
+        "status": "Active Basin"
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/20",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_three_gorges_hydro_mega_dam",
+      "siteName": "Three Gorges Hydro Mega-Dam",
+      "originalCountryLabel": "CHINA",
+      "countryId": "CHN",
+      "resourceId": "electricity",
+      "coordinates": {
+        "lat": 30.82,
+        "lng": 111,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "22,500 MW",
+      "statusText": "Hydro Dam",
+      "rawLegacyRecord": {
+        "name": "Three Gorges Hydro Mega-Dam",
+        "resId": "electricity",
+        "country": "CHINA",
+        "lat": 30.82,
+        "lng": 111,
+        "reserve": "22,500 MW",
+        "status": "Hydro Dam"
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/21",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_lovozero_massif_ree_complex",
+      "siteName": "Lovozero Massif REE Complex",
+      "originalCountryLabel": "RUSSIA",
+      "countryId": "RUS",
+      "resourceId": "rare_earth",
+      "coordinates": {
+        "lat": 67.85,
+        "lng": 34.6,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "7.5M Tons Lopardite",
+      "statusText": "Active Mining",
+      "rawLegacyRecord": {
+        "name": "Lovozero Massif REE Complex",
+        "resId": "rare_earth",
+        "country": "RUSSIA",
+        "lat": 67.85,
+        "lng": 34.6,
+        "reserve": "7.5M Tons Lopardite",
+        "status": "Active Mining",
+        "rare_earth_elements": {
+          "Neodymium (Nd)": "30%",
+          "Cerium (Ce)": "50%",
+          "Lanthanum (La)": "20%"
+        }
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/22",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_west_siberian_oil_basin",
+      "siteName": "West Siberian Oil Basin",
+      "originalCountryLabel": "RUSSIA",
+      "countryId": "RUS",
+      "resourceId": "crude_oil",
+      "coordinates": {
+        "lat": 61.25,
+        "lng": 73.4,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "35B Barrels",
+      "statusText": "Active Oil Field",
+      "rawLegacyRecord": {
+        "name": "West Siberian Oil Basin",
+        "resId": "crude_oil",
+        "country": "RUSSIA",
+        "lat": 61.25,
+        "lng": 73.4,
+        "reserve": "35B Barrels",
+        "status": "Active Oil Field"
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/23",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_urengoy_natural_gas_superfield",
+      "siteName": "Urengoy Natural Gas Superfield",
+      "originalCountryLabel": "RUSSIA",
+      "countryId": "RUS",
+      "resourceId": "natural_gas",
+      "coordinates": {
+        "lat": 66,
+        "lng": 78,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "100 TCF",
+      "statusText": "Active Field",
+      "rawLegacyRecord": {
+        "name": "Urengoy Natural Gas Superfield",
+        "resId": "natural_gas",
+        "country": "RUSSIA",
+        "lat": 66,
+        "lng": 78,
+        "reserve": "100 TCF",
+        "status": "Active Field"
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/24",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_krasnoyarsk_siberian_gold_field",
+      "siteName": "Krasnoyarsk Siberian Gold Field",
+      "originalCountryLabel": "RUSSIA",
+      "countryId": "RUS",
+      "resourceId": "gold",
+      "coordinates": {
+        "lat": 56.01,
+        "lng": 92.86,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "3,400 Tons Gold",
+      "statusText": "Open Pit",
+      "rawLegacyRecord": {
+        "name": "Krasnoyarsk Siberian Gold Field",
+        "resId": "gold",
+        "country": "RUSSIA",
+        "lat": 56.01,
+        "lng": 92.86,
+        "reserve": "3,400 Tons Gold",
+        "status": "Open Pit"
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/25",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_mount_weld_rare_earth_mine",
+      "siteName": "Mount Weld Rare Earth Mine",
+      "originalCountryLabel": "AUSTRALIA",
+      "countryId": "AUS",
+      "resourceId": "rare_earth",
+      "coordinates": {
+        "lat": -28.58,
+        "lng": 122.56,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "3.0M Tons High Grade",
+      "statusText": "Active Mine",
+      "rawLegacyRecord": {
+        "name": "Mount Weld Rare Earth Mine",
+        "resId": "rare_earth",
+        "country": "AUSTRALIA",
+        "lat": -28.58,
+        "lng": 122.56,
+        "reserve": "3.0M Tons High Grade",
+        "status": "Active Mine",
+        "rare_earth_elements": {
+          "Neodymium (Nd)": "45%",
+          "Praseodymium (Pr)": "25%",
+          "Dysprosium (Dy)": "15%",
+          "Europium (Eu)": "15%"
+        }
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/26",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_greenbushes_lithium_mine",
+      "siteName": "Greenbushes Lithium Mine",
+      "originalCountryLabel": "AUSTRALIA",
+      "countryId": "AUS",
+      "resourceId": "lithium",
+      "coordinates": {
+        "lat": -33.86,
+        "lng": 116.05,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "8.6M Tons LCE",
+      "statusText": "World's Largest Hard Rock Pit",
+      "rawLegacyRecord": {
+        "name": "Greenbushes Lithium Mine",
+        "resId": "lithium",
+        "country": "AUSTRALIA",
+        "lat": -33.86,
+        "lng": 116.05,
+        "reserve": "8.6M Tons LCE",
+        "status": "World's Largest Hard Rock Pit"
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/27",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_pilbara_iron_ore_range",
+      "siteName": "Pilbara Iron Ore Range",
+      "originalCountryLabel": "AUSTRALIA",
+      "countryId": "AUS",
+      "resourceId": "iron_ore",
+      "coordinates": {
+        "lat": -21.5,
+        "lng": 119,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "25B Tons",
+      "statusText": "Mega Mine",
+      "rawLegacyRecord": {
+        "name": "Pilbara Iron Ore Range",
+        "resId": "iron_ore",
+        "country": "AUSTRALIA",
+        "lat": -21.5,
+        "lng": 119,
+        "reserve": "25B Tons",
+        "status": "Mega Mine"
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/28",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_olympic_dam_uranium_copper",
+      "siteName": "Olympic Dam Uranium & Copper",
+      "originalCountryLabel": "AUSTRALIA",
+      "countryId": "AUS",
+      "resourceId": "uranium",
+      "coordinates": {
+        "lat": -30.43,
+        "lng": 136.88,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "2.1M Tons Uranium",
+      "statusText": "Supermine",
+      "rawLegacyRecord": {
+        "name": "Olympic Dam Uranium & Copper",
+        "resId": "uranium",
+        "country": "AUSTRALIA",
+        "lat": -30.43,
+        "lng": 136.88,
+        "reserve": "2.1M Tons Uranium",
+        "status": "Supermine"
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/29",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_salar_de_atacama_lithium_reserve",
+      "siteName": "Salar de Atacama Lithium Reserve",
+      "originalCountryLabel": "CHILE",
+      "countryId": "CHL",
+      "resourceId": "lithium",
+      "coordinates": {
+        "lat": -23.5,
+        "lng": -68.33,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "9.3M Tons LCE",
+      "statusText": "Active Brine Extraction",
+      "rawLegacyRecord": {
+        "name": "Salar de Atacama Lithium Reserve",
+        "resId": "lithium",
+        "country": "CHILE",
+        "lat": -23.5,
+        "lng": -68.33,
+        "reserve": "9.3M Tons LCE",
+        "status": "Active Brine Extraction"
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/30",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_salar_de_uyuni_mega_lithium_basin",
+      "siteName": "Salar de Uyuni Mega Lithium Basin",
+      "originalCountryLabel": "BOLIVIA",
+      "countryId": "BOL",
+      "resourceId": "lithium",
+      "coordinates": {
+        "lat": -20.13,
+        "lng": -67.48,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "21M Tons LCE",
+      "statusText": "State Extraction Complex",
+      "rawLegacyRecord": {
+        "name": "Salar de Uyuni Mega Lithium Basin",
+        "resId": "lithium",
+        "country": "BOLIVIA",
+        "lat": -20.13,
+        "lng": -67.48,
+        "reserve": "21M Tons LCE",
+        "status": "State Extraction Complex"
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/31",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_salar_del_hombre_muerto_lithium",
+      "siteName": "Salar del Hombre Muerto Lithium",
+      "originalCountryLabel": "ARGENTINA",
+      "countryId": "ARG",
+      "resourceId": "lithium",
+      "coordinates": {
+        "lat": -25.43,
+        "lng": -67.08,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "6.5M Tons LCE",
+      "statusText": "Active Mining",
+      "rawLegacyRecord": {
+        "name": "Salar del Hombre Muerto Lithium",
+        "resId": "lithium",
+        "country": "ARGENTINA",
+        "lat": -25.43,
+        "lng": -67.08,
+        "reserve": "6.5M Tons LCE",
+        "status": "Active Mining"
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/32",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_ghawar_oil_superfield",
+      "siteName": "Ghawar Oil Superfield",
+      "originalCountryLabel": "SAUDI ARABIA",
+      "countryId": "SAU",
+      "resourceId": "crude_oil",
+      "coordinates": {
+        "lat": 25.4,
+        "lng": 49.6,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "70B Barrels",
+      "statusText": "Superfield",
+      "rawLegacyRecord": {
+        "name": "Ghawar Oil Superfield",
+        "resId": "crude_oil",
+        "country": "SAUDI ARABIA",
+        "lat": 25.4,
+        "lng": 49.6,
+        "reserve": "70B Barrels",
+        "status": "Superfield"
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/33",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_north_field_natural_gas",
+      "siteName": "North Field Natural Gas",
+      "originalCountryLabel": "QATAR",
+      "countryId": "QAT",
+      "resourceId": "natural_gas",
+      "coordinates": {
+        "lat": 26,
+        "lng": 51.5,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "900 TCF",
+      "statusText": "World LNG Leader",
+      "rawLegacyRecord": {
+        "name": "North Field Natural Gas",
+        "resId": "natural_gas",
+        "country": "QATAR",
+        "lat": 26,
+        "lng": 51.5,
+        "reserve": "900 TCF",
+        "status": "World LNG Leader"
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/34",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_upper_zakum_offshore_oil_rig",
+      "siteName": "Upper Zakum Offshore Oil Rig",
+      "originalCountryLabel": "UAE",
+      "countryId": "ARE",
+      "resourceId": "crude_oil",
+      "coordinates": {
+        "lat": 24.8,
+        "lng": 53.7,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "50B Barrels",
+      "statusText": "Offshore Rig",
+      "rawLegacyRecord": {
+        "name": "Upper Zakum Offshore Oil Rig",
+        "resId": "crude_oil",
+        "country": "UAE",
+        "lat": 24.8,
+        "lng": 53.7,
+        "reserve": "50B Barrels",
+        "status": "Offshore Rig"
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/35",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_tenke_fungurume_cobalt_copper_mine",
+      "siteName": "Tenke Fungurume Cobalt & Copper Mine",
+      "originalCountryLabel": "CONGO (KINSHASA / DRC)",
+      "countryId": "COD",
+      "resourceId": "cobalt",
+      "coordinates": {
+        "lat": -10.62,
+        "lng": 26.17,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "560,000 Tons Cobalt",
+      "statusText": "Active Cobalt Pit",
+      "rawLegacyRecord": {
+        "name": "Tenke Fungurume Cobalt & Copper Mine",
+        "resId": "cobalt",
+        "country": "CONGO (KINSHASA / DRC)",
+        "lat": -10.62,
+        "lng": 26.17,
+        "reserve": "560,000 Tons Cobalt",
+        "status": "Active Cobalt Pit"
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/36",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_carajas_iron_ore_mine",
+      "siteName": "Carajás Iron Ore Mine",
+      "originalCountryLabel": "BRAZIL",
+      "countryId": "BRA",
+      "resourceId": "iron_ore",
+      "coordinates": {
+        "lat": -6.06,
+        "lng": -50.18,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "7.2B Tons",
+      "statusText": "Largest Iron Mine",
+      "rawLegacyRecord": {
+        "name": "Carajás Iron Ore Mine",
+        "resId": "iron_ore",
+        "country": "BRAZIL",
+        "lat": -6.06,
+        "lng": -50.18,
+        "reserve": "7.2B Tons",
+        "status": "Largest Iron Mine"
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/37",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_nam_xe_rare_earth_field",
+      "siteName": "Nam Xe Rare Earth Field",
+      "originalCountryLabel": "VIETNAM",
+      "countryId": "VNM",
+      "resourceId": "rare_earth",
+      "coordinates": {
+        "lat": 22.28,
+        "lng": 103.35,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "22M Tons REE",
+      "statusText": "Development Phase",
+      "rawLegacyRecord": {
+        "name": "Nam Xe Rare Earth Field",
+        "resId": "rare_earth",
+        "country": "VIETNAM",
+        "lat": 22.28,
+        "lng": 103.35,
+        "reserve": "22M Tons REE",
+        "status": "Development Phase",
+        "rare_earth_elements": {
+          "Neodymium (Nd)": "38%",
+          "Cerium (Ce)": "42%",
+          "Yttrium (Y)": "20%"
+        }
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/38",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_bushveld_ree_platinum_complex",
+      "siteName": "Bushveld REE & Platinum Complex",
+      "originalCountryLabel": "SOUTH AFRICA",
+      "countryId": null,
+      "resourceId": "rare_earth",
+      "coordinates": {
+        "lat": -25.2,
+        "lng": 27.1,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "6.8M Tons REE",
+      "statusText": "Shaft Mine",
+      "rawLegacyRecord": {
+        "name": "Bushveld REE & Platinum Complex",
+        "resId": "rare_earth",
+        "country": "SOUTH AFRICA",
+        "lat": -25.2,
+        "lng": 27.1,
+        "reserve": "6.8M Tons REE",
+        "status": "Shaft Mine",
+        "rare_earth_elements": {
+          "Platinum Group": "40%",
+          "Neodymium (Nd)": "30%",
+          "Dysprosium (Dy)": "30%"
+        }
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/39",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_taiwan_hsinchu_semiconductor_fab",
+      "siteName": "Taiwan Hsinchu Semiconductor Fab",
+      "originalCountryLabel": "TAIWAN",
+      "countryId": "TWN",
+      "resourceId": "semiconductor",
+      "coordinates": {
+        "lat": 24.78,
+        "lng": 120.99,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "12M Wafers/yr (3nm Leader)",
+      "statusText": "High Tech Cleanroom",
+      "rawLegacyRecord": {
+        "name": "Taiwan Hsinchu Semiconductor Fab",
+        "resId": "semiconductor",
+        "country": "TAIWAN",
+        "lat": 24.78,
+        "lng": 120.99,
+        "reserve": "12M Wafers/yr (3nm Leader)",
+        "status": "High Tech Cleanroom"
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/40",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_hassi_r_mel_natural_gas_basin",
+      "siteName": "Hassi R'Mel Natural Gas Basin",
+      "originalCountryLabel": "ALGERIA",
+      "countryId": "DZA",
+      "resourceId": "natural_gas",
+      "coordinates": {
+        "lat": 32.5,
+        "lng": 3.25,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "85 TCF",
+      "statusText": "Active Superfield",
+      "rawLegacyRecord": {
+        "name": "Hassi R'Mel Natural Gas Basin",
+        "resId": "natural_gas",
+        "country": "ALGERIA",
+        "lat": 32.5,
+        "lng": 3.25,
+        "reserve": "85 TCF",
+        "status": "Active Superfield"
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/41",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_hassi_messaoud_crude_oil_field",
+      "siteName": "Hassi Messaoud Crude Oil Field",
+      "originalCountryLabel": "ALGERIA",
+      "countryId": "DZA",
+      "resourceId": "crude_oil",
+      "coordinates": {
+        "lat": 31.86,
+        "lng": 6.07,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "12B Barrels",
+      "statusText": "Active Oil Field",
+      "rawLegacyRecord": {
+        "name": "Hassi Messaoud Crude Oil Field",
+        "resId": "crude_oil",
+        "country": "ALGERIA",
+        "lat": 31.86,
+        "lng": 6.07,
+        "reserve": "12B Barrels",
+        "status": "Active Oil Field"
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/42",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_gara_djebilet_iron_ore_mine",
+      "siteName": "Gara Djebilet Iron Ore Mine",
+      "originalCountryLabel": "ALGERIA",
+      "countryId": "DZA",
+      "resourceId": "iron_ore",
+      "coordinates": {
+        "lat": 26.88,
+        "lng": -7.02,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "3.5B Tons",
+      "statusText": "Mega Mining Complex",
+      "rawLegacyRecord": {
+        "name": "Gara Djebilet Iron Ore Mine",
+        "resId": "iron_ore",
+        "country": "ALGERIA",
+        "lat": 26.88,
+        "lng": -7.02,
+        "reserve": "3.5B Tons",
+        "status": "Mega Mining Complex"
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/43",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_hoggar_shield_gold_uranium_belt",
+      "siteName": "Hoggar Shield Gold & Uranium Belt",
+      "originalCountryLabel": "ALGERIA",
+      "countryId": "DZA",
+      "resourceId": "gold",
+      "coordinates": {
+        "lat": 22.78,
+        "lng": 5.52,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "50 Tons Gold / 26K Tons Uranium",
+      "statusText": "Active Pit",
+      "rawLegacyRecord": {
+        "name": "Hoggar Shield Gold & Uranium Belt",
+        "resId": "gold",
+        "country": "ALGERIA",
+        "lat": 22.78,
+        "lng": 5.52,
+        "reserve": "50 Tons Gold / 26K Tons Uranium",
+        "status": "Active Pit"
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/44",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_zohr_deepwater_mediterranean_gas_field",
+      "siteName": "Zohr Deepwater Mediterranean Gas Field",
+      "originalCountryLabel": "EGYPT",
+      "countryId": "EGY",
+      "resourceId": "natural_gas",
+      "coordinates": {
+        "lat": 32.5,
+        "lng": 31.8,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "30 TCF",
+      "statusText": "Active Offshore Field",
+      "rawLegacyRecord": {
+        "name": "Zohr Deepwater Mediterranean Gas Field",
+        "resId": "natural_gas",
+        "country": "EGYPT",
+        "lat": 32.5,
+        "lng": 31.8,
+        "reserve": "30 TCF",
+        "status": "Active Offshore Field"
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/45",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_western_desert_oil_fields",
+      "siteName": "Western Desert Oil Fields",
+      "originalCountryLabel": "EGYPT",
+      "countryId": "EGY",
+      "resourceId": "crude_oil",
+      "coordinates": {
+        "lat": 29.5,
+        "lng": 28.2,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "4.2B Barrels",
+      "statusText": "Active Field",
+      "rawLegacyRecord": {
+        "name": "Western Desert Oil Fields",
+        "resId": "crude_oil",
+        "country": "EGYPT",
+        "lat": 29.5,
+        "lng": 28.2,
+        "reserve": "4.2B Barrels",
+        "status": "Active Field"
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/46",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_sukari_orogenic_gold_mine",
+      "siteName": "Sukari Orogenic Gold Mine",
+      "originalCountryLabel": "EGYPT",
+      "countryId": "EGY",
+      "resourceId": "gold",
+      "coordinates": {
+        "lat": 24.95,
+        "lng": 34.71,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "12M Oz Gold",
+      "statusText": "Active Mine",
+      "rawLegacyRecord": {
+        "name": "Sukari Orogenic Gold Mine",
+        "resId": "gold",
+        "country": "EGYPT",
+        "lat": 24.95,
+        "lng": 34.71,
+        "reserve": "12M Oz Gold",
+        "status": "Active Mine"
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/47",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_abu_tartur_phosphate_mine",
+      "siteName": "Abu Tartur Phosphate Mine",
+      "originalCountryLabel": "EGYPT",
+      "countryId": "EGY",
+      "resourceId": "bauxite",
+      "coordinates": {
+        "lat": 25.42,
+        "lng": 30.05,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "1.0B Tons Phosphate",
+      "statusText": "Active Surface Mine",
+      "rawLegacyRecord": {
+        "name": "Abu Tartur Phosphate Mine",
+        "resId": "bauxite",
+        "country": "EGYPT",
+        "lat": 25.42,
+        "lng": 30.05,
+        "reserve": "1.0B Tons Phosphate",
+        "status": "Active Surface Mine"
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/48",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_sirte_crude_oil_superbasin",
+      "siteName": "Sirte Crude Oil Superbasin",
+      "originalCountryLabel": "LIBYA",
+      "countryId": "LBY",
+      "resourceId": "crude_oil",
+      "coordinates": {
+        "lat": 29.2,
+        "lng": 19.3,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "48B Barrels (Africa Largest)",
+      "statusText": "Active Field",
+      "rawLegacyRecord": {
+        "name": "Sirte Crude Oil Superbasin",
+        "resId": "crude_oil",
+        "country": "LIBYA",
+        "lat": 29.2,
+        "lng": 19.3,
+        "reserve": "48B Barrels (Africa Largest)",
+        "status": "Active Field"
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/49",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_murzuq_oil_field_zone",
+      "siteName": "Murzuq Oil Field Zone",
+      "originalCountryLabel": "LIBYA",
+      "countryId": "LBY",
+      "resourceId": "crude_oil",
+      "coordinates": {
+        "lat": 25.9,
+        "lng": 13.9,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "5.2B Barrels",
+      "statusText": "Active Field",
+      "rawLegacyRecord": {
+        "name": "Murzuq Oil Field Zone",
+        "resId": "crude_oil",
+        "country": "LIBYA",
+        "lat": 25.9,
+        "lng": 13.9,
+        "reserve": "5.2B Barrels",
+        "status": "Active Field"
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/50",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_greenstream_mellitah_gas_hub",
+      "siteName": "Greenstream Mellitah Gas Hub",
+      "originalCountryLabel": "LIBYA",
+      "countryId": "LBY",
+      "resourceId": "natural_gas",
+      "coordinates": {
+        "lat": 32.88,
+        "lng": 12.24,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "18 TCF",
+      "statusText": "Active Gas Terminal",
+      "rawLegacyRecord": {
+        "name": "Greenstream Mellitah Gas Hub",
+        "resId": "natural_gas",
+        "country": "LIBYA",
+        "lat": 32.88,
+        "lng": 12.24,
+        "reserve": "18 TCF",
+        "status": "Active Gas Terminal"
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/51",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_wadi_shati_iron_ore_basin",
+      "siteName": "Wadi Shati Iron Ore Basin",
+      "originalCountryLabel": "LIBYA",
+      "countryId": "LBY",
+      "resourceId": "iron_ore",
+      "coordinates": {
+        "lat": 27.5,
+        "lng": 14.2,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "3.8B Tons",
+      "statusText": "Strategic Reserve",
+      "rawLegacyRecord": {
+        "name": "Wadi Shati Iron Ore Basin",
+        "resId": "iron_ore",
+        "country": "LIBYA",
+        "lat": 27.5,
+        "lng": 14.2,
+        "reserve": "3.8B Tons",
+        "status": "Strategic Reserve"
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/52",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_oulad_abdoun_khouribga_phosphate_supermine",
+      "siteName": "Oulad Abdoun Khouribga Phosphate Supermine",
+      "originalCountryLabel": "MOROCCO",
+      "countryId": "MAR",
+      "resourceId": "bauxite",
+      "coordinates": {
+        "lat": 32.88,
+        "lng": -6.91,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "50B Tons (70% Global Reserves)",
+      "statusText": "World Leader",
+      "rawLegacyRecord": {
+        "name": "Oulad Abdoun Khouribga Phosphate Supermine",
+        "resId": "bauxite",
+        "country": "MOROCCO",
+        "lat": 32.88,
+        "lng": -6.91,
+        "reserve": "50B Tons (70% Global Reserves)",
+        "status": "World Leader"
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/53",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_anti_atlas_imiter_silver_copper_belt",
+      "siteName": "Anti-Atlas Imiter Silver & Copper Belt",
+      "originalCountryLabel": "MOROCCO",
+      "countryId": "MAR",
+      "resourceId": "copper",
+      "coordinates": {
+        "lat": 31.35,
+        "lng": -5.8,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "8,500 Tons Silver",
+      "statusText": "Active Mine",
+      "rawLegacyRecord": {
+        "name": "Anti-Atlas Imiter Silver & Copper Belt",
+        "resId": "copper",
+        "country": "MOROCCO",
+        "lat": 31.35,
+        "lng": -5.8,
+        "reserve": "8,500 Tons Silver",
+        "status": "Active Mine"
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/54",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_bou_azzer_cobalt_polymetallic_mine",
+      "siteName": "Bou Azzer Cobalt & Polymetallic Mine",
+      "originalCountryLabel": "MOROCCO",
+      "countryId": "MAR",
+      "resourceId": "rare_earth",
+      "coordinates": {
+        "lat": 30.52,
+        "lng": -6.9,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "High Grade Cobalt & REE",
+      "statusText": "Active Mine",
+      "rawLegacyRecord": {
+        "name": "Bou Azzer Cobalt & Polymetallic Mine",
+        "resId": "rare_earth",
+        "country": "MOROCCO",
+        "lat": 30.52,
+        "lng": -6.9,
+        "reserve": "High Grade Cobalt & REE",
+        "status": "Active Mine",
+        "rare_earth_elements": {
+          "Cobalt (Co)": "45%",
+          "Neodymium (Nd)": "25%",
+          "Yttrium (Y)": "15%",
+          "Samarium (Sm)": "15%"
+        }
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/55",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_noor_ouarzazate_solar_complex",
+      "siteName": "Noor Ouarzazate Solar Complex",
+      "originalCountryLabel": "MOROCCO",
+      "countryId": "MAR",
+      "resourceId": "electricity",
+      "coordinates": {
+        "lat": 30.99,
+        "lng": -6.86,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "580 MW Solar Grid",
+      "statusText": "Active Solar Complex",
+      "rawLegacyRecord": {
+        "name": "Noor Ouarzazate Solar Complex",
+        "resId": "electricity",
+        "country": "MOROCCO",
+        "lat": 30.99,
+        "lng": -6.86,
+        "reserve": "580 MW Solar Grid",
+        "status": "Active Solar Complex"
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/56",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_gafsa_phosphate_basin",
+      "siteName": "Gafsa Phosphate Basin",
+      "originalCountryLabel": "TUNISIA",
+      "countryId": "TUN",
+      "resourceId": "bauxite",
+      "coordinates": {
+        "lat": 34.42,
+        "lng": 8.78,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "1.2B Tons",
+      "statusText": "Active Mine",
+      "rawLegacyRecord": {
+        "name": "Gafsa Phosphate Basin",
+        "resId": "bauxite",
+        "country": "TUNISIA",
+        "lat": 34.42,
+        "lng": 8.78,
+        "reserve": "1.2B Tons",
+        "status": "Active Mine"
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/57",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_pelagian_sfax_offshore_gas_oil_field",
+      "siteName": "Pelagian Sfax Offshore Gas & Oil Field",
+      "originalCountryLabel": "TUNISIA",
+      "countryId": "TUN",
+      "resourceId": "natural_gas",
+      "coordinates": {
+        "lat": 34.73,
+        "lng": 11.2,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "2.8 TCF",
+      "statusText": "Offshore Platform",
+      "rawLegacyRecord": {
+        "name": "Pelagian Sfax Offshore Gas & Oil Field",
+        "resId": "natural_gas",
+        "country": "TUNISIA",
+        "lat": 34.73,
+        "lng": 11.2,
+        "reserve": "2.8 TCF",
+        "status": "Offshore Platform"
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/58",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_hassai_red_sea_gold_belt",
+      "siteName": "Hassai Red Sea Gold Belt",
+      "originalCountryLabel": "SUDAN",
+      "countryId": "SDN",
+      "resourceId": "gold",
+      "coordinates": {
+        "lat": 19.6,
+        "lng": 35.8,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "90 Tons/yr Production",
+      "statusText": "Active Mine",
+      "rawLegacyRecord": {
+        "name": "Hassai Red Sea Gold Belt",
+        "resId": "gold",
+        "country": "SUDAN",
+        "lat": 19.6,
+        "lng": 35.8,
+        "reserve": "90 Tons/yr Production",
+        "status": "Active Mine"
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/59",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_muglad_petroleum_rift_basin",
+      "siteName": "Muglad Petroleum Rift Basin",
+      "originalCountryLabel": "SUDAN",
+      "countryId": "SDN",
+      "resourceId": "crude_oil",
+      "coordinates": {
+        "lat": 10.2,
+        "lng": 28.5,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "1.5B Barrels",
+      "statusText": "Active Field",
+      "rawLegacyRecord": {
+        "name": "Muglad Petroleum Rift Basin",
+        "resId": "crude_oil",
+        "country": "SUDAN",
+        "lat": 10.2,
+        "lng": 28.5,
+        "reserve": "1.5B Barrels",
+        "status": "Active Field"
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/60",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    },
+    {
+      "recoveryId": "LEGACY_JSON_DEPOSIT_khartoum_refinery_oil_terminal",
+      "siteName": "Khartoum Refinery & Oil Terminal",
+      "originalCountryLabel": "SUDAN",
+      "countryId": "SDN",
+      "resourceId": "crude_oil",
+      "coordinates": {
+        "lat": 15.65,
+        "lng": 32.52,
+        "coordinateAuthority": "LEGACY_JSON_VALUE_UNVERIFIED"
+      },
+      "reserveText": "100,000 bpd Capacity",
+      "statusText": "Refinery Hub",
+      "rawLegacyRecord": {
+        "name": "Khartoum Refinery & Oil Terminal",
+        "resId": "crude_oil",
+        "country": "SUDAN",
+        "lat": 15.65,
+        "lng": 32.52,
+        "reserve": "100,000 bpd Capacity",
+        "status": "Refinery Hub"
+      },
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resources.json",
+        "pointer": "#/deposits/61",
+        "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+      },
+      "authority": "HISTORICAL_RESOURCE_JSON_RECORD_UNVERIFIED",
+      "notes": "Preserved as an exact old JSON deposit record. Match and review against the current 250-site authority before activation; no silent overwrite or automatic execution."
+    }
+  ],
+  "countsByLegacySource": {
+    "resource_ministry_engine.js#GEOGRAPHIC_DEPOSITS": 114,
+    "resources.json#/deposits": 62
+  }
 }
