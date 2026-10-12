@@ -1,14 +1,18 @@
-import assert from 'node:assert/strict';
+iconst restorationManifest=JSON.parse(fs.readFileSync(new URL('../resource_site_verified_legacy_restoration_v1.json',import.meta.url),'utf8'));
+const expectedSiteCount=250+restorationManifest.records.length;
+const expectedCommercialSiteCount=246+restorationManifest.records.length;
+mport assert from 'node:assert/strict';
+import fs from 'node:fs';
 import { readFileSync } from 'node:fs';
 const load=name=>JSON.parse(readFileSync(name,'utf8'));
 const catalog=load('resource_site_canonical_catalog_v1.json');
 const data=load('resource_site_reserve_simulation_v1.json');
-assert.equal(catalog.siteCount,250);
-assert.equal(data.siteCount,250);
+assert.equal(catalog.siteCount,expectedSiteCount);
+assert.equal(data.siteCount,expectedSiteCount);
 const a=new Map(catalog.sites.map(s=>[s.siteId,s]));
 const b=new Map(data.records.map(s=>[s.siteId,s]));
-assert.equal(a.size,250);
-assert.equal(b.size,250);
+assert.equal(a.size,expectedSiteCount);
+assert.equal(b.size,expectedSiteCount);
 for(const [id,s] of a){
  const r=b.get(id);assert(r,id);
  assert.equal(r.countryId,s.countryId);
