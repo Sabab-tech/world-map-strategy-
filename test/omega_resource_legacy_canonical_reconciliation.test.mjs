@@ -6,12 +6,15 @@ const archived = read('resource_site_legacy_map_recovery_candidates_v1.json');
 const reconstructed = read('resource_site_legacy_profile_marker_reconstruction_v1.json');
 const master = read('resource_site_master_registry_v1.json');
 const canonical = read('resource_site_canonical_catalog_v1.json');
+const reserveScenario = read('resource_site_reserve_simulation_v1.json');
 
 assert.equal(archived.records.length, 114, 'preserve all embedded historical rows');
 assert.equal(archived.resourcesJsonDeposits.length, 62, 'preserve all historical JSON deposit rows');
 assert.equal(reconstructed.records.length, 1095, 'preserve all reconstructed profile markers');
 assert.equal(master.sites.length, 250);
 assert.equal(canonical.sites.length, 250);
+assert.equal(reserveScenario.siteCount, 250);
+assert.equal(reserveScenario.commercialSiteCount, 246);
 
 const norm = value => String(value ?? '').toLowerCase().normalize('NFKD')
   .replace(/\p{M}/gu, '').replace(/[^a-z0-9]+/g, ' ').trim();
@@ -135,7 +138,8 @@ const report = {
   activeAuthority: {
     canonicalSiteCount: canonical.sites.length,
     masterSiteCount: master.sites.length,
-    commercialSiteCount: master.sites.filter(site => site.real?.resourceId).length,
+    commercialSiteCount: reserveScenario.commercialSiteCount,
+    notApplicableSiteCount: reserveScenario.siteCount - reserveScenario.commercialSiteCount,
     uniqueSiteIds: canonicalIds.size,
     historicalRowsAutoPromoted: 0
   },
