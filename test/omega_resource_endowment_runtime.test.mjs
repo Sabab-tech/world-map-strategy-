@@ -260,7 +260,7 @@ globalThis.Game.state.transport.KWT=globalThis.Game.state.transport.KWT||{
   }
 };
 globalThis.Game.state.simulation.turn=2;
-await runtime.hydrateCountry('BGD');
+await runtime.hydrateCountry('KWT');
 const bindingState=runtime.countryResourceState('KWT')||{};
 const bindingController=bindingState.mineSiteControllers?.[realPipelineSiteId]||
   Object.values(bindingState.mineSiteControllers||{}).find(x=>String(x?.siteReferenceKey||'')===realPipelineSiteId);
@@ -279,8 +279,8 @@ console.log('REAL_ENDOWMENT_SITE_BINDING_DEBUG '+JSON.stringify({
     linkedOccurrenceKeys:bindingController.linkedOccurrenceKeys
   }:null,
   candidateMineStates:Object.entries(bindingState.mineStates||{}).filter(([k,v])=>
-    k.toLowerCase().includes('barapukuria')||
-    String(v?.depositKey||'').toLowerCase().includes('barapukuria')
+    k.toLowerCase().includes('greater_burgan')||
+    String(v?.depositKey||'').toLowerCase().includes('burgan')
   ).map(([k,v])=>({key:k,resourceId:v?.resourceId,depositKey:v?.depositKey,siteReferenceKey:v?.siteReferenceKey})),
   bindingKeys
 }));
@@ -299,7 +299,7 @@ assert.ok(realPipeline.occurrenceKey,'pipeline must retain the controller-linked
 assert.ok(realPipeline.shipmentId,'pipeline must persist a shipment ID');
 assert.ok(realPipeline.factoryId,'shipment must target a concrete country-scoped factory asset');
 
-const preDeliveryState=runtime.countryResourceState('BGD');
+const preDeliveryState=runtime.countryResourceState('KWT');
 const beforeWarehouse=Number(preDeliveryState?.warehouse?.availableByResource?.[realPipelineResourceId]||0);
 const beforeReserved=Number(preDeliveryState?.warehouse?.reservedByResource?.[realPipelineResourceId]||0);
 const beforeCountryRaw=Number(preDeliveryState?.inventory?.[realPipelineResourceId]||0);
@@ -315,7 +315,7 @@ const delivered=realDelivery.shipments.find(x=>x.shipmentId===realPipeline.shipm
 assert.ok(delivered,'arrival record must match the committed shipment');
 assert.equal(delivered.destinationStatus,'FACTORY_RECEIVED');
 assert.equal(delivered.processingStatus,'PROCESSED','delivered real Endowment material must enter factory processing');
-const postDeliveryState=runtime.countryResourceState('BGD');
+const postDeliveryState=runtime.countryResourceState('KWT');
 assert.ok(Math.abs(Number(postDeliveryState.warehouse.availableByResource[realPipelineResourceId])-(beforeWarehouse-deliveredQuantity))<1e-5,
   'raw warehouse stock must fall by exactly the quantity shipped');
 assert.ok(Math.abs(Number(postDeliveryState.warehouse.reservedByResource[realPipelineResourceId])-(beforeReserved-deliveredQuantity))<1e-5,
