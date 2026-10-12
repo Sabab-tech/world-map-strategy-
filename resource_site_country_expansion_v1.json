@@ -2492,11 +2492,12 @@
           "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
         },
         "production": {
-          "annual": 229000,
+          "annual": 228800,
           "rate": null,
-          "unit": "metric_tonnes_copper",
+          "unit": "metric_tonnes_copper_per_year",
           "year": 2024,
-          "status": "REPORTED"
+          "status": "REPORTED",
+          "basis": "KAZ Minerals FY2024 production report; payable copper production as reported by the group."
         },
         "grade": {
           "value": 0.33,
@@ -2527,18 +2528,20 @@
           "minimum": null,
           "maximum": null,
           "unit": "metric_tonnes_ore_per_year",
-          "status": "REPORTED_PROCESSING_CAPACITY"
+          "status": "REPORTED_CONCENTRATOR_CAPACITY",
+          "basis": "Two sulphide concentrators combined processing capacity, not copper output."
         },
-        "reportedMetrics": {},
+        "reportedMetrics": {
+          "goldProduction": {
+            "annual": 0,
+            "unit": "troy_ounces_gold_per_year",
+            "year": 2024,
+            "status": "NOT_SITE_SPECIFICALLY_DISCLOSED"
+          }
+        },
         "quantitativeProvenance": {
-          "structuredSource": [
-            "http://kazminerals.com/our-locations/aktogay",
-            "https://www.kazminerals.com/media/22033/kaz-minerals-ar-2020.pdf"
-          ],
-          "capacitySource": [
-            "http://kazminerals.com/our-locations/aktogay",
-            "https://www.kazminerals.com/media/22033/kaz-minerals-ar-2020.pdf"
-          ],
+          "structuredSource": "https://www.kazminerals.com/media/23240/q4-2024-production-report_final.pdf",
+          "capacitySource": "https://www.kazminerals.com/media/23240/q4-2024-production-report_final.pdf",
           "promotedAt": "2026-10-10"
         },
         "completeness": {
@@ -2547,15 +2550,16 @@
           "grade": "REPORTED_RESOURCE_GRADE",
           "recovery": "UNOBSERVED",
           "purity": "UNOBSERVED",
-          "capacity": "REPORTED_PROCESSING_CAPACITY",
+          "capacity": "REPORTED_CONCENTRATOR_CAPACITY",
           "structuredEvidence": true,
-          "overall": "IDENTITY_LOCATION_AND_SOURCE_LINKED_SITE_RECORD"
+          "overall": "SITE_SPECIFIC_PRIMARY_SOURCE_RESEARCH_PARTIAL",
+          "throughput": "UNOBSERVED"
         }
       },
       "verification": {
-        "researchState": "SOURCE_LINKED_SITE_RECORD_FIELD_LEVEL_REVALIDATION_REQUIRED",
-        "reviewedAt": "2026-10-10",
-        "sourceCount": 2,
+        "researchState": "PRIMARY_SOURCE_QUANTITATIVE_RESEARCH_UPDATED",
+        "reviewedAt": "2026-10-12",
+        "sourceCount": 4,
         "sourceAuthorities": [
           "MINE_OPERATOR_OR_TECHNICAL_REPORT"
         ],
@@ -2574,6 +2578,14 @@
           {
             "url": "https://www.kazminerals.com/media/22033/kaz-minerals-ar-2020.pdf",
             "scope": "2020 resource grade and historical production metrics"
+          },
+          {
+            "url": "https://www.kazminerals.com/media/23240/q4-2024-production-report_final.pdf",
+            "scope": "KAZ Minerals FY2024 production report: site-level copper output. Capacity and throughput values kept distinct from metal output."
+          },
+          {
+            "url": "https://www.kazminerals.com/operations/aktogay",
+            "scope": "KAZ Minerals site page: 50 Mtpa combined sulphide concentrator capacity and 229 kt copper production in 2024."
           }
         ]
       },
@@ -2650,11 +2662,12 @@
           "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
         },
         "production": {
-          "annual": 125000,
+          "annual": 104700,
           "rate": null,
-          "unit": "metric_tonnes_copper",
-          "year": 2020,
-          "status": "REPORTED_HISTORICAL"
+          "unit": "metric_tonnes_copper_per_year",
+          "year": 2024,
+          "status": "REPORTED",
+          "basis": "KAZ Minerals FY2024 production report; payable copper production."
         },
         "grade": {
           "value": 0.35,
@@ -2670,10 +2683,11 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
-          "value": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
+          "value": 34800000,
+          "unit": "metric_tonnes_ore_processed_per_year",
+          "year": 2024,
+          "status": "REPORTED",
+          "basis": "KAZ Minerals states 34.8 Mt of ore processed by the site's two concentrators in 2024."
         },
         "purity": {
           "value": null,
@@ -2681,35 +2695,43 @@
           "status": "UNOBSERVED"
         },
         "capacity": {
-          "nominal": null,
+          "nominal": 30000000,
           "minimum": null,
           "maximum": null,
-          "unit": null,
-          "status": "UNOBSERVED"
+          "unit": "metric_tonnes_ore_per_year",
+          "status": "REPORTED_DESIGN_CAPACITY",
+          "basis": "Combined design capacity from sulphide and clay processing circuits."
         },
-        "reportedMetrics": {},
+        "reportedMetrics": {
+          "goldProduction": {
+            "annual": 104000,
+            "unit": "troy_ounces_gold_per_year",
+            "year": 2024,
+            "status": "REPORTED",
+            "basis": "KAZ Minerals site fact page reports 104 koz gold."
+          }
+        },
         "quantitativeProvenance": {
-          "structuredSource": [
-            "https://www.kazminerals.com/media/22033/kaz-minerals-ar-2020.pdf"
-          ],
-          "capacitySource": null,
+          "structuredSource": "https://www.kazminerals.com/media/23240/q4-2024-production-report_final.pdf",
+          "capacitySource": "https://www.kazminerals.com/media/23240/q4-2024-production-report_final.pdf",
           "promotedAt": "2026-10-10"
         },
         "completeness": {
           "reserve": "UNQUANTIFIED",
-          "production": "REPORTED_HISTORICAL",
+          "production": "REPORTED",
           "grade": "REPORTED_RESOURCE_GRADE",
           "recovery": "UNOBSERVED",
           "purity": "UNOBSERVED",
-          "capacity": "UNOBSERVED",
+          "capacity": "REPORTED_DESIGN_CAPACITY",
           "structuredEvidence": true,
-          "overall": "IDENTITY_LOCATION_AND_SOURCE_LINKED_SITE_RECORD"
+          "overall": "SITE_SPECIFIC_PRIMARY_SOURCE_RESEARCH_PARTIAL",
+          "throughput": "REPORTED"
         }
       },
       "verification": {
-        "researchState": "SOURCE_LINKED_SITE_RECORD_FIELD_LEVEL_REVALIDATION_REQUIRED",
-        "reviewedAt": "2026-10-10",
-        "sourceCount": 1,
+        "researchState": "PRIMARY_SOURCE_QUANTITATIVE_RESEARCH_UPDATED",
+        "reviewedAt": "2026-10-12",
+        "sourceCount": 3,
         "sourceAuthorities": [
           "MINE_OPERATOR_OR_TECHNICAL_REPORT"
         ],
@@ -2724,6 +2746,14 @@
           {
             "url": "https://www.kazminerals.com/media/22033/kaz-minerals-ar-2020.pdf",
             "scope": "2020 annual report: resource grade and 2020 production summary"
+          },
+          {
+            "url": "https://www.kazminerals.com/media/23240/q4-2024-production-report_final.pdf",
+            "scope": "KAZ Minerals FY2024 production report: site-level copper output. Capacity and throughput values kept distinct from metal output."
+          },
+          {
+            "url": "https://www.kazminerals.com/our-locations/bozshakol/",
+            "scope": "KAZ Minerals site page: 105 kt copper and 104 koz gold production in 2024, with 30 Mtpa design capacity."
           }
         ]
       },
