@@ -4288,11 +4288,12 @@
           "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
         },
         "production": {
-          "annual": 91910,
+          "annual": 85057,
           "rate": null,
-          "unit": "troy_ounces_gold",
-          "year": 2025,
-          "status": "REPORTED"
+          "unit": "troy_ounces_gold_poured_per_year",
+          "year": 2024,
+          "status": "REPORTED",
+          "basis": "Thor Explorations FY2024 operational update; gold poured, not gold sold."
         },
         "grade": {
           "value": 4.2,
@@ -4308,10 +4309,11 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
-          "value": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
+          "value": 858966,
+          "unit": "metric_tonnes_ore_processed_per_year",
+          "year": 2024,
+          "status": "DERIVED_FROM_QUARTERLY_REPORTED_VALUES",
+          "basis": "Sum of the four reported quarterly ore-processed totals: 235,933 + 174,000 + 201,958 + 247,075 tonnes."
         },
         "purity": {
           "value": null,
@@ -4325,12 +4327,49 @@
           "unit": null,
           "status": "UNOBSERVED"
         },
-        "reportedMetrics": {},
+        "reportedMetrics": {
+          "quarterlyProduction": {
+            "year": 2024,
+            "quarters": [
+              {
+                "quarter": "Q1",
+                "oreProcessed": 235933,
+                "grade": 2.85,
+                "recovery": 90.7,
+                "goldPoured": 18543
+              },
+              {
+                "quarter": "Q2",
+                "oreProcessed": 174000,
+                "grade": 3.42,
+                "recovery": 94.6,
+                "goldPoured": 21742
+              },
+              {
+                "quarter": "Q3",
+                "oreProcessed": 201958,
+                "grade": 3.22,
+                "recovery": 88.5,
+                "goldPoured": 20110
+              },
+              {
+                "quarter": "Q4",
+                "oreProcessed": 247075,
+                "grade": 3.08,
+                "recovery": 89.2,
+                "goldPoured": 24662
+              }
+            ],
+            "units": {
+              "oreProcessed": "metric_tonnes",
+              "grade": "grams_per_tonne_gold",
+              "recovery": "percent",
+              "goldPoured": "troy_ounces"
+            }
+          }
+        },
         "quantitativeProvenance": {
-          "structuredSource": [
-            "https://thorexpl.com/projects-operations/segilola-gold-project",
-            "https://thorexpl.com/wp-content/uploads/2026/01/imc_q3_2025_rns_presentation_yj_19_11_25_1pm_sl_v2.pdf"
-          ],
+          "structuredSource": "https://thorexpl.com/thor-explorations-announces-strong-q4-2024-gold-production-2025-operating-guidance-and-details-of-investor-webinar/",
           "capacitySource": null,
           "promotedAt": "2026-10-10"
         },
@@ -4342,13 +4381,14 @@
           "purity": "UNOBSERVED",
           "capacity": "UNOBSERVED",
           "structuredEvidence": true,
-          "overall": "IDENTITY_LOCATION_AND_SOURCE_LINKED_SITE_RECORD"
+          "overall": "SITE_SPECIFIC_PRIMARY_SOURCE_RESEARCH_PARTIAL",
+          "throughput": "DERIVED_FROM_QUARTERLY_REPORTED_VALUES"
         }
       },
       "verification": {
-        "researchState": "SOURCE_LINKED_SITE_RECORD_FIELD_LEVEL_REVALIDATION_REQUIRED",
-        "reviewedAt": "2026-10-10",
-        "sourceCount": 2,
+        "researchState": "PRIMARY_SOURCE_QUANTITATIVE_RESEARCH_UPDATED",
+        "reviewedAt": "2026-10-12",
+        "sourceCount": 3,
         "sourceAuthorities": [
           "MINE_OPERATOR_OR_TECHNICAL_REPORT"
         ],
@@ -4367,6 +4407,10 @@
           {
             "url": "https://thorexpl.com/wp-content/uploads/2026/01/imc_q3_2025_rns_presentation_yj_19_11_25_1pm_sl_v2.pdf",
             "scope": "2024 production, 2025 production and DFS reserve grade"
+          },
+          {
+            "url": "https://thorexpl.com/thor-explorations-announces-strong-q4-2024-gold-production-2025-operating-guidance-and-details-of-investor-webinar/",
+            "scope": "Thor Explorations FY2024 operational update: 85,057 oz gold poured; quarterly ore processed, grade, recovery and poured-gold figures included."
           }
         ]
       },
@@ -4589,32 +4633,33 @@
           "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
         },
         "production": {
-          "annual": null,
+          "annual": 502029,
           "rate": null,
-          "unit": "troy_ounces_gold_per_quarter",
+          "unit": "troy_ounces_gold_per_year",
           "year": 2024,
-          "status": "REPORTED_Q1",
-          "quarter": "Q1",
-          "quantity": 111572
+          "status": "REPORTED",
+          "basis": "Lundin Gold FY2024 annual mine production; 320,240 oz in concentrate and 181,789 oz as doré."
         },
         "grade": {
-          "value": 9.5,
-          "unit": "g/t Au",
+          "value": 10.5,
+          "unit": "grams_per_tonne_gold",
+          "status": "REPORTED_AVERAGE_HEAD_GRADE",
           "year": 2024,
-          "status": "REPORTED_Q1_MILL_FEED_GRADE",
-          "basis": "Q1 2024 average ore grade milled"
+          "basis": "Average grade of ore milled during 2024."
         },
         "recovery": {
-          "value": 88.3,
-          "unit": "%",
+          "value": 87.8,
+          "unit": "percent",
           "year": 2024,
-          "status": "REPORTED_Q1_AVERAGE"
+          "status": "REPORTED",
+          "basis": "Average mill recovery in 2024."
         },
         "throughput": {
-          "value": 4545,
-          "unit": "metric_tonnes_ore_per_day",
+          "value": 1690865,
+          "unit": "metric_tonnes_ore_milled_per_year",
           "year": 2024,
-          "status": "REPORTED_Q1_AVERAGE"
+          "status": "REPORTED",
+          "basis": "Annual ore milled in 2024."
         },
         "purity": {
           "value": null,
@@ -4626,35 +4671,45 @@
           "minimum": null,
           "maximum": null,
           "unit": "metric_tonnes_ore_per_day",
-          "status": "OPERATOR_STATED_PLANT_CAPACITY"
+          "status": "REPORTED_PLANT_THROUGHPUT_CAPACITY",
+          "basis": "Plant expansion targets 5,000 tpd; subsequent operation reported averaging over 5,000 tpd after expansion commissioning."
         },
-        "reportedMetrics": {},
+        "reportedMetrics": {
+          "productionBreakdown": {
+            "concentrate": 320240,
+            "dore": 181789,
+            "unit": "troy_ounces_gold",
+            "year": 2024,
+            "status": "REPORTED"
+          },
+          "oreMined": {
+            "annual": 1671849,
+            "unit": "metric_tonnes_ore_mined_per_year",
+            "year": 2024,
+            "status": "REPORTED"
+          }
+        },
         "quantitativeProvenance": {
-          "structuredSource": [
-            "https://lundingold.com/news/lundin-gold-reports-q1-2024-production-of-111-572-122762",
-            "https://lundingold.com/fruta-del-norte/fruta-del-norte/operational-overview"
-          ],
-          "capacitySource": [
-            "https://lundingold.com/news/lundin-gold-reports-q1-2024-production-of-111-572-122762",
-            "https://lundingold.com/fruta-del-norte/fruta-del-norte/operational-overview"
-          ],
+          "structuredSource": "https://lundingold.com/news/lundin-gold-reports-fourth-quarter-and-full-year-2-122796",
+          "capacitySource": "https://lundingold.com/fruta-del-norte/fruta-del-norte/operational-overview",
           "promotedAt": "2026-10-10"
         },
         "completeness": {
           "reserve": "UNQUANTIFIED",
-          "production": "REPORTED_Q1",
-          "grade": "REPORTED_Q1_MILL_FEED_GRADE",
-          "recovery": "REPORTED_Q1_AVERAGE",
+          "production": "REPORTED",
+          "grade": "REPORTED_AVERAGE_HEAD_GRADE",
+          "recovery": "REPORTED",
           "purity": "UNOBSERVED",
-          "capacity": "OPERATOR_STATED_PLANT_CAPACITY",
+          "capacity": "REPORTED_PLANT_THROUGHPUT_CAPACITY",
           "structuredEvidence": true,
-          "overall": "IDENTITY_LOCATION_AND_SOURCE_LINKED_SITE_RECORD"
+          "overall": "SITE_SPECIFIC_PRIMARY_SOURCE_RESEARCH_PARTIAL",
+          "throughput": "REPORTED"
         }
       },
       "verification": {
-        "researchState": "SOURCE_LINKED_SITE_RECORD_FIELD_LEVEL_REVALIDATION_REQUIRED",
-        "reviewedAt": "2026-10-10",
-        "sourceCount": 2,
+        "researchState": "PRIMARY_SOURCE_QUANTITATIVE_RESEARCH_UPDATED",
+        "reviewedAt": "2026-10-12",
+        "sourceCount": 3,
         "sourceAuthorities": [
           "MINE_OPERATOR_OR_TECHNICAL_REPORT"
         ],
@@ -4673,6 +4728,10 @@
           {
             "url": "https://lundingold.com/fruta-del-norte/fruta-del-norte/operational-overview",
             "scope": "operator mining method and 5,000 tonnes/day plant capacity"
+          },
+          {
+            "url": "https://lundingold.com/news/lundin-gold-reports-fourth-quarter-and-full-year-2-122796",
+            "scope": "Lundin Gold FY2024 results: 502,029 oz gold, 1,690,865 t milled, 10.5 g/t average head grade and 87.8% recovery."
           }
         ]
       },
