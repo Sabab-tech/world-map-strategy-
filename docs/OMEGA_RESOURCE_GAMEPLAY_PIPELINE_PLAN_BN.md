@@ -16,6 +16,7 @@
 - ওই 199টি site-এর বর্তমান বণ্টন: 197টি দেশ-প্রোফাইলের মধ্যে 196 দেশে 1টি করে site, কিউবায় 3টি; বাকি দেশে 0টি এই নির্দিষ্ট array থেকে। তাই এই 199টি আপনার বর্ণিত “প্রায় সব দেশে 3–4টি map marker”-এর তালিকা নয়।
 - বর্তমান canonical catalog-এ প্রথম 199টি legacy reference-এর পরে 51টি additive record আছে। current tests 250 unique IDs, 246 commercial + 4 N/A-র contract যাচাই করে।
 - ইতিহাসে মুছে যাওয়া build_resources_database.py-এর deposits_list-এ 41টি স্পষ্ট deposit entry ছিল এবং মাত্র 17টি country label ছিল। ফাইলটির comment “all 195 countries” বললেও data list বাস্তবে সেই coverage দেয়নি। তাই এই generator নিজে 195×3–4 sites-এর নির্ভরযোগ্য backup নয়।
+- পুরনো map-engine-2.js এবং বর্তমান legacy overlay ResourceMinistryEngine.deposits-এর ওপর নির্ভর করে, যা বর্তমান startup-এ 43টি runtime deposit। অন্যদিকে individual-site binding canonical/master catalog থেকে আলাদা marker layer তৈরি করে। দুই renderer-এর মধ্যে registry parity নিশ্চিত নয়। এটি visible marker কমে যাওয়ার একটি বাস্তব architectural explanation, কিন্তু পুরনো 3–4-per-country records কোথায় গেছে তার সম্পূর্ণ recovery নয়।
 - 962b4461 migration commit-এ resources.json উল্লেখযোগ্যভাবে বদলেছে এবং পুরনো srie_database.json বাদ গেছে; build_resources_database.py-ও পরে সরানো হয়েছে। এই পরিবর্তনগুলো historical-source recovery audit দাবি করে, কিন্তু শুধু deletion বা diff-stat দেখে 3–4/site data মুছে গেছে বলে নিশ্চিত হওয়া যায় না।
 - বর্তমান প্রমাণে 199টি legacy source-profile record ও 51টি additive site সংরক্ষিত। কিন্তু আগে map-এ দেখা সব marker ঐতিহাসিকভাবে পুনরুদ্ধার হয়েছে, তা এখনও প্রমাণিত নয়। পুরনো commits, পুরনো map renderer, generated data ও deleted scripts/output তুলনা না করে “কিছুই হারায়নি” বলা ভুল হবে।
 
@@ -42,6 +43,13 @@
 | J. AI/government/war | ministries, opponent autonomy, relations/treaties/sanctions, military/naval layers | sanctions, ownership, war, naval/route blockage, tech and cabinet decisions production/transport-এ প্রভাব ফেলবে; missing data হলে explicit blocked reason |
 | K. Persistence & Android | game session/turn system, offline build | save/load-এ batch, reserves, routes, shipments, factory stock, event IDs স্থায়ী; network ছাড়াই offline gameplay; CDN-এর ওপর নির্ভরতা নয় |
 
+## বর্তমান প্রমাণিত অগ্রগতি (2026-10-12)
+
+- SITE → EXTRACTION → RAW WAREHOUSE → ROUTE/SHIPMENT → FACTORY → PROCESS OUTPUT-এর একটি বাস্তব Endowment Runtime vertical slice CI-তে সফল।
+- বর্তমান main-এ PR #57 merge হয়েছে: [commit 31c61aed](https://github.com/Sabab-tech/world-map-strategy-/commit/31c61aeddf914274606bfe6a74c78dd7a2a8b9f4)।
+- Android CI build merge commit-এ সফল হয়েছে; সেটি low-end Android ডিভাইসে app চালিয়ে পূর্ণ game session সম্পন্ন করার সমতুল্য নয়।
+- বাকি বড় কাজ: 250 site-এর map/runtime parity test, ঐতিহাসিক marker recovery, output থেকে market/fiscal/treasury settlement, save/load, route blockage ও বাস্তব Android smoke test। গেমের সামগ্রিক status এখনও INCOMPLETE।
+
 ## 4. বাস্তবায়নের ক্রম
 
 ### P0 — Baseline lock and data proof
@@ -60,7 +68,7 @@
 - একই game state-এ plan → extract → batch → warehouse → shipment reservation → ETA advance → factory input → process outputs/by-products trace করতে হবে।
 - প্রতিটি ধাপে stable transaction/event ID, source site ID, occurrence key, country, quantity এবং unit assert করতে হবে।
 - shipment failure হলে stock/reservation rollback; duplicate turn action হলে idempotent block; no cross-country ledger leakage।
-- PR #57-এর বর্তমান real-runtime regression test এই প্রমাণের দিকে এগোচ্ছে; CI pass ছাড়া একে সম্পূর্ণ সফল বলা যাবে না।
+- PR #57 merge হওয়ার আগে real-runtime regression CI-তে সফল হয়েছে: [Resource Verification Certificate run #38256067068](https://github.com/Sabab-tech/world-map-strategy-/actions/runs/38256067068), head `05bdedc0`। এতে প্রকৃত Kuwait Greater Burgan site থেকে Endowment extraction → batch → country raw warehouse → shipment reservation/dispatch → ETA advance → factory receipt/processing → output ও ledger assertion সম্পন্ন হয়েছে। এটি একটি site-এর vertical slice প্রমাণ করে, সব 250 site বা পুরো economy settlement নয়।
 
 ### P3 — Economy settlement
 - বর্তমান factory-cycle test resource outputs যাচাই করতে পারে; কিন্তু output থেকে treasury/GDP/market ledger settlement আলাদাভাবে প্রমাণ করতে হবে।
@@ -94,5 +102,6 @@
 - আগে 250 site-কে আগের map-এর সব resource point-এর সমার্থক ধরে নেওয়া অতিরিক্ত আত্মবিশ্বাসী ছিল। Registry count আর historical marker parity আলাদা মাপকাঠি।
 - আগের 199-কে পুরো world resource inventory বলাও ভুল: তা এক নির্দিষ্ট profile array-এর 199 rows। map-এ ব্যবহৃত runtime deposits-ও ভিন্ন list।
 - পৃথক test pass থেকে whole-game runtime pass অনুমান করা যাবে না। mock Endowment test industrial logic-এর contract যাচাই করে, real module-to-module linkage নয়।
+- real-runtime test-এ দুইটি প্রকৃত integration bug ধরা পড়েছিল: (১) industrial country normalizer KWT-কে ভুল করে ISO-2 KW bucket-এ পাঠাচ্ছিল, ফলে controller lookup ব্যর্থ হতো; (২) economy.productionAssets আগে না থাকলে auto-commissioned factory detached temporary array-তে যোগ হতো, persistent game state-এ নয়। দুটোই runtime-এ ঠিক হয়েছে এবং regression assertions যোগ হয়েছে।
 - source evidence, scenario-generated value, coordinate confidence এবং UI marker visibility আলাদা status হিসেবে রাখতে হবে।
 - additive edits only: original files preserve, recovery candidates append, source hash/count checks add; unrelated file delete/overwrite নয়।
