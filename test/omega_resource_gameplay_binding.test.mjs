@@ -264,7 +264,7 @@ test('runtime renders all global sites and applies nation/resource scope without
   assert.ok(markerCount()>0 && markerCount()<239+expansion.migratedSiteCount+2,'resource filter must narrow the global site markers');
   context.Game.Map.resourceState.selectedResources=vm.runInContext("new Set(['natural-gas'])",context);
   context.Omega.IndividualResourceSiteBinding.refresh();
-  assert.ok(markerCount()>0 && markerCount()<239+expansion.records.length+2,'hyphenated commodity filters must match canonical underscore resource IDs across the world');
+  assert.ok(markerCount()>0 && markerCount()<239+expansion.migratedSiteCount+2,'hyphenated commodity filters must match canonical underscore resource IDs across the world');
 
   // Regression fixture: Saudi Arabia has one source mine site plus two separate oilfield records.
   context.Game.Map.resourceState.scope='NATION';
