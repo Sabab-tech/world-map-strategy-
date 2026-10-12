@@ -290,7 +290,9 @@ const realPipeline=await industrial.executeSitePipeline({
 });
 assert.equal(realPipeline.status,'IN_TRANSIT',
   'real Endowment extraction must commit and dispatch a site-specific shipment: '+JSON.stringify({
-    status:realPipeline.status,reason:realPipeline.reason,extractionStatus:realPipeline.extractionStatus,
+    status:realPipeline.status,reason:realPipeline.reason,countryId:realPipeline.countryId,siteId:realPipeline.siteId,
+    resourceId:realPipeline.resourceId,controllerStatus:realPipeline.controllerStatus,linkedOccurrenceCount:realPipeline.linkedOccurrenceCount,
+    referenceResource:realPipeline.referenceResource,extractionStatus:realPipeline.extractionStatus,
     shipmentStatus:realPipeline.shipmentStatus,detail:realPipeline.detail
   }));
 assert.equal(realPipeline.extractionStatus,'COMMITTED');
