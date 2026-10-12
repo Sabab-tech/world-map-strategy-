@@ -334,4 +334,5 @@ assert.ok((postDeliveryState.industrialNetwork?.events||[]).some(x=>x.transactio
 
 
 if(nativeFetch)globalThis.fetch=nativeFetch;
+// This completion line is reached only after the real site pipeline assertions above pass.
 console.log('OMEGA RESOURCE JSON -> MINE -> BATCH -> WAREHOUSE -> FACTORY EVENT TEST PASSED');
