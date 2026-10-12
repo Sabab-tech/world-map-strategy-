@@ -31,7 +31,22 @@ const daysPerTurn=()=>Math.max(1,num(state()?.simulation?.daysPerTurn??state()?.
 const year=()=>{const d=state()?.simulation?.date;if(d){const y=num(String(d).slice(0,4));if(y!==null)return y;}return num(state()?.simulation?.startYear)??2015};
 const canonicalCountry=v=>{
   const raw=String(v??'').trim();if(!raw)return null;
-  try{const b=g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity;const r=b?.resolveCountry?.(raw);if(r?.id)return id(r.id);}catch(_){}
+  // Runtime country buckets use ISO-3. Never resolve an incoming ISO-3 through a name/alias
+  // index first: the resolver may return the ISO-2 display identity (e.g. KWT -> KW).
+  if(/^[A-Z]{3}$/i.test(raw))return id(raw);
+  try{
+    const b=g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity;
+    const r=b?.resolveCountry?.(raw);
+    const source=r?.raw?.raw||r?.raw?.datasets?.['countries.json']||r?.raw||{};
+    const iso3=source?.iso3||source?.iso3Code||source?.countryCode||source?.countryId||
+      r?.iso3||r?.iso3Code||r?.countryCode||r?.countryId;
+    if(iso3&&/^[A-Z]{3}$/i.test(String(iso3).trim()))return id(iso3);
+    if(r?.id)return id(r.id);
+  }catch(_){}
+  try{
+    const normalized=g.ResourceMinistryEngine?.normalizeCountryCode?.(raw);
+    if(normalized&&/^[A-Z]{3}$/i.test(String(normalized).trim()))return id(normalized);
+  }catch(_){}
   return id(raw);
 };
 const interop=()=>g.Omega?.MinistryInteroperability||g.OmegaMinistryInteroperability||null;
