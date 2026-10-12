@@ -15,12 +15,12 @@ const ontology=json('resource_ontology.json').COMMODITY_ONTOLOGIES||{};
 const ontologyMap={};
 for(const [k,v] of Object.entries(ontology))ontologyMap[k.toLowerCase()]=v;
 
-assert.equal(master.siteCount,199);
-assert.equal(master.sites.length,199);
-assert.equal(reserves.siteCount,199);
-assert.equal(reserves.records.length,199);
-assert.equal(scenario.records.length,199);
-assert.equal(master.sites.filter(x=>x.sourceSiteRecord?.commercialExtraction===true).length,195);
+assert.equal(master.siteCount,250);
+assert.equal(master.sites.length,250);
+assert.equal(reserves.siteCount,250);
+assert.equal(reserves.records.length,250);
+assert.equal(scenario.records.length,250);
+assert.equal(master.sites.filter(x=>x.sourceSiteRecord?.commercialExtraction===true).length,246);
 assert.equal(master.sites.filter(x=>x.sourceSiteRecord?.commercialExtraction===false).length,4);
 
 const context={
@@ -66,7 +66,7 @@ for(const site of master.sites){
   }
 }
 const elapsed=performance.now()-t0;
-assert(elapsed<5000,'199-site hardening resolution exceeded 5s: '+elapsed.toFixed(1)+'ms');
+assert(elapsed<5000,'250-site hardening resolution exceeded 5s: '+elapsed.toFixed(1)+'ms');
 assert(simulatedCount>0);
 
 const multi=realism.siteModel({
@@ -126,14 +126,14 @@ assert(Object.keys(copperModel.outputs).length>0);
 assert.equal(copperModel.authority,'SIMULATION_RULES_FROM_CANONICAL_ONTOLOGY');
 
 const diagnostics=hard.diagnostics();
-assert.equal(diagnostics.masterSiteCount,199);
-assert.equal(diagnostics.commercialSiteCount,195);
-assert.equal(diagnostics.playableCommercialSimulationCount,195);
+assert.equal(diagnostics.masterSiteCount,250);
+assert.equal(diagnostics.commercialSiteCount,246);
+assert.equal(diagnostics.playableCommercialSimulationCount,246);
 assert.equal(diagnostics.blockedCommercialSimulationCount,0);
 
 console.log(JSON.stringify({
   certificate:'OMEGA-RESOURCE-SYSTEM-HARDENING-V1',
-  status:'PASS',siteCount:199,commercialSites:195,
+  status:'PASS',siteCount:250,commercialSites:246,
   playableCommercialSimulationSites:diagnostics.playableCommercialSimulationCount,
   simulatedStreams:simulatedCount,resolverElapsedMs:Number(elapsed.toFixed(2)),
   gameplayHorizonTargetYears:375,multiCommodityStreams:multi.commodityStreams.length,
