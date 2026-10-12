@@ -53,8 +53,11 @@ for (const countryId of Object.keys(profiles)) {
 }
 
 const canonical = read('resource_site_canonical_catalog_v1.json');
-assert.equal(canonical.siteCount, 250);
-assert.equal(canonical.sites.length, 250);
+const restoration = JSON.parse(read('resource_site_verified_legacy_restoration_v1.json'));
+const expectedSiteCount = 250 + restoration.records.length;
+
+assert.equal(canonical.siteCount, expectedSiteCount);
+assert.equal(canonical.sites.length, expectedSiteCount);
 for (const [index, site] of canonical.sites.slice(0,199).entries()) {
   const part = Math.floor(index / 50) + 1;
   const partIndex = index % 50;
