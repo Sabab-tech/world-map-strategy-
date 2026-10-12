@@ -64,11 +64,12 @@
           "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
         },
         "production": {
-          "annual": null,
+          "annual": 1125300,
           "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
+          "unit": "metric_tonnes_copper_per_year",
+          "year": 2024,
+          "status": "REPORTED",
+          "basis": "BHP FY2024 (year ended 30 June 2024); production for Escondida, not company-wide copper output."
         },
         "grade": {
           "value": "Porphyry copper deposit; site-specific assay grade not supplied in this record",
@@ -101,25 +102,26 @@
         },
         "reportedMetrics": {},
         "quantitativeProvenance": {
-          "structuredSource": null,
+          "structuredSource": "https://www.bhp.com/-/media/documents/investors/annual-reports/2024/240827_bhpannualreport2024.pdf",
           "capacitySource": null,
           "promotedAt": "2026-10-10"
         },
         "completeness": {
           "reserve": "UNQUANTIFIED",
-          "production": "UNOBSERVED",
-          "grade": "QUALITATIVE_ONLY",
+          "production": "REPORTED",
+          "grade": "QUALITATIVE_DEPOSIT_DESCRIPTION_NOT_ASSAY",
           "recovery": "UNOBSERVED",
           "purity": "UNOBSERVED",
           "capacity": "UNOBSERVED",
-          "structuredEvidence": false,
-          "overall": "IDENTITY_AND_LOCATION_ENRICHED_QUANTITATIVES_REQUIRE_RESEARCH"
+          "structuredEvidence": true,
+          "overall": "SITE_SPECIFIC_PRIMARY_SOURCE_RESEARCH_PARTIAL",
+          "throughput": "UNOBSERVED"
         }
       },
       "verification": {
-        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_REQUIRES_FIELD_REVALIDATION",
-        "reviewedAt": "2026-10-10",
-        "sourceCount": 1,
+        "researchState": "PRIMARY_SOURCE_QUANTITATIVE_RESEARCH_UPDATED",
+        "reviewedAt": "2026-10-12",
+        "sourceCount": 2,
         "sourceAuthorities": [
           "OPERATOR_OR_PUBLIC_SITE_REFERENCE"
         ],
@@ -134,6 +136,10 @@
           {
             "url": "https://www.bhp.com/what-we-do/global-locations/chile/escondida",
             "scope": "site identity, commodity, region and/or operator; revalidate field-level claims before promotion"
+          },
+          {
+            "url": "https://www.bhp.com/-/media/documents/investors/annual-reports/2024/240827_bhpannualreport2024.pdf",
+            "scope": "BHP FY2024 Annual Report: Escondida production 1,125.3 kt; FY basis ends 30 June 2024."
           }
         ]
       },
@@ -204,10 +210,11 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNQUANTIFIED",
-          "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
+          "quantity": 1057000000,
+          "unit": "metric_tonnes_ore",
+          "year": 2024,
+          "status": "REPORTED_MINERAL_RESERVES",
+          "basis": "Codelco at a Glance 31 Dec 2024: El Teniente mineral reserves 1,057 Mt at 0.83% copper; ore tonnage."
         },
         "production": {
           "annual": null,
@@ -217,9 +224,11 @@
           "status": "UNOBSERVED"
         },
         "grade": {
-          "value": "Copper ore; site-specific current assay grade not supplied in this record",
-          "unit": null,
-          "status": "QUALITATIVE_DEPOSIT_DESCRIPTION_NOT_ASSAY"
+          "value": 0.83,
+          "unit": "percent_copper",
+          "status": "REPORTED_RESERVE_GRADE",
+          "year": 2024,
+          "basis": "Codelco mineral reserve grade; not current mill-feed grade."
         },
         "recovery": {
           "value": null,
@@ -245,27 +254,37 @@
           "unit": null,
           "status": "UNOBSERVED"
         },
-        "reportedMetrics": {},
+        "reportedMetrics": {
+          "mineralResources": {
+            "quantity": 5390000000,
+            "unit": "metric_tonnes_ore",
+            "grade": 0.73,
+            "gradeUnit": "percent_copper",
+            "year": 2024,
+            "status": "REPORTED_MINERAL_RESOURCES"
+          }
+        },
         "quantitativeProvenance": {
-          "structuredSource": null,
+          "structuredSource": "https://codelco.com/prontus_codelco/site/docs/20200531/20200531230507/codelco_at_a_glance_december_31__2024.pdf",
           "capacitySource": null,
           "promotedAt": "2026-10-10"
         },
         "completeness": {
-          "reserve": "UNQUANTIFIED",
+          "reserve": "REPORTED_MINERAL_RESERVES",
           "production": "UNOBSERVED",
-          "grade": "QUALITATIVE_ONLY",
+          "grade": "REPORTED_RESERVE_GRADE",
           "recovery": "UNOBSERVED",
           "purity": "UNOBSERVED",
           "capacity": "UNOBSERVED",
-          "structuredEvidence": false,
-          "overall": "IDENTITY_AND_LOCATION_ENRICHED_QUANTITATIVES_REQUIRE_RESEARCH"
+          "structuredEvidence": true,
+          "overall": "SITE_SPECIFIC_PRIMARY_SOURCE_RESEARCH_PARTIAL",
+          "throughput": "UNOBSERVED"
         }
       },
       "verification": {
-        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_REQUIRES_FIELD_REVALIDATION",
-        "reviewedAt": "2026-10-10",
-        "sourceCount": 1,
+        "researchState": "PRIMARY_SOURCE_QUANTITATIVE_RESEARCH_UPDATED",
+        "reviewedAt": "2026-10-12",
+        "sourceCount": 2,
         "sourceAuthorities": [
           "OPERATOR_OR_PUBLIC_SITE_REFERENCE"
         ],
@@ -280,6 +299,10 @@
           {
             "url": "https://www.codelco.com/",
             "scope": "operator reference for El Teniente; site-specific fields require direct revalidation"
+          },
+          {
+            "url": "https://codelco.com/prontus_codelco/site/docs/20200531/20200531230507/codelco_at_a_glance_december_31__2024.pdf",
+            "scope": "Codelco at a Glance 31 December 2024: El Teniente reserves 1,057 Mt at 0.83% Cu and resources 5,390 Mt at 0.73% Cu."
           }
         ]
       },
@@ -1683,11 +1706,12 @@
           "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
         },
         "production": {
-          "annual": null,
+          "annual": 322912,
           "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
+          "unit": "metric_tonnes_copper_in_concentrate_per_year",
+          "year": 2024,
+          "status": "REPORTED",
+          "basis": "MMG Annual Report 2024, 100% asset basis; copper in concentrate, not payable metal sold."
         },
         "grade": {
           "value": "Copper ore; site-specific current assay grade not supplied in this record",
@@ -1701,10 +1725,11 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
-          "value": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
+          "value": 51586909,
+          "unit": "metric_tonnes_ore_milled_per_year",
+          "year": 2024,
+          "status": "REPORTED",
+          "basis": "MMG Annual Report 2024."
         },
         "purity": {
           "value": null,
@@ -1718,27 +1743,42 @@
           "unit": null,
           "status": "UNOBSERVED"
         },
-        "reportedMetrics": {},
+        "reportedMetrics": {
+          "payableCopperSold": {
+            "annual": 302868,
+            "unit": "metric_tonnes_copper_per_year",
+            "year": 2024,
+            "status": "REPORTED",
+            "basis": "Payable copper in product sold; distinct from 322,912 tonnes produced in concentrate."
+          },
+          "oreMined": {
+            "annual": 63819945,
+            "unit": "metric_tonnes_ore_mined_per_year",
+            "year": 2024,
+            "status": "REPORTED"
+          }
+        },
         "quantitativeProvenance": {
-          "structuredSource": null,
+          "structuredSource": "https://www.mmg.com/content/uploads/2025/04/MMG_AR24_MDA_LB.pdf",
           "capacitySource": null,
           "promotedAt": "2026-10-10"
         },
         "completeness": {
           "reserve": "UNQUANTIFIED",
-          "production": "UNOBSERVED",
-          "grade": "QUALITATIVE_ONLY",
+          "production": "REPORTED",
+          "grade": "QUALITATIVE_DEPOSIT_DESCRIPTION_NOT_ASSAY",
           "recovery": "UNOBSERVED",
           "purity": "UNOBSERVED",
           "capacity": "UNOBSERVED",
-          "structuredEvidence": false,
-          "overall": "IDENTITY_AND_LOCATION_ENRICHED_QUANTITATIVES_REQUIRE_RESEARCH"
+          "structuredEvidence": true,
+          "overall": "SITE_SPECIFIC_PRIMARY_SOURCE_RESEARCH_PARTIAL",
+          "throughput": "REPORTED"
         }
       },
       "verification": {
-        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_REQUIRES_FIELD_REVALIDATION",
-        "reviewedAt": "2026-10-10",
-        "sourceCount": 1,
+        "researchState": "PRIMARY_SOURCE_QUANTITATIVE_RESEARCH_UPDATED",
+        "reviewedAt": "2026-10-12",
+        "sourceCount": 2,
         "sourceAuthorities": [
           "OPERATOR_OR_PUBLIC_SITE_REFERENCE"
         ],
@@ -1753,6 +1793,10 @@
           {
             "url": "https://www.mmg.com/our-business/las-bambas/",
             "scope": "operator reference for Las Bambas; site-specific fields require direct revalidation"
+          },
+          {
+            "url": "https://www.mmg.com/content/uploads/2025/04/MMG_AR24_MDA_LB.pdf",
+            "scope": "MMG Annual Report 2024: 322,912 t copper in concentrate produced, 51,586,909 t ore milled and 302,868 t payable copper sold; 100% asset basis."
           }
         ]
       },
@@ -1829,11 +1873,12 @@
           "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
         },
         "production": {
-          "annual": null,
+          "annual": 102400,
           "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
+          "unit": "metric_tonnes_copper_per_year",
+          "year": 2024,
+          "status": "REPORTED",
+          "basis": "Teck reports 102.4 thousand tonnes copper production for calendar year 2024."
         },
         "grade": {
           "value": "Low-grade porphyry copper deposit with molybdenum; no numeric assay assigned",
@@ -1864,27 +1909,36 @@
           "unit": null,
           "status": "UNOBSERVED"
         },
-        "reportedMetrics": {},
+        "reportedMetrics": {
+          "goldProduction": {
+            "annual": 20800,
+            "unit": "troy_ounces_gold_per_year",
+            "year": 2024,
+            "status": "REPORTED",
+            "basis": "Teck 2025 Annual Report table reports 20,800 oz gold in 2024."
+          }
+        },
         "quantitativeProvenance": {
-          "structuredSource": null,
+          "structuredSource": "https://www.teck.com/operations/canada/operations/highland-valley-copper",
           "capacitySource": null,
           "promotedAt": "2026-10-10"
         },
         "completeness": {
           "reserve": "UNQUANTIFIED",
-          "production": "UNOBSERVED",
-          "grade": "QUALITATIVE_ONLY",
+          "production": "REPORTED",
+          "grade": "QUALITATIVE_ONLY_NOT_ASSAY",
           "recovery": "UNOBSERVED",
           "purity": "UNOBSERVED",
           "capacity": "UNOBSERVED",
-          "structuredEvidence": false,
-          "overall": "IDENTITY_AND_LOCATION_ENRICHED_QUANTITATIVES_REQUIRE_RESEARCH"
+          "structuredEvidence": true,
+          "overall": "SITE_SPECIFIC_PRIMARY_SOURCE_RESEARCH_PARTIAL",
+          "throughput": "UNOBSERVED"
         }
       },
       "verification": {
-        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_REQUIRES_FIELD_REVALIDATION",
-        "reviewedAt": "2026-10-10",
-        "sourceCount": 1,
+        "researchState": "PRIMARY_SOURCE_QUANTITATIVE_RESEARCH_UPDATED",
+        "reviewedAt": "2026-10-12",
+        "sourceCount": 2,
         "sourceAuthorities": [
           "OPERATOR_OR_GOVERNMENT_REFERENCE"
         ],
@@ -1899,6 +1953,10 @@
           {
             "url": "https://www.teck.com/operations/canada/operations/highland-valley-copper",
             "scope": "site identity, commodity, region and/or operator; validate each field before marking verified"
+          },
+          {
+            "url": "https://www.teck.com/media/2025-Annual-Report.pdf",
+            "scope": "Teck FY2025 Annual Report: Highland Valley Copper produced 102.4 kt copper and 20.8 koz gold in 2024."
           }
         ]
       },
@@ -4693,11 +4751,12 @@
           "status": "UNOBSERVED"
         },
         "capacity": {
-          "nominal": null,
+          "nominal": 18000000,
           "minimum": null,
           "maximum": null,
-          "unit": null,
-          "status": "UNOBSERVED"
+          "unit": "pounds_U3O8_per_year",
+          "status": "REPORTED_LICENCED_ANNUAL_PRODUCTION_RATE",
+          "basis": "Cameco 2024 Cigar Lake Technical Report states an approved average annual production rate of 18 million lb U3O8; this is capacity/rate authority, not 2024 actual output."
         },
         "reportedMetrics": {},
         "quantitativeProvenance": {
@@ -4705,7 +4764,7 @@
             "https://www.cameco.com/businesses/uranium-operations/canada/cigar-lake",
             "https://www.cameco.com/media/news/cigar-lake-mine-resumes-production"
           ],
-          "capacitySource": null,
+          "capacitySource": "https://www.cameco.com/sites/default/files/documents/cameco-2023-cigar-lake-technical-report.pdf",
           "promotedAt": "2026-10-10"
         },
         "completeness": {
@@ -4714,15 +4773,16 @@
           "grade": "QUALITATIVE_ONLY",
           "recovery": "UNOBSERVED",
           "purity": "UNOBSERVED",
-          "capacity": "UNOBSERVED",
+          "capacity": "REPORTED_LICENCED_ANNUAL_PRODUCTION_RATE",
           "structuredEvidence": true,
-          "overall": "IDENTITY_LOCATION_AND_SOURCE_LINKED_SITE_RECORD"
+          "overall": "SITE_SPECIFIC_PRIMARY_SOURCE_RESEARCH_PARTIAL",
+          "throughput": "UNOBSERVED"
         }
       },
       "verification": {
-        "researchState": "SOURCE_LINKED_SITE_RECORD_FIELD_LEVEL_REVALIDATION_REQUIRED",
-        "reviewedAt": "2026-10-10",
-        "sourceCount": 2,
+        "researchState": "PRIMARY_SOURCE_QUANTITATIVE_RESEARCH_UPDATED",
+        "reviewedAt": "2026-10-12",
+        "sourceCount": 3,
         "sourceAuthorities": [
           "MINE_OPERATOR_OR_TECHNICAL_REPORT"
         ],
@@ -4741,6 +4801,10 @@
           {
             "url": "https://www.cameco.com/media/news/cigar-lake-mine-resumes-production",
             "scope": "2026 production restart and production outlook"
+          },
+          {
+            "url": "https://www.cameco.com/sites/default/files/documents/cameco-2023-cigar-lake-technical-report.pdf",
+            "scope": "Cameco Cigar Lake Technical Report: approved average annual production rate 18 million pounds U3O8; source is a licensed rate, not actual annual production."
           }
         ]
       },
@@ -5109,17 +5173,19 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNQUANTIFIED",
-          "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
+          "quantity": 104500000,
+          "unit": "troy_ounces_silver_contained",
+          "year": 2024,
+          "status": "REPORTED_RESERVES",
+          "basis": "Fresnillo plc 2024 preliminary results: 104.5 Moz Ag reserves as of 30 June 2024; contained metal, not ore tonnage."
         },
         "production": {
-          "annual": 10273,
+          "annual": 10200000,
           "rate": null,
-          "unit": "thousand_troy_ounces_silver",
-          "year": 2025,
-          "status": "REPORTED"
+          "unit": "troy_ounces_silver_per_year",
+          "year": 2024,
+          "status": "REPORTED_APPROXIMATE",
+          "basis": "Fresnillo plc FY2024 preliminary results report production rounded to 10.2 million oz silver."
         },
         "grade": {
           "value": 821,
@@ -5152,30 +5218,42 @@
           "unit": null,
           "status": "UNOBSERVED"
         },
-        "reportedMetrics": {},
+        "reportedMetrics": {
+          "goldProduction": {
+            "annual": 51500,
+            "unit": "troy_ounces_gold_per_year",
+            "year": 2024,
+            "status": "REPORTED_APPROXIMATE"
+          },
+          "goldReserves": {
+            "quantity": 263000,
+            "unit": "troy_ounces_gold_contained",
+            "year": 2024,
+            "status": "REPORTED_RESERVES",
+            "basis": "As of 30 June 2024"
+          }
+        },
         "quantitativeProvenance": {
-          "structuredSource": [
-            "https://www2.fresnilloplc.com/en/portfolio/mines-in-operation/fresnillo",
-            "https://www.fresnilloplc.com/media/02cl5zop/220726-fresnillo-plc-2q26-production-report.pdf"
-          ],
+          "structuredSource": "https://www.fresnilloplc.com/media/4b2ifnvt/040325-fres-fy24-presentation.pdf",
           "capacitySource": null,
           "promotedAt": "2026-10-10"
         },
         "completeness": {
-          "reserve": "UNQUANTIFIED",
-          "production": "REPORTED",
+          "reserve": "REPORTED_RESERVES",
+          "production": "REPORTED_APPROXIMATE",
           "grade": "REPORTED_1H_AVERAGE_ORE_GRADE",
           "recovery": "UNOBSERVED",
           "purity": "UNOBSERVED",
           "capacity": "UNOBSERVED",
           "structuredEvidence": true,
-          "overall": "IDENTITY_LOCATION_AND_SOURCE_LINKED_SITE_RECORD"
+          "overall": "SITE_SPECIFIC_PRIMARY_SOURCE_RESEARCH_PARTIAL",
+          "throughput": "UNOBSERVED"
         }
       },
       "verification": {
-        "researchState": "SOURCE_LINKED_SITE_RECORD_FIELD_LEVEL_REVALIDATION_REQUIRED",
-        "reviewedAt": "2026-10-10",
-        "sourceCount": 2,
+        "researchState": "PRIMARY_SOURCE_QUANTITATIVE_RESEARCH_UPDATED",
+        "reviewedAt": "2026-10-12",
+        "sourceCount": 3,
         "sourceAuthorities": [
           "MINE_OPERATOR_OR_TECHNICAL_REPORT"
         ],
@@ -5194,6 +5272,10 @@
           {
             "url": "https://www.fresnilloplc.com/media/02cl5zop/220726-fresnillo-plc-2q26-production-report.pdf",
             "scope": "operator 2026 ore-grade and production report"
+          },
+          {
+            "url": "https://www.fresnilloplc.com/media/4b2ifnvt/040325-fres-fy24-presentation.pdf",
+            "scope": "Fresnillo plc FY2024 preliminary results: 10.2 Moz silver, 51.5 koz gold, 104.5 Moz silver reserves and 263 koz gold reserves as of 30 June 2024."
           }
         ]
       },
