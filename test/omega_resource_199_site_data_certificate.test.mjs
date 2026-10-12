@@ -8,6 +8,11 @@ const load = (path) => JSON.parse(readFileSync(path, 'utf8'));
 const a = load('resources.json');
 const b = load('resources_2.json');
 
+const restorationManifest = load('resource_site_verified_legacy_restoration_v1.json');
+const expectedCanonicalCount = 250 + restorationManifest.records.length;
+
+
+
 const profiles = {
   ...(a.GSRSK_Master_CountryProfiles_v14?.countryProfiles || {}),
   ...(b.GSRSK_Master_CountryProfiles_v14?.countryProfiles || {})
@@ -133,20 +138,20 @@ assert.equal(ids.size, 199);
 assert.equal(packageCount, 199);
 
 const scenarioSource = readFileSync('omega_resource_scenario_engineering_data_v1.js', 'utf8');
-assert(scenarioSource.includes('"recordCount":250'));
-assert.equal((scenarioSource.match(/"siteId":/g) || []).length, 250);
+assert(scenarioSource.includes('"recordCount":'+expectedCanonicalCount));
+assert.equal((scenarioSource.match(/"siteId":/g) || []).length, expectedCanonicalCount);
 
 const catalog = load('resource_site_canonical_catalog_v1.json');
-assert.equal(catalog.siteCount, 250);
-assert(Array.isArray(catalog.sites) && catalog.sites.length === 250);
-assert.equal(new Set(catalog.sites.map((x) => x.siteId)).size, 250);
+assert.equal(catalog.siteCount, expectedCanonicalCount);
+assert(Array.isArray(catalog.sites) && catalog.sites.length === expectedCanonicalCount);
+assert.equal(new Set(catalog.sites.map((x) => x.siteId)).size, expectedCanonicalCount);
 
 const currentLegacySites = sites.filter(({ site }) => site.researchState === 'LEGACY_CURATED_NOT_RECENTLY_REVALIDATED');
 assert.equal(currentLegacySites.length, 0, 'no legacy site should remain after the 199-site web-revalidation pass');
 
 const sourceIds = sites.map(({ site }) => site.id).sort();
 const catalogIds = catalog.sites.map((x) => x.siteId).sort();
-assert(sourceIds.every(id => catalogIds.includes(id)), 'all 199 legacy source IDs must remain in the 250-site canonical catalog');
+assert(sourceIds.every(id => catalogIds.includes(id)), 'all 199 legacy source IDs must remain in the expanded canonical catalog');
 
 const commercial = sites.filter(({ site }) => !(String(site.status).toUpperCase() === 'NOT_APPLICABLE' || site.commercialExtraction === false));
 const na = sites.length - commercial.length;
