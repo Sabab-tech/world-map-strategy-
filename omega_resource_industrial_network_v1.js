@@ -289,7 +289,10 @@ function planExtraction(input={}){
 }
 
 function factoryAssets(c){
-  const assets=econState(c).productionAssets;return Array.isArray(assets)?assets:[];
+  const economy=econState(c);
+  // A factory bootstrap must mutate the persisted country economy, not a detached fallback array.
+  if(!Array.isArray(economy.productionAssets))economy.productionAssets=[];
+  return economy.productionAssets;
 }
 function recipeFor(resourceId,asset={}){
   const r=processRules()[tok(resourceId)]||{};
