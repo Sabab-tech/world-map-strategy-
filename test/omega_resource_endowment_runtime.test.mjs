@@ -3,6 +3,12 @@ import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const repoRoot=new URL('../',import.meta.url);
+
+const restorationManifest=JSON.parse(fs.readFileSync(new URL('../resource_site_verified_legacy_restoration_v1.json',import.meta.url),'utf8'));
+const expectedSiteCount=250+restorationManifest.records.length;
+const expectedCommercialSiteCount=246+restorationManifest.records.length;
+
+
 const resourceFiles=new Map([
   ['resources.json',new URL('../resources.json',import.meta.url)],
   ['resources_2.json',new URL('../resources_2.json',import.meta.url)],
@@ -67,8 +73,8 @@ const initialized=await runtime.initialize();
 assert.equal(initialized.status,'READY',JSON.stringify(initialized));
 assert.equal(initialized.countries,Object.keys(engine.countryProfiles||{}).length);
 const reserveScenario=JSON.parse(fs.readFileSync(new URL('../resource_site_reserve_simulation_v1.json',import.meta.url),'utf8'));
-assert.equal(reserveScenario.siteCount,250);
-assert.equal(reserveScenario.commercialSiteCount,246);
+assert.equal(reserveScenario.siteCount,expectedSiteCount);
+assert.equal(reserveScenario.commercialSiteCount,expectedCommercialSiteCount);
 const hydrated=runtime.hydrateCountry('BGD');
 const indDiag=runtime.hydrateCountry('IND');
 const indState=runtime.countryResourceState('IND')||{};
@@ -132,8 +138,8 @@ assert(seen.some(x=>x&&x.payload&&x.payload.batch&&x.payload.batch.batchId===bat
 const preGlobal=runtime.diagnostics();
 const expectedResourceCountries=Object.keys(engine.countryProfiles||{});
 assert.equal(preGlobal.countryCount,expectedResourceCountries.length);
-assert.equal(preGlobal.mineSiteReferenceCount,250);
-assert.equal(preGlobal.mineSiteControllerCount,250);
+assert.equal(preGlobal.mineSiteReferenceCount,expectedSiteCount);
+assert.equal(preGlobal.mineSiteControllerCount,expectedSiteCount);
 const globalExtraction=await runtime.extractAll();
 assert.equal(globalExtraction.status,'COMPLETED');
 assert.equal(globalExtraction.results.length,expectedResourceCountries.length);
@@ -148,8 +154,8 @@ const profileMineOutputs=allMineOutputs.filter(x=>x?.assetType==='MINE_SITE');
 const siteLinkedExecutionOutputs=allMineOutputs.filter(x=>x?.siteReferenceKey&&Number(x?.producedQuantity)>0);
 const simulatedMineOutputs=profileMineOutputs.filter(x=>x?.simulationGenerated===true);
 const simulatedFieldOutputs=allMineOutputs.filter(x=>x?.simulationGenerated===true&&['OIL_FIELD','GAS_FIELD'].includes(x?.assetType));
-assert.equal(siteReferenceRows,250);
-assert.equal(siteControllerRows,250);
+assert.equal(siteReferenceRows,expectedSiteCount);
+assert.equal(siteControllerRows,expectedSiteCount);
 assert.ok(structuredMineRows>=engine.deposits.length,'structured mine rows must include canonical runtime deposits plus profile-derived structured sites');
 const unifiedReferences=[];
 let siteReferenceHoleCount=0;
@@ -242,7 +248,7 @@ assert.equal((await industrial.loadCatalog()).status,'READY');
 const realPipelineSiteId='SITE_KWT_greater_burgan_oilfield';
 const masterRows=globalThis.OmegaResourceSiteMasterResearchData?.sites||[];
 const realPipelineSite=masterRows.find(s=>String(s?.siteId||'')===realPipelineSiteId);
-assert.ok(realPipelineSite,'real Greater Burgan record must exist in the authoritative 250-site master registry');
+assert.ok(realPipelineSite,'real Greater Burgan record must exist in the authoritative '+expectedSiteCount+'-site master registry');
 const realPipelineResourceId=String(realPipelineSite?.real?.resourceId||
   realPipelineSite?.sourceSiteRecord?.resourceId||
   realPipelineSite?.sourceSiteRecord?.resourceTypeId||
