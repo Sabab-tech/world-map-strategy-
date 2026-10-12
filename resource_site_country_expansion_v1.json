@@ -2531,14 +2531,7 @@
           "status": "REPORTED_CONCENTRATOR_CAPACITY",
           "basis": "Two sulphide concentrators combined processing capacity, not copper output."
         },
-        "reportedMetrics": {
-          "goldProduction": {
-            "annual": 0,
-            "unit": "troy_ounces_gold_per_year",
-            "year": 2024,
-            "status": "NOT_SITE_SPECIFICALLY_DISCLOSED"
-          }
-        },
+        "reportedMetrics": {},
         "quantitativeProvenance": {
           "structuredSource": "https://www.kazminerals.com/media/23240/q4-2024-production-report_final.pdf",
           "capacitySource": "https://www.kazminerals.com/media/23240/q4-2024-production-report_final.pdf",
@@ -3600,7 +3593,7 @@
       "quantitative": {
         "reserve": {
           "quantity": 6750000,
-          "unit": "thousand_troy_ounces_gold_contained",
+          "unit": "troy_ounces_gold_contained",
           "year": 2024,
           "status": "REPORTED_MINERAL_RESERVE",
           "basis": "AngloGold Ashanti 2024 operational profile reports 6.75 Moz reserves at 31 Dec 2024; unit represented as thousands of ounces."
@@ -8027,5 +8020,35 @@
     "date": "2026-10-12",
     "scope": "Primary-source quantitative enrichment of selected records",
     "policy": "Keep units, reporting year, attribution basis and evidence; do not conflate plant throughput with metal output; unknown values remain unknown."
+  },
+  "auditSnapshot": {
+    "date": "2026-10-12",
+    "scope": "51-site expansion tranche",
+    "checks": {
+      "records": 51,
+      "uniqueIds": 51,
+      "missingFields": {
+        "reserve": 0,
+        "production": 0,
+        "grade": 0,
+        "recovery": 0,
+        "throughput": 0,
+        "purity": 0,
+        "capacity": 0
+      },
+      "withNumericProduction": 32,
+      "withNumericGrade": 16,
+      "withNumericRecovery": 7,
+      "withNumericThroughput": 18,
+      "withNumericPurity": 1,
+      "withNumericCapacity": 11,
+      "missingSource": [],
+      "numericProductionNoYear": [
+        "Erdenet Copper-Molybdenum Mine"
+      ],
+      "researchUpdated": 30,
+      "sourceCountTotal": 89
+    },
+    "notes": "Numeric counts include reported values only. Qualitative statuses, guidance and derived lower bounds are kept distinct. A non-null field is not automatically a verified measurement."
   }
 }
