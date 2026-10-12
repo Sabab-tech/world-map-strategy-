@@ -21,7 +21,7 @@ assert.equal(canonical.sites.length, 250, 'historical archive must never inflate
 assert.equal(new Set(master.sites.map(s => s.siteId)).size, 250);
 
 const norm = value => String(value || '').toLowerCase().normalize('NFKD')
-  .replace(/[\\u0300-\\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+  .replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
 const staticNames = new Set(embedded.map(x => norm(x.siteName)));
 const overlaps = oldJsonDeposits.filter(x => staticNames.has(norm(x.siteName)));
 assert.equal(overlaps.length, 38, 'preserve and report the 38 duplicate-name rows across historical sources');
