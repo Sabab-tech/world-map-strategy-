@@ -1094,11 +1094,12 @@
           "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
         },
         "production": {
-          "annual": null,
+          "annual": 231000,
           "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
+          "unit": "metric_tonnes_copper_per_year",
+          "year": 2024,
+          "status": "REPORTED",
+          "basis": "First Quantum FY2024 Annual Report; copper metal output, not ore tonnage."
         },
         "grade": {
           "value": "Copper ore; site-specific current assay grade not supplied in this record",
@@ -1131,25 +1132,26 @@
         },
         "reportedMetrics": {},
         "quantitativeProvenance": {
-          "structuredSource": null,
+          "structuredSource": "https://www.first-quantum.com/wp-content/uploads/2025/04/First-Quantum-AR-Final.pdf",
           "capacitySource": null,
           "promotedAt": "2026-10-10"
         },
         "completeness": {
           "reserve": "UNQUANTIFIED",
-          "production": "UNOBSERVED",
-          "grade": "QUALITATIVE_ONLY",
+          "production": "REPORTED",
+          "grade": "QUALITATIVE_DEPOSIT_DESCRIPTION_NOT_ASSAY",
           "recovery": "UNOBSERVED",
           "purity": "UNOBSERVED",
           "capacity": "UNOBSERVED",
-          "structuredEvidence": false,
-          "overall": "IDENTITY_AND_LOCATION_ENRICHED_QUANTITATIVES_REQUIRE_RESEARCH"
+          "structuredEvidence": true,
+          "overall": "SITE_SPECIFIC_PRIMARY_SOURCE_RESEARCH_PARTIAL",
+          "throughput": "UNOBSERVED"
         }
       },
       "verification": {
-        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_REQUIRES_FIELD_REVALIDATION",
-        "reviewedAt": "2026-10-10",
-        "sourceCount": 1,
+        "researchState": "PRIMARY_SOURCE_QUANTITATIVE_RESEARCH_UPDATED",
+        "reviewedAt": "2026-10-12",
+        "sourceCount": 2,
         "sourceAuthorities": [
           "OPERATOR_OR_PUBLIC_SITE_REFERENCE"
         ],
@@ -1164,6 +1166,10 @@
           {
             "url": "https://www.first-quantum.com/English/our-operations/default.aspx",
             "scope": "operator reference for Sentinel; site-specific fields require direct revalidation"
+          },
+          {
+            "url": "https://www.first-quantum.com/wp-content/uploads/2025/04/First-Quantum-AR-Final.pdf",
+            "scope": "First Quantum FY2024 Annual Report: 231 kt copper production at Sentinel, supported by higher grade and throughput."
           }
         ]
       },
@@ -3749,13 +3755,12 @@
           "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
         },
         "production": {
-          "annual": null,
+          "annual": 300000,
           "rate": null,
           "unit": "metric_tonnes_copper_per_year",
           "year": 2024,
-          "status": "GUIDANCE_RANGE_NOT_ACTUAL",
-          "guidanceMinimum": 300000,
-          "guidanceMaximum": 330000
+          "status": "REPORTED_LOWER_BOUND",
+          "basis": "Anglo American says Quellaveco delivered more than 300,000 tonnes per year in both 2023 and 2024; 300,000 is a lower bound, not an exact total."
         },
         "grade": {
           "value": "Copper deposit; site-specific numeric assay not established in this tranche",
@@ -3788,27 +3793,26 @@
         },
         "reportedMetrics": {},
         "quantitativeProvenance": {
-          "structuredSource": [
-            "https://www.angloamerican.com/our-portfolio/our-products/copper"
-          ],
+          "structuredSource": "https://www.angloamerican.com/our-stories/trusted-corporate-leader/quellaveco-celebrates-1-million-tonnes-of-copper-production-since-start-up",
           "capacitySource": null,
           "promotedAt": "2026-10-10"
         },
         "completeness": {
           "reserve": "UNQUANTIFIED",
-          "production": "GUIDANCE_RANGE_NOT_ACTUAL",
+          "production": "REPORTED_LOWER_BOUND",
           "grade": "QUALITATIVE_ONLY",
           "recovery": "UNOBSERVED",
           "purity": "UNOBSERVED",
           "capacity": "UNOBSERVED",
           "structuredEvidence": true,
-          "overall": "IDENTITY_LOCATION_AND_SOURCE_LINKED_SITE_RECORD"
+          "overall": "SITE_SPECIFIC_PRIMARY_SOURCE_RESEARCH_PARTIAL",
+          "throughput": "UNOBSERVED"
         }
       },
       "verification": {
-        "researchState": "SOURCE_LINKED_SITE_RECORD_FIELD_LEVEL_REVALIDATION_REQUIRED",
-        "reviewedAt": "2026-10-10",
-        "sourceCount": 1,
+        "researchState": "PRIMARY_SOURCE_QUANTITATIVE_RESEARCH_UPDATED",
+        "reviewedAt": "2026-10-12",
+        "sourceCount": 2,
         "sourceAuthorities": [
           "MINE_OPERATOR_OR_TECHNICAL_REPORT"
         ],
@@ -3823,6 +3827,10 @@
           {
             "url": "https://www.angloamerican.com/our-portfolio/our-products/copper",
             "scope": "operator copper portfolio page: 2024 Quellaveco production guidance range"
+          },
+          {
+            "url": "https://www.angloamerican.com/our-stories/trusted-corporate-leader/quellaveco-celebrates-1-million-tonnes-of-copper-production-since-start-up",
+            "scope": "Anglo American says Quellaveco produced over 300,000 tonnes/year in 2023 and 2024 and reached designed capacity."
           }
         ]
       },
@@ -5234,15 +5242,15 @@
         "operatorEvidenceStatus": "SOURCE_REFERENCED_REVALIDATION_REQUIRED"
       },
       "operation": {
-        "status": "DEVELOPMENT_AND_CONSTRUCTION",
-        "operationalStatus": "DEVELOPMENT_AND_CONSTRUCTION",
+        "status": "STARTED_OPERATIONS_RAMP_UP",
+        "operationalStatus": "STARTED_OPERATIONS_RAMP_UP",
         "extractionMethod": "Open-pit iron ore development; construction and staged commissioning",
         "extractionEligibility": "EXECUTABLE_SIMULATION",
         "commercialExtraction": true
       },
       "processing": {
         "upstreamProcess": "Open-pit iron ore development; construction and staged commissioning",
-        "midstreamProcess": "Crushing, screening and beneficiation as configured",
+        "midstreamProcess": "Iron ore mining with staged commissioning and ramp-up; SimFer design capacity 60 Mtpa. Actual annual output tonnage is not disclosed in the cited current project page.",
         "refinedOutputs": [
           "IRON_ORE_FINES",
           "IRON_ORE_LUMP"
@@ -5257,20 +5265,23 @@
           "quantity": 1500000000,
           "unit": "dry_metric_tonnes_ore",
           "year": 2024,
-          "status": "REPORTED",
-          "basis": "JORC proved 0.2 Bt + probable 1.3 Bt ore reserves"
+          "status": "REPORTED_JORC_ORE_RESERVE",
+          "basis": "SimFer blocks 3–4: 0.2 Bt proved at 66.4% Fe plus 1.3 Bt probable at 65.0% Fe; ore tonnage, not marketable product tonnage."
         },
         "production": {
           "annual": null,
           "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "NOT_YET_REPORTED_AS_OPERATING_MINE"
+          "unit": "dry_metric_tonnes_iron_ore",
+          "year": 2025,
+          "status": "FIRST_SHIPMENT_REPORTED_OUTPUT_VOLUME_NOT_QUANTIFIED",
+          "basis": "Rio Tinto reports first shipment left Guinea in December 2025; cited page does not state shipment tonnage or a full-year production total."
         },
         "grade": {
-          "value": "Proved 66.4% Fe; probable 65.0% Fe",
-          "unit": "% Fe",
-          "status": "REPORTED_RESERVE_GRADE"
+          "value": "Proved 66.4%; probable 65.0%",
+          "unit": "percent_Fe",
+          "status": "REPORTED_RESERVE_GRADE",
+          "year": 2024,
+          "basis": "JORC reserve grades; not refined-product purity."
         },
         "recovery": {
           "value": null,
@@ -5294,29 +5305,59 @@
           "minimum": null,
           "maximum": null,
           "unit": "dry_metric_tonnes_per_year",
-          "status": "REPORTED_LIFE_OF_MINE_CAPACITY"
+          "status": "REPORTED_DESIGN_CAPACITY",
+          "basis": "SimFer mine design capacity with staged ramp-up; not actual annual production."
         },
-        "reportedMetrics": {},
+        "reportedMetrics": {
+          "reserveProved": {
+            "quantity": 200000000,
+            "unit": "dry_metric_tonnes_ore",
+            "grade": 66.4,
+            "gradeUnit": "percent_Fe",
+            "year": 2024
+          },
+          "reserveProbable": {
+            "quantity": 1300000000,
+            "unit": "dry_metric_tonnes_ore",
+            "grade": 65,
+            "gradeUnit": "percent_Fe",
+            "year": 2024
+          },
+          "RioTintoShareMarketableProductReserve": {
+            "quantity": 675000000,
+            "unit": "metric_tonnes_marketable_iron_ore_product",
+            "grade": 65.3,
+            "year": 2023,
+            "status": "REPORTED_SEC_SK1300_BASIS"
+          },
+          "firstShipment": {
+            "date": "2025-12",
+            "quantity": null,
+            "unit": "dry_metric_tonnes_iron_ore",
+            "status": "REPORTED_QUANTITY_NOT_DISCLOSED"
+          }
+        },
         "quantitativeProvenance": {
           "structuredSource": "https://www.riotinto.com/en/operations/africa/simandou",
-          "capacitySource": null,
+          "capacitySource": "https://www.riotinto.com/en/operations/africa/simandou",
           "promotedAt": "2026-10-11"
         },
         "completeness": {
-          "reserve": "REPORTED",
-          "production": "REPORTED",
+          "reserve": "REPORTED_JORC_ORE_RESERVE",
+          "production": "FIRST_SHIPMENT_REPORTED_OUTPUT_VOLUME_NOT_QUANTIFIED",
           "grade": "REPORTED_RESERVE_GRADE",
           "recovery": "UNOBSERVED",
           "purity": "UNOBSERVED",
-          "capacity": "REPORTED_LIFE_OF_MINE_CAPACITY",
+          "capacity": "REPORTED_DESIGN_CAPACITY",
           "structuredEvidence": true,
-          "overall": "SITE_IDENTITY_ENRICHED_FIELD_LEVEL_RESEARCH_PARTIAL"
+          "overall": "SITE_SPECIFIC_PRIMARY_SOURCE_RESEARCH_PARTIAL",
+          "throughput": "UNOBSERVED"
         }
       },
       "verification": {
-        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_FIELD_LEVEL_REVIEW_REQUIRED",
-        "reviewedAt": "2026-10-11",
-        "sourceCount": 1,
+        "researchState": "PRIMARY_SOURCE_QUANTITATIVE_RESEARCH_UPDATED",
+        "reviewedAt": "2026-10-12",
+        "sourceCount": 2,
         "sourceAuthorities": [
           "RIO_TINTO"
         ],
@@ -5331,6 +5372,10 @@
           {
             "url": "https://www.riotinto.com/en/operations/africa/simandou",
             "scope": "Site identity and cited field(s); revalidate field-level claims and ownership/operating status before authoritative promotion."
+          },
+          {
+            "url": "https://www.sec.gov/Archives/edgar/data/863064/000162828024006512/ex96-4simandousxk1300trs.htm",
+            "scope": "SEC-hosted Simfer technical report summary: 675 Mt marketable product reserve at 65.3% Fe on Rio Tinto ownership basis; different basis from 1.5 Bt ore reserve."
           }
         ]
       },
@@ -5439,9 +5484,17 @@
           "unit": null,
           "status": "UNOBSERVED"
         },
-        "reportedMetrics": {},
+        "reportedMetrics": {
+          "typicalAnnualProduction": {
+            "value": 10000000,
+            "unit": "carats_per_year",
+            "year": null,
+            "status": "OPERATOR_STATED_TYPICAL_AVERAGE_NOT_YEAR_SPECIFIC",
+            "basis": "Debswana says production normally varies around an average of 10 million carats/year; not a current-year audited actual."
+          }
+        },
         "quantitativeProvenance": {
-          "structuredSource": "https://www.debswana.com/operations/orapa",
+          "structuredSource": "https://www.debswana.com/orapa",
           "capacitySource": null,
           "promotedAt": "2026-10-11"
         },
@@ -5452,14 +5505,15 @@
           "recovery": "UNOBSERVED",
           "purity": "UNOBSERVED",
           "capacity": "UNOBSERVED",
-          "structuredEvidence": false,
-          "overall": "SITE_IDENTITY_ENRICHED_FIELD_LEVEL_RESEARCH_PARTIAL"
+          "structuredEvidence": true,
+          "overall": "SITE_SPECIFIC_PRIMARY_SOURCE_RESEARCH_PARTIAL",
+          "throughput": "UNOBSERVED"
         }
       },
       "verification": {
-        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_FIELD_LEVEL_REVIEW_REQUIRED",
-        "reviewedAt": "2026-10-11",
-        "sourceCount": 1,
+        "researchState": "PRIMARY_SOURCE_QUANTITATIVE_RESEARCH_UPDATED",
+        "reviewedAt": "2026-10-12",
+        "sourceCount": 2,
         "sourceAuthorities": [
           "DEBSWANA"
         ],
@@ -5474,6 +5528,10 @@
           {
             "url": "https://www.debswana.com/operations/orapa",
             "scope": "Site identity and cited field(s); revalidate field-level claims and ownership/operating status before authoritative promotion."
+          },
+          {
+            "url": "https://www.debswana.com/orapa",
+            "scope": "Debswana Orapa page: conventional open-pit diamond mine and typical average around 10 million carats/year; no dated annual actual supplied."
           }
         ]
       },
@@ -5911,13 +5969,13 @@
           "purity": "UNOBSERVED",
           "capacity": "UNOBSERVED",
           "structuredEvidence": true,
-          "overall": "SITE_IDENTITY_ENRICHED_FIELD_LEVEL_RESEARCH_PARTIAL",
+          "overall": "SITE_SPECIFIC_PRIMARY_SOURCE_RESEARCH_PARTIAL",
           "throughput": "REPORTED"
         }
       },
       "verification": {
-        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_FIELD_LEVEL_REVIEW_REQUIRED",
-        "reviewedAt": "2026-10-11",
+        "researchState": "PRIMARY_SOURCE_QUANTITATIVE_RESEARCH_UPDATED",
+        "reviewedAt": "2026-10-12",
         "sourceCount": 1,
         "sourceAuthorities": [
           "B2GOLD"
@@ -7195,34 +7253,40 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNQUANTIFIED",
-          "basis": null
+          "quantity": 202100000,
+          "unit": "metric_tonnes_ore",
+          "year": 2024,
+          "status": "REPORTED_PROVEN_PLUS_PROBABLE_RESERVES",
+          "basis": "187.1 Mt proven at 0.60% Cu plus 15.0 Mt probable at 0.57% Cu; ore tonnage, not contained copper."
         },
         "production": {
-          "annual": null,
+          "annual": 123765,
           "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
+          "unit": "fine_metric_tonnes_copper_per_year",
+          "year": 2024,
+          "status": "REPORTED",
+          "basis": "90,492 fine tonnes in concentrate plus 33,272 fine tonnes cathodes; source totals differ by one tonne due rounding."
         },
         "grade": {
-          "value": "Site-specific measured ore/feed grade not supplied in this record",
-          "unit": null,
-          "status": "QUALITATIVE_ONLY"
+          "value": 1.5,
+          "unit": "percent_CuT",
+          "status": "REPORTED_AVERAGE_SULFIDE_ORE_GRADE",
+          "year": 2024,
+          "basis": "Average grade of sulfide ore treated."
         },
         "recovery": {
-          "value": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
+          "value": 90.4,
+          "unit": "percent",
+          "year": 2024,
+          "status": "REPORTED",
+          "basis": "Sulfide circuit total copper recovery (CuT); oxide circuit recovery is separate."
         },
         "throughput": {
-          "value": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
+          "value": 6668000,
+          "unit": "metric_tonnes_sulfide_ore_treated_per_year",
+          "year": 2024,
+          "status": "REPORTED",
+          "basis": "Approximately 6.7 Mt sulfide ore treated in 2024."
         },
         "purity": {
           "value": null,
@@ -7233,30 +7297,60 @@
           "nominal": null,
           "minimum": null,
           "maximum": null,
-          "unit": null,
-          "status": "UNOBSERVED"
+          "unit": "metric_tonnes_per_year_by_process_circuit",
+          "status": "REPORTED_MULTIPLE_PROCESS_CAPACITIES",
+          "basis": "Separate sulfide and oxide plants; retain their capacities in reportedMetrics rather than collapsing them into one figure."
         },
-        "reportedMetrics": {},
+        "reportedMetrics": {
+          "oxideCircuit": {
+            "throughput": 9925000,
+            "throughputUnit": "metric_tonnes_oxide_ore_treated_per_year",
+            "grade": 0.49,
+            "gradeUnit": "percent_soluble_Cu",
+            "recovery": 68.2,
+            "recoveryUnit": "percent_CuAs",
+            "year": 2024
+          },
+          "circuitCapacity": {
+            "sulfide": 6000000,
+            "oxide": 12000000,
+            "unit": "metric_tonnes_ore_per_year",
+            "basis": "Minsur 2024 Annual Report stated processing capacities"
+          },
+          "reserveGrades": {
+            "proven": {
+              "tonnes": 187100000,
+              "grade": 0.6,
+              "gradeUnit": "percent_Cu"
+            },
+            "probable": {
+              "tonnes": 15000000,
+              "grade": 0.57,
+              "gradeUnit": "percent_Cu"
+            }
+          }
+        },
         "quantitativeProvenance": {
-          "structuredSource": "https://www.marcobre.com/",
-          "capacitySource": null,
+          "structuredSource": "https://stportalwebminsurprd.blob.core.windows.net/documentos/FileIngles_a4e5587f-5b5f-4176-9a98-2d65ac83cb11",
+          "capacitySource": "https://stportalwebminsurprd.blob.core.windows.net/documentos/FileIngles_a4e5587f-5b5f-4176-9a98-2d65ac83cb11",
           "promotedAt": "2026-10-11"
         },
         "completeness": {
-          "reserve": "UNQUANTIFIED",
-          "production": "UNOBSERVED",
-          "grade": "QUALITATIVE_ONLY",
-          "recovery": "UNOBSERVED",
+          "reserve": "REPORTED_PROVEN_PLUS_PROBABLE_RESERVES",
+          "production": "REPORTED",
+          "grade": "REPORTED_AVERAGE_SULFIDE_ORE_GRADE",
+          "recovery": "REPORTED",
           "purity": "UNOBSERVED",
-          "capacity": "UNOBSERVED",
-          "structuredEvidence": false,
-          "overall": "SITE_IDENTITY_ENRICHED_FIELD_LEVEL_RESEARCH_PARTIAL"
+          "capacity": "REPORTED_MULTIPLE_PROCESS_CAPACITIES",
+          "structuredEvidence": true,
+          "overall": "SITE_SPECIFIC_PRIMARY_SOURCE_RESEARCH_PARTIAL",
+          "throughput": "REPORTED"
         }
       },
       "verification": {
-        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_FIELD_LEVEL_REVIEW_REQUIRED",
-        "reviewedAt": "2026-10-11",
-        "sourceCount": 1,
+        "researchState": "PRIMARY_SOURCE_QUANTITATIVE_RESEARCH_UPDATED",
+        "reviewedAt": "2026-10-12",
+        "sourceCount": 3,
         "sourceAuthorities": [
           "MARCOBRE"
         ],
@@ -7271,6 +7365,14 @@
           {
             "url": "https://www.marcobre.com/",
             "scope": "Site identity and cited field(s); revalidate field-level claims and ownership/operating status before authoritative promotion."
+          },
+          {
+            "url": "https://stportalwebminsurprd.blob.core.windows.net/documentos/FileIngles_a4e5587f-5b5f-4176-9a98-2d65ac83cb11",
+            "scope": "Minsur FY2024 Annual Report: output, sulfide/oxide throughput, ore grades, recoveries, plant capacities and reserve table."
+          },
+          {
+            "url": "https://www.alxar.cl/en/proyecto/marcobre-mina-justa",
+            "scope": "Alxar/Marcobre site page: location, operation ownership and reported 2024 fine copper output."
           }
         ]
       },
@@ -7352,21 +7454,25 @@
           "status": "REPORTED"
         },
         "grade": {
-          "value": "Site-specific measured ore/feed grade not supplied in this record",
-          "unit": null,
-          "status": "QUALITATIVE_ONLY"
+          "value": 0.96,
+          "unit": "grams_per_tonne_gold",
+          "status": "REPORTED_MILL_FEED_GRADE",
+          "year": 2024,
+          "basis": "B2Gold FY2024 results."
         },
         "recovery": {
-          "value": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
+          "value": 72.8,
+          "unit": "percent",
+          "year": 2024,
+          "status": "REPORTED",
+          "basis": "Annual average gold recovery."
         },
         "throughput": {
-          "value": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
+          "value": 8600241,
+          "unit": "metric_tonnes_ore_milled_per_year",
+          "year": 2024,
+          "status": "REPORTED",
+          "basis": "B2Gold FY2024 results."
         },
         "purity": {
           "value": null,
@@ -7389,17 +7495,18 @@
         "completeness": {
           "reserve": "UNQUANTIFIED",
           "production": "REPORTED",
-          "grade": "QUALITATIVE_ONLY",
-          "recovery": "UNOBSERVED",
+          "grade": "REPORTED_MILL_FEED_GRADE",
+          "recovery": "REPORTED",
           "purity": "UNOBSERVED",
           "capacity": "UNOBSERVED",
           "structuredEvidence": true,
-          "overall": "SITE_IDENTITY_ENRICHED_FIELD_LEVEL_RESEARCH_PARTIAL"
+          "overall": "SITE_SPECIFIC_PRIMARY_SOURCE_RESEARCH_PARTIAL",
+          "throughput": "REPORTED"
         }
       },
       "verification": {
-        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_FIELD_LEVEL_REVIEW_REQUIRED",
-        "reviewedAt": "2026-10-11",
+        "researchState": "PRIMARY_SOURCE_QUANTITATIVE_RESEARCH_UPDATED",
+        "reviewedAt": "2026-10-12",
         "sourceCount": 1,
         "sourceAuthorities": [
           "B2GOLD"
@@ -7496,21 +7603,25 @@
           "status": "REPORTED"
         },
         "grade": {
-          "value": "Site-specific measured ore/feed grade not supplied in this record",
-          "unit": null,
-          "status": "QUALITATIVE_ONLY"
+          "value": 1.87,
+          "unit": "grams_per_tonne_gold",
+          "status": "REPORTED_MILL_FEED_GRADE",
+          "year": 2024,
+          "basis": "B2Gold FY2024 results."
         },
         "recovery": {
-          "value": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
+          "value": 98.6,
+          "unit": "percent",
+          "year": 2024,
+          "status": "REPORTED",
+          "basis": "Annual average gold recovery."
         },
         "throughput": {
-          "value": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
+          "value": 3338384,
+          "unit": "metric_tonnes_ore_milled_per_year",
+          "year": 2024,
+          "status": "REPORTED",
+          "basis": "B2Gold FY2024 results."
         },
         "purity": {
           "value": null,
@@ -7533,17 +7644,18 @@
         "completeness": {
           "reserve": "UNQUANTIFIED",
           "production": "REPORTED",
-          "grade": "QUALITATIVE_ONLY",
-          "recovery": "UNOBSERVED",
+          "grade": "REPORTED_MILL_FEED_GRADE",
+          "recovery": "REPORTED",
           "purity": "UNOBSERVED",
           "capacity": "UNOBSERVED",
           "structuredEvidence": true,
-          "overall": "SITE_IDENTITY_ENRICHED_FIELD_LEVEL_RESEARCH_PARTIAL"
+          "overall": "SITE_SPECIFIC_PRIMARY_SOURCE_RESEARCH_PARTIAL",
+          "throughput": "REPORTED"
         }
       },
       "verification": {
-        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_FIELD_LEVEL_REVIEW_REQUIRED",
-        "reviewedAt": "2026-10-11",
+        "researchState": "PRIMARY_SOURCE_QUANTITATIVE_RESEARCH_UPDATED",
+        "reviewedAt": "2026-10-12",
         "sourceCount": 1,
         "sourceAuthorities": [
           "B2GOLD"
