@@ -972,11 +972,12 @@
           "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
         },
         "production": {
-          "annual": null,
+          "annual": 900000000,
           "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
+          "unit": "pounds_copper_per_year",
+          "year": 2024,
+          "status": "REPORTED_APPROXIMATE",
+          "basis": "Freeport 2024 Form 10-K rounds Cerro Verde production to 0.9 billion pounds copper; not an exact unrounded quantity."
         },
         "grade": {
           "value": "Copper-molybdenum ore; site-specific current assay grade not supplied in this record",
@@ -990,10 +991,11 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
-          "value": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
+          "value": 415500,
+          "unit": "metric_tonnes_ore_milled_per_day",
+          "year": 2024,
+          "status": "REPORTED_AVERAGE_MILLING_RATE",
+          "basis": "Combined average milling rate at two concentrators during 2024; throughput, not copper output."
         },
         "purity": {
           "value": null,
@@ -1001,33 +1003,46 @@
           "status": "UNOBSERVED"
         },
         "capacity": {
-          "nominal": null,
+          "nominal": 409500,
           "minimum": null,
-          "maximum": null,
-          "unit": null,
-          "status": "UNOBSERVED"
+          "maximum": 450450,
+          "unit": "metric_tonnes_ore_milled_per_day",
+          "status": "REPORTED_PERMITTED_CAPACITY",
+          "basis": "Two concentrators permitted average capacity 409,500 t/day, with ability to treat up to 10% more (450,450 t/day)."
         },
-        "reportedMetrics": {},
+        "reportedMetrics": {
+          "romLeachSystem": {
+            "oreThroughput": 100000,
+            "unit": "metric_tonnes_ore_per_day",
+            "status": "REPORTED_CAPACITY"
+          },
+          "romLeachCopperCapacity": {
+            "value": 200000000,
+            "unit": "pounds_copper_per_year",
+            "status": "REPORTED_CAPACITY"
+          }
+        },
         "quantitativeProvenance": {
-          "structuredSource": null,
-          "capacitySource": null,
+          "structuredSource": "https://s22.q4cdn.com/529358580/files/doc_financials/10-K/10_k2024.pdf",
+          "capacitySource": "https://s22.q4cdn.com/529358580/files/doc_financials/10-K/10_k2024.pdf",
           "promotedAt": "2026-10-10"
         },
         "completeness": {
           "reserve": "UNQUANTIFIED",
-          "production": "UNOBSERVED",
-          "grade": "QUALITATIVE_ONLY",
+          "production": "REPORTED_APPROXIMATE",
+          "grade": "QUALITATIVE_DEPOSIT_DESCRIPTION_NOT_ASSAY",
           "recovery": "UNOBSERVED",
           "purity": "UNOBSERVED",
-          "capacity": "UNOBSERVED",
-          "structuredEvidence": false,
-          "overall": "IDENTITY_AND_LOCATION_ENRICHED_QUANTITATIVES_REQUIRE_RESEARCH"
+          "capacity": "REPORTED_PERMITTED_CAPACITY",
+          "structuredEvidence": true,
+          "overall": "SITE_SPECIFIC_PRIMARY_SOURCE_RESEARCH_PARTIAL",
+          "throughput": "REPORTED_AVERAGE_MILLING_RATE"
         }
       },
       "verification": {
-        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_REQUIRES_FIELD_REVALIDATION",
-        "reviewedAt": "2026-10-10",
-        "sourceCount": 1,
+        "researchState": "PRIMARY_SOURCE_QUANTITATIVE_RESEARCH_UPDATED",
+        "reviewedAt": "2026-10-12",
+        "sourceCount": 2,
         "sourceAuthorities": [
           "OPERATOR_OR_PUBLIC_SITE_REFERENCE"
         ],
@@ -1042,6 +1057,10 @@
           {
             "url": "https://www.fcx.com/operations/south-america",
             "scope": "site identity, commodity, region and/or operator; revalidate field-level claims before promotion"
+          },
+          {
+            "url": "https://s22.q4cdn.com/529358580/files/doc_financials/10-K/10_k2024.pdf",
+            "scope": "Freeport 2024 Form 10-K: rounded 0.9 billion lb copper production; 415,500 t/day actual average concentrator milling; 409,500 t/day permitted capacity with 10% allowance; separate ROM leach capacity."
           }
         ]
       },
@@ -1414,11 +1433,12 @@
           "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
         },
         "production": {
-          "annual": null,
+          "annual": 798000,
           "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
+          "unit": "troy_ounces_gold_per_year",
+          "year": 2024,
+          "status": "REPORTED",
+          "basis": "Newmont Q4/FY2024 Operating Statistics; annual mine output, consolidated/attributable reporting as shown in source."
         },
         "grade": {
           "value": "Gold ore; site-specific current grade not supplied in this record",
@@ -1432,10 +1452,11 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
-          "value": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
+          "value": 9470000,
+          "unit": "metric_tonnes_ore_milled_per_year",
+          "year": 2024,
+          "status": "REPORTED",
+          "basis": "Newmont Q4/FY2024 Operating Statistics reports 9.470 million tonnes milled/processed."
         },
         "purity": {
           "value": null,
@@ -1451,25 +1472,26 @@
         },
         "reportedMetrics": {},
         "quantitativeProvenance": {
-          "structuredSource": null,
+          "structuredSource": "https://s24.q4cdn.com/382246808/files/doc_earnings/2024/q4/generic/Newmont-Q4-2024-Operating-Statistics_Final.pdf",
           "capacitySource": null,
           "promotedAt": "2026-10-10"
         },
         "completeness": {
           "reserve": "UNQUANTIFIED",
-          "production": "UNOBSERVED",
-          "grade": "QUALITATIVE_ONLY",
+          "production": "REPORTED",
+          "grade": "QUALITATIVE_DEPOSIT_DESCRIPTION_NOT_ASSAY",
           "recovery": "UNOBSERVED",
           "purity": "UNOBSERVED",
           "capacity": "UNOBSERVED",
-          "structuredEvidence": false,
-          "overall": "IDENTITY_AND_LOCATION_ENRICHED_QUANTITATIVES_REQUIRE_RESEARCH"
+          "structuredEvidence": true,
+          "overall": "SITE_SPECIFIC_PRIMARY_SOURCE_RESEARCH_PARTIAL",
+          "throughput": "REPORTED"
         }
       },
       "verification": {
-        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_REQUIRES_FIELD_REVALIDATION",
-        "reviewedAt": "2026-10-10",
-        "sourceCount": 1,
+        "researchState": "PRIMARY_SOURCE_QUANTITATIVE_RESEARCH_UPDATED",
+        "reviewedAt": "2026-10-12",
+        "sourceCount": 2,
         "sourceAuthorities": [
           "OPERATOR_OR_PUBLIC_SITE_REFERENCE"
         ],
@@ -1484,6 +1506,10 @@
           {
             "url": "https://www.newmont.com/operations-and-projects/global-presence/africa/ahafo-ghana/default.aspx",
             "scope": "site identity, commodity, region and/or operator; revalidate field-level claims before promotion"
+          },
+          {
+            "url": "https://s24.q4cdn.com/382246808/files/doc_earnings/2024/q4/generic/Newmont-Q4-2024-Operating-Statistics_Final.pdf",
+            "scope": "Newmont FY2024 Operating Statistics: Ahafo produced 798 thousand oz gold and processed 9.470 Mt in 2024."
           }
         ]
       },
@@ -6589,11 +6615,12 @@
           "basis": null
         },
         "production": {
-          "annual": null,
+          "annual": 1261000,
           "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
+          "unit": "troy_ounces_gold_per_year",
+          "year": 2024,
+          "status": "REPORTED",
+          "basis": "Barrick Annual Report 2024 states 100% Carlin Complex production 1,261 koz; not Barrick's 61.5% attributable share."
         },
         "grade": {
           "value": "Site-specific measured ore/feed grade not supplied in this record",
@@ -6624,27 +6651,43 @@
           "unit": null,
           "status": "UNOBSERVED"
         },
-        "reportedMetrics": {},
+        "reportedMetrics": {
+          "attributableProduction": {
+            "annual": 775000,
+            "unit": "troy_ounces_gold_per_year",
+            "year": 2024,
+            "status": "REPORTED",
+            "basis": "Barrick 61.5% attributable share."
+          },
+          "provenAndProbableReserves": {
+            "quantity": 9500000,
+            "unit": "troy_ounces_gold_contained",
+            "year": 2024,
+            "status": "REPORTED",
+            "basis": "Barrick Annual Report 2024, Carlin Complex reserves."
+          }
+        },
         "quantitativeProvenance": {
-          "structuredSource": "https://www.nevadagoldmines.com/",
+          "structuredSource": "https://s25.q4cdn.com/322814910/files/doc_financial/annual_reports/2024/Barrick_Annual_Report_2024.pdf",
           "capacitySource": null,
           "promotedAt": "2026-10-11"
         },
         "completeness": {
           "reserve": "UNQUANTIFIED",
-          "production": "UNOBSERVED",
+          "production": "REPORTED",
           "grade": "QUALITATIVE_ONLY",
           "recovery": "UNOBSERVED",
           "purity": "UNOBSERVED",
           "capacity": "UNOBSERVED",
-          "structuredEvidence": false,
-          "overall": "SITE_IDENTITY_ENRICHED_FIELD_LEVEL_RESEARCH_PARTIAL"
+          "structuredEvidence": true,
+          "overall": "SITE_SPECIFIC_PRIMARY_SOURCE_RESEARCH_PARTIAL",
+          "throughput": "UNOBSERVED"
         }
       },
       "verification": {
-        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_FIELD_LEVEL_REVIEW_REQUIRED",
-        "reviewedAt": "2026-10-11",
-        "sourceCount": 1,
+        "researchState": "PRIMARY_SOURCE_QUANTITATIVE_RESEARCH_UPDATED",
+        "reviewedAt": "2026-10-12",
+        "sourceCount": 2,
         "sourceAuthorities": [
           "NEVADA_GOLD_MINES"
         ],
@@ -6659,6 +6702,10 @@
           {
             "url": "https://www.nevadagoldmines.com/",
             "scope": "Site identity and cited field(s); revalidate field-level claims and ownership/operating status before authoritative promotion."
+          },
+          {
+            "url": "https://s25.q4cdn.com/322814910/files/doc_financial/annual_reports/2024/Barrick_Annual_Report_2024.pdf",
+            "scope": "Barrick Annual Report 2024: Carlin Complex 1,261 koz gold on 100% basis, 775 koz attributable at 61.5%, 9.5 Moz P&P reserves."
           }
         ]
       },
