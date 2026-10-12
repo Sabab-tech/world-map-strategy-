@@ -1,12 +1,12 @@
 {
   "schemaVersion": "1.0.0",
   "datasetId": "OMEGA_RESOURCE_SITE_RESERVE_SIMULATION_V1",
-  "generatedAt": "2026-10-04",
-  "siteCount": 199,
-  "commercialSiteCount": 195,
+  "generatedAt": "2026-10-12",
+  "siteCount": 250,
+  "commercialSiteCount": 246,
   "notApplicableSiteCount": 4,
   "authority": "SCENARIO_SIMULATION_DATA",
-  "note": "Gameplay-only quantitative reserve layer. It does not claim real-world reserve figures and does not modify source datasets.",
+  "note": "Observed/geological facts remain in canonical site records; this file is the separate gameplay reserve authority. New tranche reserves are simulated per identity and explicitly sized for a 350-450 year gameplay horizon.",
   "records": [
     {
       "siteId": "SITE_BGD_barapukuria_coal_mine",
@@ -3787,6 +3787,1179 @@
         "seedKey": "SITE_PLW_airai_limestone_quarry_zone|PLW|limestone",
         "basis": "resource-specific reserve band + country-resource factor + site-count factor + site-tier factor + operational-state factor",
         "realWorldDataRequired": false
+      }
+    },
+    {
+      "siteId": "SITE_CHL_escondida_copper_mine",
+      "countryId": "CHL",
+      "resourceId": "copper",
+      "siteName": "Escondida Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 491756100,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V2",
+        "seedKey": "SITE_CHL_escondida_copper_mine|CHL|copper",
+        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate.",
+        "realWorldDataRequired": false,
+        "targetGameplayLifeYears": 437,
+        "annualOutputBasis": 1125300,
+        "annualOutputUnit": "TONNES",
+        "annualOutputSource": "reported annual output or lower bound used only as scenario seed; simulation remains separate"
+      }
+    },
+    {
+      "siteId": "SITE_CHL_el_teniente_copper_mine",
+      "countryId": "CHL",
+      "resourceId": "copper",
+      "siteName": "El Teniente Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 58262400,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V2",
+        "seedKey": "SITE_CHL_el_teniente_copper_mine|CHL|copper",
+        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate.",
+        "realWorldDataRequired": false,
+        "targetGameplayLifeYears": 408,
+        "annualOutputBasis": 142800,
+        "annualOutputUnit": "TONNES",
+        "annualOutputSource": "resource-specific deterministic gameplay baseline"
+      }
+    },
+    {
+      "siteId": "SITE_AUS_olympic_dam_mine",
+      "countryId": "AUS",
+      "resourceId": "copper",
+      "siteName": "Olympic Dam",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 48576000,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V2",
+        "seedKey": "SITE_AUS_olympic_dam_mine|AUS|copper",
+        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate.",
+        "realWorldDataRequired": false,
+        "targetGameplayLifeYears": 440,
+        "annualOutputBasis": 110400,
+        "annualOutputUnit": "TONNES",
+        "annualOutputSource": "resource-specific deterministic gameplay baseline"
+      }
+    },
+    {
+      "siteId": "SITE_MNG_erdenet_copper_molybdenum_mine",
+      "countryId": "MNG",
+      "resourceId": "copper",
+      "siteName": "Erdenet Copper-Molybdenum Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 249000000,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V2",
+        "seedKey": "SITE_MNG_erdenet_copper_molybdenum_mine|MNG|copper",
+        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate.",
+        "realWorldDataRequired": false,
+        "targetGameplayLifeYears": 415,
+        "annualOutputBasis": 600000,
+        "annualOutputUnit": "TONNES",
+        "annualOutputSource": "reported annual output or lower bound used only as scenario seed; simulation remains separate"
+      }
+    },
+    {
+      "siteId": "SITE_IDN_grasberg_mine",
+      "countryId": "IDN",
+      "resourceId": "copper",
+      "siteName": "Grasberg Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 43848000,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V2",
+        "seedKey": "SITE_IDN_grasberg_mine|IDN|copper",
+        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate.",
+        "realWorldDataRequired": false,
+        "targetGameplayLifeYears": 420,
+        "annualOutputBasis": 104400,
+        "annualOutputUnit": "TONNES",
+        "annualOutputSource": "resource-specific deterministic gameplay baseline"
+      }
+    },
+    {
+      "siteId": "SITE_BRA_carajas_iron_ore_mine",
+      "countryId": "BRA",
+      "resourceId": "iron_ore",
+      "siteName": "Carajás Mining Complex",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 4590000000,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V2",
+        "seedKey": "SITE_BRA_carajas_iron_ore_mine|BRA|iron_ore",
+        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate.",
+        "realWorldDataRequired": false,
+        "targetGameplayLifeYears": 425,
+        "annualOutputBasis": 10800000,
+        "annualOutputUnit": "TONNES",
+        "annualOutputSource": "resource-specific deterministic gameplay baseline"
+      }
+    },
+    {
+      "siteId": "SITE_PER_cerro_verde_copper_mine",
+      "countryId": "PER",
+      "resourceId": "copper",
+      "siteName": "Cerro Verde Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 320400000000,
+        "unit": "POUNDS_COPPER",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V2",
+        "seedKey": "SITE_PER_cerro_verde_copper_mine|PER|copper",
+        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate.",
+        "realWorldDataRequired": false,
+        "targetGameplayLifeYears": 356,
+        "annualOutputBasis": 900000000,
+        "annualOutputUnit": "POUNDS_COPPER",
+        "annualOutputSource": "reported annual output or lower bound used only as scenario seed; simulation remains separate"
+      }
+    },
+    {
+      "siteId": "SITE_ZMB_sentinel_copper_mine",
+      "countryId": "ZMB",
+      "resourceId": "copper",
+      "siteName": "Sentinel Copper Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 82236000,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V2",
+        "seedKey": "SITE_ZMB_sentinel_copper_mine|ZMB|copper",
+        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate.",
+        "realWorldDataRequired": false,
+        "targetGameplayLifeYears": 356,
+        "annualOutputBasis": 231000,
+        "annualOutputUnit": "TONNES",
+        "annualOutputSource": "reported annual output or lower bound used only as scenario seed; simulation remains separate"
+      }
+    },
+    {
+      "siteId": "SITE_COD_tenke_fungurume_mine",
+      "countryId": "COD",
+      "resourceId": "copper",
+      "siteName": "Tenke Fungurume Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 160650000,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V2",
+        "seedKey": "SITE_COD_tenke_fungurume_mine|COD|copper",
+        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate.",
+        "realWorldDataRequired": false,
+        "targetGameplayLifeYears": 357,
+        "annualOutputBasis": 450000,
+        "annualOutputUnit": "TONNES",
+        "annualOutputSource": "reported annual product capacity used only as scenario seed; not actual output"
+      }
+    },
+    {
+      "siteId": "SITE_GHA_ahafo_gold_mine",
+      "countryId": "GHA",
+      "resourceId": "gold",
+      "siteName": "Ahafo Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 290472000,
+        "unit": "TROY_OUNCES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V2",
+        "seedKey": "SITE_GHA_ahafo_gold_mine|GHA|gold",
+        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate.",
+        "realWorldDataRequired": false,
+        "targetGameplayLifeYears": 364,
+        "annualOutputBasis": 798000,
+        "annualOutputUnit": "TROY_OUNCES",
+        "annualOutputSource": "reported annual output or lower bound used only as scenario seed; simulation remains separate"
+      }
+    },
+    {
+      "siteId": "SITE_USA_bingham_canyon_mine",
+      "countryId": "USA",
+      "resourceId": "copper",
+      "siteName": "Bingham Canyon Mine (Kennecott)",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 56245600,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V2",
+        "seedKey": "SITE_USA_bingham_canyon_mine|USA|copper",
+        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate.",
+        "realWorldDataRequired": false,
+        "targetGameplayLifeYears": 421,
+        "annualOutputBasis": 133600,
+        "annualOutputUnit": "TONNES",
+        "annualOutputSource": "reported annual output or lower bound used only as scenario seed; simulation remains separate"
+      }
+    },
+    {
+      "siteId": "SITE_PER_las_bambas_copper_mine",
+      "countryId": "PER",
+      "resourceId": "copper",
+      "siteName": "Las Bambas Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 126258592,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V2",
+        "seedKey": "SITE_PER_las_bambas_copper_mine|PER|copper",
+        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate.",
+        "realWorldDataRequired": false,
+        "targetGameplayLifeYears": 391,
+        "annualOutputBasis": 322912,
+        "annualOutputUnit": "TONNES",
+        "annualOutputSource": "reported annual output or lower bound used only as scenario seed; simulation remains separate"
+      }
+    },
+    {
+      "siteId": "SITE_CAN_highland_valley_copper_mine",
+      "countryId": "CAN",
+      "resourceId": "copper",
+      "siteName": "Highland Valley Copper Operations",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 38092800,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V2",
+        "seedKey": "SITE_CAN_highland_valley_copper_mine|CAN|copper",
+        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate.",
+        "realWorldDataRequired": false,
+        "targetGameplayLifeYears": 372,
+        "annualOutputBasis": 102400,
+        "annualOutputUnit": "TONNES",
+        "annualOutputSource": "reported annual output or lower bound used only as scenario seed; simulation remains separate"
+      }
+    },
+    {
+      "siteId": "SITE_MEX_buenavista_del_cobre_mine",
+      "countryId": "MEX",
+      "resourceId": "copper",
+      "siteName": "Buenavista del Cobre Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 127718994,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V2",
+        "seedKey": "SITE_MEX_buenavista_del_cobre_mine|MEX|copper",
+        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate.",
+        "realWorldDataRequired": false,
+        "targetGameplayLifeYears": 366,
+        "annualOutputBasis": 348959,
+        "annualOutputUnit": "TONNES",
+        "annualOutputSource": "reported annual output or lower bound used only as scenario seed; simulation remains separate"
+      }
+    },
+    {
+      "siteId": "SITE_IND_bailadila_kirandul_iron_ore_mine",
+      "countryId": "IND",
+      "resourceId": "iron_ore",
+      "siteName": "Bailadila Iron Ore Mine, Kirandul Complex",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 5746950000,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V2",
+        "seedKey": "SITE_IND_bailadila_kirandul_iron_ore_mine|IND|iron_ore",
+        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate.",
+        "realWorldDataRequired": false,
+        "targetGameplayLifeYears": 387,
+        "annualOutputBasis": 14850000,
+        "annualOutputUnit": "TONNES",
+        "annualOutputSource": "resource-specific deterministic gameplay baseline"
+      }
+    },
+    {
+      "siteId": "SITE_BRA_paracatu_gold_mine",
+      "countryId": "BRA",
+      "resourceId": "gold",
+      "siteName": "Paracatu Gold Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 182000000,
+        "unit": "TROY_OUNCES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V2",
+        "seedKey": "SITE_BRA_paracatu_gold_mine|BRA|gold",
+        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate.",
+        "realWorldDataRequired": false,
+        "targetGameplayLifeYears": 364,
+        "annualOutputBasis": 500000,
+        "annualOutputUnit": "TROY_OUNCES",
+        "annualOutputSource": "reported annual output or lower bound used only as scenario seed; simulation remains separate"
+      }
+    },
+    {
+      "siteId": "SITE_KAZ_aktogay_copper_mine",
+      "countryId": "KAZ",
+      "resourceId": "copper",
+      "siteName": "Aktogay Copper Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 97926400,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V2",
+        "seedKey": "SITE_KAZ_aktogay_copper_mine|KAZ|copper",
+        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate.",
+        "realWorldDataRequired": false,
+        "targetGameplayLifeYears": 428,
+        "annualOutputBasis": 228800,
+        "annualOutputUnit": "TONNES",
+        "annualOutputSource": "reported annual output or lower bound used only as scenario seed; simulation remains separate"
+      }
+    },
+    {
+      "siteId": "SITE_KAZ_bozshakol_copper_mine",
+      "countryId": "KAZ",
+      "resourceId": "copper",
+      "siteName": "Bozshakol Copper Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 47010300,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V2",
+        "seedKey": "SITE_KAZ_bozshakol_copper_mine|KAZ|copper",
+        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate.",
+        "realWorldDataRequired": false,
+        "targetGameplayLifeYears": 449,
+        "annualOutputBasis": 104700,
+        "annualOutputUnit": "TONNES",
+        "annualOutputSource": "reported annual output or lower bound used only as scenario seed; simulation remains separate"
+      }
+    },
+    {
+      "siteId": "SITE_COD_kipushi_zinc_copper_mine",
+      "countryId": "COD",
+      "resourceId": "zinc",
+      "siteName": "Kipushi Zinc-Copper Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 18663897,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V2",
+        "seedKey": "SITE_COD_kipushi_zinc_copper_mine|COD|zinc",
+        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate.",
+        "realWorldDataRequired": false,
+        "targetGameplayLifeYears": 371,
+        "annualOutputBasis": 50307,
+        "annualOutputUnit": "TONNES",
+        "annualOutputSource": "reported annual output or lower bound used only as scenario seed; simulation remains separate"
+      }
+    },
+    {
+      "siteId": "SITE_NAM_rossing_uranium_mine",
+      "countryId": "NAM",
+      "resourceId": "uranium",
+      "siteName": "Rössing Uranium Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 988000,
+        "unit": "METRIC_TONNES_U3O8",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V2",
+        "seedKey": "SITE_NAM_rossing_uranium_mine|NAM|uranium",
+        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate.",
+        "realWorldDataRequired": false,
+        "targetGameplayLifeYears": 380,
+        "annualOutputBasis": 2600,
+        "annualOutputUnit": "METRIC_TONNES_U3O8",
+        "annualOutputSource": "reported annual output or lower bound used only as scenario seed; simulation remains separate"
+      }
+    },
+    {
+      "siteId": "SITE_ZAF_sishen_iron_ore_mine",
+      "countryId": "ZAF",
+      "resourceId": "iron_ore",
+      "siteName": "Sishen Iron Ore Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 10954900000,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V2",
+        "seedKey": "SITE_ZAF_sishen_iron_ore_mine|ZAF|iron_ore",
+        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate.",
+        "realWorldDataRequired": false,
+        "targetGameplayLifeYears": 433,
+        "annualOutputBasis": 25300000,
+        "annualOutputUnit": "TONNES",
+        "annualOutputSource": "reported annual output or lower bound used only as scenario seed; simulation remains separate"
+      }
+    },
+    {
+      "siteId": "SITE_CAN_detour_lake_gold_mine",
+      "countryId": "CAN",
+      "resourceId": "gold",
+      "siteName": "Detour Lake Gold Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 256289750,
+        "unit": "TROY_OUNCES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V2",
+        "seedKey": "SITE_CAN_detour_lake_gold_mine|CAN|gold",
+        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate.",
+        "realWorldDataRequired": false,
+        "targetGameplayLifeYears": 370,
+        "annualOutputBasis": 692675,
+        "annualOutputUnit": "TROY_OUNCES",
+        "annualOutputSource": "reported annual output or lower bound used only as scenario seed; simulation remains separate"
+      }
+    },
+    {
+      "siteId": "SITE_POL_lubin_copper_silver_mine",
+      "countryId": "POL",
+      "resourceId": "copper",
+      "siteName": "Lubin Copper-Silver Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 25728000,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V2",
+        "seedKey": "SITE_POL_lubin_copper_silver_mine|POL|copper",
+        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate.",
+        "realWorldDataRequired": false,
+        "targetGameplayLifeYears": 384,
+        "annualOutputBasis": 67000,
+        "annualOutputUnit": "TONNES",
+        "annualOutputSource": "reported annual output or lower bound used only as scenario seed; simulation remains separate"
+      }
+    },
+    {
+      "siteId": "SITE_GHA_obuasi_gold_mine",
+      "countryId": "GHA",
+      "resourceId": "gold",
+      "siteName": "Obuasi Gold Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 93925000,
+        "unit": "TROY_OUNCES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V2",
+        "seedKey": "SITE_GHA_obuasi_gold_mine|GHA|gold",
+        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate.",
+        "realWorldDataRequired": false,
+        "targetGameplayLifeYears": 425,
+        "annualOutputBasis": 221000,
+        "annualOutputUnit": "TROY_OUNCES",
+        "annualOutputSource": "reported annual output or lower bound used only as scenario seed; simulation remains separate"
+      }
+    },
+    {
+      "siteId": "SITE_USA_bagdad_copper_mine",
+      "countryId": "USA",
+      "resourceId": "copper",
+      "siteName": "Bagdad Copper Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 43099200,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V2",
+        "seedKey": "SITE_USA_bagdad_copper_mine|USA|copper",
+        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate.",
+        "realWorldDataRequired": false,
+        "targetGameplayLifeYears": 438,
+        "annualOutputBasis": 98400,
+        "annualOutputUnit": "TONNES",
+        "annualOutputSource": "resource-specific deterministic gameplay baseline"
+      }
+    },
+    {
+      "siteId": "SITE_PER_quellaveco_copper_mine",
+      "countryId": "PER",
+      "resourceId": "copper",
+      "siteName": "Quellaveco Copper Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 120900000,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V2",
+        "seedKey": "SITE_PER_quellaveco_copper_mine|PER|copper",
+        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate.",
+        "realWorldDataRequired": false,
+        "targetGameplayLifeYears": 403,
+        "annualOutputBasis": 300000,
+        "annualOutputUnit": "TONNES",
+        "annualOutputSource": "reported annual output or lower bound used only as scenario seed; simulation remains separate"
+      }
+    },
+    {
+      "siteId": "SITE_BRA_salobo_copper_mine",
+      "countryId": "BRA",
+      "resourceId": "copper",
+      "siteName": "Salobo Mining Complex",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 51530400,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V2",
+        "seedKey": "SITE_BRA_salobo_copper_mine|BRA|copper",
+        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate.",
+        "realWorldDataRequired": false,
+        "targetGameplayLifeYears": 421,
+        "annualOutputBasis": 122400,
+        "annualOutputUnit": "TONNES",
+        "annualOutputSource": "resource-specific deterministic gameplay baseline"
+      }
+    },
+    {
+      "siteId": "SITE_AUS_cadia_east_gold_copper_mine",
+      "countryId": "AUS",
+      "resourceId": "copper",
+      "siteName": "Cadia East Gold-Copper Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 37351200,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V2",
+        "seedKey": "SITE_AUS_cadia_east_gold_copper_mine|AUS|copper",
+        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate.",
+        "realWorldDataRequired": false,
+        "targetGameplayLifeYears": 394,
+        "annualOutputBasis": 94800,
+        "annualOutputUnit": "TONNES",
+        "annualOutputSource": "resource-specific deterministic gameplay baseline"
+      }
+    },
+    {
+      "siteId": "SITE_NGA_segilola_gold_mine",
+      "countryId": "NGA",
+      "resourceId": "gold",
+      "siteName": "Segilola Gold Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 38275650,
+        "unit": "TROY_OUNCES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V2",
+        "seedKey": "SITE_NGA_segilola_gold_mine|NGA|gold",
+        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate.",
+        "realWorldDataRequired": false,
+        "targetGameplayLifeYears": 450,
+        "annualOutputBasis": 85057,
+        "annualOutputUnit": "TROY_OUNCES",
+        "annualOutputSource": "reported annual output or lower bound used only as scenario seed; simulation remains separate"
+      }
+    },
+    {
+      "siteId": "SITE_TUR_kisladag_gold_mine",
+      "countryId": "TUR",
+      "resourceId": "gold",
+      "siteName": "Kışladağ Gold Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 66324480,
+        "unit": "TROY_OUNCES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V2",
+        "seedKey": "SITE_TUR_kisladag_gold_mine|TUR|gold",
+        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate.",
+        "realWorldDataRequired": false,
+        "targetGameplayLifeYears": 381,
+        "annualOutputBasis": 174080,
+        "annualOutputUnit": "TROY_OUNCES",
+        "annualOutputSource": "reported annual output or lower bound used only as scenario seed; simulation remains separate"
+      }
+    },
+    {
+      "siteId": "SITE_ECU_fruta_del_norte_gold_mine",
+      "countryId": "ECU",
+      "resourceId": "gold",
+      "siteName": "Fruta del Norte Gold Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 201313629,
+        "unit": "TROY_OUNCES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V2",
+        "seedKey": "SITE_ECU_fruta_del_norte_gold_mine|ECU|gold",
+        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate.",
+        "realWorldDataRequired": false,
+        "targetGameplayLifeYears": 401,
+        "annualOutputBasis": 502029,
+        "annualOutputUnit": "TROY_OUNCES",
+        "annualOutputSource": "reported annual output or lower bound used only as scenario seed; simulation remains separate"
+      }
+    },
+    {
+      "siteId": "SITE_CAN_cigar_lake_uranium_mine",
+      "countryId": "CAN",
+      "resourceId": "uranium",
+      "siteName": "Cigar Lake Uranium Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 7866000000,
+        "unit": "POUNDS_U3O8",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V2",
+        "seedKey": "SITE_CAN_cigar_lake_uranium_mine|CAN|uranium",
+        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate.",
+        "realWorldDataRequired": false,
+        "targetGameplayLifeYears": 437,
+        "annualOutputBasis": 18000000,
+        "annualOutputUnit": "POUNDS_U3O8",
+        "annualOutputSource": "reported annual product capacity used only as scenario seed; not actual output"
+      }
+    },
+    {
+      "siteId": "SITE_MOZ_balama_graphite_operation",
+      "countryId": "MOZ",
+      "resourceId": "graphite",
+      "siteName": "Balama Graphite Operation",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 12775000,
+        "unit": "TONNES_GRAPHITE",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V2",
+        "seedKey": "SITE_MOZ_balama_graphite_operation|MOZ|graphite",
+        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate.",
+        "realWorldDataRequired": false,
+        "targetGameplayLifeYears": 365,
+        "annualOutputBasis": 35000,
+        "annualOutputUnit": "TONNES_GRAPHITE",
+        "annualOutputSource": "reported annual output or lower bound used only as scenario seed; simulation remains separate"
+      }
+    },
+    {
+      "siteId": "SITE_TZA_north_mara_gold_mine",
+      "countryId": "TZA",
+      "resourceId": "gold",
+      "siteName": "North Mara Gold Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 97110000,
+        "unit": "TROY_OUNCES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V2",
+        "seedKey": "SITE_TZA_north_mara_gold_mine|TZA|gold",
+        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate.",
+        "realWorldDataRequired": false,
+        "targetGameplayLifeYears": 415,
+        "annualOutputBasis": 234000,
+        "annualOutputUnit": "TROY_OUNCES",
+        "annualOutputSource": "resource-specific deterministic gameplay baseline"
+      }
+    },
+    {
+      "siteId": "SITE_MEX_fresnillo_silver_mine",
+      "countryId": "MEX",
+      "resourceId": "silver",
+      "siteName": "Fresnillo Silver Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 4355400000,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V2",
+        "seedKey": "SITE_MEX_fresnillo_silver_mine|MEX|silver",
+        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate.",
+        "realWorldDataRequired": false,
+        "targetGameplayLifeYears": 427,
+        "annualOutputBasis": 10200000,
+        "annualOutputUnit": "TONNES",
+        "annualOutputSource": "reported annual output or lower bound used only as scenario seed; simulation remains separate"
+      }
+    },
+    {
+      "siteId": "SITE_GIN_simandou_iron_ore_mine",
+      "countryId": "GIN",
+      "resourceId": "iron_ore",
+      "siteName": "Simandou Iron Ore Project",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 22860000000,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V2",
+        "seedKey": "SITE_GIN_simandou_iron_ore_mine|GIN|iron_ore",
+        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate.",
+        "realWorldDataRequired": false,
+        "targetGameplayLifeYears": 381,
+        "annualOutputBasis": 60000000,
+        "annualOutputUnit": "TONNES",
+        "annualOutputSource": "reported annual product capacity used only as scenario seed; not actual output"
+      }
+    },
+    {
+      "siteId": "SITE_BWA_orapa_diamond_mine",
+      "countryId": "BWA",
+      "resourceId": "diamond",
+      "siteName": "Orapa Diamond Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 3770000000,
+        "unit": "CARATS",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V2",
+        "seedKey": "SITE_BWA_orapa_diamond_mine|BWA|diamond",
+        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate.",
+        "realWorldDataRequired": false,
+        "targetGameplayLifeYears": 377,
+        "annualOutputBasis": 10000000,
+        "annualOutputUnit": "CARATS",
+        "annualOutputSource": "operator-stated typical average used only as scenario seed; not a dated actual"
+      }
+    },
+    {
+      "siteId": "SITE_ZAF_venetia_diamond_mine",
+      "countryId": "ZAF",
+      "resourceId": "diamond",
+      "siteName": "Venetia Diamond Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 942210000,
+        "unit": "CARATS",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V2",
+        "seedKey": "SITE_ZAF_venetia_diamond_mine|ZAF|diamond",
+        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate.",
+        "realWorldDataRequired": false,
+        "targetGameplayLifeYears": 435,
+        "annualOutputBasis": 2166000,
+        "annualOutputUnit": "CARATS",
+        "annualOutputSource": "reported annual output or lower bound used only as scenario seed; simulation remains separate"
+      }
+    },
+    {
+      "siteId": "SITE_CAN_gahcho_kue_diamond_mine",
+      "countryId": "CAN",
+      "resourceId": "diamond",
+      "siteName": "Gahcho Kué Diamond Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 1752792056,
+        "unit": "CARATS",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V2",
+        "seedKey": "SITE_CAN_gahcho_kue_diamond_mine|CAN|diamond",
+        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate.",
+        "realWorldDataRequired": false,
+        "targetGameplayLifeYears": 376,
+        "annualOutputBasis": 4661681,
+        "annualOutputUnit": "CARATS",
+        "annualOutputSource": "reported annual output or lower bound used only as scenario seed; simulation remains separate"
+      }
+    },
+    {
+      "siteId": "SITE_MLI_fekola_gold_mine",
+      "countryId": "MLI",
+      "resourceId": "gold",
+      "siteName": "Fekola Gold Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 173682132,
+        "unit": "TROY_OUNCES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V2",
+        "seedKey": "SITE_MLI_fekola_gold_mine|MLI|gold",
+        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate.",
+        "realWorldDataRequired": false,
+        "targetGameplayLifeYears": 442,
+        "annualOutputBasis": 392946,
+        "annualOutputUnit": "TROY_OUNCES",
+        "annualOutputSource": "reported annual output or lower bound used only as scenario seed; simulation remains separate"
+      }
+    },
+    {
+      "siteId": "SITE_COD_kibali_gold_mine",
+      "countryId": "COD",
+      "resourceId": "gold",
+      "siteName": "Kibali Gold Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 150920000,
+        "unit": "TROY_OUNCES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V2",
+        "seedKey": "SITE_COD_kibali_gold_mine|COD|gold",
+        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate.",
+        "realWorldDataRequired": false,
+        "targetGameplayLifeYears": 440,
+        "annualOutputBasis": 343000,
+        "annualOutputUnit": "TROY_OUNCES",
+        "annualOutputSource": "reported annual output or lower bound used only as scenario seed; simulation remains separate"
+      }
+    },
+    {
+      "siteId": "SITE_CHL_sierra_gorda_copper_mine",
+      "countryId": "CHL",
+      "resourceId": "copper",
+      "siteName": "Sierra Gorda Copper Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 52557600,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V2",
+        "seedKey": "SITE_CHL_sierra_gorda_copper_mine|CHL|copper",
+        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate.",
+        "realWorldDataRequired": false,
+        "targetGameplayLifeYears": 359,
+        "annualOutputBasis": 146400,
+        "annualOutputUnit": "TONNES",
+        "annualOutputSource": "reported annual output or lower bound used only as scenario seed; simulation remains separate"
+      }
+    },
+    {
+      "siteId": "SITE_SWE_aitik_copper_mine",
+      "countryId": "SWE",
+      "resourceId": "copper",
+      "siteName": "Aitik Copper Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 38620800,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V2",
+        "seedKey": "SITE_SWE_aitik_copper_mine|SWE|copper",
+        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate.",
+        "realWorldDataRequired": false,
+        "targetGameplayLifeYears": 447,
+        "annualOutputBasis": 86400,
+        "annualOutputUnit": "TONNES",
+        "annualOutputSource": "resource-specific deterministic gameplay baseline"
+      }
+    },
+    {
+      "siteId": "SITE_USA_carlin_gold_complex",
+      "countryId": "USA",
+      "resourceId": "gold",
+      "siteName": "Carlin Gold Complex",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 442611000,
+        "unit": "TROY_OUNCES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V2",
+        "seedKey": "SITE_USA_carlin_gold_complex|USA|gold",
+        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate.",
+        "realWorldDataRequired": false,
+        "targetGameplayLifeYears": 351,
+        "annualOutputBasis": 1261000,
+        "annualOutputUnit": "TROY_OUNCES",
+        "annualOutputSource": "reported annual output or lower bound used only as scenario seed; simulation remains separate"
+      }
+    },
+    {
+      "siteId": "SITE_AUS_murrin_murrin_nickel_mine",
+      "countryId": "AUS",
+      "resourceId": "nickel",
+      "siteName": "Murrin Murrin Nickel-Cobalt Operation",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 13582800,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V2",
+        "seedKey": "SITE_AUS_murrin_murrin_nickel_mine|AUS|nickel",
+        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate.",
+        "realWorldDataRequired": false,
+        "targetGameplayLifeYears": 396,
+        "annualOutputBasis": 34300,
+        "annualOutputUnit": "TONNES",
+        "annualOutputSource": "reported annual output or lower bound used only as scenario seed; simulation remains separate"
+      }
+    },
+    {
+      "siteId": "SITE_AUS_cannington_silver_lead_mine",
+      "countryId": "AUS",
+      "resourceId": "silver",
+      "siteName": "Cannington Silver-Lead-Zinc Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 5009984000,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V2",
+        "seedKey": "SITE_AUS_cannington_silver_lead_mine|AUS|silver",
+        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate.",
+        "realWorldDataRequired": false,
+        "targetGameplayLifeYears": 448,
+        "annualOutputBasis": 11183000,
+        "annualOutputUnit": "TONNES",
+        "annualOutputSource": "reported annual output or lower bound used only as scenario seed; simulation remains separate"
+      }
+    },
+    {
+      "siteId": "SITE_CAN_raglan_nickel_mine",
+      "countryId": "CAN",
+      "resourceId": "nickel",
+      "siteName": "Raglan Nickel Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 13657800,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V2",
+        "seedKey": "SITE_CAN_raglan_nickel_mine|CAN|nickel",
+        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate.",
+        "realWorldDataRequired": false,
+        "targetGameplayLifeYears": 442,
+        "annualOutputBasis": 30900,
+        "annualOutputUnit": "TONNES",
+        "annualOutputSource": "resource-specific deterministic gameplay baseline"
+      }
+    },
+    {
+      "siteId": "SITE_COL_cerro_matoso_nickel_mine",
+      "countryId": "COL",
+      "resourceId": "nickel",
+      "siteName": "Cerro Matoso Nickel Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 17707200,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V2",
+        "seedKey": "SITE_COL_cerro_matoso_nickel_mine|COL|nickel",
+        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate.",
+        "realWorldDataRequired": false,
+        "targetGameplayLifeYears": 434,
+        "annualOutputBasis": 40800,
+        "annualOutputUnit": "TONNES",
+        "annualOutputSource": "reported annual output or lower bound used only as scenario seed; simulation remains separate"
+      }
+    },
+    {
+      "siteId": "SITE_PER_mina_justa_copper_mine",
+      "countryId": "PER",
+      "resourceId": "copper",
+      "siteName": "Mina Justa Copper Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 54951660,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V2",
+        "seedKey": "SITE_PER_mina_justa_copper_mine|PER|copper",
+        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate.",
+        "realWorldDataRequired": false,
+        "targetGameplayLifeYears": 444,
+        "annualOutputBasis": 123765,
+        "annualOutputUnit": "TONNES",
+        "annualOutputSource": "reported annual output or lower bound used only as scenario seed; simulation remains separate"
+      }
+    },
+    {
+      "siteId": "SITE_PHL_masbate_gold_mine",
+      "countryId": "PHL",
+      "resourceId": "gold",
+      "siteName": "Masbate Gold Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 78394584,
+        "unit": "TROY_OUNCES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V2",
+        "seedKey": "SITE_PHL_masbate_gold_mine|PHL|gold",
+        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate.",
+        "realWorldDataRequired": false,
+        "targetGameplayLifeYears": 404,
+        "annualOutputBasis": 194046,
+        "annualOutputUnit": "TROY_OUNCES",
+        "annualOutputSource": "reported annual output or lower bound used only as scenario seed; simulation remains separate"
+      }
+    },
+    {
+      "siteId": "SITE_NAM_otjikoto_gold_mine",
+      "countryId": "NAM",
+      "resourceId": "gold",
+      "siteName": "Otjikoto Gold Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 84012208,
+        "unit": "TROY_OUNCES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V2",
+        "seedKey": "SITE_NAM_otjikoto_gold_mine|NAM|gold",
+        "basis": "Deterministic site-specific gameplay stock sized to a 350-450 year target at this site's simulated annual output; not a geological reserve estimate.",
+        "realWorldDataRequired": false,
+        "targetGameplayLifeYears": 424,
+        "annualOutputBasis": 198142,
+        "annualOutputUnit": "TROY_OUNCES",
+        "annualOutputSource": "reported annual output or lower bound used only as scenario seed; simulation remains separate"
       }
     }
   ]
