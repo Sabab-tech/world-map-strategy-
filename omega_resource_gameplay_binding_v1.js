@@ -233,18 +233,20 @@ async function plan(){
 }
 async function execute(){
  const s=chosenSite();if(!s)return setStatus('BLOCKED: select a site first');
- const e=endowment();if(!e?.hydrateCountry||!e?.extractCountry)return setStatus('BLOCKED: endowment runtime unavailable');
- setStatus('Loading country state for '+s.siteId+'…');
- await e.hydrateCountry(s.countryId);
- const refs=e.countryMineSiteReferences?.(s.countryId)||[];
- const ref=findOccurrence(s,refs);
- if(!ref){setStatus('BLOCKED · No exact site-to-occurrence binding for '+s.siteId+'; no extraction was executed.');return;}
- const occurrence=ref.occurrenceKey||ref.canonicalOccurrenceKey||ref.depositKey||ref.linkedDepositId||ref.siteId||ref.id;
- if(!occurrence){setStatus('BLOCKED · matched reference has no executable occurrence key.');return;}
- const result=await e.extractCountry(s.countryId,[occurrence]);
- const ok=!['FAILED','UNAVAILABLE','BLOCKED'].includes(String(result?.status||'').toUpperCase())&&(result?.status==='COMMITTED'||result?.status==='EXECUTED'||result?.result?.status==='COMMITTED'||Array.isArray(result?.result?.records)&&result.result.records.length>0);
- setStatus(ok?'EXTRACTION COMMITTED · '+s.siteId+' · turn '+(state().simulation?.turn??state().turn??0):'EXTRACTION NOT CONFIRMED · '+JSON.stringify({status:result?.status,reason:result?.reason||result?.result?.reason||null,siteId:s.siteId}).slice(0,240));
- g.__OMEGA_LAST_INDIVIDUAL_SITE_EXTRACTION__={siteId:s.siteId,result};
+ const net=api();if(!net?.executeSitePipeline)return setStatus('BLOCKED · unified site-pipeline runtime unavailable; no extraction was executed.');
+ setStatus('Executing exact site through extraction → warehouse → route → factory…');
+ try{
+  const result=await net.executeSitePipeline({countryId:s.countryId,siteId:s.siteId,resourceId:s.real?.resourceId||s.sourceSiteRecord?.resourceId||s.sourceSiteRecord?.resourceTypeId||s.identity?.resourceTypeId,autoCommissionFactory:true});
+  g.__OMEGA_LAST_INDIVIDUAL_SITE_EXTRACTION__={siteId:s.siteId,result};
+  if(result?.status==='IN_TRANSIT'){
+   setStatus('EXTRACTION COMMITTED · '+s.siteId+' · batch '+(result.batchId||'created')+' · shipment '+(result.shipmentId||'dispatched')+' · factory '+result.factoryId+' · route ETA turn '+(result.shipment?.etaTurn??'pending'));
+   return;
+  }
+  setStatus('SITE PIPELINE '+String(result?.status||'BLOCKED')+' · '+String(result?.reason||result?.blockReason||'No confirmed end-to-end commit')+' · '+JSON.stringify({siteId:s.siteId,occurrenceKey:result?.occurrenceKey,extractionStatus:result?.extractionStatus,shipmentStatus:result?.shipmentStatus}).slice(0,220));
+ }catch(e){
+  const reason=String(e?.message||e);g.__OMEGA_LAST_INDIVIDUAL_SITE_EXTRACTION__={siteId:s.siteId,status:'FAILED',reason};
+  setStatus('SITE PIPELINE FAILED · '+reason.slice(0,220));
+ }
 }
 function mount(){
  if(document.getElementById('omega-individual-resource-open'))return;
