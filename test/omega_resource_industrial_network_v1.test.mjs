@@ -7,16 +7,18 @@ const context={
   console,Math,Number,String,Object,Array,Set,Map,WeakMap,JSON,Date,Promise,Intl,
   OmegaResourceIndustrialCatalogData:catalog,
   OmegaResourceSiteMasterResearchData:{
-    siteCount:2,
+    siteCount:3,
     sites:[
       {siteId:'SITE_BGD_COAL_01',countryId:'BGD',siteName:'Test Coal Mine',real:{resourceId:'coal'},sourceSiteRecord:{id:'SITE_BGD_COAL_01',resourceId:'coal',commercialExtraction:true},simulation:{transportRoute:[]},siteType:'COAL_MINE'},
-      {siteId:'SITE_BGD_IRON_01',countryId:'BGD',siteName:'Test Iron Mine',real:{resourceId:'iron_ore'},sourceSiteRecord:{id:'SITE_BGD_IRON_01',resourceId:'iron_ore',commercialExtraction:true},simulation:{transportRoute:[]},siteType:'OPEN_PIT_MINE'}
+      {siteId:'SITE_BGD_IRON_01',countryId:'BGD',siteName:'Test Iron Mine',real:{resourceId:'iron_ore'},sourceSiteRecord:{id:'SITE_BGD_IRON_01',resourceId:'iron_ore',commercialExtraction:true},simulation:{transportRoute:[]},siteType:'OPEN_PIT_MINE'},
+      {siteId:'SITE_BGD_COPPER_01',countryId:'BGD',siteName:'Test Copper Mine',real:{resourceId:'copper'},sourceSiteRecord:{id:'SITE_BGD_COPPER_01',resourceId:'copper',commercialExtraction:true},simulation:{transportRoute:[]},siteType:'OPEN_PIT_MINE'}
     ]
   },
   OmegaResourceScenarioEngineeringData:{
     records:[
       {siteId:'SITE_BGD_COAL_01',countryId:'BGD',resourceId:'coal',unit:'TONNES',nominalCapacity:1000,minimumCapacity:500,maximumCapacity:1300,utilization:.8,recovery:.85,decline:.01,maintenance:.03,scenarioLifeYears:375},
-      {siteId:'SITE_BGD_IRON_01',countryId:'BGD',resourceId:'iron_ore',unit:'TONNES',nominalCapacity:2000,minimumCapacity:1000,maximumCapacity:2600,utilization:.8,recovery:.9,decline:.01,maintenance:.03,scenarioLifeYears:375}
+      {siteId:'SITE_BGD_IRON_01',countryId:'BGD',resourceId:'iron_ore',unit:'TONNES',nominalCapacity:2000,minimumCapacity:1000,maximumCapacity:2600,utilization:.8,recovery:.9,decline:.01,maintenance:.03,scenarioLifeYears:375},
+      {siteId:'SITE_BGD_COPPER_01',countryId:'BGD',resourceId:'copper',unit:'TONNES',nominalCapacity:1500,minimumCapacity:800,maximumCapacity:2000,utilization:.8,recovery:.85,decline:.01,maintenance:.03,scenarioLifeYears:375}
     ]
   },
   Omega:{
@@ -131,40 +133,40 @@ context.Omega.ResourceEndowmentRuntime={
   async hydrateCountry(countryId){
     const rs=context.Game.state.resource[countryId]||(context.Game.state.resource[countryId]={inventory:{},warehouse:{availableByResource:{},reservedByResource:{}},mineSiteControllers:{}});
     rs.mineSiteControllers=rs.mineSiteControllers||{};
-    rs.mineSiteControllers.SITE_BGD_IRON_01={siteReferenceKey:'SITE_BGD_IRON_01',linkedOccurrenceKeys:['SITE_OCC:BGD:SITE_BGD_IRON_01'],controllerStatus:'RUNNING'};
+    rs.mineSiteControllers.SITE_BGD_COPPER_01={siteReferenceKey:'SITE_BGD_COPPER_01',linkedOccurrenceKeys:['SITE_OCC:BGD:SITE_BGD_COPPER_01'],controllerStatus:'RUNNING'};
     return{status:'APPLIED',result:{accepted:true,countryId}};
   },
   async extractCountry(countryId,occurrenceKeys){
-    assert.deepEqual(occurrenceKeys,['SITE_OCC:BGD:SITE_BGD_IRON_01'],'execution must use the controller-linked occurrence key, not the display siteId');
+    assert.deepEqual(occurrenceKeys,['SITE_OCC:BGD:SITE_BGD_COPPER_01'],'execution must use the controller-linked occurrence key, not the display siteId');
     const rs=context.Game.state.resource[countryId],quantity=1200;
-    rs.inventory.iron_ore=(Number(rs.inventory.iron_ore)||0)+quantity;
-    rs.warehouse.availableByResource.iron_ore=(Number(rs.warehouse.availableByResource.iron_ore)||0)+quantity;
-    const record={occurrenceKey:occurrenceKeys[0],countryId,resourceId:'iron_ore',approvedQuantity:quantity,
-      producedBatch:{batchId:'BATCH-E2E-IRON',quantity,unit:'TONNES',warehouseId:'WH-'+countryId+'-RAW'}};
+    rs.inventory.copper=(Number(rs.inventory.copper)||0)+quantity;
+    rs.warehouse.availableByResource.copper=(Number(rs.warehouse.availableByResource.copper)||0)+quantity;
+    const record={occurrenceKey:occurrenceKeys[0],countryId,resourceId:'copper',approvedQuantity:quantity,
+      producedBatch:{batchId:'BATCH-E2E-COPPER',quantity,unit:'TONNES',warehouseId:'WH-'+countryId+'-RAW'}};
     return{status:'APPLIED',result:{accepted:true,records:[record]}};
   }
 };
-const siteRun=await N.executeSitePipeline({countryId:'BGD',siteId:'SITE_BGD_IRON_01',resourceId:'iron_ore',autoCommissionFactory:true,transportMode:'rail'});
+const siteRun=await N.executeSitePipeline({countryId:'BGD',siteId:'SITE_BGD_COPPER_01',resourceId:'copper',autoCommissionFactory:true,transportMode:'rail'});
 assert.equal(siteRun.status,'IN_TRANSIT','a selected resource site must commit extraction and dispatch a real shipment record');
 assert.equal(siteRun.extractionStatus,'COMMITTED');
-assert.equal(siteRun.batchId,'BATCH-E2E-IRON');
+assert.equal(siteRun.batchId,'BATCH-E2E-COPPER');
 assert.ok(siteRun.extractionPlanId,'industrial extraction planner must be part of the same site action');
 assert.ok(siteRun.shipmentId,'shipment must be persisted in the country industrial network');
 assert.equal(siteRun.factoryBootstrapStatus,'CREATED_SIMULATION_ONLY','fallback processing capacity must be clearly marked simulation-only');
-assert.equal(context.Game.state.resource.BGD.industrialNetwork.siteExecutions[0].siteId,'SITE_BGD_IRON_01');
+assert.equal(context.Game.state.resource.BGD.industrialNetwork.siteExecutions[0].siteId,'SITE_BGD_COPPER_01');
 context.Game.state.simulation.turn=siteRun.shipment.etaTurn;
 const ironDelivery=N.advanceShipments('BGD');
 assert.equal(ironDelivery.delivered,1);
 assert.equal(ironDelivery.shipments[0].processingStatus,'PROCESSED');
-assert.ok(context.Game.state.resource.BGD.inventory.IRON_CONCENTRATE>0,'processed site output must be persisted in the country inventory');
-assert.ok(context.Game.state.resource.BGD.inventory.ORE_TAILINGS>0,'processing by-product must be persisted too');
-assert.equal(context.Game.state.resource.BGD.warehouse.availableByResource.iron_ore,50000,'raw shipment quantity must be removed from warehouse exactly once');
-assert.equal(context.Game.state.resource.BGD.warehouse.reservedByResource.iron_ore,0,'site shipment reservation must be cleared');
+assert.ok(context.Game.state.resource.BGD.inventory.COPPER_CONCENTRATE>0,'processed site output must be persisted in the country inventory');
+assert.ok(context.Game.state.resource.BGD.inventory.TAILINGS>0,'processing by-product must be persisted too');
+assert.equal(context.Game.state.resource.BGD.warehouse.availableByResource.copper,50000,'raw shipment quantity must be removed from warehouse exactly once');
+assert.equal(context.Game.state.resource.BGD.warehouse.reservedByResource.copper,0,'site shipment reservation must be cleared');
 assert.ok(context.Game.state.resource.BGD.industrialNetwork.events.some(x=>x.transactionId&&x.status==='COMPLETED'),'factory processing must be written to the runtime event ledger');
 
 const diag=N.diagnostics();
-assert.equal(diag.siteCount,2);
-assert.equal(diag.extractionPlans,2);
+assert.equal(diag.siteCount,3);
+assert.equal(diag.extractionPlans,3);
 assert.equal(diag.targetArchitecture,'SITE -> EXTRACTION -> WAREHOUSE -> ROUTE -> FACTORY -> PROCESS -> OUTPUT');
 
 console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
