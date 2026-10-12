@@ -346,8 +346,10 @@ function buildRoute(site,asset,resourceId,requestedQuantity,input={}){
   const legs=vehiclePlan.length;
   const path=vehiclePlan.map(x=>x.edgeClass);
   const etaTurn=turn()+Math.max(1,Math.ceil(totalDays/daysPerTurn()));
-  const route={status:dispatchQuantity>0?'PLANNED':'BLOCKED',routeId:'IR:'+h32(JSON.stringify({cid,site:site?.siteId,factory:asset?.id||asset?.assetId||asset?.projectId,resourceId,mode})).toString(16),
-    countryId:cid,sourceSiteId:site?.siteId||null,sourceNode:nodeToken('MINE',cid,site?.siteId),destinationFactoryId:String(asset?.id||asset?.assetId||asset?.projectId||''),destinationNode:nodeToken('FACTORY',cid,asset?.id||asset?.assetId||asset?.projectId),
+  const routeSourceSiteId=input.sourceSiteId||site?.siteId||null;
+  const routeSourceNode=input.sourceNode||nodeToken(input.sourceNodeType||'MINE',cid,site?.siteId);
+  const route={status:dispatchQuantity>0?'PLANNED':'BLOCKED',routeId:'IR:'+h32(JSON.stringify({cid,site:routeSourceSiteId,sourceNode:routeSourceNode,factory:asset?.id||asset?.assetId||asset?.projectId,resourceId,mode})).toString(16),
+    countryId:cid,sourceSiteId:routeSourceSiteId,sourceWarehouseId:input.sourceWarehouseId||null,sourceNode:routeSourceNode,destinationFactoryId:String(asset?.id||asset?.assetId||asset?.projectId||''),destinationNode:nodeToken('FACTORY',cid,asset?.id||asset?.assetId||asset?.projectId),
     resourceId,requestedQuantity:quantity,dispatchQuantity:Number(dispatchQuantity.toFixed(6)),unit:input.unit||'TONNES',transportMode:mode,
     routePath:path,legs:vehiclePlan,totalDistanceKm:vehiclePlan.reduce((s,x)=>s+x.distanceKm,0),travelTimeDays:Number(totalDays.toFixed(3)),
     etaTurn,etaYear:year()+Math.floor(totalDays/365),vehiclePlan,totalCost:Number(totalCost.toFixed(4)),
@@ -366,8 +368,10 @@ function planShipment(input={}){
   if(!candidates.length)return{status:'BLOCKED',reason:'NO_MATCHING_FACTORY',countryId:cid,siteId:site.siteId,resourceId:rid};
   const ordered=candidates.sort((a,b)=>String(a.asset?.priority??999)-String(b.asset?.priority??999));
   let best=null;
+  const warehouseId='WH-'+cid+'-RAW';
+  const routeOrigin={siteId:warehouseId,countryId:cid,siteName:cid+' sovereign raw warehouse',siteType:'RAW_MATERIAL_WAREHOUSE',simulation:{transportRoute:[]}};
   for(const c of ordered.slice(0,16)){
-    const route=buildRoute(site,c.asset,rid,input.quantity,{countryId:cid,transportMode:input.transportMode,unit:input.unit});
+    const route=buildRoute(routeOrigin,c.asset,rid,input.quantity,{countryId:cid,sourceSiteId:site.siteId,sourceWarehouseId:warehouseId,sourceNode:'WAREHOUSE:'+cid+':RAW',sourceNodeType:'WAREHOUSE',transportMode:input.transportMode,unit:input.unit});
     if(route.status==='PLANNED' && (!best||route.travelTimeDays<best.route.travelTimeDays))best={candidate:c,route};
   }
   if(!best)return{status:'BLOCKED',reason:'NO_USABLE_TRANSPORT_ROUTE',candidates:ordered.length};
