@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import fs from 'node:fs';
 import { createContext, Script } from 'node:vm';
 
 const restorationManifest=JSON.parse(fs.readFileSync(new URL('../resource_site_verified_legacy_restoration_v1.json',import.meta.url),'utf8'));
