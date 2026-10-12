@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import { readFileSync } from 'node:fs';
 import { createContext, Script } from 'node:vm';
 
@@ -42,10 +43,10 @@ for(const [siteId,site] of catalogMap){
   assert.equal(r.provenance.authority,'SCENARIO_SIMULATION_DATA');
   assert.equal(r.provenance.realWorldDataRequired,false);
 }
-assert.equal(data.commercialSiteCount,246);
+assert.equal(data.commercialSiteCount,expectedCommercialSiteCount);
 assert.equal(data.notApplicableSiteCount,4);
 
-console.log(JSON.stringify({certificate:'OMEGA-250-PER-SITE-RESERVE-DATA',status:'PASS',siteCount:expectedSiteCount,commercialSiteCount:expectedCommercialSiteCount,notApplicableSiteCount:4,uniqueSiteIds:reserveMap.size,countryBinding:'PASS',resourceBinding:'PASS',perIdentityReserve:'PASS'},null,2));
+console.log(JSON.stringify({certificate:'OMEGA-PER-SITE-RESERVE-DATA',status:'PASS',siteCount:expectedSiteCount,commercialSiteCount:expectedCommercialSiteCount,notApplicableSiteCount:4,uniqueSiteIds:reserveMap.size,countryBinding:'PASS',resourceBinding:'PASS',perIdentityReserve:'PASS'},null,2));
 
 const context=createContext({console,globalThis:null});
 context.globalThis=context;
