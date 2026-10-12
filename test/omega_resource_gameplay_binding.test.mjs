@@ -34,7 +34,8 @@ assert.ok(master.sites.every(s=>catalogIds.has(s.siteId)),'master rows must map 
 assert.match(index,/omega_resource_gameplay_binding_v1\.js/,'playable shell must load site binding');
 assert.match(binding,/OMEGA_RESOURCE_SITE_SELECTED/,'site selection event must be emitted');
 assert.match(binding,/planExtraction/,'site selection UI must call industrial extraction planner');
-assert.match(binding,/extractCountry/,'site UI must connect to actual extraction executor');
+assert.match(binding,/executeSitePipeline/,'site UI must invoke the unified extraction-to-factory runtime pipeline');
+assert.match(read('omega_resource_industrial_network_v1.js'),/executeSitePipeline/,'industrial runtime must export the executable site pipeline API');
 assert.match(binding,/No country-average substitution/,'UI must explicitly prevent average mapping');
 
 const runtimeContext={

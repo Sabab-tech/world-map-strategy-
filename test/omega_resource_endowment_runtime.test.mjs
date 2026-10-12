@@ -226,5 +226,117 @@ for(const [countryId,row] of Object.entries(worldState)){
   }
 }
 
+
+
+// REAL ENDOWMENT -> INDUSTRIAL NETWORK END-TO-END REGRESSION
+// This deliberately uses the real ResourceMinistryEngine + Endowment Runtime above.
+// The industrial network is not allowed to manufacture a fake extraction batch in this fixture.
+globalThis.OmegaResourceIndustrialCatalogData=JSON.parse(
+  fs.readFileSync(new URL('../resource_industrial_catalog_v1.json',import.meta.url),'utf8')
+);
+await import('../omega_resource_industrial_network_v1.js');
+const industrial=globalThis.Omega?.ResourceIndustrialNetwork||globalThis.OmegaResourceIndustrialNetwork;
+assert.ok(industrial?.executeSitePipeline,'industrial runtime must export the individual site pipeline');
+assert.equal((await industrial.loadCatalog()).status,'READY');
+
+const realPipelineSiteId='SITE_KWT_greater_burgan_oilfield';
+const masterRows=globalThis.OmegaResourceSiteMasterResearchData?.sites||[];
+const realPipelineSite=masterRows.find(s=>String(s?.siteId||'')===realPipelineSiteId);
+assert.ok(realPipelineSite,'real Greater Burgan record must exist in the authoritative 250-site master registry');
+const realPipelineResourceId=String(realPipelineSite?.real?.resourceId||
+  realPipelineSite?.sourceSiteRecord?.resourceId||
+  realPipelineSite?.sourceSiteRecord?.resourceTypeId||
+  realPipelineSite?.identity?.resourceTypeId||'').trim().toLowerCase();
+assert.equal(realPipelineResourceId,'crude_oil',"selected site commodity identity must be retained");
+
+globalThis.Game.state.transport=globalThis.Game.state.transport||{};
+globalThis.Game.state.transport.KWT=globalThis.Game.state.transport.KWT||{
+  infrastructure:{
+    roads:{capacityPerDay:50000,quality:0.9},
+    rail:{capacityPerDay:120000,quality:0.8},
+    ports:{capacityPerDay:200000,quality:0.9},
+    bridges:{capacityPerDay:50000,quality:0.8},
+    pipelines:{capacityPerDay:400000,quality:0.8}
+  }
+};
+globalThis.Game.state.simulation.turn=2;
+await runtime.hydrateCountry('KWT');
+const bindingState=runtime.countryResourceState('KWT')||{};
+const bindingController=bindingState.mineSiteControllers?.[realPipelineSiteId]||
+  Object.values(bindingState.mineSiteControllers||{}).find(x=>String(x?.siteReferenceKey||'')===realPipelineSiteId);
+const bindingKeys=(bindingController?.linkedOccurrenceKeys||[]).map(k=>({
+  key:String(k),resourceId:bindingState.mineStates?.[k]?.resourceId||bindingState.mineStates?.[k]?.resourceTypeId||null,
+  siteReferenceKey:bindingState.mineOutputs?.[k]?.siteReferenceKey||null,
+  depositKey:bindingState.mineStates?.[k]?.depositKey||null
+}));
+console.log('REAL_ENDOWMENT_SITE_BINDING_DEBUG '+JSON.stringify({
+  siteId:realPipelineSiteId,resourceId:realPipelineResourceId,
+  controller:bindingController?{
+    siteReferenceKey:bindingController.siteReferenceKey,
+    controllerStatus:bindingController.controllerStatus,
+    extractionExecutable:bindingController.extractionExecutable,
+    extractionPathStatus:bindingController.extractionPathStatus,
+    linkedOccurrenceKeys:bindingController.linkedOccurrenceKeys
+  }:null,
+  candidateMineStates:Object.entries(bindingState.mineStates||{}).filter(([k,v])=>
+    k.toLowerCase().includes('greater_burgan')||
+    String(v?.depositKey||'').toLowerCase().includes('burgan')
+  ).map(([k,v])=>({key:k,resourceId:v?.resourceId,depositKey:v?.depositKey,siteReferenceKey:v?.siteReferenceKey})),
+  bindingKeys
+}));
+const realPipeline=await industrial.executeSitePipeline({
+  countryId:'KWT',siteId:realPipelineSiteId,resourceId:realPipelineResourceId,
+  autoCommissionFactory:true,transportMode:'rail'
+});
+assert.equal(realPipeline.status,'IN_TRANSIT',
+  'real Endowment extraction must commit and dispatch a site-specific shipment: '+JSON.stringify({
+    status:realPipeline.status,reason:realPipeline.reason,countryId:realPipeline.countryId,siteId:realPipeline.siteId,
+    resourceId:realPipeline.resourceId,controllerStatus:realPipeline.controllerStatus,linkedOccurrenceCount:realPipeline.linkedOccurrenceCount,
+    referenceResource:realPipeline.referenceResource,extractionStatus:realPipeline.extractionStatus,
+    shipmentStatus:realPipeline.shipmentStatus,detail:realPipeline.detail
+  }));
+assert.equal(realPipeline.extractionStatus,'COMMITTED');
+assert.ok(realPipeline.batchId,'real extraction must return its own batch ID');
+assert.ok(realPipeline.occurrenceKey,'pipeline must retain the controller-linked occurrence key');
+assert.ok(realPipeline.shipmentId,'pipeline must persist a shipment ID');
+assert.ok(realPipeline.factoryId,'shipment must target a concrete country-scoped factory asset');
+assert.ok((globalThis.Game.state.economy?.KWT?.productionAssets||[]).some(x=>String(x?.id||x?.assetId||x?.projectId)===realPipeline.factoryId),
+  'auto-commissioned processing factory must persist in the Kuwait economy state');
+
+const preDeliveryState=runtime.countryResourceState('KWT');
+const beforeWarehouse=Number(preDeliveryState?.warehouse?.availableByResource?.[realPipelineResourceId]||0);
+const beforeReserved=Number(preDeliveryState?.warehouse?.reservedByResource?.[realPipelineResourceId]||0);
+const beforeCountryRaw=Number(preDeliveryState?.inventory?.[realPipelineResourceId]||0);
+const deliveredQuantity=Number(realPipeline.shipment?.quantity||0);
+assert.ok(deliveredQuantity>0,'route must dispatch a positive quantity');
+assert.ok(beforeWarehouse>=deliveredQuantity,'real extraction batch must be in the sovereign raw warehouse before shipment arrival');
+assert.ok(beforeReserved>=deliveredQuantity,'shipment quantity must be reserved in the raw warehouse before arrival');
+
+globalThis.Game.state.simulation.turn=Number(realPipeline.shipment.etaTurn);
+const realDelivery=industrial.advanceShipments('KWT');
+assert.equal(realDelivery.delivered,1,'real site shipment must arrive through the turn-advance runtime');
+const delivered=realDelivery.shipments.find(x=>x.shipmentId===realPipeline.shipmentId);
+assert.ok(delivered,'arrival record must match the committed shipment');
+assert.equal(delivered.destinationStatus,'FACTORY_RECEIVED');
+assert.equal(delivered.processingStatus,'PROCESSED','delivered real Endowment material must enter factory processing');
+const postDeliveryState=runtime.countryResourceState('KWT');
+assert.ok(Math.abs(Number(postDeliveryState.warehouse.availableByResource[realPipelineResourceId])-(beforeWarehouse-deliveredQuantity))<1e-5,
+  'raw warehouse stock must fall by exactly the quantity shipped');
+assert.ok(Math.abs(Number(postDeliveryState.warehouse.reservedByResource[realPipelineResourceId])-(beforeReserved-deliveredQuantity))<1e-5,
+  'shipment reservation must be released exactly once at delivery');
+assert.ok(Math.abs(Number(postDeliveryState.inventory[realPipelineResourceId])-(beforeCountryRaw-deliveredQuantity))<1e-5,
+  'country raw inventory must be debited exactly once');
+const realProcessedOutputs=Object.keys(delivered.processing?.outputs||{});
+assert.ok(realProcessedOutputs.length>0,'real factory cycle must produce at least one output');
+assert.ok(realProcessedOutputs.every(k=>Number(postDeliveryState.inventory[k])>0),
+  'real processed outputs must be recorded in country inventory');
+const executionLedger=postDeliveryState.industrialNetwork?.siteExecutions||[];
+assert.ok(executionLedger.some(x=>x.siteId===realPipelineSiteId&&x.batchId===realPipeline.batchId&&x.occurrenceKey===realPipeline.occurrenceKey),
+  'site execution ledger must preserve the exact site, batch and occurrence identities');
+assert.ok((postDeliveryState.industrialNetwork?.events||[]).some(x=>x.transactionId===delivered.processingTransactionId&&x.status==='COMPLETED'),
+  'factory processing must be represented in the industrial event ledger');
+
+
 if(nativeFetch)globalThis.fetch=nativeFetch;
+// This completion line is reached only after the real site pipeline assertions above pass.
 console.log('OMEGA RESOURCE JSON -> MINE -> BATCH -> WAREHOUSE -> FACTORY EVENT TEST PASSED');
