@@ -6,6 +6,13 @@ const catalog=JSON.parse(fs.readFileSync('resource_industrial_catalog_v1.json','
 const context={
   console,Math,Number,String,Object,Array,Set,Map,WeakMap,JSON,Date,Promise,Intl,
   OmegaResourceIndustrialCatalogData:catalog,
+  OmegaCanonicalIdentityRegistry:{
+    resolveCountry(value){
+      const key=String(value??'').trim().toUpperCase();
+      if(key==='KUWAIT'||key==='KW'||key==='KWT')return{id:'KW',raw:{iso3:'KWT',iso2:'KW',name:'Kuwait'}};
+      return null;
+    }
+  },
   OmegaResourceSiteMasterResearchData:{
     siteCount:3,
     sites:[
@@ -167,6 +174,15 @@ assert.ok(context.Game.state.resource.BGD.inventory.TAILINGS>0,'processing by-pr
 assert.equal(context.Game.state.resource.BGD.warehouse.availableByResource.copper,0,'raw shipment quantity must be removed from warehouse exactly once');
 assert.equal(context.Game.state.resource.BGD.warehouse.reservedByResource.copper,0,'site shipment reservation must be cleared');
 assert.ok(context.Game.state.resource.BGD.industrialNetwork.events.some(x=>x.transactionId&&x.status==='COMPLETED'),'factory processing must be written to the runtime event ledger');
+
+const kuwaitProject=N.startInfrastructureProject({
+  countryId:'Kuwait',infrastructureType:'road',distanceKm:10,capacityPerDay:100,cost:100
+});
+assert.equal(kuwaitProject.countryId,'KWT','country alias must canonicalize to runtime ISO-3, not ISO-2 display ID');
+assert.ok(context.Game.state.resource.KWT.industrialNetwork.projects.some(x=>x.projectId===kuwaitProject.projectId),
+  'country-scoped industrial state must remain under the matching ISO-3 resource bucket');
+assert.equal(context.Game.state.resource.KW?.industrialNetwork?.projects?.some(x=>x.projectId===kuwaitProject.projectId)||false,false,
+  'country alias resolution must not silently create a competing ISO-2 bucket');
 
 const diag=N.diagnostics();
 assert.equal(diag.siteCount,3);
