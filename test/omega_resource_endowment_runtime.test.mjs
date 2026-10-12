@@ -260,30 +260,6 @@ globalThis.Game.state.transport.KWT=globalThis.Game.state.transport.KWT||{
   }
 };
 globalThis.Game.state.simulation.turn=2;
-await runtime.hydrateCountry('KWT');
-const bindingState=runtime.countryResourceState('KWT')||{};
-const bindingController=bindingState.mineSiteControllers?.[realPipelineSiteId]||
-  Object.values(bindingState.mineSiteControllers||{}).find(x=>String(x?.siteReferenceKey||'')===realPipelineSiteId);
-const bindingKeys=(bindingController?.linkedOccurrenceKeys||[]).map(k=>({
-  key:String(k),resourceId:bindingState.mineStates?.[k]?.resourceId||bindingState.mineStates?.[k]?.resourceTypeId||null,
-  siteReferenceKey:bindingState.mineOutputs?.[k]?.siteReferenceKey||null,
-  depositKey:bindingState.mineStates?.[k]?.depositKey||null
-}));
-console.log('REAL_ENDOWMENT_SITE_BINDING_DEBUG '+JSON.stringify({
-  siteId:realPipelineSiteId,resourceId:realPipelineResourceId,
-  controller:bindingController?{
-    siteReferenceKey:bindingController.siteReferenceKey,
-    controllerStatus:bindingController.controllerStatus,
-    extractionExecutable:bindingController.extractionExecutable,
-    extractionPathStatus:bindingController.extractionPathStatus,
-    linkedOccurrenceKeys:bindingController.linkedOccurrenceKeys
-  }:null,
-  candidateMineStates:Object.entries(bindingState.mineStates||{}).filter(([k,v])=>
-    k.toLowerCase().includes('greater_burgan')||
-    String(v?.depositKey||'').toLowerCase().includes('burgan')
-  ).map(([k,v])=>({key:k,resourceId:v?.resourceId,depositKey:v?.depositKey,siteReferenceKey:v?.siteReferenceKey})),
-  bindingKeys
-}));
 const realPipeline=await industrial.executeSitePipeline({
   countryId:'KWT',siteId:realPipelineSiteId,resourceId:realPipelineResourceId,
   autoCommissionFactory:true,transportMode:'rail'
