@@ -1612,11 +1612,12 @@
           "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
         },
         "production": {
-          "annual": null,
+          "annual": 133600,
           "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
+          "unit": "metric_tonnes_refined_copper_per_year",
+          "year": 2025,
+          "status": "REPORTED_OPERATION_OUTPUT",
+          "basis": "Rio Tinto Kennecott page reports 133.6 kt refined copper for 2025; integrated Kennecott operation output, not a standalone mine-only mined-metal figure."
         },
         "grade": {
           "value": "Porphyry copper deposit; site-specific current assay grade not supplied in this record",
@@ -1649,24 +1650,25 @@
         },
         "reportedMetrics": {},
         "quantitativeProvenance": {
-          "structuredSource": null,
+          "structuredSource": "https://www.riotinto.com/en/operations/us/kennecott",
           "capacitySource": null,
           "promotedAt": "2026-10-10"
         },
         "completeness": {
           "reserve": "UNQUANTIFIED",
-          "production": "UNOBSERVED",
-          "grade": "QUALITATIVE_ONLY",
+          "production": "REPORTED_OPERATION_OUTPUT",
+          "grade": "QUALITATIVE_DEPOSIT_DESCRIPTION_NOT_ASSAY",
           "recovery": "UNOBSERVED",
           "purity": "UNOBSERVED",
           "capacity": "UNOBSERVED",
-          "structuredEvidence": false,
-          "overall": "IDENTITY_AND_LOCATION_ENRICHED_QUANTITATIVES_REQUIRE_RESEARCH"
+          "structuredEvidence": true,
+          "overall": "SITE_SPECIFIC_PRIMARY_SOURCE_RESEARCH_PARTIAL",
+          "throughput": "UNOBSERVED"
         }
       },
       "verification": {
-        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_REQUIRES_FIELD_REVALIDATION",
-        "reviewedAt": "2026-10-10",
+        "researchState": "PRIMARY_SOURCE_QUANTITATIVE_RESEARCH_UPDATED",
+        "reviewedAt": "2026-10-12",
         "sourceCount": 1,
         "sourceAuthorities": [
           "OPERATOR_OR_PUBLIC_SITE_REFERENCE"
@@ -2084,11 +2086,12 @@
           "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
         },
         "production": {
-          "annual": null,
+          "annual": 348959,
           "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
+          "unit": "metric_tonnes_copper_in_concentrate_per_year",
+          "year": 2024,
+          "status": "REPORTED",
+          "basis": "Southern Copper Annual Report 2024: mine production copper in concentrates; SX/EW cathode production is not included in this mine-level line."
         },
         "grade": {
           "value": "Copper ore; no numeric assay assigned",
@@ -2119,27 +2122,42 @@
           "unit": null,
           "status": "UNOBSERVED"
         },
-        "reportedMetrics": {},
+        "reportedMetrics": {
+          "oreMined": {
+            "annual": 335904000,
+            "unit": "metric_tonnes_mined_material_per_year",
+            "year": 2024,
+            "status": "REPORTED",
+            "basis": "Southern Copper FY2024 Annual Report; 335.904 million tonnes mined material."
+          },
+          "copperSxEwProduction": {
+            "value": null,
+            "unit": "metric_tonnes_copper_cathode_per_year",
+            "year": 2024,
+            "status": "NOT_SEPARATELY_DISCLOSED_IN_MINE_TABLE"
+          }
+        },
         "quantitativeProvenance": {
-          "structuredSource": null,
+          "structuredSource": "https://southerncoppercorp.com/wp-content/uploads/2025/06/m2024.pdf",
           "capacitySource": null,
           "promotedAt": "2026-10-10"
         },
         "completeness": {
           "reserve": "UNQUANTIFIED",
-          "production": "UNOBSERVED",
-          "grade": "QUALITATIVE_ONLY",
+          "production": "REPORTED",
+          "grade": "QUALITATIVE_ONLY_NOT_ASSAY",
           "recovery": "UNOBSERVED",
           "purity": "UNOBSERVED",
           "capacity": "UNOBSERVED",
-          "structuredEvidence": false,
-          "overall": "IDENTITY_AND_LOCATION_ENRICHED_QUANTITATIVES_REQUIRE_RESEARCH"
+          "structuredEvidence": true,
+          "overall": "SITE_SPECIFIC_PRIMARY_SOURCE_RESEARCH_PARTIAL",
+          "throughput": "UNOBSERVED"
         }
       },
       "verification": {
-        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_REQUIRES_FIELD_REVALIDATION",
-        "reviewedAt": "2026-10-10",
-        "sourceCount": 1,
+        "researchState": "PRIMARY_SOURCE_QUANTITATIVE_RESEARCH_UPDATED",
+        "reviewedAt": "2026-10-12",
+        "sourceCount": 2,
         "sourceAuthorities": [
           "OPERATOR_OR_GOVERNMENT_REFERENCE"
         ],
@@ -2154,6 +2172,10 @@
           {
             "url": "https://www.americasmining.com/eng/our-history",
             "scope": "site identity, commodity, region and/or operator; validate each field before marking verified"
+          },
+          {
+            "url": "https://southerncoppercorp.com/wp-content/uploads/2025/06/m2024.pdf",
+            "scope": "Southern Copper Annual Report 2024: Buenavista 348,959 t copper in concentrates and 335.904 Mt mined material; distinct from company-wide total copper."
           }
         ]
       },
@@ -5254,10 +5276,11 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": null,
-          "unit": null,
-          "status": "UNQUANTIFIED",
-          "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
+          "quantity": 2900000,
+          "unit": "troy_ounces_gold_contained",
+          "year": 2024,
+          "status": "REPORTED_ATTRIBUTABLE_MINERAL_RESERVES",
+          "basis": "Barrick Annual Report 2024 reports 2.9 Moz attributable reserves at 84% ownership."
         },
         "production": {
           "annual": null,
@@ -5267,9 +5290,11 @@
           "status": "UNOBSERVED"
         },
         "grade": {
-          "value": "Gold deposit; site-specific numeric assay not established in this tranche",
-          "unit": null,
-          "status": "QUALITATIVE_ONLY"
+          "value": 2.39,
+          "unit": "grams_per_tonne_gold",
+          "status": "REPORTED_MINERAL_RESERVE_GRADE",
+          "year": 2024,
+          "basis": "Barrick 2024 reserve table; weighted reserve grade, not current mill-feed grade."
         },
         "recovery": {
           "value": null,
@@ -5298,16 +5323,14 @@
         },
         "reportedMetrics": {},
         "quantitativeProvenance": {
-          "structuredSource": [
-            "https://www.barrick.com/English/news/news-details/2023/tanzanian-assets-deliver-record-production-and-create-long-term-value/default.aspx"
-          ],
+          "structuredSource": "https://www.barrick.com/English/news/news-details/2025/q4-2024-results/default.aspx",
           "capacitySource": "https://www.barrick.com/English/operations/north-mara/default.aspx",
           "promotedAt": "2026-10-10"
         },
         "completeness": {
-          "reserve": "UNQUANTIFIED",
+          "reserve": "REPORTED_ATTRIBUTABLE_MINERAL_RESERVES",
           "production": "UNOBSERVED",
-          "grade": "QUALITATIVE_ONLY",
+          "grade": "REPORTED_MINERAL_RESERVE_GRADE",
           "recovery": "UNOBSERVED",
           "purity": "UNOBSERVED",
           "capacity": "OPERATOR_REPORTED_PROCESSING_CAPACITY",
@@ -5319,7 +5342,7 @@
       "verification": {
         "researchState": "PRIMARY_SOURCE_QUANTITATIVE_RESEARCH_UPDATED",
         "reviewedAt": "2026-10-12",
-        "sourceCount": 2,
+        "sourceCount": 3,
         "sourceAuthorities": [
           "MINE_OPERATOR_OR_TECHNICAL_REPORT"
         ],
@@ -5338,6 +5361,10 @@
           {
             "url": "https://www.barrick.com/English/operations/north-mara/default.aspx",
             "scope": "Barrick official operations page: processing plant capacity average 8,000 tonnes ore/day."
+          },
+          {
+            "url": "https://www.barrick.com/English/news/news-details/2025/q4-2024-results/default.aspx",
+            "scope": "Barrick 2024 reserve statement: North Mara 2.9 Moz attributable gold reserves at 2.39 g/t, 84% ownership basis."
           }
         ]
       },
@@ -6379,40 +6406,40 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": 47000000,
-          "unit": "metric_tonnes_ore",
+          "quantity": 4600000,
+          "unit": "troy_ounces_gold_contained",
           "year": 2024,
-          "status": "REPORTED",
-          "basis": "Barrick 2024 attributable mineral reserve table reports 47 Mt on 45% basis; see source before downstream interpretation"
+          "status": "REPORTED_ATTRIBUTABLE_MINERAL_RESERVES",
+          "basis": "Barrick reserve table, 45% attributable basis."
         },
         "production": {
-          "annual": 309000,
+          "annual": 343000,
           "rate": null,
           "unit": "troy_ounces_gold_per_year",
           "year": 2024,
-          "status": "REPORTED",
-          "basis": "Barrick 45% attributable basis"
+          "status": "REPORTED_ATTRIBUTABLE",
+          "basis": "Barrick's 45% attributable share; do not label as 100% mine output."
         },
         "grade": {
-          "value": 2.82,
-          "unit": "g/t Au processed",
-          "status": "REPORTED",
+          "value": 3.21,
+          "unit": "grams_per_tonne_gold",
+          "status": "REPORTED_AVERAGE_PROCESSED_GRADE",
           "year": 2024,
-          "basis": "Average grade processed"
+          "basis": "Barrick 2024 Annual Report; average grade of processed ore."
         },
         "recovery": {
-          "value": 89,
+          "value": 90,
           "unit": "percent",
           "year": 2024,
-          "status": "REPORTED",
-          "basis": "Average recovery"
+          "status": "REPORTED_APPROXIMATE",
+          "basis": "Barrick 2024 Annual Report; rounded annual recovery rate."
         },
         "throughput": {
-          "value": 3827000,
-          "unit": "metric_tonnes_per_year",
+          "value": 3700000,
+          "unit": "metric_tonnes_ore_processed_per_year",
           "year": 2024,
-          "status": "REPORTED",
-          "basis": "Ore tonnes processed; Barrick reporting table"
+          "status": "REPORTED_APPROXIMATE",
+          "basis": "Barrick 2024 Annual Report; 3,700 thousand tonnes processed."
         },
         "purity": {
           "value": null,
@@ -6428,26 +6455,26 @@
         },
         "reportedMetrics": {},
         "quantitativeProvenance": {
-          "structuredSource": "https://www.barrick.com/files/doc_downloads/agm/2025/Barrick_2024_Annual_Information_Form.pdf",
+          "structuredSource": "https://www.barrick.com/files/doc_financial/annual_reports/2024/Barrick_Annual_Report_2024.pdf",
           "capacitySource": null,
           "promotedAt": "2026-10-11"
         },
         "completeness": {
-          "reserve": "REPORTED",
-          "production": "REPORTED",
-          "grade": "REPORTED",
-          "recovery": "REPORTED",
+          "reserve": "REPORTED_ATTRIBUTABLE_MINERAL_RESERVES",
+          "production": "REPORTED_ATTRIBUTABLE",
+          "grade": "REPORTED_AVERAGE_PROCESSED_GRADE",
+          "recovery": "REPORTED_APPROXIMATE",
           "purity": "UNOBSERVED",
           "capacity": "UNOBSERVED",
           "structuredEvidence": true,
-          "overall": "SITE_IDENTITY_ENRICHED_FIELD_LEVEL_RESEARCH_PARTIAL",
-          "throughput": "REPORTED"
+          "overall": "SITE_SPECIFIC_PRIMARY_SOURCE_RESEARCH_PARTIAL",
+          "throughput": "REPORTED_APPROXIMATE"
         }
       },
       "verification": {
-        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_FIELD_LEVEL_REVIEW_REQUIRED",
-        "reviewedAt": "2026-10-11",
-        "sourceCount": 1,
+        "researchState": "PRIMARY_SOURCE_QUANTITATIVE_RESEARCH_UPDATED",
+        "reviewedAt": "2026-10-12",
+        "sourceCount": 2,
         "sourceAuthorities": [
           "BARRICK"
         ],
@@ -6462,6 +6489,10 @@
           {
             "url": "https://www.barrick.com/files/doc_downloads/agm/2025/Barrick_2024_Annual_Information_Form.pdf",
             "scope": "Site identity and cited field(s); revalidate field-level claims and ownership/operating status before authoritative promotion."
+          },
+          {
+            "url": "https://www.barrick.com/files/doc_financial/annual_reports/2024/Barrick_Annual_Report_2024.pdf",
+            "scope": "Barrick Annual Report 2024: 343 koz attributable gold, 3.21 g/t processed grade, 3.7 Mt processed, 90% recovery and 4.6 Moz attributable reserves."
           }
         ]
       },
