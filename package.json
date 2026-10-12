@@ -49,7 +49,7 @@
     "test:resource-research": "node test/omega_resource_research_runtime.test.mjs",
     "test:resource-research-evidence": "node test/omega_resource_research_evidence.test.mjs",
     "test:resource-industrial-network": "node test/omega_resource_industrial_network_v1.test.mjs",
-    "test:resource-country-expansion": "node --test test/omega_resource_site_country_expansion.test.mjs && node --test test/omega_resource_site_data_contract.test.mjs",
+    "test:resource-country-expansion": "node --test test/omega_resource_site_country_expansion.test.mjs && node --test test/omega_resource_site_data_contract.test.mjs && node test/omega_resource_verified_legacy_restoration.test.mjs",
     "test:resource-gameplay-binding": "node --check omega_resource_gameplay_binding_v1.js && node test/omega_resource_gameplay_binding.test.mjs",
     "test:resource-site-data-contract": "node --test test/omega_resource_site_data_contract.test.mjs"
   },

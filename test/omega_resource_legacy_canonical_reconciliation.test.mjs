@@ -8,13 +8,19 @@ const master = read('resource_site_master_registry_v1.json');
 const canonical = read('resource_site_canonical_catalog_v1.json');
 const reserveScenario = read('resource_site_reserve_simulation_v1.json');
 
+const restoration = read('resource_site_verified_legacy_restoration_v1.json');
+const expectedSiteCount = 250 + restoration.records.length;
+const expectedCommercialSiteCount = 246 + restoration.records.length;
+
+
+
 assert.equal(archived.records.length, 114, 'preserve all embedded historical rows');
 assert.equal(archived.resourcesJsonDeposits.length, 62, 'preserve all historical JSON deposit rows');
 assert.equal(reconstructed.records.length, 1095, 'preserve all reconstructed profile markers');
-assert.equal(master.sites.length, 250);
-assert.equal(canonical.sites.length, 250);
-assert.equal(reserveScenario.siteCount, 250);
-assert.equal(reserveScenario.commercialSiteCount, 246);
+assert.equal(master.sites.length, expectedSiteCount);
+assert.equal(canonical.sites.length, expectedSiteCount);
+assert.equal(reserveScenario.siteCount, expectedSiteCount);
+assert.equal(reserveScenario.commercialSiteCount, expectedCommercialSiteCount);
 
 const norm = value => String(value ?? '').toLowerCase().normalize('NFKD')
   .replace(/\p{M}/gu, '').replace(/[^a-z0-9]+/g, ' ').trim();
@@ -74,8 +80,8 @@ const activeSites = master.sites.map(site => {
   };
 });
 const canonicalIds = new Set(canonical.sites.map(site => site.siteId));
-assert.equal(canonicalIds.size, 250, 'canonical IDs must remain unique');
-assert.equal(new Set(activeSites.map(site => site.siteId)).size, 250, 'master IDs must remain unique');
+assert.equal(canonicalIds.size, expectedSiteCount, 'canonical IDs must remain unique');
+assert.equal(new Set(activeSites.map(site => site.siteId)).size, expectedSiteCount, 'master IDs must remain unique');
 
 const candidates = [
   ...archived.records.map(row => ({ sourceType: 'EMBEDDED_ENGINE', ...row })),

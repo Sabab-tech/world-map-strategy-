@@ -8,9 +8,12 @@ const expansion = JSON.parse(read('resource_site_country_expansion_v1.json'));
 const overlay = JSON.parse(read('resource_site_research_facts_overlay_v1.json'));
 const endowment = read('omega_resource_endowment_runtime.js');
 const mapBinding = read('omega_resource_gameplay_binding_v1.js');
+const restoration = JSON.parse(read('resource_site_verified_legacy_restoration_v1.json'));
+const expectedSiteCount = 250 + restoration.records.length;
 
-assert.equal(base.siteCount, 250);
-assert.equal(base.sites.length, 250);
+
+assert.equal(base.siteCount, expectedSiteCount);
+assert.equal(base.sites.length, expectedSiteCount);
 assert.equal(expansion.datasetId, 'OMEGA_RESOURCE_SITE_COUNTRY_EXPANSION_V1');
 assert.equal(expansion.siteCount, 0);
 assert.equal(expansion.records.length, 0);
@@ -48,7 +51,7 @@ for (const site of migratedSites) {
 }
 assert.ok(countries.size >= 9, 'migrated tranche must cover multiple countries');
 assert.match(endowment, /resource_site_country_expansion_v1\.json/, 'runtime may read the migration manifest but canonical rows are authoritative');
-assert.match(endowment, /if\(rows\.length!==250\)/, 'runtime master registry guard must match 250 canonical sites');
+assert.match(endowment, /new Set\(rowIds\)\.size!==rows\.length/, 'runtime master guard must validate unique IDs and declared row count');
 assert.match(mapBinding, /resource_site_country_expansion_v1\.json/, 'map migration audit manifest remains available');
 assert.match(mapBinding, /\[\.\.\.baseCatalogSites,\.\.\.expansionSites\]/, 'canonical site candidates still pass through the existing marker join');
 

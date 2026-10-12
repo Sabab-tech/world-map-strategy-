@@ -1,19 +1,23 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import { readFileSync } from 'node:fs';
 import { createContext, Script } from 'node:vm';
 
+const restorationManifest=JSON.parse(fs.readFileSync(new URL('../resource_site_verified_legacy_restoration_v1.json',import.meta.url),'utf8'));
+const expectedSiteCount=250+restorationManifest.records.length;
+const expectedCommercialSiteCount=246+restorationManifest.records.length;
 const load=name=>JSON.parse(readFileSync(name,'utf8'));
 const catalog=load('resource_site_canonical_catalog_v1.json');
 const data=load('resource_site_reserve_simulation_v1.json');
 
-assert.equal(catalog.siteCount,250);
-assert.equal(data.siteCount,250);
-assert.equal(data.records.length,250);
+assert.equal(catalog.siteCount,expectedSiteCount);
+assert.equal(data.siteCount,expectedSiteCount);
+assert.equal(data.records.length,expectedSiteCount);
 
 const catalogMap=new Map(catalog.sites.map(s=>[s.siteId,s]));
 const reserveMap=new Map(data.records.map(r=>[r.siteId,r]));
-assert.equal(catalogMap.size,250);
-assert.equal(reserveMap.size,250);
+assert.equal(catalogMap.size,expectedSiteCount);
+assert.equal(reserveMap.size,expectedSiteCount);
 
 const sameResourceValues=new Map();
 for(const [siteId,site] of catalogMap){
@@ -39,10 +43,10 @@ for(const [siteId,site] of catalogMap){
   assert.equal(r.provenance.authority,'SCENARIO_SIMULATION_DATA');
   assert.equal(r.provenance.realWorldDataRequired,false);
 }
-assert.equal(data.commercialSiteCount,246);
+assert.equal(data.commercialSiteCount,expectedCommercialSiteCount);
 assert.equal(data.notApplicableSiteCount,4);
 
-console.log(JSON.stringify({certificate:'OMEGA-250-PER-SITE-RESERVE-DATA',status:'PASS',siteCount:250,commercialSiteCount:246,notApplicableSiteCount:4,uniqueSiteIds:reserveMap.size,countryBinding:'PASS',resourceBinding:'PASS',perIdentityReserve:'PASS'},null,2));
+console.log(JSON.stringify({certificate:'OMEGA-PER-SITE-RESERVE-DATA',status:'PASS',siteCount:expectedSiteCount,commercialSiteCount:expectedCommercialSiteCount,notApplicableSiteCount:4,uniqueSiteIds:reserveMap.size,countryBinding:'PASS',resourceBinding:'PASS',perIdentityReserve:'PASS'},null,2));
 
 const context=createContext({console,globalThis:null});
 context.globalThis=context;
@@ -62,5 +66,5 @@ for(const site of catalog.sites){
   assert.equal(stream.reserve.unit,r.reserve.unit);
   runtimeChecked++;
 }
-assert.equal(runtimeChecked,246);
+assert.equal(runtimeChecked,expectedCommercialSiteCount);
 console.log('OMEGA RUNTIME PER-SITE RESERVE CONSUMPTION CERTIFICATE PASSED');

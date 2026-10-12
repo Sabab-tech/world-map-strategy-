@@ -2,8 +2,8 @@
   "schemaVersion": "1.0.0",
   "datasetId": "OMEGA_RESOURCE_SITE_RESERVE_SIMULATION_V1",
   "generatedAt": "2026-10-12",
-  "siteCount": 250,
-  "commercialSiteCount": 246,
+  "siteCount": 260,
+  "commercialSiteCount": 256,
   "notApplicableSiteCount": 4,
   "authority": "SCENARIO_SIMULATION_DATA",
   "note": "Observed/geological facts remain in canonical site records; this file is the separate gameplay reserve authority. New tranche reserves are simulated per identity and explicitly sized for a 350-450 year gameplay horizon.",
@@ -4960,6 +4960,206 @@
         "annualOutputBasis": 198142,
         "annualOutputUnit": "TROY_OUNCES",
         "annualOutputSource": "reported annual output or lower bound used only as scenario seed; simulation remains separate"
+      }
+    },
+    {
+      "siteId": "SITE_BGD_bibiyana_gas_field",
+      "countryId": "BGD",
+      "resourceId": "natural_gas",
+      "siteName": "Bibiyana Gas Field",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 137.101,
+        "unit": "BCM",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_BGD_bibiyana_gas_field|BGD|natural_gas",
+        "basis": "Additive per-site gameplay reserve assumption; observed facts are separately held in canonical quantitative fields.",
+        "realWorldDataRequired": false,
+        "restorationManifest": "resource_site_verified_legacy_restoration_v1.json"
+      }
+    },
+    {
+      "siteId": "SITE_BGD_titas_gas_deposit",
+      "countryId": "BGD",
+      "resourceId": "natural_gas",
+      "siteName": "Titas Gas Deposit",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 142.202,
+        "unit": "BCM",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_BGD_titas_gas_deposit|BGD|natural_gas",
+        "basis": "Additive per-site gameplay reserve assumption; observed facts are separately held in canonical quantitative fields.",
+        "realWorldDataRequired": false,
+        "restorationManifest": "resource_site_verified_legacy_restoration_v1.json"
+      }
+    },
+    {
+      "siteId": "SITE_IND_jharia_coalfield",
+      "countryId": "IND",
+      "resourceId": "coal",
+      "siteName": "Jharia Coal Field",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 1212345678,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_IND_jharia_coalfield|IND|coal",
+        "basis": "Additive per-site gameplay reserve assumption; observed facts are separately held in canonical quantitative fields.",
+        "realWorldDataRequired": false,
+        "restorationManifest": "resource_site_verified_legacy_restoration_v1.json"
+      }
+    },
+    {
+      "siteId": "SITE_IND_mumbai_high_oil_field",
+      "countryId": "IND",
+      "resourceId": "crude_oil",
+      "siteName": "Mumbai High Offshore Oil Field",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 11678901234,
+        "unit": "BBL",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_IND_mumbai_high_oil_field|IND|crude_oil",
+        "basis": "Additive per-site gameplay reserve assumption; observed facts are separately held in canonical quantitative fields.",
+        "realWorldDataRequired": false,
+        "restorationManifest": "resource_site_verified_legacy_restoration_v1.json"
+      }
+    },
+    {
+      "siteId": "SITE_PAK_saindak_copper_gold_mine",
+      "countryId": "PAK",
+      "resourceId": "copper",
+      "siteName": "Saindak Copper-Gold Deposit",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 91234567,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_PAK_saindak_copper_gold_mine|PAK|copper",
+        "basis": "Additive per-site gameplay reserve assumption; observed facts are separately held in canonical quantitative fields.",
+        "realWorldDataRequired": false,
+        "restorationManifest": "resource_site_verified_legacy_restoration_v1.json"
+      }
+    },
+    {
+      "siteId": "SITE_EGY_zohr_gas_field",
+      "countryId": "EGY",
+      "resourceId": "natural_gas",
+      "siteName": "Zohr Gas Field Mediterranean",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 157.404,
+        "unit": "BCM",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_EGY_zohr_gas_field|EGY|natural_gas",
+        "basis": "Additive per-site gameplay reserve assumption; observed facts are separately held in canonical quantitative fields.",
+        "realWorldDataRequired": false,
+        "restorationManifest": "resource_site_verified_legacy_restoration_v1.json"
+      }
+    },
+    {
+      "siteId": "SITE_DZA_hassi_rmel_gas_field",
+      "countryId": "DZA",
+      "resourceId": "natural_gas",
+      "siteName": "Hassi R'Mel Natural Gas Basin",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 163.505,
+        "unit": "BCM",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_DZA_hassi_rmel_gas_field|DZA|natural_gas",
+        "basis": "Additive per-site gameplay reserve assumption; observed facts are separately held in canonical quantitative fields.",
+        "realWorldDataRequired": false,
+        "restorationManifest": "resource_site_verified_legacy_restoration_v1.json"
+      }
+    },
+    {
+      "siteId": "SITE_AUS_greenbushes_lithium_mine",
+      "countryId": "AUS",
+      "resourceId": "lithium",
+      "siteName": "Greenbushes Lithium Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 913456789,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_AUS_greenbushes_lithium_mine|AUS|lithium",
+        "basis": "Additive per-site gameplay reserve assumption; observed facts are separately held in canonical quantitative fields.",
+        "realWorldDataRequired": false,
+        "restorationManifest": "resource_site_verified_legacy_restoration_v1.json"
+      }
+    },
+    {
+      "siteId": "SITE_CHL_salar_de_atacama_lithium_brine_field",
+      "countryId": "CHL",
+      "resourceId": "lithium",
+      "siteName": "Salar de Atacama Lithium Reserve",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 731.731,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_CHL_salar_de_atacama_lithium_brine_field|CHL|lithium",
+        "basis": "Additive per-site gameplay reserve assumption; observed facts are separately held in canonical quantitative fields.",
+        "realWorldDataRequired": false,
+        "restorationManifest": "resource_site_verified_legacy_restoration_v1.json"
+      }
+    },
+    {
+      "siteId": "SITE_CHN_bayan_obo_main_iron_ore_mine",
+      "countryId": "CHN",
+      "resourceId": "iron_ore",
+      "siteName": "Bayan Obo Main Iron Ore Mine",
+      "commercialExtraction": true,
+      "reserve": {
+        "quantity": 19303000000,
+        "unit": "TONNES",
+        "status": "SIMULATED"
+      },
+      "provenance": {
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "method": "PER_SITE_IDENTITY_RESERVE_ALLOCATION_V1",
+        "seedKey": "SITE_CHN_bayan_obo_main_iron_ore_mine|CHN|iron_ore",
+        "basis": "Additive per-site gameplay reserve assumption; observed facts are separately held in canonical quantitative fields.",
+        "realWorldDataRequired": false,
+        "restorationManifest": "resource_site_verified_legacy_restoration_v1.json"
       }
     }
   ]

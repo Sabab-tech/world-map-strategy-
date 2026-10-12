@@ -1,0 +1,343 @@
+{
+  "schemaVersion": "1.0.0",
+  "datasetId": "OMEGA_RESOURCE_VERIFIED_LEGACY_RESTORATION_V1",
+  "generatedAt": "2026-10-12",
+  "authority": "MANUALLY_REVIEWED_SOURCE_BACKED_PROMOTION",
+  "baselineCanonicalSiteCount": 250,
+  "restoredSiteCount": 10,
+  "expectedCanonicalSiteCount": 260,
+  "historicalArchiveUnmodified": true,
+  "syntheticProfileMarkersPromoted": 0,
+  "policy": "Only individually reviewed historic records with independent sources, valid country, commodity and coordinates are promoted. Historical reserve assumptions and synthetic profile offsets are not observed facts. Source-observed metrics are year-scoped; gameplay reserves remain separate.",
+  "records": [
+    {
+      "siteId": "SITE_BGD_bibiyana_gas_field",
+      "countryId": "BGD",
+      "siteName": "Bibiyana Gas Field",
+      "resourceId": "natural_gas",
+      "sourceArchiveRecordIds": [
+        "LEGACY_MAP_bibiyana_gas_field",
+        "LEGACY_JSON_DEPOSIT_bibiyana_gas_field"
+      ],
+      "decision": "SOURCE_BACKED_RESTORE",
+      "identityAuthority": "CANONICAL_CATALOG",
+      "quantityAuthority": "SIMULATION_RUNTIME",
+      "coordinate": {
+        "lat": 24.63597,
+        "lng": 91.59367,
+        "authority": "PUBLIC_MAP_APPROXIMATE"
+      },
+      "sourceUrls": [
+        "https://bangladesh.chevron.com/our-businesses/bibiyana",
+        "https://www.openstreetmap.org/?mlat=24.63597&mlon=91.59367#map=14/24.63597/91.59367"
+      ],
+      "sourceAuthorities": [
+        "OPERATOR",
+        "PUBLIC_MAP"
+      ],
+      "quantitativeStatus": {
+        "reserve": "UNOBSERVED",
+        "production": "UNOBSERVED",
+        "grade": "UNOBSERVED",
+        "capacity": "UNOBSERVED"
+      },
+      "limitations": "Public map point is approximate; production rate and reserve remain unobserved."
+    },
+    {
+      "siteId": "SITE_BGD_titas_gas_deposit",
+      "countryId": "BGD",
+      "siteName": "Titas Gas Deposit",
+      "resourceId": "natural_gas",
+      "sourceArchiveRecordIds": [
+        "LEGACY_MAP_titas_gas_deposit",
+        "LEGACY_JSON_DEPOSIT_titas_gas_deposit"
+      ],
+      "decision": "SOURCE_BACKED_RESTORE",
+      "identityAuthority": "CANONICAL_CATALOG",
+      "quantityAuthority": "SIMULATION_RUNTIME",
+      "coordinate": {
+        "lat": 23.9952,
+        "lng": 91.1188,
+        "authority": "WGS84_FIELD_LEVEL_COORDINATE"
+      },
+      "sourceUrls": [
+        "https://www.gem.wiki/Titas_Gas_Field_(Bangladesh)",
+        "https://www.petrobangla.org.bd/"
+      ],
+      "sourceAuthorities": [
+        "GAS_TRACKER",
+        "PUBLIC_MAP"
+      ],
+      "quantitativeStatus": {
+        "reserve": "REPORTED",
+        "production": "REPORTED",
+        "grade": "UNOBSERVED",
+        "capacity": "REPORTED"
+      },
+      "limitations": "Reported production/reserve numbers are from 2020, not current daily rates."
+    },
+    {
+      "siteId": "SITE_IND_jharia_coalfield",
+      "countryId": "IND",
+      "siteName": "Jharia Coal Field",
+      "resourceId": "coal",
+      "sourceArchiveRecordIds": [
+        "LEGACY_MAP_jharia_coal_field"
+      ],
+      "decision": "SOURCE_BACKED_RESTORE",
+      "identityAuthority": "CANONICAL_CATALOG",
+      "quantityAuthority": "SIMULATION_RUNTIME",
+      "coordinate": {
+        "lat": 23.75167,
+        "lng": 86.42028,
+        "authority": "APPROXIMATE_COALFIELD_CENTROID"
+      },
+      "sourceUrls": [
+        "https://coal.gov.in/major-statistics/coal-reserves",
+        "https://www.mindat.org/loc-147189.html",
+        "https://www.bcclweb.in/"
+      ],
+      "sourceAuthorities": [
+        "GOVERNMENT",
+        "GEOLOGICAL_REFERENCE"
+      ],
+      "quantitativeStatus": {
+        "reserve": "UNOBSERVED",
+        "production": "UNOBSERVED",
+        "grade": "UNOBSERVED",
+        "capacity": "UNOBSERVED"
+      },
+      "limitations": "Regional production cluster, not an individual mine; coordinates are an approximate field centroid."
+    },
+    {
+      "siteId": "SITE_IND_mumbai_high_oil_field",
+      "countryId": "IND",
+      "siteName": "Mumbai High Offshore Oil Field",
+      "resourceId": "crude_oil",
+      "sourceArchiveRecordIds": [
+        "LEGACY_MAP_mumbai_high_offshore_oil_rig"
+      ],
+      "decision": "SOURCE_BACKED_RESTORE",
+      "identityAuthority": "CANONICAL_CATALOG",
+      "quantityAuthority": "SIMULATION_RUNTIME",
+      "coordinate": {
+        "lat": 19.41667,
+        "lng": 71.33333,
+        "authority": "PUBLIC_MAP_APPROXIMATE"
+      },
+      "sourceUrls": [
+        "https://ongcindia.com/zh/web/eng/detail?assetClassPK=69670154&assetEntry=69670160",
+        "https://mapcarta.com/15016626"
+      ],
+      "sourceAuthorities": [
+        "OPERATOR",
+        "PUBLIC_MAP"
+      ],
+      "quantitativeStatus": {
+        "reserve": "UNOBSERVED",
+        "production": "UNOBSERVED",
+        "grade": "UNOBSERVED",
+        "capacity": "UNOBSERVED"
+      },
+      "limitations": "The old label said rig; the restored asset is the oil field, not one rig. Public map point is approximate."
+    },
+    {
+      "siteId": "SITE_PAK_saindak_copper_gold_mine",
+      "countryId": "PAK",
+      "siteName": "Saindak Copper-Gold Deposit",
+      "resourceId": "copper",
+      "sourceArchiveRecordIds": [
+        "LEGACY_MAP_saindak_copper_gold_deposit"
+      ],
+      "decision": "SOURCE_BACKED_RESTORE",
+      "identityAuthority": "CANONICAL_CATALOG",
+      "quantityAuthority": "SIMULATION_RUNTIME",
+      "coordinate": {
+        "lat": 29.25083,
+        "lng": 61.61167,
+        "authority": "PUBLIC_GEOLOGICAL_MAP_POINT"
+      },
+      "sourceUrls": [
+        "https://saindak.com.pk/current-projects/",
+        "https://gsp.gov.pk/gsp-achievements/",
+        "https://www.mindat.org/loc-206624.html"
+      ],
+      "sourceAuthorities": [
+        "OPERATOR",
+        "GEOLOGICAL_SURVEY",
+        "PUBLIC_GEOLOGICAL_MAP"
+      ],
+      "quantitativeStatus": {
+        "reserve": "UNOBSERVED",
+        "production": "UNOBSERVED",
+        "grade": "UNOBSERVED",
+        "capacity": "UNOBSERVED"
+      },
+      "limitations": "Official project data separates East, South and North ore bodies; reported figures are not collapsed into a false site-wide reserve."
+    },
+    {
+      "siteId": "SITE_EGY_zohr_gas_field",
+      "countryId": "EGY",
+      "siteName": "Zohr Gas Field Mediterranean",
+      "resourceId": "natural_gas",
+      "sourceArchiveRecordIds": [
+        "LEGACY_MAP_zohr_gas_field_mediterranean"
+      ],
+      "decision": "SOURCE_BACKED_RESTORE",
+      "identityAuthority": "CANONICAL_CATALOG",
+      "quantityAuthority": "SIMULATION_RUNTIME",
+      "coordinate": {
+        "lat": 32.364,
+        "lng": 32.864,
+        "authority": "APPROXIMATE_FIELD_LOCATION"
+      },
+      "sourceUrls": [
+        "https://www.eni.com/en-IT/actions/global-activities/egypt/zohr.html",
+        "https://www.gem.wiki/Zohr_Gas_Field_(Egypt)"
+      ],
+      "sourceAuthorities": [
+        "OPERATOR",
+        "GAS_TRACKER"
+      ],
+      "quantitativeStatus": {
+        "reserve": "UNOBSERVED",
+        "production": "UNOBSERVED",
+        "grade": "UNOBSERVED",
+        "capacity": "UNOBSERVED"
+      },
+      "limitations": "Offshore field point is approximate; source production figures are time-specific and not copied into a live daily rate."
+    },
+    {
+      "siteId": "SITE_DZA_hassi_rmel_gas_field",
+      "countryId": "DZA",
+      "siteName": "Hassi R'Mel Natural Gas Basin",
+      "resourceId": "natural_gas",
+      "sourceArchiveRecordIds": [
+        "LEGACY_MAP_hassi_r_mel_natural_gas_basin",
+        "LEGACY_JSON_DEPOSIT_hassi_r_mel_natural_gas_basin"
+      ],
+      "decision": "SOURCE_BACKED_RESTORE",
+      "identityAuthority": "CANONICAL_CATALOG",
+      "quantityAuthority": "SIMULATION_RUNTIME",
+      "coordinate": {
+        "lat": 32.94722,
+        "lng": 3.17056,
+        "authority": "PUBLISHED_RESEARCH_FIELD_POINT"
+      },
+      "sourceUrls": [
+        "https://www.sciencedirect.com/science/article/pii/S1464343X20303009",
+        "https://www.eia.gov/international/analysis/country/DZA"
+      ],
+      "sourceAuthorities": [
+        "ACADEMIC_RESEARCH",
+        "GOVERNMENT"
+      ],
+      "quantitativeStatus": {
+        "reserve": "UNOBSERVED",
+        "production": "UNOBSERVED",
+        "grade": "UNOBSERVED",
+        "capacity": "UNOBSERVED"
+      },
+      "limitations": "Published coordinate is a field reference point, not a surveyed boundary; current reserve, grade, production and capacity remain unobserved."
+    },
+    {
+      "siteId": "SITE_AUS_greenbushes_lithium_mine",
+      "countryId": "AUS",
+      "siteName": "Greenbushes Lithium Mine",
+      "resourceId": "lithium",
+      "sourceArchiveRecordIds": [
+        "LEGACY_JSON_DEPOSIT_greenbushes_lithium_mine"
+      ],
+      "decision": "SOURCE_BACKED_RESTORE",
+      "identityAuthority": "CANONICAL_CATALOG",
+      "quantityAuthority": "SIMULATION_RUNTIME",
+      "coordinate": {
+        "lat": -33.86946,
+        "lng": 116.0626,
+        "authority": "PUBLIC_MAP_APPROXIMATE"
+      },
+      "sourceUrls": [
+        "https://www.talisonlithium.com/greenbushes-project",
+        "https://www.sec.gov/Archives/edgar/data/915913/000091591326000018/ex961greenbushes2025trs.htm",
+        "https://www.openstreetmap.org/?mlat=-33.86946&mlon=116.0626#map=12/-33.86946/116.0626"
+      ],
+      "sourceAuthorities": [
+        "OPERATOR",
+        "REGULATORY_FILING",
+        "PUBLIC_MAP"
+      ],
+      "quantitativeStatus": {
+        "reserve": "REPORTED",
+        "production": "UNOBSERVED",
+        "grade": "REPORTED",
+        "capacity": "UNOBSERVED"
+      },
+      "limitations": "Coordinates indicate the mining complex, not the lease boundary; reserve and grade are 100% project values."
+    },
+    {
+      "siteId": "SITE_CHL_salar_de_atacama_lithium_brine_field",
+      "countryId": "CHL",
+      "siteName": "Salar de Atacama Lithium Reserve",
+      "resourceId": "lithium",
+      "sourceArchiveRecordIds": [
+        "LEGACY_JSON_DEPOSIT_salar_de_atacama_lithium_reserve"
+      ],
+      "decision": "SOURCE_BACKED_RESTORE",
+      "identityAuthority": "CANONICAL_CATALOG",
+      "quantityAuthority": "SIMULATION_RUNTIME",
+      "coordinate": {
+        "lat": -23.551,
+        "lng": -68.41,
+        "authority": "SEC_REPORT_LOCATION_REFERENCE"
+      },
+      "sourceUrls": [
+        "https://www.sec.gov/Archives/edgar/data/915913/000091591326000018/ex963salardeatacama2025t.htm",
+        "https://www.sec.gov/Archives/edgar/data/909037/000090903725000020/sqm-20241231.htm",
+        "https://www.openstreetmap.org/?mlat=-23.551&mlon=-68.410#map=9/-23.551/-68.410"
+      ],
+      "sourceAuthorities": [
+        "REGULATORY_FILING",
+        "PUBLIC_MAP"
+      ],
+      "quantitativeStatus": {
+        "reserve": "UNOBSERVED",
+        "production": "UNOBSERVED",
+        "grade": "UNOBSERVED",
+        "capacity": "UNOBSERVED"
+      },
+      "limitations": "Basin-level identity spans separate SQM and Albemarle concessions. Site-wide reserve remains unobserved to prevent double counting."
+    },
+    {
+      "siteId": "SITE_CHN_bayan_obo_main_iron_ore_mine",
+      "countryId": "CHN",
+      "siteName": "Bayan Obo Main Iron Ore Mine",
+      "resourceId": "iron_ore",
+      "sourceArchiveRecordIds": [
+        "LEGACY_MAP_bayan_obo_rare_earth_mine"
+      ],
+      "decision": "PROMOTE_WITH_CORRECTED_COMMODITY_IDENTITY",
+      "identityAuthority": "CANONICAL_CATALOG",
+      "quantityAuthority": "SIMULATION_RUNTIME",
+      "coordinate": {
+        "lat": 41.798138,
+        "lng": 109.962814,
+        "authority": "WGS84_TRACKER_COORDINATE"
+      },
+      "sourceUrls": [
+        "https://www.gem.wiki/Bayan_Obo_Main_Mine",
+        "https://pubs.usgs.gov/bul/b2143/intro.html"
+      ],
+      "sourceAuthorities": [
+        "GLOBAL_ENERGY_TRACKER",
+        "GOVERNMENT_GEOLOGY"
+      ],
+      "quantitativeStatus": {
+        "reserve": "REPORTED",
+        "production": "UNOBSERVED",
+        "grade": "UNOBSERVED",
+        "capacity": "REPORTED"
+      },
+      "limitations": "The old marker label said rare-earth mine; current operating-asset tracking identifies this point as the main iron-ore mine. Commodity corrected to iron_ore; REE is not counted as a separate site."
+    }
+  ]
+}

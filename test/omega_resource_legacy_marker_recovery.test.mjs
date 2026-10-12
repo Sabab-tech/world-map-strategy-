@@ -6,6 +6,9 @@ const recovered = readJson('resource_site_legacy_map_recovery_candidates_v1.json
 const synthesized = readJson('resource_site_legacy_profile_marker_reconstruction_v1.json');
 const master = readJson('resource_site_master_registry_v1.json');
 const canonical = readJson('resource_site_canonical_catalog_v1.json');
+const restoration = readJson('resource_site_verified_legacy_restoration_v1.json');
+const expectedSiteCount = 250 + restoration.records.length;
+
 
 const embedded = recovered.records;
 const oldJsonDeposits = recovered.resourcesJsonDeposits;
@@ -15,10 +18,10 @@ assert.equal(embedded.length, 114, 'archive must preserve all 114 historical GEO
 assert.equal(oldJsonDeposits.length, 62, 'archive must preserve the old resources.json#/deposits records');
 assert.equal(synthesized.counts.reconstructedMarkerCount, 1095);
 assert.equal(profileMarkers.length, 1095, 'legacy profile synthesis must be reproducibly archived');
-assert.equal(master.siteCount, 250);
-assert.equal(master.sites.length, 250);
-assert.equal(canonical.sites.length, 250, 'historical archive must never inflate the active canonical catalog');
-assert.equal(new Set(master.sites.map(s => s.siteId)).size, 250);
+assert.equal(master.siteCount, expectedSiteCount);
+assert.equal(master.sites.length, expectedSiteCount);
+assert.equal(canonical.sites.length, expectedSiteCount, 'only explicitly source-backed restoration records may extend canonical authority');
+assert.equal(new Set(master.sites.map(s => s.siteId)).size, expectedSiteCount);
 
 const norm = value => String(value || '').toLowerCase().normalize('NFKD')
   .replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
