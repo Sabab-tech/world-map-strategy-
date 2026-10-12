@@ -1,0 +1,3031 @@
+{
+  "schemaVersion": "1.0.0",
+  "datasetId": "resource_site_legacy_map_recovery_candidates_v1",
+  "generatedAt": "2026-10-12",
+  "purpose": "Preserve historical map-marker records for forensic review without silently promoting old UI data into the authoritative playable mine registry.",
+  "historicalSource": {
+    "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+    "path": "resource_ministry_engine.js",
+    "sha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de",
+    "symbol": "GEOGRAPHIC_DEPOSITS"
+  },
+  "sourceInterpretation": {
+    "entryCount": 114,
+    "countryLabelCount": 45,
+    "status": "UNVERIFIED_LEGACY_CODE_SNAPSHOT",
+    "rationale": "The old engine separately synthesized additional country-profile markers with approximate offsets. Those generated markers are not included here because they were transient derivations rather than a stable independently researched site list."
+  },
+  "countsByCountry": {
+    "BANGLADESH": 9,
+    "INDIA": 6,
+    "PAKISTAN": 4,
+    "USA": 7,
+    "CHINA": 6,
+    "RUSSIA": 6,
+    "SAUDI ARABIA": 3,
+    "QATAR": 1,
+    "UAE": 1,
+    "BAHRAIN": 2,
+    "MALDIVES": 2,
+    "IRAN": 1,
+    "IRAQ": 1,
+    "PALESTINE": 2,
+    "TURKEY": 1,
+    "EGYPT": 4,
+    "ALGERIA": 4,
+    "LIBYA": 4,
+    "MOROCCO": 4,
+    "TUNISIA": 2,
+    "SUDAN": 3,
+    "AUSTRALIA": 3,
+    "JAPAN": 1,
+    "SOUTH_KOREA": 1,
+    "GERMANY": 1,
+    "FRANCE": 1,
+    "UNITED_KINGDOM": 1,
+    "CANADA": 1,
+    "BRAZIL": 1,
+    "CHILE": 1,
+    "KAZAKHSTAN": 1,
+    "SOUTH_AFRICA": 1,
+    "NIGERIA": 1,
+    "INDONESIA": 1,
+    "VIETNAM": 1,
+    "DR CONGO": 3,
+    "GABON": 2,
+    "EQUATORIAL GUINEA": 2,
+    "SAO TOME AND PRINCIPE": 2,
+    "ETHIOPIA": 3,
+    "KENYA": 3,
+    "TANZANIA": 3,
+    "UGANDA": 3,
+    "RWANDA": 2,
+    "BURUNDI": 2
+  },
+  "records": [
+    {
+      "recoveryId": "LEGACY_MAP_sylhet_chhatak_limestone_quarry",
+      "siteName": "Sylhet Chhatak Limestone Quarry",
+      "originalCountryLabel": "BANGLADESH",
+      "countryId": "BGD",
+      "resourceId": "limestone",
+      "coordinates": {
+        "lat": 25.04,
+        "lng": 91.67,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "High Grade",
+      "statusText": "Active Mine",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 335,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_bibiyana_gas_field",
+      "siteName": "Bibiyana Gas Field",
+      "originalCountryLabel": "BANGLADESH",
+      "countryId": "BGD",
+      "resourceId": "natural_gas",
+      "coordinates": {
+        "lat": 24.64,
+        "lng": 91.65,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "4.5 TCF",
+      "statusText": "Major Field",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 336,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_titas_gas_deposit",
+      "siteName": "Titas Gas Deposit",
+      "originalCountryLabel": "BANGLADESH",
+      "countryId": "BGD",
+      "resourceId": "natural_gas",
+      "coordinates": {
+        "lat": 23.98,
+        "lng": 91.11,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "3.2 TCF",
+      "statusText": "Active Field",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 337,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_barapukuria_coal_mine",
+      "siteName": "Barapukuria Coal Mine",
+      "originalCountryLabel": "BANGLADESH",
+      "countryId": "BGD",
+      "resourceId": "coal",
+      "coordinates": {
+        "lat": 25.55,
+        "lng": 88.96,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "390M Tons",
+      "statusText": "Underground Mining",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 338,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_ganges_padma_delta_rice_belt",
+      "siteName": "Ganges-Padma Delta Rice Belt",
+      "originalCountryLabel": "BANGLADESH",
+      "countryId": "BGD",
+      "resourceId": "rice",
+      "coordinates": {
+        "lat": 23.2,
+        "lng": 89.8,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "38M Tons/yr",
+      "statusText": "Agricultural Zone",
+      "historicalMarkerClass": "RESOURCE_OR_INFRASTRUCTURE_CONTEXT",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 339,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_kaptai_hydro_power_dam",
+      "siteName": "Kaptai Hydro Power Dam",
+      "originalCountryLabel": "BANGLADESH",
+      "countryId": "BGD",
+      "resourceId": "electricity",
+      "coordinates": {
+        "lat": 22.49,
+        "lng": 92.22,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "230 MW",
+      "statusText": "Hydroelectric Station",
+      "historicalMarkerClass": "ENERGY_INFRASTRUCTURE",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 340,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_chittagong_hill_tracts_timber_reserve",
+      "siteName": "Chittagong Hill Tracts Timber Reserve",
+      "originalCountryLabel": "BANGLADESH",
+      "countryId": "BGD",
+      "resourceId": "timber",
+      "coordinates": {
+        "lat": 22.5,
+        "lng": 92.3,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "Dense Hardwood",
+      "statusText": "Forestry Reserve",
+      "historicalMarkerClass": "RESOURCE_OR_INFRASTRUCTURE_CONTEXT",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 341,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_sylhet_chhatak_cement_hub",
+      "siteName": "Sylhet Chhatak Cement Hub",
+      "originalCountryLabel": "BANGLADESH",
+      "countryId": "BGD",
+      "resourceId": "cement",
+      "coordinates": {
+        "lat": 25.02,
+        "lng": 91.66,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "5.5M Tons/yr",
+      "statusText": "Industrial Complex",
+      "historicalMarkerClass": "INDUSTRIAL_FACILITY_OR_HUB",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 342,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_jamuna_river_dredged_sand_reserve",
+      "siteName": "Jamuna River Dredged Sand Reserve",
+      "originalCountryLabel": "BANGLADESH",
+      "countryId": "BGD",
+      "resourceId": "sand",
+      "coordinates": {
+        "lat": 24.4,
+        "lng": 89.75,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "Abundant Aggregate",
+      "statusText": "Active Dredging",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 343,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_jharia_coal_field",
+      "siteName": "Jharia Coal Field",
+      "originalCountryLabel": "INDIA",
+      "countryId": "IND",
+      "resourceId": "coal",
+      "coordinates": {
+        "lat": 23.75,
+        "lng": 86.42,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "19B Tons",
+      "statusText": "Active Mining",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 346,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_singhbhum_iron_ore_belt",
+      "siteName": "Singhbhum Iron Ore Belt",
+      "originalCountryLabel": "INDIA",
+      "countryId": "IND",
+      "resourceId": "iron_ore",
+      "coordinates": {
+        "lat": 22.5,
+        "lng": 85.8,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "5B Tons",
+      "statusText": "Major Mine",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 347,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_kudremukh_iron_ore_complex",
+      "siteName": "Kudremukh Iron Ore Complex",
+      "originalCountryLabel": "INDIA",
+      "countryId": "IND",
+      "resourceId": "iron_ore",
+      "coordinates": {
+        "lat": 13.22,
+        "lng": 75.25,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "1.2B Tons",
+      "statusText": "Active Pit",
+      "historicalMarkerClass": "INDUSTRIAL_FACILITY_OR_HUB",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 348,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_punjab_wheat_agricultural_granary",
+      "siteName": "Punjab Wheat Agricultural Granary",
+      "originalCountryLabel": "INDIA",
+      "countryId": "IND",
+      "resourceId": "wheat",
+      "coordinates": {
+        "lat": 30.9,
+        "lng": 75.85,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "110M Tons/yr",
+      "statusText": "Primary Crop",
+      "historicalMarkerClass": "RESOURCE_OR_INFRASTRUCTURE_CONTEXT",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 349,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_mumbai_high_offshore_oil_rig",
+      "siteName": "Mumbai High Offshore Oil Rig",
+      "originalCountryLabel": "INDIA",
+      "countryId": "IND",
+      "resourceId": "crude_oil",
+      "coordinates": {
+        "lat": 19.42,
+        "lng": 71.33,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "1.8B Barrels",
+      "statusText": "Offshore Platform",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 350,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_korba_bauxite_aluminum_smelter",
+      "siteName": "Korba Bauxite & Aluminum Smelter",
+      "originalCountryLabel": "INDIA",
+      "countryId": "IND",
+      "resourceId": "bauxite",
+      "coordinates": {
+        "lat": 22.35,
+        "lng": 82.68,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "320M Tons",
+      "statusText": "Processing Plant",
+      "historicalMarkerClass": "INDUSTRIAL_FACILITY_OR_HUB",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 351,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_saindak_copper_gold_deposit",
+      "siteName": "Saindak Copper-Gold Deposit",
+      "originalCountryLabel": "PAKISTAN",
+      "countryId": "PAK",
+      "resourceId": "copper",
+      "coordinates": {
+        "lat": 29.27,
+        "lng": 61.6,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "412M Tons",
+      "statusText": "Active Mine",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 354,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_thar_coal_field",
+      "siteName": "Thar Coal Field",
+      "originalCountryLabel": "PAKISTAN",
+      "countryId": "PAK",
+      "resourceId": "coal",
+      "coordinates": {
+        "lat": 24.75,
+        "lng": 70.3,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "175B Tons",
+      "statusText": "Open Pit",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 355,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_sui_gas_field",
+      "siteName": "Sui Gas Field",
+      "originalCountryLabel": "PAKISTAN",
+      "countryId": "PAK",
+      "resourceId": "natural_gas",
+      "coordinates": {
+        "lat": 28.63,
+        "lng": 69.3,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "2.0 TCF",
+      "statusText": "Active Field",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 356,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_tarbela_hydro_power_reservoir",
+      "siteName": "Tarbela Hydro Power Reservoir",
+      "originalCountryLabel": "PAKISTAN",
+      "countryId": "PAK",
+      "resourceId": "electricity",
+      "coordinates": {
+        "lat": 34.09,
+        "lng": 72.7,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "4,880 MW",
+      "statusText": "Mega Dam",
+      "historicalMarkerClass": "ENERGY_INFRASTRUCTURE",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 357,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_permian_basin_oil_fields",
+      "siteName": "Permian Basin Oil Fields",
+      "originalCountryLabel": "USA",
+      "countryId": "USA",
+      "resourceId": "crude_oil",
+      "coordinates": {
+        "lat": 31.85,
+        "lng": -102.36,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "20B Barrels",
+      "statusText": "Active Field",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 360,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_marcellus_shale_gas_basin",
+      "siteName": "Marcellus Shale Gas Basin",
+      "originalCountryLabel": "USA",
+      "countryId": "USA",
+      "resourceId": "natural_gas",
+      "coordinates": {
+        "lat": 41.2,
+        "lng": -77.2,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "85 TCF",
+      "statusText": "Active Field",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 361,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_mountain_pass_rare_earth_mine",
+      "siteName": "Mountain Pass Rare Earth Mine",
+      "originalCountryLabel": "USA",
+      "countryId": "USA",
+      "resourceId": "rare_earth",
+      "coordinates": {
+        "lat": 35.48,
+        "lng": -115.53,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "1.5M Tons",
+      "statusText": "Active Mine",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 362,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_mesabi_iron_range",
+      "siteName": "Mesabi Iron Range",
+      "originalCountryLabel": "USA",
+      "countryId": "USA",
+      "resourceId": "iron_ore",
+      "coordinates": {
+        "lat": 47.5,
+        "lng": -92.53,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "High Capacity",
+      "statusText": "Active Pit",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 363,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_appalachian_coal_basin",
+      "siteName": "Appalachian Coal Basin",
+      "originalCountryLabel": "USA",
+      "countryId": "USA",
+      "resourceId": "coal",
+      "coordinates": {
+        "lat": 38.5,
+        "lng": -80.5,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "50B Tons",
+      "statusText": "Active Field",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 364,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_morenci_copper_mine",
+      "siteName": "Morenci Copper Mine",
+      "originalCountryLabel": "USA",
+      "countryId": "USA",
+      "resourceId": "copper",
+      "coordinates": {
+        "lat": 33.08,
+        "lng": -109.36,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "12M Tons",
+      "statusText": "Active Pit",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 365,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_great_lakes_water_system",
+      "siteName": "Great Lakes Water System",
+      "originalCountryLabel": "USA",
+      "countryId": "USA",
+      "resourceId": "water",
+      "coordinates": {
+        "lat": 45,
+        "lng": -84,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "6 Quadrillion Gal",
+      "statusText": "Freshwater Basin",
+      "historicalMarkerClass": "RESOURCE_OR_INFRASTRUCTURE_CONTEXT",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 366,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_bayan_obo_rare_earth_mine",
+      "siteName": "Bayan Obo Rare Earth Mine",
+      "originalCountryLabel": "CHINA",
+      "countryId": "CHN",
+      "resourceId": "rare_earth",
+      "coordinates": {
+        "lat": 41.78,
+        "lng": 109.97,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "40M Tons (Global Leader)",
+      "statusText": "Active Supermine",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 369,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_shanxi_coal_superbasin",
+      "siteName": "Shanxi Coal Superbasin",
+      "originalCountryLabel": "CHINA",
+      "countryId": "CHN",
+      "resourceId": "coal",
+      "coordinates": {
+        "lat": 37.87,
+        "lng": 112.55,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "200B Tons",
+      "statusText": "Active Basin",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 370,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_three_gorges_hydro_plant",
+      "siteName": "Three Gorges Hydro Plant",
+      "originalCountryLabel": "CHINA",
+      "countryId": "CHN",
+      "resourceId": "electricity",
+      "coordinates": {
+        "lat": 30.82,
+        "lng": 111,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "22,500 MW",
+      "statusText": "Hydroelectric Dam",
+      "historicalMarkerClass": "ENERGY_INFRASTRUCTURE",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 371,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_anshan_iron_ore_complex",
+      "siteName": "Anshan Iron Ore Complex",
+      "originalCountryLabel": "CHINA",
+      "countryId": "CHN",
+      "resourceId": "iron_ore",
+      "coordinates": {
+        "lat": 41.1,
+        "lng": 122.98,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "10B Tons",
+      "statusText": "Active Mine",
+      "historicalMarkerClass": "INDUSTRIAL_FACILITY_OR_HUB",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 372,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_yangtze_delta_rice_belt",
+      "siteName": "Yangtze Delta Rice Belt",
+      "originalCountryLabel": "CHINA",
+      "countryId": "CHN",
+      "resourceId": "rice",
+      "coordinates": {
+        "lat": 31.2,
+        "lng": 120.6,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "210M Tons/yr",
+      "statusText": "Agricultural Zone",
+      "historicalMarkerClass": "RESOURCE_OR_INFRASTRUCTURE_CONTEXT",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 373,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_daqing_oilfield",
+      "siteName": "Daqing Oilfield",
+      "originalCountryLabel": "CHINA",
+      "countryId": "CHN",
+      "resourceId": "crude_oil",
+      "coordinates": {
+        "lat": 46.58,
+        "lng": 125.02,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "16B Barrels",
+      "statusText": "Active Field",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 374,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_west_siberian_oil_basin",
+      "siteName": "West Siberian Oil Basin",
+      "originalCountryLabel": "RUSSIA",
+      "countryId": "RUS",
+      "resourceId": "crude_oil",
+      "coordinates": {
+        "lat": 61.25,
+        "lng": 73.4,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "35B Barrels",
+      "statusText": "Active Superfield",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 377,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_urengoy_gas_field",
+      "siteName": "Urengoy Gas Field",
+      "originalCountryLabel": "RUSSIA",
+      "countryId": "RUS",
+      "resourceId": "natural_gas",
+      "coordinates": {
+        "lat": 66,
+        "lng": 78,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "100 TCF",
+      "statusText": "Active Field",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 378,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_kuzbass_coal_basin",
+      "siteName": "Kuzbass Coal Basin",
+      "originalCountryLabel": "RUSSIA",
+      "countryId": "RUS",
+      "resourceId": "coal",
+      "coordinates": {
+        "lat": 55.3,
+        "lng": 86,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "90B Tons",
+      "statusText": "Active Mine",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 379,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_siberian_taiga_forest_timber",
+      "siteName": "Siberian Taiga Forest Timber",
+      "originalCountryLabel": "RUSSIA",
+      "countryId": "RUS",
+      "resourceId": "timber",
+      "coordinates": {
+        "lat": 58,
+        "lng": 100,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "12M Sq Km",
+      "statusText": "Boreal Forest",
+      "historicalMarkerClass": "RESOURCE_OR_INFRASTRUCTURE_CONTEXT",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 380,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_lake_baikal_water_reserve",
+      "siteName": "Lake Baikal Water Reserve",
+      "originalCountryLabel": "RUSSIA",
+      "countryId": "RUS",
+      "resourceId": "water",
+      "coordinates": {
+        "lat": 53.5,
+        "lng": 108,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "23,600 km3",
+      "statusText": "Freshwater Reserve",
+      "historicalMarkerClass": "RESOURCE_OR_INFRASTRUCTURE_CONTEXT",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 381,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_norilsk_nickel_copper_mine",
+      "siteName": "Norilsk Nickel & Copper Mine",
+      "originalCountryLabel": "RUSSIA",
+      "countryId": "RUS",
+      "resourceId": "copper",
+      "coordinates": {
+        "lat": 69.35,
+        "lng": 88.2,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "18M Tons",
+      "statusText": "Arctic Mining",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 382,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_ghawar_oil_field",
+      "siteName": "Ghawar Oil Field",
+      "originalCountryLabel": "SAUDI ARABIA",
+      "countryId": "SAU",
+      "resourceId": "crude_oil",
+      "coordinates": {
+        "lat": 25.4,
+        "lng": 49.6,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "70B Barrels",
+      "statusText": "Active Superfield",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 385,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_safaniya_offshore_oil_field",
+      "siteName": "Safaniya Offshore Oil Field",
+      "originalCountryLabel": "SAUDI ARABIA",
+      "countryId": "SAU",
+      "resourceId": "crude_oil",
+      "coordinates": {
+        "lat": 28,
+        "lng": 48.8,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "37B Barrels",
+      "statusText": "Offshore Platform",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 386,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_jubail_petrochemical_complex",
+      "siteName": "Jubail Petrochemical Complex",
+      "originalCountryLabel": "SAUDI ARABIA",
+      "countryId": "SAU",
+      "resourceId": "natural_gas",
+      "coordinates": {
+        "lat": 27,
+        "lng": 49.65,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "High Processing",
+      "statusText": "Refinery Hub",
+      "historicalMarkerClass": "INDUSTRIAL_FACILITY_OR_HUB",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 387,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_north_field_natural_gas",
+      "siteName": "North Field Natural Gas",
+      "originalCountryLabel": "QATAR",
+      "countryId": "QAT",
+      "resourceId": "natural_gas",
+      "coordinates": {
+        "lat": 26,
+        "lng": 51.5,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "900 TCF",
+      "statusText": "World LNG Leader",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 390,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_upper_zakum_oil_field",
+      "siteName": "Upper Zakum Oil Field",
+      "originalCountryLabel": "UAE",
+      "countryId": "ARE",
+      "resourceId": "crude_oil",
+      "coordinates": {
+        "lat": 24.8,
+        "lng": 53.7,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "50B Barrels",
+      "statusText": "Offshore Rig",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 391,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_bahrain_offshore_oil_gas_field",
+      "siteName": "Bahrain Offshore Oil & Gas Field",
+      "originalCountryLabel": "BAHRAIN",
+      "countryId": "BHR",
+      "resourceId": "crude_oil",
+      "coordinates": {
+        "lat": 26.06,
+        "lng": 50.55,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "80B Barrels Shale",
+      "statusText": "Offshore Discovery",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 392,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_alba_aluminum_smelter_hub",
+      "siteName": "Alba Aluminum Smelter Hub",
+      "originalCountryLabel": "BAHRAIN",
+      "countryId": "BHR",
+      "resourceId": "bauxite",
+      "coordinates": {
+        "lat": 26.11,
+        "lng": 50.6,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "1.5M Tons/yr",
+      "statusText": "Smelter Plant",
+      "historicalMarkerClass": "INDUSTRIAL_FACILITY_OR_HUB",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 393,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_maldives_coral_atoll_fisheries",
+      "siteName": "Maldives Coral Atoll Fisheries",
+      "originalCountryLabel": "MALDIVES",
+      "countryId": "MDV",
+      "resourceId": "rice",
+      "coordinates": {
+        "lat": 3.2,
+        "lng": 73.22,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "180,000 Tons Marine",
+      "statusText": "Sovereign Maritime",
+      "historicalMarkerClass": "RESOURCE_OR_INFRASTRUCTURE_CONTEXT",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 394,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_male_desalination_solar_grid",
+      "siteName": "Male Desalination & Solar Grid",
+      "originalCountryLabel": "MALDIVES",
+      "countryId": "MDV",
+      "resourceId": "water",
+      "coordinates": {
+        "lat": 4.17,
+        "lng": 73.51,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "45M Liters/day",
+      "statusText": "Freshwater Plant",
+      "historicalMarkerClass": "RESOURCE_OR_INFRASTRUCTURE_CONTEXT",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 395,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_south_pars_gas_field",
+      "siteName": "South Pars Gas Field",
+      "originalCountryLabel": "IRAN",
+      "countryId": "IRN",
+      "resourceId": "natural_gas",
+      "coordinates": {
+        "lat": 27.5,
+        "lng": 52.6,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "500 TCF",
+      "statusText": "Active Field",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 398,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_rumaila_oil_field",
+      "siteName": "Rumaila Oil Field",
+      "originalCountryLabel": "IRAQ",
+      "countryId": "IRQ",
+      "resourceId": "crude_oil",
+      "coordinates": {
+        "lat": 30.2,
+        "lng": 47.3,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "17B Barrels",
+      "statusText": "Active Field",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 399,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_gaza_marine_offshore_gas_field",
+      "siteName": "Gaza Marine Offshore Gas Field",
+      "originalCountryLabel": "PALESTINE",
+      "countryId": "PSE",
+      "resourceId": "natural_gas",
+      "coordinates": {
+        "lat": 31.45,
+        "lng": 34.2,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "1.0 TCF Offshore",
+      "statusText": "Sovereign Gas Reserve",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 400,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_west_bank_agricultural_grain_belt",
+      "siteName": "West Bank Agricultural Grain Belt",
+      "originalCountryLabel": "PALESTINE",
+      "countryId": "PSE",
+      "resourceId": "wheat",
+      "coordinates": {
+        "lat": 31.9,
+        "lng": 35.2,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "Organic Grain",
+      "statusText": "Agricultural Zone",
+      "historicalMarkerClass": "RESOURCE_OR_INFRASTRUCTURE_CONTEXT",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 401,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_eskisehir_boron_ree_deposit",
+      "siteName": "Eskişehir Boron & REE Deposit",
+      "originalCountryLabel": "TURKEY",
+      "countryId": "TUR",
+      "resourceId": "rare_earth",
+      "coordinates": {
+        "lat": 39.77,
+        "lng": 30.52,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "694M Tons",
+      "statusText": "Active Mine",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 404,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_zohr_gas_field_mediterranean",
+      "siteName": "Zohr Gas Field Mediterranean",
+      "originalCountryLabel": "EGYPT",
+      "countryId": "EGY",
+      "resourceId": "natural_gas",
+      "coordinates": {
+        "lat": 32.5,
+        "lng": 31.8,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "30 TCF",
+      "statusText": "Offshore Field",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 405,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_hassi_r_mel_natural_gas_basin",
+      "siteName": "Hassi R'Mel Natural Gas Basin",
+      "originalCountryLabel": "ALGERIA",
+      "countryId": "DZA",
+      "resourceId": "natural_gas",
+      "coordinates": {
+        "lat": 32.5,
+        "lng": 3.25,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "85 TCF",
+      "statusText": "Active Superfield",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 408,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_hassi_messaoud_crude_oil_field",
+      "siteName": "Hassi Messaoud Crude Oil Field",
+      "originalCountryLabel": "ALGERIA",
+      "countryId": "DZA",
+      "resourceId": "crude_oil",
+      "coordinates": {
+        "lat": 31.86,
+        "lng": 6.07,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "12B Barrels",
+      "statusText": "Active Oil Field",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 409,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_gara_djebilet_iron_ore_mine",
+      "siteName": "Gara Djebilet Iron Ore Mine",
+      "originalCountryLabel": "ALGERIA",
+      "countryId": "DZA",
+      "resourceId": "iron_ore",
+      "coordinates": {
+        "lat": 26.88,
+        "lng": -7.02,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "3.5B Tons",
+      "statusText": "Mega Mining Complex",
+      "historicalMarkerClass": "INDUSTRIAL_FACILITY_OR_HUB",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 410,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_hoggar_shield_gold_uranium_belt",
+      "siteName": "Hoggar Shield Gold & Uranium Belt",
+      "originalCountryLabel": "ALGERIA",
+      "countryId": "DZA",
+      "resourceId": "gold",
+      "coordinates": {
+        "lat": 22.78,
+        "lng": 5.52,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "50 Tons Gold / 26K Tons Uranium",
+      "statusText": "Active Pit",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 411,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_western_desert_oil_fields",
+      "siteName": "Western Desert Oil Fields",
+      "originalCountryLabel": "EGYPT",
+      "countryId": "EGY",
+      "resourceId": "crude_oil",
+      "coordinates": {
+        "lat": 29.5,
+        "lng": 28.2,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "4.2B Barrels",
+      "statusText": "Active Field",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 413,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_sukari_orogenic_gold_mine",
+      "siteName": "Sukari Orogenic Gold Mine",
+      "originalCountryLabel": "EGYPT",
+      "countryId": "EGY",
+      "resourceId": "gold",
+      "coordinates": {
+        "lat": 24.95,
+        "lng": 34.71,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "12M Oz Gold",
+      "statusText": "Active Mine",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 414,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_abu_tartur_phosphate_mine",
+      "siteName": "Abu Tartur Phosphate Mine",
+      "originalCountryLabel": "EGYPT",
+      "countryId": "EGY",
+      "resourceId": "bauxite",
+      "coordinates": {
+        "lat": 25.42,
+        "lng": 30.05,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "1.0B Tons Phosphate",
+      "statusText": "Active Surface Mine",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 415,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_sirte_crude_oil_superbasin",
+      "siteName": "Sirte Crude Oil Superbasin",
+      "originalCountryLabel": "LIBYA",
+      "countryId": "LBY",
+      "resourceId": "crude_oil",
+      "coordinates": {
+        "lat": 29.2,
+        "lng": 19.3,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "48B Barrels (Africa Largest)",
+      "statusText": "Active Field",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 417,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_murzuq_oil_field_zone",
+      "siteName": "Murzuq Oil Field Zone",
+      "originalCountryLabel": "LIBYA",
+      "countryId": "LBY",
+      "resourceId": "crude_oil",
+      "coordinates": {
+        "lat": 25.9,
+        "lng": 13.9,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "5.2B Barrels",
+      "statusText": "Active Field",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 418,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_greenstream_mellitah_gas_hub",
+      "siteName": "Greenstream Mellitah Gas Hub",
+      "originalCountryLabel": "LIBYA",
+      "countryId": "LBY",
+      "resourceId": "natural_gas",
+      "coordinates": {
+        "lat": 32.88,
+        "lng": 12.24,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "18 TCF",
+      "statusText": "Active Gas Terminal",
+      "historicalMarkerClass": "INDUSTRIAL_FACILITY_OR_HUB",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 419,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_wadi_shati_iron_ore_basin",
+      "siteName": "Wadi Shati Iron Ore Basin",
+      "originalCountryLabel": "LIBYA",
+      "countryId": "LBY",
+      "resourceId": "iron_ore",
+      "coordinates": {
+        "lat": 27.5,
+        "lng": 14.2,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "3.8B Tons",
+      "statusText": "Strategic Reserve",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 420,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_oulad_abdoun_khouribga_phosphate_supermine",
+      "siteName": "Oulad Abdoun Khouribga Phosphate Supermine",
+      "originalCountryLabel": "MOROCCO",
+      "countryId": "MAR",
+      "resourceId": "bauxite",
+      "coordinates": {
+        "lat": 32.88,
+        "lng": -6.91,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "50B Tons (70% Global Reserves)",
+      "statusText": "World Leader",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 422,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_anti_atlas_imiter_silver_copper_belt",
+      "siteName": "Anti-Atlas Imiter Silver & Copper Belt",
+      "originalCountryLabel": "MOROCCO",
+      "countryId": "MAR",
+      "resourceId": "copper",
+      "coordinates": {
+        "lat": 31.35,
+        "lng": -5.8,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "8,500 Tons Silver",
+      "statusText": "Active Mine",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 423,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_bou_azzer_cobalt_polymetallic_mine",
+      "siteName": "Bou Azzer Cobalt & Polymetallic Mine",
+      "originalCountryLabel": "MOROCCO",
+      "countryId": "MAR",
+      "resourceId": "rare_earth",
+      "coordinates": {
+        "lat": 30.52,
+        "lng": -6.9,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "High Grade Cobalt & REE",
+      "statusText": "Active Mine",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 424,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_noor_ouarzazate_solar_complex",
+      "siteName": "Noor Ouarzazate Solar Complex",
+      "originalCountryLabel": "MOROCCO",
+      "countryId": "MAR",
+      "resourceId": "electricity",
+      "coordinates": {
+        "lat": 30.99,
+        "lng": -6.86,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "580 MW Solar Grid",
+      "statusText": "Active Solar Complex",
+      "historicalMarkerClass": "ENERGY_INFRASTRUCTURE",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 425,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_gafsa_phosphate_basin",
+      "siteName": "Gafsa Phosphate Basin",
+      "originalCountryLabel": "TUNISIA",
+      "countryId": "TUN",
+      "resourceId": "bauxite",
+      "coordinates": {
+        "lat": 34.42,
+        "lng": 8.78,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "1.2B Tons",
+      "statusText": "Active Mine",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 427,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_pelagian_sfax_offshore_gas_oil_field",
+      "siteName": "Pelagian Sfax Offshore Gas & Oil Field",
+      "originalCountryLabel": "TUNISIA",
+      "countryId": "TUN",
+      "resourceId": "natural_gas",
+      "coordinates": {
+        "lat": 34.73,
+        "lng": 11.2,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "2.8 TCF",
+      "statusText": "Offshore Platform",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 428,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_hassai_red_sea_gold_belt",
+      "siteName": "Hassai Red Sea Gold Belt",
+      "originalCountryLabel": "SUDAN",
+      "countryId": "SDN",
+      "resourceId": "gold",
+      "coordinates": {
+        "lat": 19.6,
+        "lng": 35.8,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "90 Tons/yr Production",
+      "statusText": "Active Mine",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 430,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_muglad_petroleum_rift_basin",
+      "siteName": "Muglad Petroleum Rift Basin",
+      "originalCountryLabel": "SUDAN",
+      "countryId": "SDN",
+      "resourceId": "crude_oil",
+      "coordinates": {
+        "lat": 10.2,
+        "lng": 28.5,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "1.5B Barrels",
+      "statusText": "Active Field",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 431,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_khartoum_refinery_oil_terminal",
+      "siteName": "Khartoum Refinery & Oil Terminal",
+      "originalCountryLabel": "SUDAN",
+      "countryId": "SDN",
+      "resourceId": "crude_oil",
+      "coordinates": {
+        "lat": 15.65,
+        "lng": 32.52,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "100,000 bpd Capacity",
+      "statusText": "Refinery Hub",
+      "historicalMarkerClass": "INDUSTRIAL_FACILITY_OR_HUB",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 432,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_pilbara_iron_ore_range",
+      "siteName": "Pilbara Iron Ore Range",
+      "originalCountryLabel": "AUSTRALIA",
+      "countryId": "AUS",
+      "resourceId": "iron_ore",
+      "coordinates": {
+        "lat": -21.5,
+        "lng": 119,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "25B Tons",
+      "statusText": "Mega Mining Hub",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 435,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_weipa_bauxite_mine",
+      "siteName": "Weipa Bauxite Mine",
+      "originalCountryLabel": "AUSTRALIA",
+      "countryId": "AUS",
+      "resourceId": "bauxite",
+      "coordinates": {
+        "lat": -12.63,
+        "lng": 141.87,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "3B Tons",
+      "statusText": "Active Surface Mine",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 436,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_olympic_dam_uranium_copper",
+      "siteName": "Olympic Dam Uranium & Copper",
+      "originalCountryLabel": "AUSTRALIA",
+      "countryId": "AUS",
+      "resourceId": "uranium",
+      "coordinates": {
+        "lat": -30.43,
+        "lng": 136.88,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "2.1M Tons Uranium",
+      "statusText": "Active Supermine",
+      "historicalMarkerClass": "ENERGY_INFRASTRUCTURE",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 437,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_kashiwazaki_kariwa_nuclear_power",
+      "siteName": "Kashiwazaki-Kariwa Nuclear Power",
+      "originalCountryLabel": "JAPAN",
+      "countryId": "JPN",
+      "resourceId": "electricity",
+      "coordinates": {
+        "lat": 37.42,
+        "lng": 138.6,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "8,212 MW",
+      "statusText": "Nuclear Plant",
+      "historicalMarkerClass": "ENERGY_INFRASTRUCTURE",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 440,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_pohang_high_tech_steel_mill",
+      "siteName": "Pohang High Tech Steel Mill",
+      "originalCountryLabel": "SOUTH_KOREA",
+      "countryId": "KOR",
+      "resourceId": "iron_ore",
+      "coordinates": {
+        "lat": 36.01,
+        "lng": 129.38,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "41M Tons/yr",
+      "statusText": "Industrial Steel",
+      "historicalMarkerClass": "INDUSTRIAL_FACILITY_OR_HUB",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 441,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_ruhr_industrial_coal_steel_basin",
+      "siteName": "Ruhr Industrial Coal & Steel Basin",
+      "originalCountryLabel": "GERMANY",
+      "countryId": "DEU",
+      "resourceId": "coal",
+      "coordinates": {
+        "lat": 51.5,
+        "lng": 7.2,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "40B Tons",
+      "statusText": "Industrial Hub",
+      "historicalMarkerClass": "INDUSTRIAL_FACILITY_OR_HUB",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 444,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_gravelines_nuclear_energy_hub",
+      "siteName": "Gravelines Nuclear Energy Hub",
+      "originalCountryLabel": "FRANCE",
+      "countryId": "FRA",
+      "resourceId": "electricity",
+      "coordinates": {
+        "lat": 51.01,
+        "lng": 2.13,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "5,460 MW",
+      "statusText": "Nuclear Grid",
+      "historicalMarkerClass": "ENERGY_INFRASTRUCTURE",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 445,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_north_sea_forties_oil_field",
+      "siteName": "North Sea Forties Oil Field",
+      "originalCountryLabel": "UNITED_KINGDOM",
+      "countryId": "GBR",
+      "resourceId": "crude_oil",
+      "coordinates": {
+        "lat": 57.75,
+        "lng": 0.9,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "4.2B Barrels",
+      "statusText": "Offshore Field",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 446,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_athabasca_oil_sands",
+      "siteName": "Athabasca Oil Sands",
+      "originalCountryLabel": "CANADA",
+      "countryId": "CAN",
+      "resourceId": "crude_oil",
+      "coordinates": {
+        "lat": 57,
+        "lng": -111.5,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "165B Barrels",
+      "statusText": "Bitumen Mine",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 449,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_carajas_iron_ore_mine",
+      "siteName": "Carajás Iron Ore Mine",
+      "originalCountryLabel": "BRAZIL",
+      "countryId": "BRA",
+      "resourceId": "iron_ore",
+      "coordinates": {
+        "lat": -6.06,
+        "lng": -50.18,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "7.2B Tons",
+      "statusText": "World Largest Mine",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 450,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_escondida_copper_mine",
+      "siteName": "Escondida Copper Mine",
+      "originalCountryLabel": "CHILE",
+      "countryId": "CHL",
+      "resourceId": "copper",
+      "coordinates": {
+        "lat": -24.27,
+        "lng": -69.07,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "32M Tons",
+      "statusText": "Active Pit",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 451,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_inkai_uranium_operation",
+      "siteName": "Inkai Uranium Operation",
+      "originalCountryLabel": "KAZAKHSTAN",
+      "countryId": "KAZ",
+      "resourceId": "uranium",
+      "coordinates": {
+        "lat": 44.5,
+        "lng": 68.2,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "135,000 Tons",
+      "statusText": "ISL Mining",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 454,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_bushveld_complex_metals_mine",
+      "siteName": "Bushveld Complex Metals Mine",
+      "originalCountryLabel": "SOUTH_AFRICA",
+      "countryId": "ZAF",
+      "resourceId": "rare_earth",
+      "coordinates": {
+        "lat": -25.2,
+        "lng": 27.1,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "World Leader Platinum/REE",
+      "statusText": "Deep Shaft Mine",
+      "historicalMarkerClass": "INDUSTRIAL_FACILITY_OR_HUB",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 455,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_niger_delta_offshore_oil_basin",
+      "siteName": "Niger Delta Offshore Oil Basin",
+      "originalCountryLabel": "NIGERIA",
+      "countryId": "NGA",
+      "resourceId": "crude_oil",
+      "coordinates": {
+        "lat": 4.8,
+        "lng": 6.2,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "37B Barrels",
+      "statusText": "Offshore Field",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 456,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_grasberg_copper_gold_mine",
+      "siteName": "Grasberg Copper & Gold Mine",
+      "originalCountryLabel": "INDONESIA",
+      "countryId": "IDN",
+      "resourceId": "copper",
+      "coordinates": {
+        "lat": -4.05,
+        "lng": 137.11,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "27M Tons",
+      "statusText": "High Mountain Mine",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 459,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_red_river_delta_rice_paddy_belt",
+      "siteName": "Red River Delta Rice Paddy Belt",
+      "originalCountryLabel": "VIETNAM",
+      "countryId": "VNM",
+      "resourceId": "rice",
+      "coordinates": {
+        "lat": 20.8,
+        "lng": 106,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "43M Tons/yr",
+      "statusText": "Agriculture",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 460,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_kolwezi_cobalt_copper_supermine",
+      "siteName": "Kolwezi Cobalt & Copper Supermine",
+      "originalCountryLabel": "DR CONGO",
+      "countryId": "COD",
+      "resourceId": "cobalt",
+      "coordinates": {
+        "lat": -10.71,
+        "lng": 25.47,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "3.5M Tons Cobalt (Global Leader)",
+      "statusText": "Active Mine",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 463,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_tenke_fungurume_copper_cobalt_complex",
+      "siteName": "Tenke Fungurume Copper-Cobalt Complex",
+      "originalCountryLabel": "DR CONGO",
+      "countryId": "COD",
+      "resourceId": "copper",
+      "coordinates": {
+        "lat": -10.62,
+        "lng": 26.18,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "500K Tons/yr Copper",
+      "statusText": "Active Mining",
+      "historicalMarkerClass": "INDUSTRIAL_FACILITY_OR_HUB",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 464,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_kibali_gold_mine_complex",
+      "siteName": "Kibali Gold Mine Complex",
+      "originalCountryLabel": "DR CONGO",
+      "countryId": "COD",
+      "resourceId": "gold",
+      "coordinates": {
+        "lat": 3.13,
+        "lng": 29.58,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "10M Oz Gold",
+      "statusText": "Active Mine",
+      "historicalMarkerClass": "INDUSTRIAL_FACILITY_OR_HUB",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 465,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_moanda_manganese_ree_reserve",
+      "siteName": "Moanda Manganese & REE Reserve",
+      "originalCountryLabel": "GABON",
+      "countryId": "GAB",
+      "resourceId": "rare_earth",
+      "coordinates": {
+        "lat": -1.56,
+        "lng": 13.2,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "1.2B Tons High-Grade",
+      "statusText": "Active Mine",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 466,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_port_gentil_offshore_petroleum_basin",
+      "siteName": "Port-Gentil Offshore Petroleum Basin",
+      "originalCountryLabel": "GABON",
+      "countryId": "GAB",
+      "resourceId": "crude_oil",
+      "coordinates": {
+        "lat": -0.72,
+        "lng": 8.78,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "2.5B Barrels",
+      "statusText": "Offshore Rigs",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 467,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_alba_offshore_gas_liquefaction_hub",
+      "siteName": "Alba Offshore Gas & Liquefaction Hub",
+      "originalCountryLabel": "EQUATORIAL GUINEA",
+      "countryId": "GNQ",
+      "resourceId": "natural_gas",
+      "coordinates": {
+        "lat": 3.65,
+        "lng": 8.52,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "5.5 TCF Gas",
+      "statusText": "LNG Complex",
+      "historicalMarkerClass": "INDUSTRIAL_FACILITY_OR_HUB",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 468,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_zafiro_deepwater_oil_field",
+      "siteName": "Zafiro Deepwater Oil Field",
+      "originalCountryLabel": "EQUATORIAL GUINEA",
+      "countryId": "GNQ",
+      "resourceId": "crude_oil",
+      "coordinates": {
+        "lat": 3.82,
+        "lng": 8.4,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "1.2B Barrels",
+      "statusText": "Offshore Platform",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 469,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_joint_development_zone_oil_block_1",
+      "siteName": "Joint Development Zone Oil Block 1",
+      "originalCountryLabel": "SAO TOME AND PRINCIPE",
+      "countryId": "STP",
+      "resourceId": "crude_oil",
+      "coordinates": {
+        "lat": 0.33,
+        "lng": 6.73,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "850M Barrels Deepwater",
+      "statusText": "Exploration",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 470,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_sao_tome_hydro_maritime_solar_grid",
+      "siteName": "São Tomé Hydro & Maritime Solar Grid",
+      "originalCountryLabel": "SAO TOME AND PRINCIPE",
+      "countryId": "STP",
+      "resourceId": "electricity",
+      "coordinates": {
+        "lat": 0.3,
+        "lng": 6.6,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "45 MW Grid",
+      "statusText": "Active Hydro/Solar",
+      "historicalMarkerClass": "ENERGY_INFRASTRUCTURE",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 471,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_grand_ethiopian_renaissance_hydro_megadam_gerd",
+      "siteName": "Grand Ethiopian Renaissance Hydro Megadam (GERD)",
+      "originalCountryLabel": "ETHIOPIA",
+      "countryId": "ETH",
+      "resourceId": "electricity",
+      "coordinates": {
+        "lat": 11.21,
+        "lng": 35.09,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "5,150 MW Clean Hydro",
+      "statusText": "Mega Power Plant",
+      "historicalMarkerClass": "ENERGY_INFRASTRUCTURE",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 472,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_danakil_potash_lithium_brine_basin",
+      "siteName": "Danakil Potash & Lithium Brine Basin",
+      "originalCountryLabel": "ETHIOPIA",
+      "countryId": "ETH",
+      "resourceId": "lithium",
+      "coordinates": {
+        "lat": 14.24,
+        "lng": 40.3,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "1.2B Tons Potash",
+      "statusText": "Active Extraction",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 473,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_lega_dembi_orogenic_gold_mine",
+      "siteName": "Lega Dembi Orogenic Gold Mine",
+      "originalCountryLabel": "ETHIOPIA",
+      "countryId": "ETH",
+      "resourceId": "gold",
+      "coordinates": {
+        "lat": 5.68,
+        "lng": 38.93,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "80 Tons Gold",
+      "statusText": "Active Mine",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 474,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_olkaria_geothermal_clean_energy_complex",
+      "siteName": "Olkaria Geothermal Clean Energy Complex",
+      "originalCountryLabel": "KENYA",
+      "countryId": "KEN",
+      "resourceId": "electricity",
+      "coordinates": {
+        "lat": -0.88,
+        "lng": 36.31,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "860 MW Geothermal",
+      "statusText": "Geothermal Leader",
+      "historicalMarkerClass": "INDUSTRIAL_FACILITY_OR_HUB",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 475,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_kwale_heavy_mineral_titanium_sands",
+      "siteName": "Kwale Heavy Mineral Titanium Sands",
+      "originalCountryLabel": "KENYA",
+      "countryId": "KEN",
+      "resourceId": "rare_earth",
+      "coordinates": {
+        "lat": -4.32,
+        "lng": 39.45,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "140M Tons Sands",
+      "statusText": "Active Mine",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 476,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_south_lokichar_crude_oil_basin",
+      "siteName": "South Lokichar Crude Oil Basin",
+      "originalCountryLabel": "KENYA",
+      "countryId": "KEN",
+      "resourceId": "crude_oil",
+      "coordinates": {
+        "lat": 2.33,
+        "lng": 35.6,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "560M Barrels",
+      "statusText": "Development",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 477,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_geita_gold_mine_super_pit",
+      "siteName": "Geita Gold Mine Super-Pit",
+      "originalCountryLabel": "TANZANIA",
+      "countryId": "TZA",
+      "resourceId": "gold",
+      "coordinates": {
+        "lat": -2.87,
+        "lng": 32.23,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "12M Oz Gold",
+      "statusText": "Open Pit Mine",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 478,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_songo_songo_offshore_natural_gas_hub",
+      "siteName": "Songo Songo Offshore Natural Gas Hub",
+      "originalCountryLabel": "TANZANIA",
+      "countryId": "TZA",
+      "resourceId": "natural_gas",
+      "coordinates": {
+        "lat": -8.53,
+        "lng": 39.52,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "1.1 TCF Gas",
+      "statusText": "Offshore Field",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 479,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_merelani_gemstone_tanzanite_mine",
+      "siteName": "Merelani Gemstone & Tanzanite Mine",
+      "originalCountryLabel": "TANZANIA",
+      "countryId": "TZA",
+      "resourceId": "limestone",
+      "coordinates": {
+        "lat": -3.58,
+        "lng": 37.01,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "Exclusive Global Deposit",
+      "statusText": "Active Mine",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 480,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_tilenga_albertine_oil_rift_basin",
+      "siteName": "Tilenga Albertine Oil Rift Basin",
+      "originalCountryLabel": "UGANDA",
+      "countryId": "UGA",
+      "resourceId": "crude_oil",
+      "coordinates": {
+        "lat": 2.05,
+        "lng": 31.42,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "1.4B Barrels Recoverable",
+      "statusText": "Oilfield Project",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 481,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_sukulu_ree_phosphate_carbonatite",
+      "siteName": "Sukulu REE & Phosphate Carbonatite",
+      "originalCountryLabel": "UGANDA",
+      "countryId": "UGA",
+      "resourceId": "rare_earth",
+      "coordinates": {
+        "lat": 0.63,
+        "lng": 34.16,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "230M Tons Phosphate/REE",
+      "statusText": "Mining Complex",
+      "historicalMarkerClass": "INDUSTRIAL_FACILITY_OR_HUB",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 482,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_karuma_hydroelectric_dam_station",
+      "siteName": "Karuma Hydroelectric Dam Station",
+      "originalCountryLabel": "UGANDA",
+      "countryId": "UGA",
+      "resourceId": "electricity",
+      "coordinates": {
+        "lat": 2.23,
+        "lng": 32.25,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "600 MW Hydro",
+      "statusText": "Hydroelectric Plant",
+      "historicalMarkerClass": "ENERGY_INFRASTRUCTURE",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 483,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_kivuwatt_lake_methane_gas_power_project",
+      "siteName": "KivuWatt Lake Methane Gas Power Project",
+      "originalCountryLabel": "RWANDA",
+      "countryId": "RWA",
+      "resourceId": "natural_gas",
+      "coordinates": {
+        "lat": -2.06,
+        "lng": 29.33,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "60B m3 Methane",
+      "statusText": "Gas Extraction Plant",
+      "historicalMarkerClass": "ENERGY_INFRASTRUCTURE",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 484,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_gatumba_coltan_tantalum_mining_belt",
+      "siteName": "Gatumba Coltan & Tantalum Mining Belt",
+      "originalCountryLabel": "RWANDA",
+      "countryId": "RWA",
+      "resourceId": "rare_earth",
+      "coordinates": {
+        "lat": -1.92,
+        "lng": 29.65,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "Major Tantalite Hub",
+      "statusText": "Active Mine",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 485,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_gakara_high_grade_rare_earth_mine",
+      "siteName": "Gakara High-Grade Rare Earth Mine",
+      "originalCountryLabel": "BURUNDI",
+      "countryId": "BDI",
+      "resourceId": "rare_earth",
+      "coordinates": {
+        "lat": -3.42,
+        "lng": 29.43,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "Highest Grade REE (47%-67%)",
+      "statusText": "Active Mine",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 486,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    },
+    {
+      "recoveryId": "LEGACY_MAP_musongati_nickel_cobalt_pgm_project",
+      "siteName": "Musongati Nickel-Cobalt-PGM Project",
+      "originalCountryLabel": "BURUNDI",
+      "countryId": "BDI",
+      "resourceId": "cobalt",
+      "coordinates": {
+        "lat": -3.81,
+        "lng": 30.08,
+        "coordinateAuthority": "LEGACY_CODE_VALUE_UNVERIFIED"
+      },
+      "reserveText": "150M Tons Nickel/Cobalt",
+      "statusText": "Strategic Reserve",
+      "historicalMarkerClass": "GEOLOGICAL_OR_EXTRACTION_MARKER",
+      "recoveryStatus": "HISTORICAL_REVIEW_REQUIRED",
+      "eligibleForCanonicalMinePipeline": false,
+      "source": {
+        "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+        "path": "resource_ministry_engine.js",
+        "symbol": "GEOGRAPHIC_DEPOSITS",
+        "line": 487,
+        "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+      },
+      "authority": "HISTORICAL_EMBEDDED_UI_DATA_UNVERIFIED",
+      "notes": "Archived exactly as authored in the historical engine. This is not verified geological data and must not become executable mine state without independent site-level review."
+    }
+  ]
+}
