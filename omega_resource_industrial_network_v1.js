@@ -90,9 +90,75 @@ function dispatch(owner,type,c,payload){
   try{return interop()?.dispatchCommand?.(owner,type,canonicalCountry(c),payload||{},{turn:turn(),commandType:type,correlationId:payload?.correlationId||payload?.id||null})||{status:'UNAVAILABLE',reason:'INTEROP_UNAVAILABLE'}}catch(e){return{status:'FAILED',reason:String(e?.message||e)}}
 }
 
+function quantitativeEngineAdapter(site, quantitative){
+  const q=quantitative&&typeof quantitative==='object'?quantitative:{};
+  const p=q.production||{},cap=q.capacity||{},grade=q.grade||{},purity=q.purity||{},rec=q.recovery||{};
+  const observedStatus=v=>/^(OBSERVED|REPORTED(?:_|$)|OPERATOR_REPORTED)/i.test(String(v?.status||''));
+  const perDay=u=>/(per[_\s-]?day|\/day|daily)/i.test(String(u||''));
+  const finite=v=>Number.isFinite(Number(v))&&v!==null&&v!==undefined&&v!==''?Number(v):null;
+  const dailyRate=observedStatus(p)&&perDay(p.unit)?finite(p.rate):null;
+  const nominalRate=observedStatus(cap)&&perDay(cap.unit)?finite(cap.nominal):null;
+  const recovery=observedStatus(rec)?finite(rec.value):null;
+  const productionModel={...(site?.productionModel||{})};
+  if(dailyRate!==null){productionModel.productionRate=dailyRate;productionModel.unit=p.unit;productionModel.productionAuthority='OBSERVED';productionModel.productionPeriod=p.period||'PER_DAY';}
+  if(nominalRate!==null){productionModel.nominalCapacity=nominalRate;productionModel.capacityUnit=cap.unit;productionModel.capacityAuthority='OBSERVED';}
+  if(recovery!==null){productionModel.recovery=recovery;productionModel.recoveryAuthority='OBSERVED';}
+  const out={...site,quantitative:clone(q),productionModel};
+  if(grade.value!==null&&grade.value!==undefined)out.grade=grade.value;
+  if(grade.unit)out.gradeUnit=grade.unit;
+  if(purity.value!==null&&purity.value!==undefined)out.purity=purity.value;
+  if(purity.unit)out.purityUnit=purity.unit;
+  out.quantitativeProvenance=clone(q.quantitativeProvenance||{});
+  return out;
+}
 function masterSites(){
   const x=g.OmegaResourceSiteMasterResearchData||g.Omega?.ResourceSiteMasterResearchData;
-  return Array.isArray(x?.sites)?x.sites:[];
+  const catalog=g.OmegaResourceSiteCanonicalCatalogData||g.Omega?.ResourceSiteCanonicalCatalogData;
+  const canonicalRows=Array.isArray(catalog?.sites)?catalog.sites:[];
+  const canonicalById=new Map(canonicalRows.map(row=>[String(row?.siteId||''),row]));
+  // Preserve master research records, but attach the exact same canonical quantitative contract by site ID.
+  const base=Array.isArray(x?.sites)?x.sites.map(site=>{
+    const canonical=canonicalById.get(String(site?.siteId||''))||null;
+    if(!canonical)return site;
+    const normalized=g.OmegaResourceSiteDataContract?.normalizeSiteRecord?.(canonical)||canonical;
+    return quantitativeEngineAdapter({...site,canonicalSiteRecord:clone(normalized),identity:clone(normalized.identity||site.identity||{}),
+      quantitativeProvenance:clone(normalized.quantitative?.quantitativeProvenance||site.quantitativeProvenance||{}),
+      map:clone(normalized.map||site.map||{}),location:clone(site.location||normalized.location||{}),
+      sourceReference:clone(normalized.sourceReference||site.sourceReference||{})},normalized.quantitative||site.quantitative||{});
+  }):[];
+  const expansion=g.OmegaResourceSiteCountryExpansionData||g.Omega?.ResourceSiteCountryExpansionData;
+  const extra=Array.isArray(expansion?.records)?expansion.records.map(row=>{
+    const resourceId=String(row?.identity?.resourceTypeId||'').trim();
+    const method=String(row?.operation?.extractionMethod||'').trim();
+    const siteType=String(row?.identity?.siteType||'RESOURCE_SITE').trim();
+    const countryId=canonicalCountry(row?.countryId||row?.identity?.countryIso3);
+    if(!row?.siteId||!countryId||!resourceId)return null;
+    return {
+      siteId:String(row.siteId),countryId,siteName:String(row.siteName||row.siteId),siteType,
+      real:{resourceId,extractionMethod:method,operationStatus:row?.operation?.status||'ACTIVE_SITE_REFERENCE',
+        owner:row?.ownership?.owner||null,operator:row?.ownership?.operator||null,location:clone(row?.location||{}),
+        quantitative:clone(row?.quantitative||{}),quantitativeProvenance:clone(row?.quantitative?.quantitativeProvenance||{}),
+        coordinateStatus:row?.location?.coordinateStatus||row?.location?.coordinates?.coordinateStatus||'APPROXIMATE'},
+      sourceSiteRecord:{id:String(row.siteId),siteId:String(row.siteId),resourceId,siteType,extractionMethod:method,
+        status:row?.operation?.status||'ACTIVE_SITE_REFERENCE',commercialExtraction:row?.operation?.commercialExtraction!==false,
+        countryCode:countryId,lat:row?.location?.coordinates?.lat,lng:row?.location?.coordinates?.lng,
+        quantitative:clone(row?.quantitative||{}),quantitativeProvenance:clone(row?.quantitative?.quantitativeProvenance||{}),
+        dataAuthority:'SITE_EXPANSION_REFERENCE',quantitativeAuthority:'SIMULATION_RUNTIME'},
+      location:clone(row?.location||{}),ownership:clone(row?.ownership||{}),operation:clone(row?.operation||{}),
+      quantitativeProvenance:clone(row?.quantitative?.quantitativeProvenance||{}),
+      processing:clone(row?.processing||{}),sourceReference:clone(row?.sourceReference||{}),
+      simulation:{simulationOnly:true,capacityModel:'SYNTHETIC_GAMEPLAY_CAPACITY_V1',
+        reserveStatus:'SIMULATION_REQUIRED',transportRoute:[{
+          routeId:'SIM_ROUTE:'+countryId+':'+String(row.siteId),
+          mode:'truck',transportMode:'truck',sourceNode:'MINE:'+String(row.siteId),
+          destinationNode:'WH-'+countryId+'-RAW',distanceKm:null,distanceStatus:'UNOBSERVED',authority:'SIMULATED',
+          countryIsolationKey:countryId
+        }]}
+    };
+  }).filter(Boolean).map(site=>quantitativeEngineAdapter(site,site.quantitative)):[];
+  const byId=new Map(base.map(site=>[String(site?.siteId||''),site]));
+  for(const site of extra)if(!byId.has(site.siteId))byId.set(site.siteId,site);
+  return [...byId.values()];
 }
 function siteById(siteId){
   const s=String(siteId||'').trim();

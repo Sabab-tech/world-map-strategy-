@@ -14,6 +14,54 @@
     if(Array.isArray(v)){const a=[];seen.set(v,a);for(const x of v)a.push(clone(x,seen));return a;}
     const o={};seen.set(v,o);for(const k of Object.keys(v))if(k!=='__proto__'&&k!=='constructor'&&typeof v[k]!=='function'&&v[k]!==undefined)o[k]=clone(v[k]);return o;
   };
+  // Normalize every canonical and additive site into one lossless, typed runtime contract.
+  // Missing real-world values stay null/UNOBSERVED; the simulation layer is never promoted to evidence.
+  function normalizeSiteQuantitative(row){
+    const q=row?.quantitative&&typeof row.quantitative==='object'?clone(row.quantitative):{};
+    const ensure=(key,shape,status='UNOBSERVED')=>{
+      const old=q[key]&&typeof q[key]==='object'?q[key]:{};
+      q[key]={...shape,...old};
+      if(!q[key].status)q[key].status=status;
+      return q[key];
+    };
+    const reserve=ensure('reserve',{quantity:null,unit:null,year:null,basis:null});
+    if(reserve.quantity===null||reserve.quantity===undefined)reserve.status=reserve.status||'UNQUANTIFIED';
+    ensure('production',{annual:null,rate:null,unit:null,year:null,period:null,basis:null});
+    ensure('grade',{value:null,unit:null,year:null,metric:null,basis:null});
+    ensure('recovery',{value:null,unit:'percent',year:null,period:null,basis:null});
+    ensure('throughput',{value:null,unit:null,year:null,period:null,basis:null});
+    ensure('purity',{value:null,unit:null,year:null,metric:null,basis:null});
+    ensure('capacity',{nominal:null,minimum:null,maximum:null,unit:null,period:null,basis:null});
+    q.reportedMetrics=q.reportedMetrics&&typeof q.reportedMetrics==='object'?q.reportedMetrics:{};
+    q.quantitativeProvenance=q.quantitativeProvenance&&typeof q.quantitativeProvenance==='object'?q.quantitativeProvenance:{};
+    q.completeness=q.completeness&&typeof q.completeness==='object'?q.completeness:{};
+    for(const key of ['reserve','production','grade','recovery','throughput','purity','capacity']){
+      q.completeness[key]=q[key].status||'UNOBSERVED';
+    }
+    const realKnown=['reserve','production','grade','recovery','throughput','purity','capacity'].some(key=>{
+      const v=q[key];
+      return Object.entries(v).some(([k,x])=>!['status','basis','metric','period','year','unit'].includes(k)&&x!==null&&x!==undefined&&x!=='');
+    });
+    q.completeness.overall=realKnown?'PARTIAL':'IDENTITY_AND_LOCATION_ONLY';
+    return q;
+  }
+  function normalizeSiteRecord(raw){
+    const row=clone(raw||{});
+    const country=String(row.countryId||row.identity?.countryIso3||row.countryCode||'').trim().toUpperCase();
+    row.countryId=country;
+    row.identity={...(row.identity||{}),countryIso3:row.identity?.countryIso3||country};
+    row.quantitative=normalizeSiteQuantitative(row);
+    row.map={...(row.map||{}),markerEligible:row.map?.markerEligible!==false,countryIsolationKey:row.map?.countryIsolationKey||country};
+    row.runtime={...(row.runtime||{}),identityAuthority:row.runtime?.identityAuthority||'SITE_REFERENCE',
+      quantityAuthority:row.runtime?.quantityAuthority||'SIMULATION_RUNTIME',
+      productionAuthority:row.runtime?.productionAuthority||'SIMULATION_RUNTIME',
+      qualityAuthority:row.runtime?.qualityAuthority||'OBSERVED_OR_EXPLICITLY_UNOBSERVED',
+      countryWarehouseId:row.runtime?.countryWarehouseId||('WH-'+country+'-RAW'),
+      requiresSiteSpecificRoute:row.runtime?.requiresSiteSpecificRoute!==false,
+      requiresFactoryBinding:row.runtime?.requiresFactoryBinding!==false};
+    return row;
+  }
+  g.OmegaResourceSiteDataContract={version:'1.0.0',normalizeSiteRecord,normalizeSiteQuantitative};
   const id=v=>String(v??'').trim().toUpperCase();
   const rid=v=>String(v??'').replace(/^RES_TYPE:/i,'').trim().toLowerCase();
   const tok=v=>String(v??'').trim().toLowerCase().replace(/[\s-]+/g,'_');
@@ -70,14 +118,42 @@
           if(!res?.ok)throw new Error('RESOURCE_SITE_CANONICAL_CATALOG_FETCH_FAILED');
           data=await res.json();
         }
-        const rows=Array.isArray(data?.sites)?data.sites:[];
+        const baseRows=Array.isArray(data?.sites)?data.sites:[];
+        // Additive site expansion is merged in memory only. The canonical 199-site
+        // source file and its existing certificate remain unchanged.
+        let expansionRows=[];
+        try{
+          let expansion=g.OmegaResourceSiteCountryExpansionData||g.Omega?.ResourceSiteCountryExpansionData||null;
+          if(!expansion){
+            const er=await fetch('resource_site_country_expansion_v1.json',{cache:'no-store'});
+            if(er?.ok)expansion=await er.json();
+          }
+          if(expansion&&expansion.datasetId==='OMEGA_RESOURCE_SITE_COUNTRY_EXPANSION_V1'&&Array.isArray(expansion.records)){
+            expansionRows=expansion.records.filter(row=>{
+              const id=String(row?.siteId||'').trim();
+              const country=String(row?.countryId||row?.identity?.countryIso3||'').trim().toUpperCase();
+              const lat=Number(row?.location?.coordinates?.lat),lng=Number(row?.location?.coordinates?.lng);
+              return id&&/^[A-Z]{3}$/.test(country)&&Number.isFinite(lat)&&lat>=-90&&lat<=90&&Number.isFinite(lng)&&lng>=-180&&lng<=180;
+            });
+            g.OmegaResourceSiteCountryExpansionData=expansion;
+            g.Omega=g.Omega||{};
+            g.Omega.ResourceSiteCountryExpansionData=expansion;
+          }
+        }catch(_){ expansionRows=[]; }
+        const ids=new Set(baseRows.map(row=>String(row?.siteId||'')));
+        const acceptedExpansion=expansionRows.filter(row=>!ids.has(String(row.siteId))&&ids.add(String(row.siteId)));
+        const rows=baseRows.concat(acceptedExpansion);
+        const normalizedRows=rows.map(normalizeSiteRecord);
         const map={};
-        for(const row of rows)if(row?.siteId)map[String(row.siteId)]=clone(row);
+        for(const row of normalizedRows)if(row?.siteId)map[String(row.siteId)]=row;
         canonicalSiteCatalogMap=map;
+        data.sites=normalizedRows;
+        data.baseSiteCount=baseRows.length;
+        data.expansionSiteCount=acceptedExpansion.length;
         g.OmegaResourceSiteCanonicalCatalogData=data;
         g.Omega=g.Omega||{};
         g.Omega.ResourceSiteCanonicalCatalogData=data;
-        return{status:'READY',count:rows.length,siteCount:Number(data?.siteCount)||rows.length};
+        return{status:'READY',count:baseRows.length,siteCount:baseRows.length,totalSiteCount:rows.length,expansionSiteCount:acceptedExpansion.length};
       }catch(e){
         canonicalSiteCatalogMap={};
         return{status:'FAILED',count:0,reason:String(e?.message||e)};

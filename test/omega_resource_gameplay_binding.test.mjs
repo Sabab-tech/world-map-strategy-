@@ -7,6 +7,7 @@ const read = p => fs.readFileSync(new URL('../'+p, import.meta.url), 'utf8');
 const catalog=JSON.parse(read('resource_site_canonical_catalog_v1.json'));
 const master=JSON.parse(read('resource_site_master_registry_v1.json'));
 const reserves=JSON.parse(read('resource_site_reserve_simulation_v1.json'));
+const expansion=JSON.parse(read('resource_site_country_expansion_v1.json'));
 const index=read('index.html');
 const binding=read('omega_resource_gameplay_binding_v1.js');
 const scenarioSource=read('omega_resource_scenario_engineering_data_v1.js');
@@ -41,6 +42,7 @@ const runtimeContext={
  Game:{state:{simulation:{turn:1,startYear:2015,date:'2015-01-01',daysPerTurn:30},resource:{},economy:{},transport:{}}},
  OmegaResourceSiteMasterResearchData:master,
  OmegaResourceSiteReserveSimulationData:reserves,
+  OmegaResourceSiteCountryExpansionData:expansion,
  OmegaResourceIndustrialCatalogData:JSON.parse(read('resource_industrial_catalog_v1.json')),
  OmegaMinistryInteroperability:{registerAction(){},registerCommandHandler(){},dispatchCommand(){return {status:'COMMITTED',records:[]}},emitEvent(){return true}},
  Omega:{}
@@ -59,8 +61,18 @@ assert.equal(plan.siteId,'SITE_BGD_barapukuria_coal_mine','runtime must retain e
 assert.equal(plan.countryId,'BGD','runtime must retain the site country');
 assert.equal(plan.method,'UNDERGROUND_LONGWALL','site-specific extraction method must normalize to the engineering catalog key');
 
+const expandedSite=expansion.records.find(s=>s.siteId==='SITE_CHL_escondida_copper_mine');
+assert.ok(expandedSite,'expansion catalog must include a named site with individual identity');
+const expandedPlan=liveApi.planExtraction({countryId:expandedSite.countryId,siteId:expandedSite.siteId,resourceId:expandedSite.identity.resourceTypeId});
+assert.equal(expandedPlan.status,'PLANNED','new expansion site must resolve through the same industrial extraction planner');
+assert.equal(expandedPlan.siteId,expandedSite.siteId,'expansion plan must retain exact individual site ID');
+assert.equal(expandedPlan.countryId,expandedSite.countryId,'expansion plan must preserve country isolation');
+assert.equal(expandedPlan.warehouseCountryId,expandedSite.countryId,'expansion extraction must bind to its own country warehouse');
+
+
 console.log('OMEGA INDIVIDUAL RESOURCE GAMEPLAY BINDING TEST PASSED');
-console.log('Canonical/master/reserve/scenario site identities: 199/199');
+console.log('Canonical/master/reserve/scenario base site identities: 199/199');
+console.log('Expansion sites resolved by existing extraction planner: PASS');
 console.log('Unique site IDs and exact per-site catalog joins: PASS');
 console.log('Playable index wiring + individual selection + extraction API binding: PASS');
 console.log('Actual master-registry -> realism/hardening -> industrial runtime extraction plan: PASS');
@@ -138,7 +150,8 @@ test('runtime renders all global sites and applies nation/resource scope without
     'resources.json': JSON.parse(read('resources.json')),
     'resources_2.json': JSON.parse(read('resources_2.json')),
     'resource_site_canonical_catalog_v1.json': catalog,
-    'resource_site_master_registry_v1.json': master
+    'resource_site_master_registry_v1.json': master,
+    'resource_site_country_expansion_v1.json': expansion
   };
   // Test-only fixture: force two separate site identities to share one coordinate so pixel-spider offsets are verified.
   const rawCountryProfiles=Object.values(rawSources['resources.json'].GSRSK_Master_CountryProfiles_v14.countryProfiles||{});
@@ -208,11 +221,18 @@ test('runtime renders all global sites and applies nation/resource scope without
   await new Promise(resolve => setImmediate(resolve));
   await new Promise(resolve => setImmediate(resolve));
 
+  const markerCount = () => [...layers].reduce((sum,layer)=>sum+layer.markers.length,0);
   const diagnostics = context.Omega.IndividualResourceSiteBinding?.diagnostics();
   assert.equal(diagnostics?.status,'READY','global source registry must initialize');
-  assert.equal(diagnostics?.siteCount,241,'239 distinct physical locations plus coincident and near-overlap test identities must yield 241 site markers');
-  const markerCount = () => [...layers].reduce((sum,layer)=>sum+layer.markers.length,0);
-  assert.equal(markerCount(),241,'WORLD scope must render all 239 source locations plus two test-only overlap fixtures');
+  assert.equal(diagnostics?.siteCount,markerCount(),'diagnostics must match rendered individual site markers');
+  assert.ok(markerCount() >= 239+expansion.records.length,'WORLD scope must render the source locations and all non-duplicate expansion sites');
+  const mappedSiteIds = new Set(context.Omega.IndividualResourceSiteBinding.sites.flatMap(site => [
+    site.siteId, ...(site.depositAliases || []), ...(site.sourceDepositRecords || []).map(record => record.siteId || record.id),
+    site.sourceSiteRecord?.siteId, site.sourceSiteRecord?.id
+  ]).filter(Boolean));
+  for (const site of expansion.records) {
+    assert.ok(mappedSiteIds.has(site.siteId), site.siteId + ': expansion identity must be mapped or explicitly joined as a physical-site alias');
+  }
   const geographicPositions=new Set([...layers].flatMap(layer=>layer.markers).map(marker=>marker.latlng.map(value=>Number(value).toFixed(3)).join('|')));
   assert.ok(geographicPositions.size>100,'world markers must preserve widespread source coordinates instead of collapsing all resources to one point');
   assert.ok(context.Game.Map.resourceDepositsLayer.clearCount>0,'legacy deposit layer must be cleared so old and individual markers do not stack');
@@ -241,10 +261,10 @@ test('runtime renders all global sites and applies nation/resource scope without
   context.Game.Map.resourceState.scope='WORLD';
   context.Game.Map.resourceState.selectedResources=vm.runInContext("new Set(['coal'])",context);
   context.Omega.IndividualResourceSiteBinding.refresh();
-  assert.ok(markerCount()>0 && markerCount()<241,'resource filter must narrow the global site markers');
+  assert.ok(markerCount()>0 && markerCount()<239+expansion.records.length+2,'resource filter must narrow the global site markers');
   context.Game.Map.resourceState.selectedResources=vm.runInContext("new Set(['natural-gas'])",context);
   context.Omega.IndividualResourceSiteBinding.refresh();
-  assert.ok(markerCount()>0 && markerCount()<241,'hyphenated commodity filters must match canonical underscore resource IDs across the world');
+  assert.ok(markerCount()>0 && markerCount()<239+expansion.records.length+2,'hyphenated commodity filters must match canonical underscore resource IDs across the world');
 
   // Regression fixture: Saudi Arabia has one source mine site plus two separate oilfield records.
   context.Game.Map.resourceState.scope='NATION';
