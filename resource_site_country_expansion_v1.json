@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0.0",
   "datasetId": "OMEGA_RESOURCE_SITE_COUNTRY_EXPANSION_V1",
-  "generatedAt": "2026-10-11",
+  "generatedAt": "2026-10-12",
   "authority": "SITE_IDENTITY_AND_LOCATION_REFERENCE_WITH_EXPLICIT_QUANTITATIVE_GAPS",
   "siteCount": 51,
   "baseCatalogPreserved": true,
@@ -5691,17 +5691,19 @@
           "basis": null
         },
         "production": {
-          "annual": 2377000,
+          "annual": 4661681,
           "rate": null,
-          "unit": "carats_per_year",
+          "unit": "carats_recovered_per_year",
           "year": 2024,
           "status": "REPORTED",
-          "basis": "De Beers 2024 production report; 51% attributable basis"
+          "basis": "100% mine basis; Mountain Province FY2024 release; 49% attributable share 2,284,224 carats."
         },
         "grade": {
-          "value": "Site-specific measured ore/feed grade not supplied in this record",
-          "unit": null,
-          "status": "QUALITATIVE_ONLY"
+          "value": 1.28,
+          "unit": "carats_per_tonne",
+          "status": "REPORTED_RECOVERED_GRADE",
+          "year": 2024,
+          "basis": "Recovered grade, not refined diamond purity."
         },
         "recovery": {
           "value": null,
@@ -5710,10 +5712,11 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
-          "value": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
+          "value": 3628501,
+          "unit": "metric_tonnes_ore_treated_per_year",
+          "year": 2024,
+          "status": "REPORTED",
+          "basis": "100% mine basis."
         },
         "purity": {
           "value": null,
@@ -5727,27 +5730,42 @@
           "unit": null,
           "status": "UNOBSERVED"
         },
-        "reportedMetrics": {},
+        "reportedMetrics": {
+          "attributableProduction": {
+            "annual": 2284224,
+            "unit": "carats_recovered_per_year",
+            "year": 2024,
+            "status": "REPORTED",
+            "basis": "Mountain Province 49% share"
+          },
+          "oreMined": {
+            "annual": 5379404,
+            "unit": "metric_tonnes_per_year",
+            "year": 2024,
+            "status": "REPORTED"
+          }
+        },
         "quantitativeProvenance": {
-          "structuredSource": "https://www.debeersgroup.com/news-insights/latest-group-news/2025/production-report-for-the-fourth-quarter-of-2024",
+          "structuredSource": "https://www.mountainprovince.com/2025-01-23-Mountain-Province-Diamonds-Announces-Fourth-Quarter-and-Full-Year-2024-Production-and-Sales-Results",
           "capacitySource": null,
           "promotedAt": "2026-10-11"
         },
         "completeness": {
           "reserve": "UNQUANTIFIED",
           "production": "REPORTED",
-          "grade": "QUALITATIVE_ONLY",
+          "grade": "REPORTED_RECOVERED_GRADE",
           "recovery": "UNOBSERVED",
           "purity": "UNOBSERVED",
           "capacity": "UNOBSERVED",
           "structuredEvidence": true,
-          "overall": "SITE_IDENTITY_ENRICHED_FIELD_LEVEL_RESEARCH_PARTIAL"
+          "overall": "SITE_SPECIFIC_PRIMARY_SOURCE_RESEARCH_PARTIAL",
+          "throughput": "REPORTED"
         }
       },
       "verification": {
-        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_FIELD_LEVEL_REVIEW_REQUIRED",
-        "reviewedAt": "2026-10-11",
-        "sourceCount": 1,
+        "researchState": "PRIMARY_SOURCE_QUANTITATIVE_RESEARCH_UPDATED",
+        "reviewedAt": "2026-10-12",
+        "sourceCount": 2,
         "sourceAuthorities": [
           "DE_BEERS_GROUP"
         ],
@@ -5762,6 +5780,10 @@
           {
             "url": "https://www.debeersgroup.com/news-insights/latest-group-news/2025/production-report-for-the-fourth-quarter-of-2024",
             "scope": "Site identity and cited field(s); revalidate field-level claims and ownership/operating status before authoritative promotion."
+          },
+          {
+            "url": "https://www.mountainprovince.com/2025-01-23-Mountain-Province-Diamonds-Announces-Fourth-Quarter-and-Full-Year-2024-Production-and-Sales-Results",
+            "scope": "Mountain Province FY2024 release: carats recovered, recovered grade, ore treated and 49% attributable production."
           }
         ]
       },
@@ -6572,11 +6594,12 @@
           "basis": null
         },
         "production": {
-          "annual": null,
+          "annual": 34300,
           "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
+          "unit": "metric_tonnes_nickel_metal_per_year",
+          "year": 2024,
+          "status": "REPORTED",
+          "basis": "Glencore FY2024 asset-level nickel metal output, not ore throughput."
         },
         "grade": {
           "value": "Site-specific measured ore/feed grade not supplied in this record",
@@ -6607,27 +6630,36 @@
           "unit": null,
           "status": "UNOBSERVED"
         },
-        "reportedMetrics": {},
+        "reportedMetrics": {
+          "2023NickelMetal": {
+            "annual": 31100,
+            "unit": "metric_tonnes_nickel_metal_per_year",
+            "year": 2023,
+            "status": "REPORTED"
+          },
+          "yearOverYearChangePercent": 10
+        },
         "quantitativeProvenance": {
-          "structuredSource": "https://www.glencore.com/what-we-do/energy-products/nickel",
+          "structuredSource": "https://www.glencore.com/.rest/api/v1/documents/static/437c6cdb-dbfb-4e61-a769-18655951cee2/Glencore+production+report_FY2024.pdf",
           "capacitySource": null,
           "promotedAt": "2026-10-11"
         },
         "completeness": {
           "reserve": "UNQUANTIFIED",
-          "production": "UNOBSERVED",
+          "production": "REPORTED",
           "grade": "QUALITATIVE_ONLY",
           "recovery": "UNOBSERVED",
           "purity": "UNOBSERVED",
           "capacity": "UNOBSERVED",
-          "structuredEvidence": false,
-          "overall": "SITE_IDENTITY_ENRICHED_FIELD_LEVEL_RESEARCH_PARTIAL"
+          "structuredEvidence": true,
+          "overall": "SITE_SPECIFIC_PRIMARY_SOURCE_RESEARCH_PARTIAL",
+          "throughput": "UNOBSERVED"
         }
       },
       "verification": {
-        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_FIELD_LEVEL_REVIEW_REQUIRED",
-        "reviewedAt": "2026-10-11",
-        "sourceCount": 1,
+        "researchState": "PRIMARY_SOURCE_QUANTITATIVE_RESEARCH_UPDATED",
+        "reviewedAt": "2026-10-12",
+        "sourceCount": 2,
         "sourceAuthorities": [
           "GLENCORE"
         ],
@@ -6642,6 +6674,10 @@
           {
             "url": "https://www.glencore.com/what-we-do/energy-products/nickel",
             "scope": "Site identity and cited field(s); revalidate field-level claims and ownership/operating status before authoritative promotion."
+          },
+          {
+            "url": "https://www.glencore.com/.rest/api/v1/documents/static/437c6cdb-dbfb-4e61-a769-18655951cee2/Glencore+production+report_FY2024.pdf",
+            "scope": "Glencore FY2024 production report: 34.3 kt nickel metal in 2024 vs 31.1 kt in 2023."
           }
         ]
       },
@@ -6882,10 +6918,11 @@
           "status": "UNOBSERVED"
         },
         "throughput": {
-          "value": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
+          "value": 1500000,
+          "unit": "metric_tonnes_ore_per_year",
+          "year": 2022,
+          "status": "OPERATOR_REPORTED_CONCENTRATOR_THROUGHPUT_CAPACITY",
+          "basis": "Glencore describes upgraded concentrator capacity up to 1.5 Mtpa ore; this is not nickel output."
         },
         "purity": {
           "value": null,
@@ -6899,10 +6936,17 @@
           "unit": null,
           "status": "UNOBSERVED"
         },
-        "reportedMetrics": {},
+        "reportedMetrics": {
+          "concentratorCapacity": {
+            "value": 1500000,
+            "unit": "metric_tonnes_ore_per_year",
+            "year": 2022,
+            "status": "OPERATOR_REPORTED_CAPACITY"
+          }
+        },
         "quantitativeProvenance": {
           "structuredSource": "https://www.glencore.com/what-we-do/metals-and-minerals/nickel",
-          "capacitySource": null,
+          "capacitySource": "https://www.glencore.com/media-and-insights/insights/2022-02-the-journey-of-nickel",
           "promotedAt": "2026-10-11"
         },
         "completeness": {
@@ -6912,14 +6956,15 @@
           "recovery": "UNOBSERVED",
           "purity": "UNOBSERVED",
           "capacity": "UNOBSERVED",
-          "structuredEvidence": false,
-          "overall": "SITE_IDENTITY_ENRICHED_FIELD_LEVEL_RESEARCH_PARTIAL"
+          "structuredEvidence": true,
+          "overall": "SITE_SPECIFIC_PRIMARY_SOURCE_RESEARCH_PARTIAL",
+          "throughput": "OPERATOR_REPORTED_CONCENTRATOR_THROUGHPUT_CAPACITY"
         }
       },
       "verification": {
-        "researchState": "SOURCE_REFERENCED_SITE_IDENTITY_FIELD_LEVEL_REVIEW_REQUIRED",
-        "reviewedAt": "2026-10-11",
-        "sourceCount": 1,
+        "researchState": "PRIMARY_SOURCE_QUANTITATIVE_RESEARCH_UPDATED",
+        "reviewedAt": "2026-10-12",
+        "sourceCount": 2,
         "sourceAuthorities": [
           "GLENCORE"
         ],
@@ -6934,6 +6979,10 @@
           {
             "url": "https://www.glencore.com/what-we-do/metals-and-minerals/nickel",
             "scope": "Site identity and cited field(s); revalidate field-level claims and ownership/operating status before authoritative promotion."
+          },
+          {
+            "url": "https://www.glencore.com/media-and-insights/insights/2022-02-the-journey-of-nickel",
+            "scope": "Glencore describes Raglan concentrator capacity up to 1.5 Mtpa ore."
           }
         ]
       },
@@ -7566,5 +7615,10 @@
       "SITE_NAM_otjikoto_gold_mine"
     ],
     "note": "Sixteen additional site records. Each record has the shared seven-field quantitative schema; unverified measures remain null/UNOBSERVED. Reported metrics preserve year, unit, ownership basis and source."
+  },
+  "researchUpdate": {
+    "date": "2026-10-12",
+    "scope": "Primary-source quantitative enrichment of selected records",
+    "policy": "Keep units, reporting year, attribution basis and evidence; do not conflate plant throughput with metal output; unknown values remain unknown."
   }
 }
