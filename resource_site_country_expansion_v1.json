@@ -3282,11 +3282,12 @@
           "basis": "GAMEPLAY_SIMULATION_LAYER_REQUIRED"
         },
         "production": {
-          "annual": null,
+          "annual": 692675,
           "rate": null,
-          "unit": null,
-          "year": null,
-          "status": "UNOBSERVED"
+          "unit": "troy_ounces_gold_per_year",
+          "year": 2025,
+          "status": "REPORTED",
+          "basis": "Agnico Eagle official Detour Lake operations page reports 2025 production; this is not 2024 output."
         },
         "grade": {
           "value": "Gold deposit; site-specific numeric assay not established in this tranche",
@@ -3319,9 +3320,7 @@
         },
         "reportedMetrics": {},
         "quantitativeProvenance": {
-          "structuredSource": [
-            "https://s205.q4cdn.com/243646470/files/doc_presentation/2024/Detour-Lake-Mine.pdf"
-          ],
+          "structuredSource": "https://www.agnicoeagle.com/English/operations-and-projects/global-operations-and-development-projects/detour-lake/default.aspx",
           "capacitySource": [
             "https://s205.q4cdn.com/243646470/files/doc_presentation/2024/Detour-Lake-Mine.pdf"
           ],
@@ -3329,19 +3328,20 @@
         },
         "completeness": {
           "reserve": "UNQUANTIFIED",
-          "production": "UNOBSERVED",
+          "production": "REPORTED",
           "grade": "QUALITATIVE_ONLY",
           "recovery": "UNOBSERVED",
           "purity": "UNOBSERVED",
           "capacity": "REPORTED_DESIGN_CAPACITY",
           "structuredEvidence": true,
-          "overall": "IDENTITY_LOCATION_AND_SOURCE_LINKED_SITE_RECORD"
+          "overall": "SITE_SPECIFIC_PRIMARY_SOURCE_RESEARCH_PARTIAL",
+          "throughput": "UNOBSERVED"
         }
       },
       "verification": {
-        "researchState": "SOURCE_LINKED_SITE_RECORD_FIELD_LEVEL_REVALIDATION_REQUIRED",
-        "reviewedAt": "2026-10-10",
-        "sourceCount": 1,
+        "researchState": "PRIMARY_SOURCE_QUANTITATIVE_RESEARCH_UPDATED",
+        "reviewedAt": "2026-10-12",
+        "sourceCount": 2,
         "sourceAuthorities": [
           "MINE_OPERATOR_OR_TECHNICAL_REPORT"
         ],
@@ -3356,6 +3356,10 @@
           {
             "url": "https://s205.q4cdn.com/243646470/files/doc_presentation/2024/Detour-Lake-Mine.pdf",
             "scope": "operator technical presentation: daily mill capacity and reserve cut-off context"
+          },
+          {
+            "url": "https://www.agnicoeagle.com/English/operations-and-projects/global-operations-and-development-projects/detour-lake/default.aspx",
+            "scope": "Agnico Eagle Detour Lake official operations page: 692,675 oz gold produced in 2025."
           }
         ]
       },
@@ -4550,9 +4554,10 @@
         "production": {
           "annual": 174080,
           "rate": null,
-          "unit": "troy_ounces_gold",
+          "unit": "troy_ounces_gold_per_year",
           "year": 2024,
-          "status": "REPORTED"
+          "status": "REPORTED",
+          "basis": "Eldorado Gold FY2024 results: site-specific gold production."
         },
         "grade": {
           "value": 0.81,
@@ -4586,9 +4591,7 @@
         },
         "reportedMetrics": {},
         "quantitativeProvenance": {
-          "structuredSource": [
-            "https://www.eldoradogold.com/investors/news-releases/eldorado-gold-delivers-strong-2024-full-year-and-fourth-quarter-financial"
-          ],
+          "structuredSource": "https://www.eldoradogold.com/sites/eldorado-gold/files/2025-02/Q4-2024-Annual-MD&A-Final.pdf",
           "capacitySource": null,
           "promotedAt": "2026-10-10"
         },
@@ -4600,13 +4603,14 @@
           "purity": "UNOBSERVED",
           "capacity": "UNOBSERVED",
           "structuredEvidence": true,
-          "overall": "IDENTITY_LOCATION_AND_SOURCE_LINKED_SITE_RECORD"
+          "overall": "SITE_SPECIFIC_PRIMARY_SOURCE_RESEARCH_PARTIAL",
+          "throughput": "UNOBSERVED"
         }
       },
       "verification": {
-        "researchState": "SOURCE_LINKED_SITE_RECORD_FIELD_LEVEL_REVALIDATION_REQUIRED",
-        "reviewedAt": "2026-10-10",
-        "sourceCount": 1,
+        "researchState": "PRIMARY_SOURCE_QUANTITATIVE_RESEARCH_UPDATED",
+        "reviewedAt": "2026-10-12",
+        "sourceCount": 2,
         "sourceAuthorities": [
           "MINE_OPERATOR_OR_TECHNICAL_REPORT"
         ],
@@ -4621,6 +4625,10 @@
           {
             "url": "https://www.eldoradogold.com/investors/news-releases/eldorado-gold-delivers-strong-2024-full-year-and-fourth-quarter-financial",
             "scope": "operator-reported 2024 gold production and average grade"
+          },
+          {
+            "url": "https://www.eldoradogold.com/sites/eldorado-gold/files/2025-02/Q4-2024-Annual-MD&A-Final.pdf",
+            "scope": "Eldorado Gold FY2024 MD&A: Kışladağ produced 174,080 oz gold in 2024."
           }
         ]
       },
@@ -5029,9 +5037,10 @@
         "production": {
           "annual": 35000,
           "rate": null,
-          "unit": "metric_tonnes_natural_graphite",
+          "unit": "metric_tonnes_natural_graphite_product_per_year",
           "year": 2024,
-          "status": "REPORTED"
+          "status": "REPORTED_APPROXIMATE",
+          "basis": "Syrah 2025 Annual Report compares 2025 production of approximately 67 kt with 35 kt in 2024."
         },
         "grade": {
           "value": 16,
@@ -5061,34 +5070,45 @@
           "nominal": 350000,
           "minimum": null,
           "maximum": null,
-          "unit": "metric_tonnes_graphite_per_year",
-          "status": "REPORTED_DESIGN_CAPACITY"
+          "unit": "metric_tonnes_natural_graphite_product_per_year",
+          "status": "REPORTED_DESIGN_CAPACITY",
+          "basis": "Syrah Annual Report 2023 states 350 ktpa graphite product capacity; not current actual production."
         },
-        "reportedMetrics": {},
+        "reportedMetrics": {
+          "orePlantCapacity": {
+            "value": 2000000,
+            "unit": "metric_tonnes_ore_per_year",
+            "status": "REPORTED_DESIGN_CAPACITY",
+            "basis": "Syrah 2023 Annual Report: 2 Mtpa ore throughput yielding ~350 ktpa graphite product"
+          },
+          "productSpecification": {
+            "fixedCarbonPercentMinimum": 94,
+            "fixedCarbonPercentMaximum": 98,
+            "status": "REPORTED_PRODUCT_SPECIFICATION",
+            "basis": "Fixed-carbon content of graphite concentrate; not coded as the site's ore grade or purity."
+          }
+        },
         "quantitativeProvenance": {
-          "structuredSource": [
-            "https://minedocs.com/29/Syrah-Resources-AR-2024.pdf"
-          ],
-          "capacitySource": [
-            "https://minedocs.com/29/Syrah-Resources-AR-2024.pdf"
-          ],
+          "structuredSource": "https://www.datocms-assets.com/65260/1774572803-syr_2025_annual_report.pdf",
+          "capacitySource": "https://www.datocms-assets.com/65260/1711495246-syr_31_december_2023_annual_report.pdf",
           "promotedAt": "2026-10-10"
         },
         "completeness": {
           "reserve": "REPORTED_ORE_RESERVE_ESTIMATE",
-          "production": "REPORTED",
+          "production": "REPORTED_APPROXIMATE",
           "grade": "REPORTED_RESERVE_GRADE",
           "recovery": "UNOBSERVED",
           "purity": "UNOBSERVED",
           "capacity": "REPORTED_DESIGN_CAPACITY",
           "structuredEvidence": true,
-          "overall": "IDENTITY_LOCATION_AND_SOURCE_LINKED_SITE_RECORD"
+          "overall": "SITE_SPECIFIC_PRIMARY_SOURCE_RESEARCH_PARTIAL",
+          "throughput": "UNOBSERVED"
         }
       },
       "verification": {
-        "researchState": "SOURCE_LINKED_SITE_RECORD_FIELD_LEVEL_REVALIDATION_REQUIRED",
-        "reviewedAt": "2026-10-10",
-        "sourceCount": 1,
+        "researchState": "PRIMARY_SOURCE_QUANTITATIVE_RESEARCH_UPDATED",
+        "reviewedAt": "2026-10-12",
+        "sourceCount": 3,
         "sourceAuthorities": [
           "MINE_OPERATOR_OR_TECHNICAL_REPORT"
         ],
@@ -5103,6 +5123,14 @@
           {
             "url": "https://minedocs.com/29/Syrah-Resources-AR-2024.pdf",
             "scope": "2024 annual report: graphite production, capacity and ore reserve estimate"
+          },
+          {
+            "url": "https://www.datocms-assets.com/65260/1774572803-syr_2025_annual_report.pdf",
+            "scope": "Syrah FY2025 Annual Report reports 35 kt natural graphite production in 2024 (67 kt in 2025)."
+          },
+          {
+            "url": "https://www.datocms-assets.com/65260/1711495246-syr_31_december_2023_annual_report.pdf",
+            "scope": "Syrah FY2023 Annual Report: 2 Mtpa ore plant throughput and approximately 350 ktpa graphite product capacity; graphite product fixed carbon 94–98%."
           }
         ]
       },
@@ -5206,18 +5234,19 @@
           "status": "UNOBSERVED"
         },
         "capacity": {
-          "nominal": null,
+          "nominal": 8000,
           "minimum": null,
           "maximum": null,
-          "unit": null,
-          "status": "UNOBSERVED"
+          "unit": "metric_tonnes_ore_per_day",
+          "status": "OPERATOR_REPORTED_PROCESSING_CAPACITY",
+          "basis": "Barrick official North Mara operations page states plant capacity to process an average of 8,000 tonnes of ore per day."
         },
         "reportedMetrics": {},
         "quantitativeProvenance": {
           "structuredSource": [
             "https://www.barrick.com/English/news/news-details/2023/tanzanian-assets-deliver-record-production-and-create-long-term-value/default.aspx"
           ],
-          "capacitySource": null,
+          "capacitySource": "https://www.barrick.com/English/operations/north-mara/default.aspx",
           "promotedAt": "2026-10-10"
         },
         "completeness": {
@@ -5226,15 +5255,16 @@
           "grade": "QUALITATIVE_ONLY",
           "recovery": "UNOBSERVED",
           "purity": "UNOBSERVED",
-          "capacity": "UNOBSERVED",
-          "structuredEvidence": false,
-          "overall": "IDENTITY_LOCATION_AND_SOURCE_LINKED_SITE_RECORD"
+          "capacity": "OPERATOR_REPORTED_PROCESSING_CAPACITY",
+          "structuredEvidence": true,
+          "overall": "SITE_SPECIFIC_PRIMARY_SOURCE_RESEARCH_PARTIAL",
+          "throughput": "UNOBSERVED"
         }
       },
       "verification": {
-        "researchState": "SOURCE_LINKED_SITE_RECORD_FIELD_LEVEL_REVALIDATION_REQUIRED",
-        "reviewedAt": "2026-10-10",
-        "sourceCount": 1,
+        "researchState": "PRIMARY_SOURCE_QUANTITATIVE_RESEARCH_UPDATED",
+        "reviewedAt": "2026-10-12",
+        "sourceCount": 2,
         "sourceAuthorities": [
           "MINE_OPERATOR_OR_TECHNICAL_REPORT"
         ],
@@ -5249,6 +5279,10 @@
           {
             "url": "https://www.barrick.com/English/news/news-details/2023/tanzanian-assets-deliver-record-production-and-create-long-term-value/default.aspx",
             "scope": "Barrick source confirming North Mara and Tanzanian operating context"
+          },
+          {
+            "url": "https://www.barrick.com/English/operations/north-mara/default.aspx",
+            "scope": "Barrick official operations page: processing plant capacity average 8,000 tonnes ore/day."
           }
         ]
       },
