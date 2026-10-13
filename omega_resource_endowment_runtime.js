@@ -817,7 +817,7 @@ function batchFromExtraction(x,record){
       epistemicState:simulatedQuantity?'SIMULATED':'OBSERVED',stateAuthority:simulatedQuantity?'SIMULATED':'OBSERVED',countryId:c,sourceCountryId:c,originCountryId:c,
       ownerCountryCode:c,ownerKey:x.ownerKey||null,custodianKey:c,destinationCountryId:c,
       locationNodeKey:'WAREHOUSE:'+c+':RAW',warehouseId:'WH-'+c+'-RAW',
-      originKey:x.occurrenceKey,facilityKey:x.occurrenceKey,extractionReference:record?.extractionId||null,sourceBatchIds:[],
+      occurrenceKey:x.occurrenceKey,originKey:x.occurrenceKey,facilityKey:x.occurrenceKey,extractionReference:record?.extractionId||null,sourceBatchIds:[],
       lifecycleStatus:'AVAILABLE',timestampTurn:turn(),transferType:'LOCAL_EXTRACTION',
       provenance:{
         sourceSubsystem:'OMEGA_RESOURCE_ENDOWMENT_RUNTIME_V2',sourceAuthority:simulatedQuantity?'SIMULATED':'OBSERVED',
