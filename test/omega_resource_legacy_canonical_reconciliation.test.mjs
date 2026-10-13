@@ -195,3 +195,73 @@ console.log(JSON.stringify({
   matchCountsOverall: report.matchCountsOverall,
   coordinateCoverage: report.coordinateCoverage
 }, null, 2));
+
+
+const structuredLegacy = read('resource_site_legacy_structural_candidates_v1.json');
+assert.equal(structuredLegacy.auditCounts.historicalEmbeddedRows, 114);
+assert.equal(structuredLegacy.auditCounts.historicalJsonDepositRows, 62);
+assert.equal(structuredLegacy.auditCounts.synthesizedProfileMarkerCount, 1095);
+assert.equal(structuredLegacy.auditCounts.totalSiteLevelLegacyRows, 176);
+assert.equal(structuredLegacy.auditCounts.uniqueLegacyNames, 138);
+assert.equal(structuredLegacy.auditCounts.duplicateNameGroupsAcrossLegacySources, 38);
+assert.equal(structuredLegacy.records.length, structuredLegacy.auditCounts.structurallyMappedCandidateCount);
+assert.equal(structuredLegacy.excludedCandidates.length, structuredLegacy.auditCounts.excludedCandidateCount);
+assert.equal(
+  structuredLegacy.records.length + structuredLegacy.excludedCandidates.length,
+  structuredLegacy.auditCounts.extractiveCandidateNameGroups,
+  'every named extractive legacy group must be either structured or explicitly excluded'
+);
+assert.equal(structuredLegacy.rules.noExternalResearchUsed, true);
+assert.equal(structuredLegacy.rules.historicalInputsPreservedUnmodified, true);
+assert.equal(structuredLegacy.rules.candidatesExecutableAtRuntime, 0);
+assert.equal(structuredLegacy.rules.candidatesAddedToCanonicalCatalog, 0);
+assert.equal(structuredLegacy.rules.candidatesAddedToMasterRegistry, 0);
+assert.equal(structuredLegacy.rules.candidatesAddedToReserveSimulation, 0);
+assert.equal(structuredLegacy.selectionPolicy.allSelectedRowsNonExecutable, true);
+
+const currentNamesForTest = new Set(canonical.sites.map(site => site.countryId + '|' + norm(site.siteName)));
+const candidateIds = new Set();
+const candidateNames = new Set();
+const ontologyIds = new Set(canonical.sites.map(site => site.identity?.resourceTypeId).filter(Boolean));
+for (const site of structuredLegacy.records) {
+  assert.match(site.siteId, /^SITE_[A-Z]{3}_[a-z0-9_]+$/);
+  assert.equal(candidateIds.has(site.siteId), false, 'legacy candidate site IDs must be unique');
+  candidateIds.add(site.siteId);
+  assert.equal(canonicalIds.has(site.siteId), false, 'legacy candidates must not collide with canonical IDs');
+  assert.equal(site.countryId, site.identity.countryIso3);
+  assert.match(site.countryId, /^[A-Z]{3}$/);
+  assert.equal(ontologyIds.has(site.identity.resourceTypeId), true, 'candidate resource must exist in current ontology');
+  const candidateNameKey = site.countryId + '|' + norm(site.siteName);
+  assert.equal(candidateNames.has(candidateNameKey), false, 'duplicate candidate name/country rows must be collapsed');
+  candidateNames.add(candidateNameKey);
+  assert.equal(currentNamesForTest.has(candidateNameKey), false, 'existing canonical sites must not be reintroduced');
+  const point = site.location.coordinates;
+  assert.ok(Number.isFinite(point.lat) && Math.abs(point.lat) <= 90);
+  assert.ok(Number.isFinite(point.lng) && Math.abs(point.lng) <= 180);
+  assert.equal(site.location.coordinateStatus, 'LEGACY_UNVERIFIED_POINT');
+  assert.equal(site.operation.extractionEligibility, 'NOT_EXECUTABLE_LEGACY_UNVERIFIED');
+  assert.equal(site.operation.commercialExtraction, false);
+  assert.equal(site.legacyRecovery.canonicalPromotionAllowed, false);
+  assert.equal(site.legacyRecovery.runtimeIntegrationStatus, 'NOT_BOUND_TO_RUNTIME_PIPELINE');
+  assert.equal(site.logistics.inventoryRouteStatus, 'NOT_YET_BOUND_TO_RUNTIME_PIPELINE');
+  assert.equal(site.logistics.factoryRouteStatus, 'NOT_YET_BOUND_TO_RUNTIME_PIPELINE');
+  assert.equal(site.quantitative.reserve.quantity, null);
+  assert.equal(site.quantitative.reserve.status, 'UNOBSERVED');
+  assert.equal(site.quantitative.production.rate, null);
+  assert.equal(site.quantitative.production.status, 'UNOBSERVED');
+  assert.equal(site.quantitative.grade.value, null);
+  assert.equal(site.quantitative.grade.status, 'UNOBSERVED');
+  assert.equal(site.quantitative.recovery.status, 'UNOBSERVED');
+  assert.equal(site.quantitative.throughput.status, 'UNOBSERVED');
+  assert.equal(site.quantitative.purity.status, 'UNOBSERVED');
+  assert.equal(site.quantitative.capacity.status, 'UNOBSERVED');
+  assert.ok(site.legacyRecovery.sourceRows.length >= 1, 'source evidence must be retained');
+}
+assert.ok(structuredLegacy.records.some(site => site.siteName === 'Jharia Coal Field'));
+assert.ok(structuredLegacy.records.some(site => site.siteName === 'Bibiyana Gas Field'));
+assert.ok(structuredLegacy.records.some(site => site.siteName === 'Escondida Copper Mine'));
+assert.ok(structuredLegacy.excludedCandidates.some(site => site.candidateName === 'Barapukuria Coal Mine' && site.reasons.includes('EXACT_CANONICAL_DUPLICATE')));
+assert.ok(structuredLegacy.excludedCandidates.some(site => site.candidateName === 'Greenbushes Lithium Mine' && site.reasons.includes('RESOURCE_NOT_IN_CURRENT_ONTOLOGY')));
+console.log('OMEGA legacy structural candidate normalization: PASS');
+console.log('Structurally mapped non-executable candidates:', structuredLegacy.records.length);
+console.log('Excluded/duplicate/conflicting legacy groups:', structuredLegacy.excludedCandidates.length);
