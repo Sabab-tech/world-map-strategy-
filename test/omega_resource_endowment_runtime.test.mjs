@@ -13,7 +13,12 @@ const resourceFiles=new Map([
   ['resource_site_reference_expanded_part_01.json',new URL('../resource_site_reference_expanded_part_01.json',import.meta.url)],
   ['resource_site_reference_expanded_part_02.json',new URL('../resource_site_reference_expanded_part_02.json',import.meta.url)],
   ['resource_site_reference_expanded_part_03.json',new URL('../resource_site_reference_expanded_part_03.json',import.meta.url)],
-  ['resource_site_reference_expanded_part_04.json',new URL('../resource_site_reference_expanded_part_04.json',import.meta.url)]
+  ['resource_site_reference_expanded_part_04.json',new URL('../resource_site_reference_expanded_part_04.json',import.meta.url)],
+  ['resource_site_legacy_gameplay_expansion_part_1_v1.json',new URL('../resource_site_legacy_gameplay_expansion_part_1_v1.json',import.meta.url)],
+  ['resource_site_legacy_gameplay_expansion_part_2_v1.json',new URL('../resource_site_legacy_gameplay_expansion_part_2_v1.json',import.meta.url)],
+  ['resource_site_legacy_gameplay_expansion_part_3_v1.json',new URL('../resource_site_legacy_gameplay_expansion_part_3_v1.json',import.meta.url)],
+  ['resource_site_legacy_gameplay_expansion_part_4_v1.json',new URL('../resource_site_legacy_gameplay_expansion_part_4_v1.json',import.meta.url)],
+  ['resource_site_legacy_gameplay_expansion_part_5_v1.json',new URL('../resource_site_legacy_gameplay_expansion_part_5_v1.json',import.meta.url)]
 ]);
 const nativeFetch=globalThis.fetch;
 globalThis.fetch=async function(input){
@@ -72,6 +77,27 @@ assert.equal(reserveScenario.commercialSiteCount,246);
 const hydrated=runtime.hydrateCountry('BGD');
 const indDiag=runtime.hydrateCountry('IND');
 const indState=runtime.countryResourceState('IND')||{};
+
+// The 65-site legacy gameplay overlay is loaded into real per-country site references,
+// reserve state and extraction models, without rewriting the canonical 250-site files.
+const expansionReport=globalThis.OmegaResourceLegacyGameplayExpansion||globalThis.Omega?.ResourceLegacyGameplayExpansion;
+assert.equal(expansionReport?.status,'READY',JSON.stringify(expansionReport));
+assert.equal(expansionReport?.count,65,JSON.stringify(expansionReport));
+assert.equal(expansionReport?.activeAdded,55,JSON.stringify(expansionReport));
+const ausDiag=runtime.hydrateCountry('AUS');
+assert.equal(ausDiag.status,'APPLIED',JSON.stringify(ausDiag));
+const ausState=runtime.countryResourceState('AUS')||{};
+const pilbaraSite=(ausState.mineSiteReferences||[]).find(x=>x.siteReferenceKey==='SITE_AUS_pilbara_iron_ore_range');
+assert(pilbaraSite,'Pilbara legacy site must be bound to country-level site references');
+assert.equal(pilbaraSite.quantitative.grade.status,'SIMULATED');
+assert.equal(pilbaraSite.quantitative.purity.status,'SIMULATED');
+assert.equal(pilbaraSite.quantitative.production.status,'SIMULATED');
+assert.ok(pilbaraSite.simulationReserveQuantity>0);
+const pilbaraExecution=(ausState.mineStates||{});
+const pilbaraOccurrence=Object.keys(pilbaraExecution).find(k=>k.includes('SITE_AUS_pilbara_iron_ore_range'));
+assert(pilbaraOccurrence,'Pilbara should have an initialized reserve/extraction state');
+assert.equal(pilbaraExecution[pilbaraOccurrence].provenance.stateAuthority,'SIMULATED');
+assert.ok(pilbaraExecution[pilbaraOccurrence].recoverableQuantity>0);
 const gevraRef=(indState.mineSiteReferences||[]).find(x=>x.siteReferenceKey==='SITE_IND_gevra_oc_mine');
 const kwtDiag=runtime.hydrateCountry('KWT');const kwtState=runtime.countryResourceState('KWT')||{};const kwtRef=(kwtState.mineSiteReferences||[]).find(x=>x.siteReferenceKey==='SITE_KWT_greater_burgan_oilfield');console.log('ENDOWMENT_KWT_MODEL '+JSON.stringify({hydrate:kwtDiag.status,ref:kwtRef&&{siteReferenceKey:kwtRef.siteReferenceKey,resourceId:kwtRef.resourceId,commercialExtraction:kwtRef.commercialExtraction,simulationReserveQuantity:kwtRef.simulationReserveQuantity},model:globalThis.Omega?.ResourceRealism?.siteModel?.(kwtRef,engine.countryProfiles?.KWT,'KWT'),controller:Object.values(kwtState.mineSiteControllers||{}).find(x=>x.siteReferenceKey==='SITE_KWT_greater_burgan_oilfield')}));
 assert.equal(hydrated.status,'APPLIED', JSON.stringify(hydrated));
