@@ -29,7 +29,9 @@ function detail(s){
  const sim=s.simulation||{},real=s.real||{},loc=s.location||{},coords=s.coordinates||loc.coordinates||{};
  const operation=s.operation||s.operationProfile||{},ownership=s.ownership||{},processing=s.processing||{};
  const routes=sim.transportRoute||sim.transportRoutes||s.transportRoute||s.logistics?.routes||s.routes||[];
- const reserve=sim.reserve||sim.recoverableReserve||s.quantitative?.reserve||{};
+ const q=s.quantitative||s.sourceSiteRecord?.quantitative||{},production=q.production||{},grade=q.grade||{},purity=q.purity||{},recoveryData=q.recovery||{},throughput=q.throughput||{},capacity=q.capacity||{};
+ const facts=Array.isArray(s.observedFacts)?s.observedFacts:(Array.isArray(s.sourceSiteRecord?.observedFacts)?s.sourceSiteRecord.observedFacts:[]);
+ const reserve=sim.reserve||sim.recoverableReserve||q.reserve||s.sourceSiteRecord?.reserve||{};
  const routeRows=Array.isArray(routes)?routes:(routes?[routes]:[]);
  const routeHtml=routeRows.length?routeRows.map((route,i)=>{
   const row=route&&typeof route==='object'?route:{route};
@@ -41,9 +43,10 @@ function detail(s){
  '<p>Country: <b>'+esc(s.countryId)+'</b> · Commodity: <b>'+esc(real.resourceId||s.sourceSiteRecord?.resourceId||s.sourceSiteRecord?.resId||s.identity?.resourceTypeId||'unknown')+'</b></p>'+
  '<p>Location: '+esc(loc.locality||loc.adminRegion||loc.countryName||'unknown')+' ('+esc(coords.lat)+', '+esc(coords.lng)+')</p>'+
  '<div class="omega-site-section"><h4>Extraction & ownership</h4><p>Method: <b>'+esc(real.extractionMethod||operation.extractionMethod||operation.method||'UNSPECIFIED')+'</b></p><p>Status: '+esc(real.operationStatus||operation.status||operation.operationalStatus||s.sourceSiteRecord?.status||'UNKNOWN')+'</p><p>Owner: '+esc(ownership.owner||real.owner||'Not specified')+' · Operator: '+esc(ownership.operator||real.operator||'Not specified')+'</p></div>'+
- '<div class="omega-site-section"><h4>Reserve & site capacity</h4><p>Gameplay reserve: '+displayValue(typeof reserve==='object'?((reserve.quantity??reserve.value??'')+' '+(reserve.unit||'')):reserve)+' <small>('+esc(reserve.status||sim.reserveStatus||'SIMULATION DATA')+')</small></p><p>Nominal capacity: '+esc(sim.nominalDailyCapacity??sim.capacityModel?.nominalDailyCapacity??'Not specified')+' / day</p><p>Utilization: '+esc(sim.utilization===undefined?'Not specified':Math.round(Number(sim.utilization)*100)+'%')+' · Recovery: '+esc(sim.recovery===undefined?'Not specified':Math.round(Number(sim.recovery)*100)+'%')+'</p><small>Simulation assumptions are gameplay values, not verified real-world production rates.</small></div>'+
+ '<div class="omega-site-section"><h4>Reserve, production & quality</h4><p>Gameplay reserve: '+displayValue(typeof reserve==='object'?((reserve.quantity??reserve.value??'')+' '+(reserve.unit||'')):reserve)+' <small>('+esc(reserve.status||sim.reserveStatus||'SIMULATION DATA')+')</small></p><p>Daily production: <b>'+esc(production.rate??sim.productionRate??'Not specified')+' '+esc(production.unit||sim.productionRateUnit||'')+'</b> · Annual: '+esc(production.annual??sim.annualProduction??'Not specified')+' '+esc(production.annualUnit||sim.annualProductionUnit||'')+'</p><p>Grade: <b>'+esc(grade.value??sim.grade?.value??'Not specified')+' '+esc(grade.unit||sim.grade?.unit||'')+'</b> · Purity: <b>'+esc(purity.value??sim.purity?.value??'Not specified')+' '+esc(purity.unit||sim.purity?.unit||'PERCENT')+'</b></p><p>Processing recovery: '+esc(recoveryData.value===undefined?(sim.recovery===undefined?'Not specified':Math.round(Number(sim.recovery)*100)):recoveryData.value)+' '+esc(recoveryData.unit||'PERCENT')+' · Daily throughput: '+esc(throughput.value??'Not specified')+' '+esc(throughput.unit||'')+'</p><p>Capacity min/nominal/max: '+esc(capacity.minimum??sim.minimumDailyCapacity??'Not specified')+' / '+esc(capacity.nominal??sim.nominalDailyCapacity??'Not specified')+' / '+esc(capacity.maximum??sim.maximumDailyCapacity??'Not specified')+' '+esc(capacity.unit||sim.productionRateUnit||'')+' per day</p><p>Utilization: '+esc(sim.utilization===undefined?'Not specified':Math.round(Number(sim.utilization)*100)+'%')+'</p><small>All generated operational metrics carry SIMULATED authority unless explicitly listed below as sourced facts.</small></div>'+
  '<div class="omega-site-section"><h4>Individual transport route & delivery</h4>'+routeHtml+'<p>Route data is taken from this site record; no country-average route is substituted.</p></div>'+
  '<div class="omega-site-section"><h4>Processing & factory outputs</h4><p>Upstream: '+displayValue(processing.upstreamProcess||sim.upstreamProcess||'Not specified')+'</p><p>Midstream: '+displayValue(processing.midstreamProcess||sim.midstreamProcess||'Not specified')+'</p><p>Factory outputs: '+displayValue(processing.refinedOutputs||processing.factoryOutputs||sim.factoryOutputs||[])+'</p><p>Downstream sectors: '+displayValue(processing.downstreamSectors||[])+'</p></div>'+
+ (facts.length?'<div class="omega-site-section"><h4>Observed source facts (separate from simulation)</h4>'+facts.map(f=>'<p><b>'+esc(f.metric||'Reported fact')+'</b>: '+esc(typeof f.value==='object'?JSON.stringify(f.value):f.value)+' '+esc(f.unit||'')+' <small>('+esc(f.status||'SOURCE_STATUS_NOT_SET')+')</small></p>').join('')+'</div>':'')+
  '<div class="omega-site-section"><h4>Coordinate & data provenance</h4><p>'+esc(coords.coordinateStatus||loc.coordinateStatus||s.real?.coordinateStatus||'Coordinate status not supplied')+'</p><p>Source: '+esc(s.sourcePath||s.sourceReference?.source||s.sourceReference?.url||s.sourceSiteRecord?.source||'Existing OMEGA resource JSON / site registry')+'</p></div>';
 }
 function setSelected(id){
@@ -328,7 +331,9 @@ async function init(){
     logistics:normalized.logistics||source.logistics||masterRow.logistics||catalogRow.logistics||{},
     processing:normalized.processing||source.processing||masterRow.processing||catalogRow.processing||{},
     map:normalized.map||source.map||catalogRow.map||{},
-    runtime:normalized.runtime||source.runtime||catalogRow.runtime||{}
+    runtime:normalized.runtime||source.runtime||catalogRow.runtime||{},
+    observedFacts:normalized.observedFacts||source.observedFacts||catalogRow.observedFacts||[],
+    sources:normalized.sources||source.sources||catalogRow.sources||[]
    });
    if(!isDeposit)physicalIndex.set(physicalKey,id);
   }
