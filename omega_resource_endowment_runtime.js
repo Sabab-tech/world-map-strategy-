@@ -71,7 +71,7 @@
   let simulationReserveMap=null,simulationReservePromise=null,researchEvidenceMap=null,researchEvidencePromise=null;
   let canonicalSiteCatalogMap=null,canonicalSiteCatalogPromise=null;
   let losslessReferenceMap=null,losslessReferencePromise=null,masterResearchMap=null,masterResearchPromise=null;
-  const LEGACY_GAMEPLAY_EXPANSION_FILES=['resource_site_legacy_gameplay_expansion_part_1_v1.json','resource_site_legacy_gameplay_expansion_part_2_v1.json','resource_site_legacy_gameplay_expansion_part_3_v1.json','resource_site_legacy_gameplay_expansion_part_4_v1.json','resource_site_legacy_gameplay_expansion_part_5_v1.json'];
+  const LEGACY_GAMEPLAY_EXPANSION_FILES=['resource_site_legacy_gameplay_expansion_part_1_v1.json','resource_site_legacy_gameplay_expansion_part_2_v1.json','resource_site_legacy_gameplay_expansion_part_3_v1.json','resource_site_legacy_gameplay_expansion_part_4_v1.json','resource_site_legacy_gameplay_expansion_part_5_v1.json','resource_site_legacy_gameplay_expansion_part_6_v1.json'];
   const LEGACY_CANONICAL_ALIAS_IDS={SITE_AUS_olympic_dam_uranium_copper:'SITE_AUS_olympic_dam_mine',SITE_BRA_carajas_iron_ore_mine_legacy2:'SITE_BRA_carajas_iron_ore_mine',SITE_CHL_escondida_copper_mine_legacy2:'SITE_CHL_escondida_copper_mine',SITE_IDN_grasberg_copper_gold_mine:'SITE_IDN_grasberg_mine',SITE_COD_tenke_fungurume_copper_cobalt_complex:'SITE_COD_tenke_fungurume_mine',SITE_COD_kibali_gold_mine_complex:'SITE_COD_kibali_gold_mine'};
   let legacyGameplayExpansionRows=null,legacyGameplayExpansionPromise=null;
   async function loadLegacyGameplayExpansionRows(){
@@ -81,7 +81,7 @@
       const packs=await Promise.all(LEGACY_GAMEPLAY_EXPANSION_FILES.map(async file=>{try{const response=await fetch(file,{cache:'no-store'});if(!response?.ok)return null;const data=await response.json();return data?.datasetId?.startsWith('OMEGA_RESOURCE_SITE_LEGACY_GAMEPLAY_EXPANSION_PART_')&&Array.isArray(data.records)?data:null;}catch(_){return null;}}));
       const unique=new Map();for(const pack of packs.filter(Boolean).sort((a,b)=>Number(a.part)-Number(b.part)))for(const row of pack.records)if(row?.siteId&&!unique.has(String(row.siteId)))unique.set(String(row.siteId),row);
       legacyGameplayExpansionRows=[...unique.values()];
-      return{status:legacyGameplayExpansionRows.length===65?'READY':'PARTIAL',count:legacyGameplayExpansionRows.length,rows:legacyGameplayExpansionRows,loadedParts:packs.filter(Boolean).length};
+      return{status:legacyGameplayExpansionRows.length===115?'READY':'PARTIAL',count:legacyGameplayExpansionRows.length,rows:legacyGameplayExpansionRows,loadedParts:packs.filter(Boolean).length};
     })().finally(()=>{legacyGameplayExpansionPromise=null;});
     return legacyGameplayExpansionPromise;
   }
@@ -188,7 +188,7 @@
         g.OmegaResourceSiteCanonicalCatalogData=data;
         g.Omega=g.Omega||{};
         g.Omega.ResourceSiteCanonicalCatalogData=data;
-        g.OmegaResourceLegacyGameplayExpansion={status:(legacy.count>=65||legacyCanonicalRows.length===65)?'READY':legacy.status,count:Math.max(Number(legacy.count)||0,legacyCanonicalRows.length),activeAdded:acceptedLegacy.length+legacyCanonicalPhysicalRows.length,activeCanonical:legacyCanonicalPhysicalRows.length,canonicalCandidateCount:legacyCanonicalRows.length,loadedParts:legacy.loadedParts||0};
+        g.OmegaResourceLegacyGameplayExpansion={status:legacy.count>=115?'READY':legacy.status,count:Math.max(Number(legacy.count)||0,legacyCanonicalRows.length),activeAdded:acceptedLegacy.length+legacyCanonicalPhysicalRows.length,activeCanonical:legacyCanonicalPhysicalRows.length,canonicalCandidateCount:legacyCanonicalRows.length,loadedParts:legacy.loadedParts||0};
         g.Omega=g.Omega||{};
         g.Omega.ResourceLegacyGameplayExpansion=g.OmegaResourceLegacyGameplayExpansion;
         return{status:'READY',count:baseRows.length,siteCount:baseRows.length,totalSiteCount:rows.length,expansionSiteCount:acceptedExpansion.length,legacyCandidateCount:Math.max(Number(legacy.count)||0,legacyCanonicalRows.length),legacyExpansionSiteCount:acceptedLegacy.length+legacyCanonicalPhysicalRows.length,legacyCanonicalCandidateCount:legacyCanonicalRows.length};
