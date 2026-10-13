@@ -32,7 +32,8 @@
         "resourceTypeId": "gold",
         "resourceName": "Gold ore and doré",
         "ontologyKey": "GOLD",
-        "aliases": []
+        "aliases": [],
+        "aliasOfSiteId": "SITE_COD_kibali_gold_mine"
       },
       "location": {
         "countryName": "DR Congo",
@@ -60,8 +61,8 @@
         "status": "SIMULATED_OPERATIONAL_SCENARIO",
         "operationalStatus": "SIMULATED_ACTIVE",
         "extractionMethod": "GOLD_ORE_EXTRACTION_AND_PROCESSING",
-        "extractionEligibility": "SIMULATED_SITE_ELIGIBLE_SUBJECT_TO_GAMEPLAY_GATES",
-        "commercialExtraction": true,
+        "extractionEligibility": "ALIAS_ONLY_NOT_EXECUTABLE",
+        "commercialExtraction": false,
         "siteCommissioningLevel": 4,
         "mineLevel": 4,
         "legacyReportedStatusTexts": [
@@ -178,7 +179,7 @@
           "allOperationalMetricsAboveAreSimulated": true
         },
         "quantitativeProvenance": {
-          "authority": "SCENARIO_SIMULATION_DATA",
+          "authority": "SIMULATION_ALIAS_REFERENCE_NOT_INDEPENDENT_ASSET",
           "method": "OMEGA_PER_SITE_IDENTITY_METRIC_ALLOCATION_V1",
           "seedKey": "SITE_COD_kibali_gold_mine_complex|COD|gold",
           "generatedAt": "2026-10-13",
@@ -194,7 +195,7 @@
           "throughput": "SIMULATED",
           "purity": "SIMULATED",
           "capacity": "SIMULATED",
-          "overall": "GAMEPLAY_SIMULATION_COMPLETE"
+          "overall": "GAMEPLAY_SIMULATION_COMPLETE_ALIAS_NOT_EXECUTABLE"
         }
       },
       "reserve": {
@@ -280,26 +281,26 @@
       },
       "mineLevel": 4,
       "map": {
-        "markerEligible": true,
+        "markerEligible": false,
         "countryIsolationKey": "COD",
         "iconResourceKey": "gold",
         "markerType": "RESOURCE_SITE",
         "coordinatePrecision": "REGIONAL_APPROXIMATION",
-        "aliasOfSiteId": null,
-        "collisionGroup": "SITE_COD_kibali_gold_mine_complex"
+        "aliasOfSiteId": "SITE_COD_kibali_gold_mine",
+        "collisionGroup": "SITE_COD_kibali_gold_mine"
       },
       "runtime": {
-        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "CANONICAL_SITE_ALIAS_WITH_LEGACY_QUANTITATIVE_RECORD",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
         "countryWarehouseId": "WH-COD-RAW",
         "requiresSiteSpecificRoute": true,
         "requiresFactoryBinding": true,
-        "aliasOfSiteId": null,
+        "aliasOfSiteId": "SITE_COD_kibali_gold_mine",
         "pipeline": {
           "site": "BOUND",
-          "extraction": "SIMULATED_ENGINEERING_READY",
+          "extraction": "ALIAS_ONLY_NOT_EXECUTABLE",
           "batch": "SITE_ID_KEYED",
           "rawWarehouse": "BOUND_TO_OWNER_COUNTRY",
           "transport": "SIMULATED_ROUTE_READY",
@@ -4325,5 +4326,8 @@
     "metricsAreExplicitlySimulated": true,
     "coordinatesAreRegionalApproximations": true,
     "originalCanonicalAndReserveDataUnchanged": true
+  },
+  "counts": {
+    "canonicalAliasRecords": 1
   }
 }
