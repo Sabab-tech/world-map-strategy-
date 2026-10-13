@@ -188,7 +188,7 @@ function masterSites(){
       extractionMethod:row.operation?.extractionMethod||null};
     const routeRows=(row.simulation?.transportRoute||[]).map(route=>{
       const type=tok(route?.mode||route?.routeType||'');
-      const mode=type.includes('PIPELINE')?'pipeline':type.includes('SEA')?'ship':type.includes('RAIL')?'rail':(rules()[resourceId]?.preferredModes?.[0]||'truck');
+      const mode=type.includes('pipeline')?'pipeline':type.includes('sea')?'ship':type.includes('rail')?'rail':(rules()[resourceId]?.preferredModes?.[0]||'truck');
       return {...clone(route),mode,transportMode:mode,authority:'SITE_SIMULATION_ROUTE',countryIsolationKey:countryId};
     });
     const q=row.quantitative||{},production=q.production||{},capacity=q.capacity||{},grade=q.grade||{},purity=q.purity||{},recovery=q.recovery||{};
@@ -440,7 +440,7 @@ function planShipment(input={}){
   const siteRoute=(site.simulation?.transportRoute||[])[0]||{};
   const routeType=tok(siteRoute.mode||siteRoute.routeType||'');
   const preferredMode=tok(input.transportMode||rules()[rid]?.preferredModes?.[0]||'truck');
-  const routeMode=routeType.includes('PIPELINE')?'pipeline':routeType.includes('SEA')?'ship':routeType.includes('RAIL')?'rail':preferredMode;
+  const routeMode=routeType.includes('pipeline')?'pipeline':routeType.includes('sea')?'ship':routeType.includes('rail')?'rail':preferredMode;
   const routeDistance=Math.max(0,num(siteRoute.distanceKm??siteRoute.distance??siteRoute.km)||0);
   const routeOrigin={siteId:warehouseId,countryId:cid,siteName:cid+' sovereign raw warehouse',siteType:'RAW_MATERIAL_WAREHOUSE',
     simulation:{transportRoute:routeDistance>0?[{...clone(siteRoute),mode:routeMode,transportMode:routeMode,distanceKm:routeDistance,authority:'SITE_SIMULATION_ROUTE',countryIsolationKey:cid}]:[]}};
