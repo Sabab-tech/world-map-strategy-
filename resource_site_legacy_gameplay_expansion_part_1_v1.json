@@ -667,11 +667,10 @@
           "metric": "gasProduction",
           "value": 347.47,
           "unit": "BCF_PER_REPORTING_YEAR",
-          "status": "OBSERVED_REPORTED_YEAR_NOT_IN_EXCERPT",
-          "sourceUrl": "https://objectstorage.ap-dcc-gazipur-1.oraclecloud15.com/n/axvjbnqpryl/g/V2Ministry/o/office-hcu/2026/1/4927a8a2-ee6c-4bc2-82b6-eeb10063b0f3.pdf",
+          "status": "OBSERVED_REPORTED_YEAR_NOT_VERIFIED_HERE",
           "dailyRate": 951.97,
           "dailyUnit": "MMCF_PER_DAY",
-          "periodNote": "Government report's reporting period; no year assigned without verifying the report table header."
+          "sourceUrl": "https://objectstorage.ap-dcc-gazipur-1.oraclecloud15.com/n/axvjbnqpryl/g/V2Ministry/o/office-hcu/2026/1/4927a8a2-ee6c-4bc2-82b6-eeb10063b0f3.pdf"
         }
       ],
       "sources": [
@@ -679,7 +678,7 @@
           "url": "https://objectstorage.ap-dcc-gazipur-1.oraclecloud15.com/n/axvjbnqpryl/g/V2Ministry/o/office-hcu/2026/1/4927a8a2-ee6c-4bc2-82b6-eeb10063b0f3.pdf",
           "sourceType": "BANGLADESH_GOVERNMENT_HCU_REPORT",
           "accessed": "2026-10-13",
-          "scope": "field gas production and daily rate reported in sector report"
+          "scope": "reported field gas production and daily rate"
         }
       ],
       "locationSource": {
@@ -715,7 +714,7 @@
         "identityConfidence": "LEGACY_STRUCTURAL_CANDIDATE",
         "metricAuthority": "SIMULATED_GAMEPLAY_NOT_OBSERVED"
       },
-      "researchState": "LEGACY_IDENTITY_WITH_SIMULATED_GAMEPLAY_METRICS",
+      "researchState": "PARTIAL_SITE_SPECIFIC_RESEARCH; GAMEPLAY_METRICS_REMAIN_SIMULATED",
       "generatedAt": "2026-10-13"
     },
     {
@@ -1026,27 +1025,26 @@
           "metric": "originalRecoverableReserve",
           "value": 214642.86,
           "unit": "MILLION_CUBIC_METRES",
+          "year": 2020,
           "status": "OBSERVED_HISTORICAL_ESTIMATE",
-          "sourceUrl": "https://www.gem.wiki/Titas_Gas_Field_(Bangladesh)",
-          "year": 2020
+          "sourceUrl": "https://www.gem.wiki/Titas_Gas_Field_(Bangladesh)"
         },
         {
           "metric": "productionDesignCapacity",
           "value": 4888.93,
           "unit": "MILLION_CUBIC_METRES_PER_YEAR",
+          "year": 2020,
           "status": "OBSERVED_HISTORICAL_ESTIMATE",
-          "sourceUrl": "https://www.gem.wiki/Titas_Gas_Field_(Bangladesh)",
-          "year": 2020
+          "sourceUrl": "https://www.gem.wiki/Titas_Gas_Field_(Bangladesh)"
         },
         {
           "metric": "reportedGasProduction",
           "value": 129.05,
           "unit": "BCF_PER_REPORTING_YEAR",
-          "status": "OBSERVED_REPORTED_YEAR_NOT_IN_EXCERPT",
-          "sourceUrl": "https://objectstorage.ap-dcc-gazipur-1.oraclecloud15.com/n/axvjbnqpryl/g/V2Ministry/o/office-hcu/2026/1/4927a8a2-ee6c-4bc2-82b6-eeb10063b0f3.pdf",
           "dailyRate": 353.55,
           "dailyUnit": "MMCF_PER_DAY",
-          "periodNote": "Government report's reporting period; distinct from GEM's 2020 table."
+          "status": "OBSERVED_REPORTED_YEAR_NOT_VERIFIED_HERE",
+          "sourceUrl": "https://objectstorage.ap-dcc-gazipur-1.oraclecloud15.com/n/axvjbnqpryl/g/V2Ministry/o/office-hcu/2026/1/4927a8a2-ee6c-4bc2-82b6-eeb10063b0f3.pdf"
         }
       ],
       "sources": [
@@ -1054,13 +1052,13 @@
           "url": "https://www.gem.wiki/Titas_Gas_Field_(Bangladesh)",
           "sourceType": "GLOBAL_ENERGY_MONITOR",
           "accessed": "2026-10-13",
-          "scope": "operator, owner, reserves and design capacity historical data"
+          "scope": "reported operator, 2020 reserve and design-capacity figures"
         },
         {
           "url": "https://objectstorage.ap-dcc-gazipur-1.oraclecloud15.com/n/axvjbnqpryl/g/V2Ministry/o/office-hcu/2026/1/4927a8a2-ee6c-4bc2-82b6-eeb10063b0f3.pdf",
           "sourceType": "BANGLADESH_GOVERNMENT_HCU_REPORT",
           "accessed": "2026-10-13",
-          "scope": "reported annual gas production and daily average rate"
+          "scope": "reported field production and daily rate"
         }
       ],
       "locationSource": {
