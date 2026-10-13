@@ -102,9 +102,9 @@ assert.ok(pilbaraExecution[pilbaraOccurrence].recoverableQuantity>0);
 
 // Exercise SITE -> extraction -> country warehouse -> route -> factory -> processing.
 await import('../omega_resource_industrial_network_v1.js');
-const industrial=globalThis.OmegaResourceIndustrialNetwork;
-assert(industrial?.executeSitePipeline,'industrial site-pipeline executor must be installed');
-const pilbaraPipeline=await industrial.executeSitePipeline({countryId:'AUS',siteId:'SITE_AUS_pilbara_iron_ore_range',resourceId:'iron_ore',quantity:100});
+const industrialPipelineRuntime=globalThis.OmegaResourceIndustrialNetwork||globalThis.Omega?.ResourceIndustrialNetwork;
+assert(industrialPipelineRuntime?.executeSitePipeline,'industrial site-pipeline executor must be installed');
+const pilbaraPipeline=await industrialPipelineRuntime.executeSitePipeline({countryId:'AUS',siteId:'SITE_AUS_pilbara_iron_ore_range',resourceId:'iron_ore',quantity:100});
 assert.equal(pilbaraPipeline.status,'IN_TRANSIT',JSON.stringify(pilbaraPipeline));
 assert.equal(pilbaraPipeline.countryId,'AUS');
 assert.equal(pilbaraPipeline.extractionStatus,'COMMITTED');
@@ -128,7 +128,7 @@ assert.ok((ausAfterExtraction.warehouse.availableByResource?.iron_ore||0)>=0);
 const etaTurn=Number(pilbaraPipeline.route.etaTurn);
 assert.ok(etaTurn>=Number(globalThis.Game.state.simulation.turn));
 globalThis.Game.state.simulation.turn=etaTurn;
-const delivery=industrial.advanceShipments('AUS');
+const delivery=industrialPipelineRuntime.advanceShipments('AUS');
 assert.equal(delivery.status,'ADVANCED',JSON.stringify(delivery));
 assert.equal(delivery.delivered,1,JSON.stringify(delivery));
 const pilbaraDelivered=delivery.shipments[0];
