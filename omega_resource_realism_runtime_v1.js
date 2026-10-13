@@ -207,6 +207,8 @@ function siteModel(site,profile,countryId){
  const productionInput=site?.productionModel&&typeof site.productionModel==='object'?site.productionModel:site||{};
  const streams=unique.map((resourceId,index)=>{
    const matchedStream=explicitStreams.find(x=>rid(typeof x==='string'?x:x?.resourceId||x?.resourceTypeId||x?.resId||x?.resource)===resourceId);const src=matchedStream&&typeof matchedStream==='object'?matchedStream:site||{};
+   const metricAuthorityInputs=[site?.quantitativeProvenance?.authority,site?.quantitative?.quantitativeProvenance?.authority,src?.quantitativeProvenance?.authority,site?.productionModel?.authority,site?.productionModel?.stateAuthority,site?.capacity?.authority,site?.capacity?.stateAuthority];
+   const scenarioOnlyInput=metricAuthorityInputs.some(v=>['SCENARIO_SIMULATION_DATA','SIMULATION_DATA','SIMULATED'].includes(String(v||'').trim().toUpperCase()));
    const scenario=scenarioEngineeringFor(site,resourceId);
    const simulationReserve=simulationReserveFor(site,resourceId);const scenarioUnit=scenario?.unit||simulationReserve?.reserve?.unit||null;
    const qp=src?.quantitativeProfile&&typeof src.quantitativeProfile==='object'?src.quantitativeProfile:{};
@@ -256,22 +258,22 @@ function siteModel(site,profile,countryId){
    const scenarioReserveUnit=String(src?.simulationReserveUnit??src?.simulationReserve?.unit??site?.simulationReserveUnit??site?.simulationReserve?.unit??scenarioUnit??'').trim()||null;
    const observedReserve=num(src?.reserveQuantity??src?.geologicalQuantity??src?.reservesQuantity);
    const reserveQuantity=scenarioReserve!==null?scenarioReserve:(observedReserve!==null?observedReserve:fallbackReserve);
-   const reserveAuthority=scenarioReserve!==null?'SIMULATED':(observedReserve!==null?'OBSERVED':'SIMULATED');
+   const reserveAuthority=scenarioReserve!==null?'SIMULATED':(!scenarioOnlyInput&&observedReserve!==null?'OBSERVED':'SIMULATED');
    const gradeField=qp?.grade&&typeof qp.grade==='object'?qp.grade:null;
    const rawGrade=src?.grade??src?.oreGrade??site?.grade??gradeField?.value??null;
    const gradeNumeric=rawGrade===null?null:(typeof rawGrade==='number'?rawGrade:Number(String(rawGrade).match(/[-+]?\d+(?:\.\d+)?/)?.[0]));
    const grade=Number.isFinite(gradeNumeric)?gradeNumeric:(calibration.gradeMin+deterministicSeed*(calibration.gradeMax-calibration.gradeMin));
-   const gradeAuthority=rawGrade!==null?'OBSERVED':'SIMULATED';
+   const gradeAuthority=rawGrade!==null&&!scenarioOnlyInput?'OBSERVED':'SIMULATED';
    const purity=src?.purity??site?.purity??qp?.purity?.value??null,apiRaw=src?.APIGravity??src?.apiGravity??site?.APIGravity??qp?.APIGravity?.value??null;
    const api=apiRaw===null?null:Number(apiRaw);
-   const productionObserved=nominalObs!==null||observedRate!==null||annualRate!==null||minObs!==null||maxObs!==null;
-   const streamAuthority=productionObserved||reserveAuthority==='OBSERVED'||rawGrade!==null||costObs!==null?'OBSERVED':'SIMULATED';
+   const productionObserved=!scenarioOnlyInput&&(nominalObs!==null||observedRate!==null||annualRate!==null||minObs!==null||maxObs!==null);
+   const streamAuthority=!scenarioOnlyInput&&(productionObserved||reserveAuthority==='OBSERVED'||rawGrade!==null||costObs!==null)?'OBSERVED':'SIMULATED';
    return{
      resourceId,
      reserve:{quantity:reserveQuantity,unit:scenarioReserveUnit||(CALIBRATION_RANGES[resourceId]?.unit||'TONNES'),authority:reserveAuthority,status:reserveAuthority,basis:scenarioReserve!==null?'PER_SITE_SCENARIO_RESERVE_DATA':(reserveAuthority==='OBSERVED'?'RESOURCE_JSON_SITE_FIELD':'production_capacity_x_modeled_asset_life'),fieldAuthority:reserveAuthority,scenarioRecord:scenarioReserve!==null},
      quality:{grade:rawGrade??grade,oreGrade:src?.oreGrade??rawGrade??grade,concentration:src?.concentration??null,assay:src?.assay??null,metalContent:src?.metalContent??null,purity,
        APIGravity:api,gradeStatus:gradeAuthority,concentrationStatus:src?.concentration!=null?'OBSERVED':'UNOBSERVED',assayStatus:src?.assay!=null?'OBSERVED':'UNOBSERVED',metalContentStatus:src?.metalContent!=null?'OBSERVED':'UNOBSERVED',
-       purityStatus:purity!==null?'OBSERVED':'UNOBSERVED',apiGravityStatus:apiRaw!==null?'OBSERVED':'UNOBSERVED',
+       purityStatus:purity!==null?(scenarioOnlyInput?'SIMULATED':'OBSERVED'):'UNOBSERVED',apiGravityStatus:apiRaw!==null?(scenarioOnlyInput?'SIMULATED':'OBSERVED'):'UNOBSERVED',
        normalized:{gradePercent:grade,concentrationPercent:null,purityFraction:purity===null?null:(Number(purity)>1?Number(purity)/100:Number(purity)),APIGravity:api},
        resourceId},
      production:{nominalCapacity:nominal,minimumCapacity:minimum,maximumCapacity:maximum,utilization:utilizationFinal,recovery:recoveryFinal,decline:declineFinal,maintenance:maintenanceFinal,operatingCost:costObs??null,activeRate,observedRate,
