@@ -359,8 +359,10 @@
       s.simulationReserveUnit=row.reserve.unit||null;
       s.simulationReserveRecordId=row.siteId;
       s.simulationReserveAuthority='SCENARIO_SIMULATION_DATA';
-      s.commercialExtraction=row.commercialExtraction===true;
-      s.simulationCommercialExtraction=row.commercialExtraction===true;
+      const legacyScenarioEligible=s.operation?.commercialExtraction===true&&!s.runtime?.aliasOfSiteId&&s.map?.markerEligible!==false;
+      const reserveRowEligible=row.commercialExtraction===true;
+      s.commercialExtraction=legacyScenarioEligible||reserveRowEligible;
+      s.simulationCommercialExtraction=legacyScenarioEligible||reserveRowEligible;
       s.simulationReserveSourceDataset='resource_site_reserve_simulation_v1.json';
       const resourceId=rid(s.resourceId||s.resourceTypeId||s.resId||row.resourceId);
       const petroleum=resourceId==='crude_oil'||resourceId==='natural_gas';
