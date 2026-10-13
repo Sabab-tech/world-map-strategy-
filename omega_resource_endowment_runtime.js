@@ -71,6 +71,20 @@
   let simulationReserveMap=null,simulationReservePromise=null,researchEvidenceMap=null,researchEvidencePromise=null;
   let canonicalSiteCatalogMap=null,canonicalSiteCatalogPromise=null;
   let losslessReferenceMap=null,losslessReferencePromise=null,masterResearchMap=null,masterResearchPromise=null;
+  const LEGACY_GAMEPLAY_EXPANSION_FILES=['resource_site_legacy_gameplay_expansion_part_1_v1.json','resource_site_legacy_gameplay_expansion_part_2_v1.json','resource_site_legacy_gameplay_expansion_part_3_v1.json','resource_site_legacy_gameplay_expansion_part_4_v1.json','resource_site_legacy_gameplay_expansion_part_5_v1.json'];
+  const LEGACY_CANONICAL_ALIAS_IDS={SITE_AUS_olympic_dam_uranium_copper:'SITE_AUS_olympic_dam_mine',SITE_BRA_carajas_iron_ore_mine_legacy2:'SITE_BRA_carajas_iron_ore_mine',SITE_CHL_escondida_copper_mine_legacy2:'SITE_CHL_escondida_copper_mine',SITE_IDN_grasberg_copper_gold_mine:'SITE_IDN_grasberg_mine',SITE_COD_tenke_fungurume_copper_cobalt_complex:'SITE_COD_tenke_fungurume_mine',SITE_COD_kibali_gold_mine_complex:'SITE_COD_kibali_gold_mine'};
+  let legacyGameplayExpansionRows=null,legacyGameplayExpansionPromise=null;
+  async function loadLegacyGameplayExpansionRows(){
+    if(Array.isArray(legacyGameplayExpansionRows))return{status:'READY',count:legacyGameplayExpansionRows.length,reused:true,rows:legacyGameplayExpansionRows};
+    if(legacyGameplayExpansionPromise)return legacyGameplayExpansionPromise;
+    legacyGameplayExpansionPromise=(async()=>{
+      const packs=await Promise.all(LEGACY_GAMEPLAY_EXPANSION_FILES.map(async file=>{try{const response=await fetch(file,{cache:'no-store'});if(!response?.ok)return null;const data=await response.json();return data?.datasetId?.startsWith('OMEGA_RESOURCE_SITE_LEGACY_GAMEPLAY_EXPANSION_PART_')&&Array.isArray(data.records)?data:null;}catch(_){return null;}}));
+      const unique=new Map();for(const pack of packs.filter(Boolean).sort((a,b)=>Number(a.part)-Number(b.part)))for(const row of pack.records)if(row?.siteId&&!unique.has(String(row.siteId)))unique.set(String(row.siteId),row);
+      legacyGameplayExpansionRows=[...unique.values()];
+      return{status:legacyGameplayExpansionRows.length===65?'READY':'PARTIAL',count:legacyGameplayExpansionRows.length,rows:legacyGameplayExpansionRows,loadedParts:packs.filter(Boolean).length};
+    })().finally(()=>{legacyGameplayExpansionPromise=null;});
+    return legacyGameplayExpansionPromise;
+  }
   // Runtime indexes: these datasets are immutable during a simulation turn. Reusing the indexes avoids rebuilding and deep-enriching the same country/site rows for every gate and extraction pass.
   let countryListCache=null;
   const profileCache=new Map();
@@ -93,12 +107,20 @@
         const rows=Array.isArray(data?.records)?data.records:[];
         const map={};
         for(const row of rows)if(row?.siteId)map[String(row.siteId)]=clone(row);
+        const legacy=await loadLegacyGameplayExpansionRows();let legacyAdded=0;
+        for(const row of (legacy.rows||[])){
+          const siteId=String(row?.siteId||'');
+          if(!siteId||row.runtime?.aliasOfSiteId||LEGACY_CANONICAL_ALIAS_IDS[siteId])continue;
+          if(!map[siteId]&&row.reserve?.status==='SIMULATED'&&Number(row.reserve.quantity)>0){map[siteId]=clone(row);legacyAdded++;}
+        }
         simulationReserveMap=map;
-        g.__OmegaResourceSiteReferenceCount=Number(data?.siteCount)||rows.length;
+        g.__OmegaResourceSiteReferenceCount=Object.keys(map).length;
         g.OmegaResourceSiteReserveSimulationData=data;
         g.Omega=g.Omega||{};
         g.Omega.ResourceSiteReserveSimulationData=data;
-        return{status:'READY',count:rows.length,siteCount:Number(data?.siteCount)||rows.length};
+        g.OmegaResourceLegacyGameplayExpansion={status:legacy.status,count:legacy.count,activeAdded:legacyAdded,loadedParts:legacy.loadedParts||0};
+        g.Omega.ResourceLegacyGameplayExpansion=g.OmegaResourceLegacyGameplayExpansion;
+        return{status:'READY',count:Object.keys(map).length,baseSiteCount:Number(data?.siteCount)||rows.length,legacyAdded,legacyCandidateCount:legacy.count};
       }catch(e){
         simulationReserveMap={};
         return{status:'FAILED',count:0,reason:String(e?.message||e)};
@@ -141,7 +163,14 @@
         }catch(_){ expansionRows=[]; }
         const ids=new Set(baseRows.map(row=>String(row?.siteId||'')));
         const acceptedExpansion=expansionRows.filter(row=>!ids.has(String(row.siteId))&&ids.add(String(row.siteId)));
-        const rows=baseRows.concat(acceptedExpansion);
+        const legacy=await loadLegacyGameplayExpansionRows();
+        const legacyRows=(legacy.rows||[]).filter(row=>{
+          const siteId=String(row?.siteId||'').trim(),country=String(row?.countryId||row?.identity?.countryIso3||'').trim().toUpperCase();
+          const lat=Number(row?.location?.coordinates?.lat),lng=Number(row?.location?.coordinates?.lng);
+          return siteId&&!row.runtime?.aliasOfSiteId&&!LEGACY_CANONICAL_ALIAS_IDS[siteId]&&!ids.has(siteId)&&/^[A-Z]{3}$/.test(country)&&Number.isFinite(lat)&&lat>=-90&&lat<=90&&Number.isFinite(lng)&&lng>=-180&&lng<=180;
+        });
+        const acceptedLegacy=legacyRows.filter(row=>!ids.has(String(row.siteId))&&ids.add(String(row.siteId)));
+        const rows=baseRows.concat(acceptedExpansion,acceptedLegacy);
         const normalizedRows=rows.map(normalizeSiteRecord);
         const map={};
         for(const row of normalizedRows)if(row?.siteId)map[String(row.siteId)]=row;
@@ -152,7 +181,10 @@
         g.OmegaResourceSiteCanonicalCatalogData=data;
         g.Omega=g.Omega||{};
         g.Omega.ResourceSiteCanonicalCatalogData=data;
-        return{status:'READY',count:baseRows.length,siteCount:baseRows.length,totalSiteCount:rows.length,expansionSiteCount:acceptedExpansion.length};
+        g.OmegaResourceLegacyGameplayExpansion={status:legacy.status,count:legacy.count,activeAdded:acceptedLegacy.length,loadedParts:legacy.loadedParts||0};
+        g.Omega=g.Omega||{};
+        g.Omega.ResourceLegacyGameplayExpansion=g.OmegaResourceLegacyGameplayExpansion;
+        return{status:'READY',count:baseRows.length,siteCount:baseRows.length,totalSiteCount:rows.length,expansionSiteCount:acceptedExpansion.length,legacyCandidateCount:legacy.count,legacyExpansionSiteCount:acceptedLegacy.length};
       }catch(e){
         canonicalSiteCatalogMap={};
         return{status:'FAILED',count:0,reason:String(e?.message||e)};
