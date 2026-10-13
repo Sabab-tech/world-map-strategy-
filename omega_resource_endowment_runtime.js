@@ -568,10 +568,10 @@
       const refs=g.__OmegaResourceKnowledgeModel?.refCatalog?.allReferences;
       if(Array.isArray(refs))rows=refs.filter(ref=>canonical(ref?.countryCode||ref?.countryId||ref?.country)===wanted).map(enrichSimulationReserve).map(enrichResearchEvidence);
     }
-    // Canonical catalog is the identity authority. RESOURCE_JSON profile rows are
-    // legacy/source evidence and may use corrected/older names, so they are merged only
-    // when identity matching is sufficiently strong. This guarantees exactly the 199
-    // canonical physical sites without fabricating additional deposits.
+    // The canonical catalog remains the identity authority. Additive legacy gameplay
+    // rows are accepted only after identity, country and coordinate checks in the loader.
+    // Existing canonical rows are preserved and alias candidates are excluded, so each
+    // distinct legacy physical asset gets at most one additional site-reference row.
     const profileRows=rows.map(enrichLosslessResourceReference);
     const tokens=value=>new Set(String(value||'').toLowerCase().normalize('NFKC').replace(/[^a-z0-9]+/g,' ').trim().split(/\s+/).filter(x=>x.length>2&&!['site','mine','area','zone','facility','quarry','sites'].includes(x)));
     const similarity=(a,b)=>{
@@ -604,9 +604,29 @@
       }
       if(best)usedProfile.add(best.index);
       const location=site.location||{},ownership=site.ownership||{},operation=site.operation||{};
+      const q=site.quantitative||{},qReserve=q.reserve||site.reserve||{},qProduction=q.production||{},qGrade=q.grade||{},qPurity=q.purity||{},qRecovery=q.recovery||{},qCapacity=q.capacity||{},sim=site.simulation||{};
+      const gasResource=rid(identity?.resourceTypeId)==='natural_gas',runtimeDivisor=gasResource?1000:1;
+      const runtimeReserveQuantity=n(qReserve.quantity);
+      const runtimeReserveUnit=qReserve.unit||null;
+      const runtimeRate=n(qProduction.rate)===null?null:n(qProduction.rate)/runtimeDivisor;
+      const runtimeNominal=n(qCapacity.nominal)===null?null:n(qCapacity.nominal)/runtimeDivisor;
+      const runtimeMinimum=n(qCapacity.minimum)===null?null:n(qCapacity.minimum)/runtimeDivisor;
+      const runtimeMaximum=n(qCapacity.maximum)===null?null:n(qCapacity.maximum)/runtimeDivisor;
+      const runtimeRecovery=n(qRecovery.value)===null?null:n(qRecovery.value)/100;
+      const runtimeProductionModel={
+        nominalCapacity:runtimeNominal,minimumCapacity:runtimeMinimum,maximumCapacity:runtimeMaximum,
+        productionRate:runtimeRate,dailyRate:runtimeRate,activeRate:runtimeRate,
+        annualProduction:qProduction.annual==null?null:{value:qProduction.annual,unit:qProduction.annualUnit||null},
+        utilization:n(sim.utilization),recovery:runtimeRecovery,
+        decline:0.005+(Number(site.naturalRisk?.geological)||35)/10000,
+        maintenance:0.02+(Number(site.naturalRisk?.environmental)||35)/10000,
+        rateUnit:gasResource?'BCF_PER_DAY':qProduction.unit||null,unit:runtimeReserveUnit,
+        authority:'SIMULATED',stateAuthority:'SIMULATED',dataStatus:'SIMULATED',productionAuthority:'SIMULATED'
+      };
       const profile=best?.row||{};
       const rawSite={
         ...clone(profile?.rawSiteReference||profile||{}),
+        ...clone(site),
         siteId,siteReferenceKey:siteId,siteName,name:siteName,
         countryId:wanted,countryCode:wanted,
         resourceId:identity.resourceTypeId||profile?.resourceId||null,
@@ -615,8 +635,17 @@
         status:operation.status||profile?.status||'ACTIVE_SITE_REFERENCE',commercialExtraction:operation.commercialExtraction!==false&&String(operation.status||'').toUpperCase()!=='NOT_APPLICABLE',
         owner:ownership.owner||profile?.owner||null,operator:ownership.operator||profile?.operator||null,
         lat:location.coordinates?.lat??profile?.lat??null,lon:location.coordinates?.lng??profile?.lon??null,
-        sourceAuthority:'RESOURCE_JSON',sourceDatasetId:'resource_site_canonical_catalog_v1.json',
-        sourcePath:'resource_site_canonical_catalog_v1.sites['+Object.keys(canonicalSiteCatalogMap||{}).indexOf(siteId)+']',
+        quantitative:clone(q),simulation:clone(sim),quantitativeProvenance:clone(q.quantitativeProvenance||{}),
+        quantitativeProfile:{grade:clone(qGrade),purity:clone(qPurity),production:{rate:runtimeRate,annual:qProduction.annual,nominalCapacity:runtimeNominal,minimumCapacity:runtimeMinimum,maximumCapacity:runtimeMaximum}},
+        simulationReserveQuantity:runtimeReserveQuantity,simulationReserveUnit:runtimeReserveUnit,
+        reserveQuantity:runtimeReserveQuantity,unit:runtimeReserveUnit,
+        productionRate:runtimeRate,dailyRate:runtimeRate,annualProduction:runtimeProductionModel.annualProduction,
+        nominalCapacity:runtimeNominal,minimumCapacity:runtimeMinimum,maximumCapacity:runtimeMaximum,
+        productionModel:runtimeProductionModel,capacity:runtimeProductionModel,
+        grade:qGrade.value??null,purity:qPurity.value??null,recoveryRate:runtimeRecovery,
+        throughputRate:n(q.throughput?.value),
+        sourceAuthority:'SIMULATED',sourceDatasetId:'OMEGA_LEGACY_GAMEPLAY_EXPANSION',
+        sourcePath:site.sourceReference?.sourcePath||'resource_site_legacy_gameplay_expansion_v1',
         sourceProfileReferenceKey:profile?.siteReferenceKey||null
       };
       const resourceAsset=g.GSRSK_Part04?.normalizeUnifiedAsset?.({
@@ -631,9 +660,20 @@
         profileKey:'CANONICAL_SITE_CATALOG',
         siteName,status:'ACTIVE_SITE_REFERENCE',activationState:'ACTIVE_REFERENCE',extractionExecutable:false,
         quantitativeExtractionDataAvailable:resourceAsset.quantitativeExtractionDataAvailable===true,
-        sourceAuthority:'RESOURCE_JSON',sourceDatasetId:'resource_site_canonical_catalog_v1.json',
+        sourceAuthority:rawSite.sourceAuthority||'RESOURCE_JSON',sourceDatasetId:rawSite.sourceDatasetId,
         sourcePath:rawSite.sourcePath,sourceProfileReferenceKey:rawSite.sourceProfileReferenceKey,
-        rawSiteReference:clone(rawSite),resourceAsset
+        rawSiteReference:clone(rawSite),resourceAsset,
+        quantitative:clone(rawSite.quantitative||{}),simulation:clone(rawSite.simulation||{}),
+        quantitativeProvenance:clone(rawSite.quantitativeProvenance||{}),
+        quantitativeProfile:clone(rawSite.quantitativeProfile||{}),
+        simulationReserveQuantity:runtimeReserveQuantity,simulationReserveUnit:runtimeReserveUnit,
+        reserveQuantity:runtimeReserveQuantity,unit:runtimeReserveUnit,
+        productionRate:runtimeRate,dailyRate:runtimeRate,annualProduction:clone(runtimeProductionModel.annualProduction),
+        nominalCapacity:runtimeNominal,minimumCapacity:runtimeMinimum,maximumCapacity:runtimeMaximum,
+        utilization:runtimeProductionModel.utilization,recovery:runtimeProductionModel.recovery,
+        productionModel:clone(runtimeProductionModel),capacity:clone(runtimeProductionModel),
+        grade:qGrade.value??null,purity:qPurity.value??null,recoveryRate:runtimeRecovery,
+        throughputRate:n(q.throughput?.value)
       });
     }
     rows=(catalogSites.length>0?canonicalRows:profileRows).map(enrichLosslessResourceReference).map(enrichSimulationReserve).map(enrichResearchEvidence);
