@@ -98,6 +98,25 @@ const pilbaraOccurrence=Object.keys(pilbaraExecution).find(k=>k.includes('SITE_A
 assert(pilbaraOccurrence,'Pilbara should have an initialized reserve/extraction state');
 assert.equal(pilbaraExecution[pilbaraOccurrence].provenance.stateAuthority,'SIMULATED');
 assert.ok(pilbaraExecution[pilbaraOccurrence].recoverableQuantity>0);
+
+// Exercise the production site through the authoritative extraction command and verify
+// that its output becomes a country-owned raw batch in the sovereign raw-material warehouse.
+const pilbaraExtraction=runtime.extractCountry('AUS',[pilbaraOccurrence]);
+assert.equal(pilbaraExtraction.status,'APPLIED',JSON.stringify(pilbaraExtraction));
+assert.equal(pilbaraExtraction.result?.accepted,true,JSON.stringify(pilbaraExtraction.result));
+assert.equal(pilbaraExtraction.result?.extracted,1,JSON.stringify(pilbaraExtraction.result));
+const ausAfterExtraction=runtime.countryResourceState('AUS')||{};
+const pilbaraBatch=(ausAfterExtraction.batches||[]).find(b=>b.occurrenceKey===pilbaraOccurrence);
+assert(pilbaraBatch,'extraction must create an auditable raw batch');
+assert.equal(pilbaraBatch.countryId,'AUS');
+assert.equal(pilbaraBatch.sourceCountryId,'AUS');
+assert.equal(pilbaraBatch.originCountryId,'AUS');
+assert.equal(pilbaraBatch.ownerCountryCode,'AUS');
+assert.equal(pilbaraBatch.warehouseId,'WH-AUS-RAW');
+assert.ok(Number(pilbaraBatch.quantity)>0);
+assert.equal(pilbaraBatch.stateAuthority,'SIMULATED');
+assert.equal(ausAfterExtraction.warehouse.countryId,'AUS');
+assert.ok((ausAfterExtraction.warehouse.availableByResource?.iron_ore||0)>0);
 const gevraRef=(indState.mineSiteReferences||[]).find(x=>x.siteReferenceKey==='SITE_IND_gevra_oc_mine');
 const kwtDiag=runtime.hydrateCountry('KWT');const kwtState=runtime.countryResourceState('KWT')||{};const kwtRef=(kwtState.mineSiteReferences||[]).find(x=>x.siteReferenceKey==='SITE_KWT_greater_burgan_oilfield');console.log('ENDOWMENT_KWT_MODEL '+JSON.stringify({hydrate:kwtDiag.status,ref:kwtRef&&{siteReferenceKey:kwtRef.siteReferenceKey,resourceId:kwtRef.resourceId,commercialExtraction:kwtRef.commercialExtraction,simulationReserveQuantity:kwtRef.simulationReserveQuantity},model:globalThis.Omega?.ResourceRealism?.siteModel?.(kwtRef,engine.countryProfiles?.KWT,'KWT'),controller:Object.values(kwtState.mineSiteControllers||{}).find(x=>x.siteReferenceKey==='SITE_KWT_greater_burgan_oilfield')}));
 assert.equal(hydrated.status,'APPLIED', JSON.stringify(hydrated));
