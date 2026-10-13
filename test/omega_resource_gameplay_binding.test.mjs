@@ -276,7 +276,7 @@ test('runtime renders all global sites and applies nation/resource scope without
   assert.equal(markerCount(),5,'Saudi Arabia scope must include its three original locations and two newly integrated physical sites');
   context.Game.Map.resourceState.selectedResources=vm.runInContext("new Set(['crude_oil'])",context);
   context.Omega.IndividualResourceSiteBinding.refresh();
-  assert.equal(markerCount(),2,'Saudi Arabia crude-oil filter must show both Ghawar and Safaniya, not one country aggregate');
+  assert.equal(markerCount(),4,'Saudi Arabia crude-oil filter must show Ghawar, Safaniya, and both newly integrated crude-oil sites');
   context.Game.Map.resourceState.selectedResources=vm.runInContext("new Set(['all'])",context);
   const diagnosticsAfterLoad=context.Omega.IndividualResourceSiteBinding.diagnostics();
   assert.equal(diagnosticsAfterLoad.sourceRecordCounts.mineSites,201,'the 199 source mine/site records plus two test-only overlap fixtures must be counted');
@@ -284,7 +284,7 @@ test('runtime renders all global sites and applies nation/resource scope without
   assert.ok(Object.values(diagnosticsAfterLoad.coordinateStatusCounts).reduce((a,b)=>a+b,0)===diagnosticsAfterLoad.siteCount,
     'coordinate confidence reporting must cover every mapped site');
   const loadedSaudiSites=context.Omega.IndividualResourceSiteBinding.sites.filter(site=>site.countryId==='SAU');
-  assert.equal(loadedSaudiSites.length,3,'Saudi Arabia must retain all three distinct existing source records');
+  assert.equal(loadedSaudiSites.length,5,'Saudi Arabia must retain its three original source records plus two newly integrated physical sites');
   assert.ok(loadedSaudiSites.every(site=>site.location.coordinateStatus),
     'every mapped site must expose a coordinate confidence/status label in its location object');
   assert.ok(loadedSaudiSites.some(site=>site.location.coordinateStatus==='ESTIMATED_SITE_POINT'),

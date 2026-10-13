@@ -1120,7 +1120,7 @@ function batchFromExtraction(x,record){
     const persistedMineStates=ctx.stateTransaction.get('resource.mineStates')||{};
     const canonicalRows=occurrenceRows(c);
     const siteRows=siteExecutionRows(c,{mineStates:persistedMineStates});
-    const gameplaySiteIds=new Set(mineSiteReferenceRows(c).filter(site=>site?.runtime?.identityAuthority==='LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE'&&site?.map?.markerEligible!==false&&!site?.runtime?.aliasOfSiteId&&!LEGACY_CANONICAL_ALIAS_IDS[String(site?.siteId||'')]).map(site=>String(site.siteId)));
+    const gameplaySiteIds=new Set(Object.values(canonicalSiteCatalogMap||{}).filter(site=>site?.runtime?.identityAuthority==='LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE'&&site?.map?.markerEligible!==false&&!site?.runtime?.aliasOfSiteId&&!LEGACY_CANONICAL_ALIAS_IDS[String(site?.siteId||'')]).map(site=>String(site.siteId)));
     const signature=row=>[
       canonical(c),
       String(row?.resourceId||'').toLowerCase(),
