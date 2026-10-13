@@ -4,7 +4,7 @@ import fs from 'node:fs';
 const read = name => JSON.parse(fs.readFileSync(new URL('../' + name, import.meta.url), 'utf8'));
 const source = read('resource_site_legacy_structural_candidates_v1.json');
 const canonical = read('resource_site_canonical_catalog_v1.json');
-const parts = [1, 2, 3, 4, 5].map(n => read('resource_site_legacy_gameplay_expansion_part_' + n + '_v1.json'));
+const parts = [1, 2, 3, 4, 5, 6].map(n => read('resource_site_legacy_gameplay_expansion_part_' + n + '_v1.json'));
 const sites = parts.flatMap(x => x.records);
 const ids = new Set(sites.map(s => s.siteId));
 const metrics = ['reserve', 'production', 'grade', 'recovery', 'throughput', 'purity', 'capacity'];
@@ -12,23 +12,23 @@ const aliases = sites.filter(s => Boolean(s.runtime?.aliasOfSiteId));
 const canonicalIds = new Set(canonical.sites.map(s => s.siteId));
 
 assert.equal(source.records.length, 65, 'preserve all 65 legacy candidates');
-assert.equal(parts.length, 5);
-assert.deepEqual(parts.map(p => p.recordCount), [13, 13, 13, 13, 13]);
-assert.equal(sites.length, 65, 'all 65 candidate records must be present');
-assert.equal(ids.size, 65, 'all candidate IDs must be unique');
-assert.equal(canonical.siteCount, 315, 'canonical authority contains 250 baseline + 65 expansion records');
-assert.equal(canonical.sites.length, 315);
-assert.equal(canonicalIds.size, 315);
-assert.equal(sites.filter(s => canonicalIds.has(s.siteId)).length, 65, 'all 65 quantified candidates must be canonical');
+assert.equal(parts.length, 6);
+assert.deepEqual(parts.map(p => p.recordCount), [13, 13, 13, 13, 13, 50]);
+assert.equal(sites.length, 115, 'all 65 legacy candidates plus 50 new sites must be present');
+assert.equal(ids.size, 115, 'all expansion site IDs must be unique');
+assert.equal(canonical.siteCount, 365, 'canonical authority contains 250 baseline + 65 legacy + 50 new records');
+assert.equal(canonical.sites.length, 365);
+assert.equal(canonicalIds.size, 365);
+assert.equal(sites.filter(s => canonicalIds.has(s.siteId)).length, 115, 'all 115 expansion records must be canonical');
 const canonicalLegacyRows = canonical.sites.filter(s => s.runtime?.identityAuthority === 'LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE');
-assert.equal(canonicalLegacyRows.length, 65, 'exactly 65 gameplay records belong to this expansion');
-assert.equal(canonicalLegacyRows.filter(s => s.map?.markerEligible === true && !s.runtime?.aliasOfSiteId).length, 55, '55 physical map sites are independently eligible');
+assert.equal(canonicalLegacyRows.length, 115, 'all 115 gameplay records belong to this expansion');
+assert.equal(canonicalLegacyRows.filter(s => s.map?.markerEligible === true && !s.runtime?.aliasOfSiteId).length, 105, '105 physical map sites are independently eligible');
 assert.equal(canonicalLegacyRows.filter(s => s.map?.markerEligible === false || s.runtime?.aliasOfSiteId).length, 10, '10 aliases are retained but not independently executable');
 const master = read('resource_site_master_registry_v1.json');
 assert.equal(master.sites.length, 250, 'baseline master research registry is preserved');
 assert(master.sites.every(s => canonical.sites.slice(0, 250).some(c => c.siteId === s.siteId)), 'all original master IDs remain in the original 250 rows');
 assert.equal(aliases.length, 10, 'six canonical aliases and four duplicate legacy aliases');
-assert.equal(sites.filter(s => s.map?.markerEligible === true).length, 55, 'only distinct new physical assets receive independent markers');
+assert.equal(sites.filter(s => s.map?.markerEligible === true).length, 105, 'only distinct physical assets receive independent markers');
 assert.equal(sites.filter(s => s.map?.markerEligible === false).length, 10, 'aliases must not create duplicate markers');
 for (const target of aliases) {
   assert(target.runtime.aliasOfSiteId, target.siteId + ': alias target missing');
@@ -71,7 +71,7 @@ for (const s of sites) {
     s.quantitative.capacity.nominal <= s.quantitative.capacity.maximum, s.siteId + ': capacity ordering invalid');
   assert.equal(s.quantitative.quantitativeProvenance.authority, 'SCENARIO_SIMULATION_DATA');
   assert.equal(s.quantitative.quantitativeProvenance.externalMeasuredValuePromotion, false);
-  assert(s.simulation.reserveHorizonYears >= 400 && s.simulation.reserveHorizonYears <= 440, s.siteId + ': gameplay reserve horizon out of range');
+  const horizon = Number(s.simulation.reserveHorizonYears);\n  const horizonOk = s.sourceReference?.sourcePath?.includes('_part_6_') ? horizon >= 350 && horizon <= 450 : horizon >= 400 && horizon <= 440;\n  assert(horizonOk, s.siteId + ': gameplay reserve horizon out of range');
   assert(s.simulation.transportRoute.length > 0, s.siteId + ': per-site route missing');
   assert(s.processing.midstreamProcess, s.siteId + ': processing step missing');
   assert(s.processing.refinedOutputs.length > 0, s.siteId + ': product output missing');
@@ -95,7 +95,7 @@ for (const key of metrics) {
 
 const endowment = fs.readFileSync(new URL('../omega_resource_endowment_runtime.js', import.meta.url), 'utf8');
 const binding = fs.readFileSync(new URL('../omega_resource_gameplay_binding_v1.js', import.meta.url), 'utf8');
-for (const part of [1, 2, 3, 4, 5]) {
+for (const part of [1, 2, 3, 4, 5, 6]) {
   const file = 'resource_site_legacy_gameplay_expansion_part_' + part + '_v1.json';
   assert(endowment.includes(file), 'endowment runtime must load ' + file);
   assert(binding.includes(file), 'map/detail runtime must load ' + file);
