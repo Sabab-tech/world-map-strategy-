@@ -236,7 +236,12 @@ for (const site of structuredLegacy.records) {
   const gameplayRow = legacyGameplayById.get(site.siteId);
   const canonicalRow = canonicalById.get(site.siteId);
   assert(gameplayRow && canonicalRow, site.siteId + ': exact candidate ID must survive canonical merge');
-  assert.equal(canonicalRow.runtime?.identityAuthority, 'LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE');
+  assert.ok(['LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE','CANONICAL_SITE_ALIAS_WITH_LEGACY_QUANTITATIVE_RECORD'].includes(canonicalRow.runtime?.identityAuthority), site.siteId + ': candidate authority must be explicit');
+  if (gameplayRow.runtime?.aliasOfSiteId || gameplayRow.map?.markerEligible === false) {
+    assert.equal(canonicalRow.map?.markerEligible, false, site.siteId + ': alias must not create a second physical marker');
+  } else {
+    assert.equal(canonicalRow.runtime?.identityAuthority, 'LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE');
+  }
   assert.equal(canonicalRow.quantitative?.quantitativeProvenance?.authority, 'SCENARIO_SIMULATION_DATA');
   assert.equal(canonicalRow.map?.markerEligible, gameplayRow.map?.markerEligible, site.siteId + ': map alias flag must survive merge');
   assert.equal(site.countryId, site.identity.countryIso3);

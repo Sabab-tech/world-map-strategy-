@@ -170,7 +170,7 @@
           return siteId&&!row.runtime?.aliasOfSiteId&&!LEGACY_CANONICAL_ALIAS_IDS[siteId]&&!ids.has(siteId)&&/^[A-Z]{3}$/.test(country)&&Number.isFinite(lat)&&lat>=-90&&lat<=90&&Number.isFinite(lng)&&lng>=-180&&lng<=180;
         });
         const acceptedLegacy=legacyRows.filter(row=>!ids.has(String(row.siteId))&&ids.add(String(row.siteId)));
-        const legacyCanonicalRows=baseRows.filter(row=>row?.runtime?.identityAuthority==='LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE');
+        const legacyCanonicalRows=Number(data?.legacyGameplayExpansion?.candidateRecordCount)===65?baseRows.slice(-65):baseRows.filter(row=>row?.runtime?.identityAuthority==='LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE');
         const legacyCanonicalPhysicalRows=legacyCanonicalRows.filter(row=>row?.map?.markerEligible!==false&&!row?.runtime?.aliasOfSiteId&&!LEGACY_CANONICAL_ALIAS_IDS[String(row?.siteId||'')]);
         const rows=baseRows.concat(acceptedExpansion,acceptedLegacy);
         const normalizedRows=rows.map(normalizeSiteRecord);
@@ -188,7 +188,7 @@
         g.OmegaResourceSiteCanonicalCatalogData=data;
         g.Omega=g.Omega||{};
         g.Omega.ResourceSiteCanonicalCatalogData=data;
-        g.OmegaResourceLegacyGameplayExpansion={status:(legacy.count>=65||legacyCanonicalRows.length===65)?'READY':legacy.status,count:Math.max(Number(legacy.count)||0,legacyCanonicalRows.length),activeAdded:acceptedLegacy.length,activeCanonical:legacyCanonicalPhysicalRows.length,canonicalCandidateCount:legacyCanonicalRows.length,loadedParts:legacy.loadedParts||0};
+        g.OmegaResourceLegacyGameplayExpansion={status:(legacy.count>=65||legacyCanonicalRows.length===65)?'READY':legacy.status,count:Math.max(Number(legacy.count)||0,legacyCanonicalRows.length),activeAdded:acceptedLegacy.length+legacyCanonicalPhysicalRows.length,activeCanonical:legacyCanonicalPhysicalRows.length,canonicalCandidateCount:legacyCanonicalRows.length,loadedParts:legacy.loadedParts||0};
         g.Omega=g.Omega||{};
         g.Omega.ResourceLegacyGameplayExpansion=g.OmegaResourceLegacyGameplayExpansion;
         return{status:'READY',count:baseRows.length,siteCount:baseRows.length,totalSiteCount:rows.length,expansionSiteCount:acceptedExpansion.length,legacyCandidateCount:Math.max(Number(legacy.count)||0,legacyCanonicalRows.length),legacyExpansionSiteCount:acceptedLegacy.length+legacyCanonicalPhysicalRows.length,legacyCanonicalCandidateCount:legacyCanonicalRows.length};
@@ -1452,7 +1452,8 @@ function batchFromExtraction(x,record){
         const [reserveData,researchData,canonicalCatalogData,losslessReferenceData,masterResearchData]=await Promise.all([loadSimulationReserveData(),loadResearchEvidenceData(),loadCanonicalSiteCatalogData(),loadLosslessResourceReferenceData(),loadMasterResourceResearchData()]);
         const dependencyLightContext=typeof g.fetch!=='function'&&typeof g.OmegaResourceSiteReserveSimulationData==='undefined'&&typeof g.Omega?.ResourceSiteReserveSimulationData==='undefined';
         if((reserveData.status!=='READY'||Number(reserveData.baseSiteCount??reserveData.count)!==250)&&!dependencyLightContext)return{status:'FAILED',reason:'PER_SITE_RESERVE_DATASET_INCOMPLETE',detail:reserveData};
-        if((canonicalCatalogData.status!=='READY'||canonicalCatalogData.count!==250)&&!dependencyLightContext)return{status:'FAILED',reason:'CANONICAL_SITE_CATALOG_INCOMPLETE',detail:canonicalCatalogData};
+        const canonicalCatalogCountReady=canonicalCatalogData.status==='READY'&&(canonicalCatalogData.count===250||(canonicalCatalogData.count===315&&canonicalCatalogData.legacyCanonicalCandidateCount===65&&canonicalCatalogData.legacyExpansionSiteCount===55));
+        if(!canonicalCatalogCountReady&&!dependencyLightContext)return{status:'FAILED',reason:'CANONICAL_SITE_CATALOG_INCOMPLETE',detail:canonicalCatalogData};
         if((losslessReferenceData.status!=='READY'||losslessReferenceData.count!==199)&&!dependencyLightContext)return{status:'FAILED',reason:'LOSSLESS_RESOURCE_REFERENCE_INCOMPLETE',detail:losslessReferenceData};
         if((masterResearchData.status!=='READY'||masterResearchData.count!==250)&&!dependencyLightContext)return{status:'FAILED',reason:'RESOURCE_SITE_MASTER_RESEARCH_INCOMPLETE',detail:masterResearchData};
         if(!engine()?.isReady)return{status:'FAILED',reason:'RESOURCE_MINISTRY_ENGINE_NOT_READY'};

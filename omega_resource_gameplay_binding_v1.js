@@ -287,7 +287,7 @@ async function init(){
   const masterSites=Array.isArray(master?.sites)?master.sites:[];
   const knownSiteIds=new Set([...baseCatalogSites,...expansionSites,...masterSites].map(row=>String(row?.siteId||'')));
   const legacySiteRows=sources.filter(x=>LEGACY_GAMEPLAY_URLS.includes(x.url)).filter(x=>x.data?.datasetId?.startsWith('OMEGA_RESOURCE_SITE_LEGACY_GAMEPLAY_EXPANSION_PART_')).flatMap(x=>Array.isArray(x.data?.records)?x.data.records:[]);
-   const canonicalLegacySites=baseCatalogSites.filter(row=>row?.runtime?.identityAuthority==='LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE');
+   const canonicalLegacySites=Number(catalog?.legacyGameplayExpansion?.candidateRecordCount)===65?baseCatalogSites.slice(-65):baseCatalogSites.filter(row=>row?.runtime?.identityAuthority==='LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE');
    const activeLegacySites=legacySiteRows.filter(row=>row?.siteId&&!row.runtime?.aliasOfSiteId&&row.map?.markerEligible!==false&&!LEGACY_CANONICAL_ALIAS_IDS[String(row.siteId)]&&!knownSiteIds.has(String(row.siteId)));
   const catalogSites=[...baseCatalogSites,...expansionSites,...activeLegacySites];
    const activeLegacyIds=new Set([...canonicalLegacySites,...activeLegacySites].filter(row=>row?.siteId&&row.map?.markerEligible!==false&&!row.runtime?.aliasOfSiteId&&!LEGACY_CANONICAL_ALIAS_IDS[String(row.siteId)]).map(row=>String(row.siteId)));

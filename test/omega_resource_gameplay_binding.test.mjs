@@ -253,13 +253,13 @@ test('runtime renders all global sites and applies nation/resource scope without
   context.Game.Map.resourceState.scope='NATION';
   context.Game.currentActiveCountry='BGD';
   context.Omega.IndividualResourceSiteBinding.refresh();
-  assert.equal(markerCount(),6,'Bangladesh scope must show its four source locations plus two test-only overlap fixtures, not all countries');
+  assert.equal(markerCount(),9,'Bangladesh scope must show four original locations, three newly integrated sites, and two test-only overlap fixtures');
   context.Game.Map.resourceState.selectedResources=vm.runInContext("new Set(['coal'])",context);
   context.Omega.IndividualResourceSiteBinding.refresh();
   assert.equal(markerCount(),3,'Bangladesh coal filter must show the source coal site and its two test-only matching overlap identities');
   context.Game.Map.resourceState.selectedResources=vm.runInContext('new Set()',context);
   context.Omega.IndividualResourceSiteBinding.refresh();
-  assert.equal(markerCount(),6,'clearing the resource filter must restore every site in the selected country');
+  assert.equal(markerCount(),9,'clearing the resource filter must restore all nine sites in the selected country');
   context.Game.Map.resourceState.scope='WORLD';
   context.Game.Map.resourceState.selectedResources=vm.runInContext("new Set(['coal'])",context);
   context.Omega.IndividualResourceSiteBinding.refresh();
