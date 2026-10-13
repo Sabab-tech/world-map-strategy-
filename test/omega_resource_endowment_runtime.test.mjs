@@ -126,7 +126,7 @@ assert.equal(pilbaraPipeline.status,'IN_TRANSIT',JSON.stringify(pilbaraPipeline)
 assert.equal(pilbaraPipeline.countryId,'AUS');
 assert.equal(pilbaraPipeline.extractionStatus,'COMMITTED');
 assert.equal(pilbaraPipeline.shipmentStatus,'DISPATCHED');
-assert.ok(pilbaraPipeline.route?.distanceKm>0);
+assert.ok(Number.isFinite(pilbaraPipeline.route?.totalDistanceKm) && pilbaraPipeline.route.totalDistanceKm>0);
 assert.equal(pilbaraPipeline.route?.crossBorderRequired,false);
 const ausAfterExtraction=runtime.countryResourceState('AUS')||{};
 const pipelineOccurrence=pilbaraPipeline.occurrenceKey;
