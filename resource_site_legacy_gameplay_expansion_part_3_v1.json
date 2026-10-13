@@ -1,0 +1,4389 @@
+{
+  "schemaVersion": "1.0.0",
+  "datasetId": "OMEGA_RESOURCE_SITE_LEGACY_GAMEPLAY_EXPANSION_PART_3_V1",
+  "generatedAt": "2026-10-13",
+  "authority": "SCENARIO_SIMULATION_DATA_WITH_SEPARATE_REAL_WORLD_EVIDENCE",
+  "part": 3,
+  "partCount": 5,
+  "range": {
+    "first": 27,
+    "last": 39
+  },
+  "recordCount": 13,
+  "metricCoverage": {
+    "reserve": 13,
+    "production": 13,
+    "grade": 13,
+    "recovery": 13,
+    "throughput": 13,
+    "purity": 13,
+    "capacity": 13
+  },
+  "records": [
+    {
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_IRN_south_pars_gas_field",
+      "countryId": "IRN",
+      "siteName": "South Pars Gas Field",
+      "identity": {
+        "countryIso3": "IRN",
+        "countryName": "Iran",
+        "siteType": "GAS_FIELD",
+        "resourceTypeId": "natural_gas",
+        "resourceName": "Natural Gas & Methane",
+        "ontologyKey": "NATURAL_GAS",
+        "aliases": []
+      },
+      "location": {
+        "countryName": "Iran",
+        "adminRegion": null,
+        "locality": null,
+        "coordinates": {
+          "lat": 27.5,
+          "lng": 52.6
+        },
+        "coordinateStatus": "GAMEPLAY_REGIONAL_APPROXIMATION",
+        "coordinateAuthority": "RETAINED_LEGACY_POINT_NOT_SURVEY_GRADE",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "countryBoundaryKey": "IRN"
+      },
+      "ownership": {
+        "owner": "Iran Sovereign Resource Authority [SIMULATED]",
+        "operator": "OMEGA_SIMULATED_OPERATOR_SITE_IRN_south_pars_gas_field",
+        "ownerEvidenceStatus": "SIMULATED",
+        "operatorEvidenceStatus": "SIMULATED",
+        "authority": "OMEGA_SCENARIO_OWNERSHIP",
+        "equityControlCountry": "IRN",
+        "operatorContractId": "OPCONTRACT_SITE_IRN_south_pars_gas_field"
+      },
+      "operation": {
+        "status": "SIMULATED_OPERATIONAL_SCENARIO",
+        "operationalStatus": "SIMULATED_ACTIVE",
+        "extractionMethod": "GAS_WELLS_AND_GATHERING",
+        "extractionEligibility": "SIMULATED_SITE_ELIGIBLE_SUBJECT_TO_GAMEPLAY_GATES",
+        "commercialExtraction": true,
+        "siteCommissioningLevel": 5,
+        "mineLevel": 3,
+        "legacyReportedStatusTexts": [
+          "Active Field"
+        ],
+        "statusAuthority": "SIMULATED_GAMEPLAY_STATE_NOT_REAL_WORLD_CLAIM"
+      },
+      "processing": {
+        "upstreamProcess": "GAS_WELLS_AND_GATHERING",
+        "midstreamProcess": "GAS_GATHERING_DEHYDRATION_AND_PROCESSING",
+        "refinedOutputs": [
+          "treated natural gas",
+          "condensate where present"
+        ],
+        "downstreamSectors": [
+          "power_generation",
+          "fertilizer",
+          "industrial_heat",
+          "LNG_if_connected"
+        ]
+      },
+      "logistics": {
+        "warehouseCountryId": "IRN",
+        "warehouseSiteId": "WH-IRN-RAW",
+        "inventoryRouteStatus": "SIMULATED_ROUTE_READY",
+        "factoryRouteStatus": "SIMULATED_FACTORY_BINDING_READY",
+        "routeStatus": "SIMULATED_ROUTE_READY",
+        "transport": {
+          "routeId": "ROUTE_SITE_IRN_south_pars_gas_field_RAW_TO_FACTORY",
+          "routeType": "PIPELINE_AND_SEA_LANE",
+          "originSiteId": "SITE_IRN_south_pars_gas_field",
+          "originCountryId": "IRN",
+          "warehouseId": "WH-IRN-RAW",
+          "destinationFactoryId": "FACTORY_IRN_natural_gas",
+          "destinationCountryId": "IRN",
+          "distanceKm": 338,
+          "averageSpeedKmPerDay": 260,
+          "estimatedTravelDays": 1,
+          "routeStatus": "SIMULATED_ROUTE_READY",
+          "canBeBlockedByWar": true,
+          "canBeBlockedByNeighborControl": true,
+          "canBeBlockedByNavalInterdiction": true,
+          "strategicRouteNotRoadSurvey": true,
+          "routeCapacityPerDay": 13880
+        }
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": 1293233.37,
+          "unit": "BCF",
+          "year": 2026,
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_429_YEARS",
+          "legacyReportedText": [
+            "500 TCF"
+          ]
+        },
+        "production": {
+          "annual": 3014.53,
+          "rate": 8259,
+          "unit": "MMCF_PER_DAY",
+          "annualUnit": "BCF_PER_YEAR",
+          "year": 2026,
+          "period": "DAILY_AND_ANNUAL",
+          "status": "SIMULATED",
+          "basis": "PER_SITE_IDENTITY_PRODUCTION_ALLOCATION_V1"
+        },
+        "grade": {
+          "value": 90.92,
+          "unit": "PERCENT_METHANE",
+          "year": 2026,
+          "metric": "RESOURCE_SPECIFIC_RAW_MATERIAL_QUALITY",
+          "status": "SIMULATED",
+          "basis": "COMMODITY_BAND_AND_STABLE_SITE_ID_VARIATION"
+        },
+        "recovery": {
+          "value": 87.46,
+          "unit": "PERCENT",
+          "year": 2026,
+          "period": "PROCESSING_CYCLE",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_PROCESSING_RECOVERY_MODEL"
+        },
+        "throughput": {
+          "value": 7516,
+          "unit": "MMCF_PER_DAY",
+          "year": 2026,
+          "period": "DAILY",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_THROUGHPUT_MODEL"
+        },
+        "purity": {
+          "value": 99.66,
+          "unit": "PERCENT",
+          "year": 2026,
+          "metric": "PROCESSED_METHANE_PERCENT",
+          "status": "SIMULATED",
+          "basis": "COMMODITY_PRODUCT_QUALITY_MODEL"
+        },
+        "capacity": {
+          "nominal": 11471,
+          "minimum": 8718,
+          "maximum": 13880,
+          "unit": "MMCF_PER_DAY",
+          "period": "DAILY",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_CAPACITY_UTILIZATION_AND_HEADROOM"
+        },
+        "reportedMetrics": {
+          "legacyReserveText": [
+            "500 TCF"
+          ],
+          "legacyStatusText": [
+            "Active Field"
+          ],
+          "allOperationalMetricsAboveAreSimulated": true
+        },
+        "quantitativeProvenance": {
+          "authority": "SCENARIO_SIMULATION_DATA",
+          "method": "OMEGA_PER_SITE_IDENTITY_METRIC_ALLOCATION_V1",
+          "seedKey": "SITE_IRN_south_pars_gas_field|IRN|natural_gas",
+          "generatedAt": "2026-10-13",
+          "gameplayHorizonYears": 429,
+          "realWorldDataRequired": false,
+          "externalMeasuredValuePromotion": false
+        },
+        "completeness": {
+          "reserve": "SIMULATED",
+          "production": "SIMULATED",
+          "grade": "SIMULATED",
+          "recovery": "SIMULATED",
+          "throughput": "SIMULATED",
+          "purity": "SIMULATED",
+          "capacity": "SIMULATED",
+          "overall": "GAMEPLAY_SIMULATION_COMPLETE"
+        }
+      },
+      "reserve": {
+        "quantity": 1293233.37,
+        "unit": "BCF",
+        "status": "SIMULATED",
+        "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_429_YEARS"
+      },
+      "simulation": {
+        "reserve": {
+          "quantity": 1293233.37,
+          "unit": "BCF",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_429_YEARS"
+        },
+        "nominalDailyCapacity": 11471,
+        "minimumDailyCapacity": 8718,
+        "maximumDailyCapacity": 13880,
+        "productionRate": 8259,
+        "productionRateUnit": "MMCF_PER_DAY",
+        "annualProduction": 3014.53,
+        "annualProductionUnit": "BCF_PER_YEAR",
+        "utilization": 0.72,
+        "recovery": 0.8746,
+        "grade": {
+          "value": 90.92,
+          "unit": "PERCENT_METHANE",
+          "metric": "RESOURCE_SPECIFIC_RAW_MATERIAL_QUALITY"
+        },
+        "purity": {
+          "value": 99.66,
+          "unit": "PERCENT",
+          "metric": "PROCESSED_METHANE_PERCENT"
+        },
+        "reserveHorizonYears": 429,
+        "transportRoute": [
+          {
+            "routeId": "ROUTE_SITE_IRN_south_pars_gas_field_RAW_TO_FACTORY",
+            "countryId": "IRN",
+            "originSiteId": "SITE_IRN_south_pars_gas_field",
+            "warehouseId": "WH-IRN-RAW",
+            "factoryId": "FACTORY_IRN_natural_gas",
+            "mode": "PIPELINE_AND_SEA_LANE",
+            "distanceKm": 338,
+            "estimatedTravelDays": 1,
+            "status": "SIMULATED_ROUTE_READY",
+            "blockableByWar": true,
+            "blockableByNeighborControl": true,
+            "blockableByNavalInterdiction": true
+          }
+        ],
+        "rawWarehouseId": "WH-IRN-RAW",
+        "factoryBinding": {
+          "factoryId": "FACTORY_IRN_natural_gas",
+          "countryId": "IRN",
+          "inputResourceId": "natural_gas",
+          "outputResourceId": "natural_gas",
+          "status": "SIMULATED_READY",
+          "processingMethod": "GAS_GATHERING_DEHYDRATION_AND_PROCESSING",
+          "requiresSameCountryWarehouse": true
+        },
+        "factoryOutputs": [
+          "treated natural gas",
+          "condensate where present"
+        ],
+        "naturalRisk": {
+          "geological": 44,
+          "environmental": 55,
+          "waterStress": 33,
+          "infrastructure": 58,
+          "conflictExposure": 54,
+          "maritimeExposure": 60,
+          "scale": "0_TO_100_SIMULATION_INDEX"
+        }
+      },
+      "naturalRisk": {
+        "geological": 44,
+        "environmental": 55,
+        "waterStress": 33,
+        "infrastructure": 58,
+        "conflictExposure": 54,
+        "maritimeExposure": 60,
+        "scale": "0_TO_100_SIMULATION_INDEX"
+      },
+      "mineLevel": 3,
+      "map": {
+        "markerEligible": true,
+        "countryIsolationKey": "IRN",
+        "iconResourceKey": "natural_gas",
+        "markerType": "RESOURCE_SITE",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "aliasOfSiteId": null,
+        "collisionGroup": "SITE_IRN_south_pars_gas_field"
+      },
+      "runtime": {
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
+        "quantityAuthority": "SCENARIO_SIMULATION_DATA",
+        "productionAuthority": "SCENARIO_SIMULATION_DATA",
+        "qualityAuthority": "SCENARIO_SIMULATION_DATA",
+        "countryWarehouseId": "WH-IRN-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true,
+        "aliasOfSiteId": null,
+        "pipeline": {
+          "site": "BOUND",
+          "extraction": "SIMULATED_ENGINEERING_READY",
+          "batch": "SITE_ID_KEYED",
+          "rawWarehouse": "BOUND_TO_OWNER_COUNTRY",
+          "transport": "SIMULATED_ROUTE_READY",
+          "factory": "SITE_AND_COUNTRY_BOUND",
+          "processing": "RESOURCE_SPECIFIC_SIMULATED_PROCESS",
+          "output": "SIMULATED_PRODUCT_STREAM",
+          "economy": "COUNTRY_ISOLATED_SIMULATED_OUTPUT"
+        }
+      },
+      "naturalHazards": {
+        "geologicRiskIndex": 44,
+        "environmentalRiskIndex": 55,
+        "waterStressIndex": 33,
+        "infrastructureRiskIndex": 58,
+        "conflictExposureIndex": 54,
+        "maritimeExposureIndex": 60,
+        "scale": "0_TO_100_SIMULATION_INDEX"
+      },
+      "observedFacts": [],
+      "sources": [],
+      "locationSource": {
+        "sourceType": "LEGACY_REPOSITORY_COORDINATE",
+        "scope": "Regional approximation; not survey grade",
+        "sourceReference": "resource_site_legacy_structural_candidates_v1.json"
+      },
+      "sourceReference": {
+        "sourcePath": "resource_site_legacy_structural_candidates_v1.json",
+        "sourceDatasetAuthority": "LEGACY_REPOSITORY_DATA_ONLY",
+        "historicalSourcePointers": [
+          {
+            "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+            "path": "resource_ministry_engine.js",
+            "symbol": "GEOGRAPHIC_DEPOSITS",
+            "line": 398,
+            "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+          }
+        ],
+        "legacyReportedReserveText": [
+          "500 TCF"
+        ],
+        "historicalStatusTexts": [
+          "Active Field"
+        ],
+        "identityConfidence": "LEGACY_STRUCTURAL_CANDIDATE",
+        "metricAuthority": "SIMULATED_GAMEPLAY_NOT_OBSERVED"
+      },
+      "researchState": "LEGACY_IDENTITY_WITH_SIMULATED_GAMEPLAY_METRICS",
+      "generatedAt": "2026-10-13"
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_PSE_gaza_marine_offshore_gas_field",
+      "countryId": "PSE",
+      "siteName": "Gaza Marine Offshore Gas Field",
+      "identity": {
+        "countryIso3": "PSE",
+        "countryName": "Palestine",
+        "siteType": "GAS_FIELD",
+        "resourceTypeId": "natural_gas",
+        "resourceName": "Natural Gas & Methane",
+        "ontologyKey": "NATURAL_GAS",
+        "aliases": []
+      },
+      "location": {
+        "countryName": "Palestine",
+        "adminRegion": null,
+        "locality": null,
+        "coordinates": {
+          "lat": 31.45,
+          "lng": 34.2
+        },
+        "coordinateStatus": "GAMEPLAY_REGIONAL_APPROXIMATION",
+        "coordinateAuthority": "RETAINED_LEGACY_POINT_NOT_SURVEY_GRADE",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "countryBoundaryKey": "PSE"
+      },
+      "ownership": {
+        "owner": "Palestine Sovereign Resource Authority [SIMULATED]",
+        "operator": "OMEGA_SIMULATED_OPERATOR_SITE_PSE_gaza_marine_offshore_gas_field",
+        "ownerEvidenceStatus": "SIMULATED",
+        "operatorEvidenceStatus": "SIMULATED",
+        "authority": "OMEGA_SCENARIO_OWNERSHIP",
+        "equityControlCountry": "PSE",
+        "operatorContractId": "OPCONTRACT_SITE_PSE_gaza_marine_offshore_gas_field"
+      },
+      "operation": {
+        "status": "SIMULATED_OPERATIONAL_SCENARIO",
+        "operationalStatus": "SIMULATED_ACTIVE",
+        "extractionMethod": "OFFSHORE_DRILLING_AND_PRODUCTION",
+        "extractionEligibility": "SIMULATED_SITE_ELIGIBLE_SUBJECT_TO_GAMEPLAY_GATES",
+        "commercialExtraction": true,
+        "siteCommissioningLevel": 4,
+        "mineLevel": 5,
+        "legacyReportedStatusTexts": [
+          "Sovereign Gas Reserve"
+        ],
+        "statusAuthority": "SIMULATED_GAMEPLAY_STATE_NOT_REAL_WORLD_CLAIM"
+      },
+      "processing": {
+        "upstreamProcess": "OFFSHORE_DRILLING_AND_PRODUCTION",
+        "midstreamProcess": "GAS_GATHERING_DEHYDRATION_AND_PROCESSING",
+        "refinedOutputs": [
+          "treated natural gas",
+          "condensate where present"
+        ],
+        "downstreamSectors": [
+          "power_generation",
+          "fertilizer",
+          "industrial_heat",
+          "LNG_if_connected"
+        ]
+      },
+      "logistics": {
+        "warehouseCountryId": "PSE",
+        "warehouseSiteId": "WH-PSE-RAW",
+        "inventoryRouteStatus": "SIMULATED_ROUTE_READY",
+        "factoryRouteStatus": "SIMULATED_FACTORY_BINDING_READY",
+        "routeStatus": "SIMULATED_ROUTE_READY",
+        "transport": {
+          "routeId": "ROUTE_SITE_PSE_gaza_marine_offshore_gas_field_RAW_TO_FACTORY",
+          "routeType": "PIPELINE_AND_SEA_LANE",
+          "originSiteId": "SITE_PSE_gaza_marine_offshore_gas_field",
+          "originCountryId": "PSE",
+          "warehouseId": "WH-PSE-RAW",
+          "destinationFactoryId": "FACTORY_PSE_natural_gas",
+          "destinationCountryId": "PSE",
+          "distanceKm": 557,
+          "averageSpeedKmPerDay": 260,
+          "estimatedTravelDays": 2,
+          "routeStatus": "SIMULATED_ROUTE_READY",
+          "canBeBlockedByWar": true,
+          "canBeBlockedByNeighborControl": true,
+          "canBeBlockedByNavalInterdiction": true,
+          "strategicRouteNotRoadSurvey": true,
+          "routeCapacityPerDay": 1122
+        }
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": 86693.18,
+          "unit": "BCF",
+          "year": 2026,
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_406_YEARS",
+          "legacyReportedText": [
+            "1.0 TCF Offshore"
+          ]
+        },
+        "production": {
+          "annual": 213.53,
+          "rate": 585,
+          "unit": "MMCF_PER_DAY",
+          "annualUnit": "BCF_PER_YEAR",
+          "year": 2026,
+          "period": "DAILY_AND_ANNUAL",
+          "status": "SIMULATED",
+          "basis": "PER_SITE_IDENTITY_PRODUCTION_ALLOCATION_V1"
+        },
+        "grade": {
+          "value": 84.27,
+          "unit": "PERCENT_METHANE",
+          "year": 2026,
+          "metric": "RESOURCE_SPECIFIC_RAW_MATERIAL_QUALITY",
+          "status": "SIMULATED",
+          "basis": "COMMODITY_BAND_AND_STABLE_SITE_ID_VARIATION"
+        },
+        "recovery": {
+          "value": 78.22,
+          "unit": "PERCENT",
+          "year": 2026,
+          "period": "PROCESSING_CYCLE",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_PROCESSING_RECOVERY_MODEL"
+        },
+        "throughput": {
+          "value": 573,
+          "unit": "MMCF_PER_DAY",
+          "year": 2026,
+          "period": "DAILY",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_THROUGHPUT_MODEL"
+        },
+        "purity": {
+          "value": 93.6,
+          "unit": "PERCENT",
+          "year": 2026,
+          "metric": "PROCESSED_METHANE_PERCENT",
+          "status": "SIMULATED",
+          "basis": "COMMODITY_PRODUCT_QUALITY_MODEL"
+        },
+        "capacity": {
+          "nominal": 813,
+          "minimum": 504,
+          "maximum": 1122,
+          "unit": "MMCF_PER_DAY",
+          "period": "DAILY",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_CAPACITY_UTILIZATION_AND_HEADROOM"
+        },
+        "reportedMetrics": {
+          "legacyReserveText": [
+            "1.0 TCF Offshore"
+          ],
+          "legacyStatusText": [
+            "Sovereign Gas Reserve"
+          ],
+          "allOperationalMetricsAboveAreSimulated": true
+        },
+        "quantitativeProvenance": {
+          "authority": "SCENARIO_SIMULATION_DATA",
+          "method": "OMEGA_PER_SITE_IDENTITY_METRIC_ALLOCATION_V1",
+          "seedKey": "SITE_PSE_gaza_marine_offshore_gas_field|PSE|natural_gas",
+          "generatedAt": "2026-10-13",
+          "gameplayHorizonYears": 406,
+          "realWorldDataRequired": false,
+          "externalMeasuredValuePromotion": false
+        },
+        "completeness": {
+          "reserve": "SIMULATED",
+          "production": "SIMULATED",
+          "grade": "SIMULATED",
+          "recovery": "SIMULATED",
+          "throughput": "SIMULATED",
+          "purity": "SIMULATED",
+          "capacity": "SIMULATED",
+          "overall": "GAMEPLAY_SIMULATION_COMPLETE"
+        }
+      },
+      "reserve": {
+        "quantity": 86693.18,
+        "unit": "BCF",
+        "status": "SIMULATED",
+        "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_406_YEARS"
+      },
+      "simulation": {
+        "reserve": {
+          "quantity": 86693.18,
+          "unit": "BCF",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_406_YEARS"
+        },
+        "nominalDailyCapacity": 813,
+        "minimumDailyCapacity": 504,
+        "maximumDailyCapacity": 1122,
+        "productionRate": 585,
+        "productionRateUnit": "MMCF_PER_DAY",
+        "annualProduction": 213.53,
+        "annualProductionUnit": "BCF_PER_YEAR",
+        "utilization": 0.72,
+        "recovery": 0.7822,
+        "grade": {
+          "value": 84.27,
+          "unit": "PERCENT_METHANE",
+          "metric": "RESOURCE_SPECIFIC_RAW_MATERIAL_QUALITY"
+        },
+        "purity": {
+          "value": 93.6,
+          "unit": "PERCENT",
+          "metric": "PROCESSED_METHANE_PERCENT"
+        },
+        "reserveHorizonYears": 406,
+        "transportRoute": [
+          {
+            "routeId": "ROUTE_SITE_PSE_gaza_marine_offshore_gas_field_RAW_TO_FACTORY",
+            "countryId": "PSE",
+            "originSiteId": "SITE_PSE_gaza_marine_offshore_gas_field",
+            "warehouseId": "WH-PSE-RAW",
+            "factoryId": "FACTORY_PSE_natural_gas",
+            "mode": "PIPELINE_AND_SEA_LANE",
+            "distanceKm": 557,
+            "estimatedTravelDays": 2,
+            "status": "SIMULATED_ROUTE_READY",
+            "blockableByWar": true,
+            "blockableByNeighborControl": true,
+            "blockableByNavalInterdiction": true
+          }
+        ],
+        "rawWarehouseId": "WH-PSE-RAW",
+        "factoryBinding": {
+          "factoryId": "FACTORY_PSE_natural_gas",
+          "countryId": "PSE",
+          "inputResourceId": "natural_gas",
+          "outputResourceId": "natural_gas",
+          "status": "SIMULATED_READY",
+          "processingMethod": "GAS_GATHERING_DEHYDRATION_AND_PROCESSING",
+          "requiresSameCountryWarehouse": true
+        },
+        "factoryOutputs": [
+          "treated natural gas",
+          "condensate where present"
+        ],
+        "naturalRisk": {
+          "geological": 20,
+          "environmental": 44,
+          "waterStress": 43,
+          "infrastructure": 65,
+          "conflictExposure": 17,
+          "maritimeExposure": 62,
+          "scale": "0_TO_100_SIMULATION_INDEX"
+        }
+      },
+      "naturalRisk": {
+        "geological": 20,
+        "environmental": 44,
+        "waterStress": 43,
+        "infrastructure": 65,
+        "conflictExposure": 17,
+        "maritimeExposure": 62,
+        "scale": "0_TO_100_SIMULATION_INDEX"
+      },
+      "mineLevel": 5,
+      "map": {
+        "markerEligible": true,
+        "countryIsolationKey": "PSE",
+        "iconResourceKey": "natural_gas",
+        "markerType": "RESOURCE_SITE",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "aliasOfSiteId": null,
+        "collisionGroup": "SITE_PSE_gaza_marine_offshore_gas_field"
+      },
+      "runtime": {
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
+        "quantityAuthority": "SCENARIO_SIMULATION_DATA",
+        "productionAuthority": "SCENARIO_SIMULATION_DATA",
+        "qualityAuthority": "SCENARIO_SIMULATION_DATA",
+        "countryWarehouseId": "WH-PSE-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true,
+        "aliasOfSiteId": null,
+        "pipeline": {
+          "site": "BOUND",
+          "extraction": "SIMULATED_ENGINEERING_READY",
+          "batch": "SITE_ID_KEYED",
+          "rawWarehouse": "BOUND_TO_OWNER_COUNTRY",
+          "transport": "SIMULATED_ROUTE_READY",
+          "factory": "SITE_AND_COUNTRY_BOUND",
+          "processing": "RESOURCE_SPECIFIC_SIMULATED_PROCESS",
+          "output": "SIMULATED_PRODUCT_STREAM",
+          "economy": "COUNTRY_ISOLATED_SIMULATED_OUTPUT"
+        }
+      },
+      "naturalHazards": {
+        "geologicRiskIndex": 20,
+        "environmentalRiskIndex": 44,
+        "waterStressIndex": 43,
+        "infrastructureRiskIndex": 65,
+        "conflictExposureIndex": 17,
+        "maritimeExposureIndex": 62,
+        "scale": "0_TO_100_SIMULATION_INDEX"
+      },
+      "observedFacts": [],
+      "sources": [],
+      "locationSource": {
+        "sourceType": "LEGACY_REPOSITORY_COORDINATE",
+        "scope": "Regional approximation; not survey grade",
+        "sourceReference": "resource_site_legacy_structural_candidates_v1.json"
+      },
+      "sourceReference": {
+        "sourcePath": "resource_site_legacy_structural_candidates_v1.json",
+        "sourceDatasetAuthority": "LEGACY_REPOSITORY_DATA_ONLY",
+        "historicalSourcePointers": [
+          {
+            "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+            "path": "resource_ministry_engine.js",
+            "symbol": "GEOGRAPHIC_DEPOSITS",
+            "line": 400,
+            "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+          }
+        ],
+        "legacyReportedReserveText": [
+          "1.0 TCF Offshore"
+        ],
+        "historicalStatusTexts": [
+          "Sovereign Gas Reserve"
+        ],
+        "identityConfidence": "LEGACY_STRUCTURAL_CANDIDATE",
+        "metricAuthority": "SIMULATED_GAMEPLAY_NOT_OBSERVED"
+      },
+      "researchState": "LEGACY_IDENTITY_WITH_SIMULATED_GAMEPLAY_METRICS",
+      "generatedAt": "2026-10-13"
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_EGY_zohr_gas_field_mediterranean",
+      "countryId": "EGY",
+      "siteName": "Zohr Gas Field Mediterranean",
+      "identity": {
+        "countryIso3": "EGY",
+        "countryName": "Egypt",
+        "siteType": "GAS_FIELD",
+        "resourceTypeId": "natural_gas",
+        "resourceName": "Natural Gas & Methane",
+        "ontologyKey": "NATURAL_GAS",
+        "aliases": []
+      },
+      "location": {
+        "countryName": "Egypt",
+        "adminRegion": null,
+        "locality": null,
+        "coordinates": {
+          "lat": 32.5,
+          "lng": 31.8
+        },
+        "coordinateStatus": "GAMEPLAY_REGIONAL_APPROXIMATION",
+        "coordinateAuthority": "RETAINED_LEGACY_POINT_NOT_SURVEY_GRADE",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "countryBoundaryKey": "EGY"
+      },
+      "ownership": {
+        "owner": "Egypt Sovereign Resource Authority [SIMULATED]",
+        "operator": "OMEGA_SIMULATED_OPERATOR_SITE_EGY_zohr_gas_field_mediterranean",
+        "ownerEvidenceStatus": "SIMULATED",
+        "operatorEvidenceStatus": "SIMULATED",
+        "authority": "OMEGA_SCENARIO_OWNERSHIP",
+        "equityControlCountry": "EGY",
+        "operatorContractId": "OPCONTRACT_SITE_EGY_zohr_gas_field_mediterranean"
+      },
+      "operation": {
+        "status": "SIMULATED_OPERATIONAL_SCENARIO",
+        "operationalStatus": "SIMULATED_ACTIVE",
+        "extractionMethod": "GAS_WELLS_AND_GATHERING",
+        "extractionEligibility": "SIMULATED_SITE_ELIGIBLE_SUBJECT_TO_GAMEPLAY_GATES",
+        "commercialExtraction": true,
+        "siteCommissioningLevel": 5,
+        "mineLevel": 3,
+        "legacyReportedStatusTexts": [
+          "Offshore Field"
+        ],
+        "statusAuthority": "SIMULATED_GAMEPLAY_STATE_NOT_REAL_WORLD_CLAIM"
+      },
+      "processing": {
+        "upstreamProcess": "GAS_WELLS_AND_GATHERING",
+        "midstreamProcess": "GAS_GATHERING_DEHYDRATION_AND_PROCESSING",
+        "refinedOutputs": [
+          "treated natural gas",
+          "condensate where present"
+        ],
+        "downstreamSectors": [
+          "power_generation",
+          "fertilizer",
+          "industrial_heat",
+          "LNG_if_connected"
+        ]
+      },
+      "logistics": {
+        "warehouseCountryId": "EGY",
+        "warehouseSiteId": "WH-EGY-RAW",
+        "inventoryRouteStatus": "SIMULATED_ROUTE_READY",
+        "factoryRouteStatus": "SIMULATED_FACTORY_BINDING_READY",
+        "routeStatus": "SIMULATED_ROUTE_READY",
+        "transport": {
+          "routeId": "ROUTE_SITE_EGY_zohr_gas_field_mediterranean_RAW_TO_FACTORY",
+          "routeType": "PIPELINE_AND_SEA_LANE",
+          "originSiteId": "SITE_EGY_zohr_gas_field_mediterranean",
+          "originCountryId": "EGY",
+          "warehouseId": "WH-EGY-RAW",
+          "destinationFactoryId": "FACTORY_EGY_natural_gas",
+          "destinationCountryId": "EGY",
+          "distanceKm": 292,
+          "averageSpeedKmPerDay": 260,
+          "estimatedTravelDays": 1,
+          "routeStatus": "SIMULATED_ROUTE_READY",
+          "canBeBlockedByWar": true,
+          "canBeBlockedByNeighborControl": true,
+          "canBeBlockedByNavalInterdiction": true,
+          "strategicRouteNotRoadSurvey": true,
+          "routeCapacityPerDay": 4578
+        }
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": 417224.2,
+          "unit": "BCF",
+          "year": 2026,
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_410_YEARS",
+          "legacyReportedText": [
+            "30 TCF"
+          ]
+        },
+        "production": {
+          "annual": 1017.62,
+          "rate": 2788,
+          "unit": "MMCF_PER_DAY",
+          "annualUnit": "BCF_PER_YEAR",
+          "year": 2026,
+          "period": "DAILY_AND_ANNUAL",
+          "status": "SIMULATED",
+          "basis": "PER_SITE_IDENTITY_PRODUCTION_ALLOCATION_V1"
+        },
+        "grade": {
+          "value": 88.83,
+          "unit": "PERCENT_METHANE",
+          "year": 2026,
+          "metric": "RESOURCE_SPECIFIC_RAW_MATERIAL_QUALITY",
+          "status": "SIMULATED",
+          "basis": "COMMODITY_BAND_AND_STABLE_SITE_ID_VARIATION"
+        },
+        "recovery": {
+          "value": 72.59,
+          "unit": "PERCENT",
+          "year": 2026,
+          "period": "PROCESSING_CYCLE",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_PROCESSING_RECOVERY_MODEL"
+        },
+        "throughput": {
+          "value": 2788,
+          "unit": "MMCF_PER_DAY",
+          "year": 2026,
+          "period": "DAILY",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_THROUGHPUT_MODEL"
+        },
+        "purity": {
+          "value": 94.71,
+          "unit": "PERCENT",
+          "year": 2026,
+          "metric": "PROCESSED_METHANE_PERCENT",
+          "status": "SIMULATED",
+          "basis": "COMMODITY_PRODUCT_QUALITY_MODEL"
+        },
+        "capacity": {
+          "nominal": 3442,
+          "minimum": 2444,
+          "maximum": 4578,
+          "unit": "MMCF_PER_DAY",
+          "period": "DAILY",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_CAPACITY_UTILIZATION_AND_HEADROOM"
+        },
+        "reportedMetrics": {
+          "legacyReserveText": [
+            "30 TCF"
+          ],
+          "legacyStatusText": [
+            "Offshore Field"
+          ],
+          "allOperationalMetricsAboveAreSimulated": true
+        },
+        "quantitativeProvenance": {
+          "authority": "SCENARIO_SIMULATION_DATA",
+          "method": "OMEGA_PER_SITE_IDENTITY_METRIC_ALLOCATION_V1",
+          "seedKey": "SITE_EGY_zohr_gas_field_mediterranean|EGY|natural_gas",
+          "generatedAt": "2026-10-13",
+          "gameplayHorizonYears": 410,
+          "realWorldDataRequired": false,
+          "externalMeasuredValuePromotion": false
+        },
+        "completeness": {
+          "reserve": "SIMULATED",
+          "production": "SIMULATED",
+          "grade": "SIMULATED",
+          "recovery": "SIMULATED",
+          "throughput": "SIMULATED",
+          "purity": "SIMULATED",
+          "capacity": "SIMULATED",
+          "overall": "GAMEPLAY_SIMULATION_COMPLETE"
+        }
+      },
+      "reserve": {
+        "quantity": 417224.2,
+        "unit": "BCF",
+        "status": "SIMULATED",
+        "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_410_YEARS"
+      },
+      "simulation": {
+        "reserve": {
+          "quantity": 417224.2,
+          "unit": "BCF",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_410_YEARS"
+        },
+        "nominalDailyCapacity": 3442,
+        "minimumDailyCapacity": 2444,
+        "maximumDailyCapacity": 4578,
+        "productionRate": 2788,
+        "productionRateUnit": "MMCF_PER_DAY",
+        "annualProduction": 1017.62,
+        "annualProductionUnit": "BCF_PER_YEAR",
+        "utilization": 0.81,
+        "recovery": 0.7259,
+        "grade": {
+          "value": 88.83,
+          "unit": "PERCENT_METHANE",
+          "metric": "RESOURCE_SPECIFIC_RAW_MATERIAL_QUALITY"
+        },
+        "purity": {
+          "value": 94.71,
+          "unit": "PERCENT",
+          "metric": "PROCESSED_METHANE_PERCENT"
+        },
+        "reserveHorizonYears": 410,
+        "transportRoute": [
+          {
+            "routeId": "ROUTE_SITE_EGY_zohr_gas_field_mediterranean_RAW_TO_FACTORY",
+            "countryId": "EGY",
+            "originSiteId": "SITE_EGY_zohr_gas_field_mediterranean",
+            "warehouseId": "WH-EGY-RAW",
+            "factoryId": "FACTORY_EGY_natural_gas",
+            "mode": "PIPELINE_AND_SEA_LANE",
+            "distanceKm": 292,
+            "estimatedTravelDays": 1,
+            "status": "SIMULATED_ROUTE_READY",
+            "blockableByWar": true,
+            "blockableByNeighborControl": true,
+            "blockableByNavalInterdiction": true
+          }
+        ],
+        "rawWarehouseId": "WH-EGY-RAW",
+        "factoryBinding": {
+          "factoryId": "FACTORY_EGY_natural_gas",
+          "countryId": "EGY",
+          "inputResourceId": "natural_gas",
+          "outputResourceId": "natural_gas",
+          "status": "SIMULATED_READY",
+          "processingMethod": "GAS_GATHERING_DEHYDRATION_AND_PROCESSING",
+          "requiresSameCountryWarehouse": true
+        },
+        "factoryOutputs": [
+          "treated natural gas",
+          "condensate where present"
+        ],
+        "naturalRisk": {
+          "geological": 17,
+          "environmental": 37,
+          "waterStress": 62,
+          "infrastructure": 27,
+          "conflictExposure": 56,
+          "maritimeExposure": 29,
+          "scale": "0_TO_100_SIMULATION_INDEX"
+        }
+      },
+      "naturalRisk": {
+        "geological": 17,
+        "environmental": 37,
+        "waterStress": 62,
+        "infrastructure": 27,
+        "conflictExposure": 56,
+        "maritimeExposure": 29,
+        "scale": "0_TO_100_SIMULATION_INDEX"
+      },
+      "mineLevel": 3,
+      "map": {
+        "markerEligible": true,
+        "countryIsolationKey": "EGY",
+        "iconResourceKey": "natural_gas",
+        "markerType": "RESOURCE_SITE",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "aliasOfSiteId": null,
+        "collisionGroup": "SITE_EGY_zohr_gas_field_mediterranean"
+      },
+      "runtime": {
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
+        "quantityAuthority": "SCENARIO_SIMULATION_DATA",
+        "productionAuthority": "SCENARIO_SIMULATION_DATA",
+        "qualityAuthority": "SCENARIO_SIMULATION_DATA",
+        "countryWarehouseId": "WH-EGY-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true,
+        "aliasOfSiteId": null,
+        "pipeline": {
+          "site": "BOUND",
+          "extraction": "SIMULATED_ENGINEERING_READY",
+          "batch": "SITE_ID_KEYED",
+          "rawWarehouse": "BOUND_TO_OWNER_COUNTRY",
+          "transport": "SIMULATED_ROUTE_READY",
+          "factory": "SITE_AND_COUNTRY_BOUND",
+          "processing": "RESOURCE_SPECIFIC_SIMULATED_PROCESS",
+          "output": "SIMULATED_PRODUCT_STREAM",
+          "economy": "COUNTRY_ISOLATED_SIMULATED_OUTPUT"
+        }
+      },
+      "naturalHazards": {
+        "geologicRiskIndex": 17,
+        "environmentalRiskIndex": 37,
+        "waterStressIndex": 62,
+        "infrastructureRiskIndex": 27,
+        "conflictExposureIndex": 56,
+        "maritimeExposureIndex": 29,
+        "scale": "0_TO_100_SIMULATION_INDEX"
+      },
+      "observedFacts": [],
+      "sources": [],
+      "locationSource": {
+        "sourceType": "LEGACY_REPOSITORY_COORDINATE",
+        "scope": "Regional approximation; not survey grade",
+        "sourceReference": "resource_site_legacy_structural_candidates_v1.json"
+      },
+      "sourceReference": {
+        "sourcePath": "resource_site_legacy_structural_candidates_v1.json",
+        "sourceDatasetAuthority": "LEGACY_REPOSITORY_DATA_ONLY",
+        "historicalSourcePointers": [
+          {
+            "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+            "path": "resource_ministry_engine.js",
+            "symbol": "GEOGRAPHIC_DEPOSITS",
+            "line": 405,
+            "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+          }
+        ],
+        "legacyReportedReserveText": [
+          "30 TCF"
+        ],
+        "historicalStatusTexts": [
+          "Offshore Field"
+        ],
+        "identityConfidence": "LEGACY_STRUCTURAL_CANDIDATE",
+        "metricAuthority": "SIMULATED_GAMEPLAY_NOT_OBSERVED"
+      },
+      "researchState": "LEGACY_IDENTITY_WITH_SIMULATED_GAMEPLAY_METRICS",
+      "generatedAt": "2026-10-13"
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_DZA_hassi_r_mel_natural_gas_basin",
+      "countryId": "DZA",
+      "siteName": "Hassi R'Mel Natural Gas Basin",
+      "identity": {
+        "countryIso3": "DZA",
+        "countryName": "Algeria",
+        "siteType": "GAS_FIELD",
+        "resourceTypeId": "natural_gas",
+        "resourceName": "Natural Gas & Methane",
+        "ontologyKey": "NATURAL_GAS",
+        "aliases": []
+      },
+      "location": {
+        "countryName": "Algeria",
+        "adminRegion": null,
+        "locality": null,
+        "coordinates": {
+          "lat": 32.5,
+          "lng": 3.25
+        },
+        "coordinateStatus": "GAMEPLAY_REGIONAL_APPROXIMATION",
+        "coordinateAuthority": "RETAINED_LEGACY_POINT_NOT_SURVEY_GRADE",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "countryBoundaryKey": "DZA"
+      },
+      "ownership": {
+        "owner": "Algeria Sovereign Resource Authority [SIMULATED]",
+        "operator": "OMEGA_SIMULATED_OPERATOR_SITE_DZA_hassi_r_mel_natural_gas_basin",
+        "ownerEvidenceStatus": "SIMULATED",
+        "operatorEvidenceStatus": "SIMULATED",
+        "authority": "OMEGA_SCENARIO_OWNERSHIP",
+        "equityControlCountry": "DZA",
+        "operatorContractId": "OPCONTRACT_SITE_DZA_hassi_r_mel_natural_gas_basin"
+      },
+      "operation": {
+        "status": "SIMULATED_OPERATIONAL_SCENARIO",
+        "operationalStatus": "SIMULATED_ACTIVE",
+        "extractionMethod": "GAS_WELLS_AND_GATHERING",
+        "extractionEligibility": "SIMULATED_SITE_ELIGIBLE_SUBJECT_TO_GAMEPLAY_GATES",
+        "commercialExtraction": true,
+        "siteCommissioningLevel": 3,
+        "mineLevel": 5,
+        "legacyReportedStatusTexts": [
+          "Active Superfield"
+        ],
+        "statusAuthority": "SIMULATED_GAMEPLAY_STATE_NOT_REAL_WORLD_CLAIM"
+      },
+      "processing": {
+        "upstreamProcess": "GAS_WELLS_AND_GATHERING",
+        "midstreamProcess": "GAS_GATHERING_DEHYDRATION_AND_PROCESSING",
+        "refinedOutputs": [
+          "treated natural gas",
+          "condensate where present"
+        ],
+        "downstreamSectors": [
+          "power_generation",
+          "fertilizer",
+          "industrial_heat",
+          "LNG_if_connected"
+        ]
+      },
+      "logistics": {
+        "warehouseCountryId": "DZA",
+        "warehouseSiteId": "WH-DZA-RAW",
+        "inventoryRouteStatus": "SIMULATED_ROUTE_READY",
+        "factoryRouteStatus": "SIMULATED_FACTORY_BINDING_READY",
+        "routeStatus": "SIMULATED_ROUTE_READY",
+        "transport": {
+          "routeId": "ROUTE_SITE_DZA_hassi_r_mel_natural_gas_basin_RAW_TO_FACTORY",
+          "routeType": "PIPELINE_AND_SEA_LANE",
+          "originSiteId": "SITE_DZA_hassi_r_mel_natural_gas_basin",
+          "originCountryId": "DZA",
+          "warehouseId": "WH-DZA-RAW",
+          "destinationFactoryId": "FACTORY_DZA_natural_gas",
+          "destinationCountryId": "DZA",
+          "distanceKm": 455,
+          "averageSpeedKmPerDay": 260,
+          "estimatedTravelDays": 2,
+          "routeStatus": "SIMULATED_ROUTE_READY",
+          "canBeBlockedByWar": true,
+          "canBeBlockedByNeighborControl": true,
+          "canBeBlockedByNavalInterdiction": true,
+          "strategicRouteNotRoadSurvey": true,
+          "routeCapacityPerDay": 6750
+        }
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": 649797.82,
+          "unit": "BCF",
+          "year": 2026,
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_434_YEARS",
+          "legacyReportedText": [
+            "85 TCF"
+          ]
+        },
+        "production": {
+          "annual": 1497.23,
+          "rate": 4102,
+          "unit": "MMCF_PER_DAY",
+          "annualUnit": "BCF_PER_YEAR",
+          "year": 2026,
+          "period": "DAILY_AND_ANNUAL",
+          "status": "SIMULATED",
+          "basis": "PER_SITE_IDENTITY_PRODUCTION_ALLOCATION_V1"
+        },
+        "grade": {
+          "value": 82.42,
+          "unit": "PERCENT_METHANE",
+          "year": 2026,
+          "metric": "RESOURCE_SPECIFIC_RAW_MATERIAL_QUALITY",
+          "status": "SIMULATED",
+          "basis": "COMMODITY_BAND_AND_STABLE_SITE_ID_VARIATION"
+        },
+        "recovery": {
+          "value": 81.15,
+          "unit": "PERCENT",
+          "year": 2026,
+          "period": "PROCESSING_CYCLE",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_PROCESSING_RECOVERY_MODEL"
+        },
+        "throughput": {
+          "value": 3405,
+          "unit": "MMCF_PER_DAY",
+          "year": 2026,
+          "period": "DAILY",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_THROUGHPUT_MODEL"
+        },
+        "purity": {
+          "value": 96.68,
+          "unit": "PERCENT",
+          "year": 2026,
+          "metric": "PROCESSED_METHANE_PERCENT",
+          "status": "SIMULATED",
+          "basis": "COMMODITY_PRODUCT_QUALITY_MODEL"
+        },
+        "capacity": {
+          "nominal": 5192,
+          "minimum": 3686,
+          "maximum": 6750,
+          "unit": "MMCF_PER_DAY",
+          "period": "DAILY",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_CAPACITY_UTILIZATION_AND_HEADROOM"
+        },
+        "reportedMetrics": {
+          "legacyReserveText": [
+            "85 TCF"
+          ],
+          "legacyStatusText": [
+            "Active Superfield"
+          ],
+          "allOperationalMetricsAboveAreSimulated": true
+        },
+        "quantitativeProvenance": {
+          "authority": "SCENARIO_SIMULATION_DATA",
+          "method": "OMEGA_PER_SITE_IDENTITY_METRIC_ALLOCATION_V1",
+          "seedKey": "SITE_DZA_hassi_r_mel_natural_gas_basin|DZA|natural_gas",
+          "generatedAt": "2026-10-13",
+          "gameplayHorizonYears": 434,
+          "realWorldDataRequired": false,
+          "externalMeasuredValuePromotion": false
+        },
+        "completeness": {
+          "reserve": "SIMULATED",
+          "production": "SIMULATED",
+          "grade": "SIMULATED",
+          "recovery": "SIMULATED",
+          "throughput": "SIMULATED",
+          "purity": "SIMULATED",
+          "capacity": "SIMULATED",
+          "overall": "GAMEPLAY_SIMULATION_COMPLETE"
+        }
+      },
+      "reserve": {
+        "quantity": 649797.82,
+        "unit": "BCF",
+        "status": "SIMULATED",
+        "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_434_YEARS"
+      },
+      "simulation": {
+        "reserve": {
+          "quantity": 649797.82,
+          "unit": "BCF",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_434_YEARS"
+        },
+        "nominalDailyCapacity": 5192,
+        "minimumDailyCapacity": 3686,
+        "maximumDailyCapacity": 6750,
+        "productionRate": 4102,
+        "productionRateUnit": "MMCF_PER_DAY",
+        "annualProduction": 1497.23,
+        "annualProductionUnit": "BCF_PER_YEAR",
+        "utilization": 0.79,
+        "recovery": 0.8115,
+        "grade": {
+          "value": 82.42,
+          "unit": "PERCENT_METHANE",
+          "metric": "RESOURCE_SPECIFIC_RAW_MATERIAL_QUALITY"
+        },
+        "purity": {
+          "value": 96.68,
+          "unit": "PERCENT",
+          "metric": "PROCESSED_METHANE_PERCENT"
+        },
+        "reserveHorizonYears": 434,
+        "transportRoute": [
+          {
+            "routeId": "ROUTE_SITE_DZA_hassi_r_mel_natural_gas_basin_RAW_TO_FACTORY",
+            "countryId": "DZA",
+            "originSiteId": "SITE_DZA_hassi_r_mel_natural_gas_basin",
+            "warehouseId": "WH-DZA-RAW",
+            "factoryId": "FACTORY_DZA_natural_gas",
+            "mode": "PIPELINE_AND_SEA_LANE",
+            "distanceKm": 455,
+            "estimatedTravelDays": 2,
+            "status": "SIMULATED_ROUTE_READY",
+            "blockableByWar": true,
+            "blockableByNeighborControl": true,
+            "blockableByNavalInterdiction": true
+          }
+        ],
+        "rawWarehouseId": "WH-DZA-RAW",
+        "factoryBinding": {
+          "factoryId": "FACTORY_DZA_natural_gas",
+          "countryId": "DZA",
+          "inputResourceId": "natural_gas",
+          "outputResourceId": "natural_gas",
+          "status": "SIMULATED_READY",
+          "processingMethod": "GAS_GATHERING_DEHYDRATION_AND_PROCESSING",
+          "requiresSameCountryWarehouse": true
+        },
+        "factoryOutputs": [
+          "treated natural gas",
+          "condensate where present"
+        ],
+        "naturalRisk": {
+          "geological": 26,
+          "environmental": 31,
+          "waterStress": 73,
+          "infrastructure": 39,
+          "conflictExposure": 34,
+          "maritimeExposure": 18,
+          "scale": "0_TO_100_SIMULATION_INDEX"
+        }
+      },
+      "naturalRisk": {
+        "geological": 26,
+        "environmental": 31,
+        "waterStress": 73,
+        "infrastructure": 39,
+        "conflictExposure": 34,
+        "maritimeExposure": 18,
+        "scale": "0_TO_100_SIMULATION_INDEX"
+      },
+      "mineLevel": 5,
+      "map": {
+        "markerEligible": true,
+        "countryIsolationKey": "DZA",
+        "iconResourceKey": "natural_gas",
+        "markerType": "RESOURCE_SITE",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "aliasOfSiteId": null,
+        "collisionGroup": "SITE_DZA_hassi_r_mel_natural_gas_basin"
+      },
+      "runtime": {
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
+        "quantityAuthority": "SCENARIO_SIMULATION_DATA",
+        "productionAuthority": "SCENARIO_SIMULATION_DATA",
+        "qualityAuthority": "SCENARIO_SIMULATION_DATA",
+        "countryWarehouseId": "WH-DZA-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true,
+        "aliasOfSiteId": null,
+        "pipeline": {
+          "site": "BOUND",
+          "extraction": "SIMULATED_ENGINEERING_READY",
+          "batch": "SITE_ID_KEYED",
+          "rawWarehouse": "BOUND_TO_OWNER_COUNTRY",
+          "transport": "SIMULATED_ROUTE_READY",
+          "factory": "SITE_AND_COUNTRY_BOUND",
+          "processing": "RESOURCE_SPECIFIC_SIMULATED_PROCESS",
+          "output": "SIMULATED_PRODUCT_STREAM",
+          "economy": "COUNTRY_ISOLATED_SIMULATED_OUTPUT"
+        }
+      },
+      "naturalHazards": {
+        "geologicRiskIndex": 26,
+        "environmentalRiskIndex": 31,
+        "waterStressIndex": 73,
+        "infrastructureRiskIndex": 39,
+        "conflictExposureIndex": 34,
+        "maritimeExposureIndex": 18,
+        "scale": "0_TO_100_SIMULATION_INDEX"
+      },
+      "observedFacts": [],
+      "sources": [],
+      "locationSource": {
+        "sourceType": "LEGACY_REPOSITORY_COORDINATE",
+        "scope": "Regional approximation; not survey grade",
+        "sourceReference": "resource_site_legacy_structural_candidates_v1.json"
+      },
+      "sourceReference": {
+        "sourcePath": "resource_site_legacy_structural_candidates_v1.json",
+        "sourceDatasetAuthority": "LEGACY_REPOSITORY_DATA_ONLY",
+        "historicalSourcePointers": [
+          {
+            "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+            "path": "resource_ministry_engine.js",
+            "symbol": "GEOGRAPHIC_DEPOSITS",
+            "line": 408,
+            "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+          },
+          {
+            "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+            "path": "resources.json",
+            "pointer": "#/deposits/41",
+            "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+          }
+        ],
+        "legacyReportedReserveText": [
+          "85 TCF"
+        ],
+        "historicalStatusTexts": [
+          "Active Superfield"
+        ],
+        "identityConfidence": "LEGACY_STRUCTURAL_CANDIDATE",
+        "metricAuthority": "SIMULATED_GAMEPLAY_NOT_OBSERVED"
+      },
+      "researchState": "LEGACY_IDENTITY_WITH_SIMULATED_GAMEPLAY_METRICS",
+      "generatedAt": "2026-10-13"
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_DZA_hassi_messaoud_crude_oil_field",
+      "countryId": "DZA",
+      "siteName": "Hassi Messaoud Crude Oil Field",
+      "identity": {
+        "countryIso3": "DZA",
+        "countryName": "Algeria",
+        "siteType": "OIL_FIELD",
+        "resourceTypeId": "crude_oil",
+        "resourceName": "Crude Petroleum & Hydrocarbons",
+        "ontologyKey": "CRUDE_OIL",
+        "aliases": []
+      },
+      "location": {
+        "countryName": "Algeria",
+        "adminRegion": null,
+        "locality": null,
+        "coordinates": {
+          "lat": 31.86,
+          "lng": 6.07
+        },
+        "coordinateStatus": "GAMEPLAY_REGIONAL_APPROXIMATION",
+        "coordinateAuthority": "RETAINED_LEGACY_POINT_NOT_SURVEY_GRADE",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "countryBoundaryKey": "DZA"
+      },
+      "ownership": {
+        "owner": "Algeria Sovereign Resource Authority [SIMULATED]",
+        "operator": "OMEGA_SIMULATED_OPERATOR_SITE_DZA_hassi_messaoud_crude_oil_field",
+        "ownerEvidenceStatus": "SIMULATED",
+        "operatorEvidenceStatus": "SIMULATED",
+        "authority": "OMEGA_SCENARIO_OWNERSHIP",
+        "equityControlCountry": "DZA",
+        "operatorContractId": "OPCONTRACT_SITE_DZA_hassi_messaoud_crude_oil_field"
+      },
+      "operation": {
+        "status": "SIMULATED_OPERATIONAL_SCENARIO",
+        "operationalStatus": "SIMULATED_ACTIVE",
+        "extractionMethod": "CONVENTIONAL_OIL_WELLS",
+        "extractionEligibility": "SIMULATED_SITE_ELIGIBLE_SUBJECT_TO_GAMEPLAY_GATES",
+        "commercialExtraction": true,
+        "siteCommissioningLevel": 3,
+        "mineLevel": 2,
+        "legacyReportedStatusTexts": [
+          "Active Oil Field"
+        ],
+        "statusAuthority": "SIMULATED_GAMEPLAY_STATE_NOT_REAL_WORLD_CLAIM"
+      },
+      "processing": {
+        "upstreamProcess": "CONVENTIONAL_OIL_WELLS",
+        "midstreamProcess": "STABILIZATION_AND_CRUDE_GATHERING",
+        "refinedOutputs": [
+          "stabilized crude oil",
+          "associated gas where present"
+        ],
+        "downstreamSectors": [
+          "refining",
+          "petrochemicals",
+          "transport_fuels"
+        ]
+      },
+      "logistics": {
+        "warehouseCountryId": "DZA",
+        "warehouseSiteId": "WH-DZA-RAW",
+        "inventoryRouteStatus": "SIMULATED_ROUTE_READY",
+        "factoryRouteStatus": "SIMULATED_FACTORY_BINDING_READY",
+        "routeStatus": "SIMULATED_ROUTE_READY",
+        "transport": {
+          "routeId": "ROUTE_SITE_DZA_hassi_messaoud_crude_oil_field_RAW_TO_FACTORY",
+          "routeType": "PIPELINE_AND_SEA_LANE",
+          "originSiteId": "SITE_DZA_hassi_messaoud_crude_oil_field",
+          "originCountryId": "DZA",
+          "warehouseId": "WH-DZA-RAW",
+          "destinationFactoryId": "FACTORY_DZA_crude_oil",
+          "destinationCountryId": "DZA",
+          "distanceKm": 389,
+          "averageSpeedKmPerDay": 260,
+          "estimatedTravelDays": 1,
+          "routeStatus": "SIMULATED_ROUTE_READY",
+          "canBeBlockedByWar": true,
+          "canBeBlockedByNeighborControl": true,
+          "canBeBlockedByNavalInterdiction": true,
+          "strategicRouteNotRoadSurvey": true,
+          "routeCapacityPerDay": 523795
+        }
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": 46663523550,
+          "unit": "BARRELS",
+          "year": 2026,
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_414_YEARS",
+          "legacyReportedText": [
+            "12B Barrels"
+          ]
+        },
+        "production": {
+          "annual": 112713825,
+          "rate": 308805,
+          "unit": "BARRELS_PER_DAY",
+          "annualUnit": "BARRELS_PER_YEAR",
+          "year": 2026,
+          "period": "DAILY_AND_ANNUAL",
+          "status": "SIMULATED",
+          "basis": "PER_SITE_IDENTITY_PRODUCTION_ALLOCATION_V1"
+        },
+        "grade": {
+          "value": 35.07,
+          "unit": "API_GRAVITY",
+          "year": 2026,
+          "metric": "RESOURCE_SPECIFIC_RAW_MATERIAL_QUALITY",
+          "status": "SIMULATED",
+          "basis": "COMMODITY_BAND_AND_STABLE_SITE_ID_VARIATION"
+        },
+        "recovery": {
+          "value": 77.87,
+          "unit": "PERCENT",
+          "year": 2026,
+          "period": "PROCESSING_CYCLE",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_PROCESSING_RECOVERY_MODEL"
+        },
+        "throughput": {
+          "value": 287189,
+          "unit": "BARRELS_PER_DAY",
+          "year": 2026,
+          "period": "DAILY",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_THROUGHPUT_MODEL"
+        },
+        "purity": {
+          "value": 99.42,
+          "unit": "PERCENT",
+          "year": 2026,
+          "metric": "HYDROCARBON_FRACTION_PERCENT",
+          "status": "SIMULATED",
+          "basis": "COMMODITY_PRODUCT_QUALITY_MODEL"
+        },
+        "capacity": {
+          "nominal": 390892,
+          "minimum": 281442,
+          "maximum": 523795,
+          "unit": "BARRELS_PER_DAY",
+          "period": "DAILY",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_CAPACITY_UTILIZATION_AND_HEADROOM"
+        },
+        "reportedMetrics": {
+          "legacyReserveText": [
+            "12B Barrels"
+          ],
+          "legacyStatusText": [
+            "Active Oil Field"
+          ],
+          "allOperationalMetricsAboveAreSimulated": true
+        },
+        "quantitativeProvenance": {
+          "authority": "SCENARIO_SIMULATION_DATA",
+          "method": "OMEGA_PER_SITE_IDENTITY_METRIC_ALLOCATION_V1",
+          "seedKey": "SITE_DZA_hassi_messaoud_crude_oil_field|DZA|crude_oil",
+          "generatedAt": "2026-10-13",
+          "gameplayHorizonYears": 414,
+          "realWorldDataRequired": false,
+          "externalMeasuredValuePromotion": false
+        },
+        "completeness": {
+          "reserve": "SIMULATED",
+          "production": "SIMULATED",
+          "grade": "SIMULATED",
+          "recovery": "SIMULATED",
+          "throughput": "SIMULATED",
+          "purity": "SIMULATED",
+          "capacity": "SIMULATED",
+          "overall": "GAMEPLAY_SIMULATION_COMPLETE"
+        }
+      },
+      "reserve": {
+        "quantity": 46663523550,
+        "unit": "BARRELS",
+        "status": "SIMULATED",
+        "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_414_YEARS"
+      },
+      "simulation": {
+        "reserve": {
+          "quantity": 46663523550,
+          "unit": "BARRELS",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_414_YEARS"
+        },
+        "nominalDailyCapacity": 390892,
+        "minimumDailyCapacity": 281442,
+        "maximumDailyCapacity": 523795,
+        "productionRate": 308805,
+        "productionRateUnit": "BARRELS_PER_DAY",
+        "annualProduction": 112713825,
+        "annualProductionUnit": "BARRELS_PER_YEAR",
+        "utilization": 0.79,
+        "recovery": 0.7787,
+        "grade": {
+          "value": 35.07,
+          "unit": "API_GRAVITY",
+          "metric": "RESOURCE_SPECIFIC_RAW_MATERIAL_QUALITY"
+        },
+        "purity": {
+          "value": 99.42,
+          "unit": "PERCENT",
+          "metric": "HYDROCARBON_FRACTION_PERCENT"
+        },
+        "reserveHorizonYears": 414,
+        "transportRoute": [
+          {
+            "routeId": "ROUTE_SITE_DZA_hassi_messaoud_crude_oil_field_RAW_TO_FACTORY",
+            "countryId": "DZA",
+            "originSiteId": "SITE_DZA_hassi_messaoud_crude_oil_field",
+            "warehouseId": "WH-DZA-RAW",
+            "factoryId": "FACTORY_DZA_crude_oil",
+            "mode": "PIPELINE_AND_SEA_LANE",
+            "distanceKm": 389,
+            "estimatedTravelDays": 1,
+            "status": "SIMULATED_ROUTE_READY",
+            "blockableByWar": true,
+            "blockableByNeighborControl": true,
+            "blockableByNavalInterdiction": true
+          }
+        ],
+        "rawWarehouseId": "WH-DZA-RAW",
+        "factoryBinding": {
+          "factoryId": "FACTORY_DZA_crude_oil",
+          "countryId": "DZA",
+          "inputResourceId": "crude_oil",
+          "outputResourceId": "crude_oil",
+          "status": "SIMULATED_READY",
+          "processingMethod": "STABILIZATION_AND_CRUDE_GATHERING",
+          "requiresSameCountryWarehouse": true
+        },
+        "factoryOutputs": [
+          "stabilized crude oil",
+          "associated gas where present"
+        ],
+        "naturalRisk": {
+          "geological": 46,
+          "environmental": 42,
+          "waterStress": 43,
+          "infrastructure": 46,
+          "conflictExposure": 64,
+          "maritimeExposure": 37,
+          "scale": "0_TO_100_SIMULATION_INDEX"
+        }
+      },
+      "naturalRisk": {
+        "geological": 46,
+        "environmental": 42,
+        "waterStress": 43,
+        "infrastructure": 46,
+        "conflictExposure": 64,
+        "maritimeExposure": 37,
+        "scale": "0_TO_100_SIMULATION_INDEX"
+      },
+      "mineLevel": 2,
+      "map": {
+        "markerEligible": true,
+        "countryIsolationKey": "DZA",
+        "iconResourceKey": "crude_oil",
+        "markerType": "RESOURCE_SITE",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "aliasOfSiteId": null,
+        "collisionGroup": "SITE_DZA_hassi_messaoud_crude_oil_field"
+      },
+      "runtime": {
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
+        "quantityAuthority": "SCENARIO_SIMULATION_DATA",
+        "productionAuthority": "SCENARIO_SIMULATION_DATA",
+        "qualityAuthority": "SCENARIO_SIMULATION_DATA",
+        "countryWarehouseId": "WH-DZA-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true,
+        "aliasOfSiteId": null,
+        "pipeline": {
+          "site": "BOUND",
+          "extraction": "SIMULATED_ENGINEERING_READY",
+          "batch": "SITE_ID_KEYED",
+          "rawWarehouse": "BOUND_TO_OWNER_COUNTRY",
+          "transport": "SIMULATED_ROUTE_READY",
+          "factory": "SITE_AND_COUNTRY_BOUND",
+          "processing": "RESOURCE_SPECIFIC_SIMULATED_PROCESS",
+          "output": "SIMULATED_PRODUCT_STREAM",
+          "economy": "COUNTRY_ISOLATED_SIMULATED_OUTPUT"
+        }
+      },
+      "naturalHazards": {
+        "geologicRiskIndex": 46,
+        "environmentalRiskIndex": 42,
+        "waterStressIndex": 43,
+        "infrastructureRiskIndex": 46,
+        "conflictExposureIndex": 64,
+        "maritimeExposureIndex": 37,
+        "scale": "0_TO_100_SIMULATION_INDEX"
+      },
+      "observedFacts": [],
+      "sources": [],
+      "locationSource": {
+        "sourceType": "LEGACY_REPOSITORY_COORDINATE",
+        "scope": "Regional approximation; not survey grade",
+        "sourceReference": "resource_site_legacy_structural_candidates_v1.json"
+      },
+      "sourceReference": {
+        "sourcePath": "resource_site_legacy_structural_candidates_v1.json",
+        "sourceDatasetAuthority": "LEGACY_REPOSITORY_DATA_ONLY",
+        "historicalSourcePointers": [
+          {
+            "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+            "path": "resource_ministry_engine.js",
+            "symbol": "GEOGRAPHIC_DEPOSITS",
+            "line": 409,
+            "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+          },
+          {
+            "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+            "path": "resources.json",
+            "pointer": "#/deposits/42",
+            "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+          }
+        ],
+        "legacyReportedReserveText": [
+          "12B Barrels"
+        ],
+        "historicalStatusTexts": [
+          "Active Oil Field"
+        ],
+        "identityConfidence": "LEGACY_STRUCTURAL_CANDIDATE",
+        "metricAuthority": "SIMULATED_GAMEPLAY_NOT_OBSERVED"
+      },
+      "researchState": "LEGACY_IDENTITY_WITH_SIMULATED_GAMEPLAY_METRICS",
+      "generatedAt": "2026-10-13"
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_DZA_gara_djebilet_iron_ore_mine",
+      "countryId": "DZA",
+      "siteName": "Gara Djebilet Iron Ore Mine",
+      "identity": {
+        "countryIso3": "DZA",
+        "countryName": "Algeria",
+        "siteType": "IRON_ORE_SITE",
+        "resourceTypeId": "iron_ore",
+        "resourceName": "Iron Ore & Concentrates",
+        "ontologyKey": "IRON_ORE",
+        "aliases": []
+      },
+      "location": {
+        "countryName": "Algeria",
+        "adminRegion": null,
+        "locality": null,
+        "coordinates": {
+          "lat": 26.88,
+          "lng": -7.02
+        },
+        "coordinateStatus": "GAMEPLAY_REGIONAL_APPROXIMATION",
+        "coordinateAuthority": "RETAINED_LEGACY_POINT_NOT_SURVEY_GRADE",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "countryBoundaryKey": "DZA"
+      },
+      "ownership": {
+        "owner": "Algeria Sovereign Resource Authority [SIMULATED]",
+        "operator": "OMEGA_SIMULATED_OPERATOR_SITE_DZA_gara_djebilet_iron_ore_mine",
+        "ownerEvidenceStatus": "SIMULATED",
+        "operatorEvidenceStatus": "SIMULATED",
+        "authority": "OMEGA_SCENARIO_OWNERSHIP",
+        "equityControlCountry": "DZA",
+        "operatorContractId": "OPCONTRACT_SITE_DZA_gara_djebilet_iron_ore_mine"
+      },
+      "operation": {
+        "status": "SIMULATED_OPERATIONAL_SCENARIO",
+        "operationalStatus": "SIMULATED_ACTIVE",
+        "extractionMethod": "OPEN_PIT_DRILL_BLAST_LOAD_HAUL",
+        "extractionEligibility": "SIMULATED_SITE_ELIGIBLE_SUBJECT_TO_GAMEPLAY_GATES",
+        "commercialExtraction": true,
+        "siteCommissioningLevel": 4,
+        "mineLevel": 4,
+        "legacyReportedStatusTexts": [
+          "Mega Mining Complex"
+        ],
+        "statusAuthority": "SIMULATED_GAMEPLAY_STATE_NOT_REAL_WORLD_CLAIM"
+      },
+      "processing": {
+        "upstreamProcess": "OPEN_PIT_DRILL_BLAST_LOAD_HAUL",
+        "midstreamProcess": "CRUSHING_SCREENING_BENEFICIATION",
+        "refinedOutputs": [
+          "iron ore concentrate",
+          "pellet/sinter feed"
+        ],
+        "downstreamSectors": [
+          "steelmaking"
+        ]
+      },
+      "logistics": {
+        "warehouseCountryId": "DZA",
+        "warehouseSiteId": "WH-DZA-RAW",
+        "inventoryRouteStatus": "SIMULATED_ROUTE_READY",
+        "factoryRouteStatus": "SIMULATED_FACTORY_BINDING_READY",
+        "routeStatus": "SIMULATED_ROUTE_READY",
+        "transport": {
+          "routeId": "ROUTE_SITE_DZA_gara_djebilet_iron_ore_mine_RAW_TO_FACTORY",
+          "routeType": "ROAD_RAIL",
+          "originSiteId": "SITE_DZA_gara_djebilet_iron_ore_mine",
+          "originCountryId": "DZA",
+          "warehouseId": "WH-DZA-RAW",
+          "destinationFactoryId": "FACTORY_DZA_iron_ore",
+          "destinationCountryId": "DZA",
+          "distanceKm": 136,
+          "averageSpeedKmPerDay": 70,
+          "estimatedTravelDays": 2,
+          "routeStatus": "SIMULATED_ROUTE_READY",
+          "canBeBlockedByWar": true,
+          "canBeBlockedByNeighborControl": true,
+          "canBeBlockedByNavalInterdiction": false,
+          "strategicRouteNotRoadSurvey": true,
+          "routeCapacityPerDay": 1038818
+        }
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": 89917074750,
+          "unit": "TONNES_ORE",
+          "year": 2026,
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_415_YEARS",
+          "legacyReportedText": [
+            "3.5B Tons"
+          ]
+        },
+        "production": {
+          "annual": 216667650,
+          "rate": 593610,
+          "unit": "TONNES_PER_DAY",
+          "annualUnit": "TONNES_PER_YEAR",
+          "year": 2026,
+          "period": "DAILY_AND_ANNUAL",
+          "status": "SIMULATED",
+          "basis": "PER_SITE_IDENTITY_PRODUCTION_ALLOCATION_V1"
+        },
+        "grade": {
+          "value": 52.68,
+          "unit": "PERCENT_FE",
+          "year": 2026,
+          "metric": "RESOURCE_SPECIFIC_RAW_MATERIAL_QUALITY",
+          "status": "SIMULATED",
+          "basis": "COMMODITY_BAND_AND_STABLE_SITE_ID_VARIATION"
+        },
+        "recovery": {
+          "value": 73.98,
+          "unit": "PERCENT",
+          "year": 2026,
+          "period": "PROCESSING_CYCLE",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_PROCESSING_RECOVERY_MODEL"
+        },
+        "throughput": {
+          "value": 587674,
+          "unit": "TONNES_PER_DAY",
+          "year": 2026,
+          "period": "DAILY",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_THROUGHPUT_MODEL"
+        },
+        "purity": {
+          "value": 63.97,
+          "unit": "PERCENT",
+          "year": 2026,
+          "metric": "CONCENTRATE_FE_PERCENT",
+          "status": "SIMULATED",
+          "basis": "COMMODITY_PRODUCT_QUALITY_MODEL"
+        },
+        "capacity": {
+          "nominal": 781066,
+          "minimum": 570178,
+          "maximum": 1038818,
+          "unit": "TONNES_PER_DAY",
+          "period": "DAILY",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_CAPACITY_UTILIZATION_AND_HEADROOM"
+        },
+        "reportedMetrics": {
+          "legacyReserveText": [
+            "3.5B Tons"
+          ],
+          "legacyStatusText": [
+            "Mega Mining Complex"
+          ],
+          "allOperationalMetricsAboveAreSimulated": true
+        },
+        "quantitativeProvenance": {
+          "authority": "SCENARIO_SIMULATION_DATA",
+          "method": "OMEGA_PER_SITE_IDENTITY_METRIC_ALLOCATION_V1",
+          "seedKey": "SITE_DZA_gara_djebilet_iron_ore_mine|DZA|iron_ore",
+          "generatedAt": "2026-10-13",
+          "gameplayHorizonYears": 415,
+          "realWorldDataRequired": false,
+          "externalMeasuredValuePromotion": false
+        },
+        "completeness": {
+          "reserve": "SIMULATED",
+          "production": "SIMULATED",
+          "grade": "SIMULATED",
+          "recovery": "SIMULATED",
+          "throughput": "SIMULATED",
+          "purity": "SIMULATED",
+          "capacity": "SIMULATED",
+          "overall": "GAMEPLAY_SIMULATION_COMPLETE"
+        }
+      },
+      "reserve": {
+        "quantity": 89917074750,
+        "unit": "TONNES_ORE",
+        "status": "SIMULATED",
+        "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_415_YEARS"
+      },
+      "simulation": {
+        "reserve": {
+          "quantity": 89917074750,
+          "unit": "TONNES_ORE",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_415_YEARS"
+        },
+        "nominalDailyCapacity": 781066,
+        "minimumDailyCapacity": 570178,
+        "maximumDailyCapacity": 1038818,
+        "productionRate": 593610,
+        "productionRateUnit": "TONNES_PER_DAY",
+        "annualProduction": 216667650,
+        "annualProductionUnit": "TONNES_PER_YEAR",
+        "utilization": 0.76,
+        "recovery": 0.7398,
+        "grade": {
+          "value": 52.68,
+          "unit": "PERCENT_FE",
+          "metric": "RESOURCE_SPECIFIC_RAW_MATERIAL_QUALITY"
+        },
+        "purity": {
+          "value": 63.97,
+          "unit": "PERCENT",
+          "metric": "CONCENTRATE_FE_PERCENT"
+        },
+        "reserveHorizonYears": 415,
+        "transportRoute": [
+          {
+            "routeId": "ROUTE_SITE_DZA_gara_djebilet_iron_ore_mine_RAW_TO_FACTORY",
+            "countryId": "DZA",
+            "originSiteId": "SITE_DZA_gara_djebilet_iron_ore_mine",
+            "warehouseId": "WH-DZA-RAW",
+            "factoryId": "FACTORY_DZA_iron_ore",
+            "mode": "ROAD_RAIL",
+            "distanceKm": 136,
+            "estimatedTravelDays": 2,
+            "status": "SIMULATED_ROUTE_READY",
+            "blockableByWar": true,
+            "blockableByNeighborControl": true,
+            "blockableByNavalInterdiction": false
+          }
+        ],
+        "rawWarehouseId": "WH-DZA-RAW",
+        "factoryBinding": {
+          "factoryId": "FACTORY_DZA_iron_ore",
+          "countryId": "DZA",
+          "inputResourceId": "iron_ore",
+          "outputResourceId": "iron_ore",
+          "status": "SIMULATED_READY",
+          "processingMethod": "CRUSHING_SCREENING_BENEFICIATION",
+          "requiresSameCountryWarehouse": true
+        },
+        "factoryOutputs": [
+          "iron ore concentrate",
+          "pellet/sinter feed"
+        ],
+        "naturalRisk": {
+          "geological": 26,
+          "environmental": 34,
+          "waterStress": 41,
+          "infrastructure": 24,
+          "conflictExposure": 44,
+          "maritimeExposure": 17,
+          "scale": "0_TO_100_SIMULATION_INDEX"
+        }
+      },
+      "naturalRisk": {
+        "geological": 26,
+        "environmental": 34,
+        "waterStress": 41,
+        "infrastructure": 24,
+        "conflictExposure": 44,
+        "maritimeExposure": 17,
+        "scale": "0_TO_100_SIMULATION_INDEX"
+      },
+      "mineLevel": 4,
+      "map": {
+        "markerEligible": true,
+        "countryIsolationKey": "DZA",
+        "iconResourceKey": "iron_ore",
+        "markerType": "RESOURCE_SITE",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "aliasOfSiteId": null,
+        "collisionGroup": "SITE_DZA_gara_djebilet_iron_ore_mine"
+      },
+      "runtime": {
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
+        "quantityAuthority": "SCENARIO_SIMULATION_DATA",
+        "productionAuthority": "SCENARIO_SIMULATION_DATA",
+        "qualityAuthority": "SCENARIO_SIMULATION_DATA",
+        "countryWarehouseId": "WH-DZA-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true,
+        "aliasOfSiteId": null,
+        "pipeline": {
+          "site": "BOUND",
+          "extraction": "SIMULATED_ENGINEERING_READY",
+          "batch": "SITE_ID_KEYED",
+          "rawWarehouse": "BOUND_TO_OWNER_COUNTRY",
+          "transport": "SIMULATED_ROUTE_READY",
+          "factory": "SITE_AND_COUNTRY_BOUND",
+          "processing": "RESOURCE_SPECIFIC_SIMULATED_PROCESS",
+          "output": "SIMULATED_PRODUCT_STREAM",
+          "economy": "COUNTRY_ISOLATED_SIMULATED_OUTPUT"
+        }
+      },
+      "naturalHazards": {
+        "geologicRiskIndex": 26,
+        "environmentalRiskIndex": 34,
+        "waterStressIndex": 41,
+        "infrastructureRiskIndex": 24,
+        "conflictExposureIndex": 44,
+        "maritimeExposureIndex": 17,
+        "scale": "0_TO_100_SIMULATION_INDEX"
+      },
+      "observedFacts": [],
+      "sources": [],
+      "locationSource": {
+        "sourceType": "LEGACY_REPOSITORY_COORDINATE",
+        "scope": "Regional approximation; not survey grade",
+        "sourceReference": "resource_site_legacy_structural_candidates_v1.json"
+      },
+      "sourceReference": {
+        "sourcePath": "resource_site_legacy_structural_candidates_v1.json",
+        "sourceDatasetAuthority": "LEGACY_REPOSITORY_DATA_ONLY",
+        "historicalSourcePointers": [
+          {
+            "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+            "path": "resource_ministry_engine.js",
+            "symbol": "GEOGRAPHIC_DEPOSITS",
+            "line": 410,
+            "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+          },
+          {
+            "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+            "path": "resources.json",
+            "pointer": "#/deposits/43",
+            "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+          }
+        ],
+        "legacyReportedReserveText": [
+          "3.5B Tons"
+        ],
+        "historicalStatusTexts": [
+          "Mega Mining Complex"
+        ],
+        "identityConfidence": "LEGACY_STRUCTURAL_CANDIDATE",
+        "metricAuthority": "SIMULATED_GAMEPLAY_NOT_OBSERVED"
+      },
+      "researchState": "LEGACY_IDENTITY_WITH_SIMULATED_GAMEPLAY_METRICS",
+      "generatedAt": "2026-10-13"
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_DZA_hoggar_shield_gold_uranium_belt",
+      "countryId": "DZA",
+      "siteName": "Hoggar Shield Gold & Uranium Belt",
+      "identity": {
+        "countryIso3": "DZA",
+        "countryName": "Algeria",
+        "siteType": "GOLD_SITE",
+        "resourceTypeId": "gold",
+        "resourceName": "Gold ore and doré",
+        "ontologyKey": "GOLD",
+        "aliases": []
+      },
+      "location": {
+        "countryName": "Algeria",
+        "adminRegion": null,
+        "locality": null,
+        "coordinates": {
+          "lat": 22.78,
+          "lng": 5.52
+        },
+        "coordinateStatus": "GAMEPLAY_REGIONAL_APPROXIMATION",
+        "coordinateAuthority": "RETAINED_LEGACY_POINT_NOT_SURVEY_GRADE",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "countryBoundaryKey": "DZA"
+      },
+      "ownership": {
+        "owner": "Algeria Sovereign Resource Authority [SIMULATED]",
+        "operator": "OMEGA_SIMULATED_OPERATOR_SITE_DZA_hoggar_shield_gold_uranium_belt",
+        "ownerEvidenceStatus": "SIMULATED",
+        "operatorEvidenceStatus": "SIMULATED",
+        "authority": "OMEGA_SCENARIO_OWNERSHIP",
+        "equityControlCountry": "DZA",
+        "operatorContractId": "OPCONTRACT_SITE_DZA_hoggar_shield_gold_uranium_belt"
+      },
+      "operation": {
+        "status": "SIMULATED_OPERATIONAL_SCENARIO",
+        "operationalStatus": "SIMULATED_ACTIVE",
+        "extractionMethod": "GOLD_ORE_EXTRACTION_AND_PROCESSING",
+        "extractionEligibility": "SIMULATED_SITE_ELIGIBLE_SUBJECT_TO_GAMEPLAY_GATES",
+        "commercialExtraction": true,
+        "siteCommissioningLevel": 5,
+        "mineLevel": 3,
+        "legacyReportedStatusTexts": [
+          "Active Pit"
+        ],
+        "statusAuthority": "SIMULATED_GAMEPLAY_STATE_NOT_REAL_WORLD_CLAIM"
+      },
+      "processing": {
+        "upstreamProcess": "GOLD_ORE_EXTRACTION_AND_PROCESSING",
+        "midstreamProcess": "CRUSHING_GRINDING_LEACHING_OR_FLOTATION",
+        "refinedOutputs": [
+          "gold concentrate/doré"
+        ],
+        "downstreamSectors": [
+          "bullion",
+          "electronics",
+          "jewellery"
+        ]
+      },
+      "logistics": {
+        "warehouseCountryId": "DZA",
+        "warehouseSiteId": "WH-DZA-RAW",
+        "inventoryRouteStatus": "SIMULATED_ROUTE_READY",
+        "factoryRouteStatus": "SIMULATED_FACTORY_BINDING_READY",
+        "routeStatus": "SIMULATED_ROUTE_READY",
+        "transport": {
+          "routeId": "ROUTE_SITE_DZA_hoggar_shield_gold_uranium_belt_RAW_TO_FACTORY",
+          "routeType": "ROAD_RAIL",
+          "originSiteId": "SITE_DZA_hoggar_shield_gold_uranium_belt",
+          "originCountryId": "DZA",
+          "warehouseId": "WH-DZA-RAW",
+          "destinationFactoryId": "FACTORY_DZA_gold",
+          "destinationCountryId": "DZA",
+          "distanceKm": 86,
+          "averageSpeedKmPerDay": 70,
+          "estimatedTravelDays": 1,
+          "routeStatus": "SIMULATED_ROUTE_READY",
+          "canBeBlockedByWar": true,
+          "canBeBlockedByNeighborControl": true,
+          "canBeBlockedByNavalInterdiction": false,
+          "strategicRouteNotRoadSurvey": true,
+          "routeCapacityPerDay": 14927
+        }
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": 1563665110,
+          "unit": "TONNES_ORE",
+          "year": 2026,
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_434_YEARS",
+          "legacyReportedText": [
+            "50 Tons Gold / 26K Tons Uranium"
+          ]
+        },
+        "production": {
+          "annual": 3602915,
+          "rate": 9871,
+          "unit": "TONNES_PER_DAY",
+          "annualUnit": "TONNES_PER_YEAR",
+          "year": 2026,
+          "period": "DAILY_AND_ANNUAL",
+          "status": "SIMULATED",
+          "basis": "PER_SITE_IDENTITY_PRODUCTION_ALLOCATION_V1"
+        },
+        "grade": {
+          "value": 5.097,
+          "unit": "GRAMS_PER_TONNE",
+          "year": 2026,
+          "metric": "RESOURCE_SPECIFIC_RAW_MATERIAL_QUALITY",
+          "status": "SIMULATED",
+          "basis": "COMMODITY_BAND_AND_STABLE_SITE_ID_VARIATION"
+        },
+        "recovery": {
+          "value": 85.5,
+          "unit": "PERCENT",
+          "year": 2026,
+          "period": "PROCESSING_CYCLE",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_PROCESSING_RECOVERY_MODEL"
+        },
+        "throughput": {
+          "value": 8390,
+          "unit": "TONNES_PER_DAY",
+          "year": 2026,
+          "period": "DAILY",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_THROUGHPUT_MODEL"
+        },
+        "purity": {
+          "value": 99.72,
+          "unit": "PERCENT",
+          "year": 2026,
+          "metric": "REFINED_GOLD_FINENESS_PERCENT",
+          "status": "SIMULATED",
+          "basis": "COMMODITY_PRODUCT_QUALITY_MODEL"
+        },
+        "capacity": {
+          "nominal": 12038,
+          "minimum": 7704,
+          "maximum": 14927,
+          "unit": "TONNES_PER_DAY",
+          "period": "DAILY",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_CAPACITY_UTILIZATION_AND_HEADROOM"
+        },
+        "reportedMetrics": {
+          "legacyReserveText": [
+            "50 Tons Gold / 26K Tons Uranium"
+          ],
+          "legacyStatusText": [
+            "Active Pit"
+          ],
+          "allOperationalMetricsAboveAreSimulated": true
+        },
+        "quantitativeProvenance": {
+          "authority": "SCENARIO_SIMULATION_DATA",
+          "method": "OMEGA_PER_SITE_IDENTITY_METRIC_ALLOCATION_V1",
+          "seedKey": "SITE_DZA_hoggar_shield_gold_uranium_belt|DZA|gold",
+          "generatedAt": "2026-10-13",
+          "gameplayHorizonYears": 434,
+          "realWorldDataRequired": false,
+          "externalMeasuredValuePromotion": false
+        },
+        "completeness": {
+          "reserve": "SIMULATED",
+          "production": "SIMULATED",
+          "grade": "SIMULATED",
+          "recovery": "SIMULATED",
+          "throughput": "SIMULATED",
+          "purity": "SIMULATED",
+          "capacity": "SIMULATED",
+          "overall": "GAMEPLAY_SIMULATION_COMPLETE"
+        }
+      },
+      "reserve": {
+        "quantity": 1563665110,
+        "unit": "TONNES_ORE",
+        "status": "SIMULATED",
+        "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_434_YEARS"
+      },
+      "simulation": {
+        "reserve": {
+          "quantity": 1563665110,
+          "unit": "TONNES_ORE",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_434_YEARS"
+        },
+        "nominalDailyCapacity": 12038,
+        "minimumDailyCapacity": 7704,
+        "maximumDailyCapacity": 14927,
+        "productionRate": 9871,
+        "productionRateUnit": "TONNES_PER_DAY",
+        "annualProduction": 3602915,
+        "annualProductionUnit": "TONNES_PER_YEAR",
+        "utilization": 0.82,
+        "recovery": 0.855,
+        "grade": {
+          "value": 5.097,
+          "unit": "GRAMS_PER_TONNE",
+          "metric": "RESOURCE_SPECIFIC_RAW_MATERIAL_QUALITY"
+        },
+        "purity": {
+          "value": 99.72,
+          "unit": "PERCENT",
+          "metric": "REFINED_GOLD_FINENESS_PERCENT"
+        },
+        "reserveHorizonYears": 434,
+        "transportRoute": [
+          {
+            "routeId": "ROUTE_SITE_DZA_hoggar_shield_gold_uranium_belt_RAW_TO_FACTORY",
+            "countryId": "DZA",
+            "originSiteId": "SITE_DZA_hoggar_shield_gold_uranium_belt",
+            "warehouseId": "WH-DZA-RAW",
+            "factoryId": "FACTORY_DZA_gold",
+            "mode": "ROAD_RAIL",
+            "distanceKm": 86,
+            "estimatedTravelDays": 1,
+            "status": "SIMULATED_ROUTE_READY",
+            "blockableByWar": true,
+            "blockableByNeighborControl": true,
+            "blockableByNavalInterdiction": false
+          }
+        ],
+        "rawWarehouseId": "WH-DZA-RAW",
+        "factoryBinding": {
+          "factoryId": "FACTORY_DZA_gold",
+          "countryId": "DZA",
+          "inputResourceId": "gold",
+          "outputResourceId": "gold",
+          "status": "SIMULATED_READY",
+          "processingMethod": "CRUSHING_GRINDING_LEACHING_OR_FLOTATION",
+          "requiresSameCountryWarehouse": true
+        },
+        "factoryOutputs": [
+          "gold concentrate/doré"
+        ],
+        "naturalRisk": {
+          "geological": 40,
+          "environmental": 55,
+          "waterStress": 30,
+          "infrastructure": 67,
+          "conflictExposure": 32,
+          "maritimeExposure": 13,
+          "scale": "0_TO_100_SIMULATION_INDEX"
+        }
+      },
+      "naturalRisk": {
+        "geological": 40,
+        "environmental": 55,
+        "waterStress": 30,
+        "infrastructure": 67,
+        "conflictExposure": 32,
+        "maritimeExposure": 13,
+        "scale": "0_TO_100_SIMULATION_INDEX"
+      },
+      "mineLevel": 3,
+      "map": {
+        "markerEligible": true,
+        "countryIsolationKey": "DZA",
+        "iconResourceKey": "gold",
+        "markerType": "RESOURCE_SITE",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "aliasOfSiteId": null,
+        "collisionGroup": "SITE_DZA_hoggar_shield_gold_uranium_belt"
+      },
+      "runtime": {
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
+        "quantityAuthority": "SCENARIO_SIMULATION_DATA",
+        "productionAuthority": "SCENARIO_SIMULATION_DATA",
+        "qualityAuthority": "SCENARIO_SIMULATION_DATA",
+        "countryWarehouseId": "WH-DZA-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true,
+        "aliasOfSiteId": null,
+        "pipeline": {
+          "site": "BOUND",
+          "extraction": "SIMULATED_ENGINEERING_READY",
+          "batch": "SITE_ID_KEYED",
+          "rawWarehouse": "BOUND_TO_OWNER_COUNTRY",
+          "transport": "SIMULATED_ROUTE_READY",
+          "factory": "SITE_AND_COUNTRY_BOUND",
+          "processing": "RESOURCE_SPECIFIC_SIMULATED_PROCESS",
+          "output": "SIMULATED_PRODUCT_STREAM",
+          "economy": "COUNTRY_ISOLATED_SIMULATED_OUTPUT"
+        }
+      },
+      "naturalHazards": {
+        "geologicRiskIndex": 40,
+        "environmentalRiskIndex": 55,
+        "waterStressIndex": 30,
+        "infrastructureRiskIndex": 67,
+        "conflictExposureIndex": 32,
+        "maritimeExposureIndex": 13,
+        "scale": "0_TO_100_SIMULATION_INDEX"
+      },
+      "observedFacts": [],
+      "sources": [],
+      "locationSource": {
+        "sourceType": "LEGACY_REPOSITORY_COORDINATE",
+        "scope": "Regional approximation; not survey grade",
+        "sourceReference": "resource_site_legacy_structural_candidates_v1.json"
+      },
+      "sourceReference": {
+        "sourcePath": "resource_site_legacy_structural_candidates_v1.json",
+        "sourceDatasetAuthority": "LEGACY_REPOSITORY_DATA_ONLY",
+        "historicalSourcePointers": [
+          {
+            "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+            "path": "resource_ministry_engine.js",
+            "symbol": "GEOGRAPHIC_DEPOSITS",
+            "line": 411,
+            "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+          },
+          {
+            "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+            "path": "resources.json",
+            "pointer": "#/deposits/44",
+            "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+          }
+        ],
+        "legacyReportedReserveText": [
+          "50 Tons Gold / 26K Tons Uranium"
+        ],
+        "historicalStatusTexts": [
+          "Active Pit"
+        ],
+        "identityConfidence": "LEGACY_STRUCTURAL_CANDIDATE",
+        "metricAuthority": "SIMULATED_GAMEPLAY_NOT_OBSERVED"
+      },
+      "researchState": "LEGACY_IDENTITY_WITH_SIMULATED_GAMEPLAY_METRICS",
+      "generatedAt": "2026-10-13"
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_EGY_western_desert_oil_fields",
+      "countryId": "EGY",
+      "siteName": "Western Desert Oil Fields",
+      "identity": {
+        "countryIso3": "EGY",
+        "countryName": "Egypt",
+        "siteType": "OIL_FIELD",
+        "resourceTypeId": "crude_oil",
+        "resourceName": "Crude Petroleum & Hydrocarbons",
+        "ontologyKey": "CRUDE_OIL",
+        "aliases": []
+      },
+      "location": {
+        "countryName": "Egypt",
+        "adminRegion": null,
+        "locality": null,
+        "coordinates": {
+          "lat": 29.5,
+          "lng": 28.2
+        },
+        "coordinateStatus": "GAMEPLAY_REGIONAL_APPROXIMATION",
+        "coordinateAuthority": "RETAINED_LEGACY_POINT_NOT_SURVEY_GRADE",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "countryBoundaryKey": "EGY"
+      },
+      "ownership": {
+        "owner": "Egypt Sovereign Resource Authority [SIMULATED]",
+        "operator": "OMEGA_SIMULATED_OPERATOR_SITE_EGY_western_desert_oil_fields",
+        "ownerEvidenceStatus": "SIMULATED",
+        "operatorEvidenceStatus": "SIMULATED",
+        "authority": "OMEGA_SCENARIO_OWNERSHIP",
+        "equityControlCountry": "EGY",
+        "operatorContractId": "OPCONTRACT_SITE_EGY_western_desert_oil_fields"
+      },
+      "operation": {
+        "status": "SIMULATED_OPERATIONAL_SCENARIO",
+        "operationalStatus": "SIMULATED_ACTIVE",
+        "extractionMethod": "CONVENTIONAL_OIL_WELLS",
+        "extractionEligibility": "SIMULATED_SITE_ELIGIBLE_SUBJECT_TO_GAMEPLAY_GATES",
+        "commercialExtraction": true,
+        "siteCommissioningLevel": 4,
+        "mineLevel": 4,
+        "legacyReportedStatusTexts": [
+          "Active Field"
+        ],
+        "statusAuthority": "SIMULATED_GAMEPLAY_STATE_NOT_REAL_WORLD_CLAIM"
+      },
+      "processing": {
+        "upstreamProcess": "CONVENTIONAL_OIL_WELLS",
+        "midstreamProcess": "STABILIZATION_AND_CRUDE_GATHERING",
+        "refinedOutputs": [
+          "stabilized crude oil",
+          "associated gas where present"
+        ],
+        "downstreamSectors": [
+          "refining",
+          "petrochemicals",
+          "transport_fuels"
+        ]
+      },
+      "logistics": {
+        "warehouseCountryId": "EGY",
+        "warehouseSiteId": "WH-EGY-RAW",
+        "inventoryRouteStatus": "SIMULATED_ROUTE_READY",
+        "factoryRouteStatus": "SIMULATED_FACTORY_BINDING_READY",
+        "routeStatus": "SIMULATED_ROUTE_READY",
+        "transport": {
+          "routeId": "ROUTE_SITE_EGY_western_desert_oil_fields_RAW_TO_FACTORY",
+          "routeType": "PIPELINE_AND_SEA_LANE",
+          "originSiteId": "SITE_EGY_western_desert_oil_fields",
+          "originCountryId": "EGY",
+          "warehouseId": "WH-EGY-RAW",
+          "destinationFactoryId": "FACTORY_EGY_crude_oil",
+          "destinationCountryId": "EGY",
+          "distanceKm": 467,
+          "averageSpeedKmPerDay": 260,
+          "estimatedTravelDays": 2,
+          "routeStatus": "SIMULATED_ROUTE_READY",
+          "canBeBlockedByWar": true,
+          "canBeBlockedByNeighborControl": true,
+          "canBeBlockedByNavalInterdiction": true,
+          "strategicRouteNotRoadSurvey": true,
+          "routeCapacityPerDay": 80925
+        }
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": 6779112150,
+          "unit": "BARRELS",
+          "year": 2026,
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_415_YEARS",
+          "legacyReportedText": [
+            "4.2B Barrels"
+          ]
+        },
+        "production": {
+          "annual": 16335210,
+          "rate": 44754,
+          "unit": "BARRELS_PER_DAY",
+          "annualUnit": "BARRELS_PER_YEAR",
+          "year": 2026,
+          "period": "DAILY_AND_ANNUAL",
+          "status": "SIMULATED",
+          "basis": "PER_SITE_IDENTITY_PRODUCTION_ALLOCATION_V1"
+        },
+        "grade": {
+          "value": 34.8,
+          "unit": "API_GRAVITY",
+          "year": 2026,
+          "metric": "RESOURCE_SPECIFIC_RAW_MATERIAL_QUALITY",
+          "status": "SIMULATED",
+          "basis": "COMMODITY_BAND_AND_STABLE_SITE_ID_VARIATION"
+        },
+        "recovery": {
+          "value": 83.73,
+          "unit": "PERCENT",
+          "year": 2026,
+          "period": "PROCESSING_CYCLE",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_PROCESSING_RECOVERY_MODEL"
+        },
+        "throughput": {
+          "value": 45202,
+          "unit": "BARRELS_PER_DAY",
+          "year": 2026,
+          "period": "DAILY",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_THROUGHPUT_MODEL"
+        },
+        "purity": {
+          "value": 99.05,
+          "unit": "PERCENT",
+          "year": 2026,
+          "metric": "HYDROCARBON_FRACTION_PERCENT",
+          "status": "SIMULATED",
+          "basis": "COMMODITY_PRODUCT_QUALITY_MODEL"
+        },
+        "capacity": {
+          "nominal": 61307,
+          "minimum": 44141,
+          "maximum": 80925,
+          "unit": "BARRELS_PER_DAY",
+          "period": "DAILY",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_CAPACITY_UTILIZATION_AND_HEADROOM"
+        },
+        "reportedMetrics": {
+          "legacyReserveText": [
+            "4.2B Barrels"
+          ],
+          "legacyStatusText": [
+            "Active Field"
+          ],
+          "allOperationalMetricsAboveAreSimulated": true
+        },
+        "quantitativeProvenance": {
+          "authority": "SCENARIO_SIMULATION_DATA",
+          "method": "OMEGA_PER_SITE_IDENTITY_METRIC_ALLOCATION_V1",
+          "seedKey": "SITE_EGY_western_desert_oil_fields|EGY|crude_oil",
+          "generatedAt": "2026-10-13",
+          "gameplayHorizonYears": 415,
+          "realWorldDataRequired": false,
+          "externalMeasuredValuePromotion": false
+        },
+        "completeness": {
+          "reserve": "SIMULATED",
+          "production": "SIMULATED",
+          "grade": "SIMULATED",
+          "recovery": "SIMULATED",
+          "throughput": "SIMULATED",
+          "purity": "SIMULATED",
+          "capacity": "SIMULATED",
+          "overall": "GAMEPLAY_SIMULATION_COMPLETE"
+        }
+      },
+      "reserve": {
+        "quantity": 6779112150,
+        "unit": "BARRELS",
+        "status": "SIMULATED",
+        "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_415_YEARS"
+      },
+      "simulation": {
+        "reserve": {
+          "quantity": 6779112150,
+          "unit": "BARRELS",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_415_YEARS"
+        },
+        "nominalDailyCapacity": 61307,
+        "minimumDailyCapacity": 44141,
+        "maximumDailyCapacity": 80925,
+        "productionRate": 44754,
+        "productionRateUnit": "BARRELS_PER_DAY",
+        "annualProduction": 16335210,
+        "annualProductionUnit": "BARRELS_PER_YEAR",
+        "utilization": 0.73,
+        "recovery": 0.8373,
+        "grade": {
+          "value": 34.8,
+          "unit": "API_GRAVITY",
+          "metric": "RESOURCE_SPECIFIC_RAW_MATERIAL_QUALITY"
+        },
+        "purity": {
+          "value": 99.05,
+          "unit": "PERCENT",
+          "metric": "HYDROCARBON_FRACTION_PERCENT"
+        },
+        "reserveHorizonYears": 415,
+        "transportRoute": [
+          {
+            "routeId": "ROUTE_SITE_EGY_western_desert_oil_fields_RAW_TO_FACTORY",
+            "countryId": "EGY",
+            "originSiteId": "SITE_EGY_western_desert_oil_fields",
+            "warehouseId": "WH-EGY-RAW",
+            "factoryId": "FACTORY_EGY_crude_oil",
+            "mode": "PIPELINE_AND_SEA_LANE",
+            "distanceKm": 467,
+            "estimatedTravelDays": 2,
+            "status": "SIMULATED_ROUTE_READY",
+            "blockableByWar": true,
+            "blockableByNeighborControl": true,
+            "blockableByNavalInterdiction": true
+          }
+        ],
+        "rawWarehouseId": "WH-EGY-RAW",
+        "factoryBinding": {
+          "factoryId": "FACTORY_EGY_crude_oil",
+          "countryId": "EGY",
+          "inputResourceId": "crude_oil",
+          "outputResourceId": "crude_oil",
+          "status": "SIMULATED_READY",
+          "processingMethod": "STABILIZATION_AND_CRUDE_GATHERING",
+          "requiresSameCountryWarehouse": true
+        },
+        "factoryOutputs": [
+          "stabilized crude oil",
+          "associated gas where present"
+        ],
+        "naturalRisk": {
+          "geological": 31,
+          "environmental": 36,
+          "waterStress": 46,
+          "infrastructure": 55,
+          "conflictExposure": 33,
+          "maritimeExposure": 52,
+          "scale": "0_TO_100_SIMULATION_INDEX"
+        }
+      },
+      "naturalRisk": {
+        "geological": 31,
+        "environmental": 36,
+        "waterStress": 46,
+        "infrastructure": 55,
+        "conflictExposure": 33,
+        "maritimeExposure": 52,
+        "scale": "0_TO_100_SIMULATION_INDEX"
+      },
+      "mineLevel": 4,
+      "map": {
+        "markerEligible": true,
+        "countryIsolationKey": "EGY",
+        "iconResourceKey": "crude_oil",
+        "markerType": "RESOURCE_SITE",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "aliasOfSiteId": null,
+        "collisionGroup": "SITE_EGY_western_desert_oil_fields"
+      },
+      "runtime": {
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
+        "quantityAuthority": "SCENARIO_SIMULATION_DATA",
+        "productionAuthority": "SCENARIO_SIMULATION_DATA",
+        "qualityAuthority": "SCENARIO_SIMULATION_DATA",
+        "countryWarehouseId": "WH-EGY-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true,
+        "aliasOfSiteId": null,
+        "pipeline": {
+          "site": "BOUND",
+          "extraction": "SIMULATED_ENGINEERING_READY",
+          "batch": "SITE_ID_KEYED",
+          "rawWarehouse": "BOUND_TO_OWNER_COUNTRY",
+          "transport": "SIMULATED_ROUTE_READY",
+          "factory": "SITE_AND_COUNTRY_BOUND",
+          "processing": "RESOURCE_SPECIFIC_SIMULATED_PROCESS",
+          "output": "SIMULATED_PRODUCT_STREAM",
+          "economy": "COUNTRY_ISOLATED_SIMULATED_OUTPUT"
+        }
+      },
+      "naturalHazards": {
+        "geologicRiskIndex": 31,
+        "environmentalRiskIndex": 36,
+        "waterStressIndex": 46,
+        "infrastructureRiskIndex": 55,
+        "conflictExposureIndex": 33,
+        "maritimeExposureIndex": 52,
+        "scale": "0_TO_100_SIMULATION_INDEX"
+      },
+      "observedFacts": [],
+      "sources": [],
+      "locationSource": {
+        "sourceType": "LEGACY_REPOSITORY_COORDINATE",
+        "scope": "Regional approximation; not survey grade",
+        "sourceReference": "resource_site_legacy_structural_candidates_v1.json"
+      },
+      "sourceReference": {
+        "sourcePath": "resource_site_legacy_structural_candidates_v1.json",
+        "sourceDatasetAuthority": "LEGACY_REPOSITORY_DATA_ONLY",
+        "historicalSourcePointers": [
+          {
+            "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+            "path": "resource_ministry_engine.js",
+            "symbol": "GEOGRAPHIC_DEPOSITS",
+            "line": 413,
+            "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+          },
+          {
+            "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+            "path": "resources.json",
+            "pointer": "#/deposits/46",
+            "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+          }
+        ],
+        "legacyReportedReserveText": [
+          "4.2B Barrels"
+        ],
+        "historicalStatusTexts": [
+          "Active Field"
+        ],
+        "identityConfidence": "LEGACY_STRUCTURAL_CANDIDATE",
+        "metricAuthority": "SIMULATED_GAMEPLAY_NOT_OBSERVED"
+      },
+      "researchState": "LEGACY_IDENTITY_WITH_SIMULATED_GAMEPLAY_METRICS",
+      "generatedAt": "2026-10-13"
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_EGY_sukari_orogenic_gold_mine",
+      "countryId": "EGY",
+      "siteName": "Sukari Orogenic Gold Mine",
+      "identity": {
+        "countryIso3": "EGY",
+        "countryName": "Egypt",
+        "siteType": "GOLD_SITE",
+        "resourceTypeId": "gold",
+        "resourceName": "Gold ore and doré",
+        "ontologyKey": "GOLD",
+        "aliases": []
+      },
+      "location": {
+        "countryName": "Egypt",
+        "adminRegion": null,
+        "locality": null,
+        "coordinates": {
+          "lat": 24.95,
+          "lng": 34.71
+        },
+        "coordinateStatus": "GAMEPLAY_REGIONAL_APPROXIMATION",
+        "coordinateAuthority": "RETAINED_LEGACY_POINT_NOT_SURVEY_GRADE",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "countryBoundaryKey": "EGY"
+      },
+      "ownership": {
+        "owner": "Egypt Sovereign Resource Authority [SIMULATED]",
+        "operator": "OMEGA_SIMULATED_OPERATOR_SITE_EGY_sukari_orogenic_gold_mine",
+        "ownerEvidenceStatus": "SIMULATED",
+        "operatorEvidenceStatus": "SIMULATED",
+        "authority": "OMEGA_SCENARIO_OWNERSHIP",
+        "equityControlCountry": "EGY",
+        "operatorContractId": "OPCONTRACT_SITE_EGY_sukari_orogenic_gold_mine"
+      },
+      "operation": {
+        "status": "SIMULATED_OPERATIONAL_SCENARIO",
+        "operationalStatus": "SIMULATED_ACTIVE",
+        "extractionMethod": "GOLD_ORE_EXTRACTION_AND_PROCESSING",
+        "extractionEligibility": "SIMULATED_SITE_ELIGIBLE_SUBJECT_TO_GAMEPLAY_GATES",
+        "commercialExtraction": true,
+        "siteCommissioningLevel": 3,
+        "mineLevel": 5,
+        "legacyReportedStatusTexts": [
+          "Active Mine"
+        ],
+        "statusAuthority": "SIMULATED_GAMEPLAY_STATE_NOT_REAL_WORLD_CLAIM"
+      },
+      "processing": {
+        "upstreamProcess": "GOLD_ORE_EXTRACTION_AND_PROCESSING",
+        "midstreamProcess": "CRUSHING_GRINDING_LEACHING_OR_FLOTATION",
+        "refinedOutputs": [
+          "gold concentrate/doré"
+        ],
+        "downstreamSectors": [
+          "bullion",
+          "electronics",
+          "jewellery"
+        ]
+      },
+      "logistics": {
+        "warehouseCountryId": "EGY",
+        "warehouseSiteId": "WH-EGY-RAW",
+        "inventoryRouteStatus": "SIMULATED_ROUTE_READY",
+        "factoryRouteStatus": "SIMULATED_FACTORY_BINDING_READY",
+        "routeStatus": "SIMULATED_ROUTE_READY",
+        "transport": {
+          "routeId": "ROUTE_SITE_EGY_sukari_orogenic_gold_mine_RAW_TO_FACTORY",
+          "routeType": "ROAD_RAIL",
+          "originSiteId": "SITE_EGY_sukari_orogenic_gold_mine",
+          "originCountryId": "EGY",
+          "warehouseId": "WH-EGY-RAW",
+          "destinationFactoryId": "FACTORY_EGY_gold",
+          "destinationCountryId": "EGY",
+          "distanceKm": 44,
+          "averageSpeedKmPerDay": 70,
+          "estimatedTravelDays": 1,
+          "routeStatus": "SIMULATED_ROUTE_READY",
+          "canBeBlockedByWar": true,
+          "canBeBlockedByNeighborControl": true,
+          "canBeBlockedByNavalInterdiction": false,
+          "strategicRouteNotRoadSurvey": true,
+          "routeCapacityPerDay": 12605
+        }
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": 1097059695,
+          "unit": "TONNES_ORE",
+          "year": 2026,
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_411_YEARS",
+          "legacyReportedText": [
+            "12M Oz Gold"
+          ]
+        },
+        "production": {
+          "annual": 2669245,
+          "rate": 7313,
+          "unit": "TONNES_PER_DAY",
+          "annualUnit": "TONNES_PER_YEAR",
+          "year": 2026,
+          "period": "DAILY_AND_ANNUAL",
+          "status": "SIMULATED",
+          "basis": "PER_SITE_IDENTITY_PRODUCTION_ALLOCATION_V1"
+        },
+        "grade": {
+          "value": 7.738,
+          "unit": "GRAMS_PER_TONNE",
+          "year": 2026,
+          "metric": "RESOURCE_SPECIFIC_RAW_MATERIAL_QUALITY",
+          "status": "SIMULATED",
+          "basis": "COMMODITY_BAND_AND_STABLE_SITE_ID_VARIATION"
+        },
+        "recovery": {
+          "value": 73.03,
+          "unit": "PERCENT",
+          "year": 2026,
+          "period": "PROCESSING_CYCLE",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_PROCESSING_RECOVERY_MODEL"
+        },
+        "throughput": {
+          "value": 6801,
+          "unit": "TONNES_PER_DAY",
+          "year": 2026,
+          "period": "DAILY",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_THROUGHPUT_MODEL"
+        },
+        "purity": {
+          "value": 99.73,
+          "unit": "PERCENT",
+          "year": 2026,
+          "metric": "REFINED_GOLD_FINENESS_PERCENT",
+          "status": "SIMULATED",
+          "basis": "COMMODITY_PRODUCT_QUALITY_MODEL"
+        },
+        "capacity": {
+          "nominal": 9622,
+          "minimum": 6639,
+          "maximum": 12605,
+          "unit": "TONNES_PER_DAY",
+          "period": "DAILY",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_CAPACITY_UTILIZATION_AND_HEADROOM"
+        },
+        "reportedMetrics": {
+          "legacyReserveText": [
+            "12M Oz Gold"
+          ],
+          "legacyStatusText": [
+            "Active Mine"
+          ],
+          "allOperationalMetricsAboveAreSimulated": true
+        },
+        "quantitativeProvenance": {
+          "authority": "SCENARIO_SIMULATION_DATA",
+          "method": "OMEGA_PER_SITE_IDENTITY_METRIC_ALLOCATION_V1",
+          "seedKey": "SITE_EGY_sukari_orogenic_gold_mine|EGY|gold",
+          "generatedAt": "2026-10-13",
+          "gameplayHorizonYears": 411,
+          "realWorldDataRequired": false,
+          "externalMeasuredValuePromotion": false
+        },
+        "completeness": {
+          "reserve": "SIMULATED",
+          "production": "SIMULATED",
+          "grade": "SIMULATED",
+          "recovery": "SIMULATED",
+          "throughput": "SIMULATED",
+          "purity": "SIMULATED",
+          "capacity": "SIMULATED",
+          "overall": "GAMEPLAY_SIMULATION_COMPLETE"
+        }
+      },
+      "reserve": {
+        "quantity": 1097059695,
+        "unit": "TONNES_ORE",
+        "status": "SIMULATED",
+        "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_411_YEARS"
+      },
+      "simulation": {
+        "reserve": {
+          "quantity": 1097059695,
+          "unit": "TONNES_ORE",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_411_YEARS"
+        },
+        "nominalDailyCapacity": 9622,
+        "minimumDailyCapacity": 6639,
+        "maximumDailyCapacity": 12605,
+        "productionRate": 7313,
+        "productionRateUnit": "TONNES_PER_DAY",
+        "annualProduction": 2669245,
+        "annualProductionUnit": "TONNES_PER_YEAR",
+        "utilization": 0.76,
+        "recovery": 0.7303,
+        "grade": {
+          "value": 7.738,
+          "unit": "GRAMS_PER_TONNE",
+          "metric": "RESOURCE_SPECIFIC_RAW_MATERIAL_QUALITY"
+        },
+        "purity": {
+          "value": 99.73,
+          "unit": "PERCENT",
+          "metric": "REFINED_GOLD_FINENESS_PERCENT"
+        },
+        "reserveHorizonYears": 411,
+        "transportRoute": [
+          {
+            "routeId": "ROUTE_SITE_EGY_sukari_orogenic_gold_mine_RAW_TO_FACTORY",
+            "countryId": "EGY",
+            "originSiteId": "SITE_EGY_sukari_orogenic_gold_mine",
+            "warehouseId": "WH-EGY-RAW",
+            "factoryId": "FACTORY_EGY_gold",
+            "mode": "ROAD_RAIL",
+            "distanceKm": 44,
+            "estimatedTravelDays": 1,
+            "status": "SIMULATED_ROUTE_READY",
+            "blockableByWar": true,
+            "blockableByNeighborControl": true,
+            "blockableByNavalInterdiction": false
+          }
+        ],
+        "rawWarehouseId": "WH-EGY-RAW",
+        "factoryBinding": {
+          "factoryId": "FACTORY_EGY_gold",
+          "countryId": "EGY",
+          "inputResourceId": "gold",
+          "outputResourceId": "gold",
+          "status": "SIMULATED_READY",
+          "processingMethod": "CRUSHING_GRINDING_LEACHING_OR_FLOTATION",
+          "requiresSameCountryWarehouse": true
+        },
+        "factoryOutputs": [
+          "gold concentrate/doré"
+        ],
+        "naturalRisk": {
+          "geological": 16,
+          "environmental": 31,
+          "waterStress": 60,
+          "infrastructure": 42,
+          "conflictExposure": 61,
+          "maritimeExposure": 15,
+          "scale": "0_TO_100_SIMULATION_INDEX"
+        }
+      },
+      "naturalRisk": {
+        "geological": 16,
+        "environmental": 31,
+        "waterStress": 60,
+        "infrastructure": 42,
+        "conflictExposure": 61,
+        "maritimeExposure": 15,
+        "scale": "0_TO_100_SIMULATION_INDEX"
+      },
+      "mineLevel": 5,
+      "map": {
+        "markerEligible": true,
+        "countryIsolationKey": "EGY",
+        "iconResourceKey": "gold",
+        "markerType": "RESOURCE_SITE",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "aliasOfSiteId": null,
+        "collisionGroup": "SITE_EGY_sukari_orogenic_gold_mine"
+      },
+      "runtime": {
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
+        "quantityAuthority": "SCENARIO_SIMULATION_DATA",
+        "productionAuthority": "SCENARIO_SIMULATION_DATA",
+        "qualityAuthority": "SCENARIO_SIMULATION_DATA",
+        "countryWarehouseId": "WH-EGY-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true,
+        "aliasOfSiteId": null,
+        "pipeline": {
+          "site": "BOUND",
+          "extraction": "SIMULATED_ENGINEERING_READY",
+          "batch": "SITE_ID_KEYED",
+          "rawWarehouse": "BOUND_TO_OWNER_COUNTRY",
+          "transport": "SIMULATED_ROUTE_READY",
+          "factory": "SITE_AND_COUNTRY_BOUND",
+          "processing": "RESOURCE_SPECIFIC_SIMULATED_PROCESS",
+          "output": "SIMULATED_PRODUCT_STREAM",
+          "economy": "COUNTRY_ISOLATED_SIMULATED_OUTPUT"
+        }
+      },
+      "naturalHazards": {
+        "geologicRiskIndex": 16,
+        "environmentalRiskIndex": 31,
+        "waterStressIndex": 60,
+        "infrastructureRiskIndex": 42,
+        "conflictExposureIndex": 61,
+        "maritimeExposureIndex": 15,
+        "scale": "0_TO_100_SIMULATION_INDEX"
+      },
+      "observedFacts": [],
+      "sources": [],
+      "locationSource": {
+        "sourceType": "LEGACY_REPOSITORY_COORDINATE",
+        "scope": "Regional approximation; not survey grade",
+        "sourceReference": "resource_site_legacy_structural_candidates_v1.json"
+      },
+      "sourceReference": {
+        "sourcePath": "resource_site_legacy_structural_candidates_v1.json",
+        "sourceDatasetAuthority": "LEGACY_REPOSITORY_DATA_ONLY",
+        "historicalSourcePointers": [
+          {
+            "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+            "path": "resource_ministry_engine.js",
+            "symbol": "GEOGRAPHIC_DEPOSITS",
+            "line": 414,
+            "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+          },
+          {
+            "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+            "path": "resources.json",
+            "pointer": "#/deposits/47",
+            "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+          }
+        ],
+        "legacyReportedReserveText": [
+          "12M Oz Gold"
+        ],
+        "historicalStatusTexts": [
+          "Active Mine"
+        ],
+        "identityConfidence": "LEGACY_STRUCTURAL_CANDIDATE",
+        "metricAuthority": "SIMULATED_GAMEPLAY_NOT_OBSERVED"
+      },
+      "researchState": "LEGACY_IDENTITY_WITH_SIMULATED_GAMEPLAY_METRICS",
+      "generatedAt": "2026-10-13"
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_LBY_sirte_crude_oil_superbasin",
+      "countryId": "LBY",
+      "siteName": "Sirte Crude Oil Superbasin",
+      "identity": {
+        "countryIso3": "LBY",
+        "countryName": "Libya",
+        "siteType": "OIL_FIELD",
+        "resourceTypeId": "crude_oil",
+        "resourceName": "Crude Petroleum & Hydrocarbons",
+        "ontologyKey": "CRUDE_OIL",
+        "aliases": []
+      },
+      "location": {
+        "countryName": "Libya",
+        "adminRegion": null,
+        "locality": null,
+        "coordinates": {
+          "lat": 29.2,
+          "lng": 19.3
+        },
+        "coordinateStatus": "GAMEPLAY_REGIONAL_APPROXIMATION",
+        "coordinateAuthority": "RETAINED_LEGACY_POINT_NOT_SURVEY_GRADE",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "countryBoundaryKey": "LBY"
+      },
+      "ownership": {
+        "owner": "Libya Sovereign Resource Authority [SIMULATED]",
+        "operator": "OMEGA_SIMULATED_OPERATOR_SITE_LBY_sirte_crude_oil_superbasin",
+        "ownerEvidenceStatus": "SIMULATED",
+        "operatorEvidenceStatus": "SIMULATED",
+        "authority": "OMEGA_SCENARIO_OWNERSHIP",
+        "equityControlCountry": "LBY",
+        "operatorContractId": "OPCONTRACT_SITE_LBY_sirte_crude_oil_superbasin"
+      },
+      "operation": {
+        "status": "SIMULATED_OPERATIONAL_SCENARIO",
+        "operationalStatus": "SIMULATED_ACTIVE",
+        "extractionMethod": "CONVENTIONAL_OIL_WELLS",
+        "extractionEligibility": "SIMULATED_SITE_ELIGIBLE_SUBJECT_TO_GAMEPLAY_GATES",
+        "commercialExtraction": true,
+        "siteCommissioningLevel": 5,
+        "mineLevel": 4,
+        "legacyReportedStatusTexts": [
+          "Active Field"
+        ],
+        "statusAuthority": "SIMULATED_GAMEPLAY_STATE_NOT_REAL_WORLD_CLAIM"
+      },
+      "processing": {
+        "upstreamProcess": "CONVENTIONAL_OIL_WELLS",
+        "midstreamProcess": "STABILIZATION_AND_CRUDE_GATHERING",
+        "refinedOutputs": [
+          "stabilized crude oil",
+          "associated gas where present"
+        ],
+        "downstreamSectors": [
+          "refining",
+          "petrochemicals",
+          "transport_fuels"
+        ]
+      },
+      "logistics": {
+        "warehouseCountryId": "LBY",
+        "warehouseSiteId": "WH-LBY-RAW",
+        "inventoryRouteStatus": "SIMULATED_ROUTE_READY",
+        "factoryRouteStatus": "SIMULATED_FACTORY_BINDING_READY",
+        "routeStatus": "SIMULATED_ROUTE_READY",
+        "transport": {
+          "routeId": "ROUTE_SITE_LBY_sirte_crude_oil_superbasin_RAW_TO_FACTORY",
+          "routeType": "PIPELINE_AND_SEA_LANE",
+          "originSiteId": "SITE_LBY_sirte_crude_oil_superbasin",
+          "originCountryId": "LBY",
+          "warehouseId": "WH-LBY-RAW",
+          "destinationFactoryId": "FACTORY_LBY_crude_oil",
+          "destinationCountryId": "LBY",
+          "distanceKm": 520,
+          "averageSpeedKmPerDay": 260,
+          "estimatedTravelDays": 2,
+          "routeStatus": "SIMULATED_ROUTE_READY",
+          "canBeBlockedByWar": true,
+          "canBeBlockedByNeighborControl": true,
+          "canBeBlockedByNavalInterdiction": true,
+          "strategicRouteNotRoadSurvey": true,
+          "routeCapacityPerDay": 588633
+        }
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": 61873623605,
+          "unit": "BARRELS",
+          "year": 2026,
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_439_YEARS",
+          "legacyReportedText": [
+            "48B Barrels (Africa Largest)"
+          ]
+        },
+        "production": {
+          "annual": 140942195,
+          "rate": 386143,
+          "unit": "BARRELS_PER_DAY",
+          "annualUnit": "BARRELS_PER_YEAR",
+          "year": 2026,
+          "period": "DAILY_AND_ANNUAL",
+          "status": "SIMULATED",
+          "basis": "PER_SITE_IDENTITY_PRODUCTION_ALLOCATION_V1"
+        },
+        "grade": {
+          "value": 34.38,
+          "unit": "API_GRAVITY",
+          "year": 2026,
+          "metric": "RESOURCE_SPECIFIC_RAW_MATERIAL_QUALITY",
+          "status": "SIMULATED",
+          "basis": "COMMODITY_BAND_AND_STABLE_SITE_ID_VARIATION"
+        },
+        "recovery": {
+          "value": 78.38,
+          "unit": "PERCENT",
+          "year": 2026,
+          "period": "PROCESSING_CYCLE",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_PROCESSING_RECOVERY_MODEL"
+        },
+        "throughput": {
+          "value": 351390,
+          "unit": "BARRELS_PER_DAY",
+          "year": 2026,
+          "period": "DAILY",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_THROUGHPUT_MODEL"
+        },
+        "purity": {
+          "value": 97.22,
+          "unit": "PERCENT",
+          "year": 2026,
+          "metric": "HYDROCARBON_FRACTION_PERCENT",
+          "status": "SIMULATED",
+          "basis": "COMMODITY_PRODUCT_QUALITY_MODEL"
+        },
+        "capacity": {
+          "nominal": 470906,
+          "minimum": 315507,
+          "maximum": 588633,
+          "unit": "BARRELS_PER_DAY",
+          "period": "DAILY",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_CAPACITY_UTILIZATION_AND_HEADROOM"
+        },
+        "reportedMetrics": {
+          "legacyReserveText": [
+            "48B Barrels (Africa Largest)"
+          ],
+          "legacyStatusText": [
+            "Active Field"
+          ],
+          "allOperationalMetricsAboveAreSimulated": true
+        },
+        "quantitativeProvenance": {
+          "authority": "SCENARIO_SIMULATION_DATA",
+          "method": "OMEGA_PER_SITE_IDENTITY_METRIC_ALLOCATION_V1",
+          "seedKey": "SITE_LBY_sirte_crude_oil_superbasin|LBY|crude_oil",
+          "generatedAt": "2026-10-13",
+          "gameplayHorizonYears": 439,
+          "realWorldDataRequired": false,
+          "externalMeasuredValuePromotion": false
+        },
+        "completeness": {
+          "reserve": "SIMULATED",
+          "production": "SIMULATED",
+          "grade": "SIMULATED",
+          "recovery": "SIMULATED",
+          "throughput": "SIMULATED",
+          "purity": "SIMULATED",
+          "capacity": "SIMULATED",
+          "overall": "GAMEPLAY_SIMULATION_COMPLETE"
+        }
+      },
+      "reserve": {
+        "quantity": 61873623605,
+        "unit": "BARRELS",
+        "status": "SIMULATED",
+        "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_439_YEARS"
+      },
+      "simulation": {
+        "reserve": {
+          "quantity": 61873623605,
+          "unit": "BARRELS",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_439_YEARS"
+        },
+        "nominalDailyCapacity": 470906,
+        "minimumDailyCapacity": 315507,
+        "maximumDailyCapacity": 588633,
+        "productionRate": 386143,
+        "productionRateUnit": "BARRELS_PER_DAY",
+        "annualProduction": 140942195,
+        "annualProductionUnit": "BARRELS_PER_YEAR",
+        "utilization": 0.82,
+        "recovery": 0.7838,
+        "grade": {
+          "value": 34.38,
+          "unit": "API_GRAVITY",
+          "metric": "RESOURCE_SPECIFIC_RAW_MATERIAL_QUALITY"
+        },
+        "purity": {
+          "value": 97.22,
+          "unit": "PERCENT",
+          "metric": "HYDROCARBON_FRACTION_PERCENT"
+        },
+        "reserveHorizonYears": 439,
+        "transportRoute": [
+          {
+            "routeId": "ROUTE_SITE_LBY_sirte_crude_oil_superbasin_RAW_TO_FACTORY",
+            "countryId": "LBY",
+            "originSiteId": "SITE_LBY_sirte_crude_oil_superbasin",
+            "warehouseId": "WH-LBY-RAW",
+            "factoryId": "FACTORY_LBY_crude_oil",
+            "mode": "PIPELINE_AND_SEA_LANE",
+            "distanceKm": 520,
+            "estimatedTravelDays": 2,
+            "status": "SIMULATED_ROUTE_READY",
+            "blockableByWar": true,
+            "blockableByNeighborControl": true,
+            "blockableByNavalInterdiction": true
+          }
+        ],
+        "rawWarehouseId": "WH-LBY-RAW",
+        "factoryBinding": {
+          "factoryId": "FACTORY_LBY_crude_oil",
+          "countryId": "LBY",
+          "inputResourceId": "crude_oil",
+          "outputResourceId": "crude_oil",
+          "status": "SIMULATED_READY",
+          "processingMethod": "STABILIZATION_AND_CRUDE_GATHERING",
+          "requiresSameCountryWarehouse": true
+        },
+        "factoryOutputs": [
+          "stabilized crude oil",
+          "associated gas where present"
+        ],
+        "naturalRisk": {
+          "geological": 58,
+          "environmental": 61,
+          "waterStress": 41,
+          "infrastructure": 23,
+          "conflictExposure": 70,
+          "maritimeExposure": 19,
+          "scale": "0_TO_100_SIMULATION_INDEX"
+        }
+      },
+      "naturalRisk": {
+        "geological": 58,
+        "environmental": 61,
+        "waterStress": 41,
+        "infrastructure": 23,
+        "conflictExposure": 70,
+        "maritimeExposure": 19,
+        "scale": "0_TO_100_SIMULATION_INDEX"
+      },
+      "mineLevel": 4,
+      "map": {
+        "markerEligible": true,
+        "countryIsolationKey": "LBY",
+        "iconResourceKey": "crude_oil",
+        "markerType": "RESOURCE_SITE",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "aliasOfSiteId": null,
+        "collisionGroup": "SITE_LBY_sirte_crude_oil_superbasin"
+      },
+      "runtime": {
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
+        "quantityAuthority": "SCENARIO_SIMULATION_DATA",
+        "productionAuthority": "SCENARIO_SIMULATION_DATA",
+        "qualityAuthority": "SCENARIO_SIMULATION_DATA",
+        "countryWarehouseId": "WH-LBY-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true,
+        "aliasOfSiteId": null,
+        "pipeline": {
+          "site": "BOUND",
+          "extraction": "SIMULATED_ENGINEERING_READY",
+          "batch": "SITE_ID_KEYED",
+          "rawWarehouse": "BOUND_TO_OWNER_COUNTRY",
+          "transport": "SIMULATED_ROUTE_READY",
+          "factory": "SITE_AND_COUNTRY_BOUND",
+          "processing": "RESOURCE_SPECIFIC_SIMULATED_PROCESS",
+          "output": "SIMULATED_PRODUCT_STREAM",
+          "economy": "COUNTRY_ISOLATED_SIMULATED_OUTPUT"
+        }
+      },
+      "naturalHazards": {
+        "geologicRiskIndex": 58,
+        "environmentalRiskIndex": 61,
+        "waterStressIndex": 41,
+        "infrastructureRiskIndex": 23,
+        "conflictExposureIndex": 70,
+        "maritimeExposureIndex": 19,
+        "scale": "0_TO_100_SIMULATION_INDEX"
+      },
+      "observedFacts": [],
+      "sources": [],
+      "locationSource": {
+        "sourceType": "LEGACY_REPOSITORY_COORDINATE",
+        "scope": "Regional approximation; not survey grade",
+        "sourceReference": "resource_site_legacy_structural_candidates_v1.json"
+      },
+      "sourceReference": {
+        "sourcePath": "resource_site_legacy_structural_candidates_v1.json",
+        "sourceDatasetAuthority": "LEGACY_REPOSITORY_DATA_ONLY",
+        "historicalSourcePointers": [
+          {
+            "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+            "path": "resource_ministry_engine.js",
+            "symbol": "GEOGRAPHIC_DEPOSITS",
+            "line": 417,
+            "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+          },
+          {
+            "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+            "path": "resources.json",
+            "pointer": "#/deposits/49",
+            "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+          }
+        ],
+        "legacyReportedReserveText": [
+          "48B Barrels (Africa Largest)"
+        ],
+        "historicalStatusTexts": [
+          "Active Field"
+        ],
+        "identityConfidence": "LEGACY_STRUCTURAL_CANDIDATE",
+        "metricAuthority": "SIMULATED_GAMEPLAY_NOT_OBSERVED"
+      },
+      "researchState": "LEGACY_IDENTITY_WITH_SIMULATED_GAMEPLAY_METRICS",
+      "generatedAt": "2026-10-13"
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_LBY_murzuq_oil_field_zone",
+      "countryId": "LBY",
+      "siteName": "Murzuq Oil Field Zone",
+      "identity": {
+        "countryIso3": "LBY",
+        "countryName": "Libya",
+        "siteType": "OIL_FIELD",
+        "resourceTypeId": "crude_oil",
+        "resourceName": "Crude Petroleum & Hydrocarbons",
+        "ontologyKey": "CRUDE_OIL",
+        "aliases": []
+      },
+      "location": {
+        "countryName": "Libya",
+        "adminRegion": null,
+        "locality": null,
+        "coordinates": {
+          "lat": 25.9,
+          "lng": 13.9
+        },
+        "coordinateStatus": "GAMEPLAY_REGIONAL_APPROXIMATION",
+        "coordinateAuthority": "RETAINED_LEGACY_POINT_NOT_SURVEY_GRADE",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "countryBoundaryKey": "LBY"
+      },
+      "ownership": {
+        "owner": "Libya Sovereign Resource Authority [SIMULATED]",
+        "operator": "OMEGA_SIMULATED_OPERATOR_SITE_LBY_murzuq_oil_field_zone",
+        "ownerEvidenceStatus": "SIMULATED",
+        "operatorEvidenceStatus": "SIMULATED",
+        "authority": "OMEGA_SCENARIO_OWNERSHIP",
+        "equityControlCountry": "LBY",
+        "operatorContractId": "OPCONTRACT_SITE_LBY_murzuq_oil_field_zone"
+      },
+      "operation": {
+        "status": "SIMULATED_OPERATIONAL_SCENARIO",
+        "operationalStatus": "SIMULATED_ACTIVE",
+        "extractionMethod": "CONVENTIONAL_OIL_WELLS",
+        "extractionEligibility": "SIMULATED_SITE_ELIGIBLE_SUBJECT_TO_GAMEPLAY_GATES",
+        "commercialExtraction": true,
+        "siteCommissioningLevel": 3,
+        "mineLevel": 5,
+        "legacyReportedStatusTexts": [
+          "Active Field"
+        ],
+        "statusAuthority": "SIMULATED_GAMEPLAY_STATE_NOT_REAL_WORLD_CLAIM"
+      },
+      "processing": {
+        "upstreamProcess": "CONVENTIONAL_OIL_WELLS",
+        "midstreamProcess": "STABILIZATION_AND_CRUDE_GATHERING",
+        "refinedOutputs": [
+          "stabilized crude oil",
+          "associated gas where present"
+        ],
+        "downstreamSectors": [
+          "refining",
+          "petrochemicals",
+          "transport_fuels"
+        ]
+      },
+      "logistics": {
+        "warehouseCountryId": "LBY",
+        "warehouseSiteId": "WH-LBY-RAW",
+        "inventoryRouteStatus": "SIMULATED_ROUTE_READY",
+        "factoryRouteStatus": "SIMULATED_FACTORY_BINDING_READY",
+        "routeStatus": "SIMULATED_ROUTE_READY",
+        "transport": {
+          "routeId": "ROUTE_SITE_LBY_murzuq_oil_field_zone_RAW_TO_FACTORY",
+          "routeType": "PIPELINE_AND_SEA_LANE",
+          "originSiteId": "SITE_LBY_murzuq_oil_field_zone",
+          "originCountryId": "LBY",
+          "warehouseId": "WH-LBY-RAW",
+          "destinationFactoryId": "FACTORY_LBY_crude_oil",
+          "destinationCountryId": "LBY",
+          "distanceKm": 373,
+          "averageSpeedKmPerDay": 260,
+          "estimatedTravelDays": 1,
+          "routeStatus": "SIMULATED_ROUTE_READY",
+          "canBeBlockedByWar": true,
+          "canBeBlockedByNeighborControl": true,
+          "canBeBlockedByNavalInterdiction": true,
+          "strategicRouteNotRoadSurvey": true,
+          "routeCapacityPerDay": 847678
+        }
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": 82544149575,
+          "unit": "BARRELS",
+          "year": 2026,
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_405_YEARS",
+          "legacyReportedText": [
+            "5.2B Barrels"
+          ]
+        },
+        "production": {
+          "annual": 203812715,
+          "rate": 558391,
+          "unit": "BARRELS_PER_DAY",
+          "annualUnit": "BARRELS_PER_YEAR",
+          "year": 2026,
+          "period": "DAILY_AND_ANNUAL",
+          "status": "SIMULATED",
+          "basis": "PER_SITE_IDENTITY_PRODUCTION_ALLOCATION_V1"
+        },
+        "grade": {
+          "value": 19.82,
+          "unit": "API_GRAVITY",
+          "year": 2026,
+          "metric": "RESOURCE_SPECIFIC_RAW_MATERIAL_QUALITY",
+          "status": "SIMULATED",
+          "basis": "COMMODITY_BAND_AND_STABLE_SITE_ID_VARIATION"
+        },
+        "recovery": {
+          "value": 84.81,
+          "unit": "PERCENT",
+          "year": 2026,
+          "period": "PROCESSING_CYCLE",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_PROCESSING_RECOVERY_MODEL"
+        },
+        "throughput": {
+          "value": 563975,
+          "unit": "BARRELS_PER_DAY",
+          "year": 2026,
+          "period": "DAILY",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_THROUGHPUT_MODEL"
+        },
+        "purity": {
+          "value": 98.84,
+          "unit": "PERCENT",
+          "year": 2026,
+          "metric": "HYDROCARBON_FRACTION_PERCENT",
+          "status": "SIMULATED",
+          "basis": "COMMODITY_PRODUCT_QUALITY_MODEL"
+        },
+        "capacity": {
+          "nominal": 672760,
+          "minimum": 457477,
+          "maximum": 847678,
+          "unit": "BARRELS_PER_DAY",
+          "period": "DAILY",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_CAPACITY_UTILIZATION_AND_HEADROOM"
+        },
+        "reportedMetrics": {
+          "legacyReserveText": [
+            "5.2B Barrels"
+          ],
+          "legacyStatusText": [
+            "Active Field"
+          ],
+          "allOperationalMetricsAboveAreSimulated": true
+        },
+        "quantitativeProvenance": {
+          "authority": "SCENARIO_SIMULATION_DATA",
+          "method": "OMEGA_PER_SITE_IDENTITY_METRIC_ALLOCATION_V1",
+          "seedKey": "SITE_LBY_murzuq_oil_field_zone|LBY|crude_oil",
+          "generatedAt": "2026-10-13",
+          "gameplayHorizonYears": 405,
+          "realWorldDataRequired": false,
+          "externalMeasuredValuePromotion": false
+        },
+        "completeness": {
+          "reserve": "SIMULATED",
+          "production": "SIMULATED",
+          "grade": "SIMULATED",
+          "recovery": "SIMULATED",
+          "throughput": "SIMULATED",
+          "purity": "SIMULATED",
+          "capacity": "SIMULATED",
+          "overall": "GAMEPLAY_SIMULATION_COMPLETE"
+        }
+      },
+      "reserve": {
+        "quantity": 82544149575,
+        "unit": "BARRELS",
+        "status": "SIMULATED",
+        "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_405_YEARS"
+      },
+      "simulation": {
+        "reserve": {
+          "quantity": 82544149575,
+          "unit": "BARRELS",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_405_YEARS"
+        },
+        "nominalDailyCapacity": 672760,
+        "minimumDailyCapacity": 457477,
+        "maximumDailyCapacity": 847678,
+        "productionRate": 558391,
+        "productionRateUnit": "BARRELS_PER_DAY",
+        "annualProduction": 203812715,
+        "annualProductionUnit": "BARRELS_PER_YEAR",
+        "utilization": 0.83,
+        "recovery": 0.8481,
+        "grade": {
+          "value": 19.82,
+          "unit": "API_GRAVITY",
+          "metric": "RESOURCE_SPECIFIC_RAW_MATERIAL_QUALITY"
+        },
+        "purity": {
+          "value": 98.84,
+          "unit": "PERCENT",
+          "metric": "HYDROCARBON_FRACTION_PERCENT"
+        },
+        "reserveHorizonYears": 405,
+        "transportRoute": [
+          {
+            "routeId": "ROUTE_SITE_LBY_murzuq_oil_field_zone_RAW_TO_FACTORY",
+            "countryId": "LBY",
+            "originSiteId": "SITE_LBY_murzuq_oil_field_zone",
+            "warehouseId": "WH-LBY-RAW",
+            "factoryId": "FACTORY_LBY_crude_oil",
+            "mode": "PIPELINE_AND_SEA_LANE",
+            "distanceKm": 373,
+            "estimatedTravelDays": 1,
+            "status": "SIMULATED_ROUTE_READY",
+            "blockableByWar": true,
+            "blockableByNeighborControl": true,
+            "blockableByNavalInterdiction": true
+          }
+        ],
+        "rawWarehouseId": "WH-LBY-RAW",
+        "factoryBinding": {
+          "factoryId": "FACTORY_LBY_crude_oil",
+          "countryId": "LBY",
+          "inputResourceId": "crude_oil",
+          "outputResourceId": "crude_oil",
+          "status": "SIMULATED_READY",
+          "processingMethod": "STABILIZATION_AND_CRUDE_GATHERING",
+          "requiresSameCountryWarehouse": true
+        },
+        "factoryOutputs": [
+          "stabilized crude oil",
+          "associated gas where present"
+        ],
+        "naturalRisk": {
+          "geological": 55,
+          "environmental": 70,
+          "waterStress": 28,
+          "infrastructure": 55,
+          "conflictExposure": 71,
+          "maritimeExposure": 60,
+          "scale": "0_TO_100_SIMULATION_INDEX"
+        }
+      },
+      "naturalRisk": {
+        "geological": 55,
+        "environmental": 70,
+        "waterStress": 28,
+        "infrastructure": 55,
+        "conflictExposure": 71,
+        "maritimeExposure": 60,
+        "scale": "0_TO_100_SIMULATION_INDEX"
+      },
+      "mineLevel": 5,
+      "map": {
+        "markerEligible": true,
+        "countryIsolationKey": "LBY",
+        "iconResourceKey": "crude_oil",
+        "markerType": "RESOURCE_SITE",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "aliasOfSiteId": null,
+        "collisionGroup": "SITE_LBY_murzuq_oil_field_zone"
+      },
+      "runtime": {
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
+        "quantityAuthority": "SCENARIO_SIMULATION_DATA",
+        "productionAuthority": "SCENARIO_SIMULATION_DATA",
+        "qualityAuthority": "SCENARIO_SIMULATION_DATA",
+        "countryWarehouseId": "WH-LBY-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true,
+        "aliasOfSiteId": null,
+        "pipeline": {
+          "site": "BOUND",
+          "extraction": "SIMULATED_ENGINEERING_READY",
+          "batch": "SITE_ID_KEYED",
+          "rawWarehouse": "BOUND_TO_OWNER_COUNTRY",
+          "transport": "SIMULATED_ROUTE_READY",
+          "factory": "SITE_AND_COUNTRY_BOUND",
+          "processing": "RESOURCE_SPECIFIC_SIMULATED_PROCESS",
+          "output": "SIMULATED_PRODUCT_STREAM",
+          "economy": "COUNTRY_ISOLATED_SIMULATED_OUTPUT"
+        }
+      },
+      "naturalHazards": {
+        "geologicRiskIndex": 55,
+        "environmentalRiskIndex": 70,
+        "waterStressIndex": 28,
+        "infrastructureRiskIndex": 55,
+        "conflictExposureIndex": 71,
+        "maritimeExposureIndex": 60,
+        "scale": "0_TO_100_SIMULATION_INDEX"
+      },
+      "observedFacts": [],
+      "sources": [],
+      "locationSource": {
+        "sourceType": "LEGACY_REPOSITORY_COORDINATE",
+        "scope": "Regional approximation; not survey grade",
+        "sourceReference": "resource_site_legacy_structural_candidates_v1.json"
+      },
+      "sourceReference": {
+        "sourcePath": "resource_site_legacy_structural_candidates_v1.json",
+        "sourceDatasetAuthority": "LEGACY_REPOSITORY_DATA_ONLY",
+        "historicalSourcePointers": [
+          {
+            "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+            "path": "resource_ministry_engine.js",
+            "symbol": "GEOGRAPHIC_DEPOSITS",
+            "line": 418,
+            "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+          },
+          {
+            "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+            "path": "resources.json",
+            "pointer": "#/deposits/50",
+            "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+          }
+        ],
+        "legacyReportedReserveText": [
+          "5.2B Barrels"
+        ],
+        "historicalStatusTexts": [
+          "Active Field"
+        ],
+        "identityConfidence": "LEGACY_STRUCTURAL_CANDIDATE",
+        "metricAuthority": "SIMULATED_GAMEPLAY_NOT_OBSERVED"
+      },
+      "researchState": "LEGACY_IDENTITY_WITH_SIMULATED_GAMEPLAY_METRICS",
+      "generatedAt": "2026-10-13"
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_LBY_wadi_shati_iron_ore_basin",
+      "countryId": "LBY",
+      "siteName": "Wadi Shati Iron Ore Basin",
+      "identity": {
+        "countryIso3": "LBY",
+        "countryName": "Libya",
+        "siteType": "IRON_ORE_SITE",
+        "resourceTypeId": "iron_ore",
+        "resourceName": "Iron Ore & Concentrates",
+        "ontologyKey": "IRON_ORE",
+        "aliases": []
+      },
+      "location": {
+        "countryName": "Libya",
+        "adminRegion": null,
+        "locality": null,
+        "coordinates": {
+          "lat": 27.5,
+          "lng": 14.2
+        },
+        "coordinateStatus": "GAMEPLAY_REGIONAL_APPROXIMATION",
+        "coordinateAuthority": "RETAINED_LEGACY_POINT_NOT_SURVEY_GRADE",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "countryBoundaryKey": "LBY"
+      },
+      "ownership": {
+        "owner": "Libya Sovereign Resource Authority [SIMULATED]",
+        "operator": "OMEGA_SIMULATED_OPERATOR_SITE_LBY_wadi_shati_iron_ore_basin",
+        "ownerEvidenceStatus": "SIMULATED",
+        "operatorEvidenceStatus": "SIMULATED",
+        "authority": "OMEGA_SCENARIO_OWNERSHIP",
+        "equityControlCountry": "LBY",
+        "operatorContractId": "OPCONTRACT_SITE_LBY_wadi_shati_iron_ore_basin"
+      },
+      "operation": {
+        "status": "SIMULATED_OPERATIONAL_SCENARIO",
+        "operationalStatus": "SIMULATED_ACTIVE",
+        "extractionMethod": "OPEN_PIT_DRILL_BLAST_LOAD_HAUL",
+        "extractionEligibility": "SIMULATED_SITE_ELIGIBLE_SUBJECT_TO_GAMEPLAY_GATES",
+        "commercialExtraction": true,
+        "siteCommissioningLevel": 3,
+        "mineLevel": 5,
+        "legacyReportedStatusTexts": [
+          "Strategic Reserve"
+        ],
+        "statusAuthority": "SIMULATED_GAMEPLAY_STATE_NOT_REAL_WORLD_CLAIM"
+      },
+      "processing": {
+        "upstreamProcess": "OPEN_PIT_DRILL_BLAST_LOAD_HAUL",
+        "midstreamProcess": "CRUSHING_SCREENING_BENEFICIATION",
+        "refinedOutputs": [
+          "iron ore concentrate",
+          "pellet/sinter feed"
+        ],
+        "downstreamSectors": [
+          "steelmaking"
+        ]
+      },
+      "logistics": {
+        "warehouseCountryId": "LBY",
+        "warehouseSiteId": "WH-LBY-RAW",
+        "inventoryRouteStatus": "SIMULATED_ROUTE_READY",
+        "factoryRouteStatus": "SIMULATED_FACTORY_BINDING_READY",
+        "routeStatus": "SIMULATED_ROUTE_READY",
+        "transport": {
+          "routeId": "ROUTE_SITE_LBY_wadi_shati_iron_ore_basin_RAW_TO_FACTORY",
+          "routeType": "ROAD_RAIL",
+          "originSiteId": "SITE_LBY_wadi_shati_iron_ore_basin",
+          "originCountryId": "LBY",
+          "warehouseId": "WH-LBY-RAW",
+          "destinationFactoryId": "FACTORY_LBY_iron_ore",
+          "destinationCountryId": "LBY",
+          "distanceKm": 205,
+          "averageSpeedKmPerDay": 70,
+          "estimatedTravelDays": 3,
+          "routeStatus": "SIMULATED_ROUTE_READY",
+          "canBeBlockedByWar": true,
+          "canBeBlockedByNeighborControl": true,
+          "canBeBlockedByNavalInterdiction": false,
+          "strategicRouteNotRoadSurvey": true,
+          "routeCapacityPerDay": 1018261
+        }
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": 93946817100,
+          "unit": "TONNES_ORE",
+          "year": 2026,
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_402_YEARS",
+          "legacyReportedText": [
+            "3.8B Tons"
+          ]
+        },
+        "production": {
+          "annual": 233698550,
+          "rate": 640270,
+          "unit": "TONNES_PER_DAY",
+          "annualUnit": "TONNES_PER_YEAR",
+          "year": 2026,
+          "period": "DAILY_AND_ANNUAL",
+          "status": "SIMULATED",
+          "basis": "PER_SITE_IDENTITY_PRODUCTION_ALLOCATION_V1"
+        },
+        "grade": {
+          "value": 31.15,
+          "unit": "PERCENT_FE",
+          "year": 2026,
+          "metric": "RESOURCE_SPECIFIC_RAW_MATERIAL_QUALITY",
+          "status": "SIMULATED",
+          "basis": "COMMODITY_BAND_AND_STABLE_SITE_ID_VARIATION"
+        },
+        "recovery": {
+          "value": 82.23,
+          "unit": "PERCENT",
+          "year": 2026,
+          "period": "PROCESSING_CYCLE",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_PROCESSING_RECOVERY_MODEL"
+        },
+        "throughput": {
+          "value": 621062,
+          "unit": "TONNES_PER_DAY",
+          "year": 2026,
+          "period": "DAILY",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_THROUGHPUT_MODEL"
+        },
+        "purity": {
+          "value": 62.37,
+          "unit": "PERCENT",
+          "year": 2026,
+          "metric": "CONCENTRATE_FE_PERCENT",
+          "status": "SIMULATED",
+          "basis": "COMMODITY_PRODUCT_QUALITY_MODEL"
+        },
+        "capacity": {
+          "nominal": 771410,
+          "minimum": 555415,
+          "maximum": 1018261,
+          "unit": "TONNES_PER_DAY",
+          "period": "DAILY",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_CAPACITY_UTILIZATION_AND_HEADROOM"
+        },
+        "reportedMetrics": {
+          "legacyReserveText": [
+            "3.8B Tons"
+          ],
+          "legacyStatusText": [
+            "Strategic Reserve"
+          ],
+          "allOperationalMetricsAboveAreSimulated": true
+        },
+        "quantitativeProvenance": {
+          "authority": "SCENARIO_SIMULATION_DATA",
+          "method": "OMEGA_PER_SITE_IDENTITY_METRIC_ALLOCATION_V1",
+          "seedKey": "SITE_LBY_wadi_shati_iron_ore_basin|LBY|iron_ore",
+          "generatedAt": "2026-10-13",
+          "gameplayHorizonYears": 402,
+          "realWorldDataRequired": false,
+          "externalMeasuredValuePromotion": false
+        },
+        "completeness": {
+          "reserve": "SIMULATED",
+          "production": "SIMULATED",
+          "grade": "SIMULATED",
+          "recovery": "SIMULATED",
+          "throughput": "SIMULATED",
+          "purity": "SIMULATED",
+          "capacity": "SIMULATED",
+          "overall": "GAMEPLAY_SIMULATION_COMPLETE"
+        }
+      },
+      "reserve": {
+        "quantity": 93946817100,
+        "unit": "TONNES_ORE",
+        "status": "SIMULATED",
+        "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_402_YEARS"
+      },
+      "simulation": {
+        "reserve": {
+          "quantity": 93946817100,
+          "unit": "TONNES_ORE",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_402_YEARS"
+        },
+        "nominalDailyCapacity": 771410,
+        "minimumDailyCapacity": 555415,
+        "maximumDailyCapacity": 1018261,
+        "productionRate": 640270,
+        "productionRateUnit": "TONNES_PER_DAY",
+        "annualProduction": 233698550,
+        "annualProductionUnit": "TONNES_PER_YEAR",
+        "utilization": 0.83,
+        "recovery": 0.8223,
+        "grade": {
+          "value": 31.15,
+          "unit": "PERCENT_FE",
+          "metric": "RESOURCE_SPECIFIC_RAW_MATERIAL_QUALITY"
+        },
+        "purity": {
+          "value": 62.37,
+          "unit": "PERCENT",
+          "metric": "CONCENTRATE_FE_PERCENT"
+        },
+        "reserveHorizonYears": 402,
+        "transportRoute": [
+          {
+            "routeId": "ROUTE_SITE_LBY_wadi_shati_iron_ore_basin_RAW_TO_FACTORY",
+            "countryId": "LBY",
+            "originSiteId": "SITE_LBY_wadi_shati_iron_ore_basin",
+            "warehouseId": "WH-LBY-RAW",
+            "factoryId": "FACTORY_LBY_iron_ore",
+            "mode": "ROAD_RAIL",
+            "distanceKm": 205,
+            "estimatedTravelDays": 3,
+            "status": "SIMULATED_ROUTE_READY",
+            "blockableByWar": true,
+            "blockableByNeighborControl": true,
+            "blockableByNavalInterdiction": false
+          }
+        ],
+        "rawWarehouseId": "WH-LBY-RAW",
+        "factoryBinding": {
+          "factoryId": "FACTORY_LBY_iron_ore",
+          "countryId": "LBY",
+          "inputResourceId": "iron_ore",
+          "outputResourceId": "iron_ore",
+          "status": "SIMULATED_READY",
+          "processingMethod": "CRUSHING_SCREENING_BENEFICIATION",
+          "requiresSameCountryWarehouse": true
+        },
+        "factoryOutputs": [
+          "iron ore concentrate",
+          "pellet/sinter feed"
+        ],
+        "naturalRisk": {
+          "geological": 22,
+          "environmental": 31,
+          "waterStress": 32,
+          "infrastructure": 29,
+          "conflictExposure": 41,
+          "maritimeExposure": 10,
+          "scale": "0_TO_100_SIMULATION_INDEX"
+        }
+      },
+      "naturalRisk": {
+        "geological": 22,
+        "environmental": 31,
+        "waterStress": 32,
+        "infrastructure": 29,
+        "conflictExposure": 41,
+        "maritimeExposure": 10,
+        "scale": "0_TO_100_SIMULATION_INDEX"
+      },
+      "mineLevel": 5,
+      "map": {
+        "markerEligible": true,
+        "countryIsolationKey": "LBY",
+        "iconResourceKey": "iron_ore",
+        "markerType": "RESOURCE_SITE",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "aliasOfSiteId": null,
+        "collisionGroup": "SITE_LBY_wadi_shati_iron_ore_basin"
+      },
+      "runtime": {
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
+        "quantityAuthority": "SCENARIO_SIMULATION_DATA",
+        "productionAuthority": "SCENARIO_SIMULATION_DATA",
+        "qualityAuthority": "SCENARIO_SIMULATION_DATA",
+        "countryWarehouseId": "WH-LBY-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true,
+        "aliasOfSiteId": null,
+        "pipeline": {
+          "site": "BOUND",
+          "extraction": "SIMULATED_ENGINEERING_READY",
+          "batch": "SITE_ID_KEYED",
+          "rawWarehouse": "BOUND_TO_OWNER_COUNTRY",
+          "transport": "SIMULATED_ROUTE_READY",
+          "factory": "SITE_AND_COUNTRY_BOUND",
+          "processing": "RESOURCE_SPECIFIC_SIMULATED_PROCESS",
+          "output": "SIMULATED_PRODUCT_STREAM",
+          "economy": "COUNTRY_ISOLATED_SIMULATED_OUTPUT"
+        }
+      },
+      "naturalHazards": {
+        "geologicRiskIndex": 22,
+        "environmentalRiskIndex": 31,
+        "waterStressIndex": 32,
+        "infrastructureRiskIndex": 29,
+        "conflictExposureIndex": 41,
+        "maritimeExposureIndex": 10,
+        "scale": "0_TO_100_SIMULATION_INDEX"
+      },
+      "observedFacts": [],
+      "sources": [],
+      "locationSource": {
+        "sourceType": "LEGACY_REPOSITORY_COORDINATE",
+        "scope": "Regional approximation; not survey grade",
+        "sourceReference": "resource_site_legacy_structural_candidates_v1.json"
+      },
+      "sourceReference": {
+        "sourcePath": "resource_site_legacy_structural_candidates_v1.json",
+        "sourceDatasetAuthority": "LEGACY_REPOSITORY_DATA_ONLY",
+        "historicalSourcePointers": [
+          {
+            "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+            "path": "resource_ministry_engine.js",
+            "symbol": "GEOGRAPHIC_DEPOSITS",
+            "line": 420,
+            "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+          },
+          {
+            "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+            "path": "resources.json",
+            "pointer": "#/deposits/52",
+            "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+          }
+        ],
+        "legacyReportedReserveText": [
+          "3.8B Tons"
+        ],
+        "historicalStatusTexts": [
+          "Strategic Reserve"
+        ],
+        "identityConfidence": "LEGACY_STRUCTURAL_CANDIDATE",
+        "metricAuthority": "SIMULATED_GAMEPLAY_NOT_OBSERVED"
+      },
+      "researchState": "LEGACY_IDENTITY_WITH_SIMULATED_GAMEPLAY_METRICS",
+      "generatedAt": "2026-10-13"
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_TUN_pelagian_sfax_offshore_gas_oil_field",
+      "countryId": "TUN",
+      "siteName": "Pelagian Sfax Offshore Gas & Oil Field",
+      "identity": {
+        "countryIso3": "TUN",
+        "countryName": "Tunisia",
+        "siteType": "GAS_FIELD",
+        "resourceTypeId": "natural_gas",
+        "resourceName": "Natural Gas & Methane",
+        "ontologyKey": "NATURAL_GAS",
+        "aliases": []
+      },
+      "location": {
+        "countryName": "Tunisia",
+        "adminRegion": null,
+        "locality": null,
+        "coordinates": {
+          "lat": 34.73,
+          "lng": 11.2
+        },
+        "coordinateStatus": "GAMEPLAY_REGIONAL_APPROXIMATION",
+        "coordinateAuthority": "RETAINED_LEGACY_POINT_NOT_SURVEY_GRADE",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "countryBoundaryKey": "TUN"
+      },
+      "ownership": {
+        "owner": "Tunisia Sovereign Resource Authority [SIMULATED]",
+        "operator": "OMEGA_SIMULATED_OPERATOR_SITE_TUN_pelagian_sfax_offshore_gas_oil_field",
+        "ownerEvidenceStatus": "SIMULATED",
+        "operatorEvidenceStatus": "SIMULATED",
+        "authority": "OMEGA_SCENARIO_OWNERSHIP",
+        "equityControlCountry": "TUN",
+        "operatorContractId": "OPCONTRACT_SITE_TUN_pelagian_sfax_offshore_gas_oil_field"
+      },
+      "operation": {
+        "status": "SIMULATED_OPERATIONAL_SCENARIO",
+        "operationalStatus": "SIMULATED_ACTIVE",
+        "extractionMethod": "OFFSHORE_DRILLING_AND_PRODUCTION",
+        "extractionEligibility": "SIMULATED_SITE_ELIGIBLE_SUBJECT_TO_GAMEPLAY_GATES",
+        "commercialExtraction": true,
+        "siteCommissioningLevel": 2,
+        "mineLevel": 4,
+        "legacyReportedStatusTexts": [
+          "Offshore Platform"
+        ],
+        "statusAuthority": "SIMULATED_GAMEPLAY_STATE_NOT_REAL_WORLD_CLAIM"
+      },
+      "processing": {
+        "upstreamProcess": "OFFSHORE_DRILLING_AND_PRODUCTION",
+        "midstreamProcess": "GAS_GATHERING_DEHYDRATION_AND_PROCESSING",
+        "refinedOutputs": [
+          "treated natural gas",
+          "condensate where present"
+        ],
+        "downstreamSectors": [
+          "power_generation",
+          "fertilizer",
+          "industrial_heat",
+          "LNG_if_connected"
+        ]
+      },
+      "logistics": {
+        "warehouseCountryId": "TUN",
+        "warehouseSiteId": "WH-TUN-RAW",
+        "inventoryRouteStatus": "SIMULATED_ROUTE_READY",
+        "factoryRouteStatus": "SIMULATED_FACTORY_BINDING_READY",
+        "routeStatus": "SIMULATED_ROUTE_READY",
+        "transport": {
+          "routeId": "ROUTE_SITE_TUN_pelagian_sfax_offshore_gas_oil_field_RAW_TO_FACTORY",
+          "routeType": "PIPELINE_AND_SEA_LANE",
+          "originSiteId": "SITE_TUN_pelagian_sfax_offshore_gas_oil_field",
+          "originCountryId": "TUN",
+          "warehouseId": "WH-TUN-RAW",
+          "destinationFactoryId": "FACTORY_TUN_natural_gas",
+          "destinationCountryId": "TUN",
+          "distanceKm": 637,
+          "averageSpeedKmPerDay": 260,
+          "estimatedTravelDays": 2,
+          "routeStatus": "SIMULATED_ROUTE_READY",
+          "canBeBlockedByWar": true,
+          "canBeBlockedByNeighborControl": true,
+          "canBeBlockedByNavalInterdiction": true,
+          "strategicRouteNotRoadSurvey": true,
+          "routeCapacityPerDay": 4610
+        }
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": 422696.28,
+          "unit": "BCF",
+          "year": 2026,
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_438_YEARS",
+          "legacyReportedText": [
+            "2.8 TCF"
+          ]
+        },
+        "production": {
+          "annual": 965.06,
+          "rate": 2644,
+          "unit": "MMCF_PER_DAY",
+          "annualUnit": "BCF_PER_YEAR",
+          "year": 2026,
+          "period": "DAILY_AND_ANNUAL",
+          "status": "SIMULATED",
+          "basis": "PER_SITE_IDENTITY_PRODUCTION_ALLOCATION_V1"
+        },
+        "grade": {
+          "value": 83.04,
+          "unit": "PERCENT_METHANE",
+          "year": 2026,
+          "metric": "RESOURCE_SPECIFIC_RAW_MATERIAL_QUALITY",
+          "status": "SIMULATED",
+          "basis": "COMMODITY_BAND_AND_STABLE_SITE_ID_VARIATION"
+        },
+        "recovery": {
+          "value": 74,
+          "unit": "PERCENT",
+          "year": 2026,
+          "period": "PROCESSING_CYCLE",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_PROCESSING_RECOVERY_MODEL"
+        },
+        "throughput": {
+          "value": 2247,
+          "unit": "MMCF_PER_DAY",
+          "year": 2026,
+          "period": "DAILY",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_THROUGHPUT_MODEL"
+        },
+        "purity": {
+          "value": 94.85,
+          "unit": "PERCENT",
+          "year": 2026,
+          "metric": "PROCESSED_METHANE_PERCENT",
+          "status": "SIMULATED",
+          "basis": "COMMODITY_PRODUCT_QUALITY_MODEL"
+        },
+        "capacity": {
+          "nominal": 3390,
+          "minimum": 2475,
+          "maximum": 4610,
+          "unit": "MMCF_PER_DAY",
+          "period": "DAILY",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_CAPACITY_UTILIZATION_AND_HEADROOM"
+        },
+        "reportedMetrics": {
+          "legacyReserveText": [
+            "2.8 TCF"
+          ],
+          "legacyStatusText": [
+            "Offshore Platform"
+          ],
+          "allOperationalMetricsAboveAreSimulated": true
+        },
+        "quantitativeProvenance": {
+          "authority": "SCENARIO_SIMULATION_DATA",
+          "method": "OMEGA_PER_SITE_IDENTITY_METRIC_ALLOCATION_V1",
+          "seedKey": "SITE_TUN_pelagian_sfax_offshore_gas_oil_field|TUN|natural_gas",
+          "generatedAt": "2026-10-13",
+          "gameplayHorizonYears": 438,
+          "realWorldDataRequired": false,
+          "externalMeasuredValuePromotion": false
+        },
+        "completeness": {
+          "reserve": "SIMULATED",
+          "production": "SIMULATED",
+          "grade": "SIMULATED",
+          "recovery": "SIMULATED",
+          "throughput": "SIMULATED",
+          "purity": "SIMULATED",
+          "capacity": "SIMULATED",
+          "overall": "GAMEPLAY_SIMULATION_COMPLETE"
+        }
+      },
+      "reserve": {
+        "quantity": 422696.28,
+        "unit": "BCF",
+        "status": "SIMULATED",
+        "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_438_YEARS"
+      },
+      "simulation": {
+        "reserve": {
+          "quantity": 422696.28,
+          "unit": "BCF",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_438_YEARS"
+        },
+        "nominalDailyCapacity": 3390,
+        "minimumDailyCapacity": 2475,
+        "maximumDailyCapacity": 4610,
+        "productionRate": 2644,
+        "productionRateUnit": "MMCF_PER_DAY",
+        "annualProduction": 965.06,
+        "annualProductionUnit": "BCF_PER_YEAR",
+        "utilization": 0.78,
+        "recovery": 0.74,
+        "grade": {
+          "value": 83.04,
+          "unit": "PERCENT_METHANE",
+          "metric": "RESOURCE_SPECIFIC_RAW_MATERIAL_QUALITY"
+        },
+        "purity": {
+          "value": 94.85,
+          "unit": "PERCENT",
+          "metric": "PROCESSED_METHANE_PERCENT"
+        },
+        "reserveHorizonYears": 438,
+        "transportRoute": [
+          {
+            "routeId": "ROUTE_SITE_TUN_pelagian_sfax_offshore_gas_oil_field_RAW_TO_FACTORY",
+            "countryId": "TUN",
+            "originSiteId": "SITE_TUN_pelagian_sfax_offshore_gas_oil_field",
+            "warehouseId": "WH-TUN-RAW",
+            "factoryId": "FACTORY_TUN_natural_gas",
+            "mode": "PIPELINE_AND_SEA_LANE",
+            "distanceKm": 637,
+            "estimatedTravelDays": 2,
+            "status": "SIMULATED_ROUTE_READY",
+            "blockableByWar": true,
+            "blockableByNeighborControl": true,
+            "blockableByNavalInterdiction": true
+          }
+        ],
+        "rawWarehouseId": "WH-TUN-RAW",
+        "factoryBinding": {
+          "factoryId": "FACTORY_TUN_natural_gas",
+          "countryId": "TUN",
+          "inputResourceId": "natural_gas",
+          "outputResourceId": "natural_gas",
+          "status": "SIMULATED_READY",
+          "processingMethod": "GAS_GATHERING_DEHYDRATION_AND_PROCESSING",
+          "requiresSameCountryWarehouse": true
+        },
+        "factoryOutputs": [
+          "treated natural gas",
+          "condensate where present"
+        ],
+        "naturalRisk": {
+          "geological": 39,
+          "environmental": 40,
+          "waterStress": 32,
+          "infrastructure": 42,
+          "conflictExposure": 43,
+          "maritimeExposure": 14,
+          "scale": "0_TO_100_SIMULATION_INDEX"
+        }
+      },
+      "naturalRisk": {
+        "geological": 39,
+        "environmental": 40,
+        "waterStress": 32,
+        "infrastructure": 42,
+        "conflictExposure": 43,
+        "maritimeExposure": 14,
+        "scale": "0_TO_100_SIMULATION_INDEX"
+      },
+      "mineLevel": 4,
+      "map": {
+        "markerEligible": true,
+        "countryIsolationKey": "TUN",
+        "iconResourceKey": "natural_gas",
+        "markerType": "RESOURCE_SITE",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "aliasOfSiteId": null,
+        "collisionGroup": "SITE_TUN_pelagian_sfax_offshore_gas_oil_field"
+      },
+      "runtime": {
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
+        "quantityAuthority": "SCENARIO_SIMULATION_DATA",
+        "productionAuthority": "SCENARIO_SIMULATION_DATA",
+        "qualityAuthority": "SCENARIO_SIMULATION_DATA",
+        "countryWarehouseId": "WH-TUN-RAW",
+        "requiresSiteSpecificRoute": true,
+        "requiresFactoryBinding": true,
+        "aliasOfSiteId": null,
+        "pipeline": {
+          "site": "BOUND",
+          "extraction": "SIMULATED_ENGINEERING_READY",
+          "batch": "SITE_ID_KEYED",
+          "rawWarehouse": "BOUND_TO_OWNER_COUNTRY",
+          "transport": "SIMULATED_ROUTE_READY",
+          "factory": "SITE_AND_COUNTRY_BOUND",
+          "processing": "RESOURCE_SPECIFIC_SIMULATED_PROCESS",
+          "output": "SIMULATED_PRODUCT_STREAM",
+          "economy": "COUNTRY_ISOLATED_SIMULATED_OUTPUT"
+        }
+      },
+      "naturalHazards": {
+        "geologicRiskIndex": 39,
+        "environmentalRiskIndex": 40,
+        "waterStressIndex": 32,
+        "infrastructureRiskIndex": 42,
+        "conflictExposureIndex": 43,
+        "maritimeExposureIndex": 14,
+        "scale": "0_TO_100_SIMULATION_INDEX"
+      },
+      "observedFacts": [],
+      "sources": [],
+      "locationSource": {
+        "sourceType": "LEGACY_REPOSITORY_COORDINATE",
+        "scope": "Regional approximation; not survey grade",
+        "sourceReference": "resource_site_legacy_structural_candidates_v1.json"
+      },
+      "sourceReference": {
+        "sourcePath": "resource_site_legacy_structural_candidates_v1.json",
+        "sourceDatasetAuthority": "LEGACY_REPOSITORY_DATA_ONLY",
+        "historicalSourcePointers": [
+          {
+            "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+            "path": "resource_ministry_engine.js",
+            "symbol": "GEOGRAPHIC_DEPOSITS",
+            "line": 428,
+            "engineSha": "6e096ebdcc12b309413c2ed79fbe6d54fea463de"
+          },
+          {
+            "commit": "5aa5bce4af954c8fb5bb624f8472871b447af889",
+            "path": "resources.json",
+            "pointer": "#/deposits/58",
+            "blob": "ff4f8a9117aa833aac9a589d94210db1695b3c21"
+          }
+        ],
+        "legacyReportedReserveText": [
+          "2.8 TCF"
+        ],
+        "historicalStatusTexts": [
+          "Offshore Platform"
+        ],
+        "identityConfidence": "LEGACY_STRUCTURAL_CANDIDATE",
+        "metricAuthority": "SIMULATED_GAMEPLAY_NOT_OBSERVED"
+      },
+      "researchState": "LEGACY_IDENTITY_WITH_SIMULATED_GAMEPLAY_METRICS",
+      "generatedAt": "2026-10-13"
+    }
+  ],
+  "policy": {
+    "metricsAreExplicitlySimulated": true,
+    "coordinatesAreRegionalApproximations": true,
+    "originalCanonicalAndReserveDataUnchanged": true
+  }
+}
