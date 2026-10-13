@@ -19,7 +19,7 @@ const resourceFiles=new Map([
   ['resource_site_legacy_gameplay_expansion_part_3_v1.json',new URL('../resource_site_legacy_gameplay_expansion_part_3_v1.json',import.meta.url)],
   ['resource_site_legacy_gameplay_expansion_part_4_v1.json',new URL('../resource_site_legacy_gameplay_expansion_part_4_v1.json',import.meta.url)],
   ['resource_site_legacy_gameplay_expansion_part_5_v1.json',new URL('../resource_site_legacy_gameplay_expansion_part_5_v1.json',import.meta.url)],
-  ['resource_site_industrial_catalog_v1.json',new URL('../resource_site_industrial_catalog_v1.json',import.meta.url)]
+  ['resource_industrial_catalog_v1.json',new URL('../resource_industrial_catalog_v1.json',import.meta.url)]
 ]);
 const nativeFetch=globalThis.fetch;
 globalThis.fetch=async function(input){
