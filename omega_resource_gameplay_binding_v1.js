@@ -7,6 +7,8 @@ const VERSION='1.0.0';
 const CATALOG_URL='resource_site_canonical_catalog_v1.json';
 const MASTER_URL='resource_site_master_registry_v1.json';
 const EXPANSION_URL='resource_site_country_expansion_v1.json';
+const LEGACY_GAMEPLAY_URLS=['resource_site_legacy_gameplay_expansion_part_1_v1.json','resource_site_legacy_gameplay_expansion_part_2_v1.json','resource_site_legacy_gameplay_expansion_part_3_v1.json','resource_site_legacy_gameplay_expansion_part_4_v1.json','resource_site_legacy_gameplay_expansion_part_5_v1.json'];
+const LEGACY_CANONICAL_ALIAS_IDS={SITE_AUS_olympic_dam_uranium_copper:'SITE_AUS_olympic_dam_mine',SITE_BRA_carajas_iron_ore_mine_legacy2:'SITE_BRA_carajas_iron_ore_mine',SITE_CHL_escondida_copper_mine_legacy2:'SITE_CHL_escondida_copper_mine',SITE_IDN_grasberg_copper_gold_mine:'SITE_IDN_grasberg_mine',SITE_COD_tenke_fungurume_copper_cobalt_complex:'SITE_COD_tenke_fungurume_mine',SITE_COD_kibali_gold_mine_complex:'SITE_COD_kibali_gold_mine'};
 let sites=[], selected=null, markers=[], markerLayer=null, panel=null, statusNode=null, detailNode=null, selectNode=null;
 const esc=v=>String(v??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const state=()=>g.Game?.state||g.gameState||{};
@@ -266,7 +268,7 @@ async function init(){
  g.__OMEGA_RESOURCE_SITE_BINDING_INIT__=true;
  mount();
  try{
-  const urls=['resources.json','resources_2.json',CATALOG_URL,MASTER_URL,EXPANSION_URL];
+  const urls=['resources.json','resources_2.json',CATALOG_URL,MASTER_URL,EXPANSION_URL,...LEGACY_GAMEPLAY_URLS];
   const loaded=await Promise.all(urls.map(async url=>{
    try{const response=await fetch(url,{cache:'no-store'});if(!response.ok)return null;return {url,data:await response.json()};}
    catch(_){return null;}
@@ -279,8 +281,13 @@ async function init(){
   }
   const baseCatalogSites=Array.isArray(catalog?.sites)?catalog.sites:[];
   const expansionSites=expansion?.datasetId==='OMEGA_RESOURCE_SITE_COUNTRY_EXPANSION_V1'&&Array.isArray(expansion.records)?expansion.records:[];
-  const catalogSites=[...baseCatalogSites,...expansionSites];
   const masterSites=Array.isArray(master?.sites)?master.sites:[];
+  const knownSiteIds=new Set([...baseCatalogSites,...expansionSites,...masterSites].map(row=>String(row?.siteId||'')));
+  const legacySiteRows=sources.filter(x=>LEGACY_GAMEPLAY_URLS.includes(x.url)).filter(x=>x.data?.datasetId?.startsWith('OMEGA_RESOURCE_SITE_LEGACY_GAMEPLAY_EXPANSION_PART_')).flatMap(x=>Array.isArray(x.data?.records)?x.data.records:[]);
+  const activeLegacySites=legacySiteRows.filter(row=>row?.siteId&&!row.runtime?.aliasOfSiteId&&!LEGACY_CANONICAL_ALIAS_IDS[String(row.siteId)]&&!knownSiteIds.has(String(row.siteId)));
+  const catalogSites=[...baseCatalogSites,...expansionSites,...activeLegacySites];
+  g.OmegaResourceLegacyGameplayExpansion={status:legacySiteRows.length===65?'READY':'PARTIAL',count:legacySiteRows.length,activeCandidateCount:activeLegacySites.length,loadedParts:sources.filter(x=>LEGACY_GAMEPLAY_URLS.includes(x.url)&&x.data?.records).length};
+  g.Omega=g.Omega||{};g.Omega.ResourceLegacyGameplayExpansion=g.OmegaResourceLegacyGameplayExpansion;
   const masterById=new Map(masterSites.map(s=>[String(s.siteId),s]));
   const catalogById=new Map(catalogSites.map(s=>[String(s.siteId),s]));
   const discovered=sources.filter(x=>x.url==='resources.json'||x.url==='resources_2.json').flatMap(x=>discoverSourceSites(x.data));
@@ -314,8 +321,14 @@ async function init(){
     coordinates:coords,
     location:{...(catalogRow.location||{}),...(masterRow.location||{}),...(normalized.location||{}),coordinates:coords},
     identity:{...(catalogRow.identity||{}),...(masterRow.identity||{}),...(normalized.identity||{}),countryIso3:countryId,resourceTypeId:resourceId},
-    operation:normalized.operation||masterRow.operation||catalogRow.operation||{},
-    processing:normalized.processing||masterRow.processing||catalogRow.processing||{}
+    operation:normalized.operation||source.operation||masterRow.operation||catalogRow.operation||{},
+    ownership:normalized.ownership||source.ownership||masterRow.ownership||catalogRow.ownership||{},
+    quantitative:normalized.quantitative||source.quantitative||masterRow.quantitative||catalogRow.quantitative||{},
+    simulation:normalized.simulation||source.simulation||masterRow.simulation||catalogRow.simulation||{},
+    logistics:normalized.logistics||source.logistics||masterRow.logistics||catalogRow.logistics||{},
+    processing:normalized.processing||source.processing||masterRow.processing||catalogRow.processing||{},
+    map:normalized.map||source.map||catalogRow.map||{},
+    runtime:normalized.runtime||source.runtime||catalogRow.runtime||{}
    });
    if(!isDeposit)physicalIndex.set(physicalKey,id);
   }
