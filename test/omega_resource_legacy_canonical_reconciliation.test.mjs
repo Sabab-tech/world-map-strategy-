@@ -7,11 +7,11 @@ const reconstructed = read('resource_site_legacy_profile_marker_reconstruction_v
 const master = read('resource_site_master_registry_v1.json');
 const canonical = read('resource_site_canonical_catalog_v1.json');
 const reserveScenario = read('resource_site_reserve_simulation_v1.json');
-const legacyGameplayRows = [1,2,3,4,5].flatMap(n => read('resource_site_legacy_gameplay_expansion_part_' + n + '_v1.json').records);
+const legacyGameplayRows = [1,2,3,4,5,6].flatMap(n => read('resource_site_legacy_gameplay_expansion_part_' + n + '_v1.json').records);
 const legacyGameplayById = new Map(legacyGameplayRows.map(site => [site.siteId, site]));
 const canonicalById = new Map(canonical.sites.map(site => [site.siteId, site]));
-assert.equal(legacyGameplayRows.length, 65, 'all 65 candidates remain in the auditable source packs');
-assert.equal(legacyGameplayById.size, 65, 'gameplay candidate IDs remain unique');
+assert.equal(legacyGameplayRows.length, 115, 'all 115 candidates remain in the auditable source packs');
+assert.equal(legacyGameplayById.size, 115, 'gameplay candidate IDs remain unique');
 
 assert.equal(archived.records.length, 114, 'preserve all embedded historical rows');
 assert.equal(archived.resourcesJsonDeposits.length, 62, 'preserve all historical JSON deposit rows');
