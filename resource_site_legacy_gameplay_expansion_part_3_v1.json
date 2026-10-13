@@ -321,8 +321,45 @@
         "maritimeExposureIndex": 60,
         "scale": "0_TO_100_SIMULATION_INDEX"
       },
-      "observedFacts": [],
-      "sources": [],
+      "observedFacts": [
+        {
+          "metric": "phaseProduction",
+          "value": 20213.7,
+          "unit": "MILLION_CUBIC_METRES_PER_YEAR",
+          "year": 2016,
+          "status": "OBSERVED_HISTORICAL_PHASE_VALUE_NOT_TOTAL_FIELD",
+          "sourceUrl": "https://www.gem.wiki/South_Pars_(Phase_9-10)_Gas_Phase_(Iran)"
+        },
+        {
+          "metric": "phaseDesignCapacity",
+          "value": 18250,
+          "unit": "MILLION_CUBIC_METRES_PER_YEAR",
+          "year": 2009,
+          "status": "OBSERVED_HISTORICAL_PHASE_VALUE_NOT_TOTAL_FIELD",
+          "sourceUrl": "https://www.gem.wiki/South_Pars_(Phase_9-10)_Gas_Phase_(Iran)"
+        },
+        {
+          "metric": "SouthParsSubfieldRecoverableGas",
+          "value": 500,
+          "unit": "TCF",
+          "status": "SECONDARY_REPORTED_SUBFIELD_ESTIMATE",
+          "sourceUrl": "https://en.wikipedia.org/wiki/South_Pars/North_Dome_Gas-Condensate_field"
+        }
+      ],
+      "sources": [
+        {
+          "url": "https://www.gem.wiki/South_Pars_(Phase_9-10)_Gas_Phase_(Iran)",
+          "sourceType": "GLOBAL_ENERGY_MONITOR",
+          "accessed": "2026-10-13",
+          "scope": "historical Phase 9-10 production and design capacity"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/South_Pars/North_Dome_Gas-Condensate_field",
+          "sourceType": "SECONDARY_REFERENCE",
+          "accessed": "2026-10-13",
+          "scope": "shared South Pars/North Dome gas field context"
+        }
+      ],
       "locationSource": {
         "sourceType": "LEGACY_REPOSITORY_COORDINATE",
         "scope": "Regional approximation; not survey grade",
@@ -349,7 +386,7 @@
         "identityConfidence": "LEGACY_STRUCTURAL_CANDIDATE",
         "metricAuthority": "SIMULATED_GAMEPLAY_NOT_OBSERVED"
       },
-      "researchState": "LEGACY_IDENTITY_WITH_SIMULATED_GAMEPLAY_METRICS",
+      "researchState": "PARTIAL_SITE_SPECIFIC_RESEARCH; GAMEPLAY_METRICS_REMAIN_SIMULATED",
       "generatedAt": "2026-10-13"
     },
     {
