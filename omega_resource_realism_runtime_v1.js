@@ -279,7 +279,7 @@ function siteModel(site,profile,countryId){
      production:{nominalCapacity:nominal,minimumCapacity:minimum,maximumCapacity:maximum,utilization:utilizationFinal,recovery:recoveryFinal,decline:declineFinal,maintenance:maintenanceFinal,operatingCost:costObs??null,activeRate,observedRate,
        authority:productionObserved?'OBSERVED':'SIMULATED',dataStatus:productionObserved?'AVAILABLE':'SIMULATED',technologyAdjusted:Array.isArray(technology.technologies)&&technology.technologies.length>0,technologyEffects:technology,
        annualProduction:src?.annualProduction??productionInput?.annualProduction??null,
-       rangeDataStatus:minObs!==null&&maxObs!==null?'OBSERVED':productionObserved?'DERIVED_FROM_OBSERVED_RATE':'SIMULATED',
+       rangeDataStatus:scenarioOnlyInput?'SIMULATED':minObs!==null&&maxObs!==null?'OBSERVED':productionObserved?'DERIVED_FROM_OBSERVED_RATE':'SIMULATED',
        operatingCostStatus:costObs!==null?'OBSERVED':'UNOBSERVED'}
    };
  });
