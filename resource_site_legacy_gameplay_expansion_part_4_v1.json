@@ -4315,8 +4315,46 @@
         "maritimeExposureIndex": 17,
         "scale": "0_TO_100_SIMULATION_INDEX"
       },
-      "observedFacts": [],
-      "sources": [],
+      "observedFacts": [
+        {
+          "metric": "copperProduction",
+          "value": 280300,
+          "unit": "TONNES_PER_YEAR",
+          "year": 2023,
+          "status": "OBSERVED_REPORTED",
+          "sourceUrl": "https://docs.aiddata.org/reports/china-transition-minerals-2025/Tenke_Fungurume_Copper_Cobalt_Mine_Chinese_Financing_for_Transition_Minerals.pdf"
+        },
+        {
+          "metric": "copperCapacity",
+          "value": 450000,
+          "unit": "TONNES_PER_YEAR",
+          "status": "OBSERVED_REPORTED_CAPACITY",
+          "sourceUrl": "https://docs.aiddata.org/reports/china-transition-minerals-2025/Tenke_Fungurume_Copper_Cobalt_Mine_Chinese_Financing_for_Transition_Minerals.pdf"
+        },
+        {
+          "metric": "cobaltProduction",
+          "value": 21600,
+          "unit": "TONNES_PER_YEAR",
+          "year": 2023,
+          "status": "OBSERVED_REPORTED",
+          "sourceUrl": "https://docs.aiddata.org/reports/china-transition-minerals-2025/Tenke_Fungurume_Copper_Cobalt_Mine_Chinese_Financing_for_Transition_Minerals.pdf"
+        },
+        {
+          "metric": "cobaltCapacity",
+          "value": 37000,
+          "unit": "TONNES_PER_YEAR",
+          "status": "OBSERVED_REPORTED_CAPACITY",
+          "sourceUrl": "https://docs.aiddata.org/reports/china-transition-minerals-2025/Tenke_Fungurume_Copper_Cobalt_Mine_Chinese_Financing_for_Transition_Minerals.pdf"
+        }
+      ],
+      "sources": [
+        {
+          "url": "https://docs.aiddata.org/reports/china-transition-minerals-2025/Tenke_Fungurume_Copper_Cobalt_Mine_Chinese_Financing_for_Transition_Minerals.pdf",
+          "sourceType": "AIDDATA_RESEARCH_REPORT",
+          "accessed": "2026-10-13",
+          "scope": "mine location, 2023 output and reported production capacity"
+        }
+      ],
       "locationSource": {
         "sourceType": "LEGACY_REPOSITORY_COORDINATE",
         "scope": "Regional approximation; not survey grade",
@@ -4343,7 +4381,7 @@
         "identityConfidence": "LEGACY_STRUCTURAL_CANDIDATE",
         "metricAuthority": "SIMULATED_GAMEPLAY_NOT_OBSERVED"
       },
-      "researchState": "LEGACY_IDENTITY_WITH_SIMULATED_GAMEPLAY_METRICS",
+      "researchState": "PARTIAL_SITE_SPECIFIC_RESEARCH; GAMEPLAY_METRICS_REMAIN_SIMULATED; CANONICAL_ALIAS_NOT_EXECUTABLE",
       "generatedAt": "2026-10-13"
     }
   ],
