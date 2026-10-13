@@ -1,0 +1,3731 @@
+{
+  "schemaVersion": "1.0.0",
+  "datasetId": "OMEGA_RESOURCE_SITE_LEGACY_QUANTITATIVE_AUDIT_V1",
+  "generatedAt": "2026-10-13",
+  "purpose": "Per-site gap matrix for safely researching and migrating 65 legacy candidates. Audit only; not runtime input.",
+  "source": {
+    "path": "resource_site_legacy_structural_candidates_v1.json",
+    "blobSha": "53dd304b9adda6033c54ff948252d6f683857988",
+    "sourceAuthority": "LEGACY_REPOSITORY_DATA_ONLY"
+  },
+  "policy": {
+    "historicalRecordsPreserved": true,
+    "canonicalCatalogModified": false,
+    "reserveSimulationModified": false,
+    "profileSyntheticMarkersPromoted": 0,
+    "observedMetricsMustHaveSiteSpecificEvidence": true,
+    "simulationMetricsMustBeSeparateAndExplicitlySIMULATED": true,
+    "unknownValuesMustRemainNullWithUNOBSERVEDStatus": true,
+    "unverifiedCoordinatesBlockMapMarkerPromotion": true,
+    "runtimeIntegrationNotClaimed": true
+  },
+  "counts": {
+    "candidateCount": 65,
+    "canonicalPromotionsAllowed": 0,
+    "readyForRuntime": 0
+  },
+  "quantitativeCoverage": {
+    "reserve": {
+      "rowsWithNumericOrValue": 0,
+      "rowsUnobserved": 65,
+      "rowsMissingStatus": 0
+    },
+    "production": {
+      "rowsWithNumericOrValue": 0,
+      "rowsUnobserved": 65,
+      "rowsMissingStatus": 0
+    },
+    "grade": {
+      "rowsWithNumericOrValue": 0,
+      "rowsUnobserved": 65,
+      "rowsMissingStatus": 0
+    },
+    "recovery": {
+      "rowsWithNumericOrValue": 0,
+      "rowsUnobserved": 65,
+      "rowsMissingStatus": 0
+    },
+    "throughput": {
+      "rowsWithNumericOrValue": 0,
+      "rowsUnobserved": 65,
+      "rowsMissingStatus": 0
+    },
+    "purity": {
+      "rowsWithNumericOrValue": 0,
+      "rowsUnobserved": 65,
+      "rowsMissingStatus": 0
+    },
+    "capacity": {
+      "rowsWithNumericOrValue": 0,
+      "rowsUnobserved": 65,
+      "rowsMissingStatus": 0
+    }
+  },
+  "requiredPerSiteFields": [
+    "siteId",
+    "countryId",
+    "identity.resourceTypeId",
+    "location.coordinates",
+    "location.coordinateStatus",
+    "quantitative.reserve",
+    "quantitative.production",
+    "quantitative.grade",
+    "quantitative.recovery",
+    "quantitative.throughput",
+    "quantitative.purity",
+    "quantitative.capacity",
+    "ownership.owner",
+    "ownership.operator",
+    "operation.extractionMethod",
+    "operation.status",
+    "map.markerEligible",
+    "map.iconResourceKey",
+    "runtime.countryWarehouseId",
+    "logistics.transport",
+    "logistics.factoryRouteStatus",
+    "quantitative.quantitativeProvenance",
+    "verification.sourceAuthorities"
+  ],
+  "records": [
+    {
+      "siteId": "SITE_BGD_sylhet_chhatak_limestone_quarry",
+      "countryId": "BGD",
+      "siteName": "Sylhet Chhatak Limestone Quarry",
+      "resourceId": "limestone",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "BGD",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_BGD_bibiyana_gas_field",
+      "countryId": "BGD",
+      "siteName": "Bibiyana Gas Field",
+      "resourceId": "natural_gas",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "BGD",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_BGD_titas_gas_deposit",
+      "countryId": "BGD",
+      "siteName": "Titas Gas Deposit",
+      "resourceId": "natural_gas",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "BGD",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_IND_jharia_coal_field",
+      "countryId": "IND",
+      "siteName": "Jharia Coal Field",
+      "resourceId": "coal",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "IND",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_IND_singhbhum_iron_ore_belt",
+      "countryId": "IND",
+      "siteName": "Singhbhum Iron Ore Belt",
+      "resourceId": "iron_ore",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "IND",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_IND_kudremukh_iron_ore_complex",
+      "countryId": "IND",
+      "siteName": "Kudremukh Iron Ore Complex",
+      "resourceId": "iron_ore",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "IND",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_IND_mumbai_high_offshore_oil_rig",
+      "countryId": "IND",
+      "siteName": "Mumbai High Offshore Oil Rig",
+      "resourceId": "crude_oil",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "IND",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_PAK_saindak_copper_gold_deposit",
+      "countryId": "PAK",
+      "siteName": "Saindak Copper-Gold Deposit",
+      "resourceId": "copper",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "PAK",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_PAK_thar_coal_field",
+      "countryId": "PAK",
+      "siteName": "Thar Coal Field",
+      "resourceId": "coal",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "PAK",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_PAK_sui_gas_field",
+      "countryId": "PAK",
+      "siteName": "Sui Gas Field",
+      "resourceId": "natural_gas",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "PAK",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_USA_permian_basin_oil_fields",
+      "countryId": "USA",
+      "siteName": "Permian Basin Oil Fields",
+      "resourceId": "crude_oil",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "USA",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_USA_marcellus_shale_gas_basin",
+      "countryId": "USA",
+      "siteName": "Marcellus Shale Gas Basin",
+      "resourceId": "natural_gas",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "USA",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_USA_mesabi_iron_range",
+      "countryId": "USA",
+      "siteName": "Mesabi Iron Range",
+      "resourceId": "iron_ore",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "USA",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_USA_appalachian_coal_basin",
+      "countryId": "USA",
+      "siteName": "Appalachian Coal Basin",
+      "resourceId": "coal",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "USA",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_CHN_shanxi_coal_superbasin",
+      "countryId": "CHN",
+      "siteName": "Shanxi Coal Superbasin",
+      "resourceId": "coal",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "CHN",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_CHN_anshan_iron_ore_complex",
+      "countryId": "CHN",
+      "siteName": "Anshan Iron Ore Complex",
+      "resourceId": "iron_ore",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "CHN",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_CHN_daqing_oilfield",
+      "countryId": "CHN",
+      "siteName": "Daqing Oilfield",
+      "resourceId": "crude_oil",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "CHN",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_RUS_west_siberian_oil_basin",
+      "countryId": "RUS",
+      "siteName": "West Siberian Oil Basin",
+      "resourceId": "crude_oil",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "RUS",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_RUS_urengoy_gas_field",
+      "countryId": "RUS",
+      "siteName": "Urengoy Gas Field",
+      "resourceId": "natural_gas",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "RUS",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_RUS_kuzbass_coal_basin",
+      "countryId": "RUS",
+      "siteName": "Kuzbass Coal Basin",
+      "resourceId": "coal",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "RUS",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_RUS_norilsk_nickel_copper_mine",
+      "countryId": "RUS",
+      "siteName": "Norilsk Nickel & Copper Mine",
+      "resourceId": "copper",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "RUS",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_SAU_ghawar_oil_field",
+      "countryId": "SAU",
+      "siteName": "Ghawar Oil Field",
+      "resourceId": "crude_oil",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "SAU",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_SAU_safaniya_offshore_oil_field",
+      "countryId": "SAU",
+      "siteName": "Safaniya Offshore Oil Field",
+      "resourceId": "crude_oil",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "SAU",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_QAT_north_field_natural_gas",
+      "countryId": "QAT",
+      "siteName": "North Field Natural Gas",
+      "resourceId": "natural_gas",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "QAT",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_ARE_upper_zakum_oil_field",
+      "countryId": "ARE",
+      "siteName": "Upper Zakum Oil Field",
+      "resourceId": "crude_oil",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "ARE",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_BHR_bahrain_offshore_oil_gas_field",
+      "countryId": "BHR",
+      "siteName": "Bahrain Offshore Oil & Gas Field",
+      "resourceId": "crude_oil",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "BHR",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_IRN_south_pars_gas_field",
+      "countryId": "IRN",
+      "siteName": "South Pars Gas Field",
+      "resourceId": "natural_gas",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "IRN",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_PSE_gaza_marine_offshore_gas_field",
+      "countryId": "PSE",
+      "siteName": "Gaza Marine Offshore Gas Field",
+      "resourceId": "natural_gas",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "PSE",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_EGY_zohr_gas_field_mediterranean",
+      "countryId": "EGY",
+      "siteName": "Zohr Gas Field Mediterranean",
+      "resourceId": "natural_gas",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "EGY",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_DZA_hassi_r_mel_natural_gas_basin",
+      "countryId": "DZA",
+      "siteName": "Hassi R'Mel Natural Gas Basin",
+      "resourceId": "natural_gas",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "DZA",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_DZA_hassi_messaoud_crude_oil_field",
+      "countryId": "DZA",
+      "siteName": "Hassi Messaoud Crude Oil Field",
+      "resourceId": "crude_oil",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "DZA",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_DZA_gara_djebilet_iron_ore_mine",
+      "countryId": "DZA",
+      "siteName": "Gara Djebilet Iron Ore Mine",
+      "resourceId": "iron_ore",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "DZA",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_DZA_hoggar_shield_gold_uranium_belt",
+      "countryId": "DZA",
+      "siteName": "Hoggar Shield Gold & Uranium Belt",
+      "resourceId": "gold",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "DZA",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_EGY_western_desert_oil_fields",
+      "countryId": "EGY",
+      "siteName": "Western Desert Oil Fields",
+      "resourceId": "crude_oil",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "EGY",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_EGY_sukari_orogenic_gold_mine",
+      "countryId": "EGY",
+      "siteName": "Sukari Orogenic Gold Mine",
+      "resourceId": "gold",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "EGY",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_LBY_sirte_crude_oil_superbasin",
+      "countryId": "LBY",
+      "siteName": "Sirte Crude Oil Superbasin",
+      "resourceId": "crude_oil",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "LBY",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_LBY_murzuq_oil_field_zone",
+      "countryId": "LBY",
+      "siteName": "Murzuq Oil Field Zone",
+      "resourceId": "crude_oil",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "LBY",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_LBY_wadi_shati_iron_ore_basin",
+      "countryId": "LBY",
+      "siteName": "Wadi Shati Iron Ore Basin",
+      "resourceId": "iron_ore",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "LBY",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_TUN_pelagian_sfax_offshore_gas_oil_field",
+      "countryId": "TUN",
+      "siteName": "Pelagian Sfax Offshore Gas & Oil Field",
+      "resourceId": "natural_gas",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "TUN",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_SDN_hassai_red_sea_gold_belt",
+      "countryId": "SDN",
+      "siteName": "Hassai Red Sea Gold Belt",
+      "resourceId": "gold",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "SDN",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_SDN_muglad_petroleum_rift_basin",
+      "countryId": "SDN",
+      "siteName": "Muglad Petroleum Rift Basin",
+      "resourceId": "crude_oil",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "SDN",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_AUS_pilbara_iron_ore_range",
+      "countryId": "AUS",
+      "siteName": "Pilbara Iron Ore Range",
+      "resourceId": "iron_ore",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "AUS",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_AUS_weipa_bauxite_mine",
+      "countryId": "AUS",
+      "siteName": "Weipa Bauxite Mine",
+      "resourceId": "bauxite",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "AUS",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_AUS_olympic_dam_uranium_copper",
+      "countryId": "AUS",
+      "siteName": "Olympic Dam Uranium & Copper",
+      "resourceId": "uranium",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "AUS",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_GBR_north_sea_forties_oil_field",
+      "countryId": "GBR",
+      "siteName": "North Sea Forties Oil Field",
+      "resourceId": "crude_oil",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "GBR",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_CAN_athabasca_oil_sands",
+      "countryId": "CAN",
+      "siteName": "Athabasca Oil Sands",
+      "resourceId": "crude_oil",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "CAN",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_BRA_carajas_iron_ore_mine_legacy2",
+      "countryId": "BRA",
+      "siteName": "Carajás Iron Ore Mine",
+      "resourceId": "iron_ore",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "BRA",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_CHL_escondida_copper_mine_legacy2",
+      "countryId": "CHL",
+      "siteName": "Escondida Copper Mine",
+      "resourceId": "copper",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "CHL",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_KAZ_inkai_uranium_operation",
+      "countryId": "KAZ",
+      "siteName": "Inkai Uranium Operation",
+      "resourceId": "uranium",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "KAZ",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_NGA_niger_delta_offshore_oil_basin",
+      "countryId": "NGA",
+      "siteName": "Niger Delta Offshore Oil Basin",
+      "resourceId": "crude_oil",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "NGA",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_IDN_grasberg_copper_gold_mine",
+      "countryId": "IDN",
+      "siteName": "Grasberg Copper & Gold Mine",
+      "resourceId": "copper",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "IDN",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_COD_tenke_fungurume_copper_cobalt_complex",
+      "countryId": "COD",
+      "siteName": "Tenke Fungurume Copper-Cobalt Complex",
+      "resourceId": "copper",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "COD",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_COD_kibali_gold_mine_complex",
+      "countryId": "COD",
+      "siteName": "Kibali Gold Mine Complex",
+      "resourceId": "gold",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "COD",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_GAB_port_gentil_offshore_petroleum_basin",
+      "countryId": "GAB",
+      "siteName": "Port-Gentil Offshore Petroleum Basin",
+      "resourceId": "crude_oil",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "GAB",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_GNQ_zafiro_deepwater_oil_field",
+      "countryId": "GNQ",
+      "siteName": "Zafiro Deepwater Oil Field",
+      "resourceId": "crude_oil",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "GNQ",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_STP_joint_development_zone_oil_block_1",
+      "countryId": "STP",
+      "siteName": "Joint Development Zone Oil Block 1",
+      "resourceId": "crude_oil",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "STP",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_ETH_lega_dembi_orogenic_gold_mine",
+      "countryId": "ETH",
+      "siteName": "Lega Dembi Orogenic Gold Mine",
+      "resourceId": "gold",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "ETH",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_KEN_south_lokichar_crude_oil_basin",
+      "countryId": "KEN",
+      "siteName": "South Lokichar Crude Oil Basin",
+      "resourceId": "crude_oil",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "KEN",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_TZA_geita_gold_mine_super_pit",
+      "countryId": "TZA",
+      "siteName": "Geita Gold Mine Super-Pit",
+      "resourceId": "gold",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "TZA",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_UGA_tilenga_albertine_oil_rift_basin",
+      "countryId": "UGA",
+      "siteName": "Tilenga Albertine Oil Rift Basin",
+      "resourceId": "crude_oil",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "UGA",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_RUS_urengoy_natural_gas_superfield",
+      "countryId": "RUS",
+      "siteName": "Urengoy Natural Gas Superfield",
+      "resourceId": "natural_gas",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "RUS",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_RUS_krasnoyarsk_siberian_gold_field",
+      "countryId": "RUS",
+      "siteName": "Krasnoyarsk Siberian Gold Field",
+      "resourceId": "gold",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "RUS",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_SAU_ghawar_oil_superfield",
+      "countryId": "SAU",
+      "siteName": "Ghawar Oil Superfield",
+      "resourceId": "crude_oil",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "SAU",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_ARE_upper_zakum_offshore_oil_rig",
+      "countryId": "ARE",
+      "siteName": "Upper Zakum Offshore Oil Rig",
+      "resourceId": "crude_oil",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "ARE",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    },
+    {
+      "siteId": "SITE_EGY_zohr_deepwater_mediterranean_gas_field",
+      "countryId": "EGY",
+      "siteName": "Zohr Deepwater Mediterranean Gas Field",
+      "resourceId": "natural_gas",
+      "coordinateStatus": "LEGACY_UNVERIFIED_POINT",
+      "identityStatus": "LEGACY_RECOVERED_UNVERIFIED",
+      "runtimeIntegrationStatus": "NOT_BOUND_TO_RUNTIME_PIPELINE",
+      "canonicalPromotionAllowed": false,
+      "metrics": {
+        "reserve": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "production": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "grade": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "recovery": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "throughput": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "purity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        },
+        "capacity": {
+          "status": "UNOBSERVED",
+          "hasNumericOrValue": false,
+          "valueKeys": []
+        }
+      },
+      "mapMarker": {
+        "eligible": false,
+        "status": "QUARANTINED_UNVERIFIED_COORDINATES"
+      },
+      "logistics": {
+        "warehouseCountryId": "EGY",
+        "routeStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "readiness": "BLOCKED_IDENTITY_COORDINATE_AND_QUANTITATIVE_REVIEW"
+    }
+  ]
+}
