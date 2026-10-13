@@ -265,3 +265,51 @@ assert.ok(structuredLegacy.excludedCandidates.some(site => site.candidateName ==
 console.log('OMEGA legacy structural candidate normalization: PASS');
 console.log('Structurally mapped non-executable candidates:', structuredLegacy.records.length);
 console.log('Excluded/duplicate/conflicting legacy groups:', structuredLegacy.excludedCandidates.length);
+
+
+// Gameplay-profile completeness is separate from real-world evidence completeness.
+const simulationResourceFields = ['reserve', 'production', 'grade', 'purity', 'recovery', 'throughput', 'capacity'];
+assert.equal(structuredLegacy.schemaVersion, '1.1.0');
+assert.equal(structuredLegacy.auditCounts.simulationProfilesAdded, structuredLegacy.records.length);
+assert.equal(structuredLegacy.rules.simulationMetricsAreNotObservedFacts, true);
+assert.equal(structuredLegacy.rules.externalResearchUsedForLegacySimulationProfiles, false);
+for (const site of structuredLegacy.records) {
+  const sim = site.simulationProfile;
+  assert.ok(sim && sim.simulationOnly === true);
+  assert.equal(sim.authority, 'SCENARIO_SIMULATION_DATA');
+  assert.equal(sim.realWorldDataRequired, false);
+  assert.equal(sim.mapMarker.markerId, 'MARKER_' + site.siteId);
+  assert.equal(sim.mapMarker.latitude, site.location.coordinates.lat);
+  assert.equal(sim.mapMarker.longitude, site.location.coordinates.lng);
+  assert.equal(sim.mapMarker.visibleInLegacyReviewLayer, true);
+  assert.equal(sim.mapMarker.visibleInAuthoritativeGameplayLayer, false);
+  assert.equal(sim.provenance.measuredValuesPromoted, 0);
+  assert.equal(sim.provenance.externalSiteResearchUsed, false);
+  for (const field of simulationResourceFields) {
+    assert.equal(sim.quantitative[field].status, 'SIMULATED_FOR_GAMEPLAY_ONLY', site.siteId + ' ' + field);
+  }
+  assert.ok(sim.quantitative.reserve.quantity > 0);
+  assert.ok(sim.quantitative.production.dailyRate > 0);
+  assert.ok(sim.quantitative.grade.value > 0);
+  assert.ok(sim.quantitative.purity.value > 0);
+  assert.ok(sim.quantitative.recovery.value > 0 && sim.quantitative.recovery.value <= 100);
+  assert.ok(sim.quantitative.throughput.value > 0);
+  assert.ok(sim.quantitative.capacity.nominalDaily > 0);
+  assert.ok(sim.quantitative.capacity.minimumDaily < sim.quantitative.capacity.nominalDaily);
+  assert.ok(sim.quantitative.capacity.maximumDaily > sim.quantitative.capacity.nominalDaily);
+  assert.ok(sim.quantitative.production.annualOutput > 0);
+  assert.ok(sim.gameplayHorizonYears >= 320 && sim.gameplayHorizonYears <= 480);
+  assert.ok(sim.logistics.route.distanceKm > 0);
+  assert.ok(sim.logistics.route.transitDays > 0);
+  assert.equal(sim.logistics.route.routeAuthority, 'SIMULATED_STRATEGIC_ROUTE_NOT_GEOGRAPHICALLY_VERIFIED');
+  assert.equal(sim.logistics.inventoryRouteStatus, 'SIMULATED_ROUTE_TEMPLATE_NOT_RUNTIME_BOUND');
+  assert.equal(sim.logistics.factoryRouteStatus, 'SIMULATED_ROUTE_TEMPLATE_NOT_RUNTIME_BOUND');
+  assert.equal(site.operation.extractionEligibility, 'NOT_EXECUTABLE_LEGACY_UNVERIFIED');
+  assert.equal(site.quantitative.production.status, 'UNOBSERVED');
+  assert.equal(site.quantitative.grade.status, 'UNOBSERVED');
+  assert.equal(site.quantitative.purity.status, 'UNOBSERVED');
+  assert.equal(site.quantitative.reserve.status, 'UNOBSERVED');
+  assert.equal(site.legacyRecovery.canonicalPromotionAllowed, false);
+}
+console.log('OMEGA legacy simulation profiles: PASS');
+console.log('Complete simulation-only profiles:', structuredLegacy.auditCounts.simulationProfilesAdded);
