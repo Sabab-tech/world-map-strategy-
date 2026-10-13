@@ -285,7 +285,7 @@
         "collisionGroup": "SITE_BWA_karowe_diamond_mine"
       },
       "runtime": {
-        "identityAuthority": "CURATED_SITE_IDENTITY_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
@@ -592,7 +592,7 @@
         "collisionGroup": "SITE_LSO_liqhobong_diamond_mine"
       },
       "runtime": {
-        "identityAuthority": "CURATED_SITE_IDENTITY_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
@@ -900,7 +900,7 @@
         "collisionGroup": "SITE_PNG_porgera_gold_mine"
       },
       "runtime": {
-        "identityAuthority": "CURATED_SITE_IDENTITY_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
@@ -1208,7 +1208,7 @@
         "collisionGroup": "SITE_PNG_ok_tedi_copper_mine"
       },
       "runtime": {
-        "identityAuthority": "CURATED_SITE_IDENTITY_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
@@ -1515,7 +1515,7 @@
         "collisionGroup": "SITE_PNG_ramu_nickel_mine"
       },
       "runtime": {
-        "identityAuthority": "CURATED_SITE_IDENTITY_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
@@ -1823,7 +1823,7 @@
         "collisionGroup": "SITE_ZMB_lumwana_copper_mine"
       },
       "runtime": {
-        "identityAuthority": "CURATED_SITE_IDENTITY_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
@@ -2131,7 +2131,7 @@
         "collisionGroup": "SITE_ZMB_mopani_mufulira_copper_mine"
       },
       "runtime": {
-        "identityAuthority": "CURATED_SITE_IDENTITY_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
@@ -2438,7 +2438,7 @@
         "collisionGroup": "SITE_COD_mutanda_copper_cobalt_mine"
       },
       "runtime": {
-        "identityAuthority": "CURATED_SITE_IDENTITY_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
@@ -2746,7 +2746,7 @@
         "collisionGroup": "SITE_MLI_syama_gold_mine"
       },
       "runtime": {
-        "identityAuthority": "CURATED_SITE_IDENTITY_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
@@ -3054,7 +3054,7 @@
         "collisionGroup": "SITE_MLI_loulo_gounkoto_gold_complex"
       },
       "runtime": {
-        "identityAuthority": "CURATED_SITE_IDENTITY_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
@@ -3362,7 +3362,7 @@
         "collisionGroup": "SITE_GHA_akyem_gold_mine"
       },
       "runtime": {
-        "identityAuthority": "CURATED_SITE_IDENTITY_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
@@ -3670,7 +3670,7 @@
         "collisionGroup": "SITE_GIN_boke_bauxite_mine_cluster"
       },
       "runtime": {
-        "identityAuthority": "CURATED_SITE_IDENTITY_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
@@ -3978,7 +3978,7 @@
         "collisionGroup": "SITE_GIN_siguiri_gold_mine"
       },
       "runtime": {
-        "identityAuthority": "CURATED_SITE_IDENTITY_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
@@ -4286,7 +4286,7 @@
         "collisionGroup": "SITE_MNG_tavan_tolgoi_coal_mine"
       },
       "runtime": {
-        "identityAuthority": "CURATED_SITE_IDENTITY_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
@@ -4593,7 +4593,7 @@
         "collisionGroup": "SITE_IND_jaduguda_uranium_mine"
       },
       "runtime": {
-        "identityAuthority": "CURATED_SITE_IDENTITY_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
@@ -4901,7 +4901,7 @@
         "collisionGroup": "SITE_IND_neyveli_lignite_mine"
       },
       "runtime": {
-        "identityAuthority": "CURATED_SITE_IDENTITY_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
@@ -5209,7 +5209,7 @@
         "collisionGroup": "SITE_USA_red_dog_zinc_mine"
       },
       "runtime": {
-        "identityAuthority": "CURATED_SITE_IDENTITY_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
@@ -5516,7 +5516,7 @@
         "collisionGroup": "SITE_USA_thacker_pass_lithium_project"
       },
       "runtime": {
-        "identityAuthority": "CURATED_SITE_IDENTITY_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
@@ -5824,7 +5824,7 @@
         "collisionGroup": "SITE_BOL_san_cristobal_mine"
       },
       "runtime": {
-        "identityAuthority": "CURATED_SITE_IDENTITY_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
@@ -6132,7 +6132,7 @@
         "collisionGroup": "SITE_BOL_cerro_rico_potosi_silver_mine"
       },
       "runtime": {
-        "identityAuthority": "CURATED_SITE_IDENTITY_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
@@ -6439,7 +6439,7 @@
         "collisionGroup": "SITE_ARG_cauchari_olaroz_lithium_project"
       },
       "runtime": {
-        "identityAuthority": "CURATED_SITE_IDENTITY_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
@@ -6747,7 +6747,7 @@
         "collisionGroup": "SITE_ARG_veladero_gold_mine"
       },
       "runtime": {
-        "identityAuthority": "CURATED_SITE_IDENTITY_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
@@ -7055,7 +7055,7 @@
         "collisionGroup": "SITE_CHL_collahuasi_copper_mine"
       },
       "runtime": {
-        "identityAuthority": "CURATED_SITE_IDENTITY_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
@@ -7363,7 +7363,7 @@
         "collisionGroup": "SITE_CHL_los_bronces_copper_mine"
       },
       "runtime": {
-        "identityAuthority": "CURATED_SITE_IDENTITY_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
@@ -7670,7 +7670,7 @@
         "collisionGroup": "SITE_AUS_greenbushes_lithium_mine"
       },
       "runtime": {
-        "identityAuthority": "CURATED_SITE_IDENTITY_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
@@ -7977,7 +7977,7 @@
         "collisionGroup": "SITE_AUS_pilgangoora_lithium_operation"
       },
       "runtime": {
-        "identityAuthority": "CURATED_SITE_IDENTITY_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
@@ -8285,7 +8285,7 @@
         "collisionGroup": "SITE_AUS_mount_whaleback_iron_ore_mine"
       },
       "runtime": {
-        "identityAuthority": "CURATED_SITE_IDENTITY_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
@@ -8593,7 +8593,7 @@
         "collisionGroup": "SITE_AUS_tanami_gold_mine"
       },
       "runtime": {
-        "identityAuthority": "CURATED_SITE_IDENTITY_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
@@ -8900,7 +8900,7 @@
         "collisionGroup": "SITE_CAN_voiseys_bay_nickel_mine"
       },
       "runtime": {
-        "identityAuthority": "CURATED_SITE_IDENTITY_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
@@ -9207,7 +9207,7 @@
         "collisionGroup": "SITE_CAN_ekati_diamond_mine"
       },
       "runtime": {
-        "identityAuthority": "CURATED_SITE_IDENTITY_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
@@ -9515,7 +9515,7 @@
         "collisionGroup": "SITE_CAN_brucejack_gold_mine"
       },
       "runtime": {
-        "identityAuthority": "CURATED_SITE_IDENTITY_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
@@ -9823,7 +9823,7 @@
         "collisionGroup": "SITE_PRT_neves_corvo_mine"
       },
       "runtime": {
-        "identityAuthority": "CURATED_SITE_IDENTITY_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
@@ -10131,7 +10131,7 @@
         "collisionGroup": "SITE_GBR_boulby_mine"
       },
       "runtime": {
-        "identityAuthority": "CURATED_SITE_IDENTITY_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
@@ -10439,7 +10439,7 @@
         "collisionGroup": "SITE_POL_rudna_copper_mine"
       },
       "runtime": {
-        "identityAuthority": "CURATED_SITE_IDENTITY_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
@@ -10747,7 +10747,7 @@
         "collisionGroup": "SITE_SWE_kiruna_iron_ore_mine"
       },
       "runtime": {
-        "identityAuthority": "CURATED_SITE_IDENTITY_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
@@ -11054,7 +11054,7 @@
         "collisionGroup": "SITE_FIN_kevitsa_nickel_copper_mine"
       },
       "runtime": {
-        "identityAuthority": "CURATED_SITE_IDENTITY_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
@@ -11361,7 +11361,7 @@
         "collisionGroup": "SITE_FIN_kemi_chromite_mine"
       },
       "runtime": {
-        "identityAuthority": "CURATED_SITE_IDENTITY_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
@@ -11669,7 +11669,7 @@
         "collisionGroup": "SITE_MEX_penasquito_silver_gold_mine"
       },
       "runtime": {
-        "identityAuthority": "CURATED_SITE_IDENTITY_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
@@ -11977,7 +11977,7 @@
         "collisionGroup": "SITE_MEX_san_dimas_gold_silver_mine"
       },
       "runtime": {
-        "identityAuthority": "CURATED_SITE_IDENTITY_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
@@ -12285,7 +12285,7 @@
         "collisionGroup": "SITE_CHL_candelaria_copper_mine"
       },
       "runtime": {
-        "identityAuthority": "CURATED_SITE_IDENTITY_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
@@ -12593,7 +12593,7 @@
         "collisionGroup": "SITE_CHL_el_soldado_copper_mine"
       },
       "runtime": {
-        "identityAuthority": "CURATED_SITE_IDENTITY_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
@@ -12901,7 +12901,7 @@
         "collisionGroup": "SITE_PHL_tampakan_copper_gold_project"
       },
       "runtime": {
-        "identityAuthority": "CURATED_SITE_IDENTITY_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
@@ -13209,7 +13209,7 @@
         "collisionGroup": "SITE_IDN_martabe_gold_mine"
       },
       "runtime": {
-        "identityAuthority": "CURATED_SITE_IDENTITY_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
@@ -13516,7 +13516,7 @@
         "collisionGroup": "SITE_IDN_weda_bay_nickel_mine"
       },
       "runtime": {
-        "identityAuthority": "CURATED_SITE_IDENTITY_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
@@ -13824,7 +13824,7 @@
         "collisionGroup": "SITE_SEN_mako_gold_mine"
       },
       "runtime": {
-        "identityAuthority": "CURATED_SITE_IDENTITY_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
@@ -14132,7 +14132,7 @@
         "collisionGroup": "SITE_TZA_bulyanhulu_gold_mine"
       },
       "runtime": {
-        "identityAuthority": "CURATED_SITE_IDENTITY_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
@@ -14439,7 +14439,7 @@
         "collisionGroup": "SITE_ZWE_bikita_lithium_mine"
       },
       "runtime": {
-        "identityAuthority": "CURATED_SITE_IDENTITY_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
@@ -14747,7 +14747,7 @@
         "collisionGroup": "SITE_ZWE_unki_platinum_mine"
       },
       "runtime": {
-        "identityAuthority": "CURATED_SITE_IDENTITY_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
@@ -15055,7 +15055,7 @@
         "collisionGroup": "SITE_MOZ_moma_heavy_mineral_sands_mine"
       },
       "runtime": {
-        "identityAuthority": "CURATED_SITE_IDENTITY_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
@@ -15363,7 +15363,7 @@
         "collisionGroup": "SITE_AUS_telfer_gold_copper_mine"
       },
       "runtime": {
-        "identityAuthority": "CURATED_SITE_IDENTITY_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
