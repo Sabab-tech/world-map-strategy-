@@ -1372,7 +1372,8 @@
         "resourceTypeId": "uranium",
         "resourceName": "Natural Uranium (U3O8 Yellowcake)",
         "ontologyKey": "URANIUM",
-        "aliases": []
+        "aliases": [],
+        "aliasOfSiteId": "SITE_AUS_olympic_dam_mine"
       },
       "location": {
         "countryName": "Australia",
@@ -1400,8 +1401,8 @@
         "status": "SIMULATED_OPERATIONAL_SCENARIO",
         "operationalStatus": "SIMULATED_ACTIVE",
         "extractionMethod": "URANIUM_MINE_AND_MILL",
-        "extractionEligibility": "SIMULATED_SITE_ELIGIBLE_SUBJECT_TO_GAMEPLAY_GATES",
-        "commercialExtraction": true,
+        "extractionEligibility": "ALIAS_ONLY_NOT_EXECUTABLE",
+        "commercialExtraction": false,
         "siteCommissioningLevel": 2,
         "mineLevel": 4,
         "legacyReportedStatusTexts": [
@@ -1518,7 +1519,7 @@
           "allOperationalMetricsAboveAreSimulated": true
         },
         "quantitativeProvenance": {
-          "authority": "SCENARIO_SIMULATION_DATA",
+          "authority": "SIMULATION_ALIAS_REFERENCE_NOT_INDEPENDENT_ASSET",
           "method": "OMEGA_PER_SITE_IDENTITY_METRIC_ALLOCATION_V1",
           "seedKey": "SITE_AUS_olympic_dam_uranium_copper|AUS|uranium",
           "generatedAt": "2026-10-13",
@@ -1534,7 +1535,7 @@
           "throughput": "SIMULATED",
           "purity": "SIMULATED",
           "capacity": "SIMULATED",
-          "overall": "GAMEPLAY_SIMULATION_COMPLETE"
+          "overall": "GAMEPLAY_SIMULATION_COMPLETE_ALIAS_NOT_EXECUTABLE"
         }
       },
       "reserve": {
@@ -1620,26 +1621,26 @@
       },
       "mineLevel": 4,
       "map": {
-        "markerEligible": true,
+        "markerEligible": false,
         "countryIsolationKey": "AUS",
         "iconResourceKey": "uranium",
         "markerType": "RESOURCE_SITE",
         "coordinatePrecision": "REGIONAL_APPROXIMATION",
-        "aliasOfSiteId": null,
-        "collisionGroup": "SITE_AUS_olympic_dam_uranium_copper"
+        "aliasOfSiteId": "SITE_AUS_olympic_dam_mine",
+        "collisionGroup": "SITE_AUS_olympic_dam_mine"
       },
       "runtime": {
-        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "CANONICAL_SITE_ALIAS_WITH_LEGACY_QUANTITATIVE_RECORD",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
         "countryWarehouseId": "WH-AUS-RAW",
         "requiresSiteSpecificRoute": true,
         "requiresFactoryBinding": true,
-        "aliasOfSiteId": null,
+        "aliasOfSiteId": "SITE_AUS_olympic_dam_mine",
         "pipeline": {
           "site": "BOUND",
-          "extraction": "SIMULATED_ENGINEERING_READY",
+          "extraction": "ALIAS_ONLY_NOT_EXECUTABLE",
           "batch": "SITE_ID_KEYED",
           "rawWarehouse": "BOUND_TO_OWNER_COUNTRY",
           "transport": "SIMULATED_ROUTE_READY",
@@ -2370,7 +2371,8 @@
         "resourceTypeId": "iron_ore",
         "resourceName": "Iron Ore & Concentrates",
         "ontologyKey": "IRON_ORE",
-        "aliases": []
+        "aliases": [],
+        "aliasOfSiteId": "SITE_BRA_carajas_iron_ore_mine"
       },
       "location": {
         "countryName": "Brazil",
@@ -2398,8 +2400,8 @@
         "status": "SIMULATED_OPERATIONAL_SCENARIO",
         "operationalStatus": "SIMULATED_ACTIVE",
         "extractionMethod": "OPEN_PIT_DRILL_BLAST_LOAD_HAUL",
-        "extractionEligibility": "SIMULATED_SITE_ELIGIBLE_SUBJECT_TO_GAMEPLAY_GATES",
-        "commercialExtraction": true,
+        "extractionEligibility": "ALIAS_ONLY_NOT_EXECUTABLE",
+        "commercialExtraction": false,
         "siteCommissioningLevel": 2,
         "mineLevel": 3,
         "legacyReportedStatusTexts": [
@@ -2517,7 +2519,7 @@
           "allOperationalMetricsAboveAreSimulated": true
         },
         "quantitativeProvenance": {
-          "authority": "SCENARIO_SIMULATION_DATA",
+          "authority": "SIMULATION_ALIAS_REFERENCE_NOT_INDEPENDENT_ASSET",
           "method": "OMEGA_PER_SITE_IDENTITY_METRIC_ALLOCATION_V1",
           "seedKey": "SITE_BRA_carajas_iron_ore_mine_legacy2|BRA|iron_ore",
           "generatedAt": "2026-10-13",
@@ -2533,7 +2535,7 @@
           "throughput": "SIMULATED",
           "purity": "SIMULATED",
           "capacity": "SIMULATED",
-          "overall": "GAMEPLAY_SIMULATION_COMPLETE"
+          "overall": "GAMEPLAY_SIMULATION_COMPLETE_ALIAS_NOT_EXECUTABLE"
         }
       },
       "reserve": {
@@ -2620,26 +2622,26 @@
       },
       "mineLevel": 3,
       "map": {
-        "markerEligible": true,
+        "markerEligible": false,
         "countryIsolationKey": "BRA",
         "iconResourceKey": "iron_ore",
         "markerType": "RESOURCE_SITE",
         "coordinatePrecision": "REGIONAL_APPROXIMATION",
-        "aliasOfSiteId": null,
-        "collisionGroup": "SITE_BRA_carajas_iron_ore_mine_legacy2"
+        "aliasOfSiteId": "SITE_BRA_carajas_iron_ore_mine",
+        "collisionGroup": "SITE_BRA_carajas_iron_ore_mine"
       },
       "runtime": {
-        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "CANONICAL_SITE_ALIAS_WITH_LEGACY_QUANTITATIVE_RECORD",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
         "countryWarehouseId": "WH-BRA-RAW",
         "requiresSiteSpecificRoute": true,
         "requiresFactoryBinding": true,
-        "aliasOfSiteId": null,
+        "aliasOfSiteId": "SITE_BRA_carajas_iron_ore_mine",
         "pipeline": {
           "site": "BOUND",
-          "extraction": "SIMULATED_ENGINEERING_READY",
+          "extraction": "ALIAS_ONLY_NOT_EXECUTABLE",
           "batch": "SITE_ID_KEYED",
           "rawWarehouse": "BOUND_TO_OWNER_COUNTRY",
           "transport": "SIMULATED_ROUTE_READY",
@@ -2708,7 +2710,8 @@
         "resourceTypeId": "copper",
         "resourceName": "Refined Copper & Concentrates",
         "ontologyKey": "COPPER",
-        "aliases": []
+        "aliases": [],
+        "aliasOfSiteId": "SITE_CHL_escondida_copper_mine"
       },
       "location": {
         "countryName": "Chile",
@@ -2736,8 +2739,8 @@
         "status": "SIMULATED_OPERATIONAL_SCENARIO",
         "operationalStatus": "SIMULATED_ACTIVE",
         "extractionMethod": "ORE_EXTRACTION_AND_BENEFICIATION",
-        "extractionEligibility": "SIMULATED_SITE_ELIGIBLE_SUBJECT_TO_GAMEPLAY_GATES",
-        "commercialExtraction": true,
+        "extractionEligibility": "ALIAS_ONLY_NOT_EXECUTABLE",
+        "commercialExtraction": false,
         "siteCommissioningLevel": 2,
         "mineLevel": 3,
         "legacyReportedStatusTexts": [
@@ -2854,7 +2857,7 @@
           "allOperationalMetricsAboveAreSimulated": true
         },
         "quantitativeProvenance": {
-          "authority": "SCENARIO_SIMULATION_DATA",
+          "authority": "SIMULATION_ALIAS_REFERENCE_NOT_INDEPENDENT_ASSET",
           "method": "OMEGA_PER_SITE_IDENTITY_METRIC_ALLOCATION_V1",
           "seedKey": "SITE_CHL_escondida_copper_mine_legacy2|CHL|copper",
           "generatedAt": "2026-10-13",
@@ -2870,7 +2873,7 @@
           "throughput": "SIMULATED",
           "purity": "SIMULATED",
           "capacity": "SIMULATED",
-          "overall": "GAMEPLAY_SIMULATION_COMPLETE"
+          "overall": "GAMEPLAY_SIMULATION_COMPLETE_ALIAS_NOT_EXECUTABLE"
         }
       },
       "reserve": {
@@ -2956,26 +2959,26 @@
       },
       "mineLevel": 3,
       "map": {
-        "markerEligible": true,
+        "markerEligible": false,
         "countryIsolationKey": "CHL",
         "iconResourceKey": "copper",
         "markerType": "RESOURCE_SITE",
         "coordinatePrecision": "REGIONAL_APPROXIMATION",
-        "aliasOfSiteId": null,
-        "collisionGroup": "SITE_CHL_escondida_copper_mine_legacy2"
+        "aliasOfSiteId": "SITE_CHL_escondida_copper_mine",
+        "collisionGroup": "SITE_CHL_escondida_copper_mine"
       },
       "runtime": {
-        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "CANONICAL_SITE_ALIAS_WITH_LEGACY_QUANTITATIVE_RECORD",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
         "countryWarehouseId": "WH-CHL-RAW",
         "requiresSiteSpecificRoute": true,
         "requiresFactoryBinding": true,
-        "aliasOfSiteId": null,
+        "aliasOfSiteId": "SITE_CHL_escondida_copper_mine",
         "pipeline": {
           "site": "BOUND",
-          "extraction": "SIMULATED_ENGINEERING_READY",
+          "extraction": "ALIAS_ONLY_NOT_EXECUTABLE",
           "batch": "SITE_ID_KEYED",
           "rawWarehouse": "BOUND_TO_OWNER_COUNTRY",
           "transport": "SIMULATED_ROUTE_READY",
@@ -3695,7 +3698,8 @@
         "resourceTypeId": "copper",
         "resourceName": "Refined Copper & Concentrates",
         "ontologyKey": "COPPER",
-        "aliases": []
+        "aliases": [],
+        "aliasOfSiteId": "SITE_IDN_grasberg_mine"
       },
       "location": {
         "countryName": "Indonesia",
@@ -3723,8 +3727,8 @@
         "status": "SIMULATED_OPERATIONAL_SCENARIO",
         "operationalStatus": "SIMULATED_ACTIVE",
         "extractionMethod": "ORE_EXTRACTION_AND_BENEFICIATION",
-        "extractionEligibility": "SIMULATED_SITE_ELIGIBLE_SUBJECT_TO_GAMEPLAY_GATES",
-        "commercialExtraction": true,
+        "extractionEligibility": "ALIAS_ONLY_NOT_EXECUTABLE",
+        "commercialExtraction": false,
         "siteCommissioningLevel": 2,
         "mineLevel": 4,
         "legacyReportedStatusTexts": [
@@ -3841,7 +3845,7 @@
           "allOperationalMetricsAboveAreSimulated": true
         },
         "quantitativeProvenance": {
-          "authority": "SCENARIO_SIMULATION_DATA",
+          "authority": "SIMULATION_ALIAS_REFERENCE_NOT_INDEPENDENT_ASSET",
           "method": "OMEGA_PER_SITE_IDENTITY_METRIC_ALLOCATION_V1",
           "seedKey": "SITE_IDN_grasberg_copper_gold_mine|IDN|copper",
           "generatedAt": "2026-10-13",
@@ -3857,7 +3861,7 @@
           "throughput": "SIMULATED",
           "purity": "SIMULATED",
           "capacity": "SIMULATED",
-          "overall": "GAMEPLAY_SIMULATION_COMPLETE"
+          "overall": "GAMEPLAY_SIMULATION_COMPLETE_ALIAS_NOT_EXECUTABLE"
         }
       },
       "reserve": {
@@ -3943,26 +3947,26 @@
       },
       "mineLevel": 4,
       "map": {
-        "markerEligible": true,
+        "markerEligible": false,
         "countryIsolationKey": "IDN",
         "iconResourceKey": "copper",
         "markerType": "RESOURCE_SITE",
         "coordinatePrecision": "REGIONAL_APPROXIMATION",
-        "aliasOfSiteId": null,
-        "collisionGroup": "SITE_IDN_grasberg_copper_gold_mine"
+        "aliasOfSiteId": "SITE_IDN_grasberg_mine",
+        "collisionGroup": "SITE_IDN_grasberg_mine"
       },
       "runtime": {
-        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "CANONICAL_SITE_ALIAS_WITH_LEGACY_QUANTITATIVE_RECORD",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
         "countryWarehouseId": "WH-IDN-RAW",
         "requiresSiteSpecificRoute": true,
         "requiresFactoryBinding": true,
-        "aliasOfSiteId": null,
+        "aliasOfSiteId": "SITE_IDN_grasberg_mine",
         "pipeline": {
           "site": "BOUND",
-          "extraction": "SIMULATED_ENGINEERING_READY",
+          "extraction": "ALIAS_ONLY_NOT_EXECUTABLE",
           "batch": "SITE_ID_KEYED",
           "rawWarehouse": "BOUND_TO_OWNER_COUNTRY",
           "transport": "SIMULATED_ROUTE_READY",
@@ -4024,7 +4028,8 @@
         "resourceTypeId": "copper",
         "resourceName": "Refined Copper & Concentrates",
         "ontologyKey": "COPPER",
-        "aliases": []
+        "aliases": [],
+        "aliasOfSiteId": "SITE_COD_tenke_fungurume_mine"
       },
       "location": {
         "countryName": "DR Congo",
@@ -4052,8 +4057,8 @@
         "status": "SIMULATED_OPERATIONAL_SCENARIO",
         "operationalStatus": "SIMULATED_ACTIVE",
         "extractionMethod": "ORE_EXTRACTION_AND_BENEFICIATION",
-        "extractionEligibility": "SIMULATED_SITE_ELIGIBLE_SUBJECT_TO_GAMEPLAY_GATES",
-        "commercialExtraction": true,
+        "extractionEligibility": "ALIAS_ONLY_NOT_EXECUTABLE",
+        "commercialExtraction": false,
         "siteCommissioningLevel": 2,
         "mineLevel": 4,
         "legacyReportedStatusTexts": [
@@ -4170,7 +4175,7 @@
           "allOperationalMetricsAboveAreSimulated": true
         },
         "quantitativeProvenance": {
-          "authority": "SCENARIO_SIMULATION_DATA",
+          "authority": "SIMULATION_ALIAS_REFERENCE_NOT_INDEPENDENT_ASSET",
           "method": "OMEGA_PER_SITE_IDENTITY_METRIC_ALLOCATION_V1",
           "seedKey": "SITE_COD_tenke_fungurume_copper_cobalt_complex|COD|copper",
           "generatedAt": "2026-10-13",
@@ -4186,7 +4191,7 @@
           "throughput": "SIMULATED",
           "purity": "SIMULATED",
           "capacity": "SIMULATED",
-          "overall": "GAMEPLAY_SIMULATION_COMPLETE"
+          "overall": "GAMEPLAY_SIMULATION_COMPLETE_ALIAS_NOT_EXECUTABLE"
         }
       },
       "reserve": {
@@ -4272,26 +4277,26 @@
       },
       "mineLevel": 4,
       "map": {
-        "markerEligible": true,
+        "markerEligible": false,
         "countryIsolationKey": "COD",
         "iconResourceKey": "copper",
         "markerType": "RESOURCE_SITE",
         "coordinatePrecision": "REGIONAL_APPROXIMATION",
-        "aliasOfSiteId": null,
-        "collisionGroup": "SITE_COD_tenke_fungurume_copper_cobalt_complex"
+        "aliasOfSiteId": "SITE_COD_tenke_fungurume_mine",
+        "collisionGroup": "SITE_COD_tenke_fungurume_mine"
       },
       "runtime": {
-        "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
+        "identityAuthority": "CANONICAL_SITE_ALIAS_WITH_LEGACY_QUANTITATIVE_RECORD",
         "quantityAuthority": "SCENARIO_SIMULATION_DATA",
         "productionAuthority": "SCENARIO_SIMULATION_DATA",
         "qualityAuthority": "SCENARIO_SIMULATION_DATA",
         "countryWarehouseId": "WH-COD-RAW",
         "requiresSiteSpecificRoute": true,
         "requiresFactoryBinding": true,
-        "aliasOfSiteId": null,
+        "aliasOfSiteId": "SITE_COD_tenke_fungurume_mine",
         "pipeline": {
           "site": "BOUND",
-          "extraction": "SIMULATED_ENGINEERING_READY",
+          "extraction": "ALIAS_ONLY_NOT_EXECUTABLE",
           "batch": "SITE_ID_KEYED",
           "rawWarehouse": "BOUND_TO_OWNER_COUNTRY",
           "transport": "SIMULATED_ROUTE_READY",
@@ -4346,5 +4351,8 @@
     "metricsAreExplicitlySimulated": true,
     "coordinatesAreRegionalApproximations": true,
     "originalCanonicalAndReserveDataUnchanged": true
+  },
+  "counts": {
+    "canonicalAliasRecords": 5
   }
 }
