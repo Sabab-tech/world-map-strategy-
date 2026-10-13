@@ -95,7 +95,7 @@ assert.equal(pilbaraSite.quantitative.purity.status,'SIMULATED');
 assert.equal(pilbaraSite.quantitative.production.status,'SIMULATED');
 assert.ok(pilbaraSite.simulationReserveQuantity>0);
 const pilbaraExecution=(ausState.mineStates||{});
-const pilbaraOccurrence=Object.keys(pilbaraExecution).find(k=>k.includes('SITE_AUS_pilbara_iron_ore_range'));
+const pilbaraOccurrence=Object.keys(pilbaraExecution).find(k=>k.toLowerCase().includes('site_aus_pilbara_iron_ore_range'.toLowerCase()));
 assert(pilbaraOccurrence,'Pilbara should have an initialized reserve/extraction state');
 assert.equal(pilbaraExecution[pilbaraOccurrence].provenance.stateAuthority,'SIMULATED');
 assert.ok(pilbaraExecution[pilbaraOccurrence].recoverableQuantity>0);
