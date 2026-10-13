@@ -30,13 +30,14 @@ assert.equal(sourceIds.length, 199, 'Every source site must have a stable siteId
 assert.equal(new Set(sourceIds).size, 199, 'Source site identities must be unique');
 
 const catalogIds = catalog.sites.map(x => String(x.siteId || '').trim());
-assert.equal(catalog.sites.length, 199, 'Canonical catalog must contain 199 sites');
-assert.equal(new Set(catalogIds).size, 199, 'Canonical site identities must be unique');
+assert.equal(catalog.siteCount, 315, 'canonical authority has 250 baseline and 65 expansion records');
+assert.equal(catalog.sites.length, 315, 'canonical record count');
+assert.equal(new Set(catalogIds).size, 315, 'canonical site identities must be unique');
 
 const sourceIdSet = new Set(sourceIds);
 const catalogIdSet = new Set(catalogIds);
 for (const id of sourceIdSet) assert.ok(catalogIdSet.has(id), `Canonical catalog missing source site identity: ${id}`);
-for (const id of catalogIdSet) assert.ok(sourceIdSet.has(id), `Canonical catalog contains non-source site identity: ${id}`);
+assert.equal(catalog.sites.filter(row => sourceIdSet.has(String(row.siteId))).length, 199, 'all original source IDs remain exactly once in canonical');
 
 for (const { site } of sourceSites) {
   const id = String(site?.siteId || site?.id || '').trim();
@@ -78,4 +79,4 @@ for (const { site } of sourceSites) {
   }
 }
 
-console.log('PASS source-resource-reference coverage: 199/199 source site identities mapped 1:1 to canonical catalog and runtime preserves source IDs.');
+console.log('PASS source-reference coverage: all 199 legacy source IDs remain mapped 1:1 inside the 315-record canonical catalog.');

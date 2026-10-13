@@ -16,6 +16,17 @@ assert.equal(parts.length, 5);
 assert.deepEqual(parts.map(p => p.recordCount), [13, 13, 13, 13, 13]);
 assert.equal(sites.length, 65, 'all 65 candidate records must be present');
 assert.equal(ids.size, 65, 'all candidate IDs must be unique');
+assert.equal(canonical.siteCount, 315, 'canonical authority contains 250 baseline + 65 expansion records');
+assert.equal(canonical.sites.length, 315);
+assert.equal(canonicalIds.size, 315);
+assert.equal(sites.filter(s => canonicalIds.has(s.siteId)).length, 65, 'all 65 quantified candidates must be canonical');
+const canonicalLegacyRows = canonical.sites.filter(s => s.runtime?.identityAuthority === 'LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE');
+assert.equal(canonicalLegacyRows.length, 65, 'exactly 65 gameplay records belong to this expansion');
+assert.equal(canonicalLegacyRows.filter(s => s.map?.markerEligible === true && !s.runtime?.aliasOfSiteId).length, 55, '55 physical map sites are independently eligible');
+assert.equal(canonicalLegacyRows.filter(s => s.map?.markerEligible === false || s.runtime?.aliasOfSiteId).length, 10, '10 aliases are retained but not independently executable');
+const master = read('resource_site_master_registry_v1.json');
+assert.equal(master.sites.length, 250, 'baseline master research registry is preserved');
+assert(master.sites.every(s => canonical.sites.slice(0, 250).some(c => c.siteId === s.siteId)), 'all original master IDs remain in the original 250 rows');
 assert.equal(aliases.length, 10, 'six canonical aliases and four duplicate legacy aliases');
 assert.equal(sites.filter(s => s.map?.markerEligible === true).length, 55, 'only distinct new physical assets receive independent markers');
 assert.equal(sites.filter(s => s.map?.markerEligible === false).length, 10, 'aliases must not create duplicate markers');
@@ -110,5 +121,7 @@ console.log(JSON.stringify({
   aliasesNotIndependentlyExecutable: aliases.length,
   sourcedFactRows: sites.filter(s => (s.observedFacts || []).length).length,
   runtimeWiring: 'STATIC_ASSERTIONS_PASSED',
-  endToEndGameplayPipeline: 'NOT_CLAIMED_BY_THIS_DATA_COVERAGE_TEST'
+  countryCoverage: new Set(canonical.sites.map(s => s.countryId)).size,
+  mapEligibleLegacySites: canonicalLegacyRows.filter(s => s.map?.markerEligible === true && !s.runtime?.aliasOfSiteId).length,
+  endToEndGameplayPipeline: 'SEPARATELY_ASSERTED_BY_RESOURCE_ENDOWMENT_RUNTIME_TEST'
 }, null, 2));

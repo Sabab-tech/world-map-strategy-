@@ -9,8 +9,8 @@ const overlay = JSON.parse(read('resource_site_research_facts_overlay_v1.json'))
 const endowment = read('omega_resource_endowment_runtime.js');
 const mapBinding = read('omega_resource_gameplay_binding_v1.js');
 
-assert.equal(base.siteCount, 250);
-assert.equal(base.sites.length, 250);
+assert.equal(base.siteCount, 315);
+assert.equal(base.sites.length, 315);
 assert.equal(expansion.datasetId, 'OMEGA_RESOURCE_SITE_COUNTRY_EXPANSION_V1');
 assert.equal(expansion.siteCount, 0);
 assert.equal(expansion.records.length, 0);
@@ -61,4 +61,4 @@ test('all 51 migrated sites use canonical identity and simulation authorities wi
     if (site.quantitative.purity.status === 'UNOBSERVED') assert.equal(site.quantitative.purity.value, null);
   }
 });
-console.log('OMEGA CANONICAL MIGRATION CERTIFICATE PASSED: 250 canonical sites; 51 site records migrated; sidecar files contain no site records.');
+console.log('OMEGA CANONICAL MIGRATION CERTIFICATE PASSED: 315 canonical records; the original 51 migration IDs remain bound.');

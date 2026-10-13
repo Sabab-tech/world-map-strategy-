@@ -287,9 +287,12 @@ async function init(){
   const masterSites=Array.isArray(master?.sites)?master.sites:[];
   const knownSiteIds=new Set([...baseCatalogSites,...expansionSites,...masterSites].map(row=>String(row?.siteId||'')));
   const legacySiteRows=sources.filter(x=>LEGACY_GAMEPLAY_URLS.includes(x.url)).filter(x=>x.data?.datasetId?.startsWith('OMEGA_RESOURCE_SITE_LEGACY_GAMEPLAY_EXPANSION_PART_')).flatMap(x=>Array.isArray(x.data?.records)?x.data.records:[]);
-  const activeLegacySites=legacySiteRows.filter(row=>row?.siteId&&!row.runtime?.aliasOfSiteId&&!LEGACY_CANONICAL_ALIAS_IDS[String(row.siteId)]&&!knownSiteIds.has(String(row.siteId)));
+   const canonicalLegacySites=baseCatalogSites.filter(row=>row?.runtime?.identityAuthority==='LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE');
+   const activeLegacySites=legacySiteRows.filter(row=>row?.siteId&&!row.runtime?.aliasOfSiteId&&row.map?.markerEligible!==false&&!LEGACY_CANONICAL_ALIAS_IDS[String(row.siteId)]&&!knownSiteIds.has(String(row.siteId)));
   const catalogSites=[...baseCatalogSites,...expansionSites,...activeLegacySites];
-  g.OmegaResourceLegacyGameplayExpansion={status:legacySiteRows.length===65?'READY':'PARTIAL',count:legacySiteRows.length,activeCandidateCount:activeLegacySites.length,loadedParts:sources.filter(x=>LEGACY_GAMEPLAY_URLS.includes(x.url)&&x.data?.records).length};
+   const activeLegacyIds=new Set([...canonicalLegacySites,...activeLegacySites].filter(row=>row?.siteId&&row.map?.markerEligible!==false&&!row.runtime?.aliasOfSiteId&&!LEGACY_CANONICAL_ALIAS_IDS[String(row.siteId)]).map(row=>String(row.siteId)));
+   const candidateReady=legacySiteRows.length===65&&activeLegacyIds.size===55;
+   g.OmegaResourceLegacyGameplayExpansion={status:candidateReady?'READY':'PARTIAL',count:Math.max(legacySiteRows.length,canonicalLegacySites.length),candidateRecordCount:65,activeCandidateCount:activeLegacyIds.size,aliasCount:legacySiteRows.filter(row=>row.runtime?.aliasOfSiteId||row.map?.markerEligible===false).length,canonicalCandidateCount:canonicalLegacySites.length,loadedParts:sources.filter(x=>LEGACY_GAMEPLAY_URLS.includes(x.url)&&x.data?.records).length};
   g.Omega=g.Omega||{};g.Omega.ResourceLegacyGameplayExpansion=g.OmegaResourceLegacyGameplayExpansion;
   const masterById=new Map(masterSites.map(s=>[String(s.siteId),s]));
   const catalogById=new Map(catalogSites.map(s=>[String(s.siteId),s]));
@@ -301,6 +304,7 @@ async function init(){
    const normalized=normalizeSourceSite(candidate,candidate.countryId)||candidate;
    const id=String(normalized.siteId||'').trim(),coords=coordsOf(normalized);
    if(!id||!coords||!normalized.countryId)continue;
+    if(normalized.runtime?.aliasOfSiteId||LEGACY_CANONICAL_ALIAS_IDS[id]||normalized.map?.markerEligible===false)continue;
    const masterRow=masterById.get(id)||{},catalogRow=catalogById.get(id)||{};
    const source=normalized.sourceSiteRecord||normalized;
    const resourceId=normalized.real?.resourceId||source.resourceId||source.resourceTypeId||source.resourceTypeKey||source.resId||catalogRow.identity?.resourceTypeId||'unknown';

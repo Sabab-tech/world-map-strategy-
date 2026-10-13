@@ -14,7 +14,8 @@ const scenarioSource=read('omega_resource_scenario_engineering_data_v1.js');
 const scenarioText=scenarioSource.slice(scenarioSource.indexOf('const DATA=')+'const DATA='.length,scenarioSource.indexOf(';\ng.OmegaResourceScenarioEngineeringData=DATA;'));
 const scenario=JSON.parse(scenarioText);
 
-assert.equal(catalog.sites.length,250,'canonical catalog must contain 250 individual sites');
+assert.equal(catalog.siteCount,315,'canonical catalog count');
+assert.equal(catalog.sites.length,315,'canonical catalog contains the 250 baseline + 65 additive records');
 assert.equal(master.siteCount,250,'master registry count');
 assert.equal(master.sites.length,250,'master registry rows');
 assert.equal(reserves.records.length,250,'reserve simulation rows');
@@ -72,7 +73,7 @@ assert.equal(expandedPlan.warehouseCountryId,expandedSite.countryId,'expansion e
 
 
 console.log('OMEGA INDIVIDUAL RESOURCE GAMEPLAY BINDING TEST PASSED');
-console.log('Canonical/master/reserve/scenario site identities: 250/250');
+console.log('Canonical/master/reserve/scenario site counts: 315/250/250/250');
 console.log('Expansion sites resolved by existing extraction planner: PASS');
 console.log('Unique site IDs and exact per-site catalog joins: PASS');
 console.log('Playable index wiring + individual selection + extraction API binding: PASS');

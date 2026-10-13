@@ -10,9 +10,9 @@ const runtime = read('omega_resource_endowment_runtime.js');
 const network = read('omega_resource_industrial_network_v1.js');
 
 const rows = base.sites;
-assert.equal(base.siteCount, 250);
-assert.equal(rows.length, 250);
-assert.equal(new Set(rows.map(s => s.siteId)).size, 250);
+assert.equal(base.siteCount, 315);
+assert.equal(rows.length, 315);
+assert.equal(new Set(rows.map(s => s.siteId)).size, 315);
 assert.equal(expansion.siteCount, 0);
 assert.equal(expansion.records.length, 0);
 assert.equal(expansion.migratedSiteCount, 51);
@@ -50,7 +50,7 @@ assert.match(network, /productionModel\.productionRate=dailyRate/);
 assert.match(network, /observedStatus\(p\)&&perDay\(p\.unit\)/);
 assert.match(network, /distanceStatus:'UNOBSERVED'/);
 
-test('all 250 canonical sites share a typed runtime contract without fabricated observations', () => {
+test('all 315 canonical records share a typed runtime contract with explicit authority states', () => {
   for (const site of rows) {
     for (const field of fields) {
       const v = site.quantitative[field];
@@ -62,4 +62,4 @@ test('all 250 canonical sites share a typed runtime contract without fabricated 
     }
   }
 });
-console.log('OMEGA SITE DATA CONTRACT: PASS - 250 canonical site rows; 51 migration IDs; seven typed quantitative fields checked.');
+console.log('OMEGA SITE DATA CONTRACT: PASS - 315 canonical rows; 51 original migration IDs; seven fields checked for every record.');

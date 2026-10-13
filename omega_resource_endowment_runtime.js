@@ -170,6 +170,8 @@
           return siteId&&!row.runtime?.aliasOfSiteId&&!LEGACY_CANONICAL_ALIAS_IDS[siteId]&&!ids.has(siteId)&&/^[A-Z]{3}$/.test(country)&&Number.isFinite(lat)&&lat>=-90&&lat<=90&&Number.isFinite(lng)&&lng>=-180&&lng<=180;
         });
         const acceptedLegacy=legacyRows.filter(row=>!ids.has(String(row.siteId))&&ids.add(String(row.siteId)));
+        const legacyCanonicalRows=baseRows.filter(row=>row?.runtime?.identityAuthority==='LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE');
+        const legacyCanonicalPhysicalRows=legacyCanonicalRows.filter(row=>row?.map?.markerEligible!==false&&!row?.runtime?.aliasOfSiteId&&!LEGACY_CANONICAL_ALIAS_IDS[String(row?.siteId||'')]);
         const rows=baseRows.concat(acceptedExpansion,acceptedLegacy);
         const normalizedRows=rows.map(normalizeSiteRecord);
         const map={};
@@ -186,10 +188,10 @@
         g.OmegaResourceSiteCanonicalCatalogData=data;
         g.Omega=g.Omega||{};
         g.Omega.ResourceSiteCanonicalCatalogData=data;
-        g.OmegaResourceLegacyGameplayExpansion={status:legacy.status,count:legacy.count,activeAdded:acceptedLegacy.length,loadedParts:legacy.loadedParts||0};
+        g.OmegaResourceLegacyGameplayExpansion={status:(legacy.count>=65||legacyCanonicalRows.length===65)?'READY':legacy.status,count:Math.max(Number(legacy.count)||0,legacyCanonicalRows.length),activeAdded:acceptedLegacy.length,activeCanonical:legacyCanonicalPhysicalRows.length,canonicalCandidateCount:legacyCanonicalRows.length,loadedParts:legacy.loadedParts||0};
         g.Omega=g.Omega||{};
         g.Omega.ResourceLegacyGameplayExpansion=g.OmegaResourceLegacyGameplayExpansion;
-        return{status:'READY',count:baseRows.length,siteCount:baseRows.length,totalSiteCount:rows.length,expansionSiteCount:acceptedExpansion.length,legacyCandidateCount:legacy.count,legacyExpansionSiteCount:acceptedLegacy.length};
+        return{status:'READY',count:baseRows.length,siteCount:baseRows.length,totalSiteCount:rows.length,expansionSiteCount:acceptedExpansion.length,legacyCandidateCount:Math.max(Number(legacy.count)||0,legacyCanonicalRows.length),legacyExpansionSiteCount:acceptedLegacy.length+legacyCanonicalPhysicalRows.length,legacyCanonicalCandidateCount:legacyCanonicalRows.length};
       }catch(e){
         canonicalSiteCatalogMap={};
         return{status:'FAILED',count:0,reason:String(e?.message||e)};
@@ -589,7 +591,7 @@
       let common=0;for(const x of A)if(B.has(x))common++;
       return common/Math.max(A.size,B.size);
     };
-    const catalogSites=Object.values(canonicalSiteCatalogMap||{}).filter(site=>canonical(site?.countryId||site?.identity?.countryIso3||'')===wanted);
+    const catalogSites=Object.values(canonicalSiteCatalogMap||{}).filter(site=>canonical(site?.countryId||site?.identity?.countryIso3||'')===wanted&&site?.map?.markerEligible!==false&&!site?.runtime?.aliasOfSiteId&&!LEGACY_CANONICAL_ALIAS_IDS[String(site?.siteId||'')]);
     const usedProfile=new Set(),canonicalRows=[];
     for(const site of catalogSites){
       const siteId=String(site?.siteId||'').trim(),siteName=String(site?.siteName||'').trim(),identity=site?.identity||{};
@@ -693,13 +695,15 @@
   function canonicalSiteReferenceForOccurrence(countryId,resourceId,rawDeposit,depositName){
     const wanted=canonical(countryId),ridWanted=rid(resourceId);
     const direct=String(rawDeposit?.siteId||rawDeposit?.siteReferenceKey||rawDeposit?.resourceSiteId||'').trim();
-    if(direct&&canonicalSiteCatalogMap?.[direct])return direct;
+    const directSite=direct?canonicalSiteCatalogMap?.[direct]:null;
+    if(directSite&&directSite.map?.markerEligible!==false&&!directSite.runtime?.aliasOfSiteId&&!LEGACY_CANONICAL_ALIAS_IDS[direct])return direct;
     const normalizeName=v=>String(v||'').toLowerCase().replace(/oilfield/g,'oil field').replace(/[^a-z0-9]+/g,' ').trim();
     const target=normalizeName(rawDeposit?.siteName||rawDeposit?.siteName||depositName||rawDeposit?.name);
     if(!target)return null;
     const tt=new Set(target.split(/\s+/).filter(x=>x.length>2&&!['site','mine','field','area','zone','facility','complex'].includes(x)));
     let best=null,bestScore=0;
     for(const site of Object.values(canonicalSiteCatalogMap||{})){
+      if(site?.map?.markerEligible===false||site?.runtime?.aliasOfSiteId||LEGACY_CANONICAL_ALIAS_IDS[String(site?.siteId||'')])continue;
       if(canonical(site?.countryId||site?.identity?.countryIso3||'')!==wanted)continue;
       if(rid(site?.identity?.resourceTypeId)!==ridWanted)continue;
       const name=normalizeName(site?.siteName),st=new Set(name.split(/\s+/).filter(x=>x.length>2&&!['site','mine','field','area','zone','facility','complex'].includes(x)));
