@@ -175,6 +175,11 @@
         const map={};
         for(const row of normalizedRows)if(row?.siteId)map[String(row.siteId)]=row;
         canonicalSiteCatalogMap=map;
+        // The resource runtime can ask for site references before the full canonical
+        // catalog finishes loading. Invalidate those earlier profile-only caches so the
+        // newly loaded legacy records produce their reserve/extraction occurrences too.
+        try{mineSiteReferenceCache?.clear?.();}catch(_){}
+        try{siteExecutionRowsCache?.clear?.();siteExecutionRowsCacheTurn=-1;}catch(_){}
         data.sites=normalizedRows;
         data.baseSiteCount=baseRows.length;
         data.expansionSiteCount=acceptedExpansion.length;
