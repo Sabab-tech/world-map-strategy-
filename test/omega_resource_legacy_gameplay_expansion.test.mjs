@@ -91,8 +91,14 @@ for (const part of [1, 2, 3, 4, 5]) {
 }
 assert(endowment.includes('loadLegacyGameplayExpansionRows'), 'endowment data loader is wired');
 assert(binding.includes('activeLegacySites'), 'map site loader is wired');
+assert(endowment.includes('simulationReserveQuantity:runtimeReserveQuantity'), 'scenario reserve must enter site extraction modelling');
+assert(endowment.includes('productionModel:clone(runtimeProductionModel)'), 'site-specific production/capacity/recovery must enter extraction modelling');
+assert(endowment.includes('quantitative:clone(rawSite.quantitative||{})'), 'site quantitative fields must survive country reference binding');
 assert(binding.includes('production.rate') && binding.includes('grade.value') &&
   binding.includes('purity.value') && binding.includes('throughput.value'), 'site detail exposes per-site metrics');
+const realism = fs.readFileSync(new URL('../omega_resource_realism_runtime_v1.js', import.meta.url), 'utf8');
+assert(realism.includes('const scenarioOnlyInput=metricAuthorityInputs.some'), 'explicit scenario values must not be relabelled observed');
+assert(realism.includes("productionObserved=!scenarioOnlyInput"), 'scenario production authority stays simulated');
 
 console.log(JSON.stringify({
   certificate: 'OMEGA-65-LEGACY-GAMEPLAY-QUANTITATIVE-COVERAGE',
