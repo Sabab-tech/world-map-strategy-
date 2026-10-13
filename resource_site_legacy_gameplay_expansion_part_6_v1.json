@@ -111,7 +111,7 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": 1525875200,
+          "quantity": 1192090000,
           "unit": "TONNES_ORE",
           "year": 2026,
           "status": "SIMULATED",
@@ -192,14 +192,14 @@
         }
       },
       "reserve": {
-        "quantity": 1525875200,
+        "quantity": 1192090000,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
         "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_355_YEARS"
       },
       "simulation": {
         "reserve": {
-          "quantity": 1525875200,
+          "quantity": 1192090000,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
           "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_355_YEARS"
@@ -418,7 +418,7 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": 1944233820,
+          "quantity": 1751562000,
           "unit": "TONNES_ORE",
           "year": 2026,
           "status": "SIMULATED",
@@ -499,14 +499,14 @@
         }
       },
       "reserve": {
-        "quantity": 1944233820,
+        "quantity": 1751562000,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
         "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_372_YEARS"
       },
       "simulation": {
         "reserve": {
-          "quantity": 1944233820,
+          "quantity": 1751562000,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
           "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_372_YEARS"
@@ -726,7 +726,7 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": 2895329723,
+          "quantity": 2334943325,
           "unit": "TONNES_ORE",
           "year": 2026,
           "status": "SIMULATED",
@@ -807,14 +807,14 @@
         }
       },
       "reserve": {
-        "quantity": 2895329723,
+        "quantity": 2334943325,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
         "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_389_YEARS"
       },
       "simulation": {
         "reserve": {
-          "quantity": 2895329723,
+          "quantity": 2334943325,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
           "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_389_YEARS"
@@ -1034,7 +1034,7 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": 8562418200,
+          "quantity": 8002260000,
           "unit": "TONNES_ORE",
           "year": 2026,
           "status": "SIMULATED",
@@ -1115,14 +1115,14 @@
         }
       },
       "reserve": {
-        "quantity": 8562418200,
+        "quantity": 8002260000,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
         "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_406_YEARS"
       },
       "simulation": {
         "reserve": {
-          "quantity": 8562418200,
+          "quantity": 8002260000,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
           "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_406_YEARS"
@@ -1341,7 +1341,7 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": 6225206400,
+          "quantity": 5187672000,
           "unit": "TONNES_ORE",
           "year": 2026,
           "status": "SIMULATED",
@@ -1422,14 +1422,14 @@
         }
       },
       "reserve": {
-        "quantity": 6225206400,
+        "quantity": 5187672000,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
         "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_423_YEARS"
       },
       "simulation": {
         "reserve": {
-          "quantity": 6225206400,
+          "quantity": 5187672000,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
           "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_423_YEARS"
@@ -1649,7 +1649,7 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": 5553548000,
+          "quantity": 4175600000,
           "unit": "TONNES_ORE",
           "year": 2026,
           "status": "SIMULATED",
@@ -1730,14 +1730,14 @@
         }
       },
       "reserve": {
-        "quantity": 5553548000,
+        "quantity": 4175600000,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
         "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_440_YEARS"
       },
       "simulation": {
         "reserve": {
-          "quantity": 5553548000,
+          "quantity": 4175600000,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
           "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_440_YEARS"
@@ -1957,7 +1957,7 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": 6895915800,
+          "quantity": 5944755000,
           "unit": "TONNES_ORE",
           "year": 2026,
           "status": "SIMULATED",
@@ -2038,14 +2038,14 @@
         }
       },
       "reserve": {
-        "quantity": 6895915800,
+        "quantity": 5944755000,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
         "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_366_YEARS"
       },
       "simulation": {
         "reserve": {
-          "quantity": 6895915800,
+          "quantity": 5944755000,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
           "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_366_YEARS"
@@ -2264,7 +2264,7 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": 2699623184,
+          "quantity": 2092731150,
           "unit": "TONNES_ORE",
           "year": 2026,
           "status": "SIMULATED",
@@ -2345,14 +2345,14 @@
         }
       },
       "reserve": {
-        "quantity": 2699623184,
+        "quantity": 2092731150,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
         "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_383_YEARS"
       },
       "simulation": {
         "reserve": {
-          "quantity": 2699623184,
+          "quantity": 2092731150,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
           "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_383_YEARS"
@@ -2572,7 +2572,7 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": 3550019200,
+          "quantity": 3169660000,
           "unit": "TONNES_ORE",
           "year": 2026,
           "status": "SIMULATED",
@@ -2653,14 +2653,14 @@
         }
       },
       "reserve": {
-        "quantity": 3550019200,
+        "quantity": 3169660000,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
         "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_400_YEARS"
       },
       "simulation": {
         "reserve": {
-          "quantity": 3550019200,
+          "quantity": 3169660000,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
           "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_400_YEARS"
@@ -2880,7 +2880,7 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": 3091664063,
+          "quantity": 2473331250,
           "unit": "TONNES_ORE",
           "year": 2026,
           "status": "SIMULATED",
@@ -2961,14 +2961,14 @@
         }
       },
       "reserve": {
-        "quantity": 3091664063,
+        "quantity": 2473331250,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
         "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_417_YEARS"
       },
       "simulation": {
         "reserve": {
-          "quantity": 3091664063,
+          "quantity": 2473331250,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
           "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_417_YEARS"
@@ -3188,7 +3188,7 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": 4014457902,
+          "quantity": 3717090650,
           "unit": "TONNES_ORE",
           "year": 2026,
           "status": "SIMULATED",
@@ -3269,14 +3269,14 @@
         }
       },
       "reserve": {
-        "quantity": 4014457902,
+        "quantity": 3717090650,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
         "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_434_YEARS"
       },
       "simulation": {
         "reserve": {
-          "quantity": 4014457902,
+          "quantity": 3717090650,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
           "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_434_YEARS"
@@ -3496,7 +3496,7 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": 9134205300,
+          "quantity": 7548930000,
           "unit": "TONNES_ORE",
           "year": 2026,
           "status": "SIMULATED",
@@ -3577,14 +3577,14 @@
         }
       },
       "reserve": {
-        "quantity": 9134205300,
+        "quantity": 7548930000,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
         "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_360_YEARS"
       },
       "simulation": {
         "reserve": {
-          "quantity": 9134205300,
+          "quantity": 7548930000,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
           "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_360_YEARS"
@@ -3804,7 +3804,7 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": 2313181332,
+          "quantity": 1726254725,
           "unit": "TONNES_ORE",
           "year": 2026,
           "status": "SIMULATED",
@@ -3885,14 +3885,14 @@
         }
       },
       "reserve": {
-        "quantity": 2313181332,
+        "quantity": 1726254725,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
         "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_377_YEARS"
       },
       "simulation": {
         "reserve": {
-          "quantity": 2313181332,
+          "quantity": 1726254725,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
           "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_377_YEARS"
@@ -4112,7 +4112,7 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": 9927204300,
+          "quantity": 8484790000,
           "unit": "TONNES_ORE",
           "year": 2026,
           "status": "SIMULATED",
@@ -4193,14 +4193,14 @@
         }
       },
       "reserve": {
-        "quantity": 9927204300,
+        "quantity": 8484790000,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
         "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_394_YEARS"
       },
       "simulation": {
         "reserve": {
-          "quantity": 9927204300,
+          "quantity": 8484790000,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
           "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_394_YEARS"
@@ -4419,7 +4419,7 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": 994599450,
+          "quantity": 765076500,
           "unit": "TONNES_ORE",
           "year": 2026,
           "status": "SIMULATED",
@@ -4500,14 +4500,14 @@
         }
       },
       "reserve": {
-        "quantity": 994599450,
+        "quantity": 765076500,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
         "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_411_YEARS"
       },
       "simulation": {
         "reserve": {
-          "quantity": 994599450,
+          "quantity": 765076500,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
           "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_411_YEARS"
@@ -4727,7 +4727,7 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": 11209566100,
+          "quantity": 9919970000,
           "unit": "TONNES_ORE",
           "year": 2026,
           "status": "SIMULATED",
@@ -4808,14 +4808,14 @@
         }
       },
       "reserve": {
-        "quantity": 11209566100,
+        "quantity": 9919970000,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
         "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_428_YEARS"
       },
       "simulation": {
         "reserve": {
-          "quantity": 11209566100,
+          "quantity": 9919970000,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
           "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_428_YEARS"
@@ -5035,7 +5035,7 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": 3140500734,
+          "quantity": 2492460900,
           "unit": "TONNES_ORE",
           "year": 2026,
           "status": "SIMULATED",
@@ -5116,14 +5116,14 @@
         }
       },
       "reserve": {
-        "quantity": 3140500734,
+        "quantity": 2492460900,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
         "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_354_YEARS"
       },
       "simulation": {
         "reserve": {
-          "quantity": 3140500734,
+          "quantity": 2492460900,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
           "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_354_YEARS"
@@ -5342,7 +5342,7 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": 4968295101,
+          "quantity": 4558068900,
           "unit": "TONNES_ORE",
           "year": 2026,
           "status": "SIMULATED",
@@ -5423,14 +5423,14 @@
         }
       },
       "reserve": {
-        "quantity": 4968295101,
+        "quantity": 4558068900,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
         "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_371_YEARS"
       },
       "simulation": {
         "reserve": {
-          "quantity": 4968295101,
+          "quantity": 4558068900,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
           "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_371_YEARS"
@@ -5650,7 +5650,7 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": 3659404152,
+          "quantity": 2999511600,
           "unit": "TONNES_ORE",
           "year": 2026,
           "status": "SIMULATED",
@@ -5731,14 +5731,14 @@
         }
       },
       "reserve": {
-        "quantity": 3659404152,
+        "quantity": 2999511600,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
         "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_388_YEARS"
       },
       "simulation": {
         "reserve": {
-          "quantity": 3659404152,
+          "quantity": 2999511600,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
           "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_388_YEARS"
@@ -5958,7 +5958,7 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": 1459032750,
+          "quantity": 1389555000,
           "unit": "TONNES_ORE",
           "year": 2026,
           "status": "SIMULATED",
@@ -6039,14 +6039,14 @@
         }
       },
       "reserve": {
-        "quantity": 1459032750,
+        "quantity": 1389555000,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
         "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_405_YEARS"
       },
       "simulation": {
         "reserve": {
-          "quantity": 1459032750,
+          "quantity": 1389555000,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
           "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_405_YEARS"
@@ -6265,7 +6265,7 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": 5047347458,
+          "quantity": 4277413100,
           "unit": "TONNES_ORE",
           "year": 2026,
           "status": "SIMULATED",
@@ -6346,14 +6346,14 @@
         }
       },
       "reserve": {
-        "quantity": 5047347458,
+        "quantity": 4277413100,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
         "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_422_YEARS"
       },
       "simulation": {
         "reserve": {
-          "quantity": 5047347458,
+          "quantity": 4277413100,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
           "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_422_YEARS"
@@ -6573,7 +6573,7 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": 2960750224,
+          "quantity": 2260114675,
           "unit": "TONNES_ORE",
           "year": 2026,
           "status": "SIMULATED",
@@ -6654,14 +6654,14 @@
         }
       },
       "reserve": {
-        "quantity": 2960750224,
+        "quantity": 2260114675,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
         "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_439_YEARS"
       },
       "simulation": {
         "reserve": {
-          "quantity": 2960750224,
+          "quantity": 2260114675,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
           "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_439_YEARS"
@@ -6881,7 +6881,7 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": 7290072000,
+          "quantity": 6394800000,
           "unit": "TONNES_ORE",
           "year": 2026,
           "status": "SIMULATED",
@@ -6962,14 +6962,14 @@
         }
       },
       "reserve": {
-        "quantity": 7290072000,
+        "quantity": 6394800000,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
         "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_365_YEARS"
       },
       "simulation": {
         "reserve": {
-          "quantity": 7290072000,
+          "quantity": 6394800000,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
           "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_365_YEARS"
@@ -7189,7 +7189,7 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": 6020587400,
+          "quantity": 4740620000,
           "unit": "TONNES_ORE",
           "year": 2026,
           "status": "SIMULATED",
@@ -7270,14 +7270,14 @@
         }
       },
       "reserve": {
-        "quantity": 6020587400,
+        "quantity": 4740620000,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
         "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_382_YEARS"
       },
       "simulation": {
         "reserve": {
-          "quantity": 6020587400,
+          "quantity": 4740620000,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
           "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_382_YEARS"
@@ -7496,7 +7496,7 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": 5342619975,
+          "quantity": 4856927250,
           "unit": "TONNES_ORE",
           "year": 2026,
           "status": "SIMULATED",
@@ -7577,14 +7577,14 @@
         }
       },
       "reserve": {
-        "quantity": 5342619975,
+        "quantity": 4856927250,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
         "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_399_YEARS"
       },
       "simulation": {
         "reserve": {
-          "quantity": 5342619975,
+          "quantity": 4856927250,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
           "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_399_YEARS"
@@ -7803,7 +7803,7 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": 4607448144,
+          "quantity": 3745892800,
           "unit": "TONNES_ORE",
           "year": 2026,
           "status": "SIMULATED",
@@ -7884,14 +7884,14 @@
         }
       },
       "reserve": {
-        "quantity": 4607448144,
+        "quantity": 3745892800,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
         "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_416_YEARS"
       },
       "simulation": {
         "reserve": {
-          "quantity": 4607448144,
+          "quantity": 3745892800,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
           "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_416_YEARS"
@@ -8111,7 +8111,7 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": 9993027305,
+          "quantity": 9427384250,
           "unit": "TONNES_ORE",
           "year": 2026,
           "status": "SIMULATED",
@@ -8192,14 +8192,14 @@
         }
       },
       "reserve": {
-        "quantity": 9993027305,
+        "quantity": 9427384250,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
         "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_433_YEARS"
       },
       "simulation": {
         "reserve": {
-          "quantity": 9993027305,
+          "quantity": 9427384250,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
           "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_433_YEARS"
@@ -8419,7 +8419,7 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": 3020396061,
+          "quantity": 2538147950,
           "unit": "TONNES_ORE",
           "year": 2026,
           "status": "SIMULATED",
@@ -8500,14 +8500,14 @@
         }
       },
       "reserve": {
-        "quantity": 3020396061,
+        "quantity": 2538147950,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
         "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_359_YEARS"
       },
       "simulation": {
         "reserve": {
-          "quantity": 3020396061,
+          "quantity": 2538147950,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
           "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_359_YEARS"
@@ -8726,7 +8726,7 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": 4452834144,
+          "quantity": 3373359200,
           "unit": "TONNES_ORE",
           "year": 2026,
           "status": "SIMULATED",
@@ -8807,14 +8807,14 @@
         }
       },
       "reserve": {
-        "quantity": 4452834144,
+        "quantity": 3373359200,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
         "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_376_YEARS"
       },
       "simulation": {
         "reserve": {
-          "quantity": 4452834144,
+          "quantity": 3373359200,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
           "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_376_YEARS"
@@ -9033,7 +9033,7 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": 2062021875,
+          "quantity": 1793062500,
           "unit": "TONNES_ORE",
           "year": 2026,
           "status": "SIMULATED",
@@ -9114,14 +9114,14 @@
         }
       },
       "reserve": {
-        "quantity": 2062021875,
+        "quantity": 1793062500,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
         "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_393_YEARS"
       },
       "simulation": {
         "reserve": {
-          "quantity": 2062021875,
+          "quantity": 1793062500,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
           "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_393_YEARS"
@@ -9341,7 +9341,7 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": 3000662080,
+          "quantity": 2344267250,
           "unit": "TONNES_ORE",
           "year": 2026,
           "status": "SIMULATED",
@@ -9422,14 +9422,14 @@
         }
       },
       "reserve": {
-        "quantity": 3000662080,
+        "quantity": 2344267250,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
         "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_410_YEARS"
       },
       "simulation": {
         "reserve": {
-          "quantity": 3000662080,
+          "quantity": 2344267250,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
           "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_410_YEARS"
@@ -9649,7 +9649,7 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": 8995950600,
+          "quantity": 8104460000,
           "unit": "TONNES_ORE",
           "year": 2026,
           "status": "SIMULATED",
@@ -9730,14 +9730,14 @@
         }
       },
       "reserve": {
-        "quantity": 8995950600,
+        "quantity": 8104460000,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
         "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_427_YEARS"
       },
       "simulation": {
         "reserve": {
-          "quantity": 8995950600,
+          "quantity": 8104460000,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
           "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_427_YEARS"
@@ -9957,7 +9957,7 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": 3137839592,
+          "quantity": 2530515800,
           "unit": "TONNES_ORE",
           "year": 2026,
           "status": "SIMULATED",
@@ -10038,14 +10038,14 @@
         }
       },
       "reserve": {
-        "quantity": 3137839592,
+        "quantity": 2530515800,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
         "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_353_YEARS"
       },
       "simulation": {
         "reserve": {
-          "quantity": 3137839592,
+          "quantity": 2530515800,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
           "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_353_YEARS"
@@ -10265,7 +10265,7 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": 3468084000,
+          "quantity": 3241200000,
           "unit": "TONNES_ORE",
           "year": 2026,
           "status": "SIMULATED",
@@ -10346,14 +10346,14 @@
         }
       },
       "reserve": {
-        "quantity": 3468084000,
+        "quantity": 3241200000,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
         "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_370_YEARS"
       },
       "simulation": {
         "reserve": {
-          "quantity": 3468084000,
+          "quantity": 3241200000,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
           "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_370_YEARS"
@@ -10573,7 +10573,7 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": 15297916500,
+          "quantity": 12748263750,
           "unit": "TONNES_ORE",
           "year": 2026,
           "status": "SIMULATED",
@@ -10654,14 +10654,14 @@
         }
       },
       "reserve": {
-        "quantity": 15297916500,
+        "quantity": 12748263750,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
         "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_387_YEARS"
       },
       "simulation": {
         "reserve": {
-          "quantity": 15297916500,
+          "quantity": 12748263750,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
           "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_387_YEARS"
@@ -10880,7 +10880,7 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": 4740263906,
+          "quantity": 3564108200,
           "unit": "TONNES_ORE",
           "year": 2026,
           "status": "SIMULATED",
@@ -10961,14 +10961,14 @@
         }
       },
       "reserve": {
-        "quantity": 4740263906,
+        "quantity": 3564108200,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
         "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_404_YEARS"
       },
       "simulation": {
         "reserve": {
-          "quantity": 4740263906,
+          "quantity": 3564108200,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
           "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_404_YEARS"
@@ -11187,7 +11187,7 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": 3932225884,
+          "quantity": 3389849900,
           "unit": "TONNES_ORE",
           "year": 2026,
           "status": "SIMULATED",
@@ -11268,14 +11268,14 @@
         }
       },
       "reserve": {
-        "quantity": 3932225884,
+        "quantity": 3389849900,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
         "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_421_YEARS"
       },
       "simulation": {
         "reserve": {
-          "quantity": 3932225884,
+          "quantity": 3389849900,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
           "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_421_YEARS"
@@ -11495,7 +11495,7 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": 2532532644,
+          "quantity": 1963203600,
           "unit": "TONNES_ORE",
           "year": 2026,
           "status": "SIMULATED",
@@ -11576,14 +11576,14 @@
         }
       },
       "reserve": {
-        "quantity": 2532532644,
+        "quantity": 1963203600,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
         "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_438_YEARS"
       },
       "simulation": {
         "reserve": {
-          "quantity": 2532532644,
+          "quantity": 1963203600,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
           "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_438_YEARS"
@@ -11803,7 +11803,7 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": 3375600592,
+          "quantity": 3013929100,
           "unit": "TONNES_ORE",
           "year": 2026,
           "status": "SIMULATED",
@@ -11884,14 +11884,14 @@
         }
       },
       "reserve": {
-        "quantity": 3375600592,
+        "quantity": 3013929100,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
         "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_364_YEARS"
       },
       "simulation": {
         "reserve": {
-          "quantity": 3375600592,
+          "quantity": 3013929100,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
           "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_364_YEARS"
@@ -12111,7 +12111,7 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": 6518671875,
+          "quantity": 5214937500,
           "unit": "TONNES_ORE",
           "year": 2026,
           "status": "SIMULATED",
@@ -12192,14 +12192,14 @@
         }
       },
       "reserve": {
-        "quantity": 6518671875,
+        "quantity": 5214937500,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
         "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_381_YEARS"
       },
       "simulation": {
         "reserve": {
-          "quantity": 6518671875,
+          "quantity": 5214937500,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
           "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_381_YEARS"
@@ -12419,7 +12419,7 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": 3686952600,
+          "quantity": 3413845000,
           "unit": "TONNES_ORE",
           "year": 2026,
           "status": "SIMULATED",
@@ -12500,14 +12500,14 @@
         }
       },
       "reserve": {
-        "quantity": 3686952600,
+        "quantity": 3413845000,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
         "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_398_YEARS"
       },
       "simulation": {
         "reserve": {
-          "quantity": 3686952600,
+          "quantity": 3413845000,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
           "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_398_YEARS"
@@ -12727,7 +12727,7 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": 7697959500,
+          "quantity": 6361950000,
           "unit": "TONNES_ORE",
           "year": 2026,
           "status": "SIMULATED",
@@ -12808,14 +12808,14 @@
         }
       },
       "reserve": {
-        "quantity": 7697959500,
+        "quantity": 6361950000,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
         "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_415_YEARS"
       },
       "simulation": {
         "reserve": {
-          "quantity": 7697959500,
+          "quantity": 6361950000,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
           "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_415_YEARS"
@@ -13035,7 +13035,7 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": 2856657024,
+          "quantity": 2131833600,
           "unit": "TONNES_ORE",
           "year": 2026,
           "status": "SIMULATED",
@@ -13116,14 +13116,14 @@
         }
       },
       "reserve": {
-        "quantity": 2856657024,
+        "quantity": 2131833600,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
         "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_432_YEARS"
       },
       "simulation": {
         "reserve": {
-          "quantity": 2856657024,
+          "quantity": 2131833600,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
           "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_432_YEARS"
@@ -13342,7 +13342,7 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": 5951770227,
+          "quantity": 5086983100,
           "unit": "TONNES_ORE",
           "year": 2026,
           "status": "SIMULATED",
@@ -13423,14 +13423,14 @@
         }
       },
       "reserve": {
-        "quantity": 5951770227,
+        "quantity": 5086983100,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
         "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_358_YEARS"
       },
       "simulation": {
         "reserve": {
-          "quantity": 5951770227,
+          "quantity": 5086983100,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
           "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_358_YEARS"
@@ -13650,7 +13650,7 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": 2717995313,
+          "quantity": 2090765625,
           "unit": "TONNES_ORE",
           "year": 2026,
           "status": "SIMULATED",
@@ -13731,14 +13731,14 @@
         }
       },
       "reserve": {
-        "quantity": 2717995313,
+        "quantity": 2090765625,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
         "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_375_YEARS"
       },
       "simulation": {
         "reserve": {
-          "quantity": 2717995313,
+          "quantity": 2090765625,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
           "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_375_YEARS"
@@ -13958,7 +13958,7 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": 3636192196,
+          "quantity": 3217869200,
           "unit": "TONNES_ORE",
           "year": 2026,
           "status": "SIMULATED",
@@ -14039,14 +14039,14 @@
         }
       },
       "reserve": {
-        "quantity": 3636192196,
+        "quantity": 3217869200,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
         "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_392_YEARS"
       },
       "simulation": {
         "reserve": {
-          "quantity": 3636192196,
+          "quantity": 3217869200,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
           "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_392_YEARS"
@@ -14265,7 +14265,7 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": 4465472634,
+          "quantity": 3544025900,
           "unit": "TONNES_ORE",
           "year": 2026,
           "status": "SIMULATED",
@@ -14346,14 +14346,14 @@
         }
       },
       "reserve": {
-        "quantity": 4465472634,
+        "quantity": 3544025900,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
         "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_409_YEARS"
       },
       "simulation": {
         "reserve": {
-          "quantity": 4465472634,
+          "quantity": 3544025900,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
           "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_409_YEARS"
@@ -14573,7 +14573,7 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": 1677892590,
+          "quantity": 1539351000,
           "unit": "TONNES_ORE",
           "year": 2026,
           "status": "SIMULATED",
@@ -14654,14 +14654,14 @@
         }
       },
       "reserve": {
-        "quantity": 1677892590,
+        "quantity": 1539351000,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
         "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_426_YEARS"
       },
       "simulation": {
         "reserve": {
-          "quantity": 1677892590,
+          "quantity": 1539351000,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
           "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_426_YEARS"
@@ -14881,7 +14881,7 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": 3542450560,
+          "quantity": 2903648000,
           "unit": "TONNES_ORE",
           "year": 2026,
           "status": "SIMULATED",
@@ -14962,14 +14962,14 @@
         }
       },
       "reserve": {
-        "quantity": 3542450560,
+        "quantity": 2903648000,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
         "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_352_YEARS"
       },
       "simulation": {
         "reserve": {
-          "quantity": 3542450560,
+          "quantity": 2903648000,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
           "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_352_YEARS"
@@ -15189,7 +15189,7 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": 1884411506,
+          "quantity": 1794677625,
           "unit": "TONNES_ORE",
           "year": 2026,
           "status": "SIMULATED",
@@ -15270,14 +15270,14 @@
         }
       },
       "reserve": {
-        "quantity": 1884411506,
+        "quantity": 1794677625,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
         "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_369_YEARS"
       },
       "simulation": {
         "reserve": {
-          "quantity": 1884411506,
+          "quantity": 1794677625,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
           "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_369_YEARS"
