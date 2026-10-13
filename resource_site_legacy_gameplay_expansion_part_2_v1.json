@@ -3640,8 +3640,45 @@
         "maritimeExposureIndex": 33,
         "scale": "0_TO_100_SIMULATION_INDEX"
       },
-      "observedFacts": [],
-      "sources": [],
+      "observedFacts": [
+        {
+          "metric": "recoverableGasReserveLowerBound",
+          "value": 900,
+          "unit": "TCF",
+          "comparison": "GREATER_THAN",
+          "status": "OBSERVED_OPERATOR_REPORTED_LOWER_BOUND",
+          "sourceUrl": "https://www.qatarenergy.qa/en/Whatwedo/Pages/ExplorationandProduction.aspx"
+        },
+        {
+          "metric": "phaseIReportedGasProductionLowerBound",
+          "value": 700,
+          "unit": "MMSCF_PER_DAY",
+          "comparison": "GREATER_THAN",
+          "status": "OBSERVED_OPERATOR_REPORTED_PHASE_CONTEXT_NOT_TOTAL_FIELD_OUTPUT",
+          "sourceUrl": "https://www.qatarenergy.qa/en/Whatwedo/Pages/ExplorationandProduction.aspx"
+        },
+        {
+          "metric": "additionalGasQuantitiesAnnounced",
+          "value": 240,
+          "unit": "TCF",
+          "status": "OBSERVED_ANNOUNCEMENT_CONTEXT_NOT_INDEPENDENT_RESERVE_AUDIT",
+          "sourceUrl": "https://thepeninsulaqatar.com/article/25/02/2024/qatar-announces-significant-increase-in-north-field-gas-reserves"
+        }
+      ],
+      "sources": [
+        {
+          "url": "https://www.qatarenergy.qa/en/Whatwedo/Pages/ExplorationandProduction.aspx",
+          "sourceType": "QATARENERGY_OPERATOR_PRIMARY",
+          "accessed": "2026-10-13",
+          "scope": "recoverable gas lower bound and Phase I production context"
+        },
+        {
+          "url": "https://thepeninsulaqatar.com/article/25/02/2024/qatar-announces-significant-increase-in-north-field-gas-reserves",
+          "sourceType": "THE_PENINSULA_REPORTING",
+          "accessed": "2026-10-13",
+          "scope": "2024 announced North Field reserve expansion"
+        }
+      ],
       "locationSource": {
         "sourceType": "LEGACY_REPOSITORY_COORDINATE",
         "scope": "Regional approximation; not survey grade",
@@ -3674,7 +3711,7 @@
         "identityConfidence": "LEGACY_STRUCTURAL_CANDIDATE",
         "metricAuthority": "SIMULATED_GAMEPLAY_NOT_OBSERVED"
       },
-      "researchState": "LEGACY_IDENTITY_WITH_SIMULATED_GAMEPLAY_METRICS",
+      "researchState": "PARTIAL_SITE_SPECIFIC_RESEARCH; GAMEPLAY_METRICS_REMAIN_SIMULATED",
       "generatedAt": "2026-10-13"
     },
     {
@@ -3977,8 +4014,32 @@
         "maritimeExposureIndex": 18,
         "scale": "0_TO_100_SIMULATION_INDEX"
       },
-      "observedFacts": [],
-      "sources": [],
+      "observedFacts": [
+        {
+          "metric": "reportedOperator",
+          "value": "ADNOC Offshore",
+          "status": "SECONDARY_REPORTED",
+          "sourceUrl": "https://en.wikipedia.org/wiki/Upper_Zakum_oil_field"
+        },
+        {
+          "metric": "reportedEquityInterests",
+          "value": {
+            "ADNOC": "majority interest",
+            "ExxonMobil": "28%",
+            "JODCO": "12%"
+          },
+          "status": "SECONDARY_REPORTED",
+          "sourceUrl": "https://en.wikipedia.org/wiki/Upper_Zakum_oil_field"
+        }
+      ],
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Upper_Zakum_oil_field",
+          "sourceType": "SECONDARY_REFERENCE",
+          "accessed": "2026-10-13",
+          "scope": "reported operator and ownership interests"
+        }
+      ],
       "locationSource": {
         "sourceType": "LEGACY_REPOSITORY_COORDINATE",
         "scope": "Regional approximation; not survey grade",
@@ -4005,7 +4066,7 @@
         "identityConfidence": "LEGACY_STRUCTURAL_CANDIDATE",
         "metricAuthority": "SIMULATED_GAMEPLAY_NOT_OBSERVED"
       },
-      "researchState": "LEGACY_IDENTITY_WITH_SIMULATED_GAMEPLAY_METRICS",
+      "researchState": "PARTIAL_SITE_SPECIFIC_RESEARCH; GAMEPLAY_METRICS_REMAIN_SIMULATED",
       "generatedAt": "2026-10-13"
     },
     {
