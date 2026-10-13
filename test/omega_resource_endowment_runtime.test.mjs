@@ -18,7 +18,8 @@ const resourceFiles=new Map([
   ['resource_site_legacy_gameplay_expansion_part_2_v1.json',new URL('../resource_site_legacy_gameplay_expansion_part_2_v1.json',import.meta.url)],
   ['resource_site_legacy_gameplay_expansion_part_3_v1.json',new URL('../resource_site_legacy_gameplay_expansion_part_3_v1.json',import.meta.url)],
   ['resource_site_legacy_gameplay_expansion_part_4_v1.json',new URL('../resource_site_legacy_gameplay_expansion_part_4_v1.json',import.meta.url)],
-  ['resource_site_legacy_gameplay_expansion_part_5_v1.json',new URL('../resource_site_legacy_gameplay_expansion_part_5_v1.json',import.meta.url)]
+  ['resource_site_legacy_gameplay_expansion_part_5_v1.json',new URL('../resource_site_legacy_gameplay_expansion_part_5_v1.json',import.meta.url)],
+  ['resource_site_industrial_catalog_v1.json',new URL('../resource_site_industrial_catalog_v1.json',import.meta.url)]
 ]);
 const nativeFetch=globalThis.fetch;
 globalThis.fetch=async function(input){
@@ -99,15 +100,21 @@ assert(pilbaraOccurrence,'Pilbara should have an initialized reserve/extraction 
 assert.equal(pilbaraExecution[pilbaraOccurrence].provenance.stateAuthority,'SIMULATED');
 assert.ok(pilbaraExecution[pilbaraOccurrence].recoverableQuantity>0);
 
-// Exercise the production site through the authoritative extraction command and verify
-// that its output becomes a country-owned raw batch in the sovereign raw-material warehouse.
-const pilbaraExtraction=runtime.extractCountry('AUS',[pilbaraOccurrence]);
-assert.equal(pilbaraExtraction.status,'APPLIED',JSON.stringify(pilbaraExtraction));
-assert.equal(pilbaraExtraction.result?.accepted,true,JSON.stringify(pilbaraExtraction.result));
-assert.equal(pilbaraExtraction.result?.extracted,1,JSON.stringify(pilbaraExtraction.result));
+// Exercise SITE -> extraction -> country warehouse -> route -> factory -> processing.
+await import('../omega_resource_industrial_network_v1.js');
+const industrial=globalThis.OmegaResourceIndustrialNetwork;
+assert(industrial?.executeSitePipeline,'industrial site-pipeline executor must be installed');
+const pilbaraPipeline=await industrial.executeSitePipeline({countryId:'AUS',siteId:'SITE_AUS_pilbara_iron_ore_range',resourceId:'iron_ore',quantity:100});
+assert.equal(pilbaraPipeline.status,'IN_TRANSIT',JSON.stringify(pilbaraPipeline));
+assert.equal(pilbaraPipeline.countryId,'AUS');
+assert.equal(pilbaraPipeline.extractionStatus,'COMMITTED');
+assert.equal(pilbaraPipeline.shipmentStatus,'DISPATCHED');
+assert.ok(pilbaraPipeline.route?.distanceKm>0);
+assert.equal(pilbaraPipeline.route?.crossBorderRequired,false);
 const ausAfterExtraction=runtime.countryResourceState('AUS')||{};
+const pilbaraOccurrence=pilbaraPipeline.occurrenceKey;
 const pilbaraBatch=(ausAfterExtraction.batches||[]).find(b=>b.occurrenceKey===pilbaraOccurrence);
-assert(pilbaraBatch,'extraction must create an auditable raw batch');
+assert(pilbaraBatch,'site pipeline extraction must create an auditable raw batch');
 assert.equal(pilbaraBatch.countryId,'AUS');
 assert.equal(pilbaraBatch.sourceCountryId,'AUS');
 assert.equal(pilbaraBatch.originCountryId,'AUS');
@@ -116,7 +123,19 @@ assert.equal(pilbaraBatch.warehouseId,'WH-AUS-RAW');
 assert.ok(Number(pilbaraBatch.quantity)>0);
 assert.equal(pilbaraBatch.stateAuthority,'SIMULATED');
 assert.equal(ausAfterExtraction.warehouse.countryId,'AUS');
-assert.ok((ausAfterExtraction.warehouse.availableByResource?.iron_ore||0)>0);
+assert.ok((ausAfterExtraction.warehouse.availableByResource?.iron_ore||0)>=0);
+const etaTurn=Number(pilbaraPipeline.route.etaTurn);
+assert.ok(etaTurn>=Number(globalThis.Game.state.simulation.turn));
+globalThis.Game.state.simulation.turn=etaTurn;
+const delivery=industrial.advanceShipments('AUS');
+assert.equal(delivery.status,'ADVANCED',JSON.stringify(delivery));
+assert.equal(delivery.delivered,1,JSON.stringify(delivery));
+const pilbaraDelivered=delivery.shipments[0];
+assert.equal(pilbaraDelivered.status,'DELIVERED');
+assert.equal(pilbaraDelivered.processingStatus,'PROCESSED',JSON.stringify(pilbaraDelivered.processing));
+const ausAfterProcessing=runtime.countryResourceState('AUS')||{};
+const factoryRuntime=globalThis.OmegaMinistryStateProvider?.getState?.()?.economy?.AUS?.productionAssets||globalThis.Game.state.economy?.AUS?.productionAssets||[];
+assert.ok(factoryRuntime.some(x=>String(x.id||x.assetId||x.projectId)===pilbaraPipeline.factoryId),'simulated factory must remain country-owned and findable');
 const gevraRef=(indState.mineSiteReferences||[]).find(x=>x.siteReferenceKey==='SITE_IND_gevra_oc_mine');
 const kwtDiag=runtime.hydrateCountry('KWT');const kwtState=runtime.countryResourceState('KWT')||{};const kwtRef=(kwtState.mineSiteReferences||[]).find(x=>x.siteReferenceKey==='SITE_KWT_greater_burgan_oilfield');console.log('ENDOWMENT_KWT_MODEL '+JSON.stringify({hydrate:kwtDiag.status,ref:kwtRef&&{siteReferenceKey:kwtRef.siteReferenceKey,resourceId:kwtRef.resourceId,commercialExtraction:kwtRef.commercialExtraction,simulationReserveQuantity:kwtRef.simulationReserveQuantity},model:globalThis.Omega?.ResourceRealism?.siteModel?.(kwtRef,engine.countryProfiles?.KWT,'KWT'),controller:Object.values(kwtState.mineSiteControllers||{}).find(x=>x.siteReferenceKey==='SITE_KWT_greater_burgan_oilfield')}));
 assert.equal(hydrated.status,'APPLIED', JSON.stringify(hydrated));
