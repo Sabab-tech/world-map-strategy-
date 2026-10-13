@@ -96,7 +96,24 @@ assert.equal(pilbaraSite.quantitative.production.status,'SIMULATED');
 assert.ok(pilbaraSite.simulationReserveQuantity>0);
 const pilbaraExecution=(ausState.mineStates||{});
 const pilbaraOccurrence=Object.keys(pilbaraExecution).find(k=>k.toLowerCase().includes('site_aus_pilbara_iron_ore_range'.toLowerCase()));
-assert(pilbaraOccurrence,'Pilbara should have an initialized reserve/extraction state');
+if(!pilbaraOccurrence){
+  const directModel=(globalThis.OmegaResourceRealism||globalThis.Omega?.ResourceRealism)?.siteModel?.({
+    ...pilbaraSite,siteId:pilbaraSite.siteId,siteReferenceKey:pilbaraSite.siteReferenceKey,
+    resourceId:pilbaraSite.resourceId||pilbaraSite.resourceTypeId,
+    simulationReserveQuantity:pilbaraSite.simulationReserveQuantity,
+    simulationReserveUnit:pilbaraSite.simulationReserveUnit
+  },null,'AUS');
+  assert(pilbaraOccurrence,'Pilbara should have an initialized reserve/extraction state; diagnostic='+JSON.stringify({
+    mineStateKeyCount:Object.keys(pilbaraExecution).length,
+    sampleMineStateKeys:Object.keys(pilbaraExecution).slice(-8),
+    siteRef:{siteId:pilbaraSite.siteId,resourceId:pilbaraSite.resourceId,resourceTypeId:pilbaraSite.resourceTypeId,
+      commercialExtraction:pilbaraSite.commercialExtraction,siteReferenceKey:pilbaraSite.siteReferenceKey,
+      quantity:pilbaraSite.simulationReserveQuantity,sourceAuthority:pilbaraSite.sourceAuthority,
+      provenance:pilbaraSite.quantitativeProvenance},
+    modelStatus:directModel?.status,modelResourceId:directModel?.resourceId,
+    modelStreams:directModel?.commodityStreams?.map(x=>({resourceId:x.resourceId,reserve:x.reserve,production:x.production,quality:x.quality}))
+  }));
+}
 assert.equal(pilbaraExecution[pilbaraOccurrence].provenance.stateAuthority,'SIMULATED');
 assert.ok(pilbaraExecution[pilbaraOccurrence].recoverableQuantity>0);
 
