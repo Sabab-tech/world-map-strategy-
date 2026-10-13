@@ -1312,8 +1312,22 @@
         "maritimeExposureIndex": 57,
         "scale": "0_TO_100_SIMULATION_INDEX"
       },
-      "observedFacts": [],
-      "sources": [],
+      "observedFacts": [
+        {
+          "metric": "commercialDiscoveryStatus",
+          "value": "NO_SIGNIFICANT_COMMERCIAL_DISCOVERY_REPORTED",
+          "status": "OBSERVED_SECTOR_CONTEXT",
+          "sourceUrl": "https://eiti.org/countries/sao-tome-and-principe"
+        }
+      ],
+      "sources": [
+        {
+          "url": "https://eiti.org/countries/sao-tome-and-principe",
+          "sourceType": "EITI_COUNTRY_REPORTING",
+          "accessed": "2026-10-13",
+          "scope": "petroleum sector status and exploratory activity"
+        }
+      ],
       "locationSource": {
         "sourceType": "LEGACY_REPOSITORY_COORDINATE",
         "scope": "Regional approximation; not survey grade",
@@ -1340,7 +1354,7 @@
         "identityConfidence": "LEGACY_STRUCTURAL_CANDIDATE",
         "metricAuthority": "SIMULATED_GAMEPLAY_NOT_OBSERVED"
       },
-      "researchState": "LEGACY_IDENTITY_WITH_SIMULATED_GAMEPLAY_METRICS",
+      "researchState": "EXPLORATION_CONTEXT_RESEARCHED; SCENARIO_EXTRACTION_REMAINS_LOCKED",
       "generatedAt": "2026-10-13"
     },
     {
@@ -1641,8 +1655,23 @@
         "maritimeExposureIndex": 13,
         "scale": "0_TO_100_SIMULATION_INDEX"
       },
-      "observedFacts": [],
-      "sources": [],
+      "observedFacts": [
+        {
+          "metric": "goldProduction",
+          "value": 4500,
+          "unit": "KILOGRAMS_PER_YEAR",
+          "status": "SECONDARY_REPORTED_ESTIMATE_YEAR_UNSPECIFIED",
+          "sourceUrl": "https://en.wikipedia.org/wiki/Lega_Dembi_Mine"
+        }
+      ],
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Lega_Dembi_Mine",
+          "sourceType": "SECONDARY_REFERENCE",
+          "accessed": "2026-10-13",
+          "scope": "mine identity and reported annual production estimate"
+        }
+      ],
       "locationSource": {
         "sourceType": "LEGACY_REPOSITORY_COORDINATE",
         "scope": "Regional approximation; not survey grade",
@@ -1669,7 +1698,7 @@
         "identityConfidence": "LEGACY_STRUCTURAL_CANDIDATE",
         "metricAuthority": "SIMULATED_GAMEPLAY_NOT_OBSERVED"
       },
-      "researchState": "LEGACY_IDENTITY_WITH_SIMULATED_GAMEPLAY_METRICS",
+      "researchState": "PARTIAL_SECONDARY_SOURCE_RESEARCH; GAMEPLAY_METRICS_REMAIN_SIMULATED",
       "generatedAt": "2026-10-13"
     },
     {
@@ -2632,8 +2661,31 @@
         "maritimeExposureIndex": 20,
         "scale": "0_TO_100_SIMULATION_INDEX"
       },
-      "observedFacts": [],
-      "sources": [],
+      "observedFacts": [
+        {
+          "metric": "projectRecoverableOil",
+          "value": 1.4,
+          "unit": "BILLION_BARRELS",
+          "status": "OBSERVED_OPERATOR_REPORTED_PROJECT_ESTIMATE",
+          "sourceUrl": "https://totalenergies.ug/projects/tilenga-project"
+        },
+        {
+          "metric": "projectDuration",
+          "value": 20,
+          "unit": "YEARS_MINIMUM",
+          "comparison": "AT_LEAST",
+          "status": "OBSERVED_OPERATOR_REPORTED",
+          "sourceUrl": "https://totalenergies.ug/projects/tilenga-project"
+        }
+      ],
+      "sources": [
+        {
+          "url": "https://totalenergies.ug/projects/tilenga-project",
+          "sourceType": "TOTALENERGIES_OPERATOR_PRIMARY",
+          "accessed": "2026-10-13",
+          "scope": "project-level recoverable resource and project duration estimate"
+        }
+      ],
       "locationSource": {
         "sourceType": "LEGACY_REPOSITORY_COORDINATE",
         "scope": "Regional approximation; not survey grade",
@@ -2660,7 +2712,7 @@
         "identityConfidence": "LEGACY_STRUCTURAL_CANDIDATE",
         "metricAuthority": "SIMULATED_GAMEPLAY_NOT_OBSERVED"
       },
-      "researchState": "LEGACY_IDENTITY_WITH_SIMULATED_GAMEPLAY_METRICS",
+      "researchState": "PARTIAL_SITE_SPECIFIC_RESEARCH; GAMEPLAY_METRICS_REMAIN_SIMULATED",
       "generatedAt": "2026-10-13"
     },
     {
