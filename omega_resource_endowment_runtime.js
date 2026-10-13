@@ -1127,13 +1127,13 @@ function batchFromExtraction(x,record){
       String(row?.depositName||row?.rawDeposit?.name||'').trim().toLowerCase().replace(/[^a-z0-9]+/g,'')
     ].join('|');
     const canonicalSignatures=new Set(canonicalRows.map(signature));
-    const preferredCanonicalRows=canonicalRows.filter(row=>!gameplaySiteIds.has(String(row?.siteReferenceKey||'')));
+    const explicitOccurrenceKeys=new Set(Array.isArray(cmd?.payload?.occurrenceKeys)?cmd.payload.occurrenceKeys.map(String):[]);
     const rowSeen=new Set(),rows=[];
-    for(const row of [...preferredCanonicalRows,...siteRows]){
+    for(const row of [...canonicalRows,...siteRows]){
       const key=String(row?.occurrenceKey||'');
       if(!key||rowSeen.has(key))continue;
-      const isDedicatedGameplaySite=gameplaySiteIds.has(String(row?.siteReferenceKey||''));
-      if(row?.assetType==='MINE_SITE'&&!isDedicatedGameplaySite&&(canonicalSignatures.has(signature(row))||(row?.linkedDepositId&&canonicalRows.some(x=>String(x?.depositKey||'')===String(row.linkedDepositId)))))continue;
+      const isExplicitDedicatedGameplaySite=gameplaySiteIds.has(String(row?.siteReferenceKey||''))&&explicitOccurrenceKeys.has(key);
+      if(row?.assetType==='MINE_SITE'&&!isExplicitDedicatedGameplaySite&&(canonicalSignatures.has(signature(row))||(row?.linkedDepositId&&canonicalRows.some(x=>String(x?.depositKey||'')===String(row.linkedDepositId)))))continue;
       rowSeen.add(key);rows.push(row);
     }
     const selected=Array.isArray(cmd?.payload?.occurrenceKeys)&&cmd.payload.occurrenceKeys.length
