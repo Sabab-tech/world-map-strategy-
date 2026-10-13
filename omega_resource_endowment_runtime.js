@@ -359,7 +359,10 @@
       s.simulationReserveUnit=row.reserve.unit||null;
       s.simulationReserveRecordId=row.siteId;
       s.simulationReserveAuthority='SCENARIO_SIMULATION_DATA';
-      const legacyScenarioEligible=s.operation?.commercialExtraction===true&&!s.runtime?.aliasOfSiteId&&s.map?.markerEligible!==false;
+      const legacyOperation=s.operation||s.rawSiteReference?.operation||{};
+      const legacyRuntime=s.runtime||s.rawSiteReference?.runtime||{};
+      const legacyMap=s.map||s.rawSiteReference?.map||{};
+      const legacyScenarioEligible=legacyOperation.commercialExtraction===true&&!legacyRuntime.aliasOfSiteId&&legacyMap.markerEligible!==false;
       const reserveRowEligible=row.commercialExtraction===true;
       s.commercialExtraction=legacyScenarioEligible||reserveRowEligible;
       s.simulationCommercialExtraction=legacyScenarioEligible||reserveRowEligible;
