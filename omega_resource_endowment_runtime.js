@@ -1120,17 +1120,20 @@ function batchFromExtraction(x,record){
     const persistedMineStates=ctx.stateTransaction.get('resource.mineStates')||{};
     const canonicalRows=occurrenceRows(c);
     const siteRows=siteExecutionRows(c,{mineStates:persistedMineStates});
+    const gameplaySiteIds=new Set(mineSiteReferenceRows(c).filter(site=>site?.runtime?.identityAuthority==='LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE'&&site?.map?.markerEligible!==false&&!site?.runtime?.aliasOfSiteId&&!LEGACY_CANONICAL_ALIAS_IDS[String(site?.siteId||'')]).map(site=>String(site.siteId)));
     const signature=row=>[
       canonical(c),
       String(row?.resourceId||'').toLowerCase(),
       String(row?.depositName||row?.rawDeposit?.name||'').trim().toLowerCase().replace(/[^a-z0-9]+/g,'')
     ].join('|');
     const canonicalSignatures=new Set(canonicalRows.map(signature));
+    const preferredCanonicalRows=canonicalRows.filter(row=>!gameplaySiteIds.has(String(row?.siteReferenceKey||'')));
     const rowSeen=new Set(),rows=[];
-    for(const row of [...canonicalRows,...siteRows]){
+    for(const row of [...preferredCanonicalRows,...siteRows]){
       const key=String(row?.occurrenceKey||'');
       if(!key||rowSeen.has(key))continue;
-      if(row?.assetType==='MINE_SITE'&&(canonicalSignatures.has(signature(row))||(row?.linkedDepositId&&canonicalRows.some(x=>String(x?.depositKey||'')===String(row.linkedDepositId)))))continue;
+      const isDedicatedGameplaySite=gameplaySiteIds.has(String(row?.siteReferenceKey||''));
+      if(row?.assetType==='MINE_SITE'&&!isDedicatedGameplaySite&&(canonicalSignatures.has(signature(row))||(row?.linkedDepositId&&canonicalRows.some(x=>String(x?.depositKey||'')===String(row.linkedDepositId)))))continue;
       rowSeen.add(key);rows.push(row);
     }
     const selected=Array.isArray(cmd?.payload?.occurrenceKeys)&&cmd.payload.occurrenceKeys.length

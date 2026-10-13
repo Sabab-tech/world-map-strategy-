@@ -242,7 +242,12 @@ for (const site of structuredLegacy.records) {
   } else {
     assert.equal(canonicalRow.runtime?.identityAuthority, 'LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE');
   }
-  assert.equal(canonicalRow.quantitative?.quantitativeProvenance?.authority, 'SCENARIO_SIMULATION_DATA');
+  const quantitativeAuthority=canonicalRow.quantitative?.quantitativeProvenance?.authority;
+  if (gameplayRow.runtime?.aliasOfSiteId || gameplayRow.map?.markerEligible===false) {
+    assert.ok(['SCENARIO_SIMULATION_DATA','SIMULATION_ALIAS_REFERENCE_NOT_INDEPENDENT_ASSET'].includes(quantitativeAuthority), site.siteId + ': alias authority must stay explicit');
+  } else {
+    assert.equal(quantitativeAuthority, 'SCENARIO_SIMULATION_DATA');
+  }
   assert.equal(canonicalRow.map?.markerEligible, gameplayRow.map?.markerEligible, site.siteId + ': map alias flag must survive merge');
   assert.equal(site.countryId, site.identity.countryIso3);
   assert.match(site.countryId, /^[A-Z]{3}$/);

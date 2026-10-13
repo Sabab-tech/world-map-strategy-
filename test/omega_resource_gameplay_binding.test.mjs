@@ -273,7 +273,7 @@ test('runtime renders all global sites and applies nation/resource scope without
   context.Game.currentActiveCountry='Saudi Arabia';
   context.Game.Map.resourceState.selectedResources=vm.runInContext("new Set(['all'])",context);
   context.Omega.IndividualResourceSiteBinding.refresh();
-  assert.equal(markerCount(),3,'Saudi Arabia must show the gold mine and both individually identified oilfields');
+  assert.equal(markerCount(),5,'Saudi Arabia scope must include its three original locations and two newly integrated physical sites');
   context.Game.Map.resourceState.selectedResources=vm.runInContext("new Set(['crude_oil'])",context);
   context.Omega.IndividualResourceSiteBinding.refresh();
   assert.equal(markerCount(),2,'Saudi Arabia crude-oil filter must show both Ghawar and Safaniya, not one country aggregate');
