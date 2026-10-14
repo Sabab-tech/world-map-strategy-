@@ -153,7 +153,8 @@ test('runtime renders all global sites and applies nation/resource scope without
     'resources_2.json': JSON.parse(read('resources_2.json')),
     'resource_site_canonical_catalog_v1.json': catalog,
     'resource_site_master_registry_v1.json': master,
-    'resource_site_country_expansion_v1.json': expansion
+    'resource_site_country_expansion_v1.json': expansion,
+    'resource_site_legacy_gameplay_expansion_part_6_v1.json': JSON.parse(read('resource_site_legacy_gameplay_expansion_part_6_v1.json'))
   };
   // Test-only fixture: force two separate site identities to share one coordinate so pixel-spider offsets are verified.
   const rawCountryProfiles=Object.values(rawSources['resources.json'].GSRSK_Master_CountryProfiles_v14.countryProfiles||{});
@@ -235,10 +236,28 @@ test('runtime renders all global sites and applies nation/resource scope without
   for (const site of catalog.sites.filter(s=>expansion.migratedSiteIds.includes(s.siteId))) {
     assert.ok(mappedSiteIds.has(site.siteId), site.siteId + ': expansion identity must be mapped or explicitly joined as a physical-site alias');
   }
+  const part6=rawSources['resource_site_legacy_gameplay_expansion_part_6_v1.json'];
+  assert.equal(part6.records.length,50,'map binding fixture must load all 50 Part 6 sites');
+  const part6Ids=new Set(part6.records.map(site=>site.siteId));
+  const mappedPart6Sites=context.Omega.IndividualResourceSiteBinding.sites.filter(site=>part6Ids.has(site.siteId));
+  assert.equal(mappedPart6Sites.length,50,'all 50 Part 6 identities must join the same individual-site map registry');
+  for(const expected of part6.records){
+    const site=mappedPart6Sites.find(row=>row.siteId===expected.siteId);
+    assert(site,expected.siteId+': per-site map identity missing');
+    assert.equal(site.countryId,expected.countryId,expected.siteId+': map country must remain site-specific');
+    assert.equal(site.resourceId,expected.resourceId,expected.siteId+': map resource filter key must remain site-specific');
+    assert.ok(site.location?.coordinateStatus,expected.siteId+': coordinate confidence must be exposed');
+  }
   const geographicPositions=new Set([...layers].flatMap(layer=>layer.markers).map(marker=>marker.latlng.map(value=>Number(value).toFixed(3)).join('|')));
   assert.ok(geographicPositions.size>100,'world markers must preserve widespread source coordinates instead of collapsing all resources to one point');
   assert.ok(context.Game.Map.resourceDepositsLayer.clearCount>0,'legacy deposit layer must be cleared so old and individual markers do not stack');
   const activeMarkers=[...layers].flatMap(layer=>layer.markers);
+  for(const expected of part6.records){
+    const coords=expected.location.coordinates;
+    assert(activeMarkers.some(marker=>Math.abs(Number(marker.latlng[0])-Number(coords.lat))<1e-7&&
+      Math.abs(Number(marker.latlng[1])-Number(coords.lng))<1e-7),
+      expected.siteId+': the site must render an actual marker at its own stored coordinates');
+  }
   const overlapping=activeMarkers.filter(marker=>Math.abs(marker.latlng[0]-Number(overlapBase.lat??overlapBase.coordinates?.lat??overlapBase.location?.coordinates?.lat))<1e-7&&Math.abs(marker.latlng[1]-Number(overlapBase.lng??overlapBase.lon??overlapBase.coordinates?.lng??overlapBase.location?.coordinates?.lng))<1e-7);
   assert.ok(overlapping.length>=2,'test fixture must produce separate site markers at the same geographic coordinate');
   assert.ok(new Set(overlapping.map(marker=>JSON.stringify(marker.options.icon.iconAnchor))).size>=2,'coincident sites must get distinct screen-space icon anchors without changing their true lat/lng');
