@@ -148,6 +148,9 @@ assert.equal(audit.status,'PASS','integrity audit failed: '+JSON.stringify(audit
 assert.equal(audit.siteCount,365);
 assert.equal(audit.uniqueSiteIdCount,365);
 assert.equal(audit.aliasTargetsNotFound.length,0);
+assert.equal(audit.markerCollisionGroups.length,1,'the only same-coordinate marker overlap must be explicitly reviewed');
+assert.equal(audit.markerCollisionGroups[0].intentional,true,'Geita regional point collision must be a declared cluster, not silently deduplicated');
+assert.deepEqual([...audit.markerCollisionGroups[0].siteIds].sort(),['SITE_TZA_geita_gold_mine','SITE_TZA_geita_gold_mine_super_pit'].sort());
 
 // All six expansion packs have unique identity records; exact duplicate coordinates must be explicitly declared, not silently hidden.
 const expansionAudit=I.auditRegistry(allLegacy,{aliasMap,allowExternalAliasTargets:knownIds});
