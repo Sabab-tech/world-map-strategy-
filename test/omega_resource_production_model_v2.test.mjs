@@ -6,6 +6,7 @@ const context={console,Math,Number,String,Object,Array,Set,Map,WeakMap,JSON,Date
 context.globalThis=context;
 vm.createContext(context);
 
+vm.runInContext(fs.readFileSync('omega_resource_production_capacity_contract_v1.js','utf8'),context,{filename:'omega_resource_production_capacity_contract_v1.js'});
 vm.runInContext(fs.readFileSync('omega_resource_part05_reserve_extraction_runtime.js','utf8'),context,{filename:'omega_resource_part05_reserve_extraction_runtime.js'});
 vm.runInContext(fs.readFileSync('omega_resource_realism_runtime_v1.js','utf8'),context,{filename:'omega_resource_realism_runtime_v1.js'});
 vm.runInContext(fs.readFileSync('omega_resource_production_model_v2.js','utf8'),context,{filename:'omega_resource_production_model_v2.js'});
