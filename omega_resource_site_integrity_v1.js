@@ -34,7 +34,11 @@ const NUMERIC_KEYS=Object.freeze({
 const UNKNOWN=new Set(['UNOBSERVED','UNQUANTIFIED','NOT_APPLICABLE','UNKNOWN','MISSING']);
 const KNOWN_STATUS=new Set(['OBSERVED','OBSERVED_ATTRIBUTABLE','REPORTED','REPORTED_TEXT_ONLY','SIMULATED','UNOBSERVED','UNQUANTIFIED','NOT_APPLICABLE','UNKNOWN','DERIVED','ESTIMATED','INFERRED','PARTIAL']);
 function unitToken(value){
-  return String(value??'').trim().toUpperCase().replace(/[\\s-]+/g,'_').replace(/\\/DAY$/,'_PER_DAY').replace(/\\/YEAR$/,'_PER_YEAR').replace(/\\/YR$/,'_PER_YEAR');
+  let s=String(value??'').trim().toUpperCase().replace(/[\s-]+/g,'_');
+  if(s.endsWith('/DAY'))s=s.slice(0,-4)+'_PER_DAY';
+  else if(s.endsWith('/YEAR'))s=s.slice(0,-5)+'_PER_YEAR';
+  else if(s.endsWith('/YR'))s=s.slice(0,-3)+'_PER_YEAR';
+  return s;
 }
 function normalizeProductionUnit(value,period){
   const raw=unitToken(value);
