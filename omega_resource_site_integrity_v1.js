@@ -114,8 +114,12 @@ function normalizeQuantitative(source){
         v.unit=normalizeProductionUnit(rawValue.sourceUnit,'rate');
       if(hasValue(v.unit))v.unit=normalizeProductionUnit(v.unit,'rate');
       if(hasValue(v.annualUnit))v.annualUnit=normalizeProductionUnit(v.annualUnit,'annual');
+      if(finite(v.rate)&&!hasValue(v.unit)&&hasValue(v.annualUnit)&&/_PER_YEAR$/.test(v.annualUnit))v.unit=v.annualUnit.replace(/_PER_YEAR$/,'_PER_DAY');
+      if(finite(v.annual)&&!hasValue(v.annualUnit)&&hasValue(v.unit)&&/_PER_DAY$/.test(v.unit))v.annualUnit=v.unit.replace(/_PER_DAY$/,'_PER_YEAR');
     }
     if(field==='recovery'&&!hasValue(v.unit))v.unit='PERCENT';
+    const legacyText=firstUnit(rawValue.reportedText,rawValue.legacyReportedText,rawValue.reportedValue,rawValue.legacyReportedReserveText);
+    if(hasValue(legacyText))descriptive.push({key:'reportedText',value:legacyText});
     if(descriptive.length){
       v.reportedText=descriptive.map(x=>typeof x.value==='string'?x.value:JSON.stringify(x.value)).join(' | ');
       rawFields[field]=rawValue;
@@ -132,8 +136,8 @@ function normalizeQuantitative(source){
       v.status=descriptive.length?'REPORTED_TEXT_ONLY':'UNOBSERVED';
     }else if(['REPORTED','REPORTED_TEXT','LEGACY_REPORTED'].includes(sourceStatus)&&!numericPresent){
       v.status=descriptive.length?'REPORTED_TEXT_ONLY':'UNQUANTIFIED';
-    }else if(['OBSERVED','OBSERVED_ATTRIBUTABLE'].includes(sourceStatus)&&!numericPresent&&descriptive.length){
-      v.status='REPORTED_TEXT_ONLY';
+    }else if(['OBSERVED','OBSERVED_ATTRIBUTABLE','REPORTED','REPORTED_TEXT','LEGACY_REPORTED'].includes(sourceStatus)&&!numericPresent){
+      v.status=descriptive.length?'REPORTED_TEXT_ONLY':(sourceStatus.startsWith('REPORTED')||sourceStatus==='LEGACY_REPORTED'?'UNQUANTIFIED':'UNOBSERVED');
     }else{
       v.status=sourceStatus;
     }
