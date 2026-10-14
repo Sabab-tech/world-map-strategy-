@@ -65,7 +65,7 @@
   const id=v=>String(v??'').trim().toUpperCase();
   const rid=v=>String(v??'').replace(/^RES_TYPE:/i,'').trim().toLowerCase();
   const tok=v=>String(v??'').trim().toLowerCase().replace(/[\s-]+/g,'_');
-  const n=v=>{const x=Number(v);return Number.isFinite(x)?x:null;};
+  const n=v=>{if(v===null||v===undefined||v==='')return null;const x=Number(v);return Number.isFinite(x)?x:null;};
   const state=()=>g.Game?.state||g.gameState||{};
   const simulationYear=()=>{const d=state()?.simulation?.date;if(d){const y=Number(String(d).slice(0,4));if(Number.isFinite(y))return y;}const sy=Number(state()?.simulation?.startYear);return Number.isFinite(sy)?sy:2015;};
   let simulationReserveMap=null,simulationReservePromise=null,researchEvidenceMap=null,researchEvidencePromise=null;
