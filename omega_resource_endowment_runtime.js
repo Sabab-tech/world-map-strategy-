@@ -17,6 +17,8 @@
   // Normalize every canonical and additive site into one lossless, typed runtime contract.
   // Missing real-world values stay null/UNOBSERVED; the simulation layer is never promoted to evidence.
   function normalizeSiteQuantitative(row){
+    const sharedIntegrity=g.OmegaResourceSiteIntegrity||g.Omega?.ResourceSiteIntegrity;
+    if(typeof sharedIntegrity?.normalizeQuantitative==='function')return sharedIntegrity.normalizeQuantitative(row?.quantitative&&typeof row.quantitative==='object'?row.quantitative:row||{});
     const q=row?.quantitative&&typeof row.quantitative==='object'?clone(row.quantitative):{};
     const ensure=(key,shape,status='UNOBSERVED')=>{
       const old=q[key]&&typeof q[key]==='object'?q[key]:{};
@@ -46,6 +48,8 @@
     return q;
   }
   function normalizeSiteRecord(raw){
+    const sharedIntegrity=g.OmegaResourceSiteIntegrity||g.Omega?.ResourceSiteIntegrity;
+    if(typeof sharedIntegrity?.normalizeSiteRecord==='function')return sharedIntegrity.normalizeSiteRecord(raw);
     const row=clone(raw||{});
     const country=String(row.countryId||row.identity?.countryIso3||row.countryCode||'').trim().toUpperCase();
     row.countryId=country;
@@ -174,6 +178,14 @@
         const legacyCanonicalPhysicalRows=legacyCanonicalRows.filter(row=>row?.map?.markerEligible!==false&&!row?.runtime?.aliasOfSiteId&&!LEGACY_CANONICAL_ALIAS_IDS[String(row?.siteId||'')]);
         const rows=baseRows.concat(acceptedExpansion,acceptedLegacy);
         const normalizedRows=rows.map(normalizeSiteRecord);
+        const integrity=g.OmegaResourceSiteIntegrity||g.Omega?.ResourceSiteIntegrity;
+        if(typeof integrity?.auditRegistry==='function'){
+          const integrityReport=integrity.auditRegistry(normalizedRows,{aliasMap:LEGACY_CANONICAL_ALIAS_IDS});
+          g.OmegaResourceSiteIntegrityReport=integrityReport;
+          g.Omega=g.Omega||{};
+          g.Omega.ResourceSiteIntegrityReport=integrityReport;
+          if(integrityReport.status!=='PASS')throw new Error('OMEGA_RESOURCE_SITE_INTEGRITY_FAILED:'+JSON.stringify({siteCount:integrityReport.siteCount,errorCount:integrityReport.errorCount,errors:integrityReport.errors.slice(0,12)}));
+        }
         const map={};
         for(const row of normalizedRows)if(row?.siteId)map[String(row.siteId)]=row;
         canonicalSiteCatalogMap=map;
