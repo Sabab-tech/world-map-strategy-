@@ -64,7 +64,7 @@ function numericCandidate(raw){
   if(finite(raw))return raw;
   if(typeof raw==='string'){
     const trimmed=raw.trim();
-    if(/^[-+]?(?:\\d{1,3}(?:,\\d{3})+|\\d+)(?:\\.\\d+)?$/.test(trimmed))return Number(trimmed.replace(/,/g,''));
+    if(/^[-+]?(?:[0-9]{1,3}(?:,[0-9]{3})+|[0-9]+)(?:\.[0-9]+)?$/.test(trimmed))return Number(trimmed.replace(/,/g,''));
     return null;
   }
   if(raw&&typeof raw==='object'){
