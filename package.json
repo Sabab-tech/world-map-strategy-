@@ -41,8 +41,8 @@
     "test:resource-request": "node test/omega_resource_request_and_settlement.test.mjs",
     "test:resource-authoritative": "node --test test/omega_resource_authoritative_adapter.test.mjs",
     "test:resource-actions": "node --test test/omega_resource_action_execution_runtime.test.mjs",
-    "test:resource-production-model": "node test/omega_resource_production_model_v2.test.mjs",
-    "test:resource-realism": "node test/omega_resource_realism_runtime_v1.test.mjs && npm run test:resource-logistics && npm run test:resource-site-reserves",
+    "test:resource-production-model": "npm run test:resource-capacity-contract && node test/omega_resource_production_model_v2.test.mjs",
+    "test:resource-realism": "npm run test:resource-capacity-contract && node test/omega_resource_realism_runtime_v1.test.mjs && npm run test:resource-logistics && npm run test:resource-site-reserves",
     "test:resource-logistics": "node test/omega_resource_logistics_runtime_v1.test.mjs",
     "test:resource-simulation-scale": "node test/omega_resource_site_reserve_certificate.test.mjs",
     "test:resource-site-reserves": "node test/omega_resource_site_reserve_certificate.test.mjs",
@@ -51,7 +51,8 @@
     "test:resource-industrial-network": "node test/omega_resource_industrial_network_v1.test.mjs",
     "test:resource-country-expansion": "node test/omega_resource_legacy_gameplay_expansion.test.mjs && node --test test/omega_resource_site_country_expansion.test.mjs && node --test test/omega_resource_site_data_contract.test.mjs && node test/omega_resource_next_50_site_contract.test.mjs",
     "test:resource-gameplay-binding": "node --check omega_resource_gameplay_binding_v1.js && node test/omega_resource_gameplay_binding.test.mjs && node test/omega_resource_next_50_site_contract.test.mjs",
-    "test:resource-site-data-contract": "node --test test/omega_resource_site_data_contract.test.mjs"
+    "test:resource-site-data-contract": "node --test test/omega_resource_site_data_contract.test.mjs",
+    "test:resource-capacity-contract": "node test/omega_resource_production_capacity_contract.test.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.21.0",

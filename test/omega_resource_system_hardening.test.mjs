@@ -34,6 +34,7 @@ const context={
 };
 context.globalThis=context;
 vm.createContext(context);
+vm.runInContext(read('omega_resource_production_capacity_contract_v1.js'),context,{filename:'omega_resource_production_capacity_contract_v1.js'});
 vm.runInContext(read('omega_resource_realism_runtime_v1.js'),context,{filename:'omega_resource_realism_runtime_v1.js'});
 context.Omega.ResourceLogisticsRuntime={plan:()=>({status:'PLANNED',requestedQuantity:100,dispatchQuantity:100,capacity:100,transportMode:'truck',travelTimeDays:1})};
 vm.runInContext(read('omega_resource_system_hardening_v1.js'),context,{filename:'omega_resource_system_hardening_v1.js'});

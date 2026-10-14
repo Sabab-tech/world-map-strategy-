@@ -8,6 +8,7 @@ function load(path,context){
 const context=createContext({console,globalThis:null});
 context.globalThis=context;
 
+load('omega_resource_production_capacity_contract_v1.js',context);
 load('omega_resource_realism_runtime_v1.js',context);
 const R=context.Omega.ResourceRealism;
 assert.equal(R.VERSION,'1.2.0');
@@ -64,6 +65,9 @@ assert.equal(stream.reserve.authority,'SIMULATED');
 assert.equal(typeof stream.quality.grade,'number');
 assert.ok(stream.reserve.quantity>0);
 assert.notEqual(stream.production.activeRate,1000);
+assert.equal(stream.production.productionCalculation.formulaVersion,'OMEGA_EFFECTIVE_PRODUCTION_V1');
+assert.ok(stream.production.availabilityFactors.powerAvailability>0);
+assert.equal(stream.production.productionCalculation.activeRate,stream.production.activeRate);
 
 // Real numeric fields from the 65-site expansion remain scenario data, not falsely observed facts.
 const legacyGameplaySite=R.siteModel({
@@ -101,6 +105,8 @@ assert.equal(legacyStream.quality.purityStatus,'SIMULATED');
 assert.equal(legacyStream.quality.grade,42.5);
 assert.equal(legacyStream.quality.purity,64.2);
 assert.ok(legacyStream.production.activeRate>0);
+assert.equal(legacyStream.production.productionCalculation.authority,'SIMULATED');
+assert.ok(legacyStream.production.availabilityMultiplier>0);
 
 const observedSite=R.siteModel({
   siteReferenceKey:'SITE:OBS:01',siteName:'Observed Multi Commodity',
