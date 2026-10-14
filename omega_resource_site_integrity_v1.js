@@ -130,7 +130,14 @@ function normalizeQuantitative(source){
     }
     v.sourceStatus=sourceStatus;
     const numericPresent=keys.some(key=>finite(v[key]));
-    if(!sourceStatus){
+    const customStatus=sourceStatus&&!KNOWN_STATUS.has(sourceStatus);
+    const reportedLike=customStatus&&/(REPORTED|GOVERNMENT|MINISTRY|ESTIMATE|DESIGN|EXPANSION|OPERATIONAL|PRODUCTION|CAPACITY|RESERVE|GRADE|QUALITY|SOURCE|DATA|ATTRIBUTABLE)/.test(sourceStatus);
+    const canonicalStatus=sourceStatus&&KNOWN_STATUS.has(sourceStatus)?sourceStatus:
+      sourceStatus&&/SIMULATED|SCENARIO/.test(sourceStatus)?'SIMULATED':
+      sourceStatus&&/OBSERVED/.test(sourceStatus)&&numericPresent?'OBSERVED':
+      reportedLike?(numericPresent?'REPORTED':(descriptive.length?'REPORTED_TEXT_ONLY':'UNQUANTIFIED')):
+      (!numericPresent?(descriptive.length?'REPORTED_TEXT_ONLY':'UNOBSERVED'):null);
+    if(!canonicalStatus){
       // Never infer authority from the mere presence of a number. Preserve it for review,
       // but keep the quantitative slot null until the source/status is reconciled.
       if(numericPresent){
@@ -138,12 +145,12 @@ function normalizeQuantitative(source){
         for(const key of keys)if(finite(v[key]))v[key]=null;
       }
       v.status=descriptive.length?'REPORTED_TEXT_ONLY':'UNOBSERVED';
-    }else if(['REPORTED','REPORTED_TEXT','LEGACY_REPORTED'].includes(sourceStatus)&&!numericPresent){
+    }else if(['REPORTED','REPORTED_TEXT','LEGACY_REPORTED'].includes(canonicalStatus)&&!numericPresent){
       v.status=descriptive.length?'REPORTED_TEXT_ONLY':'UNQUANTIFIED';
-    }else if(['OBSERVED','OBSERVED_ATTRIBUTABLE','REPORTED','REPORTED_TEXT','LEGACY_REPORTED'].includes(sourceStatus)&&!numericPresent){
-      v.status=descriptive.length?'REPORTED_TEXT_ONLY':(sourceStatus.startsWith('REPORTED')||sourceStatus==='LEGACY_REPORTED'?'UNQUANTIFIED':'UNOBSERVED');
+    }else if(['OBSERVED','OBSERVED_ATTRIBUTABLE','REPORTED','REPORTED_TEXT','LEGACY_REPORTED'].includes(canonicalStatus)&&!numericPresent){
+      v.status=descriptive.length?'REPORTED_TEXT_ONLY':(canonicalStatus.startsWith('REPORTED')||canonicalStatus==='LEGACY_REPORTED'?'UNQUANTIFIED':'UNOBSERVED');
     }else{
-      v.status=sourceStatus;
+      v.status=canonicalStatus;
     }
     // Preserve original labels and wrapper metadata without pretending they are numeric.
     if(descriptive.length){
@@ -261,7 +268,10 @@ function auditSiteRecord(row,options={}){
   else if(!/^SITE_[A-Z]{3}_[A-Za-z0-9][A-Za-z0-9_-]*$/.test(siteId))issue('ERROR','SITE_ID_FORMAT_INVALID','siteId',{siteId});
   if(!/^[A-Z]{3}$/.test(country))issue('ERROR','COUNTRY_ISO3_INVALID','countryId',{country});
   if(iso!==country)issue('ERROR','IDENTITY_COUNTRY_MISMATCH','identity.countryIso3',{expected:country,actual:iso});
-  if(!resource)issue('ERROR','RESOURCE_ID_MISSING','identity.resourceTypeId');
+  const nonCommercialReference=row?.operation?.commercialExtraction===false||
+    row?.identity?.siteType==='NO_COMMERCIAL_EXTRACTION'||
+    String(row?.operation?.status||'').toUpperCase()==='NOT_APPLICABLE';
+  if(!resource&&!nonCommercialReference)issue('ERROR','RESOURCE_ID_MISSING','identity.resourceTypeId');
   if(row?.resourceId&&row?.identity?.resourceTypeId&&canonResource(row.resourceId)!==canonResource(row.identity.resourceTypeId))
     issue('ERROR','RESOURCE_IDENTITY_MISMATCH','resourceId',{topLevel:row.resourceId,identity:row.identity.resourceTypeId});
   if(row?.map?.countryIsolationKey&&canonCountry(row.map.countryIsolationKey)!==country)
