@@ -33,23 +33,127 @@ const NUMERIC_KEYS=Object.freeze({
 });
 const UNKNOWN=new Set(['UNOBSERVED','UNQUANTIFIED','NOT_APPLICABLE','UNKNOWN','MISSING']);
 const KNOWN_STATUS=new Set(['OBSERVED','SIMULATED','UNOBSERVED','UNQUANTIFIED','NOT_APPLICABLE','UNKNOWN','DERIVED','ESTIMATED','INFERRED','PARTIAL','REPORTED_TEXT_ONLY']);
-function normalizeQuantitative(source){
-  const q=source&&typeof source==='object'?clone(source):{};
-  for(const [field,shape] of Object.entries(FIELDS)){
-    const value=q[field]&&typeof q[field]==='object'?q[field]:{};
-    q[field]={...clone(shape),...value};
-    q[field].status=String(q[field].status||'UNOBSERVED').trim().toUpperCase();
-    for(const key of NUMERIC_KEYS[field]){
-      const v=q[field][key];
-      if(v===''||v===undefined)q[field][key]=null;
+function unitToken(value){
+  return String(value??'').trim().toUpperCase().replace(/[\\s-]+/g,'_').replace(/\\/+PER\\//g,'_PER_');
+}
+function normalizeProductionUnit(value,period){
+  const raw=unitToken(value);
+  if(!raw)return null;
+  const direct={
+    METRIC_TONNES:'TONNES',METRIC_TONS:'TONNES',METRIC_TON:'TONNES',METRIC_TONNE:'TONNES',
+    TONNES:'TONNES',TONNE:'TONNES',TONS:'TONNES',TON:'TONNES',
+    TROY_OUNCES:'TROY_OUNCES',TROY_OUNCE:'TROY_OUNCES',TROY_OZ:'TROY_OUNCES',OZT:'TROY_OUNCES',
+    OUNCES:'TROY_OUNCES',OUNCE:'TROY_OUNCES',OZ:'TROY_OUNCES',
+    MMCF:'MMCF',MILLION_CUBIC_FEET:'MMCF',MCF:'MCF',THOUSAND_CUBIC_FEET:'MCF',
+    BCF:'BCF',TCF:'TCF',BCM:'BCM',MCM:'MCM',
+    BBL:'BBL',BBLS:'BBL',BARREL:'BBL',BARRELS:'BBL',
+    CARAT:'CARATS',CARATS:'CARATS',CT:'CARATS',
+    KILOGRAM:'KG',KILOGRAMS:'KG',KG:'KG'
+  };
+  let base=direct[raw]||raw;
+  if(/_(?:PER_DAY|PER_YEAR|DAILY|ANNUAL|YEARLY)$/.test(base))return base;
+  if(period==='annual')return base+'_PER_YEAR';
+  if(period==='rate')return base+'_PER_DAY';
+  return base;
+}
+function numericCandidate(raw){
+  if(finite(raw))return raw;
+  if(typeof raw==='string'){
+    const trimmed=raw.trim();
+    if(/^[-+]?(?:\\d{1,3}(?:,\\d{3})+|\\d+)(?:\\.\\d+)?$/.test(trimmed))return Number(trimmed.replace(/,/g,''));
+    return null;
+  }
+  if(raw&&typeof raw==='object'){
+    for(const key of ['value','quantity','amount','rate','annual','nominal','minimum','maximum']){
+      if(Object.prototype.hasOwnProperty.call(raw,key)){
+        const n=numericCandidate(raw[key]);if(n!==null)return n;
+      }
     }
   }
+  return null;
+}
+function firstUnit(...values){for(const v of values)if(hasValue(v))return v;return null;}
+function normalizeQuantitative(source){
+  const q=source&&typeof source==='object'?clone(source):{};
+  const rawFields={};
+  for(const [field,shape] of Object.entries(FIELDS)){
+    const rawValue=q[field]&&typeof q[field]==='object'?clone(q[field]):{};
+    const v={...clone(shape),...rawValue};
+    const sourceStatus=String(rawValue.status||'').trim().toUpperCase()||null;
+    const keys=NUMERIC_KEYS[field];
+    const descriptive=[];
+    for(const key of keys){
+      const rawMetric=rawValue[key];
+      const amount=numericCandidate(rawMetric);
+      if(amount!==null)v[key]=amount;
+      else{
+        v[key]=null;
+        if(hasValue(rawMetric)){
+          descriptive.push({key,value:clone(rawMetric)});
+        }
+      }
+      if(rawMetric&&typeof rawMetric==='object'&&!Array.isArray(rawMetric)){
+        if(field==='production'&&key==='annual'){
+          v.annualUnit=normalizeProductionUnit(firstUnit(v.annualUnit,rawMetric.unit),'annual');
+          if(!hasValue(v.year)&&hasValue(rawMetric.year))v.year=rawMetric.year;
+        }else if(field==='production'&&key==='rate'){
+          v.unit=normalizeProductionUnit(firstUnit(v.unit,rawMetric.unit),'rate');
+          if(!hasValue(v.year)&&hasValue(rawMetric.year))v.year=rawMetric.year;
+        }else{
+          if(!hasValue(v.unit)&&hasValue(rawMetric.unit))v.unit=String(rawMetric.unit);
+          if(!hasValue(v.year)&&hasValue(rawMetric.year))v.year=rawMetric.year;
+        }
+      }
+    }
+    if(field==='production'){
+      if(finite(v.annual)&&!hasValue(v.annualUnit)&&hasValue(rawValue.unit)&&!finite(v.rate))
+        v.annualUnit=normalizeProductionUnit(rawValue.unit,'annual');
+      if(finite(v.rate)&&!hasValue(v.unit)&&hasValue(rawValue.sourceUnit))
+        v.unit=normalizeProductionUnit(rawValue.sourceUnit,'rate');
+      if(hasValue(v.unit))v.unit=normalizeProductionUnit(v.unit,'rate');
+      if(hasValue(v.annualUnit))v.annualUnit=normalizeProductionUnit(v.annualUnit,'annual');
+    }
+    if(field==='recovery'&&!hasValue(v.unit))v.unit='PERCENT';
+    if(descriptive.length){
+      v.reportedText=descriptive.map(x=>typeof x.value==='string'?x.value:JSON.stringify(x.value)).join(' | ');
+      rawFields[field]=rawValue;
+    }
+    v.sourceStatus=sourceStatus;
+    const numericPresent=keys.some(key=>finite(v[key]));
+    if(!sourceStatus){
+      // Never infer authority from the mere presence of a number. Preserve it for review,
+      // but keep the quantitative slot null until the source/status is reconciled.
+      if(numericPresent){
+        rawFields[field]=rawValue;
+        for(const key of keys)if(finite(v[key]))v[key]=null;
+      }
+      v.status=descriptive.length?'REPORTED_TEXT_ONLY':'UNOBSERVED';
+    }else if(['REPORTED','REPORTED_TEXT','LEGACY_REPORTED'].includes(sourceStatus)&&!numericPresent){
+      v.status=descriptive.length?'REPORTED_TEXT_ONLY':'UNQUANTIFIED';
+    }else if(['OBSERVED','OBSERVED_ATTRIBUTABLE'].includes(sourceStatus)&&!numericPresent&&descriptive.length){
+      v.status='REPORTED_TEXT_ONLY';
+    }else{
+      v.status=sourceStatus;
+    }
+    // Preserve original labels and wrapper metadata without pretending they are numeric.
+    if(descriptive.length){
+      q.reportedMetrics=q.reportedMetrics&&typeof q.reportedMetrics==='object'?q.reportedMetrics:{};
+      q.reportedMetrics.descriptiveValues=q.reportedMetrics.descriptiveValues&&typeof q.reportedMetrics.descriptiveValues==='object'?q.reportedMetrics.descriptiveValues:{};
+      q.reportedMetrics.descriptiveValues[field]=descriptive.map(x=>({key:x.key,value:clone(x.value)}));
+    }
+    q[field]=v;
+  }
   q.reportedMetrics=q.reportedMetrics&&typeof q.reportedMetrics==='object'?q.reportedMetrics:{};
+  if(Object.keys(rawFields).length){
+    q.reportedMetrics.legacyQuantitativeFields=q.reportedMetrics.legacyQuantitativeFields&&typeof q.reportedMetrics.legacyQuantitativeFields==='object'?q.reportedMetrics.legacyQuantitativeFields:{};
+    for(const [field,value] of Object.entries(rawFields))if(!Object.prototype.hasOwnProperty.call(q.reportedMetrics.legacyQuantitativeFields,field))q.reportedMetrics.legacyQuantitativeFields[field]=value;
+  }
   q.quantitativeProvenance=q.quantitativeProvenance&&typeof q.quantitativeProvenance==='object'?q.quantitativeProvenance:{};
   q.completeness=q.completeness&&typeof q.completeness==='object'?q.completeness:{};
   for(const field of Object.keys(FIELDS))q.completeness[field]=q[field].status;
   const numericKnown=Object.entries(NUMERIC_KEYS).some(([field,keys])=>keys.some(key=>finite(q[field][key])));
-  q.completeness.overall=numericKnown?'PARTIAL':'IDENTITY_AND_LOCATION_ONLY';
+  const reportedText=Object.values(q.reportedMetrics.descriptiveValues||{}).some(v=>Array.isArray(v)&&v.length);
+  q.completeness.overall=numericKnown||reportedText?'PARTIAL':'IDENTITY_AND_LOCATION_ONLY';
   return q;
 }
 function normalizeSiteRecord(raw){
