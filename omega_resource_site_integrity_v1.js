@@ -32,9 +32,9 @@ const NUMERIC_KEYS=Object.freeze({
  throughput:['value'],purity:['value'],capacity:['nominal','minimum','maximum']
 });
 const UNKNOWN=new Set(['UNOBSERVED','UNQUANTIFIED','NOT_APPLICABLE','UNKNOWN','MISSING']);
-const KNOWN_STATUS=new Set(['OBSERVED','SIMULATED','UNOBSERVED','UNQUANTIFIED','NOT_APPLICABLE','UNKNOWN','DERIVED','ESTIMATED','INFERRED','PARTIAL','REPORTED_TEXT_ONLY']);
+const KNOWN_STATUS=new Set(['OBSERVED','OBSERVED_ATTRIBUTABLE','REPORTED','REPORTED_TEXT_ONLY','SIMULATED','UNOBSERVED','UNQUANTIFIED','NOT_APPLICABLE','UNKNOWN','DERIVED','ESTIMATED','INFERRED','PARTIAL']);
 function unitToken(value){
-  return String(value??'').trim().toUpperCase().replace(/[\\s-]+/g,'_').replace(/\\/+PER\\//g,'_PER_');
+  return String(value??'').trim().toUpperCase().replace(/[\\s-]+/g,'_').replace(/\\/DAY$/,'_PER_DAY').replace(/\\/YEAR$/,'_PER_YEAR').replace(/\\/YR$/,'_PER_YEAR');
 }
 function normalizeProductionUnit(value,period){
   const raw=unitToken(value);
@@ -95,9 +95,11 @@ function normalizeQuantitative(source){
       if(rawMetric&&typeof rawMetric==='object'&&!Array.isArray(rawMetric)){
         if(field==='production'&&key==='annual'){
           v.annualUnit=normalizeProductionUnit(firstUnit(v.annualUnit,rawMetric.unit),'annual');
+          if(hasValue(rawMetric.unit))v.sourceAnnualUnit=String(rawMetric.unit);
           if(!hasValue(v.year)&&hasValue(rawMetric.year))v.year=rawMetric.year;
         }else if(field==='production'&&key==='rate'){
           v.unit=normalizeProductionUnit(firstUnit(v.unit,rawMetric.unit),'rate');
+          if(hasValue(rawMetric.unit))v.sourceRateUnit=String(rawMetric.unit);
           if(!hasValue(v.year)&&hasValue(rawMetric.year))v.year=rawMetric.year;
         }else{
           if(!hasValue(v.unit)&&hasValue(rawMetric.unit))v.unit=String(rawMetric.unit);
@@ -280,7 +282,7 @@ function auditSiteRecord(row,options={}){
         issue('ERROR','QUANTITATIVE_NUMERIC_INVALID','quantitative.'+field+'.'+key,{value});
       if(UNKNOWN.has(status)&&value!==null&&value!==undefined&&value!=='')
         issue('ERROR','UNKNOWN_VALUE_NOT_NULL','quantitative.'+field+'.'+key,{status,value});
-      if(['OBSERVED','SIMULATED','DERIVED','ESTIMATED','INFERRED'].includes(status)&&value!==null&&value!==undefined&&value!==''){
+      if(['OBSERVED','OBSERVED_ATTRIBUTABLE','REPORTED','SIMULATED','DERIVED','ESTIMATED','INFERRED'].includes(status)&&value!==null&&value!==undefined&&value!==''){
         if(typeof value!=='number'||!Number.isFinite(value))
           issue('ERROR','QUANTITATIVE_VALUE_NOT_NUMERIC','quantitative.'+field+'.'+key,{status,value});
       }
@@ -288,12 +290,14 @@ function auditSiteRecord(row,options={}){
         issue('ERROR','QUANTITATIVE_NEGATIVE','quantitative.'+field+'.'+key,{value});
     }
     const numeric=NUMERIC_KEYS[field].some(key=>finite(v[key]));
-    if(numeric&&['OBSERVED','SIMULATED','DERIVED','ESTIMATED','INFERRED'].includes(status)){
-      const units=field==='production'?(v.rate!==null?v.unit:v.annualUnit):v.unit;
+    if(numeric&&['OBSERVED','OBSERVED_ATTRIBUTABLE','REPORTED','SIMULATED','DERIVED','ESTIMATED','INFERRED'].includes(status)){
+      const units=field==='production'?(finite(v.rate)?v.unit:v.annualUnit):v.unit;
       if(!hasValue(units))issue('ERROR','QUANTITATIVE_UNIT_MISSING','quantitative.'+field+'.unit',{status});
-      if(status==='OBSERVED'&&!siteEvidence(row,q,field))
-        issue('ERROR','OBSERVED_WITHOUT_PROVENANCE','quantitative.'+field,{status});
-      if(status!=='OBSERVED'&&!authorityDeclared(row,q,field))
+      if(field==='production'&&finite(v.rate)&&!hasValue(v.unit))issue('ERROR','PRODUCTION_RATE_UNIT_MISSING','quantitative.production.unit',{status});
+      if(field==='production'&&finite(v.annual)&&!hasValue(v.annualUnit))issue('ERROR','PRODUCTION_ANNUAL_UNIT_MISSING','quantitative.production.annualUnit',{status});
+      if(['OBSERVED','OBSERVED_ATTRIBUTABLE','REPORTED'].includes(status)&&!siteEvidence(row,q,field))
+        issue('ERROR','REPORTED_VALUE_WITHOUT_PROVENANCE','quantitative.'+field,{status});
+      if(['SIMULATED','DERIVED','ESTIMATED','INFERRED'].includes(status)&&!authorityDeclared(row,q,field))
         issue('ERROR','AUTHORITY_NOT_DECLARED','quantitative.'+field,{status});
     }
   }
