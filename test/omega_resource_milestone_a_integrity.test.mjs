@@ -141,7 +141,8 @@ console.log(JSON.stringify({
   markerCollisionGroups:audit.markerCollisionGroups.length,
   errors:audit.errorCount,
   warnings:audit.warningCount,
-  errorSample:audit.errors.slice(0,25)
+  errorCounts:audit.errors.reduce((acc,error)=>{acc[error.code]=(acc[error.code]||0)+1;return acc;},{}),
+  errorSample:audit.errors.slice(0,120)
 },null,2));
 assert.equal(audit.status,'PASS','integrity audit failed: '+JSON.stringify(audit.errors.slice(0,20)));
 assert.equal(audit.siteCount,365);
