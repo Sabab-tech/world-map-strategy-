@@ -74,11 +74,16 @@ assert.ok(Math.abs(simulated.minimumCapacity-(1000000/150000*.55))<1e-12);
 assert.ok(Math.abs(simulated.maximumCapacity-(1000000/150000*1.3))<1e-12);
 assert.ok(Math.abs(simulated.simulatedRate-(1000000/150000))<1e-12);
 assert.equal(simulated.dataStatus,'UNOBSERVED');
+assert.equal(simulated.productionCalculation.formulaVersion,'OMEGA_EFFECTIVE_PRODUCTION_V1');
+assert.ok(simulated.availabilityFactors.equipmentAvailability>0);
+assert.equal(simulated.productionCalculation.activeRate,simulated.activeRate);
 
 const cap=compiled.registry.getCapacityForOccurrence('OCC:TEST:GRASBERG:COM:copper');
 const result=P.executeExtraction({requestedQuantity:100,timeWindowDurationHours:24,simulationTick:1},copper,{capacity:cap});
 assert(result.approvedQuantity>0);
 assert(result.reserveAfter.residualQuantity<copper.residualQuantity);
 assert.equal(result.provenance.productionAuthority,'OBSERVED');
+assert.equal(cap.availabilityFactors.equipmentAvailability,1);
+assert.equal(cap.productionCalculation.formulaVersion,'OMEGA_EFFECTIVE_PRODUCTION_V1');
 
 console.log('OMEGA RESOURCE PRODUCTION MODEL V2 TEST PASSED');
