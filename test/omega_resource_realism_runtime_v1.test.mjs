@@ -8,6 +8,7 @@ function load(path,context){
 const context=createContext({console,globalThis:null});
 context.globalThis=context;
 
+load('omega_resource_production_capacity_contract_v1.js',context);
 load('omega_resource_realism_runtime_v1.js',context);
 const R=context.Omega.ResourceRealism;
 assert.equal(R.VERSION,'1.2.0');
