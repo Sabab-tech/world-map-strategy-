@@ -65,6 +65,43 @@ assert.equal(typeof stream.quality.grade,'number');
 assert.ok(stream.reserve.quantity>0);
 assert.notEqual(stream.production.activeRate,1000);
 
+// Real numeric fields from the 65-site expansion remain scenario data, not falsely observed facts.
+const legacyGameplaySite=R.siteModel({
+  siteId:'SITE_TEST_legacy_iron_ore',
+  siteReferenceKey:'SITE_TEST_legacy_iron_ore',
+  siteName:'Legacy Gameplay Iron Ore Site',
+  resourceId:'iron_ore',
+  siteType:'IRON_ORE_SITE',
+  simulationReserveQuantity:900000000000,
+  simulationReserveUnit:'TONNES_ORE',
+  productionRate:40000,
+  dailyRate:40000,
+  grade:42.5,
+  purity:64.2,
+  quantitativeProvenance:{authority:'SCENARIO_SIMULATION_DATA'},
+  productionModel:{
+    productionRate:40000,activeRate:40000,nominalCapacity:50000,
+    minimumCapacity:32000,maximumCapacity:65000,annualProduction:{value:14600000,unit:'TONNES_PER_YEAR'},
+    utilization:0.8,recovery:0.86,maintenance:0.03,decline:0.01,
+    authority:'SIMULATED',stateAuthority:'SIMULATED',dataStatus:'SIMULATED'
+  },
+  quantitativeProfile:{
+    grade:{value:42.5,unit:'PERCENT_FE',status:'SIMULATED'},
+    purity:{value:64.2,unit:'PERCENT',status:'SIMULATED'}
+  }
+},{resource_domain:{knownResourceTypes:['iron_ore']},mineral_resource_base:{}},'TST');
+const legacyStream=legacyGameplaySite.commodityStreams[0];
+assert.equal(legacyStream.reserve.quantity,900000000000);
+assert.equal(legacyStream.reserve.unit,'TONNES_ORE');
+assert.equal(legacyStream.reserve.authority,'SIMULATED');
+assert.equal(legacyStream.production.authority,'SIMULATED');
+assert.equal(legacyStream.production.rangeDataStatus,'SIMULATED');
+assert.equal(legacyStream.quality.gradeStatus,'SIMULATED');
+assert.equal(legacyStream.quality.purityStatus,'SIMULATED');
+assert.equal(legacyStream.quality.grade,42.5);
+assert.equal(legacyStream.quality.purity,64.2);
+assert.ok(legacyStream.production.activeRate>0);
+
 const observedSite=R.siteModel({
   siteReferenceKey:'SITE:OBS:01',siteName:'Observed Multi Commodity',
   commodities:[

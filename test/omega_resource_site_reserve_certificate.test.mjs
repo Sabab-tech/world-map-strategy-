@@ -6,11 +6,11 @@ const load=name=>JSON.parse(readFileSync(name,'utf8'));
 const catalog=load('resource_site_canonical_catalog_v1.json');
 const data=load('resource_site_reserve_simulation_v1.json');
 
-assert.equal(catalog.siteCount,250);
+assert.equal(catalog.siteCount,315);
 assert.equal(data.siteCount,250);
 assert.equal(data.records.length,250);
 
-const catalogMap=new Map(catalog.sites.map(s=>[s.siteId,s]));
+const catalogMap=new Map(catalog.sites.slice(0,250).map(s=>[s.siteId,s]));
 const reserveMap=new Map(data.records.map(r=>[r.siteId,r]));
 assert.equal(catalogMap.size,250);
 assert.equal(reserveMap.size,250);
@@ -50,7 +50,7 @@ new Script(readFileSync('omega_resource_realism_runtime_v1.js','utf8'),{filename
 const R=context.Omega.ResourceRealism;
 assert.equal(R.VERSION,'1.2.0');
 let runtimeChecked=0;
-for(const site of catalog.sites){
+for(const site of catalog.sites.slice(0,250)){
   const r=reserveMap.get(site.siteId);
   if(site.operation?.commercialExtraction===false||site.identity?.siteType==='NO_COMMERCIAL_EXTRACTION')continue;
   const model=R.siteModel({...site,siteName:site.siteName,resourceId:site.identity?.resourceTypeId,simulationReserveQuantity:r.reserve.quantity,simulationReserveUnit:r.reserve.unit},site.countryId==='BGD'?{}:{},site.countryId);

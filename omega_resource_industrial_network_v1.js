@@ -172,6 +172,52 @@ function masterSites(){
     };
   }).filter(Boolean).map(site=>quantitativeEngineAdapter(site,site.quantitative)):[];
   const byId=new Map(base.map(site=>[String(site?.siteId||''),site]));
+  // Append eligible sites from the in-memory canonical catalog so map-visible legacy
+  // sites are also discoverable by the industrial runtime. Keep existing records first.
+  const canonicalExtras=canonicalRows.filter(row=>{
+    const siteId=String(row?.siteId||''),countryId=canonicalCountry(row?.countryId||row?.identity?.countryIso3);
+    const resourceId=String(row?.identity?.resourceTypeId||row?.resourceId||'').trim();
+    return siteId&&countryId&&resourceId&&!byId.has(siteId)&&row?.map?.markerEligible!==false&&!row?.runtime?.aliasOfSiteId;
+  }).map(row=>{
+    const siteId=String(row.siteId),countryId=canonicalCountry(row.countryId||row.identity?.countryIso3);
+    const resourceId=String(row.identity?.resourceTypeId||row.resourceId||'').trim();
+    const sourceSiteRecord={...clone(row),siteId,id:siteId,resourceId,siteType:row.identity?.siteType||row.siteType||'RESOURCE_SITE',
+      status:row.operation?.status||'ACTIVE_SITE_REFERENCE',commercialExtraction:row.operation?.commercialExtraction!==false,
+      countryCode:countryId,lat:row.location?.coordinates?.lat,lng:row.location?.coordinates?.lng,
+      quantitative:clone(row.quantitative||{}),quantitativeProvenance:clone(row.quantitative?.quantitativeProvenance||{}),
+      extractionMethod:row.operation?.extractionMethod||null};
+    const routeRows=(row.simulation?.transportRoute||[]).map(route=>{
+      const type=tok(route?.mode||route?.routeType||'');
+      const mode=type.includes('pipeline')?'pipeline':type.includes('sea')?'ship':type.includes('rail')?'rail':(rules()[resourceId]?.preferredModes?.[0]||'truck');
+      return {...clone(route),mode,transportMode:mode,authority:'SITE_SIMULATION_ROUTE',countryIsolationKey:countryId};
+    });
+    const q=row.quantitative||{},production=q.production||{},capacity=q.capacity||{},grade=q.grade||{},purity=q.purity||{},recovery=q.recovery||{};
+    const gas=tok(resourceId)==='natural_gas',divisor=gas?1000:1;
+    const productionModel={productionRate:num(production.rate)===null?null:num(production.rate)/divisor,
+      activeRate:num(production.rate)===null?null:num(production.rate)/divisor,
+      nominalCapacity:num(capacity.nominal)===null?null:num(capacity.nominal)/divisor,
+      minimumCapacity:num(capacity.minimum)===null?null:num(capacity.minimum)/divisor,
+      maximumCapacity:num(capacity.maximum)===null?null:num(capacity.maximum)/divisor,
+      annualProduction:production.annual==null?null:{value:production.annual,unit:production.annualUnit||null},
+      utilization:num(row.simulation?.utilization),recovery:num(recovery.value)===null?null:num(recovery.value)/100,
+      maintenance:0.03,decline:0.01,authority:'SIMULATED',stateAuthority:'SIMULATED',dataStatus:'SIMULATED',productionAuthority:'SIMULATED'};
+    const site={siteId,countryId,siteName:String(row.siteName||siteId),siteType:row.identity?.siteType||row.siteType||'RESOURCE_SITE',
+      real:{resourceId,extractionMethod:row.operation?.extractionMethod||null,operationStatus:row.operation?.status||'ACTIVE_SITE_REFERENCE',
+        owner:row.ownership?.owner||null,operator:row.ownership?.operator||null,location:clone(row.location||{}),
+        quantitative:clone(q),quantitativeProvenance:clone(q.quantitativeProvenance||{})},
+      sourceSiteRecord,identity:clone(row.identity||{}),location:clone(row.location||{}),coordinates:clone(row.location?.coordinates||{}),
+      ownership:clone(row.ownership||{}),operation:clone(row.operation||{}),quantitative:clone(q),
+      quantitativeProvenance:clone(q.quantitativeProvenance||{}),
+      quantitativeProfile:{grade:clone(grade),purity:clone(purity),production:{...clone(production),nominalCapacity:capacity.nominal,minimumCapacity:capacity.minimum,maximumCapacity:capacity.maximum}},
+      productionModel,simulation:{...clone(row.simulation||{}),transportRoute:routeRows},processing:clone(row.processing||{}),
+      logistics:clone(row.logistics||{}),map:clone(row.map||{}),runtime:clone(row.runtime||{}),sourceReference:clone(row.sourceReference||{}),
+      simulationReserveQuantity:q.reserve?.quantity??row.reserve?.quantity??null,
+      simulationReserveUnit:q.reserve?.unit||row.reserve?.unit||null,productionRate:productionModel.productionRate,
+      dailyRate:productionModel.productionRate,grade:grade.value??null,gradeUnit:grade.unit||null,
+      purity:purity.value??null,purityUnit:purity.unit||null,recoveryRate:productionModel.recovery,capacity:clone(productionModel)};
+    return quantitativeEngineAdapter(site,q);
+  });
+  for(const site of canonicalExtras)if(!byId.has(site.siteId))byId.set(site.siteId,site);
   for(const site of extra)if(!byId.has(site.siteId))byId.set(site.siteId,site);
   return [...byId.values()];
 }
@@ -262,7 +308,11 @@ function planExtraction(input={}){
   if(!site?.siteId)return{status:'BLOCKED',reason:'SITE_NOT_FOUND'};
   const resourceId=tok(input.resourceId||site?.real?.resourceId||site?.sourceSiteRecord?.resourceId);
   if(!resourceId)return{status:'BLOCKED',reason:'RESOURCE_ID_MISSING'};
-  const sr=scenarioFor(site,resourceId),model=g.Omega?.ResourceRealism?.siteModel?.({siteId:site.siteId,siteReferenceKey:site.siteId,siteName:site.siteName,siteType:site.siteType,resourceId,simulationReserveQuantity:sr?.reserve?.quantity||input.reserveQuantity,simulationReserveUnit:sr?.reserve?.unit||input.reserveUnit},null,cid);
+  const sr=scenarioFor(site,resourceId),model=g.Omega?.ResourceRealism?.siteModel?.({
+    ...clone(site),siteId:site.siteId,siteReferenceKey:site.siteId,siteName:site.siteName,siteType:site.siteType,resourceId,
+    simulationReserveQuantity:sr?.reserve?.quantity??input.reserveQuantity??site.simulationReserveQuantity??site.quantitative?.reserve?.quantity,
+    simulationReserveUnit:sr?.reserve?.unit??input.reserveUnit??site.simulationReserveUnit??site.quantitative?.reserve?.unit
+  },null,cid);
   const stream=model?.commodityStreams?.find(x=>tok(x.resourceId)===resourceId);
   if(!stream)return{status:'BLOCKED',reason:'NO_COMMODITY_STREAM'};
   const meth=resourceMethod(site,resourceId),m=methodRules()[meth.method];if(!m)return{status:'BLOCKED',reason:'EXTRACTION_METHOD_UNDEFINED'};
@@ -387,7 +437,13 @@ function planShipment(input={}){
   const ordered=candidates.sort((a,b)=>String(a.asset?.priority??999)-String(b.asset?.priority??999));
   let best=null;
   const warehouseId='WH-'+cid+'-RAW';
-  const routeOrigin={siteId:warehouseId,countryId:cid,siteName:cid+' sovereign raw warehouse',siteType:'RAW_MATERIAL_WAREHOUSE',simulation:{transportRoute:[]}};
+  const siteRoute=(site.simulation?.transportRoute||[])[0]||{};
+  const routeType=tok(siteRoute.mode||siteRoute.routeType||'');
+  const preferredMode=tok(input.transportMode||rules()[rid]?.preferredModes?.[0]||'truck');
+  const routeMode=routeType.includes('pipeline')?'pipeline':routeType.includes('sea')?'ship':routeType.includes('rail')?'rail':preferredMode;
+  const routeDistance=Math.max(0,num(siteRoute.distanceKm??siteRoute.distance??siteRoute.km)||0);
+  const routeOrigin={siteId:warehouseId,countryId:cid,siteName:cid+' sovereign raw warehouse',siteType:'RAW_MATERIAL_WAREHOUSE',
+    simulation:{transportRoute:routeDistance>0?[{...clone(siteRoute),mode:routeMode,transportMode:routeMode,distanceKm:routeDistance,authority:'SITE_SIMULATION_ROUTE',countryIsolationKey:cid}]:[]}};
   for(const c of ordered.slice(0,16)){
     const route=buildRoute(routeOrigin,c.asset,rid,input.quantity,{countryId:cid,sourceSiteId:site.siteId,sourceWarehouseId:warehouseId,sourceNode:'WAREHOUSE:'+cid+':RAW',sourceNodeType:'WAREHOUSE',transportMode:input.transportMode,unit:input.unit});
     if(route.status==='PLANNED' && (!best||route.travelTimeDays<best.route.travelTimeDays))best={candidate:c,route};
@@ -600,16 +656,18 @@ function ensureSimulationFactory(cid,site,resourceId,quantity){
   return{status:'CREATED_SIMULATION_ONLY',factory};
 }
 async function executeSitePipeline(input={}){
-  const cid=canonicalCountry(input.countryId),site=siteById(input.siteId);
-  if(!cid||!site?.siteId)return{status:'BLOCKED',reason:'SITE_NOT_FOUND'};
-  if(canonicalCountry(site.countryId)!==cid)return{status:'BLOCKED',reason:'SITE_COUNTRY_MISMATCH',siteCountryId:site.countryId,requestedCountryId:cid};
-  const rid=tok(input.resourceId||site?.real?.resourceId||site?.sourceSiteRecord?.resourceId||site?.identity?.resourceTypeId);
-  if(!rid)return{status:'BLOCKED',reason:'RESOURCE_ID_MISSING'};
-  const loaded=await loadCatalog();if(loaded?.status==='FAILED')return{status:'BLOCKED',reason:'INDUSTRIAL_CATALOG_UNAVAILABLE',detail:loaded};
+  const cid=canonicalCountry(input.countryId);
+  if(!cid)return{status:'BLOCKED',reason:'SITE_COUNTRY_MISSING'};
   const endowment=g.Omega?.ResourceEndowmentRuntime||g.OmegaResourceEndowmentRuntime;
   if(!endowment?.initialize||!endowment?.hydrateCountry||!endowment?.extractCountry)return{status:'BLOCKED',reason:'RESOURCE_ENDOWMENT_RUNTIME_UNAVAILABLE'};
   const initialized=await endowment.initialize();
   if(initialized?.status!=='READY')return{status:'BLOCKED',reason:'RESOURCE_ENDOWMENT_NOT_READY',detail:initialized};
+  const site=siteById(input.siteId);
+  if(!site?.siteId)return{status:'BLOCKED',reason:'SITE_NOT_FOUND'};
+  if(canonicalCountry(site.countryId)!==cid)return{status:'BLOCKED',reason:'SITE_COUNTRY_MISMATCH',siteCountryId:site.countryId,requestedCountryId:cid};
+  const rid=tok(input.resourceId||site?.real?.resourceId||site?.sourceSiteRecord?.resourceId||site?.identity?.resourceTypeId);
+  if(!rid)return{status:'BLOCKED',reason:'RESOURCE_ID_MISSING'};
+  const loaded=await loadCatalog();if(loaded?.status==='FAILED')return{status:'BLOCKED',reason:'INDUSTRIAL_CATALOG_UNAVAILABLE',detail:loaded};
   const hydrated=await endowment.hydrateCountry(cid);
   if(hydrated?.status!=='APPLIED'||hydrated?.result?.accepted===false)return{status:'BLOCKED',reason:'COUNTRY_HYDRATION_NOT_COMMITTED',detail:hydrated};
   const extractionPlan=planExtraction({countryId:cid,siteId:site.siteId,resourceId:rid,quantity:input.quantity,remainingReserve:input.remainingReserve});
@@ -627,7 +685,9 @@ async function executeSitePipeline(input={}){
   // Some legacy occurrence keys predate per-key resourceId persistence or controller materialization.
   // Reuse a mine-state key only when its own site identity and commodity both match exactly.
   const referenceResource=tok(siteReference?.resourceId||siteReference?.resourceTypeId||siteReference?.rawSiteReference?.resourceId||siteReference?.rawSiteReference?.resourceTypeId);
-  const keys=matchingKeys.length?matchingKeys:(stateBoundKeys.length?stateBoundKeys:(referenceResource===rid?linkedKeys:[]));
+  const dedicatedGameplaySite=site?.runtime?.identityAuthority==='LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE'&&site?.map?.markerEligible!==false&&!site?.runtime?.aliasOfSiteId;
+  const dedicatedSiteKeys=dedicatedGameplaySite?linkedKeys.filter(key=>String(key).startsWith('SITE_OCC:'+cid+':')&&tok(mineStates[key]?.resourceId||mineStates[key]?.resourceTypeId)===rid):[];
+  const keys=dedicatedSiteKeys.length?dedicatedSiteKeys:(matchingKeys.length?matchingKeys:(stateBoundKeys.length?stateBoundKeys:(referenceResource===rid?linkedKeys:[])));
   if(!keys.length)return{status:'BLOCKED',reason:linkedKeys.length?'SITE_RESOURCE_OCCURRENCE_NOT_FOUND':'SITE_HAS_NO_EXECUTABLE_OCCURRENCE',siteId:site.siteId,countryId:cid,resourceId:rid,controllerStatus:controller?.controllerStatus||null,linkedOccurrenceCount:linkedKeys.length,siteStateOccurrenceCount:stateBoundKeys.length,referenceResource:referenceResource||null};
   const already=netState(cid).siteExecutions||[];
   const duplicate=already.find(x=>x.siteId===site.siteId&&Number(x.turn)===turn()&&x.status!=='FAILED');

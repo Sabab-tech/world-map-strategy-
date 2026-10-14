@@ -14,7 +14,8 @@ const scenarioSource=read('omega_resource_scenario_engineering_data_v1.js');
 const scenarioText=scenarioSource.slice(scenarioSource.indexOf('const DATA=')+'const DATA='.length,scenarioSource.indexOf(';\ng.OmegaResourceScenarioEngineeringData=DATA;'));
 const scenario=JSON.parse(scenarioText);
 
-assert.equal(catalog.sites.length,250,'canonical catalog must contain 250 individual sites');
+assert.equal(catalog.siteCount,315,'canonical catalog count');
+assert.equal(catalog.sites.length,315,'canonical catalog contains the 250 baseline + 65 additive records');
 assert.equal(master.siteCount,250,'master registry count');
 assert.equal(master.sites.length,250,'master registry rows');
 assert.equal(reserves.records.length,250,'reserve simulation rows');
@@ -72,7 +73,7 @@ assert.equal(expandedPlan.warehouseCountryId,expandedSite.countryId,'expansion e
 
 
 console.log('OMEGA INDIVIDUAL RESOURCE GAMEPLAY BINDING TEST PASSED');
-console.log('Canonical/master/reserve/scenario site identities: 250/250');
+console.log('Canonical/master/reserve/scenario site counts: 315/250/250/250');
 console.log('Expansion sites resolved by existing extraction planner: PASS');
 console.log('Unique site IDs and exact per-site catalog joins: PASS');
 console.log('Playable index wiring + individual selection + extraction API binding: PASS');
@@ -152,7 +153,8 @@ test('runtime renders all global sites and applies nation/resource scope without
     'resources_2.json': JSON.parse(read('resources_2.json')),
     'resource_site_canonical_catalog_v1.json': catalog,
     'resource_site_master_registry_v1.json': master,
-    'resource_site_country_expansion_v1.json': expansion
+    'resource_site_country_expansion_v1.json': expansion,
+    'resource_site_legacy_gameplay_expansion_part_6_v1.json': JSON.parse(read('resource_site_legacy_gameplay_expansion_part_6_v1.json'))
   };
   // Test-only fixture: force two separate site identities to share one coordinate so pixel-spider offsets are verified.
   const rawCountryProfiles=Object.values(rawSources['resources.json'].GSRSK_Master_CountryProfiles_v14.countryProfiles||{});
@@ -234,10 +236,28 @@ test('runtime renders all global sites and applies nation/resource scope without
   for (const site of catalog.sites.filter(s=>expansion.migratedSiteIds.includes(s.siteId))) {
     assert.ok(mappedSiteIds.has(site.siteId), site.siteId + ': expansion identity must be mapped or explicitly joined as a physical-site alias');
   }
+  const part6=rawSources['resource_site_legacy_gameplay_expansion_part_6_v1.json'];
+  assert.equal(part6.records.length,50,'map binding fixture must load all 50 Part 6 sites');
+  const part6Ids=new Set(part6.records.map(site=>site.siteId));
+  const mappedPart6Sites=context.Omega.IndividualResourceSiteBinding.sites.filter(site=>part6Ids.has(site.siteId));
+  assert.equal(mappedPart6Sites.length,50,'all 50 Part 6 identities must join the same individual-site map registry');
+  for(const expected of part6.records){
+    const site=mappedPart6Sites.find(row=>row.siteId===expected.siteId);
+    assert(site,expected.siteId+': per-site map identity missing');
+    assert.equal(site.countryId,expected.countryId,expected.siteId+': map country must remain site-specific');
+    assert.equal(site.resourceId,expected.resourceId,expected.siteId+': map resource filter key must remain site-specific');
+    assert.ok(site.location?.coordinateStatus,expected.siteId+': coordinate confidence must be exposed');
+  }
   const geographicPositions=new Set([...layers].flatMap(layer=>layer.markers).map(marker=>marker.latlng.map(value=>Number(value).toFixed(3)).join('|')));
   assert.ok(geographicPositions.size>100,'world markers must preserve widespread source coordinates instead of collapsing all resources to one point');
   assert.ok(context.Game.Map.resourceDepositsLayer.clearCount>0,'legacy deposit layer must be cleared so old and individual markers do not stack');
   const activeMarkers=[...layers].flatMap(layer=>layer.markers);
+  for(const expected of part6.records){
+    const coords=expected.location.coordinates;
+    assert(activeMarkers.some(marker=>Math.abs(Number(marker.latlng[0])-Number(coords.lat))<1e-7&&
+      Math.abs(Number(marker.latlng[1])-Number(coords.lng))<1e-7),
+      expected.siteId+': the site must render an actual marker at its own stored coordinates');
+  }
   const overlapping=activeMarkers.filter(marker=>Math.abs(marker.latlng[0]-Number(overlapBase.lat??overlapBase.coordinates?.lat??overlapBase.location?.coordinates?.lat))<1e-7&&Math.abs(marker.latlng[1]-Number(overlapBase.lng??overlapBase.lon??overlapBase.coordinates?.lng??overlapBase.location?.coordinates?.lng))<1e-7);
   assert.ok(overlapping.length>=2,'test fixture must produce separate site markers at the same geographic coordinate');
   assert.ok(new Set(overlapping.map(marker=>JSON.stringify(marker.options.icon.iconAnchor))).size>=2,'coincident sites must get distinct screen-space icon anchors without changing their true lat/lng');
@@ -252,13 +272,13 @@ test('runtime renders all global sites and applies nation/resource scope without
   context.Game.Map.resourceState.scope='NATION';
   context.Game.currentActiveCountry='BGD';
   context.Omega.IndividualResourceSiteBinding.refresh();
-  assert.equal(markerCount(),6,'Bangladesh scope must show its four source locations plus two test-only overlap fixtures, not all countries');
+  assert.equal(markerCount(),9,'Bangladesh scope must show four original locations, three newly integrated sites, and two test-only overlap fixtures');
   context.Game.Map.resourceState.selectedResources=vm.runInContext("new Set(['coal'])",context);
   context.Omega.IndividualResourceSiteBinding.refresh();
   assert.equal(markerCount(),3,'Bangladesh coal filter must show the source coal site and its two test-only matching overlap identities');
   context.Game.Map.resourceState.selectedResources=vm.runInContext('new Set()',context);
   context.Omega.IndividualResourceSiteBinding.refresh();
-  assert.equal(markerCount(),6,'clearing the resource filter must restore every site in the selected country');
+  assert.equal(markerCount(),9,'clearing the resource filter must restore all nine sites in the selected country');
   context.Game.Map.resourceState.scope='WORLD';
   context.Game.Map.resourceState.selectedResources=vm.runInContext("new Set(['coal'])",context);
   context.Omega.IndividualResourceSiteBinding.refresh();
@@ -272,10 +292,10 @@ test('runtime renders all global sites and applies nation/resource scope without
   context.Game.currentActiveCountry='Saudi Arabia';
   context.Game.Map.resourceState.selectedResources=vm.runInContext("new Set(['all'])",context);
   context.Omega.IndividualResourceSiteBinding.refresh();
-  assert.equal(markerCount(),3,'Saudi Arabia must show the gold mine and both individually identified oilfields');
+  assert.equal(markerCount(),5,'Saudi Arabia scope must include its three original locations and two newly integrated physical sites');
   context.Game.Map.resourceState.selectedResources=vm.runInContext("new Set(['crude_oil'])",context);
   context.Omega.IndividualResourceSiteBinding.refresh();
-  assert.equal(markerCount(),2,'Saudi Arabia crude-oil filter must show both Ghawar and Safaniya, not one country aggregate');
+  assert.equal(markerCount(),4,'Saudi Arabia crude-oil filter must show Ghawar, Safaniya, and both newly integrated crude-oil sites');
   context.Game.Map.resourceState.selectedResources=vm.runInContext("new Set(['all'])",context);
   const diagnosticsAfterLoad=context.Omega.IndividualResourceSiteBinding.diagnostics();
   assert.equal(diagnosticsAfterLoad.sourceRecordCounts.mineSites,201,'the 199 source mine/site records plus two test-only overlap fixtures must be counted');
@@ -283,7 +303,7 @@ test('runtime renders all global sites and applies nation/resource scope without
   assert.ok(Object.values(diagnosticsAfterLoad.coordinateStatusCounts).reduce((a,b)=>a+b,0)===diagnosticsAfterLoad.siteCount,
     'coordinate confidence reporting must cover every mapped site');
   const loadedSaudiSites=context.Omega.IndividualResourceSiteBinding.sites.filter(site=>site.countryId==='SAU');
-  assert.equal(loadedSaudiSites.length,3,'Saudi Arabia must retain all three distinct existing source records');
+  assert.equal(loadedSaudiSites.length,5,'Saudi Arabia must retain its three original source records plus two newly integrated physical sites');
   assert.ok(loadedSaudiSites.every(site=>site.location.coordinateStatus),
     'every mapped site must expose a coordinate confidence/status label in its location object');
   assert.ok(loadedSaudiSites.some(site=>site.location.coordinateStatus==='ESTIMATED_SITE_POINT'),

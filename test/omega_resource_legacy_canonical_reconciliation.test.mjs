@@ -7,12 +7,17 @@ const reconstructed = read('resource_site_legacy_profile_marker_reconstruction_v
 const master = read('resource_site_master_registry_v1.json');
 const canonical = read('resource_site_canonical_catalog_v1.json');
 const reserveScenario = read('resource_site_reserve_simulation_v1.json');
+const legacyGameplayRows = [1,2,3,4,5,6].flatMap(n => read('resource_site_legacy_gameplay_expansion_part_' + n + '_v1.json').records);
+const legacyGameplayById = new Map(legacyGameplayRows.map(site => [site.siteId, site]));
+const canonicalById = new Map(canonical.sites.map(site => [site.siteId, site]));
+assert.equal(legacyGameplayRows.length, 115, 'all 115 candidates remain in the auditable source packs');
+assert.equal(legacyGameplayById.size, 115, 'gameplay candidate IDs remain unique');
 
 assert.equal(archived.records.length, 114, 'preserve all embedded historical rows');
 assert.equal(archived.resourcesJsonDeposits.length, 62, 'preserve all historical JSON deposit rows');
 assert.equal(reconstructed.records.length, 1095, 'preserve all reconstructed profile markers');
-assert.equal(master.sites.length, 250);
-assert.equal(canonical.sites.length, 250);
+assert.equal(master.sites.length, 250, 'baseline master research registry remains intact');
+assert.equal(canonical.sites.length, 315, 'canonical authority contains the 65 explicitly quantified expansion records');
 assert.equal(reserveScenario.siteCount, 250);
 assert.equal(reserveScenario.commercialSiteCount, 246);
 
@@ -60,7 +65,7 @@ function distanceKm(a, b) {
   return 6371 * 2 * Math.asin(Math.min(1, Math.sqrt(h)));
 }
 
-const activeSites = master.sites.map(site => {
+const activeSites = canonical.sites.map(site => {
   const source = site.sourceSiteRecord || {};
   const name = firstText(site.siteName, site.name, source.siteName, source.name, site.real?.siteName);
   const countryId = String(site.countryId || source.countryId || '').toUpperCase();
@@ -69,13 +74,13 @@ const activeSites = master.sites.map(site => {
     countryId,
     name,
     normalizedName: norm(name),
-    resourceId: firstText(site.real?.resourceId, source.resourceId, source.resourceTypeId),
+    resourceId: firstText(site.real?.resourceId, source.resourceId, source.resourceTypeId, site.identity?.resourceTypeId),
     coordinates: coordsOf(site)
   };
 });
 const canonicalIds = new Set(canonical.sites.map(site => site.siteId));
-assert.equal(canonicalIds.size, 250, 'canonical IDs must remain unique');
-assert.equal(new Set(activeSites.map(site => site.siteId)).size, 250, 'master IDs must remain unique');
+assert.equal(canonicalIds.size, 315, 'canonical IDs must remain unique');
+assert.equal(new Set(activeSites.map(site => site.siteId)).size, 315, 'canonical inventory IDs must remain unique');
 
 const candidates = [
   ...archived.records.map(row => ({ sourceType: 'EMBEDDED_ENGINE', ...row })),
@@ -227,14 +232,30 @@ for (const site of structuredLegacy.records) {
   assert.match(site.siteId, /^SITE_[A-Z]{3}_[a-z0-9_]+$/);
   assert.equal(candidateIds.has(site.siteId), false, 'legacy candidate site IDs must be unique');
   candidateIds.add(site.siteId);
-  assert.equal(canonicalIds.has(site.siteId), false, 'legacy candidates must not collide with canonical IDs');
+  assert.equal(canonicalIds.has(site.siteId), true, 'each structured legacy candidate must be in canonical authority');
+  const gameplayRow = legacyGameplayById.get(site.siteId);
+  const canonicalRow = canonicalById.get(site.siteId);
+  assert(gameplayRow && canonicalRow, site.siteId + ': exact candidate ID must survive canonical merge');
+  assert.ok(['LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE','CANONICAL_SITE_ALIAS_WITH_LEGACY_QUANTITATIVE_RECORD'].includes(canonicalRow.runtime?.identityAuthority), site.siteId + ': candidate authority must be explicit');
+  if (gameplayRow.runtime?.aliasOfSiteId || gameplayRow.map?.markerEligible === false) {
+    assert.equal(canonicalRow.map?.markerEligible, false, site.siteId + ': alias must not create a second physical marker');
+  } else {
+    assert.equal(canonicalRow.runtime?.identityAuthority, 'LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE');
+  }
+  const quantitativeAuthority=canonicalRow.quantitative?.quantitativeProvenance?.authority;
+  if (gameplayRow.runtime?.aliasOfSiteId || gameplayRow.map?.markerEligible===false) {
+    assert.ok(['SCENARIO_SIMULATION_DATA','SIMULATION_ALIAS_REFERENCE_NOT_INDEPENDENT_ASSET'].includes(quantitativeAuthority), site.siteId + ': alias authority must stay explicit');
+  } else {
+    assert.equal(quantitativeAuthority, 'SCENARIO_SIMULATION_DATA');
+  }
+  assert.equal(canonicalRow.map?.markerEligible, gameplayRow.map?.markerEligible, site.siteId + ': map alias flag must survive merge');
   assert.equal(site.countryId, site.identity.countryIso3);
   assert.match(site.countryId, /^[A-Z]{3}$/);
   assert.equal(ontologyIds.has(site.identity.resourceTypeId), true, 'candidate resource must exist in current ontology');
   const candidateNameKey = site.countryId + '|' + norm(site.siteName);
   assert.equal(candidateNames.has(candidateNameKey), false, 'duplicate candidate name/country rows must be collapsed');
   candidateNames.add(candidateNameKey);
-  assert.equal(currentNamesForTest.has(candidateNameKey), false, 'existing canonical sites must not be reintroduced');
+  assert.equal(currentNamesForTest.has(candidateNameKey), true, 'quantified candidate is now intentionally represented in canonical');
   const point = site.location.coordinates;
   assert.ok(Number.isFinite(point.lat) && Math.abs(point.lat) <= 90);
   assert.ok(Number.isFinite(point.lng) && Math.abs(point.lng) <= 180);

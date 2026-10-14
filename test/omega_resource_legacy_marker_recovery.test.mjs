@@ -17,7 +17,7 @@ assert.equal(synthesized.counts.reconstructedMarkerCount, 1095);
 assert.equal(profileMarkers.length, 1095, 'legacy profile synthesis must be reproducibly archived');
 assert.equal(master.siteCount, 250);
 assert.equal(master.sites.length, 250);
-assert.equal(canonical.sites.length, 250, 'historical archive must never inflate the active canonical catalog');
+assert.equal(canonical.sites.length, 315, 'only the explicit 65-row gameplay derivative was added; synthetic historical markers remain quarantined');
 assert.equal(new Set(master.sites.map(s => s.siteId)).size, 250);
 
 const norm = value => String(value || '').toLowerCase().normalize('NFKD')
@@ -63,6 +63,7 @@ console.log(JSON.stringify({
   historicalProfileDerivedMarkers: profileMarkers.length,
   duplicateNamesAcrossHistoricalStaticSources: overlaps.length,
   reconstructedHistoricalMarkerCandidates: 1233,
-  activeCanonicalSites: master.sites.length,
+  activeCanonicalSites: canonical.sites.length,
+  baselineMasterRecords: master.sites.length,
   syntheticMarkersEligibleForMinePipeline: profileMarkers.filter(x => x.eligibleForCanonicalMinePipeline).length
 }, null, 2));

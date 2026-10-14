@@ -9,8 +9,8 @@ const overlay = JSON.parse(read('resource_site_research_facts_overlay_v1.json'))
 const endowment = read('omega_resource_endowment_runtime.js');
 const mapBinding = read('omega_resource_gameplay_binding_v1.js');
 
-assert.equal(base.siteCount, 250);
-assert.equal(base.sites.length, 250);
+assert.equal(base.siteCount, 315);
+assert.equal(base.sites.length, 315);
 assert.equal(expansion.datasetId, 'OMEGA_RESOURCE_SITE_COUNTRY_EXPANSION_V1');
 assert.equal(expansion.siteCount, 0);
 assert.equal(expansion.records.length, 0);
@@ -50,7 +50,9 @@ assert.ok(countries.size >= 9, 'migrated tranche must cover multiple countries')
 assert.match(endowment, /resource_site_country_expansion_v1\.json/, 'runtime may read the migration manifest but canonical rows are authoritative');
 assert.match(endowment, /if\(rows\.length!==250\)/, 'runtime master registry guard must match 250 canonical sites');
 assert.match(mapBinding, /resource_site_country_expansion_v1\.json/, 'map migration audit manifest remains available');
-assert.match(mapBinding, /\[\.\.\.baseCatalogSites,\.\.\.expansionSites\]/, 'canonical site candidates still pass through the existing marker join');
+assert.match(mapBinding, /\[\.\.\.baseCatalogSites,\.\.\.expansionSites,\.\.\.activeLegacySites\]/, 'canonical, migrated and deduplicated legacy candidates pass through the existing marker join');
+assert.match(mapBinding, /LEGACY_CANONICAL_ALIAS_IDS/, 'legacy aliases must not create duplicate physical markers');
+assert.match(mapBinding, /resource_site_legacy_gameplay_expansion_part_5_v1\.json/, 'all legacy gameplay packs are registered for marker binding');
 
 test('all 51 migrated sites use canonical identity and simulation authorities without promoting unknown facts', () => {
   for (const site of migratedSites) {
@@ -59,4 +61,4 @@ test('all 51 migrated sites use canonical identity and simulation authorities wi
     if (site.quantitative.purity.status === 'UNOBSERVED') assert.equal(site.quantitative.purity.value, null);
   }
 });
-console.log('OMEGA CANONICAL MIGRATION CERTIFICATE PASSED: 250 canonical sites; 51 site records migrated; sidecar files contain no site records.');
+console.log('OMEGA CANONICAL MIGRATION CERTIFICATE PASSED: 315 canonical records; the original 51 migration IDs remain bound.');

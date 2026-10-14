@@ -53,8 +53,8 @@ for (const countryId of Object.keys(profiles)) {
 }
 
 const canonical = read('resource_site_canonical_catalog_v1.json');
-assert.equal(canonical.siteCount, 250);
-assert.equal(canonical.sites.length, 250);
+assert.equal(canonical.siteCount, 315);
+assert.equal(canonical.sites.length, 315);
 for (const [index, site] of canonical.sites.slice(0,199).entries()) {
   const part = Math.floor(index / 50) + 1;
   const partIndex = index % 50;
@@ -63,7 +63,7 @@ for (const [index, site] of canonical.sites.slice(0,199).entries()) {
   assert.equal(site.sourceReference?.countryContextFile, 'resource_country_resource_context_index.json');
 }
 
-const migrated = canonical.sites.slice(199);
+const migrated = canonical.sites.slice(199, 250);
 assert.equal(migrated.length, 51);
 assert(migrated.every(s => s.sourceReference?.sourcePath?.startsWith('resource_site_canonical_catalog_v1.sites[')));
 
