@@ -26,7 +26,7 @@ Missing values remain `null` with an explicit status. Numerical scenario values 
 
 The browser/offline and server boot chains load the integrity contract before the endowment runtime. Before a canonical registry becomes ready, the endowment loader normalizes the merged rows and runs the registry audit. A hard identity/quantitative-integrity failure emits the visible diagnostic `OMEGA_RESOURCE_SITE_INTEGRITY_FAILED` and prevents a corrupted registry from silently becoming authoritative. The detailed report is exposed through `OmegaResourceSiteIntegrityReport`.
 
-Marker coordinate collisions are not silently deduplicated: only explicitly grouped collisions are classified as intentional; otherwise the audit fails. Same-name identity matches are reported for review, while explicit aliases must have a valid target, be non-executable, and be ineligible for an independent marker.
+Marker coordinate collisions are not silently deduplicated: only explicitly grouped collisions are classified as intentional; otherwise the audit fails. The Geita Gold Mine / Geita Gold Mine Super-Pit regional-point overlap is declared as one collision cluster while preserving both source identities and both quantitative records; this is a reviewed coordinate collision, not a claim that the records are proven aliases. Same-name identity matches are reported for review, while explicit aliases must have a valid target, be non-executable, and be ineligible for an independent marker.
 
 ## Verification
 
