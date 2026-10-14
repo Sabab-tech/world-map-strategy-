@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { test } from 'node:test';
+import vm from 'node:vm';
 
 const read = name => fs.readFileSync(new URL('../' + name, import.meta.url), 'utf8');
 const base = JSON.parse(read('resource_site_canonical_catalog_v1.json'));
@@ -8,6 +9,12 @@ const expansion = JSON.parse(read('resource_site_country_expansion_v1.json'));
 const overlay = JSON.parse(read('resource_site_research_facts_overlay_v1.json'));
 const runtime = read('omega_resource_endowment_runtime.js');
 const network = read('omega_resource_industrial_network_v1.js');
+
+const integrityContext=vm.createContext({console,Math,Number,String,Object,Array,Set,Map,WeakMap,JSON,Date,globalThis:null});
+integrityContext.globalThis=integrityContext;
+new vm.Script(read('omega_resource_site_integrity_v1.js'),{filename:'omega_resource_site_integrity_v1.js'}).runInContext(integrityContext);
+const integrity=integrityContext.Omega.ResourceSiteIntegrity;
+const normalizedRows=rows.map(site=>integrity.normalizeSiteRecord(site));
 
 const rows = base.sites;
 assert.equal(base.siteCount, 315);
@@ -20,11 +27,20 @@ assert.equal(overlay.siteCount, 0);
 assert.equal(overlay.records.length, 0);
 assert.equal(overlay.migratedSiteCount, 51);
 const migratedIds = new Set(expansion.migratedSiteIds);
+const statuslessRawFields=rows.flatMap(site=>fields.filter(field=>!site.quantitative?.[field]?.status).map(field=>({siteId:site.siteId,field,source:site.quantitative?.[field]||{}})));
+for(const missing of statuslessRawFields){
+  const normalized=normalizedRows.find(site=>site.siteId===missing.siteId)?.quantitative?.[missing.field];
+  assert(normalized&&typeof normalized.status==='string',missing.siteId+': missing source status must be normalized explicitly');
+  if(['UNOBSERVED','UNQUANTIFIED','UNKNOWN','NOT_APPLICABLE'].includes(normalized.status)){
+    for(const key of ['quantity','value','annual','rate','nominal','minimum','maximum'])
+      if(Object.prototype.hasOwnProperty.call(normalized,key))assert.equal(normalized[key],null,missing.siteId+': statusless '+missing.field+'.'+key+' must remain null');
+  }
+}
 assert.equal(migratedIds.size, 51);
 assert.ok([...migratedIds].every(id => rows.some(s => s.siteId === id)), 'all migrated IDs must live in canonical catalog');
 
 const fields = ['reserve','production','grade','recovery','throughput','purity','capacity'];
-for (const site of rows) {
+for (const site of normalizedRows) {
   assert.ok(site.siteId, 'site ID required');
   assert.match(String(site.countryId || site.identity?.countryIso3 || ''), /^[A-Z]{3}$/);
   for (const field of fields) {
@@ -51,7 +67,7 @@ assert.match(network, /observedStatus\(p\)&&perDay\(p\.unit\)/);
 assert.match(network, /distanceStatus:'UNOBSERVED'/);
 
 test('all 315 canonical records share a typed runtime contract with explicit authority states', () => {
-  for (const site of rows) {
+  for (const site of normalizedRows) {
     for (const field of fields) {
       const v = site.quantitative[field];
       if (v.status && ['UNOBSERVED','UNQUANTIFIED'].includes(v.status)) {
