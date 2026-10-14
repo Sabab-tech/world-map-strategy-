@@ -59,6 +59,7 @@ jobs:
           node --check omega_resource_endowment_runtime.js
           node --check omega_resource_part04_identity_runtime.js
           node --check omega_resource_part05_reserve_extraction_runtime.js
+          node --check omega_resource_site_integrity_v1.js
           node --check omega_resource_production_model_v2.js
           node --check omega_resource_realism_runtime_v1.js
           node --check omega_resource_logistics_runtime_v1.js
@@ -87,6 +88,7 @@ jobs:
       - name: Resource action execution proof
         run: |
           set -euo pipefail
+          node test/omega_resource_milestone_a_integrity.test.mjs
           node test/omega_resource_endowment_runtime.test.mjs
           node --test test/omega_resource_economy_runtime_v2.test.mjs
           node --test test/omega_resource_authoritative_adapter.test.mjs
