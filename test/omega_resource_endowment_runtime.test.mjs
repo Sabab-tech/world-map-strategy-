@@ -241,6 +241,50 @@ const simulatedMineOutputs=profileMineOutputs.filter(x=>x?.simulationGenerated==
 const simulatedFieldOutputs=allMineOutputs.filter(x=>x?.simulationGenerated===true&&['OIL_FIELD','GAS_FIELD'].includes(x?.assetType));
 assert.equal(siteReferenceRows,355);
 assert.equal(siteControllerRows,355);
+
+// Every new Part 6 mine must use the same authoritative runtime identity and extraction path.
+const part6Data=JSON.parse(fs.readFileSync(new URL('../resource_site_legacy_gameplay_expansion_part_6_v1.json',import.meta.url),'utf8'));
+assert.equal(part6Data.records.length,50,'Part 6 must contribute all 50 new physical sites');
+const part6SiteIds=new Set(part6Data.records.map(site=>site.siteId));
+const part6PositiveOutputs=new Set(siteLinkedExecutionOutputs.map(output=>output.siteReferenceKey).filter(siteId=>part6SiteIds.has(siteId)));
+assert.equal(part6PositiveOutputs.size,50,'all 50 new sites must create positive site-linked extraction output');
+for(const site of part6Data.records){
+  const countryRow=worldState[site.countryId];
+  assert(countryRow,site.siteId+': owning country runtime state missing');
+  const ref=(countryRow.mineSiteReferences||[]).find(item=>item.siteReferenceKey===site.siteId);
+  assert(ref,site.siteId+': authoritative site reference missing');
+  assert.equal(ref.countryId,site.countryId,site.siteId+': country identity changed');
+  assert.equal(ref.resourceId,site.resourceId,site.siteId+': resource identity changed');
+  assert.equal(ref.commercialExtraction,true,site.siteId+': eligible simulation mine must be extractable');
+  const q=ref.quantitative||{};
+  for(const metric of ['reserve','production','grade','recovery','throughput','purity','capacity']){
+    assert.equal(q[metric]?.status,'SIMULATED',site.siteId+': '+metric+' must retain simulated authority');
+  }
+  assert.ok(Number(q.reserve?.quantity)>0,site.siteId+': positive simulated reserve required');
+  assert.ok(Number(q.production?.rate)>0&&Number(q.production?.annual)>0,site.siteId+': production rate/annual output required');
+  assert.ok(Number(q.grade?.value)>0,site.siteId+': grade required');
+  assert.ok(Number(q.purity?.value)>0&&Number(q.purity?.value)<=100,site.siteId+': purity range required');
+  assert.ok(Number(q.recovery?.value)>0&&Number(q.recovery?.value)<=100,site.siteId+': recovery range required');
+  assert.ok(Number(q.throughput?.value)>0,site.siteId+': throughput required');
+  assert.ok(Number(q.capacity?.minimum)>0&&Number(q.capacity.minimum)<=Number(q.capacity.nominal),site.siteId+': minimum/nominal capacity ordering');
+  assert.ok(Number(q.capacity?.nominal)<=Number(q.capacity?.maximum),site.siteId+': nominal/maximum capacity ordering');
+  const controller=countryRow.mineSiteControllers?.[site.siteId];
+  assert.equal(controller?.extractionExecutable,true,site.siteId+': controller must link to an executable occurrence');
+  assert.ok(controller.linkedOccurrenceKeys?.length,site.siteId+': occurrence link missing');
+  const output=Object.values(countryRow.mineOutputs||{}).find(item=>item.siteReferenceKey===site.siteId&&Number(item.producedQuantity)>0);
+  assert(output,site.siteId+': positive output record missing');
+  assert(output.batchId,site.siteId+': output batch missing');
+  const batch=(countryRow.batches||[]).find(item=>item.batchId===output.batchId);
+  assert(batch,site.siteId+': extraction batch missing');
+  assert.equal(batch.countryId,site.countryId,site.siteId+': batch crossed country boundary');
+  assert.equal(batch.warehouseId,'WH-'+site.countryId+'-RAW',site.siteId+': batch was not stored in the owning country warehouse');
+  const lot=countryRow.inventoryLots?.[output.batchId];
+  assert(lot,site.siteId+': warehouse inventory lot missing');
+  assert.equal(lot.countryId,site.countryId,site.siteId+': inventory lot country mismatch');
+  assert.equal(lot.warehouseId,'WH-'+site.countryId+'-RAW',site.siteId+': inventory lot warehouse mismatch');
+  assert((countryRow.mineProductionLedger||[]).some(item=>item.batchId===batch.batchId&&item.mineId===output.occurrenceKey),
+    site.siteId+': site-specific production ledger missing');
+}
 assert.ok(structuredMineRows>=engine.deposits.length,'structured mine rows must include canonical runtime deposits plus profile-derived structured sites');
 const unifiedReferences=[];
 let siteReferenceHoleCount=0;
@@ -255,10 +299,28 @@ assert.equal(unifiedReferences.length,siteReferenceRows);
 assert.ok(unifiedReferences.every(x=>x.resourceAsset&&x.resourceAsset.schemaVersion==='1.0.0'));
 assert.ok(unifiedReferences.every(x=>x.resourceAsset.assetId===x.siteReferenceKey));
 assert.deepEqual(Object.keys(unifiedReferences[0]?.resourceAsset||{}).sort(),unifiedMineKeys);
-const commercialCatalogIds=(globalThis.OmegaResourceSiteReserveSimulationData?.records||[]).filter(x=>x.commercialExtraction===true).map(x=>x.siteId);
+const baseCommercialCatalogIds=(globalThis.OmegaResourceSiteReserveSimulationData?.records||[]).filter(x=>x.commercialExtraction===true).map(x=>x.siteId);
+const legacyExpansionRows=[1,2,3,4,5,6].flatMap(part=>{
+  const data=JSON.parse(fs.readFileSync(new URL('../resource_site_legacy_gameplay_expansion_part_'+part+'_v1.json',import.meta.url),'utf8'));
+  return Array.isArray(data.records)?data.records:[];
+});
+const legacyCanonicalAliasIds=new Set([
+  'SITE_AUS_olympic_dam_uranium_copper','SITE_BRA_carajas_iron_ore_mine_legacy2',
+  'SITE_CHL_escondida_copper_mine_legacy2','SITE_IDN_grasberg_copper_gold_mine',
+  'SITE_COD_tenke_fungurume_copper_cobalt_complex','SITE_COD_kibali_gold_mine_complex'
+]);
+const expandedCommercialCatalogIds=legacyExpansionRows
+  .filter(site=>site?.operation?.commercialExtraction===true&&site?.map?.markerEligible!==false&&
+    !site?.runtime?.aliasOfSiteId&&!legacyCanonicalAliasIds.has(String(site?.siteId||'')))
+  .map(site=>String(site.siteId));
+const commercialCatalogIds=[...new Set([...baseCommercialCatalogIds,...expandedCommercialCatalogIds])];
 const canonicalSiteIds=new Set((globalThis.OmegaResourceSiteCanonicalCatalogData?.sites||[]).map(x=>x.siteId).filter(Boolean));
 const executedProfileSiteIds=new Set(siteLinkedExecutionOutputs.map(x=>x.siteReferenceKey).filter(x=>canonicalSiteIds.has(x)));
-assert.equal(executedProfileSiteIds.size,commercialCatalogIds.length,'all commercial canonical site identities must have a positive linked extraction output; N/A sites are excluded');
+const missingCommercialSiteIds=commercialCatalogIds.filter(siteId=>!executedProfileSiteIds.has(siteId));
+assert.deepEqual(missingCommercialSiteIds,[],
+  'all commercial baseline and physical expansion site identities must have positive linked extraction output; missing='+missingCommercialSiteIds.join(', '));
+assert.equal(executedProfileSiteIds.size,commercialCatalogIds.length,
+  'the positive-output count must match the full deduplicated authoritative commercial site set');
 assert(simulatedFieldOutputs.length>0,'expected hydrocarbon field execution assets');
 assert(siteLinkedExecutionOutputs.every(x=>(x?.producedQuantity||0)>0&&x?.effortUtilization>0&&x?.effortUtilization<=1),'some canonical site-linked output did not execute with valid utilization');
 assert(simulatedFieldOutputs.every(x=>(x?.producedQuantity||0)>0&&x?.effortUtilization>0&&x?.effortUtilization<=1),'some hydrocarbon field did not execute with modeled utilization');
