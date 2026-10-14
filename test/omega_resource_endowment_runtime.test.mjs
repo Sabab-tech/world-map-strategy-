@@ -67,6 +67,7 @@ globalThis.addEventListener('OMEGA_RESOURCE_FACTORY_INPUT_AVAILABLE',e=>seen.pus
 
 await import('../omega_resource_part05_reserve_extraction_runtime.js');
 await import('../omega_resource_production_model_v2.js');
+await import('../omega_resource_production_capacity_contract_v1.js');
 await import('../omega_resource_realism_runtime_v1.js');
 await import('../omega_resource_endowment_runtime.js');
 const runtime=globalThis.OmegaResourceEndowmentRuntime;
