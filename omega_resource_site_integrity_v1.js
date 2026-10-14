@@ -213,7 +213,7 @@ function auditSiteRecord(row,options={}){
   if(numericObserved&&!siteEvidence(row,q,Object.keys(FIELDS).find(f=>q[f].status==='OBSERVED')))
     issue('ERROR','OBSERVED_METRIC_PROVENANCE_REQUIRED','sourceReference');
   const status=errors.length?'FAIL':'PASS';
-  return{siteId,countryId:country,resourceId,aliasOfSiteId:alias,markerEligible:row?.map?.markerEligible!==false,commercialExtraction:row?.operation?.commercialExtraction!==false,status,errors,warnings,quantitative:q,annualCheck};
+  return{siteId,countryId:country,resourceId:resource,aliasOfSiteId:alias,markerEligible:row?.map?.markerEligible!==false,commercialExtraction:row?.operation?.commercialExtraction!==false,status,errors,warnings,quantitative:q,annualCheck};
 }
 function auditRegistry(rows,options={}){
   const list=Array.isArray(rows)?rows:[],errors=[],warnings=[],byId=new Map(),byIdentity=new Map(),byCoordinate=new Map();
