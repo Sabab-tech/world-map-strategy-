@@ -156,7 +156,15 @@ const ausAfterProcessing=runtime.countryResourceState('AUS')||{};
 const factoryRuntime=globalThis.OmegaMinistryStateProvider?.getState?.()?.economy?.AUS?.productionAssets||globalThis.Game.state.economy?.AUS?.productionAssets||[];
 assert.ok(factoryRuntime.some(x=>String(x.id||x.assetId||x.projectId)===pilbaraPipeline.factoryId),'simulated factory must remain country-owned and findable');
 const gevraRef=(indState.mineSiteReferences||[]).find(x=>x.siteReferenceKey==='SITE_IND_gevra_oc_mine');
-const kwtDiag=runtime.hydrateCountry('KWT');const kwtState=runtime.countryResourceState('KWT')||{};const kwtRef=(kwtState.mineSiteReferences||[]).find(x=>x.siteReferenceKey==='SITE_KWT_greater_burgan_oilfield');console.log('ENDOWMENT_KWT_MODEL '+JSON.stringify({hydrate:kwtDiag.status,ref:kwtRef&&{siteReferenceKey:kwtRef.siteReferenceKey,resourceId:kwtRef.resourceId,commercialExtraction:kwtRef.commercialExtraction,simulationReserveQuantity:kwtRef.simulationReserveQuantity},model:globalThis.Omega?.ResourceRealism?.siteModel?.(kwtRef,engine.countryProfiles?.KWT,'KWT'),controller:Object.values(kwtState.mineSiteControllers||{}).find(x=>x.siteReferenceKey==='SITE_KWT_greater_burgan_oilfield')}));
+const kwtDiag=runtime.hydrateCountry('KWT');const kwtState=runtime.countryResourceState('KWT')||{};const kwtRef=(kwtState.mineSiteReferences||[]).find(x=>x.siteReferenceKey==='SITE_KWT_greater_burgan_oilfield');const kwtRuntimeModel=globalThis.Omega?.ResourceRealism?.siteModel?.(kwtRef,engine.countryProfiles?.KWT,'KWT');console.log('ENDOWMENT_KWT_MODEL '+JSON.stringify({hydrate:kwtDiag.status,ref:kwtRef&&{siteReferenceKey:kwtRef.siteReferenceKey,resourceId:kwtRef.resourceId,commercialExtraction:kwtRef.commercialExtraction,simulationReserveQuantity:kwtRef.simulationReserveQuantity},model:kwtRuntimeModel,controller:Object.values(kwtState.mineSiteControllers||{}).find(x=>x.siteReferenceKey==='SITE_KWT_greater_burgan_oilfield')}));
+// Regression: nullable catalog metrics must stay missing, not be coerced to numeric zero.
+// A commercial scenario site with positive reserves must then use the realism model's
+// explicit simulation fallback rate instead of being silently blocked from extraction.
+if(kwtRef?.quantitative?.production?.rate==null){
+  assert.equal(kwtRef.productionRate,null,'missing production rate must remain null in the authoritative site reference');
+  assert.ok(Number(kwtRuntimeModel?.commodityStreams?.[0]?.production?.activeRate)>0,
+    'missing production metrics must enable a positive simulated fallback rate for eligible commercial sites');
+}
 assert.equal(hydrated.status,'APPLIED', JSON.stringify(hydrated));
 
 const before=runtime.countryResourceState('BGD');
