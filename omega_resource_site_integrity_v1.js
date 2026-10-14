@@ -219,7 +219,8 @@ function auditRegistry(rows,options={}){
   const list=Array.isArray(rows)?rows:[],errors=[],warnings=[],byId=new Map(),byIdentity=new Map(),byCoordinate=new Map();
   let markerEligibleCount=0,aliasCount=0,commercialCount=0,simulatedMetrics=0,observedMetrics=0,unobservedMetrics=0,annualChecks=0;
   const perSite=[];
-  for(const row of list){
+  for(const sourceRow of list){
+    const row=normalizeSiteRecord(sourceRow);
     const res=auditSiteRecord(row,options);perSite.push(res);errors.push(...res.errors);warnings.push(...res.warnings);
     const id=res.siteId;
     if(id){
@@ -258,7 +259,8 @@ function auditRegistry(rows,options={}){
   for(const [key,items] of byCoordinate)if(items.length>1){
     const groups=new Set(items.map(x=>String(x?.map?.collisionGroup||'').trim()).filter(Boolean));
     const ids=items.map(x=>x.siteId);
-    const intentional=groups.size===1&&groups.has(String(items[0]?.map?.collisionGroup||'').trim());
+    const collisionGroupValues=items.map(x=>String(x?.map?.collisionGroup||'').trim());
+    const intentional=collisionGroupValues.every(Boolean)&&new Set(collisionGroupValues).size===1;
     markerCollisionGroups.push({key,siteIds:ids,intentional,collisionGroups:[...groups]});
     if(!intentional)errors.push({severity:'ERROR',code:'UNDECLARED_MARKER_COLLISION',detail:{key,siteIds:ids,collisionGroups:[...groups]}});
     else warnings.push({severity:'WARNING',code:'DECLARED_MARKER_COLLISION',detail:{key,siteIds:ids,collisionGroup:[...groups][0]}});
