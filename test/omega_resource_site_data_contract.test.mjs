@@ -14,9 +14,9 @@ const integrityContext=vm.createContext({console,Math,Number,String,Object,Array
 integrityContext.globalThis=integrityContext;
 new vm.Script(read('omega_resource_site_integrity_v1.js'),{filename:'omega_resource_site_integrity_v1.js'}).runInContext(integrityContext);
 const integrity=integrityContext.Omega.ResourceSiteIntegrity;
-const normalizedRows=rows.map(site=>integrity.normalizeSiteRecord(site));
-
 const rows = base.sites;
+const normalizedRows=rows.map(site=>integrity.normalizeSiteRecord(site));
+const fields = ['reserve','production','grade','recovery','throughput','purity','capacity'];
 assert.equal(base.siteCount, 315);
 assert.equal(rows.length, 315);
 assert.equal(new Set(rows.map(s => s.siteId)).size, 315);
@@ -39,7 +39,6 @@ for(const missing of statuslessRawFields){
 assert.equal(migratedIds.size, 51);
 assert.ok([...migratedIds].every(id => rows.some(s => s.siteId === id)), 'all migrated IDs must live in canonical catalog');
 
-const fields = ['reserve','production','grade','recovery','throughput','purity','capacity'];
 for (const site of normalizedRows) {
   assert.ok(site.siteId, 'site ID required');
   assert.match(String(site.countryId || site.identity?.countryIso3 || ''), /^[A-Z]{3}$/);
