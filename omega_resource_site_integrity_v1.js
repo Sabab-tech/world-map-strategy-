@@ -32,6 +32,10 @@ const NUMERIC_KEYS=Object.freeze({
  throughput:['value'],purity:['value'],capacity:['nominal','minimum','maximum']
 });
 const UNKNOWN=new Set(['UNOBSERVED','UNQUANTIFIED','NOT_APPLICABLE','UNKNOWN','MISSING']);
+const KNOWN_MARKER_COLLISION_GROUPS=Object.freeze({
+  SITE_TZA_geita_gold_mine:'TZA_GEITA_GOLD_MINE_REGIONAL_CLUSTER',
+  SITE_TZA_geita_gold_mine_super_pit:'TZA_GEITA_GOLD_MINE_REGIONAL_CLUSTER'
+});
 const KNOWN_STATUS=new Set(['OBSERVED','OBSERVED_ATTRIBUTABLE','REPORTED','REPORTED_TEXT_ONLY','SIMULATED','UNOBSERVED','UNQUANTIFIED','NOT_APPLICABLE','UNKNOWN','DERIVED','ESTIMATED','INFERRED','PARTIAL']);
 function unitToken(value){
   let s=String(value??'').trim().toUpperCase().replace(/[\s-]+/g,'_');
@@ -183,7 +187,8 @@ function normalizeSiteRecord(raw){
   if(resource&&!row.identity.resourceTypeId)row.identity.resourceTypeId=resource;
   if(resource&&!row.resourceId)row.resourceId=resource;
   row.quantitative=normalizeQuantitative(row.quantitative);
-  row.map={...(row.map||{}),markerEligible:row.map?.markerEligible!==false,countryIsolationKey:canonCountry(row.map?.countryIsolationKey||country)};
+  const declaredCollisionGroup=KNOWN_MARKER_COLLISION_GROUPS[row.siteId]||null;
+  row.map={...(row.map||{}),markerEligible:row.map?.markerEligible!==false,countryIsolationKey:canonCountry(row.map?.countryIsolationKey||country),collisionGroup:declaredCollisionGroup||row.map?.collisionGroup||null};
   row.runtime={...(row.runtime||{}),identityAuthority:row.runtime?.identityAuthority||'SITE_REFERENCE',
     quantityAuthority:row.runtime?.quantityAuthority||'SIMULATION_RUNTIME',
     productionAuthority:row.runtime?.productionAuthority||'SIMULATION_RUNTIME',
