@@ -465,6 +465,50 @@ assert.ok(executionLedger.some(x=>x.siteId===realPipelineSiteId&&x.batchId===rea
 assert.ok((postDeliveryState.industrialNetwork?.events||[]).some(x=>x.transactionId===delivered.processingTransactionId&&x.status==='COMPLETED'),
   'factory processing must be represented in the industrial event ledger');
 
+// Part 6 integration proof: a newly added mine must complete the same extraction,
+// sovereign warehouse, transport, auto-commissioned factory and processing sequence.
+const part6CopperSite=part6Data.records.find(site=>site.siteId==='SITE_CHL_collahuasi_copper_mine');
+assert(part6CopperSite,'Part 6 copper pipeline fixture must exist');
+globalThis.Game.state.transport.CHL=globalThis.Game.state.transport.CHL||{
+  infrastructure:{
+    roads:{capacityPerDay:50000,quality:0.9},rail:{capacityPerDay:120000,quality:0.8},
+    ports:{capacityPerDay:200000,quality:0.9},bridges:{capacityPerDay:50000,quality:0.8},
+    pipelines:{capacityPerDay:400000,quality:0.8}
+  }
+};
+globalThis.Game.state.simulation.turn=Number(globalThis.Game.state.simulation.turn||0)+1;
+const part6Pipeline=await industrial.executeSitePipeline({
+  countryId:part6CopperSite.countryId,siteId:part6CopperSite.siteId,
+  resourceId:part6CopperSite.resourceId,autoCommissionFactory:true,transportMode:'rail'
+});
+assert.equal(part6Pipeline.status,'IN_TRANSIT',
+  'new Part 6 mine must enter the same production pipeline: '+JSON.stringify({
+    status:part6Pipeline.status,reason:part6Pipeline.reason,siteId:part6Pipeline.siteId,
+    resourceId:part6Pipeline.resourceId,extractionStatus:part6Pipeline.extractionStatus,
+    shipmentStatus:part6Pipeline.shipmentStatus,detail:part6Pipeline.detail
+  }));
+assert.equal(part6Pipeline.extractionStatus,'COMMITTED');
+assert.ok(part6Pipeline.batchId&&part6Pipeline.shipmentId&&part6Pipeline.factoryId,
+  'Part 6 pipeline must persist its extraction batch, shipment and factory identities');
+const part6PreDelivery=runtime.countryResourceState(part6CopperSite.countryId);
+const part6ShipQuantity=Number(part6Pipeline.shipment?.quantity||0);
+assert.ok(part6ShipQuantity>0);
+assert.ok(Number(part6PreDelivery?.warehouse?.reservedByResource?.[part6CopperSite.resourceId]||0)>=part6ShipQuantity,
+  'Part 6 shipment must reserve material from its country raw warehouse');
+globalThis.Game.state.simulation.turn=Number(part6Pipeline.shipment.etaTurn);
+const part6Delivery=industrial.advanceShipments(part6CopperSite.countryId);
+assert.equal(part6Delivery.delivered,1,'Part 6 mine shipment must reach its bound factory');
+const part6Delivered=part6Delivery.shipments.find(item=>item.shipmentId===part6Pipeline.shipmentId);
+assert(part6Delivered);
+assert.equal(part6Delivered.processingStatus,'PROCESSED');
+assert.equal(part6Delivered.destinationStatus,'FACTORY_RECEIVED');
+const part6PostDelivery=runtime.countryResourceState(part6CopperSite.countryId);
+assert.ok(Object.keys(part6Delivered.processing?.outputs||{}).some(key=>Number(part6PostDelivery.inventory?.[key])>0),
+  'Part 6 processed products must enter the owning country inventory');
+assert.ok((part6PostDelivery.industrialNetwork?.siteExecutions||[]).some(item=>
+  item.siteId===part6CopperSite.siteId&&item.batchId===part6Pipeline.batchId&&item.occurrenceKey===part6Pipeline.occurrenceKey),
+  'Part 6 industrial ledger must retain the exact site, batch and occurrence identities');
+
 
 if(nativeFetch)globalThis.fetch=nativeFetch;
 // This completion line is reached only after the real site pipeline assertions above pass.
