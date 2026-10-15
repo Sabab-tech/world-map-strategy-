@@ -46,8 +46,8 @@ function dispatch(owner,type,c,payload={}){
  }catch(e){return{status:'FAILED',reason:String(e?.message||e)};}
 }
 function emit(type,c,payload={}){
- try{const m=interop();if(m?.emitEvent)return m.emitEvent(type,country(c),'strategic-resource-policy',clone(payload),{turn:turn(),correlationId:payload?.policyId||payload?.projectId||payload?.transactionId||null});}catch(_){}
- try{if(typeof g.dispatchEvent==='function'&&typeof g.CustomEvent==='function')g.dispatchEvent(new g.CustomEvent(type,{detail:{eventType:type,countryId:country(c),payload:clone(payload),source:'strategic-resource-policy'}}));}catch(_){}
+ try{const m=interop();if(m?.emitEvent)return m.emitEvent(type,country(c),'resource',clone(payload),{turn:turn(),correlationId:payload?.violationId||payload?.policyId||payload?.projectId||payload?.transactionId||payload?.decisionId||null});}catch(_){}
+ try{if(typeof g.dispatchEvent==='function'&&typeof g.CustomEvent==='function')g.dispatchEvent(new g.CustomEvent(type,{detail:{eventType:type,countryId:country(c),payload:clone(payload),source:'resource'}}));}catch(_){}
  return null;
 }
 function rowsFor(domain,field){
