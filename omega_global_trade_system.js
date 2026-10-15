@@ -969,7 +969,7 @@
     installHandlers();
     const requestId=String(payload.requestId||('TRADE-'+turn()+'-'+canonical(countryId)+'-'+token(payload.resourceId||'RESOURCE')+'-'+Date.now()));
     const result=command('trade','OMEGA_TRADE_CREATE_IMPORT_REQUEST',countryId,{...clone(payload),requestId});
-    return result&&result.status==='APPLIED'&&result.result?result.result:result;
+    return result&&['APPLIED','FAILED'].includes(String(result.status||''))&&result.result?result.result:result;
   }
   const API=Object.freeze({VERSION,TYPES,diagnostics,processAll,reviewRequest:sellerReviewDecision,createRequest,relationScore,marketPrice,inventory,currencyOf,fxRate,settlementValues});
   g.Omega=g.Omega||{};g.Omega.GlobalTrade=API;g.OmegaGlobalTrade=API;
