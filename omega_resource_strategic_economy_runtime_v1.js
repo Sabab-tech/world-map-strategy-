@@ -159,7 +159,7 @@ function applyOne(c,{eventId,eventType,resourceId,quantity,unit,siteId,sourceBat
   const key=String(eventId||[eventType,cid,siteId||'',rid,turn(),q,unitId||''].join(':'));
   if(impact.processedEventIds.includes(key))return{status:'DUPLICATE_IGNORED',eventId:key};
   const source=stage==='PROCESSING'?loadedRules?.processing:loadedRules?.extraction;
-  const rule=source?.[rid]||null;
+  const rule=source?.[rid]||Object.entries(source||{}).find(([key])=>tok(key)===rid)?.[1]||null;
   let values={landDisturbanceHa:0,waterUseM3:0,ghgTCO2e:0,tailingsTonnes:0},impactStatus='UNMODELED',reason=null;
   if(!rule){reason='RESOURCE_ENVIRONMENT_RULE_NOT_FOUND';}
   else if(unitId!==unitToken(rule.unit)){impactStatus='BLOCKED';reason='RESOURCE_UNIT_DOES_NOT_MATCH_ENVIRONMENT_RULE';}
