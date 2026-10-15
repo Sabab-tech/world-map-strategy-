@@ -222,6 +222,7 @@ test('Live Operations joins canonical site profiles to shared country state by c
           { siteId: 'SITE-BGD-1', countryId: 'BGD', siteName: 'Canonical Bangladesh coal mine',
             real: { resourceId: 'coal' }, operation: { status: 'ACTIVE' },
             quantitative: { production: { rate: 5, unit: 'tonnes/day' } },
+            simulation: { transportRoutes: [{ routeId: 'ROUTE-BGD-1', routeName: 'Rail to processing plant', from: 'SITE-BGD-1', to: 'FACTORY-BGD-1', mode: 'rail' }] },
             coordinates: { lat: 24, lng: 90 }, location: { countryName: 'Bangladesh', coordinateStatus: 'VERIFIED' } },
           { siteId: 'SITE-IND-1', countryId: 'IND', siteName: 'Canonical India iron mine',
             real: { resourceId: 'iron_ore' }, operation: { status: 'ACTIVE' },
@@ -252,6 +253,11 @@ test('Live Operations joins canonical site profiles to shared country state by c
   assert.equal(bangladeshMine.runtimeRecorded, true, 'runtime data overlays the registry profile rather than duplicating it');
   assert.equal(bangladeshMine.quantity, 4);
   assert.equal(bangladeshMine.profileDailyRate, 5);
+  assert.equal(bangladeshMine.profileRoutes[0].routeId, 'ROUTE-BGD-1');
+  assert.equal(snapshot.siteRouteProfiles.length, 1);
+  assert.equal(snapshot.siteRouteProfiles[0].routeId, 'ROUTE-BGD-1');
+  assert.equal(snapshot.siteRouteProfiles[0].profileOnly, true);
+  assert.equal(snapshot.summary.siteRouteProfiles, 1);
   assert.equal(snapshot.summary.registeredResourceSites, 2);
   assert.equal(snapshot.summary.runtimeMineRecords, 1);
   assert.equal(snapshot.summary.currentTurnMineOutputs, 1);
