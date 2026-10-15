@@ -157,3 +157,21 @@ test('automatic turn autosave writes one stable slot and state audit identifies 
   assert.equal(api.auditState().status,'DEGRADED');
   assert.ok(api.auditState().issues.some(x=>x.type==='CROSS_COUNTRY_BATCH_OWNER'));
 });
+
+test('save loader rejects semantically inconsistent state even when checksum is recomputed',()=>{
+  const h=harness(),{api,state}=h;
+  const exported=api.createSaveEnvelope();
+  assert.equal(exported.status,'READY');
+  const invalid=exported.envelope;
+  invalid.state.resource.BGD.batches[0].countryId='SAU';
+  const body={schema:invalid.schema,schemaVersion:invalid.schemaVersion,metadata:invalid.metadata||{},state:invalid.state};
+  invalid.checksum=api.checksum(body);
+  const validation=api.validateSave(invalid);
+  assert.equal(validation.status,'INVALID');
+  assert.equal(validation.reason,'SAVE_STATE_INTEGRITY_FAILED');
+  assert.ok(validation.integrity.issues.some(x=>x.type==='CROSS_COUNTRY_BATCH_OWNER'));
+  const turnBefore=state.simulation.turn;
+  const restored=api.restoreSave(invalid);
+  assert.equal(restored.status,'REJECTED');
+  assert.equal(state.simulation.turn,turnBefore,'semantically invalid save must not mutate live state');
+});
