@@ -138,4 +138,32 @@ assert.deepEqual({
   sellerExport:globalThis.Game.state.trade.SAU.exportValue||0
 },beforeEmbargo,'embargo rejection must not move stock or settle money');
 assert.equal(policy.liftEmbargo('BGD',{policyId:'TRADE-EMBARGO-E2E'}).accepted,true);
+
+const blockadeResult=policy.declareBlockade('BGD',{targetCountryId:'SAU',resourceId:'crude_oil',modes:['ship'],policyId:'TRADE-BLOCKADE-E2E'});
+assert.equal(blockadeResult.accepted,true,JSON.stringify(blockadeResult));
+const beforeBlockade={
+  buyerStock:globalThis.Game.state.resource.BGD.inventory.crude_oil,
+  sellerStock:globalThis.Game.state.resource.SAU.inventory.crude_oil,
+  buyerCash:globalThis.Game.state.finance.BGD.available,
+  sellerCash:globalThis.Game.state.finance.SAU.available,
+  buyerImport:globalThis.Game.state.trade.BGD.importValue||0,
+  sellerExport:globalThis.Game.state.trade.SAU.exportValue||0
+};
+globalThis.Game.state.trade.BGD.importRequests.push({
+  requestId:'REQ-BLOCKADE',countryId:'BGD',targetCountryId:'SAU',resourceId:'crude_oil',transportMode:'ship',quantity:50,
+  unitPrice:100,totalValue:5000,status:'SENT',stage:'COUNTERPARTY_DECISION_PENDING',createdTurn:globalThis.Game.state.simulation.turn
+});
+trade.processAll();
+const blockadeRequest=globalThis.Game.state.trade.BGD.importRequests.find(x=>x.requestId==='REQ-BLOCKADE');
+assert.equal(blockadeRequest.status,'REJECTED',JSON.stringify({blockadeRequest,trace:globalThis.__OMEGA_LAST_TRADE_PROCESS_TRACE}));
+assert.equal(blockadeRequest.rejectionReason,'RESOURCE_ROUTE_BLOCKADE_ACTIVE',JSON.stringify(blockadeRequest));
+assert.deepEqual({
+  buyerStock:globalThis.Game.state.resource.BGD.inventory.crude_oil,
+  sellerStock:globalThis.Game.state.resource.SAU.inventory.crude_oil,
+  buyerCash:globalThis.Game.state.finance.BGD.available,
+  sellerCash:globalThis.Game.state.finance.SAU.available,
+  buyerImport:globalThis.Game.state.trade.BGD.importValue||0,
+  sellerExport:globalThis.Game.state.trade.SAU.exportValue||0
+},beforeBlockade,'blockade rejection must not move stock or settle money');
+assert.equal(policy.liftBlockade('BGD',{policyId:'TRADE-BLOCKADE-E2E'}).accepted,true);
 console.log('OMEGA GLOBAL TRADE TEST PASSED');
