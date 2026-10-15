@@ -199,8 +199,8 @@ function surveyTick(ctx,payload){
  }
  ctx.stateTransaction.set('resource.explorationProjects',projects.slice(-MAX_PROJECTS));return{accepted:true,countryId:c,turn:turn(),advanced,discovered};
 }
-function investSite(c,payload){
- const c=country(c),p=payload||{},projectId=String(p.projectId||'').trim();if(!projectId)return{accepted:false,reason:'PROJECT_ID_REQUIRED'};
+function investSite(countryId,payload){
+ const c=country(countryId),p=payload||{},projectId=String(p.projectId||'').trim();if(!projectId)return{accepted:false,reason:'PROJECT_ID_REQUIRED'};
  const existing=state()?.resource?.[c]?.explorationProjects,project=Array.isArray(existing)?existing.find(x=>x.projectId===projectId):null;
  if(!project)return{accepted:false,reason:'EXPLORATION_PROJECT_NOT_FOUND'};
  if(project.status==='INVESTMENT_APPROVED'||project.status==='COMMISSIONED')return{accepted:true,duplicate:true,project};
