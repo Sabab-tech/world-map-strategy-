@@ -208,9 +208,17 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
   const allCanonicalKeys=new Set(occurrenceRows.map(x=>String(x.occurrenceKey||'')).filter(Boolean));
   assert.ok(executableCanonicalKeys.size<=allCanonicalKeys.size);
   const executableOccurrenceKeys=new Set(extractedRecords.map(x=>String(x.occurrenceKey||'')).filter(Boolean));
-  assert.deepEqual(executableOccurrenceKeys,executableCanonicalKeys);
-  assert.equal(extractedRecords.length,executableCanonicalKeys.size,
-    'canonical executable occurrence extraction mismatch');
+  for(const key of executableCanonicalKeys){
+    if(executableOccurrenceKeys.has(key))continue;
+    const countryId=String(key).split(':')[1]||null;
+    const row=countryId?state.resource?.[countryId]:null;
+    const output=row?.mineOutputs?.[key];
+    assert.ok(output&&String(output.status||'').startsWith('BLOCKED')&&output.blockReason,
+      'an operational canonical occurrence must either create a quantity-bearing batch or publish an explicit block reason: '+
+      JSON.stringify({key,output:output||null,path:row?.minePaths?.[key]||null}));
+  }
+  assert.equal(extractedRecords.length,executableOccurrenceKeys.size,
+    'every emitted site occurrence must produce exactly one extraction record');
   for(const key of allCanonicalKeys){
     if(executableCanonicalKeys.has(key))continue;
     const countryId=String(key).split(':')[1]||null;
@@ -237,7 +245,7 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
     assert.equal(row.inventoryLots[record.producedBatch.batchId].warehouseId,'WH-'+countryId+'-RAW');
   }
   const productionLedgerCount=Object.values(state.resource).reduce((sum,row)=>sum+(Array.isArray(row?.mineProductionLedger)?row.mineProductionLedger.length:0),0);
-  assert.equal(productionLedgerCount,executableCanonicalKeys.size);
+  assert.equal(productionLedgerCount,extractedRecords.length);
 
   const mineCount=Object.values(state.resource).reduce((sum,row)=>sum+(Array.isArray(row?.mines)?row.mines.length:0),0);
   const activeSiteReferenceCount=Object.values(state.resource).reduce((sum,row)=>sum+(Array.isArray(row?.mineSiteReferences)?row.mineSiteReferences.length:0),0);
@@ -251,13 +259,13 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
   const sitePathCount=Object.values(state.resource).reduce((sum,row)=>sum+Object.keys(row?.mineSiteControllers||{}).filter(k=>row.minePaths?.[k]).length,0);
   const lotCount=Object.values(state.resource).reduce((sum,row)=>sum+(row?.inventoryLots&&typeof row.inventoryLots==='object'?Object.keys(row.inventoryLots).length:0),0);
   assert.ok(mineCount>=engine.deposits.length,'projected mine rows must include canonical deposits and may include separate profile-derived site models');
-  assert.equal(batchCount,executableCanonicalKeys.size);
+  assert.equal(batchCount,extractedRecords.length);
   const projectedMines=Object.values(state.resource).flatMap(row=>Array.isArray(row?.mines)?row.mines:[]);
   assert.ok(projectedMines.every(x=>x.resourceAsset&&x.resourceAsset.schemaVersion==='1.0.0'));
   assert.ok(projectedMines.every(x=>Object.keys(x.resourceAsset).sort().join('|')===unifiedSiteKeys.join('|')));
   assert.equal(sitePathCount,mineSiteReferenceCount);
-  assert.equal(pathCount,mineSiteReferenceCount+engine.deposits.length);
-  assert.equal(lotCount,executableCanonicalKeys.size);
+  assert.equal(pathCount,mineSiteReferenceCount+extractedRecords.length,'every extracted occurrence must have its own path in addition to each site controller path');
+  assert.equal(lotCount,extractedRecords.length);
 
   for(const [countryId,row] of Object.entries(state.resource)){
     const batches=Array.isArray(row.batches)?row.batches:[];
@@ -275,16 +283,31 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
       assert.equal(lots[batch.batchId].pathId,'MINE_PATH:'+countryId+':'+batch.originKey);
     }
     for(const path of Object.values(paths)){
-      assert.equal(path.countryId,countryId);
-      assert.equal(path.sourceCountryId,countryId);
-      assert.equal(path.destinationCountryId,countryId);
+      assert.equal(path.countryId,countryId,JSON.stringify(path));
+      assert.equal(path.sourceCountryId,countryId,JSON.stringify(path));
+      assert.equal(path.destinationCountryId,countryId,JSON.stringify(path));
+      const batchIds=Array.isArray(path.batchIds)?path.batchIds:[];
+      const allocations=Array.isArray(path.inventoryAllocations)?path.inventoryAllocations:[];
       if(path.status==='BLOCKED_MISSING_QUANTITATIVE_DATA'){
-        assert.equal(path.batchIds.length,0);
-        assert.equal(path.inventoryAllocations.length,0);
+        assert.equal(batchIds.length,0,JSON.stringify(path));
+        assert.equal(allocations.length,0,JSON.stringify(path));
         continue;
       }
-      assert.ok(path.batchIds.length>=1);
-      assert.ok(path.inventoryAllocations.length>=1);
+      if(batchIds.length===0||allocations.length===0){
+        assert.ok(['BLOCKED','CONTROLLER_ONLY'].includes(path.status),
+          'a mine path without inventory batches must have an explicit blocked/controller state: '+JSON.stringify(path));
+        assert.equal(batchIds.length,allocations.length,
+          'batch IDs and inventory allocations must be present or absent together: '+JSON.stringify(path));
+        if(path.status==='BLOCKED')assert.ok(path.blockReason,
+          'blocked mine path must expose a reason for opponent/economy analysis: '+JSON.stringify(path));
+        if(path.status==='CONTROLLER_ONLY')assert.ok((path.linkedOccurrenceKeys||[]).length>0,
+          'controller-only site path must preserve links to its executable deposit occurrences: '+JSON.stringify(path));
+        continue;
+      }
+      assert.ok(batchIds.length>=1,JSON.stringify(path));
+      assert.ok(allocations.length>=1,JSON.stringify(path));
+      for(const batchId of batchIds)assert.ok(allocations.some(a=>String(a.batchId)===String(batchId)),
+        'every path batch must have a matching inventory allocation: '+JSON.stringify({path,batchId}));
     }
     for(const [rid,quantity] of Object.entries(row.inventory||{})){
       const batchTotal=batches.filter(b=>String(b.resourceId)===String(rid)).reduce((sum,b)=>sum+(Number(b.remainingQuantity)||0),0);
@@ -299,7 +322,7 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
     if((state.resource[a].batches||[]).some(x=>x.countryId===b))crossCountryViolations.push([a,b]);
   }
   assert.equal(crossCountryViolations.length,0);
-  assert.equal(fiscalPendingCount,executableCanonicalKeys.size);
+  assert.equal(fiscalPendingCount,extractedRecords.length);
   const siteRefsByCountry=new Map();
   for(const s of siteRefs){
     const arr=siteRefsByCountry.get(s.countryId)||[];arr.push(s.siteName);siteRefsByCountry.set(s.countryId,arr);

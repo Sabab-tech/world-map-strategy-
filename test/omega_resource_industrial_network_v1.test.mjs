@@ -102,6 +102,11 @@ assert.equal(context.Game.state.resource.BGD.inventory.coal,45000,'raw inventory
 assert.equal(context.Game.state.resource.BGD.inventory.COAL_CONCENTRATE,820,'factory output must enter the resource inventory');
 assert.equal(context.Game.state.resource.BGD.inventory.COAL_REJECT,180,'processing coproduct must be recorded');
 assert.equal(context.Game.state.economy.BGD.productionAssets[0].inputInventory.coal,4000,'unprocessed delivered material must remain in factory input stock');
+assert.equal(context.Game.state.resource.BGD.processedWarehouse.availableByResource.COAL_CONCENTRATE,820);
+assert.equal(context.Game.state.resource.BGD.processedWarehouse.availableByResource.COAL_REJECT,180);
+assert.ok(context.Game.state.resource.BGD.batches.some(x=>x.stage==='FINISHED'&&x.resourceId==='COAL_CONCENTRATE'));
+assert.ok(Object.values(context.Game.state.resource.BGD.inventoryLots).some(x=>x.stage==='FINISHED'&&x.resourceId==='COAL_REJECT'));
+assert.equal(context.Game.state.economy.BGD.productionAssets[0].inputBatchLots.reduce((sum,x)=>sum+(Number(x.remainingQuantity)||0),0),4000);
 
 const factoryProject=N.startFactoryProject({countryId:'BGD',resourceId:'iron_ore',capacityPerDay:750,buildDays:60,requiredTechnologyIds:['DIGITAL_MAINTENANCE']});
 assert.equal(factoryProject.status,'UNDER_CONSTRUCTION');
@@ -152,6 +157,13 @@ context.Omega.ResourceEndowmentRuntime={
     const rs=context.Game.state.resource[countryId],quantity=1200;
     rs.inventory.copper=(Number(rs.inventory.copper)||0)+quantity;
     rs.warehouse.availableByResource.copper=(Number(rs.warehouse.availableByResource.copper)||0)+quantity;
+    rs.warehouse.warehouseId='WH-'+countryId+'-RAW';rs.warehouse.countryId=countryId;rs.warehouse.locationNodeKey='WAREHOUSE:'+countryId+':RAW';
+    rs.warehouse.storedBatchIds=rs.warehouse.storedBatchIds||[];rs.batches=rs.batches||[];rs.inventoryLots=rs.inventoryLots||{};
+    const trackedBatch={batchId:'BATCH-E2E-COPPER',resourceId:'copper',materialIdentity:'copper',quantity,remainingQuantity:quantity,unit:'TONNES',
+      stage:'RAW_EXTRACTED',countryId,sourceCountryId:countryId,originCountryId:countryId,ownerCountryCode:countryId,destinationCountryId:countryId,
+      warehouseId:'WH-'+countryId+'-RAW',locationNodeKey:'WAREHOUSE:'+countryId+':RAW',occurrenceKey:occurrenceKeys[0],sourceBatchIds:[],
+      provenance:{sourceAuthority:'SIMULATED_TEST_FIXTURE'}};
+    rs.batches.push(trackedBatch);rs.inventoryLots[trackedBatch.batchId]={...trackedBatch,status:'AVAILABLE'};rs.warehouse.storedBatchIds.push(trackedBatch.batchId);
     const record={occurrenceKey:occurrenceKeys[0],countryId,resourceId:'copper',approvedQuantity:quantity,
       producedBatch:{batchId:'BATCH-E2E-COPPER',quantity,unit:'TONNES',warehouseId:'WH-'+countryId+'-RAW'}};
     return{status:'APPLIED',result:{accepted:true,records:[record]}};
