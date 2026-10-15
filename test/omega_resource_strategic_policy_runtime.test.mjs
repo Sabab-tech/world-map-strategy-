@@ -263,6 +263,7 @@ test('carbon quota tracks CO2e separately from environmental impact indexes and 
  assert.equal(h.state.resource.BGD.carbonQuotaEnforcementLedger[0].projectedTonnesCo2e,120);
  assert.equal(h.state.resource.BGD.carbonQuotaEnforcementLedger[0].enforcementAction,'ACTIVITY_BLOCKED_BEFORE_EMISSION_COMMIT');
  assert.equal(h.state.resource.BGD.carbonQuotaEnforcementLedger[0].remediationFollowUp,'MONITOR_SITE_IMPACT');
+ assert.equal(h.events.filter(event=>event.type==='OMEGA_RESOURCE_CARBON_QUOTA_VIOLATION_RECORDED').length,1);
  const saved=JSON.parse(JSON.stringify(h.state.resource.BGD));
  assert.equal(saved.carbonQuotaEnforcementLedger[0].reason,'CARBON_QUOTA_EXCEEDED','the violation ledger remains save/load serializable');
 
