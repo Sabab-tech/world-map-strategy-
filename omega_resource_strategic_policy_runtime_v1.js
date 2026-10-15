@@ -276,6 +276,32 @@ function remediate(ctx,payload){
  emit('OMEGA_RESOURCE_ENVIRONMENT_REMEDIATED',c,{transactionId:txn,siteId:sid,amount:reduce,cost});return{accepted:true,transactionId:txn,cost,impact:next};
 }
 
+
+function capitalizeSwfTx(ctx,payload){
+ const cfg=rules()?.swf,p=payload||{},amount=num(p.amount),transactionId=String(p.transactionId||'').trim();
+ if(!cfg?.enabled)return{accepted:false,reason:'SWF_RULES_UNAVAILABLE'};
+ if(amount===null||amount<=0)return{accepted:false,reason:'SWF_AMOUNT_MUST_BE_POSITIVE'};
+ if(!transactionId)return{accepted:false,reason:'SWF_TRANSACTION_ID_REQUIRED'};
+ const c=country(ctx.countryId),prior=ctx.stateTransaction.get('resource.sovereignWealthFund')||{};
+ const contributions=Array.isArray(prior.contributions)?clone(prior.contributions):[];
+ const old=contributions.find(x=>String(x?.transactionId||'')===transactionId);
+ if(old)return Math.abs((num(old.amount)||0)-amount)<1e-9?{accepted:true,duplicate:true,contribution:old,fund:prior}:{accepted:false,reason:'SWF_TRANSACTION_ID_CONFLICT'};
+ const limit=num(cfg.maxTransactions);if(limit===null||limit<1)return{accepted:false,reason:'SWF_HISTORY_LIMIT_UNAVAILABLE'};
+ const debit=dispatch('finance','OMEGA_TRADE_FINANCE_DEBIT',c,{amount,reason:'SOVEREIGN_WEALTH_FUND_CAPITALIZATION',
+  referenceId:'SWF:'+c,transactionId:'SWF-CAPITAL:'+transactionId});
+ if(debit?.status!=='APPLIED'&&debit?.accepted!==true)return{accepted:false,reason:'SWF_TREASURY_DEBIT_FAILED',detail:debit};
+ const contribution={transactionId,amount,countryId:c,turn:turn(),status:'CAPITALIZED',unit:'TREASURY_NATIVE_UNITS',
+  authority:'OMEGA_RESOURCE_STRATEGIC_POLICY_RUNTIME',provenance:'PLAYER_AUTHORIZED_TREASURY_TRANSFER'};
+ contributions.push(contribution);
+ const fund={fundId:'SWF:'+c,countryId:c,balance:(num(prior.balance)||0)+amount,unit:'TREASURY_NATIVE_UNITS',
+  currencyCode:ctx.stateTransaction.get('finance.currencyCode')||ctx.stateTransaction.get('trade.settlementCurrency')||ctx.stateTransaction.get('economy.currencyCode')||null,
+  contributions:contributions.slice(-limit),createdTurn:num(prior.createdTurn)??turn(),updatedTurn:turn(),
+  authority:'OMEGA_RESOURCE_STRATEGIC_POLICY_RUNTIME',provenance:'LEDGER_BACKED_TREASURY_CAPITALIZATION'};
+ ctx.stateTransaction.set('resource.sovereignWealthFund',fund);
+ emit('OMEGA_RESOURCE_SWF_CAPITALIZED',c,{contribution,fund});
+ return{accepted:true,contribution,fund};
+}
+function capitalizeSovereignWealthFund(c,p={}){install();return dispatch('resource','OMEGA_RESOURCE_SWF_CAPITALIZE',c,p);}
 function carbonUnit(v){return String(v||'').trim().toUpperCase().replace(/[^A-Z0-9]+/g,'_').replace(/^_+|_+$/g,'');}
 function carbonFactor(resourceId,unit){
  const map=rules()?.carbon?.emissionsFactorsByResourceUnit||{};
@@ -495,6 +521,7 @@ function install(){
  ['OMEGA_RESOURCE_CARBON_QUOTA_SET',(cmd,ctx)=>setCarbonQuotaTx(ctx,cmd?.payload||{})],
  ['OMEGA_RESOURCE_CARBON_EMISSION_RECORD',(cmd,ctx)=>recordCarbonEmissionTx(ctx,cmd?.payload||{})],
  ['OMEGA_RESOURCE_COGNITIVE_GATE_EVALUATE',(cmd,ctx)=>evaluateCognitiveGateTx(ctx,cmd?.payload||{})],
+ ['OMEGA_RESOURCE_SWF_CAPITALIZE',(cmd,ctx)=>capitalizeSwfTx(ctx,cmd?.payload||{})],
  ['OMEGA_RESOURCE_POWER_PROJECT_CREATE',(cmd,ctx)=>powerProjectCreate(ctx,cmd?.payload||{})],
  ['OMEGA_RESOURCE_POWER_PROJECT_TICK',(cmd,ctx)=>powerTick(ctx,cmd?.payload||{})]
  ];
@@ -529,9 +556,10 @@ function diagnostics(){
   powerProjectCount:Object.values(resource).reduce((n,r)=>n+(Array.isArray(r?.powerProjects)?r.powerProjects.length:0),0),
   powerAssetCount:Object.values(resource).reduce((n,r)=>n+(Array.isArray(r?.powerAssets)?r.powerAssets.length:0),0),
   cognitiveDecisionRows:Object.values(resource).reduce((n,r)=>n+(Array.isArray(r?.cognitiveDecisionLedger)?r.cognitiveDecisionLedger.length:0),0),
+  sovereignWealthFundCount:Object.values(resource).filter(r=>!!r?.sovereignWealthFund).length,
   marketLedgerCountries:Object.keys(trade).length};
 }
-const API=Object.freeze({VERSION,loadRules,install,diagnostics,isResourceEmbargoed,isRouteBlocked,siteAvailableForExtraction,extractionMultiplier,recordExtractionImpactTx,recordProcessingImpactTx,declareEmbargo,liftEmbargo,declareBlockade,liftBlockade,startExploration,processCountry,processAll,approveInvestment,commissionSite,remediateSite,setCarbonQuota,recordCarbonEmission,previewCarbonActivity,evaluateCognitiveGate,startPowerProject,processPowerCountry});
+const API=Object.freeze({VERSION,loadRules,install,diagnostics,isResourceEmbargoed,isRouteBlocked,siteAvailableForExtraction,extractionMultiplier,recordExtractionImpactTx,recordProcessingImpactTx,declareEmbargo,liftEmbargo,declareBlockade,liftBlockade,startExploration,processCountry,processAll,approveInvestment,commissionSite,remediateSite,setCarbonQuota,recordCarbonEmission,previewCarbonActivity,evaluateCognitiveGate,startPowerProject,processPowerCountry,capitalizeSovereignWealthFund});
 g.Omega=g.Omega||{};g.Omega.ResourceStrategicPolicyRuntime=API;g.OmegaResourceStrategicPolicyRuntime=API;
 if(typeof g.addEventListener==='function'){
  g.addEventListener('OMEGA_READY',()=>{loadRules().then(()=>install()).catch(()=>{});});
