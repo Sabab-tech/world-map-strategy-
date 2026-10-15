@@ -446,28 +446,53 @@ function evaluateCognitiveGateTx(ctx,payload){
  const required=num(cfg?.questionsRequired),historyLimit=configuredLimit('cognitive','maxHistory');
  if(!cfg?.enabled||required===null||historyLimit===null)return{accepted:false,reason:'COGNITIVE_RULES_UNAVAILABLE'};
  if(!answers||answers.length!==required||answers.some(x=>!['proceed','review','block'].includes(x)))return{accepted:false,reason:'ALL_12_QUESTIONS_REQUIRE_ANSWERS',requiredAnswers:required};
+ const operation=String(p.operation||'').trim().toUpperCase();
+ if(!['POWER_PROJECT','SWF_CAPITALIZATION'].includes(operation))return{accepted:false,reason:'COGNITIVE_GATE_OPERATION_INVALID'};
+ const projectType=operation==='POWER_PROJECT'?String(p.projectType||'NUCLEAR_BASELOAD').trim().toUpperCase():null;
+ if(operation==='POWER_PROJECT'&&projectType!=='NUCLEAR_BASELOAD')return{accepted:false,reason:'COGNITIVE_GATE_PROJECT_TYPE_UNSUPPORTED'};
+ const requestedAmount=p.requestedAmount===undefined||p.requestedAmount===null||p.requestedAmount===''?null:num(p.requestedAmount);
+ if(operation==='SWF_CAPITALIZATION'&&(requestedAmount===null||requestedAmount<=0))return{accepted:false,reason:'COGNITIVE_GATE_SWF_AMOUNT_REQUIRED'};
+ if(operation==='POWER_PROJECT'&&requestedAmount!==null)return{accepted:false,reason:'COGNITIVE_GATE_POWER_AMOUNT_RULESET_CONTROLLED'};
  const decisionId=String(p.decisionId||'COGNITIVE:'+country(ctx.countryId)+':T'+turn()+':'+Date.now()).trim();
  const old=ctx.stateTransaction.get('resource.cognitiveDecisionLedger'),ledger=Array.isArray(old)?clone(old):[];
  const existing=ledger.find(x=>String(x?.decisionId||'')===decisionId);
- if(existing)return JSON.stringify(existing.answers)===JSON.stringify(answers)?{accepted:true,duplicate:true,decision:existing}:{accepted:false,reason:'COGNITIVE_DECISION_ID_CONFLICT'};
+ if(existing){
+  const same=JSON.stringify(existing.answers)===JSON.stringify(answers)&&String(existing.operation||'')===operation&&
+   (projectType===null?existing.projectType==null:String(existing.projectType||'')===projectType)&&
+   ((requestedAmount===null&&existing.requestedAmount==null)||(requestedAmount!==null&&Math.abs((num(existing.requestedAmount)||0)-requestedAmount)<1e-9));
+  return same?{accepted:true,duplicate:true,decision:existing}:{accepted:false,reason:'COGNITIVE_DECISION_ID_CONFLICT'};
+ }
  const ai=p.aiAssessment&&typeof p.aiAssessment==='object'?p.aiAssessment:null;
  if(!ai||ai.aiGenerated!==true||ai.authority!=='OMEGA_SERVER_RESOURCE_DECISION_AI')
   return{accepted:false,reason:'AI_ASSESSMENT_REQUIRED',authorityRequired:'OMEGA_SERVER_RESOURCE_DECISION_AI'};
  const modelDecision=String(ai.decision||'').toUpperCase(),confidence=num(ai.confidence);
  if(!['PROCEED','REVIEW','BLOCK'].includes(modelDecision)||confidence===null||confidence<0||confidence>1)
   return{accepted:false,reason:'AI_ASSESSMENT_SCHEMA_INVALID'};
+ const aiAmount=ai.requestedAmount===undefined||ai.requestedAmount===null||ai.requestedAmount===''?null:num(ai.requestedAmount);
+ if(String(ai.operation||'').toUpperCase()!==operation||
+    (projectType===null?ai.projectType!=null:String(ai.projectType||'').toUpperCase()!==projectType)||
+    !((requestedAmount===null&&aiAmount===null)||(requestedAmount!==null&&aiAmount!==null&&Math.abs(requestedAmount-aiAmount)<1e-9)))
+  return{accepted:false,reason:'AI_ASSESSMENT_SCOPE_MISMATCH'};
+ if(operation==='POWER_PROJECT'){
+  const cost=num(rules()?.power?.projectTypes?.[projectType]?.constructionCostTreasuryUnits);
+  const assessedCost=num(ai.operationRequirements?.constructionCostTreasuryUnits);
+  if(cost===null||assessedCost===null||Math.abs(cost-assessedCost)>1e-9)
+   return{accepted:false,reason:'AI_ASSESSMENT_RULESET_MISMATCH'};
+ }
  const blocks=answers.filter(x=>x==='block').length,reviews=answers.filter(x=>x==='review').length;
  let finalDecision=blocks?'BLOCK':(reviews>=4&&modelDecision==='PROCEED'?'REVIEW':modelDecision);
  const decision=finalDecision==='PROCEED'?'PROCEED_WITH_RECORDED_ASSUMPTIONS':finalDecision;
- const aiRecord={decision:modelDecision,confidence,riskSummary:String(ai.riskSummary||'').slice(0,1200),
+ const aiRecord={decision:modelDecision,confidence,operation,projectType,requestedAmount,
+  operationRequirements:clone(ai.operationRequirements||{}),riskSummary:String(ai.riskSummary||'').slice(0,1200),
   findings:Array.isArray(ai.findings)?ai.findings.slice(0,12):[],
   recommendedChecks:Array.isArray(ai.recommendedChecks)?ai.recommendedChecks.slice(0,12):[],
   safetyOverride:ai.safetyOverride||null,model:String(ai.model||'GEMINI_MODEL_UNDISCLOSED'),
   provenance:String(ai.provenance||'SERVER_MODEL_RESPONSE_WITH_DETERMINISTIC_SAFETY_FLOORS')};
- const row={decisionId,countryId:country(ctx.countryId),turn:turn(),answers:answers.slice(),answeredCount:answers.length,
-  blockCount:blocks,reviewCount:reviews,decision,status:'RECORDED',advisory:false,enforced:true,gateScope:'STRATEGIC_HIGH_IMPACT_OPERATIONS',
-  authority:'OMEGA_SERVER_RESOURCE_DECISION_AI',aiGenerated:true,modelDecision,confidence,
-  aiAssessment:aiRecord,safetyOverride:blocks>0?'PLAYER_REPORTED_BLOCKER':(reviews>=4&&modelDecision==='PROCEED'?'FOUR_OR_MORE_UNRESOLVED_ANSWERS':null),
+ const row={decisionId,countryId:country(ctx.countryId),turn:turn(),operation,projectType,requestedAmount,
+  answers:answers.slice(),answeredCount:answers.length,blockCount:blocks,reviewCount:reviews,decision,status:'RECORDED',
+  advisory:false,enforced:true,gateScope:'STRATEGIC_HIGH_IMPACT_OPERATIONS',authority:'OMEGA_SERVER_RESOURCE_DECISION_AI',
+  aiGenerated:true,modelDecision,confidence,aiAssessment:aiRecord,safetyOverride:blocks>0?'PLAYER_REPORTED_BLOCKER':
+   (reviews>=4&&modelDecision==='PROCEED'?'FOUR_OR_MORE_UNRESOLVED_ANSWERS':null),
   provenance:'SERVER_AI_EVALUATION_PLUS_USER_ENTERED_CHECKLIST'};
  ledger.push(row);ctx.stateTransaction.set('resource.cognitiveDecisionLedger',ledger.slice(-historyLimit));
  emit('OMEGA_RESOURCE_COGNITIVE_DECISION_RECORDED',ctx.countryId,row);return{accepted:true,decision:row,persisted:true};
