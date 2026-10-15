@@ -5,6 +5,8 @@ import fs from 'node:fs';
 const ui = fs.readFileSync('omega_resource_command_center_ui_v1.js', 'utf8');
 const ministry = fs.readFileSync('ministry_engine.js', 'utf8');
 const html = fs.readFileSync('index.html', 'utf8');
+await import('../omega_resource_command_center_ui_v1.js');
+const commandCenter = globalThis.OmegaResourceCommandCenterUI;
 
 test('all sixteen resource cards have a dedicated command-center panel', () => {
   for (const id of ['matrix','ontology','reserves','deposits','extraction','processing','inventory','logistics','industrial','market','trade','value','cascade','cognitive','power','environment']) {
@@ -41,4 +43,35 @@ test('action feedback requires a real runtime result and records reference-only 
   assert.match(ui, /referenceLiquidity === true/);
   assert.match(ui, /NO_COMPATIBLE_FACTORY/);
   assert.match(ui, /ALL_12_QUESTIONS_REQUIRE_ANSWERS/);
+});
+
+test('each numbered legacy card maps explicitly to its intended panel, independent of active category filters', () => {
+  const pointBlock = ui.slice(ui.indexOf('const panelByPoint = {'), ui.indexOf('};', ui.indexOf('const panelByPoint = {')) + 2);
+  const mappings = [...pointBlock.matchAll(/'(\\d{2})': '([a-z]+)'/g)].map((m) => [m[1], m[2]]);
+  assert.equal(mappings.length, 16);
+  assert.deepEqual(mappings, [
+    ['01','matrix'],['02','ontology'],['03','reserves'],['04','deposits'],
+    ['05','extraction'],['06','processing'],['07','inventory'],['08','logistics'],
+    ['09','industrial'],['10','market'],['11','trade'],['12','value'],
+    ['13','cascade'],['14','cognitive'],['15','power'],['16','environment']
+  ]);
+  assert.match(ui, /const routeCountry = activeCountry\\(this\\.activeCountry \\|\\| countryId\\)/);
+  assert.match(ui, /network\\.candidateFactories\\(country, resourceId\\)/);
+});
+
+test('metrology converter handles matching dimensions and blocks dimension mismatches', () => {
+  assert.ok(commandCenter && typeof commandCenter.convertUnits === 'function');
+  assert.equal(commandCenter.convertUnits(1000, 'kg', 'metric_tonne').value, 1);
+  assert.equal(commandCenter.convertUnits(1, 'bbl', 'litre').value, 158.987294928);
+  assert.equal(commandCenter.convertUnits(1, 'mmbtu', 'gj').value, 1.05505585262);
+  assert.equal(commandCenter.convertUnits(1, 'kg', 'gj').reason, 'UNIT_DIMENSION_MISMATCH');
+  assert.equal(commandCenter.convertUnits('not-a-number', 'kg', 'lb').reason, 'FINITE_QUANTITY_REQUIRED');
+});
+
+test('actual industrial flow and technology project state paths are rendered', () => {
+  assert.match(ui, /r\\.industrialNetwork \\|\\| \\{\\}/);
+  assert.match(ui, /industrialState\\.siteFlowLedger/);
+  assert.match(ui, /technology project contracts/);
+  assert.match(ui, /Resource research runtime projects/);
+  assert.match(ui, /data-search-item data-form=/);
 });
