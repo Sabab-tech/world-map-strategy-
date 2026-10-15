@@ -183,6 +183,9 @@ test('cognitive gate uses the server AI endpoint and cannot persist a player-onl
   assert.match(ui, /aiAssessment:\s*body\.assessment/);
   assert.match(ui, /verdictRecorded:\s*false/);
   assert.match(ui, /body\.assessment\.authority\s*!==\s*'OMEGA_SERVER_RESOURCE_DECISION_AI'/);
+  assert.match(ui, /liveSnapshotMatches/);
+  assert.match(ui, /SIMULATION_STATE_CHANGED_DURING_AI_REVIEW/);
+  assert.doesNotMatch(ui, /A player-entered 12-question screening decision is persisted/);
   assert.match(policyRuntime, /AI_ASSESSMENT_REQUIRED/);
   assert.match(policyRuntime, /SERVER_AI_DECISION_REQUIRED/);
   assert.match(policyRuntime, /aiGenerated!==true/);
