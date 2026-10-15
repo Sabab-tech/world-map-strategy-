@@ -652,9 +652,9 @@
       }).join('') + '<button class="omega-rescc-button" type="submit">Evaluate with server AI</button></form>';
     const policy = g.OmegaResourceStrategicPolicyRuntime || g.Omega && g.Omega.ResourceStrategicPolicyRuntime;
     const decisions = Array.isArray(resourceBucket(country).cognitiveDecisionLedger) ? resourceBucket(country).cognitiveDecisionLedger : [];
-    return card('Cognitive runtime availability', policy && typeof policy.evaluateCognitiveGate === 'function' ? 'AUTHORITATIVE CHECKLIST API AVAILABLE' : (os ? 'COGNITIVE OBJECT FOUND; CHECKLIST API UNAVAILABLE' : 'NO COGNITIVE GATE API CONFIRMED'),
+    return card('Cognitive runtime availability', policy && typeof policy.evaluateCognitiveGate === 'function' ? 'LOCAL POLICY PERSISTENCE READY' : (os ? 'COGNITIVE OBJECT FOUND; PERSISTENCE API UNAVAILABLE' : 'NO COGNITIVE GATE API CONFIRMED'),
       '<div class="omega-rescc-grid2">' + kv('Runtime object', os ? 'Available' : null) +
-      kv('Policy checklist endpoint', policy && typeof policy.evaluateCognitiveGate === 'function' ? 'Available' : null) +
+      kv('Policy decision persistence', policy && typeof policy.evaluateCognitiveGate === 'function' ? 'Available' : null) +
       kv('Profile record', profile && profile.identity && (profile.identity.name || profile.identity.officialName)) + '</div>' +
       '<p class="omega-rescc-note">Only a server-generated AI assessment with a valid authority marker can authorize nuclear construction or SWF capitalization. Player answers alone cannot approve an action. PROCEED is still subject to deterministic blocker checks; REVIEW, BLOCK, expired, missing, or failed assessments prevent the action.</p>', '') +
       form + '<h3 class="omega-rescc-section-title">Persisted strategic gate decisions</h3>' + statusRows(decisions);
