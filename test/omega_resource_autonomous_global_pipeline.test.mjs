@@ -209,7 +209,8 @@ function normalizeExpandedSite(raw,referenceOverlay=null){
   const initialStatus=String(baseOperation.status||raw?.currentStatus||raw?.status||src.status||src.operationalStatus||'UNKNOWN').trim().toUpperCase();
   const refStatus=String(refOperation.status||referenceOverlay?.currentStatus||referenceOverlay?.status||
     referenceOverlay?.sourceSiteRecord?.status||'').trim().toUpperCase();
-  const operationalStatus=initialStatus==='ACTIVE_SITE_REFERENCE'&&refStatus&&refStatus!=='ACTIVE_SITE_REFERENCE'?refStatus:initialStatus;
+  const placeholderStatuses=new Set(['UNKNOWN','ACTIVE_SITE_REFERENCE','SIMULATED_OPERATIONAL_SCENARIO']);
+  const operationalStatus=placeholderStatuses.has(initialStatus)&&refStatus&&!placeholderStatuses.has(refStatus)?refStatus:initialStatus;
   const commercial=baseOperation.commercialExtraction??pkg.operation?.commercialExtraction??src.commercialExtraction??
     raw?.commercialExtraction??(resourceId?true:false);
   const isAlias=Boolean(raw?.runtime?.aliasOfSiteId||raw?.aliasOfSiteId||
