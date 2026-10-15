@@ -1,0 +1,245 @@
+{
+  "schemaVersion": "1.0.0",
+  "datasetId": "OMEGA_RESOURCE_ENVIRONMENTAL_RULES_V1",
+  "authority": "SIMULATED_GAMEPLAY_RULES",
+  "description": "Gameplay-only environmental impact coefficients. These are simulation assumptions, not observed site-level environmental measurements or regulatory prices.",
+  "extraction": {
+    "coal": {
+      "unit": "TONNES",
+      "landDisturbanceHaPerUnit": 0.000045,
+      "waterUseM3PerUnit": 0.42,
+      "ghgTCO2ePerUnit": 0.018,
+      "tailingsTonnesPerUnit": 0.12
+    },
+    "iron_ore": {
+      "unit": "TONNES",
+      "landDisturbanceHaPerUnit": 0.000025,
+      "waterUseM3PerUnit": 0.22,
+      "ghgTCO2ePerUnit": 0.009,
+      "tailingsTonnesPerUnit": 0.18
+    },
+    "copper": {
+      "unit": "TONNES",
+      "landDisturbanceHaPerUnit": 0.00009,
+      "waterUseM3PerUnit": 1.75,
+      "ghgTCO2ePerUnit": 0.035,
+      "tailingsTonnesPerUnit": 0.88
+    },
+    "gold": {
+      "unit": "TONNES",
+      "landDisturbanceHaPerUnit": 0.00022,
+      "waterUseM3PerUnit": 3.8,
+      "ghgTCO2ePerUnit": 0.11,
+      "tailingsTonnesPerUnit": 0.995
+    },
+    "bauxite": {
+      "unit": "TONNES",
+      "landDisturbanceHaPerUnit": 0.00004,
+      "waterUseM3PerUnit": 0.35,
+      "ghgTCO2ePerUnit": 0.012,
+      "tailingsTonnesPerUnit": 0.3
+    },
+    "nickel": {
+      "unit": "TONNES",
+      "landDisturbanceHaPerUnit": 0.0001,
+      "waterUseM3PerUnit": 2.1,
+      "ghgTCO2ePerUnit": 0.044,
+      "tailingsTonnesPerUnit": 0.78
+    },
+    "cobalt": {
+      "unit": "TONNES",
+      "landDisturbanceHaPerUnit": 0.00013,
+      "waterUseM3PerUnit": 2.4,
+      "ghgTCO2ePerUnit": 0.052,
+      "tailingsTonnesPerUnit": 0.82
+    },
+    "lithium": {
+      "unit": "TONNES",
+      "landDisturbanceHaPerUnit": 0.00016,
+      "waterUseM3PerUnit": 4.2,
+      "ghgTCO2ePerUnit": 0.061,
+      "tailingsTonnesPerUnit": 0.55
+    },
+    "uranium": {
+      "unit": "TONNES",
+      "landDisturbanceHaPerUnit": 0.00012,
+      "waterUseM3PerUnit": 1.65,
+      "ghgTCO2ePerUnit": 0.028,
+      "tailingsTonnesPerUnit": 0.72
+    },
+    "phosphate": {
+      "unit": "TONNES",
+      "landDisturbanceHaPerUnit": 0.000055,
+      "waterUseM3PerUnit": 0.58,
+      "ghgTCO2ePerUnit": 0.021,
+      "tailingsTonnesPerUnit": 0.47
+    },
+    "potash": {
+      "unit": "TONNES",
+      "landDisturbanceHaPerUnit": 0.00003,
+      "waterUseM3PerUnit": 0.48,
+      "ghgTCO2ePerUnit": 0.014,
+      "tailingsTonnesPerUnit": 0.25
+    },
+    "zinc": {
+      "unit": "TONNES",
+      "landDisturbanceHaPerUnit": 0.00008,
+      "waterUseM3PerUnit": 1.3,
+      "ghgTCO2ePerUnit": 0.031,
+      "tailingsTonnesPerUnit": 0.8
+    },
+    "silver": {
+      "unit": "TONNES",
+      "landDisturbanceHaPerUnit": 0.00018,
+      "waterUseM3PerUnit": 2.8,
+      "ghgTCO2ePerUnit": 0.082,
+      "tailingsTonnesPerUnit": 0.97
+    },
+    "rare_earth": {
+      "unit": "TONNES",
+      "landDisturbanceHaPerUnit": 0.00018,
+      "waterUseM3PerUnit": 3.2,
+      "ghgTCO2ePerUnit": 0.074,
+      "tailingsTonnesPerUnit": 0.9
+    },
+    "crude_oil": {
+      "unit": "BBL",
+      "landDisturbanceHaPerUnit": 3.5e-7,
+      "waterUseM3PerUnit": 0.008,
+      "ghgTCO2ePerUnit": 0.00043,
+      "tailingsTonnesPerUnit": 0
+    },
+    "natural_gas": {
+      "unit": "MCF",
+      "landDisturbanceHaPerUnit": 9e-8,
+      "waterUseM3PerUnit": 0.003,
+      "ghgTCO2ePerUnit": 0.00018,
+      "tailingsTonnesPerUnit": 0
+    },
+    "natural_gas_bcm": {
+      "unit": "BCM",
+      "landDisturbanceHaPerUnit": 1.2,
+      "waterUseM3PerUnit": 420000,
+      "ghgTCO2ePerUnit": 24000,
+      "tailingsTonnesPerUnit": 0
+    },
+    "oil_sands": {
+      "unit": "BBL",
+      "landDisturbanceHaPerUnit": 0.0000015,
+      "waterUseM3PerUnit": 0.012,
+      "ghgTCO2ePerUnit": 0.00068,
+      "tailingsTonnesPerUnit": 0.0003
+    }
+  },
+  "processing": {
+    "COAL_CONCENTRATE": {
+      "unit": "TONNES",
+      "waterUseM3PerUnit": 0.18,
+      "ghgTCO2ePerUnit": 0.006,
+      "tailingsTonnesPerUnit": 0.08,
+      "landDisturbanceHaPerUnit": 0
+    },
+    "COPPER_CONCENTRATE": {
+      "unit": "TONNES",
+      "waterUseM3PerUnit": 0.85,
+      "ghgTCO2ePerUnit": 0.018,
+      "tailingsTonnesPerUnit": 0.12,
+      "landDisturbanceHaPerUnit": 0
+    },
+    "IRON_CONCENTRATE": {
+      "unit": "TONNES",
+      "waterUseM3PerUnit": 0.16,
+      "ghgTCO2ePerUnit": 0.007,
+      "tailingsTonnesPerUnit": 0.1,
+      "landDisturbanceHaPerUnit": 0
+    },
+    "GOLD_CONCENTRATE": {
+      "unit": "TONNES",
+      "waterUseM3PerUnit": 1.4,
+      "ghgTCO2ePerUnit": 0.044,
+      "tailingsTonnesPerUnit": 0.16,
+      "landDisturbanceHaPerUnit": 0
+    },
+    "TAILINGS": {
+      "unit": "TONNES",
+      "waterUseM3PerUnit": 0,
+      "ghgTCO2ePerUnit": 0.001,
+      "tailingsTonnesPerUnit": 1,
+      "landDisturbanceHaPerUnit": 0
+    },
+    "PROCESSING_RESIDUE": {
+      "unit": "TONNES",
+      "waterUseM3PerUnit": 0,
+      "ghgTCO2ePerUnit": 0.001,
+      "tailingsTonnesPerUnit": 1,
+      "landDisturbanceHaPerUnit": 0
+    },
+    "COAL_REJECT": {
+      "unit": "TONNES",
+      "landDisturbanceHaPerUnit": 0,
+      "waterUseM3PerUnit": 0.08,
+      "ghgTCO2ePerUnit": 0.003,
+      "tailingsTonnesPerUnit": 0.12
+    },
+    "COPPER_CATHODE": {
+      "unit": "TONNES",
+      "landDisturbanceHaPerUnit": 0,
+      "waterUseM3PerUnit": 0.24,
+      "ghgTCO2ePerUnit": 0.014,
+      "tailingsTonnesPerUnit": 0.04
+    }
+  },
+  "unitAliases": {
+    "TONNE": "TONNES",
+    "TON": "TONNES",
+    "TONS": "TONNES",
+    "METRIC_TON": "TONNES",
+    "METRIC_TONS": "TONNES",
+    "TONNES_ORE": "TONNES",
+    "BARREL": "BBL",
+    "BARRELS": "BBL",
+    "BBLS": "BBL",
+    "TROY_OUNCE": "TROY_OUNCES",
+    "OZ": "TROY_OUNCES",
+    "OUNCES": "TROY_OUNCES"
+  },
+  "thresholds": {
+    "watch": {
+      "ghgTCO2e": 10000,
+      "waterUseM3": 250000,
+      "landDisturbanceHa": 50
+    },
+    "high": {
+      "ghgTCO2e": 50000,
+      "waterUseM3": 1500000,
+      "landDisturbanceHa": 250
+    },
+    "critical": {
+      "ghgTCO2e": 200000,
+      "waterUseM3": 6000000,
+      "landDisturbanceHa": 1000
+    }
+  },
+  "consequences": {
+    "productionCapacityMultiplier": {
+      "NORMAL": 1,
+      "WATCH": 0.97,
+      "HIGH": 0.88,
+      "CRITICAL": 0.65
+    },
+    "liabilityUnitsPerTCO2e": 7,
+    "liabilityUnitsPerWaterM3": 0.003,
+    "liabilityUnitsPerLandHa": 250,
+    "liabilityUnitsPerTailingsTonne": 0.08,
+    "remediationPaymentFractionPerTurn": 0.08,
+    "maxSiteCapacityMultiplier": 0.8
+  },
+  "persistence": {
+    "schemaVersion": "1.0.0",
+    "autosaveOnCompletedEconomyTurn": true,
+    "maxSaveBytes": 4500000,
+    "maxSlots": 8,
+    "autosaveSlot": "autosave",
+    "saveKeyPrefix": "omega.resource.save.v1:"
+  }
+}

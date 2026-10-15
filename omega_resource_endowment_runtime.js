@@ -1418,6 +1418,9 @@ function batchFromExtraction(x,record){
         windowQuantity=Math.max(0,allocation);
         remainingDemandByResource[resourceKey]=Math.max(0,turnDemand-windowQuantity);
       }
+      const environmentalRuntime=g.OmegaResourceStrategicEconomyRuntime||g.Omega?.ResourceStrategicEconomyRuntime;
+      const environmentalMultiplier=n(environmentalRuntime?.getExtractionMultiplier?.(c,x.siteReferenceKey||x.siteId||x.occurrenceKey,x.resourceId));
+      if(environmentalMultiplier!==null)windowQuantity=Math.max(0,windowQuantity*Math.max(0.1,Math.min(1,environmentalMultiplier)));
       if(windowQuantity<=0){
         const reason={occurrenceKey:x.occurrenceKey,resourceId:x.resourceId,reason:'EXTRACTION_OUTPUT_RATE_UNAVAILABLE'};
         blocked.push(reason);
@@ -1757,6 +1760,7 @@ function batchFromExtraction(x,record){
     g.addEventListener?.('OMEGA_READY',onReady);
     g.addEventListener?.('RESOURCE_STATE_UPDATED',onReady);
     g.addEventListener?.('OMEGA_GAME_SESSION_STARTED',onReady);
+    g.addEventListener?.('OMEGA_GAME_STATE_RESTORED',function(){applyPersistedReserveStates();g.__omegaResourceExtractionTurn=null;g.__omegaResourceExtractionPromise=null;g.__omegaResourceExtractionPromiseTurn=null;});
     g.addEventListener?.('OMEGA_SIMULATION_TURN_COMMITTED',onTurn);
     return diagnostics();
   }
@@ -1788,6 +1792,7 @@ function batchFromExtraction(x,record){
     countryMineSiteReferences:function(c){return clone(state()?.resource?.[canonical(c)]?.mineSiteReferences||mineSiteReferenceRows(c));},
     countryMineSiteControllers:function(c){return clone(state()?.resource?.[canonical(c)]?.mineSiteControllers||{});},
     registerCanonicalSiteSimulationRecord,
+    restorePersistedReserveStates:applyPersistedReserveStates,
     compile
   });
   g.Omega=g.Omega||{};g.Omega.ResourceEndowmentRuntime=API;g.OmegaResourceEndowmentRuntime=API;

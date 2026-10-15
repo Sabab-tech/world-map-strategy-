@@ -34,4 +34,32 @@ assert.equal(q.status,'CLEARED');
 assert.equal(q.matchedQuantity,100);
 assert.equal(q.clearingPriceUsd,100);
 assert.equal(market.localPrice('BDG','crude_oil'),100);
+
+// A changed real bid/ask pair changes the clearing price; the reference quote is
+// not used as the transaction price.
+globalThis.Game.state.simulation.turn=2;
+globalThis.Game.state.trade.BDG.importRequests[0].unitPrice=130;
+globalThis.Game.state.trade.SAU.offerBook.crude_oil.unitPrice=100;
+market.rebuild();
+const repriced=market.quote('crude_oil');
+assert.equal(repriced.status,'CLEARED');
+assert.equal(repriced.clearingPriceUsd,115);
+assert.equal(market.localPrice('BDG','crude_oil'),115);
+
+// Reference-only liquidity is indicative, not a real seller/order. Once both
+// real sides disappear, it must never manufacture a cleared dynamic price.
+globalThis.Game.state.trade.BDG.importRequests=[];
+globalThis.Game.state.trade.SAU.offerBook={};
+globalThis.ResourceMinistryEngine={resourceTypes:[{id:'crude_oil',basePrice:88,unit:'BBL'}]};
+market.rebuild();
+const referenceOnly=market.quote('crude_oil');
+assert.equal(referenceOnly.status,'REFERENCE_ONLY');
+assert.equal(referenceOnly.clearingPriceUsd,null);
+assert.equal(referenceOnly.matchedQuantity,0);
+assert.equal(referenceOnly.referencePrice,88);
+assert.equal(market.localPrice('BDG','crude_oil'),null);
+globalThis.Game.state.trade.BDG.marketPrice.crude_oil=100; // deliberately stale seed/previous clearing price
+await import('../omega_global_trade_system.js');
+assert.equal(globalThis.OmegaGlobalTrade.marketPrice('BDG','crude_oil'),null,
+  'trade valuation must reject stale country prices while dynamic market has no current clear');
 console.log('OMEGA GLOBAL MARKET CLEARING TEST PASSED');

@@ -115,13 +115,79 @@
     return !!t && /SIGNED|RATIFIED|ACTIVE|IMPLEMENTED/.test(String(t.status||t.stage||'').toUpperCase());
   }
   function sanctionsOrWar(r){return r?.war_state===true||r?.sanctions===true;}
+  function policyRows(value,defaultTarget){
+    if(Array.isArray(value))return value.map(x=>({...x,targetCountryId:x?.targetCountryId||x?.counterpartyCountryId||defaultTarget}));
+    if(!value||typeof value!=='object')return [];
+    if(['status','active','resourceIds','resources','commodityIds','targetCountryId','counterpartyCountryId','direction','mode','blockadeType'].some(k=>Object.prototype.hasOwnProperty.call(value,k)))
+      return [{...value,targetCountryId:value.targetCountryId||value.counterpartyCountryId||defaultTarget}];
+    const out=[];
+    for(const [target,row] of Object.entries(value)){
+      if(row===true)out.push({targetCountryId:target,status:'ACTIVE'});
+      else if(row&&typeof row==='object')out.push({...row,targetCountryId:row.targetCountryId||row.counterpartyCountryId||target});
+    }
+    return out;
+  }
+  function restrictionMatches(row,resourceId,expectedDirection,counterparty){
+    const status=String(row?.status||row?.stage||(row?.active===true?'ACTIVE':'')).toUpperCase();
+    if(row?.active===false||!(/ACTIVE|ENFORCED|IMPLEMENTED|IN_FORCE|BLOCKED/.test(status)))return false;
+    const target=canonical(row?.targetCountryId||row?.counterpartyCountryId||counterparty);
+    if(target&&target!==canonical(counterparty))return false;
+    const direction=String(row?.direction||row?.scope||'BOTH').toUpperCase();
+    if(direction!=='BOTH'&&direction!=='ALL'&&direction!==expectedDirection)return false;
+    const ids=row?.resourceIds||row?.resources||row?.commodityIds||row?.commodities||row?.resourceId||row?.commodityId;
+    if(ids!==undefined&&ids!==null&&ids!==''){
+      const list=Array.isArray(ids)?ids:[ids];
+      if(!list.some(x=>token(x)==='*'||token(x)===token(resourceId)))return false;
+    }
+    return true;
+  }
+  function resourceTradeRestriction(buyer,seller,resourceId,request={}){
+    const b=canonical(buyer),s=canonical(seller),rid=token(resourceId);
+    const policies=[
+      ...policyRows(countryValue(b,'foreign.resourceEmbargoes')?.[s],s).map(x=>({row:x,dir:'IMPORT'})),
+      ...policyRows(countryValue(b,'foreign.importEmbargoes')?.[s],s).map(x=>({row:x,dir:'IMPORT'})),
+      ...policyRows(countryValue(b,'trade.resourceEmbargoes')?.[s],s).map(x=>({row:x,dir:'IMPORT'})),
+      ...policyRows(countryValue(s,'foreign.resourceEmbargoes')?.[b],b).map(x=>({row:x,dir:'EXPORT'})),
+      ...policyRows(countryValue(s,'foreign.exportEmbargoes')?.[b],b).map(x=>({row:x,dir:'EXPORT'})),
+      ...policyRows(countryValue(s,'trade.resourceEmbargoes')?.[b],b).map(x=>({row:x,dir:'EXPORT'}))
+    ];
+    for(const x of policies)if(restrictionMatches(x.row,rid,x.dir,x.row.targetCountryId|| (x.dir==='IMPORT'?s:b)))
+      return{blocked:true,reason:'RESOURCE_EMBARGO_ACTIVE',direction:x.dir,resourceId:rid,countryId:x.dir==='IMPORT'?b:s,counterpartyCountryId:x.dir==='IMPORT'?s:b};
+    const routeMode=String(request.transportMode||request.routeMode||request.mode||'').toLowerCase();
+    const blockades=[
+      ...policyRows(countryValue(b,'transport.navalBlockades')?.[s],s).map(x=>({row:x,side:'BUYER'})),
+      ...policyRows(countryValue(s,'transport.navalBlockades')?.[b],b).map(x=>({row:x,side:'SELLER'})),
+      ...policyRows(countryValue(b,'transport.tradeBlockades')?.[s],s).map(x=>({row:x,side:'BUYER'})),
+      ...policyRows(countryValue(s,'transport.tradeBlockades')?.[b],b).map(x=>({row:x,side:'SELLER'})),
+      ...policyRows(countryValue(b,'trade.routeBlockades')?.[s],s).map(x=>({row:x,side:'BUYER'})),
+      ...policyRows(countryValue(s,'trade.routeBlockades')?.[b],b).map(x=>({row:x,side:'SELLER'}))
+    ];
+    for(const x of blockades){
+      if(!restrictionMatches(x.row,rid,'BOTH',x.row.targetCountryId||(x.side==='BUYER'?s:b)))continue;
+      const modes=x.row.modes||x.row.transportModes||x.row.mode;
+      const modeList=modes===undefined?[]:(Array.isArray(modes)?modes:[modes]).map(v=>String(v).toLowerCase());
+      const maritime=modeList.some(v=>/ship|sea|naval|maritime|ocean/.test(v))||/ship|sea|naval|maritime|ocean/.test(String(x.row.blockadeType||''));
+      if(modeList.length&&routeMode&&!modeList.some(v=>v===routeMode||(/ship|sea|naval|maritime|ocean/.test(v)&&/ship|sea|naval|maritime|ocean/.test(routeMode))))continue;
+      if(modeList.length&&!routeMode&&!maritime)continue;
+      return{blocked:true,reason:'TRADE_ROUTE_BLOCKADED',resourceId:rid,countryId:x.side==='BUYER'?b:s,counterpartyCountryId:x.side==='BUYER'?s:b};
+    }
+    return{blocked:false,reason:null};
+  }
   function marketPrice(country,resource){
     const rid=String(resource||'').trim();
     try{
       const market=g.OmegaGlobalMarket||g.Omega?.GlobalMarket;
+      if(market&&typeof market.quote==='function'){
+        const quote=market.quote(rid);
+        // Once the dynamic market is installed, a reference quote, stale local
+        // price or one-sided book is not a cleared price for fiscal settlement.
+        if(String(quote?.status||'').toUpperCase()!=='CLEARED')return null;
+        const local=market.localPrice?.(canonical(country),rid);
+        return num(local)!==null&&local>0?local:null;
+      }
       const local=market?.localPrice?.(canonical(country),rid);
       if(num(local)!==null&&local>=0)return local;
-    }catch(_){}
+    }catch(_){return null;}
     const paths=[
       'trade.marketPrice.'+rid,'trade.marketPrices.'+rid,
       'trade.offerBook.'+rid+'.unitPrice','trade.offerBook.'+rid+'.price',
@@ -250,6 +316,7 @@
     };
     if(!r){result.reason='FOREIGN_RELATION_NOT_OBSERVED';return result;}
     if(sanctionsOrWar(r)){result.decision='REJECT';result.reason='WAR_OR_SANCTIONS';return result;}
+    const restriction=resourceTradeRestriction(buyer,seller,resourceId,request);if(restriction.blocked){result.decision='REJECT';result.reason=restriction.reason;result.restriction=restriction;return result;}
     if(rel===null){result.reason='RELATION_SCORE_NOT_OBSERVED';return result;}
     if(!result.agreement){result.decision='REJECT';result.reason='TRADE_AGREEMENT_NOT_APPROVED';return result;}
     if(price===null){result.reason='SELLER_MARKET_PRICE_NOT_OBSERVED';return result;}
@@ -448,6 +515,7 @@
     const total=values.sellerValue;
     if(!r)return{ok:false,reason:'RELATION_NOT_OBSERVED'};
     if(sanctionsOrWar(r))return{ok:false,reason:'WAR_OR_SANCTIONS'};
+    const restriction=resourceTradeRestriction(req.countryId,req.targetCountryId,req.resourceId,req);if(restriction.blocked)return{ok:false,reason:restriction.reason,restriction};
     if(!agreement(r,req.countryId,req.targetCountryId))return{ok:false,reason:'TRADE_AGREEMENT_NOT_APPROVED'};
     if(capacity!==null&&capacity<=0)return{ok:false,reason:'ROUTE_UNAVAILABLE'};
     if(inv.stock===null)return{ok:false,reason:'SELLER_INVENTORY_NOT_OBSERVED'};
@@ -903,7 +971,7 @@
     }
     return diagnostics();
   }
-  const API=Object.freeze({VERSION,TYPES,diagnostics,processAll,reviewRequest:sellerReviewDecision,relationScore,marketPrice,inventory,currencyOf,fxRate,settlementValues});
+  const API=Object.freeze({VERSION,TYPES,diagnostics,processAll,reviewRequest:sellerReviewDecision,validateSettlementPolicy:sellerCanSettle,relationScore,marketPrice,inventory,currencyOf,fxRate,settlementValues,resourceTradeRestriction});
   g.Omega=g.Omega||{};g.Omega.GlobalTrade=API;g.OmegaGlobalTrade=API;
   try{init();}catch(e){g.OmegaGlobalTradeError=String(e?.message||e);}
 })(typeof window!=='undefined'?window:globalThis);
