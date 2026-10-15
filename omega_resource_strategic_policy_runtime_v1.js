@@ -42,7 +42,7 @@ function configuredLimit(group,key){const value=num(rules()?.[group]?.[key]);ret
 function dispatch(owner,type,c,payload={}){
  const m=interop();if(!m?.dispatchCommand)return{status:'UNAVAILABLE',reason:'MINISTRY_INTEROPERABILITY_UNAVAILABLE'};
  try{const r=m.dispatchCommand(owner,type,country(c),clone(payload),{turn:turn(),commandType:type,correlationId:payload?.policyId||payload?.projectId||payload?.transactionId||payload?.correlationId||null});
-  return r?.result&&['APPLIED','REJECTED'].includes(String(r.status||''))?r.result:r;
+  return r?.result&&['APPLIED','FAILED','REJECTED'].includes(String(r.status||''))?r.result:r;
  }catch(e){return{status:'FAILED',reason:String(e?.message||e)};}
 }
 function emit(type,c,payload={}){
