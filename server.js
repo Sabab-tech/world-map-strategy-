@@ -22,6 +22,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const INDEX_PATH = path.join(__dirname, 'index.html');
 const CANDIDATE_MODELS = ['gemini-2.5-flash','gemini-2.0-flash'];
+const resourceDecisionAiRateLimits = new Map();
 const AI_INTEGRITY_SCRIPT = '<script src="/omega_ai_integrity_layer.js"></script>';
 const HEALTH_LOGO_SCRIPT = '<script src="/health-ministry-logo.js"></script>';
 const MINISTRY_REGISTRY_SCRIPT = '<script src="/omega_ministry_registry.js"></script>';
@@ -162,6 +163,28 @@ app.get('/api/minister-candidates', (req, res) => {
 app.get('/api/ai/status', (req, res) => { const hasKey = !!process.env.GEMINI_API_KEY; res.json({ ok: true, aiAvailable: hasKey, models: CANDIDATE_MODELS, primaryModel: CANDIDATE_MODELS[0], resourceDecisionAI: { endpoint: '/api/resource-decision/ai-evaluate', configured: hasKey, inputQuestions: 12, authority: 'OMEGA_SERVER_RESOURCE_DECISION_AI' }, integrityLayer: '2.1.0', ministerStateSystem: '1.0.0', deepCore: OfflineQueryEngine?.VERSION || null, semanticRuntime: { authority: ProductionSemanticRuntime?.VERSION || null, diagnostics: ProductionSemanticRuntime?.diagnostics?.() || canonicalSemanticRuntime }, cognitiveBridge: { authority: OmegaReasoningDispatcher?.VERSION || null, full40: OmegaReasoningDispatcher?.full40 === true }, timestamp: new Date().toISOString() }); });
 
 app.post('/api/resource-decision/ai-evaluate', async (req, res) => {
+  const now = Date.now();
+  const clientKey = String(req.ip || req.socket?.remoteAddress || 'unknown');
+  let rate = resourceDecisionAiRateLimits.get(clientKey);
+  if (!rate || now - rate.windowStartedAt >= 60_000) rate = { windowStartedAt: now, count: 0 };
+  if (rate.count >= 8) {
+    return res.status(429).json({
+      ok: false, status: 'RATE_LIMITED', error: 'RESOURCE_DECISION_AI_RATE_LIMIT',
+      message: 'AI decision request limit reached; retry after the current one-minute window.'
+    });
+  }
+  rate.count += 1;
+  resourceDecisionAiRateLimits.set(clientKey, rate);
+  if (resourceDecisionAiRateLimits.size > 2048) {
+    for (const [key, value] of resourceDecisionAiRateLimits) {
+      if (now - value.windowStartedAt >= 120_000) resourceDecisionAiRateLimits.delete(key);
+      if (resourceDecisionAiRateLimits.size <= 2048) break;
+    }
+    if (resourceDecisionAiRateLimits.size > 4096) {
+      const oldestKey = resourceDecisionAiRateLimits.keys().next().value;
+      if (oldestKey) resourceDecisionAiRateLimits.delete(oldestKey);
+    }
+  }
   const apiKey = String(process.env.GEMINI_API_KEY || '').trim();
   if (!apiKey) {
     return res.status(503).json({
