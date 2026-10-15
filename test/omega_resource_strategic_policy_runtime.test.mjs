@@ -1,0 +1,152 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
+import test from 'node:test';
+
+const read=name=>JSON.parse(fs.readFileSync(new URL('../'+name,import.meta.url),'utf8'));
+function harness(){
+  const state={
+    simulation:{turn:1,date:'2015-01-01'},
+    resource:{BGD:{},AAA:{},SAU:{}},
+    trade:{BGD:{},AAA:{},SAU:{}},
+    finance:{BGD:{available:10000000,reserves:10000000},AAA:{available:10000000,reserves:10000000},SAU:{available:10000000,reserves:10000000}}
+  };
+  const listeners=new Map(),handlers=new Map(),events=[];
+  class CustomEventMock{constructor(type,init={}){this.type=type;this.detail=init.detail;}}
+  const sandbox={
+    console,Math,Number,String,Object,Array,Set,Map,WeakMap,JSON,Date,Promise,Error,TypeError,
+    CustomEvent:CustomEventMock,
+    addEventListener(type,fn){const a=listeners.get(type)||[];a.push(fn);listeners.set(type,a);},
+    dispatchEvent(event){events.push(event);for(const fn of listeners.get(event.type)||[])fn(event);return true;},
+    Game:{state,currentActiveCountry:'BGD'},
+    Omega:{MinistryInteroperability:null},
+    OmegaResourceStrategicPolicyRules:read('resource_strategic_policy_rules_v1.json'),
+    OmegaResourceSiteCanonicalCatalogData:{siteCount:1,sites:[{
+      siteId:'SITE_BGD_TEST_LOCKED',siteName:'Test Locked Copper Mine',countryId:'BGD',
+      identity:{countryIso3:'BGD',resourceTypeId:'copper'},
+      location:{coordinates:{lat:23.7,lng:90.4},countryBoundaryKey:'BGD'},
+      map:{markerEligible:true,countryIsolationKey:'BGD'},
+      operation:{commercialExtraction:true,status:'DISCOVERED_REFERENCE',extractionEligibility:'LOCKED_UNTIL_DISCOVERY_AND_FINAL_INVESTMENT_DECISION'},
+      naturalRisk:{environmental:80,waterStress:70}
+    }]}
+  };
+  function txFactory(countryId){
+    const c=String(countryId).toUpperCase();
+    return{
+      get(path){
+        const parts=String(path).split('.'),domain=parts.shift();let cur=state[domain]?.[c];
+        for(const part of parts){if(cur==null)return undefined;cur=cur[part];}
+        return cur===undefined?undefined:cur;
+      },
+      set(path,value){
+        const parts=String(path).split('.'),domain=parts.shift();state[domain]=state[domain]||{};state[domain][c]=state[domain][c]||{};
+        if(!parts.length){state[domain][c]=value;return;}
+        let cur=state[domain][c];
+        for(let i=0;i<parts.length-1;i++){if(!cur[parts[i]]||typeof cur[parts[i]]!=='object')cur[parts[i]]={};cur=cur[parts[i]];}
+        cur[parts[parts.length-1]]=value;
+      }
+    };
+  }
+  const interop={
+    registerAction(){},
+    registerCommandHandler(type,owner,fn){handlers.set(owner+':'+type,fn);},
+    dispatchCommand(owner,type,countryId,payload={},meta={}){
+      const c=String(countryId||'').toUpperCase(),fn=handlers.get(owner+':'+type);
+      if(!fn)return{status:'UNAVAILABLE',reason:'HANDLER_NOT_FOUND',commandId:'TEST-'+type};
+      const result=fn({commandId:'TEST-'+type,payload},{countryId:c,stateTransaction:txFactory(c)});
+      return{status:result?.accepted===false?'REJECTED':'APPLIED',result,commandId:'TEST-'+type};
+    },
+    emitEvent(type,c,source,payload,meta){sandbox.dispatchEvent(new CustomEventMock(type,{detail:{eventType:type,countryId:c,source,payload,meta}}));return true;}
+  };
+  sandbox.Omega.MinistryInteroperability=interop;
+  sandbox.OmegaMinistryInteroperability=interop;
+  sandbox.globalThis=sandbox;sandbox.window=sandbox;vm.createContext(sandbox);
+  const source=fs.readFileSync(new URL('../omega_resource_strategic_policy_runtime_v1.js',import.meta.url),'utf8');
+  new vm.Script(source,{filename:'omega_resource_strategic_policy_runtime_v1.js'}).runInContext(sandbox);
+  interop.registerCommandHandler('OMEGA_TRADE_FINANCE_DEBIT','finance',(cmd,ctx)=>{
+    const amount=Number(cmd.payload?.amount);if(!Number.isFinite(amount)||amount<0)return{accepted:false,reason:'INVALID_DEBIT'};
+    const current=Number(ctx.stateTransaction.get('finance.available')??0);
+    if(current<amount)return{accepted:false,reason:'TREASURY_FUNDS_INSUFFICIENT'};
+    ctx.stateTransaction.set('finance.available',current-amount);return{accepted:true,amount};
+  });
+  return{sandbox,state,handlers,interop,events,txFactory};
+}
+
+test('embargo and blockade policies actively block scoped trade and routes, then lift cleanly',()=>{
+  const h=harness(),api=h.sandbox.Omega.ResourceStrategicPolicyRuntime;
+  const embargo=api.declareEmbargo('BGD',{targetCountryId:'SAU',resourceId:'crude_oil',direction:'EXPORT',policyId:'EMBARGO-BGD-SAU-OIL'});
+  assert.equal(embargo.accepted,true,JSON.stringify(embargo));
+  assert.equal(api.isResourceEmbargoed('SAU','BGD','crude_oil').blocked,true);
+  assert.equal(api.isResourceEmbargoed('SAU','BGD','copper').blocked,false);
+  assert.equal(api.liftEmbargo('BGD',{policyId:'EMBARGO-BGD-SAU-OIL'}).accepted,true);
+  assert.equal(api.isResourceEmbargoed('SAU','BGD','crude_oil').blocked,false);
+
+  const blockade=api.declareBlockade('AAA',{targetCountryId:'BGD',resourceId:'crude_oil',modes:['ship'],policyId:'BLOCKADE-AAA-BGD'});
+  assert.equal(blockade.accepted,true,JSON.stringify(blockade));
+  assert.equal(api.isRouteBlocked('BGD',{resourceId:'crude_oil',transportMode:'ship'}).blocked,true);
+  assert.equal(api.isRouteBlocked('BGD',{resourceId:'copper',transportMode:'ship'}).blocked,false);
+  assert.equal(api.isRouteBlocked('BGD',{resourceId:'crude_oil',transportMode:'rail'}).blocked,false);
+  assert.equal(api.liftBlockade('AAA',{policyId:'BLOCKADE-AAA-BGD'}).accepted,true);
+  assert.equal(api.isRouteBlocked('BGD',{resourceId:'crude_oil',transportMode:'ship'}).blocked,false);
+});
+
+test('exploration requires survey completion, funded investment and commissioning before a locked mine can extract',()=>{
+  const h=harness(),api=h.sandbox.Omega.ResourceStrategicPolicyRuntime,siteId='SITE_BGD_TEST_LOCKED';
+  assert.equal(api.siteAvailableForExtraction('BGD',siteId).reason,'EXPLORATION_AND_INVESTMENT_REQUIRED');
+  const started=api.startExploration('BGD',{siteId,requiredTurns:2});
+  assert.equal(started.accepted,true,JSON.stringify(started));
+  const projectId=started.project.projectId;
+  h.state.simulation.turn=2;api.processCountry('BGD');
+  h.state.simulation.turn=3;api.processCountry('BGD');
+  const project=h.state.resource.BGD.explorationProjects.find(x=>x.projectId===projectId);
+  assert.equal(project.status,'DISCOVERED_PENDING_INVESTMENT');
+  assert.equal(api.siteAvailableForExtraction('BGD',siteId).allowed,false);
+
+  const invested=api.approveInvestment('BGD',{projectId});
+  assert.equal(invested.accepted,true,JSON.stringify(invested));
+  assert.equal(h.state.finance.BGD.available,10000000-h.sandbox.OmegaResourceStrategicPolicyRules.exploration.investmentCostPerProject);
+  const commissioned=api.commissionSite('BGD',{projectId});
+  assert.equal(commissioned.accepted,true,JSON.stringify(commissioned));
+  const gate=api.siteAvailableForExtraction('BGD',siteId);
+  assert.equal(gate.allowed,true,JSON.stringify(gate));
+  assert.equal(h.state.resource.BGD.commissionedSites[0].siteId,siteId);
+});
+
+test('extraction and processing commit environmental impact; replay is idempotent and remediation improves site state',()=>{
+  const h=harness(),api=h.sandbox.Omega.ResourceStrategicPolicyRuntime,siteId='SITE_BGD_TEST_LOCKED';
+  const baseline=api.extractionMultiplier('BGD',siteId,'copper');
+  assert.equal(baseline,1);
+  for(let i=1;i<=20;i++){
+    const response=h.interop.dispatchCommand('resource','OMEGA_RESOURCE_ENVIRONMENT_RECORD_EXTRACTION','BGD',{
+      transactionId:'EXT-ENV-'+i,siteId,resourceId:'copper',quantity:1000000,unit:'TONNES'
+    });
+    assert.equal(response.status,'APPLIED',JSON.stringify(response));
+  }
+  const after=h.state.resource.BGD.environmentalImpact.bySite[siteId];
+  assert(after.landIndex>0&&after.waterIndex>0&&after.emissionsIndex>0);
+  assert(api.extractionMultiplier('BGD',siteId,'copper')<baseline,'accumulated environmental burden must reduce future extraction rate');
+  const rowsBefore=h.state.resource.BGD.environmentalLedger.length;
+  const replay=h.interop.dispatchCommand('resource','OMEGA_RESOURCE_ENVIRONMENT_RECORD_EXTRACTION','BGD',{
+    transactionId:'EXT-ENV-20',siteId,resourceId:'copper',quantity:1000000,unit:'TONNES'
+  });
+  assert.equal(replay.result.duplicate,true);
+  assert.equal(h.state.resource.BGD.environmentalLedger.length,rowsBefore);
+
+  const processed=h.interop.dispatchCommand('resource','OMEGA_RESOURCE_ENVIRONMENT_RECORD_PROCESSING','BGD',{
+    transactionId:'PROCESS-ENV-1',siteId,resourceId:'copper',quantity:1000000,unit:'TONNES'
+  });
+  assert.equal(processed.status,'APPLIED',JSON.stringify(processed));
+  assert(h.state.resource.BGD.environmentalImpact.bySite[siteId].wasteIndex>0);
+  const landBeforeRemediation=h.state.resource.BGD.environmentalImpact.bySite[siteId].landIndex;
+  const remediated=api.remediateSite('BGD',{siteId,amount:5,transactionId:'REMED-ENV-1'});
+  assert.equal(remediated.accepted,true,JSON.stringify(remediated));
+  assert(h.state.resource.BGD.environmentalImpact.bySite[siteId].landIndex<landBeforeRemediation);
+  assert(h.state.resource.BGD.environmentalLedger.some(x=>x.transactionId==='REMED-ENV-1'&&x.impactType==='REMEDIATION'));
+});
+
+test('policy diagnostics expose live rule load and handler registration state',()=>{
+  const h=harness(),diag=h.sandbox.Omega.ResourceStrategicPolicyRuntime.diagnostics();
+  assert.equal(diag.rulesLoaded,true);
+  assert.equal(diag.rulesVersion,'1.0.0');
+  assert.equal(diag.handlersReady,true,JSON.stringify(diag));
+});
