@@ -705,7 +705,7 @@ window.CountryIOS = {
                     <div>
                         <div style="font-size:14px; font-weight:bold; color:#00e5ff; font-family:var(--font-title); display:flex; align-items:center; gap:8px;">
                             <span>GSRSK RESOURCE MINISTRY & GLOBAL INTELLIGENCE HUB</span>
-                            <span style="font-size:10px; padding:1px 6px; border-radius:8px; background:rgba(34,197,94,0.2); border:1px solid #22c55e; color:#22c55e;">PARTS 01–13 ACTIVE</span>
+                            <span style="font-size:10px; padding:1px 6px; border-radius:8px; background:rgba(34,197,94,0.2); border:1px solid #22c55e; color:#22c55e;">${nrms.briefing && nrms.briefing.indexOf('Live resource values are read from Game.state.resource') === 0 ? 'LIVE SOURCE ATTACHED' : 'RUNTIME STATE UNAVAILABLE'}</span>
                         </div>
                         <div style="font-size:10px; color:#cbd5e1; font-family:var(--font-mono); margin-top:2px;">
                             Indexed deposit and commodity records • Recorded market data • Resource cascade diagnostics
@@ -801,17 +801,17 @@ window.CountryIOS = {
                         <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.08);">
                             <div style="font-size:11px; font-weight:bold; color:#ffd700; font-family:var(--font-title); margin-bottom:6px;">🪨 GEOLOGICAL & SEDIMENTARY BASINS</div>
                             <div style="font-size:10px; color:#cbd5e1; font-family:var(--font-mono); line-height:1.4;">
-                                <div>• Domains: ${(geol.majorGeologicalDomains || ['Sedimentary Cover', 'Bengal Delta Basin']).join(', ')}</div>
-                                <div>• Basins: ${(geol.sedimentaryBasins || ['Surma Basin', 'Hatiya Trough', 'Faridpur Trough']).join(', ')}</div>
+                                <div>• Domains: ${Array.isArray(geol.majorGeologicalDomains) && geol.majorGeologicalDomains.length ? geol.majorGeologicalDomains.join(', ') : 'NOT RECORDED'}</div>
+                                <div>• Basins: ${Array.isArray(geol.sedimentaryBasins) && geol.sedimentaryBasins.length ? geol.sedimentaryBasins.join(', ') : 'NOT RECORDED'}</div>
                                 <div>• Tectonic Setting: ${geol.tectonicSetting || 'Continental Margin & Active Delta'}</div>
                             </div>
                         </div>
                         <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.08);">
                             <div style="font-size:11px; font-weight:bold; color:#22c55e; font-family:var(--font-title); margin-bottom:6px;">⛏️ MINERAL & CRITICAL METALS BASE</div>
                             <div style="font-size:10px; color:#cbd5e1; font-family:var(--font-mono); line-height:1.4;">
-                                <div>• Metallic: ${(min.metallic || ['Iron Ore', 'Copper', 'Titanium Sands']).join(', ')}</div>
-                                <div>• Critical/Rare: ${(min.criticalMinerals || min.rareEarths || ['Monazite Rare Earths', 'Zircon', 'Rutile']).join(', ')}</div>
-                                <div>• Non-Metallic: ${(min.nonMetallic || ['Limestone', 'Kaolin White Clay', 'Silica Quartz']).join(', ')}</div>
+                                <div>• Metallic: ${Array.isArray(min.metallic) && min.metallic.length ? min.metallic.join(', ') : 'NOT RECORDED'}</div>
+                                <div>• Critical/Rare: ${Array.isArray(min.criticalMinerals) && min.criticalMinerals.length ? min.criticalMinerals.join(', ') : Array.isArray(min.rareEarths) && min.rareEarths.length ? min.rareEarths.join(', ') : 'NOT RECORDED'}</div>
+                                <div>• Non-Metallic: ${Array.isArray(min.nonMetallic) && min.nonMetallic.length ? min.nonMetallic.join(', ') : 'NOT RECORDED'}</div>
                             </div>
                         </div>
                     </div>
@@ -852,13 +852,13 @@ window.CountryIOS = {
                             <div style="background:rgba(0,0,0,0.4); padding:8px; border-radius:6px; border-left:3px solid #00e5ff;">
                                 <div style="display:flex; justify-content:space-between; font-size:11px; font-weight:bold; color:#f8fafc; font-family:var(--font-mono);">
                                     <span>${s.resName} Survey (${s.country})</span>
-                                    <span style="color:#22c55e;">${s.progress}%</span>
+                                    <span style="color:#22c55e;">${numericObserved(s.progress) ? fmtObserved(s.progress) + '%' : 'NOT RECORDED'}</span>
                                 </div>
                                 <div style="font-size:10px; color:#94a3b8; font-family:var(--font-mono); margin:2px 0 4px 0;">
                                     Stage: ${s.stageName} • Est. Time: ${s.estimatedDays} Days
                                 </div>
                                 <div style="width:100%; height:4px; background:rgba(255,255,255,0.1); border-radius:2px; overflow:hidden;">
-                                    <div style="width:${s.progress}%; height:100%; background:linear-gradient(90deg, #00e5ff, #22c55e);"></div>
+                                    <div style="width:${numericObserved(s.progress) ? Math.max(0, Math.min(100, Number(s.progress))) : 0}%; height:100%; background:linear-gradient(90deg, #00e5ff, #22c55e);"></div>
                                 </div>
                             </div>
                         `).join('')}
@@ -908,8 +908,8 @@ window.CountryIOS = {
                         <button onclick="window.ResourceMinistryEngine.executeDirective('add_reserve', '${r.id}');" style="padding:5px 4px; background:rgba(255,215,0,0.15); border:1px solid #ffd700; color:#ffd700; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
                             📦 SPR (+50K)
                         </button>
-                        <button onclick="window.ResourceMinistryEngine.executeDirective('drawdown_spr', '${r.id}');" style="padding:5px 4px; background:rgba(239,68,68,0.15); border:1px solid #ef4444; color:#ef4444; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
-                            🚨 DRAWDOWN
+                        <button type="button" disabled title="Disabled: no authoritative physical stock-transfer handler is registered." style="padding:5px 4px; background:rgba(100,116,139,0.12); border:1px solid #64748b; color:#94a3b8; font-size:10px; font-weight:bold; border-radius:4px; cursor:not-allowed; opacity:.75;">
+                            DRAWDOWN UNAVAILABLE
                         </button>
                     </div>
                 </div>
@@ -998,7 +998,7 @@ window.CountryIOS = {
                             📦 NATIONAL RESOURCE REGISTRY (18 STRATEGIC COMMODITIES)
                         </div>
                         <button onclick="if(window.ResourceMinistryEngine && typeof window.ResourceMinistryEngine.openModal === 'function') window.ResourceMinistryEngine.openModal('${countryKey}', 'deposits');" style="padding:5px 12px; background:rgba(255,215,0,0.2); border:1px solid #ffd700; color:#ffd700; font-size:11px; font-weight:bold; border-radius:6px; cursor:pointer;">
-                            🗺️ 593 WORLD DEPOSITS
+                            🗺️ ${Array.isArray(window.ResourceMinistryEngine && window.ResourceMinistryEngine.deposits) ? window.ResourceMinistryEngine.deposits.length.toLocaleString() : 'COUNT NOT RECORDED'} WORLD DEPOSITS
                         </button>
                     </div>
 
@@ -1797,7 +1797,7 @@ window.addEventListener('RESOURCE_STATE_UPDATED', () => {
                     <div>
                         <div style="font-size:14px; font-weight:bold; color:#00e5ff; font-family:var(--font-title); display:flex; align-items:center; gap:8px;">
                             <span>GSRSK RESOURCE MINISTRY & GLOBAL INTELLIGENCE HUB</span>
-                            <span style="font-size:10px; padding:1px 6px; border-radius:8px; background:rgba(34,197,94,0.2); border:1px solid #22c55e; color:#22c55e;">PARTS 01–13 ACTIVE</span>
+                            <span style="font-size:10px; padding:1px 6px; border-radius:8px; background:rgba(34,197,94,0.2); border:1px solid #22c55e; color:#22c55e;">${nrms.briefing && nrms.briefing.indexOf('Live resource values are read from Game.state.resource') === 0 ? 'LIVE SOURCE ATTACHED' : 'RUNTIME STATE UNAVAILABLE'}</span>
                         </div>
                         <div style="font-size:10px; color:#cbd5e1; font-family:var(--font-mono); margin-top:2px;">
                             Indexed deposit and commodity records • Recorded market data • Resource cascade diagnostics
@@ -1893,17 +1893,17 @@ window.addEventListener('RESOURCE_STATE_UPDATED', () => {
                         <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.08);">
                             <div style="font-size:11px; font-weight:bold; color:#ffd700; font-family:var(--font-title); margin-bottom:6px;">🪨 GEOLOGICAL & SEDIMENTARY BASINS</div>
                             <div style="font-size:10px; color:#cbd5e1; font-family:var(--font-mono); line-height:1.4;">
-                                <div>• Domains: ${(geol.majorGeologicalDomains || ['Sedimentary Cover', 'Bengal Delta Basin']).join(', ')}</div>
-                                <div>• Basins: ${(geol.sedimentaryBasins || ['Surma Basin', 'Hatiya Trough', 'Faridpur Trough']).join(', ')}</div>
+                                <div>• Domains: ${Array.isArray(geol.majorGeologicalDomains) && geol.majorGeologicalDomains.length ? geol.majorGeologicalDomains.join(', ') : 'NOT RECORDED'}</div>
+                                <div>• Basins: ${Array.isArray(geol.sedimentaryBasins) && geol.sedimentaryBasins.length ? geol.sedimentaryBasins.join(', ') : 'NOT RECORDED'}</div>
                                 <div>• Tectonic Setting: ${geol.tectonicSetting || 'Continental Margin & Active Delta'}</div>
                             </div>
                         </div>
                         <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.08);">
                             <div style="font-size:11px; font-weight:bold; color:#22c55e; font-family:var(--font-title); margin-bottom:6px;">⛏️ MINERAL & CRITICAL METALS BASE</div>
                             <div style="font-size:10px; color:#cbd5e1; font-family:var(--font-mono); line-height:1.4;">
-                                <div>• Metallic: ${(min.metallic || ['Iron Ore', 'Copper', 'Titanium Sands']).join(', ')}</div>
-                                <div>• Critical/Rare: ${(min.criticalMinerals || min.rareEarths || ['Monazite Rare Earths', 'Zircon', 'Rutile']).join(', ')}</div>
-                                <div>• Non-Metallic: ${(min.nonMetallic || ['Limestone', 'Kaolin White Clay', 'Silica Quartz']).join(', ')}</div>
+                                <div>• Metallic: ${Array.isArray(min.metallic) && min.metallic.length ? min.metallic.join(', ') : 'NOT RECORDED'}</div>
+                                <div>• Critical/Rare: ${Array.isArray(min.criticalMinerals) && min.criticalMinerals.length ? min.criticalMinerals.join(', ') : Array.isArray(min.rareEarths) && min.rareEarths.length ? min.rareEarths.join(', ') : 'NOT RECORDED'}</div>
+                                <div>• Non-Metallic: ${Array.isArray(min.nonMetallic) && min.nonMetallic.length ? min.nonMetallic.join(', ') : 'NOT RECORDED'}</div>
                             </div>
                         </div>
                     </div>
@@ -1944,13 +1944,13 @@ window.addEventListener('RESOURCE_STATE_UPDATED', () => {
                             <div style="background:rgba(0,0,0,0.4); padding:8px; border-radius:6px; border-left:3px solid #00e5ff;">
                                 <div style="display:flex; justify-content:space-between; font-size:11px; font-weight:bold; color:#f8fafc; font-family:var(--font-mono);">
                                     <span>${s.resName} Survey (${s.country})</span>
-                                    <span style="color:#22c55e;">${s.progress}%</span>
+                                    <span style="color:#22c55e;">${numericObserved(s.progress) ? fmtObserved(s.progress) + '%' : 'NOT RECORDED'}</span>
                                 </div>
                                 <div style="font-size:10px; color:#94a3b8; font-family:var(--font-mono); margin:2px 0 4px 0;">
                                     Stage: ${s.stageName} • Est. Time: ${s.estimatedDays} Days
                                 </div>
                                 <div style="width:100%; height:4px; background:rgba(255,255,255,0.1); border-radius:2px; overflow:hidden;">
-                                    <div style="width:${s.progress}%; height:100%; background:linear-gradient(90deg, #00e5ff, #22c55e);"></div>
+                                    <div style="width:${numericObserved(s.progress) ? Math.max(0, Math.min(100, Number(s.progress))) : 0}%; height:100%; background:linear-gradient(90deg, #00e5ff, #22c55e);"></div>
                                 </div>
                             </div>
                         `).join('')}
@@ -2000,8 +2000,8 @@ window.addEventListener('RESOURCE_STATE_UPDATED', () => {
                         <button onclick="window.ResourceMinistryEngine.executeDirective('add_reserve', '${r.id}');" style="padding:5px 4px; background:rgba(255,215,0,0.15); border:1px solid #ffd700; color:#ffd700; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
                             📦 SPR (+50K)
                         </button>
-                        <button onclick="window.ResourceMinistryEngine.executeDirective('drawdown_spr', '${r.id}');" style="padding:5px 4px; background:rgba(239,68,68,0.15); border:1px solid #ef4444; color:#ef4444; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
-                            🚨 DRAWDOWN
+                        <button type="button" disabled title="Disabled: no authoritative physical stock-transfer handler is registered." style="padding:5px 4px; background:rgba(100,116,139,0.12); border:1px solid #64748b; color:#94a3b8; font-size:10px; font-weight:bold; border-radius:4px; cursor:not-allowed; opacity:.75;">
+                            DRAWDOWN UNAVAILABLE
                         </button>
                     </div>
                 </div>
@@ -2090,7 +2090,7 @@ window.addEventListener('RESOURCE_STATE_UPDATED', () => {
                             📦 NATIONAL RESOURCE REGISTRY (18 STRATEGIC COMMODITIES)
                         </div>
                         <button onclick="if(window.ResourceMinistryEngine && typeof window.ResourceMinistryEngine.openModal === 'function') window.ResourceMinistryEngine.openModal('${countryKey}', 'deposits');" style="padding:5px 12px; background:rgba(255,215,0,0.2); border:1px solid #ffd700; color:#ffd700; font-size:11px; font-weight:bold; border-radius:6px; cursor:pointer;">
-                            🗺️ 593 WORLD DEPOSITS
+                            🗺️ ${Array.isArray(window.ResourceMinistryEngine && window.ResourceMinistryEngine.deposits) ? window.ResourceMinistryEngine.deposits.length.toLocaleString() : 'COUNT NOT RECORDED'} WORLD DEPOSITS
                         </button>
                     </div>
 
