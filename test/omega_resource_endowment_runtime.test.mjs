@@ -380,8 +380,25 @@ for(const [countryId,row] of Object.entries(worldState)){
     assert.equal(controller.controllerStatus,'RUNNING');
     const reserveRecord=(globalThis.OmegaResourceSiteReserveSimulationData?.records||[]).find(x=>x.siteId===siteKey);
     const commercial=controller.rawSiteReference?.commercialExtraction===true || reserveRecord?.commercialExtraction===true;
-    if(commercial){
-      assert.equal(controller.extractionExecutable,true,countryId+' commercial controller not executable '+siteKey);
+    const rawSite=controller.rawSiteReference||{};
+    const lifecycleStatus=String(rawSite.operation?.status||rawSite.operation?.operationalStatus||
+      rawSite.sourceSiteRecord?.status||rawSite.status||expandedSiteStatusById.get(siteKey)||'').toUpperCase();
+    const explicitlyNonOperational=commercial&&explicitlyNonOperationalStatus(lifecycleStatus);
+    if(commercial&&explicitlyNonOperational){
+      assert(Array.isArray(controller.linkedOccurrenceKeys)&&controller.linkedOccurrenceKeys.length>=1,
+        countryId+' non-operational site must retain its occurrence link '+siteKey);
+      const blockedOutput=controller.linkedOccurrenceKeys
+        .map(key=>row.mineOutputs?.[key])
+        .find(output=>String(output?.blockReason||'').toUpperCase()==='MINE_NOT_OPERATIONAL');
+      assert(blockedOutput,countryId+' site status '+lifecycleStatus+' must be explicitly blocked '+siteKey);
+      assert.equal(Number(blockedOutput.producedQuantity)||0,0,countryId+' non-operational site must not produce '+siteKey);
+      assert.equal(blockedOutput.batchId,undefined,countryId+' non-operational site must not create an extraction batch '+siteKey);
+      const blockedPath=row.minePaths?.[siteKey];
+      assert(blockedPath,countryId+' non-operational site path missing '+siteKey);
+      assert.equal(blockedPath.status,'BLOCKED',countryId+' non-operational site path must be blocked '+siteKey);
+      assert.equal(blockedPath.blockReason,'MINE_NOT_OPERATIONAL',countryId+' site path must retain the lifecycle reason '+siteKey);
+    }else if(commercial){
+      assert.equal(controller.extractionExecutable,true,countryId+' operational commercial controller not executable '+siteKey);
       assert.equal(controller.extractionPathStatus,'EXECUTABLE_OCCURRENCE_ATTACHED');
       assert(Array.isArray(controller.linkedOccurrenceKeys)&&controller.linkedOccurrenceKeys.length>=1);
       const occurrenceKey=controller.linkedOccurrenceKeys[0];
@@ -389,7 +406,7 @@ for(const [countryId,row] of Object.entries(worldState)){
       assert(output,countryId+' missing site output '+siteKey);
       assert.equal(output.siteReferenceKey,siteKey);
       assert.ok(['MINE_SITE','STRUCTURED_MINE'].includes(output.assetType),countryId+' unexpected site output asset type '+siteKey);
-      assert.ok(Number(output.producedQuantity)>0,countryId+' commercial site produced no positive quantity '+siteKey);
+      assert.ok(Number(output.producedQuantity)>0,countryId+' operational commercial site produced no positive quantity '+siteKey);
       assert(output.batchId,countryId+' missing site batch '+siteKey);
       assert.ok(output.effortUtilization>0&&output.effortUtilization<=1);
       const lot=row.inventoryLots?.[output.batchId];
