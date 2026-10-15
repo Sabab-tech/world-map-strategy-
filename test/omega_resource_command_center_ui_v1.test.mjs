@@ -98,8 +98,8 @@ test('legacy card names disclose feature gaps instead of claiming unsupported ac
   assert.ok(ministry.includes("executeResource16Point('p16', 'build_solar')"));
   assert.match(ui,/Open 12-Question Screening Checklist/);
   assert.match(ui,/Inspect Treasury & SWF Records/);
-  assert.match(ui,/TONNES CO₂e/);
-  assert.match(ui,/SIMULATED_GAMEPLAY_ASSUMPTION_NOT_MEASURED_EMISSIONS/);
+  assert.match(ui,/tonnes CO₂e/i);
+  assert.match(ui,/simulated gameplay assumptions, not measured national emissions/i);
   assert.match(ui,/data-form="carbon-quota"/);
   assert.match(ui,/policy\.evaluateCognitiveGate\(c/);
   assert.match(ui,/policy\.startPowerProject/);
