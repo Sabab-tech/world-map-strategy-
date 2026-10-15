@@ -265,7 +265,7 @@
           const out = clone(row);
           out.resName = out.resourceName || resourceNameForModal(out.resourceId);
           out.country = out.country || (profile && profile.identity && (profile.identity.name || profile.identity.officialName)) || cid;
-          out.progress = numberOrNull(out.progress) === null ? 0 : numberOrNull(out.progress);
+          out.progress = numberOrNull(out.progress);
           return out;
         })
       : [];
