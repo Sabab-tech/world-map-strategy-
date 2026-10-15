@@ -75,3 +75,14 @@ test('actual industrial flow and technology project state paths are rendered', (
   assert.match(ui, /Resource research runtime projects/);
   assert.match(ui, /data-search-item data-form=/);
 });
+
+
+test('resource panels avoid navigation clutter, raw diagnostics, and pinned top content', () => {
+  assert.match(ui, /omega-rescc-panel-select/);
+  assert.match(ui, /\\.omega-rescc-shell\\{[^}]*overflow-y:auto/);
+  assert.match(ui, /\\.omega-rescc-content\\{flex:0 0 auto;[^}]*overflow:visible/);
+  assert.match(ui, /\\.omega-rescc-note\\{display:none!important\\}/);
+  assert.match(ui, /function diagnosticCard\\(\\) \\{ return ''; \\}/);
+  assert.match(ui, /\\(lastOutcome \\? '<div id="omega-rescc-status"/);
+  assert.doesNotMatch(ui, /Panel: ' \\+ viewTitle\\(activePanel\\)/);
+});
