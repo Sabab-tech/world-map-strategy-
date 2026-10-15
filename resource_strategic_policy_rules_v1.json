@@ -113,14 +113,15 @@
     "projectTypes": {
       "NUCLEAR_BASELOAD": {
         "capacityMw": 2400,
-        "constructionCostUsd": 2000000000,
         "constructionTurns": 5,
         "capacityFactor": 0.9,
         "fuelResourceId": "uranium",
         "fuelQuantityPerTurn": 0.01,
         "fuelUnitAuthority": "RESOURCE_STATE_CANONICAL_COMMODITY_UNIT",
         "emissionsTonnesCo2ePerMwh": 0.012,
-        "authority": "SIMULATED_GAMEPLAY_RULESET"
+        "authority": "SIMULATED_GAMEPLAY_RULESET",
+        "constructionCostTreasuryUnits": 2000000000,
+        "constructionCurrency": "TREASURY_NATIVE_UNITS"
       }
     }
   },
