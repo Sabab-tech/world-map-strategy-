@@ -176,9 +176,10 @@ test('canonical simulation save/load preserves resource policy, environment, res
   h.state.resource.BGD.powerGeneration={turn:12,installedCapacityMw:2400,generatedMwh:51840,unit:'MWH_PER_TURN'};
   h.state.resource.BGD.powerGenerationLedger=[{transactionId:'POWER-GEN-RESTORE',status:'GENERATED',generationMwh:51840}];
   h.state.resource.BGD.cognitiveDecisionLedger=[{decisionId:'COG-RESTORE',decision:'REVIEW',advisory:true,aiGenerated:false}];
+  h.state.resource.BGD.sovereignWealthFund={fundId:'SWF:BGD',balance:240,unit:'TREASURY_NATIVE_UNITS',contributions:[{transactionId:'SWF-RESTORE',amount:240}]};
   const saved=sim.saveState();
   h.state.resource.BGD.mineStates={};h.state.resource.BGD.environmentalImpact={revision:999};h.state.resource.BGD.explorationProjects=[];h.state.trade.BGD.resourceEmbargoes=[];h.state.resource.BGD.batches=[];
-  h.state.resource.BGD.carbonQuota=null;h.state.resource.BGD.carbonEmissionsLedger=[];h.state.resource.BGD.powerProjects=[];h.state.resource.BGD.powerAssets=[];h.state.resource.BGD.powerGeneration={};h.state.resource.BGD.powerGenerationLedger=[];h.state.resource.BGD.cognitiveDecisionLedger=[];
+  h.state.resource.BGD.carbonQuota=null;h.state.resource.BGD.carbonEmissionsLedger=[];h.state.resource.BGD.powerProjects=[];h.state.resource.BGD.powerAssets=[];h.state.resource.BGD.powerGeneration={};h.state.resource.BGD.powerGenerationLedger=[];h.state.resource.BGD.cognitiveDecisionLedger=[];h.state.resource.BGD.sovereignWealthFund=null;
   sim.loadState(saved);
   assert.equal(h.state.simulation.turn,12);
   assert.equal(h.state.resource.BGD.mineStates['SITE_OCC:BGD:test'].residualQuantity,987654);
@@ -193,6 +194,8 @@ test('canonical simulation save/load preserves resource policy, environment, res
   assert.equal(h.state.resource.BGD.powerGeneration.generatedMwh,51840);
   assert.equal(h.state.resource.BGD.powerGenerationLedger[0].transactionId,'POWER-GEN-RESTORE');
   assert.equal(h.state.resource.BGD.cognitiveDecisionLedger[0].aiGenerated,false);
+  assert.equal(h.state.resource.BGD.sovereignWealthFund.balance,240);
+  assert.equal(h.state.resource.BGD.sovereignWealthFund.contributions[0].transactionId,'SWF-RESTORE');
   assert.equal(sim.diagnostics().authoritativeState.worldStateLinked,true);
 });
 
