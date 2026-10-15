@@ -1780,6 +1780,7 @@ function batchFromExtraction(x,record){
     g.addEventListener?.('OMEGA_READY',onReady);
     g.addEventListener?.('RESOURCE_STATE_UPDATED',onReady);
     g.addEventListener?.('OMEGA_GAME_SESSION_STARTED',onReady);
+    g.addEventListener?.('OMEGA_RESOURCE_SITE_BINDING_READY',onSiteBindingReady);
     g.addEventListener?.('OMEGA_SIMULATION_TURN_COMMITTED',onTurn);
     return diagnostics();
   }
