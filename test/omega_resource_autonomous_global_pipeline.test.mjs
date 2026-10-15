@@ -420,8 +420,21 @@ test('all expanded deposits receive explicit flow status; active sites dispatch 
   for(const site of activeSites){
     const cid=site.countryId,rawBatchId='BATCH-ALL-SITE:'+site.siteId,rs=state.resource[cid];
     const flow=(rs?.industrialNetwork?.siteFlowLedger||[]).find(row=>String(row.batchId||'')===rawBatchId);
-    if(!flow?.treasurySettlements?.length||!flow.stages?.some(stage=>stage.stage==='TREASURY'&&stage.status==='RECEIPT_POSTED'))
+    const treasuryTrace=(flow?.stages||[]).find(stage=>stage.stage==='TREASURY'&&
+      ['RECEIPT_POSTED','SETTLEMENT_LINKED_UNALLOCATED'].includes(stage.status));
+    if(!flow?.treasurySettlements?.length||!treasuryTrace)
       missingTreasuryRoots.push({siteId:site.siteId,countryId:cid,batchId:rawBatchId,receipts:flow?.treasurySettlements||[],stages:flow?.stages||[]});
+    for(const receipt of flow?.treasurySettlements||[]){
+      if(receipt.status==='SETTLEMENT_LINKED_UNALLOCATED'){
+        assert.equal(receipt.totalValue,null,
+          site.siteId+': shared-source sale value must not be duplicated into a single deposit ledger');
+        assert.ok(receipt.sharedSourceBatchIds?.length>0,
+          site.siteId+': unallocated settlement must retain the other contributing source batches');
+      }else if(receipt.status==='RECEIPT_POSTED'){
+        assert.ok(Number(receipt.totalValue)>=0,
+          site.siteId+': attributed deposit settlement must record its own value, not an absent value');
+      }
+    }
   }
   assert.deepEqual(missingTreasuryRoots,[],
     'every active deposit whose finished goods were published must receive a country-local treasury settlement lineage: '+
