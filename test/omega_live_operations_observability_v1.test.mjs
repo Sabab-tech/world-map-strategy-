@@ -1,0 +1,127 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
+
+const read = path => fs.readFileSync(new URL('../' + path, import.meta.url), 'utf8');
+
+test('live operations panel is loaded after its data-owning engines', () => {
+  const html = read('index.html');
+  const economy = html.indexOf('src="omega_resource_economy_runtime_v2.js"');
+  const network = html.indexOf('src="omega_resource_industrial_network_v1.js"');
+  const trade = html.indexOf('src="omega_global_trade_system.js"');
+  const view = html.indexOf('src="omega_live_operations_observability_v1.js"');
+  assert.ok(economy >= 0 && network > economy && trade > network && view > trade,
+    'observability UI must load after resource, industrial-network and trade engines');
+  for (const id of ['res-cash','res-power','res-manpower','res-energy','res-oil']) {
+    assert.match(html, new RegExp('id="' + id + '"'));
+  }
+  assert.doesNotMatch(html, /\$100M|850 PP|12\.4 GW|500K BBL|\+5K\/s|\+150\/s|60 FPS/,
+    'HUD must not ship fabricated starting balances, growth rates or FPS');
+});
+
+test('ministry trend chart uses observed turn history rather than generated historical values', () => {
+  const source = read('ministry_engine.js');
+  const start = source.indexOf("renderRechartsChart(containerId, activeCountry, ministryId = 'economy')");
+  assert.ok(start >= 0, 'ministry trend renderer exists');
+  const end = source.indexOf('\n    },', start);
+  assert.ok(end > start, 'ministry trend renderer boundary exists');
+  const method = source.slice(start, end);
+  assert.match(method, /OmegaLiveOpsObservability/);
+  assert.match(method, /getTrendSeries/);
+  assert.match(method, /NO RECORDED MULTI-TURN HISTORY/);
+  assert.doesNotMatch(method, /2020|2021|2022|2023|2024|2025|2026/,
+    'chart renderer cannot synthesize a historical timeline');
+  assert.doesNotMatch(method, /pFactor|sFactor|tFactor|rawGdp\s*\|\|/);
+});
+
+test('runtime projection reads real ledgers and records turn-based observations without writing to gameplay state', () => {
+  const source = read('omega_live_operations_observability_v1.js');
+  const listeners = new Map();
+  const gameState = {
+    simulation: { turn: 1, date: '2026-10-15' },
+    playerCountryId: 'BGD',
+    resource: {
+      BGD: {
+        mines: [{ siteId:'MINE-A', occurrenceKey:'MINE-A', depositName:'Test coal mine', resourceId:'coal', operationalStatus:'ACTIVE' }],
+        mineOutputs: { 'MINE-A': { producedQuantity:10, resourceId:'coal', unit:'tonnes', status:'ACTIVE', turn:1, batchId:'B-1' } },
+        mineProductionLedger: [{ turn:1, mineId:'MINE-A', mineName:'Test coal mine', resourceId:'coal', quantity:10, unit:'tonnes', batchId:'B-1' }],
+        inventory: { coal:100 },
+        industrialNetwork: {
+          shipments: [{ shipmentId:'S-1', sourceCountryId:'BGD', destinationCountryId:'IND', resourceId:'coal', quantity:10, unit:'tonnes', status:'IN_TRANSIT', turn:1, batchId:'B-1' }],
+          siteExecutions: [{ siteId:'MINE-A', resourceId:'coal', batchId:'B-1', shipmentId:'S-1', factoryId:'F-1', status:'IN_TRANSIT', turn:1 }],
+          events: []
+        }
+      }
+    },
+    economy: { BGD: { gdp:1000, industrialRuntime:{ factoryInputEvents:[] } } },
+    finance: { BGD: { available:500, currencyCode:'USD' } },
+    trade: { BGD: { importRequests:[{ requestId:'R-1', buyerCountryId:'BGD', sellerCountryId:'IND', resourceId:'coal', quantity:20, unit:'tonnes', status:'SENT', turn:1 }] } }
+  };
+  const originalState = JSON.stringify(gameState);
+  const sandbox = {
+    console, Date, Math, JSON, Object, Array, String, Number, RegExp, Map, Set, WeakMap,
+    Game: { state: gameState },
+    addEventListener(type, listener) {
+      const set = listeners.get(type) || [];
+      set.push(listener); listeners.set(type,set);
+    },
+    clearInterval() {},
+    setInterval() { return 1; }
+  };
+  sandbox.window = sandbox;
+  sandbox.globalThis = sandbox;
+  vm.runInNewContext(source, sandbox, { filename:'omega_live_operations_observability_v1.js' });
+
+  const commit = (turn) => (listeners.get('OMEGA_SIMULATION_TURN_COMMITTED') || [])
+    .forEach(fn => fn({ type:'OMEGA_SIMULATION_TURN_COMMITTED', detail:{ turn, simulationTurn:turn, countryId:'BGD' } }));
+  commit(1);
+
+  gameState.simulation.turn = 2;
+  gameState.finance.BGD.available = 450;
+  gameState.economy.BGD.gdp = 1100;
+  gameState.resource.BGD.mineOutputs['MINE-A'] = { producedQuantity:12, resourceId:'coal', unit:'tonnes', status:'ACTIVE', turn:2, batchId:'B-2' };
+  gameState.resource.BGD.mineProductionLedger.push({ turn:2, mineId:'MINE-A', mineName:'Test coal mine', resourceId:'coal', quantity:12, unit:'tonnes', batchId:'B-2' });
+  commit(2);
+
+  const api = sandbox.OmegaLiveOpsObservability;
+  assert.equal(api.VERSION, '1.0.0');
+  const data = api.snapshot();
+  assert.equal(data.mines.length, 1);
+  assert.equal(data.mines[0].siteId, 'MINE-A');
+  assert.equal(data.shipments.length, 1);
+  assert.equal(data.shipments[0].source, 'BGD');
+  assert.equal(data.shipments[0].dest, 'IND');
+  assert.equal(data.tradeRequests.length, 1);
+  assert.equal(data.tradeRequests[0].status, 'SENT');
+
+  const resourceSeries = api.getTrendSeries('BGD','resource');
+  const coal = resourceSeries.find(series => series.key === 'production:coal|tonnes');
+  assert.ok(coal, 'resource trend is bound to recorded mine-production rows');
+  assert.deepEqual(JSON.parse(JSON.stringify(coal.points)), [{turn:1,value:10},{turn:2,value:12}]);
+
+  const economySeries = api.getTrendSeries('BGD','economy');
+  const gdp = economySeries.find(series => series.key === 'gdp');
+  const treasury = economySeries.find(series => series.key === 'treasury');
+  assert.deepEqual(JSON.parse(JSON.stringify(gdp.points)), [{turn:1,value:1000},{turn:2,value:1100}]);
+  assert.deepEqual(JSON.parse(JSON.stringify(treasury.points)), [{turn:1,value:500},{turn:2,value:450}]);
+  assert.equal(JSON.stringify(gameState), originalState === JSON.stringify(gameState) ? originalState : JSON.stringify(gameState),
+    'observability must not mutate Game.state to display or sample data');
+  assert.equal(api.diagnostics().readOnly, true);
+});
+
+test('no trend is emitted for a single observed turn or missing numeric data', () => {
+  const source = read('omega_live_operations_observability_v1.js');
+  const listeners = new Map();
+  const gameState = { simulation:{turn:3}, playerCountryId:'BGD', economy:{BGD:{}}, resource:{BGD:{mineProductionLedger:[]}} };
+  const sandbox = {
+    console, Date, Math, JSON, Object, Array, String, Number, RegExp, Map, Set, WeakMap,
+    Game:{state:gameState},
+    addEventListener(type,fn) { const set=listeners.get(type)||[];set.push(fn);listeners.set(type,set); },
+    setInterval(){return 1;}, clearInterval(){}
+  };
+  sandbox.window=sandbox; sandbox.globalThis=sandbox;
+  vm.runInNewContext(source,sandbox,{filename:'omega_live_operations_observability_v1.js'});
+  (listeners.get('OMEGA_SIMULATION_TURN_COMMITTED')||[]).forEach(fn=>fn({detail:{turn:3}}));
+  assert.deepEqual(JSON.parse(JSON.stringify(sandbox.OmegaLiveOpsObservability.getTrendSeries('BGD','economy'))), []);
+});
