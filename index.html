@@ -182,7 +182,7 @@
             <!-- 🛰️ TOP STATUS AREA (Unified AAA Top Header) -->
             <div id="top-status-bar" class="top-status-bar" role="banner">
                 <div class="status-group status-left">
-                    <span class="status-item"><span class="icon">⏰</span> <span id="status-clock">2026.07.27 | 03:42:15 UTC</span></span>
+                    <span class="status-item"><span class="icon">⏰</span> <span id="status-clock">SIMULATION TIME: NOT RECORDED</span></span>
                     <div class="speed-controls" role="group" aria-label="Game Speed">
                         <button class="speed-btn" data-speed="0" title="Pause Game">⏸</button>
                         <button class="speed-btn active" data-speed="1" title="Normal Speed">1x</button>
@@ -201,28 +201,28 @@
 
                     <div class="res-node" title="Treasury Reserve">
                         <span class="res-icon">💵</span>
-                        <span id="res-cash" class="res-val">$100M</span>
-                        <span class="res-trend positive">▲ +5K/s</span>
+                        <span id="res-cash" class="res-val">Not recorded</span>
+                        <span class="res-trend positive">—</span>
                     </div>
                     <div class="res-node" title="Political Power">
                         <span class="res-icon">🏛️</span>
-                        <span id="res-power" class="res-val">850 PP</span>
-                        <span class="res-trend positive">▲ +2.5/s</span>
+                        <span id="res-power" class="res-val">Not recorded</span>
+                        <span class="res-trend positive">—</span>
                     </div>
                     <div class="res-node" title="Military Manpower">
                         <span class="res-icon">👥</span>
-                        <span id="res-manpower" class="res-val">500K</span>
-                        <span class="res-trend positive">▲ +150/s</span>
+                        <span id="res-manpower" class="res-val">Not recorded</span>
+                        <span class="res-trend positive">—</span>
                     </div>
                     <div class="res-node" title="Energy Production">
                         <span class="res-icon">⚡</span>
-                        <span id="res-energy" class="res-val">12.4 GW</span>
-                        <span class="res-trend positive">▲ +1.2 GW</span>
+                        <span id="res-energy" class="res-val">Not recorded</span>
+                        <span class="res-trend positive">—</span>
                     </div>
                     <div class="res-node" title="Crude Oil Stockpile">
                         <span class="res-icon">🛢️</span>
-                        <span id="res-oil" class="res-val">500K BBL</span>
-                        <span class="res-trend positive">▲ +200/s</span>
+                        <span id="res-oil" class="res-val">Not recorded</span>
+                        <span class="res-trend positive">—</span>
                     </div>
 
                     <!-- 🔽 TOP BAR DROPDOWN TRIGGER ICON BUTTON -->
@@ -233,9 +233,9 @@
                 </div>
 
                 <div class="status-group status-right">
-                    <span class="status-item green"><span class="icon">💾</span> <span id="status-autosave">SYNCED</span></span>
-                    <span class="status-item cyan"><span class="icon">📡</span> <span id="status-link">ONLINE</span></span>
-                    <span class="status-item debug-fps"><span id="status-fps">60 FPS</span></span>
+                    <span class="status-item green"><span class="icon">💾</span> <span id="status-autosave">SAVE STATUS UNKNOWN</span></span>
+                    <span class="status-item cyan"><span class="icon">📡</span> <span id="status-link">ENGINE STATE UNKNOWN</span></span>
+                    <span class="status-item debug-fps"><span id="status-fps">FPS N/A</span></span>
                 </div>
             </div>
 
@@ -1142,5 +1142,6 @@
     <script src="omega_global_trade_system.js" defer></script>
     <script src="omega_opponent_treaty_lifecycle_system.js" defer></script>
     <script src="omega_opponent_second_order_consequence_system.js" defer></script>
+<script src="omega_live_operations_observability_v1.js" defer></script>
 </body>
 </html>
