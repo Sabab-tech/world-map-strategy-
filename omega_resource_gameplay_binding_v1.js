@@ -17,7 +17,7 @@ const endowment=()=>g.Omega?.ResourceEndowmentRuntime||g.OmegaResourceEndowmentR
 const cid=v=>String(v||'').trim().toUpperCase();
 function setStatus(s){if(statusNode)statusNode.textContent=String(s||'');}
 function chosenSite(){return sites.find(s=>s.siteId===selected)||null;}
-const PLACEHOLDER_VALUES=new Set(['','unknown','unspecified','not specified','not supplied','not recorded','not available','n/a','na','n.a.','none','null','undefined','source_status_not_set','coordinate status not supplied','unobserved','simulation data']);
+const PLACEHOLDER_VALUES=new Set(['','unknown','unspecified','not specified','not supplied','not recorded','not available','n/a','na','n.a.','none','null','undefined','source_status_not_set','source_status_unspecified','source status unspecified','coordinate status not supplied','unobserved','simulation data']);
 function isPlaceholder(value){
  if(value===null||value===undefined)return true;
  if(typeof value!=='string')return false;
@@ -74,8 +74,8 @@ function authorityLabel(authority){
  if(authority==='RECORDED')return 'Site record';
  return '';
 }
-function makeMeasure(value,unit,fallbackAuthority){
- let raw=value,measureUnit=unit||'',record=value;
+function makeMeasure(value,unit,fallbackAuthority,authorityRecord){
+ let raw=value,measureUnit=unit||'',record=authorityRecord||value;
  if(value&&typeof value==='object'&&!Array.isArray(value)){
   record=value;
   raw=value.value??value.quantity??value.amount??value.rate??value.annual??value.estimate??value.nominal;
@@ -174,18 +174,18 @@ function renderSiteDetail(s){
  const daily=production.rate??sim.productionRate;
  const dailyUnit=production.unit||sim.productionRateUnit||'';
  const dailyFallback=production.rate!==undefined?'RECORDED':'SIMULATED';
- const dailyMetric=makeMeasure(daily,dailyUnit,dailyFallback);
+ const dailyMetric=makeMeasure(daily,dailyUnit,dailyFallback,production);
  if(dailyMetric)metrics.push({label:'Daily output',...dailyMetric});
  const annual=production.annual??sim.annualProduction;
  const annualUnit=production.annualUnit||sim.annualProductionUnit||'';
- const annualMetric=makeMeasure(annual,annualUnit,production.annual!==undefined?'RECORDED':'SIMULATED');
+ const annualMetric=makeMeasure(annual,annualUnit,production.annual!==undefined?'RECORDED':'SIMULATED',production);
  if(annualMetric)metrics.push({label:'Annual output',...annualMetric});
  const gradeRaw=grade.value??sim.grade?.value;
  const gradeUnit=grade.unit||sim.grade?.unit||'';
- const gradeMetric=makeMeasure(gradeRaw,gradeUnit,grade.value!==undefined?'RECORDED':'SIMULATED');
+ const gradeMetric=makeMeasure(gradeRaw,gradeUnit,grade.value!==undefined?'RECORDED':'SIMULATED',grade);
  if(gradeMetric)metrics.push({label:'Grade',...gradeMetric});
  const purityRaw=purity.value??sim.purity?.value;
- const purityMetric=makeMeasure(purityRaw,purity.unit||sim.purity?.unit||'%',purity.value!==undefined?'RECORDED':'SIMULATED');
+ const purityMetric=makeMeasure(purityRaw,purity.unit||sim.purity?.unit||'%',purity.value!==undefined?'RECORDED':'SIMULATED',purity);
  if(purityMetric)metrics.push({label:'Purity',...purityMetric});
  let recoveryRaw=recovery.value;
  let recoveryFallback=recovery.value!==undefined?'RECORDED':'SIMULATED';
@@ -193,9 +193,9 @@ function renderSiteDetail(s){
   const numeric=Number(sim.recovery);
   recoveryRaw=Number.isFinite(numeric)?numeric*100:sim.recovery;
  }
- const recoveryMetric=makeMeasure(recoveryRaw,recovery.unit||'%',recoveryFallback);
+ const recoveryMetric=makeMeasure(recoveryRaw,recovery.unit||'%',recoveryFallback,recovery);
  if(recoveryMetric)metrics.push({label:'Recovery',...recoveryMetric});
- const throughputMetric=makeMeasure(throughput.value??sim.dailyThroughput,throughput.unit||sim.dailyThroughputUnit||'',throughput.value!==undefined?'RECORDED':'SIMULATED');
+ const throughputMetric=makeMeasure(throughput.value??sim.dailyThroughput,throughput.unit||sim.dailyThroughputUnit||'',throughput.value!==undefined?'RECORDED':'SIMULATED',throughput);
  if(throughputMetric)metrics.push({label:'Daily throughput',...throughputMetric});
  const utilization=sim.utilization;
  const utilizationMetric=utilization===undefined?null:makeMeasure(Number(utilization)*100,'%','SIMULATED');
@@ -245,7 +245,7 @@ function renderSiteDetail(s){
   Number.isFinite(Number(coords.lat))&&Number.isFinite(Number(coords.lng))?detailRow('Coordinates',Number(coords.lat).toFixed(4)+', '+Number(coords.lng).toFixed(4)):''
  ].filter(Boolean).join('');
  detailSections.push('<details class="omega-site-details"><summary>Data quality & source</summary>'+renderRows([provenanceRows])+'<p class="omega-site-muted">Observed facts and gameplay estimates are labelled separately. Unavailable figures are not treated as zero.</p></details>');
- return header+metricHtml+operationHtml.replace(operationHtml,'')+'<div class="omega-site-detail-sections">'+detailSections.join('')+'</div>';
+ return header+metricHtml+'<div class="omega-site-detail-sections">'+detailSections.join('')+'</div>';
 }
 function detail(s){
  if(!detailNode)return;
@@ -437,7 +437,7 @@ async function plan(){
  const net=api();if(!net)return setStatus('BLOCKED: industrial runtime not loaded');
  const r=await net.loadCatalog?.();if(r?.status==='FAILED')return setStatus('BLOCKED: industrial catalog unavailable');
  const out=net.planExtraction({countryId:s.countryId,siteId:s.siteId,resourceId:s.real?.resourceId||s.sourceSiteRecord?.resourceId});
- setStatus(out.status==='PLANNED'?'Extraction plan ready · '+formatScalar(out.approvedQuantity)+' '+formatUnit(out.unit)+' · '+formatScalar(out.totalDurationDays)+' days':'Plan unavailable · '+(humanize(out.reason)||humanize(out.status)||'The engine could not confirm a valid plan.'));
+ setStatus(out.status==='PLANNED'?'Extraction plan ready'+(hasValue(out.approvedQuantity)&&hasValue(out.unit)?' · '+formatScalar(out.approvedQuantity)+' '+formatUnit(out.unit):'')+(hasValue(out.totalDurationDays)?' · '+formatScalar(out.totalDurationDays)+' days':'')+'.':'Plan unavailable · '+(humanize(out.reason)||humanize(out.status)||'The engine could not confirm a valid plan.')+'.');
  g.__OMEGA_LAST_INDIVIDUAL_SITE_PLAN__=out;
 }
 async function execute(){
