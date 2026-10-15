@@ -177,9 +177,17 @@
     const rid=String(resource||'').trim();
     try{
       const market=g.OmegaGlobalMarket||g.Omega?.GlobalMarket;
+      if(market&&typeof market.quote==='function'){
+        const quote=market.quote(rid);
+        // Once the dynamic market is installed, a reference quote, stale local
+        // price or one-sided book is not a cleared price for fiscal settlement.
+        if(String(quote?.status||'').toUpperCase()!=='CLEARED')return null;
+        const local=market.localPrice?.(canonical(country),rid);
+        return num(local)!==null&&local>0?local:null;
+      }
       const local=market?.localPrice?.(canonical(country),rid);
       if(num(local)!==null&&local>=0)return local;
-    }catch(_){}
+    }catch(_){return null;}
     const paths=[
       'trade.marketPrice.'+rid,'trade.marketPrices.'+rid,
       'trade.offerBook.'+rid+'.unitPrice','trade.offerBook.'+rid+'.price',
