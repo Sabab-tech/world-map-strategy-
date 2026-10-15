@@ -521,31 +521,16 @@
       '<h3 class="omega-rescc-section-title">Saved route profiles from existing data files</h3>'+(routeCards||empty('No saved route definition is recorded for this country.'))+
       '<h3 class="omega-rescc-section-title">Actual shipment state</h3>'+(shipmentCards||empty('No shipments have been recorded.'));
   }
-  function panelIndustrial(country) {
-    const network = g.Omega && g.Omega.ResourceIndustrialNetwork;
-    const diag = network && network.diagnostics ? network.diagnostics(country) : null;
-    const pipeline = network && network.gameplayPipelineDiagnostics ? network.gameplayPipelineDiagnostics() : null;
-    const perCountry = pipeline && Array.isArray(pipeline.perCountry) ?
-      pipeline.perCountry.find(function (x) { return normaliseCountry(x.countryId) === activeCountry(country); }) : null;
-    const r = resourceBucket(country);
-    const econ = bucket('economy', country);
-    const industrialState = r.industrialNetwork || {};
-    const flows = Array.isArray(industrialState.siteFlowLedger) ? industrialState.siteFlowLedger :
-      (Array.isArray(r.siteFlows) ? r.siteFlows : (Array.isArray(r.siteFlowLedger) ? r.siteFlowLedger : (Array.isArray(r.extractionFlows) ? r.extractionFlows : [])));
-    const projects = Array.isArray(industrialState.projects) ? industrialState.projects :
-      (Array.isArray(econ.projects) ? econ.projects : []);
-    const technologyContracts = Array.isArray(industrialState.technologyContracts) ? industrialState.technologyContracts : [];
-    const stages = perCountry && perCountry.stages || {};
-    return (diag ? diagnosticCard('Country industrial network diagnostics', diag) : empty('Industrial network runtime is unavailable.')) +
-      (perCountry ? diagnosticCard('End-to-end site pipeline state', perCountry) : '') +
-      '<div class="omega-rescc-metrics"><div><span>Extraction flows</span><strong>' + number(perCountry && perCountry.extractionFlows) +
-      '</strong></div><div><span>Dispatched shipments</span><strong>' + number(perCountry && perCountry.dispatched) +
-      '</strong></div><div><span>Processed flows</span><strong>' + number(perCountry && perCountry.processed) + '</strong></div></div>' +
-      '<h3 class="omega-rescc-section-title">Observed flow ledger</h3>' +
-      (Array.isArray(flows) ? statusRows(flows) : empty('No site flow ledger is exposed at this state path.')) +
-      '<h3 class="omega-rescc-section-title">Construction projects</h3>' + statusRows(projects) +
-      '<h3 class="omega-rescc-section-title">Technology project contracts</h3>' + statusRows(technologyContracts) +
-      (Object.keys(stages).length ? diagnosticCard('Pipeline stage counts', stages) : '');
+  function panelIndustrial(country){
+    const network=g.Omega&&g.Omega.ResourceIndustrialNetwork,diag=network&&network.diagnostics?network.diagnostics(country):null,pipeline=network&&network.gameplayPipelineDiagnostics?network.gameplayPipelineDiagnostics():null;
+    const perCountry=pipeline&&Array.isArray(pipeline.perCountry)?pipeline.perCountry.find(x=>normaliseCountry(x.countryId)===activeCountry(country)):null;
+    const r=resourceBucket(country),econ=bucket('economy',country),industrial=r.industrialNetwork||{};
+    const flows=Array.isArray(industrial.siteFlowLedger)?industrial.siteFlowLedger:(Array.isArray(r.siteFlows)?r.siteFlows:(Array.isArray(r.siteFlowLedger)?r.siteFlowLedger:(Array.isArray(r.extractionFlows)?r.extractionFlows:[])));
+    const projects=Array.isArray(industrial.projects)?industrial.projects:(Array.isArray(econ.projects)?econ.projects:[]),contracts=Array.isArray(industrial.technologyContracts)?industrial.technologyContracts:[],stages=perCountry&&perCountry.stages||{},sites=siteRows(country);
+    return (diag?diagnosticCard('Country industrial network diagnostics',diag):empty('Industrial network runtime is unavailable.'))+(perCountry?diagnosticCard('End-to-end site pipeline state',perCountry):'')+
+      '<div class="omega-rescc-metrics"><div><span>Country site profiles</span><strong>'+number(sites.length)+'</strong></div><div><span>Extraction flows</span><strong>'+number(perCountry&&perCountry.extractionFlows)+'</strong></div><div><span>Dispatched shipments</span><strong>'+number(perCountry&&perCountry.dispatched)+'</strong></div><div><span>Processed flows</span><strong>'+number(perCountry&&perCountry.processed)+'</strong></div></div>'+
+      '<h3 class="omega-rescc-section-title">Observed flow ledger</h3>'+(flows.length?statusRows(flows):empty('No site execution or flow records are present in this country runtime.'))+
+      '<h3 class="omega-rescc-section-title">Construction projects</h3>'+statusRows(projects)+'<h3 class="omega-rescc-section-title">Technology project contracts</h3>'+statusRows(contracts)+(Object.keys(stages).length?diagnosticCard('Pipeline stage counts',stages):'');
   }
   function panelMarket(country) {
     const market = g.OmegaGlobalMarket || g.Omega && g.Omega.GlobalMarket;
@@ -674,33 +659,20 @@
       kv('Profile record', profile && profile.identity && (profile.identity.name || profile.identity.officialName)) + '</div>' +
       '<p class="omega-rescc-note">A runtime object alone does not prove that a 12-question evaluation endpoint exists. This panel does not report an AI run unless a supported result is returned.</p>', '') + form;
   }
-  function panelPower(country) {
-    const network = g.Omega && g.Omega.ResourceIndustrialNetwork;
-    const r = resourceBucket(country);
-    const energyRows = resources(country).filter(function (x) {
-      return /oil|gas|uranium|coal|power|energy|hydrogen/i.test(String(x.id) + ' ' + String(x.name));
-    });
-    const projects = Array.isArray(r.industrialNetwork && r.industrialNetwork.projects) ? r.industrialNetwork.projects :
-      (Array.isArray(bucket('economy', country).projects) ? bucket('economy', country).projects : []);
-    const technologyContracts = Array.isArray(r.industrialNetwork && r.industrialNetwork.technologyContracts) ? r.industrialNetwork.technologyContracts : [];
-    const researchProjects = Array.isArray(r.technologyResearchProjects) ? r.technologyResearchProjects : [];
-    const controls = '<div class="omega-rescc-actions">' +
-      actionButton('industry-tech', 'Start advanced gas-compression research', { 'technology-id': 'ADVANCED_GAS_COMPRESSION', mode: 'RESEARCH' },
-        !(network && network.startTechnologyProject)) +
-      actionButton('industry-tech', 'Start enhanced oil-recovery research', { 'technology-id': 'ENHANCED_OIL_RECOVERY', mode: 'RESEARCH' },
-        !(network && network.startTechnologyProject)) + '</div>';
-    return '<div class="omega-rescc-warning">The installed industrial catalog does not define a nuclear reactor or electric-grid construction type. This console does not claim to build 2.4 GW of nuclear capacity. The supported energy-technology projects below use the actual catalog API.</div>' +
-      '<h3 class="omega-rescc-section-title">Observed energy resource state</h3>' +
-      (energyRows.map(function (x) {
-        return card(x.name || x.id, x.id, '<div class="omega-rescc-grid2">' +
-          kv('Production/day', x.dailyProduction) + kv('Inventory', x.inventory) +
-          kv('Reserve', x.reserve) + kv('Unit', x.unit) + '</div>', '');
-      }).join('') || empty('No matching energy resource rows are recorded.')) +
-      controls + '<h3 class="omega-rescc-section-title">Energy and infrastructure project records</h3>' + statusRows(projects) +
-      '<h3 class="omega-rescc-section-title">Industrial technology contracts</h3>' + statusRows(technologyContracts) +
-      '<h3 class="omega-rescc-section-title">Resource research runtime projects</h3>' + statusRows(researchProjects) +
-      '<h3 class="omega-rescc-section-title">Current mine and power-related outputs</h3>' +
-      statusRows(Array.isArray(r.mineProductionLedger) ? r.mineProductionLedger : []);
+  function panelPower(country){
+    const network=g.Omega&&g.Omega.ResourceIndustrialNetwork,r=resourceBucket(country),energy=resources(country).filter(x=>/oil|gas|uranium|coal|power|energy|hydrogen/i.test(String(x.id)+' '+String(x.name)));
+    const sites=siteRows(country).filter(site=>/oil|gas|uranium|coal|power|energy|hydrogen/i.test(String(site.resourceId||site.real&&site.real.resourceId||site.identity&&site.identity.resourceTypeId||'')+' '+String(site.siteName||site.name||'')));
+    const profileCards=sites.slice(0,120).map(site=>{
+      const src=site.sourceSiteRecord&&typeof site.sourceSiteRecord==='object'?site.sourceSiteRecord:{},q=site.quantitative||src.quantitative||{},prod=q.production||{},reserve=q.reserve||site.simulation&&site.simulation.reserve||{},rv=reserve&&typeof reserve==='object'?(reserve.quantity??reserve.value??reserve.amount):reserve;
+      return card(site.siteName||site.name||site.siteId,'FILE-BACKED SITE PROFILE','<div class="omega-rescc-grid2">'+kv('Site ID',site.siteId)+kv('Commodity',site.resourceId||site.real&&site.real.resourceId||site.identity&&site.identity.resourceTypeId)+kv('Profile production rate',prod.rate??site.productionRate??site.dailyRate,prod.unit||site.unit?' '+(prod.unit||site.unit):'')+kv('Profile reserve',rv,reserve&&typeof reserve==='object'?reserve.unit||'':'')+kv('Source authority',site.sourceAuthority||src.sourceAuthority||src.dataAuthority||'NOT_RECORDED')+'</div><p class="omega-rescc-note">Profile data is not proof of current-turn production.</p>','');
+    }).join('');
+    const projects=Array.isArray(r.industrialNetwork&&r.industrialNetwork.projects)?r.industrialNetwork.projects:(Array.isArray(bucket('economy',country).projects)?bucket('economy',country).projects:[]),contracts=Array.isArray(r.industrialNetwork&&r.industrialNetwork.technologyContracts)?r.industrialNetwork.technologyContracts:[],research=Array.isArray(r.technologyResearchProjects)?r.technologyResearchProjects:[];
+    const controls='<div class="omega-rescc-actions">'+actionButton('industry-tech','Start advanced gas-compression research',{'technology-id':'ADVANCED_GAS_COMPRESSION',mode:'RESEARCH'},!(network&&network.startTechnologyProject))+actionButton('industry-tech','Start enhanced oil-recovery research',{'technology-id':'ENHANCED_OIL_RECOVERY',mode:'RESEARCH'},!(network&&network.startTechnologyProject))+'</div>';
+    return '<div class="omega-rescc-warning">The installed industrial catalog does not define a nuclear reactor or electric-grid construction type. This console does not claim to build 2.4 GW of nuclear capacity.</div><h3 class="omega-rescc-section-title">Live energy commodity state</h3>'+
+      (energy.map(x=>card(x.name||x.id,x.id,'<div class="omega-rescc-grid2">'+kv('Production/day',x.dailyProduction)+kv('Inventory',x.inventory)+kv('Reserve',x.reserve)+kv('Unit',x.unit)+'</div>','')).join('')||empty('No matching energy resource rows are recorded in live commodity state.'))+
+      '<h3 class="omega-rescc-section-title">Energy site profiles from existing data files</h3>'+(profileCards||empty('No energy-related site profile is recorded for this country.'))+(sites.length>120?'<p class="omega-rescc-note">Showing 120 of '+sites.length+' profiles.</p>':'')+controls+
+      '<h3 class="omega-rescc-section-title">Energy and infrastructure project records</h3>'+statusRows(projects)+'<h3 class="omega-rescc-section-title">Industrial technology contracts</h3>'+statusRows(contracts)+
+      '<h3 class="omega-rescc-section-title">Resource research runtime projects</h3>'+statusRows(research)+'<h3 class="omega-rescc-section-title">Current mine and power-related outputs</h3>'+statusRows(Array.isArray(r.mineProductionLedger)?r.mineProductionLedger:[]);
   }
   function panelEnvironment(country) {
     const network = g.Omega && g.Omega.ResourceIndustrialNetwork;
