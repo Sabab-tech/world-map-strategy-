@@ -12,7 +12,8 @@ class CustomEventMock{constructor(type,init={}){this.type=type;this.detail=init.
 
 function loadJson(path){return JSON.parse(readFileSync(path,'utf8'));}
 async function repoFetch(input){
-  const file=String(input||'').split('?')[0].replace(/^\\/+/, '');
+  let file=String(input||'').split('?')[0];
+  while(file.startsWith('/'))file=file.slice(1);
   if(!file||file.split('/').includes('..'))return{ok:false,status:400,json:async()=>({}),text:async()=>''};
   try{
     const body=readFileSync(file,'utf8');
