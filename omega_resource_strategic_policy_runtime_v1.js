@@ -635,7 +635,7 @@ function powerTick(ctx){
   }
   const carbon=recordCarbonEmissionTx(ctx,{transactionId:'POWER-CO2:'+asset.assetId+':T'+turn(),quantity:emission,unit:'TONNES_CO2E',
    source:'POWER_GENERATION',sourceId:asset.assetId,provenance:asset.provenance});
-  if(!carbon.accepted){
+  if(!carbon.accepted||carbon.blocked===true){
    asset.status=carbon.reason==='CARBON_QUOTA_EXCEEDED'?'IDLE_CARBON_QUOTA':'BLOCKED_CARBON_ACCOUNTING';
    asset.generationMwh=0;asset.lastAttemptTurn=turn();asset.lastBlockedReason=carbon.reason;
    generationLedger.push({transactionId:'POWER-GEN:'+asset.assetId+':T'+turn(),assetId:asset.assetId,countryId:c,turn:turn(),status:'BLOCKED',reason:carbon.reason,generationMwh:0});
