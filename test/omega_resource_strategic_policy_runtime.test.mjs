@@ -161,11 +161,14 @@ test('extraction and processing commit environmental impact; replay is idempoten
   assert(h.state.resource.BGD.environmentalLedger.some(x=>x.transactionId==='REMED-ENV-1'&&x.impactType==='REMEDIATION'));
 });
 
-test('policy diagnostics expose live rule load and handler registration state',()=>{
-  const h=harness(),diag=h.sandbox.Omega.ResourceStrategicPolicyRuntime.diagnostics();
+test('policy diagnostics expose live rule load, handler registration and quota enforcement history',()=>{
+  const h=harness();
+  h.state.resource.BGD.carbonQuotaEnforcementLedger=[{violationId:'DIAG-VIOLATION',status:'BLOCKED'}];
+  const diag=h.sandbox.Omega.ResourceStrategicPolicyRuntime.diagnostics();
   assert.equal(diag.rulesLoaded,true);
   assert.equal(diag.rulesVersion,'1.0.0');
   assert.equal(diag.handlersReady,true,JSON.stringify(diag));
+  assert.equal(diag.carbonQuotaEnforcementRows,1);
 });
 
 
