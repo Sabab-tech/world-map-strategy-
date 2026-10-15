@@ -93,7 +93,7 @@ test('environment impacts are data-driven, idempotent, persisted, and constrain 
   }));
   await api.flushPending();
   impact=state.environment.BGD.resourceImpact;
-  assert.ok(impact.ledger.some(x=>x.eventId==='PROCESSING:FACTORY-TXN-1:coal_concentrate'&&x.status==='MODELED'));
+  assert.ok(impact.ledger.some(x=>x.eventId==='PROCESSING:FACTORY-TXN-1:coal_concentrate'&&x.status==='MODELED'),JSON.stringify({processing:impact.ledger.filter(x=>x.stage==='PROCESSING'),rules:api.diagnostics().rulesStatus}));
   assert.ok(impact.ledger.some(x=>x.eventId==='PROCESSING:FACTORY-TXN-1:coal_reject'&&x.status==='MODELED'));
   assert.ok(api.diagnostics().environment.modeledCountries>=1);
 });
