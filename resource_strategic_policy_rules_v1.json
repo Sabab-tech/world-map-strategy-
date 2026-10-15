@@ -128,7 +128,8 @@
   "cognitive": {
     "enabled": true,
     "questionsRequired": 12,
-    "maxHistory": 512
+    "maxHistory": 512,
+    "maxDecisionAgeTurns": 10
   },
   "swf": {
     "enabled": true,
