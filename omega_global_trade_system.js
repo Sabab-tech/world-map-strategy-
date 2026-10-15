@@ -250,6 +250,9 @@
     };
     if(!r){result.reason='FOREIGN_RELATION_NOT_OBSERVED';return result;}
     if(sanctionsOrWar(r)){result.decision='REJECT';result.reason='WAR_OR_SANCTIONS';return result;}
+    const strategicPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
+    const embargo=strategicPolicy?.isResourceEmbargoed?.(buyer,seller,resourceId);
+    if(embargo?.blocked){result.decision='REJECT';result.reason=embargo.reason||'RESOURCE_EMBARGO_ACTIVE';result.embargoPolicies=embargo.policies||[];return result;}
     if(rel===null){result.reason='RELATION_SCORE_NOT_OBSERVED';return result;}
     if(!result.agreement){result.decision='REJECT';result.reason='TRADE_AGREEMENT_NOT_APPROVED';return result;}
     if(price===null){result.reason='SELLER_MARKET_PRICE_NOT_OBSERVED';return result;}
@@ -448,6 +451,9 @@
     const total=values.sellerValue;
     if(!r)return{ok:false,reason:'RELATION_NOT_OBSERVED'};
     if(sanctionsOrWar(r))return{ok:false,reason:'WAR_OR_SANCTIONS'};
+    const strategicPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
+    const embargo=strategicPolicy?.isResourceEmbargoed?.(req.countryId,req.targetCountryId,req.resourceId);
+    if(embargo?.blocked)return{ok:false,reason:embargo.reason||'RESOURCE_EMBARGO_ACTIVE',policies:embargo.policies||[]};
     if(!agreement(r,req.countryId,req.targetCountryId))return{ok:false,reason:'TRADE_AGREEMENT_NOT_APPROVED'};
     if(capacity!==null&&capacity<=0)return{ok:false,reason:'ROUTE_UNAVAILABLE'};
     if(inv.stock===null)return{ok:false,reason:'SELLER_INVENTORY_NOT_OBSERVED'};
@@ -493,6 +499,9 @@
     if(canonical(auth.sourceCountryId)!==seller)return{accepted:false,reason:'TRADE_SOURCE_COUNTRY_MISMATCH',countryId:seller,sourceCountryId:canonical(auth.sourceCountryId)};
     const buyer=canonical(auth.destinationCountryId);
     if(!buyer||buyer===seller)return{accepted:false,reason:'TRADE_DESTINATION_COUNTRY_INVALID'};
+    const strategicPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
+    const embargo=strategicPolicy?.isResourceEmbargoed?.(buyer,seller,rid);
+    if(embargo?.blocked)return{accepted:false,reason:embargo.reason||'RESOURCE_EMBARGO_ACTIVE',policies:embargo.policies||[]};
     if(!rid||q===null||q<=0)return{accepted:false,reason:'RESOURCE_SETTLEMENT_INPUT_INVALID'};
     if(!inv||typeof inv!=='object')return{accepted:false,reason:'RESOURCE_INVENTORY_NOT_OBSERVED'};
     const k=Object.prototype.hasOwnProperty.call(inv,rid)?rid:Object.keys(inv).find(x=>token(x)===token(rid));
