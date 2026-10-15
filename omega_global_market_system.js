@@ -43,7 +43,7 @@
   };
   function countryValue(c,path){
     const cid=canonical(c),parts=String(path||'').split('.'),domain=parts.shift();let bucket=state()?.[domain];
-    if(bucket&&typeof bucket==='object')bucket=bucket[cid]??bucket[Object.keys(bucket).find(k=>id(k)===cid)];
+    if(bucket&&typeof bucket==='object')bucket=bucket[cid]??bucket[Object.keys(bucket).find(k=>canonical(k)===cid)];
     for(const p of parts){if(bucket==null||!Object.prototype.hasOwnProperty.call(Object(bucket),p))return undefined;bucket=bucket[p];}
     return bucket;
   }
