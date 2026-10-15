@@ -1643,6 +1643,8 @@ function batchFromExtraction(x,record){
   }
   async function extractCountry(c,occurrenceKeys=null){
     install();
+    const strategicPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
+    if(strategicPolicy?.loadRules){const ready=await strategicPolicy.loadRules();if(ready?.status!=='READY')return{status:'BLOCKED',reason:'STRATEGIC_RESOURCE_POLICY_RULES_NOT_READY',detail:ready};}
     const result=dispatch('OMEGA_RESOURCE_EXTRACT_TICK',canonical(c),{occurrenceKeys:Array.isArray(occurrenceKeys)?occurrenceKeys:undefined,correlationId:'RESOURCE-EXTRACT-MANUAL-'+turn()+'-'+canonical(c)});
     publishCommittedExtractionEvents(c,result);
     return result;
@@ -1716,6 +1718,8 @@ function batchFromExtraction(x,record){
       const initialized=await initialize();
       if(!g.__OmegaResourceReserveRegistry||initialized?.status==='FAILED'||initialized?.status==='WAITING_DEPENDENCIES')
         return initialized||{status:'WAITING_DEPENDENCIES'};
+      const strategicPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
+      if(strategicPolicy?.loadRules){const ready=await strategicPolicy.loadRules();if(ready?.status!=='READY')return{status:'FAILED',reason:'STRATEGIC_RESOURCE_POLICY_RULES_NOT_READY',detail:ready};}
       // Recheck after initialization so a concurrent caller cannot start a second extraction pass.
       if(g.__omegaResourceExtractionTurn===t)return{status:'ALREADY_EXTRACTED',turn:t};
       g.__omegaResourceExtractionTurn=t;
