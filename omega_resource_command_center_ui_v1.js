@@ -687,18 +687,20 @@
     const options = '<option value="">Select assessment</option><option value="proceed">Verified / proceed</option>' +
       '<option value="review">Uncertain / review</option><option value="block">Failed / block</option>';
     const form = '<form class="omega-rescc-form" data-search-item data-form="cognitive"><h3>12-question server AI decision gate</h3>' +
-      '<p class="omega-rescc-note">Answers and a country-scoped game snapshot are evaluated by the server-side Gemini AI endpoint. Only a validated AI response can create an approval for high-impact actions. If the API key, model, or response is unavailable, no verdict is recorded and those actions remain blocked. Simulation values and AI recommendations are not real-world measurements or guaranteed facts.</p>' +
+      '<p class="omega-rescc-note">Select exactly which action is being reviewed. Nuclear construction costs and timing come from the ruleset; SWF reviews are bound to the entered treasury amount. A valid server-side Gemini assessment is required, and each approval is limited to one matching action. If the API key, model, or response is unavailable, no verdict is recorded. These are simulation assumptions, not real-world measurements or guaranteed facts.</p>' +
+      '<label class="omega-rescc-question"><span>Action under review</span><select name="operation" required><option value="">Select action</option><option value="POWER_PROJECT">Nuclear baseload construction (2.4 GW ruleset)</option><option value="SWF_CAPITALIZATION">Sovereign wealth fund capitalization</option></select></label>' +
+      '<label class="omega-rescc-question"><span>SWF contribution amount (native treasury units; required only for SWF)</span><input type="number" name="requestedAmount" min="0.01" step="any" placeholder="Leave blank for nuclear construction" /></label>' +
       questions.map(function (q, i) {
         return '<label class="omega-rescc-question"><span>' + (i + 1) + '. ' + esc(q) + '</span>' +
           '<select name="q' + (i + 1) + '" required>' + options + '</select></label>';
-      }).join('') + '<button class="omega-rescc-button" type="submit">Evaluate with server AI</button></form>';
+      }).join('') + '<button class="omega-rescc-button" type="submit">Evaluate selected action with server AI</button></form>';
     const policy = g.OmegaResourceStrategicPolicyRuntime || g.Omega && g.Omega.ResourceStrategicPolicyRuntime;
     const decisions = Array.isArray(resourceBucket(country).cognitiveDecisionLedger) ? resourceBucket(country).cognitiveDecisionLedger : [];
     return card('Cognitive runtime availability', policy && typeof policy.evaluateCognitiveGate === 'function' ? 'LOCAL POLICY PERSISTENCE READY' : (os ? 'COGNITIVE OBJECT FOUND; PERSISTENCE API UNAVAILABLE' : 'NO COGNITIVE GATE API CONFIRMED'),
       '<div class="omega-rescc-grid2">' + kv('Runtime object', os ? 'Available' : null) +
       kv('Policy decision persistence', policy && typeof policy.evaluateCognitiveGate === 'function' ? 'Available' : null) +
       kv('Profile record', profile && profile.identity && (profile.identity.name || profile.identity.officialName)) + '</div>' +
-      '<p class="omega-rescc-note">Only a server-generated AI assessment with a valid authority marker can authorize nuclear construction or SWF capitalization. Player answers alone cannot approve an action. PROCEED is still subject to deterministic blocker checks; REVIEW, BLOCK, expired, missing, or failed assessments prevent the action.</p>', '') +
+      '<p class="omega-rescc-note">A PROCEED verdict is bound to the selected operation and, for SWF, its exact amount. A new high-impact action requires a fresh AI assessment. Player answers alone cannot approve actions. REVIEW, BLOCK, expired, missing, mismatched, or failed assessments prevent the action.</p>', '') +
       form + '<h3 class="omega-rescc-section-title">Persisted strategic gate decisions</h3>' + statusRows(decisions);
   }
   function panelPower(country) {
@@ -1174,8 +1176,17 @@
       if (kind === 'cognitive') {
         const vals = [];
         for (let i = 1; i <= 12; i++) vals.push(String(data.get('q' + i) || '').toLowerCase());
+        const operation = String(data.get('operation') || '').toUpperCase();
+        const requestedAmountText = String(data.get('requestedAmount') || '').trim();
+        const requestedAmount = requestedAmountText === '' ? null : Number(requestedAmountText);
         if (vals.some(function (x) { return ['proceed', 'review', 'block'].indexOf(x) < 0; })) {
           setOutcome('Server AI decision', { status: 'BLOCKED', reason: 'ALL_12_QUESTIONS_REQUIRE_ANSWERS' });
+          return;
+        }
+        if (['POWER_PROJECT', 'SWF_CAPITALIZATION'].indexOf(operation) < 0 ||
+            (operation === 'SWF_CAPITALIZATION' && (!Number.isFinite(requestedAmount) || requestedAmount <= 0)) ||
+            (operation === 'POWER_PROJECT' && requestedAmount !== null)) {
+          setOutcome('Server AI decision', { status: 'BLOCKED', reason: 'DECISION_OPERATION_OR_AMOUNT_INVALID' });
           return;
         }
         const policy = g.OmegaResourceStrategicPolicyRuntime || g.Omega && g.Omega.ResourceStrategicPolicyRuntime;
@@ -1193,7 +1204,7 @@
           response = await g.fetch('/api/resource-decision/ai-evaluate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ countryId: c, decisionId, answers: vals, gameState: aiCountrySnapshot(c) })
+            body: JSON.stringify({ countryId: c, decisionId, operation, requestedAmount, answers: vals, gameState: aiCountrySnapshot(c) })
           });
           body = await response.json();
         } catch (error) {
@@ -1205,7 +1216,12 @@
           ? Number(liveState.simulation.turn)
           : (liveState.turn != null ? Number(liveState.turn) : (liveState.simulationTurn != null ? Number(liveState.simulationTurn) : null));
         const assessedTurn = body && body.context && body.context.simulationTurn != null ? Number(body.context.simulationTurn) : null;
-        const responseMatchesRequest = body && body.decisionId === decisionId && body.context && body.context.countryId === c;
+        const amountMatches = body && body.context &&
+          ((requestedAmount === null && body.context.requestedAmount == null) || Number(body.context.requestedAmount) === requestedAmount);
+        const responseMatchesRequest = body && body.decisionId === decisionId && body.context &&
+          body.context.countryId === c && body.context.operation === operation &&
+          body.assessment && body.assessment.operation === operation && amountMatches &&
+          ((requestedAmount === null && body.assessment.requestedAmount == null) || Number(body.assessment.requestedAmount) === requestedAmount);
         const contextStillCurrent = assessedTurn === null || liveTurn === null || assessedTurn === liveTurn;
         if (!response.ok || !body || body.ok !== true || body.status !== 'COMPLETED' ||
             !responseMatchesRequest || !contextStillCurrent ||
@@ -1223,6 +1239,8 @@
         }
         result = policy.evaluateCognitiveGate(c, {
           decisionId,
+          operation,
+          requestedAmount,
           answers: vals,
           aiAssessment: body.assessment
         });
