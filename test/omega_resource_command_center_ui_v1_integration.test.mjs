@@ -187,3 +187,11 @@ test('cognitive gate uses the server AI endpoint and cannot persist a player-onl
   assert.match(policyRuntime, /SERVER_AI_DECISION_REQUIRED/);
   assert.match(policyRuntime, /aiGenerated!==true/);
 });
+
+test('quota enforcement and remediation follow-up are visible to the player and included in AI context', () => {
+  assert.match(ui, /carbonQuotaEnforcementLedger/);
+  assert.match(ui, /Carbon quota enforcement violations and remediation follow-up/);
+  assert.match(ui, /BLOCKED attempts are kept separately from emissions actually committed|Blocked attempts are kept separately from emissions actually committed/);
+  assert.match(ui, /carbonQuotaEnforcementLedger:.*slice\(-12\)/);
+  assert.match(fs.readFileSync(new URL('../omega_resource_ai_decision_service.js', import.meta.url), 'utf8'), /recentQuotaEnforcement/);
+});
