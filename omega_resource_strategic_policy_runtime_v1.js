@@ -65,7 +65,7 @@ function embargoMatch(p,buyer,seller,rid){
   (issuer===buyer&&(target===seller||target==='*')&&(d==='IMPORT'||d==='BOTH'));
 }
 function isResourceEmbargoed(buyer,seller,resourceId){
- const b=country(buyer),s=country(seller),r=String(resourceId||'').trim();if(!b||!s||!r)return{blocked:false,reason:'INCOMPLETE_SCOPE',policies:[]};
+ const b=country(buyer),s=country(seller),r=String(resourceId||'').trim();if(!b||!s||!r)return{blocked:true,reason:'INCOMPLETE_SCOPE',policies:[]};
  const hits=rowsFor('trade','resourceEmbargoes').filter(p=>embargoMatch(p,b,s,r));
  return{blocked:hits.length>0,reason:hits.length?'RESOURCE_EMBARGO_ACTIVE':null,policies:hits.map(p=>({policyId:p.policyId,issuerCountryId:p.issuerCountryId,targetCountryId:p.targetCountryId,resourceId:p.resourceId,direction:p.direction}))};
 }
@@ -144,7 +144,8 @@ function extractionMultiplier(c,siteId,resourceId,tx){
 }
 function unitScale(unit){
  const scale=rules()?.environmental?.quantityScaleByUnit||{},raw=String(unit||'').toUpperCase().replace(/[ -]+/g,'_');
- if(num(scale[raw])!==null)return num(scale[raw]);const simple=raw.replace(/S$/,'');if(num(scale[simple])!==null)return num(scale[simple]);return num(scale.DEFAULT);
+ if(!raw)return null;
+ if(num(scale[raw])!==null)return num(scale[raw]);const simple=raw.replace(/S$/,'');if(num(scale[simple])!==null)return num(scale[simple]);return null;
 }
 function recordImpactTx(ctx,payload,kind){
  const e=rules()?.environmental,ledgerLimit=configuredLimit('policy','maxEnvironmentalLedgerRows');if(!e?.enabled||ledgerLimit===null||num(e.maximumBatchIntensity)===null||num(e.maximumSiteIndex)===null||num(e.defaultEnvironmentalRisk)===null||num(e.defaultWaterStress)===null||num(e.riskInfluence)===null||num(e.waterStressInfluence)===null||!e.batchImpact||num(e.batchImpact.land)===null||num(e.batchImpact.water)===null||num(e.batchImpact.emissions)===null||num(e.batchImpact.processingWaste)===null)return{accepted:false,reason:'ENVIRONMENTAL_RULES_UNAVAILABLE'};
@@ -213,8 +214,10 @@ function investSite(countryId,payload){
  if(!project)return{accepted:false,reason:'EXPLORATION_PROJECT_NOT_FOUND'};
  if(project.status==='INVESTMENT_APPROVED'||project.status==='COMMISSIONED')return{accepted:true,duplicate:true,project};
  if(project.status!=='DISCOVERED_PENDING_INVESTMENT')return{accepted:false,reason:'DISCOVERY_NOT_COMPLETED'};
- const configuredCost=num(rules()?.exploration?.investmentCostPerProject);if(configuredCost===null)return{accepted:false,reason:'STRATEGIC_POLICY_RULES_NOT_READY'};
- const cost=Math.max(0,num(p.amount)??configuredCost);
+ const configuredCost=num(rules()?.exploration?.investmentCostPerProject);if(configuredCost===null||configuredCost<0)return{accepted:false,reason:'STRATEGIC_POLICY_RULES_NOT_READY'};
+ const suppliedAmount=p.amount===undefined||p.amount===null?configuredCost:num(p.amount);
+ if(suppliedAmount===null||Math.abs(suppliedAmount-configuredCost)>1e-9)return{accepted:false,reason:'EXPLORATION_INVESTMENT_AMOUNT_MISMATCH',requiredAmount:configuredCost};
+ const cost=configuredCost;
  const debit=dispatch('finance','OMEGA_TRADE_FINANCE_DEBIT',c,{amount:cost,reason:'RESOURCE_SITE_INVESTMENT',referenceId:projectId,transactionId:'RESOURCE_INVEST:'+projectId});
  if(debit?.status!=='APPLIED'&&debit?.accepted!==true)return{accepted:false,reason:'TREASURY_INVESTMENT_DEBIT_FAILED',detail:debit};
  const r=dispatch('resource','OMEGA_RESOURCE_EXPLORATION_INVEST_COMMIT',c,{projectId,amount:cost,transactionId:'RESOURCE_INVEST:'+projectId});
