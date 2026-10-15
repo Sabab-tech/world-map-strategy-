@@ -1114,23 +1114,23 @@ window.CountryIOS = {
                 <div class="ios-grid-4">
                     <div class="ios-card">
                         <div class="ios-card-title">AIRPORTS & PORTS</div>
-                        <div class="ios-card-val">135 Intl Airports</div>
-                        <div class="ios-card-sub">52 Deepwater Seaports</div>
+                        <div class="ios-card-val">${this.formatCountryValue(countryKey, ['infrastructure','transport'], ['internationalAirports','airportCount','airports.international','airports'], '')} Intl Airports</div>
+                        <div class="ios-card-sub">${this.formatCountryValue(countryKey, ['infrastructure','transport'], ['deepwaterSeaports','seaportCount','ports.deepwater','seaports'], '')} Deepwater Seaports</div>
                     </div>
                     <div class="ios-card">
                         <div class="ios-card-title">RAIL & HIGHWAYS</div>
-                        <div class="ios-card-val">250,000 km Grid</div>
-                        <div class="ios-card-sub">High-Speed Logistics</div>
+                        <div class="ios-card-val">${this.formatCountryValue(countryKey, ['infrastructure','transport'], ['railHighwayKm','transportNetworkKm','networkLengthKm','infrastructure.roadRailKm'], 'km')} Grid</div>
+                        <div class="ios-card-sub">${this.formatCountryValue(countryKey, ['infrastructure','transport'], ['logisticsSystem.status','highSpeedRail.status','logisticsStatus'])}</div>
                     </div>
                     <div class="ios-card">
                         <div class="ios-card-title">POWER GRID</div>
-                        <div class="ios-card-val">4,200 Terawatt-Hours</div>
-                        <div class="ios-card-sub">Nuclear + Clean Energy 45%</div>
+                        <div class="ios-card-val">${this.formatCountryValue(countryKey, ['energy','infrastructure','economy'], ['annualElectricityGenerationTWh','electricityGenerationTWh','energyProductionTWh','powerSystem.annualTWh'], 'TWh')}</div>
+                        <div class="ios-card-sub">Nuclear + Clean Energy ${this.formatCountryValue(countryKey, ['energy','infrastructure','economy'], ['cleanEnergySharePercent','renewableSharePercent','energyMix.cleanPercent'], '%')}</div>
                     </div>
                     <div class="ios-card">
                         <div class="ios-card-title">TELECOM / 5G</div>
-                        <div class="ios-card-val" style="color:#22c55e;">99.2% Coverage</div>
-                        <div class="ios-card-sub">Quantum Satellite Link</div>
+                        <div class="ios-card-val" style="color:#22c55e;">${this.formatCountryValue(countryKey, ['telecom','infrastructure','technology'], ['coveragePercent','mobileCoveragePercent','network.coveragePercent'], '%')} Coverage</div>
+                        <div class="ios-card-sub">${this.formatCountryValue(countryKey, ['telecom','technology','infrastructure'], ['networkTechnology','telecomGeneration','satelliteLink.status'])}</div>
                     </div>
                 </div>
 
@@ -1139,7 +1139,7 @@ window.CountryIOS = {
                     <div style="background:rgba(255,255,255,0.1); border-radius:6px; height:18px; overflow:hidden; margin-top:6px;">
                         <div style="width:92%; background:linear-gradient(90deg, #00e5ff, #22c55e); height:100%;"></div>
                     </div>
-                    <span class="ios-card-sub" style="margin-top:4px;">Logistics Network Operating Efficiency: 92%</span>
+                    <span class="ios-card-sub" style="margin-top:4px;">Logistics Network Operating Efficiency: ${this.formatCountryValue(countryKey, ['transport','infrastructure'], ['logisticsEfficiencyPercent','operatingEfficiencyPercent','logistics.efficiencyPercent'], '%')}</span>
                 </div>
             </div>
         `;
@@ -1154,27 +1154,27 @@ window.CountryIOS = {
                 <div class="ios-grid-3">
                     <div class="ios-card">
                         <div class="ios-card-title">AI & QUANTUM COMPUTE</div>
-                        <div class="ios-card-val" style="color:#ffd700;">TIER 1 LEADERSHIP</div>
-                        <div class="ios-card-sub">Autonomous Swarm Systems</div>
+                        <div class="ios-card-val" style="color:#ffd700;">${this.formatCountryValue(countryKey, ['technology','research'], ['aiMaturityTier','aiTechnologyTier','quantumComputing.tier','technologyTier'])}</div>
+                        <div class="ios-card-sub">${this.formatCountryValue(countryKey, ['technology','research'], ['autonomousSystems.status','autonomousSwarmSystems.status','swarmSystems'])}</div>
                     </div>
                     <div class="ios-card">
                         <div class="ios-card-title">SPACE PROGRAM</div>
-                        <div class="ios-card-val">Lunar & Orbital Stations</div>
-                        <div class="ios-card-sub">1,400 Active Satellites</div>
+                        <div class="ios-card-val">${this.formatCountryValue(countryKey, ['technology','space'], ['spaceProgram.status','orbitalStations.status','lunarProgram.status'])}</div>
+                        <div class="ios-card-sub">${this.formatCountryValue(countryKey, ['technology','space','infrastructure'], ['activeSatellites','satellites.active','spaceProgram.activeSatellites'])} Active Satellites</div>
                     </div>
                     <div class="ios-card">
                         <div class="ios-card-title">CYBER SECURITY GRID</div>
-                        <div class="ios-card-val" style="color:#22c55e;">QUANTUM ENCRYPTED</div>
+                        <div class="ios-card-val" style="color:#22c55e;">${this.formatCountryValue(countryKey, ['technology','intelligence'], ['cyberSecurity.encryptionStatus','cyberSecurityStatus','encryptionStatus'])}</div>
                     </div>
                 </div>
 
                 <div class="ios-card">
                     <div class="ios-card-title" style="color:#00e5ff;">RESEARCH PROGRESS TIMELINE</div>
                     <div style="display:flex; justify-content:space-between; margin-top:10px; font-size:11px; color:#cbd5e1;">
-                        <div>🤖 AI Robotics (100%)</div>
-                        <div>⚡ Fusion Energy (84%)</div>
-                        <div>🚀 Hypersonic Flight (92%)</div>
-                        <div>🧪 Bio-Genetics (78%)</div>
+                        <div>🤖 AI Robotics (${this.formatCountryValue(countryKey, ['technology','research'], ['research.aiRobotics.progressPercent','aiRobotics.progressPercent','researchProgress.aiRobotics'], '%')})</div>
+                        <div>⚡ Fusion Energy (${this.formatCountryValue(countryKey, ['technology','research','energy'], ['research.fusionEnergy.progressPercent','fusionEnergy.progressPercent','researchProgress.fusionEnergy'], '%')})</div>
+                        <div>🚀 Hypersonic Flight (${this.formatCountryValue(countryKey, ['technology','research'], ['research.hypersonicFlight.progressPercent','hypersonicFlight.progressPercent','researchProgress.hypersonicFlight'], '%')})</div>
+                        <div>🧪 Bio-Genetics (${this.formatCountryValue(countryKey, ['technology','research','health'], ['research.bioGenetics.progressPercent','bioGenetics.progressPercent','researchProgress.bioGenetics'], '%')})</div>
                     </div>
                 </div>
 
@@ -1234,22 +1234,22 @@ window.CountryIOS = {
                 <div class="ios-grid-4">
                     <div class="ios-card">
                         <div class="ios-card-title">EDUCATION INDEX</div>
-                        <div class="ios-card-val">0.94 (Tier 1)</div>
-                        <div class="ios-card-sub">Literacy Rate: 99%</div>
+                        <div class="ios-card-val">${this.formatCountryValue(countryKey, ['education','society'], ['educationIndex','education.index','index'])}</div>
+                        <div class="ios-card-sub">Literacy Rate: ${this.formatCountryValue(countryKey, ['education','society','population'], ['literacyRatePercent','literacyRate','literacy.ratePercent'], '%')}</div>
                     </div>
                     <div class="ios-card">
                         <div class="ios-card-title">HEALTHCARE SYSTEM</div>
-                        <div class="ios-card-val">Advanced Universal</div>
-                        <div class="ios-card-sub">Life Expectancy: 81 Yrs</div>
+                        <div class="ios-card-val">${this.formatCountryValue(countryKey, ['health','society'], ['healthcareSystem','healthSystem.status','healthcare.status'])}</div>
+                        <div class="ios-card-sub">Life Expectancy: ${this.formatCountryValue(countryKey, ['health','society','population'], ['lifeExpectancyYears','lifeExpectancy','demographics.lifeExpectancy'], 'years')}</div>
                     </div>
                     <div class="ios-card">
                         <div class="ios-card-title">HAPPINESS INDEX</div>
-                        <div class="ios-card-val" style="color:#22c55e;">78.4 / 100</div>
-                        <div class="ios-card-sub">Public Morale High</div>
+                        <div class="ios-card-val" style="color:#22c55e;">${this.formatCountryValue(countryKey, ['society','population'], ['happinessIndex','lifeSatisfactionIndex','publicMorale'])}</div>
+                        <div class="ios-card-sub">Public Morale: ${this.formatCountryValue(countryKey, ['society','politics'], ['publicMorale','publicSatisfaction','approvalRating'], '%')}</div>
                     </div>
                     <div class="ios-card">
                         <div class="ios-card-title">URBANIZATION RATE</div>
-                        <div class="ios-card-val">82.5%</div>
+                        <div class="ios-card-val">${this.formatCountryValue(countryKey, ['society','population'], ['urbanizationRatePercent','urbanizationRate','urbanization.ratePercent'], '%')}</div>
                         <div class="ios-card-sub">Metro Demographics</div>
                     </div>
                 </div>
@@ -2128,23 +2128,23 @@ window.addEventListener('RESOURCE_STATE_UPDATED', () => {
                 <div class="ios-grid-4">
                     <div class="ios-card">
                         <div class="ios-card-title">AIRPORTS & PORTS</div>
-                        <div class="ios-card-val">135 Intl Airports</div>
-                        <div class="ios-card-sub">52 Deepwater Seaports</div>
+                        <div class="ios-card-val">${this.formatCountryValue(countryKey, ['infrastructure','transport'], ['internationalAirports','airportCount','airports.international','airports'], '')} Intl Airports</div>
+                        <div class="ios-card-sub">${this.formatCountryValue(countryKey, ['infrastructure','transport'], ['deepwaterSeaports','seaportCount','ports.deepwater','seaports'], '')} Deepwater Seaports</div>
                     </div>
                     <div class="ios-card">
                         <div class="ios-card-title">RAIL & HIGHWAYS</div>
-                        <div class="ios-card-val">250,000 km Grid</div>
-                        <div class="ios-card-sub">High-Speed Logistics</div>
+                        <div class="ios-card-val">${this.formatCountryValue(countryKey, ['infrastructure','transport'], ['railHighwayKm','transportNetworkKm','networkLengthKm','infrastructure.roadRailKm'], 'km')} Grid</div>
+                        <div class="ios-card-sub">${this.formatCountryValue(countryKey, ['infrastructure','transport'], ['logisticsSystem.status','highSpeedRail.status','logisticsStatus'])}</div>
                     </div>
                     <div class="ios-card">
                         <div class="ios-card-title">POWER GRID</div>
-                        <div class="ios-card-val">4,200 Terawatt-Hours</div>
-                        <div class="ios-card-sub">Nuclear + Clean Energy 45%</div>
+                        <div class="ios-card-val">${this.formatCountryValue(countryKey, ['energy','infrastructure','economy'], ['annualElectricityGenerationTWh','electricityGenerationTWh','energyProductionTWh','powerSystem.annualTWh'], 'TWh')}</div>
+                        <div class="ios-card-sub">Nuclear + Clean Energy ${this.formatCountryValue(countryKey, ['energy','infrastructure','economy'], ['cleanEnergySharePercent','renewableSharePercent','energyMix.cleanPercent'], '%')}</div>
                     </div>
                     <div class="ios-card">
                         <div class="ios-card-title">TELECOM / 5G</div>
-                        <div class="ios-card-val" style="color:#22c55e;">99.2% Coverage</div>
-                        <div class="ios-card-sub">Quantum Satellite Link</div>
+                        <div class="ios-card-val" style="color:#22c55e;">${this.formatCountryValue(countryKey, ['telecom','infrastructure','technology'], ['coveragePercent','mobileCoveragePercent','network.coveragePercent'], '%')} Coverage</div>
+                        <div class="ios-card-sub">${this.formatCountryValue(countryKey, ['telecom','technology','infrastructure'], ['networkTechnology','telecomGeneration','satelliteLink.status'])}</div>
                     </div>
                 </div>
 
@@ -2153,7 +2153,7 @@ window.addEventListener('RESOURCE_STATE_UPDATED', () => {
                     <div style="background:rgba(255,255,255,0.1); border-radius:6px; height:18px; overflow:hidden; margin-top:6px;">
                         <div style="width:92%; background:linear-gradient(90deg, #00e5ff, #22c55e); height:100%;"></div>
                     </div>
-                    <span class="ios-card-sub" style="margin-top:4px;">Logistics Network Operating Efficiency: 92%</span>
+                    <span class="ios-card-sub" style="margin-top:4px;">Logistics Network Operating Efficiency: ${this.formatCountryValue(countryKey, ['transport','infrastructure'], ['logisticsEfficiencyPercent','operatingEfficiencyPercent','logistics.efficiencyPercent'], '%')}</span>
                 </div>
             </div>
         `;
@@ -2168,27 +2168,27 @@ window.addEventListener('RESOURCE_STATE_UPDATED', () => {
                 <div class="ios-grid-3">
                     <div class="ios-card">
                         <div class="ios-card-title">AI & QUANTUM COMPUTE</div>
-                        <div class="ios-card-val" style="color:#ffd700;">TIER 1 LEADERSHIP</div>
-                        <div class="ios-card-sub">Autonomous Swarm Systems</div>
+                        <div class="ios-card-val" style="color:#ffd700;">${this.formatCountryValue(countryKey, ['technology','research'], ['aiMaturityTier','aiTechnologyTier','quantumComputing.tier','technologyTier'])}</div>
+                        <div class="ios-card-sub">${this.formatCountryValue(countryKey, ['technology','research'], ['autonomousSystems.status','autonomousSwarmSystems.status','swarmSystems'])}</div>
                     </div>
                     <div class="ios-card">
                         <div class="ios-card-title">SPACE PROGRAM</div>
-                        <div class="ios-card-val">Lunar & Orbital Stations</div>
-                        <div class="ios-card-sub">1,400 Active Satellites</div>
+                        <div class="ios-card-val">${this.formatCountryValue(countryKey, ['technology','space'], ['spaceProgram.status','orbitalStations.status','lunarProgram.status'])}</div>
+                        <div class="ios-card-sub">${this.formatCountryValue(countryKey, ['technology','space','infrastructure'], ['activeSatellites','satellites.active','spaceProgram.activeSatellites'])} Active Satellites</div>
                     </div>
                     <div class="ios-card">
                         <div class="ios-card-title">CYBER SECURITY GRID</div>
-                        <div class="ios-card-val" style="color:#22c55e;">QUANTUM ENCRYPTED</div>
+                        <div class="ios-card-val" style="color:#22c55e;">${this.formatCountryValue(countryKey, ['technology','intelligence'], ['cyberSecurity.encryptionStatus','cyberSecurityStatus','encryptionStatus'])}</div>
                     </div>
                 </div>
 
                 <div class="ios-card">
                     <div class="ios-card-title" style="color:#00e5ff;">RESEARCH PROGRESS TIMELINE</div>
                     <div style="display:flex; justify-content:space-between; margin-top:10px; font-size:11px; color:#cbd5e1;">
-                        <div>🤖 AI Robotics (100%)</div>
-                        <div>⚡ Fusion Energy (84%)</div>
-                        <div>🚀 Hypersonic Flight (92%)</div>
-                        <div>🧪 Bio-Genetics (78%)</div>
+                        <div>🤖 AI Robotics (${this.formatCountryValue(countryKey, ['technology','research'], ['research.aiRobotics.progressPercent','aiRobotics.progressPercent','researchProgress.aiRobotics'], '%')})</div>
+                        <div>⚡ Fusion Energy (${this.formatCountryValue(countryKey, ['technology','research','energy'], ['research.fusionEnergy.progressPercent','fusionEnergy.progressPercent','researchProgress.fusionEnergy'], '%')})</div>
+                        <div>🚀 Hypersonic Flight (${this.formatCountryValue(countryKey, ['technology','research'], ['research.hypersonicFlight.progressPercent','hypersonicFlight.progressPercent','researchProgress.hypersonicFlight'], '%')})</div>
+                        <div>🧪 Bio-Genetics (${this.formatCountryValue(countryKey, ['technology','research','health'], ['research.bioGenetics.progressPercent','bioGenetics.progressPercent','researchProgress.bioGenetics'], '%')})</div>
                     </div>
                 </div>
 
@@ -2248,22 +2248,22 @@ window.addEventListener('RESOURCE_STATE_UPDATED', () => {
                 <div class="ios-grid-4">
                     <div class="ios-card">
                         <div class="ios-card-title">EDUCATION INDEX</div>
-                        <div class="ios-card-val">0.94 (Tier 1)</div>
-                        <div class="ios-card-sub">Literacy Rate: 99%</div>
+                        <div class="ios-card-val">${this.formatCountryValue(countryKey, ['education','society'], ['educationIndex','education.index','index'])}</div>
+                        <div class="ios-card-sub">Literacy Rate: ${this.formatCountryValue(countryKey, ['education','society','population'], ['literacyRatePercent','literacyRate','literacy.ratePercent'], '%')}</div>
                     </div>
                     <div class="ios-card">
                         <div class="ios-card-title">HEALTHCARE SYSTEM</div>
-                        <div class="ios-card-val">Advanced Universal</div>
-                        <div class="ios-card-sub">Life Expectancy: 81 Yrs</div>
+                        <div class="ios-card-val">${this.formatCountryValue(countryKey, ['health','society'], ['healthcareSystem','healthSystem.status','healthcare.status'])}</div>
+                        <div class="ios-card-sub">Life Expectancy: ${this.formatCountryValue(countryKey, ['health','society','population'], ['lifeExpectancyYears','lifeExpectancy','demographics.lifeExpectancy'], 'years')}</div>
                     </div>
                     <div class="ios-card">
                         <div class="ios-card-title">HAPPINESS INDEX</div>
-                        <div class="ios-card-val" style="color:#22c55e;">78.4 / 100</div>
-                        <div class="ios-card-sub">Public Morale High</div>
+                        <div class="ios-card-val" style="color:#22c55e;">${this.formatCountryValue(countryKey, ['society','population'], ['happinessIndex','lifeSatisfactionIndex','publicMorale'])}</div>
+                        <div class="ios-card-sub">Public Morale: ${this.formatCountryValue(countryKey, ['society','politics'], ['publicMorale','publicSatisfaction','approvalRating'], '%')}</div>
                     </div>
                     <div class="ios-card">
                         <div class="ios-card-title">URBANIZATION RATE</div>
-                        <div class="ios-card-val">82.5%</div>
+                        <div class="ios-card-val">${this.formatCountryValue(countryKey, ['society','population'], ['urbanizationRatePercent','urbanizationRate','urbanization.ratePercent'], '%')}</div>
                         <div class="ios-card-sub">Metro Demographics</div>
                     </div>
                 </div>
