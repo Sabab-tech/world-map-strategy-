@@ -277,7 +277,12 @@ test('high-impact cognitive gate requires a server AI verdict and persists it id
  assert.equal(response.decision.gateScope,'STRATEGIC_HIGH_IMPACT_OPERATIONS');
  assert.equal(response.decision.authority,'OMEGA_SERVER_RESOURCE_DECISION_AI');
  assert.equal(response.decision.modelDecision,'PROCEED');
+ assert.equal(response.decision.operation,'POWER_PROJECT');
+ assert.equal(response.decision.projectType,'NUCLEAR_BASELOAD');
  assert.equal(h.state.resource.BGD.cognitiveDecisionLedger.length,1);
+ const crossOperation=api.capitalizeSovereignWealthFund('BGD',{transactionId:'SWF-CAP-CROSS-OP',amount:200});
+ assert.equal(crossOperation.accepted,false);
+ assert.equal(crossOperation.reason,'COGNITIVE_GATE_OPERATION_MISMATCH');
  const replay=api.evaluateCognitiveGate('BGD',payload);
  assert.equal(replay.duplicate,true);
  assert.equal(h.state.resource.BGD.cognitiveDecisionLedger.length,1);
@@ -308,6 +313,9 @@ test('nuclear baseload construction debits treasury, commissions only by turns a
  assert.equal(h.state.finance.BGD.available,1000000000);
  const repeat=api.startPowerProject('BGD',{projectId:'POWER-PROJECT-2400',projectType:'NUCLEAR_BASELOAD'});
  assert.equal(repeat.duplicate,true,'same project request must not debit treasury twice');
+ const secondProject=api.startPowerProject('BGD',{projectId:'POWER-PROJECT-2400-SECOND',projectType:'NUCLEAR_BASELOAD'});
+ assert.equal(secondProject.accepted,false);
+ assert.equal(secondProject.reason,'COGNITIVE_GATE_APPROVAL_ALREADY_USED');
  for(let t=2;t<=6;t++){h.state.simulation.turn=t;api.processPowerCountry('BGD');}
  assert.equal(h.state.resource.BGD.powerProjects[0].status,'COMMISSIONED');
  assert.equal(h.state.resource.BGD.powerAssets[0].status,'IDLE_CARBON_QUOTA');
@@ -349,6 +357,9 @@ test('sovereign wealth fund capitalization debits treasury once and persists con
  const duplicate=api.capitalizeSovereignWealthFund('BGD',{transactionId:'SWF-CAP-1',amount:200});
  assert.equal(duplicate.duplicate,true);
  assert.equal(h.state.finance.BGD.available,300,'retry must not debit treasury twice');
+ const approvalReuse=api.capitalizeSovereignWealthFund('BGD',{transactionId:'SWF-CAP-SECOND',amount:200});
+ assert.equal(approvalReuse.accepted,false);
+ assert.equal(approvalReuse.reason,'COGNITIVE_GATE_APPROVAL_ALREADY_USED');
  const conflict=api.capitalizeSovereignWealthFund('BGD',{transactionId:'SWF-CAP-1',amount:250});
  assert.equal(conflict.accepted,false);
  assert.equal(conflict.reason,'SWF_TRANSACTION_ID_CONFLICT');
