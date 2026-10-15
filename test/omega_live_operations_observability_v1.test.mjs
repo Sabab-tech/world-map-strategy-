@@ -151,3 +151,39 @@ test('no trend is emitted for a single observed turn or missing numeric data', (
   (listeners.get('OMEGA_SIMULATION_TURN_COMMITTED')||[]).forEach(fn=>fn({detail:{turn:3}}));
   assert.deepEqual(JSON.parse(JSON.stringify(sandbox.OmegaLiveOpsObservability.getTrendSeries('BGD','economy'))), []);
 });
+
+
+test('country resource and diplomacy panels never substitute example facilities, rates or relationship nodes', () => {
+  const source = read('country-ios.js');
+  const forbidden = [
+    'Bibiyana Mega Field (940 MMSCFD)',
+    'Bay of Bengal Methane Hydrates (17-25 TCF)',
+    'Rooppur VVER-1200 Nuclear Power Plant (2.4 GW)',
+    'Matarbari Deep Sea Port',
+    'Eastern Refinery Ltd (ERL-2)',
+    '593 WORLD DEPOSITS',
+    'PARTS 01–13 ACTIVE',
+    '28 Nations',
+    '94.2 Score',
+    '175 Global Embassies',
+    'EXPAND (+25%)',
+    'SPR (+50K)',
+    '0-18 Yrs (18%)',
+    '19-64 Yrs (62%)',
+    '65+ Yrs (20%)'
+  ];
+  for (const value of forbidden) assert.equal(source.includes(value), false, 'removed fabricated UI value: ' + value);
+  assert.match(source, /DRAWDOWN UNAVAILABLE/);
+  assert.match(source, /REQUEST CAPACITY/);
+  assert.match(source, /REQUEST SPR BUFFER/);
+  assert.match(source, /No bilateral relationship records are available/);
+});
+test('resource authoritative adapter preserves unknown numeric values and only reports observed request progress', () => {
+  const source = read('omega_resource_authoritative_adapter.js');
+  assert.match(source, /if \(value === null \|\| value === undefined \|\| value === ''\) return null/);
+  assert.match(source, /out\.progress = numberOrNull\(out\.progress\);/);
+  assert.doesNotMatch(source, /out\.progress = numberOrNull\(out\.progress\) === null \? 0/);
+  assert.match(source, /strategicReserve=strategicReserveState\?valueByToken\(strategicReserveState\.availableByResource,rid\):null/);
+  assert.match(source, /No stock was fabricated or transferred/);
+  assert.match(source, /Factory capacity, treasury and project state were not changed/);
+});
