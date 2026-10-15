@@ -24,6 +24,15 @@ const gameState = {
       { transactionId: 'E2', quotaId: 'Q-BGD', periodIndex: 0, quantityTonnesCo2e: 20, unit: 'TONNES_CO2E' },
       { transactionId: 'OTHER', quotaId: 'Q-OLD', periodIndex: 0, quantityTonnesCo2e: 1000, unit: 'TONNES_CO2E' }
     ],
+    carbonQuotaEnforcementLedger: [{
+      violationId: 'V-BGD-1', quotaId: 'Q-BGD', turn: 9, source: 'RESOURCE_EXTRACTION',
+      sourceId: 'SITE1', transactionId: 'E3', siteId: 'SITE1', resourceId: 'coal',
+      requestedTonnesCo2e: 50, usedTonnesCo2e: 90, allowanceTonnesCo2e: 100,
+      projectedTonnesCo2e: 140, reason: 'CARBON_QUOTA_EXCEEDED',
+      enforcementAction: 'ACTIVITY_BLOCKED_BEFORE_EMISSION_COMMIT',
+      productionConsequence: 'EXTRACTION_OR_PROCESSING_BLOCKED',
+      remediationFollowUp: 'MONITOR_SITE_IMPACT', status: 'BLOCKED'
+    }],
     environmentalImpact: { revision: 2, bySite: { SITE1: { siteId: 'SITE1', landIndex: 5, waterIndex: 2, wasteIndex: 1 } } },
     powerProjects: [{ projectId: 'P1', status: 'UNDER_CONSTRUCTION', capacityMw: 2400, privateField: 'must not leak' }]
   }, SAU: { inventory: { crude_oil: 900000 } } }
@@ -41,6 +50,8 @@ test('country context is bounded, country-scoped, and preserves unknown values',
   assert.deepEqual(context.inventory, { uranium: 12, iron_ore: 90 });
   assert.equal(context.carbonQuota.currentPeriodUsedTonnesCo2e, 30);
   assert.equal(context.carbonQuota.remainingAllowanceTonnesCo2e, 70);
+  assert.equal(context.recentQuotaEnforcement[0].violationId, 'V-BGD-1');
+  assert.equal(context.recentQuotaEnforcement[0].reason, 'CARBON_QUOTA_EXCEEDED');
   assert.equal(context.powerProjects[0].privateField, undefined);
   assert.equal(context.inventory.crude_oil, undefined);
   assert.equal(context.treasury.currencyCode, 'BDT');
