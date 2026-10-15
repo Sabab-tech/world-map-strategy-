@@ -113,7 +113,7 @@ test('runtime projection reads real ledgers and records turn-based observations 
   commit(2);
 
   const api = sandbox.OmegaLiveOpsObservability;
-  assert.equal(api.VERSION, '1.1.0');
+  assert.equal(api.VERSION, '1.2.0');
   const data = api.snapshot();
   assert.equal(data.mines.length, 1);
   assert.equal(data.mines[0].siteId, 'MINE-A');
@@ -263,4 +263,16 @@ test('Live Operations joins canonical site profiles to shared country state by c
   assert.equal(snapshot.summary.currentTurnMineOutputs, 1);
   assert.equal(snapshot.mines.filter(row => row.siteId === 'SITE-BGD-1').length, 1,
     'a site in the canonical registry and Game.state must merge by canonical country + site ID');
+});
+
+
+test('Live Operations bounds event/turn work and preserves scroll during refreshes', () => {
+  const source = read('omega_live_operations_observability_v1.js');
+  assert.ok(source.includes('function scheduleRender()'));
+  assert.ok(source.includes('if (panelOpen) scheduleRender();'));
+  assert.ok(source.includes('const observe = new Set([playerCountry(), selectedCountry()])'));
+  assert.ok(source.includes('renderScheduleHandle = g.setTimeout'));
+  assert.ok(source.includes('panel.scrollTop = scrollTop'));
+  assert.ok(source.includes('}, 15000);'));
+  assert.equal(source.includes("if (panelOpen) { buildCountrySelect(); sampleAll(); render(); }"), false);
 });

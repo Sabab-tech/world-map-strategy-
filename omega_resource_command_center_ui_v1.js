@@ -1,10 +1,10 @@
-/* OMEGA Resource Command Center UI v1.0.0
+/* OMEGA Resource Command Center UI v1.1.0
  * Binds all sixteen Resource Ministry cards to scoped live-data panels.
  * Actions report authoritative runtime outcomes; unavailable systems never report success.
  */
 (function (g) {
   'use strict';
-  const VERSION = '1.0.0';
+  const VERSION = '1.1.0';
   const PANELS = [
     { id: 'matrix', num: '01', title: 'Unit standards & metrology' },
     { id: 'ontology', num: '02', title: 'Commodity ontology' },
@@ -176,9 +176,8 @@
       return card(titleFn(row), row.status || row.operationalStatus || '', bodyFn(row), '');
     }).join('');
   }
-  function diagnosticCard(title, value) {
-    return card(title, 'RUNTIME DIAGNOSTIC', '<pre class="omega-rescc-json">' + shortJson(value) + '</pre>', '');
-  }
+  // Raw runtime objects are for diagnostics/API consumers, not the player-facing screen.
+  function diagnosticCard() { return ''; }
   function statusRows(list) {
     if (!Array.isArray(list) || !list.length) return empty('No requests or events have been recorded for this country.');
     return list.slice(-80).reverse().map(function (row) {
@@ -698,19 +697,20 @@
     }
   }
   function css() {
-    return '.omega-rescc-shell{width:96vw;max-width:1440px;height:92vh;max-height:980px;display:flex;flex-direction:column;overflow:hidden;background:#07111f;color:#e2e8f0;border:1px solid #1e7890;border-radius:14px;box-shadow:0 18px 64px #000b;font:13px/1.45 system-ui,sans-serif}' +
+    return '.omega-rescc-shell{width:96vw;max-width:1440px;height:92vh;max-height:980px;display:flex;flex-direction:column;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;background:#07111f;color:#e2e8f0;border:1px solid #1e7890;border-radius:14px;box-shadow:0 18px 64px #000b;font:13px/1.45 system-ui,sans-serif}' +
       '.omega-rescc-top{padding:13px 16px;background:#0b1b2c;border-bottom:1px solid #1e4560;display:flex;flex-direction:column;gap:10px;flex-shrink:0}' +
       '.omega-rescc-heading{display:flex;justify-content:space-between;align-items:center;gap:12px}' +
       '.omega-rescc-heading h2{font-size:16px;margin:0;color:#67e8f9;letter-spacing:.03em}' +
       '.omega-rescc-headtools{display:flex;gap:7px;align-items:center;flex-wrap:wrap}' +
       '.omega-rescc-input,.omega-rescc-form input,.omega-rescc-form select,.omega-rescc-top select{background:#030b15;color:#f1f5f9;border:1px solid #334b60;border-radius:6px;padding:8px;min-width:0;font:inherit}' +
       '.omega-rescc-search{flex:1;min-width:160px}' +
-      '.omega-rescc-nav{display:flex;gap:5px;overflow-x:auto;padding:2px 0 4px;scrollbar-width:thin}' +
-      '.omega-rescc-nav button{white-space:nowrap;background:#0a1625;color:#a8c3d3;border:1px solid #253b4f;border-radius:6px;padding:7px 9px;cursor:pointer;font:inherit;font-size:11px}' +
-      '.omega-rescc-nav button[aria-current=true]{background:#0e7490;color:#fff;border-color:#67e8f9}' +
+      '.omega-rescc-nav{display:flex;align-items:center;gap:8px;min-width:0;padding:2px 0}' +
+      '.omega-rescc-panel-label{flex:0 0 auto;color:#a8c3d3;font-size:11px;white-space:nowrap}' +
+      '.omega-rescc-nav select{flex:1;min-width:0;max-width:100%;background:#030b15;color:#f1f5f9;border:1px solid #334b60;border-radius:6px;padding:8px;font:inherit}' +
       '.omega-rescc-status{padding:9px 16px;background:#0a1523;border-bottom:1px solid #21364b;color:#a5f3fc;font-size:12px;flex-shrink:0}' +
-      '.omega-rescc-content{overflow:auto;padding:14px;display:flex;flex-direction:column;gap:10px}' +
-      '.omega-rescc-note,.omega-rescc-muted{color:#9fb3c8;font-size:12px;margin:0}' +
+      '.omega-rescc-content{flex:0 0 auto;min-height:0;min-width:0;overflow:visible;padding:14px;display:flex;flex-direction:column;gap:10px}' +
+      '.omega-rescc-note{display:none!important}' +
+      '.omega-rescc-muted{color:#9fb3c8;font-size:12px;margin:0}' +
       '.omega-rescc-warning{border-left:3px solid #f59e0b;background:#251b0b;color:#fde68a;padding:9px 11px;border-radius:4px;font-size:12px;margin:7px 0}' +
       '.omega-rescc-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}' +
       '.omega-rescc-metrics>div{border:1px solid #263d51;background:#0a1a2b;border-radius:8px;padding:11px;display:flex;flex-direction:column;gap:3px;min-width:0}' +
@@ -760,6 +760,10 @@
         if (event.target && event.target.id === 'omega-rescc-search') applySearch(event.target.value);
       });
       modal.addEventListener('change', function (event) {
+        if (event.target && event.target.id === 'omega-rescc-panel-select') {
+          openPanel(event.target.value);
+          return;
+        }
         if (event.target && event.target.id === 'omega-rescc-country') {
           countryId = activeCountry(event.target.value);
           lastOutcome = '';
@@ -796,23 +800,23 @@
     const options = countryList().map(function (c) {
       return '<option value="' + esc(c) + '"' + (c === countryId ? ' selected' : '') + '>' + esc(c) + '</option>';
     }).join('');
-    const nav = PANELS.map(function (p) {
-      return '<button type="button" data-panel="' + p.id + '" aria-current="' + (p.id === activePanel ? 'true' : 'false') + '">' +
-        p.num + ' · ' + esc(p.title) + '</button>';
+    const navOptions = PANELS.map(function (p) {
+      return '<option value="' + p.id + '"' + (p.id === activePanel ? ' selected' : '') + '>' +
+        p.num + ' · ' + esc(p.title) + '</option>';
     }).join('');
-    modal.innerHTML = '<style>' + css() + '</style><div class="omega-rescc-shell" role="dialog" aria-modal="true" aria-label="OMEGA Resource Command Center">' +
-      '<div class="omega-rescc-top"><div class="omega-rescc-heading"><h2>OMEGA RESOURCE COMMAND CENTER · ' + esc(VERSION) + '</h2>' +
+    modal.innerHTML = '<style>' + css() + '</style><div class="omega-rescc-shell" role="dialog" aria-modal="true" aria-label="Resource Command Center">' +
+      '<div class="omega-rescc-top"><div class="omega-rescc-heading"><h2>Resource Command Center</h2>' +
       '<div class="omega-rescc-headtools"><select id="omega-rescc-country" aria-label="Country scope">' + options + '</select>' +
       '<button type="button" class="omega-rescc-button" data-action="refresh-panel">Refresh</button>' +
       '<button type="button" class="omega-rescc-button" data-action="close">Close</button></div></div>' +
-      '<div class="omega-rescc-headtools"><input id="omega-rescc-search" class="omega-rescc-input omega-rescc-search" type="search" placeholder="Search the current panel…" aria-label="Search current panel">' +
-      '<span class="omega-rescc-muted">Scope: ' + esc(countryId) + '</span></div><nav class="omega-rescc-nav" aria-label="Sixteen resource command panels">' + nav + '</nav></div>' +
-      '<div id="omega-rescc-status" class="omega-rescc-status">' + esc(lastOutcome || ('Panel: ' + viewTitle(activePanel) + ' · Live state is read when available; missing data is not converted to zero.')) + '</div>' +
+      '<div class="omega-rescc-headtools"><input id="omega-rescc-search" class="omega-rescc-input omega-rescc-search" type="search" placeholder="Search this section…" aria-label="Search current section"></div>' +
+      '<nav class="omega-rescc-nav" aria-label="Resource section selector"><label class="omega-rescc-panel-label" for="omega-rescc-panel-select">Section</label><select id="omega-rescc-panel-select" aria-label="Resource section">' + navOptions + '</select></nav></div>' +
+      (lastOutcome ? '<div id="omega-rescc-status" class="omega-rescc-status" role="status">' + esc(lastOutcome) + '</div>' : '') +
       '<main id="omega-rescc-content" class="omega-rescc-content"><h3 class="omega-rescc-section-title">' + esc(viewTitle(activePanel)) + '</h3>' +
       panelContent(activePanel, countryId) + '</main></div>';
     modal.style.display = 'flex';
   }
-  function openPanel(panel) { render(countryId, panel); }
+  function openPanel(panel) { lastOutcome = ''; render(countryId, panel); }
   function close() {
     const modal = g.document && g.document.getElementById('gsrsk-intelligence-modal');
     if (modal) modal.style.display = 'none';
