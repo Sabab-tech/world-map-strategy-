@@ -91,7 +91,20 @@ test('all sixteen resource panels are registered, selectable and safe to render'
 });
 
 test('legacy card names disclose feature gaps instead of claiming unsupported actions', () => {
+  assert.match(ui,/p01: 'matrix'/);
+  assert.match(ui,/p02: 'ontology'/);
+  assert.match(ui,/p03: 'reserves'/);
+  assert.match(ui,/p04: 'deposits'/);
   assert.match(ui,/p05: 'extraction'/);
+  assert.match(ui,/p06: 'processing'/);
+  assert.match(ui,/p07: 'inventory'/);
+  assert.match(ui,/p08: 'logistics'/);
+  assert.match(ui,/p09: 'industrial'/);
+  assert.match(ui,/p10: 'market'/);
+  assert.match(ui,/p11: 'trade'/);
+  assert.match(ui,/p12: 'value'/);
+  assert.match(ui,/p13: 'cascade'/);
+  assert.match(ui,/p14: 'cognitive'/);
   assert.match(ui,/p06: 'processing'/);
   assert.match(ui,/p15: 'power'/);
   assert.match(ui,/p16: 'environment'/);
