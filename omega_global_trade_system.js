@@ -307,6 +307,45 @@
     return result;
   }
 
+  function createImportRequestHandler(cmd,ctx){
+    const p=cmd?.payload||{};
+    const buyer=canonical(ctx.countryId);
+    const seller=canonical(p.targetCountryId||p.sellerCountryId);
+    const resourceId=String(p.resourceId||'').trim().toLowerCase().replace(/[\\s-]+/g,'_');
+    const quantity=num(p.quantity),unitPrice=num(p.unitPrice);
+    const requestId=String(p.requestId||'').trim();
+    if(!buyer||!seller||buyer===seller)return{accepted:false,reason:'TRADE_COUNTERPARTY_INVALID'};
+    if(!resourceId||quantity===null||quantity<=0||unitPrice===null||unitPrice<=0||!Number.isFinite(quantity*unitPrice))
+      return{accepted:false,reason:'TRADE_REQUEST_INPUT_INVALID'};
+    if(!requestId)return{accepted:false,reason:'TRADE_REQUEST_ID_REQUIRED'};
+    const raw=ctx.stateTransaction.get('trade');
+    const bucket=raw&&typeof raw==='object'?clone(raw):{};
+    if(!Array.isArray(bucket.importRequests))bucket.importRequests=[];
+    if(!bucket.globalTradeLedger||typeof bucket.globalTradeLedger!=='object')
+      bucket.globalTradeLedger={requests:[],decisions:[],settlements:[]};
+    for(const key of ['requests','decisions','settlements'])
+      if(!Array.isArray(bucket.globalTradeLedger[key]))bucket.globalTradeLedger[key]=[];
+    const old=bucket.importRequests.find(x=>String(x?.requestId||'')===requestId);
+    if(old){
+      const same=canonical(old.countryId||old.buyerCountryId)===buyer&&canonical(old.targetCountryId||old.sellerCountryId)===seller&&
+        String(old.resourceId||'')===resourceId&&num(old.quantity)===quantity&&num(old.unitPrice)===unitPrice;
+      return same?{accepted:true,duplicate:true,request:clone(old)}:{accepted:false,reason:'TRADE_REQUEST_ID_CONFLICT'};
+    }
+    const request={
+      requestId,countryId:buyer,buyerCountryId:buyer,targetCountryId:seller,sellerCountryId:seller,
+      resourceId,quantity,unitPrice,totalValue:Number((quantity*unitPrice).toFixed(8)),
+      unit:p.unit?String(p.unit):null,status:'SENT',stage:'OPEN',createdTurn:turn(),
+      source:String(p.source||'OMEGA_GLOBAL_TRADE_UI'),evidencePolicy:'COUNTERPARTY_REVIEW_REQUIRED'
+    };
+    bucket.importRequests.push(clone(request));
+    bucket.importRequests=bucket.importRequests.slice(-MAX_HISTORY);
+    bucket.globalTradeLedger.requests.push(clone(request));
+    bucket.globalTradeLedger.requests=bucket.globalTradeLedger.requests.slice(-MAX_HISTORY);
+    persistTradeBucket(ctx,bucket);
+    emit('OMEGA_TRADE_REQUEST_CREATED',buyer,request);
+    return{accepted:true,request:clone(request)};
+  }
+
   function reviewHandler(cmd,ctx){
     const p=cmd?.payload||{},r=p.request||{},decision=sellerReviewDecision(r),seller=canonical(ctx.countryId);
     const ledger=ctx.stateTransaction.get('trade.globalTradeLedger');
@@ -741,6 +780,7 @@
     // leave counterpart review and settlement commands UNHANDLED.
     try{mesh?.configure?.({});}catch(e){handlerInstallReport.errors.push('MINISTRY_MESH_CONFIGURE_FAILED:'+String(e?.message||e));}
     const defs=[
+      ['OMEGA_TRADE_CREATE_IMPORT_REQUEST','trade',createImportRequestHandler],
       ['OMEGA_TRADE_COUNTERPARTY_REVIEW','trade',reviewHandler],
       ['OMEGA_TRADE_APPLY_BUYER_RESPONSE','trade',buyerResponseHandler],
       ['OMEGA_TRADE_SCHEDULE_RETRY','trade',scheduleRetryHandler],
@@ -903,7 +943,14 @@
     }
     return diagnostics();
   }
-  const API=Object.freeze({VERSION,TYPES,diagnostics,processAll,reviewRequest:sellerReviewDecision,relationScore,marketPrice,inventory,currencyOf,fxRate,settlementValues});
+  function createRequest(countryId,payload={}){
+    installHandlers();
+    const input=clone(payload||{});
+    input.requestId=String(input.requestId||('TRADE-UI:'+canonical(countryId)+':'+String(input.resourceId||'').trim().toLowerCase()+':T'+turn()+':'+Date.now()));
+    const response=command('trade','OMEGA_TRADE_CREATE_IMPORT_REQUEST',countryId,input);
+    return response?.status==='APPLIED'?(response.result||response):response;
+  }
+  const API=Object.freeze({VERSION,TYPES,diagnostics,processAll,createRequest,reviewRequest:sellerReviewDecision,relationScore,marketPrice,inventory,currencyOf,fxRate,settlementValues});
   g.Omega=g.Omega||{};g.Omega.GlobalTrade=API;g.OmegaGlobalTrade=API;
   try{init();}catch(e){g.OmegaGlobalTradeError=String(e?.message||e);}
 })(typeof window!=='undefined'?window:globalThis);
