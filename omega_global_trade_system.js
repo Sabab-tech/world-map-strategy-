@@ -329,7 +329,7 @@
     if(duplicate){
       const same=canonical(duplicate.countryId||duplicate.buyerCountryId)===buyer&&
         canonical(duplicate.targetCountryId||duplicate.sellerCountryId)===seller&&
-        String(duplicate.resourceId||'').trim().toLowerCase().replace(/[\\s-]+/g,'_')===resourceId.trim().toLowerCase().replace(/[\\s-]+/g,'_')&&
+        String(duplicate.resourceId||'').trim().toLowerCase().replace(/[\s-]+/g,'_')===resourceId.trim().toLowerCase().replace(/[\s-]+/g,'_')&&
         num(duplicate.quantity)===quantity&&num(duplicate.unitPrice)===unitPrice&&
         String(duplicate.currency||currencyOf(buyer)||'').toUpperCase()===String(p.currency||currencyOf(buyer)||'').toUpperCase();
       return same?{accepted:true,duplicate:true,request:clone(duplicate)}:{accepted:false,reason:'TRADE_REQUEST_ID_CONFLICT'};
