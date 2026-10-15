@@ -3119,78 +3119,140 @@ class OrientationManager {
     constructor() {
         this.mode = window.innerWidth > window.innerHeight ? "landscape" : "portrait";
         this.locked = false;
+        this.gestureLockArmed = false;
+        this.listenersAttached = false;
+    }
+
+    isNativeAndroid() {
+        try {
+            return window.OMEGA_ANDROID_APP === true
+                || Boolean(window.OmegaAndroid && typeof window.OmegaAndroid.isAndroidApp === "function"
+                    && window.OmegaAndroid.isAndroidApp());
+        } catch (_) {
+            return window.OMEGA_ANDROID_APP === true;
+        }
+    }
+
+    isStandalone() {
+        try {
+            return Boolean(
+                (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches)
+                || window.navigator.standalone === true
+            );
+        } catch (_) {
+            return false;
+        }
+    }
+
+    isTouchDevice() {
+        return (window.matchMedia && window.matchMedia("(pointer: coarse)").matches)
+            || (window.navigator && window.navigator.maxTouchPoints > 0);
     }
 
     async initialize() {
         this.detect();
-        await this.fullscreen();
-        await this.lockLandscape();
         this.listen();
+
+        // Android's native Activity owns orientation through AndroidManifest.xml.
+        // Avoid browser fullscreen/orientation requests during initial page load.
+        if (this.isNativeAndroid()) {
+            this.hideRotateMessage();
+            return;
+        }
+
+        const locked = await this.tryLockLandscape(false);
+        if (!locked && this.mode === "portrait" && this.isTouchDevice()) {
+            this.armGestureLock();
+        }
+
+        // A failed browser API request must never cover the game with a rotate prompt.
+        this.hideRotateMessage();
     }
 
     detect() {
         this.mode = window.innerWidth > window.innerHeight ? "landscape" : "portrait";
-        if (this.mode === "landscape") {
-            this.hideRotateMessage();
-        }
+        this.hideRotateMessage();
     }
 
-    async fullscreen() {
+    async tryLockLandscape(fromUserGesture = false) {
         try {
-            if (document.documentElement.requestFullscreen && !document.fullscreenElement) {
+            if (this.isNativeAndroid()) {
+                this.hideRotateMessage();
+                return true;
+            }
+
+            if (typeof screen === "undefined"
+                || !screen.orientation
+                || typeof screen.orientation.lock !== "function") {
+                return false;
+            }
+
+            const standalone = this.isStandalone();
+            if (!fromUserGesture && !document.fullscreenElement && !standalone) {
+                return false;
+            }
+
+            if (fromUserGesture && !document.fullscreenElement && !standalone
+                && document.documentElement.requestFullscreen) {
                 await document.documentElement.requestFullscreen();
             }
-        } catch(e) {
-            console.log("Fullscreen unavailable");
+
+            await screen.orientation.lock("landscape");
+            this.locked = true;
+            this.detect();
+            return true;
+        } catch (_) {
+            // Browsers may require a user gesture, fullscreen, or may not support locking.
+            // Keep gameplay available instead of asking the player to rotate manually.
+            this.detect();
+            return false;
         }
     }
 
-    async lockLandscape() {
-        try {
-            if (screen.orientation && screen.orientation.lock) {
-                await screen.orientation.lock("landscape");
-                this.locked = true;
+    armGestureLock() {
+        if (this.gestureLockArmed) return;
+        this.gestureLockArmed = true;
+
+        const attempt = () => {
+            if (!this.gestureLockArmed) return;
+            this.gestureLockArmed = false;
+            window.removeEventListener("pointerdown", attempt, true);
+            window.removeEventListener("touchstart", attempt, true);
+            window.removeEventListener("keydown", attempt, true);
+
+            this.tryLockLandscape(true).finally(() => {
+                this.detect();
                 this.hideRotateMessage();
-            } else {
-                this.showRotateMessage();
-            }
-        } catch(e) {
-            if (this.mode === "portrait") {
-                this.showRotateMessage();
-            }
-        }
+            });
+        };
+
+        // Browser orientation locking needs user activation. Use the player's first
+        // interaction to request fullscreen/landscape, without an extra confirmation.
+        window.addEventListener("pointerdown", attempt, { once: true, passive: true, capture: true });
+        window.addEventListener("touchstart", attempt, { once: true, passive: true, capture: true });
+        window.addEventListener("keydown", attempt, { once: true, capture: true });
     }
 
     listen() {
-        window.addEventListener("resize", () => {
-            this.detect();
-            if (this.mode === "landscape") {
-                this.hideRotateMessage();
-            }
-        });
-        window.addEventListener("orientationchange", () => {
-            setTimeout(() => {
-                this.detect();
-                if (this.mode === "landscape") {
-                    this.hideRotateMessage();
-                }
-            }, 100);
-        });
+        if (this.listenersAttached) return;
+        this.listenersAttached = true;
+
+        const refresh = () => this.detect();
+        window.addEventListener("resize", refresh);
+        window.addEventListener("orientationchange", () => setTimeout(refresh, 100));
+        document.addEventListener("fullscreenchange", refresh);
     }
 
     showRotateMessage() {
-        let box = document.getElementById("rotate-warning");
-        if (box && this.mode === "portrait") {
-            box.style.display = "flex";
-        }
+        // Legacy compatibility only: the game must not be blocked by a manual-rotate overlay.
+        this.hideRotateMessage();
     }
 
     hideRotateMessage() {
-        let box = document.getElementById("rotate-warning");
+        const box = document.getElementById("rotate-warning");
         if (box) box.style.display = "none";
     }
 }
-
 window.Omega.OrientationManager = new OrientationManager();
 if (document.readyState === 'complete' || document.readyState === 'interactive') {
     window.Omega.OrientationManager.initialize();
