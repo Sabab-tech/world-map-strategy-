@@ -241,10 +241,11 @@ test('all expanded deposits receive explicit flow status; active sites dispatch 
   const blockedSites=sites.filter(s=>!activeIds.has(s.siteId));
   assert.equal(activeSites.length+blockedSites.length,sites.length);
   const h=makeContext(sites),g=h.context,state=h.state;
-  for(const f of ['omega_resource_country_boundary_guard.js','omega_resource_industrial_network_v1.js'])
+  for(const f of ['omega_resource_country_boundary_guard.js','omega_resource_industrial_network_v1.js','omega_resource_economy_runtime_v2.js'])
     vm.runInContext(readText(f),g,{filename:f});
-  const industry=g.Omega.ResourceIndustrialNetwork;
+  const industry=g.Omega.ResourceIndustrialNetwork,economy=g.Omega.ResourceEconomy;
   assert.ok(industry,'Industrial Network must be active before extraction notifications');
+  assert.ok(economy,'Economy Runtime must be active before factory output so market offers are created from actual finished-goods events');
   let committed=0,failedActive=[],expectedBatchIds=[],expectedBlockedFlowIds=[];
   for(let index=0;index<sites.length;index++){
     const site=sites[index],rid=site.real.resourceId,cid=site.countryId;
@@ -301,5 +302,133 @@ test('all expanded deposits receive explicit flow status; active sites dispatch 
   const diag=industry.gameplayPipelineDiagnostics();
   assert.equal(diag.flowCount,sites.length);
   assert.equal(diag.blocked,blockedSites.length,JSON.stringify(diag.perCountry.filter(x=>x.blocked>0).slice(0,20)));
-  console.log('OMEGA ALL-EXPANDED-DEPOSIT FLOW STATUS PASSED: '+activeSites.length+' active / '+blockedSites.length+' blocked / '+sites.length+' total across '+new Set(sites.map(x=>x.countryId)).size+' countries');
+
+  // End-to-end requirement for every operational deposit in this 199-site pack:
+  // do not stop at "shipment created". Advance sovereign deliveries, process every
+  // remaining factory-input lot over later turns, publish batch-backed offers, and
+  // settle those offers so the original mine flow receives a treasury-lineage record.
+  const countryIds=[...new Set(sites.map(site=>String(site.countryId||'').toUpperCase()).filter(cid=>/^[A-Z]{3}$/.test(cid)))];
+  const activeCountByCountry=new Map();
+  for(const site of activeSites)activeCountByCountry.set(site.countryId,(activeCountByCountry.get(site.countryId)||0)+1);
+  const maxActivePerCountry=Math.max(1,...activeCountByCountry.values());
+  const expectedRawBatchIds=new Set(expectedBatchIds);
+  const allInitialShipments=countryIds.flatMap(cid=>(state.resource[cid]?.industrialNetwork?.shipments||[])
+    .filter(shipment=>expectedRawBatchIds.has(String(shipment.batchId))));
+  assert.equal(allInitialShipments.length,activeSites.length,
+    'every active deposit must have exactly one source-batch shipment before delivery');
+  const lastEta=Math.max(1,...allInitialShipments.map(shipment=>Number(shipment.etaTurn)||1));
+  const processingTurnLimit=lastEta+maxActivePerCountry+5;
+  for(let simulationTurn=1;simulationTurn<=processingTurnLimit;simulationTurn++){
+    state.simulation.turn=simulationTurn;
+    for(const cid of countryIds)industry.processPendingFactoryInputs(cid);
+    for(const cid of countryIds)industry.advanceShipments(cid);
+  }
+
+  const endToEndFailures=[];
+  for(const site of activeSites){
+    const cid=site.countryId,rs=state.resource[cid],rawBatchId='BATCH-ALL-SITE:'+site.siteId;
+    const flow=(rs?.industrialNetwork?.siteFlowLedger||[]).find(row=>String(row.batchId||'')===rawBatchId);
+    const batch=rs?.batches?.find(row=>String(row.batchId||'')===rawBatchId);
+    const outputRows=(flow?.createdBatchIds||[]).map(id=>(rs?.batches||[]).find(row=>String(row.batchId||'')===String(id))).filter(Boolean);
+    const linkedFinished=outputRows.filter(output=>
+      String(output.stage||'').toUpperCase()==='FINISHED'&&
+      (output.sourceBatchIds||[]).map(String).includes(rawBatchId));
+    const inputLots=(state.economy[cid]?.productionAssets||[]).flatMap(factory=>
+      (factory.inputBatchLots||[]).filter(lot=>(lot.sourceBatchIds||[]).map(String).includes(rawBatchId)));
+    const failures=[];
+    if(!flow)failures.push('SITE_FLOW_MISSING');
+    if(!batch)failures.push('RAW_BATCH_MISSING');
+    if(!flow?.stages?.some(stage=>stage.stage==='TRANSPORT'&&stage.status==='DELIVERED'))failures.push('TRANSPORT_NOT_DELIVERED');
+    if(!flow?.stages?.some(stage=>stage.stage==='FACTORY_INPUT'&&stage.status==='RECEIVED'))failures.push('FACTORY_INPUT_NOT_RECEIVED');
+    if(!flow?.stages?.some(stage=>stage.stage==='PROCESSING'&&stage.status==='COMPLETED'))failures.push('PROCESSING_NOT_COMPLETED');
+    if(!flow?.stages?.some(stage=>stage.stage==='FINISHED_GOODS'&&stage.status==='AVAILABLE'))failures.push('FINISHED_GOODS_NOT_REGISTERED');
+    if(!linkedFinished.length)failures.push('FINISHED_BATCH_LINEAGE_MISSING');
+    if(inputLots.some(lot=>Math.max(0,Number(lot.remainingQuantity)||0)>1e-6))failures.push('FACTORY_INPUT_REMAINS_UNPROCESSED');
+    if(!flow?.stages?.some(stage=>stage.stage==='MARKET'&&stage.status==='PUBLISHED'))failures.push('MARKET_NOT_PUBLISHED');
+    if(!Array.isArray(rs?.batches)||!rs.batches.some(output=>
+      String(output.stage||'').toUpperCase()==='FINISHED'&&
+      (output.sourceBatchIds||[]).map(String).includes(rawBatchId)))failures.push('NO_FINISHED_GOODS_WITH_SOURCE_BATCH_LINEAGE');
+    if(failures.length)endToEndFailures.push({siteId:site.siteId,countryId:cid,batchId:rawBatchId,failures,
+      flow:flow?{status:flow.status,blockReason:flow.blockReason,stages:flow.stages}:null});
+  }
+  assert.deepEqual(endToEndFailures,[],
+    'every active expanded deposit must complete shipment -> factory input -> processing -> finished goods -> market: '+
+    JSON.stringify(endToEndFailures.slice(0,20)));
+
+  // Final per-country market book must expose positive, physically backed offers.
+  const offerSourceRootsByCountry=new Map();
+  for(const cid of countryIds){
+    economy.processCountry(cid);
+    const rs=state.resource[cid],offers=(state.trade[cid]?.offerBook||[]).filter(offer=>
+      offer?.source==='OMEGA_RESOURCE_ECON_AUTO_OFFER'&&Number(offer.quantity)>0);
+    assert.ok(offers.length>0,cid+': at least one positive finished/raw market offer must be published');
+    const roots=new Set();
+    for(const offer of offers){
+      assert.ok(Array.isArray(offer.batchAllocations)&&offer.batchAllocations.length>0,
+        cid+': each offer must have physical batch allocations '+offer.resourceId);
+      const allocationTotal=offer.batchAllocations.reduce((sum,row)=>sum+(Number(row.quantity)||0),0);
+      assert.ok(Math.abs(allocationTotal-Number(offer.quantity))<1e-5,
+        cid+': offer quantity must reconcile to its batch allocations '+offer.resourceId);
+      for(const allocation of offer.batchAllocations){
+        for(const id of [allocation.originatingBatchId,...(allocation.sourceBatchIds||[])])
+          if(expectedRawBatchIds.has(String(id)))roots.add(String(id));
+      }
+    }
+    offerSourceRootsByCountry.set(cid,roots);
+  }
+  const missingMarketRoots=activeSites.filter(site=>!offerSourceRootsByCountry.get(site.countryId)?.has('BATCH-ALL-SITE:'+site.siteId))
+    .map(site=>({siteId:site.siteId,countryId:site.countryId,batchId:'BATCH-ALL-SITE:'+site.siteId}));
+  assert.deepEqual(missingMarketRoots,[],
+    'market batch allocations must preserve lineage to every active deposit batch: '+JSON.stringify(missingMarketRoots.slice(0,20)));
+
+  // Clear actual published quantities through the treasury settlement event contract.
+  // This asserts fiscal posting and source-deposit lineage, not merely a UI offer count.
+  for(const cid of countryIds){
+    const offers=(state.trade[cid]?.offerBook||[]).filter(offer=>
+      offer?.source==='OMEGA_RESOURCE_ECON_AUTO_OFFER'&&Number(offer.quantity)>0&&Number(offer.price)>0);
+    for(const offer of offers){
+      const allocations=Array.isArray(offer.batchAllocations)?offer.batchAllocations:[];
+      const transfers=allocations.map(allocation=>{
+        const roots=[...new Set([allocation.originatingBatchId,...(allocation.sourceBatchIds||[])].map(String).filter(Boolean))];
+        return{sourceBatchId:allocation.originatingBatchId||allocation.batchId||null,sourceBatchIds:roots,
+          siteId:allocation.siteId||null,siteReferenceKey:allocation.siteReferenceKey||allocation.siteId||null,
+          occurrenceKey:allocation.occurrenceKey||null,resourceId:offer.resourceId,
+          quantity:Math.max(0,Number(allocation.quantity)||0)};
+      }).filter(transfer=>transfer.sourceBatchId||transfer.sourceBatchIds.length);
+      const sourceBatchIds=[...new Set(transfers.flatMap(transfer=>[transfer.sourceBatchId,...transfer.sourceBatchIds].filter(Boolean).map(String)))];
+      if(!sourceBatchIds.some(id=>expectedRawBatchIds.has(id)))continue;
+      const totalValue=Number(offer.quantity)*Number(offer.price);
+      assert.ok(totalValue>0,cid+': settlement value must be positive for '+offer.resourceId);
+      g.dispatchEvent(new CustomEventMock('OMEGA_TRADE_SETTLEMENT_COMPLETED',{detail:{
+        eventType:'OMEGA_TRADE_SETTLEMENT_COMPLETED',countryId:cid,payload:{
+          settlementId:'EXPANDED-SITE-SETTLEMENT:'+cid+':'+String(offer.offerId),
+          sellerCountryId:cid,resourceId:offer.resourceId,quantity:Number(offer.quantity),totalValue,
+          sourceBatchIds,batchTransfers:transfers
+        }
+      }}));
+    }
+  }
+
+  const missingTreasuryRoots=[];
+  for(const site of activeSites){
+    const cid=site.countryId,rawBatchId='BATCH-ALL-SITE:'+site.siteId,rs=state.resource[cid];
+    const flow=(rs?.industrialNetwork?.siteFlowLedger||[]).find(row=>String(row.batchId||'')===rawBatchId);
+    if(!flow?.treasurySettlements?.length||!flow.stages?.some(stage=>stage.stage==='TREASURY'&&stage.status==='RECEIPT_POSTED'))
+      missingTreasuryRoots.push({siteId:site.siteId,countryId:cid,batchId:rawBatchId,receipts:flow?.treasurySettlements||[],stages:flow?.stages||[]});
+  }
+  assert.deepEqual(missingTreasuryRoots,[],
+    'every active deposit whose finished goods were published must receive a country-local treasury settlement lineage: '+
+    JSON.stringify(missingTreasuryRoots.slice(0,20)));
+  for(const cid of countryIds){
+    assert.ok(Number(state.finance[cid]?.resourceFiscal?.thisTurn?.total)>0,
+      cid+': settled resource offers must credit a country-local fiscal receipt');
+    assert.ok((state.finance[cid]?.resourceFiscalLedger||[]).some(row=>String(row.settlementId||'').startsWith('EXPANDED-SITE-SETTLEMENT:'+cid+':')),
+      cid+': treasury ledger must record market settlement receipts');
+  }
+
+  const finalDiag=industry.gameplayPipelineDiagnostics();
+  assert.equal(finalDiag.flowCount,sites.length);
+  assert.equal(finalDiag.blocked,blockedSites.length,JSON.stringify(finalDiag.perCountry.filter(x=>x.blocked>0).slice(0,20)));
+  console.log('OMEGA ALL-EXPANDED-DEPOSIT END-TO-END PASSED: '+activeSites.length+' active / '+blockedSites.length+
+    ' correctly blocked / '+sites.length+' total across '+countryIds.length+' countries');
 });
