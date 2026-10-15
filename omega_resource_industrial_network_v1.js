@@ -589,6 +589,9 @@ function planExtraction(input={}){
   if(!site?.siteId)return{status:'BLOCKED',reason:'SITE_NOT_FOUND'};
   const resourceId=tok(input.resourceId||site?.real?.resourceId||site?.sourceSiteRecord?.resourceId||site?.identity?.resourceTypeId);
   if(!resourceId)return{status:'BLOCKED',reason:'RESOURCE_ID_MISSING'};
+  const strategicPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
+  const siteGate=strategicPolicy?.siteAvailableForExtraction?.(cid,site.siteId,site);
+  if(siteGate&&!siteGate.allowed)return{status:'BLOCKED',reason:siteGate.reason||'SITE_EXPLORATION_GATE_BLOCKED',siteId:site.siteId,countryId:cid,resourceId};
   const countryResource=resourceState(cid),mineStates=countryResource.mineStates&&typeof countryResource.mineStates==='object'?countryResource.mineStates:{};
   const matchingState=Object.entries(mineStates).find(([key,row])=>
     String(row?.siteReferenceKey||row?.siteId||row?.sourceSiteId||'')===String(site.siteId)&&
@@ -740,11 +743,15 @@ function planShipment(input={}){
   const cid=canonicalCountry(input.countryId),site=siteById(input.siteId)||input.site;
   if(!site?.siteId)return{status:'BLOCKED',reason:'SITE_NOT_FOUND'};
   const rid=tok(input.resourceId||site?.real?.resourceId||site?.sourceSiteRecord?.resourceId);if(!rid)return{status:'BLOCKED',reason:'RESOURCE_ID_MISSING'};
+  const strategicPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
+  const siteGate=strategicPolicy?.siteAvailableForExtraction?.(cid,site.siteId,site);
+  if(siteGate&&!siteGate.allowed)return{status:'BLOCKED',reason:siteGate.reason||'SITE_EXPLORATION_GATE_BLOCKED',siteId:site.siteId,countryId:cid,resourceId:rid};
   const candidates=candidateFactories(cid,rid);
   if(input.factoryId){const f=candidates.find(x=>String(x.asset?.id||x.asset?.assetId||x.asset?.projectId)===String(input.factoryId));if(!f)return{status:'BLOCKED',reason:'FACTORY_NOT_CAPABLE'};candidates.splice(0,candidates.length,f)}
   if(!candidates.length)return{status:'BLOCKED',reason:'NO_MATCHING_FACTORY',countryId:cid,siteId:site.siteId,resourceId:rid};
   const ordered=candidates.sort((a,b)=>String(a.asset?.priority??999)-String(b.asset?.priority??999));
-  let best=null;
+  let best=null,policyBlockedRoute=null;
+  const strategicPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
   const warehouseId='WH-'+cid+'-RAW';
   const siteRoute=(site.simulation?.transportRoute||[])[0]||{};
   const routeType=tok(siteRoute.mode||siteRoute.routeType||'');
@@ -755,9 +762,11 @@ function planShipment(input={}){
     simulation:{transportRoute:routeDistance>0?[{...clone(siteRoute),mode:routeMode,transportMode:routeMode,distanceKm:routeDistance,authority:'SITE_SIMULATION_ROUTE',countryIsolationKey:cid}]:[]}};
   for(const c of ordered.slice(0,16)){
     const route=buildRoute(routeOrigin,c.asset,rid,input.quantity,{countryId:cid,sourceSiteId:site.siteId,sourceWarehouseId:warehouseId,sourceNode:'WAREHOUSE:'+cid+':RAW',sourceNodeType:'WAREHOUSE',transportMode:input.transportMode,unit:input.unit});
+    const blockade=strategicPolicy?.isRouteBlocked?.(cid,{resourceId:rid,transportMode:route.transportMode||route.mode,routeId:route.routeId,siteId:site.siteId,factoryId:String(c.asset?.id||c.asset?.assetId||c.asset?.projectId||'')});
+    if(blockade?.blocked){policyBlockedRoute=blockade;continue;}
     if(route.status==='PLANNED' && (!best||route.travelTimeDays<best.route.travelTimeDays))best={candidate:c,route};
   }
-  if(!best)return{status:'BLOCKED',reason:'NO_USABLE_TRANSPORT_ROUTE',candidates:ordered.length};
+  if(!best)return{status:'BLOCKED',reason:policyBlockedRoute?.reason||'NO_USABLE_TRANSPORT_ROUTE',policy:policyBlockedRoute||null,candidates:ordered.length};
   if(best.route.crossBorderRequired&&!input.tradeContractId)return{status:'BLOCKED',reason:'CROSS_BORDER_CONTRACT_REQUIRED',route:best.route};
   const result={status:'PLANNED',countryId:cid,siteId:site.siteId,resourceId:rid,factoryId:String(best.candidate.asset?.id||best.candidate.asset?.assetId||best.candidate.asset?.projectId),recipe:best.candidate.recipe,route:best.route};
   emit('OMEGA_RESOURCE_FACTORY_ROUTE_PLANNED',cid,result);
@@ -775,7 +784,10 @@ function reserveInventoryForShipment(c,resourceId,quantity,shipmentId){
 }
 function dispatchShipment(input={}){
   const plan=planShipment(input);if(plan.status!=='PLANNED')return plan;
-  const cid=canonicalCountry(input.countryId),plannedQuantity=Math.max(0,num(plan.route.dispatchQuantity)||0);
+  const cid=canonicalCountry(input.countryId),strategicPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
+  const dispatchBlockade=strategicPolicy?.isRouteBlocked?.(cid,{resourceId:plan.resourceId,transportMode:plan.route?.transportMode,routeId:plan.route?.routeId,siteId:plan.siteId,factoryId:plan.factoryId});
+  if(dispatchBlockade?.blocked)return{status:'BLOCKED',reason:dispatchBlockade.reason||'RESOURCE_ROUTE_BLOCKADE_ACTIVE',policy:dispatchBlockade,plan};
+  const plannedQuantity=Math.max(0,num(plan.route.dispatchQuantity)||0);
   let quantity=plannedQuantity,quantityAdjustmentReason=null;
   const sourceBatchId=String(input.batchId||'').trim(),sourceBatch=sourceBatchId?
     (Array.isArray(resourceState(cid).batches)?resourceState(cid).batches.find(x=>String(x?.batchId||'')===sourceBatchId):null):null;
@@ -864,7 +876,12 @@ function advanceShipments(c){
   const cid=canonicalCountry(c),n=netState(cid),delivered=[];
   dispatchResidualSiteBatches(cid);
   for(const s of n.shipments){
-    if(s.status!=='IN_TRANSIT'||num(s.etaTurn)>turn())continue;
+    if(!['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE'].includes(String(s.status||'')))continue;
+    const strategicPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
+    const blockade=strategicPolicy?.isRouteBlocked?.(cid,{resourceId:s.resourceId,transportMode:s.route?.transportMode||s.route?.mode,routeId:s.route?.routeId,siteId:s.siteId,factoryId:s.factoryId});
+    if(blockade?.blocked){s.status='BLOCKED_ROUTE_BLOCKADE';s.blockReason=blockade.reason||'RESOURCE_ROUTE_BLOCKADE_ACTIVE';s.blockadePolicies=blockade.blockades||[];s.blockedTurn=turn();continue;}
+    if(s.status==='BLOCKED_ROUTE_BLOCKADE'){s.status='IN_TRANSIT';s.blockReason=null;s.resumedTurn=turn();s.etaTurn=Math.max(turn()+1,num(s.etaTurn)||turn()+1);}
+    if(num(s.etaTurn)>turn())continue;
     const rid=tok(s.resourceId),quantity=Math.max(0,num(s.quantity)||0),r=resourceState(cid);
     const warehouse=r.warehouse||{},available=Math.max(0,num(warehouse.availableByResource?.[rid])||0);
     const reserved=Math.max(0,num(warehouse.reservedByResource?.[rid])||0);
@@ -1281,6 +1298,9 @@ async function executeSitePipeline(input={}){
   const site=siteById(input.siteId);
   if(!site?.siteId)return{status:'BLOCKED',reason:'SITE_NOT_FOUND'};
   if(canonicalCountry(site.countryId)!==cid)return{status:'BLOCKED',reason:'SITE_COUNTRY_MISMATCH',siteCountryId:site.countryId,requestedCountryId:cid};
+  const strategicPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
+  const siteGate=strategicPolicy?.siteAvailableForExtraction?.(cid,site.siteId,site);
+  if(siteGate&&!siteGate.allowed)return{status:'BLOCKED',reason:siteGate.reason||'SITE_EXPLORATION_GATE_BLOCKED',siteId:site.siteId,countryId:cid};
   const rid=tok(input.resourceId||site?.real?.resourceId||site?.sourceSiteRecord?.resourceId||site?.identity?.resourceTypeId);
   if(!rid)return{status:'BLOCKED',reason:'RESOURCE_ID_MISSING'};
   const loaded=await loadCatalog();if(loaded?.status==='FAILED')return{status:'BLOCKED',reason:'INDUSTRIAL_CATALOG_UNAVAILABLE',detail:loaded};
