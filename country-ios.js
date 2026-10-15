@@ -903,10 +903,10 @@ window.CountryIOS = {
                             ⛏️ SURVEY
                         </button>
                         <button onclick="window.ResourceMinistryEngine.executeDirective('expand_facility', '${r.id}');" style="padding:5px 4px; background:rgba(34,197,94,0.15); border:1px solid #22c55e; color:#22c55e; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
-                            🏭 EXPAND (+25%)
+                            🏭 REQUEST CAPACITY
                         </button>
                         <button onclick="window.ResourceMinistryEngine.executeDirective('add_reserve', '${r.id}');" style="padding:5px 4px; background:rgba(255,215,0,0.15); border:1px solid #ffd700; color:#ffd700; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
-                            📦 SPR (+50K)
+                            📦 REQUEST SPR BUFFER
                         </button>
                         <button type="button" disabled title="Disabled: no authoritative physical stock-transfer handler is registered." style="padding:5px 4px; background:rgba(100,116,139,0.12); border:1px solid #64748b; color:#94a3b8; font-size:10px; font-weight:bold; border-radius:4px; cursor:not-allowed; opacity:.75;">
                             DRAWDOWN UNAVAILABLE
@@ -2012,10 +2012,10 @@ window.addEventListener('RESOURCE_STATE_UPDATED', () => {
                             ⛏️ SURVEY
                         </button>
                         <button onclick="window.ResourceMinistryEngine.executeDirective('expand_facility', '${r.id}');" style="padding:5px 4px; background:rgba(34,197,94,0.15); border:1px solid #22c55e; color:#22c55e; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
-                            🏭 EXPAND (+25%)
+                            🏭 REQUEST CAPACITY
                         </button>
                         <button onclick="window.ResourceMinistryEngine.executeDirective('add_reserve', '${r.id}');" style="padding:5px 4px; background:rgba(255,215,0,0.15); border:1px solid #ffd700; color:#ffd700; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
-                            📦 SPR (+50K)
+                            📦 REQUEST SPR BUFFER
                         </button>
                         <button type="button" disabled title="Disabled: no authoritative physical stock-transfer handler is registered." style="padding:5px 4px; background:rgba(100,116,139,0.12); border:1px solid #64748b; color:#94a3b8; font-size:10px; font-weight:bold; border-radius:4px; cursor:not-allowed; opacity:.75;">
                             DRAWDOWN UNAVAILABLE
