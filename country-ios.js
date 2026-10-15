@@ -684,6 +684,15 @@ window.CountryIOS = {
         const briefingText = nrms.briefing;
         const metrics = nrms.globalMetrics;
         const resList = nrms.resourcesList;
+        const fmtObserved = value => {
+            if (value === null || value === undefined || value === '') return 'NOT RECORDED';
+            const number = typeof value === 'number' ? value :
+                (typeof value === 'string' && /^-?\\d+(?:\\.\\d+)?$/.test(value.trim()) ? Number(value) : null);
+            return number !== null && Number.isFinite(number)
+                ? number.toLocaleString(undefined, { maximumFractionDigits: 2 }) : 'NOT RECORDED';
+        };
+        const numericObserved = value => value !== null && value !== undefined && value !== '' &&
+            Number.isFinite(typeof value === 'number' ? value : (typeof value === 'string' && /^-?\\d+(?:\\.\\d+)?$/.test(value.trim()) ? Number(value) : NaN));
         const debates = nrms.debates || [];
         const surveys = metrics.surveysUnderway || [];
 
@@ -859,32 +868,34 @@ window.CountryIOS = {
         }
 
         let resGridHtml = resList.map(r => {
-            const selfSuffColor = r.selfSufficiencyRatio >= 100 ? '#22c55e' : (r.selfSufficiencyRatio >= 75 ? '#eab308' : '#ef4444');
-            const netColor = r.netBalance >= 0 ? '#22c55e' : '#ef4444';
-            const netSign = r.netBalance >= 0 ? '+' : '';
+            const ratioObserved = numericObserved(r.selfSufficiencyRatio) ? Number(r.selfSufficiencyRatio) : null;
+            const balanceObserved = numericObserved(r.netBalance) ? Number(r.netBalance) : null;
+            const selfSuffColor = ratioObserved === null ? '#64748b' : (ratioObserved >= 100 ? '#22c55e' : (ratioObserved >= 75 ? '#eab308' : '#ef4444'));
+            const netColor = balanceObserved === null ? '#64748b' : (balanceObserved >= 0 ? '#22c55e' : '#ef4444');
+            const netSign = balanceObserved !== null && balanceObserved >= 0 ? '+' : '';
 
             return `
                 <div class="ios-card" style="border-top: 2px solid ${selfSuffColor}; position: relative; padding:12px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
                         <span style="font-size:13px; font-weight:bold; color:#f8fafc; font-family:var(--font-title);">${r.icon} ${r.name.toUpperCase()}</span>
                         <span style="font-size:10px; padding:2px 6px; border-radius:10px; background:${selfSuffColor}22; color:${selfSuffColor}; font-weight:bold; border:1px solid ${selfSuffColor}; font-family:var(--font-mono);">
-                            ${r.selfSufficiencyRatio}% ${r.selfSufficiencyRatio >= 100 ? 'SECURE' : 'DEFICIT'}
+                            ${fmtObserved(r.selfSufficiencyRatio)}${ratioObserved === null ? '' : '%'} ${ratioObserved === null ? 'NOT RECORDED' : (ratioObserved >= 100 ? 'SECURE' : 'DEFICIT')}
                         </span>
                     </div>
                     
                     <div style="font-size:10px; color:#94a3b8; font-family:var(--font-mono); margin-bottom:6px;">${r.bnName || ''} • ${r.category}</div>
 
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; font-size:11px; color:#cbd5e1; font-family:var(--font-mono); margin-bottom:8px;">
-                        <div>Output: <strong style="color:#00e5ff;">${r.dailyProduction.toLocaleString()}</strong></div>
-                        <div>Consume: <strong style="color:#f97316;">${r.dailyConsumption.toLocaleString()}</strong></div>
-                        <div>Net Flow: <strong style="color:${netColor};">${netSign}${r.netBalance.toLocaleString()}</strong></div>
-                        <div>Stock Days: <strong style="color:#ffd700;">${r.stockDays} Days</strong></div>
-                        <div>Mines/Plants: <strong style="color:#22c55e;">${r.activeFacilities} Active</strong></div>
-                        <div>Stockpile: <strong style="color:#a855f7;">${r.warehouseStock.toLocaleString()}</strong></div>
+                        <div>Output: <strong style="color:#00e5ff;">${fmtObserved(r.dailyProduction)}</strong></div>
+                        <div>Consume: <strong style="color:#f97316;">${fmtObserved(r.dailyConsumption)}</strong></div>
+                        <div>Net Flow: <strong style="color:${netColor};">${balanceObserved === null ? 'NOT RECORDED' : netSign + fmtObserved(r.netBalance)}</strong></div>
+                        <div>Stock Days: <strong style="color:#ffd700;">${fmtObserved(r.stockDays)}${numericObserved(r.stockDays) ? ' Days' : ''}</strong></div>
+                        <div>Mines/Plants: <strong style="color:#22c55e;">${fmtObserved(r.activeFacilities)}${numericObserved(r.activeFacilities) ? ' Active' : ''}</strong></div>
+                        <div>Stockpile: <strong style="color:#a855f7;">${fmtObserved(r.warehouseStock)}</strong></div>
                     </div>
 
                     <div style="font-size:10px; color:#94a3b8; line-height:1.3; background:rgba(0,0,0,0.3); padding:4px 6px; border-radius:4px; font-family:var(--font-mono); margin-bottom:8px;">
-                        ⛓️ ${r.processChain}
+                        ⛓️ ${r.processChain || 'NOT RECORDED'}
                     </div>
 
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:4px;">
@@ -1765,6 +1776,15 @@ window.addEventListener('RESOURCE_STATE_UPDATED', () => {
         const briefingText = nrms.briefing;
         const metrics = nrms.globalMetrics;
         const resList = nrms.resourcesList;
+        const fmtObserved = value => {
+            if (value === null || value === undefined || value === '') return 'NOT RECORDED';
+            const number = typeof value === 'number' ? value :
+                (typeof value === 'string' && /^-?\\d+(?:\\.\\d+)?$/.test(value.trim()) ? Number(value) : null);
+            return number !== null && Number.isFinite(number)
+                ? number.toLocaleString(undefined, { maximumFractionDigits: 2 }) : 'NOT RECORDED';
+        };
+        const numericObserved = value => value !== null && value !== undefined && value !== '' &&
+            Number.isFinite(typeof value === 'number' ? value : (typeof value === 'string' && /^-?\\d+(?:\\.\\d+)?$/.test(value.trim()) ? Number(value) : NaN));
         const debates = nrms.debates || [];
         const surveys = metrics.surveysUnderway || [];
 
@@ -1940,32 +1960,34 @@ window.addEventListener('RESOURCE_STATE_UPDATED', () => {
         }
 
         let resGridHtml = resList.map(r => {
-            const selfSuffColor = r.selfSufficiencyRatio >= 100 ? '#22c55e' : (r.selfSufficiencyRatio >= 75 ? '#eab308' : '#ef4444');
-            const netColor = r.netBalance >= 0 ? '#22c55e' : '#ef4444';
-            const netSign = r.netBalance >= 0 ? '+' : '';
+            const ratioObserved = numericObserved(r.selfSufficiencyRatio) ? Number(r.selfSufficiencyRatio) : null;
+            const balanceObserved = numericObserved(r.netBalance) ? Number(r.netBalance) : null;
+            const selfSuffColor = ratioObserved === null ? '#64748b' : (ratioObserved >= 100 ? '#22c55e' : (ratioObserved >= 75 ? '#eab308' : '#ef4444'));
+            const netColor = balanceObserved === null ? '#64748b' : (balanceObserved >= 0 ? '#22c55e' : '#ef4444');
+            const netSign = balanceObserved !== null && balanceObserved >= 0 ? '+' : '';
 
             return `
                 <div class="ios-card" style="border-top: 2px solid ${selfSuffColor}; position: relative; padding:12px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
                         <span style="font-size:13px; font-weight:bold; color:#f8fafc; font-family:var(--font-title);">${r.icon} ${r.name.toUpperCase()}</span>
                         <span style="font-size:10px; padding:2px 6px; border-radius:10px; background:${selfSuffColor}22; color:${selfSuffColor}; font-weight:bold; border:1px solid ${selfSuffColor}; font-family:var(--font-mono);">
-                            ${r.selfSufficiencyRatio}% ${r.selfSufficiencyRatio >= 100 ? 'SECURE' : 'DEFICIT'}
+                            ${fmtObserved(r.selfSufficiencyRatio)}${ratioObserved === null ? '' : '%'} ${ratioObserved === null ? 'NOT RECORDED' : (ratioObserved >= 100 ? 'SECURE' : 'DEFICIT')}
                         </span>
                     </div>
                     
                     <div style="font-size:10px; color:#94a3b8; font-family:var(--font-mono); margin-bottom:6px;">${r.bnName || ''} • ${r.category}</div>
 
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; font-size:11px; color:#cbd5e1; font-family:var(--font-mono); margin-bottom:8px;">
-                        <div>Output: <strong style="color:#00e5ff;">${r.dailyProduction.toLocaleString()}</strong></div>
-                        <div>Consume: <strong style="color:#f97316;">${r.dailyConsumption.toLocaleString()}</strong></div>
-                        <div>Net Flow: <strong style="color:${netColor};">${netSign}${r.netBalance.toLocaleString()}</strong></div>
-                        <div>Stock Days: <strong style="color:#ffd700;">${r.stockDays} Days</strong></div>
-                        <div>Mines/Plants: <strong style="color:#22c55e;">${r.activeFacilities} Active</strong></div>
-                        <div>Stockpile: <strong style="color:#a855f7;">${r.warehouseStock.toLocaleString()}</strong></div>
+                        <div>Output: <strong style="color:#00e5ff;">${fmtObserved(r.dailyProduction)}</strong></div>
+                        <div>Consume: <strong style="color:#f97316;">${fmtObserved(r.dailyConsumption)}</strong></div>
+                        <div>Net Flow: <strong style="color:${netColor};">${balanceObserved === null ? 'NOT RECORDED' : netSign + fmtObserved(r.netBalance)}</strong></div>
+                        <div>Stock Days: <strong style="color:#ffd700;">${fmtObserved(r.stockDays)}${numericObserved(r.stockDays) ? ' Days' : ''}</strong></div>
+                        <div>Mines/Plants: <strong style="color:#22c55e;">${fmtObserved(r.activeFacilities)}${numericObserved(r.activeFacilities) ? ' Active' : ''}</strong></div>
+                        <div>Stockpile: <strong style="color:#a855f7;">${fmtObserved(r.warehouseStock)}</strong></div>
                     </div>
 
                     <div style="font-size:10px; color:#94a3b8; line-height:1.3; background:rgba(0,0,0,0.3); padding:4px 6px; border-radius:4px; font-family:var(--font-mono); margin-bottom:8px;">
-                        ⛓️ ${r.processChain}
+                        ⛓️ ${r.processChain || 'NOT RECORDED'}
                     </div>
 
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:4px;">
