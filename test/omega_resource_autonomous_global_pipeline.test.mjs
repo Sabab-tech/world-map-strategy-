@@ -356,12 +356,18 @@ test('all expanded deposits receive explicit flow status; active sites dispatch 
     JSON.stringify(endToEndFailures.slice(0,20)));
 
   // Final per-country market book must expose positive, physically backed offers.
+  const activeCountryIds=new Set(activeSites.map(site=>String(site.countryId||'').toUpperCase()));
   const offerSourceRootsByCountry=new Map();
   for(const cid of countryIds){
     economy.processCountry(cid);
     const rs=state.resource[cid],offers=(state.trade[cid]?.offerBook||[]).filter(offer=>
       offer?.source==='OMEGA_RESOURCE_ECON_AUTO_OFFER'&&Number(offer.quantity)>0);
-    assert.ok(offers.length>0,cid+': at least one positive finished/raw market offer must be published');
+    if(!activeCountryIds.has(cid)){
+      assert.equal(offers.length,0,cid+': a country with only blocked/non-operational sites must not receive synthetic market stock');
+      offerSourceRootsByCountry.set(cid,new Set());
+      continue;
+    }
+    assert.ok(offers.length>0,cid+': active producing country must publish at least one positive finished/raw market offer');
     const roots=new Set();
     for(const offer of offers){
       assert.ok(Array.isArray(offer.batchAllocations)&&offer.batchAllocations.length>0,
@@ -419,7 +425,7 @@ test('all expanded deposits receive explicit flow status; active sites dispatch 
   assert.deepEqual(missingTreasuryRoots,[],
     'every active deposit whose finished goods were published must receive a country-local treasury settlement lineage: '+
     JSON.stringify(missingTreasuryRoots.slice(0,20)));
-  for(const cid of countryIds){
+  for(const cid of activeCountryIds){
     assert.ok(Number(state.finance[cid]?.resourceFiscal?.thisTurn?.total)>0,
       cid+': settled resource offers must credit a country-local fiscal receipt');
     assert.ok((state.finance[cid]?.resourceFiscalLedger||[]).some(row=>String(row.settlementId||'').startsWith('EXPANDED-SITE-SETTLEMENT:'+cid+':')),
