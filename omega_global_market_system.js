@@ -121,6 +121,10 @@
         if(bid.countryId===ask.countryId)continue;
         const embargo=strategicPolicy?.isResourceEmbargoed?.(bid.countryId,ask.countryId,rid);
         if(embargo?.blocked){blockedPairs.push({buyerCountryId:bid.countryId,sellerCountryId:ask.countryId,resourceId:rid,reason:embargo.reason||'RESOURCE_EMBARGO_ACTIVE'});continue;}
+        const routeMode=String(bid.transportMode||ask.transportMode||'ship');
+        const buyerBlockade=strategicPolicy?.isRouteBlocked?.(bid.countryId,{resourceId:rid,transportMode:routeMode,routeId:bid.routeId,siteId:bid.siteId});
+        const sellerBlockade=strategicPolicy?.isRouteBlocked?.(ask.countryId,{resourceId:rid,transportMode:routeMode,routeId:ask.routeId,siteId:ask.siteId});
+        if(buyerBlockade?.blocked||sellerBlockade?.blocked){blockedPairs.push({buyerCountryId:bid.countryId,sellerCountryId:ask.countryId,resourceId:rid,reason:'RESOURCE_ROUTE_BLOCKADE_ACTIVE',blockades:[...(buyerBlockade?.blockades||[]),...(sellerBlockade?.blockades||[])]});continue;}
         const q=Math.min(bid.remaining,ask.remaining);if(!(q>0))continue;
         matched+=q;lastBid=bid;lastAsk=ask;
         matches.push({buyerCountryId:bid.countryId,sellerCountryId:ask.countryId,quantity:q,bidPriceUsd:bid.priceUsd,askPriceUsd:ask.priceUsd,bidPrice:bid.price,askPrice:ask.price,referenceLiquidity:!!ask.referenceOnly});
@@ -179,6 +183,9 @@
       const strategicPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
       const embargo=target?strategicPolicy?.isResourceEmbargoed?.(target,c,rid):null;
       if(embargo?.blocked)continue;
+      const buyerBlockade=target?strategicPolicy?.isRouteBlocked?.(target,{resourceId:rid,transportMode:'ship'}):null;
+      const sellerBlockade=strategicPolicy?.isRouteBlocked?.(c,{resourceId:rid,transportMode:'ship'});
+      if(buyerBlockade?.blocked||sellerBlockade?.blocked)continue;
       const inv=countryValue(c,'resource.inventory'),prod=countryValue(c,'resource.production'),tradeable=countryValue(c,'resource.tradeAvailability');
       const spr=countryValue(c,'resource.strategicReserve'),protectedStock=n(spr?.availableByResource?.[rid])||0;
       const available=n(tradeable?.[rid])??Math.max(0,(n(inv?.[rid])||0)-protectedStock)+(n(prod?.[rid])||0);
