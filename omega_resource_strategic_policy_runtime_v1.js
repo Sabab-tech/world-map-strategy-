@@ -107,7 +107,7 @@ function setPolicy(ctx,kind,payload){
  if(!c||!target)return{accepted:false,reason:'POLICY_COUNTRY_REQUIRED'};
  if(target===c||target==='*'&&p.targetCountryId)return{accepted:false,reason:'POLICY_TARGET_INVALID'};
  if(!rid)return{accepted:false,reason:'POLICY_RESOURCE_REQUIRED'};
- const direction=String(p.direction||'BOTH').toUpperCase();
+ const direction=String(p.direction||rules()?.policy?.defaultEmbargoDirection||'').toUpperCase();
  if(kind==='embargo'&&!['EXPORT','IMPORT','BOTH'].includes(direction))return{accepted:false,reason:'EMBARGO_DIRECTION_INVALID'};
  const path=kind==='embargo'?'trade.resourceEmbargoes':'trade.resourceBlockades';
  const raw=ctx.stateTransaction.get(path),arr=Array.isArray(raw)?clone(raw):[];
@@ -116,7 +116,7 @@ function setPolicy(ctx,kind,payload){
  const startsTurn=Math.max(turn(),num(p.startsTurn)??turn()),expiresTurn=num(p.expiresTurn);
  if(expiresTurn!==null&&expiresTurn<startsTurn)return{accepted:false,reason:'POLICY_EXPIRY_BEFORE_START'};
  const row={policyId,issuerCountryId:c,targetCountryId:target,resourceId:rid,status:'ACTIVE',createdTurn:turn(),startsTurn,expiresTurn,reason:String(p.reason||''),
-  authority:'OMEGA_RESOURCE_STRATEGIC_POLICY_RUNTIME',...(kind==='embargo'?{direction}:{modes:Array.isArray(p.modes)?p.modes.map(tok).filter(Boolean):['ship'],routeId:p.routeId||null,siteId:p.siteId||null,factoryId:p.factoryId||null})};
+  authority:'OMEGA_RESOURCE_STRATEGIC_POLICY_RUNTIME',...(kind==='embargo'?{direction}:{modes:Array.isArray(p.modes)?p.modes.map(tok).filter(Boolean):(Array.isArray(rules()?.policy?.defaultBlockadeModes)?rules().policy.defaultBlockadeModes.map(tok):[]),routeId:p.routeId||null,siteId:p.siteId||null,factoryId:p.factoryId||null})};
  if(old>=0)arr[old]={...arr[old],...row};else arr.push(row);
  ctx.stateTransaction.set(path,arr.slice(-MAX_POLICIES));emit(kind==='embargo'?'OMEGA_RESOURCE_EMBARGO_DECLARED':'OMEGA_RESOURCE_ROUTE_BLOCKADE_DECLARED',c,row);
  return{accepted:true,policy:row,idempotent:old>=0};
@@ -143,7 +143,7 @@ function unitScale(unit){
  if(num(scale[raw])!==null)return num(scale[raw]);const simple=raw.replace(/S$/,'');if(num(scale[simple])!==null)return num(scale[simple]);return num(scale.DEFAULT);
 }
 function recordImpactTx(ctx,payload,kind){
- const e=rules()?.environmental;if(!e?.enabled||num(e.maximumBatchIntensity)===null||num(e.maximumSiteIndex)===null||!e.batchImpact||num(e.batchImpact.land)===null||num(e.batchImpact.water)===null||num(e.batchImpact.emissions)===null||num(e.batchImpact.processingWaste)===null)return{accepted:false,reason:'ENVIRONMENTAL_RULES_UNAVAILABLE'};
+ const e=rules()?.environmental;if(!e?.enabled||num(e.maximumBatchIntensity)===null||num(e.maximumSiteIndex)===null||num(e.defaultEnvironmentalRisk)===null||num(e.defaultWaterStress)===null||num(e.riskInfluence)===null||num(e.waterStressInfluence)===null||!e.batchImpact||num(e.batchImpact.land)===null||num(e.batchImpact.water)===null||num(e.batchImpact.emissions)===null||num(e.batchImpact.processingWaste)===null)return{accepted:false,reason:'ENVIRONMENTAL_RULES_UNAVAILABLE'};
  const c=country(ctx.countryId),p=payload||{},quantity=num(p.quantity);if(quantity===null||quantity<=0)return{accepted:false,reason:'ENVIRONMENTAL_QUANTITY_INVALID'};
  const transactionId=String(p.transactionId||p.extractionId||p.batchId||[kind,c,p.siteId,turn()].join(':'));
  const oldLedger=ctx.stateTransaction.get('resource.environmentalLedger'),ledger=Array.isArray(oldLedger)?clone(oldLedger):[];
@@ -151,11 +151,11 @@ function recordImpactTx(ctx,payload,kind){
  const rootRaw=ctx.stateTransaction.get('resource.environmentalImpact'),root=rootRaw&&typeof rootRaw==='object'?clone(rootRaw):{bySite:{},revision:0};
  if(!root.bySite||typeof root.bySite!=='object')root.bySite={};
  const sid=impactKey(p.siteId),old=impactIndex(root,sid),site=findSite(p.siteId)||{},risk=site.naturalRisk||site.riskProfile||{};
- const riskValue=Math.max(0,Math.min(100,num(risk.environmental)??num(e.defaultEnvironmentalRisk)??50));
- const waterStress=Math.max(0,Math.min(100,num(risk.waterStress)??num(e.defaultWaterStress)??50));
+ const riskValue=Math.max(0,Math.min(100,num(risk.environmental)??num(e.defaultEnvironmentalRisk)));
+ const waterStress=Math.max(0,Math.min(100,num(risk.waterStress)??num(e.defaultWaterStress)));
  const scale=unitScale(p.unit);if(scale===null||scale<=0)return{accepted:false,reason:'ENVIRONMENTAL_UNIT_SCALE_UNAVAILABLE'};
  const intensity=Math.min(num(e.maximumBatchIntensity),quantity/scale);
- const riskInfluence=Math.max(0,Math.min(1,num(e.riskInfluence)??0.6)),waterInfluence=Math.max(0,Math.min(1,num(e.waterStressInfluence)??0.6));
+ const riskInfluence=Math.max(0,Math.min(1,num(e.riskInfluence))),waterInfluence=Math.max(0,Math.min(1,num(e.waterStressInfluence)));
  const impact=kind==='PROCESSING'?num(e.batchImpact.processingWaste):num(e.batchImpact.land);
  const landDelta=kind==='PROCESSING'?0:intensity*impact*((1-riskInfluence)+riskInfluence*riskValue/100);
  const waterDelta=kind==='PROCESSING'?intensity*num(e.batchImpact.processingWaste)*((1-waterInfluence)+waterInfluence*waterStress/100):intensity*num(e.batchImpact.water)*((1-waterInfluence)+waterInfluence*waterStress/100);
@@ -309,8 +309,10 @@ if(typeof g.addEventListener==='function'){
   const outputs=p.outputs||p.outputQuantities||{},inputs=p.inputs||p.inputQuantities||{};
   const quantity=Object.values(inputs).reduce((s,v)=>s+Math.max(0,num(v?.quantity??v)||0),0)||Object.values(outputs).reduce((s,v)=>s+Math.max(0,num(v?.quantity??v)||0),0);
   if(quantity<=0)return;
-  const siteId=p.siteId||p.sourceSiteId||p.siteReferenceKey||p.sourceOccurrenceKey||null;
-  dispatch('resource','OMEGA_RESOURCE_ENVIRONMENT_RECORD_PROCESSING',cc,{transactionId:tx,siteId,resourceId:p.resourceId||Object.keys(inputs)[0]||Object.keys(outputs)[0]||null,quantity,unit:p.unit||'TONNES'});
+  const root=state()?.resource?.[cc]||{},sourceIds=Array.isArray(p.sourceBatchIds)?p.sourceBatchIds.map(String):[],batches=Array.isArray(root.batches)?root.batches:[];
+  const sourceBatch=batches.find(x=>sourceIds.includes(String(x?.batchId||'')))||batches.find(x=>String(x?.batchId||'')===String(p.batchId||''))||null;
+  const siteId=p.siteId||p.sourceSiteId||p.siteReferenceKey||p.sourceOccurrenceKey||sourceBatch?.siteReferenceKey||sourceBatch?.siteId||sourceBatch?.occurrenceKey||null;
+  dispatch('resource','OMEGA_RESOURCE_ENVIRONMENT_RECORD_PROCESSING',cc,{transactionId:tx,siteId,resourceId:p.resourceId||sourceBatch?.resourceId||Object.keys(inputs)[0]||Object.keys(outputs)[0]||null,quantity,unit:p.unit||sourceBatch?.unit||'TONNES'});
  });
 }
 void loadRules();install();
