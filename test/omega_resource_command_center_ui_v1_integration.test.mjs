@@ -133,7 +133,7 @@ test('legacy card names disclose feature gaps instead of claiming unsupported ac
   assert.match(ui,/policy\.startPowerProject/);
   assert.match(ui,/data-form="carbon-emission"/);
   assert.match(ui,/data-form="remediation"/);
-  assert.match(ui,/Persisted advisory decisions/);
+  assert.match(ui,/Persisted strategic gate decisions/);
   assert.match(ui,/2\.4 GW nuclear baseload project/);
 });
 
