@@ -450,42 +450,26 @@
       '<h3 class="omega-rescc-section-title">Commodity survey shortcuts</h3>' + (rows || empty('No commodity rows are available.'));
   }
   function panelProcessing(country) {
-    const assets = allFactories(country);
-    const requests = bucket('economy', country).capacityUpgradeRequests || resourceBucket(country).capacityUpgradeRequests || [];
-    const content = assets.map(function (asset) {
-      const id = asset.id || asset.assetId || asset.factoryId || asset.projectId;
-      const resourcesForAsset = Object.keys(asset.inputCoefficients || {}).concat(Object.keys(asset.outputProfile || []));
-      const rid = asset.resourceId || asset.inputResourceId || resourcesForAsset[0] ||
-        (resources(country)[0] && resources(country)[0].id) || '';
-      const body = '<div class="omega-rescc-grid2">' + kv('Factory ID', id) +
-        kv('Stage', asset.stage || asset.facilityType || asset.factoryType) + kv('Capacity', asset.capacity) +
-        kv('Input stock', asset.inputInventory && asset.inputInventory[rid]) +
-        kv('Inputs', esc(Object.keys(asset.inputCoefficients || {}).join(', ') || 'Not recorded')) +
-        kv('Outputs', esc(Object.keys(asset.outputProfile || {}).join(', ') || 'Not recorded')) + '</div>';
-      return card(asset.name || asset.factoryName || id, asset.status || asset.stage || 'STATUS NOT RECORDED', body,
-        actionButton('process-factory', 'Run one real factory cycle', { 'factory-id': id, 'resource-id': rid, quantity: asset.capacity || 1 },
-          !(g.Omega && g.Omega.ResourceIndustrialNetwork && g.Omega.ResourceIndustrialNetwork.executeFactoryCycle && id && rid)) +
-        (rid ? actionButton('expansion', 'Request capacity expansion', { 'resource-id': rid }) : ''));
+    const assets=allFactories(country),requests=bucket('economy',country).capacityUpgradeRequests||resourceBucket(country).capacityUpgradeRequests||[];
+    const liveCards=assets.map(asset=>{
+      const id=asset.id||asset.assetId||asset.factoryId||asset.projectId,inputs=Object.keys(asset.inputCoefficients||{}),outputs=Object.keys(asset.outputProfile||{}),rid=asset.resourceId||asset.inputResourceId||inputs[0]||(resources(country)[0]&&resources(country)[0].id)||'';
+      const body='<div class="omega-rescc-grid2">'+kv('Factory ID',id)+kv('Stage',asset.stage||asset.facilityType||asset.factoryType)+kv('Capacity',asset.capacity)+kv('Input stock',asset.inputInventory&&asset.inputInventory[rid])+kv('Inputs',inputs.join(', ')||'Not recorded')+kv('Outputs',outputs.join(', ')||'Not recorded')+'</div>';
+      return card(asset.name||asset.factoryName||id,asset.status||asset.stage||'STATUS NOT RECORDED',body,actionButton('process-factory','Run one real factory cycle',{'factory-id':id,'resource-id':rid,quantity:asset.capacity||1},!(g.Omega&&g.Omega.ResourceIndustrialNetwork&&g.Omega.ResourceIndustrialNetwork.executeFactoryCycle&&id&&rid))+(rid?actionButton('expansion','Request capacity expansion',{'resource-id':rid}):''));
     }).join('');
-    const resourceIndustrial = resourceBucket(country).industrialNetwork || {};
-    const projectRows = Array.isArray(resourceIndustrial.projects) ? resourceIndustrial.projects :
-      (Array.isArray(bucket('economy', country).projects) ? bucket('economy', country).projects :
-      (Array.isArray(bucket('economy', country).industrialProjects) ? bucket('economy', country).industrialProjects : []));
-    const resourceOptions = resources(country).map(function (r) {
-      return '<option value="' + esc(r.id) + '">' + esc(r.name || r.id) + '</option>';
-    }).join('');
-    const projectForm = '<form class="omega-rescc-form" data-search-item data-form="factory-project">' +
-      '<h3>Start a catalog-backed factory project</h3><div class="omega-rescc-formgrid">' +
-      '<label>Resource<select name="resourceId" required>' + resourceOptions + '</select></label>' +
-      '<label>Budget cost<input type="number" name="cost" min="1" step="1" required></label>' +
-      '<label>Capacity per day<input type="number" name="capacityPerDay" min="1" step="1" required></label>' +
-      '<label>Build days<input type="number" name="buildDays" min="1" step="1" value="180" required></label></div>' +
-      '<p class="omega-rescc-note">This API records a construction project; a treasury debit is not part of this project-creation call.</p>' +
-      '<button class="omega-rescc-button" type="submit">Create factory project</button></form>';
-    return '<h3 class="omega-rescc-section-title">Production and processing assets</h3>' +
-      (content || empty('No matching production assets are registered in the selected country.')) +
-      '<h3 class="omega-rescc-section-title">Capacity requests</h3>' + statusRows(requests) +
-      '<h3 class="omega-rescc-section-title">Industrial construction projects</h3>' + statusRows(projectRows) + projectForm;
+    const profiles=siteRows(country).map(site=>{
+      const src=site.sourceSiteRecord&&typeof site.sourceSiteRecord==='object'?site.sourceSiteRecord:{},p=site.processing||src.processing||site.processingProfile||{},sim=site.simulation||src.simulation||{};
+      const outputs=p.refinedOutputs||p.factoryOutputs||site.factoryOutputs||sim.factoryOutputs||sim.refinedOutputs||[],up=p.upstreamProcess||site.upstreamProcess||sim.upstreamProcess,mid=p.midstreamProcess||site.midstreamProcess||sim.midstreamProcess,down=p.downstreamSectors||site.downstreamSectors;
+      return([outputs,up,mid,down].some(v=>Array.isArray(v)?v.length>0:v!==null&&v!==undefined&&v!=='')?{site,outputs,up,mid,down}:null);
+    }).filter(Boolean);
+    const profileCards=profiles.slice(0,150).map(x=>card(x.site.siteName||x.site.name||x.site.siteId,'FILE-BACKED PROCESSING PROFILE',
+      '<div class="omega-rescc-grid2">'+kv('Site ID',x.site.siteId)+kv('Commodity',x.site.resourceId||x.site.real&&x.site.real.resourceId||x.site.identity&&x.site.identity.resourceTypeId)+kv('Upstream',x.up)+kv('Midstream',x.mid)+kv('Outputs',x.outputs)+kv('Downstream sectors',x.down)+'</div>','')).join('');
+    const industrial=resourceBucket(country).industrialNetwork||{},econ=bucket('economy',country),projects=Array.isArray(industrial.projects)?industrial.projects:(Array.isArray(econ.projects)?econ.projects:(Array.isArray(econ.industrialProjects)?econ.industrialProjects:[]));
+    const options=resources(country).map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name||x.id)+'</option>').join('');
+    const form='<form class="omega-rescc-form" data-search-item data-form="factory-project"><h3>Start a catalog-backed factory project</h3><div class="omega-rescc-formgrid"><label>Resource<select name="resourceId" required>'+options+'</select></label><label>Budget cost<input type="number" name="cost" min="1" step="1" required></label><label>Capacity per day<input type="number" name="capacityPerDay" min="1" step="1" required></label><label>Build days<input type="number" name="buildDays" min="1" step="1" value="180" required></label></div><p class="omega-rescc-note">Project creation does not itself debit treasury.</p><button class="omega-rescc-button" type="submit">Create factory project</button></form>';
+    return '<h3 class="omega-rescc-section-title">Live production and processing assets</h3>'+(liveCards||empty('No factory asset is recorded in this country runtime.'))+
+      '<h3 class="omega-rescc-section-title">Processing capabilities from existing site files</h3>'+(profileCards||empty('No per-site processing/output profile is recorded for this country.'))+
+      (profiles.length>150?'<p class="omega-rescc-note">Showing 150 of '+profiles.length+' site profiles.</p>':'')+
+      '<h3 class="omega-rescc-section-title">Capacity requests</h3>'+statusRows(requests)+'<h3 class="omega-rescc-section-title">Industrial construction projects</h3>'+statusRows(projects)+form;
   }
   function panelInventory(country) {
     const r = resourceBucket(country);
