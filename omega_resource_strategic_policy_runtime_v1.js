@@ -259,7 +259,7 @@ function remediate(ctx,payload){
  const debit=dispatch('finance','OMEGA_TRADE_FINANCE_DEBIT',c,{amount:cost,reason:'RESOURCE_ENVIRONMENTAL_REMEDIATION',transactionId:txn});
  if(debit?.status!=='APPLIED'&&debit?.accepted!==true)return{accepted:false,reason:'TREASURY_REMEDIATION_DEBIT_FAILED',detail:debit,cost};
  const rootRaw=ctx.stateTransaction.get('resource.environmentalImpact'),root=rootRaw&&typeof rootRaw==='object'?clone(rootRaw):{bySite:{},revision:0};
- if(!root.bySite||typeof root.bySite!=='object')root.bySite={};const old=impactIndex(root,sid),reduce=Math.min(amount,num(e.remediationMaximumPerAction)||25);
+ if(!root.bySite||typeof root.bySite!=='object')root.bySite={};const old=impactIndex(root,sid),reduce=Math.min(amount,num(e.remediationMaximumPerAction));
  const next={...clone(old),siteId:sid,countryId:c,landIndex:Math.max(0,(num(old.landIndex)||0)-reduce),waterIndex:Math.max(0,(num(old.waterIndex)||0)-reduce),wasteIndex:Math.max(0,(num(old.wasteIndex)||0)-reduce),lastUpdatedTurn:turn()};
  root.bySite[sid]=next;root.revision=(num(root.revision)||0)+1;root.lastUpdatedTurn=turn();
  ledger.push({transactionId:txn,impactType:'REMEDIATION',countryId:c,siteId:sid,amount:reduce,cost,turn:turn(),status:'COMMITTED'});
