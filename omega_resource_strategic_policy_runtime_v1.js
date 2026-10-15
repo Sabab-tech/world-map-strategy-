@@ -661,7 +661,18 @@ function powerTick(ctx){
 function startPowerProject(countryId,payload={}){install();return dispatch('resource','OMEGA_RESOURCE_POWER_PROJECT_CREATE',countryId,payload);}
 function processPowerCountry(countryId){install();return dispatch('resource','OMEGA_RESOURCE_POWER_PROJECT_TICK',countryId,{correlationId:'POWER-TICK:'+country(countryId)+':'+turn()});}
 
-function handlerFor(type,fn,owner='resource'){const m=interop();if(!m?.registerCommandHandler)return false;try{m.registerAction?.(type,{actionId:type,stateOwnerMinistry:owner,authority:'OMEGA_RESOURCE_STRATEGIC_POLICY_RUNTIME'});m.registerCommandHandler(type,owner,fn);return true;}catch(e){registrationErrors.push(type+':'+String(e?.message||e));return false;}}
+function handlerFor(type,fn,owner='resource'){
+ const m=interop();if(!m?.registerCommandHandler)return false;
+ try{
+  // Interoperability can be loaded before its registry is configured. Initialise
+  // the canonical ministry IDs before attempting to register an owned handler.
+  if(Array.isArray(m.instance?.ids)&&m.instance.ids.length===0&&typeof m.configure==='function')m.configure({});
+  try{m.registerAction?.(type,{actionId:type,stateOwnerMinistry:owner,authority:'OMEGA_RESOURCE_STRATEGIC_POLICY_RUNTIME'});}
+  catch(error){registrationErrors.push(type+':ACTION_REGISTRATION:'+String(error?.message||error));}
+  m.registerCommandHandler(type,owner,fn);
+  return true;
+ }catch(e){registrationErrors.push(type+':'+String(e?.message||e));return false;}
+}
 function install(){
  if(handlersReady)return{ready:true,registered:registeredHandlerCount,required:registeredHandlerCount,errors:[]};
  registrationErrors=[];const defs=[
