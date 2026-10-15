@@ -280,10 +280,9 @@
       globalMetrics: {
         autonomyIndex: average(rows, 'selfSufficiencyRatio'),
         strategicReservesTotalDays: average(rows, 'strategicReserveDays'),
-        activeFacilitiesTotal: rows.reduce(function (sum, row) {
-          const value = numberOrNull(row.activeFacilities);
-          return sum + (value === null ? 0 : value);
-        }, 0),
+        activeFacilitiesTotal: rows.length && rows.every(function (row) { return numberOrNull(row.activeFacilities) !== null; })
+          ? rows.reduce(function (sum, row) { return sum + numberOrNull(row.activeFacilities); }, 0)
+          : null,
         surveysUnderway: surveys
       },
       resourcesList: rows,
