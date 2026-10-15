@@ -2,7 +2,7 @@ name: OMEGA Resource Gameplay Pipeline
 
 on:
   push:
-    branches: [main, feature/milestone-b-resource-e2e]
+    branches: [main, feature/milestone-b-resource-e2e, milestone-b-all-deposits-policy]
     paths:
       - '.github/workflows/omega-resource-gameplay-pipeline.yml'
       - 'omega_resource_endowment_runtime.js'
