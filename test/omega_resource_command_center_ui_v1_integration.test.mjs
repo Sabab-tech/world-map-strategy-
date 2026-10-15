@@ -6,6 +6,9 @@ import vm from 'node:vm';
 const ui = fs.readFileSync('omega_resource_command_center_ui_v1.js', 'utf8');
 const ministry = fs.readFileSync('ministry_engine.js', 'utf8');
 const html = fs.readFileSync('index.html', 'utf8');
+const market = fs.readFileSync('omega_global_market_system.js', 'utf8');
+const logistics = fs.readFileSync('omega_resource_logistics_runtime_v1.js', 'utf8');
+const policyRuntime = fs.readFileSync('omega_resource_strategic_policy_runtime_v1.js', 'utf8');
 const panelIds = ['matrix','ontology','reserves','deposits','extraction','processing','inventory','logistics','industrial','market','trade','value','cascade','cognitive','power','environment'];
 
 test('all sixteen resource panels are registered, selectable and safe to render', () => {
@@ -133,4 +136,22 @@ test('trade form submits through the authoritative request runtime and action fe
   assert.match(ui,/NO_COMPATIBLE_FACTORY/);
   assert.match(ui,/ALL_12_QUESTIONS_REQUIRE_ANSWERS/);
   assert.match(ui,/UNHANDLED_UI_ACTION/);
+});
+
+
+test('value, cascade, market and logistics controls use authoritative records without inventing transactions',()=>{
+  assert.match(ui,/data-form="swf-capitalise"/);
+  assert.match(ui,/policy\.capitalizeSovereignWealthFund/);
+  assert.match(ui,/Fund contribution ledger/);
+  assert.match(ui,/TREASURY_NATIVE_UNITS/);
+  assert.match(ui,/authoritativeRoutePolicy/);
+  assert.match(ui,/policy\.isRouteBlocked/);
+  assert.match(ui,/mutatesGameplay: false/);
+  assert.match(market,/if\(ask\.referenceOnly===true\)continue;/);
+  assert.match(market,/referenceAskDepth/);
+  assert.match(market,/bestAsk=asks\.find\(x=>x\.referenceOnly!==true\)/);
+  assert.match(logistics,/RESOURCE_ROUTE_BLOCKADE_ACTIVE/);
+  assert.match(logistics,/status:x\.status==='BLOCKED'/);
+  assert.match(policyRuntime,/function capitalizeSwfTx/);
+  assert.match(policyRuntime,/SWF_TRANSACTION_ID_CONFLICT/);
 });
