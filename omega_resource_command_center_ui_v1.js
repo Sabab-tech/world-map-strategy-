@@ -96,6 +96,26 @@
     const e = engine();
     return e && Array.isArray(e.resourceTypes) ? e.resourceTypes : [];
   }
+  const UNIT_DEFINITIONS = Object.freeze({
+    kg: { label: 'Kilogram (kg)', dimension: 'MASS', factor: 1, base: 'kg' },
+    metric_tonne: { label: 'Metric tonne (t)', dimension: 'MASS', factor: 1000, base: 'kg' },
+    lb: { label: 'Pound (lb)', dimension: 'MASS', factor: 0.45359237, base: 'kg' },
+    litre: { label: 'Litre (L)', dimension: 'VOLUME', factor: 1, base: 'L' },
+    bbl: { label: 'Oil barrel (bbl)', dimension: 'VOLUME', factor: 158.987294928, base: 'L' },
+    cubic_metre: { label: 'Cubic metre (m³)', dimension: 'VOLUME', factor: 1000, base: 'L' },
+    gj: { label: 'Gigajoule (GJ)', dimension: 'ENERGY', factor: 1, base: 'GJ' },
+    mmbtu: { label: 'Million Btu (MMBtu)', dimension: 'ENERGY', factor: 1.05505585262, base: 'GJ' },
+    kwh: { label: 'Kilowatt-hour (kWh)', dimension: 'ENERGY', factor: 0.0036, base: 'GJ' }
+  });
+  function convertUnits(value, fromUnit, toUnit) {
+    const amount = Number(value), from = UNIT_DEFINITIONS[String(fromUnit || '')], to = UNIT_DEFINITIONS[String(toUnit || '')];
+    if (!Number.isFinite(amount)) return { status: 'BLOCKED', reason: 'FINITE_QUANTITY_REQUIRED' };
+    if (!from || !to) return { status: 'BLOCKED', reason: 'UNKNOWN_UNIT' };
+    if (from.dimension !== to.dimension) return { status: 'BLOCKED', reason: 'UNIT_DIMENSION_MISMATCH', fromDimension: from.dimension, toDimension: to.dimension };
+    const converted = amount * from.factor / to.factor;
+    if (!Number.isFinite(converted)) return { status: 'BLOCKED', reason: 'CONVERSION_RESULT_NOT_FINITE' };
+    return { status: 'APPLIED', value: Number(converted.toPrecision(12)), unit: toUnit, label: to.label, dimension: to.dimension, baseUnit: from.base, source: 'FIXED_CANONICAL_UNIT_DEFINITIONS' };
+  }
   function deposits() {
     const e = engine();
     return e && Array.isArray(e.deposits) ? e.deposits : [];
@@ -196,7 +216,18 @@
     const summary = engineSummary(country);
     const rows = resources(country);
     const metrics = summary.globalMetrics || {};
-    const top = '<div class="omega-rescc-metrics">' +
+    const unitOptions = Object.keys(UNIT_DEFINITIONS).map(function (id) {
+      const unit = UNIT_DEFINITIONS[id];
+      return '<option value="' + esc(id) + '">' + esc(unit.label) + '</option>';
+    }).join('');
+    const metrology = '<form class="omega-rescc-form" data-form="metrology"><h3>Canonical unit conversion</h3>' +
+      '<div class="omega-rescc-formgrid">' +
+      '<label>Quantity<input name="value" type="number" step="any" required placeholder="Enter quantity"></label>' +
+      '<label>From unit<select name="fromUnit" required>' + unitOptions + '</select></label>' +
+      '<label>To unit<select name="toUnit" required>' + unitOptions + '</select></label></div>' +
+      '<p class="omega-rescc-note">Only conversions within the same physical dimension are allowed. Volume, mass and energy are never converted across dimensions.</p>' +
+      '<button class="omega-rescc-button" type="submit">Convert quantity</button></form>';
+    const top = metrology + '<div class="omega-rescc-metrics">' +
       '<div><span>Autonomy index</span><strong>' + number(metrics.autonomyIndex, '%') + '</strong></div>' +
       '<div><span>Reserve duration</span><strong>' + number(metrics.strategicReservesTotalDays, ' days') + '</strong></div>' +
       '<div><span>Runtime source</span><strong>' + esc(summary.version || 'Unavailable') + '</strong></div></div>' +
@@ -344,8 +375,10 @@
           !(g.Omega && g.Omega.ResourceIndustrialNetwork && g.Omega.ResourceIndustrialNetwork.executeFactoryCycle && id && rid)) +
         (rid ? actionButton('expansion', 'Request capacity expansion', { 'resource-id': rid }) : ''));
     }).join('');
-    const projectRows = Array.isArray(bucket('economy', country).projects) ? bucket('economy', country).projects :
-      (Array.isArray(bucket('economy', country).industrialProjects) ? bucket('economy', country).industrialProjects : []);
+    const resourceIndustrial = resourceBucket(country).industrialNetwork || {};
+    const projectRows = Array.isArray(resourceIndustrial.projects) ? resourceIndustrial.projects :
+      (Array.isArray(bucket('economy', country).projects) ? bucket('economy', country).projects :
+      (Array.isArray(bucket('economy', country).industrialProjects) ? bucket('economy', country).industrialProjects : []));
     const resourceOptions = resources(country).map(function (r) {
       return '<option value="' + esc(r.id) + '">' + esc(r.name || r.id) + '</option>';
     }).join('');
@@ -438,8 +471,12 @@
       pipeline.perCountry.find(function (x) { return normaliseCountry(x.countryId) === activeCountry(country); }) : null;
     const r = resourceBucket(country);
     const econ = bucket('economy', country);
-    const flows = r.siteFlows || r.siteFlowLedger || r.extractionFlows || [];
-    const projects = Array.isArray(econ.projects) ? econ.projects : [];
+    const industrialState = r.industrialNetwork || {};
+    const flows = Array.isArray(industrialState.siteFlowLedger) ? industrialState.siteFlowLedger :
+      (Array.isArray(r.siteFlows) ? r.siteFlows : (Array.isArray(r.siteFlowLedger) ? r.siteFlowLedger : (Array.isArray(r.extractionFlows) ? r.extractionFlows : [])));
+    const projects = Array.isArray(industrialState.projects) ? industrialState.projects :
+      (Array.isArray(econ.projects) ? econ.projects : []);
+    const technologyContracts = Array.isArray(industrialState.technologyContracts) ? industrialState.technologyContracts : [];
     const stages = perCountry && perCountry.stages || {};
     return (diag ? diagnosticCard('Country industrial network diagnostics', diag) : empty('Industrial network runtime is unavailable.')) +
       (perCountry ? diagnosticCard('End-to-end site pipeline state', perCountry) : '') +
@@ -449,6 +486,7 @@
       '<h3 class="omega-rescc-section-title">Observed flow ledger</h3>' +
       (Array.isArray(flows) ? statusRows(flows) : empty('No site flow ledger is exposed at this state path.')) +
       '<h3 class="omega-rescc-section-title">Construction projects</h3>' + statusRows(projects) +
+      '<h3 class="omega-rescc-section-title">Technology project contracts</h3>' + statusRows(technologyContracts) +
       (Object.keys(stages).length ? diagnosticCard('Pipeline stage counts', stages) : '');
   }
   function panelMarket(country) {
@@ -584,7 +622,10 @@
     const energyRows = resources(country).filter(function (x) {
       return /oil|gas|uranium|coal|power|energy|hydrogen/i.test(String(x.id) + ' ' + String(x.name));
     });
-    const projects = Array.isArray(bucket('economy', country).projects) ? bucket('economy', country).projects : [];
+    const projects = Array.isArray(r.industrialNetwork && r.industrialNetwork.projects) ? r.industrialNetwork.projects :
+      (Array.isArray(bucket('economy', country).projects) ? bucket('economy', country).projects : []);
+    const technologyContracts = Array.isArray(r.industrialNetwork && r.industrialNetwork.technologyContracts) ? r.industrialNetwork.technologyContracts : [];
+    const researchProjects = Array.isArray(r.technologyResearchProjects) ? r.technologyResearchProjects : [];
     const controls = '<div class="omega-rescc-actions">' +
       actionButton('industry-tech', 'Start advanced gas-compression research', { 'technology-id': 'ADVANCED_GAS_COMPRESSION', mode: 'RESEARCH' },
         !(network && network.startTechnologyProject)) +
@@ -598,6 +639,8 @@
           kv('Reserve', x.reserve) + kv('Unit', x.unit) + '</div>', '');
       }).join('') || empty('No matching energy resource rows are recorded.')) +
       controls + '<h3 class="omega-rescc-section-title">Energy and infrastructure project records</h3>' + statusRows(projects) +
+      '<h3 class="omega-rescc-section-title">Industrial technology contracts</h3>' + statusRows(technologyContracts) +
+      '<h3 class="omega-rescc-section-title">Resource research runtime projects</h3>' + statusRows(researchProjects) +
       '<h3 class="omega-rescc-section-title">Current mine and power-related outputs</h3>' +
       statusRows(Array.isArray(r.mineProductionLedger) ? r.mineProductionLedger : []);
   }
@@ -605,7 +648,10 @@
     const network = g.Omega && g.Omega.ResourceIndustrialNetwork;
     const r = resourceBucket(country);
     const env = r.environment || r.environmental || bucket('economy', country).environment || {};
-    const projects = Array.isArray(bucket('economy', country).projects) ? bucket('economy', country).projects : [];
+    const projects = Array.isArray(r.industrialNetwork && r.industrialNetwork.projects) ? r.industrialNetwork.projects :
+      (Array.isArray(bucket('economy', country).projects) ? bucket('economy', country).projects : []);
+    const technologyContracts = Array.isArray(r.industrialNetwork && r.industrialNetwork.technologyContracts) ? r.industrialNetwork.technologyContracts : [];
+    const researchProjects = Array.isArray(r.technologyResearchProjects) ? r.technologyResearchProjects : [];
     const controls = '<div class="omega-rescc-actions">' +
       actionButton('industry-tech', 'Research water recycling', { 'technology-id': 'WATER_RECYCLING', mode: 'RESEARCH' },
         !(network && network.startTechnologyProject)) +
@@ -615,7 +661,9 @@
       card('Environmental runtime state', Object.keys(env).length ? 'STATE FOUND' : 'NO ENVIRONMENTAL LEDGER FOUND',
         Object.keys(env).length ? '<pre class="omega-rescc-json">' + shortJson(env) + '</pre>' :
           '<div class="omega-rescc-warning">No environmental ledger object was found in the expected country state. Quota enforcement and remediation consequences are therefore unverified.</div>', '') +
-      controls + '<h3 class="omega-rescc-section-title">Construction / technology projects</h3>' + statusRows(projects) +
+      controls + '<h3 class="omega-rescc-section-title">Construction projects</h3>' + statusRows(projects) +
+      '<h3 class="omega-rescc-section-title">Industrial technology contracts</h3>' + statusRows(technologyContracts) +
+      '<h3 class="omega-rescc-section-title">Resource research runtime projects</h3>' + statusRows(researchProjects) +
       '<h3 class="omega-rescc-section-title">Tailings and by-product records</h3>' +
       statusRows(Array.isArray(r.byproducts) ? r.byproducts : (Array.isArray(r.tailings) ? r.tailings : []));
   }
@@ -889,6 +937,17 @@
     const c = activeCountry();
     let result;
     try {
+      if (kind === 'metrology') {
+        const converted = convertUnits(data.get('value'), data.get('fromUnit'), data.get('toUnit'));
+        if (converted.status !== 'APPLIED') {
+          setOutcome('Metrology conversion', converted);
+          return;
+        }
+        lastOutcome = 'Metrology conversion · ' + Number(converted.value).toLocaleString(undefined, { maximumFractionDigits: 10 }) +
+          ' ' + converted.label + ' · Dimension: ' + converted.dimension + ' · ' + converted.source;
+        render(countryId, activePanel);
+        return;
+      }
       if (kind === 'trade-request') {
         const trade = g.OmegaGlobalTrade || g.Omega && g.Omega.GlobalTrade;
         if (!trade || typeof trade.createRequest !== 'function') result = { status: 'UNAVAILABLE', reason: 'TRADE_REQUEST_CREATION_API_UNAVAILABLE' };
@@ -960,21 +1019,33 @@
         const oldCards = cabinet.getResource16CardsHtml;
         cabinet.getResource16CardsHtml = function () {
           let html = oldCards.call(this);
-          const targets = ['matrix', 'ontology', 'reserves'];
-          let seen = 0;
-          html = html.replace(/onclick="window\.ResourceMinistryEngine\.openModal\('([^']+)', 'matrix'\);"/g, function (_, country) {
-            const panel = targets[seen];
-            seen += 1;
-            return panel ? 'onclick="window.ResourceMinistryEngine.openModal(\'' + country + '\', \'' + panel + '\');"' : _;
+          const panelByPoint = {
+            '01': 'matrix', '02': 'ontology', '03': 'reserves', '04': 'deposits',
+            '05': 'extraction', '06': 'processing', '07': 'inventory', '08': 'logistics',
+            '09': 'industrial', '10': 'market', '11': 'trade', '12': 'value',
+            '13': 'cascade', '14': 'cognitive', '15': 'power', '16': 'environment'
+          };
+          html = html.replace(/<div class="dept-card" style=[\\s\\S]*?(?=<div class="dept-card" style=|$)/g, function (block) {
+            const point = block.match(/<span>(\\d{2})\\.\\s/);
+            if (!point || !panelByPoint[point[1]]) return block;
+            const panel = panelByPoint[point[1]];
+            return block.replace(/onclick="[^"]*"/, 'onclick="window.ResourceMinistryEngine.openModal(\\'' + countryKey + '\\', \\' + panel + '\\');"');
           });
           html = html.replace('18 Commodity Ontology Matrix', 'Commodity Ontology Matrix')
             .replace('593 geocoded global mining concessions, ore purities, and spatial reserve clusters.', 'Authoritative global deposit registry; missing values remain unavailable.')
             .replace('Upgrade Extraction & RRR ($800M)', 'Open Extraction & Depletion Console')
             .replace('Commission Smelter Complex ($1.2B)', 'Open Processing & Factory Console')
             .replace('Drawdown / Expand SPR Silos', 'Inspect Inventory / Request SPR Transfer')
+            .replace('Negotiate Supply Agreements', 'Create Bilateral Supply Request')
+            .replace('Capitalize National SWF', 'Inspect Treasury & SWF Records')
             .replace('Build 2.4GW Nuclear Baseload ($2.0B)', 'Open Power Systems Console')
-            .replace('Deploy Green Infrastructure ($600M)', 'Open Environmental Controls');
-          return html;
+            .replace('Deploy Green Infrastructure ($600M)', 'Open Environmental Controls')
+            .replace('Power Grid & 2.4GW Baseload Mix', 'Power Systems & Energy Projects')
+            .replace('2,400MW nuclear baseload, combined-cycle gas peakers, offshore wind, and black-start capability.', 'Catalog-backed energy projects and observed output records. Nuclear construction is unavailable in the current industrial catalog.')
+            .replace('Cognitive Situation & 12-Question Gate', 'Cognitive Review & 12-Question Gate')
+            .replace('Red-Team counterfactual critics, 10-dimensional health evaluations, and AI briefing generation.', 'Evidence and constraint review. An authoritative AI gate result is shown only if an evaluation endpoint exists.')
+            .replace('Run AI Cognitive Decision Gate', 'Open 12-Question Decision Review')
+            .replace('Tailings reprocessing, emissions cap-and-trade, industrial water recycling, and green transition.', 'Water recycling and tailings-reprocessing research are supported; carbon quota enforcement is only shown when backed by authoritative state.');          return html;
         };
         cabinet.__omegaResccCardPatch = true;
       }
@@ -1030,6 +1101,7 @@
     openPanel: function (panel) { render(countryId, panel); },
     open: function (country, panel) { render(country, panel); },
     close,
+    convertUnits,
     getState: function () { return { countryId: countryId, panel: activePanel, lastOutcome: lastOutcome }; }
   });
   g.Omega = g.Omega || {};
