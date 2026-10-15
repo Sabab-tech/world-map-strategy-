@@ -47,4 +47,8 @@ assert.equal(referenceOnly.clearingPriceUsd,null);
 assert.equal(referenceOnly.matchedQuantity,0);
 assert.equal(referenceOnly.referencePrice,88);
 assert.equal(market.localPrice('BDG','crude_oil'),null);
+globalThis.Game.state.trade.BDG.marketPrice.crude_oil=100; // deliberately stale seed/previous clearing price
+await import('../omega_global_trade_system.js');
+assert.equal(globalThis.OmegaGlobalTrade.marketPrice('BDG','crude_oil'),null,
+  'trade valuation must reject stale country prices while dynamic market has no current clear');
 console.log('OMEGA GLOBAL MARKET CLEARING TEST PASSED');
