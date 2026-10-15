@@ -29,6 +29,8 @@
     "quantityScaleByUnit": {
       "TONNE": 10000,
       "TONNES": 10000,
+      "TONNE_ORE": 10000,
+      "TONNES_ORE": 10000,
       "METRIC_TONNE": 10000,
       "METRIC_TONNES": 10000,
       "BBL": 20000,
