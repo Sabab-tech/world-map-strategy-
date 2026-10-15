@@ -4,8 +4,14 @@ import vm from 'node:vm';
 import test from 'node:test';
 
 const read=name=>JSON.parse(fs.readFileSync(new URL('../'+name,import.meta.url),'utf8'));
-const aiAssessment=(decision='PROCEED')=>({
- decision,confidence:.91,riskSummary:'Validated test AI response',findings:['Test context reviewed'],
+const aiAssessment=(decision='PROCEED',operation='POWER_PROJECT',requestedAmount=null)=>({
+ decision,confidence:.91,operation,
+ projectType:operation==='POWER_PROJECT'?'NUCLEAR_BASELOAD':null,
+ requestedAmount,
+ operationRequirements:operation==='POWER_PROJECT'
+  ?{projectType:'NUCLEAR_BASELOAD',capacityMw:2400,constructionTurns:5,constructionCostTreasuryUnits:2000000000,fuelResourceId:'uranium',fuelQuantityPerTurn:.01,emissionsTonnesCo2ePerMwh:.012}
+  :{requestedContributionTreasuryUnits:requestedAmount,currencyAuthority:'TREASURY_NATIVE_UNITS',enabled:true,maxTransactions:512},
+ riskSummary:'Validated test AI response',findings:['Test context reviewed'],
  recommendedChecks:['Recheck after each turn'],aiGenerated:true,
  authority:'OMEGA_SERVER_RESOURCE_DECISION_AI',model:'gemini-test',
  provenance:'SERVER_MODEL_RESPONSE_WITH_DETERMINISTIC_SAFETY_FLOORS'
@@ -257,11 +263,11 @@ test('carbon quota tracks CO2e separately from environmental impact indexes and 
 test('high-impact cognitive gate requires a server AI verdict and persists it idempotently',()=>{
  const h=harness(),api=h.sandbox.Omega.ResourceStrategicPolicyRuntime;
  const answers=['proceed','proceed','review','proceed','proceed','review','proceed','proceed','review','proceed','proceed','proceed'];
- const missingAi=api.evaluateCognitiveGate('BGD',{decisionId:'COGNITIVE-NO-AI',answers});
+ const missingAi=api.evaluateCognitiveGate('BGD',{decisionId:'COGNITIVE-NO-AI',operation:'POWER_PROJECT',projectType:'NUCLEAR_BASELOAD',answers});
  assert.equal(missingAi.accepted,false);
  assert.equal(missingAi.reason,'AI_ASSESSMENT_REQUIRED');
  assert.equal((h.state.resource.BGD.cognitiveDecisionLedger||[]).length,0);
- const payload={decisionId:'COGNITIVE-TEST-1',answers,aiAssessment:aiAssessment('PROCEED')};
+ const payload={decisionId:'COGNITIVE-TEST-1',operation:'POWER_PROJECT',projectType:'NUCLEAR_BASELOAD',requestedAmount:null,answers,aiAssessment:aiAssessment('PROCEED','POWER_PROJECT',null)};
  const response=api.evaluateCognitiveGate('BGD',payload);
  assert.equal(response.accepted,true,JSON.stringify(response));
  assert.equal(response.persisted,true);
@@ -275,10 +281,10 @@ test('high-impact cognitive gate requires a server AI verdict and persists it id
  const replay=api.evaluateCognitiveGate('BGD',payload);
  assert.equal(replay.duplicate,true);
  assert.equal(h.state.resource.BGD.cognitiveDecisionLedger.length,1);
- const incomplete=api.evaluateCognitiveGate('BGD',{decisionId:'COGNITIVE-INCOMPLETE',answers:['proceed'],aiAssessment:aiAssessment()});
+ const incomplete=api.evaluateCognitiveGate('BGD',{decisionId:'COGNITIVE-INCOMPLETE',operation:'POWER_PROJECT',projectType:'NUCLEAR_BASELOAD',answers:['proceed'],aiAssessment:aiAssessment()});
  assert.equal(incomplete.accepted,false);
  assert.equal(incomplete.reason,'ALL_12_QUESTIONS_REQUIRE_ANSWERS');
- const unauthoritative=api.evaluateCognitiveGate('BGD',{decisionId:'COGNITIVE-FAKE-AI',answers,aiAssessment:{...aiAssessment(),authority:'PLAYER_ENTERED_COGNITIVE_SCREENING'}});
+ const unauthoritative=api.evaluateCognitiveGate('BGD',{decisionId:'COGNITIVE-FAKE-AI',operation:'POWER_PROJECT',projectType:'NUCLEAR_BASELOAD',answers,aiAssessment:{...aiAssessment(),authority:'PLAYER_ENTERED_COGNITIVE_SCREENING'}});
  assert.equal(unauthoritative.accepted,false);
  assert.equal(unauthoritative.reason,'AI_ASSESSMENT_REQUIRED');
 });
@@ -292,7 +298,7 @@ test('nuclear baseload construction debits treasury, commissions only by turns a
  const noGate=api.startPowerProject('BGD',{projectId:'POWER-PROJECT-NO-GATE',projectType:'NUCLEAR_BASELOAD'});
  assert.equal(noGate.accepted,false);
  assert.equal(noGate.reason,'COGNITIVE_GATE_DECISION_REQUIRED');
- const gate=api.evaluateCognitiveGate('BGD',{decisionId:'POWER-GATE-APPROVAL',answers:Array(12).fill('proceed'),aiAssessment:aiAssessment('PROCEED')});
+ const gate=api.evaluateCognitiveGate('BGD',{decisionId:'POWER-GATE-APPROVAL',operation:'POWER_PROJECT',projectType:'NUCLEAR_BASELOAD',requestedAmount:null,answers:Array(12).fill('proceed'),aiAssessment:aiAssessment('PROCEED','POWER_PROJECT',null)});
  assert.equal(gate.accepted,true);
  const started=api.startPowerProject('BGD',{projectId:'POWER-PROJECT-2400',projectType:'NUCLEAR_BASELOAD'});
  assert.equal(started.accepted,true,JSON.stringify(started));
@@ -328,12 +334,12 @@ test('sovereign wealth fund capitalization debits treasury once and persists con
  const noGate=api.capitalizeSovereignWealthFund('BGD',{transactionId:'SWF-CAP-NO-GATE',amount:200});
  assert.equal(noGate.accepted,false);
  assert.equal(noGate.reason,'COGNITIVE_GATE_DECISION_REQUIRED');
- const blockedGate=api.evaluateCognitiveGate('BGD',{decisionId:'SWF-GATE-BLOCK',answers:['block',...Array(11).fill('proceed')],aiAssessment:aiAssessment('PROCEED')});
+ const blockedGate=api.evaluateCognitiveGate('BGD',{decisionId:'SWF-GATE-BLOCK',operation:'SWF_CAPITALIZATION',requestedAmount:200,answers:['block',...Array(11).fill('proceed')],aiAssessment:aiAssessment('PROCEED','SWF_CAPITALIZATION',200)});
  assert.equal(blockedGate.accepted,true);
  const blocked=api.capitalizeSovereignWealthFund('BGD',{transactionId:'SWF-CAP-BLOCKED',amount:200});
  assert.equal(blocked.accepted,false);
  assert.equal(blocked.reason,'COGNITIVE_GATE_BLOCKED');
- const approved=api.evaluateCognitiveGate('BGD',{decisionId:'SWF-GATE-PROCEED',answers:Array(12).fill('proceed'),aiAssessment:aiAssessment('PROCEED')});
+ const approved=api.evaluateCognitiveGate('BGD',{decisionId:'SWF-GATE-PROCEED',operation:'SWF_CAPITALIZATION',requestedAmount:200,answers:Array(12).fill('proceed'),aiAssessment:aiAssessment('PROCEED','SWF_CAPITALIZATION',200)});
  assert.equal(approved.accepted,true);
  const first=api.capitalizeSovereignWealthFund('BGD',{transactionId:'SWF-CAP-1',amount:200});
  assert.equal(first.accepted,true,JSON.stringify(first));
