@@ -175,7 +175,7 @@ test('canonical simulation save/load preserves resource policy, environment, res
   h.state.resource.BGD.powerAssets=[{assetId:'ASSET-RESTORE',status:'OPERATIONAL',capacityMw:2400}];
   h.state.resource.BGD.powerGeneration={turn:12,installedCapacityMw:2400,generatedMwh:51840,unit:'MWH_PER_TURN'};
   h.state.resource.BGD.powerGenerationLedger=[{transactionId:'POWER-GEN-RESTORE',status:'GENERATED',generationMwh:51840}];
-  h.state.resource.BGD.cognitiveDecisionLedger=[{decisionId:'COG-RESTORE',decision:'REVIEW',advisory:true,aiGenerated:false}];
+  h.state.resource.BGD.cognitiveDecisionLedger=[{decisionId:'COG-RESTORE',decision:'REVIEW',advisory:false,enforced:true,gateScope:'STRATEGIC_HIGH_IMPACT_OPERATIONS',aiGenerated:false}];
   h.state.resource.BGD.sovereignWealthFund={fundId:'SWF:BGD',balance:240,unit:'TREASURY_NATIVE_UNITS',contributions:[{transactionId:'SWF-RESTORE',amount:240}]};
   const saved=sim.saveState();
   h.state.resource.BGD.mineStates={};h.state.resource.BGD.environmentalImpact={revision:999};h.state.resource.BGD.explorationProjects=[];h.state.trade.BGD.resourceEmbargoes=[];h.state.resource.BGD.batches=[];
@@ -194,6 +194,7 @@ test('canonical simulation save/load preserves resource policy, environment, res
   assert.equal(h.state.resource.BGD.powerGeneration.generatedMwh,51840);
   assert.equal(h.state.resource.BGD.powerGenerationLedger[0].transactionId,'POWER-GEN-RESTORE');
   assert.equal(h.state.resource.BGD.cognitiveDecisionLedger[0].aiGenerated,false);
+  assert.equal(h.state.resource.BGD.cognitiveDecisionLedger[0].enforced,true);
   assert.equal(h.state.resource.BGD.sovereignWealthFund.balance,240);
   assert.equal(h.state.resource.BGD.sovereignWealthFund.contributions[0].transactionId,'SWF-RESTORE');
   assert.equal(sim.diagnostics().authoritativeState.worldStateLinked,true);
@@ -249,6 +250,8 @@ test('the 12-question cognitive gate persists a provenance-labelled advisory dec
  assert.equal(response.persisted,true);
  assert.equal(response.decision.decision,'PROCEED_WITH_RECORDED_ASSUMPTIONS');
  assert.equal(response.decision.aiGenerated,false);
+ assert.equal(response.decision.enforced,true);
+ assert.equal(response.decision.gateScope,'STRATEGIC_HIGH_IMPACT_OPERATIONS');
  assert.equal(response.decision.authority,'PLAYER_ENTERED_COGNITIVE_SCREENING');
  assert.equal(h.state.resource.BGD.cognitiveDecisionLedger.length,1);
  const replay=api.evaluateCognitiveGate('BGD',{decisionId:'COGNITIVE-TEST-1',answers});
@@ -265,6 +268,11 @@ test('nuclear baseload construction debits treasury, commissions only by turns a
  h.state.resource.BGD.inventory={uranium:10};
  const quota=api.setCarbonQuota('BGD',{quotaId:'POWER-CARBON-LOW',allowanceTonnesCo2e:1,periodTurns:10});
  assert.equal(quota.accepted,true);
+ const noGate=api.startPowerProject('BGD',{projectId:'POWER-PROJECT-NO-GATE',projectType:'NUCLEAR_BASELOAD'});
+ assert.equal(noGate.accepted,false);
+ assert.equal(noGate.reason,'COGNITIVE_GATE_DECISION_REQUIRED');
+ const gate=api.evaluateCognitiveGate('BGD',{decisionId:'POWER-GATE-APPROVAL',answers:Array(12).fill('proceed')});
+ assert.equal(gate.accepted,true);
  const started=api.startPowerProject('BGD',{projectId:'POWER-PROJECT-2400',projectType:'NUCLEAR_BASELOAD'});
  assert.equal(started.accepted,true,JSON.stringify(started));
  assert.equal(started.project.capacityMw,2400);
@@ -296,6 +304,16 @@ test('nuclear baseload construction debits treasury, commissions only by turns a
 test('sovereign wealth fund capitalization debits treasury once and persists contribution lineage',()=>{
  const h=harness(),api=h.sandbox.Omega.ResourceStrategicPolicyRuntime;
  h.state.finance.BGD.available=500;
+ const noGate=api.capitalizeSovereignWealthFund('BGD',{transactionId:'SWF-CAP-NO-GATE',amount:200});
+ assert.equal(noGate.accepted,false);
+ assert.equal(noGate.reason,'COGNITIVE_GATE_DECISION_REQUIRED');
+ const blockedGate=api.evaluateCognitiveGate('BGD',{decisionId:'SWF-GATE-BLOCK',answers:['block',...Array(11).fill('proceed')]});
+ assert.equal(blockedGate.accepted,true);
+ const blocked=api.capitalizeSovereignWealthFund('BGD',{transactionId:'SWF-CAP-BLOCKED',amount:200});
+ assert.equal(blocked.accepted,false);
+ assert.equal(blocked.reason,'COGNITIVE_GATE_BLOCKED');
+ const approved=api.evaluateCognitiveGate('BGD',{decisionId:'SWF-GATE-PROCEED',answers:Array(12).fill('proceed')});
+ assert.equal(approved.accepted,true);
  const first=api.capitalizeSovereignWealthFund('BGD',{transactionId:'SWF-CAP-1',amount:200});
  assert.equal(first.accepted,true,JSON.stringify(first));
  assert.equal(first.fund.balance,200);
