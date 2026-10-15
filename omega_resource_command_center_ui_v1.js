@@ -109,6 +109,7 @@
     kwh: { label: 'Kilowatt-hour (kWh)', dimension: 'ENERGY', factor: 0.0036, base: 'GJ' }
   });
   function convertUnits(value, fromUnit, toUnit) {
+    if (value === null || value === undefined || String(value).trim() === '') return { status: 'BLOCKED', reason: 'QUANTITY_REQUIRED' };
     const amount = Number(value), from = UNIT_DEFINITIONS[String(fromUnit || '')], to = UNIT_DEFINITIONS[String(toUnit || '')];
     if (!Number.isFinite(amount)) return { status: 'BLOCKED', reason: 'FINITE_QUANTITY_REQUIRED' };
     if (!from || !to) return { status: 'BLOCKED', reason: 'UNKNOWN_UNIT' };
@@ -1054,7 +1055,14 @@
             .replace('Cognitive Situation & 12-Question Gate', 'Cognitive Review & 12-Question Gate')
             .replace('Red-Team counterfactual critics, 10-dimensional health evaluations, and AI briefing generation.', 'Evidence and constraint review. An authoritative AI gate result is shown only if an evaluation endpoint exists.')
             .replace('Run AI Cognitive Decision Gate', 'Open 12-Question Decision Review')
-            .replace('Tailings reprocessing, emissions cap-and-trade, industrial water recycling, and green transition.', 'Water recycling and tailings-reprocessing research are supported; carbon quota enforcement is only shown when backed by authoritative state.');
+            .replace('Tailings reprocessing, emissions cap-and-trade, industrial water recycling, and green transition.', 'Water recycling and tailings-reprocessing research are supported; carbon quota enforcement is only shown when backed by authoritative state.')
+            .replace('Canonical conversion factors for MMBTU, BBL, Metric Tons and Murmur64 checksum validation.', 'Canonical mass, volume and energy conversion with physical-dimension checks.')
+            .replace('Verified proven reserves, daily extraction mutation rates, and sovereign resource balance sheets.', 'Observed or explicitly simulated reserve balances, extraction records, and source-authority labels.')
+            .replace('Block caving, open-cast stripping, and Reserve Replacement Ratio (RRR) optimization.', 'Site-specific extraction eligibility, reserve depletion, and survey/request status from the installed runtime.')
+            .replace('Continuous clearing, order book matching, Brent/WTI arbitrage, and derivative hedging.', 'Observed order-book matching, reference-only quotes, and clearing history; no derivatives engine is assumed.')
+            .replace('Long-term bilateral offtake agreements, Letters of Credit, import/export tariffs, and sanctions.', 'Bilateral import requests, counterparty review, observed relations and sanctions, and settlement ledger.')
+            .replace('Resource rent capture, Sovereign Wealth Fund capitalization, and Dutch Disease mitigation.', 'Inspect treasury and trade ledgers; sovereign-fund capitalization remains unavailable without an authoritative fund API.')
+            .replace('Non-linear supply shock propagation, chokepoint blockades, and contingency war-gaming.', 'Non-mutating transport-constraint multipliers and current shipment exposure; no unverified consequence is applied.');
         };
         cabinet.__omegaResccCardPatch = true;
       }
