@@ -16,7 +16,7 @@ const tok=v=>String(v??'').normalize('NFKC').trim().toLowerCase().replace(/[^a-z
 const state=()=>g.Game?.state||g.gameState||{};
 const turn=()=>num(state()?.simulation?.turn??state()?.turn??state()?.simulationTurn??g.Omega?.Simulation?.clock?.turn)??0;
 const interop=()=>g.Omega?.MinistryInteroperability||g.OmegaMinistryInteroperability||null;
-let policyRules=null,loadPromise=null,handlersReady=false,registrationErrors=[];
+let policyRules=null,loadPromise=null,handlersReady=false,registeredHandlerCount=0,registrationErrors=[];
 function country(v){
  const raw=String(v??'').trim();if(!raw)return null;
  try{const b=g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity;const hit=b?.resolveCountry?.(raw);if(hit?.id)return id(hit.id);}catch(_){}
@@ -506,6 +506,7 @@ function processPowerCountry(countryId){install();return dispatch('resource','OM
 
 function handlerFor(type,fn,owner='resource'){const m=interop();if(!m?.registerCommandHandler)return false;try{m.registerAction?.(type,{actionId:type,stateOwnerMinistry:owner,authority:'OMEGA_RESOURCE_STRATEGIC_POLICY_RUNTIME'});m.registerCommandHandler(type,owner,fn);return true;}catch(e){registrationErrors.push(type+':'+String(e?.message||e));return false;}}
 function install(){
+ if(handlersReady)return{ready:true,registered:registeredHandlerCount,required:registeredHandlerCount,errors:[]};
  registrationErrors=[];const defs=[
  ['OMEGA_RESOURCE_EMBARGO_DECLARE',(cmd,ctx)=>setPolicy(ctx,'embargo',cmd?.payload||{}),'trade'],
  ['OMEGA_RESOURCE_EMBARGO_LIFT',(cmd,ctx)=>liftPolicy(ctx,'embargo',cmd?.payload||{}),'trade'],
@@ -525,7 +526,7 @@ function install(){
  ['OMEGA_RESOURCE_POWER_PROJECT_CREATE',(cmd,ctx)=>powerProjectCreate(ctx,cmd?.payload||{})],
  ['OMEGA_RESOURCE_POWER_PROJECT_TICK',(cmd,ctx)=>powerTick(ctx,cmd?.payload||{})]
  ];
- let n=0;for(const [t,f,owner='resource'] of defs)if(handlerFor(t,f,owner))n++;handlersReady=n===defs.length;return{ready:handlersReady,registered:n,required:defs.length,errors:registrationErrors.slice()};
+ let n=0;for(const [t,f,owner='resource'] of defs)if(handlerFor(t,f,owner))n++;registeredHandlerCount=n;handlersReady=n===defs.length;return{ready:handlersReady,registered:n,required:defs.length,errors:registrationErrors.slice()};
 }
 function countryIds(){
  const out=new Set(Object.keys(state()?.resource||{}).map(country).filter(Boolean));
