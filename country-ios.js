@@ -188,6 +188,18 @@ window.CountryIOS = {
         return text;
     },
 
+    renderCountryPercentBar(countryKey, domains, paths, label) {
+        const raw = this.readCountryValue(countryKey, domains, paths);
+        const value = typeof raw === 'number' ? raw :
+            (typeof raw === 'string' && raw.trim() !== '' && /^-?\d+(?:\.\d+)?$/.test(raw.trim()) ? Number(raw) : null);
+        if (value === null || !Number.isFinite(value) || value < 0 || value > 100) {
+            return '<p class="ios-card-sub">' + String(label || 'Metric') + ': NOT RECORDED; chart omitted until a valid 0-100 value exists.</p>';
+        }
+        return '<div style="background:rgba(255,255,255,0.1);border-radius:6px;height:18px;overflow:hidden;margin-top:6px;">' +
+            '<div style="width:' + value + '%;background:linear-gradient(90deg,#00e5ff,#22c55e);height:100%;"></div></div>' +
+            '<span class="ios-card-sub" style="margin-top:4px;">' + String(label || 'Metric') + ': ' + value.toLocaleString(undefined,{maximumFractionDigits:2}) + '%</span>';
+    },
+
     switchChapter(chNum) {
         this.activeChapter = chNum;
 
@@ -1136,10 +1148,7 @@ window.CountryIOS = {
 
                 <div class="ios-card">
                     <div class="ios-card-title">INFRASTRUCTURE MODERNIZATION INDEX</div>
-                    <div style="background:rgba(255,255,255,0.1); border-radius:6px; height:18px; overflow:hidden; margin-top:6px;">
-                        <div style="width:92%; background:linear-gradient(90deg, #00e5ff, #22c55e); height:100%;"></div>
-                    </div>
-                    <span class="ios-card-sub" style="margin-top:4px;">Logistics Network Operating Efficiency: ${this.formatCountryValue(countryKey, ['transport','infrastructure'], ['logisticsEfficiencyPercent','operatingEfficiencyPercent','logistics.efficiencyPercent'], '%')}</span>
+                    ${this.renderCountryPercentBar(countryKey, ['infrastructure','transport'], ['modernizationIndexPercent','infrastructureModernizationIndex','modernizationIndex'], 'Infrastructure Modernization Index')}
                 </div>
             </div>
         `;
@@ -2150,10 +2159,7 @@ window.addEventListener('RESOURCE_STATE_UPDATED', () => {
 
                 <div class="ios-card">
                     <div class="ios-card-title">INFRASTRUCTURE MODERNIZATION INDEX</div>
-                    <div style="background:rgba(255,255,255,0.1); border-radius:6px; height:18px; overflow:hidden; margin-top:6px;">
-                        <div style="width:92%; background:linear-gradient(90deg, #00e5ff, #22c55e); height:100%;"></div>
-                    </div>
-                    <span class="ios-card-sub" style="margin-top:4px;">Logistics Network Operating Efficiency: ${this.formatCountryValue(countryKey, ['transport','infrastructure'], ['logisticsEfficiencyPercent','operatingEfficiencyPercent','logistics.efficiencyPercent'], '%')}</span>
+                    ${this.renderCountryPercentBar(countryKey, ['infrastructure','transport'], ['modernizationIndexPercent','infrastructureModernizationIndex','modernizationIndex'], 'Infrastructure Modernization Index')}
                 </div>
             </div>
         `;
