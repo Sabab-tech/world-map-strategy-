@@ -1206,7 +1206,7 @@
         cabinet.__omegaResccCardPatch = true;
       }
       cabinet.executeResource16Point = function (pointKey, directiveType) {
-        const routes = { p05: 'extraction', p06: 'processing', p15: 'power', p16: 'environment' };
+        const routes = { p01: 'matrix', p02: 'ontology', p03: 'reserves', p04: 'deposits', p05: 'extraction', p06: 'processing', p07: 'inventory', p08: 'logistics', p09: 'industrial', p10: 'market', p11: 'trade', p12: 'value', p13: 'cascade', p14: 'cognitive', p15: 'power', p16: 'environment' };
         const route = routes[String(pointKey || '').toLowerCase()];
         if (route) { render(activeCountry(), route); return { status: 'OPENED_PANEL', panel: route }; }
         if (typeof cabinet.executeResourceDirective === 'function') {
