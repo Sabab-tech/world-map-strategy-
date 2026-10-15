@@ -384,7 +384,7 @@ function recordCarbonQuotaViolation(ctx,payload={}){
  const bucket=resourceBucket();
  const quota=tx?.get('resource.carbonQuota')||bucket?.carbonQuota||state()?.resource?.[c]?.carbonQuota||null;
  const quotaId=String(p.quotaId||quota?.quotaId||'');
- const attempt=String(p.transactionId||p.attemptId||[
+ const attempt=String(p.transactionId||p.attemptId||p.activityId||[
   'PREVIEW',c,turn(),p.source||'ACTIVITY',p.siteId||p.factoryId||'',p.resourceId||'',p.quantity??p.quantityTonnesCo2e??'',p.unit||''
  ].join(':'));
  const violationId=String(p.violationId||'CARBON-VIOLATION:'+attempt);
