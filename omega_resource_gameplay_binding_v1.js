@@ -169,7 +169,7 @@ function renderSiteDetail(s){
  const metrics=[];
  const reserve=sim.reserve??sim.recoverableReserve??quantitative.reserve??source.reserve;
  const reserveFallback=(sim.reserve!==undefined||sim.recoverableReserve!==undefined)?'SIMULATED':'RECORDED';
- const reserveMetric=makeMeasure(reserve,'',reserveFallback);
+ const reserveMetric=makeMeasure(reserve,sim.reserveUnit||sim.recoverableReserveUnit||quantitative.reserve?.unit||source.reserve?.unit||'',reserveFallback);
  if(reserveMetric)metrics.push({label:'Resource reserve',...reserveMetric});
  const daily=production.rate??sim.productionRate;
  const dailyUnit=production.unit||sim.productionRateUnit||'';
@@ -224,7 +224,7 @@ function renderSiteDetail(s){
   detailRow('Upstream process',upstream),
   detailRow('Midstream process',midstream),
   detailRow('Downstream sectors',downstream)
- ])+renderRows([detailRow('Daily processing throughput',throughput.value??sim.dailyThroughput,throughput.unit||sim.dailyThroughputUnit||'')])+(renderChips(outputs)?'<div class="omega-site-output"><span class="omega-site-row-label">Potential outputs</span>'+renderChips(outputs)+'</div>':'');
+ ])+''+(renderChips(outputs)?'<div class="omega-site-output"><span class="omega-site-row-label">Potential outputs</span>'+renderChips(outputs)+'</div>':'');
  const detailSections=[];
  if(operationHtml)detailSections.push('<details class="omega-site-details"><summary>Operating details</summary>'+operationHtml+'</details>');
  if(routeHtml)detailSections.push('<details class="omega-site-details"><summary>Transport & routes</summary><div class="omega-site-route-list">'+routeHtml+'</div><p class="omega-site-muted">Only routes attached to this individual site are shown.</p></details>');
@@ -239,7 +239,7 @@ function renderSiteDetail(s){
  const coordinateStatus=coordinateStatusOf(s);
  const sourceRef=s.sourcePath||s.sourceReference?.source||s.sourceReference?.path||s.sourceReference?.url||source.sourcePath||source.source||source.provenance?.source;
  const provenanceRows=[
-  detailRow('Site identity',s.siteId),
+  '<div class="omega-site-row"><span class="omega-site-row-label">Site ID</span><span class="omega-site-row-value"><code>'+esc(s.siteId||'')+'</code></span></div>',
   detailRow('Data source',sourceRef||'Resource site registry'),
   detailRow('Coordinate confidence',coordinateStatus),
   Number.isFinite(Number(coords.lat))&&Number.isFinite(Number(coords.lng))?detailRow('Coordinates',Number(coords.lat).toFixed(4)+', '+Number(coords.lng).toFixed(4)):''
