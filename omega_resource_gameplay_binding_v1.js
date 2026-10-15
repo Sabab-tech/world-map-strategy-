@@ -151,6 +151,7 @@ function detailDatum(value,unit){
  return text&&hasValue(unit)?text+' '+formatUnit(unit):text;
 }
 // No country-average substitution: the panel renders values attached to the selected site identity only.
+// Individual transport route & delivery is kept in a collapsed section and only uses this site's own route fields.
 function renderSiteDetail(s){
  if(!s)return '<p class="omega-site-empty">Select a mine, field or deposit on the map.</p>';
  const sim=s.simulation||{},real=s.real||{},loc=s.location||{},coords=s.coordinates||loc.coordinates||{};
