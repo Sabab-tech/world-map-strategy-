@@ -814,6 +814,44 @@
     const id = ALIASES[raw] || raw;
     return PANELS.some(function (p) { return p.id === id; }) ? id : 'matrix';
   }
+  let resourceDataWarmupAttempted = false, resourceDataWarmupPromise = null, resourceDataRefreshBound = false;
+  function visibleModal() { return g.document && g.document.getElementById('gsrsk-intelligence-modal'); }
+  function refreshVisiblePanel() {
+    const modal = visibleModal();
+    if (!modal || !modal.style || modal.style.display === 'none') return;
+    const old = modal.querySelector ? modal.querySelector('#omega-rescc-content') : null;
+    const scrollTop = old ? old.scrollTop : 0, scrollLeft = old ? old.scrollLeft : 0;
+    render(countryId, activePanel, modal);
+    const current = modal.querySelector ? modal.querySelector('#omega-rescc-content') : null;
+    if (current) { current.scrollTop = scrollTop; current.scrollLeft = scrollLeft; }
+  }
+  function ensureResourceDataReady(force) {
+    if (resourceDataWarmupPromise) return resourceDataWarmupPromise;
+    if (!force && resourceDataWarmupAttempted) return null;
+    resourceDataWarmupAttempted = true;
+    const e = engine(), endowment = g.Omega && g.Omega.ResourceEndowmentRuntime;
+    const needsEngine = !!(e && !e.isReady && typeof e.init === 'function');
+    const needsEndowment = !!(e && e.isReady && endowment && typeof endowment.initialize === 'function' && !g.__omegaResourceEndowmentReady);
+    if (!needsEngine && !needsEndowment) return null;
+    resourceDataWarmupPromise = (async function () {
+      if (needsEngine) { try { await e.init(); } catch (_) {} }
+      if (e && e.isReady && endowment && typeof endowment.initialize === 'function' && !g.__omegaResourceEndowmentReady) {
+        try { await endowment.initialize(); } catch (_) {}
+      }
+    })().then(refreshVisiblePanel).catch(refreshVisiblePanel).finally(function () { resourceDataWarmupPromise = null; });
+    return resourceDataWarmupPromise;
+  }
+  function bindResourceDataRefreshEvents() {
+    if (resourceDataRefreshBound || typeof g.addEventListener !== 'function') return;
+    resourceDataRefreshBound = true;
+    [
+      'RESOURCE_STATE_UPDATED','OMEGA_RESOURCE_SITE_BINDING_READY','OMEGA_READY','OMEGA_GAME_SESSION_STARTED',
+      'OMEGA_SIMULATION_TURN_COMMITTED','OMEGA_RESOURCE_EXTRACTION_COMPLETED','OMEGA_RESOURCE_BATCH_CREATED',
+      'OMEGA_RESOURCE_INVENTORY_CHANGED','OMEGA_RESOURCE_PROCESSING_COMPLETED','OMEGA_TRADE_SETTLEMENT_COMPLETED'
+    ].forEach(function (name) {
+      try { g.addEventListener(name, function () { resourceDataWarmupAttempted = false; refreshVisiblePanel(); }); } catch (_) {}
+    });
+  }
   function render(country, panel, modalOverride) {
     const modal = modalOverride || ensureModal();
     if (!modal) return;
@@ -837,6 +875,8 @@
       '<main id="omega-rescc-content" class="omega-rescc-content"><h3 class="omega-rescc-section-title">' + esc(viewTitle(activePanel)) + '</h3>' +
       panelContent(activePanel, countryId) + '</main></div>';
     modal.style.display = 'flex';
+    bindResourceDataRefreshEvents();
+    ensureResourceDataReady(false);
   }
   function openPanel(panel) { lastOutcome = ''; render(countryId, panel); }
   function close() {
@@ -889,7 +929,7 @@
     let result;
     try {
       if (action === 'close') { close(); return; }
-      if (action === 'refresh-panel') { render(c, activePanel); return; }
+      if (action === 'refresh-panel') { resourceDataWarmupAttempted = false; render(c, activePanel); ensureResourceDataReady(true); return; }
       if (action === 'survey' || action === 'expansion' || action === 'reserve') {
         result = dispatchResourceCommand(action, c, d.resourceId);
         setOutcome(action + ' request for ' + (d.resourceId || 'resource'), result);
@@ -1042,6 +1082,7 @@
     }
   }
   function install() {
+    bindResourceDataRefreshEvents();
     const e = engine();
     if (!e || e.__omegaResourceCommandCenterUIPatched === VERSION) return false;
     e.__omegaResourceCommandCenterUIPatched = VERSION;
