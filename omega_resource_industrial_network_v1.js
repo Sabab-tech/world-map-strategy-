@@ -491,13 +491,15 @@ function onTreasurySettlement(evt){
     // Do not copy a whole multi-deposit sale value/fiscal receipt onto every contributing
     // mine. Only single-root transfer portions can be attributed to this site's flow.
     // The country's finance ledger remains authoritative for the settlement total.
+    const siteValueAttributed=siteValue!==null,
+      siteSettlementStatus=siteValueAttributed?'RECEIPT_POSTED':'SETTLEMENT_LINKED_UNALLOCATED';
     const receipt={settlementId:sid,resourceId:p.resourceId||null,quantity:siteQuantity,totalValue:siteValue,
       attributedQuantity:attributedQuantity>0?attributedQuantity:null,
       sharedSourceTransferCount:sharedMatches.length,sharedSourceBatchIds,
       valueAttributionStatus:attributionStatus,fiscal:transactionHasSingleRoot?clone(p.fiscal||null):null,
-      transactionFiscalRecorded:!!p.fiscal,turn:turn(),status:'RECONCILED'};
+      transactionFiscalRecorded:!!p.fiscal,turn:turn(),status:siteSettlementStatus};
     row.treasurySettlements.push(receipt);
-    addFlowStage(row,'TREASURY','RECEIPT_POSTED',{settlementId:sid,resourceId:p.resourceId||null,
+    addFlowStage(row,'TREASURY',siteSettlementStatus,{settlementId:sid,resourceId:p.resourceId||null,
       totalValue:siteValue,valueAttributionStatus:attributionStatus,sharedSourceTransferCount:sharedMatches.length,
       sharedSourceBatchIds,fiscal:transactionHasSingleRoot?clone(p.fiscal||null):null});
     saveSiteFlow(cid,row);
