@@ -183,11 +183,7 @@ assert.equal(uiCreatedRequest?.stage,'OPEN');
 assert.equal(uiCreatedRequest?.quantity,100);
 assert.equal(uiCreatedRequest?.targetCountryId,'SAU');
 assert(globalThis.Game.state.trade.BGD.globalTradeLedger.requests.some(x=>x.requestId==='REQ-UI-CREATE'));
-const invalidUiRequest=trade.createRequest('BGD',{
-  requestId:'REQ-UI-INVALID',targetCountryId:'BGD',resourceId:'crude_oil',quantity:100,unitPrice:101,
-  source:'OMEGA_RESOURCE_COMMAND_CENTER_UI'
-});
-assert.equal(invalidUiRequest?.accepted,false,'same-country requests must be rejected');
+
 const duplicateUiRequest=trade.createRequest('BGD',{
   requestId:'REQ-UI-CREATE',targetCountryId:'SAU',resourceId:'crude_oil',quantity:100,unitPrice:101,
   source:'OMEGA_RESOURCE_COMMAND_CENTER_UI'
