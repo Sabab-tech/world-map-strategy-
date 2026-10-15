@@ -146,6 +146,48 @@ window.CountryIOS = {
         }
     },
 
+    readCountryValue(countryKey, domains, paths) {
+        const state = window.Game && window.Game.state || window.gameState || {};
+        const requested = String(countryKey || '').trim();
+        const observer = window.OmegaLiveOpsObservability;
+        const resolved = observer && typeof observer.resolveCountryId === 'function'
+            ? observer.resolveCountryId(requested) : null;
+        const normalise = value => String(value == null ? '' : value).trim().toUpperCase().replace(/[\s-]+/g, '_');
+        const candidates = new Set([requested, requested.replace(/[\s-]+/g, '_'), requested.toUpperCase(),
+            normalise(requested), resolved, resolved && normalise(resolved)].filter(Boolean).map(normalise));
+        const pathList = Array.isArray(paths) ? paths : [paths];
+        for (const domain of (Array.isArray(domains) ? domains : [domains])) {
+            const records = state && state[domain];
+            if (!records || typeof records !== 'object') continue;
+            let row = null;
+            for (const [key, value] of Object.entries(records)) {
+                if (candidates.has(normalise(key)) || candidates.has(normalise(value && (value.countryId || value.countryCode || value.code || value.id)))) {
+                    row = value; break;
+                }
+            }
+            if (!row || typeof row !== 'object') continue;
+            for (const path of pathList) {
+                let value = row;
+                for (const part of String(path || '').split('.')) value = value == null ? undefined : value[part];
+                if (value === null || value === undefined || value === '' || typeof value === 'object') continue;
+                if ((typeof value === 'number' && Number.isFinite(value)) || typeof value === 'string' || typeof value === 'boolean') return value;
+            }
+        }
+        return null;
+    },
+
+    formatCountryValue(countryKey, domains, paths, unit = '') {
+        const value = this.readCountryValue(countryKey, domains, paths);
+        if (value === null || value === undefined || value === '') return 'NOT RECORDED';
+        if (typeof value === 'number') {
+            const formatted = value.toLocaleString(undefined, { maximumFractionDigits: 2 });
+            return unit ? formatted + ' ' + unit : formatted;
+        }
+        const text = String(value);
+        if (unit && typeof value === 'string' && /^-?\d+(?:\.\d+)?$/.test(text.trim())) return text.trim() + ' ' + unit;
+        return text;
+    },
+
     switchChapter(chNum) {
         this.activeChapter = chNum;
 
@@ -1036,17 +1078,17 @@ window.CountryIOS = {
                 <div class="ios-grid-3">
                     <div class="ios-card">
                         <div class="ios-card-title">NETWORK LEVEL</div>
-                        <div class="ios-card-val" style="color:#00e5ff;">CLASS 5 GLOBAL</div>
-                        <div class="ios-card-sub">Satellite Mesh Coverage 99.8%</div>
+                        <div class="ios-card-val" style="color:#00e5ff;">${this.formatCountryValue(countryKey, ['intelligence','technology'], ['networkLevel','network.level','networkTier','classification'])}</div>
+                        <div class="ios-card-sub">Satellite Mesh Coverage ${this.formatCountryValue(countryKey, ['intelligence','technology'], ['satelliteMeshCoverage','satellite.coveragePercent','network.coveragePercent'], '%')}</div>
                     </div>
                     <div class="ios-card">
                         <div class="ios-card-title">COUNTER-INTEL SHIELD</div>
-                        <div class="ios-card-val">96.5% Efficiency</div>
-                        <div class="ios-card-sub">Foreign Infiltration: Low</div>
+                        <div class="ios-card-val">${this.formatCountryValue(countryKey, ['intelligence'], ['counterIntelligence.efficiency','counterIntelligenceEfficiency','efficiencyPercent'], '%')} Efficiency</div>
+                        <div class="ios-card-sub">Foreign Infiltration: ${this.formatCountryValue(countryKey, ['intelligence'], ['foreignInfiltrationRisk','infiltrationRisk','foreignThreatLevel'])}</div>
                     </div>
                     <div class="ios-card">
                         <div class="ios-card-title">CYBER WARFARE UNIT</div>
-                        <div class="ios-card-val" style="color:#22c55e;">DEFCON 2 READINESS</div>
+                        <div class="ios-card-val" style="color:#22c55e;">${this.formatCountryValue(countryKey, ['military','intelligence'], ['defcon','readinessLevel','cyberReadiness'])}</div>
                         <div class="ios-card-sub">Offensive Capabilities Active</div>
                     </div>
                 </div>
@@ -1054,9 +1096,9 @@ window.CountryIOS = {
                 <div class="ios-card" style="border-color:#ef4444;">
                     <div class="ios-card-title" style="color:#ef4444;">AI THREAT ASSESSMENT & ESPIONAGE REPORT</div>
                     <div style="font-size:12px; line-height:1.6; color:#f8fafc;">
-                        <div>⚠️ Current Threat Level: <strong>MODERATE (LEVEL 3)</strong></div>
-                        <div>📡 Counter-Intelligence Status: 12 foreign surveillance nodes intercepted in last 30 days.</div>
-                        <div>🔒 Information Reliability Rating: 98.4% (Highly Verified)</div>
+                        <div>⚠️ Current Threat Level: <strong>${this.formatCountryValue(countryKey, ['intelligence'], ['threatAssessment.level','threatLevel','currentThreatLevel'])}</strong></div>
+                        <div>📡 Counter-Intelligence Status: ${this.formatCountryValue(countryKey, ['intelligence'], ['interceptedForeignNodes30d','foreignSurveillanceNodesIntercepted','counterIntelligence.interceptedLast30Days'])} foreign surveillance nodes intercepted.</div>
+                        <div>🔒 Information Reliability Rating: ${this.formatCountryValue(countryKey, ['intelligence'], ['informationReliabilityPercent','reliabilityScore','informationReliability'], '%')}</div>
                     </div>
                 </div>
             </div>
@@ -2050,17 +2092,17 @@ window.addEventListener('RESOURCE_STATE_UPDATED', () => {
                 <div class="ios-grid-3">
                     <div class="ios-card">
                         <div class="ios-card-title">NETWORK LEVEL</div>
-                        <div class="ios-card-val" style="color:#00e5ff;">CLASS 5 GLOBAL</div>
-                        <div class="ios-card-sub">Satellite Mesh Coverage 99.8%</div>
+                        <div class="ios-card-val" style="color:#00e5ff;">${this.formatCountryValue(countryKey, ['intelligence','technology'], ['networkLevel','network.level','networkTier','classification'])}</div>
+                        <div class="ios-card-sub">Satellite Mesh Coverage ${this.formatCountryValue(countryKey, ['intelligence','technology'], ['satelliteMeshCoverage','satellite.coveragePercent','network.coveragePercent'], '%')}</div>
                     </div>
                     <div class="ios-card">
                         <div class="ios-card-title">COUNTER-INTEL SHIELD</div>
-                        <div class="ios-card-val">96.5% Efficiency</div>
-                        <div class="ios-card-sub">Foreign Infiltration: Low</div>
+                        <div class="ios-card-val">${this.formatCountryValue(countryKey, ['intelligence'], ['counterIntelligence.efficiency','counterIntelligenceEfficiency','efficiencyPercent'], '%')} Efficiency</div>
+                        <div class="ios-card-sub">Foreign Infiltration: ${this.formatCountryValue(countryKey, ['intelligence'], ['foreignInfiltrationRisk','infiltrationRisk','foreignThreatLevel'])}</div>
                     </div>
                     <div class="ios-card">
                         <div class="ios-card-title">CYBER WARFARE UNIT</div>
-                        <div class="ios-card-val" style="color:#22c55e;">DEFCON 2 READINESS</div>
+                        <div class="ios-card-val" style="color:#22c55e;">${this.formatCountryValue(countryKey, ['military','intelligence'], ['defcon','readinessLevel','cyberReadiness'])}</div>
                         <div class="ios-card-sub">Offensive Capabilities Active</div>
                     </div>
                 </div>
@@ -2068,9 +2110,9 @@ window.addEventListener('RESOURCE_STATE_UPDATED', () => {
                 <div class="ios-card" style="border-color:#ef4444;">
                     <div class="ios-card-title" style="color:#ef4444;">AI THREAT ASSESSMENT & ESPIONAGE REPORT</div>
                     <div style="font-size:12px; line-height:1.6; color:#f8fafc;">
-                        <div>⚠️ Current Threat Level: <strong>MODERATE (LEVEL 3)</strong></div>
-                        <div>📡 Counter-Intelligence Status: 12 foreign surveillance nodes intercepted in last 30 days.</div>
-                        <div>🔒 Information Reliability Rating: 98.4% (Highly Verified)</div>
+                        <div>⚠️ Current Threat Level: <strong>${this.formatCountryValue(countryKey, ['intelligence'], ['threatAssessment.level','threatLevel','currentThreatLevel'])}</strong></div>
+                        <div>📡 Counter-Intelligence Status: ${this.formatCountryValue(countryKey, ['intelligence'], ['interceptedForeignNodes30d','foreignSurveillanceNodesIntercepted','counterIntelligence.interceptedLast30Days'])} foreign surveillance nodes intercepted.</div>
+                        <div>🔒 Information Reliability Rating: ${this.formatCountryValue(countryKey, ['intelligence'], ['informationReliabilityPercent','reliabilityScore','informationReliability'], '%')}</div>
                     </div>
                 </div>
             </div>
