@@ -81,6 +81,47 @@
     return (s.resource && (s.resource[c] || s.resource[String(country || '').toUpperCase()])) ||
       (s.resources && (s.resources[c] || s.resources[String(country || '').toUpperCase()])) || {};
   }
+  function aiCountrySnapshot(country) {
+    const s = state() || {};
+    const code = activeCountry(country);
+    function countryState(domain) {
+      const root = s[domain];
+      if (!root || typeof root !== 'object') return {};
+      const key = Object.keys(root).find(function (name) { return String(name).trim().toUpperCase() === code; });
+      return key ? (root[key] || {}) : {};
+    }
+    const r = Object.keys(s.resource || {}).length ? countryState('resource') : countryState('resources');
+    const fin = countryState('finance');
+    const eco = countryState('economy');
+    const impact = r.environmentalImpact && typeof r.environmentalImpact === 'object' ? r.environmentalImpact : {};
+    const bySite = impact.bySite && typeof impact.bySite === 'object' ? impact.bySite : {};
+    const boundedSites = {};
+    Object.keys(bySite).slice(0, 40).forEach(function (siteId) {
+      const site = bySite[siteId] || {};
+      boundedSites[siteId] = {
+        siteId: site.siteId || siteId,
+        landIndex: site.landIndex,
+        waterIndex: site.waterIndex,
+        wasteIndex: site.wasteIndex
+      };
+    });
+    return {
+      simulation: { turn: s.simulation && s.simulation.turn != null ? s.simulation.turn : (s.turn != null ? s.turn : s.simulationTurn) },
+      finance: { [code]: { available: fin.available, cash: fin.cash, reserves: fin.reserves, currencyCode: fin.currencyCode } },
+      economy: { [code]: { currencyCode: eco.currencyCode || eco.currency_code } },
+      resource: { [code]: {
+        inventory: r.inventory || {},
+        reserves: r.reserves || {},
+        production: r.production || {},
+        carbonQuota: r.carbonQuota || null,
+        carbonEmissionsLedger: (Array.isArray(r.carbonEmissionsLedger) ? r.carbonEmissionsLedger : []).slice(-50),
+        environmentalImpact: { revision: impact.revision, bySite: boundedSites },
+        powerProjects: (Array.isArray(r.powerProjects) ? r.powerProjects : []).slice(-12),
+        powerAssets: (Array.isArray(r.powerAssets) ? r.powerAssets : []).slice(-12),
+        environmentalLedger: (Array.isArray(r.environmentalLedger) ? r.environmentalLedger : []).slice(-12)
+      } }
+    };
+  }
   function engineSummary(country) {
     try {
       const e = engine();
@@ -1150,7 +1191,7 @@
           response = await g.fetch('/api/resource-decision/ai-evaluate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ countryId: c, answers: vals, gameState: state() })
+            body: JSON.stringify({ countryId: c, answers: vals, gameState: aiCountrySnapshot(c) })
           });
           body = await response.json();
         } catch (error) {
