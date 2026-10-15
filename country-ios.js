@@ -699,7 +699,7 @@ window.CountryIOS = {
                             <span style="font-size:10px; padding:1px 6px; border-radius:8px; background:rgba(34,197,94,0.2); border:1px solid #22c55e; color:#22c55e;">PARTS 01–13 ACTIVE</span>
                         </div>
                         <div style="font-size:10px; color:#cbd5e1; font-family:var(--font-mono); margin-top:2px;">
-                            593 Global Deposits • 18 Strategic Commodities • Spot Market Pricing • Multi-Tier Cascade Risk Sandbox
+                            Indexed deposit and commodity records • Recorded market data • Resource cascade diagnostics
                         </div>
                     </div>
                 </div>
@@ -741,7 +741,7 @@ window.CountryIOS = {
                         </div>
                         <div style="text-align:right;">
                             <span style="font-size:10px; padding:3px 10px; border-radius:12px; background:rgba(34,197,94,0.15); border:1px solid #22c55e; color:#22c55e; font-weight:bold; font-family:var(--font-mono);">
-                                25 SECTIONS AUDITED
+                                PROFILE SECTIONS: ${Object.keys(profile25).length}
                             </span>
                         </div>
                     </div>
@@ -755,18 +755,18 @@ window.CountryIOS = {
                         </div>
                         <div class="ios-card" style="padding:8px 10px;">
                             <div class="ios-card-title">RICHNESS CLASS</div>
-                            <div class="ios-card-val" style="font-size:12px; color:#ffd700;">${dom.resourceRichnessClass || 'High'}</div>
-                            <div class="ios-card-sub">Diversity: ${dom.resourceDiversityClass || 'Extensive'}</div>
+                            <div class="ios-card-val" style="font-size:12px; color:#ffd700;">${dom.resourceRichnessClass || 'NOT RECORDED'}</div>
+                            <div class="ios-card-sub">Diversity: ${dom.resourceDiversityClass || 'NOT RECORDED'}</div>
                         </div>
                         <div class="ios-card" style="padding:8px 10px;">
                             <div class="ios-card-title">KNOWN RESOURCES</div>
-                            <div class="ios-card-val" style="font-size:12px; color:#22c55e;">${dom.majorResourceCount || 18} Major Types</div>
-                            <div class="ios-card-sub">Strategic: ${dom.strategicResourceCount || 18}</div>
+                            <div class="ios-card-val" style="font-size:12px; color:#22c55e;">${Number.isFinite(Number(dom.majorResourceCount)) ? Number(dom.majorResourceCount) : 'NOT RECORDED'} Major Types</div>
+                            <div class="ios-card-sub">Strategic: ${Number.isFinite(Number(dom.strategicResourceCount)) ? Number(dom.strategicResourceCount) : 'NOT RECORDED'}</div>
                         </div>
                         <div class="ios-card" style="padding:8px 10px;">
                             <div class="ios-card-title">VERIFICATION STATUS</div>
                             <div class="ios-card-val" style="font-size:12px; color:#a855f7;">${prov.dataConfidence || 'CONFIDENCE NOT RECORDED'}</div>
-                            <div class="ios-card-sub">Verified: ${prov.lastVerified || 'Current'}</div>
+                            <div class="ios-card-sub">Verified: ${prov.lastVerified || 'NOT RECORDED'}</div>
                         </div>
                     </div>
 
@@ -812,17 +812,17 @@ window.CountryIOS = {
                         <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.08);">
                             <div style="font-size:11px; font-weight:bold; color:#00e5ff; font-family:var(--font-title); margin-bottom:6px;">🛢️ HYDROCARBON & ENERGY BASE</div>
                             <div style="font-size:10px; color:#cbd5e1; font-family:var(--font-mono); line-height:1.4;">
-                                <div>• Gas Fields: ${(hc.naturalGas || ['Bibiyana Mega Field (940 MMSCFD)', 'Titas', 'Rashidpur']).join(', ')}</div>
-                                <div>• Deepwater / Marine: ${(hc.gasHydrates || ['Bay of Bengal Methane Hydrates (17-25 TCF)']).join(', ')}</div>
-                                <div>• Nuclear & Renewable: ${(eng.nuclearStatus || ['Rooppur VVER-1200 Nuclear Power Plant (2.4 GW)']).join(', ')}</div>
+                                <div>• Gas Fields: ${(Array.isArray(hc.naturalGas) && hc.naturalGas.length ? hc.naturalGas.join(', ') : 'NOT RECORDED')}</div>
+                                <div>• Deepwater / Marine: ${(Array.isArray(hc.gasHydrates) && hc.gasHydrates.length ? hc.gasHydrates.join(', ') : 'NOT RECORDED')}</div>
+                                <div>• Nuclear & Renewable: ${(Array.isArray(eng.nuclearStatus) && eng.nuclearStatus.length ? eng.nuclearStatus.join(', ') : 'NOT RECORDED')}</div>
                             </div>
                         </div>
                         <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.08);">
                             <div style="font-size:11px; font-weight:bold; color:#a855f7; font-family:var(--font-title); margin-bottom:6px;">🏭 INFRASTRUCTURE & TRANSPORT LOGISTICS</div>
                             <div style="font-size:10px; color:#cbd5e1; font-family:var(--font-mono); line-height:1.4;">
-                                <div>• Deep Ports: ${(infra.ports || ['Matarbari Deep Sea Port', 'Chittagong Port', 'Payra']).join(', ')}</div>
-                                <div>• Refineries & Plants: ${(infra.refineries || infra.processingFacilities || ['Eastern Refinery Ltd (ERL-2)', 'Ghorashal Urea']).join(', ')}</div>
-                                <div>• Pipeline & Rail Hubs: ${(infra.pipelineHubs || infra.railTerminals || ['Indo-Bangla Friendship Pipeline', 'GTCL Grid']).join(', ')}</div>
+                                <div>• Deep Ports: ${(Array.isArray(infra.ports) && infra.ports.length ? infra.ports.join(', ') : 'NOT RECORDED')}</div>
+                                <div>• Refineries & Plants: ${(Array.isArray(infra.refineries) && infra.refineries.length ? infra.refineries.join(', ') : Array.isArray(infra.processingFacilities) && infra.processingFacilities.length ? infra.processingFacilities.join(', ') : 'NOT RECORDED')}</div>
+                                <div>• Pipeline & Rail Hubs: ${(Array.isArray(infra.pipelineHubs) && infra.pipelineHubs.length ? infra.pipelineHubs.join(', ') : Array.isArray(infra.railTerminals) && infra.railTerminals.length ? infra.railTerminals.join(', ') : 'NOT RECORDED')}</div>
                             </div>
                         </div>
                     </div>
@@ -1780,7 +1780,7 @@ window.addEventListener('RESOURCE_STATE_UPDATED', () => {
                             <span style="font-size:10px; padding:1px 6px; border-radius:8px; background:rgba(34,197,94,0.2); border:1px solid #22c55e; color:#22c55e;">PARTS 01–13 ACTIVE</span>
                         </div>
                         <div style="font-size:10px; color:#cbd5e1; font-family:var(--font-mono); margin-top:2px;">
-                            593 Global Deposits • 18 Strategic Commodities • Spot Market Pricing • Multi-Tier Cascade Risk Sandbox
+                            Indexed deposit and commodity records • Recorded market data • Resource cascade diagnostics
                         </div>
                     </div>
                 </div>
@@ -1822,7 +1822,7 @@ window.addEventListener('RESOURCE_STATE_UPDATED', () => {
                         </div>
                         <div style="text-align:right;">
                             <span style="font-size:10px; padding:3px 10px; border-radius:12px; background:rgba(34,197,94,0.15); border:1px solid #22c55e; color:#22c55e; font-weight:bold; font-family:var(--font-mono);">
-                                25 SECTIONS AUDITED
+                                PROFILE SECTIONS: ${Object.keys(profile25).length}
                             </span>
                         </div>
                     </div>
@@ -1836,18 +1836,18 @@ window.addEventListener('RESOURCE_STATE_UPDATED', () => {
                         </div>
                         <div class="ios-card" style="padding:8px 10px;">
                             <div class="ios-card-title">RICHNESS CLASS</div>
-                            <div class="ios-card-val" style="font-size:12px; color:#ffd700;">${dom.resourceRichnessClass || 'High'}</div>
-                            <div class="ios-card-sub">Diversity: ${dom.resourceDiversityClass || 'Extensive'}</div>
+                            <div class="ios-card-val" style="font-size:12px; color:#ffd700;">${dom.resourceRichnessClass || 'NOT RECORDED'}</div>
+                            <div class="ios-card-sub">Diversity: ${dom.resourceDiversityClass || 'NOT RECORDED'}</div>
                         </div>
                         <div class="ios-card" style="padding:8px 10px;">
                             <div class="ios-card-title">KNOWN RESOURCES</div>
-                            <div class="ios-card-val" style="font-size:12px; color:#22c55e;">${dom.majorResourceCount || 18} Major Types</div>
-                            <div class="ios-card-sub">Strategic: ${dom.strategicResourceCount || 18}</div>
+                            <div class="ios-card-val" style="font-size:12px; color:#22c55e;">${Number.isFinite(Number(dom.majorResourceCount)) ? Number(dom.majorResourceCount) : 'NOT RECORDED'} Major Types</div>
+                            <div class="ios-card-sub">Strategic: ${Number.isFinite(Number(dom.strategicResourceCount)) ? Number(dom.strategicResourceCount) : 'NOT RECORDED'}</div>
                         </div>
                         <div class="ios-card" style="padding:8px 10px;">
                             <div class="ios-card-title">VERIFICATION STATUS</div>
                             <div class="ios-card-val" style="font-size:12px; color:#a855f7;">${prov.dataConfidence || 'CONFIDENCE NOT RECORDED'}</div>
-                            <div class="ios-card-sub">Verified: ${prov.lastVerified || 'Current'}</div>
+                            <div class="ios-card-sub">Verified: ${prov.lastVerified || 'NOT RECORDED'}</div>
                         </div>
                     </div>
 
@@ -1893,17 +1893,17 @@ window.addEventListener('RESOURCE_STATE_UPDATED', () => {
                         <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.08);">
                             <div style="font-size:11px; font-weight:bold; color:#00e5ff; font-family:var(--font-title); margin-bottom:6px;">🛢️ HYDROCARBON & ENERGY BASE</div>
                             <div style="font-size:10px; color:#cbd5e1; font-family:var(--font-mono); line-height:1.4;">
-                                <div>• Gas Fields: ${(hc.naturalGas || ['Bibiyana Mega Field (940 MMSCFD)', 'Titas', 'Rashidpur']).join(', ')}</div>
-                                <div>• Deepwater / Marine: ${(hc.gasHydrates || ['Bay of Bengal Methane Hydrates (17-25 TCF)']).join(', ')}</div>
-                                <div>• Nuclear & Renewable: ${(eng.nuclearStatus || ['Rooppur VVER-1200 Nuclear Power Plant (2.4 GW)']).join(', ')}</div>
+                                <div>• Gas Fields: ${(Array.isArray(hc.naturalGas) && hc.naturalGas.length ? hc.naturalGas.join(', ') : 'NOT RECORDED')}</div>
+                                <div>• Deepwater / Marine: ${(Array.isArray(hc.gasHydrates) && hc.gasHydrates.length ? hc.gasHydrates.join(', ') : 'NOT RECORDED')}</div>
+                                <div>• Nuclear & Renewable: ${(Array.isArray(eng.nuclearStatus) && eng.nuclearStatus.length ? eng.nuclearStatus.join(', ') : 'NOT RECORDED')}</div>
                             </div>
                         </div>
                         <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.08);">
                             <div style="font-size:11px; font-weight:bold; color:#a855f7; font-family:var(--font-title); margin-bottom:6px;">🏭 INFRASTRUCTURE & TRANSPORT LOGISTICS</div>
                             <div style="font-size:10px; color:#cbd5e1; font-family:var(--font-mono); line-height:1.4;">
-                                <div>• Deep Ports: ${(infra.ports || ['Matarbari Deep Sea Port', 'Chittagong Port', 'Payra']).join(', ')}</div>
-                                <div>• Refineries & Plants: ${(infra.refineries || infra.processingFacilities || ['Eastern Refinery Ltd (ERL-2)', 'Ghorashal Urea']).join(', ')}</div>
-                                <div>• Pipeline & Rail Hubs: ${(infra.pipelineHubs || infra.railTerminals || ['Indo-Bangla Friendship Pipeline', 'GTCL Grid']).join(', ')}</div>
+                                <div>• Deep Ports: ${(Array.isArray(infra.ports) && infra.ports.length ? infra.ports.join(', ') : 'NOT RECORDED')}</div>
+                                <div>• Refineries & Plants: ${(Array.isArray(infra.refineries) && infra.refineries.length ? infra.refineries.join(', ') : Array.isArray(infra.processingFacilities) && infra.processingFacilities.length ? infra.processingFacilities.join(', ') : 'NOT RECORDED')}</div>
+                                <div>• Pipeline & Rail Hubs: ${(Array.isArray(infra.pipelineHubs) && infra.pipelineHubs.length ? infra.pipelineHubs.join(', ') : Array.isArray(infra.railTerminals) && infra.railTerminals.length ? infra.railTerminals.join(', ') : 'NOT RECORDED')}</div>
                             </div>
                         </div>
                     </div>
