@@ -1,0 +1,66 @@
+name: Resource Command Center
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'omega_resource_command_center_ui_v1.js'
+      - 'omega_global_trade_system.js'
+      - 'package.json'
+      - 'test/omega_resource_command_center_ui_v1.test.mjs'
+      - 'test/omega_global_trade_system.test.mjs'
+      - '.github/workflows/resource-command-center.yml'
+  push:
+    branches:
+      - main
+      - fix/resource-command-center-ui-routing-v2
+    paths:
+      - 'index.html'
+      - 'omega_resource_command_center_ui_v1.js'
+      - 'omega_global_trade_system.js'
+      - 'package.json'
+      - 'test/omega_resource_command_center_ui_v1.test.mjs'
+      - 'test/omega_global_trade_system.test.mjs'
+      - '.github/workflows/resource-command-center.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  resource-command-center:
+    name: Resource UI and runtime regression tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Check edited JavaScript syntax
+        run: |
+          node --check omega_resource_command_center_ui_v1.js
+          node --check omega_global_trade_system.js
+      - name: Test all sixteen panel routes and metrology
+        run: npm run test:ui-visual
+      - name: Test bilateral trade request and settlement
+        run: npm run test:global-trade
+      - name: Test market price discovery
+        run: npm run test:global-market
+      - name: Test authoritative resource actions
+        run: npm run test:resource-actions
+      - name: Test authoritative state adapter
+        run: npm run test:resource-authoritative
+      - name: Test reserve and extraction runtime
+        run: npm run test:resource-endowment
+      - name: Test constrained logistics and resource integrity
+        run: npm run test:resource-system-hardening
+      - name: Test industrial extraction-to-processing pipeline
+        run: npm run test:resource-industrial-network
+      - name: Test gameplay binding and end-to-end resource pipeline
+        run: |
+          npm run test:resource-gameplay-binding
+          npm run test:resource-e2e
