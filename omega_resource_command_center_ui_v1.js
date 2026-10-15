@@ -606,7 +606,12 @@
     const shipments = Array.isArray(r.logistics && r.logistics.shipments) ? r.logistics.shipments : [];
     const hardening = g.OmegaResourceSystemHardening || g.Omega && g.Omega.ResourceSystemHardening;
     const form = '<form class="omega-rescc-form" data-search-item data-form="cascade">' +
-      '<h3>Evaluate transport constraint scenario</h3><div class="omega-rescc-formgrid">' +
+      '<h3>Evaluate transport constraint scenario</h3><p class="omega-rescc-note">This is non-mutating. It reports active policy blockades separately from player-entered hypothetical multipliers.</p><div class="omega-rescc-formgrid">' +
+      '<label>Destination country (optional ISO3)<input name="targetCountryId" type="text" maxlength="3" placeholder="e.g. SAU"></label>' +
+      '<label>Resource ID<input name="resourceId" type="text" required value="crude_oil"></label>' +
+      '<label>Transport mode<select name="transportMode"><option value="ship">Ship</option><option value="pipeline">Pipeline</option><option value="rail">Rail</option><option value="truck">Truck</option></select></label>' +
+      '<label>Route ID (optional)<input name="routeId" type="text"></label>' +
+      '<label>Factory ID (optional)<input name="factoryId" type="text"></label>' +
       '<label>Terrain multiplier<input name="terrainMultiplier" type="number" min="0.1" max="1" step="0.05" value="1"></label>' +
       '<label>Infrastructure multiplier<input name="infrastructureMultiplier" type="number" min="0.1" max="1" step="0.05" value="1"></label>' +
       '<label>War effect<select name="atWar"><option value="false">No observed war constraint</option><option value="true">Apply war multiplier</option></select></label>' +
@@ -1098,19 +1103,30 @@
       }
       if (kind === 'cascade') {
         const hardening = g.OmegaResourceSystemHardening || g.Omega && g.Omega.ResourceSystemHardening;
-        if (!hardening || typeof hardening.logisticsConstraints !== 'function') result = { status: 'UNAVAILABLE', reason: 'LOGISTICS_CONSTRAINT_API_UNAVAILABLE' };
-        else {
-          lastCascade = hardening.logisticsConstraints({
+        const policy = g.OmegaResourceStrategicPolicyRuntime || g.Omega && g.Omega.ResourceStrategicPolicyRuntime;
+        const hypothetical = hardening && typeof hardening.logisticsConstraints === 'function'
+          ? hardening.logisticsConstraints({
             terrainMultiplier: Number(data.get('terrainMultiplier')),
             infrastructureMultiplier: Number(data.get('infrastructureMultiplier')),
             atWar: data.get('atWar') === 'true',
             sanctioned: data.get('sanctioned') === 'true',
             borderOpen: data.get('borderOpen') === 'true',
             blockaded: data.get('blockaded') === 'true'
-          });
-          result = { status: 'APPLIED', result: { accepted: true, simulation: 'NON_MUTATING_SCENARIO', constraints: lastCascade } };
+          }) : { status: 'UNAVAILABLE', reason: 'LOGISTICS_CONSTRAINT_API_UNAVAILABLE' };
+        const target = String(data.get('targetCountryId') || '').trim().toUpperCase();
+        const scope = { resourceId: String(data.get('resourceId') || '').trim(), transportMode: String(data.get('transportMode') || 'ship'),
+          routeId: String(data.get('routeId') || '').trim() || null, factoryId: String(data.get('factoryId') || '').trim() || null };
+        const routeChecks = [];
+        if (policy && typeof policy.isRouteBlocked === 'function') {
+          routeChecks.push({ countryId: c, ...policy.isRouteBlocked(c, scope) });
+          if (target && target !== c) routeChecks.push({ countryId: target, ...policy.isRouteBlocked(target, scope) });
         }
-        setOutcome('Transport constraint sandbox', result);
+        lastCascade = { hypotheticalConstraints: hypothetical,
+          authoritativeRoutePolicy: { checked: routeChecks.length > 0, scope, status: routeChecks.some(x => x.blocked) ? 'BLOCKED' : (routeChecks.length ? 'NO_ACTIVE_BLOCKADE_FOUND' : 'UNAVAILABLE'),
+            checks: routeChecks, mutatesGameplay: false } };
+        result = { status: routeChecks.length || hypothetical.status !== 'UNAVAILABLE' ? 'APPLIED' : 'UNAVAILABLE',
+          result: { accepted: routeChecks.length > 0 || hypothetical.status !== 'UNAVAILABLE', simulation: 'NON_MUTATING_SCENARIO', constraints: lastCascade } };
+        setOutcome('Transport constraint and active policy screening', result);
         return;
       }
       if (kind === 'cognitive') {
