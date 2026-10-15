@@ -339,18 +339,29 @@ for(const site of expandedReferenceRows){
     site?.currentStatus||site?.sourceSiteRecord?.status||site?.status||'').trim().toUpperCase();
   if(site?.siteId&&status)expandedSiteStatusById.set(String(site.siteId),status);
 }
-const explicitlyNonOperationalStatus=status=>{
-  const normalized=String(status||'').toUpperCase().replace(/[^A-Z0-9]+/g,'_');
-  return /(^|_)(INACTIVE|NOT_ACTIVE|HISTORICAL|HISTORICALLY|CARE_AND_MAINTENANCE|SUSPEND|SUSPENDED|BLOCKED|CLOSED|ABANDON|ABANDONED|DEPLETED|DEVELOPMENT|RESTARTING|CESSATION_OF_PRODUCTION|DISRUPTED|NOT_APPLICABLE|NO_CURRENT_CONCESSION|PERMIT_PROCESSING|RESOURCE_IDENTITY_UNVERIFIED|DISPUTED_OPERATION|RESTRICTED)(_|$)/.test(normalized);
+const canonicalSiteRowsForPolicy=JSON.parse(fs.readFileSync(new URL('../resource_site_canonical_catalog_v1.json',import.meta.url),'utf8')).sites||[];
+const canonicalSiteByIdForPolicy=new Map(canonicalSiteRowsForPolicy.map(site=>[String(site.siteId),site]));
+const siteExecutionPolicy=JSON.parse(fs.readFileSync(new URL('../resource_site_execution_policy_v1.json',import.meta.url),'utf8'));
+const normalizePolicyStatus=status=>String(status||'UNKNOWN').trim().toUpperCase()
+  .replace(/[^A-Z0-9]+/g,'_').replace(/^_+|_+$/g,'')||'UNKNOWN';
+const policyForSiteStatus=(siteId,statusOverride=null,commercialOverride=true)=>{
+  const canonicalSite=canonicalSiteByIdForPolicy.get(String(siteId));
+  const referenceStatus=expandedSiteStatusById.get(String(siteId));
+  const status=normalizePolicyStatus(statusOverride||referenceStatus||
+    canonicalSite?.operation?.status||canonicalSite?.operation?.operationalStatus||'UNKNOWN');
+  if(commercialOverride!==true)return siteExecutionPolicy.defaults.commercialExtractionFalse;
+  return siteExecutionPolicy.statuses[status]||siteExecutionPolicy.defaults.unknownStatus;
 };
-// Reserve authority says whether a site is commercially categorized, not whether it is
-// operational this turn. Explicit negative lifecycle evidence must beat that broader flag.
+const policyAllowsProduction=rule=>Number(rule?.productionMultiplier)>0&&
+  !['BLOCKED','NOT_APPLICABLE','NON_EXECUTABLE_ALIAS'].includes(String(rule?.state||''));
+// Commercial classification is not operational authority. Eligibility comes from the shared
+// lifecycle policy, so a site flagged for revalidation cannot be accidentally expected to produce.
 const allCommercialBaselineSiteIds=(globalThis.OmegaResourceSiteReserveSimulationData?.records||[])
   .filter(x=>x.commercialExtraction===true).map(x=>String(x.siteId));
 const inactiveCommercialBaselineSiteIds=allCommercialBaselineSiteIds
-  .filter(siteId=>explicitlyNonOperationalStatus(expandedSiteStatusById.get(siteId)));
+  .filter(siteId=>!policyAllowsProduction(policyForSiteStatus(siteId)));
 const baseCommercialCatalogIds=allCommercialBaselineSiteIds
-  .filter(siteId=>!explicitlyNonOperationalStatus(expandedSiteStatusById.get(siteId)));
+  .filter(siteId=>policyAllowsProduction(policyForSiteStatus(siteId)));
 const legacyExpansionRows=[1,2,3,4,5,6].flatMap(part=>{
   const data=JSON.parse(fs.readFileSync(new URL('../resource_site_legacy_gameplay_expansion_part_'+part+'_v1.json',import.meta.url),'utf8'));
   return Array.isArray(data.records)?data.records:[];
@@ -377,19 +388,22 @@ assert.equal(executedProfileSiteIds.size,commercialCatalogIds.length,
 // historically inactive, or otherwise explicitly non-operational deposit to produce stock.
 // Every such site still needs its own country controller and a traceable blocked output.
 for(const siteId of inactiveCommercialBaselineSiteIds){
-  const site=expandedReferenceById.get(siteId);
-  assert(site,siteId+': explicit non-operational status source record missing');
+  const site=expandedReferenceById.get(siteId)||canonicalSiteByIdForPolicy.get(siteId);
+  assert(site,siteId+': blocked commercial site must retain its canonical or reference source record');
   const countryId=String(site.countryId||site.identity?.countryIso3||'').toUpperCase();
   const countryRow=worldState[countryId];
   assert(countryRow,siteId+': owning country runtime state missing for blocked site');
   const controller=countryRow.mineSiteControllers?.[siteId];
   assert(controller,siteId+': non-operational site controller missing');
   assert(controller.linkedOccurrenceKeys?.length,siteId+': blocked site must retain its exact occurrence link');
+  const expectedRule=policyForSiteStatus(siteId,null,true);
   const blockedOutput=controller.linkedOccurrenceKeys
     .map(key=>countryRow.mineOutputs?.[key])
-    .find(output=>String(output?.blockReason||'').toUpperCase()==='MINE_NOT_OPERATIONAL');
-  assert(blockedOutput,siteId+': status '+expandedSiteStatusById.get(siteId)+' must produce an explicit MINE_NOT_OPERATIONAL diagnostic, not positive output');
-  assert.equal(Number(blockedOutput.producedQuantity)||0,0,siteId+': non-operational deposit must not create inventory');
+    .find(output=>Number(output?.producedQuantity)===0&&String(output?.blockReason||'')===String(expectedRule?.reason||''));
+  assert(blockedOutput,siteId+': status '+(expandedSiteStatusById.get(siteId)||site.operation?.status||'UNKNOWN')+
+    ' must produce the shared policy diagnostic '+expectedRule?.reason+', not positive output');
+  assert.equal(Number(blockedOutput.producedQuantity)||0,0,siteId+': blocked deposit must not create inventory');
+  assert.equal(blockedOutput.executionPolicyState||expectedRule.state,expectedRule.state,siteId+': blocked output policy state mismatch');
 }
 assert(simulatedFieldOutputs.length>0,'expected hydrocarbon field execution assets');
 assert(siteLinkedExecutionOutputs.every(x=>(x?.producedQuantity||0)>0&&x?.effortUtilization>0&&x?.effortUtilization<=1),'some canonical site-linked output did not execute with valid utilization');
@@ -400,27 +414,33 @@ for(const [countryId,row] of Object.entries(worldState)){
   if(!row)continue;
   for(const [siteKey,controller] of Object.entries(row.mineSiteControllers||{})){
     assert.equal(controller.countryId,countryId);
-    assert.equal(controller.controllerStatus,'RUNNING');
     const reserveRecord=(globalThis.OmegaResourceSiteReserveSimulationData?.records||[]).find(x=>x.siteId===siteKey);
-    const commercial=controller.rawSiteReference?.commercialExtraction===true || reserveRecord?.commercialExtraction===true;
     const rawSite=controller.rawSiteReference||{};
+    const canonicalSite=canonicalSiteByIdForPolicy.get(siteKey);
+    const commercial=rawSite.operation?.commercialExtraction===true||rawSite.commercialExtraction===true||
+      canonicalSite?.operation?.commercialExtraction===true||reserveRecord?.commercialExtraction===true;
     const lifecycleStatus=String(rawSite.operation?.status||rawSite.operation?.operationalStatus||
-      rawSite.sourceSiteRecord?.status||rawSite.status||expandedSiteStatusById.get(siteKey)||'').toUpperCase();
-    const explicitlyNonOperational=commercial&&explicitlyNonOperationalStatus(lifecycleStatus);
-    if(commercial&&explicitlyNonOperational){
+      rawSite.status||rawSite.sourceSiteRecord?.status||expandedSiteStatusById.get(siteKey)||
+      canonicalSite?.operation?.status||canonicalSite?.operation?.operationalStatus||'UNKNOWN').toUpperCase();
+    const controllerRule=policyForSiteStatus(siteKey,lifecycleStatus,commercial);
+    const controllerEligible=policyAllowsProduction(controllerRule);
+    assert.equal(controller.controllerStatus,controllerEligible?'RUNNING':'BLOCKED',
+      countryId+' controller must follow shared lifecycle policy '+siteKey+' / '+lifecycleStatus);
+    if(commercial&&!controllerEligible){
       assert(Array.isArray(controller.linkedOccurrenceKeys)&&controller.linkedOccurrenceKeys.length>=1,
-        countryId+' non-operational site must retain its occurrence link '+siteKey);
+        countryId+' blocked commercial site must retain its occurrence link '+siteKey);
       const blockedOutput=controller.linkedOccurrenceKeys
         .map(key=>row.mineOutputs?.[key])
-        .find(output=>String(output?.blockReason||'').toUpperCase()==='MINE_NOT_OPERATIONAL');
-      assert(blockedOutput,countryId+' site status '+lifecycleStatus+' must be explicitly blocked '+siteKey);
-      assert.equal(Number(blockedOutput.producedQuantity)||0,0,countryId+' non-operational site must not produce '+siteKey);
-      assert.equal(blockedOutput.batchId,undefined,countryId+' non-operational site must not create an extraction batch '+siteKey);
+        .find(output=>Number(output?.producedQuantity)===0&&String(output?.blockReason||'')===String(controllerRule?.reason||''));
+      assert(blockedOutput,countryId+' site status '+lifecycleStatus+' must be explicitly blocked '+siteKey+
+        ' / '+String(controllerRule?.reason));
+      assert.equal(Number(blockedOutput.producedQuantity)||0,0,countryId+' blocked site must not produce '+siteKey);
+      assert.equal(blockedOutput.batchId,undefined,countryId+' blocked site must not create an extraction batch '+siteKey);
       const blockedPath=row.minePaths?.[siteKey];
-      assert(blockedPath,countryId+' non-operational site path missing '+siteKey);
-      assert.equal(blockedPath.status,'BLOCKED',countryId+' non-operational site path must be blocked '+siteKey);
-      assert.equal(blockedPath.blockReason,'MINE_NOT_OPERATIONAL',countryId+' site path must retain the lifecycle reason '+siteKey);
-    }else if(commercial){
+      assert(blockedPath,countryId+' blocked site path missing '+siteKey);
+      assert.equal(blockedPath.status,'BLOCKED',countryId+' blocked site path must be blocked '+siteKey);
+      assert.equal(blockedPath.blockReason,controllerRule.reason,countryId+' site path must retain the policy reason '+siteKey);
+    }else if(commercial&&controllerEligible){
       assert.equal(controller.extractionExecutable,true,countryId+' operational commercial controller not executable '+siteKey);
       assert.equal(controller.extractionPathStatus,'EXECUTABLE_OCCURRENCE_ATTACHED');
       assert(Array.isArray(controller.linkedOccurrenceKeys)&&controller.linkedOccurrenceKeys.length>=1);
