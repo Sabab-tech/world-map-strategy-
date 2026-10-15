@@ -529,11 +529,11 @@
       ? pipeline.perCountry.find(x => normaliseCountry(x.countryId) === activeCountry(country)) : null;
     const r = resourceBucket(country);
     const econ = bucket('economy', country);
-    const industrial = r.industrialNetwork || {};
-    const flows = Array.isArray(industrial.siteFlowLedger) ? industrial.siteFlowLedger :
+    const industrialState = r.industrialNetwork || {};
+    const flows = Array.isArray(industrialState.siteFlowLedger) ? industrialState.siteFlowLedger :
       (Array.isArray(r.siteFlows) ? r.siteFlows : (Array.isArray(r.siteFlowLedger) ? r.siteFlowLedger : (Array.isArray(r.extractionFlows) ? r.extractionFlows : [])));
-    const projects = Array.isArray(industrial.projects) ? industrial.projects : (Array.isArray(econ.projects) ? econ.projects : []);
-    const contracts = Array.isArray(industrial.technologyContracts) ? industrial.technologyContracts : [];
+    const projects = Array.isArray(industrialState.projects) ? industrialState.projects : (Array.isArray(econ.projects) ? econ.projects : []);
+    const contracts = Array.isArray(industrialState.technologyContracts) ? industrialState.technologyContracts : [];
     const stages = perCountry && perCountry.stages || {}, sites = siteRows(country);
     return (diag ? diagnosticCard('Country industrial network diagnostics', diag) : empty('Industrial network runtime is unavailable.')) +
       (perCountry ? diagnosticCard('End-to-end site pipeline state', perCountry) : '') +
