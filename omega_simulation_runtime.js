@@ -52,6 +52,64 @@
     return out;
   }
 
+  function stableStringify(value){
+    if(value===null)return 'null';
+    if(value===undefined)return 'null';
+    if(value instanceof Date)return JSON.stringify(value.toISOString());
+    if(typeof value!=='object')return JSON.stringify(value);
+    if(Array.isArray(value))return '['+value.map(stableStringify).join(',')+']';
+    return '{'+Object.keys(value).filter(key=>key!=='__proto__'&&key!=='constructor'&&key!=='checksum'&&typeof value[key]!=='function'&&value[key]!==undefined).sort()
+      .map(key=>JSON.stringify(key)+':'+stableStringify(value[key])).join(',')+'}';
+  }
+
+  function checksumSnapshot(value){
+    const payload=clone(value||{});
+    if(payload&&typeof payload==='object')delete payload.checksum;
+    const text=stableStringify(payload);
+    let hash=2166136261;
+    for(let i=0;i<text.length;i++){hash^=text.charCodeAt(i);hash=Math.imul(hash,16777619);}
+    return (hash>>>0).toString(16).padStart(8,'0');
+  }
+
+  function validateWorldSaveState(root){
+    const issues=[];
+    if(!root||typeof root!=='object'||Array.isArray(root))return[{type:'WORLD_STATE_ROOT_INVALID'}];
+    if(!root.simulation||typeof root.simulation!=='object'||Array.isArray(root.simulation))issues.push({type:'SIMULATION_STATE_MISSING'});
+    const globalBatchIds=new Map();
+    for(const [countryId,resource] of Object.entries(root.resource||{})){
+      if(!resource||typeof resource!=='object'||Array.isArray(resource)){issues.push({type:'RESOURCE_COUNTRY_STATE_INVALID',countryId});continue;}
+      for(const batch of Array.isArray(resource.batches)?resource.batches:[]){
+        const batchId=String(batch?.batchId||'').trim();
+        if(batchId){
+          if(globalBatchIds.has(batchId))issues.push({type:'DUPLICATE_BATCH_ID',batchId,firstCountryId:globalBatchIds.get(batchId),countryId});
+          else globalBatchIds.set(batchId,countryId);
+        }
+        for(const field of ['countryId','ownerCountryCode']){
+          const owner=String(batch?.[field]||'').trim().toUpperCase();
+          if(/^[A-Z]{3}$/.test(owner)&&/^[A-Z]{3}$/.test(String(countryId).toUpperCase())&&owner!==String(countryId).toUpperCase())
+            issues.push({type:'CROSS_COUNTRY_BATCH_OWNER',countryId,batchId,field,ownerCountryId:owner});
+        }
+        for(const field of ['quantity','remainingQuantity']){
+          if(batch?.[field]===undefined||batch?.[field]===null)continue;
+          const quantity=Number(batch[field]);
+          if(!Number.isFinite(quantity)||quantity< -1e-9)issues.push({type:'INVALID_BATCH_QUANTITY',countryId,batchId,field,value:batch[field]});
+        }
+      }
+      for(const [resourceId,value] of Object.entries(resource.inventory||{})){
+        const quantity=Number(value);
+        if(!Number.isFinite(quantity)||quantity< -1e-9)issues.push({type:'INVALID_INVENTORY_QUANTITY',countryId,resourceId,value});
+      }
+      for(const [batchId,lot] of Object.entries(resource.inventoryLots||{})){
+        for(const field of ['quantity','remainingQuantity']){
+          if(lot?.[field]===undefined||lot?.[field]===null)continue;
+          const quantity=Number(lot[field]);
+          if(!Number.isFinite(quantity)||quantity< -1e-9)issues.push({type:'INVALID_INVENTORY_LOT_QUANTITY',countryId,batchId,field,value:lot[field]});
+        }
+      }
+    }
+    return issues.slice(0,256);
+  }
+
   function replaceContents(target,source){
     for(const key of Object.keys(target)){
       if(key==='__proto__'||key==='constructor')continue;
@@ -334,6 +392,7 @@
       this.status='READY';
       this.stepInProgress=false;
       this.lastError=null;
+      this.lastLoadIntegrity='NOT_LOADED';
       this.lastStepSummary=null;
       this.stepCount=0;
       this.checkpointInterval=Math.max(0,finite(options.checkpointInterval,0));
@@ -675,7 +734,7 @@
     }
 
     saveState(){
-      return {
+      const snapshot={
         schemaVersion:SESSION_VERSION,
         runtimeVersion:VERSION,
         status:this.status,
@@ -688,11 +747,24 @@
         worldEngine:this.worldEngine?.exportSaveState?.({authoritativeState:true})||null,
         diagnostics:this.diagnostics()
       };
+      snapshot.checksum=checksumSnapshot(snapshot);
+      return snapshot;
     }
 
     loadState(snapshot){
-      if(!snapshot||typeof snapshot!=='object')throw new Error('INVALID_SIMULATION_SAVE');
+      if(!snapshot||typeof snapshot!=='object'||Array.isArray(snapshot))throw new Error('INVALID_SIMULATION_SAVE');
       if(Number(snapshot.schemaVersion)!==SESSION_VERSION)throw new Error('SIMULATION_SAVE_SCHEMA_MISMATCH');
+      if(!snapshot.worldState||typeof snapshot.worldState!=='object'||Array.isArray(snapshot.worldState))
+        throw new Error('SIMULATION_SAVE_WORLD_STATE_MISSING');
+      if(!snapshot.clock||typeof snapshot.clock!=='object'||!Number.isFinite(Number(snapshot.clock.turn))||Number(snapshot.clock.turn)<0)
+        throw new Error('SIMULATION_SAVE_CLOCK_INVALID');
+      if(snapshot.checksum!==undefined&&snapshot.checksum!==null&&String(snapshot.checksum)!==checksumSnapshot(snapshot))
+        throw new Error('SIMULATION_SAVE_CHECKSUM_MISMATCH');
+      const stateIssues=validateWorldSaveState(snapshot.worldState);
+      if(stateIssues.length)throw new Error('SIMULATION_SAVE_STATE_INTEGRITY_FAILED:'+stateIssues.map(x=>x.type).join(','));
+      // Snapshots without a checksum are accepted only as legacy saves for compatibility;
+      // all newly generated snapshots are checksummed before persistence.
+      this.lastLoadIntegrity=snapshot.checksum?'VERIFIED':'LEGACY_UNVERIFIED';
       this.world.restore(snapshot.worldState);
       this.clock.restore(snapshot.clock);
       this.commandQueue.restore(snapshot.commands);
@@ -743,7 +815,8 @@
         },
         stepCount:this.stepCount,
         lastStep:clone(this.lastStepSummary),
-        lastError:this.lastError
+        lastError:this.lastError,
+        lastLoadIntegrity:this.lastLoadIntegrity
       };
     }
   }
