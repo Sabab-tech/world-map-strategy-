@@ -320,22 +320,21 @@
       body + (body ? '' : empty('No reserve records are available.'));
   }
   function panelDeposits(country) {
-    const rows = deposits();
-    if (!rows.length) return empty('Deposit registry is unavailable.');
-    return '<p class="omega-rescc-note">Global deposit registry: ' + rows.length +
-      ' records found. Country-specific counts and coordinate fields come from the registry, not a hard-coded concession count.</p>' +
-      rows.map(function (d) {
-        const lat = Number(d.lat), lng = Number(d.lng ?? d.lon);
-        const validCoords = Number.isFinite(lat) && Number.isFinite(lng);
-        const rid = d.resourceId || d.resId || d.resourceTypeId || d.resource || '';
-        const body = '<div class="omega-rescc-grid2">' + kv('Country', d.country || d.countryCode || d.countryId) +
-          kv('Resource', rid || d.name) + kv('Latitude', validCoords ? lat.toFixed(5) : null) +
-          kv('Longitude', validCoords ? lng.toFixed(5) : null) + kv('Reserves', d.reserves) +
-          kv('Grade', d.grade ?? d.purity) + kv('Operator', d.operator || d.owner) + '</div>';
-        return card(d.name || d.depositName || d.siteId || 'Unnamed deposit', d.status || 'STATUS NOT RECORDED', body,
-          (validCoords ? actionButton('fly-deposit', 'Fly to coordinates', { lat: lat, lng: lng, 'deposit-name': d.name || d.depositName || 'Deposit' }) : '') +
-          (rid ? actionButton('survey', 'Request resource survey', { 'resource-id': rid }) : ''));
-      }).join('');
+    const all=deposits(),selected=activeCountry(country);
+    const rows=selected==='WORLD'?all:all.filter(d=>{
+      const cid=d&&(d.countryCode||d.countryId||d.country||d.countryName||d.sovereignCountryId);
+      return cid&&normaliseCountry(cid)===selected;
+    });
+    if(!rows.length)return empty('No deposits matched '+selected+' in the loaded JSON registry.')+'<p class="omega-rescc-note">'+esc(sourceDataStatus(country))+'</p>';
+    const visible=rows.slice(0,250);
+    return '<p class="omega-rescc-note">Country-scoped JSON deposit registry: '+rows.length+' records matched '+esc(selected)+'. Showing '+visible.length+'; missing fields stay unavailable.</p>'+
+      visible.map(d=>{
+        const lat=Number(d.lat??d.latitude??(d.coordinates&&d.coordinates.lat)),lng=Number(d.lng??d.lon??d.longitude??(d.coordinates&&(d.coordinates.lng??d.coordinates.lon)));
+        const valid=Number.isFinite(lat)&&Number.isFinite(lng)&&lat>=-90&&lat<=90&&lng>=-180&&lng<=180,rid=d.resourceId||d.resId||d.resourceTypeId||d.resource||'';
+        const body='<div class="omega-rescc-grid2">'+kv('Country',d.country||d.countryCode||d.countryId)+kv('Resource',rid||d.name)+kv('Latitude',valid?lat.toFixed(5):null)+kv('Longitude',valid?lng.toFixed(5):null)+kv('Reserves',d.reserves??d.reserve)+kv('Grade',d.grade??d.purity)+kv('Operator',d.operator||d.owner)+'</div>';
+        return card(d.name||d.depositName||d.siteName||d.siteId||'Unnamed deposit',d.status||'STATUS NOT RECORDED',body,
+          (valid?actionButton('fly-deposit','Fly to coordinates',{lat,lng,'deposit-name':d.name||d.depositName||'Deposit'}):'')+(rid?actionButton('survey','Request resource survey',{'resource-id':rid}):''));
+      }).join('')+(rows.length>visible.length?'<p class="omega-rescc-note">Showing the first '+visible.length+' of '+rows.length+' matched records.</p>':'');
   }
   function siteRows(country) {
     const selected=activeCountry(country),r=resourceBucket(country),candidates=[];
