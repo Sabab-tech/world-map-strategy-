@@ -308,9 +308,11 @@ test('all canonical and additive deposits receive a policy-governed flow status 
       expectedBlockedFlowIds.push(flowId);
       g.dispatchEvent(new CustomEventMock('OMEGA_RESOURCE_EXTRACTION_BLOCKED',{detail:{eventType:'OMEGA_RESOURCE_EXTRACTION_BLOCKED',
         countryId:cid,payload:{countryId:cid,siteReferenceKey:site.siteId,siteName:site.siteName,siteType:site.siteType,
-          occurrenceKey,resourceId:rid,reason:site.operation.commercialExtraction!==true?'NON_COMMERCIAL_SITE':
-            !rid?'RESOURCE_IDENTITY_UNVERIFIED':'MINE_NOT_OPERATIONAL',
-          operationalStatus:site.operation.status,sourceStatus:site.sourceSiteRecord.status,sourceAuthority:'EXPANDED_SITE_REGISTRY',simulationTurn:1}}}));
+          occurrenceKey,resourceId:rid,reason:policyForSite(site)?.reason||(!rid?'RESOURCE_IDENTITY_UNVERIFIED':'MINE_NOT_OPERATIONAL'),
+          operationalStatus:site.operation.status,sourceStatus:site.sourceSiteRecord.status,
+          executionPolicyState:policyForSite(site)?.state||'BLOCKED',
+          productionMultiplier:Number(policyForSite(site)?.productionMultiplier)||0,
+          sourceAuthority:'OMEGA_RESOURCE_SITE_EXECUTION_POLICY_V1',simulationTurn:1}}}));
       continue;
     }
     const batchId='BATCH-ALL-SITE:'+site.siteId,quantity=100+(index%17);
@@ -502,6 +504,7 @@ test('all canonical and additive deposits receive a policy-governed flow status 
   const finalDiag=industry.gameplayPipelineDiagnostics();
   assert.equal(finalDiag.flowCount,sites.length);
   assert.equal(finalDiag.blocked,blockedSites.length,JSON.stringify(finalDiag.perCountry.filter(x=>x.blocked>0).slice(0,20)));
-  console.log('OMEGA ALL-EXPANDED-DEPOSIT END-TO-END PASSED: '+activeSites.length+' active / '+blockedSites.length+
-    ' correctly blocked / '+sites.length+' total across '+countryIds.length+' countries');
+  console.log('OMEGA ALL-DEPOSIT END-TO-END PASSED: '+activeSites.length+' active or constrained / '+blockedSites.length+
+    ' correctly blocked / '+sites.length+' independently executable physical sites / '+registry.allRows.length+
+    ' total canonical+additive identities / '+registry.aliases.length+' aliases retained but not independently executed across '+countryIds.length+' countries');
 });
