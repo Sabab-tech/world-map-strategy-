@@ -619,11 +619,14 @@
         return '<label class="omega-rescc-question"><span>' + (i + 1) + '. ' + esc(q) + '</span>' +
           '<select name="q' + (i + 1) + '" required>' + options + '</select></label>';
       }).join('') + '<button class="omega-rescc-button" type="submit">Evaluate checklist</button></form>';
-    return card('Cognitive runtime availability', os ? 'COGNITIVE OBJECT FOUND' : 'NO COGNITIVE GATE API CONFIRMED',
+    const policy = g.OmegaResourceStrategicPolicyRuntime || g.Omega && g.Omega.ResourceStrategicPolicyRuntime;
+    const decisions = Array.isArray(resourceBucket(country).cognitiveDecisionLedger) ? resourceBucket(country).cognitiveDecisionLedger : [];
+    return card('Cognitive runtime availability', policy && typeof policy.evaluateCognitiveGate === 'function' ? 'AUTHORITATIVE CHECKLIST API AVAILABLE' : (os ? 'COGNITIVE OBJECT FOUND; CHECKLIST API UNAVAILABLE' : 'NO COGNITIVE GATE API CONFIRMED'),
       '<div class="omega-rescc-grid2">' + kv('Runtime object', os ? 'Available' : null) +
-      kv('Diagnostics method', os && typeof os.diagnostics === 'function' ? 'Available' : null) +
+      kv('Policy checklist endpoint', policy && typeof policy.evaluateCognitiveGate === 'function' ? 'Available' : null) +
       kv('Profile record', profile && profile.identity && (profile.identity.name || profile.identity.officialName)) + '</div>' +
-      '<p class="omega-rescc-note">A runtime object alone does not prove that a 12-question evaluation endpoint exists. This panel does not report an AI run unless a supported result is returned.</p>', '') + form;
+      '<p class="omega-rescc-note">Submitted answers are persisted to the authoritative country state as a player-entered advisory decision. This is not an AI-generated verdict.</p>', '') +
+      form + '<h3 class="omega-rescc-section-title">Persisted advisory decisions</h3>' + statusRows(decisions);
   }
   function panelPower(country) {
     const network = g.Omega && g.Omega.ResourceIndustrialNetwork;
@@ -635,12 +638,23 @@
       (Array.isArray(bucket('economy', country).projects) ? bucket('economy', country).projects : []);
     const technologyContracts = Array.isArray(r.industrialNetwork && r.industrialNetwork.technologyContracts) ? r.industrialNetwork.technologyContracts : [];
     const researchProjects = Array.isArray(r.technologyResearchProjects) ? r.technologyResearchProjects : [];
+    const policy = g.OmegaResourceStrategicPolicyRuntime || g.Omega && g.Omega.ResourceStrategicPolicyRuntime;
+    const powerProjects = Array.isArray(r.powerProjects) ? r.powerProjects : [];
+    const powerAssets = Array.isArray(r.powerAssets) ? r.powerAssets : [];
+    const generation = r.powerGeneration || {};
+    const generationLedger = Array.isArray(r.powerGenerationLedger) ? r.powerGenerationLedger : [];
     const controls = '<div class="omega-rescc-actions">' +
+      actionButton('power-project', 'Start 2.4 GW nuclear baseload project', { 'project-type': 'NUCLEAR_BASELOAD' },
+        !(policy && typeof policy.startPowerProject === 'function')) +
       actionButton('industry-tech', 'Start advanced gas-compression research', { 'technology-id': 'ADVANCED_GAS_COMPRESSION', mode: 'RESEARCH' },
         !(network && network.startTechnologyProject)) +
       actionButton('industry-tech', 'Start enhanced oil-recovery research', { 'technology-id': 'ENHANCED_OIL_RECOVERY', mode: 'RESEARCH' },
         !(network && network.startTechnologyProject)) + '</div>';
-    return '<div class="omega-rescc-warning">The installed industrial catalog does not define a nuclear reactor or electric-grid construction type. This console does not claim to build 2.4 GW of nuclear capacity. The supported energy-technology projects below use the actual catalog API.</div>' +
+    return '<div class="omega-rescc-warning">Nuclear power is a simulated ruleset project, not measured plant capacity. Construction charges the treasury, advances by simulation turns, then generates only when fuel inventory and carbon quota checks allow it. Generation factors are scenario assumptions.</div>' +
+      '<div class="omega-rescc-metrics"><div><span>Installed power capacity (MW)</span><strong>' + number(generation.installedCapacityMw) + '</strong></div><div><span>Generated energy this turn (MWh)</span><strong>' + number(generation.generatedMwh) + '</strong></div></div>' +
+      controls + '<h3 class="omega-rescc-section-title">Power construction projects</h3>' + statusRows(powerProjects) +
+      '<h3 class="omega-rescc-section-title">Commissioned power assets</h3>' + statusRows(powerAssets) +
+      '<h3 class="omega-rescc-section-title">Power generation ledger</h3>' + statusRows(generationLedger) +
       '<h3 class="omega-rescc-section-title">Observed energy resource state</h3>' +
       (energyRows.map(function (x) {
         return card(x.name || x.id, x.id, '<div class="omega-rescc-grid2">' +
@@ -655,22 +669,44 @@
   }
   function panelEnvironment(country) {
     const network = g.Omega && g.Omega.ResourceIndustrialNetwork;
+    const policy = g.OmegaResourceStrategicPolicyRuntime || g.Omega && g.Omega.ResourceStrategicPolicyRuntime;
     const r = resourceBucket(country);
     const env = r.environment || r.environmental || bucket('economy', country).environment || {};
     const projects = Array.isArray(r.industrialNetwork && r.industrialNetwork.projects) ? r.industrialNetwork.projects :
       (Array.isArray(bucket('economy', country).projects) ? bucket('economy', country).projects : []);
     const technologyContracts = Array.isArray(r.industrialNetwork && r.industrialNetwork.technologyContracts) ? r.industrialNetwork.technologyContracts : [];
     const researchProjects = Array.isArray(r.technologyResearchProjects) ? r.technologyResearchProjects : [];
+    const quota = r.carbonQuota || null;
+    const carbonLedger = Array.isArray(r.carbonEmissionsLedger) ? r.carbonEmissionsLedger : [];
+    const envLedger = Array.isArray(r.environmentalLedger) ? r.environmentalLedger : [];
+    const quotaForm = '<form class="omega-rescc-form" data-search-item data-form="carbon-quota"><h3>Set carbon allowance</h3>' +
+      '<p class="omega-rescc-note">Separate CO₂-equivalent accounting in tonnes. Factors are simulated gameplay assumptions, not measured national emissions.</p>' +
+      '<div class="omega-rescc-formgrid"><label>Allowance (tonnes CO₂e)<input name="allowanceTonnesCo2e" type="number" min="0" step="any" required value="' + esc(quota && quota.allowanceTonnesCo2e != null ? quota.allowanceTonnesCo2e : '') + '" placeholder="Enter allowance"></label>' +
+      '<label>Period (turns)<input name="periodTurns" type="number" min="1" step="1" required value="' + esc(quota && quota.periodTurns != null ? quota.periodTurns : 365) + '"></label></div>' +
+      '<button class="omega-rescc-button" type="submit"' + (!(policy && typeof policy.setCarbonQuota === 'function') ? ' disabled' : '') + '>Save authoritative quota</button></form>';
+    const emissionForm = '<form class="omega-rescc-form" data-search-item data-form="carbon-emission"><h3>Record explicit CO₂e scenario value</h3>' +
+      '<p class="omega-rescc-note">This is a user-entered simulation record, not a sensor reading.</p><div class="omega-rescc-formgrid">' +
+      '<label>Quantity (tonnes CO₂e)<input name="quantityTonnesCo2e" type="number" min="0.000001" step="any" required></label>' +
+      '<label>Source label<input name="source" type="text" required placeholder="e.g. user-entered scenario"></label></div>' +
+      '<button class="omega-rescc-button" type="submit"' + (!(policy && typeof policy.recordCarbonEmission === 'function') ? ' disabled' : '') + '>Record emission entry</button></form>';
+    const remediationForm = '<form class="omega-rescc-form" data-search-item data-form="remediation"><h3>Fund site remediation</h3>' +
+      '<p class="omega-rescc-note">Uses the authoritative treasury debit and environmental ledger. Amount is a site-index reduction, not tonnes of pollution removed.</p>' +
+      '<div class="omega-rescc-formgrid"><label>Canonical site ID<input name="siteId" type="text" required placeholder="SITE_..."></label>' +
+      '<label>Remediation amount (site index)<input name="amount" type="number" min="1" max="25" step="any" required value="1"></label></div>' +
+      '<button class="omega-rescc-button" type="submit"' + (!(policy && typeof policy.remediateSite === 'function') ? ' disabled' : '') + '>Debit treasury and remediate</button></form>';
     const controls = '<div class="omega-rescc-actions">' +
-      actionButton('industry-tech', 'Research water recycling', { 'technology-id': 'WATER_RECYCLING', mode: 'RESEARCH' },
-        !(network && network.startTechnologyProject)) +
-      actionButton('industry-tech', 'Research tailings reprocessing', { 'technology-id': 'TAILINGS_REPROCESSING', mode: 'RESEARCH' },
-        !(network && network.startTechnologyProject)) + '</div>';
-    return '<p class="omega-rescc-note">The industrial catalog exposes water-recycling and tailings-reprocessing technology projects. Carbon-quota enforcement, emissions settlement and completed remediation are shown only if backed by actual country state; they are not inferred from a solar button.</p>' +
-      card('Environmental runtime state', Object.keys(env).length ? 'STATE FOUND' : 'NO ENVIRONMENTAL LEDGER FOUND',
-        Object.keys(env).length ? '<pre class="omega-rescc-json">' + shortJson(env) + '</pre>' :
-          '<div class="omega-rescc-warning">No environmental ledger object was found in the expected country state. Quota enforcement and remediation consequences are therefore unverified.</div>', '') +
-      controls + '<h3 class="omega-rescc-section-title">Construction projects</h3>' + statusRows(projects) +
+      actionButton('industry-tech', 'Research water recycling', { 'technology-id': 'WATER_RECYCLING', mode: 'RESEARCH' }, !(network && network.startTechnologyProject)) +
+      actionButton('industry-tech', 'Research tailings reprocessing', { 'technology-id': 'TAILINGS_REPROCESSING', mode: 'RESEARCH' }, !(network && network.startTechnologyProject)) + '</div>';
+    return '<p class="omega-rescc-note">Environmental impact, emissions accounting, quotas and remediation are distinct state records. Emission factors are marked as simulated and are never presented as measured data.</p>' +
+      card('Environmental runtime state', Object.keys(env).length ? 'STATE FOUND' : 'NO LEGACY ENVIRONMENT OBJECT',
+        Object.keys(env).length ? '<pre class="omega-rescc-json">' + shortJson(env) + '</pre>' : empty('No legacy environment object is recorded; see authoritative environmental/carbon ledgers below.'), '') +
+      card('Active carbon quota', quota ? String(quota.status || 'UNKNOWN') : 'NO ACTIVE QUOTA',
+        '<div class="omega-rescc-grid2">' + kv('Quota ID', quota && quota.quotaId) + kv('Allowance (tonnes CO₂e)', quota && quota.allowanceTonnesCo2e) +
+        kv('Period (turns)', quota && quota.periodTurns) + kv('Start turn', quota && quota.startTurn) + kv('Unit', quota && quota.unit) + '</div>', '') +
+      quotaForm + emissionForm + remediationForm + controls +
+      '<h3 class="omega-rescc-section-title">CO₂e emission ledger</h3>' + statusRows(carbonLedger) +
+      '<h3 class="omega-rescc-section-title">Environmental impact and remediation ledger</h3>' + statusRows(envLedger) +
+      '<h3 class="omega-rescc-section-title">Construction projects</h3>' + statusRows(projects) +
       '<h3 class="omega-rescc-section-title">Industrial technology contracts</h3>' + statusRows(technologyContracts) +
       '<h3 class="omega-rescc-section-title">Resource research runtime projects</h3>' + statusRows(researchProjects) +
       '<h3 class="omega-rescc-section-title">Tailings and by-product records</h3>' +
@@ -864,6 +900,13 @@
     try {
       if (action === 'close') { close(); return; }
       if (action === 'refresh-panel') { render(c, activePanel); return; }
+      if (action === 'power-project') {
+        const policy = g.OmegaResourceStrategicPolicyRuntime || g.Omega && g.Omega.ResourceStrategicPolicyRuntime;
+        if (!policy || typeof policy.startPowerProject !== 'function') result = { status: 'UNAVAILABLE', reason: 'POWER_PROJECT_RUNTIME_UNAVAILABLE' };
+        else result = policy.startPowerProject(c, { projectId: uniqueRequestId('POWER', d['project-type'] || 'NUCLEAR_BASELOAD'), projectType: d['project-type'] || 'NUCLEAR_BASELOAD' });
+        setOutcome('Nuclear baseload project', result);
+        return;
+      }
       if (action === 'survey' || action === 'expansion' || action === 'reserve') {
         result = dispatchResourceCommand(action, c, d.resourceId);
         setOutcome(action + ' request for ' + (d.resourceId || 'resource'), result);
@@ -957,6 +1000,31 @@
         render(countryId, activePanel);
         return;
       }
+      if (kind === 'carbon-quota') {
+        const policy = g.OmegaResourceStrategicPolicyRuntime || g.Omega && g.Omega.ResourceStrategicPolicyRuntime;
+        if (!policy || typeof policy.setCarbonQuota !== 'function') result = { status: 'UNAVAILABLE', reason: 'CARBON_QUOTA_RUNTIME_UNAVAILABLE' };
+        else result = policy.setCarbonQuota(c, {
+          quotaId: uniqueRequestId('CARBON-QUOTA', 'tonnes-co2e'),
+          allowanceTonnesCo2e: Number(data.get('allowanceTonnesCo2e')), periodTurns: Number(data.get('periodTurns'))
+        });
+        setOutcome('Carbon quota', result); return;
+      }
+      if (kind === 'carbon-emission') {
+        const policy = g.OmegaResourceStrategicPolicyRuntime || g.Omega && g.Omega.ResourceStrategicPolicyRuntime;
+        if (!policy || typeof policy.recordCarbonEmission !== 'function') result = { status: 'UNAVAILABLE', reason: 'CARBON_EMISSION_RUNTIME_UNAVAILABLE' };
+        else result = policy.recordCarbonEmission(c, {
+          transactionId: uniqueRequestId('CO2E', data.get('source')), quantity: Number(data.get('quantityTonnesCo2e')),
+          unit: 'TONNES_CO2E', source: String(data.get('source') || 'USER_ENTERED_SCENARIO'),
+          provenance: 'USER_ENTERED_SCENARIO_VALUE'
+        });
+        setOutcome('User-entered CO₂e scenario record', result); return;
+      }
+      if (kind === 'remediation') {
+        const policy = g.OmegaResourceStrategicPolicyRuntime || g.Omega && g.Omega.ResourceStrategicPolicyRuntime;
+        if (!policy || typeof policy.remediateSite !== 'function') result = { status: 'UNAVAILABLE', reason: 'REMEDIATION_RUNTIME_UNAVAILABLE' };
+        else result = policy.remediateSite(c, { siteId: data.get('siteId'), amount: Number(data.get('amount')), transactionId: uniqueRequestId('REMEDIATION', data.get('siteId')) });
+        setOutcome('Environmental remediation', result); return;
+      }
       if (kind === 'trade-request') {
         const trade = g.OmegaGlobalTrade || g.Omega && g.Omega.GlobalTrade;
         if (!trade || typeof trade.createRequest !== 'function') result = { status: 'UNAVAILABLE', reason: 'TRADE_REQUEST_CREATION_API_UNAVAILABLE' };
@@ -1003,11 +1071,10 @@
           setOutcome('Decision gate', { status: 'BLOCKED', reason: 'ALL_12_QUESTIONS_REQUIRE_ANSWERS' });
           return;
         }
-        const blocks = vals.filter(function (x) { return x === 'block'; }).length;
-        const reviews = vals.filter(function (x) { return x === 'review'; }).length;
-        const decision = blocks ? 'BLOCK' : reviews >= 4 ? 'REVIEW' : 'PROCEED_WITH_RECORDED_ASSUMPTIONS';
-        result = { status: 'APPLIED', result: { accepted: true, decision: decision, blockCount: blocks, reviewCount: reviews, persisted: false, authority: 'PLAYER_ENTERED_LOCAL_CHECKLIST' } };
-        setOutcome('12-question player checklist', result);
+        const policy = g.OmegaResourceStrategicPolicyRuntime || g.Omega && g.Omega.ResourceStrategicPolicyRuntime;
+        if (!policy || typeof policy.evaluateCognitiveGate !== 'function') result = { status: 'UNAVAILABLE', reason: 'COGNITIVE_CHECKLIST_RUNTIME_UNAVAILABLE' };
+        else result = policy.evaluateCognitiveGate(c, { decisionId: uniqueRequestId('COGNITIVE', 'screen'), answers: vals });
+        setOutcome('12-question persisted advisory checklist', result);
         return;
       }
       setOutcome('Form submit', { status: 'FAILED', reason: 'UNHANDLED_FORM' });
