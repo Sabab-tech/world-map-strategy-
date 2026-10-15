@@ -360,6 +360,67 @@ function quotaUsed(ctx,quota,window){
  return(Array.isArray(ledger)?ledger:[]).filter(x=>String(x?.quotaId||'')===String(quota?.quotaId||'')&&Number(x?.periodIndex)===window.periodIndex)
   .reduce((sum,x)=>sum+Math.max(0,num(x?.quantityTonnesCo2e)||0),0);
 }
+function emitCarbonViolation(c,row){
+ const type='OMEGA_RESOURCE_CARBON_QUOTA_VIOLATION_RECORDED';
+ try{
+  const m=interop();
+  if(m?.emitEvent){m.emitEvent(type,c,'resource',clone(row),{turn:turn(),correlationId:row.violationId});return true;}
+ }catch(_){}
+ try{if(typeof g.dispatchEvent==='function'&&typeof g.CustomEvent==='function')g.dispatchEvent(new g.CustomEvent(type,{detail:{eventType:type,countryId:c,payload:clone(row),source:'resource'}}));}catch(_){}
+ return false;
+}
+function recordCarbonQuotaViolation(ctx,payload={}){
+ const p=payload||{},c=country(ctx?.countryId||p.countryId);if(!c)return null;
+ const tx=ctx?.stateTransaction&&typeof ctx.stateTransaction.get==='function'&&typeof ctx.stateTransaction.set==='function'?ctx.stateTransaction:null;
+ const resourceBucket=()=>{
+  const root=state();
+  if(tx)return null;
+  root.resource=root.resource&&typeof root.resource==='object'?root.resource:{};
+  const key=Object.keys(root.resource).find(x=>country(x)===c)||c;
+  root.resource[key]=root.resource[key]&&typeof root.resource[key]==='object'?root.resource[key]:{};
+  return root.resource[key];
+ };
+ const bucket=resourceBucket();
+ const quota=tx?.get('resource.carbonQuota')||bucket?.carbonQuota||state()?.resource?.[c]?.carbonQuota||null;
+ const quotaId=String(p.quotaId||quota?.quotaId||'');
+ const attempt=String(p.transactionId||p.attemptId||[
+  'PREVIEW',c,turn(),p.source||'ACTIVITY',p.siteId||p.factoryId||'',p.resourceId||'',p.quantity??p.quantityTonnesCo2e??'',p.unit||''
+ ].join(':'));
+ const violationId=String(p.violationId||'CARBON-VIOLATION:'+attempt);
+ const previous=tx?.get('resource.carbonQuotaEnforcementLedger')??bucket?.carbonQuotaEnforcementLedger;
+ const ledger=Array.isArray(previous)?clone(previous):[];
+ const existing=ledger.find(x=>String(x?.violationId||'')===violationId);
+ if(existing)return existing;
+ const impactRoot=tx?.get('resource.environmentalImpact')||bucket?.environmentalImpact||state()?.resource?.[c]?.environmentalImpact||{};
+ const siteKey=p.siteId?impactKey(p.siteId):null;
+ const siteImpact=siteKey&&impactRoot?.bySite&&typeof impactRoot.bySite==='object'?impactRoot.bySite[siteKey]||null:null;
+ const envRules=rules()?.environmental||{},threshold=num(envRules.productionPenaltyThreshold);
+ const siteBurden=siteImpact?((Math.max(0,num(siteImpact.landIndex)||0)+Math.max(0,num(siteImpact.waterIndex)||0))/2):0;
+ const remediationFollowUp=siteImpact?(threshold!==null&&siteBurden>=threshold?'REMEDIATION_RECOMMENDED':'MONITOR_SITE_IMPACT'):'NO_SITE_LINKED';
+ const row={
+  violationId,countryId:c,quotaId:quotaId||null,turn:turn(),periodIndex:num(p.periodIndex),
+  source:String(p.source||'UNSPECIFIED_ACTIVITY'),sourceId:p.sourceId||p.factoryId||null,
+  transactionId:p.transactionId||null,siteId:p.siteId||null,resourceId:p.resourceId||null,
+  inputQuantity:num(p.quantity),inputUnit:p.inputUnit||p.unit||null,
+  requestedTonnesCo2e:num(p.requestedTonnesCo2e??p.emissionsTonnesCo2e??p.quantityTonnesCo2e),
+  usedTonnesCo2e:num(p.usedTonnesCo2e),allowanceTonnesCo2e:num(p.allowanceTonnesCo2e),
+  projectedTonnesCo2e:num(p.projectedTonnesCo2e),reason:'CARBON_QUOTA_EXCEEDED',
+  enforcementAction:'ACTIVITY_BLOCKED_BEFORE_EMISSION_COMMIT',
+  productionConsequence:/POWER_GENERATION/i.test(String(p.source||''))?'POWER_ASSET_HELD_IDLE':
+   (/RESOURCE_(EXTRACTION|PROCESSING)/i.test(String(p.source||''))?'EXTRACTION_OR_PROCESSING_BLOCKED':'EMISSION_ENTRY_NOT_COMMITTED'),
+  linkedSiteImpact:siteImpact?{landIndex:num(siteImpact.landIndex),waterIndex:num(siteImpact.waterIndex),
+   emissionsIndex:num(siteImpact.emissionsIndex),wasteIndex:num(siteImpact.wasteIndex)}:null,
+  remediationFollowUp,penaltyTreasuryUnits:0,status:'BLOCKED',
+  authority:'OMEGA_RESOURCE_STRATEGIC_POLICY_RUNTIME',
+  provenance:'CARBON_QUOTA_ENFORCEMENT_RULESET_NO_EMISSION_COMMITTED'
+ };
+ const limit=configuredLimit('carbon','maxEnforcementLedgerRows')||4096;
+ ledger.push(row);
+ if(tx)tx.set('resource.carbonQuotaEnforcementLedger',ledger.slice(-limit));
+ else bucket.carbonQuotaEnforcementLedger=ledger.slice(-limit);
+ emitCarbonViolation(c,row);
+ return row;
+}
 function recordCarbonEmissionTx(ctx,payload){
  const cfg=rules()?.carbon,p=payload||{},quantity=num(p.quantityTonnesCo2e??p.quantity);
  if(!cfg?.enabled)return{accepted:false,reason:'CARBON_RULES_UNAVAILABLE'};
