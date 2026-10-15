@@ -129,5 +129,10 @@
     "enabled": true,
     "questionsRequired": 12,
     "maxHistory": 512
+  },
+  "swf": {
+    "enabled": true,
+    "maxTransactions": 512,
+    "currencyAuthority": "TREASURY_NATIVE_UNITS_NO_FX_CONVERSION"
   }
 }
