@@ -277,6 +277,22 @@ function remediate(ctx,payload){
 }
 
 
+
+function requireCognitiveApproval(ctx,operation){
+ const cfg=rules()?.cognitive,limit=num(cfg?.maxDecisionAgeTurns);
+ const ledger=ctx?.stateTransaction?.get('resource.cognitiveDecisionLedger');
+ const decisions=Array.isArray(ledger)?ledger:[];
+ const latest=decisions.slice().reverse().find(x=>x?.gateScope==='STRATEGIC_HIGH_IMPACT_OPERATIONS');
+ if(!latest)return{accepted:false,reason:'COGNITIVE_GATE_DECISION_REQUIRED',operation};
+ if(limit===null||limit<0)return{accepted:false,reason:'COGNITIVE_GATE_RULES_INVALID',operation};
+ if(turn()-(num(latest.turn)||0)>limit)return{accepted:false,reason:'COGNITIVE_GATE_DECISION_EXPIRED',operation,decisionId:latest.decisionId};
+ if(latest.decision!=='PROCEED_WITH_RECORDED_ASSUMPTIONS'){
+  return{accepted:false,reason:latest.decision==='BLOCK'?'COGNITIVE_GATE_BLOCKED':'COGNITIVE_GATE_REVIEW_REQUIRED',operation,
+   decisionId:latest.decisionId,decision:latest.decision};
+ }
+ return{accepted:true,decisionId:latest.decisionId,decision:latest.decision,operation};
+}
+
 function capitalizeSwfTx(ctx,payload){
  const cfg=rules()?.swf,p=payload||{},amount=num(p.amount),transactionId=String(p.transactionId||'').trim();
  if(!cfg?.enabled)return{accepted:false,reason:'SWF_RULES_UNAVAILABLE'};
@@ -286,6 +302,7 @@ function capitalizeSwfTx(ctx,payload){
  const contributions=Array.isArray(prior.contributions)?clone(prior.contributions):[];
  const old=contributions.find(x=>String(x?.transactionId||'')===transactionId);
  if(old)return Math.abs((num(old.amount)||0)-amount)<1e-9?{accepted:true,duplicate:true,contribution:old,fund:prior}:{accepted:false,reason:'SWF_TRANSACTION_ID_CONFLICT'};
+ const gate=requireCognitiveApproval(ctx,'SWF_CAPITALIZATION');if(!gate.accepted)return gate;
  const limit=num(cfg.maxTransactions);if(limit===null||limit<1)return{accepted:false,reason:'SWF_HISTORY_LIMIT_UNAVAILABLE'};
  const debit=dispatch('finance','OMEGA_TRADE_FINANCE_DEBIT',c,{amount,reason:'SOVEREIGN_WEALTH_FUND_CAPITALIZATION',
   referenceId:'SWF:'+c,transactionId:'SWF-CAPITAL:'+transactionId});
@@ -412,7 +429,7 @@ function evaluateCognitiveGateTx(ctx,payload){
  const blocks=answers.filter(x=>x==='block').length,reviews=answers.filter(x=>x==='review').length;
  const decision=blocks?'BLOCK':reviews>=4?'REVIEW':'PROCEED_WITH_RECORDED_ASSUMPTIONS';
  const row={decisionId,countryId:country(ctx.countryId),turn:turn(),answers:answers.slice(),answeredCount:answers.length,
-  blockCount:blocks,reviewCount:reviews,decision,status:'RECORDED',advisory:true,authority:'PLAYER_ENTERED_COGNITIVE_SCREENING',
+  blockCount:blocks,reviewCount:reviews,decision,status:'RECORDED',advisory:false,enforced:true,gateScope:'STRATEGIC_HIGH_IMPACT_OPERATIONS',authority:'PLAYER_ENTERED_COGNITIVE_SCREENING',
   aiGenerated:false,provenance:'USER_ENTERED_12_QUESTION_CHECKLIST'};
  ledger.push(row);ctx.stateTransaction.set('resource.cognitiveDecisionLedger',ledger.slice(-historyLimit));
  emit('OMEGA_RESOURCE_COGNITIVE_DECISION_RECORDED',ctx.countryId,row);return{accepted:true,decision:row,persisted:true};
@@ -425,6 +442,7 @@ function powerProjectCreate(ctx,payload){
  const projectId=String(p.projectId||'POWER:'+c+':'+type+':T'+turn()+':'+Date.now()).trim(),old=ctx.stateTransaction.get('resource.powerProjects');
  const projects=Array.isArray(old)?clone(old):[],existing=projects.find(x=>String(x?.projectId||'')===projectId);
  if(existing)return String(existing.projectType)===type?{accepted:true,duplicate:true,project:existing}:{accepted:false,reason:'POWER_PROJECT_ID_CONFLICT'};
+ const gate=requireCognitiveApproval(ctx,'POWER_PROJECT');if(!gate.accepted)return gate;
  if(projects.filter(x=>!['CANCELLED','FAILED'].includes(String(x.status||''))).length>=limit)return{accepted:false,reason:'POWER_PROJECT_LIMIT_REACHED'};
  const cost=num(rule.constructionCostTreasuryUnits),capacity=num(rule.capacityMw),buildTurns=num(rule.constructionTurns);
  if(cost===null||cost<0||capacity===null||capacity<=0||buildTurns===null||buildTurns<1||!Number.isInteger(buildTurns))return{accepted:false,reason:'POWER_PROJECT_RULES_INVALID'};
