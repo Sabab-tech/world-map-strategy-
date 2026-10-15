@@ -9,6 +9,7 @@ const resourceFiles=new Map([
   ['resource_site_reserve_simulation_v1.json',new URL('../resource_site_reserve_simulation_v1.json',import.meta.url)],
   ['resource_site_canonical_catalog_v1.json',new URL('../resource_site_canonical_catalog_v1.json',import.meta.url)],
   ['resource_site_master_registry_v1.json',new URL('../resource_site_master_registry_v1.json',import.meta.url)],
+  ['resource_site_execution_policy_v1.json',new URL('../resource_site_execution_policy_v1.json',import.meta.url)],
   ['resource_site_reference_expanded_manifest.json',new URL('../resource_site_reference_expanded_manifest.json',import.meta.url)],
   ['resource_site_reference_expanded_part_01.json',new URL('../resource_site_reference_expanded_part_01.json',import.meta.url)],
   ['resource_site_reference_expanded_part_02.json',new URL('../resource_site_reference_expanded_part_02.json',import.meta.url)],
