@@ -389,18 +389,18 @@ window.CountryIOS = {
                 <div class="ios-grid-3">
                     <div class="ios-card">
                         <div class="ios-card-title">HEAD OF STATE</div>
-                        <div class="ios-card-val" style="color:#00e5ff;">Executive President</div>
-                        <div class="ios-card-sub">Term: 4 Years | Approval: 68%</div>
+                        <div class="ios-card-val" style="color:#00e5ff;">${this.formatCountryValue(countryKey, ['government','politics'], ['headOfState.title','leader.title','leaderTitle','headOfState','executiveTitle'])}</div>
+                        <div class="ios-card-sub">Term: ${this.formatCountryValue(countryKey, ['government','politics'], ['termLengthYears','leader.termYears','termYears'], 'years')} | Approval: ${this.formatCountryValue(countryKey, ['government','politics'], ['approvalRatingPercent','approvalRating','leader.approvalPercent'], '%')}</div>
                     </div>
                     <div class="ios-card">
                         <div class="ios-card-title">ADMINISTRATIVE EFFICIENCY</div>
-                        <div class="ios-card-val">91.4%</div>
-                        <div class="ios-card-sub">Corruption Index: 12.2 (Low)</div>
+                        <div class="ios-card-val">${this.formatCountryValue(countryKey, ['government','politics'], ['administrativeEfficiencyPercent','administrativeEfficiency','efficiencyPercent'], '%')}</div>
+                        <div class="ios-card-sub">Corruption Index: ${this.formatCountryValue(countryKey, ['government','politics'], ['corruptionIndex','governance.corruptionIndex','corruption.score'])}</div>
                     </div>
                     <div class="ios-card">
                         <div class="ios-card-title">CONSTITUTION & SYSTEM</div>
-                        <div class="ios-card-val">Constitutional Republic</div>
-                        <div class="ios-card-sub">Next Election: Nov 2028</div>
+                        <div class="ios-card-val">${this.formatCountryValue(countryKey, ['government','politics'], ['systemType','governmentSystem','constitutionalSystem','regimeType'])}</div>
+                        <div class="ios-card-sub">Next Election: ${this.formatCountryValue(countryKey, ['government','politics'], ['nextElectionDate','nextElection','election.nextDate'])}</div>
                     </div>
                 </div>
 
@@ -421,10 +421,10 @@ window.CountryIOS = {
                     <div class="ios-card">
                         <div class="ios-card-title">POLITICAL PARTIES & LEGISLATURE</div>
                         <div style="font-size:12px; color:#cbd5e1; display:flex; flex-direction:column; gap:6px;">
-                            <div>🔵 Coalition Majority: 54% Seats</div>
-                            <div>🔴 Loyal Opposition: 42% Seats</div>
-                            <div>🟢 Independent Caucus: 4% Seats</div>
-                            <div style="margin-top:4px; color:#00e5ff;">Legislative Efficiency Score: 87/100</div>
+                            <div>🔵 Coalition Majority: ${this.formatCountryValue(countryKey, ['government','politics'], ['coalitionSeatsPercent','legislature.coalitionSharePercent','parliament.coalitionPercent'], '%')} Seats</div>
+                            <div>🔴 Loyal Opposition: ${this.formatCountryValue(countryKey, ['government','politics'], ['oppositionSeatsPercent','legislature.oppositionSharePercent','parliament.oppositionPercent'], '%')} Seats</div>
+                            <div>🟢 Independent Caucus: ${this.formatCountryValue(countryKey, ['government','politics'], ['independentSeatsPercent','legislature.independentSharePercent','parliament.independentPercent'], '%')} Seats</div>
+                            <div style="margin-top:4px; color:#00e5ff;">Legislative Efficiency Score: ${this.formatCountryValue(countryKey, ['government','politics'], ['legislativeEfficiency','legislature.efficiency','parliament.efficiencyScore'])}/100</div>
                         </div>
                     </div>
                 </div>
@@ -460,23 +460,23 @@ window.CountryIOS = {
                 <div class="ios-grid-4">
                     <div class="ios-card">
                         <div class="ios-card-title">ARMY DIVISIONS</div>
-                        <div class="ios-card-val">24 Active Divisions</div>
-                        <div class="ios-card-sub">350,000 Troops</div>
+                        <div class="ios-card-val">${this.formatCountryValue(countryKey, ['military','defense'], ['forceStructure.divisions','army.divisions','armyDivisions','divisions'])} Active Divisions</div>
+                        <div class="ios-card-sub">${this.formatCountryValue(countryKey, ['military','defense'], ['forceStructure.personnel','forceStructure.activePersonnel','army.personnel','activePersonnel','personnel','manpower'])} Troops</div>
                     </div>
                     <div class="ios-card">
                         <div class="ios-card-title">NAVY FLEET</div>
-                        <div class="ios-card-val">11 Carrier Strike Groups</div>
-                        <div class="ios-card-sub">280 Warships</div>
+                        <div class="ios-card-val">${this.formatCountryValue(countryKey, ['military','defense'], ['navy.carrierStrikeGroups','carrierStrikeGroups','navy.carrierGroups'])} Carrier Strike Groups</div>
+                        <div class="ios-card-sub">${this.formatCountryValue(countryKey, ['military','defense'], ['navy.warships','navy.shipCount','warships','navalVessels'])} Warships</div>
                     </div>
                     <div class="ios-card">
                         <div class="ios-card-title">AIR FORCE</div>
-                        <div class="ios-card-val">2,200 Fighter Jets</div>
-                        <div class="ios-card-sub">Stealth Readiness 95%</div>
+                        <div class="ios-card-val">${this.formatCountryValue(countryKey, ['military','defense'], ['airForce.fighterJets','fighterJets','aircraft.fighterJets'])} Fighter Jets</div>
+                        <div class="ios-card-sub">Stealth Readiness ${this.formatCountryValue(countryKey, ['military','defense'], ['stealthReadinessPercent','stealth.readinessPercent','airForce.stealthReadiness'], '%')}</div>
                     </div>
                     <div class="ios-card">
                         <div class="ios-card-title">MISSILE & NUCLEAR</div>
-                        <div class="ios-card-val" style="color:#ef4444;">ACTIVE DETERRENT</div>
-                        <div class="ios-card-sub">Air Defense Interception: 98%</div>
+                        <div class="ios-card-val" style="color:#ef4444;">${this.formatCountryValue(countryKey, ['military','defense'], ['deterrentStatus','nuclearDeterrent.status','missileDeterrent.status'])}</div>
+                        <div class="ios-card-sub">Air Defense Interception: ${this.formatCountryValue(countryKey, ['military','defense'], ['airDefenseInterceptionPercent','airDefense.interceptionPercent','interceptionRate'], '%')}</div>
                     </div>
                 </div>
 
@@ -484,10 +484,10 @@ window.CountryIOS = {
                     <div class="ios-card">
                         <div class="ios-card-title">DEFENSE READINESS & LOGISTICS</div>
                         <div style="font-size:12px; color:#cbd5e1; display:flex; flex-direction:column; gap:8px;">
-                            <div>Overall Military Readiness: <strong style="color:#22c55e;">94%</strong></div>
-                            <div>Reserve Force Strength: 800,000 Personnel</div>
-                            <div>Strategic Base Installations: 14 Major HQ Command Posts</div>
-                            <div>Annual Defense Budget: $820 Billion</div>
+                            <div>Overall Military Readiness: <strong style="color:#22c55e;">${this.formatCountryValue(countryKey, ['military','defense'], ['readiness','overallReadinessPercent','combatReadiness'], '%')}</strong></div>
+                            <div>Reserve Force Strength: ${this.formatCountryValue(countryKey, ['military','defense'], ['reservePersonnel','forceStructure.reservePersonnel','reserves.personnel'])} Personnel</div>
+                            <div>Strategic Base Installations: ${this.formatCountryValue(countryKey, ['military','defense'], ['baseInstallations','bases.length','installationsCount'])} Major HQ Command Posts</div>
+                            <div>Annual Defense Budget: ${this.formatCountryValue(countryKey, ['finance','military','defense'], ['defenseBudget','budget.defense','annualDefenseBudget'])}</div>
                         </div>
                     </div>
 
