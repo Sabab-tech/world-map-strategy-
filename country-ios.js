@@ -478,7 +478,1021 @@ window.CountryIOS = {
     // CHAPTER 04: ECONOMY
     // -------------------------------------------------------------------------
     renderChapter4_Economy(countryKey, econ, pop) {
-        const fmtNum = window.formatGameNumber || ((n) => `${(n/1e9).toFixed(1)}B`);
+        const fmtNum = window.formatGameNumber || ((n) => '
+        const nameClean = countryKey.replace(/_/g, " ").toUpperCase();
+        const observer = window.OmegaLiveOpsObservability;
+        const countryId = observer && typeof observer.resolveCountryId === 'function'
+            ? observer.resolveCountryId(countryKey) : countryKey;
+        const escapeHtml = value => String(value == null ? '' : value)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        const numberOrNull = value => {
+            if (typeof value === 'number' && Number.isFinite(value)) return value;
+            if (typeof value === 'string' && value.trim() !== '' && /^-?\d+(?:\.\d+)?$/.test(value.trim())) {
+                const parsed = Number(value);
+                return Number.isFinite(parsed) ? parsed : null;
+            }
+            return null;
+        };
+        const gdpSeries = observer && typeof observer.getTrendSeries === 'function'
+            ? (observer.getTrendSeries(countryId, 'economy') || []).find(row => row.key === 'gdp') : null;
+        const gdpPoints = (gdpSeries && Array.isArray(gdpSeries.points) ? gdpSeries.points : [])
+            .filter(point => numberOrNull(point.turn) !== null && numberOrNull(point.value) !== null).slice(-5);
+        const gdpChartStatus = gdpPoints.length >= 2 ? 'RECORDED SIMULATION TURNS' : 'HISTORY NOT RECORDED';
+        let gdpChartHtml = '<p style="padding:18px 6px;color:#94a3b8;font-size:12px;line-height:1.5;">No multi-turn GDP history is recorded for this country yet. The chart will appear after the engine has committed at least two real numeric GDP observations.</p>';
+        if (gdpPoints.length >= 2) {
+            const vals = gdpPoints.map(point => Number(point.value));
+            const lo = Math.min(...vals), hi = Math.max(...vals), span = hi - lo || Math.max(1, Math.abs(hi) * 0.1);
+            const points = gdpPoints.map((point, index) => ({
+                x: 18 + index / Math.max(1, gdpPoints.length - 1) * 344,
+                y: 88 - ((Number(point.value) - lo) / span) * 62,
+                value: Number(point.value), turn: Number(point.turn)
+            }));
+            const line = points.map(point => point.x.toFixed(1) + ',' + point.y.toFixed(1)).join(' ');
+            gdpChartHtml = '<svg width="100%" height="130" viewBox="0 0 380 110" preserveAspectRatio="none" role="img" aria-label="Recorded GDP by simulation turn">' +
+                '<line x1="16" y1="96" x2="364" y2="96" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>' +
+                '<polyline points="' + line + '" fill="none" stroke="#00e5ff" stroke-width="3"/>' +
+                points.map(point => '<circle cx="' + point.x.toFixed(1) + '" cy="' + point.y.toFixed(1) + '" r="3.5" fill="#00e5ff"><title>T' + point.turn + ': ' + escapeHtml(point.value) + '</title></circle>').join('') +
+                '<text x="18" y="108" fill="#64748b" font-size="9" font-family="monospace">T' + gdpPoints[0].turn + '</text>' +
+                '<text x="362" y="108" text-anchor="end" fill="#64748b" font-size="9" font-family="monospace">T' + gdpPoints[gdpPoints.length - 1].turn + '</text>' +
+                '</svg>';
+        }
+        const normaliseBreakdown = raw => {
+            let rows = [];
+            if (Array.isArray(raw)) rows = raw.map((row, index) => ({ label: row && (row.name || row.label || row.sector || row.id) || 'Sector ' + (index + 1), row }));
+            else if (raw && typeof raw === 'object') rows = Object.entries(raw).map(([label, row]) => ({ label, row }));
+            rows = rows.map(item => {
+                const row = item.row && typeof item.row === 'object' ? item.row : { value: item.row };
+                const share = numberOrNull(row.percentage ?? row.percent ?? row.sharePercent ?? row.gdpSharePercent);
+                const fraction = numberOrNull(row.share ?? row.fraction ?? row.shareOfGDP);
+                const value = numberOrNull(row.gdp ?? row.gdpValue ?? row.output ?? row.value ?? row.amount ?? row.total ?? row.nominalValue);
+                return { label: String(item.label), percent: share !== null ? share : fraction !== null && fraction >= 0 && fraction <= 1 ? fraction * 100 : null, value };
+            }).filter(row => row.percent !== null || row.value !== null);
+            const rawTotal = rows.reduce((sum, row) => sum + (row.value !== null && row.value > 0 ? row.value : 0), 0);
+            return rows.map(row => {
+                const percent = row.percent !== null ? row.percent : rawTotal > 0 && row.value !== null ? row.value / rawTotal * 100 : null;
+                return { ...row, percent: percent !== null && Number.isFinite(percent) && percent >= 0 ? Math.min(100, percent) : null };
+            }).filter(row => row.percent !== null);
+        };
+        const sectorSource = econ && (econ.sectoralBreakdown || econ.sectorBreakdown || econ.sectors ||
+            econ.gdpBySector || econ.sectorGDP || econ.sectorOutput || econ.outputBySector);
+        const sectorRows = normaliseBreakdown(sectorSource);
+        const sectorRowsHtml = sectorRows.length
+            ? sectorRows.map(row => '<div><div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:3px;"><span>' +
+                escapeHtml(row.label.replace(/_/g, ' ').toUpperCase()) + '</span><strong>' + row.percent.toFixed(1) +
+                '%</strong></div><div style="width:100%;height:8px;background:rgba(255,255,255,0.1);border-radius:4px;overflow:hidden;"><div style="width:' +
+                row.percent.toFixed(2) + '%;height:100%;background:#38bdf8;"></div></div></div>').join('')
+            : '<p style="color:#94a3b8;font-size:12px;line-height:1.5;">Sector-level GDP/output values are not present in the selected economy record. No example percentages are substituted.</p>';
+        
+        return `
+            <div style="display:flex; flex-direction:column; gap:16px; max-width:960px; margin:0 auto;">
+                <!-- TOP HEADER & EXIT BUTTON -->
+                <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(15,23,42,0.8); padding:10px 16px; border-radius:8px; border:1px solid rgba(0,229,255,0.2);">
+                    <div>
+                        <span style="font-size:10px; color:#ffd700; font-family:var(--font-mono); font-weight:bold;">🏛️ MINISTRY OF FINANCE & NATIONAL TREASURY</span>
+                        <h3 style="margin:2px 0 0 0; color:#f8fafc; font-size:15px; font-family:var(--font-mono);">${nameClean} ECONOMIC DASHBOARD</h3>
+                    </div>
+                    <button onclick="window.CountryIOS.close()" style="padding:6px 14px; background:rgba(239,68,68,0.2); border:1px solid #ef4444; color:#ef4444; font-size:11px; font-weight:bold; border-radius:6px; cursor:pointer; font-family:var(--font-mono); transition:all 0.2s;">
+                        ✕ EXIT / CLOSE
+                    </button>
+                </div>
+
+                <!-- MACROECONOMIC CARDS -->
+                <div class="ios-grid-4">
+                    <div class="ios-card" style="border-left:3px solid #00e5ff;">
+                        <div class="ios-card-title">GROSS DOMESTIC PRODUCT (GDP)</div>
+                        <div class="ios-card-val" style="color:#00e5ff;">${(econ && econ.gdp) ? fmtNum(econ.gdp) : "DATA PENDING"}</div>
+                        <div class="ios-card-sub">Annual Growth: <strong style="color:#22c55e;">${(econ && econ.gdp_growth !== undefined) ? '+' + econ.gdp_growth + '% / yr' : '—'}</strong></div>
+                    </div>
+                    <div class="ios-card" style="border-left:3px solid #ef4444;">
+                        <div class="ios-card-title">SOVEREIGN NATIONAL DEBT</div>
+                        <div class="ios-card-val" style="color:#ef4444;">${(econ && econ.debt) ? fmtNum(econ.debt) : "DATA PENDING"}</div>
+                        <div class="ios-card-sub">Debt-to-GDP Ratio: <strong style="color:#ffd700;">${(econ && econ.gdp && econ.debt) ? ((econ.debt / econ.gdp) * 100).toFixed(1) + '%' : '—'}</strong></div>
+                    </div>
+                    <div class="ios-card" style="border-left:3px solid #ffd700;">
+                        <div class="ios-card-title">UNEMPLOYMENT & INFLATION</div>
+                        <div class="ios-card-val" style="color:#ffd700;">${(econ && econ.unemployment_rate !== undefined) ? econ.unemployment_rate + '%' : '—'} / ${(econ && econ.inflation_rate !== undefined) ? econ.inflation_rate + '%' : '—'}</div>
+                        <div class="ios-card-sub">Labor Index: ${(econ && econ.unemployment_rate !== undefined) ? (100 - econ.unemployment_rate).toFixed(1) + '% Active' : '—'}</div>
+                    </div>
+                    <div class="ios-card" style="border-left:3px solid #22c55e;">
+                        <div class="ios-card-title">FOREIGN TRADE BALANCE</div>
+                        <div class="ios-card-val" style="color:#22c55e;">${(econ && econ.trade_balance !== undefined) ? fmtNum(econ.trade_balance) : 'SOVEREIGN LEDGER'}</div>
+                        <div class="ios-card-sub">Forex Reserves: ${(econ && econ.forex_reserves) ? fmtNum(econ.forex_reserves) : '—'}</div>
+                    </div>
+                </div>
+
+                <!-- HIGH VISIBILITY HIGH-TECH GRAPH & METERS -->
+                <div class="ios-grid-2">
+                    <div class="ios-chart-box" style="background:rgba(15,23,42,0.8); border:1px solid rgba(0,229,255,0.2); padding:14px; border-radius:8px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                            <span style="font-size:11px; color:#00e5ff; font-family:var(--font-mono); font-weight:bold;">OBSERVED GDP BY SIMULATION TURN</span>
+                            <span style="font-size:10px; color:#22c55e; font-family:var(--font-mono);">${gdpChartStatus}</span>
+                        </div>
+                        ${gdpChartHtml}
+                    </div>
+
+                    <div class="ios-chart-box" style="background:rgba(15,23,42,0.8); border:1px solid rgba(255,215,0,0.2); padding:14px; border-radius:8px;">
+                        <div style="font-size:11px; color:#ffd700; font-family:var(--font-mono); font-weight:bold; margin-bottom:12px;">🏭 ECONOMIC SECTORAL BREAKDOWN</div>
+                        ${sectorRowsHtml}
+                    </div>
+                </div>
+
+                <!-- DIRECTIVE ACTIONS -->
+                <div>
+                    <div class="ios-card-title" style="margin-bottom:8px; color:#ffd700; font-weight:bold; font-family:var(--font-mono);">⚡ TREASURY DIRECTIVE ACTIONS</div>
+                    <div class="ios-actions-grid">
+                        <button class="ios-act-btn" data-action="trade-agreement">
+                            <span>📜 BILATERAL TRADE DEAL</span><span>⚡ EXECUTE</span>
+                        </button>
+                        <button class="ios-act-btn" data-action="investment">
+                            <span>🏗️ INFRASTRUCTURE BONDS</span><span>⚡ EXECUTE</span>
+                        </button>
+                        <button class="ios-act-btn" data-action="financial-aid">
+                            <span>💵 REVENUE TAX REFORM</span><span>⚡ EXECUTE</span>
+                        </button>
+                        <button class="ios-act-btn" data-action="sanctions">
+                            <span>⛔ CENTRAL BANK RATE SET</span><span>⚡ EXECUTE</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+
+    // -------------------------------------------------------------------------
+    // CHAPTER 05: RESOURCES - AUTONOMOUS RESOURCE MINISTRY ENGINE & NRMS
+    // -------------------------------------------------------------------------
+    renderChapter5_Resources(countryKey) {
+        const nrms = window.ResourceMinistryEngine ? window.ResourceMinistryEngine.getSummary(countryKey) : null;
+        
+        if (!nrms) {
+            return `<div style="padding:20px; color:#ef4444; font-family:'Share Tech Mono', monospace;">Resource Intelligence Engine Offline.</div>`;
+        }
+
+        const briefingText = nrms.briefing;
+        const metrics = nrms.globalMetrics;
+        const resList = nrms.resourcesList;
+        const debates = nrms.debates || [];
+        const surveys = metrics.surveysUnderway || [];
+
+        const profile25 = window.ResourceMinistryEngine && typeof window.ResourceMinistryEngine.getCountryResourceProfile === 'function' ? window.ResourceMinistryEngine.getCountryResourceProfile(countryKey) : null;
+        
+        const launchBannerHtml = `
+            <div style="display:flex; justify-content:space-between; align-items:center; background:linear-gradient(90deg, rgba(0,229,255,0.18), rgba(168,85,247,0.18), rgba(234,179,8,0.15)); border:1.5px solid #00e5ff; border-radius:10px; padding:12px 16px; margin-bottom:12px; box-shadow:0 0 25px rgba(0,229,255,0.25); flex-wrap:wrap; gap:10px;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <span style="font-size:24px; padding:6px; background:rgba(0,229,255,0.1); border-radius:8px; border:1px solid rgba(0,229,255,0.3);">💎</span>
+                    <div>
+                        <div style="font-size:14px; font-weight:bold; color:#00e5ff; font-family:var(--font-title); display:flex; align-items:center; gap:8px;">
+                            <span>GSRSK RESOURCE MINISTRY & GLOBAL INTELLIGENCE HUB</span>
+                            <span style="font-size:10px; padding:1px 6px; border-radius:8px; background:rgba(34,197,94,0.2); border:1px solid #22c55e; color:#22c55e;">PARTS 01–13 ACTIVE</span>
+                        </div>
+                        <div style="font-size:10px; color:#cbd5e1; font-family:var(--font-mono); margin-top:2px;">
+                            593 Global Deposits • 18 Strategic Commodities • Spot Market Pricing • Multi-Tier Cascade Risk Sandbox
+                        </div>
+                    </div>
+                </div>
+                <div style="display:flex; gap:6px;">
+                    <button onclick="if(window.ResourceMinistryEngine && typeof window.ResourceMinistryEngine.openModal === 'function') window.ResourceMinistryEngine.openModal('${countryKey}', 'cascade')" style="background:rgba(239,68,68,0.2); border:1px solid #ef4444; color:#ef4444; font-weight:bold; font-family:var(--font-mono); padding:8px 12px; border-radius:6px; cursor:pointer; font-size:11px;">
+                        ⚠️ CASCADE SANDBOX
+                    </button>
+                    <button onclick="if(window.ResourceMinistryEngine && typeof window.ResourceMinistryEngine.openModal === 'function') window.ResourceMinistryEngine.openModal('${countryKey}', 'matrix')" style="background:linear-gradient(135deg, #00e5ff, #0066ff); border:none; color:#000; font-weight:bold; font-family:var(--font-mono); padding:8px 16px; border-radius:6px; cursor:pointer; font-size:11px; box-shadow:0 0 12px rgba(0,229,255,0.5);">
+                        ⚡ LAUNCH FULL RESOURCE HUB
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        let profile25Html = "";
+        if (profile25) {
+            const id = profile25.identity || {};
+            const geo = profile25.geography || {};
+            const dom = profile25.resource_domain || {};
+            const geol = profile25.geological_context || {};
+            const min = profile25.mineral_resource_base || {};
+            const hc = profile25.hydrocarbon_resource_base || {};
+            const eng = profile25.energy_resource_base || {};
+            const infra = profile25.resource_infrastructure_context || {};
+            const regHubs = profile25.administrative_resource_regions || [];
+            const prov = profile25.provenance || {};
+
+            profile25Html = `
+                <div style="background:linear-gradient(135deg, rgba(15,23,42,0.95), rgba(30,41,59,0.95)); border:1.5px solid #ffd700; border-radius:12px; padding:16px; margin-top:12px; margin-bottom:4px; box-shadow:0 0 25px rgba(255,215,0,0.15);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,215,0,0.3); padding-bottom:10px; margin-bottom:12px;">
+                        <div>
+                            <div style="font-size:15px; font-weight:bold; color:#ffd700; font-family:var(--font-title); letter-spacing:1px; display:flex; align-items:center; gap:8px;">
+                                <span>🏛️</span>
+                                <span>${id.name ? id.name.toUpperCase() : countryKey} CANONICAL GSRSK COUNTRY RESOURCE PROFILE</span>
+                            </div>
+                            <div style="font-size:11px; color:#94a3b8; font-family:var(--font-mono); margin-top:2px;">
+                                Official Name: ${id.officialName || id.name} • System ID: ${id.resourceSystemId || 'N/A'} • Region: ${id.region || id.subcontinent || 'Global'}
+                            </div>
+                        </div>
+                        <div style="text-align:right;">
+                            <span style="font-size:10px; padding:3px 10px; border-radius:12px; background:rgba(34,197,94,0.15); border:1px solid #22c55e; color:#22c55e; font-weight:bold; font-family:var(--font-mono);">
+                                25 SECTIONS AUDITED
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- GEOGRAPHY & DOMAIN STATS -->
+                    <div class="ios-grid-4" style="margin-bottom:12px;">
+                        <div class="ios-card" style="padding:8px 10px;">
+                            <div class="ios-card-title">CAPITAL & LAND AREA</div>
+                            <div class="ios-card-val" style="font-size:12px; color:#00e5ff;">${geo.capital || 'N/A'}</div>
+                            <div class="ios-card-sub">${geo.landAreaKm2 ? geo.landAreaKm2.toLocaleString() + ' km²' : 'Land Area'}</div>
+                        </div>
+                        <div class="ios-card" style="padding:8px 10px;">
+                            <div class="ios-card-title">RICHNESS CLASS</div>
+                            <div class="ios-card-val" style="font-size:12px; color:#ffd700;">${dom.resourceRichnessClass || 'High'}</div>
+                            <div class="ios-card-sub">Diversity: ${dom.resourceDiversityClass || 'Extensive'}</div>
+                        </div>
+                        <div class="ios-card" style="padding:8px 10px;">
+                            <div class="ios-card-title">KNOWN RESOURCES</div>
+                            <div class="ios-card-val" style="font-size:12px; color:#22c55e;">${dom.majorResourceCount || 18} Major Types</div>
+                            <div class="ios-card-sub">Strategic: ${dom.strategicResourceCount || 18}</div>
+                        </div>
+                        <div class="ios-card" style="padding:8px 10px;">
+                            <div class="ios-card-title">VERIFICATION STATUS</div>
+                            <div class="ios-card-val" style="font-size:12px; color:#a855f7;">${prov.dataConfidence || '100% Verified'}</div>
+                            <div class="ios-card-sub">Verified: ${prov.lastVerified || 'Current'}</div>
+                        </div>
+                    </div>
+
+                    <!-- ADMINISTRATIVE RESOURCE REGIONS -->
+                    ${regHubs.length > 0 ? `
+                        <div style="background:rgba(0,0,0,0.4); border:1px solid rgba(0,229,255,0.2); border-radius:8px; padding:10px; margin-bottom:12px;">
+                            <div style="font-size:11px; font-weight:bold; color:#00e5ff; font-family:var(--font-title); margin-bottom:6px;">
+                                📍 REGIONAL RESOURCE HUBS & EXTRACTIVE ZONES (${regHubs.length})
+                            </div>
+                            <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:6px;">
+                                ${regHubs.map(r => `
+                                    <div style="background:rgba(15,23,42,0.8); padding:6px 8px; border-radius:4px; border-left:2px solid #00e5ff;">
+                                        <div style="font-size:11px; font-weight:bold; color:#f8fafc; font-family:var(--font-mono);">${r.name}</div>
+                                        <div style="font-size:10px; color:#94a3b8; font-family:var(--font-mono);">${r.type || 'Hub'} • ${(r.resourceTags || []).join(', ')}</div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    <!-- GEOLOGICAL & MINERAL ENDOWMENT DETAILS -->
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:12px;">
+                        <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.08);">
+                            <div style="font-size:11px; font-weight:bold; color:#ffd700; font-family:var(--font-title); margin-bottom:6px;">🪨 GEOLOGICAL & SEDIMENTARY BASINS</div>
+                            <div style="font-size:10px; color:#cbd5e1; font-family:var(--font-mono); line-height:1.4;">
+                                <div>• Domains: ${(geol.majorGeologicalDomains || ['Sedimentary Cover', 'Bengal Delta Basin']).join(', ')}</div>
+                                <div>• Basins: ${(geol.sedimentaryBasins || ['Surma Basin', 'Hatiya Trough', 'Faridpur Trough']).join(', ')}</div>
+                                <div>• Tectonic Setting: ${geol.tectonicSetting || 'Continental Margin & Active Delta'}</div>
+                            </div>
+                        </div>
+                        <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.08);">
+                            <div style="font-size:11px; font-weight:bold; color:#22c55e; font-family:var(--font-title); margin-bottom:6px;">⛏️ MINERAL & CRITICAL METALS BASE</div>
+                            <div style="font-size:10px; color:#cbd5e1; font-family:var(--font-mono); line-height:1.4;">
+                                <div>• Metallic: ${(min.metallic || ['Iron Ore', 'Copper', 'Titanium Sands']).join(', ')}</div>
+                                <div>• Critical/Rare: ${(min.criticalMinerals || min.rareEarths || ['Monazite Rare Earths', 'Zircon', 'Rutile']).join(', ')}</div>
+                                <div>• Non-Metallic: ${(min.nonMetallic || ['Limestone', 'Kaolin White Clay', 'Silica Quartz']).join(', ')}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- HYDROCARBON, ENERGY & INFRASTRUCTURE -->
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                        <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.08);">
+                            <div style="font-size:11px; font-weight:bold; color:#00e5ff; font-family:var(--font-title); margin-bottom:6px;">🛢️ HYDROCARBON & ENERGY BASE</div>
+                            <div style="font-size:10px; color:#cbd5e1; font-family:var(--font-mono); line-height:1.4;">
+                                <div>• Gas Fields: ${(hc.naturalGas || ['Bibiyana Mega Field (940 MMSCFD)', 'Titas', 'Rashidpur']).join(', ')}</div>
+                                <div>• Deepwater / Marine: ${(hc.gasHydrates || ['Bay of Bengal Methane Hydrates (17-25 TCF)']).join(', ')}</div>
+                                <div>• Nuclear & Renewable: ${(eng.nuclearStatus || ['Rooppur VVER-1200 Nuclear Power Plant (2.4 GW)']).join(', ')}</div>
+                            </div>
+                        </div>
+                        <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.08);">
+                            <div style="font-size:11px; font-weight:bold; color:#a855f7; font-family:var(--font-title); margin-bottom:6px;">🏭 INFRASTRUCTURE & TRANSPORT LOGISTICS</div>
+                            <div style="font-size:10px; color:#cbd5e1; font-family:var(--font-mono); line-height:1.4;">
+                                <div>• Deep Ports: ${(infra.ports || ['Matarbari Deep Sea Port', 'Chittagong Port', 'Payra']).join(', ')}</div>
+                                <div>• Refineries & Plants: ${(infra.refineries || infra.processingFacilities || ['Eastern Refinery Ltd (ERL-2)', 'Ghorashal Urea']).join(', ')}</div>
+                                <div>• Pipeline & Rail Hubs: ${(infra.pipelineHubs || infra.railTerminals || ['Indo-Bangla Friendship Pipeline', 'GTCL Grid']).join(', ')}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        let surveyHtml = "";
+        if (surveys.length > 0) {
+            surveyHtml = `
+                <div style="background:rgba(15,23,42,0.9); border:1px solid rgba(0,229,255,0.4); border-radius:10px; padding:12px; margin-bottom:12px;">
+                    <div style="font-size:12px; font-weight:bold; color:#00e5ff; font-family:var(--font-title); margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+                        <span>⛏️ ACTIVE GEOLOGICAL SURVEYS IN PROGRESS (${surveys.length})</span>
+                        <span style="font-size:10px; color:#ffd700; font-family:var(--font-mono);">DEEP EARTH RADAR ACTIVE</span>
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:8px;">
+                        ${surveys.map(s => `
+                            <div style="background:rgba(0,0,0,0.4); padding:8px; border-radius:6px; border-left:3px solid #00e5ff;">
+                                <div style="display:flex; justify-content:space-between; font-size:11px; font-weight:bold; color:#f8fafc; font-family:var(--font-mono);">
+                                    <span>${s.resName} Survey (${s.country})</span>
+                                    <span style="color:#22c55e;">${s.progress}%</span>
+                                </div>
+                                <div style="font-size:10px; color:#94a3b8; font-family:var(--font-mono); margin:2px 0 4px 0;">
+                                    Stage: ${s.stageName} • Est. Time: ${s.estimatedDays} Days
+                                </div>
+                                <div style="width:100%; height:4px; background:rgba(255,255,255,0.1); border-radius:2px; overflow:hidden;">
+                                    <div style="width:${s.progress}%; height:100%; background:linear-gradient(90deg, #00e5ff, #22c55e);"></div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        let resGridHtml = resList.map(r => {
+            const selfSuffColor = r.selfSufficiencyRatio >= 100 ? '#22c55e' : (r.selfSufficiencyRatio >= 75 ? '#eab308' : '#ef4444');
+            const netColor = r.netBalance >= 0 ? '#22c55e' : '#ef4444';
+            const netSign = r.netBalance >= 0 ? '+' : '';
+
+            return `
+                <div class="ios-card" style="border-top: 2px solid ${selfSuffColor}; position: relative; padding:12px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                        <span style="font-size:13px; font-weight:bold; color:#f8fafc; font-family:var(--font-title);">${r.icon} ${r.name.toUpperCase()}</span>
+                        <span style="font-size:10px; padding:2px 6px; border-radius:10px; background:${selfSuffColor}22; color:${selfSuffColor}; font-weight:bold; border:1px solid ${selfSuffColor}; font-family:var(--font-mono);">
+                            ${r.selfSufficiencyRatio}% ${r.selfSufficiencyRatio >= 100 ? 'SECURE' : 'DEFICIT'}
+                        </span>
+                    </div>
+                    
+                    <div style="font-size:10px; color:#94a3b8; font-family:var(--font-mono); margin-bottom:6px;">${r.bnName || ''} • ${r.category}</div>
+
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; font-size:11px; color:#cbd5e1; font-family:var(--font-mono); margin-bottom:8px;">
+                        <div>Output: <strong style="color:#00e5ff;">${r.dailyProduction.toLocaleString()}</strong></div>
+                        <div>Consume: <strong style="color:#f97316;">${r.dailyConsumption.toLocaleString()}</strong></div>
+                        <div>Net Flow: <strong style="color:${netColor};">${netSign}${r.netBalance.toLocaleString()}</strong></div>
+                        <div>Stock Days: <strong style="color:#ffd700;">${r.stockDays} Days</strong></div>
+                        <div>Mines/Plants: <strong style="color:#22c55e;">${r.activeFacilities} Active</strong></div>
+                        <div>Stockpile: <strong style="color:#a855f7;">${r.warehouseStock.toLocaleString()}</strong></div>
+                    </div>
+
+                    <div style="font-size:10px; color:#94a3b8; line-height:1.3; background:rgba(0,0,0,0.3); padding:4px 6px; border-radius:4px; font-family:var(--font-mono); margin-bottom:8px;">
+                        ⛓️ ${r.processChain}
+                    </div>
+
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:4px;">
+                        <button onclick="window.ResourceMinistryEngine.executeDirective('survey', '${r.id}');" style="padding:5px 4px; background:rgba(0,229,255,0.15); border:1px solid #00e5ff; color:#00e5ff; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
+                            ⛏️ SURVEY
+                        </button>
+                        <button onclick="window.ResourceMinistryEngine.executeDirective('expand_facility', '${r.id}');" style="padding:5px 4px; background:rgba(34,197,94,0.15); border:1px solid #22c55e; color:#22c55e; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
+                            🏭 EXPAND (+25%)
+                        </button>
+                        <button onclick="window.ResourceMinistryEngine.executeDirective('add_reserve', '${r.id}');" style="padding:5px 4px; background:rgba(255,215,0,0.15); border:1px solid #ffd700; color:#ffd700; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
+                            📦 SPR (+50K)
+                        </button>
+                        <button onclick="window.ResourceMinistryEngine.executeDirective('drawdown_spr', '${r.id}');" style="padding:5px 4px; background:rgba(239,68,68,0.15); border:1px solid #ef4444; color:#ef4444; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
+                            🚨 DRAWDOWN
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        let debatesHtml = debates.map(d => `
+            <div style="background:rgba(15,23,42,0.85); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:10px; display:flex; flex-direction:column; gap:6px;">
+                <div style="display:flex; gap:10px; align-items:flex-start;">
+                    <div style="font-size:22px; line-height:1;">${d.avatar}</div>
+                    <div style="flex:1;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px;">
+                            <span style="font-size:11px; font-weight:bold; color:#f8fafc; font-family:var(--font-title);">${d.speaker.toUpperCase()} (${d.role.toUpperCase()})</span>
+                            <span style="font-size:9px; padding:1px 5px; border-radius:4px; background:rgba(0,229,255,0.1); color:#00e5ff; font-family:var(--font-mono);">ADVISORY DECREE</span>
+                        </div>
+                        <div style="font-size:11px; color:#cbd5e1; font-style:italic; line-height:1.3; font-family:var(--font-mono);">${d.text}</div>
+                    </div>
+                </div>
+                ${d.options ? `
+                    <div style="display:flex; gap:6px; margin-top:4px; padding-left:32px;">
+                        ${d.options.map(opt => `
+                            <button onclick="window.ResourceMinistryEngine.executeDirective('cabinet_vote', '${d.id}', '${opt.action}');" style="padding:4px 8px; background:rgba(0,229,255,0.15); border:1px solid #00e5ff; color:#00e5ff; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
+                                ${opt.label}
+                            </button>
+                        `).join('')}
+                    </div>
+                ` : ''}
+            </div>
+        `).join('');
+
+        return `
+            <div style="display:flex; flex-direction:column; gap:16px;">
+                ${launchBannerHtml}
+
+                <!-- MINISTER AI EXECUTIVE BRIEFING HEADER -->
+                <div style="background:linear-gradient(135deg, rgba(11,20,36,0.95), rgba(15,23,42,0.95)); border:1.5px solid #00e5ff; border-radius:12px; padding:16px; box-shadow:0 0 20px rgba(0,229,255,0.15);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(0,229,255,0.2); padding-bottom:10px; margin-bottom:12px;">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <span style="font-size:28px;">🧠</span>
+                            <div>
+                                <div style="font-size:15px; font-weight:bold; color:#00e5ff; font-family:var(--font-title); letter-spacing:1px;">DR. ARIS THORNE</div>
+                                <div style="font-size:11px; color:#94a3b8; font-family:var(--font-mono);">Sovereign Minister of Resource Intelligence</div>
+                            </div>
+                        </div>
+                        <div style="text-align:right;">
+                            <span style="font-size:10px; padding:3px 10px; border-radius:12px; background:rgba(255,215,0,0.15); border:1px solid #ffd700; color:#ffd700; font-weight:bold; font-family:var(--font-mono);">
+                                AUTONOMY: ${metrics.autonomyIndex}%
+                            </span>
+                        </div>
+                    </div>
+
+                    <div style="font-size:12px; color:#e2e8f0; line-height:1.5; font-family:var(--font-mono); background:rgba(0,0,0,0.4); padding:12px; border-radius:8px; border-left:3px solid #00e5ff; margin-bottom:12px;">
+                        ${briefingText}
+                    </div>
+
+                    <div class="ios-grid-4">
+                        <div class="ios-card" style="padding:8px 12px;">
+                            <div class="ios-card-title">AUTONOMY SCORE</div>
+                            <div class="ios-card-val" style="color:${metrics.autonomyIndex >= 75 ? '#22c55e' : '#eab308'};">${metrics.autonomyIndex}%</div>
+                        </div>
+                        <div class="ios-card" style="padding:8px 12px;">
+                            <div class="ios-card-title">RESERVES CAPACITY</div>
+                            <div class="ios-card-val" style="color:#00e5ff;">${metrics.strategicReservesTotalDays} Days</div>
+                        </div>
+                        <div class="ios-card" style="padding:8px 12px;">
+                            <div class="ios-card-title">ACTIVE SURVEYS</div>
+                            <div class="ios-card-val" style="color:#ffd700;">${surveys.length}</div>
+                        </div>
+                        <div class="ios-card" style="padding:8px 12px;">
+                            <div class="ios-card-title">UNIVERSAL PIPELINES</div>
+                            <div class="ios-card-val" style="color:#a855f7;">18 Strategic</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CANONICAL GSRSK 25-SECTION COUNTRY PROFILE (IF AVAILABLE) -->
+                ${profile25Html}
+
+                <!-- ACTIVE SURVEYS TRACKER -->
+                ${surveyHtml}
+
+                <!-- 18 UNIVERSAL RESOURCE REGISTRY MATRIX -->
+                <div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <div style="font-size:13px; font-weight:bold; color:#ffd700; font-family:var(--font-title); letter-spacing:0.5px;">
+                            📦 NATIONAL RESOURCE REGISTRY (18 STRATEGIC COMMODITIES)
+                        </div>
+                        <button onclick="if(window.ResourceMinistryEngine && typeof window.ResourceMinistryEngine.openModal === 'function') window.ResourceMinistryEngine.openModal('${countryKey}', 'deposits');" style="padding:5px 12px; background:rgba(255,215,0,0.2); border:1px solid #ffd700; color:#ffd700; font-size:11px; font-weight:bold; border-radius:6px; cursor:pointer;">
+                            🗺️ 593 WORLD DEPOSITS
+                        </button>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap:10px; max-height:480px; overflow-y:auto; padding-right:4px;">
+                        ${resGridHtml}
+                    </div>
+                </div>
+
+                <!-- INTER-MINISTRY CABINET COUNCIL DEBATES -->
+                <div style="background:rgba(11,20,36,0.8); border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:14px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <div style="font-size:12px; font-weight:bold; color:#00e5ff; font-family:var(--font-title); letter-spacing:0.5px;">
+                            🏛️ INTER-MINISTRY RESOURCE CABINET COUNCIL DEBATES & POLICY VOTER
+                        </div>
+                        <button onclick="if(window.ResourceMinistryEngine && typeof window.ResourceMinistryEngine.openModal === 'function') window.ResourceMinistryEngine.openModal('${countryKey}', 'market')" style="padding:4px 8px; background:rgba(34,197,94,0.15); border:1px solid #22c55e; color:#22c55e; font-size:10px; font-weight:bold; border-radius:4px; cursor:pointer;">
+                            📈 COMMODITIES TRADING DESK
+                        </button>
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:8px;">
+                        ${debatesHtml}
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+
+    // -------------------------------------------------------------------------
+    // CHAPTER 06: DIPLOMACY
+    // -------------------------------------------------------------------------
+    renderChapter6_Diplomacy(countryKey, rel) {
+        return `
+            <div style="display:flex; flex-direction:column; gap:20px;">
+                <div class="ios-grid-3">
+                    <div class="ios-card">
+                        <div class="ios-card-title">STRATEGIC ALLIES</div>
+                        <div class="ios-card-val" style="color:#22c55e;">28 Nations</div>
+                        <div class="ios-card-sub">Mutual Defense Treaties Active</div>
+                    </div>
+                    <div class="ios-card">
+                        <div class="ios-card-title">DIPLOMATIC INFLUENCE</div>
+                        <div class="ios-card-val">94.2 Score</div>
+                        <div class="ios-card-sub">UN Security Council Member</div>
+                    </div>
+                    <div class="ios-card">
+                        <div class="ios-card-title">EMBASSY NETWORK</div>
+                        <div class="ios-card-val">175 Global Embassies</div>
+                    </div>
+                </div>
+
+                <div class="ios-card">
+                    <div class="ios-card-title" style="color:#00e5ff;">WORLD RELATIONSHIP DYNAMIC GRAPH</div>
+                    <svg width="100%" height="100" viewBox="0 0 300 80">
+                        <circle cx="150" cy="40" r="18" fill="#00e5ff" stroke="#fff" stroke-width="2"/>
+                        <text x="150" y="44" text-anchor="middle" fill="#000" font-size="10" font-weight="bold">${countryKey.substring(0,3)}</text>
+
+                        <circle cx="60" cy="20" r="12" fill="#22c55e"/>
+                        <line x1="150" y1="40" x2="60" y2="20" stroke="#22c55e" stroke-width="2"/>
+
+                        <circle cx="240" cy="20" r="12" fill="#22c55e"/>
+                        <line x1="150" y1="40" x2="240" y2="20" stroke="#22c55e" stroke-width="2"/>
+
+                        <circle cx="60" cy="60" r="12" fill="#ef4444"/>
+                        <line x1="150" y1="40" x2="60" y2="60" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="3,3"/>
+
+                        <circle cx="240" cy="60" r="12" fill="#ffd700"/>
+                        <line x1="150" y1="40" x2="240" y2="60" stroke="#ffd700" stroke-width="1.5"/>
+                    </svg>
+                </div>
+
+                <!-- QUICK ACTIONS -->
+                <div>
+                    <div class="ios-card-title" style="margin-bottom:8px; color:#22c55e; font-weight:bold;">DIPLOMATIC DIRECTIVES</div>
+                    <div class="ios-actions-grid">
+                        <button class="ios-act-btn" data-action="alliance">
+                            <span>🤝 FORM ALLIANCE</span><span>⚡ EXECUTE</span>
+                        </button>
+                        <button class="ios-act-btn" data-action="peace-treaty">
+                            <span>📜 PEACE TREATY</span><span>⚡ EXECUTE</span>
+                        </button>
+                        <button class="ios-act-btn" data-action="embassy">
+                            <span>🏛️ ESTABLISH EMBASSY</span><span>⚡ EXECUTE</span>
+                        </button>
+                        <button class="ios-act-btn" data-action="summit">
+                            <span>🌐 CONVENE SUMMIT</span><span>⚡ EXECUTE</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+
+    // -------------------------------------------------------------------------
+    // CHAPTER 07: INTELLIGENCE
+    // -------------------------------------------------------------------------
+    renderChapter7_Intelligence(countryKey) {
+        return `
+            <div style="display:flex; flex-direction:column; gap:20px;">
+                <div class="ios-grid-3">
+                    <div class="ios-card">
+                        <div class="ios-card-title">NETWORK LEVEL</div>
+                        <div class="ios-card-val" style="color:#00e5ff;">CLASS 5 GLOBAL</div>
+                        <div class="ios-card-sub">Satellite Mesh Coverage 99.8%</div>
+                    </div>
+                    <div class="ios-card">
+                        <div class="ios-card-title">COUNTER-INTEL SHIELD</div>
+                        <div class="ios-card-val">96.5% Efficiency</div>
+                        <div class="ios-card-sub">Foreign Infiltration: Low</div>
+                    </div>
+                    <div class="ios-card">
+                        <div class="ios-card-title">CYBER WARFARE UNIT</div>
+                        <div class="ios-card-val" style="color:#22c55e;">DEFCON 2 READINESS</div>
+                        <div class="ios-card-sub">Offensive Capabilities Active</div>
+                    </div>
+                </div>
+
+                <div class="ios-card" style="border-color:#ef4444;">
+                    <div class="ios-card-title" style="color:#ef4444;">AI THREAT ASSESSMENT & ESPIONAGE REPORT</div>
+                    <div style="font-size:12px; line-height:1.6; color:#f8fafc;">
+                        <div>⚠️ Current Threat Level: <strong>MODERATE (LEVEL 3)</strong></div>
+                        <div>📡 Counter-Intelligence Status: 12 foreign surveillance nodes intercepted in last 30 days.</div>
+                        <div>🔒 Information Reliability Rating: 98.4% (Highly Verified)</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+
+    // -------------------------------------------------------------------------
+    // CHAPTER 08: INFRASTRUCTURE
+    // -------------------------------------------------------------------------
+    renderChapter8_Infrastructure(countryKey) {
+        return `
+            <div style="display:flex; flex-direction:column; gap:20px;">
+                <div class="ios-grid-4">
+                    <div class="ios-card">
+                        <div class="ios-card-title">AIRPORTS & PORTS</div>
+                        <div class="ios-card-val">135 Intl Airports</div>
+                        <div class="ios-card-sub">52 Deepwater Seaports</div>
+                    </div>
+                    <div class="ios-card">
+                        <div class="ios-card-title">RAIL & HIGHWAYS</div>
+                        <div class="ios-card-val">250,000 km Grid</div>
+                        <div class="ios-card-sub">High-Speed Logistics</div>
+                    </div>
+                    <div class="ios-card">
+                        <div class="ios-card-title">POWER GRID</div>
+                        <div class="ios-card-val">4,200 Terawatt-Hours</div>
+                        <div class="ios-card-sub">Nuclear + Clean Energy 45%</div>
+                    </div>
+                    <div class="ios-card">
+                        <div class="ios-card-title">TELECOM / 5G</div>
+                        <div class="ios-card-val" style="color:#22c55e;">99.2% Coverage</div>
+                        <div class="ios-card-sub">Quantum Satellite Link</div>
+                    </div>
+                </div>
+
+                <div class="ios-card">
+                    <div class="ios-card-title">INFRASTRUCTURE MODERNIZATION INDEX</div>
+                    <div style="background:rgba(255,255,255,0.1); border-radius:6px; height:18px; overflow:hidden; margin-top:6px;">
+                        <div style="width:92%; background:linear-gradient(90deg, #00e5ff, #22c55e); height:100%;"></div>
+                    </div>
+                    <span class="ios-card-sub" style="margin-top:4px;">Logistics Network Operating Efficiency: 92%</span>
+                </div>
+            </div>
+        `;
+    },
+
+    // -------------------------------------------------------------------------
+    // CHAPTER 09: TECHNOLOGY
+    // -------------------------------------------------------------------------
+    renderChapter9_Technology(countryKey) {
+        return `
+            <div style="display:flex; flex-direction:column; gap:20px;">
+                <div class="ios-grid-3">
+                    <div class="ios-card">
+                        <div class="ios-card-title">AI & QUANTUM COMPUTE</div>
+                        <div class="ios-card-val" style="color:#ffd700;">TIER 1 LEADERSHIP</div>
+                        <div class="ios-card-sub">Autonomous Swarm Systems</div>
+                    </div>
+                    <div class="ios-card">
+                        <div class="ios-card-title">SPACE PROGRAM</div>
+                        <div class="ios-card-val">Lunar & Orbital Stations</div>
+                        <div class="ios-card-sub">1,400 Active Satellites</div>
+                    </div>
+                    <div class="ios-card">
+                        <div class="ios-card-title">CYBER SECURITY GRID</div>
+                        <div class="ios-card-val" style="color:#22c55e;">QUANTUM ENCRYPTED</div>
+                    </div>
+                </div>
+
+                <div class="ios-card">
+                    <div class="ios-card-title" style="color:#00e5ff;">RESEARCH PROGRESS TIMELINE</div>
+                    <div style="display:flex; justify-content:space-between; margin-top:10px; font-size:11px; color:#cbd5e1;">
+                        <div>🤖 AI Robotics (100%)</div>
+                        <div>⚡ Fusion Energy (84%)</div>
+                        <div>🚀 Hypersonic Flight (92%)</div>
+                        <div>🧪 Bio-Genetics (78%)</div>
+                    </div>
+                </div>
+
+                <!-- QUICK ACTIONS -->
+                <div>
+                    <div class="ios-card-title" style="margin-bottom:8px; color:#ffd700; font-weight:bold;">TECH DIRECTIVE ACTIONS</div>
+                    <div class="ios-actions-grid">
+                        <button class="ios-act-btn" data-action="research-pact">
+                            <span>🧪 RESEARCH AGREEMENT</span><span>⚡ EXECUTE</span>
+                        </button>
+                        <button class="ios-act-btn" data-action="tech-transfer">
+                            <span>💾 TECH TRANSFER</span><span>⚡ EXECUTE</span>
+                        </button>
+                        <button class="ios-act-btn" data-action="joint-rd">
+                            <span>🔬 JOINT R&D VENTURE</span><span>⚡ EXECUTE</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+
+    // -------------------------------------------------------------------------
+    // CHAPTER 10: SOCIETY
+    // -------------------------------------------------------------------------
+    renderChapter10_Society(countryKey, pop) {
+        const ageSource = pop && (pop.ageGroups || pop.age_groups || pop.ageDistribution || pop.age_distribution ||
+            pop.ageBreakdown || pop.age_breakdown || pop.demographics && (pop.demographics.ageGroups || pop.demographics.ageDistribution)) || null;
+        const num = value => {
+            if (typeof value === 'number' && Number.isFinite(value)) return value;
+            if (typeof value === 'string' && value.trim() !== '' && /^-?\d+(?:\.\d+)?$/.test(value.trim())) {
+                const parsed = Number(value);
+                return Number.isFinite(parsed) ? parsed : null;
+            }
+            return null;
+        };
+        const ageRowsRaw = Array.isArray(ageSource)
+            ? ageSource.map((row,index)=>({label:row && (row.label || row.name || row.ageGroup || row.id) || 'Group '+(index+1),row}))
+            : ageSource && typeof ageSource === 'object' ? Object.entries(ageSource).map(([label,row])=>({label,row})) : [];
+        const ageRows = ageRowsRaw.map(item=>{
+            const row=item.row && typeof item.row === 'object' ? item.row : {value:item.row};
+            const explicit = num(row.percentage ?? row.percent ?? row.sharePercent ?? row.populationPercent);
+            const fractional = num(row.share ?? row.fraction);
+            const value = num(row.population ?? row.count ?? row.people ?? row.total ?? row.value ?? row.amount);
+            return {label:String(item.label),percent:explicit!==null?explicit:(fractional!==null&&fractional>=0&&fractional<=1?fractional*100:null),value};
+        }).filter(row=>row.percent!==null||row.value!==null);
+        const total = ageRows.reduce((sum,row)=>sum+(row.value!==null&&row.value>0?row.value:0),0);
+        const finalAgeRows = ageRows.map(row=>({...row,percent:row.percent!==null?row.percent:(total>0&&row.value!==null?row.value/total*100:null)}))
+            .filter(row=>row.percent!==null&&Number.isFinite(row.percent)&&row.percent>=0)
+            .map(row=>({...row,percent:Math.min(100,row.percent)}));
+        const ageChartHtml = finalAgeRows.length
+            ? '<div style="display:flex;justify-content:space-around;align-items:flex-end;gap:9px;min-height:90px;margin-top:10px;">'+
+                finalAgeRows.map(row=>'<div style="text-align:center;min-width:0;flex:1;"><div title="'+String(row.percent.toFixed(1))+'%" style="background:#38bdf8;width:22px;height:'+Math.max(2,row.percent/100*62).toFixed(1)+'px;margin:0 auto 5px;border-radius:4px 4px 0 0;"></div><span style="font-size:10px;overflow-wrap:anywhere;">'+String(row.label).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+' ('+row.percent.toFixed(1)+'%)</span></div>').join('')+'</div>'
+            : '<p style="padding:10px 0;color:#94a3b8;font-size:12px;line-height:1.5;">No age-group population records are available for this country. This chart is hidden rather than filled with sample demographics.</p>';
+        return `
+            <div style="display:flex; flex-direction:column; gap:20px;">
+                <div class="ios-grid-4">
+                    <div class="ios-card">
+                        <div class="ios-card-title">EDUCATION INDEX</div>
+                        <div class="ios-card-val">0.94 (Tier 1)</div>
+                        <div class="ios-card-sub">Literacy Rate: 99%</div>
+                    </div>
+                    <div class="ios-card">
+                        <div class="ios-card-title">HEALTHCARE SYSTEM</div>
+                        <div class="ios-card-val">Advanced Universal</div>
+                        <div class="ios-card-sub">Life Expectancy: 81 Yrs</div>
+                    </div>
+                    <div class="ios-card">
+                        <div class="ios-card-title">HAPPINESS INDEX</div>
+                        <div class="ios-card-val" style="color:#22c55e;">78.4 / 100</div>
+                        <div class="ios-card-sub">Public Morale High</div>
+                    </div>
+                    <div class="ios-card">
+                        <div class="ios-card-title">URBANIZATION RATE</div>
+                        <div class="ios-card-val">82.5%</div>
+                        <div class="ios-card-sub">Metro Demographics</div>
+                    </div>
+                </div>
+
+                <div class="ios-card">
+                    <div class="ios-card-title">NATIONAL POPULATION AGE DEMOGRAPHICS</div>
+                    ${ageChartHtml}
+                </div>
+            </div>
+        `;
+    },
+
+    // -------------------------------------------------------------------------
+    // CHAPTER 11: OPERATIONS (Action Matrix)
+    // -------------------------------------------------------------------------
+    renderChapter11_Operations(countryKey) {
+        return `
+            <div style="display:flex; flex-direction:column; gap:20px;">
+                <div class="ios-card" style="border-color:#ffd700;">
+                    <div class="ios-card-title" style="color:#ffd700;">CHAPTER 11: OPERATIONS COMMAND CENTER</div>
+                    <p style="font-size:12px; color:#cbd5e1; margin:0;">
+                        Execute supreme executive directives directly against ${countryKey.replace(/_/g, " ")}. Locked directives indicate unmet prerequisite diplomatic, technical, or military thresholds.
+                    </p>
+                </div>
+
+                <div class="ios-actions-grid" style="grid-template-columns: repeat(3, 1fr);">
+                    <button class="ios-act-btn locked" data-action="declare-war">
+                        <span>⚔️ DECLARE WAR</span><span class="ios-lock-reason">🔒 Locked: Requires Tension > 75%</span>
+                    </button>
+
+                    <button class="ios-act-btn" data-action="peace-negotiation">
+                        <span>🕊️ PEACE NEGOTIATION</span><span>⚡ AVAILABLE</span>
+                    </button>
+
+                    <button class="ios-act-btn" data-action="trade-proposal">
+                        <span>📜 TRADE PROPOSAL</span><span>⚡ AVAILABLE</span>
+                    </button>
+
+                    <button class="ios-act-btn" data-action="intel-op">
+                        <span>🛰️ INTELLIGENCE OPERATION</span><span>⚡ AVAILABLE</span>
+                    </button>
+
+                    <button class="ios-act-btn" data-action="cyber-op">
+                        <span>💻 CYBER OPERATION</span><span>⚡ AVAILABLE</span>
+                    </button>
+
+                    <button class="ios-act-btn" data-action="humanitarian-aid">
+                        <span>🏥 HUMANITARIAN AID</span><span>⚡ AVAILABLE</span>
+                    </button>
+
+                    <button class="ios-act-btn" data-action="military-aid">
+                        <span>🛡️ MILITARY AID</span><span>⚡ AVAILABLE</span>
+                    </button>
+
+                    <button class="ios-act-btn" data-action="economic-aid">
+                        <span>💰 ECONOMIC AID</span><span>⚡ AVAILABLE</span>
+                    </button>
+
+                    <button class="ios-act-btn" data-action="build-embassy">
+                        <span>🏛️ BUILD EMBASSY</span><span>⚡ AVAILABLE</span>
+                    </button>
+
+                    <button class="ios-act-btn" data-action="send-delegation">
+                        <span>👥 SEND DELEGATION</span><span>⚡ AVAILABLE</span>
+                    </button>
+
+                    <button class="ios-act-btn" data-action="joint-research">
+                        <span>🧪 JOINT RESEARCH</span><span>⚡ AVAILABLE</span>
+                    </button>
+
+                    <button class="ios-act-btn" data-action="strategic-investment">
+                        <span>🏗️ STRATEGIC INVESTMENT</span><span>⚡ AVAILABLE</span>
+                    </button>
+                </div>
+            </div>
+        `;
+    },
+
+    // -------------------------------------------------------------------------
+    // CHAPTER 12: WORLD ECOSYSTEM & CAUSAL DEPENDENCY ENGINE
+    // -------------------------------------------------------------------------
+    renderChapter12_WorldEcosystem(countryKey) {
+        const profile = window.WorldEcosystemEngine ? window.WorldEcosystemEngine.getCountryProfile(countryKey) : {
+            geography: { isLandlocked: false, borderLengthKm: 4500 },
+            resources: { crude_oil: { importNeed: 120000 }, semiconductors: { importNeed: 2000000 } },
+            population: { total: 330000000, happinessScore: 72 },
+            government: { cabinetStability: 80, corruptionIndex: 25 },
+            aiPersonality: { aggressiveExpansion: 35, riskTolerance: 40, pragmaticRealism: 75, strategicVision: 80 },
+            media: { pressFreedomIndex: 75 },
+            tech: { semiconductorFabDominance: 60, cyberAttackPower: 85 },
+            blocs: ["NATO", "AUKUS"],
+            influenceSphere: "Western / Transatlantic"
+        };
+
+        const logs = window.WorldEcosystemEngine ? window.WorldEcosystemEngine.getCausalEventLog() : [];
+        const countryName = countryKey.replace(/_/g, " ");
+
+        return `
+            <div class="command-tactical-container" style="display:flex; flex-direction:column; gap:16px;">
+                <!-- HEADER BANNER -->
+                <div class="tactical-header-banner" style="background: linear-gradient(135deg, rgba(0,229,255,0.15), rgba(15,23,42,0.9)); border:1px solid var(--omega-neon); padding:16px; border-radius:10px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <div style="font-family:var(--font-title); font-size:18px; color:var(--omega-neon); font-weight:bold;">
+                                🌐 LIVING WORLD STATE ECOSYSTEM & CAUSAL DEPENDENCY ENGINE
+                            </div>
+                            <div style="font-family:var(--font-mono); font-size:12px; color:#cbd5e1; margin-top:4px;">
+                                Sovereign State: <strong style="color:#fff;">${countryName}</strong> | Systemic Interconnected Architecture (15 Active Ecosystem Subsystems)
+                            </div>
+                        </div>
+                        <div style="background:rgba(0,229,255,0.1); border:1px solid #00e5ff; color:#00e5ff; padding:6px 14px; border-radius:8px; font-family:var(--font-mono); font-size:12px; font-weight:bold;">
+                            SYSTEMIC STATUS: ONLINE
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ⚡ LIVE CAUSAL CASCADE CONTROLLER & LOG VISUALIZER -->
+                <div style="background:rgba(2,11,20,0.85); border:1px solid var(--omega-border); border-radius:10px; padding:16px; display:flex; flex-direction:column; gap:12px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(0,229,255,0.2); padding-bottom:10px;">
+                        <div style="font-family:var(--font-title); color:#ffd700; font-size:14px; font-weight:bold; display:flex; align-items:center; gap:8px;">
+                            <span>⚡</span><span>MULTI-STEP CAUSAL CASCADE SIMULATOR</span>
+                        </div>
+                        <span style="font-size:11px; font-family:var(--font-mono); color:#94a3b8;">Trigger real-time downstream feedback loops</span>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:10px;">
+                        <button onclick="window.WorldEcosystemEngine && window.WorldEcosystemEngine.triggerCausalCascade({ originCountry: '${countryKey}', targetCountry: 'CHN', type: 'TRADE_SANCTION', severity: 1.5 }); window.CountryIOS.switchChapter(12);" style="background:linear-gradient(180deg, rgba(239,68,68,0.25), rgba(153,27,27,0.4)); border:1px solid #ef4444; color:#fca5a5; padding:10px; border-radius:8px; font-family:var(--font-mono); font-size:12px; font-weight:bold; cursor:pointer; text-align:left;">
+                            🛑 High-Tech Semiconductor Embargo
+                        </button>
+                        <button onclick="window.WorldEcosystemEngine && window.WorldEcosystemEngine.triggerCausalCascade({ originCountry: '${countryKey}', targetCountry: 'RUS', type: 'TARIFF_HIKE', severity: 2.0 }); window.CountryIOS.switchChapter(12);" style="background:linear-gradient(180deg, rgba(245,158,11,0.25), rgba(180,83,9,0.4)); border:1px solid #f59e0b; color:#fde68a; padding:10px; border-radius:8px; font-family:var(--font-mono); font-size:12px; font-weight:bold; cursor:pointer; text-align:left;">
+                            🛢️ Crude Oil & Gas Export Sanction
+                        </button>
+                        <button onclick="window.WorldEcosystemEngine && window.WorldEcosystemEngine.triggerCausalCascade({ originCountry: '${countryKey}', targetCountry: 'IRN', type: 'MILITARY_MOBILIZATION', severity: 1.8 }); window.CountryIOS.switchChapter(12);" style="background:linear-gradient(180deg, rgba(16,185,129,0.25), rgba(4,120,87,0.4)); border:1px solid #10b981; color:#a7f3d0; padding:10px; border-radius:8px; font-family:var(--font-mono); font-size:12px; font-weight:bold; cursor:pointer; text-align:left;">
+                            ⚔️ Border Force Mobilization
+                        </button>
+                    </div>
+
+                    <!-- Live Causal Cascade Log -->
+                    <div style="background:rgba(0,0,0,0.6); border:1px solid rgba(0,229,255,0.2); border-radius:8px; padding:12px; max-height:260px; overflow-y:auto; font-family:var(--font-mono); font-size:12px;">
+                        <div style="color:#00e5ff; font-weight:bold; margin-bottom:8px; display:flex; justify-content:space-between;">
+                            <span>📜 LATEST CAUSAL CASCADE REACTION FEED:</span>
+                            <span style="color:#94a3b8; font-size:10px;">Showing real-time feedback steps</span>
+                        </div>
+                        ${logs.length === 0 ? '<div style="color:#64748b;">No recent causal cascade events triggered. Click a trigger button above to initiate a multi-node systemic cascade.</div>' : ''}
+                        ${logs.map(log => `
+                            <div style="border-left:3px solid #00e5ff; padding-left:10px; margin-bottom:12px;">
+                                <div style="color:#ffd700; font-weight:bold; font-size:11px;">
+                                    [${log.timestamp.substring(11,19)}] Event: ${log.eventType} (${log.origin} ➔ ${log.target}) | Severity: ${log.severity}x
+                                </div>
+                                <div style="display:flex; flex-direction:column; gap:4px; margin-top:6px;">
+                                    ${log.steps.map(s => `
+                                        <div style="background:rgba(15,23,42,0.8); padding:6px 10px; border-radius:4px; border:1px solid rgba(255,255,255,0.05); display:flex; justify-content:space-between;">
+                                            <span style="color:#38bdf8;">Step ${s.step} [${s.layer}]: ${s.node}</span>
+                                            <span style="color:#a7f3d0; font-weight:bold;">${s.impact}</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <!-- 🧠 SOVEREIGN AI COGNITIVE PERSONALITY & DEPENDENCY GRAPH -->
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+                    <!-- AI Cognitive Dimensions -->
+                    <div style="background:rgba(2,11,20,0.85); border:1px solid var(--omega-border); border-radius:10px; padding:16px;">
+                        <div style="font-family:var(--font-title); color:#00e5ff; font-size:13px; font-weight:bold; margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+                            <span>🧠</span><span>SOVEREIGN AI COGNITIVE PERSONALITY (10 DIMENSIONS)</span>
+                        </div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-family:var(--font-mono); font-size:11px;">
+                            <div style="background:rgba(0,0,0,0.4); padding:8px; border-radius:6px; border:1px solid rgba(255,255,255,0.08);">
+                                <span style="color:#94a3b8;">Aggressive Expansion:</span>
+                                <div style="color:#f87171; font-weight:bold; font-size:13px;">${profile.aiPersonality.aggressiveExpansion}/100</div>
+                            </div>
+                            <div style="background:rgba(0,0,0,0.4); padding:8px; border-radius:6px; border:1px solid rgba(255,255,255,0.08);">
+                                <span style="color:#94a3b8;">Risk Tolerance:</span>
+                                <div style="color:#fbbf24; font-weight:bold; font-size:13px;">${profile.aiPersonality.riskTolerance}/100</div>
+                            </div>
+                            <div style="background:rgba(0,0,0,0.4); padding:8px; border-radius:6px; border:1px solid rgba(255,255,255,0.08);">
+                                <span style="color:#94a3b8;">Pragmatic Realism:</span>
+                                <div style="color:#34d399; font-weight:bold; font-size:13px;">${profile.aiPersonality.pragmaticRealism}/100</div>
+                            </div>
+                            <div style="background:rgba(0,0,0,0.4); padding:8px; border-radius:6px; border:1px solid rgba(255,255,255,0.08);">
+                                <span style="color:#94a3b8;">Strategic Vision:</span>
+                                <div style="color:#38bdf8; font-weight:bold; font-size:13px;">${profile.aiPersonality.strategicVision}/100</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Strategic Blocs & Chokepoints -->
+                    <div style="background:rgba(2,11,20,0.85); border:1px solid var(--omega-border); border-radius:10px; padding:16px;">
+                        <div style="font-family:var(--font-title); color:#ffd700; font-size:13px; font-weight:bold; margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+                            <span>🏛️</span><span>ACTIVE ALLIANCE BLOCS & CHOKEPOINT CONTROL</span>
+                        </div>
+                        <div style="font-family:var(--font-mono); font-size:11px; display:flex; flex-direction:column; gap:8px;">
+                            <div style="background:rgba(0,0,0,0.4); padding:8px; border-radius:6px; border:1px solid rgba(255,255,255,0.08);">
+                                <span style="color:#94a3b8;">Active Alliance Blocs:</span>
+                                <div style="color:#00e5ff; font-weight:bold; font-size:12px; margin-top:2px;">
+                                    ${(profile.blocs || []).join(", ") || "Non-Aligned / Independent"}
+                                </div>
+                            </div>
+                            <div style="background:rgba(0,0,0,0.4); padding:8px; border-radius:6px; border:1px solid rgba(255,255,255,0.08);">
+                                <span style="color:#94a3b8;">Influence Sphere:</span>
+                                <div style="color:#a7f3d0; font-weight:bold; font-size:12px; margin-top:2px;">
+                                    ${profile.influenceSphere || "Western / Transatlantic"}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+
+    // BIND QUICK ACTION BUTTONS
+    bindQuickActions() {
+        const btns = document.querySelectorAll('.ios-act-btn:not(.locked)');
+        btns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const act = btn.getAttribute('data-action');
+                this.executeAction(act);
+            });
+        });
+    },
+
+    executeAction(actionType) {
+        const countryName = this.activeCountry.replace(/_/g, " ");
+        window.showOmegaNotification("EXECUTIVE DIRECTIVE", `Directive ${actionType.toUpperCase()} dispatched for ${countryName}`, "info");
+    },
+
+    // AI STRATEGIC ADVISOR RECOMMENDATIONS ENGINE
+    updateAdvisor(chNum, countryKey) {
+        const chTag = document.getElementById('advisor-chapter-name');
+        const text = document.getElementById('advisor-insights-text');
+        if (!chTag || !text) return;
+
+        const countryName = countryKey.replace(/_/g, " ");
+        const chNames = [
+            "01 OVERVIEW", "02 GOVERNMENT", "03 MILITARY", "04 ECONOMY", "05 RESOURCES",
+            "06 DIPLOMACY", "07 INTELLIGENCE", "08 INFRASTRUCTURE", "09 TECHNOLOGY", "10 SOCIETY", "11 OPERATIONS", "12 WORLD ECOSYSTEM"
+        ];
+
+        chTag.innerText = chNames[chNum - 1] || "01 OVERVIEW";
+
+        const adviceMap = {
+            1: `<strong>OVERVIEW ADVICE:</strong> ${countryName} exhibits a stable strategic equilibrium. Priority recommendation is to fortify diplomatic alliances while maintaining defense readiness.`,
+            2: `<strong>GOVERNMENT ADVICE:</strong> High administrative efficiency detected. Recommend negotiating bilateral governance agreements or applying diplomatic leverage.`,
+            3: `<strong>MILITARY ADVICE:</strong> Defense forces are at peak readiness (94%). Maintain joint military exercises to optimize joint interception capabilities.`,
+            4: `<strong>ECONOMY ADVICE:</strong> GDP growth is positive (+2.4%). Establishing a new trade agreement will boost treasury revenue by +$15M/s.`,
+            5: `<strong>RESOURCE ADVICE:</strong> Energy and rare earth reserves are abundant. Propose a long-term resource import deal to secure strategic supply chains.`,
+            6: `<strong>DIPLOMACY ADVICE:</strong> Strategic relations are receptive. Convening a bilateral summit will enhance overall alliance index by +15 points.`,
+            7: `<strong>INTELLIGENCE ADVICE:</strong> Counter-intelligence shield is active. Deploy covert intelligence monitoring to detect foreign infiltrations early.`,
+            8: `<strong>INFRASTRUCTURE ADVICE:</strong> High-speed logistics grid is operating at 92%. Modernizing seaport nodes will further accelerate trade throughput.`,
+            9: `<strong>TECHNOLOGY ADVICE:</strong> Quantum compute R&D is advanced. Initiating a Joint R&D Venture will accelerate research progress by +25%.`,
+            10: `<strong>SOCIETY ADVICE:</strong> Public morale and happiness are high (78.4). Excellent social stability ensures low civil unrest risk.`,
+            11: `<strong>OPERATIONS ADVICE:</strong> Optimal executive action: Propose Trade Accord or Establish Embassy to solidify strategic dominance.`,
+            12: `<strong>WORLD ECOSYSTEM ADVICE:</strong> Execute a targeted Causal Cascade or inspect structural Node Dependencies to analyze multi-tier systemic feedback loops.`
+        };
+
+        text.innerHTML = adviceMap[chNum] || "Select a chapter to generate tactical intelligence.";
+    },
+
+    executeAdvisorDirective() {
+        const currentCh = this.activeChapter;
+        const actionsMap = {
+            1: "influence-gov", 2: "negotiate-terms", 3: "joint-training",
+            4: "trade-agreement", 5: "resource-deal", 6: "alliance",
+            7: "intel-op", 8: "investment", 9: "joint-rd", 10: "humanitarian-aid", 11: "trade-proposal"
+        };
+        const act = actionsMap[currentCh] || "trade-proposal";
+        this.executeAction(act);
+    }
+};
+
+// Auto-initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    window.CountryIOS.init();
+});
+
+window.addEventListener('RESOURCE_STATE_UPDATED', () => {
+    if (window.CountryIOS && window.CountryIOS.activeChapter === 5 && window.CountryIOS.activeCountry) {
+        window.CountryIOS.switchChapter(5);
+    }
+});
+ + (n/1e9).toFixed(1) + 'B');
         const nameClean = countryKey.replace(/_/g, " ").toUpperCase();
         const observer = window.OmegaLiveOpsObservability;
         const countryId = observer && typeof observer.resolveCountryId === 'function'
