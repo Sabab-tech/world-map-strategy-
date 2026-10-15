@@ -278,7 +278,7 @@ function countryIds(){
  try{const b=g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity;for(const x of b?.list?.('COUNTRY')||b?.list?.()||[]){const r=typeof x==='object'?(x.iso3||x.countryId||x.id||x.code):x;if(r)out.add(country(r));}}catch(_){}
  return [...out].filter(Boolean).sort();
 }
-function processCountry(c){const cc=country(c);if(!cc)return{status:'SKIPPED',reason:'COUNTRY_REQUIRED'};return dispatch('resource','OMEGA_RESOURCE_EXPLORATION_TICK',cc,{correlationId:'EXPLORATION-TICK:'+cc+':'+turn()});}
+function processCountry(c){install();const cc=country(c);if(!cc)return{status:'SKIPPED',reason:'COUNTRY_REQUIRED'};return dispatch('resource','OMEGA_RESOURCE_EXPLORATION_TICK',cc,{correlationId:'EXPLORATION-TICK:'+cc+':'+turn()});}
 function processAll(){return countryIds().map(processCountry);}
 function declareEmbargo(c,p={}){install();return dispatch('resource','OMEGA_RESOURCE_EMBARGO_DECLARE',c,p);}
 function liftEmbargo(c,p={}){install();return dispatch('resource','OMEGA_RESOURCE_EMBARGO_LIFT',c,p);}
@@ -300,6 +300,8 @@ function diagnostics(){
 const API=Object.freeze({VERSION,loadRules,install,diagnostics,isResourceEmbargoed,isRouteBlocked,siteAvailableForExtraction,extractionMultiplier,recordExtractionImpactTx,recordProcessingImpactTx,declareEmbargo,liftEmbargo,declareBlockade,liftBlockade,startExploration,processCountry,processAll,approveInvestment,commissionSite,remediateSite});
 g.Omega=g.Omega||{};g.Omega.ResourceStrategicPolicyRuntime=API;g.OmegaResourceStrategicPolicyRuntime=API;
 if(typeof g.addEventListener==='function'){
+ g.addEventListener('OMEGA_READY',()=>{loadRules().then(()=>install()).catch(()=>{});});
+ g.addEventListener('OMEGA_GAME_SESSION_STARTED',()=>{loadRules().then(()=>install()).catch(()=>{});});
  g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED',()=>{try{processAll();}catch(_){}});
  g.addEventListener('OMEGA_RESOURCE_PROCESSING_COMPLETED',e=>{
   const d=e?.detail||{},p=d.payload||d,cc=country(p.countryId||d.countryId);
