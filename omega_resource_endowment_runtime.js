@@ -1467,7 +1467,9 @@ function batchFromExtraction(x,record){
       }
       const q=n(result.approvedQuantity)||0,resource=x.resourceId;
       const predictedUnit=result.producedBatch?.unit||result.reserveAfter?.unit||x?.capacity?.unit||resourceDefinition(resource)?.unit||null;
-      const carbonGate=strategicPolicy?.previewCarbonActivity?.(c,resource,q,predictedUnit,'RESOURCE_EXTRACTION',ctx);
+      const carbonGate=strategicPolicy?.previewCarbonActivity?.(c,resource,q,predictedUnit,'RESOURCE_EXTRACTION',ctx,{
+        activityId:'EXTRACTION-PREVIEW:'+c+':'+x.occurrenceKey+':T'+turn(),siteId:policySiteId||x.siteReferenceKey||null,sourceId:x.occurrenceKey
+      });
       if(carbonGate&&carbonGate.allowed===false){
         const reason=carbonGate.reason||'CARBON_QUOTA_POLICY_BLOCKED_EXTRACTION';
         blocked.push({occurrenceKey:x.occurrenceKey,siteReferenceKey:policySiteId||null,resourceId:resource,reason,carbonGate:clone(carbonGate)});
