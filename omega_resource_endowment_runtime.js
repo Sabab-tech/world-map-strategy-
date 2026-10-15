@@ -1727,6 +1727,61 @@ function batchFromExtraction(x,record){
     return shared;
   }
   function onReady(){void initialize();}
+  function publishBootstrapStatus(snapshot){
+    const detail=Object.assign({eventType:'OMEGA_RESOURCE_BOOTSTRAP_STATUS',simulationTurn:turn(),source:'resource-endowment-runtime'},clone(snapshot||{}));
+    try{
+      if(typeof g.dispatchEvent==='function'&&typeof g.CustomEvent==='function'){
+        g.dispatchEvent(new g.CustomEvent('OMEGA_RESOURCE_BOOTSTRAP_STATUS',{detail}));
+      }
+    }catch(_){}
+  }
+  // The static site catalog is not a live production ledger. Bootstrap the
+  // authoritative extraction runtime as soon as its canonical registry is ready.
+  // extractAll() is idempotent per simulation turn and publishes the normal
+  // extraction/batch/factory-input events consumed by logistics and economy.
+  function onSiteBindingReady(){
+    const binding=g.Omega?.IndividualResourceSiteBinding||g.OmegaIndividualResourceSiteBinding;
+    if(!binding||!Array.isArray(binding.sites)||binding.sites.length===0)return;
+    void initialize().then(async function(initialized){
+      if(initialized?.status!=='READY'){
+        const snapshot={status:'FAILED',turn:turn(),siteCount:binding.sites.length,
+          reason:initialized?.reason||'RESOURCE_RUNTIME_NOT_READY',detail:clone(initialized||null)};
+        g.__omegaResourceEndowmentLastBootstrap=snapshot;
+        publishBootstrapStatus(snapshot);
+        return initialized;
+      }
+      const result=await extractAll();
+      const countryResults=Array.isArray(result?.results)?result.results:[];
+      const failedCountryRows=countryResults.filter(function(row){
+        return row?.result?.status!=='APPLIED'||row?.result?.result?.accepted===false;
+      });
+      const extractedRecordCount=countryResults.reduce(function(total,row){
+        const payload=row?.result?.result||row?.result||{};
+        return total+(Array.isArray(payload.records)?payload.records.length:0);
+      },0);
+      const blockedSiteCount=countryResults.reduce(function(total,row){
+        const payload=row?.result?.result||row?.result||{};
+        return total+Math.max(0,Number(payload.blocked)||0);
+      },0);
+      const rawStatus=String(result?.status||'UNKNOWN');
+      const status=rawStatus==='COMPLETED'
+        ?(failedCountryRows.length?'DEGRADED':(extractedRecordCount>0?'COMPLETED':'NO_OUTPUT'))
+        :rawStatus;
+      const reason=failedCountryRows[0]?.result?.reason||failedCountryRows[0]?.result?.result?.reason||
+        result?.reason||(status==='NO_OUTPUT'?'NO_EXTRACTION_RECORDS_CREATED':null);
+      const snapshot={status,resultStatus:rawStatus,turn:turn(),siteCount:binding.sites.length,
+        countryCount:countryResults.length||countries().length,failedCountryCount:failedCountryRows.length,
+        extractedRecordCount,blockedSiteCount,reason};
+      g.__omegaResourceEndowmentLastBootstrap=snapshot;
+      publishBootstrapStatus(snapshot);
+      return result;
+    }).catch(function(error){
+      const snapshot={status:'FAILED',turn:turn(),reason:String(error?.message||error)};
+      g.__omegaResourceEndowmentLastBootstrap=snapshot;
+      g.OmegaResourceEndowmentRuntimeError=snapshot.reason;
+      publishBootstrapStatus(snapshot);
+    });
+  }
   function onTurn(){void extractAll();}
   function diagnostics(){
     const r=g.__OmegaResourceReserveRegistry, e=engine(), mines=[];
@@ -1757,6 +1812,7 @@ function batchFromExtraction(x,record){
     g.addEventListener?.('OMEGA_READY',onReady);
     g.addEventListener?.('RESOURCE_STATE_UPDATED',onReady);
     g.addEventListener?.('OMEGA_GAME_SESSION_STARTED',onReady);
+    g.addEventListener?.('OMEGA_RESOURCE_SITE_BINDING_READY',onSiteBindingReady);
     g.addEventListener?.('OMEGA_SIMULATION_TURN_COMMITTED',onTurn);
     return diagnostics();
   }

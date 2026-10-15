@@ -57,7 +57,7 @@
     "test:resource-e2e": "node --test test/omega_resource_true_e2e_pipeline.test.mjs",
     "test:resource-global-auto": "node --test test/omega_resource_autonomous_global_pipeline.test.mjs",
     "test:resource-recipe-coverage": "node --test test/omega_resource_recipe_coverage.test.mjs",
-    "test:liveops": "node --test test/omega_live_operations_observability_v1.test.mjs"
+    "test:liveops": "node --test test/omega_live_operations_observability_v1.test.mjs test/omega_resource_bootstrap_integration.test.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.21.0",
