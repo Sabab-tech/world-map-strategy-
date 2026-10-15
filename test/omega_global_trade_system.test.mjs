@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 
 globalThis.Game={state:{
   simulation:{turn:1},
@@ -37,6 +38,8 @@ await import('../omega_ministry_decision_framework.js');
 await import('../omega_ministry_state_transaction.js');
 await import('../omega_ministry_interoperability_system.js');
 await import('../omega_opponent_deep_memory_system.js');
+globalThis.OmegaResourceStrategicPolicyRules=JSON.parse(fs.readFileSync(new URL('../resource_strategic_policy_rules_v1.json',import.meta.url),'utf8'));
+await import('../omega_resource_strategic_policy_runtime_v1.js');
 await import('../omega_global_trade_system.js');
 await import('../omega_opponent_second_order_consequence_system.js');
 
@@ -102,6 +105,68 @@ globalThis.Game.state.simulation.turn=Number(pressured.nextRetryTurn);
 trade.processAll();
 assert(globalThis.Game.state.trade.BGD.importRequests.some(x=>x.stage==='POLITICAL_PRESSURE_RETRY'&&x.previousRequestId==='REQ-REJECT'),
   'scheduled retry must create a new pressure-aware request after the cooldown');
+
+const policy=globalThis.Omega?.ResourceStrategicPolicyRuntime||globalThis.OmegaResourceStrategicPolicyRuntime;
+globalThis.Game.state.foreign.BGD.relations.SAU.trade_agreement=true;
+globalThis.Game.state.foreign.SAU.relations.BGD.trade_agreement=true;
+globalThis.Game.state.resource.BGD.inventory.crude_oil=1000;
+globalThis.Game.state.resource.SAU.inventory.crude_oil=4000;
+const embargoResult=policy.declareEmbargo('BGD',{targetCountryId:'SAU',resourceId:'crude_oil',direction:'IMPORT',policyId:'TRADE-EMBARGO-E2E'});
+assert.equal(embargoResult.accepted,true,JSON.stringify(embargoResult));
+const beforeEmbargo={
+  buyerStock:globalThis.Game.state.resource.BGD.inventory.crude_oil,
+  sellerStock:globalThis.Game.state.resource.SAU.inventory.crude_oil,
+  buyerCash:globalThis.Game.state.finance.BGD.available,
+  sellerCash:globalThis.Game.state.finance.SAU.available,
+  buyerImport:globalThis.Game.state.trade.BGD.importValue||0,
+  sellerExport:globalThis.Game.state.trade.SAU.exportValue||0
+};
+globalThis.Game.state.trade.BGD.importRequests.push({
+  requestId:'REQ-EMBARGO',countryId:'BGD',targetCountryId:'SAU',resourceId:'crude_oil',quantity:50,
+  unitPrice:100,totalValue:5000,status:'SENT',stage:'COUNTERPARTY_DECISION_PENDING',createdTurn:globalThis.Game.state.simulation.turn
+});
+trade.processAll();
+const embargoRequest=globalThis.Game.state.trade.BGD.importRequests.find(x=>x.requestId==='REQ-EMBARGO');
+assert.equal(embargoRequest.status,'REJECTED',JSON.stringify({embargoRequest,trace:globalThis.__OMEGA_LAST_TRADE_PROCESS_TRACE}));
+assert.equal(embargoRequest.rejectionReason,'RESOURCE_EMBARGO_ACTIVE',JSON.stringify(embargoRequest));
+assert.deepEqual({
+  buyerStock:globalThis.Game.state.resource.BGD.inventory.crude_oil,
+  sellerStock:globalThis.Game.state.resource.SAU.inventory.crude_oil,
+  buyerCash:globalThis.Game.state.finance.BGD.available,
+  sellerCash:globalThis.Game.state.finance.SAU.available,
+  buyerImport:globalThis.Game.state.trade.BGD.importValue||0,
+  sellerExport:globalThis.Game.state.trade.SAU.exportValue||0
+},beforeEmbargo,'embargo rejection must not move stock or settle money');
+assert.equal(policy.liftEmbargo('BGD',{policyId:'TRADE-EMBARGO-E2E'}).accepted,true);
+
+const blockadeResult=policy.declareBlockade('BGD',{targetCountryId:'SAU',resourceId:'crude_oil',modes:['ship'],policyId:'TRADE-BLOCKADE-E2E'});
+assert.equal(blockadeResult.accepted,true,JSON.stringify(blockadeResult));
+const beforeBlockade={
+  buyerStock:globalThis.Game.state.resource.BGD.inventory.crude_oil,
+  sellerStock:globalThis.Game.state.resource.SAU.inventory.crude_oil,
+  buyerCash:globalThis.Game.state.finance.BGD.available,
+  sellerCash:globalThis.Game.state.finance.SAU.available,
+  buyerImport:globalThis.Game.state.trade.BGD.importValue||0,
+  sellerExport:globalThis.Game.state.trade.SAU.exportValue||0
+};
+globalThis.Game.state.trade.BGD.importRequests.push({
+  requestId:'REQ-BLOCKADE',countryId:'BGD',targetCountryId:'SAU',resourceId:'crude_oil',transportMode:'ship',quantity:50,
+  unitPrice:100,totalValue:5000,status:'SENT',stage:'COUNTERPARTY_DECISION_PENDING',createdTurn:globalThis.Game.state.simulation.turn
+});
+trade.processAll();
+const blockadeRequest=globalThis.Game.state.trade.BGD.importRequests.find(x=>x.requestId==='REQ-BLOCKADE');
+assert.equal(blockadeRequest.status,'REJECTED',JSON.stringify({blockadeRequest,trace:globalThis.__OMEGA_LAST_TRADE_PROCESS_TRACE}));
+assert.equal(blockadeRequest.rejectionReason,'RESOURCE_ROUTE_BLOCKADE_ACTIVE',JSON.stringify(blockadeRequest));
+assert.deepEqual({
+  buyerStock:globalThis.Game.state.resource.BGD.inventory.crude_oil,
+  sellerStock:globalThis.Game.state.resource.SAU.inventory.crude_oil,
+  buyerCash:globalThis.Game.state.finance.BGD.available,
+  sellerCash:globalThis.Game.state.finance.SAU.available,
+  buyerImport:globalThis.Game.state.trade.BGD.importValue||0,
+  sellerExport:globalThis.Game.state.trade.SAU.exportValue||0
+},beforeBlockade,'blockade rejection must not move stock or settle money');
+assert.equal(policy.liftBlockade('BGD',{policyId:'TRADE-BLOCKADE-E2E'}).accepted,true);
+
 const invalidUiRequest=trade.createRequest('BGD',{
   requestId:'REQ-UI-INVALID',targetCountryId:'BGD',resourceId:'crude_oil',quantity:100,unitPrice:101,
   source:'OMEGA_RESOURCE_COMMAND_CENTER_UI'
