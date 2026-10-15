@@ -26,9 +26,23 @@ await import('../omega_ministry_information_policy.js');
 await import('../omega_ministry_decision_framework.js');
 await import('../omega_ministry_state_transaction.js');
 await import('../omega_ministry_interoperability_system.js');
-// Production boot loads the authoritative resource catalog before market discovery;
-// mirror that order here so reference-only prices come from real catalog entries.
+// Production boot loads the authoritative resource catalog before market discovery.
+// This Node test supplies only the same checked-in JSON files, not invented prices.
+const nativeFetch=globalThis.fetch;
+globalThis.fetch=async function resourceCatalogTestFetch(input,init){
+  const raw=String(typeof input==='string'?input:input?.url||input);
+  const file=raw.split('?')[0];
+  if(file==='resources.json'||file==='resources_2.json'){
+    const data=JSON.parse(fs.readFileSync(new URL('../'+file,import.meta.url),'utf8'));
+    return {ok:true,status:200,json:async()=>data};
+  }
+  if(typeof nativeFetch==='function')return nativeFetch(input,init);
+  throw new Error('UNSUPPORTED_TEST_FETCH:'+file);
+};
 await import('../resource_ministry_engine.js');
+await globalThis.ResourceMinistryEngine?._initializationPromise;
+globalThis.fetch=nativeFetch;
+assert.equal(globalThis.ResourceMinistryEngine?.isReady,true,JSON.stringify(globalThis.ResourceMinistryEngine?.getDataLoadReport?.()));
 globalThis.OmegaResourceStrategicPolicyRules=JSON.parse(fs.readFileSync(new URL('../resource_strategic_policy_rules_v1.json',import.meta.url),'utf8'));
 await import('../omega_resource_strategic_policy_runtime_v1.js');
 await import('../omega_global_market_system.js');
