@@ -92,6 +92,7 @@
     "defaultPeriodTurns": 365,
     "maxEmissionLedgerRows": 4096,
     "maxQuotaHistory": 512,
+    "maxEnforcementLedgerRows": 4096,
     "enforcement": "BLOCK_EMISSION_IF_ALLOWANCE_WOULD_BE_EXCEEDED",
     "emissionsFactorsByResourceUnit": {
       "coal:TONNES": 0.08,
