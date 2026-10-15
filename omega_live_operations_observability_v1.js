@@ -652,7 +652,7 @@
       dataSource:'Game.state and existing engine ledgers',polling:panelOpen?'active while panel is open':'inactive while panel is closed'};
   }
   const api = {
-    VERSION:'1.0.0', diagnostics, resolveCountryId, getCountryMetrics:countryId => metricsFor(resolveCountryId(countryId) || id(countryId)), getTrendSeries, snapshot:()=>({
+    VERSION:'1.0.0', diagnostics, resolveCountryId, getCountryMetrics:countryId => metricsFor(resolveCountryId(countryId) || id(countryId)), getCountryOperationalSummary:countryId => observedStateSummary([resolveCountryId(countryId) || id(countryId)]), getTrendSeries, snapshot:()=>({
       turn:currentTurn(),scope:countryScope || 'WORLD',summary:observedStateSummary(selectedIds()),
       events:eventRows(selectedIds()),mines:minesFor(selectedIds()),shipments:allShipments(selectedIds()),
       tradeRequests:tradeRequests(selectedIds()),flows:flowRows(selectedIds()),communications:communications(selectedIds())
