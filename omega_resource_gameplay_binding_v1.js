@@ -86,7 +86,7 @@ function makeMeasure(value,unit,fallbackAuthority,authorityRecord){
  const embeddedUnit=typeof raw==='string'&&/[a-z%µ\/³]/i.test(raw.trim());
  if(!unitText&&!embeddedUnit)return null;
  const alreadyHasUnit=unitText&&String(rawText).toLowerCase().includes(unitText.toLowerCase());
- return {text:rawText+(unitText&&!alreadyHasUnit?' '+unitText:''),authority:authorityOf(record,fallbackAuthority)};
+ return {text:rawText+(unitText&&!alreadyHasUnit?(unitText==='%'?'':' ')+unitText:''),authority:authorityOf(record,fallbackAuthority)};
 }
 function detailRow(label,value,unit,fallbackAuthority){
  let text='',authority='';
@@ -95,10 +95,10 @@ function detailRow(label,value,unit,fallbackAuthority){
   text=measured?.text||humanize(value);authority=measured?.authority||authorityOf(value,fallbackAuthority);
  }else if(typeof value==='number'||(typeof value==='string'&&/^-?\d[\d,]*(\.\d+)?$/.test(value.trim()))){
   if(!hasValue(unit))return '';
-  text=formatScalar(value)+' '+formatUnit(unit);authority=fallbackAuthority||'';
+  const unitText=formatUnit(unit);text=formatScalar(value)+(unitText==='%'?'':' ')+unitText;authority=fallbackAuthority||'';
  }else{
   text=humanize(value);authority=fallbackAuthority||'';
-  if(text&&hasValue(unit))text+=' '+formatUnit(unit);
+  if(text&&hasValue(unit)){const unitText=formatUnit(unit);text+=(unitText==='%'?'':' ')+unitText;}
  }
  if(!text)return '';
  const auth=authorityLabel(authority);
@@ -145,7 +145,7 @@ function detailDatum(value,unit){
   return measured?.text||humanize(value);
  }
  if(typeof value==='number'||(typeof value==='string'&&/^-?\d[\d,]*(\.\d+)?$/.test(value.trim()))){
-  return hasValue(unit)?formatScalar(value)+' '+formatUnit(unit):'';
+  if(!hasValue(unit))return '';const unitText=formatUnit(unit);return formatScalar(value)+(unitText==='%'?'':' ')+unitText;
  }
  const text=humanize(value);
  return text&&hasValue(unit)?text+' '+formatUnit(unit):text;
