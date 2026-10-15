@@ -35,6 +35,17 @@ assert.equal(q.matchedQuantity,100);
 assert.equal(q.clearingPriceUsd,100);
 assert.equal(market.localPrice('BDG','crude_oil'),100);
 
+// A changed real bid/ask pair changes the clearing price; the reference quote is
+// not used as the transaction price.
+globalThis.Game.state.simulation.turn=2;
+globalThis.Game.state.trade.BDG.importRequests[0].unitPrice=130;
+globalThis.Game.state.trade.SAU.offerBook.crude_oil.unitPrice=100;
+market.rebuild();
+const repriced=market.quote('crude_oil');
+assert.equal(repriced.status,'CLEARED');
+assert.equal(repriced.clearingPriceUsd,115);
+assert.equal(market.localPrice('BDG','crude_oil'),115);
+
 // Reference-only liquidity is indicative, not a real seller/order. Once both
 // real sides disappear, it must never manufacture a cleared dynamic price.
 globalThis.Game.state.trade.BDG.importRequests=[];
