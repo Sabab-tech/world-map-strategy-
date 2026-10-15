@@ -279,8 +279,8 @@ function remediate(ctx,payload){
 function carbonUnit(v){return String(v||'').trim().toUpperCase().replace(/[^A-Z0-9]+/g,'_').replace(/^_+|_+$/g,'');}
 function carbonFactor(resourceId,unit){
  const map=rules()?.carbon?.emissionsFactorsByResourceUnit||{};
- const key=tok(resourceId)+':'+carbonUnit(unit);
- const value=num(map[key]);
+ const raw=carbonUnit(unit),alias=({TONNE:'TONNES',METRIC_TONNE:'TONNES',METRIC_TONNES:'TONNES',TONNE_ORE:'TONNES_ORE',BBL:'BBL',BARREL:'BARREL'})[raw]||raw;
+ const value=num(map[tok(resourceId)+':'+raw]??map[tok(resourceId)+':'+alias]);
  return value!==null&&value>=0?value:null;
 }
 function carbonWindow(quota){
@@ -334,15 +334,16 @@ function recordCarbonEmissionTx(ctx,payload){
  emit('OMEGA_RESOURCE_CARBON_EMISSION_RECORDED',c,row);
  return{accepted:true,record:row,periodUsedBefore,periodUsedAfter:periodUsedBefore+quantity,allowanceTonnesCo2e:allowance};
 }
-function previewCarbonActivity(countryId,resourceId,quantity,unit,source){
+function previewCarbonActivity(countryId,resourceId,quantity,unit,source,txContext){
  const c=country(countryId),q=num(quantity);if(!c||q===null||q<=0)return{allowed:false,reason:'CARBON_ACTIVITY_INPUT_INVALID'};
- const quota=state()?.resource?.[c]?.carbonQuota;
+ const quota=(txContext?.stateTransaction?.get('resource.carbonQuota'))||state()?.resource?.[c]?.carbonQuota;
  const active=quota&&String(quota.status||'').toUpperCase()==='ACTIVE';
  const factor=carbonFactor(resourceId,unit);
  if(!active)return{allowed:true,emissionsKnown:factor!==null,emissionsTonnesCo2e:factor===null?null:q*factor,reason:factor===null?'NO_SIMULATED_FACTOR_CONFIGURED':null};
  if(factor===null)return{allowed:false,reason:'CARBON_EMISSIONS_FACTOR_UNAVAILABLE',resourceId,unit};
  const window=carbonWindow(quota);if(!window)return{allowed:false,reason:'CARBON_QUOTA_WINDOW_INVALID'};
- const ledger=Array.isArray(state()?.resource?.[c]?.carbonEmissionsLedger)?state().resource[c].carbonEmissionsLedger:[];
+ const ledgerRaw=txContext?.stateTransaction?.get('resource.carbonEmissionsLedger')||state()?.resource?.[c]?.carbonEmissionsLedger;
+ const ledger=Array.isArray(ledgerRaw)?ledgerRaw:[];
  const used=ledger.filter(x=>String(x?.quotaId||'')===String(quota.quotaId||'')&&Number(x?.periodIndex)===window.periodIndex)
   .reduce((sum,x)=>sum+Math.max(0,num(x?.quantityTonnesCo2e)||0),0);
  const amount=q*factor,allowance=num(quota.allowanceTonnesCo2e);
