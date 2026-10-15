@@ -72,7 +72,13 @@ for (const s of sites) {
   assert(s.quantitative.capacity.minimum > 0 &&
     s.quantitative.capacity.minimum <= s.quantitative.capacity.nominal &&
     s.quantitative.capacity.nominal <= s.quantitative.capacity.maximum, s.siteId + ': capacity ordering invalid');
-  assert.equal(s.quantitative.quantitativeProvenance.authority, 'SCENARIO_SIMULATION_DATA');
+  if (s.runtime?.aliasOfSiteId) {
+    assert.equal(s.quantitative.quantitativeProvenance.authority, 'SIMULATION_ALIAS_REFERENCE_NOT_INDEPENDENT_ASSET', s.siteId + ': alias provenance must not claim independent reserve authority');
+    assert.equal(s.operation.commercialExtraction, false, s.siteId + ': alias must not extract independently');
+    assert.equal(s.map.markerEligible, false, s.siteId + ': alias must not create another map marker');
+  } else {
+    assert.equal(s.quantitative.quantitativeProvenance.authority, 'SCENARIO_SIMULATION_DATA');
+  }
   assert.equal(s.quantitative.quantitativeProvenance.externalMeasuredValuePromotion, false);
   const horizon = Number(s.simulation.reserveHorizonYears);
   const horizonOk = s.sourceReference?.sourcePath?.includes('_part_6_') ? horizon >= 350 && horizon <= 450 : horizon >= 400 && horizon <= 440;
