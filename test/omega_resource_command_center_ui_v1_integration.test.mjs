@@ -176,3 +176,14 @@ test('value, cascade, market and logistics controls use authoritative records wi
   assert.match(policyRuntime,/function capitalizeSwfTx/);
   assert.match(policyRuntime,/SWF_TRANSACTION_ID_CONFLICT/);
 });
+
+test('cognitive gate uses the server AI endpoint and cannot persist a player-only approval', () => {
+  assert.match(ui, /\/api\/resource-decision\/ai-evaluate/);
+  assert.match(ui, /aiCountrySnapshot\(c\)/);
+  assert.match(ui, /aiAssessment:\s*body\.assessment/);
+  assert.match(ui, /verdictRecorded:\s*false/);
+  assert.match(ui, /body\.assessment\.authority\s*!==\s*'OMEGA_SERVER_RESOURCE_DECISION_AI'/);
+  assert.match(policyRuntime, /AI_ASSESSMENT_REQUIRED/);
+  assert.match(policyRuntime, /SERVER_AI_DECISION_REQUIRED/);
+  assert.match(policyRuntime, /aiGenerated!==true/);
+});
