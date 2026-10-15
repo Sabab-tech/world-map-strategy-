@@ -294,7 +294,6 @@ test('all canonical and additive deposits receive a policy-governed flow status 
     'all identity records must be either an independently executable physical site or an explicit alias');
   assert.equal(registry.aliases.every(site=>!activeIds.has(site.siteId)),true,'alias identities must never receive independent extraction');
   const h=makeContext(sites),g=h.context,state=h.state;
-  const h=makeContext(sites),g=h.context,state=h.state;
   for(const f of ['omega_resource_country_boundary_guard.js','omega_resource_industrial_network_v1.js','omega_resource_economy_runtime_v2.js'])
     vm.runInContext(readText(f),g,{filename:f});
   const industry=g.Omega.ResourceIndustrialNetwork,economy=g.Omega.ResourceEconomy;
