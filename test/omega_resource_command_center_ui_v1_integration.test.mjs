@@ -81,13 +81,19 @@ test('all sixteen resource panels are registered, selectable and safe to render'
     assert.equal(api.getState().panel,panel,'the requested panel route must remain selected');
     assert.match(document.getElementById('gsrsk-intelligence-modal').innerHTML,/Sixteen resource command panels/);
   }
-  const power=sandbox.OmegaCabinetUI.executeResource16Point('p15','build_nuclear');
-  assert.equal(power.status,'OPENED_PANEL');
-  assert.equal(api.getState().panel,'power');
-  const environment=sandbox.OmegaCabinetUI.executeResource16Point('p16','build_solar');
-  assert.equal(environment.status,'OPENED_PANEL');
-  assert.equal(api.getState().panel,'environment');
-  assert.match(document.getElementById('gsrsk-intelligence-modal').innerHTML,/carbon|environment|unavailable|not available/i);
+  const clickRoutes = [
+    ['p01','matrix'],['p02','ontology'],['p03','reserves'],['p04','deposits'],
+    ['p05','extraction'],['p06','processing'],['p07','inventory'],['p08','logistics'],
+    ['p09','industrial'],['p10','market'],['p11','trade'],['p12','value'],
+    ['p13','cascade'],['p14','cognitive'],['p15','power'],['p16','environment']
+  ];
+  for (const [point,panel] of clickRoutes) {
+    const outcome=sandbox.OmegaCabinetUI.executeResource16Point(point,'legacy-directive-must-not-run');
+    assert.equal(outcome.status,'OPENED_PANEL','card '+point+' must open a panel');
+    assert.equal(outcome.panel,panel,'card '+point+' must open its corresponding panel');
+    assert.equal(api.getState().panel,panel,'selected panel must match card '+point);
+  }
+  assert.match(document.getElementById('gsrsk-intelligence-modal').innerHTML,/Sixteen resource command panels/);
 });
 
 test('legacy card names disclose feature gaps instead of claiming unsupported actions', () => {
