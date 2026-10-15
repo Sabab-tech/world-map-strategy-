@@ -424,13 +424,13 @@
     const siteCards = sites.map(function (s) {
       const rid = s.resourceId || s.resId || s.real && s.real.resourceId || s.sourceSiteRecord && s.sourceSiteRecord.resourceId || '';
       const body = '<div class="omega-rescc-grid2">' + kv('Site ID', s.siteId) + kv('Resource', rid || s.resourceName) +
-        kv('Reserve', s.reserveQuantity ?? s.remainingReserve ?? s.reserves) +
+        kv('Reserve', s.reserveQuantity ?? s.remainingReserve ?? s.reserves ?? (s.quantitative && s.quantitative.reserve && (s.quantitative.reserve.quantity ?? s.quantitative.reserve.value))) +
         kv('Production authority', s.productionAuthority || s.productionModel && s.productionModel.authority || 'NOT_RECORDED') +
         kv('Quality authority', s.qualityAuthority || s.qualityState && s.qualityState.qualityAuthority || 'NOT_RECORDED') + '</div>';
       return card(s.name || s.siteName || s.depositName || s.siteId, s.operationalStatus || s.status || 'STATUS NOT RECORDED', body,
         actionButton('extract-site', 'Run authoritative site pipeline', {
           'site-id': s.siteId, 'resource-id': rid, quantity: 1
-        }, !(g.Omega && g.Omega.ResourceIndustrialNetwork && g.Omega.ResourceIndustrialNetwork.executeSitePipeline && rid)) +
+        }, !(g.Omega && g.Omega.ResourceIndustrialNetwork && g.Omega.ResourceIndustrialNetwork.executeSitePipeline && rid && s.extractionExecutable !== false && !(s.runtime && s.runtime.extractionExecutable === false))) +
         (rid ? actionButton('survey', 'Request survey', { 'resource-id': rid }) : ''));
     }).join('');
     const rows = resources(country).map(function (x) {
@@ -439,12 +439,12 @@
         kv('Observed reserve', x.reserve) + kv('Production authority', x.productionAuthority || 'NOT_RECORDED') + '</div>',
         actionButton('survey', 'Request survey', { 'resource-id': x.id }));
     }).join('');
-    return '<div class="omega-rescc-metrics"><div><span>Canonical runnable site records</span><strong>' +
-      number(sites.length) + '</strong></div><div><span>Survey requests</span><strong>' + number(surveys.length) +
-      '</strong></div><div><span>Survey results</span><strong>' + number(results.length) + '</strong></div></div>' +
+    return '<div class="omega-rescc-metrics"><div><span>Country site profiles</span><strong>' +
+      number(sites.length) + '</strong></div><div><span>Runtime mine records</span><strong>' + number(Array.isArray(r.mines) ? r.mines.length : 0) +
+      '</strong></div><div><span>Survey requests</span><strong>' + number(surveys.length) + '</strong></div><div><span>Survey results</span><strong>' + number(results.length) + '</strong></div></div>' +
       (diag ? diagnosticCard('Extraction runtime diagnostics', diag) : '') +
       '<h3 class="omega-rescc-section-title">Canonical site registry</h3>' +
-      (siteCards || empty('No country-scoped runnable canonical site IDs were returned. Deposit records alone are not treated as executable mine sites.')) +
+      (siteCards || empty('No country-scoped site profile matched the existing canonical registry or loaded JSON profile. ' + sourceDataStatus(country))) +
       '<h3 class="omega-rescc-section-title">Resource survey requests</h3>' + statusRows(surveys) +
       '<h3 class="omega-rescc-section-title">Completed survey evidence</h3>' + statusRows(results) +
       '<h3 class="omega-rescc-section-title">Commodity survey shortcuts</h3>' + (rows || empty('No commodity rows are available.'));
