@@ -122,7 +122,12 @@ function ensureImpactState(c){
 function impactValues(rule,quantity,stage){
   const keys=['landDisturbanceHaPerUnit','waterUseM3PerUnit','ghgTCO2ePerUnit','tailingsTonnesPerUnit'];
   const values={landDisturbanceHa:0,waterUseM3:0,ghgTCO2e:0,tailingsTonnes:0};
-  for(const key of keys){const rate=num(rule?.[key]);if(rate===null||rate<0)return{status:'RULE_COEFFICIENT_INVALID',values:null};}
+  for(const key of keys){
+    const raw=rule?.[key],rate=num(raw);
+    // A processing rule may intentionally omit a component that does not apply (e.g. land disturbance).
+    if(rate===null&&(stage==='PROCESSING'&&(raw===undefined||raw===null)))continue;
+    if(rate===null||rate<0)return{status:'RULE_COEFFICIENT_INVALID',values:null};
+  }
   values.landDisturbanceHa=quantity*(num(rule.landDisturbanceHaPerUnit)||0);
   values.waterUseM3=quantity*(num(rule.waterUseM3PerUnit)||0);
   values.ghgTCO2e=quantity*(num(rule.ghgTCO2ePerUnit)||0);
