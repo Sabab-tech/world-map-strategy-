@@ -1177,6 +1177,7 @@
         const vals = [];
         for (let i = 1; i <= 12; i++) vals.push(String(data.get('q' + i) || '').toLowerCase());
         const operation = String(data.get('operation') || '').toUpperCase();
+        const projectType = operation === 'POWER_PROJECT' ? 'NUCLEAR_BASELOAD' : null;
         const requestedAmountText = String(data.get('requestedAmount') || '').trim();
         const requestedAmount = requestedAmountText === '' ? null : Number(requestedAmountText);
         if (vals.some(function (x) { return ['proceed', 'review', 'block'].indexOf(x) < 0; })) {
@@ -1204,7 +1205,7 @@
           response = await g.fetch('/api/resource-decision/ai-evaluate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ countryId: c, decisionId, operation, requestedAmount, answers: vals, gameState: aiCountrySnapshot(c) })
+            body: JSON.stringify({ countryId: c, decisionId, operation, projectType, requestedAmount, answers: vals, gameState: aiCountrySnapshot(c) })
           });
           body = await response.json();
         } catch (error) {
@@ -1218,9 +1219,13 @@
         const assessedTurn = body && body.context && body.context.simulationTurn != null ? Number(body.context.simulationTurn) : null;
         const amountMatches = body && body.context &&
           ((requestedAmount === null && body.context.requestedAmount == null) || Number(body.context.requestedAmount) === requestedAmount);
+        const projectTypeMatches = body && body.context &&
+          ((projectType === null && body.context.projectType == null) || body.context.projectType === projectType);
         const responseMatchesRequest = body && body.decisionId === decisionId && body.context &&
-          body.context.countryId === c && body.context.operation === operation &&
-          body.assessment && body.assessment.operation === operation && amountMatches &&
+          body.context.countryId === c && body.context.operation === operation && projectTypeMatches &&
+          body.assessment && body.assessment.operation === operation &&
+          ((projectType === null && body.assessment.projectType == null) || body.assessment.projectType === projectType) &&
+          amountMatches &&
           ((requestedAmount === null && body.assessment.requestedAmount == null) || Number(body.assessment.requestedAmount) === requestedAmount);
         const contextStillCurrent = assessedTurn === null || liveTurn === null || assessedTurn === liveTurn;
         if (!response.ok || !body || body.ok !== true || body.status !== 'COMPLETED' ||
@@ -1240,6 +1245,7 @@
         result = policy.evaluateCognitiveGate(c, {
           decisionId,
           operation,
+          projectType,
           requestedAmount,
           answers: vals,
           aiAssessment: body.assessment
