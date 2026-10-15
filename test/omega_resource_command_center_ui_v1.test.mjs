@@ -104,6 +104,14 @@ test('legacy card names disclose feature gaps instead of claiming unsupported ac
   assert.match(ui,/policy\.evaluateCognitiveGate\(c/);
   assert.match(ui,/policy\.startPowerProject/);
   assert.match(ui,/policy\.remediateSite/);
+  assert.match(ui,/policy\.startExploration/);
+  assert.match(ui,/policy\.approveInvestment/);
+  assert.match(ui,/policy\.commissionSite/);
+  assert.match(ui,/Authoritative exploration projects/);
+  assert.match(ui,/policy\.startPowerProject/);
+  assert.match(ui,/data-form="carbon-emission"/);
+  assert.match(ui,/data-form="remediation"/);
+  assert.match(ui,/Persisted advisory decisions/);
   assert.match(ui,/2\.4 GW nuclear baseload project/);
 });
 
