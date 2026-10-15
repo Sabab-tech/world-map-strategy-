@@ -49,7 +49,7 @@ for (const site of migratedSites) {
 }
 assert.ok(countries.size >= 9, 'migrated tranche must cover multiple countries');
 assert.match(endowment, /resource_site_country_expansion_v1\.json/, 'runtime may read the migration manifest but canonical rows are authoritative');
-assert.match(endowment, /if\(rows\.length!==250\)/, 'runtime master registry guard must match 250 canonical sites');
+assert.match(endowment, /RESOURCE_SITE_MASTER_REGISTRY_INCOMPLETE/, 'master research source must be validated without blocking additive canonical deposits');
 assert.match(mapBinding, /resource_site_country_expansion_v1\.json/, 'map migration audit manifest remains available');
 assert.match(mapBinding, /\[\.\.\.baseCatalogSites,\.\.\.expansionSites,\.\.\.activeLegacySites\]/, 'canonical, migrated and deduplicated legacy candidates pass through the existing marker join');
 assert.match(mapBinding, /LEGACY_CANONICAL_ALIAS_IDS/, 'legacy aliases must not create duplicate physical markers');
