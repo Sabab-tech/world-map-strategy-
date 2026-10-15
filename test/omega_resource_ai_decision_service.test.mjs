@@ -28,12 +28,15 @@ const gameState = {
     powerProjects: [{ projectId: 'P1', status: 'UNDER_CONSTRUCTION', capacityMw: 2400, privateField: 'must not leak' }]
   }, SAU: { inventory: { crude_oil: 900000 } } }
 };
-const payload = { countryId: 'bgd', decisionId: 'COGNITIVE-AI-BGD-screen-9', answers, gameState };
+const payload = { countryId: 'bgd', decisionId: 'COGNITIVE-AI-BGD-screen-9', operation: 'POWER_PROJECT', projectType: 'NUCLEAR_BASELOAD', requestedAmount: null, answers, gameState };
 
 test('country context is bounded, country-scoped, and preserves unknown values', () => {
   const context = buildResourceDecisionContext(payload);
   assert.equal(context.countryId, 'BGD');
   assert.equal(context.simulationTurn, 9);
+  assert.equal(context.operation, 'POWER_PROJECT');
+  assert.equal(context.projectType, 'NUCLEAR_BASELOAD');
+  assert.equal(context.operationRequirements.constructionCostTreasuryUnits, 2000000000);
   assert.equal(context.treasury.available, 2500000000);
   assert.deepEqual(context.inventory, { uranium: 12, iron_ore: 90 });
   assert.equal(context.carbonQuota.currentPeriodUsedTonnesCo2e, 30);
@@ -74,6 +77,9 @@ test('valid structured model assessment is returned with provenance and normaliz
   assert.equal(result.ok, true);
   assert.equal(result.status, 'COMPLETED');
   assert.equal(result.decisionId, payload.decisionId);
+  assert.equal(result.context.operation, 'POWER_PROJECT');
+  assert.equal(result.context.projectType, 'NUCLEAR_BASELOAD');
+  assert.equal(result.assessment.operationRequirements.constructionCostTreasuryUnits, 2000000000);
   assert.equal(result.assessment.decision, 'PROCEED');
   assert.equal(result.assessment.aiGenerated, true);
   assert.equal(result.assessment.authority, 'OMEGA_SERVER_RESOURCE_DECISION_AI');
@@ -126,4 +132,31 @@ test('Express server exposes a real Gemini-backed endpoint and never fabricates 
   assert.match(serverSource, /GEMINI_API_KEY_NOT_CONFIGURED/);
   assert.match(serverSource, /no verdict was recorded/);
   assert.match(serverSource, /RESOURCE_DECISION_AI_RATE_LIMIT/);
+});
+
+test('operation scope is mandatory and SWF amount must be present and positive', () => {
+  assert.throws(() => buildResourceDecisionContext({ ...payload, operation: '' }), e =>
+    e instanceof ResourceDecisionAIError && e.code === 'DECISION_OPERATION_INVALID');
+  assert.throws(() => buildResourceDecisionContext({ ...payload, operation: 'SWF_CAPITALIZATION', requestedAmount: null, projectType: null }), e =>
+    e instanceof ResourceDecisionAIError && e.code === 'SWF_AMOUNT_REQUIRED');
+  assert.throws(() => buildResourceDecisionContext({ ...payload, operation: 'SWF_CAPITALIZATION', requestedAmount: 50, projectType: null }), e =>
+    e instanceof ResourceDecisionAIError && e.code === 'DECISION_OPERATION_INVALID');
+  assert.throws(() => buildResourceDecisionContext({ ...payload, requestedAmount: 1 }), e =>
+    e instanceof ResourceDecisionAIError && e.code === 'POWER_AMOUNT_RULESET_CONTROLLED');
+});
+
+test('insufficient observed treasury blocks high-impact operation despite permissive model verdict', async () => {
+  const poor = { ...payload, gameState: {
+    ...gameState,
+    finance: { BGD: { available: 1999999999, reserves: 0, currencyCode: 'BDT' } }
+  }};
+  const result = await evaluateResourceDecision({
+    payload: poor,
+    generateText: async () => JSON.stringify({
+      decision: 'PROCEED', confidence: 0.99, riskSummary: 'Model is deliberately permissive',
+      findings: [], recommendedChecks: []
+    })
+  });
+  assert.equal(result.assessment.decision, 'BLOCK');
+  assert.equal(result.assessment.safetyOverride, 'INSUFFICIENT_TREASURY_FOR_POWER_PROJECT');
 });
