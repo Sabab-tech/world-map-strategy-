@@ -136,13 +136,17 @@
       siteId=String(row?.siteReferenceKey||raw.siteReferenceKey||raw.siteId||'').trim(),
       canonicalSite=siteId?canonicalSiteCatalogMap?.[siteId]:null,
       canonicalOperation=canonicalSite?.operation||{},
-      sourceStatus=operation.status||raw.status||raw.operationalStatus||row?.lifecycle?.status||row?.reserveState?.operationalStatus||'UNKNOWN',
-      canonicalStatus=canonicalOperation.status||'',
-      status=!canonicalStatus||normalizeSiteLifecycleStatus(canonicalStatus)==='ACTIVE_SITE_REFERENCE'
-        ?sourceStatus:canonicalStatus,
+      rawSourceStatus=normalizeSiteLifecycleStatus(operation.status||raw.status||raw.operationalStatus||''),
+      lifecycleFallback=row?.lifecycle?.status||row?.reserveState?.operationalStatus||'UNKNOWN',
+      canonicalStatus=normalizeSiteLifecycleStatus(canonicalOperation.status||''),
+      placeholderStatuses=new Set(['UNKNOWN','ACTIVE_SITE_REFERENCE','SIMULATED_OPERATIONAL_SCENARIO']),
+      sourceStatus=rawSourceStatus&&!placeholderStatuses.has(rawSourceStatus)?rawSourceStatus:lifecycleFallback,
+      status=canonicalSite
+        ?(placeholderStatuses.has(canonicalStatus)&&rawSourceStatus&&!placeholderStatuses.has(rawSourceStatus)?rawSourceStatus:canonicalStatus)
+        :(rawSourceStatus||lifecycleFallback),
       commercial=canonicalOperation.commercialExtraction??operation.commercialExtraction??raw.commercialExtraction??row?.commercialExtraction??true,
       alias=raw.runtime?.aliasOfSiteId||raw.aliasOfSiteId||canonicalSite?.runtime?.aliasOfSiteId;
-    return siteExecutionPolicyFor(status,commercial,Boolean(alias));
+    return siteExecutionPolicyFor(status==='UNKNOWN'?sourceStatus:status,commercial,Boolean(alias));
   }
   // Runtime indexes: these datasets are immutable during a simulation turn. Reusing the indexes avoids rebuilding and deep-enriching the same country/site rows for every gate and extraction pass.
   let countryListCache=null;
@@ -714,10 +718,11 @@
       const declaredStatus=normalizeSiteLifecycleStatus(operation.status||site.status||'');
       const profileStatus=normalizeSiteLifecycleStatus(profile?.rawSiteReference?.operation?.status||
         profile?.rawSiteReference?.status||profile?.status||profile?.operationalStatus||'');
-      // ACTIVE_SITE_REFERENCE is a catalog placeholder, not stronger evidence than an
-      // identity-matched source row. Keep explicit inactive/current states from the source.
-      const operationStatus=(!declaredStatus||declaredStatus==='ACTIVE_SITE_REFERENCE')&&profileStatus&&profileStatus!=='ACTIVE_SITE_REFERENCE'
-        ?profileStatus:(declaredStatus||profileStatus||'ACTIVE_SITE_REFERENCE');
+      const placeholderStatuses=new Set(['UNKNOWN','ACTIVE_SITE_REFERENCE','SIMULATED_OPERATIONAL_SCENARIO']);
+      // Catalog scenario/reference labels are fallbacks, not evidence that overrides an
+      // identity-matched source's explicit inactive/current lifecycle status.
+      const useProfileStatus=placeholderStatuses.has(declaredStatus)&&profileStatus&&!placeholderStatuses.has(profileStatus);
+      const operationStatus=useProfileStatus?profileStatus:(declaredStatus||profileStatus||'UNKNOWN');
       const effectiveOperation={...clone(operation),status:operationStatus,operationalStatus:operationStatus};
       const rawSite={
         ...clone(profile?.rawSiteReference||profile||{}),
