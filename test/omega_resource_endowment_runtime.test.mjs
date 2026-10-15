@@ -226,9 +226,14 @@ const expectedResourceCountries=Object.keys(engine.countryProfiles||{});
 assert.equal(preGlobal.countryCount,expectedResourceCountries.length);
 assert.equal(preGlobal.mineSiteReferenceCount,355);
 assert.equal(preGlobal.mineSiteControllerCount,355);
-const globalExtraction=await runtime.extractAll();
+const extractionPromiseA=runtime.extractAll();
+const extractionPromiseB=runtime.extractAll();
+assert.equal(extractionPromiseA,extractionPromiseB,'concurrent turn listeners must share one in-flight world extraction');
+const globalExtraction=await extractionPromiseA;
 assert.equal(globalExtraction.status,'COMPLETED');
 assert.equal(globalExtraction.results.length,expectedResourceCountries.length);
+const duplicateGlobalExtraction=await runtime.extractAll();
+assert.equal(duplicateGlobalExtraction.status,'ALREADY_EXTRACTED','a completed same-turn extraction must remain idempotent');
 
 const worldState=globalThis.Game.state.resource;
 const hydratedAssetRows=Object.values(worldState).reduce((sum,row)=>sum+(Array.isArray(row?.mines)?row.mines.length:0),0);
@@ -300,7 +305,29 @@ assert.equal(unifiedReferences.length,siteReferenceRows);
 assert.ok(unifiedReferences.every(x=>x.resourceAsset&&x.resourceAsset.schemaVersion==='1.0.0'));
 assert.ok(unifiedReferences.every(x=>x.resourceAsset.assetId===x.siteReferenceKey));
 assert.deepEqual(Object.keys(unifiedReferences[0]?.resourceAsset||{}).sort(),unifiedMineKeys);
-const baseCommercialCatalogIds=(globalThis.OmegaResourceSiteReserveSimulationData?.records||[]).filter(x=>x.commercialExtraction===true).map(x=>x.siteId);
+const expandedReferenceRows=[1,2,3,4].flatMap(part=>{
+  const data=JSON.parse(fs.readFileSync(new URL('../resource_site_reference_expanded_part_0'+part+'.json',import.meta.url),'utf8'));
+  return Array.isArray(data.sites)?data.sites:[];
+});
+const expandedReferenceById=new Map(expandedReferenceRows.filter(site=>site?.siteId).map(site=>[String(site.siteId),site]));
+const expandedSiteStatusById=new Map();
+for(const site of expandedReferenceRows){
+  const status=String(site?.operation?.status||site?.operation?.operationalStatus||
+    site?.currentStatus||site?.sourceSiteRecord?.status||site?.status||'').trim().toUpperCase();
+  if(site?.siteId&&status)expandedSiteStatusById.set(String(site.siteId),status);
+}
+const explicitlyNonOperationalStatus=status=>{
+  const normalized=String(status||'').toUpperCase().replace(/[^A-Z0-9]+/g,'_');
+  return /(^|_)(INACTIVE|NOT_ACTIVE|HISTORICAL|HISTORICALLY|CARE_AND_MAINTENANCE|SUSPEND|SUSPENDED|BLOCKED|CLOSED|ABANDON|ABANDONED|DEPLETED|DEVELOPMENT|RESTARTING|CESSATION_OF_PRODUCTION|DISRUPTED|NOT_APPLICABLE|NO_CURRENT_CONCESSION|PERMIT_PROCESSING|RESOURCE_IDENTITY_UNVERIFIED|DISPUTED_OPERATION|RESTRICTED)(_|$)/.test(normalized);
+};
+// Reserve authority says whether a site is commercially categorized, not whether it is
+// operational this turn. Explicit negative lifecycle evidence must beat that broader flag.
+const allCommercialBaselineSiteIds=(globalThis.OmegaResourceSiteReserveSimulationData?.records||[])
+  .filter(x=>x.commercialExtraction===true).map(x=>String(x.siteId));
+const inactiveCommercialBaselineSiteIds=allCommercialBaselineSiteIds
+  .filter(siteId=>explicitlyNonOperationalStatus(expandedSiteStatusById.get(siteId)));
+const baseCommercialCatalogIds=allCommercialBaselineSiteIds
+  .filter(siteId=>!explicitlyNonOperationalStatus(expandedSiteStatusById.get(siteId)));
 const legacyExpansionRows=[1,2,3,4,5,6].flatMap(part=>{
   const data=JSON.parse(fs.readFileSync(new URL('../resource_site_legacy_gameplay_expansion_part_'+part+'_v1.json',import.meta.url),'utf8'));
   return Array.isArray(data.records)?data.records:[];
@@ -319,9 +346,28 @@ const canonicalSiteIds=new Set((globalThis.OmegaResourceSiteCanonicalCatalogData
 const executedProfileSiteIds=new Set(siteLinkedExecutionOutputs.map(x=>x.siteReferenceKey).filter(x=>canonicalSiteIds.has(x)));
 const missingCommercialSiteIds=commercialCatalogIds.filter(siteId=>!executedProfileSiteIds.has(siteId));
 assert.deepEqual(missingCommercialSiteIds,[],
-  'all commercial baseline and physical expansion site identities must have positive linked extraction output; missing='+missingCommercialSiteIds.join(', '));
+  'all explicitly operational commercial baseline and physical expansion site identities must have positive linked extraction output; missing='+missingCommercialSiteIds.join(', '));
 assert.equal(executedProfileSiteIds.size,commercialCatalogIds.length,
-  'the positive-output count must match the full deduplicated authoritative commercial site set');
+  'positive-output count must match the deduplicated set of sites eligible to extract this turn');
+
+// Commercial classification alone must never force a suspended, development, disputed,
+// historically inactive, or otherwise explicitly non-operational deposit to produce stock.
+// Every such site still needs its own country controller and a traceable blocked output.
+for(const siteId of inactiveCommercialBaselineSiteIds){
+  const site=expandedReferenceById.get(siteId);
+  assert(site,siteId+': explicit non-operational status source record missing');
+  const countryId=String(site.countryId||site.identity?.countryIso3||'').toUpperCase();
+  const countryRow=worldState[countryId];
+  assert(countryRow,siteId+': owning country runtime state missing for blocked site');
+  const controller=countryRow.mineSiteControllers?.[siteId];
+  assert(controller,siteId+': non-operational site controller missing');
+  assert(controller.linkedOccurrenceKeys?.length,siteId+': blocked site must retain its exact occurrence link');
+  const blockedOutput=controller.linkedOccurrenceKeys
+    .map(key=>countryRow.mineOutputs?.[key])
+    .find(output=>String(output?.blockReason||'').toUpperCase()==='MINE_NOT_OPERATIONAL');
+  assert(blockedOutput,siteId+': status '+expandedSiteStatusById.get(siteId)+' must produce an explicit MINE_NOT_OPERATIONAL diagnostic, not positive output');
+  assert.equal(Number(blockedOutput.producedQuantity)||0,0,siteId+': non-operational deposit must not create inventory');
+}
 assert(simulatedFieldOutputs.length>0,'expected hydrocarbon field execution assets');
 assert(siteLinkedExecutionOutputs.every(x=>(x?.producedQuantity||0)>0&&x?.effortUtilization>0&&x?.effortUtilization<=1),'some canonical site-linked output did not execute with valid utilization');
 assert(simulatedFieldOutputs.every(x=>(x?.producedQuantity||0)>0&&x?.effortUtilization>0&&x?.effortUtilization<=1),'some hydrocarbon field did not execute with modeled utilization');
@@ -334,8 +380,25 @@ for(const [countryId,row] of Object.entries(worldState)){
     assert.equal(controller.controllerStatus,'RUNNING');
     const reserveRecord=(globalThis.OmegaResourceSiteReserveSimulationData?.records||[]).find(x=>x.siteId===siteKey);
     const commercial=controller.rawSiteReference?.commercialExtraction===true || reserveRecord?.commercialExtraction===true;
-    if(commercial){
-      assert.equal(controller.extractionExecutable,true,countryId+' commercial controller not executable '+siteKey);
+    const rawSite=controller.rawSiteReference||{};
+    const lifecycleStatus=String(rawSite.operation?.status||rawSite.operation?.operationalStatus||
+      rawSite.sourceSiteRecord?.status||rawSite.status||expandedSiteStatusById.get(siteKey)||'').toUpperCase();
+    const explicitlyNonOperational=commercial&&explicitlyNonOperationalStatus(lifecycleStatus);
+    if(commercial&&explicitlyNonOperational){
+      assert(Array.isArray(controller.linkedOccurrenceKeys)&&controller.linkedOccurrenceKeys.length>=1,
+        countryId+' non-operational site must retain its occurrence link '+siteKey);
+      const blockedOutput=controller.linkedOccurrenceKeys
+        .map(key=>row.mineOutputs?.[key])
+        .find(output=>String(output?.blockReason||'').toUpperCase()==='MINE_NOT_OPERATIONAL');
+      assert(blockedOutput,countryId+' site status '+lifecycleStatus+' must be explicitly blocked '+siteKey);
+      assert.equal(Number(blockedOutput.producedQuantity)||0,0,countryId+' non-operational site must not produce '+siteKey);
+      assert.equal(blockedOutput.batchId,undefined,countryId+' non-operational site must not create an extraction batch '+siteKey);
+      const blockedPath=row.minePaths?.[siteKey];
+      assert(blockedPath,countryId+' non-operational site path missing '+siteKey);
+      assert.equal(blockedPath.status,'BLOCKED',countryId+' non-operational site path must be blocked '+siteKey);
+      assert.equal(blockedPath.blockReason,'MINE_NOT_OPERATIONAL',countryId+' site path must retain the lifecycle reason '+siteKey);
+    }else if(commercial){
+      assert.equal(controller.extractionExecutable,true,countryId+' operational commercial controller not executable '+siteKey);
       assert.equal(controller.extractionPathStatus,'EXECUTABLE_OCCURRENCE_ATTACHED');
       assert(Array.isArray(controller.linkedOccurrenceKeys)&&controller.linkedOccurrenceKeys.length>=1);
       const occurrenceKey=controller.linkedOccurrenceKeys[0];
@@ -343,7 +406,7 @@ for(const [countryId,row] of Object.entries(worldState)){
       assert(output,countryId+' missing site output '+siteKey);
       assert.equal(output.siteReferenceKey,siteKey);
       assert.ok(['MINE_SITE','STRUCTURED_MINE'].includes(output.assetType),countryId+' unexpected site output asset type '+siteKey);
-      assert.ok(Number(output.producedQuantity)>0,countryId+' commercial site produced no positive quantity '+siteKey);
+      assert.ok(Number(output.producedQuantity)>0,countryId+' operational commercial site produced no positive quantity '+siteKey);
       assert(output.batchId,countryId+' missing site batch '+siteKey);
       assert.ok(output.effortUtilization>0&&output.effortUtilization<=1);
       const lot=row.inventoryLots?.[output.batchId];
@@ -437,6 +500,8 @@ const preDeliveryState=runtime.countryResourceState('KWT');
 const beforeWarehouse=Number(preDeliveryState?.warehouse?.availableByResource?.[realPipelineResourceId]||0);
 const beforeReserved=Number(preDeliveryState?.warehouse?.reservedByResource?.[realPipelineResourceId]||0);
 const beforeCountryRaw=Number(preDeliveryState?.inventory?.[realPipelineResourceId]||0);
+const inTransitBeforeDelivery=new Set((preDeliveryState?.industrialNetwork?.shipments||[])
+  .filter(x=>String(x.resourceId)===String(realPipelineResourceId)&&String(x.status)==='IN_TRANSIT').map(x=>String(x.shipmentId)));
 const deliveredQuantity=Number(realPipeline.shipment?.quantity||0);
 assert.ok(deliveredQuantity>0,'route must dispatch a positive quantity');
 assert.ok(beforeWarehouse>=deliveredQuantity,'real extraction batch must be in the sovereign raw warehouse before shipment arrival');
@@ -444,18 +509,29 @@ assert.ok(beforeReserved>=deliveredQuantity,'shipment quantity must be reserved 
 
 globalThis.Game.state.simulation.turn=Number(realPipeline.shipment.etaTurn);
 const realDelivery=industrial.advanceShipments('KWT');
-assert.equal(realDelivery.delivered,1,'real site shipment must arrive through the turn-advance runtime');
 const delivered=realDelivery.shipments.find(x=>x.shipmentId===realPipeline.shipmentId);
-assert.ok(delivered,'arrival record must match the committed shipment');
+assert.ok(delivered,'the exact real site shipment must arrive through the turn-advance runtime; other country deposits may also deliver on the same turn: '+JSON.stringify({
+  targetShipmentId:realPipeline.shipmentId,deliveredShipmentIds:realDelivery.shipments.map(x=>x.shipmentId),deliveredCount:realDelivery.delivered
+}));
+const sameResourceDeliveredQuantity=realDelivery.shipments.filter(x=>String(x.resourceId)===String(realPipelineResourceId))
+  .reduce((sum,x)=>sum+(Number(x.quantity)||0),0);
 assert.equal(delivered.destinationStatus,'FACTORY_RECEIVED');
 assert.equal(delivered.processingStatus,'PROCESSED','delivered real Endowment material must enter factory processing');
 const postDeliveryState=runtime.countryResourceState('KWT');
-assert.ok(Math.abs(Number(postDeliveryState.warehouse.availableByResource[realPipelineResourceId])-(beforeWarehouse-deliveredQuantity))<1e-5,
-  'raw warehouse stock must fall by exactly the quantity shipped');
-assert.ok(Math.abs(Number(postDeliveryState.warehouse.reservedByResource[realPipelineResourceId])-(beforeReserved-deliveredQuantity))<1e-5,
-  'shipment reservation must be released exactly once at delivery');
-assert.ok(Math.abs(Number(postDeliveryState.inventory[realPipelineResourceId])-(beforeCountryRaw-deliveredQuantity))<1e-5,
-  'country raw inventory must be debited exactly once');
+assert.ok(Math.abs(Number(postDeliveryState.warehouse.availableByResource[realPipelineResourceId])-
+  (beforeWarehouse-sameResourceDeliveredQuantity))<1e-5,
+  'raw warehouse stock must fall by exactly the combined quantity of same-resource shipments delivered this turn');
+const newlyReservedOtherShipments=(postDeliveryState.industrialNetwork?.shipments||[])
+  .filter(x=>String(x.resourceId)===String(realPipelineResourceId)&&String(x.status)==='IN_TRANSIT'&&!inTransitBeforeDelivery.has(String(x.shipmentId)))
+  .reduce((sum,x)=>sum+(Number(x.quantity)||0),0);
+assert.ok(Math.abs(Number(postDeliveryState.warehouse.reservedByResource[realPipelineResourceId])-
+  (beforeReserved-sameResourceDeliveredQuantity+newlyReservedOtherShipments))<1e-5,
+  'delivery must release each delivered shipment reservation exactly once while retaining new in-transit reservations');
+assert.equal(postDeliveryState.industrialNetwork?.reservations?.[delivered.reservationId]?.status,'DELIVERED',
+  'the delivered shipment reservation record must close');
+assert.ok(Math.abs(Number(postDeliveryState.inventory[realPipelineResourceId])-
+  (beforeCountryRaw-sameResourceDeliveredQuantity))<1e-5,
+  'country raw inventory must debit the combined same-resource deliveries exactly once');
 const realProcessedOutputs=Object.keys(delivered.processing?.outputs||{});
 assert.ok(realProcessedOutputs.length>0,'real factory cycle must produce at least one output');
 assert.ok(realProcessedOutputs.every(k=>Number(postDeliveryState.inventory[k])>0),
@@ -466,7 +542,46 @@ assert.ok(executionLedger.some(x=>x.siteId===realPipelineSiteId&&x.batchId===rea
 assert.ok((postDeliveryState.industrialNetwork?.events||[]).some(x=>x.transactionId===delivered.processingTransactionId&&x.status==='COMPLETED'),
   'factory processing must be represented in the industrial event ledger');
 
-// Part 6 integration proof: a newly added mine must complete the same extraction,
+// Future-deposit contract: a canonical-only physical site with no matching legacy
+// resources.json deposit receives simulated reserve/capacity, then traverses the same pipeline.
+const futureCanonicalSite={
+  siteId:'SITE_TEST_FUTURE_CANONICAL_SILVER',schemaVersion:'1.0.0',countryId:'BGD',siteName:'Future Canonical Silver Mine',
+  siteType:'OPEN_PIT_SILVER_MINE',
+  identity:{countryIso3:'BGD',resourceTypeId:'silver',siteType:'OPEN_PIT_SILVER_MINE'},
+  location:{countryName:'Bangladesh',coordinates:{lat:24.1,lng:90.2},coordinateStatus:'ESTIMATED_SITE_POINT'},
+  operation:{status:'ACTIVE_PRODUCING',operationalStatus:'ACTIVE_PRODUCING',commercialExtraction:true,extractionMethod:'OPEN_PIT_DRILL_BLAST'},
+  processing:{upstreamProcess:'Open-pit extraction',downstreamSectors:['INDUSTRIAL_METALS']},
+  map:{markerEligible:true,countryIsolationKey:'BGD'},
+  ownership:{owner:'SIMULATED_STATE_ENTERPRISE',operator:'SIMULATED_STATE_ENTERPRISE'},
+  sourceReference:{sourcePath:'TEST_FIXTURE_CANONICAL_ONLY'},
+  runtime:{identityAuthority:'CANONICAL_SITE_REGISTRY'}
+};
+const futureRegistration=runtime.registerCanonicalSiteSimulationRecord(futureCanonicalSite);
+assert.equal(futureRegistration.status,'REGISTERED',JSON.stringify(futureRegistration));
+const futureHydration=runtime.hydrateCountry('BGD');
+assert.equal(futureHydration.status,'APPLIED',JSON.stringify(futureHydration));
+const futureOccurrence=Object.entries(runtime.countryResourceState('BGD')?.mineStates||{}).find(([,row])=>
+  String(row?.siteReferenceKey||'')===futureCanonicalSite.siteId&&String(row?.resourceId||'')==='silver');
+assert.ok(futureOccurrence,'canonical-only site must receive an executable reserve/extraction occurrence');
+assert.ok(Number(futureOccurrence[1].residualQuantity)>0);
+assert.equal(futureOccurrence[1].provenance.quantityAuthority,'SIMULATED');
+assert.ok(Number(futureOccurrence[1].geologicalQuantity)>0,'new canonical site must carry simulated geological quantity');
+const futurePipeline=await industrial.executeSitePipeline({countryId:'BGD',siteId:futureCanonicalSite.siteId,resourceId:'silver',quantity:25,autoCommissionFactory:true,transportMode:'rail'});
+assert.equal(futurePipeline.status,'IN_TRANSIT',JSON.stringify(futurePipeline));
+assert.equal(futurePipeline.extractionStatus,'COMMITTED');
+assert.ok(futurePipeline.batchId&&futurePipeline.shipmentId&&futurePipeline.factoryId);
+assert.equal(futurePipeline.countryId,'BGD');
+const futureState=runtime.countryResourceState('BGD');
+const futureBatch=futureState.batches.find(x=>String(x.batchId)===String(futurePipeline.batchId));
+assert.ok(futureBatch,'future canonical-only deposit must create an inventory batch');
+assert.equal(futureBatch.siteReferenceKey,futureCanonicalSite.siteId);
+assert.equal(futureBatch.countryId,'BGD');
+assert.equal(futureBatch.stateAuthority,'SIMULATED');
+assert.ok(Number(futureState.warehouse.availableByResource.silver)>0||Number(futureState.warehouse.reservedByResource.silver)>0);
+assert.ok(futureState.industrialNetwork?.siteFlowLedger?.some(x=>x.batchId===futurePipeline.batchId&&x.siteId===futureCanonicalSite.siteId),
+  'future canonical-only deposit must be present in the site flow ledger');
+
+// // Part 6 integration proof: a newly added mine must complete the same extraction,
 // sovereign warehouse, transport, auto-commissioned factory and processing sequence.
 const part6CopperSite=part6Data.records.find(site=>site.siteId==='SITE_CHL_collahuasi_copper_mine');
 assert(part6CopperSite,'Part 6 copper pipeline fixture must exist');
@@ -486,7 +601,7 @@ assert.equal(part6Pipeline.status,'IN_TRANSIT',
   'new Part 6 mine must enter the same production pipeline: '+JSON.stringify({
     status:part6Pipeline.status,reason:part6Pipeline.reason,siteId:part6Pipeline.siteId,
     resourceId:part6Pipeline.resourceId,extractionStatus:part6Pipeline.extractionStatus,
-    shipmentStatus:part6Pipeline.shipmentStatus,detail:part6Pipeline.detail
+    shipmentStatus:part6Pipeline.shipmentStatus,detail:part6Pipeline.detail,quantity:part6Pipeline.quantity,shipment:part6Pipeline.shipment
   }));
 assert.equal(part6Pipeline.extractionStatus,'COMMITTED');
 assert.ok(part6Pipeline.batchId&&part6Pipeline.shipmentId&&part6Pipeline.factoryId,
@@ -498,14 +613,29 @@ assert.ok(Number(part6PreDelivery?.warehouse?.reservedByResource?.[part6CopperSi
   'Part 6 shipment must reserve material from its country raw warehouse');
 globalThis.Game.state.simulation.turn=Number(part6Pipeline.shipment.etaTurn);
 const part6Delivery=industrial.advanceShipments(part6CopperSite.countryId);
-assert.equal(part6Delivery.delivered,1,'Part 6 mine shipment must reach its bound factory');
+assert.ok(part6Delivery.delivered>=1,'global country turn must deliver due shipments across deposits; detail='+JSON.stringify({delivered:part6Delivery.delivered,targetShipmentId:part6Pipeline.shipmentId}));
 const part6Delivered=part6Delivery.shipments.find(item=>item.shipmentId===part6Pipeline.shipmentId);
 assert(part6Delivered);
-assert.equal(part6Delivered.processingStatus,'PROCESSED');
 assert.equal(part6Delivered.destinationStatus,'FACTORY_RECEIVED');
 const part6PostDelivery=runtime.countryResourceState(part6CopperSite.countryId);
-assert.ok(Object.keys(part6Delivered.processing?.outputs||{}).some(key=>Number(part6PostDelivery.inventory?.[key])>0),
-  'Part 6 processed products must enter the owning country inventory');
+const part6Flow=part6PostDelivery.industrialNetwork?.siteFlowLedger?.find(item=>String(item.batchId)===String(part6Pipeline.batchId));
+const part6Factory=(globalThis.Game.state.economy?.[part6CopperSite.countryId]?.productionAssets||[])
+  .find(item=>String(item.id||item.assetId||item.projectId)===String(part6Pipeline.factoryId));
+if(part6Delivered.processingStatus==='PROCESSED'){
+  assert.ok(Object.keys(part6Delivered.processing?.outputs||{}).some(key=>Number(part6PostDelivery.inventory?.[key])>0),
+    'Part 6 processed products must enter the owning country inventory');
+  assert.ok(part6Flow?.stages?.some(step=>step.stage==='PROCESSING'&&step.status==='COMPLETED'));
+}else{
+  assert.equal(part6Delivered.processingStatus,'AWAITING_PROCESSING');
+  assert.equal(part6Delivered.processing?.reason,'FACTORY_TURN_CAPACITY_ALREADY_USED',
+    'only a legitimately exhausted factory turn may defer processing; other execution failures must fail the test: '+JSON.stringify(part6Delivered.processing));
+  assert.ok(Number(part6Factory?.inputInventory?.[part6CopperSite.resourceId])>0,
+    'deferred material must remain physically recorded in the matching factory input inventory');
+  assert.ok((part6Factory?.inputBatchLots||[]).some(lot=>String(lot.sourceBatchIds?.[0]||'')===String(part6Pipeline.batchId)&&Number(lot.remainingQuantity)>0),
+    'deferred material must retain the source deposit batch identity in the factory input lot');
+  assert.ok(part6Flow?.stages?.some(step=>step.stage==='PROCESSING'&&step.status==='AWAITING_CAPACITY'),
+    'deposit flow ledger must explicitly show the factory-capacity queue');
+}
 assert.ok((part6PostDelivery.industrialNetwork?.siteExecutions||[]).some(item=>
   item.siteId===part6CopperSite.siteId&&item.batchId===part6Pipeline.batchId&&item.occurrenceKey===part6Pipeline.occurrenceKey),
   'Part 6 industrial ledger must retain the exact site, batch and occurrence identities');

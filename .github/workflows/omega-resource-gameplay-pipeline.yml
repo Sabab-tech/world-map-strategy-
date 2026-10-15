@@ -1,0 +1,102 @@
+name: OMEGA Resource Gameplay Pipeline
+
+on:
+  push:
+    branches: [main, feature/milestone-b-resource-e2e]
+    paths:
+      - '.github/workflows/omega-resource-gameplay-pipeline.yml'
+      - 'omega_resource_endowment_runtime.js'
+      - 'omega_resource_part04_identity_runtime.js'
+      - 'omega_resource_part05_reserve_extraction_runtime.js'
+      - 'omega_resource_production_model_v2.js'
+      - 'omega_resource_site_integrity_v1.js'
+      - 'omega_resource_scenario_engineering_data_v1.js'
+      - 'omega_resource_realism_runtime_v1.js'
+      - 'omega_resource_country_boundary_guard.js'
+      - 'omega_resource_industrial_network_v1.js'
+      - 'omega_resource_economy_runtime_v2.js'
+      - 'omega_global_trade_system.js'
+      - 'resource*.json'
+      - 'resources*.json'
+      - 'test/omega_resource_recipe_coverage.test.mjs'
+      - 'resource_industrial_catalog_v1.json'
+      - 'resource_site_canonical_catalog_v1.json'
+      - 'resource_site_master_registry_v1.json'
+      - 'resource_site_reference_expanded_manifest.json'
+      - 'resource_site_reference_expanded_part_*.json'
+      - 'test/omega_resource_true_e2e_pipeline.test.mjs'
+      - 'test/omega_resource_autonomous_global_pipeline.test.mjs'
+      - 'test/omega_resource_recipe_coverage.test.mjs'
+      - 'resource_industrial_catalog_v1.json'
+      - 'resource_site_canonical_catalog_v1.json'
+      - 'resource_site_master_registry_v1.json'
+      - 'resource_site_reference_expanded_manifest.json'
+      - 'resource_site_reference_expanded_part_*.json'
+      - 'test/omega_resource_global_pipeline.test.mjs'
+      - 'test/omega_resource_endowment_runtime.test.mjs'
+      - 'test/omega_resource_production_capacity_contract.test.mjs'
+      - 'test/omega_resource_industrial_network_v1.test.mjs'
+      - 'test/omega_resource_logistics_runtime_v1.test.mjs'
+      - 'test/omega_resource_milestone_a_integrity.test.mjs'
+      - 'package.json'
+  pull_request:
+    paths:
+      - '.github/workflows/omega-resource-gameplay-pipeline.yml'
+      - 'omega_resource_endowment_runtime.js'
+      - 'omega_resource_industrial_network_v1.js'
+      - 'omega_resource_economy_runtime_v2.js'
+      - 'omega_global_trade_system.js'
+      - 'resource*.json'
+      - 'resources*.json'
+      - 'test/omega_resource_true_e2e_pipeline.test.mjs'
+      - 'test/omega_resource_global_pipeline.test.mjs'
+      - 'test/omega_resource_industrial_network_v1.test.mjs'
+      - 'test/omega_resource_autonomous_global_pipeline.test.mjs'
+      - 'test/omega_resource_endowment_runtime.test.mjs'
+      - 'test/omega_resource_economy_runtime_v2.test.mjs'
+      - 'test/omega_global_trade_system.test.mjs'
+      - 'package.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  real-resource-gameplay-pipeline:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Repository syntax and source-integrity checks
+        run: npm run lint
+      - name: Milestone A complete registry audit
+        run: npm run test:resource-site-integrity
+      - name: Endowment runtime regression
+        run: npm run test:resource-endowment
+      - name: Every-deposit resource recipe coverage
+        run: npm run test:resource-recipe-coverage
+      - name: Real Endowment to output, market and treasury
+        run: npm run test:resource-e2e
+      - name: Autonomous per-country deposit-to-market regression
+        run: npm run test:resource-global-auto
+      - name: International trade lineage regression
+        run: npm run test:global-trade
+      - name: Global raw inventory regression
+        run: npm run test:resource-global-pipeline
+      - name: Authoritative resource adapter regression
+        run: npm run test:resource-authoritative
+      - name: Resource action and settlement regression
+        run: npm run test:resource-actions && npm run test:resource-request
+      - name: Production and realism regressions
+        run: npm run test:resource-production-model && npm run test:resource-realism
+      - name: Resource state hardening regression
+        run: npm run test:resource-system-hardening
+      - name: Industrial network regression
+        run: npm run test:resource-industrial-network
+      - name: Transport logistics regression
+        run: npm run test:resource-logistics

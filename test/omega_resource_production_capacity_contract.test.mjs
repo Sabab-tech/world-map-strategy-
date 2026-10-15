@@ -13,7 +13,7 @@ assert.equal(C.VERSION,'1.0.0');
 const simSite={siteId:'SITE_TEST_CAPACITY',countryId:'TST',resourceId:'copper'};
 const simulatedA=C.resolveFactors(simSite,{authorityMode:'SIMULATED'});
 const simulatedB=C.resolveFactors(simSite,{authorityMode:'SIMULATED'});
-assert.deepEqual(simulatedA,{...simulatedB});
+assert.deepEqual(JSON.parse(JSON.stringify(simulatedA)),JSON.parse(JSON.stringify(simulatedB)));
 assert.equal(simulatedA.authority,'SIMULATED');
 assert.equal(simulatedA.defaultsApplied,true);
 for(const k of ['equipmentAvailability','powerAvailability','inputAvailability','technologyEfficiency']){

@@ -547,6 +547,17 @@
       },
       "cycleDays": 2
     },
+    "silver": {
+      "factoryType": "SILVER_CONCENTRATOR",
+      "inputs": {
+        "silver": 1
+      },
+      "outputs": {
+        "SILVER_CONCENTRATE": 0.72,
+        "TAILINGS": 0.28
+      },
+      "cycleDays": 2
+    },
     "bauxite": {
       "factoryType": "ALUMINA_REFINERY",
       "inputs": {

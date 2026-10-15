@@ -202,16 +202,20 @@ test('resource economy v2 completes mine-backed processing, domestic settlement 
 
   assert.equal(worldState.trade.BGD.domesticSales.length,1);
   assert.equal(worldState.trade.BGD.domesticSales[0].sale.status,'SETTLED');
-  assert.equal(worldState.trade.BGD.offerBook.length,1);
-  assert.equal(worldState.trade.BGD.offerBook[0].source,'OMEGA_RESOURCE_ECON_AUTO_OFFER');
+  assert.ok(worldState.trade.BGD.offerBook.length>=2);
+  assert.ok(worldState.trade.BGD.offerBook.every(x=>x.source==='OMEGA_RESOURCE_ECON_AUTO_OFFER'));
+  assert.ok(worldState.trade.BGD.offerBook.some(x=>x.resourceId==='iron_intermediate'&&x.quantity>0&&x.priceAuthority),
+    'finished goods with no observed quote must use an explicitly simulated market offer price');
 
   assert.equal(worldState.resource.BGD.warehouse.availableByResource.iron_ore,50);
-  assert.equal(worldState.resource.BGD.warehouse.availableByResource.iron_intermediate,40);
+  assert.equal(worldState.resource.BGD.warehouse.availableByResource.iron_intermediate||0,0);
+  assert.equal(worldState.resource.BGD.processedWarehouse.availableByResource.iron_intermediate,40);
   const inputBatch=worldState.resource.BGD.batches.find(x=>x.batchId==='MINE-BATCH-1');
   assert.equal(inputBatch.remainingQuantity,50);
   const outputBatch=worldState.resource.BGD.batches.find(x=>x.resourceId==='iron_intermediate');
   assert.ok(outputBatch);
   assert.equal(outputBatch.quantity,40);
+  assert.equal(outputBatch.warehouseId,'WH-BGD-PROCESSED');
   assert.equal(outputBatch.purity,0.62);
   assert.equal(outputBatch.qualityState.purityStatus,'INHERITED_FROM_INPUT');
   assert.deepEqual([...outputBatch.sourceBatchIds],['MINE-BATCH-1']);
