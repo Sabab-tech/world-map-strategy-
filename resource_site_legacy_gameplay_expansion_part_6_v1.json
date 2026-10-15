@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0.0",
   "datasetId": "OMEGA_RESOURCE_SITE_LEGACY_GAMEPLAY_EXPANSION_PART_6_V1",
-  "generatedAt": "2026-10-13",
+  "generatedAt": "2026-10-15",
   "authority": "SCENARIO_SIMULATION_DATA_WITH_SEPARATE_REAL_WORLD_EVIDENCE",
   "part": 6,
   "partCount": 6,
@@ -8637,65 +8637,66 @@
     },
     {
       "schemaVersion": "1.0.0",
-      "siteId": "SITE_CAN_voiseys_bay_nickel_mine",
-      "siteName": "Voisey's Bay Nickel Mine",
+      "siteId": "SITE_CAN_meliadine_gold_mine",
+      "siteName": "Meliadine Gold Mine",
       "countryId": "CAN",
-      "resourceId": "nickel",
+      "resourceId": "gold",
       "identity": {
         "countryIso3": "CAN",
         "countryName": "Canada",
-        "siteType": "NICKEL_MINE",
-        "resourceTypeId": "nickel",
-        "resourceName": "Nickel",
-        "ontologyKey": "NICKEL",
+        "siteType": "GOLD_MINE",
+        "resourceTypeId": "gold",
+        "resourceName": "Gold",
+        "ontologyKey": "GOLD",
         "aliases": []
       },
       "location": {
         "countryName": "Canada",
-        "adminRegion": "Newfoundland and Labrador",
-        "locality": "Labrador",
+        "adminRegion": "Nunavut",
+        "locality": "Kivalliq District, near Rankin Inlet",
         "coordinates": {
-          "lat": 56.35,
-          "lng": -62.1
+          "lat": 63.039167,
+          "lng": -92.228056
         },
         "coordinateStatus": "GAMEPLAY_REGIONAL_APPROXIMATION",
-        "coordinateAuthority": "REGIONAL_REFERENCE_POINT; NOT SURVEY GRADE",
+        "coordinateAuthority": "GOVERNMENT OF NUNAVUT MINE-AREA REFERENCE; NOT SURVEY GRADE",
         "coordinatePrecision": "REGIONAL_APPROXIMATION",
         "countryBoundaryKey": "CAN",
-        "locationNodeKey": "ASSET:CAN:voiseys_bay_nickel_mine"
+        "locationNodeKey": "ASSET:CAN:meliadine_gold_mine"
       },
       "ownership": {
         "owner": "Canada Sovereign Resource Authority [SIMULATED]",
-        "operator": "OMEGA_SIMULATED_OPERATOR_SITE_CAN_voiseys_bay_nickel_mine",
+        "operator": "OMEGA_SIMULATED_OPERATOR_SITE_CAN_meliadine_gold_mine",
         "ownerEvidenceStatus": "SIMULATED",
         "operatorEvidenceStatus": "SIMULATED",
         "authority": "OMEGA_SCENARIO_OWNERSHIP",
         "equityControlCountry": "CAN",
-        "operatorContractId": "OPCONTRACT_SITE_CAN_voiseys_bay_nickel_mine"
+        "operatorContractId": "OPCONTRACT_SITE_CAN_meliadine_gold_mine"
       },
       "operation": {
         "status": "SIMULATED_OPERATIONAL_SCENARIO",
         "operationalStatus": "SIMULATED_ACTIVE",
-        "extractionMethod": "OPEN_PIT_DRILL_BLAST",
+        "extractionMethod": "UNDERGROUND_ROOM_PILLAR",
         "extractionEligibility": "SIMULATED_SITE_ELIGIBLE_SUBJECT_TO_GAMEPLAY_GATES",
         "commercialExtraction": true,
-        "siteCommissioningLevel": 5,
-        "mineLevel": 5,
+        "siteCommissioningLevel": 3,
+        "mineLevel": 2,
         "legacyReportedStatusTexts": [
           "REFERENCE_IDENTITY_ONLY"
         ],
         "statusAuthority": "SIMULATED_GAMEPLAY_STATE_NOT_A_REAL_WORLD_OPERATIONAL_CLAIM"
       },
       "processing": {
-        "upstreamProcess": "OPEN_PIT_DRILL_BLAST",
-        "midstreamProcess": "NICKEL_PROCESSING_PLANT",
+        "upstreamProcess": "UNDERGROUND_ROOM_PILLAR",
+        "midstreamProcess": "GOLD_PROCESSING_PLANT",
         "refinedOutputs": [
-          "nickel concentrate",
-          "tailings"
+          "gold doré",
+          "gold concentrate"
         ],
         "downstreamSectors": [
-          "stainless steel",
-          "battery materials"
+          "gold",
+          "jewellery",
+          "electronics"
         ]
       },
       "logistics": {
@@ -8705,36 +8706,36 @@
         "factoryRouteStatus": "SIMULATED_FACTORY_BINDING_READY",
         "routeStatus": "SIMULATED_ROUTE_READY",
         "transport": {
-          "routeId": "ROUTE_SITE_CAN_voiseys_bay_nickel_mine_RAW_TO_FACTORY",
-          "routeType": "ROAD_PORT",
-          "mode": "road_port",
-          "originSiteId": "SITE_CAN_voiseys_bay_nickel_mine",
+          "routeId": "ROUTE_SITE_CAN_meliadine_gold_mine_RAW_TO_FACTORY",
+          "routeType": "ROAD",
+          "mode": "road",
+          "originSiteId": "SITE_CAN_meliadine_gold_mine",
           "originCountryId": "CAN",
           "warehouseId": "WH-CAN-RAW",
-          "destinationFactoryId": "FACTORY_CAN_nickel",
+          "destinationFactoryId": "FACTORY_CAN_gold",
           "destinationCountryId": "CAN",
-          "distanceKm": 402,
-          "averageSpeedKmPerDay": 85,
-          "estimatedTravelDays": 5,
+          "distanceKm": 220,
+          "averageSpeedKmPerDay": 65,
+          "estimatedTravelDays": 4,
           "routeStatus": "SIMULATED_ROUTE_READY",
           "canBeBlockedByWar": true,
           "canBeBlockedByNeighborControl": true,
-          "canBeBlockedByNavalInterdiction": true,
+          "canBeBlockedByNavalInterdiction": false,
           "strategicRouteNotRoadSurvey": true,
-          "routeCapacityPerDay": 36288
+          "routeCapacityPerDay": 21400
         }
       },
       "quantitative": {
         "reserve": {
-          "quantity": 3373359200,
+          "quantity": 2067885600,
           "unit": "TONNES_ORE",
           "year": 2026,
           "status": "SIMULATED",
-          "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_376_YEARS"
+          "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_407_YEARS"
         },
         "production": {
-          "annual": 8971700,
-          "rate": 24580,
+          "annual": 5080800,
+          "rate": 13920,
           "unit": "TONNES_PER_DAY",
           "annualUnit": "TONNES_PER_YEAR",
           "year": 2026,
@@ -8743,15 +8744,15 @@
           "basis": "PER_SITE_IDENTITY_PRODUCTION_ALLOCATION_V1"
         },
         "grade": {
-          "value": 0.767,
-          "unit": "PERCENT_NI",
+          "value": 5.36,
+          "unit": "GRAMS_PER_TONNE_AU",
           "year": 2026,
           "metric": "RESOURCE_SPECIFIC_RAW_MATERIAL_QUALITY",
           "status": "SIMULATED",
           "basis": "COMMODITY_BAND_AND_STABLE_SITE_ID_VARIATION"
         },
         "recovery": {
-          "value": 71.45,
+          "value": 70.8,
           "unit": "PERCENT",
           "year": 2026,
           "period": "PROCESSING_CYCLE",
@@ -8759,7 +8760,7 @@
           "basis": "SITE_SPECIFIC_PROCESSING_RECOVERY_MODEL"
         },
         "throughput": {
-          "value": 17562,
+          "value": 10880,
           "unit": "TONNES_PER_DAY",
           "year": 2026,
           "period": "DAILY",
@@ -8767,7 +8768,7 @@
           "basis": "SITE_SPECIFIC_THROUGHPUT_MODEL"
         },
         "purity": {
-          "value": 83,
+          "value": 96.4,
           "unit": "PERCENT",
           "year": 2026,
           "metric": "PROCESSED_PRODUCT_QUALITY",
@@ -8775,9 +8776,9 @@
           "basis": "COMMODITY_PRODUCT_QUALITY_MODEL"
         },
         "capacity": {
-          "nominal": 27284,
-          "minimum": 18826,
-          "maximum": 36288,
+          "nominal": 15100,
+          "minimum": 10250,
+          "maximum": 21400,
           "unit": "TONNES_PER_DAY",
           "period": "DAILY",
           "status": "SIMULATED",
@@ -8789,9 +8790,9 @@
         "quantitativeProvenance": {
           "authority": "SCENARIO_SIMULATION_DATA",
           "method": "OMEGA_PER_SITE_IDENTITY_METRIC_ALLOCATION_V1",
-          "seedKey": "SITE_CAN_voiseys_bay_nickel_mine|CAN|nickel",
-          "generatedAt": "2026-10-13",
-          "gameplayHorizonYears": 376,
+          "seedKey": "SITE_CAN_meliadine_gold_mine|CAN|gold",
+          "generatedAt": "2026-10-15",
+          "gameplayHorizonYears": 407,
           "realWorldDataRequired": false,
           "externalMeasuredValuePromotion": false
         },
@@ -8807,97 +8808,98 @@
         }
       },
       "reserve": {
-        "quantity": 3373359200,
+        "quantity": 2067885600,
         "unit": "TONNES_ORE",
+        "year": 2026,
         "status": "SIMULATED",
-        "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_376_YEARS"
+        "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_407_YEARS"
       },
       "simulation": {
         "reserve": {
-          "quantity": 3373359200,
+          "quantity": 2067885600,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
-          "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_376_YEARS"
+          "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_407_YEARS"
         },
-        "nominalDailyCapacity": 27284,
-        "minimumDailyCapacity": 18826,
-        "maximumDailyCapacity": 36288,
-        "productionRate": 24580,
+        "nominalDailyCapacity": 15100,
+        "minimumDailyCapacity": 10250,
+        "maximumDailyCapacity": 21400,
+        "productionRate": 13920,
         "productionRateUnit": "TONNES_PER_DAY",
-        "annualProduction": 8971700,
+        "annualProduction": 5080800,
         "annualProductionUnit": "TONNES_PER_YEAR",
-        "utilization": 0.901,
-        "recovery": 0.7145,
+        "utilization": 0.922,
+        "recovery": 0.708,
         "grade": {
-          "value": 0.767,
-          "unit": "PERCENT_NI",
+          "value": 5.36,
+          "unit": "GRAMS_PER_TONNE_AU",
           "metric": "RESOURCE_SPECIFIC_RAW_MATERIAL_QUALITY"
         },
         "purity": {
-          "value": 83,
+          "value": 96.4,
           "unit": "PERCENT",
           "metric": "PROCESSED_PRODUCT_QUALITY"
         },
-        "reserveHorizonYears": 376,
+        "reserveHorizonYears": 407,
         "transportRoute": [
           {
-            "routeId": "ROUTE_SITE_CAN_voiseys_bay_nickel_mine_RAW_TO_FACTORY",
+            "routeId": "ROUTE_SITE_CAN_meliadine_gold_mine_RAW_TO_FACTORY",
             "countryId": "CAN",
-            "originSiteId": "SITE_CAN_voiseys_bay_nickel_mine",
+            "originSiteId": "SITE_CAN_meliadine_gold_mine",
             "warehouseId": "WH-CAN-RAW",
-            "factoryId": "FACTORY_CAN_nickel",
-            "mode": "road_port",
-            "distanceKm": 402,
-            "estimatedTravelDays": 5,
+            "factoryId": "FACTORY_CAN_gold",
+            "mode": "road",
+            "distanceKm": 220,
+            "estimatedTravelDays": 4,
             "status": "SIMULATED_ROUTE_READY",
             "blockableByWar": true,
             "blockableByNeighborControl": true,
-            "blockableByNavalInterdiction": true
+            "blockableByNavalInterdiction": false
           }
         ],
         "rawWarehouseId": "WH-CAN-RAW",
         "factoryBinding": {
-          "factoryId": "FACTORY_CAN_nickel",
+          "factoryId": "FACTORY_CAN_gold",
           "countryId": "CAN",
-          "inputResourceId": "nickel",
-          "outputResourceId": "NICKEL_CONCENTRATE",
+          "inputResourceId": "gold",
+          "outputResourceId": "GOLD_DORÉ",
           "status": "SIMULATED_READY",
-          "processingMethod": "NICKEL_PROCESSING_PLANT",
+          "processingMethod": "GOLD_PROCESSING_PLANT",
           "requiresSameCountryWarehouse": true
         },
         "factoryOutputs": [
-          "nickel concentrate",
-          "tailings"
+          "gold doré",
+          "gold concentrate"
         ],
         "naturalRisk": {
-          "geological": 28,
-          "environmental": 29,
-          "waterStress": 78,
-          "infrastructure": 72,
-          "conflictExposure": 76,
-          "maritimeExposure": 40,
+          "geological": 54,
+          "environmental": 47,
+          "waterStress": 42,
+          "infrastructure": 61,
+          "conflictExposure": 22,
+          "maritimeExposure": 18,
           "scale": "0_TO_100_SIMULATION_INDEX"
         },
         "simulationOnly": true
       },
       "naturalRisk": {
-        "geological": 28,
-        "environmental": 29,
-        "waterStress": 78,
-        "infrastructure": 72,
-        "conflictExposure": 76,
-        "maritimeExposure": 40,
+        "geological": 54,
+        "environmental": 47,
+        "waterStress": 42,
+        "infrastructure": 61,
+        "conflictExposure": 22,
+        "maritimeExposure": 18,
         "scale": "0_TO_100_SIMULATION_INDEX"
       },
-      "mineLevel": 5,
+      "mineLevel": 2,
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "CAN",
-        "iconResourceKey": "nickel",
+        "iconResourceKey": "gold",
         "markerType": "RESOURCE_SITE",
         "coordinatePrecision": "REGIONAL_APPROXIMATION",
         "aliasOfSiteId": null,
-        "collisionGroup": "SITE_CAN_voiseys_bay_nickel_mine"
+        "collisionGroup": "SITE_CAN_meliadine_gold_mine"
       },
       "runtime": {
         "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
@@ -8921,25 +8923,25 @@
         }
       },
       "naturalHazards": {
-        "geologicRiskIndex": 28,
-        "environmentalRiskIndex": 29,
-        "waterStressIndex": 78,
-        "infrastructureRiskIndex": 72,
-        "conflictExposureIndex": 76,
-        "maritimeExposureIndex": 40,
+        "geologicRiskIndex": 54,
+        "environmentalRiskIndex": 47,
+        "waterStressIndex": 42,
+        "infrastructureRiskIndex": 61,
+        "conflictExposureIndex": 22,
+        "maritimeExposureIndex": 18,
         "scale": "0_TO_100_SIMULATION_INDEX"
       },
       "observedFacts": [],
       "sources": [],
       "locationSource": {
         "sourceType": "REGIONAL_REFERENCE_ESTIMATE",
-        "scope": "Approximate public mine/project reference point; not survey-grade",
-        "sourceReference": "resource_site_legacy_gameplay_expansion_part_6_v1.json"
+        "scope": "Approximate public mine-area reference point; not survey-grade",
+        "sourceReference": "Government of Nunavut spill report geolocation for Meliadine mine-area reference: https://www.gov.nt.ca/ecc/en/spill/spill-2023037"
       },
       "sourceReference": {
         "sourcePath": "resource_site_legacy_gameplay_expansion_part_6_v1.json",
         "sourceDatasetAuthority": "CURATED_SITE_IDENTITY_WITH_SCENARIO_QUANTITATIVES",
-        "notes": "Identity, resource and regional map point are reference metadata; every numeric reserve, production, grade, purity, recovery, throughput, capacity, logistics and risk value is generated for simulation and is not a measured fact."
+        "notes": "Mine identity and approximate location are linked to public operating-site references. All numeric reserve, production, grade, purity, recovery, throughput, capacity, logistics and risk values are simulated gameplay values, not measured site facts."
       }
     },
     {
