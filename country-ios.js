@@ -478,8 +478,71 @@ window.CountryIOS = {
     // CHAPTER 04: ECONOMY
     // -------------------------------------------------------------------------
     renderChapter4_Economy(countryKey, econ, pop) {
-        const fmtNum = window.formatGameNumber || ((n) => `$${(n/1e9).toFixed(1)}B`);
+        const fmtNum = window.formatGameNumber || ((n) => \`$\${(n/1e9).toFixed(1)}B\`);
         const nameClean = countryKey.replace(/_/g, " ").toUpperCase();
+        const observer = window.OmegaLiveOpsObservability;
+        const countryId = observer && typeof observer.resolveCountryId === 'function'
+            ? observer.resolveCountryId(countryKey) : countryKey;
+        const escapeHtml = value => String(value == null ? '' : value)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        const numberOrNull = value => {
+            if (typeof value === 'number' && Number.isFinite(value)) return value;
+            if (typeof value === 'string' && value.trim() !== '' && /^-?\d+(?:\.\d+)?$/.test(value.trim())) {
+                const parsed = Number(value);
+                return Number.isFinite(parsed) ? parsed : null;
+            }
+            return null;
+        };
+        const gdpSeries = observer && typeof observer.getTrendSeries === 'function'
+            ? (observer.getTrendSeries(countryId, 'economy') || []).find(row => row.key === 'gdp') : null;
+        const gdpPoints = (gdpSeries && Array.isArray(gdpSeries.points) ? gdpSeries.points : [])
+            .filter(point => numberOrNull(point.turn) !== null && numberOrNull(point.value) !== null).slice(-5);
+        const gdpChartStatus = gdpPoints.length >= 2 ? 'RECORDED SIMULATION TURNS' : 'HISTORY NOT RECORDED';
+        let gdpChartHtml = '<p style="padding:18px 6px;color:#94a3b8;font-size:12px;line-height:1.5;">No multi-turn GDP history is recorded for this country yet. The chart will appear after the engine has committed at least two real numeric GDP observations.</p>';
+        if (gdpPoints.length >= 2) {
+            const vals = gdpPoints.map(point => Number(point.value));
+            const lo = Math.min(...vals), hi = Math.max(...vals), span = hi - lo || Math.max(1, Math.abs(hi) * 0.1);
+            const points = gdpPoints.map((point, index) => ({
+                x: 18 + index / Math.max(1, gdpPoints.length - 1) * 344,
+                y: 88 - ((Number(point.value) - lo) / span) * 62,
+                value: Number(point.value), turn: Number(point.turn)
+            }));
+            const line = points.map(point => point.x.toFixed(1) + ',' + point.y.toFixed(1)).join(' ');
+            gdpChartHtml = '<svg width="100%" height="130" viewBox="0 0 380 110" preserveAspectRatio="none" role="img" aria-label="Recorded GDP by simulation turn">' +
+                '<line x1="16" y1="96" x2="364" y2="96" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>' +
+                '<polyline points="' + line + '" fill="none" stroke="#00e5ff" stroke-width="3"/>' +
+                points.map(point => '<circle cx="' + point.x.toFixed(1) + '" cy="' + point.y.toFixed(1) + '" r="3.5" fill="#00e5ff"><title>T' + point.turn + ': ' + escapeHtml(point.value) + '</title></circle>').join('') +
+                '<text x="18" y="108" fill="#64748b" font-size="9" font-family="monospace">T' + gdpPoints[0].turn + '</text>' +
+                '<text x="362" y="108" text-anchor="end" fill="#64748b" font-size="9" font-family="monospace">T' + gdpPoints[gdpPoints.length - 1].turn + '</text>' +
+                '</svg>';
+        }
+        const normaliseBreakdown = raw => {
+            let rows = [];
+            if (Array.isArray(raw)) rows = raw.map((row, index) => ({ label: row && (row.name || row.label || row.sector || row.id) || 'Sector ' + (index + 1), row }));
+            else if (raw && typeof raw === 'object') rows = Object.entries(raw).map(([label, row]) => ({ label, row }));
+            rows = rows.map(item => {
+                const row = item.row && typeof item.row === 'object' ? item.row : { value: item.row };
+                const share = numberOrNull(row.percentage ?? row.percent ?? row.sharePercent ?? row.gdpSharePercent);
+                const fraction = numberOrNull(row.share ?? row.fraction ?? row.shareOfGDP);
+                const value = numberOrNull(row.gdp ?? row.gdpValue ?? row.output ?? row.value ?? row.amount ?? row.total ?? row.nominalValue);
+                return { label: String(item.label), percent: share !== null ? share : fraction !== null && fraction >= 0 && fraction <= 1 ? fraction * 100 : null, value };
+            }).filter(row => row.percent !== null || row.value !== null);
+            const rawTotal = rows.reduce((sum, row) => sum + (row.value !== null && row.value > 0 ? row.value : 0), 0);
+            return rows.map(row => {
+                const percent = row.percent !== null ? row.percent : rawTotal > 0 && row.value !== null ? row.value / rawTotal * 100 : null;
+                return { ...row, percent: percent !== null && Number.isFinite(percent) && percent >= 0 ? Math.min(100, percent) : null };
+            }).filter(row => row.percent !== null);
+        };
+        const sectorSource = econ && (econ.sectoralBreakdown || econ.sectorBreakdown || econ.sectors ||
+            econ.gdpBySector || econ.sectorGDP || econ.sectorOutput || econ.outputBySector);
+        const sectorRows = normaliseBreakdown(sectorSource);
+        const sectorRowsHtml = sectorRows.length
+            ? sectorRows.map(row => '<div><div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:3px;"><span>' +
+                escapeHtml(row.label.replace(/_/g, ' ').toUpperCase()) + '</span><strong>' + row.percent.toFixed(1) +
+                '%</strong></div><div style="width:100%;height:8px;background:rgba(255,255,255,0.1);border-radius:4px;overflow:hidden;"><div style="width:' +
+                row.percent.toFixed(2) + '%;height:100%;background:#38bdf8;"></div></div></div>').join('')
+            : '<p style="color:#94a3b8;font-size:12px;line-height:1.5;">Sector-level GDP/output values are not present in the selected economy record. No example percentages are substituted.</p>';
         
         return `
             <div style="display:flex; flex-direction:column; gap:16px; max-width:960px; margin:0 auto;">
@@ -522,60 +585,15 @@ window.CountryIOS = {
                 <div class="ios-grid-2">
                     <div class="ios-chart-box" style="background:rgba(15,23,42,0.8); border:1px solid rgba(0,229,255,0.2); padding:14px; border-radius:8px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                            <span style="font-size:11px; color:#00e5ff; font-family:var(--font-mono); font-weight:bold;">📈 5-YEAR REAL GDP TRAJECTORY</span>
-                            <span style="font-size:10px; color:#22c55e; font-family:var(--font-mono);">STABLE OUTLOOK</span>
+                            <span style="font-size:11px; color:#00e5ff; font-family:var(--font-mono); font-weight:bold;">OBSERVED GDP BY SIMULATION TURN</span>
+                            <span style="font-size:10px; color:#22c55e; font-family:var(--font-mono);">${gdpChartStatus}</span>
                         </div>
-                        <svg width="100%" height="130" viewBox="0 0 380 110" preserveAspectRatio="none">
-                            <defs>
-                                <linearGradient id="gdpGrad" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="0%" stop-color="#00e5ff" stop-opacity="0.3"/>
-                                    <stop offset="100%" stop-color="#00e5ff" stop-opacity="0.0"/>
-                                </linearGradient>
-                            </defs>
-                            <path d="M 10,90 Q 95,45 190,60 T 370,15 L 370,100 L 10,100 Z" fill="url(#gdpGrad)"/>
-                            <path d="M 10,90 Q 95,45 190,60 T 370,15" fill="none" stroke="#00e5ff" stroke-width="3"/>
-                            <line x1="10" y1="100" x2="370" y2="100" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
-                            <circle cx="10" cy="90" r="4" fill="#00e5ff"/>
-                            <circle cx="100" cy="48" r="4" fill="#00e5ff"/>
-                            <circle cx="190" cy="60" r="4" fill="#00e5ff"/>
-                            <circle cx="280" cy="30" r="4" fill="#00e5ff"/>
-                            <circle cx="370" cy="15" r="5" fill="#ffd700"/>
-                            <text x="10" y="108" fill="#64748b" font-size="9" font-family="monospace">2022</text>
-                            <text x="100" y="108" fill="#64748b" font-size="9" font-family="monospace">2023</text>
-                            <text x="190" y="108" fill="#64748b" font-size="9" font-family="monospace">2024</text>
-                            <text x="280" y="108" fill="#64748b" font-size="9" font-family="monospace">2025</text>
-                            <text x="350" y="108" fill="#ffd700" font-size="9" font-family="monospace">2026 PROJ</text>
-                        </svg>
+                        ${gdpChartHtml}
                     </div>
 
                     <div class="ios-chart-box" style="background:rgba(15,23,42,0.8); border:1px solid rgba(255,215,0,0.2); padding:14px; border-radius:8px;">
                         <div style="font-size:11px; color:#ffd700; font-family:var(--font-mono); font-weight:bold; margin-bottom:12px;">🏭 ECONOMIC SECTORAL BREAKDOWN</div>
-                        <div style="display:flex; flex-direction:column; gap:10px; font-family:var(--font-mono); font-size:11px; color:#cbd5e1;">
-                            <div>
-                                <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
-                                    <span>SERVICES & TECHNOLOGY</span><strong style="color:#00e5ff;">68.4%</strong>
-                                </div>
-                                <div style="width:100%; height:8px; background:rgba(255,255,255,0.1); border-radius:4px; overflow:hidden;">
-                                    <div style="width:68.4%; height:100%; background:#00e5ff;"></div>
-                                </div>
-                            </div>
-                            <div>
-                                <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
-                                    <span>INDUSTRY & MANUFACTURING</span><strong style="color:#ffd700;">23.2%</strong>
-                                </div>
-                                <div style="width:100%; height:8px; background:rgba(255,255,255,0.1); border-radius:4px; overflow:hidden;">
-                                    <div style="width:23.2%; height:100%; background:#ffd700;"></div>
-                                </div>
-                            </div>
-                            <div>
-                                <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
-                                    <span>AGRICULTURE & RAW MATERIALS</span><strong style="color:#22c55e;">8.4%</strong>
-                                </div>
-                                <div style="width:100%; height:8px; background:rgba(255,255,255,0.1); border-radius:4px; overflow:hidden;">
-                                    <div style="width:8.4%; height:100%; background:#22c55e;"></div>
-                                </div>
-                            </div>
-                        </div>
+                        ${sectorRowsHtml}
                     </div>
                 </div>
 
@@ -1141,7 +1159,35 @@ window.CountryIOS = {
     // CHAPTER 10: SOCIETY
     // -------------------------------------------------------------------------
     renderChapter10_Society(countryKey, pop) {
-        return `
+        const ageSource = pop && (pop.ageGroups || pop.age_groups || pop.ageDistribution || pop.age_distribution ||
+            pop.ageBreakdown || pop.age_breakdown || pop.demographics && (pop.demographics.ageGroups || pop.demographics.ageDistribution)) || null;
+        const num = value => {
+            if (typeof value === 'number' && Number.isFinite(value)) return value;
+            if (typeof value === 'string' && value.trim() !== '' && /^-?\d+(?:\.\d+)?$/.test(value.trim())) {
+                const parsed = Number(value);
+                return Number.isFinite(parsed) ? parsed : null;
+            }
+            return null;
+        };
+        const ageRowsRaw = Array.isArray(ageSource)
+            ? ageSource.map((row,index)=>({label:row && (row.label || row.name || row.ageGroup || row.id) || 'Group '+(index+1),row}))
+            : ageSource && typeof ageSource === 'object' ? Object.entries(ageSource).map(([label,row])=>({label,row})) : [];
+        const ageRows = ageRowsRaw.map(item=>{
+            const row=item.row && typeof item.row === 'object' ? item.row : {value:item.row};
+            const explicit = num(row.percentage ?? row.percent ?? row.sharePercent ?? row.populationPercent);
+            const fractional = num(row.share ?? row.fraction);
+            const value = num(row.population ?? row.count ?? row.people ?? row.total ?? row.value ?? row.amount);
+            return {label:String(item.label),percent:explicit!==null?explicit:(fractional!==null&&fractional>=0&&fractional<=1?fractional*100:null),value};
+        }).filter(row=>row.percent!==null||row.value!==null);
+        const total = ageRows.reduce((sum,row)=>sum+(row.value!==null&&row.value>0?row.value:0),0);
+        const finalAgeRows = ageRows.map(row=>({...row,percent:row.percent!==null?row.percent:(total>0&&row.value!==null?row.value/total*100:null)}))
+            .filter(row=>row.percent!==null&&Number.isFinite(row.percent)&&row.percent>=0)
+            .map(row=>({...row,percent:Math.min(100,row.percent)}));
+        const ageChartHtml = finalAgeRows.length
+            ? '<div style="display:flex;justify-content:space-around;align-items:flex-end;gap:9px;min-height:90px;margin-top:10px;">'+
+                finalAgeRows.map(row=>'<div style="text-align:center;min-width:0;flex:1;"><div title="'+String(row.percent.toFixed(1))+'%" style="background:#38bdf8;width:22px;height:'+Math.max(2,row.percent/100*62).toFixed(1)+'px;margin:0 auto 5px;border-radius:4px 4px 0 0;"></div><span style="font-size:10px;overflow-wrap:anywhere;">'+String(row.label).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+' ('+row.percent.toFixed(1)+'%)</span></div>').join('')+'</div>'
+            : '<p style="padding:10px 0;color:#94a3b8;font-size:12px;line-height:1.5;">No age-group population records are available for this country. This chart is hidden rather than filled with sample demographics.</p>';
+        return \`
             <div style="display:flex; flex-direction:column; gap:20px;">
                 <div class="ios-grid-4">
                     <div class="ios-card">
@@ -1168,11 +1214,7 @@ window.CountryIOS = {
 
                 <div class="ios-card">
                     <div class="ios-card-title">NATIONAL POPULATION AGE DEMOGRAPHICS</div>
-                    <div style="display:flex; justify-content:space-around; align-items:flex-end; height:80px; margin-top:10px;">
-                        <div style="text-align:center;"><div style="background:#00e5ff; width:30px; height:40px; margin:0 auto; border-radius:4px 4px 0 0;"></div><span style="font-size:10px;">0-18 Yrs (18%)</span></div>
-                        <div style="text-align:center;"><div style="background:#22c55e; width:30px; height:70px; margin:0 auto; border-radius:4px 4px 0 0;"></div><span style="font-size:10px;">19-64 Yrs (62%)</span></div>
-                        <div style="text-align:center;"><div style="background:#ffd700; width:30px; height:50px; margin:0 auto; border-radius:4px 4px 0 0;"></div><span style="font-size:10px;">65+ Yrs (20%)</span></div>
-                    </div>
+                    ${ageChartHtml}
                 </div>
             </div>
         `;
