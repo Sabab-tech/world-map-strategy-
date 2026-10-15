@@ -1,0 +1,84 @@
+{
+  "schemaVersion": "OMEGA_RESOURCE_STRATEGIC_POLICY_RULES_V1",
+  "version": "1.0.0",
+  "authority": "JSON_RULESET",
+  "policy": {
+    "maxActivePoliciesPerCountry": 512,
+    "maxPolicyHistory": 2048,
+    "maxEnvironmentalLedgerRows": 2048,
+    "maxExplorationProjectsPerCountry": 256,
+    "defaultEmbargoDirection": "BOTH",
+    "embargoDirections": [
+      "EXPORT",
+      "IMPORT",
+      "BOTH"
+    ],
+    "policyStatuses": [
+      "ACTIVE",
+      "LIFTED",
+      "EXPIRED"
+    ],
+    "wildcardCountry": "*",
+    "wildcardResource": "*"
+  },
+  "environmental": {
+    "enabled": true,
+    "quantityScaleByUnit": {
+      "TONNE": 10000,
+      "TONNES": 10000,
+      "METRIC_TONNE": 10000,
+      "METRIC_TONNES": 10000,
+      "BBL": 20000,
+      "BBLS": 20000,
+      "BARREL": 20000,
+      "BARRELS": 20000,
+      "BCM": 100,
+      "MCM": 1000,
+      "BCF": 100,
+      "TCF": 1,
+      "TROY_OUNCE": 1000000,
+      "TROY_OUNCES": 1000000,
+      "OZT": 1000000,
+      "CARAT": 10000000,
+      "CARATS": 10000000,
+      "KG": 10000,
+      "KILOGRAM": 10000,
+      "KILOGRAMS": 10000,
+      "DEFAULT": 10000
+    },
+    "batchImpact": {
+      "land": 0.65,
+      "water": 0.45,
+      "emissions": 0.35,
+      "processingWaste": 0.2
+    },
+    "maximumBatchIntensity": 2.5,
+    "defaultEnvironmentalRisk": 50,
+    "defaultWaterStress": 50,
+    "riskInfluence": 0.6,
+    "waterStressInfluence": 0.6,
+    "maximumSiteIndex": 100,
+    "productionPenaltyThreshold": 18,
+    "productionPenaltyPerIndex": 0.003,
+    "maximumProductionPenalty": 0.35,
+    "minimumExtractionMultiplier": 0.65,
+    "recoveryPerTurn": 0.015,
+    "remediationCostPerIndex": 1250,
+    "remediationMaximumPerAction": 25,
+    "remediationMinimumAmount": 1
+  },
+  "exploration": {
+    "enabled": true,
+    "surveyTurns": 3,
+    "minimumSurveyTurns": 1,
+    "maximumSurveyTurns": 24,
+    "maximumSurveyProjects": 256,
+    "status": {
+      "surveying": "IN_PROGRESS",
+      "discovered": "DISCOVERED_PENDING_INVESTMENT",
+      "commissioned": "COMMISSIONED"
+    },
+    "investmentCostPerProject": 250000,
+    "requireExplicitInvestmentForCommission": true
+  }
+}
