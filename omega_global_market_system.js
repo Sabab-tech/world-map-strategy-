@@ -106,7 +106,11 @@
   }
   function clearResource(rid,orders,history=[]){
     const bids=[...orders.bids].sort((a,b)=>b.priceUsd-a.priceUsd||a.countryId.localeCompare(b.countryId)||String(a.requestId||'').localeCompare(String(b.requestId||'')));
-    const asks=[...orders.asks].sort((a,b)=>a.priceUsd-b.priceUsd||a.countryId.localeCompare(b.countryId)||String(a.offerId||'').localeCompare(String(b.offerId||'')));
+    const allAsks=[...orders.asks].sort((a,b)=>a.priceUsd-b.priceUsd||a.countryId.localeCompare(b.countryId)||String(a.offerId||'').localeCompare(String(b.offerId||'')));
+    // Reference-only liquidity is indicative context, not a real seller. It must never
+    // cross a bid or create a transaction-derived market price.
+    const asks=allAsks.filter(x=>x.referenceOnly!==true);
+    const referenceAsks=allAsks.filter(x=>x.referenceOnly===true);
     let bi=0,ai=0,matched=0,lastBid=null,lastAsk=null,matches=[];
     const bidRemain=bids.map(x=>({...x,remaining:x.quantity}));
     const askRemain=asks.map(x=>({...x,remaining:x.quantity}));
@@ -116,14 +120,14 @@
       if(bid.countryId===ask.countryId){ai+=1;continue;}
       const q=Math.min(bid.remaining,ask.remaining);if(!(q>0))break;
       matched+=q;lastBid=bid;lastAsk=ask;
-      matches.push({buyerCountryId:bid.countryId,sellerCountryId:ask.countryId,quantity:q,bidPriceUsd:bid.priceUsd,askPriceUsd:ask.priceUsd,bidPrice:bid.price,askPrice:ask.price,referenceLiquidity:!!ask.referenceOnly});
+      matches.push({buyerCountryId:bid.countryId,sellerCountryId:ask.countryId,quantity:q,bidPriceUsd:bid.priceUsd,askPriceUsd:ask.priceUsd,referenceLiquidity:false,offerId:ask.offerId||null,requestId:bid.requestId||null});
       bid.remaining-=q;ask.remaining-=q;
       if(bid.remaining<=0)bi+=1;if(ask.remaining<=0)ai+=1;
     }
     const ref=referencePrice(rid);
     const clearing=matched>0?Number(((lastBid.priceUsd+lastAsk.priceUsd)/2).toFixed(8)):null;
     const bestBid=bids[0]?.priceUsd??null,bestAsk=asks[0]?.priceUsd??null;
-    const status=clearing!==null?'CLEARED':(bestBid!==null||bestAsk!==null?'NO_CROSS':'NO_ORDERS');
+    const status=clearing!==null?'CLEARED':(bestBid!==null&&bestAsk!==null?'NO_CROSS':(bestBid!==null||bestAsk!==null?'ONE_SIDED_BOOK':(referenceAsks.length||ref?'REFERENCE_ONLY':'NO_ORDERS')));
     const matchedNotional=matches.reduce((s,x)=>s+(x.quantity||0)*((x.bidPriceUsd+x.askPriceUsd)/2),0);
     const vwap=matched>0?Number((matchedNotional/matched).toFixed(8)):null;
     const spread=bestBid!==null&&bestAsk!==null?Number((bestAsk-bestBid).toFixed(8)):null;
@@ -132,12 +136,14 @@
     const mean=priceSamples.length?priceSamples.reduce((s,x)=>s+x,0)/priceSamples.length:null;
     const variance=priceSamples.length>1?priceSamples.reduce((s,x)=>s+Math.pow(x-mean,2),0)/priceSamples.length:null;
     const volatilityUsd=variance!==null?Number(Math.sqrt(variance).toFixed(8)):null;
+    const priceDiscovery=clearing!==null?'ORDER_BOOK_CROSSING':(bestBid!==null&&bestAsk!==null?'NEGOTIATION_RANGE':((referenceAsks.length||ref)?'REFERENCE_ONLY':(bestBid!==null||bestAsk!==null?'ONE_SIDED_BOOK':'UNAVAILABLE')));
     return{resourceId:rid,status,numeraire:'USD',clearingPriceUsd:clearing,bestBidUsd:bestBid,bestAskUsd:bestAsk,matchedQuantity:matched,
       bidDepth:bids.reduce((s,x)=>s+(n(x.quantity)||0),0),askDepth:asks.reduce((s,x)=>s+(n(x.quantity)||0),0),
-      priceDiscovery:clearing!==null?'ORDER_BOOK_CROSSING':(bestBid!==null&&bestAsk!==null?'NEGOTIATION_RANGE':ref?'REFERENCE_ONLY':'UNAVAILABLE'),
-      referencePrice:ref?.price??null,referenceUnit:ref?.unit??null,referenceSource:ref?.source??null,matches,vwapUsd:vwap,spreadUsd:spread,volatilityUsd,
-      microstructure:{bidCount:bids.length,askCount:asks.length,referenceAskCount:asks.filter(x=>x.referenceOnly).length},
-      generatedTurn:turn(),orderBookDepth:{bid:bids.length,ask:asks.length}};
+      referenceAskDepth:referenceAsks.reduce((s,x)=>s+(n(x.quantity)||0),0),
+      priceDiscovery,referencePrice:ref?.price??null,referenceUnit:ref?.unit??null,referenceSource:ref?.source??null,
+      matches,vwapUsd:vwap,spreadUsd:spread,volatilityUsd,
+      microstructure:{bidCount:bids.length,askCount:asks.length,referenceAskCount:referenceAsks.length},
+      generatedTurn:turn(),orderBookDepth:{bid:bids.length,ask:asks.length,referenceAsk:referenceAsks.length}};
   }
   function rebuild(){
     const markets={};
@@ -160,8 +166,10 @@
   }
   function localPrice(countryId,rid){
     const q=quote(rid),c=canonical(countryId);
-    const usd=q.clearingPriceUsd??q.referencePrice;
-    if(usd===null||usd===undefined)return null;
+    // Only a real order-book crossing is a market-cleared price. Reference values
+    // remain available through quote().referencePrice and are never promoted silently.
+    const usd=q.status==='CLEARED'?n(q.clearingPriceUsd):null;
+    if(usd===null)return null;
     const rate=usdRate(c);if(rate===null)return null;
     return currency(c)==='USD'?usd:usd*rate;
   }
