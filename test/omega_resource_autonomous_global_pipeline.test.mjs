@@ -396,10 +396,11 @@ test('all expanded deposits receive explicit flow status; active sites dispatch 
       const allocations=Array.isArray(offer.batchAllocations)?offer.batchAllocations:[];
       const transfers=allocations.map(allocation=>{
         const roots=[...new Set([allocation.originatingBatchId,...(allocation.sourceBatchIds||[])].map(String).filter(Boolean))];
+        const quantity=Math.max(0,Number(allocation.quantity)||0),unitPrice=Math.max(0,Number(offer.price)||0);
         return{sourceBatchId:allocation.originatingBatchId||allocation.batchId||null,sourceBatchIds:roots,
           siteId:allocation.siteId||null,siteReferenceKey:allocation.siteReferenceKey||allocation.siteId||null,
           occurrenceKey:allocation.occurrenceKey||null,resourceId:offer.resourceId,
-          quantity:Math.max(0,Number(allocation.quantity)||0)};
+          quantity,unitPrice,totalValue:quantity*unitPrice};
       }).filter(transfer=>transfer.sourceBatchId||transfer.sourceBatchIds.length);
       const sourceBatchIds=[...new Set(transfers.flatMap(transfer=>[transfer.sourceBatchId,...transfer.sourceBatchIds].filter(Boolean).map(String)))];
       if(!sourceBatchIds.some(id=>expectedRawBatchIds.has(id)))continue;
