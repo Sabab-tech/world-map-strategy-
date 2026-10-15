@@ -1483,8 +1483,78 @@ window.CountryIOS = {
     },
 
     executeAction(actionType) {
-        const countryName = this.activeCountry.replace(/_/g, " ");
-        window.showOmegaNotification("EXECUTIVE DIRECTIVE", `Directive ${actionType.toUpperCase()} dispatched for ${countryName}`, "info");
+        const notify = (title, message, type) => {
+            if (typeof window.showOmegaNotification === 'function') window.showOmegaNotification(title, message, type);
+        };
+        const treatyTypes = {
+            'non-aggression':'NON_AGGRESSION_PACT',
+            'defensive-alliance':'DEFENSIVE_ALLIANCE',
+            'alliance':'DEFENSIVE_ALLIANCE',
+            'peace-treaty':'PEACE_TREATY',
+            'peace-negotiation':'PEACE_NEGOTIATION',
+            'trade-agreement':'TRADE_AGREEMENT',
+            'trade-proposal':'TRADE_AGREEMENT',
+            'research-pact':'RESEARCH_PACT',
+            'research-contract':'RESEARCH_COOPERATION',
+            'negotiate-terms':'BILATERAL_AGREEMENT',
+            'summit':'BILATERAL_COOPERATION',
+            'send-delegation':'BILATERAL_COOPERATION',
+            'joint-rd':'RESEARCH_COOPERATION',
+            'tech-transfer':'TECHNOLOGY_COOPERATION'
+        };
+        const treatyType = treatyTypes[String(actionType || '').toLowerCase()];
+        if (!treatyType) {
+            notify('ACTION NOT EXECUTED', String(actionType || 'Unknown action').toUpperCase() +
+                ': no authoritative handler is registered for this action. Game state was not changed.', 'error');
+            return { status:'UNHANDLED', stateChanged:false, reason:'AUTHORITATIVE_ACTION_HANDLER_NOT_REGISTERED' };
+        }
+
+        const state = window.Game && window.Game.state || window.gameState || {};
+        const player = state.player || {};
+        const rawPlayer = state.playerCountryId || state.playerCountryCode || state.sovereignCountryId ||
+            player.countryId || player.countryCode || window.playerCountry || window.OMEGA_PLAYER_COUNTRY_ID ||
+            window.Game && (window.Game.playerCountryId || window.Game.playerCountryCode) || null;
+        const observer = window.OmegaLiveOpsObservability;
+        const resolver = observer && typeof observer.resolveCountryId === 'function'
+            ? value => observer.resolveCountryId(value) : value => String(value || '').trim().toUpperCase();
+        const playerId = rawPlayer ? resolver(rawPlayer) : null;
+        const targetId = resolver(this.activeCountry);
+        const normalise = value => String(value || '').trim().toUpperCase().replace(/[\s_-]+/g, '');
+        if (!playerId || !targetId) {
+            notify('ACTION NOT EXECUTED', 'Player country or target country identity is not available. No game state was changed.', 'error');
+            return { status:'UNAVAILABLE', stateChanged:false, reason:'COUNTRY_IDENTITY_NOT_AVAILABLE' };
+        }
+        if (normalise(playerId) === normalise(targetId) || normalise(rawPlayer) === normalise(this.activeCountry)) {
+            notify('ACTION NOT EXECUTED', 'Select another country as the negotiation counterpart. A country cannot negotiate this agreement with itself.', 'error');
+            return { status:'REJECTED', stateChanged:false, reason:'SELF_NEGOTIATION_NOT_ALLOWED' };
+        }
+        const autonomy = window.OmegaOpponentAutonomy || window.Omega && window.Omega.OpponentAutonomy;
+        if (!autonomy || typeof autonomy.startTreatyNegotiation !== 'function') {
+            notify('ACTION NOT EXECUTED', 'The authoritative treaty-negotiation engine is not available. No game state was changed.', 'error');
+            return { status:'UNAVAILABLE', stateChanged:false, reason:'TREATY_ENGINE_UNAVAILABLE' };
+        }
+        let result;
+        try {
+            result = autonomy.startTreatyNegotiation(playerId, targetId, {
+                treatyType,
+                terms:{ requestedAction:String(actionType), source:'COUNTRY_INTELLIGENCE_UI' },
+                correlationId:'COUNTRY-IOS-'+String(Date.now())
+            });
+        } catch (error) {
+            result = { status:'FAILED', reason:String(error && error.message || error) };
+        }
+        const applied = result && result.status === 'APPLIED' && result.stateChanged === true &&
+            !(result.result && result.result.accepted === false);
+        if (applied) {
+            notify('NEGOTIATION REQUEST RECORDED', treatyType.replace(/_/g,' ') + ' with ' +
+                String(this.activeCountry).replace(/_/g,' ') + ' has been recorded. Counterparty decision remains pending.', 'success');
+            return result;
+        }
+        notify('NEGOTIATION NOT APPLIED', 'No agreement was signed. Engine status: ' +
+            String(result && (result.status || result.reason) || 'NOT_RECORDED') +
+            (result && result.result && result.result.reason ? ' · ' + result.result.reason : '') +
+            '. No successful outcome is claimed.', 'error');
+        return result || { status:'FAILED', stateChanged:false };
     },
 
     // AI STRATEGIC ADVISOR RECOMMENDATIONS ENGINE
@@ -2494,8 +2564,78 @@ window.addEventListener('RESOURCE_STATE_UPDATED', () => {
     },
 
     executeAction(actionType) {
-        const countryName = this.activeCountry.replace(/_/g, " ");
-        window.showOmegaNotification("EXECUTIVE DIRECTIVE", `Directive ${actionType.toUpperCase()} dispatched for ${countryName}`, "info");
+        const notify = (title, message, type) => {
+            if (typeof window.showOmegaNotification === 'function') window.showOmegaNotification(title, message, type);
+        };
+        const treatyTypes = {
+            'non-aggression':'NON_AGGRESSION_PACT',
+            'defensive-alliance':'DEFENSIVE_ALLIANCE',
+            'alliance':'DEFENSIVE_ALLIANCE',
+            'peace-treaty':'PEACE_TREATY',
+            'peace-negotiation':'PEACE_NEGOTIATION',
+            'trade-agreement':'TRADE_AGREEMENT',
+            'trade-proposal':'TRADE_AGREEMENT',
+            'research-pact':'RESEARCH_PACT',
+            'research-contract':'RESEARCH_COOPERATION',
+            'negotiate-terms':'BILATERAL_AGREEMENT',
+            'summit':'BILATERAL_COOPERATION',
+            'send-delegation':'BILATERAL_COOPERATION',
+            'joint-rd':'RESEARCH_COOPERATION',
+            'tech-transfer':'TECHNOLOGY_COOPERATION'
+        };
+        const treatyType = treatyTypes[String(actionType || '').toLowerCase()];
+        if (!treatyType) {
+            notify('ACTION NOT EXECUTED', String(actionType || 'Unknown action').toUpperCase() +
+                ': no authoritative handler is registered for this action. Game state was not changed.', 'error');
+            return { status:'UNHANDLED', stateChanged:false, reason:'AUTHORITATIVE_ACTION_HANDLER_NOT_REGISTERED' };
+        }
+
+        const state = window.Game && window.Game.state || window.gameState || {};
+        const player = state.player || {};
+        const rawPlayer = state.playerCountryId || state.playerCountryCode || state.sovereignCountryId ||
+            player.countryId || player.countryCode || window.playerCountry || window.OMEGA_PLAYER_COUNTRY_ID ||
+            window.Game && (window.Game.playerCountryId || window.Game.playerCountryCode) || null;
+        const observer = window.OmegaLiveOpsObservability;
+        const resolver = observer && typeof observer.resolveCountryId === 'function'
+            ? value => observer.resolveCountryId(value) : value => String(value || '').trim().toUpperCase();
+        const playerId = rawPlayer ? resolver(rawPlayer) : null;
+        const targetId = resolver(this.activeCountry);
+        const normalise = value => String(value || '').trim().toUpperCase().replace(/[\s_-]+/g, '');
+        if (!playerId || !targetId) {
+            notify('ACTION NOT EXECUTED', 'Player country or target country identity is not available. No game state was changed.', 'error');
+            return { status:'UNAVAILABLE', stateChanged:false, reason:'COUNTRY_IDENTITY_NOT_AVAILABLE' };
+        }
+        if (normalise(playerId) === normalise(targetId) || normalise(rawPlayer) === normalise(this.activeCountry)) {
+            notify('ACTION NOT EXECUTED', 'Select another country as the negotiation counterpart. A country cannot negotiate this agreement with itself.', 'error');
+            return { status:'REJECTED', stateChanged:false, reason:'SELF_NEGOTIATION_NOT_ALLOWED' };
+        }
+        const autonomy = window.OmegaOpponentAutonomy || window.Omega && window.Omega.OpponentAutonomy;
+        if (!autonomy || typeof autonomy.startTreatyNegotiation !== 'function') {
+            notify('ACTION NOT EXECUTED', 'The authoritative treaty-negotiation engine is not available. No game state was changed.', 'error');
+            return { status:'UNAVAILABLE', stateChanged:false, reason:'TREATY_ENGINE_UNAVAILABLE' };
+        }
+        let result;
+        try {
+            result = autonomy.startTreatyNegotiation(playerId, targetId, {
+                treatyType,
+                terms:{ requestedAction:String(actionType), source:'COUNTRY_INTELLIGENCE_UI' },
+                correlationId:'COUNTRY-IOS-'+String(Date.now())
+            });
+        } catch (error) {
+            result = { status:'FAILED', reason:String(error && error.message || error) };
+        }
+        const applied = result && result.status === 'APPLIED' && result.stateChanged === true &&
+            !(result.result && result.result.accepted === false);
+        if (applied) {
+            notify('NEGOTIATION REQUEST RECORDED', treatyType.replace(/_/g,' ') + ' with ' +
+                String(this.activeCountry).replace(/_/g,' ') + ' has been recorded. Counterparty decision remains pending.', 'success');
+            return result;
+        }
+        notify('NEGOTIATION NOT APPLIED', 'No agreement was signed. Engine status: ' +
+            String(result && (result.status || result.reason) || 'NOT_RECORDED') +
+            (result && result.result && result.result.reason ? ' · ' + result.result.reason : '') +
+            '. No successful outcome is claimed.', 'error');
+        return result || { status:'FAILED', stateChanged:false };
     },
 
     // AI STRATEGIC ADVISOR RECOMMENDATIONS ENGINE
