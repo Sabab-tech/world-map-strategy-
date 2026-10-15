@@ -136,7 +136,8 @@ const CANONICAL_AI_SCRIPTS = Object.freeze([
   'omega_global_market_system.js',
   'omega_global_trade_system.js',
   'omega_opponent_treaty_lifecycle_system.js',
-  'omega_opponent_second_order_consequence_system.js'
+  'omega_opponent_second_order_consequence_system.js',
+  'omega_resource_strategic_economy_runtime_v1.js'
 ]);
 
 const escapeRegExp = value => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
