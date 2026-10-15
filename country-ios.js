@@ -499,9 +499,7 @@ window.CountryIOS = {
                             <circle cx="50" cy="50" r="15" fill="none" stroke="rgba(0,229,255,0.2)" stroke-width="1"/>
                             <line x1="50" y1="5" x2="50" y2="95" stroke="rgba(0,229,255,0.3)" stroke-width="1"/>
                             <line x1="5" y1="50" x2="95" y2="50" stroke="rgba(0,229,255,0.3)" stroke-width="1"/>
-                            <circle cx="35" cy="25" r="3" fill="#22c55e"/>
-                            <circle cx="70" cy="65" r="3" fill="#ffd700"/>
-                            <circle cx="20" cy="70" r="3" fill="#00e5ff"/>
+                            <text x="50" y="54" text-anchor="middle" fill="#94a3b8" font-size="7">NO BASE DATA</text>
                         </svg>
                     </div>
                 </div>
@@ -767,7 +765,7 @@ window.CountryIOS = {
                         </div>
                         <div class="ios-card" style="padding:8px 10px;">
                             <div class="ios-card-title">VERIFICATION STATUS</div>
-                            <div class="ios-card-val" style="font-size:12px; color:#a855f7;">${prov.dataConfidence || '100% Verified'}</div>
+                            <div class="ios-card-val" style="font-size:12px; color:#a855f7;">${prov.dataConfidence || 'CONFIDENCE NOT RECORDED'}</div>
                             <div class="ios-card-sub">Verified: ${prov.lastVerified || 'Current'}</div>
                         </div>
                     </div>
@@ -1504,16 +1502,16 @@ window.CountryIOS = {
         chTag.innerText = chNames[chNum - 1] || "01 OVERVIEW";
 
         const adviceMap = {
-            1: `<strong>OVERVIEW ADVICE:</strong> ${countryName} exhibits a stable strategic equilibrium. Priority recommendation is to fortify diplomatic alliances while maintaining defense readiness.`,
-            2: `<strong>GOVERNMENT ADVICE:</strong> High administrative efficiency detected. Recommend negotiating bilateral governance agreements or applying diplomatic leverage.`,
-            3: `<strong>MILITARY ADVICE:</strong> Defense forces are at peak readiness (94%). Maintain joint military exercises to optimize joint interception capabilities.`,
-            4: `<strong>ECONOMY ADVICE:</strong> GDP growth is positive (+2.4%). Establishing a new trade agreement will boost treasury revenue by +$15M/s.`,
-            5: `<strong>RESOURCE ADVICE:</strong> Energy and rare earth reserves are abundant. Propose a long-term resource import deal to secure strategic supply chains.`,
-            6: `<strong>DIPLOMACY ADVICE:</strong> Strategic relations are receptive. Convening a bilateral summit will enhance overall alliance index by +15 points.`,
-            7: `<strong>INTELLIGENCE ADVICE:</strong> Counter-intelligence shield is active. Deploy covert intelligence monitoring to detect foreign infiltrations early.`,
-            8: `<strong>INFRASTRUCTURE ADVICE:</strong> High-speed logistics grid is operating at 92%. Modernizing seaport nodes will further accelerate trade throughput.`,
-            9: `<strong>TECHNOLOGY ADVICE:</strong> Quantum compute R&D is advanced. Initiating a Joint R&D Venture will accelerate research progress by +25%.`,
-            10: `<strong>SOCIETY ADVICE:</strong> Public morale and happiness are high (78.4). Excellent social stability ensures low civil unrest risk.`,
+            1: `<strong>OVERVIEW ADVICE:</strong> ${countryName}. Recorded GDP: ${this.formatCountryValue(countryKey, ['economy'], ['gdp','GDP','nominalGDP'])}. Recorded treasury: ${this.formatCountryValue(countryKey, ['finance'], ['available','reserves','treasury','balance'])}. Review live operations for unrecorded indicators before issuing directives.`,
+            2: `<strong>GOVERNMENT ADVICE:</strong> Administrative efficiency recorded: ${this.formatCountryValue(countryKey, ['government','politics'], ['administrativeEfficiencyPercent','administrativeEfficiency','efficiencyPercent'], '%')}. Review governance records before choosing a policy action.`,
+            3: `<strong>MILITARY ADVICE:</strong> Recorded readiness: ${this.formatCountryValue(countryKey, ['military','defense'], ['readiness','overallReadinessPercent','combatReadiness'], '%')}. Review manpower, equipment and supply status before training or deployment.`,
+            4: `<strong>ECONOMY ADVICE:</strong> Recorded GDP: ${this.formatCountryValue(countryKey, ['economy'], ['gdp','GDP','nominalGDP'])}; treasury: ${this.formatCountryValue(countryKey, ['finance'], ['available','reserves','treasury','balance'])}. A trade agreement has no guaranteed revenue effect; verify terms and settlement records.`,
+            5: `<strong>RESOURCE ADVICE:</strong> Inspect Mine & Stock / Pipeline for recorded production, inventory, route constraints and factory-input receipts. Reserve sufficiency is not assumed when records are missing.`,
+            6: `<strong>DIPLOMACY ADVICE:</strong> Review recorded relationship score and contact history before initiating negotiations. An improvement is not guaranteed until an engine result records it.`,
+            7: `<strong>INTELLIGENCE ADVICE:</strong> Recorded threat level: ${this.formatCountryValue(countryKey, ['intelligence'], ['threatAssessment.level','threatLevel','currentThreatLevel'])}; information reliability: ${this.formatCountryValue(countryKey, ['intelligence'], ['informationReliabilityPercent','reliabilityScore','informationReliability'], '%')}. Missing intelligence is not treated as a confirmed low threat.`,
+            8: `<strong>INFRASTRUCTURE ADVICE:</strong> Recorded logistics efficiency: ${this.formatCountryValue(countryKey, ['transport','infrastructure'], ['logisticsEfficiencyPercent','operatingEfficiencyPercent','logistics.efficiencyPercent'], '%')}. Inspect route capacity and blocked-delivery records before expanding logistics.`,
+            9: `<strong>TECHNOLOGY ADVICE:</strong> Recorded AI/technology tier: ${this.formatCountryValue(countryKey, ['technology','research'], ['aiMaturityTier','aiTechnologyTier','technologyTier'])}. Research progress must come from the country's research records.`,
+            10: `<strong>SOCIETY ADVICE:</strong> Recorded happiness/public morale: ${this.formatCountryValue(countryKey, ['society','population','politics'], ['happinessIndex','lifeSatisfactionIndex','publicMorale','approvalRating'])}. Civil-unrest risk requires an explicit recorded risk field.`,
             11: `<strong>OPERATIONS ADVICE:</strong> Optimal executive action: Propose Trade Accord or Establish Embassy to solidify strategic dominance.`,
             12: `<strong>WORLD ECOSYSTEM ADVICE:</strong> Execute a targeted Causal Cascade or inspect structural Node Dependencies to analyze multi-tier systemic feedback loops.`
         };
@@ -1778,7 +1776,7 @@ window.addEventListener('RESOURCE_STATE_UPDATED', () => {
                         </div>
                         <div class="ios-card" style="padding:8px 10px;">
                             <div class="ios-card-title">VERIFICATION STATUS</div>
-                            <div class="ios-card-val" style="font-size:12px; color:#a855f7;">${prov.dataConfidence || '100% Verified'}</div>
+                            <div class="ios-card-val" style="font-size:12px; color:#a855f7;">${prov.dataConfidence || 'CONFIDENCE NOT RECORDED'}</div>
                             <div class="ios-card-sub">Verified: ${prov.lastVerified || 'Current'}</div>
                         </div>
                     </div>
@@ -2515,16 +2513,16 @@ window.addEventListener('RESOURCE_STATE_UPDATED', () => {
         chTag.innerText = chNames[chNum - 1] || "01 OVERVIEW";
 
         const adviceMap = {
-            1: `<strong>OVERVIEW ADVICE:</strong> ${countryName} exhibits a stable strategic equilibrium. Priority recommendation is to fortify diplomatic alliances while maintaining defense readiness.`,
-            2: `<strong>GOVERNMENT ADVICE:</strong> High administrative efficiency detected. Recommend negotiating bilateral governance agreements or applying diplomatic leverage.`,
-            3: `<strong>MILITARY ADVICE:</strong> Defense forces are at peak readiness (94%). Maintain joint military exercises to optimize joint interception capabilities.`,
-            4: `<strong>ECONOMY ADVICE:</strong> GDP growth is positive (+2.4%). Establishing a new trade agreement will boost treasury revenue by +$15M/s.`,
-            5: `<strong>RESOURCE ADVICE:</strong> Energy and rare earth reserves are abundant. Propose a long-term resource import deal to secure strategic supply chains.`,
-            6: `<strong>DIPLOMACY ADVICE:</strong> Strategic relations are receptive. Convening a bilateral summit will enhance overall alliance index by +15 points.`,
-            7: `<strong>INTELLIGENCE ADVICE:</strong> Counter-intelligence shield is active. Deploy covert intelligence monitoring to detect foreign infiltrations early.`,
-            8: `<strong>INFRASTRUCTURE ADVICE:</strong> High-speed logistics grid is operating at 92%. Modernizing seaport nodes will further accelerate trade throughput.`,
-            9: `<strong>TECHNOLOGY ADVICE:</strong> Quantum compute R&D is advanced. Initiating a Joint R&D Venture will accelerate research progress by +25%.`,
-            10: `<strong>SOCIETY ADVICE:</strong> Public morale and happiness are high (78.4). Excellent social stability ensures low civil unrest risk.`,
+            1: `<strong>OVERVIEW ADVICE:</strong> ${countryName}. Recorded GDP: ${this.formatCountryValue(countryKey, ['economy'], ['gdp','GDP','nominalGDP'])}. Recorded treasury: ${this.formatCountryValue(countryKey, ['finance'], ['available','reserves','treasury','balance'])}. Review live operations for unrecorded indicators before issuing directives.`,
+            2: `<strong>GOVERNMENT ADVICE:</strong> Administrative efficiency recorded: ${this.formatCountryValue(countryKey, ['government','politics'], ['administrativeEfficiencyPercent','administrativeEfficiency','efficiencyPercent'], '%')}. Review governance records before choosing a policy action.`,
+            3: `<strong>MILITARY ADVICE:</strong> Recorded readiness: ${this.formatCountryValue(countryKey, ['military','defense'], ['readiness','overallReadinessPercent','combatReadiness'], '%')}. Review manpower, equipment and supply status before training or deployment.`,
+            4: `<strong>ECONOMY ADVICE:</strong> Recorded GDP: ${this.formatCountryValue(countryKey, ['economy'], ['gdp','GDP','nominalGDP'])}; treasury: ${this.formatCountryValue(countryKey, ['finance'], ['available','reserves','treasury','balance'])}. A trade agreement has no guaranteed revenue effect; verify terms and settlement records.`,
+            5: `<strong>RESOURCE ADVICE:</strong> Inspect Mine & Stock / Pipeline for recorded production, inventory, route constraints and factory-input receipts. Reserve sufficiency is not assumed when records are missing.`,
+            6: `<strong>DIPLOMACY ADVICE:</strong> Review recorded relationship score and contact history before initiating negotiations. An improvement is not guaranteed until an engine result records it.`,
+            7: `<strong>INTELLIGENCE ADVICE:</strong> Recorded threat level: ${this.formatCountryValue(countryKey, ['intelligence'], ['threatAssessment.level','threatLevel','currentThreatLevel'])}; information reliability: ${this.formatCountryValue(countryKey, ['intelligence'], ['informationReliabilityPercent','reliabilityScore','informationReliability'], '%')}. Missing intelligence is not treated as a confirmed low threat.`,
+            8: `<strong>INFRASTRUCTURE ADVICE:</strong> Recorded logistics efficiency: ${this.formatCountryValue(countryKey, ['transport','infrastructure'], ['logisticsEfficiencyPercent','operatingEfficiencyPercent','logistics.efficiencyPercent'], '%')}. Inspect route capacity and blocked-delivery records before expanding logistics.`,
+            9: `<strong>TECHNOLOGY ADVICE:</strong> Recorded AI/technology tier: ${this.formatCountryValue(countryKey, ['technology','research'], ['aiMaturityTier','aiTechnologyTier','technologyTier'])}. Research progress must come from the country's research records.`,
+            10: `<strong>SOCIETY ADVICE:</strong> Recorded happiness/public morale: ${this.formatCountryValue(countryKey, ['society','population','politics'], ['happinessIndex','lifeSatisfactionIndex','publicMorale','approvalRating'])}. Civil-unrest risk requires an explicit recorded risk field.`,
             11: `<strong>OPERATIONS ADVICE:</strong> Optimal executive action: Propose Trade Accord or Establish Embassy to solidify strategic dominance.`,
             12: `<strong>WORLD ECOSYSTEM ADVICE:</strong> Execute a targeted Causal Cascade or inspect structural Node Dependencies to analyze multi-tier systemic feedback loops.`
         };
