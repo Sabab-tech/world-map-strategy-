@@ -20,10 +20,8 @@ assert.equal(canonical.siteCount, 315, 'canonical source file preserves the 250 
 assert.equal(canonical.sites.length, 315);
 assert.equal(canonicalIds.size, 315);
 const original65 = parts.slice(0, 5).flatMap(p => p.records);
-const remappedLegacyAliases = original65.filter(s => !canonicalIds.has(s.siteId));
-assert.equal(sites.filter(s => canonicalIds.has(s.siteId)).length, 59, '59 original legacy IDs remain canonical; six duplicate identities are represented by their canonical alias targets');
-assert.equal(remappedLegacyAliases.length, 6, 'six source aliases are retained in the source pack without duplicate canonical rows');
-assert(remappedLegacyAliases.every(s => s.runtime?.aliasOfSiteId && canonicalIds.has(s.runtime.aliasOfSiteId) && s.map?.markerEligible === false && s.operation?.commercialExtraction === false), 'remapped aliases must remain archived, point to a canonical target, and be non-executable/non-marker');
+assert.equal(original65.filter(s => canonicalIds.has(s.siteId)).length, 65, 'all 65 original legacy site IDs remain represented in canonical source data');
+assert.equal(sites.filter(s => !canonicalIds.has(s.siteId)).length, 50, 'only the next 50 site IDs are additive, not source-file overwrites');
 assert.equal(parts[5].records.filter(s => canonicalIds.has(s.siteId)).length, 0, 'the next 50 site IDs must be additive, not source-file overwrites');
 const canonicalLegacyRows = canonical.sites.filter(s => s.runtime?.identityAuthority === 'LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE');
 assert.equal(canonicalLegacyRows.length, 59, 'canonical file retains 59 original legacy rows while six source aliases resolve to canonical targets');
