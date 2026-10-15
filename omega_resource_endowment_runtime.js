@@ -1727,6 +1727,29 @@ function batchFromExtraction(x,record){
     return shared;
   }
   function onReady(){void initialize();}
+  // The static site catalog is not a live production ledger. Bootstrap the
+  // authoritative extraction runtime as soon as its canonical registry is ready.
+  // extractAll() is idempotent per simulation turn and publishes the normal
+  // extraction/batch/factory-input events consumed by logistics and economy.
+  function onSiteBindingReady(){
+    const binding=g.Omega?.IndividualResourceSiteBinding||g.OmegaIndividualResourceSiteBinding;
+    if(!binding||!Array.isArray(binding.sites)||binding.sites.length===0)return;
+    void initialize().then(async function(initialized){
+      if(initialized?.status!=='READY'){
+        g.__omegaResourceEndowmentLastBootstrap={status:'FAILED',turn:turn(),reason:initialized?.reason||'RESOURCE_RUNTIME_NOT_READY',detail:clone(initialized||null)};
+        return initialized;
+      }
+      const result=await extractAll();
+      g.__omegaResourceEndowmentLastBootstrap={
+        status:result?.status||'UNKNOWN',turn:turn(),siteCount:binding.sites.length,
+        countryCount:countries().length,reason:result?.reason||null
+      };
+      return result;
+    }).catch(function(error){
+      g.__omegaResourceEndowmentLastBootstrap={status:'FAILED',turn:turn(),reason:String(error?.message||error)};
+      g.OmegaResourceEndowmentRuntimeError=String(error?.message||error);
+    });
+  }
   function onTurn(){void extractAll();}
   function diagnostics(){
     const r=g.__OmegaResourceReserveRegistry, e=engine(), mines=[];
