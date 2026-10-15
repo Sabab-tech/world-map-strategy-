@@ -262,6 +262,20 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
     const controllerKeys=new Set(Object.keys(row?.mineSiteControllers||{}));
     return sum+Object.keys(row?.minePaths||{}).filter(key=>!controllerKeys.has(key)).length;
   },0);
+  const expectedOccurrencePathsByCountry=new Map();
+  const addExpectedOccurrencePath=(countryId,key)=>{
+    const cid=String(countryId||'').toUpperCase(),occurrenceKey=String(key||'').trim();
+    if(!cid||!occurrenceKey)return;
+    if(!expectedOccurrencePathsByCountry.has(cid))expectedOccurrencePathsByCountry.set(cid,new Set());
+    expectedOccurrencePathsByCountry.get(cid).add(occurrenceKey);
+  };
+  for(const key of allCanonicalKeys)addExpectedOccurrencePath(String(key).split(':')[1]||null,key);
+  for(const [countryId,row] of Object.entries(state.resource)){
+    for(const controller of Object.values(row?.mineSiteControllers||{})){
+      for(const key of controller?.linkedOccurrenceKeys||[])addExpectedOccurrencePath(countryId,key);
+    }
+  }
+  const expectedOccurrencePathCount=[...expectedOccurrencePathsByCountry.values()].reduce((sum,keys)=>sum+keys.size,0);
   const lotCount=Object.values(state.resource).reduce((sum,row)=>sum+(row?.inventoryLots&&typeof row.inventoryLots==='object'?Object.keys(row.inventoryLots).length:0),0);
   assert.ok(mineCount>=engine.deposits.length,'projected mine rows must include canonical deposits and may include separate profile-derived site models');
   assert.equal(batchCount,extractedRecords.length);
@@ -269,10 +283,29 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
   assert.ok(projectedMines.every(x=>x.resourceAsset&&x.resourceAsset.schemaVersion==='1.0.0'));
   assert.ok(projectedMines.every(x=>Object.keys(x.resourceAsset).sort().join('|')===unifiedSiteKeys.join('|')));
   assert.equal(sitePathCount,mineSiteReferenceCount);
-  assert.equal(occurrencePathCount,allCanonicalKeys.size,
-    'every canonical occurrence must have its own path, including a blocked occurrence that produced no batch');
-  assert.equal(pathCount,mineSiteReferenceCount+allCanonicalKeys.size,
-    'path ledger must contain one controller path per site plus one occurrence path per canonical occurrence');
+  assert.equal(occurrencePathCount,expectedOccurrencePathCount,
+    'every canonical deposit and every occurrence linked from a site controller must own an individual path');
+  assert.equal(pathCount,mineSiteReferenceCount+expectedOccurrencePathCount,
+    'path ledger must contain one site-controller path per site plus one path per distinct linked occurrence');
+  for(const [countryId,keys] of expectedOccurrencePathsByCountry){
+    const row=state.resource[countryId];
+    assert(row,countryId+': linked occurrence country state missing');
+    for(const key of keys){
+      const path=row.minePaths?.[key];
+      assert(path,countryId+': missing occurrence path '+key);
+      const output=row.mineOutputs?.[key];
+      assert(output,countryId+': occurrence has neither committed output nor a blocked record '+key);
+      if(Number(output.producedQuantity)>0){
+        assert(output.batchId,countryId+': positive occurrence output has no batch '+key);
+        assert((path.batchIds||[]).includes(output.batchId),countryId+': occurrence path is not linked to its output batch '+key);
+        assert(row.inventoryLots?.[output.batchId],countryId+': occurrence output lot missing '+key);
+      }else{
+        assert.ok(String(output.status||'').startsWith('BLOCKED')&&output.blockReason,
+          countryId+': zero-quantity occurrence must retain an explicit blocked reason '+key);
+        assert.equal(output.batchId,undefined,countryId+': blocked occurrence must not own a batch '+key);
+      }
+    }
+  }
   assert.equal(lotCount,extractedRecords.length);
 
   for(const [countryId,row] of Object.entries(state.resource)){
