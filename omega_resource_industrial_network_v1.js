@@ -1127,6 +1127,12 @@ function executeFactoryCycle(input={}){
   const trackedForResource=inputLots.filter(x=>tok(x?.resourceId||x?.materialIdentity)===rid&&Math.max(0,num(x?.remainingQuantity!=null?x.remainingQuantity:x?.quantity)||0)>1e-9);
   const trackedQuantity=trackedForResource.reduce((sum,x)=>sum+Math.max(0,num(x.remainingQuantity!=null?x.remainingQuantity:x.quantity)||0),0);
   if(fromFactoryInput&&trackedForResource.length&&trackedQuantity+1e-9<need)return{status:'BLOCKED',reason:'FACTORY_INPUT_BATCH_LEDGER_MISMATCH',required:need,trackedInputQuantity:trackedQuantity,factoryInputInventory:factoryAvailable};
+  const carbonPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
+  const carbonUnit=trackedForResource.find(x=>x?.unit)?.unit||
+    (Array.isArray(r.batches)?r.batches.find(x=>tok(x?.resourceId||x?.materialIdentity)===rid&&x?.unit)?.unit:null)||
+    (Array.isArray(g.ResourceMinistryEngine?.resourceTypes)?g.ResourceMinistryEngine.resourceTypes.find(x=>tok(x?.id||x?.resourceId)===rid)?.unit:null);
+  const carbonGate=carbonPolicy?.previewCarbonActivity?.(cid,rid,need,carbonUnit,'RESOURCE_PROCESSING');
+  if(carbonGate&&carbonGate.allowed===false)return{status:'BLOCKED',reason:carbonGate.reason||'CARBON_QUOTA_POLICY_BLOCKED_PROCESSING',carbonGate};
   const output={};for(const k of Object.keys(recipe.outputs))output[k]=requested*(num(recipe.outputs[k])||0);
   const sourceBatchIds=[],consumedInputs=[];let inputTrackingStatus='UNTRACKED_LEGACY_INPUT';
   if(fromFactoryInput){
