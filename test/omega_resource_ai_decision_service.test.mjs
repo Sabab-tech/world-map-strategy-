@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import {
   ResourceDecisionAIError,
   buildResourceDecisionContext,
@@ -8,6 +9,7 @@ import {
 } from '../omega_resource_ai_decision_service.js';
 
 const answers = Array(12).fill('proceed');
+const serverSource = fs.readFileSync(new URL('../server.js', import.meta.url), 'utf8');
 const gameState = {
   simulation: { turn: 9 },
   finance: { BGD: { available: 2500000000, reserves: 1000000, currencyCode: 'BDT' } },
@@ -115,4 +117,13 @@ test('provider outage remains an explicit failure instead of offline success', a
     payload,
     generateText: async () => { throw new Error('provider unavailable'); }
   }), e => e instanceof ResourceDecisionAIError && e.statusCode === 502 && e.code === 'AI_PROVIDER_REQUEST_FAILED');
+});
+
+test('Express server exposes a real Gemini-backed endpoint and never fabricates an offline verdict', () => {
+  assert.match(serverSource, /app\.post\('\/api\/resource-decision\/ai-evaluate'/);
+  assert.match(serverSource, /process\.env\.GEMINI_API_KEY/);
+  assert.match(serverSource, /client\.models\.generateContent/);
+  assert.match(serverSource, /GEMINI_API_KEY_NOT_CONFIGURED/);
+  assert.match(serverSource, /no verdict was recorded/);
+  assert.match(serverSource, /RESOURCE_DECISION_AI_RATE_LIMIT/);
 });
