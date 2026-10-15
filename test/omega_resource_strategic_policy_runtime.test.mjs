@@ -4,6 +4,12 @@ import vm from 'node:vm';
 import test from 'node:test';
 
 const read=name=>JSON.parse(fs.readFileSync(new URL('../'+name,import.meta.url),'utf8'));
+const aiAssessment=(decision='PROCEED')=>({
+ decision,confidence:.91,riskSummary:'Validated test AI response',findings:['Test context reviewed'],
+ recommendedChecks:['Recheck after each turn'],aiGenerated:true,
+ authority:'OMEGA_SERVER_RESOURCE_DECISION_AI',model:'gemini-test',
+ provenance:'SERVER_MODEL_RESPONSE_WITH_DETERMINISTIC_SAFETY_FLOORS'
+});
 function harness(){
   const state={
     simulation:{turn:1,date:'2015-01-01'},
@@ -242,24 +248,33 @@ test('carbon quota tracks CO2e separately from environmental impact indexes and 
  assert.equal(unmetered.reason,'CARBON_EMISSION_UNIT_INVALID');
 });
 
-test('the 12-question cognitive gate persists a provenance-labelled advisory decision and idempotent retry',()=>{
+test('high-impact cognitive gate requires a server AI verdict and persists it idempotently',()=>{
  const h=harness(),api=h.sandbox.Omega.ResourceStrategicPolicyRuntime;
  const answers=['proceed','proceed','review','proceed','proceed','review','proceed','proceed','review','proceed','proceed','proceed'];
- const response=api.evaluateCognitiveGate('BGD',{decisionId:'COGNITIVE-TEST-1',answers});
+ const missingAi=api.evaluateCognitiveGate('BGD',{decisionId:'COGNITIVE-NO-AI',answers});
+ assert.equal(missingAi.accepted,false);
+ assert.equal(missingAi.reason,'AI_ASSESSMENT_REQUIRED');
+ assert.equal(h.state.resource.BGD.cognitiveDecisionLedger||[],[]);
+ const payload={decisionId:'COGNITIVE-TEST-1',answers,aiAssessment:aiAssessment('PROCEED')};
+ const response=api.evaluateCognitiveGate('BGD',payload);
  assert.equal(response.accepted,true,JSON.stringify(response));
  assert.equal(response.persisted,true);
  assert.equal(response.decision.decision,'PROCEED_WITH_RECORDED_ASSUMPTIONS');
- assert.equal(response.decision.aiGenerated,false);
+ assert.equal(response.decision.aiGenerated,true);
  assert.equal(response.decision.enforced,true);
  assert.equal(response.decision.gateScope,'STRATEGIC_HIGH_IMPACT_OPERATIONS');
- assert.equal(response.decision.authority,'PLAYER_ENTERED_COGNITIVE_SCREENING');
+ assert.equal(response.decision.authority,'OMEGA_SERVER_RESOURCE_DECISION_AI');
+ assert.equal(response.decision.modelDecision,'PROCEED');
  assert.equal(h.state.resource.BGD.cognitiveDecisionLedger.length,1);
- const replay=api.evaluateCognitiveGate('BGD',{decisionId:'COGNITIVE-TEST-1',answers});
+ const replay=api.evaluateCognitiveGate('BGD',payload);
  assert.equal(replay.duplicate,true);
  assert.equal(h.state.resource.BGD.cognitiveDecisionLedger.length,1);
- const incomplete=api.evaluateCognitiveGate('BGD',{decisionId:'COGNITIVE-INCOMPLETE',answers:['proceed']});
+ const incomplete=api.evaluateCognitiveGate('BGD',{decisionId:'COGNITIVE-INCOMPLETE',answers:['proceed'],aiAssessment:aiAssessment()});
  assert.equal(incomplete.accepted,false);
  assert.equal(incomplete.reason,'ALL_12_QUESTIONS_REQUIRE_ANSWERS');
+ const unauthoritative=api.evaluateCognitiveGate('BGD',{decisionId:'COGNITIVE-FAKE-AI',answers,aiAssessment:{...aiAssessment(),authority:'PLAYER_ENTERED_COGNITIVE_SCREENING'}});
+ assert.equal(unauthoritative.accepted,false);
+ assert.equal(unauthoritative.reason,'AI_ASSESSMENT_REQUIRED');
 });
 
 test('nuclear baseload construction debits treasury, commissions only by turns and produces fuel- and carbon-gated output',()=>{
@@ -271,7 +286,7 @@ test('nuclear baseload construction debits treasury, commissions only by turns a
  const noGate=api.startPowerProject('BGD',{projectId:'POWER-PROJECT-NO-GATE',projectType:'NUCLEAR_BASELOAD'});
  assert.equal(noGate.accepted,false);
  assert.equal(noGate.reason,'COGNITIVE_GATE_DECISION_REQUIRED');
- const gate=api.evaluateCognitiveGate('BGD',{decisionId:'POWER-GATE-APPROVAL',answers:Array(12).fill('proceed')});
+ const gate=api.evaluateCognitiveGate('BGD',{decisionId:'POWER-GATE-APPROVAL',answers:Array(12).fill('proceed'),aiAssessment:aiAssessment('PROCEED')});
  assert.equal(gate.accepted,true);
  const started=api.startPowerProject('BGD',{projectId:'POWER-PROJECT-2400',projectType:'NUCLEAR_BASELOAD'});
  assert.equal(started.accepted,true,JSON.stringify(started));
@@ -307,12 +322,12 @@ test('sovereign wealth fund capitalization debits treasury once and persists con
  const noGate=api.capitalizeSovereignWealthFund('BGD',{transactionId:'SWF-CAP-NO-GATE',amount:200});
  assert.equal(noGate.accepted,false);
  assert.equal(noGate.reason,'COGNITIVE_GATE_DECISION_REQUIRED');
- const blockedGate=api.evaluateCognitiveGate('BGD',{decisionId:'SWF-GATE-BLOCK',answers:['block',...Array(11).fill('proceed')]});
+ const blockedGate=api.evaluateCognitiveGate('BGD',{decisionId:'SWF-GATE-BLOCK',answers:['block',...Array(11).fill('proceed')],aiAssessment:aiAssessment('PROCEED')});
  assert.equal(blockedGate.accepted,true);
  const blocked=api.capitalizeSovereignWealthFund('BGD',{transactionId:'SWF-CAP-BLOCKED',amount:200});
  assert.equal(blocked.accepted,false);
  assert.equal(blocked.reason,'COGNITIVE_GATE_BLOCKED');
- const approved=api.evaluateCognitiveGate('BGD',{decisionId:'SWF-GATE-PROCEED',answers:Array(12).fill('proceed')});
+ const approved=api.evaluateCognitiveGate('BGD',{decisionId:'SWF-GATE-PROCEED',answers:Array(12).fill('proceed'),aiAssessment:aiAssessment('PROCEED')});
  assert.equal(approved.accepted,true);
  const first=api.capitalizeSovereignWealthFund('BGD',{transactionId:'SWF-CAP-1',amount:200});
  assert.equal(first.accepted,true,JSON.stringify(first));
