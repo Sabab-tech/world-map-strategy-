@@ -1365,51 +1365,95 @@ window.OmegaCabinetUI = {
     },
 
     executeMoFAAction(actionType, target, param) {
-        let msg = "";
-        const country = this.activeCountry || "BANGLADESH";
+        const notify = (title, message, type) => {
+            if (typeof window.showOmegaNotification === 'function') window.showOmegaNotification(title, message, type);
+        };
+        const state = window.Game && window.Game.state || window.gameState || {};
+        const player = state.player || {};
+        const rawPlayer = state.playerCountryId || state.playerCountryCode || state.sovereignCountryId ||
+            player.countryId || player.countryCode || window.playerCountry || window.OMEGA_PLAYER_COUNTRY_ID ||
+            window.Game && (window.Game.playerCountryId || window.Game.playerCountryCode) || null;
+        const observer = window.OmegaLiveOpsObservability;
+        const resolve = observer && typeof observer.resolveCountryId === 'function'
+            ? value => observer.resolveCountryId(value) : value => String(value || '').trim().toUpperCase();
+        const activeCountryId = this.activeCountry ? resolve(this.activeCountry) : null;
+        const playerId = rawPlayer ? resolve(rawPlayer) : null;
 
-        if (actionType === 'establish_ties') {
-            msg = `🌐 Diplomatic ties formally established with ${target}! Embassies scheduled for construction.`;
-        } else if (actionType === 'upgrade_relation') {
-            msg = `🕊️ Bilateral relations with ${target} upgraded to Strategic Partnership (+15 Trust, +10 Trade).`;
-        } else if (actionType === 'downgrade_relation') {
-            msg = `⚠️ Diplomatic demarche delivered to ${target}. Relations downgraded to Distant.`;
-        } else if (actionType === 'recall_ambassador') {
-            msg = `🚪 Ambassador recalled from ${target} for urgent sovereign consultations.`;
-        } else if (actionType === 'expel_ambassador') {
-            msg = `🚨 Foreign Ambassador from ${target} declared Persona Non Grata and given 48 hours to depart.`;
-        } else if (actionType === 'open_embassy') {
-            msg = `🏢 New Sovereign Embassy opened in ${target} capital ($150M Treasury allocated).`;
-        } else if (actionType === 'diplomatic_summit') {
-            msg = `🤝 High-Level Bilateral Summit hosted with ${target} delegation. Signed 3 Joint Directives.`;
-        } else if (actionType === 'run_ai_cognition') {
-            if (window.OmegaCognitiveEngine) {
-                const res = window.OmegaCognitiveEngine.process(param || "Assess bilateral security and trade pact", "DIPLOMATIC_ENGAGEMENT", country, target);
-                const logSummary = res.stageLog.slice(0, 5).map(s => `[Stage ${s.stage}]: ${s.name}`).join("\n");
-                msg = `🧠 [40-STAGE AI COGNITION ENGINE EXECUTED]\n\nTarget: ${target}\nConfidence: ${res.confidenceScore}%\nStrategic Payoff: ${res.strategicPayoff}\nRisk Exposure: ${res.simulatedRisk}\n\nPipeline Summary:\n${logSummary}\n...\n[Stage 40]: Self-Reflection & Meta-Cognitive Logging Completed!\n\nAI Advice:\n"${res.finalResponseText}"`;
-            } else {
-                msg = `🧠 AI Cognition Engine executed for ${target}. Confidence: 94%. Advice: Maintain peaceful non-alignment.`;
+        if (actionType === 'run_ai_cognition') {
+            const engine = window.OmegaCognitiveEngine;
+            if (!engine || typeof engine.process !== 'function') {
+                notify('ANALYSIS NOT AVAILABLE', 'The cognitive engine is unavailable. No diplomatic action was executed.', 'error');
+                return { status:'UNAVAILABLE', stateChanged:false, reason:'COGNITIVE_ENGINE_UNAVAILABLE' };
             }
-        } else if (actionType === 'request_imf_loan') {
-            msg = `💰 IMF Board approves $2.5B Emergency Balance of Payments Support Facility! Reserves credited.`;
-        } else if (actionType === 'request_wb_grant') {
-            msg = `🏗️ World Bank approves $1.8B Green Infrastructure Development Grant!`;
-        } else if (actionType === 'vote_un_resolution') {
-            msg = `🏛️ Sovereign Vote cast at UN General Assembly for Resolution #4082. UN Prestige +5!`;
-        } else if (actionType === 'sign_treaty') {
-            msg = `📜 New Sovereign Treaty "${target}" signed and ratified into International Law!`;
-        } else if (actionType === 'appoint_ambassador') {
-            msg = `🎖️ Senior Diplomat appointed as Ambassador to ${target}. (Diplomacy: 94, Cultural IQ: 89, Integrity: Flawless).`;
-        } else if (actionType === 'dispatch_aid') {
-            msg = `🎁 $100M Foreign Aid & Emergency Medical Supplies dispatched to ${target}. Global Prestige +8!`;
-        } else if (actionType === 'resolve_crisis') {
-            msg = `🚨 Geopolitical Crisis Directive executed! Emergency Security Detail deployed to ${target}. Threat Neutralized.`;
-        } else {
-            msg = `⚡ Diplomatic Action "${actionType}" executed successfully for target "${target}".`;
+            try {
+                const result = engine.process(param || 'Assess bilateral security and trade cooperation', 'DIPLOMATIC_ENGAGEMENT',
+                    activeCountryId || this.activeCountry || '', target || '');
+                const stages = Array.isArray(result && result.stageLog)
+                    ? result.stageLog.slice(0, 5).map(row => '[Stage ' + row.stage + ']: ' + row.name).join('\n')
+                    : 'Stage detail not recorded.';
+                const summary = 'Target: ' + String(target || 'Not selected') +
+                    '\nConfidence: ' + (result && result.confidenceScore != null ? result.confidenceScore + '%' : 'NOT RECORDED') +
+                    '\nStrategic payoff: ' + String(result && result.strategicPayoff != null ? result.strategicPayoff : 'NOT RECORDED') +
+                    '\nRisk exposure: ' + String(result && result.simulatedRisk != null ? result.simulatedRisk : 'NOT RECORDED') +
+                    '\n\nRecorded pipeline:\n' + stages + '\n\nAdvice:\n' +
+                    String(result && result.finalResponseText || 'No final response was recorded.');
+                notify('COGNITIVE ASSESSMENT READY', summary, 'info');
+                return { status:'ANALYSIS_READY', stateChanged:false, result };
+            } catch (error) {
+                notify('ANALYSIS FAILED', String(error && error.message || error), 'error');
+                return { status:'FAILED', stateChanged:false, reason:String(error && error.message || error) };
+            }
         }
 
-        window.showOmegaNotification("DIPLOMATIC DIRECTIVE", msg, "success");
-        this.renderMinistryDashboard('foreign_affairs');
+        const treatyActions = {
+            establish_ties:'BILATERAL_RELATIONS',
+            upgrade_relation:'STRATEGIC_PARTNERSHIP',
+            diplomatic_summit:'BILATERAL_COOPERATION'
+        };
+        const treatyType = treatyActions[actionType];
+        if (!treatyType) {
+            notify('ACTION NOT EXECUTED', String(actionType || 'Unknown action').toUpperCase() +
+                ': no authoritative gameplay handler is registered for this action. No game state was changed.', 'error');
+            return { status:'UNHANDLED', stateChanged:false, reason:'AUTHORITATIVE_ACTION_HANDLER_NOT_REGISTERED' };
+        }
+        if (!playerId || !activeCountryId || playerId !== activeCountryId) {
+            notify('ACTION NOT EXECUTED', 'The active cabinet country must match the identified player country before a diplomatic request can be sent.', 'error');
+            return { status:'REJECTED', stateChanged:false, reason:'PLAYER_COUNTRY_AUTHORITY_NOT_CONFIRMED' };
+        }
+        const targetId = target ? resolve(target) : null;
+        const normalise = value => String(value || '').trim().toUpperCase().replace(/[\s_-]+/g, '');
+        if (!targetId || normalise(targetId) === normalise(playerId)) {
+            notify('ACTION NOT EXECUTED', 'Choose a different, recognized country as the diplomatic counterpart. No game state was changed.', 'error');
+            return { status:'REJECTED', stateChanged:false, reason:'VALID_COUNTERPARTY_REQUIRED' };
+        }
+        const autonomy = window.OmegaOpponentAutonomy || window.Omega && window.Omega.OpponentAutonomy;
+        if (!autonomy || typeof autonomy.startTreatyNegotiation !== 'function') {
+            notify('ACTION NOT EXECUTED', 'The authoritative treaty-negotiation engine is not available. No game state was changed.', 'error');
+            return { status:'UNAVAILABLE', stateChanged:false, reason:'TREATY_ENGINE_UNAVAILABLE' };
+        }
+        let result;
+        try {
+            result = autonomy.startTreatyNegotiation(playerId, targetId, {
+                treatyType,
+                terms:{ requestedAction:actionType, source:'FOREIGN_AFFAIRS_UI' },
+                correlationId:'MOFA-'+String(Date.now())
+            });
+        } catch (error) {
+            result = { status:'FAILED', reason:String(error && error.message || error) };
+        }
+        const applied = result && result.status === 'APPLIED' && result.stateChanged === true &&
+            !(result.result && result.result.accepted === false);
+        if (applied) {
+            notify('NEGOTIATION REQUEST RECORDED', treatyType.replace(/_/g,' ') + ' request sent to ' +
+                String(target) + '. This is a pending negotiation, not a signed treaty.', 'success');
+            this.renderMinistryDashboard('foreign_affairs');
+            return result;
+        }
+        notify('NEGOTIATION NOT APPLIED', 'No treaty was signed. Engine status: ' +
+            String(result && (result.status || result.reason) || 'NOT_RECORDED') +
+            (result && result.result && result.result.reason ? ' · ' + result.result.reason : '') +
+            '. No successful outcome is claimed.', 'error');
+        return result || { status:'FAILED', stateChanged:false };
     },
 
     renderMinistryDashboard(ministryId) {
