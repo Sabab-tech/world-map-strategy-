@@ -300,24 +300,24 @@
       }).join('');
   }
   function panelReserves(country) {
-    const rows = resources(country);
-    const r = resourceBucket(country);
-    const endowment = r.endowment || {};
-    const reserves = r.reserves || {};
-    const inventory = r.inventory || {};
-    const body = rows.map(function (row) {
-      const rid = row.id;
-      const ev = Object.prototype.hasOwnProperty.call(endowment, rid) ? endowment[rid] : null;
-      const rv = Object.prototype.hasOwnProperty.call(reserves, rid) ? reserves[rid] : row.reserve;
-      const iv = Object.prototype.hasOwnProperty.call(inventory, rid) ? inventory[rid] : row.inventory;
-      return card(row.name || rid, rid,
-        '<div class="omega-rescc-grid2">' + kv('Endowment', ev) + kv('Reserve balance', rv) +
-        kv('Available inventory', iv) + kv('Reserve authority', row.reserveAuthority || 'NOT_RECORDED') +
-        kv('Unit', row.unit) + kv('Grade / purity', row.grade ?? row.purity) + '</div>',
-        actionButton('reserve', 'Request SPR transfer', { 'resource-id': rid }));
+    const rows=resources(country),r=resourceBucket(country),endowment=r.endowment||{},reserves=r.reserves||{},inventory=r.inventory||{};
+    const body=rows.map(row=>{
+      const rid=row.id,ev=Object.prototype.hasOwnProperty.call(endowment,rid)?endowment[rid]:null,rv=Object.prototype.hasOwnProperty.call(reserves,rid)?reserves[rid]:row.reserve,iv=Object.prototype.hasOwnProperty.call(inventory,rid)?inventory[rid]:row.inventory;
+      return card(row.name||rid,rid,'<div class="omega-rescc-grid2">'+kv('Runtime endowment',ev)+kv('Runtime reserve balance',rv)+kv('Runtime available inventory',iv)+kv('Runtime reserve authority',row.reserveAuthority||'NOT_RECORDED')+kv('Unit',row.unit)+kv('Observed grade / purity',row.grade??row.purity)+'</div>',actionButton('reserve','Request SPR transfer',{'resource-id':rid}));
     }).join('');
-    return '<p class="omega-rescc-note">This ledger shows runtime values as stored. A missing reserve is not zero; SIMULATED values are identified as such.</p>' +
-      body + (body ? '' : empty('No reserve records are available.'));
+    const profileRows=siteRows(country).map(site=>{
+      const src=site.sourceSiteRecord&&typeof site.sourceSiteRecord==='object'?site.sourceSiteRecord:{},q=site.quantitative||src.quantitative||(site.real&&site.real.quantitative)||{},sim=site.simulation||src.simulation||{},valueObject=q.reserve||q.recoverableReserve||sim.reserve||sim.recoverableReserve||site.reserve;
+      const value=valueObject&&typeof valueObject==='object'?(valueObject.quantity??valueObject.value??valueObject.amount??valueObject.reserves??null):(valueObject??site.reserveQuantity??site.simulationReserveQuantity??null);
+      if(value===null||value===undefined||value==='')return null;
+      const unit=valueObject&&typeof valueObject==='object'?(valueObject.unit||valueObject.quantityUnit):null,authority=(q.quantitativeProvenance&&(q.quantitativeProvenance.reserveAuthority||q.quantitativeProvenance.quantityAuthority))||(valueObject&&typeof valueObject==='object'&&(valueObject.authority||valueObject.dataAuthority))||site.sourceAuthority||src.sourceAuthority||src.dataAuthority||'SOURCE_STATUS_NOT_RECORDED';
+      return{site,value,unit:unit||site.unit||'',authority};
+    }).filter(Boolean);
+    const profileCards=profileRows.slice(0,150).map(row=>card(row.site.siteName||row.site.name||row.site.siteId,'FILE-BACKED SITE PROFILE',
+      '<div class="omega-rescc-grid2">'+kv('Site ID',row.site.siteId)+kv('Commodity',row.site.resourceId||row.site.real&&row.site.real.resourceId||row.site.identity&&row.site.identity.resourceTypeId)+kv('Profile reserve',row.value,row.unit?' '+row.unit:'')+kv('Authority / provenance',row.authority)+'</div>','')).join('');
+    return '<p class="omega-rescc-note">Runtime balances are read from shared country state. File-backed reserve facts below are reference profiles, not live inventory.</p>'+
+      (body||empty('No live commodity reserve state is recorded.'))+'<h3 class="omega-rescc-section-title">Site reserve facts from existing data files</h3>'+
+      (profileCards||empty('No quantified reserve field is recorded in this country site profile.'))+
+      (profileRows.length>150?'<p class="omega-rescc-note">Showing 150 of '+profileRows.length+' reserve profiles.</p>':'');
   }
   function panelDeposits(country) {
     const all=deposits(),selected=activeCountry(country);
