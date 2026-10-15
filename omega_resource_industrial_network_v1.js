@@ -1097,9 +1097,13 @@ function executeFactoryCycle(input={}){
   const rid=tok(input.resourceId),recipe=recipeFor(rid,asset),r=resourceState(cid);r.inventory=r.inventory||{};
   const factoryStock=asset.inputInventory&&typeof asset.inputInventory==='object'?asset.inputInventory:{};
   const factoryAvailable=Math.max(0,num(factoryStock[rid])||0),countryAvailable=Math.max(0,num(r.inventory[rid])||0);
-  const inputCoefficient=Math.max(1e-9,num(recipe.inputs[rid])||1),requestedLimit=Math.min(
+  const inputCoefficient=Math.max(1e-9,num(recipe.inputs[rid])||1);
+  const environmentalRuntime=g.OmegaResourceStrategicEconomyRuntime||g.Omega?.ResourceStrategicEconomyRuntime;
+  const environmentalCapacityMultiplier=Math.max(.1,Math.min(1,num(environmentalRuntime?.getProcessingMultiplier?.(cid))??1));
+  const configuredCapacity=Math.max(0,num(asset.capacity)||Number.MAX_SAFE_INTEGER);
+  const requestedLimit=Math.min(
     Math.max(0,num(input.quantity)||num(asset.capacity)||0),
-    Math.max(0,num(asset.capacity)||Number.MAX_SAFE_INTEGER)
+    configuredCapacity*environmentalCapacityMultiplier
   );
   const availableInputStock=factoryAvailable>1e-9?factoryAvailable:countryAvailable;
   const requested=Math.min(requestedLimit,availableInputStock/inputCoefficient);
@@ -1176,7 +1180,7 @@ function executeFactoryCycle(input={}){
     finishedWarehouse.receipts.push({receiptId:'WH-REC-'+batchId,warehouseId:row.warehouseId,countryId:cid,batchId,resourceId:outputId,quantity:outQty,unit,simulationTurn:turn(),status:'RECEIVED'});
   }
   while(finishedWarehouse.receipts.length>2048)finishedWarehouse.receipts.shift();while(batches.length>8192)batches.shift();
-  const record={transactionId,countryId:cid,factoryId:fid,companyId:String(asset.companyId||asset.ownerCompanyId||('SIM-COMPANY:'+cid)),resourceId:rid,
+  const record={transactionId,countryId:cid,environmentalCapacityMultiplier,factoryId:fid,companyId:String(asset.companyId||asset.ownerCompanyId||('SIM-COMPANY:'+cid)),resourceId:rid,
     inputQuantity:need,inputQuantities:{[rid]:need},requestedProduction:requested,outputs:output,outputQuantities:clone(output),recipe:clone(recipe),
     cycleDays:recipe.cycleDays,turn:turn(),authority:'INDUSTRIAL_NETWORK_SIMULATION',status:'COMPLETED',inputSource:fromFactoryInput?'DELIVERED_SHIPMENT':'CENTRAL_INVENTORY',
     inputTrackingStatus,consumedInputs:clone(consumedInputs),sourceBatchIds:[...new Set(sourceBatchIds.filter(Boolean))],createdBatchIds:created.map(x=>x.batchId)};
