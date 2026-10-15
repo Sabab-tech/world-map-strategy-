@@ -83,5 +83,50 @@
     },
     "investmentCostPerProject": 250000,
     "requireExplicitInvestmentForCommission": true
+  },
+  "carbon": {
+    "enabled": true,
+    "unit": "TONNES_CO2E",
+    "defaultPeriodTurns": 365,
+    "maxEmissionLedgerRows": 4096,
+    "maxQuotaHistory": 512,
+    "enforcement": "BLOCK_EMISSION_IF_ALLOWANCE_WOULD_BE_EXCEEDED",
+    "emissionsFactorsByResourceUnit": {
+      "coal:TONNES": 0.08,
+      "coal:TONNES_ORE": 0.08,
+      "copper:TONNES": 0.12,
+      "copper:TONNES_ORE": 0.12,
+      "crude_oil:BBL": 0.02,
+      "crude_oil:BBLS": 0.02,
+      "crude_oil:BARREL": 0.02,
+      "crude_oil:BARRELS": 0.02,
+      "natural_gas:MCM": 2000,
+      "natural_gas:BCF": 30000,
+      "uranium:TONNES": 0.1,
+      "uranium:TONNES_ORE": 0.1
+    },
+    "factorAuthority": "SIMULATED_GAMEPLAY_ASSUMPTION_NOT_MEASURED_EMISSIONS"
+  },
+  "power": {
+    "enabled": true,
+    "maxProjectsPerCountry": 64,
+    "projectTypes": {
+      "NUCLEAR_BASELOAD": {
+        "capacityMw": 2400,
+        "constructionCostUsd": 2000000000,
+        "constructionTurns": 5,
+        "capacityFactor": 0.9,
+        "fuelResourceId": "uranium",
+        "fuelQuantityPerTurn": 0.01,
+        "fuelUnitAuthority": "RESOURCE_STATE_CANONICAL_COMMODITY_UNIT",
+        "emissionsTonnesCo2ePerMwh": 0.012,
+        "authority": "SIMULATED_GAMEPLAY_RULESET"
+      }
+    }
+  },
+  "cognitive": {
+    "enabled": true,
+    "questionsRequired": 12,
+    "maxHistory": 512
   }
 }
