@@ -132,18 +132,18 @@ function liftPolicy(ctx,kind,payload){
 function impactKey(siteId){return String(siteId||'UNBOUND_SITE').trim()||'UNBOUND_SITE';}
 function impactIndex(root,siteId){const by=root?.bySite&&typeof root.bySite==='object'?root.bySite:{};return by[impactKey(siteId)]&&typeof by[impactKey(siteId)]==='object'?by[impactKey(siteId)]:{};}
 function extractionMultiplier(c,siteId,resourceId,tx){
- const e=rules()?.environmental;if(!e?.enabled)return 1;
+ const e=rules()?.environmental;if(!e?.enabled||num(e.productionPenaltyThreshold)===null||num(e.maximumProductionPenalty)===null||num(e.productionPenaltyPerIndex)===null||num(e.minimumExtractionMultiplier)===null)return 1;
  const root=tx?.get?.('resource.environmentalImpact')||state()?.resource?.[country(c)]?.environmentalImpact||{},s=impactIndex(root,siteId);
- const burden=Math.max(0,((num(s.landIndex)||0)+(num(s.waterIndex)||0))*0.5-(num(e.productionPenaltyThreshold)||0));
- const penalty=Math.min(num(e.maximumProductionPenalty)??0.35,burden*(num(e.productionPenaltyPerIndex)||0));
- return Math.max(num(e.minimumExtractionMultiplier)??0.65,1-penalty);
+ const burden=Math.max(0,((num(s.landIndex)||0)+(num(s.waterIndex)||0))*0.5-num(e.productionPenaltyThreshold));
+ const penalty=Math.min(num(e.maximumProductionPenalty),burden*num(e.productionPenaltyPerIndex));
+ return Math.max(num(e.minimumExtractionMultiplier),1-penalty);
 }
 function unitScale(unit){
  const scale=rules()?.environmental?.quantityScaleByUnit||{},raw=String(unit||'').toUpperCase().replace(/[ -]+/g,'_');
- if(num(scale[raw])!==null)return num(scale[raw]);const simple=raw.replace(/S$/,'');if(num(scale[simple])!==null)return num(scale[simple]);return num(scale.DEFAULT)||10000;
+ if(num(scale[raw])!==null)return num(scale[raw]);const simple=raw.replace(/S$/,'');if(num(scale[simple])!==null)return num(scale[simple]);return num(scale.DEFAULT);
 }
 function recordImpactTx(ctx,payload,kind){
- const e=rules()?.environmental;if(!e?.enabled)return{accepted:false,reason:'ENVIRONMENTAL_RULES_UNAVAILABLE'};
+ const e=rules()?.environmental;if(!e?.enabled||num(e.maximumBatchIntensity)===null||num(e.maximumSiteIndex)===null||!e.batchImpact||num(e.batchImpact.land)===null||num(e.batchImpact.water)===null||num(e.batchImpact.emissions)===null||num(e.batchImpact.processingWaste)===null)return{accepted:false,reason:'ENVIRONMENTAL_RULES_UNAVAILABLE'};
  const c=country(ctx.countryId),p=payload||{},quantity=num(p.quantity);if(quantity===null||quantity<=0)return{accepted:false,reason:'ENVIRONMENTAL_QUANTITY_INVALID'};
  const transactionId=String(p.transactionId||p.extractionId||p.batchId||[kind,c,p.siteId,turn()].join(':'));
  const oldLedger=ctx.stateTransaction.get('resource.environmentalLedger'),ledger=Array.isArray(oldLedger)?clone(oldLedger):[];
@@ -153,13 +153,15 @@ function recordImpactTx(ctx,payload,kind){
  const sid=impactKey(p.siteId),old=impactIndex(root,sid),site=findSite(p.siteId)||{},risk=site.naturalRisk||site.riskProfile||{};
  const riskValue=Math.max(0,Math.min(100,num(risk.environmental)??num(e.defaultEnvironmentalRisk)??50));
  const waterStress=Math.max(0,Math.min(100,num(risk.waterStress)??num(e.defaultWaterStress)??50));
- const intensity=Math.min(num(e.maximumBatchIntensity)||2.5,quantity/unitScale(p.unit));
- const impact=kind==='PROCESSING'?num(e.batchImpact?.processingWaste)||0.2:num(e.batchImpact?.land)||0.65;
- const landDelta=kind==='PROCESSING'?0:intensity*impact*(0.35+riskValue/100);
- const waterDelta=kind==='PROCESSING'?intensity*(num(e.batchImpact?.processingWaste)||0.2)*(0.35+waterStress/100):intensity*(num(e.batchImpact?.water)||0.45)*(0.35+waterStress/100);
- const emissionsDelta=kind==='PROCESSING'?intensity*(num(e.batchImpact?.emissions)||0.35):intensity*(num(e.batchImpact?.emissions)||0.35);
- const wasteDelta=kind==='PROCESSING'?intensity*(num(e.batchImpact?.processingWaste)||0.2):0;
- const max=num(e.maximumSiteIndex)||100;
+ const scale=unitScale(p.unit);if(scale===null||scale<=0)return{accepted:false,reason:'ENVIRONMENTAL_UNIT_SCALE_UNAVAILABLE'};
+ const intensity=Math.min(num(e.maximumBatchIntensity),quantity/scale);
+ const riskInfluence=Math.max(0,Math.min(1,num(e.riskInfluence)??0.6)),waterInfluence=Math.max(0,Math.min(1,num(e.waterStressInfluence)??0.6));
+ const impact=kind==='PROCESSING'?num(e.batchImpact.processingWaste):num(e.batchImpact.land);
+ const landDelta=kind==='PROCESSING'?0:intensity*impact*((1-riskInfluence)+riskInfluence*riskValue/100);
+ const waterDelta=kind==='PROCESSING'?intensity*num(e.batchImpact.processingWaste)*((1-waterInfluence)+waterInfluence*waterStress/100):intensity*num(e.batchImpact.water)*((1-waterInfluence)+waterInfluence*waterStress/100);
+ const emissionsDelta=intensity*num(e.batchImpact.emissions);
+ const wasteDelta=kind==='PROCESSING'?intensity*num(e.batchImpact.processingWaste):0;
+ const max=num(e.maximumSiteIndex);
  const next={...clone(old),siteId:sid,countryId:c,resourceId:String(p.resourceId||''),landIndex:Math.min(max,(num(old.landIndex)||0)+landDelta),
   waterIndex:Math.min(max,(num(old.waterIndex)||0)+waterDelta),emissionsIndex:Math.min(max,(num(old.emissionsIndex)||0)+emissionsDelta),
   wasteIndex:Math.min(max,(num(old.wasteIndex)||0)+wasteDelta),lastUpdatedTurn:turn(),lastTransactionId:transactionId};
@@ -179,8 +181,9 @@ function surveyStart(ctx,payload){
  const current=ctx.stateTransaction.get('resource.explorationProjects'),projects=Array.isArray(current)?clone(current):[];
  const activeProject=projects.find(x=>x.siteId===sid&&['IN_PROGRESS','DISCOVERED_PENDING_INVESTMENT','INVESTMENT_APPROVED','COMMISSIONED'].includes(String(x.status||'')));
  if(activeProject)return{accepted:true,duplicate:true,project:activeProject};
- const er=rules()?.exploration||{},min=Math.max(1,num(er.minimumSurveyTurns)||1),max=Math.max(min,num(er.maximumSurveyTurns)||24);
- const duration=Math.max(min,Math.min(max,Math.floor(num(p.requiredTurns)||num(er.surveyTurns)||3)));
+ const er=rules()?.exploration;if(!er?.enabled||num(er.minimumSurveyTurns)===null||num(er.maximumSurveyTurns)===null||num(er.surveyTurns)===null)return{accepted:false,reason:'STRATEGIC_POLICY_RULES_NOT_READY'};
+ const min=Math.max(1,num(er.minimumSurveyTurns)),max=Math.max(min,num(er.maximumSurveyTurns));
+ const duration=Math.max(min,Math.min(max,Math.floor(num(p.requiredTurns)??num(er.surveyTurns))));
  const row={projectId:String(p.projectId||'EXPLORE:'+c+':'+sid+':T'+turn()),countryId:c,siteId:sid,resourceId:site.identity?.resourceTypeId||site.resourceId||site.sourceSiteRecord?.resourceId||null,
   status:'IN_PROGRESS',startedTurn:turn(),lastProgressTurn:turn(),progressTurns:0,requiredTurns:duration,progress:0,investmentStatus:'NOT_APPROVED',
   authority:'OMEGA_RESOURCE_STRATEGIC_POLICY_RUNTIME',provenance:{sourceAuthority:'CANONICAL_SITE_REGISTRY',quantityAuthority:'UNOBSERVED_UNTIL_DISCOVERY'}};
@@ -205,7 +208,8 @@ function investSite(countryId,payload){
  if(!project)return{accepted:false,reason:'EXPLORATION_PROJECT_NOT_FOUND'};
  if(project.status==='INVESTMENT_APPROVED'||project.status==='COMMISSIONED')return{accepted:true,duplicate:true,project};
  if(project.status!=='DISCOVERED_PENDING_INVESTMENT')return{accepted:false,reason:'DISCOVERY_NOT_COMPLETED'};
- const cost=Math.max(0,num(p.amount)??num(rules()?.exploration?.investmentCostPerProject)??250000);
+ const configuredCost=num(rules()?.exploration?.investmentCostPerProject);if(configuredCost===null)return{accepted:false,reason:'STRATEGIC_POLICY_RULES_NOT_READY'};
+ const cost=Math.max(0,num(p.amount)??configuredCost);
  const debit=dispatch('finance','OMEGA_TRADE_FINANCE_DEBIT',c,{amount:cost,reason:'RESOURCE_SITE_INVESTMENT',referenceId:projectId,transactionId:'RESOURCE_INVEST:'+projectId});
  if(debit?.status!=='APPLIED'&&debit?.accepted!==true)return{accepted:false,reason:'TREASURY_INVESTMENT_DEBIT_FAILED',detail:debit};
  const r=dispatch('resource','OMEGA_RESOURCE_EXPLORATION_INVEST_COMMIT',c,{projectId,amount:cost,transactionId:'RESOURCE_INVEST:'+projectId});
@@ -236,8 +240,8 @@ function commission(ctx,payload){
 function remediate(ctx,payload){
  const c=country(ctx.countryId),p=payload||{},sid=String(p.siteId||'').trim(),amount=num(p.amount);
  if(!sid||amount===null||amount<=0)return{accepted:false,reason:'REMEDIATION_INPUT_INVALID'};
- const e=rules()?.environmental||{},cost=amount*(num(e.remediationCostPerIndex)||0);
- const max=num(e.remediationMaximumPerAction)||25;if(amount>max)return{accepted:false,reason:'REMEDIATION_AMOUNT_EXCEEDS_LIMIT',maximum:max};
+ const e=rules()?.environmental;if(!e?.enabled||num(e.remediationCostPerIndex)===null||num(e.remediationMaximumPerAction)===null)return{accepted:false,reason:'STRATEGIC_POLICY_RULES_NOT_READY'};
+ const cost=amount*num(e.remediationCostPerIndex),max=num(e.remediationMaximumPerAction);if(amount>max)return{accepted:false,reason:'REMEDIATION_AMOUNT_EXCEEDS_LIMIT',maximum:max};
  const txn=String(p.transactionId||'REMEDIATE:'+c+':'+sid+':T'+turn());
  const before=ctx.stateTransaction.get('resource.environmentalLedger'),ledger=Array.isArray(before)?clone(before):[];
  if(ledger.some(x=>x.transactionId===txn))return{accepted:true,duplicate:true,transactionId:txn};
