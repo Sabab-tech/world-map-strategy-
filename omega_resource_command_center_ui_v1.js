@@ -69,17 +69,49 @@
       (g.OmegaCabinetUI && g.OmegaCabinetUI.activeCountry) ||
       (g.Game && g.Game.currentActiveCountry) || state().playerCountryId || 'BGD');
   }
-  function bucket(domain, country) {
-    const root = state()[domain];
-    const c = activeCountry(country);
-    if (!root || typeof root !== 'object') return {};
-    return root[c] || root[c.toLowerCase()] || root[String(country || '').trim().toUpperCase()] || {};
+  function identityOfRow(row) {
+    if (!row || typeof row !== 'object') return 'VALUE:' + String(row);
+    for (const key of ['requestId','eventId','batchId','shipmentId','projectId','reservationId','siteId',
+      'canonicalSiteId','siteReferenceKey','mineId','occurrenceKey','commandId','correlationId','routeId','id']) {
+      if (row[key] !== undefined && row[key] !== null && row[key] !== '') return key + ':' + String(row[key]);
+    }
+    try { return 'JSON:' + JSON.stringify(row); } catch (_) { return 'OBJECT:' + String(row); }
   }
+  function mergeDataValues(base, incoming) {
+    if (incoming === undefined || incoming === null || incoming === '') return base;
+    if (Array.isArray(base) && Array.isArray(incoming)) {
+      const out = [], index = new Map();
+      const add = row => {
+        const key = identityOfRow(row);
+        if (index.has(key)) out[index.get(key)] = mergeDataValues(out[index.get(key)], row);
+        else { index.set(key, out.length); out.push(row); }
+      };
+      base.forEach(add); incoming.forEach(add); return out;
+    }
+    if (base && incoming && typeof base === 'object' && typeof incoming === 'object' &&
+        !Array.isArray(base) && !Array.isArray(incoming)) {
+      const out = Object.assign({}, base);
+      Object.keys(incoming).forEach(key => {
+        if (key === '__proto__' || key === 'constructor') return;
+        out[key] = Object.prototype.hasOwnProperty.call(out,key) ? mergeDataValues(out[key],incoming[key]) : incoming[key];
+      });
+      return out;
+    }
+    return incoming;
+  }
+  function countryBucket(domain, country) {
+    const group = state()[domain], canonical = activeCountry(country);
+    if (!group || typeof group !== 'object' || Array.isArray(group)) return {};
+    const keys = Object.keys(group).filter(key =>
+      key && !['SCHEMAVERSION','VERSION','METADATA','DEFAULTS','GLOBAL','SHARED'].includes(String(key).trim().toUpperCase()) &&
+      normaliseCountry(key) === canonical && group[key] && typeof group[key] === 'object' && !Array.isArray(group[key]));
+    // Keep old display-name buckets as fallback data, while canonical-key values win conflicts.
+    keys.sort((a,b) => Number(String(a).trim().toUpperCase() === canonical) - Number(String(b).trim().toUpperCase() === canonical));
+    return keys.reduce((out,key) => mergeDataValues(out,group[key]),{});
+  }
+  function bucket(domain, country) { return countryBucket(domain,country); }
   function resourceBucket(country) {
-    const s = state();
-    const c = activeCountry(country);
-    return (s.resource && (s.resource[c] || s.resource[String(country || '').toUpperCase()])) ||
-      (s.resources && (s.resources[c] || s.resources[String(country || '').toUpperCase()])) || {};
+    return mergeDataValues(countryBucket('resources',country),countryBucket('resource',country));
   }
   function engineSummary(country) {
     try {
