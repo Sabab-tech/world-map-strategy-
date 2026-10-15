@@ -222,6 +222,9 @@ test('unknown environmental units are rejected without a fabricated default impa
   assert.equal(response.result.reason,'ENVIRONMENTAL_UNIT_SCALE_UNAVAILABLE');
   assert.equal(h.state.resource.BGD.environmentalLedger,undefined);
   assert.equal(h.state.resource.BGD.environmentalImpact,undefined);
+  const preview=api.previewCarbonActivity('BGD','copper',1000,'UNKNOWN_UNITS','TEST_ACTIVITY');
+  assert.equal(preview.allowed,false);
+  assert.equal(preview.reason,'ENVIRONMENTAL_UNIT_SCALE_UNAVAILABLE');
 });
 
 
@@ -229,6 +232,9 @@ test('carbon quota tracks CO2e separately from environmental impact indexes and 
  const h=harness(),api=h.sandbox.Omega.ResourceStrategicPolicyRuntime;
  const set=api.setCarbonQuota('BGD',{quotaId:'CARBON-TEST-1',allowanceTonnesCo2e:100,periodTurns:10});
  assert.equal(set.accepted,true,JSON.stringify(set));
+ const oreUnits=api.previewCarbonActivity('BGD','coal',100,'TONNES_ORE','TEST_ACTIVITY');
+ assert.equal(oreUnits.allowed,true,JSON.stringify(oreUnits));
+ assert.equal(oreUnits.emissionsTonnesCo2e,8);
  const allowed=h.interop.dispatchCommand('resource','OMEGA_RESOURCE_ENVIRONMENT_RECORD_EXTRACTION','BGD',{
   transactionId:'CARBON-ALLOW-1',siteId:'SITE_BGD_TEST_LOCKED',resourceId:'copper',quantity:500,unit:'TONNES'
  });
