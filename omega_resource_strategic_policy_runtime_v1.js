@@ -537,7 +537,7 @@ if(typeof g.addEventListener==='function'){
  g.addEventListener('OMEGA_READY',()=>{loadRules().then(()=>install()).catch(()=>{});});
  g.addEventListener('OMEGA_GAME_SESSION_STARTED',()=>{loadRules().then(()=>install()).catch(()=>{});});
  g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED',()=>{try{processAll();for(const c of countryIds())processPowerCountry(c);}catch(_){}});
- g.addEventListener('OMEGA_RESOURCE_PROCESSING_COMPLETED',e=>{
+ const processingImpactListener=e=>{
   const d=e?.detail||{},p=d.payload||d,cc=country(p.countryId||d.countryId);
   const tx=String(p.transactionId||p.processId||'');if(!cc||!tx)return;
   const outputs=p.outputs||p.outputQuantities||{},inputs=p.inputs||p.inputQuantities||{};
@@ -547,7 +547,9 @@ if(typeof g.addEventListener==='function'){
   const sourceBatch=batches.find(x=>sourceIds.includes(String(x?.batchId||'')))||batches.find(x=>String(x?.batchId||'')===String(p.batchId||''))||null;
   const siteId=p.siteId||p.sourceSiteId||p.siteReferenceKey||p.sourceOccurrenceKey||sourceBatch?.siteReferenceKey||sourceBatch?.siteId||sourceBatch?.occurrenceKey||null;
   dispatch('resource','OMEGA_RESOURCE_ENVIRONMENT_RECORD_PROCESSING',cc,{transactionId:tx,siteId,resourceId:p.resourceId||sourceBatch?.resourceId||Object.keys(inputs)[0]||Object.keys(outputs)[0]||null,quantity,unit:p.unit||sourceBatch?.unit||'TONNES'});
- });
+ };
+ g.addEventListener('OMEGA_RESOURCE_PROCESSING_COMPLETED',processingImpactListener);
+ g.addEventListener('OMEGA_INDUSTRIAL_PRODUCTION_COMPLETED',processingImpactListener);
 }
 void loadRules();install();
 })(typeof window!=='undefined'?window:globalThis);
