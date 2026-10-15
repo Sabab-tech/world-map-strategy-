@@ -1465,9 +1465,17 @@ function batchFromExtraction(x,record){
         blocked.push({occurrenceKey:x.occurrenceKey,resourceId:x.resourceId,reason});
         markPathBlocked(reason,{extractionStatus:result?.status||null});continue;
       }
-      r.registerReserveState(result.reserveAfter);
-
       const q=n(result.approvedQuantity)||0,resource=x.resourceId;
+      const predictedUnit=result.producedBatch?.unit||result.reserveAfter?.unit||x?.capacity?.unit||resourceDefinition(resource)?.unit||null;
+      const carbonGate=strategicPolicy?.previewCarbonActivity?.(c,resource,q,predictedUnit,'RESOURCE_EXTRACTION',ctx);
+      if(carbonGate&&carbonGate.allowed===false){
+        const reason=carbonGate.reason||'CARBON_QUOTA_POLICY_BLOCKED_EXTRACTION';
+        blocked.push({occurrenceKey:x.occurrenceKey,siteReferenceKey:policySiteId||null,resourceId:resource,reason,carbonGate:clone(carbonGate)});
+        mineOutputs[x.occurrenceKey]={countryId:c,occurrenceKey:x.occurrenceKey,siteReferenceKey:policySiteId||null,resourceId:resource,
+          simulationTurn:turn(),status:'BLOCKED',blockReason:reason,approvedQuantity:0,carbonGate:clone(carbonGate)};
+        markPathBlocked(reason,{carbonGate:clone(carbonGate)});continue;
+      }
+      r.registerReserveState(result.reserveAfter);
       production[resource]=(n(production[resource])||0)+q;
       inventory[resource]=(n(inventory[resource])||0)+q;
       reserves[resource]=n(result.reserveAfter.residualQuantity)||0;
