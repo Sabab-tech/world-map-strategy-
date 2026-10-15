@@ -4,7 +4,7 @@
  */
 (function(g){
 'use strict';
-const VERSION='1.0.0',MAX_LEDGER=2048,MAX_PROJECTS=256,MAX_POLICIES=512;
+const VERSION='1.0.0';
 const clone=(v,seen=new WeakMap())=>{
  if(v===null||typeof v!=='object')return v;if(seen.has(v))return seen.get(v);
  if(Array.isArray(v)){const a=[];seen.set(v,a);for(const x of v)a.push(clone(x));return a;}
@@ -38,6 +38,7 @@ async function loadRules(){
  return loadPromise;
 }
 const rules=()=>policyRules||inlineRules()||null;
+function configuredLimit(group,key){const value=num(rules()?.[group]?.[key]);return value!==null&&Number.isInteger(value)&&value>0?value:null;}
 function dispatch(owner,type,c,payload={}){
  const m=interop();if(!m?.dispatchCommand)return{status:'UNAVAILABLE',reason:'MINISTRY_INTEROPERABILITY_UNAVAILABLE'};
  try{const r=m.dispatchCommand(owner,type,country(c),clone(payload),{turn:turn(),commandType:type,correlationId:payload?.policyId||payload?.projectId||payload?.transactionId||payload?.correlationId||null});
@@ -110,6 +111,8 @@ function setPolicy(ctx,kind,payload){
  const direction=String(p.direction||rules()?.policy?.defaultEmbargoDirection||'').toUpperCase();
  if(kind==='embargo'&&!['EXPORT','IMPORT','BOTH'].includes(direction))return{accepted:false,reason:'EMBARGO_DIRECTION_INVALID'};
  const path=kind==='embargo'?'trade.resourceEmbargoes':'trade.resourceBlockades';
+ const historyLimit=configuredLimit('policy','maxPolicyHistory'),activeLimit=configuredLimit('policy','maxActivePoliciesPerCountry');
+ if(historyLimit===null||activeLimit===null)return{accepted:false,reason:'STRATEGIC_POLICY_RULES_NOT_READY'};
  const raw=ctx.stateTransaction.get(path),arr=Array.isArray(raw)?clone(raw):[];
  const policyId=String(p.policyId||kind.toUpperCase()+':'+c+':'+target+':'+tok(rid)+':T'+turn());
  const old=arr.findIndex(x=>String(x?.policyId||'')===policyId);
@@ -117,8 +120,9 @@ function setPolicy(ctx,kind,payload){
  if(expiresTurn!==null&&expiresTurn<startsTurn)return{accepted:false,reason:'POLICY_EXPIRY_BEFORE_START'};
  const row={policyId,issuerCountryId:c,targetCountryId:target,resourceId:rid,status:'ACTIVE',createdTurn:turn(),startsTurn,expiresTurn,reason:String(p.reason||''),
   authority:'OMEGA_RESOURCE_STRATEGIC_POLICY_RUNTIME',...(kind==='embargo'?{direction}:{modes:Array.isArray(p.modes)?p.modes.map(tok).filter(Boolean):(Array.isArray(rules()?.policy?.defaultBlockadeModes)?rules().policy.defaultBlockadeModes.map(tok):[]),routeId:p.routeId||null,siteId:p.siteId||null,factoryId:p.factoryId||null})};
+ if(old<0&&active(arr.find(x=>String(x?.policyId||'')===policyId))===false&&arr.filter(active).length>=activeLimit)return{accepted:false,reason:'ACTIVE_POLICY_LIMIT_REACHED',maximum:activeLimit};
  if(old>=0)arr[old]={...arr[old],...row};else arr.push(row);
- ctx.stateTransaction.set(path,arr.slice(-MAX_POLICIES));emit(kind==='embargo'?'OMEGA_RESOURCE_EMBARGO_DECLARED':'OMEGA_RESOURCE_ROUTE_BLOCKADE_DECLARED',c,row);
+ ctx.stateTransaction.set(path,arr.slice(-historyLimit));emit(kind==='embargo'?'OMEGA_RESOURCE_EMBARGO_DECLARED':'OMEGA_RESOURCE_ROUTE_BLOCKADE_DECLARED',c,row);
  return{accepted:true,policy:row,idempotent:old>=0};
 }
 function liftPolicy(ctx,kind,payload){
@@ -143,7 +147,7 @@ function unitScale(unit){
  if(num(scale[raw])!==null)return num(scale[raw]);const simple=raw.replace(/S$/,'');if(num(scale[simple])!==null)return num(scale[simple]);return num(scale.DEFAULT);
 }
 function recordImpactTx(ctx,payload,kind){
- const e=rules()?.environmental;if(!e?.enabled||num(e.maximumBatchIntensity)===null||num(e.maximumSiteIndex)===null||num(e.defaultEnvironmentalRisk)===null||num(e.defaultWaterStress)===null||num(e.riskInfluence)===null||num(e.waterStressInfluence)===null||!e.batchImpact||num(e.batchImpact.land)===null||num(e.batchImpact.water)===null||num(e.batchImpact.emissions)===null||num(e.batchImpact.processingWaste)===null)return{accepted:false,reason:'ENVIRONMENTAL_RULES_UNAVAILABLE'};
+ const e=rules()?.environmental,ledgerLimit=configuredLimit('policy','maxEnvironmentalLedgerRows');if(!e?.enabled||ledgerLimit===null||num(e.maximumBatchIntensity)===null||num(e.maximumSiteIndex)===null||num(e.defaultEnvironmentalRisk)===null||num(e.defaultWaterStress)===null||num(e.riskInfluence)===null||num(e.waterStressInfluence)===null||!e.batchImpact||num(e.batchImpact.land)===null||num(e.batchImpact.water)===null||num(e.batchImpact.emissions)===null||num(e.batchImpact.processingWaste)===null)return{accepted:false,reason:'ENVIRONMENTAL_RULES_UNAVAILABLE'};
  const c=country(ctx.countryId),p=payload||{},quantity=num(p.quantity);if(quantity===null||quantity<=0)return{accepted:false,reason:'ENVIRONMENTAL_QUANTITY_INVALID'};
  const transactionId=String(p.transactionId||p.extractionId||p.batchId||[kind,c,p.siteId,turn()].join(':'));
  const oldLedger=ctx.stateTransaction.get('resource.environmentalLedger'),ledger=Array.isArray(oldLedger)?clone(oldLedger):[];
@@ -167,7 +171,7 @@ function recordImpactTx(ctx,payload,kind){
   wasteIndex:Math.min(max,(num(old.wasteIndex)||0)+wasteDelta),lastUpdatedTurn:turn(),lastTransactionId:transactionId};
  root.bySite[sid]=next;root.revision=(num(root.revision)||0)+1;root.lastUpdatedTurn=turn();
  ledger.push({transactionId,impactType:kind,countryId:c,siteId:sid,resourceId:p.resourceId||null,quantity,unit:p.unit||null,landDelta,waterDelta,emissionsDelta,wasteDelta,turn:turn(),status:'COMMITTED'});
- ctx.stateTransaction.set('resource.environmentalImpact',root);ctx.stateTransaction.set('resource.environmentalLedger',ledger.slice(-MAX_LEDGER));
+ ctx.stateTransaction.set('resource.environmentalImpact',root);ctx.stateTransaction.set('resource.environmentalLedger',ledger.slice(-ledgerLimit));
  emit('OMEGA_RESOURCE_ENVIRONMENTAL_IMPACT_RECORDED',c,{transactionId,impactType:kind,siteId:sid,resourceId:p.resourceId||null,landDelta,waterDelta,emissionsDelta,wasteDelta});
  return{accepted:true,transactionId,impact:next,delta:{landDelta,waterDelta,emissionsDelta,wasteDelta}};
 }
@@ -181,16 +185,17 @@ function surveyStart(ctx,payload){
  const current=ctx.stateTransaction.get('resource.explorationProjects'),projects=Array.isArray(current)?clone(current):[];
  const activeProject=projects.find(x=>x.siteId===sid&&['IN_PROGRESS','DISCOVERED_PENDING_INVESTMENT','INVESTMENT_APPROVED','COMMISSIONED'].includes(String(x.status||'')));
  if(activeProject)return{accepted:true,duplicate:true,project:activeProject};
- const er=rules()?.exploration;if(!er?.enabled||num(er.minimumSurveyTurns)===null||num(er.maximumSurveyTurns)===null||num(er.surveyTurns)===null)return{accepted:false,reason:'STRATEGIC_POLICY_RULES_NOT_READY'};
+ const er=rules()?.exploration,projectLimit=configuredLimit('exploration','maximumSurveyProjects');if(!er?.enabled||projectLimit===null||num(er.minimumSurveyTurns)===null||num(er.maximumSurveyTurns)===null||num(er.surveyTurns)===null)return{accepted:false,reason:'STRATEGIC_POLICY_RULES_NOT_READY'};
  const min=Math.max(1,num(er.minimumSurveyTurns)),max=Math.max(min,num(er.maximumSurveyTurns));
  const duration=Math.max(min,Math.min(max,Math.floor(num(p.requiredTurns)??num(er.surveyTurns))));
  const row={projectId:String(p.projectId||'EXPLORE:'+c+':'+sid+':T'+turn()),countryId:c,siteId:sid,resourceId:site.identity?.resourceTypeId||site.resourceId||site.sourceSiteRecord?.resourceId||null,
   status:'IN_PROGRESS',startedTurn:turn(),lastProgressTurn:turn(),progressTurns:0,requiredTurns:duration,progress:0,investmentStatus:'NOT_APPROVED',
   authority:'OMEGA_RESOURCE_STRATEGIC_POLICY_RUNTIME',provenance:{sourceAuthority:'CANONICAL_SITE_REGISTRY',quantityAuthority:'UNOBSERVED_UNTIL_DISCOVERY'}};
- projects.push(row);ctx.stateTransaction.set('resource.explorationProjects',projects.slice(-MAX_PROJECTS));
+ projects.push(row);ctx.stateTransaction.set('resource.explorationProjects',projects.slice(-projectLimit));
  emit('OMEGA_RESOURCE_EXPLORATION_STARTED',c,row);return{accepted:true,project:row};
 }
 function surveyTick(ctx,payload){
+ const projectLimit=configuredLimit('exploration','maximumSurveyProjects');if(projectLimit===null)return{accepted:false,reason:'STRATEGIC_POLICY_RULES_NOT_READY'};
  const c=country(ctx.countryId),current=ctx.stateTransaction.get('resource.explorationProjects'),projects=Array.isArray(current)?clone(current):[];
  let advanced=0,discovered=0;
  for(const p of projects){
@@ -200,7 +205,7 @@ function surveyTick(ctx,payload){
   p.progress=Math.min(100,p.progressTurns/Math.max(1,num(p.requiredTurns)||1)*100);p.lastProgressTurn=turn();p.updatedTurn=turn();advanced++;
   if(p.progressTurns+1e-9>=(num(p.requiredTurns)||1)){p.progress=100;p.status='DISCOVERED_PENDING_INVESTMENT';p.discoveredTurn=turn();discovered++;emit('OMEGA_RESOURCE_SITE_DISCOVERED',c,p);}
  }
- ctx.stateTransaction.set('resource.explorationProjects',projects.slice(-MAX_PROJECTS));return{accepted:true,countryId:c,turn:turn(),advanced,discovered};
+ ctx.stateTransaction.set('resource.explorationProjects',projects.slice(-projectLimit));return{accepted:true,countryId:c,turn:turn(),advanced,discovered};
 }
 function investSite(countryId,payload){
  const c=country(countryId),p=payload||{},projectId=String(p.projectId||'').trim();if(!projectId)return{accepted:false,reason:'PROJECT_ID_REQUIRED'};
@@ -231,10 +236,11 @@ function commission(ctx,payload){
  const p=arr[i];if(p.status==='COMMISSIONED')return{accepted:true,duplicate:true,project:p};
  if(p.status!=='INVESTMENT_APPROVED')return{accepted:false,reason:'EXPLICIT_INVESTMENT_REQUIRED'};
  const site=findSite(p.siteId);if(!site||site.operation?.commercialExtraction===false||site.map?.markerEligible===false||site.runtime?.aliasOfSiteId)return{accepted:false,reason:'SITE_NOT_COMMERCIALLY_EXECUTABLE'};
+ const projectLimit=configuredLimit('exploration','maximumSurveyProjects');if(projectLimit===null)return{accepted:false,reason:'STRATEGIC_POLICY_RULES_NOT_READY'};
  const raw=ctx.stateTransaction.get('resource.commissionedSites'),commissioned=Array.isArray(raw)?clone(raw):[];
  if(!commissioned.some(x=>x.siteId===p.siteId))commissioned.push({siteId:p.siteId,countryId:c,resourceId:p.resourceId,status:'COMMISSIONED',projectId:p.projectId,commissionedTurn:turn(),authority:'OMEGA_RESOURCE_STRATEGIC_POLICY_RUNTIME'});
  p.status='COMMISSIONED';p.commissionedTurn=turn();arr[i]=p;
- ctx.stateTransaction.set('resource.explorationProjects',arr);ctx.stateTransaction.set('resource.commissionedSites',commissioned.slice(-MAX_PROJECTS));
+ ctx.stateTransaction.set('resource.explorationProjects',arr);ctx.stateTransaction.set('resource.commissionedSites',commissioned.slice(-projectLimit));
  emit('OMEGA_RESOURCE_SITE_COMMISSIONED',c,p);return{accepted:true,project:p,siteId:p.siteId};
 }
 function remediate(ctx,payload){
@@ -253,7 +259,7 @@ function remediate(ctx,payload){
  const next={...clone(old),siteId:sid,countryId:c,landIndex:Math.max(0,(num(old.landIndex)||0)-reduce),waterIndex:Math.max(0,(num(old.waterIndex)||0)-reduce),wasteIndex:Math.max(0,(num(old.wasteIndex)||0)-reduce),lastUpdatedTurn:turn()};
  root.bySite[sid]=next;root.revision=(num(root.revision)||0)+1;root.lastUpdatedTurn=turn();
  ledger.push({transactionId:txn,impactType:'REMEDIATION',countryId:c,siteId:sid,amount:reduce,cost,turn:turn(),status:'COMMITTED'});
- ctx.stateTransaction.set('resource.environmentalImpact',root);ctx.stateTransaction.set('resource.environmentalLedger',ledger.slice(-MAX_LEDGER));
+ ctx.stateTransaction.set('resource.environmentalImpact',root);ctx.stateTransaction.set('resource.environmentalLedger',ledger.slice(-configuredLimit('policy','maxEnvironmentalLedgerRows')));
  emit('OMEGA_RESOURCE_ENVIRONMENT_REMEDIATED',c,{transactionId:txn,siteId:sid,amount:reduce,cost});return{accepted:true,transactionId:txn,cost,impact:next};
 }
 function handlerFor(type,fn,owner='resource'){const m=interop();if(!m?.registerCommandHandler)return false;try{m.registerAction?.(type,{actionId:type,stateOwnerMinistry:owner,authority:'OMEGA_RESOURCE_STRATEGIC_POLICY_RUNTIME'});m.registerCommandHandler(type,owner,fn);return true;}catch(e){registrationErrors.push(type+':'+String(e?.message||e));return false;}}
