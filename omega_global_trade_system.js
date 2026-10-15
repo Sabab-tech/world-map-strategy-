@@ -137,12 +137,12 @@
     const ids=row?.resourceIds||row?.resources||row?.commodityIds||row?.commodities||row?.resourceId||row?.commodityId;
     if(ids!==undefined&&ids!==null&&ids!==''){
       const list=Array.isArray(ids)?ids:[ids];
-      if(!list.some(x=>tok(x)==='*'||tok(x)===tok(resourceId)))return false;
+      if(!list.some(x=>token(x)==='*'||token(x)===token(resourceId)))return false;
     }
     return true;
   }
   function resourceTradeRestriction(buyer,seller,resourceId,request={}){
-    const b=canonical(buyer),s=canonical(seller),rid=tok(resourceId);
+    const b=canonical(buyer),s=canonical(seller),rid=token(resourceId);
     const policies=[
       ...policyRows(countryValue(b,'foreign.resourceEmbargoes')?.[s],s).map(x=>({row:x,dir:'IMPORT'})),
       ...policyRows(countryValue(b,'foreign.importEmbargoes')?.[s],s).map(x=>({row:x,dir:'IMPORT'})),
