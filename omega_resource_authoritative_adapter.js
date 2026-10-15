@@ -30,6 +30,9 @@
   }
 
   function numberOrNull(value) {
+    if (value === null || value === undefined || value === '') return null;
+    if (typeof value !== 'number' && typeof value !== 'string') return null;
+    if (typeof value === 'string' && value.trim() === '') return null;
     const n = Number(value);
     return Number.isFinite(n) ? n : null;
   }
@@ -493,10 +496,17 @@
 
     if (action === 'focus_map') {
       try {
-        if (g.Game && g.Game.Map && g.Game.Map.activateResourceMode) g.Game.Map.activateResourceMode([rid]);
-        else if (g.Game && g.Game.Map && g.Game.Map.applyResourceMapFilter) g.Game.Map.applyResourceMapFilter(rid);
-      } catch (_) {}
-      const result = { status: 'APPLIED', action: action, countryId: cid, resourceId: rid };
+        if (g.Game && g.Game.Map && typeof g.Game.Map.activateResourceMode === 'function') {
+          g.Game.Map.activateResourceMode([rid]);
+        } else if (g.Game && g.Game.Map && typeof g.Game.Map.applyResourceMapFilter === 'function') {
+          g.Game.Map.applyResourceMapFilter(rid);
+        } else {
+          return { status:'UNAVAILABLE', reason:'RESOURCE_MAP_FILTER_API_UNAVAILABLE', action, countryId:cid, resourceId:rid };
+        }
+      } catch (error) {
+        return { status:'FAILED', reason:String(error && error.message || error), action, countryId:cid, resourceId:rid };
+      }
+      const result = { status: 'APPLIED', action: action, countryId: cid, resourceId: rid, stateChanged:false, uiChanged:true };
       emit('OMEGA_RESOURCE_MAP_FOCUS_REQUESTED', cid, result);
       return result;
     }
@@ -572,7 +582,41 @@
     };
 
     engine.executeDirective = function (action, resourceId, option) {
-      return directive(action, resourceId, option);
+      const result = directive(action, resourceId, option);
+      const notify = function(title, message, type) {
+        if (typeof g.showOmegaNotification === 'function') g.showOmegaNotification(title, message, type);
+      };
+      const failed = !result || result.status !== 'APPLIED' ||
+        (['survey','expand_facility','add_reserve'].includes(action) && result.stateChanged !== true &&
+          !(result.result && result.result.duplicate === true));
+      if (failed) {
+        notify('RESOURCE ACTION NOT APPLIED',
+          String(action || 'Unknown action').toUpperCase() + ' was not confirmed by the authoritative resource command handler. ' +
+          String(result && (result.reason || result.status) || 'RESULT_NOT_RECORDED') + '.',
+          'error');
+        return result;
+      }
+      if (action === 'survey') {
+        const duplicate = !!(result.result && result.result.duplicate);
+        notify(duplicate ? 'SURVEY REQUEST ALREADY RECORDED' : 'SURVEY REQUEST RECORDED',
+          'The request is pending. No reserve, purity, confidence or production value was changed by this request.',
+          'info');
+      } else if (action === 'expand_facility') {
+        const duplicate = !!(result.result && result.result.duplicate);
+        notify(duplicate ? 'CAPACITY REQUEST ALREADY RECORDED' : 'CAPACITY REVIEW REQUEST RECORDED',
+          'Factory capacity, treasury and project state were not changed. An authoritative costed project implementation is still required.',
+          'info');
+      } else if (action === 'add_reserve') {
+        const duplicate = !!(result.result && result.result.duplicate);
+        notify(duplicate ? 'STOCKPILE REQUEST ALREADY RECORDED' : 'STOCKPILE REQUEST RECORDED',
+          'No stock was fabricated or transferred. A recorded physical batch/source is required before inventory can increase.',
+          'info');
+      } else if (action === 'focus_map') {
+        notify('RESOURCE MAP FILTER APPLIED', 'The map was asked to focus on ' + String(resourceId) + '. No reserve or production state was changed.', 'info');
+      } else if (action === 'cabinet_vote') {
+        notify('POLICY EVENT RECORDED', 'This records the selected policy vote; it does not by itself change production or stock.', 'info');
+      }
+      return result;
     };
 
     const originalRender = engine.renderModalContent;
