@@ -72,7 +72,9 @@ for (const s of sites) {
     s.quantitative.capacity.nominal <= s.quantitative.capacity.maximum, s.siteId + ': capacity ordering invalid');
   assert.equal(s.quantitative.quantitativeProvenance.authority, 'SCENARIO_SIMULATION_DATA');
   assert.equal(s.quantitative.quantitativeProvenance.externalMeasuredValuePromotion, false);
-  const horizon = Number(s.simulation.reserveHorizonYears);\n  const horizonOk = s.sourceReference?.sourcePath?.includes('_part_6_') ? horizon >= 350 && horizon <= 450 : horizon >= 400 && horizon <= 440;\n  assert(horizonOk, s.siteId + ': gameplay reserve horizon out of range');
+  const horizon = Number(s.simulation.reserveHorizonYears);
+  const horizonOk = s.sourceReference?.sourcePath?.includes('_part_6_') ? horizon >= 350 && horizon <= 450 : horizon >= 400 && horizon <= 440;
+  assert(horizonOk, s.siteId + ': gameplay reserve horizon out of range');
   assert(s.simulation.transportRoute.length > 0, s.siteId + ': per-site route missing');
   assert(s.processing.midstreamProcess, s.siteId + ': processing step missing');
   assert(s.processing.refinedOutputs.length > 0, s.siteId + ': product output missing');
