@@ -77,4 +77,4 @@ test('all 315 canonical records share a typed runtime contract with explicit aut
     }
   }
 });
-console.log('OMEGA SITE DATA CONTRACT: PASS - 315 canonical rows; 51 original migration IDs; seven fields checked for every record.');
+console.log('OMEGA SITE DATA CONTRACT: PASS - '+rows.length+' canonical rows; 51 original migration IDs; seven fields checked for every record.');
