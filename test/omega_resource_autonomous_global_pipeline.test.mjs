@@ -189,57 +189,110 @@ test('every committed deposit event is routed country-by-country through factory
 });
 
 
-function normalizeExpandedSite(raw){
+const LEGACY_CANONICAL_ALIAS_TARGETS={
+  SITE_AUS_olympic_dam_uranium_copper:'SITE_AUS_olympic_dam_mine',
+  SITE_BRA_carajas_iron_ore_mine_legacy2:'SITE_BRA_carajas_iron_ore_mine',
+  SITE_CHL_escondida_copper_mine_legacy2:'SITE_CHL_escondida_copper_mine',
+  SITE_IDN_grasberg_copper_gold_mine:'SITE_IDN_grasberg_mine',
+  SITE_COD_tenke_fungurume_copper_cobalt_complex:'SITE_COD_tenke_fungurume_mine',
+  SITE_COD_kibali_gold_mine_complex:'SITE_COD_kibali_gold_mine'
+};
+function normalizeExpandedSite(raw,referenceOverlay=null){
   const pkg=raw?.siteDataPackage||{},src=raw?.sourceSiteRecord||{},identity=raw?.siteIdentity||pkg.identity||raw?.identity||{};
   const siteId=String(raw?.siteId||pkg.siteId||src.id||'').trim();
   const countryId=String(raw?.countryId||identity.countryIso3||src.countryCode||src.country||'').trim().toUpperCase();
-  const resourceId=String(raw?.resourceIdentity?.resourceTypeId||identity.resourceTypeId||src.resourceTypeId||src.resourceId||raw?.resourceId||'').trim().toLowerCase();
+  const resourceId=String(raw?.resourceIdentity?.resourceTypeId||identity.resourceTypeId||
+    raw?.real?.resourceId||src.resourceTypeId||src.resourceId||raw?.resourceId||'').trim().toLowerCase();
   if(!siteId||!/^[A-Z]{3}$/.test(countryId))return null;
-  const commercial=raw?.operation?.commercialExtraction??pkg.operation?.commercialExtraction??src.commercialExtraction??raw?.commercialExtraction;
-  if(raw?.runtime?.aliasOfSiteId||raw?.aliasOfSiteId)return null;
-  const siteType=String(raw?.siteType||identity.siteType||src.siteType||'RESOURCE_SITE');
-  const operationalStatus=String(raw?.currentStatus||raw?.status||pkg.operation?.status||src.status||'UNKNOWN').trim().toUpperCase();
+  const baseOperation=raw?.operation||pkg.operation||src.operation||{};
+  const refOperation=referenceOverlay?.operation||referenceOverlay?.siteDataPackage?.operation||{};
+  const initialStatus=String(baseOperation.status||raw?.currentStatus||raw?.status||src.status||src.operationalStatus||'UNKNOWN').trim().toUpperCase();
+  const refStatus=String(refOperation.status||referenceOverlay?.currentStatus||referenceOverlay?.status||
+    referenceOverlay?.sourceSiteRecord?.status||'').trim().toUpperCase();
+  const operationalStatus=initialStatus==='ACTIVE_SITE_REFERENCE'&&refStatus&&refStatus!=='ACTIVE_SITE_REFERENCE'?refStatus:initialStatus;
+  const commercial=baseOperation.commercialExtraction??pkg.operation?.commercialExtraction??src.commercialExtraction??
+    raw?.commercialExtraction??(resourceId?true:false);
+  const isAlias=Boolean(raw?.runtime?.aliasOfSiteId||raw?.aliasOfSiteId||
+    raw?.map?.markerEligible===false||LEGACY_CANONICAL_ALIAS_TARGETS[siteId]);
+  const siteType=String(raw?.siteType||identity.siteType||src.siteType||raw?.real?.siteType||'RESOURCE_SITE');
   return {
     ...raw,siteId,countryId,siteName:String(raw?.siteName||pkg.siteName||src.siteName||src.name||siteId),siteType,
-    real:{...(raw?.real||{}),resourceId:resourceId||null,extractionMethod:raw?.real?.extractionMethod||pkg.operation?.extractionMethod||src.extractionMethod||null},
+    real:{...(raw?.real||{}),resourceId:resourceId||null,
+      extractionMethod:raw?.real?.extractionMethod||baseOperation.extractionMethod||src.extractionMethod||null},
     identity:{...identity,countryIso3:countryId,resourceTypeId:resourceId||null,siteType},
-    sourceSiteRecord:{...src,siteId,resourceId:resourceId||src.resourceId||null,countryCode:countryId,commercialExtraction:commercial===true,status:operationalStatus},
-    operation:{...(raw?.operation||pkg.operation||{}),commercialExtraction:commercial===true,status:operationalStatus},
-    map:{...(raw?.map||{}),markerEligible:true,countryIsolationKey:countryId},
-    simulation:{...(raw?.simulation||{}),transportRoute:Array.isArray(raw?.simulation?.transportRoute)?raw.simulation.transportRoute:[]},
-    runtime:{...(raw?.runtime||{}),identityAuthority:raw?.runtime?.identityAuthority||'EXPANDED_SITE_REGISTRY'}
+    sourceSiteRecord:{...src,siteId,resourceId:resourceId||src.resourceId||null,countryCode:countryId,
+      commercialExtraction:commercial===true,status:operationalStatus},
+    operation:{...baseOperation,commercialExtraction:commercial===true,status:operationalStatus,operationalStatus},
+    map:{...(raw?.map||{}),markerEligible:raw?.map?.markerEligible!==false,countryIsolationKey:raw?.map?.countryIsolationKey||countryId},
+    simulation:{...(raw?.simulation||pkg.simulation||{}),
+      transportRoute:Array.isArray(raw?.simulation?.transportRoute)?raw.simulation.transportRoute:
+        Array.isArray(pkg.simulation?.transportRoute)?pkg.simulation.transportRoute:[]},
+    runtime:{...(raw?.runtime||{}),identityAuthority:raw?.runtime?.identityAuthority||'CANONICAL_SITE_REGISTRY'},
+    isAlias,aliasOfSiteId:raw?.runtime?.aliasOfSiteId||raw?.aliasOfSiteId||LEGACY_CANONICAL_ALIAS_TARGETS[siteId]||null
   };
 }
 function loadExpandedSites(){
-  const manifest=readJson('resource_site_reference_expanded_manifest.json');
-  const rows=(manifest.parts||[]).flatMap(part=>readJson(part.file).sites||[]);
-  const nonAliases=rows.filter(raw=>!raw?.runtime?.aliasOfSiteId&&!raw?.aliasOfSiteId);
-  const malformed=nonAliases.filter(raw=>{
-    const pkg=raw?.siteDataPackage||{},src=raw?.sourceSiteRecord||{},identity=raw?.siteIdentity||pkg.identity||raw?.identity||{};
-    return !String(raw?.siteId||pkg.siteId||src.id||'').trim()||
-      !/^[A-Z]{3}$/.test(String(raw?.countryId||identity.countryIso3||src.countryCode||src.country||'').trim().toUpperCase());
-  });
-  assert.deepEqual(malformed.map(x=>x.siteId||x.siteName||x.sourceSiteRecord?.name),[],
-    'every non-alias expanded site must have a country and stable site ID');
+  const canonical=readJson('resource_site_canonical_catalog_v1.json');
+  const legacyParts=[1,2,3,4,5,6].map(part=>readJson('resource_site_legacy_gameplay_expansion_part_'+part+'_v1.json'));
+  const legacyRows=legacyParts.flatMap(part=>Array.isArray(part.records)?part.records:[]);
+  assert.equal(canonical.sites?.length,Number(canonical.siteCount)||canonical.sites?.length,
+    'canonical catalog row count must reconcile with its own declared count');
+  const canonicalIds=new Set(canonical.sites.map(site=>String(site.siteId||'').trim()).filter(Boolean));
+  assert.equal(canonicalIds.size,canonical.sites.length,'canonical site IDs must be unique');
+  const legacyIds=new Set(legacyRows.map(site=>String(site.siteId||'').trim()).filter(Boolean));
+  assert.equal(legacyIds.size,legacyRows.length,'legacy expansion IDs must be unique before canonical merge');
+  const additiveRows=legacyRows.filter(site=>!canonicalIds.has(String(site.siteId||'').trim()));
+  const referenceManifest=readJson('resource_site_reference_expanded_manifest.json');
+  const referenceRows=(referenceManifest.parts||[]).flatMap(part=>readJson(part.file).sites||[]);
+  const referenceById=new Map();
+  for(const row of referenceRows){const id=String(row?.siteId||'').trim();if(id&&!referenceById.has(id))referenceById.set(id,row);}
   const byId=new Map();
-  for(const raw of rows){const site=normalizeExpandedSite(raw);if(site&&!byId.has(site.siteId))byId.set(site.siteId,site);}
-  const uniqueExpected=new Set(nonAliases.map(raw=>String(raw.siteId||raw.siteDataPackage?.siteId||raw.sourceSiteRecord?.id||'').trim()));
-  assert.equal(byId.size,uniqueExpected.size,'non-alias site rows may only be omitted through a duplicate canonical identity');
-  return [...byId.values()];
-}
-
-test('all expanded deposits receive explicit flow status; active sites dispatch and inactive sites are blocked',async()=>{
-  const sites=loadExpandedSites();
-  assert.equal(sites.length,199,'expanded registry test must include every non-alias record from the current pack: '+sites.length);
-  const isOperational=status=>{
-    const normalized=String(status||'').toUpperCase().replace(/[^A-Z0-9]+/g,'_');
-    const explicitlyInactive=/(^|_)(INACTIVE|NOT_ACTIVE|HISTORICAL|HISTORICALLY|CARE_AND_MAINTENANCE|SUSPEND|SUSPENDED|BLOCKED|CLOSED|ABANDON|ABANDONED|DEPLETED|DEVELOPMENT|RESTARTING|CESSATION_OF_PRODUCTION|DISRUPTED|NOT_APPLICABLE|NO_CURRENT_CONCESSION|PERMIT_PROCESSING|RESOURCE_IDENTITY_UNVERIFIED|DISPUTED_OPERATION|RESTRICTED)(_|$)/.test(normalized);
-    return !explicitlyInactive&&/(^|_)(ACTIVE_EXTRACTION|ACTIVE_PRODUCING|ACTIVE|DEPLETING|RESERVE_DEPLETING|OPERATING|RUNNING|PRODUCING)(_|$)/.test(normalized);
+  for(const site of canonical.sites)byId.set(String(site.siteId),site);
+  for(const site of additiveRows){
+    const id=String(site.siteId||'').trim();
+    if(id&&!byId.has(id))byId.set(id,site);
+  }
+  const normalized=[...byId.values()].map(raw=>normalizeExpandedSite(raw,referenceById.get(String(raw.siteId||'')))).filter(Boolean);
+  const allIds=new Set(normalized.map(site=>site.siteId));
+  assert.equal(allIds.size,normalized.length,'merged canonical + additive registry must have unique site IDs');
+  const aliases=normalized.filter(site=>site.isAlias);
+  const physicalSites=normalized.filter(site=>!site.isAlias&&site.map.markerEligible!==false);
+  for(const alias of aliases){
+    const target=String(alias.aliasOfSiteId||'').trim();
+    assert(target,alias.siteId+': alias must point to a canonical physical target');
+    assert(allIds.has(target),alias.siteId+': alias target must exist in the merged canonical registry: '+target);
+  }
+  return{
+    sites:physicalSites,allRows:normalized,aliases,canonicalCount:canonical.sites.length,legacyCount:legacyRows.length,
+    legacyOverlapCount:legacyRows.filter(site=>canonicalIds.has(String(site.siteId||'').trim())).length,
+    additiveUniqueCount:additiveRows.length,referenceCount:referenceById.size,
+    countryCount:new Set(normalized.map(site=>site.countryId)).size
   };
-  const activeSites=sites.filter(s=>s.operation.commercialExtraction===true&&isOperational(s.operation.status)&&Boolean(s.real.resourceId));
-  const activeIds=new Set(activeSites.map(s=>s.siteId));
-  const blockedSites=sites.filter(s=>!activeIds.has(s.siteId));
+}
+test('all canonical and additive deposits receive a policy-governed flow status and full pipeline',async()=>{
+  const registry=loadExpandedSites(),sites=registry.sites,allRows=registry.allRows;
+  const policy=readJson('resource_site_execution_policy_v1.json');
+  assert.equal(registry.canonicalCount,Number(readJson('resource_site_canonical_catalog_v1.json').siteCount));
+  assert.equal(registry.legacyCount>=registry.legacyOverlapCount,true);
+  assert.equal(registry.canonicalCount+registry.additiveUniqueCount,registry.allRows.length,
+    'the full canonical registry plus unique additive legacy IDs must all enter the same execution authority');
+  assert.equal(new Set(allRows.map(site=>site.siteId)).size,allRows.length);
+  assert.ok(registry.referenceCount>0,'the 199-site reference pack is enrichment only, never the execution boundary');
+  const lifecycleKey=status=>String(status||'UNKNOWN').trim().toUpperCase().replace(/[^A-Z0-9]+/g,'_').replace(/^_+|_+$/g,'')||'UNKNOWN';
+  const policyForSite=site=>{
+    if(site.operation.commercialExtraction!==true)return policy.defaults.commercialExtractionFalse;
+    return policy.statuses[lifecycleKey(site.operation.status)]||policy.defaults.unknownStatus;
+  };
+  const activeSites=sites.filter(site=>Boolean(site.real.resourceId)&&
+    Number(policyForSite(site)?.productionMultiplier)>0&&
+    !['BLOCKED','NOT_APPLICABLE','NON_EXECUTABLE_ALIAS'].includes(String(policyForSite(site)?.state||'')));
+  const activeIds=new Set(activeSites.map(site=>site.siteId));
+  const blockedSites=sites.filter(site=>!activeIds.has(site.siteId));
   assert.equal(activeSites.length+blockedSites.length,sites.length);
+  assert.equal(sites.length+registry.aliases.length,allRows.length,
+    'all identity records must be either an independently executable physical site or an explicit alias');
+  assert.equal(registry.aliases.every(site=>!activeIds.has(site.siteId)),true,'alias identities must never receive independent extraction');
+  const h=makeContext(sites),g=h.context,state=h.state;
   const h=makeContext(sites),g=h.context,state=h.state;
   for(const f of ['omega_resource_country_boundary_guard.js','omega_resource_industrial_network_v1.js','omega_resource_economy_runtime_v2.js'])
     vm.runInContext(readText(f),g,{filename:f});
