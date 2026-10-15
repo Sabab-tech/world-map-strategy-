@@ -152,7 +152,7 @@
     }
     const ref=referencePrice(rid);
     const clearing=matched>0?Number(((lastBid.priceUsd+lastAsk.priceUsd)/2).toFixed(8)):null;
-    const bestBid=bids[0]?.priceUsd??null,bestAsk=asks[0]?.priceUsd??null;
+    const bestBid=bids[0]?.priceUsd??null,bestAsk=asks.find(x=>x.referenceOnly!==true)?.priceUsd??null;
     const status=clearing!==null?'CLEARED':(bestBid!==null||bestAsk!==null?'NO_CROSS':'NO_ORDERS');
     const matchedNotional=matches.reduce((s,x)=>s+(x.quantity||0)*((x.bidPriceUsd+x.askPriceUsd)/2),0);
     const vwap=matched>0?Number((matchedNotional/matched).toFixed(8)):null;
@@ -163,11 +163,11 @@
     const variance=priceSamples.length>1?priceSamples.reduce((s,x)=>s+Math.pow(x-mean,2),0)/priceSamples.length:null;
     const volatilityUsd=variance!==null?Number(Math.sqrt(variance).toFixed(8)):null;
     return{resourceId:rid,status,numeraire:'USD',clearingPriceUsd:clearing,bestBidUsd:bestBid,bestAskUsd:bestAsk,matchedQuantity:matched,blockedTradePairs:blockedPairs,
-      bidDepth:bids.reduce((s,x)=>s+(n(x.quantity)||0),0),askDepth:asks.reduce((s,x)=>s+(n(x.quantity)||0),0),
+      bidDepth:bids.reduce((s,x)=>s+(n(x.quantity)||0),0),askDepth:asks.filter(x=>x.referenceOnly!==true).reduce((s,x)=>s+(n(x.quantity)||0),0),referenceAskDepth:asks.filter(x=>x.referenceOnly===true).reduce((s,x)=>s+(n(x.quantity)||0),0),
       priceDiscovery:clearing!==null?'ORDER_BOOK_CROSSING':(bestBid!==null&&bestAsk!==null?'NEGOTIATION_RANGE':ref?'REFERENCE_ONLY':'UNAVAILABLE'),
       referencePrice:ref?.price??null,referenceUnit:ref?.unit??null,referenceSource:ref?.source??null,matches,vwapUsd:vwap,spreadUsd:spread,volatilityUsd,
-      microstructure:{bidCount:bids.length,askCount:asks.length,referenceAskCount:asks.filter(x=>x.referenceOnly).length},
-      generatedTurn:turn(),orderBookDepth:{bid:bids.length,ask:asks.length}};
+      microstructure:{bidCount:bids.length,askCount:asks.filter(x=>x.referenceOnly!==true).length,referenceAskCount:asks.filter(x=>x.referenceOnly===true).length},
+      generatedTurn:turn(),orderBookDepth:{bid:bids.length,ask:asks.filter(x=>x.referenceOnly!==true).length,referenceAsks:asks.filter(x=>x.referenceOnly===true).length}};
   }
   function rebuild(){
     const markets={};
