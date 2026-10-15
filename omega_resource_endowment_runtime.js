@@ -1374,6 +1374,16 @@ function batchFromExtraction(x,record){
           sitePath.lastTurn=turn();minePaths[siteKey]=sitePath;
         }
       };
+      const strategicPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
+      const policySiteId=String(x.siteReferenceKey||x.rawDeposit?.siteId||x.rawDeposit?.siteReferenceKey||'').trim();
+      if(policySiteId&&strategicPolicy?.siteAvailableForExtraction){
+        const siteGate=strategicPolicy.siteAvailableForExtraction(c,policySiteId);
+        if(siteGate&&!siteGate.allowed){
+          const reason={occurrenceKey:x.occurrenceKey,siteId:policySiteId,resourceId:x.resourceId,reason:siteGate.reason||'SITE_EXPLORATION_GATE_BLOCKED'};
+          blocked.push(reason);mineOutputs[x.occurrenceKey]={occurrenceKey:x.occurrenceKey,siteReferenceKey:policySiteId,resourceId:x.resourceId,simulationTurn:turn(),producedQuantity:0,status:'BLOCKED',blockReason:reason.reason};
+          markPathBlocked(reason.reason,{siteId:policySiteId});continue;
+        }
+      }
       const reserve=r.getReserveState(x.occurrenceKey)||x.reserveState;
       if(!reserve){
         const reason={occurrenceKey:x.occurrenceKey,resourceId:x.resourceId,reason:'RESERVE_STATE_UNAVAILABLE'};
@@ -1410,6 +1420,8 @@ function batchFromExtraction(x,record){
         markPathBlocked(reason.reason);continue;
       }
       let windowQuantity=0;try{windowQuantity=n(capacity.computeWindowCapacity(DAY_HOURS)?.windowCapacity)||0;}catch(_){windowQuantity=n(capacity.nominalRate)||0;}
+      const environmentalMultiplier=strategicPolicy?.extractionMultiplier?.(c,policySiteId||x.occurrenceKey,x.resourceId,ctx.stateTransaction);
+      if(n(environmentalMultiplier)!==null)windowQuantity*=Math.max(0,Math.min(1,n(environmentalMultiplier)));
       const resourceKey=rid(x.resourceId),demandConstrained=Object.prototype.hasOwnProperty.call(demandTargetByResource,resourceKey)&&Number(demandTargetByResource[resourceKey])>0;
       if(demandConstrained){
         const aggregateCapacity=Math.max(totalWindowByResource[resourceKey]||0,0);
@@ -1476,6 +1488,12 @@ function batchFromExtraction(x,record){
       if(batchCheck&&!batchCheck.ok)throw new Error(batchCheck.reason||'RESOURCE_COUNTRY_BOUNDARY_VIOLATION');
       if(!batch.batchId||batch.quantity<=0)throw new Error('EXTRACTION_BATCH_CREATION_FAILED');
       if(!existingBatches.some(b=>String(b?.batchId)===batch.batchId))existingBatches.push(batch);
+      if(typeof strategicPolicy?.recordExtractionImpactTx==='function'){
+        const environmentalResult=strategicPolicy.recordExtractionImpactTx(ctx,{transactionId:batch.batchId,siteId:policySiteId||x.occurrenceKey,resourceId:resource,quantity:q,unit:batch.unit,batchId:batch.batchId,extractionId:record.extractionId});
+        if(environmentalResult?.accepted===false&&environmentalResult.reason!=='ENVIRONMENTAL_RULES_UNAVAILABLE'){
+          existingPath.stages.push({stage:'ENVIRONMENTAL_IMPACT',turn:turn(),status:'DEGRADED',reason:environmentalResult.reason||'ENVIRONMENTAL_IMPACT_NOT_RECORDED'});
+        }
+      }
       inventoryLots[batch.batchId]={
         batchId:batch.batchId,resourceId:resource,countryId:c,sourceCountryId:c,originCountryId:c,
         destinationCountryId:c,warehouseId:batch.warehouseId,quantity:q,remainingQuantity:q,
