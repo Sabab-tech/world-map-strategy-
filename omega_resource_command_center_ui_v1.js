@@ -90,13 +90,14 @@
       const key = Object.keys(root).find(function (name) { return String(name).trim().toUpperCase() === code; });
       return key ? (root[key] || {}) : {};
     }
-    const r = Object.keys(s.resource || {}).length ? countryState('resource') : countryState('resources');
+    const primaryResourceState = countryState('resource');
+    const r = Object.keys(primaryResourceState).length ? primaryResourceState : countryState('resources');
     const fin = countryState('finance');
     const eco = countryState('economy');
     const impact = r.environmentalImpact && typeof r.environmentalImpact === 'object' ? r.environmentalImpact : {};
     const bySite = impact.bySite && typeof impact.bySite === 'object' ? impact.bySite : {};
     const boundedSites = {};
-    Object.keys(bySite).slice(0, 40).forEach(function (siteId) {
+    Object.keys(bySite).slice(-40).forEach(function (siteId) {
       const site = bySite[siteId] || {};
       boundedSites[siteId] = {
         siteId: site.siteId || siteId,
