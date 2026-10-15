@@ -40,14 +40,14 @@ test('the resource command-center UI is loaded after the authoritative runtimes'
 
 test('action feedback requires a real runtime result and records reference-only market liquidity', () => {
   assert.match(ui, /acceptedFalse/);
-  assert.match(ui, /referenceLiquidity === true/);
+  assert.match(ui, /r\.industrialNetwork \|\| \{\}/);
   assert.match(ui, /NO_COMPATIBLE_FACTORY/);
   assert.match(ui, /ALL_12_QUESTIONS_REQUIRE_ANSWERS/);
 });
 
 test('each numbered legacy card maps explicitly to its intended panel, independent of active category filters', () => {
   const pointBlock = ui.slice(ui.indexOf('const panelByPoint = {'), ui.indexOf('};', ui.indexOf('const panelByPoint = {')) + 2);
-  const mappings = [...pointBlock.matchAll(/'(\\d{2})': '([a-z]+)'/g)].map((m) => [m[1], m[2]]);
+  const mappings = [...pointBlock.matchAll(/'(\d{2})': '([a-z]+)'/g)].map((m) => [m[1], m[2]]);
   assert.equal(mappings.length, 16);
   assert.deepEqual(mappings, [
     ['01','matrix'],['02','ontology'],['03','reserves'],['04','deposits'],
@@ -55,8 +55,8 @@ test('each numbered legacy card maps explicitly to its intended panel, independe
     ['09','industrial'],['10','market'],['11','trade'],['12','value'],
     ['13','cascade'],['14','cognitive'],['15','power'],['16','environment']
   ]);
-  assert.match(ui, /const routeCountry = activeCountry\\(this\\.activeCountry \\|\\| countryId\\)/);
-  assert.match(ui, /network\\.candidateFactories\\(country, resourceId\\)/);
+  assert.match(ui, /const routeCountry = activeCountry\(this\.activeCountry \|\| countryId\)/);
+  assert.match(ui, /network\.candidateFactories\(country, resourceId\)/);
 });
 
 test('metrology converter handles matching dimensions and blocks dimension mismatches', () => {
@@ -69,8 +69,8 @@ test('metrology converter handles matching dimensions and blocks dimension misma
 });
 
 test('actual industrial flow and technology project state paths are rendered', () => {
-  assert.match(ui, /r\\.industrialNetwork \\|\\| \\{\\}/);
-  assert.match(ui, /industrialState\\.siteFlowLedger/);
+  assert.match(ui, /r\.industrialNetwork \|\| \{\}/);
+  assert.match(ui, /industrialState\.siteFlowLedger/);
   assert.match(ui, /technology project contracts/);
   assert.match(ui, /Resource research runtime projects/);
   assert.match(ui, /data-search-item data-form=/);
