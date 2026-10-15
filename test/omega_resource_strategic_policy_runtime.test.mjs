@@ -26,7 +26,7 @@ function harness(){
       identity:{countryIso3:'BGD',resourceTypeId:'copper'},
       location:{coordinates:{lat:23.7,lng:90.4},countryBoundaryKey:'BGD'},
       map:{markerEligible:true,countryIsolationKey:'BGD'},
-      operation:{commercialExtraction:true,status:'DISCOVERED_REFERENCE',extractionEligibility:'LOCKED_UNTIL_DISCOVERY_AND_FINAL_INVESTMENT_DECISION'},
+      operation:{commercialExtraction:false,status:'DISCOVERED_REFERENCE',extractionEligibility:'LOCKED_UNTIL_DISCOVERY_AND_FINAL_INVESTMENT_DECISION'},
       naturalRisk:{environmental:80,waterStress:70}
     }]}
   };
