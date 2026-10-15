@@ -1,0 +1,209 @@
+{
+  "schemaVersion": "1.0.0",
+  "datasetId": "OMEGA_RESOURCE_SITE_EXECUTION_POLICY_V1",
+  "authority": "OMEGA_RESOURCE_SITE_EXECUTION_POLICY",
+  "description": "Canonical lifecycle-to-execution policy shared by all current and future site identities. It controls eligibility and simulation capacity only; canonical site/resource/reserve data remain separate authorities.",
+  "defaults": {
+    "commercialExtractionFalse": {
+      "state": "BLOCKED",
+      "reason": "NON_COMMERCIAL_SITE",
+      "productionMultiplier": 0
+    },
+    "unknownStatus": {
+      "state": "BLOCKED",
+      "reason": "SITE_LIFECYCLE_STATUS_UNCLASSIFIED",
+      "productionMultiplier": 0
+    },
+    "alias": {
+      "state": "NON_EXECUTABLE_ALIAS",
+      "reason": "CANONICAL_ALIAS_HAS_NO_INDEPENDENT_EXTRACTION",
+      "productionMultiplier": 0
+    }
+  },
+  "statuses": {
+    "ACTIVE_PRODUCING": {
+      "state": "ACTIVE",
+      "reason": null,
+      "productionMultiplier": 1,
+      "quantityAuthority": "SITE_SPECIFIC_RUNTIME"
+    },
+    "ACTIVE_EXTRACTION": {
+      "state": "ACTIVE",
+      "reason": null,
+      "productionMultiplier": 1,
+      "quantityAuthority": "SITE_SPECIFIC_RUNTIME"
+    },
+    "ACTIVE": {
+      "state": "ACTIVE",
+      "reason": null,
+      "productionMultiplier": 1,
+      "quantityAuthority": "SITE_SPECIFIC_RUNTIME"
+    },
+    "OPERATING": {
+      "state": "ACTIVE",
+      "reason": null,
+      "productionMultiplier": 1,
+      "quantityAuthority": "SITE_SPECIFIC_RUNTIME"
+    },
+    "RUNNING": {
+      "state": "ACTIVE",
+      "reason": null,
+      "productionMultiplier": 1,
+      "quantityAuthority": "SITE_SPECIFIC_RUNTIME"
+    },
+    "PRODUCING": {
+      "state": "ACTIVE",
+      "reason": null,
+      "productionMultiplier": 1,
+      "quantityAuthority": "SITE_SPECIFIC_RUNTIME"
+    },
+    "DEPLETING": {
+      "state": "ACTIVE",
+      "reason": null,
+      "productionMultiplier": 1,
+      "quantityAuthority": "SITE_SPECIFIC_RUNTIME"
+    },
+    "RESERVE_DEPLETING": {
+      "state": "ACTIVE",
+      "reason": null,
+      "productionMultiplier": 1,
+      "quantityAuthority": "SITE_SPECIFIC_RUNTIME"
+    },
+    "ACTIVE_SITE_REFERENCE": {
+      "state": "SIMULATED_ACTIVE",
+      "reason": null,
+      "productionMultiplier": 0.45,
+      "quantityAuthority": "SIMULATED_SITE_CAPACITY"
+    },
+    "SIMULATED_OPERATIONAL_SCENARIO": {
+      "state": "SIMULATED_ACTIVE",
+      "reason": null,
+      "productionMultiplier": 0.65,
+      "quantityAuthority": "SIMULATED_SITE_CAPACITY"
+    },
+    "LIMITED": {
+      "state": "CONSTRAINED",
+      "reason": null,
+      "productionMultiplier": 0.35,
+      "quantityAuthority": "SIMULATED_SITE_CAPACITY"
+    },
+    "ARTISANAL_AND_LIMITED": {
+      "state": "CONSTRAINED",
+      "reason": null,
+      "productionMultiplier": 0.1,
+      "quantityAuthority": "SIMULATED_SITE_CAPACITY"
+    },
+    "RESTARTING": {
+      "state": "CONSTRAINED",
+      "reason": null,
+      "productionMultiplier": 0.15,
+      "quantityAuthority": "SIMULATED_SITE_CAPACITY"
+    },
+    "STARTED_OPERATIONS_RAMP_UP": {
+      "state": "CONSTRAINED",
+      "reason": null,
+      "productionMultiplier": 0.25,
+      "quantityAuthority": "SIMULATED_SITE_CAPACITY"
+    },
+    "SUSPENDED": {
+      "state": "BLOCKED",
+      "reason": "SITE_SUSPENDED",
+      "productionMultiplier": 0
+    },
+    "HISTORICAL_INACTIVE": {
+      "state": "BLOCKED",
+      "reason": "SITE_HISTORICAL_INACTIVE",
+      "productionMultiplier": 0
+    },
+    "DEVELOPMENT": {
+      "state": "BLOCKED",
+      "reason": "SITE_NOT_COMMISSIONED",
+      "productionMultiplier": 0
+    },
+    "RESTRICTED": {
+      "state": "BLOCKED",
+      "reason": "SITE_EXTRACTION_RESTRICTED",
+      "productionMultiplier": 0
+    },
+    "DISRUPTED": {
+      "state": "BLOCKED",
+      "reason": "SITE_OPERATIONS_DISRUPTED",
+      "productionMultiplier": 0
+    },
+    "CARE_AND_MAINTENANCE": {
+      "state": "BLOCKED",
+      "reason": "SITE_CARE_AND_MAINTENANCE",
+      "productionMultiplier": 0
+    },
+    "RESOURCE_IDENTITY_UNVERIFIED": {
+      "state": "BLOCKED",
+      "reason": "RESOURCE_IDENTITY_UNVERIFIED",
+      "productionMultiplier": 0
+    },
+    "DISPUTED_OPERATION": {
+      "state": "BLOCKED",
+      "reason": "SITE_OPERATION_DISPUTED",
+      "productionMultiplier": 0
+    },
+    "CESSATION_OF_PRODUCTION": {
+      "state": "BLOCKED",
+      "reason": "SITE_PRODUCTION_CEASED",
+      "productionMultiplier": 0
+    },
+    "NO_CURRENT_CONCESSION": {
+      "state": "BLOCKED",
+      "reason": "SITE_NO_CURRENT_CONCESSION",
+      "productionMultiplier": 0
+    },
+    "PERMIT_PROCESSING": {
+      "state": "BLOCKED",
+      "reason": "SITE_PERMIT_NOT_GRANTED",
+      "productionMultiplier": 0
+    },
+    "SITE_REFERENCE_REVALIDATION_REQUIRED": {
+      "state": "BLOCKED",
+      "reason": "SITE_REFERENCE_REVALIDATION_REQUIRED",
+      "productionMultiplier": 0
+    },
+    "EXPLORATION_SCENARIO_LOCKED": {
+      "state": "BLOCKED",
+      "reason": "EXPLORATION_NOT_COMMISSIONED",
+      "productionMultiplier": 0
+    },
+    "INACTIVE": {
+      "state": "BLOCKED",
+      "reason": "SITE_INACTIVE",
+      "productionMultiplier": 0
+    },
+    "NOT_ACTIVE": {
+      "state": "BLOCKED",
+      "reason": "SITE_INACTIVE",
+      "productionMultiplier": 0
+    },
+    "BLOCKED": {
+      "state": "BLOCKED",
+      "reason": "SITE_BLOCKED",
+      "productionMultiplier": 0
+    },
+    "CLOSED": {
+      "state": "BLOCKED",
+      "reason": "SITE_CLOSED",
+      "productionMultiplier": 0
+    },
+    "ABANDONED": {
+      "state": "BLOCKED",
+      "reason": "SITE_ABANDONED",
+      "productionMultiplier": 0
+    },
+    "DEPLETED": {
+      "state": "BLOCKED",
+      "reason": "SITE_RESERVE_DEPLETED",
+      "productionMultiplier": 0
+    },
+    "NOT_APPLICABLE": {
+      "state": "NOT_APPLICABLE",
+      "reason": "NO_COMMERCIAL_EXTRACTION_APPLICABLE",
+      "productionMultiplier": 0
+    }
+  }
+}
