@@ -286,6 +286,8 @@ function requireCognitiveApproval(ctx,operation){
  if(!latest)return{accepted:false,reason:'COGNITIVE_GATE_DECISION_REQUIRED',operation};
  if(limit===null||limit<0)return{accepted:false,reason:'COGNITIVE_GATE_RULES_INVALID',operation};
  if(turn()-(num(latest.turn)||0)>limit)return{accepted:false,reason:'COGNITIVE_GATE_DECISION_EXPIRED',operation,decisionId:latest.decisionId};
+ if(latest.aiGenerated!==true||latest.authority!=='OMEGA_SERVER_RESOURCE_DECISION_AI')
+  return{accepted:false,reason:'SERVER_AI_DECISION_REQUIRED',operation,decisionId:latest.decisionId};
  if(latest.decision!=='PROCEED_WITH_RECORDED_ASSUMPTIONS'){
   return{accepted:false,reason:latest.decision==='BLOCK'?'COGNITIVE_GATE_BLOCKED':'COGNITIVE_GATE_REVIEW_REQUIRED',operation,
    decisionId:latest.decisionId,decision:latest.decision};
@@ -426,11 +428,25 @@ function evaluateCognitiveGateTx(ctx,payload){
  const old=ctx.stateTransaction.get('resource.cognitiveDecisionLedger'),ledger=Array.isArray(old)?clone(old):[];
  const existing=ledger.find(x=>String(x?.decisionId||'')===decisionId);
  if(existing)return JSON.stringify(existing.answers)===JSON.stringify(answers)?{accepted:true,duplicate:true,decision:existing}:{accepted:false,reason:'COGNITIVE_DECISION_ID_CONFLICT'};
+ const ai=p.aiAssessment&&typeof p.aiAssessment==='object'?p.aiAssessment:null;
+ if(!ai||ai.aiGenerated!==true||ai.authority!=='OMEGA_SERVER_RESOURCE_DECISION_AI')
+  return{accepted:false,reason:'AI_ASSESSMENT_REQUIRED',authorityRequired:'OMEGA_SERVER_RESOURCE_DECISION_AI'};
+ const modelDecision=String(ai.decision||'').toUpperCase(),confidence=num(ai.confidence);
+ if(!['PROCEED','REVIEW','BLOCK'].includes(modelDecision)||confidence===null||confidence<0||confidence>1)
+  return{accepted:false,reason:'AI_ASSESSMENT_SCHEMA_INVALID'};
  const blocks=answers.filter(x=>x==='block').length,reviews=answers.filter(x=>x==='review').length;
- const decision=blocks?'BLOCK':reviews>=4?'REVIEW':'PROCEED_WITH_RECORDED_ASSUMPTIONS';
+ let finalDecision=blocks?'BLOCK':(reviews>=4&&modelDecision==='PROCEED'?'REVIEW':modelDecision);
+ const decision=finalDecision==='PROCEED'?'PROCEED_WITH_RECORDED_ASSUMPTIONS':finalDecision;
+ const aiRecord={decision:modelDecision,confidence,riskSummary:String(ai.riskSummary||'').slice(0,1200),
+  findings:Array.isArray(ai.findings)?ai.findings.slice(0,12):[],
+  recommendedChecks:Array.isArray(ai.recommendedChecks)?ai.recommendedChecks.slice(0,12):[],
+  safetyOverride:ai.safetyOverride||null,model:String(ai.model||'GEMINI_MODEL_UNDISCLOSED'),
+  provenance:String(ai.provenance||'SERVER_MODEL_RESPONSE_WITH_DETERMINISTIC_SAFETY_FLOORS')};
  const row={decisionId,countryId:country(ctx.countryId),turn:turn(),answers:answers.slice(),answeredCount:answers.length,
-  blockCount:blocks,reviewCount:reviews,decision,status:'RECORDED',advisory:false,enforced:true,gateScope:'STRATEGIC_HIGH_IMPACT_OPERATIONS',authority:'PLAYER_ENTERED_COGNITIVE_SCREENING',
-  aiGenerated:false,provenance:'USER_ENTERED_12_QUESTION_CHECKLIST'};
+  blockCount:blocks,reviewCount:reviews,decision,status:'RECORDED',advisory:false,enforced:true,gateScope:'STRATEGIC_HIGH_IMPACT_OPERATIONS',
+  authority:'OMEGA_SERVER_RESOURCE_DECISION_AI',aiGenerated:true,modelDecision,confidence,
+  aiAssessment:aiRecord,safetyOverride:blocks>0?'PLAYER_REPORTED_BLOCKER':(reviews>=4&&modelDecision==='PROCEED'?'FOUR_OR_MORE_UNRESOLVED_ANSWERS':null),
+  provenance:'SERVER_AI_EVALUATION_PLUS_USER_ENTERED_CHECKLIST'};
  ledger.push(row);ctx.stateTransaction.set('resource.cognitiveDecisionLedger',ledger.slice(-historyLimit));
  emit('OMEGA_RESOURCE_COGNITIVE_DECISION_RECORDED',ctx.countryId,row);return{accepted:true,decision:row,persisted:true};
 }
