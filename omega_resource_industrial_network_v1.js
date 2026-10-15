@@ -452,19 +452,54 @@ function onExtractionFiscalPosted(evt){
 function onTreasurySettlement(evt){
   const p=normalizedEventPayload(evt),cid=canonicalCountry(p.sellerCountryId||p.targetCountryId||p.sourceCountryId||p.countryId);
   if(!cid)return;
-  const transfers=Array.isArray(p.batchTransfers)?p.batchTransfers:[];
-  const exactSourceIds=new Set();
-  for(const transfer of transfers){
-    if(transfer?.sourceBatchId)exactSourceIds.add(String(transfer.sourceBatchId));
-    for(const id of transfer?.sourceBatchIds||[])exactSourceIds.add(String(id));
-  }
+  const inputTransfers=Array.isArray(p.batchTransfers)?p.batchTransfers:[],
+    transferRows=inputTransfers.map(transfer=>{
+      const roots=[...new Set([transfer?.sourceBatchId,...(transfer?.sourceBatchIds||[])].filter(Boolean).map(String))],
+        quantity=num(transfer?.quantity);
+      let value=num(transfer?.totalValue);
+      const unitPrice=num(transfer?.unitPrice);
+      if(value===null&&quantity!==null&&unitPrice!==null)value=quantity*unitPrice;
+      return{roots,quantity,value,transfer};
+    }).filter(item=>item.roots.length);
+  const topLevelRoots=[...new Set((Array.isArray(p.sourceBatchIds)?p.sourceBatchIds:[]).filter(Boolean).map(String))];
+  // Older settlement events may include only sourceBatchIds, not batchTransfers.
+  if(!transferRows.length&&topLevelRoots.length)
+    transferRows.push({roots:topLevelRoots,quantity:num(p.quantity),value:num(p.totalValue),transfer:null});
+  const exactSourceIds=new Set(topLevelRoots);
+  for(const item of transferRows)for(const id of item.roots)exactSourceIds.add(id);
+  if(!exactSourceIds.size)return;
+  const transactionHasSingleRoot=exactSourceIds.size===1,sid=String(p.settlementId||'');
   for(const row of siteFlowRows(cid)){
-    if(!exactSourceIds.has(String(row.batchId)))continue;
-    const sid=String(p.settlementId||'');
+    const batchId=String(row.batchId),matches=transferRows.filter(item=>item.roots.includes(batchId));
+    if(!matches.length)continue;
     if(sid&&row.treasurySettlements.some(x=>String(x.settlementId)===sid))continue;
-    row.treasurySettlements.push({settlementId:sid,resourceId:p.resourceId||null,quantity:num(p.quantity)||null,totalValue:num(p.totalValue)||null,
-      fiscal:clone(p.fiscal||null),turn:turn(),status:'RECONCILED'});
-    addFlowStage(row,'TREASURY','RECEIPT_POSTED',{settlementId:sid,resourceId:p.resourceId||null,totalValue:num(p.totalValue)||null,fiscal:clone(p.fiscal||null)});
+    const uniquelyAttributed=matches.filter(item=>item.roots.length===1),
+      sharedMatches=matches.filter(item=>item.roots.length>1),
+      knownValues=uniquelyAttributed.filter(item=>item.value!==null),
+      allUniqueValuesKnown=uniquelyAttributed.length>0&&knownValues.length===uniquelyAttributed.length,
+      attributedValue=knownValues.reduce((sum,item)=>sum+item.value,0),
+      attributedQuantity=uniquelyAttributed.reduce((sum,item)=>sum+(item.quantity===null?0:item.quantity),0),
+      attributionStatus=transactionHasSingleRoot?'FULLY_ATTRIBUTED':
+        (sharedMatches.length&&uniquelyAttributed.length?'PARTIALLY_ATTRIBUTED':
+          (sharedMatches.length?'SHARED_SOURCE_VALUE_UNALLOCATED':
+            (uniquelyAttributed.length&&allUniqueValuesKnown?'PER_SOURCE_ALLOCATION':'SOURCE_VALUE_UNAVAILABLE'))),
+      siteValue=transactionHasSingleRoot?(num(p.totalValue)!==null?num(p.totalValue):(allUniqueValuesKnown?attributedValue:null)):
+        (allUniqueValuesKnown?attributedValue:null),
+      siteQuantity=transactionHasSingleRoot?(num(p.quantity)!==null?num(p.quantity):(attributedQuantity>0?attributedQuantity:null)):
+        (uniquelyAttributed.length?attributedQuantity:null),
+      sharedSourceBatchIds=[...new Set(sharedMatches.flatMap(item=>item.roots).filter(id=>id!==batchId))];
+    // Do not copy a whole multi-deposit sale value/fiscal receipt onto every contributing
+    // mine. Only single-root transfer portions can be attributed to this site's flow.
+    // The country's finance ledger remains authoritative for the settlement total.
+    const receipt={settlementId:sid,resourceId:p.resourceId||null,quantity:siteQuantity,totalValue:siteValue,
+      attributedQuantity:attributedQuantity>0?attributedQuantity:null,
+      sharedSourceTransferCount:sharedMatches.length,sharedSourceBatchIds,
+      valueAttributionStatus:attributionStatus,fiscal:transactionHasSingleRoot?clone(p.fiscal||null):null,
+      transactionFiscalRecorded:!!p.fiscal,turn:turn(),status:'RECONCILED'};
+    row.treasurySettlements.push(receipt);
+    addFlowStage(row,'TREASURY','RECEIPT_POSTED',{settlementId:sid,resourceId:p.resourceId||null,
+      totalValue:siteValue,valueAttributionStatus:attributionStatus,sharedSourceTransferCount:sharedMatches.length,
+      sharedSourceBatchIds,fiscal:transactionHasSingleRoot?clone(p.fiscal||null):null});
     saveSiteFlow(cid,row);
   }
 }
