@@ -143,7 +143,7 @@ test('value, cascade, market and logistics controls use authoritative records wi
   assert.match(ui,/data-form="swf-capitalise"/);
   assert.match(ui,/policy\.capitalizeSovereignWealthFund/);
   assert.match(ui,/Fund contribution ledger/);
-  assert.match(ui,/TREASURY_NATIVE_UNITS/);
+  assert.match(ui,/native treasury units/i);
   assert.match(ui,/authoritativeRoutePolicy/);
   assert.match(ui,/policy\.isRouteBlocked/);
   assert.match(ui,/mutatesGameplay: false/);
