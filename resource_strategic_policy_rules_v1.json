@@ -19,7 +19,10 @@
       "EXPIRED"
     ],
     "wildcardCountry": "*",
-    "wildcardResource": "*"
+    "wildcardResource": "*",
+    "defaultBlockadeModes": [
+      "ship"
+    ]
   },
   "environmental": {
     "enabled": true,
