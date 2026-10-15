@@ -1186,31 +1186,42 @@
           setOutcome('Server AI decision', { status: 'UNAVAILABLE', reason: 'SERVER_AI_FETCH_UNAVAILABLE' });
           return;
         }
+        const decisionId = uniqueRequestId('COGNITIVE-AI', 'screen');
         let response, body;
         try {
           response = await g.fetch('/api/resource-decision/ai-evaluate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ countryId: c, answers: vals, gameState: aiCountrySnapshot(c) })
+            body: JSON.stringify({ countryId: c, decisionId, answers: vals, gameState: aiCountrySnapshot(c) })
           });
           body = await response.json();
         } catch (error) {
           setOutcome('Server AI decision', { status: 'UNAVAILABLE', reason: 'SERVER_AI_REQUEST_FAILED', detail: String(error && error.message || error) });
           return;
         }
+        const liveState = state() || {};
+        const liveTurn = liveState.simulation && liveState.simulation.turn != null
+          ? Number(liveState.simulation.turn)
+          : (liveState.turn != null ? Number(liveState.turn) : (liveState.simulationTurn != null ? Number(liveState.simulationTurn) : null));
+        const assessedTurn = body && body.context && body.context.simulationTurn != null ? Number(body.context.simulationTurn) : null;
+        const responseMatchesRequest = body && body.decisionId === decisionId && body.context && body.context.countryId === c;
+        const contextStillCurrent = assessedTurn === null || liveTurn === null || assessedTurn === liveTurn;
         if (!response.ok || !body || body.ok !== true || body.status !== 'COMPLETED' ||
+            !responseMatchesRequest || !contextStillCurrent ||
             !body.assessment || body.assessment.aiGenerated !== true ||
             body.assessment.authority !== 'OMEGA_SERVER_RESOURCE_DECISION_AI') {
           setOutcome('Server AI decision', {
             status: 'UNAVAILABLE',
-            reason: body && body.error || body && body.message || 'SERVER_AI_VERDICT_UNAVAILABLE',
+            reason: !responseMatchesRequest ? 'AI_RESPONSE_CONTEXT_OR_CORRELATION_MISMATCH' :
+              (!contextStillCurrent ? 'SIMULATION_STATE_CHANGED_DURING_AI_REVIEW' :
+                (body && body.error || body && body.message || 'SERVER_AI_VERDICT_UNAVAILABLE')),
             httpStatus: response.status,
             verdictRecorded: false
           });
           return;
         }
         result = policy.evaluateCognitiveGate(c, {
-          decisionId: uniqueRequestId('COGNITIVE-AI', 'screen'),
+          decisionId,
           answers: vals,
           aiAssessment: body.assessment
         });
