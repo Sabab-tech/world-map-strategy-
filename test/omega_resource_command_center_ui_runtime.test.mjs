@@ -144,8 +144,9 @@ test('all sixteen panels render without runtime exceptions', () => {
     ui.open('BGD', panel);
     assert.equal(ui.getState().panel, panel);
     const modal = elements.get('gsrsk-intelligence-modal');
-    assert.ok(modal && modal.innerHTML.includes('OMEGA Resource Command Center'), panel + ' should render the command center shell');
-    assert.ok(modal.innerHTML.includes('data-panel="' + panel + '"'), panel + ' should appear in navigation');
+    assert.ok(modal && modal.innerHTML.includes('Resource Command Center'), panel + ' should render the command center shell');
+    assert.ok(modal.innerHTML.includes('value="' + panel + '" selected'), panel + ' should be the sole selected section in the compact navigator');
+    assert.equal((modal.innerHTML.match(/<button[^>]*data-panel=/g) || []).length, 0, 'the panel must not duplicate all sixteen points as visible buttons');
   }
 });
 
