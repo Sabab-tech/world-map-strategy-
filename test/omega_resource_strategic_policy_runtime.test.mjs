@@ -251,10 +251,21 @@ test('carbon quota tracks CO2e separately from environmental impact indexes and 
  const blocked=h.interop.dispatchCommand('resource','OMEGA_RESOURCE_ENVIRONMENT_RECORD_EXTRACTION','BGD',{
   transactionId:'CARBON-BLOCK-1',siteId:'SITE_BGD_TEST_LOCKED',resourceId:'copper',quantity:500,unit:'TONNES'
  });
- assert.equal(blocked.status,'REJECTED');
+ assert.equal(blocked.status,'APPLIED','the enforcement-ledger write is applied while the emission remains blocked');
+ assert.equal(blocked.result.blocked,true);
  assert.equal(blocked.result.reason,'CARBON_QUOTA_EXCEEDED');
+ assert.equal(blocked.result.emissionCommitted,false);
  assert.equal(JSON.stringify({impact:h.state.resource.BGD.environmentalImpact,ledger:h.state.resource.BGD.environmentalLedger,carbon:h.state.resource.BGD.carbonEmissionsLedger}),before,
-  'rejected emissions must not partially write impact or ledger state');
+  'blocked emissions must not partially write impact or emission state');
+ assert.equal(h.state.resource.BGD.carbonQuotaEnforcementLedger.length,1);
+ assert.equal(h.state.resource.BGD.carbonQuotaEnforcementLedger[0].violationId,'CARBON-VIOLATION:CARBON:CARBON-BLOCK-1');
+ assert.equal(h.state.resource.BGD.carbonQuotaEnforcementLedger[0].requestedTonnesCo2e,60);
+ assert.equal(h.state.resource.BGD.carbonQuotaEnforcementLedger[0].projectedTonnesCo2e,120);
+ assert.equal(h.state.resource.BGD.carbonQuotaEnforcementLedger[0].enforcementAction,'ACTIVITY_BLOCKED_BEFORE_EMISSION_COMMIT');
+ assert.equal(h.state.resource.BGD.carbonQuotaEnforcementLedger[0].remediationFollowUp,'NO_SITE_LINKED');
+ const saved=JSON.parse(JSON.stringify(h.state.resource.BGD));
+ assert.equal(saved.carbonQuotaEnforcementLedger[0].reason,'CARBON_QUOTA_EXCEEDED','the violation ledger remains save/load serializable');
+
  const unmetered=api.recordCarbonEmission('BGD',{transactionId:'CARBON-UNIT-INVALID',source:'TEST',quantity:1,unit:'KG_CO2E'});
  assert.equal(unmetered.accepted,false);
  assert.equal(unmetered.reason,'CARBON_EMISSION_UNIT_INVALID');
