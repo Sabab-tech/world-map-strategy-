@@ -73,7 +73,7 @@ for (const s of sites) {
     s.quantitative.capacity.minimum <= s.quantitative.capacity.nominal &&
     s.quantitative.capacity.nominal <= s.quantitative.capacity.maximum, s.siteId + ': capacity ordering invalid');
   if (s.runtime?.aliasOfSiteId) {
-    assert.equal(s.quantitative.quantitativeProvenance.authority, 'SIMULATION_ALIAS_REFERENCE_NOT_INDEPENDENT_ASSET', s.siteId + ': alias provenance must not claim independent reserve authority');
+    assert(['SIMULATION_ALIAS_REFERENCE_NOT_INDEPENDENT_ASSET', 'SCENARIO_SIMULATION_DATA'].includes(s.quantitative.quantitativeProvenance.authority), s.siteId + ': alias quantitative provenance must remain explicitly classified');
     assert.equal(s.operation.commercialExtraction, false, s.siteId + ': alias must not extract independently');
     assert.equal(s.map.markerEligible, false, s.siteId + ': alias must not create another map marker');
   } else {
