@@ -751,7 +751,6 @@ function planShipment(input={}){
   if(!candidates.length)return{status:'BLOCKED',reason:'NO_MATCHING_FACTORY',countryId:cid,siteId:site.siteId,resourceId:rid};
   const ordered=candidates.sort((a,b)=>String(a.asset?.priority??999)-String(b.asset?.priority??999));
   let best=null,policyBlockedRoute=null;
-  const strategicPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
   const warehouseId='WH-'+cid+'-RAW';
   const siteRoute=(site.simulation?.transportRoute||[])[0]||{};
   const routeType=tok(siteRoute.mode||siteRoute.routeType||'');
