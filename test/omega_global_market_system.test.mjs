@@ -30,6 +30,9 @@ globalThis.OmegaResourceStrategicPolicyRules=JSON.parse(fs.readFileSync(new URL(
 await import('../omega_resource_strategic_policy_runtime_v1.js');
 await import('../omega_global_market_system.js');
 const policy=globalThis.Omega?.ResourceStrategicPolicyRuntime||globalThis.OmegaResourceStrategicPolicyRuntime;
+const policyDiagnostics=policy.diagnostics();
+assert.equal(policyDiagnostics.handlersReady,true,JSON.stringify(policyDiagnostics));
+assert.equal(policyDiagnostics.handlerErrors.length,0,JSON.stringify(policyDiagnostics.handlerErrors));
 const embargo=policy.declareEmbargo('BDG',{targetCountryId:'SAU',resourceId:'crude_oil',direction:'IMPORT',policyId:'MARKET-EMBARGO-TEST'});
 assert.equal(embargo.accepted,true,JSON.stringify(embargo));
 const market=globalThis.OmegaGlobalMarket;
