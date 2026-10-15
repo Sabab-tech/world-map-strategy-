@@ -223,6 +223,7 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
     if(executableCanonicalKeys.has(key))continue;
     const countryId=String(key).split(':')[1]||null;
     const row=countryId?state.resource?.[countryId]:null;
+    assert.ok(row?.minePaths?.[key], 'Missing occurrence-specific path for blocked canonical occurrence '+key);
     const output=row?.mineOutputs?.[key];
     assert.ok(output, 'Missing blocked output for non-executable occurrence '+key);
     assert.ok(String(output.status||'').startsWith('BLOCKED'), 'Non-executable occurrence was neither extracted nor explicitly blocked: '+key);
@@ -257,6 +258,10 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
   const batchCount=Object.values(state.resource).reduce((sum,row)=>sum+(Array.isArray(row?.batches)?row.batches.length:0),0);
   const pathCount=Object.values(state.resource).reduce((sum,row)=>sum+(row?.minePaths&&typeof row.minePaths==='object'?Object.keys(row.minePaths).length:0),0);
   const sitePathCount=Object.values(state.resource).reduce((sum,row)=>sum+Object.keys(row?.mineSiteControllers||{}).filter(k=>row.minePaths?.[k]).length,0);
+  const occurrencePathCount=Object.values(state.resource).reduce((sum,row)=>{
+    const controllerKeys=new Set(Object.keys(row?.mineSiteControllers||{}));
+    return sum+Object.keys(row?.minePaths||{}).filter(key=>!controllerKeys.has(key)).length;
+  },0);
   const lotCount=Object.values(state.resource).reduce((sum,row)=>sum+(row?.inventoryLots&&typeof row.inventoryLots==='object'?Object.keys(row.inventoryLots).length:0),0);
   assert.ok(mineCount>=engine.deposits.length,'projected mine rows must include canonical deposits and may include separate profile-derived site models');
   assert.equal(batchCount,extractedRecords.length);
@@ -264,7 +269,10 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
   assert.ok(projectedMines.every(x=>x.resourceAsset&&x.resourceAsset.schemaVersion==='1.0.0'));
   assert.ok(projectedMines.every(x=>Object.keys(x.resourceAsset).sort().join('|')===unifiedSiteKeys.join('|')));
   assert.equal(sitePathCount,mineSiteReferenceCount);
-  assert.equal(pathCount,mineSiteReferenceCount+extractedRecords.length,'every extracted occurrence must have its own path in addition to each site controller path');
+  assert.equal(occurrencePathCount,allCanonicalKeys.size,
+    'every canonical occurrence must have its own path, including a blocked occurrence that produced no batch');
+  assert.equal(pathCount,mineSiteReferenceCount+allCanonicalKeys.size,
+    'path ledger must contain one controller path per site plus one occurrence path per canonical occurrence');
   assert.equal(lotCount,extractedRecords.length);
 
   for(const [countryId,row] of Object.entries(state.resource)){
