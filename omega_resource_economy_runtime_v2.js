@@ -733,27 +733,49 @@
       var stage=String(row?.stage||'RAW').toUpperCase();
       return tok(row?.resourceId||row?.materialIdentity)===tok(rid)&&!blockedStages.has(stage)&&quantityOf(row)>1e-9;
     }).sort(function(a,b){return Number(a.createdTurn||a.timestampTurn||0)-Number(b.createdTurn||b.timestampTurn||0)||String(a.batchId||'').localeCompare(String(b.batchId||''));});
-    var left=Math.max(0,num(requested)||0),allocations=[];
-    for(var row of rows){
-      if(left<=1e-9)break;
+    var requestedQuantity=Math.max(0,num(requested)||0),allocations=[];
+    // Preserve provenance from every available lot in the published fraction. A FIFO-only
+    // allocation can silently hide later deposits whenever an offer is smaller than total
+    // warehouse stock, making those sites invisible to market intelligence despite holding stock.
+    var eligibleRows=rows.map(function(row){
       var q=quantityOf(row),stage=String(row.stage||'RAW').toUpperCase(),isRaw=!isFinished(stage),
-        alreadyReserved=isRaw?Math.max(0,reserved.get(String(row.batchId))||0):0,
-        available=Math.max(0,q-alreadyReserved),take=Math.min(available,left);
-      if(take<=1e-9)continue;
-      var lineage=siteLineage(row),flow=lineage.originBatchId?(Array.isArray(network.siteFlowLedger)?network.siteFlowLedger.find(function(x){return String(x.batchId||'')===lineage.originBatchId;}):null):null;
-      allocations.push({batchId:String(row.batchId||''),resourceId:rid,quantity:take,unit:row.unit||null,stage:stage,
-        sourceBatchIds:[...new Set((Array.isArray(row.sourceBatchIds)?row.sourceBatchIds:[]).map(String).filter(Boolean))],
-        originatingBatchId:lineage.originBatchId||String(row.batchId||''),originResourceId:lineage.originResourceId||rid,
-        siteId:lineage.site?.siteId||flow?.siteId||row.siteReferenceKey||row.siteId||null,
-        siteReferenceKey:lineage.site?.siteId||flow?.siteId||row.siteReferenceKey||null,
-        occurrenceKey:lineage.site?.occurrenceKey||flow?.occurrenceKey||row.occurrenceKey||null,
-        sourceCountryId:lineage.site?.sourceCountryId||flow?.countryId||row.originCountryId||row.sourceCountryId||canonical(c),
-        destinationCountryId:canonical(c),ownerCountryCode:row.ownerCountryCode||canonical(c),
-        sourceAuthority:row.provenance?.sourceAuthority||row.provenance?.authority||row.provenance?.source||'UNOBSERVED',
-        quantityAuthority:row.provenance?.quantityAuthority||row.provenance?.authority||'UNOBSERVED',
-        provenance:clone(row.provenance||{sourceAuthority:'UNOBSERVED'})});
-      left-=take;
+        alreadyReserved=isRaw?Math.max(0,reserved.get(String(row.batchId)||'')||0):0,
+        available=Math.max(0,q-alreadyReserved);
+      if(available<=1e-9)return null;
+      return{row:row,stage:stage,available:available};
+    }).filter(Boolean);
+    var totalAvailable=eligibleRows.reduce(function(sum,item){return sum+item.available;},0),
+      trackedTarget=Math.min(requestedQuantity,totalAvailable);
+    if(totalAvailable>1e-9&&trackedTarget>1e-9){
+      var proportionalTotal=0;
+      eligibleRows.forEach(function(item,index){
+        item.take=trackedTarget*(item.available/totalAvailable);
+        proportionalTotal+=item.take;
+      });
+      // Assign floating-point remainder to the final eligible lot without exceeding its stock.
+      if(eligibleRows.length){
+        var last=eligibleRows[eligibleRows.length-1];
+        last.take=Math.max(0,Math.min(last.available,last.take+(trackedTarget-proportionalTotal)));
+      }
+      for(var item of eligibleRows){
+        var row=item.row,take=item.take,stage=item.stage;
+        if(take<=1e-12)continue;
+        var lineage=siteLineage(row),flow=lineage.originBatchId?(Array.isArray(network.siteFlowLedger)?network.siteFlowLedger.find(function(x){return String(x.batchId||'')===lineage.originBatchId;}):null):null;
+        allocations.push({batchId:String(row.batchId||''),resourceId:rid,quantity:take,unit:row.unit||null,stage:stage,
+          sourceBatchIds:[...new Set((Array.isArray(row.sourceBatchIds)?row.sourceBatchIds:[]).map(String).filter(Boolean))],
+          originatingBatchId:lineage.originBatchId||String(row.batchId||''),originResourceId:lineage.originResourceId||rid,
+          siteId:lineage.site?.siteId||flow?.siteId||row.siteReferenceKey||row.siteId||null,
+          siteReferenceKey:lineage.site?.siteId||flow?.siteId||row.siteReferenceKey||null,
+          occurrenceKey:lineage.site?.occurrenceKey||flow?.occurrenceKey||row.occurrenceKey||null,
+          sourceCountryId:lineage.site?.sourceCountryId||flow?.countryId||row.originCountryId||row.sourceCountryId||canonical(c),
+          destinationCountryId:canonical(c),ownerCountryCode:row.ownerCountryCode||canonical(c),
+          sourceAuthority:row.provenance?.sourceAuthority||row.provenance?.authority||row.provenance?.source||'UNOBSERVED',
+          quantityAuthority:row.provenance?.quantityAuthority||row.provenance?.authority||'UNOBSERVED',
+          provenance:clone(row.provenance||{sourceAuthority:'UNOBSERVED'})});
+      }
     }
+    var allocatedTotal=allocations.reduce(function(sum,row){return sum+(num(row.quantity)||0);},0),
+      left=Math.max(0,requestedQuantity-allocatedTotal);
     if(left>1e-6)allocations.push({batchId:null,resourceId:rid,quantity:left,unit:null,stage:'UNOBSERVED_OPENING_BALANCE',
       sourceBatchIds:[],originatingBatchId:null,originResourceId:rid,siteId:null,siteReferenceKey:null,occurrenceKey:null,
       sourceCountryId:canonical(c),destinationCountryId:canonical(c),ownerCountryCode:canonical(c),sourceAuthority:'UNOBSERVED',
