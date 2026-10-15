@@ -669,7 +669,7 @@
         !(network && network.startTechnologyProject)) +
       actionButton('industry-tech', 'Start enhanced oil-recovery research', { 'technology-id': 'ENHANCED_OIL_RECOVERY', mode: 'RESEARCH' },
         !(network && network.startTechnologyProject)) + '</div>';
-    return '<div class="omega-rescc-warning">Nuclear power is a simulated ruleset project, not measured plant capacity. Construction charges the treasury, advances by simulation turns, then generates only when fuel inventory and carbon quota checks allow it. Generation factors are scenario assumptions.</div>' +
+    return '<div class="omega-rescc-warning">Nuclear power is a simulated ruleset project, not measured plant capacity. Construction charges native treasury units (not a claimed USD conversion), advances by simulation turns, then generates only when fuel inventory and carbon quota checks allow it. Generation factors are scenario assumptions.</div>' +
       '<div class="omega-rescc-metrics"><div><span>Installed power capacity (MW)</span><strong>' + number(generation.installedCapacityMw) + '</strong></div><div><span>Generated energy this turn (MWh)</span><strong>' + number(generation.generatedMwh) + '</strong></div></div>' +
       controls + '<h3 class="omega-rescc-section-title">Power construction projects</h3>' + statusRows(powerProjects) +
       '<h3 class="omega-rescc-section-title">Commissioned power assets</h3>' + statusRows(powerAssets) +
