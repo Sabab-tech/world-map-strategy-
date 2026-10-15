@@ -58,7 +58,7 @@
     if(value instanceof Date)return JSON.stringify(value.toISOString());
     if(typeof value!=='object')return JSON.stringify(value);
     if(Array.isArray(value))return '['+value.map(stableStringify).join(',')+']';
-    return '{'+Object.keys(value).filter(key=>key!=='__proto__'&&key!=='constructor'&&key!=='checksum'&&typeof value[key]!=='function'&&value[key]!==undefined).sort()
+    return '{'+Object.keys(value).filter(key=>key!=='__proto__'&&key!=='constructor'&&typeof value[key]!=='function'&&value[key]!==undefined).sort()
       .map(key=>JSON.stringify(key)+':'+stableStringify(value[key])).join(',')+'}';
   }
 
