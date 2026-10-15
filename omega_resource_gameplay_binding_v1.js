@@ -31,7 +31,7 @@ function hasValue(value){
  if(typeof value==='boolean')return true;
  if(Array.isArray(value))return value.some(hasValue);
  if(typeof value==='object'){
-  return ['value','quantity','amount','rate','annual','estimate','name','label','displayName','type','method','routeName','routeId'].some(key=>hasValue(value[key]));
+  return ['value','quantity','amount','rate','annual','estimate','name','label','displayName','type','method','routeName','routeId','id','mode','transportMode','origin','destination','from','to','distance','distanceKm','transitDays','durationDays','etaDays'].some(key=>hasValue(value[key]));
  }
  return false;
 }
