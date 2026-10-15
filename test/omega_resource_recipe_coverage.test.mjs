@@ -57,6 +57,7 @@ test('every catalog resource and every registered deposit resource has an execut
   const dataFiles=[
     'resource_site_canonical_catalog_v1.json',
     'resource_site_master_registry_v1.json',
+    ...Array.from({length:6},(_,index)=>'resource_site_legacy_gameplay_expansion_part_'+(index+1)+'_v1.json'),
     ...(manifest.parts||[]).map(x=>x.file)
   ];
   const allSites=[];
