@@ -256,13 +256,13 @@ function remediate(ctx,payload){
  ctx.stateTransaction.set('resource.environmentalImpact',root);ctx.stateTransaction.set('resource.environmentalLedger',ledger.slice(-MAX_LEDGER));
  emit('OMEGA_RESOURCE_ENVIRONMENT_REMEDIATED',c,{transactionId:txn,siteId:sid,amount:reduce,cost});return{accepted:true,transactionId:txn,cost,impact:next};
 }
-function handlerFor(type,fn){const m=interop();if(!m?.registerCommandHandler)return false;try{m.registerAction?.(type,{actionId:type,stateOwnerMinistry:'resource',authority:'OMEGA_RESOURCE_STRATEGIC_POLICY_RUNTIME'});m.registerCommandHandler(type,'resource',fn);return true;}catch(e){registrationErrors.push(type+':'+String(e?.message||e));return false;}}
+function handlerFor(type,fn,owner='resource'){const m=interop();if(!m?.registerCommandHandler)return false;try{m.registerAction?.(type,{actionId:type,stateOwnerMinistry:owner,authority:'OMEGA_RESOURCE_STRATEGIC_POLICY_RUNTIME'});m.registerCommandHandler(type,owner,fn);return true;}catch(e){registrationErrors.push(type+':'+String(e?.message||e));return false;}}
 function install(){
  registrationErrors=[];const defs=[
- ['OMEGA_RESOURCE_EMBARGO_DECLARE',(cmd,ctx)=>setPolicy(ctx,'embargo',cmd?.payload||{})],
- ['OMEGA_RESOURCE_EMBARGO_LIFT',(cmd,ctx)=>liftPolicy(ctx,'embargo',cmd?.payload||{})],
- ['OMEGA_RESOURCE_BLOCKADE_DECLARE',(cmd,ctx)=>setPolicy(ctx,'blockade',cmd?.payload||{})],
- ['OMEGA_RESOURCE_BLOCKADE_LIFT',(cmd,ctx)=>liftPolicy(ctx,'blockade',cmd?.payload||{})],
+ ['OMEGA_RESOURCE_EMBARGO_DECLARE',(cmd,ctx)=>setPolicy(ctx,'embargo',cmd?.payload||{}),'trade'],
+ ['OMEGA_RESOURCE_EMBARGO_LIFT',(cmd,ctx)=>liftPolicy(ctx,'embargo',cmd?.payload||{}),'trade'],
+ ['OMEGA_RESOURCE_BLOCKADE_DECLARE',(cmd,ctx)=>setPolicy(ctx,'blockade',cmd?.payload||{}),'trade'],
+ ['OMEGA_RESOURCE_BLOCKADE_LIFT',(cmd,ctx)=>liftPolicy(ctx,'blockade',cmd?.payload||{}),'trade'],
  ['OMEGA_RESOURCE_EXPLORATION_START',(cmd,ctx)=>surveyStart(ctx,cmd?.payload||{})],
  ['OMEGA_RESOURCE_EXPLORATION_TICK',(cmd,ctx)=>surveyTick(ctx,cmd?.payload||{})],
  ['OMEGA_RESOURCE_EXPLORATION_INVEST_COMMIT',(cmd,ctx)=>investCommit(ctx,cmd?.payload||{})],
@@ -271,7 +271,7 @@ function install(){
  ['OMEGA_RESOURCE_ENVIRONMENT_RECORD_PROCESSING',(cmd,ctx)=>recordProcessingImpactTx(ctx,cmd?.payload||{})],
  ['OMEGA_RESOURCE_ENVIRONMENTAL_REMEDIATE',(cmd,ctx)=>remediate(ctx,cmd?.payload||{})]
  ];
- let n=0;for(const [t,f] of defs)if(handlerFor(t,f))n++;handlersReady=n===defs.length;return{ready:handlersReady,registered:n,required:defs.length,errors:registrationErrors.slice()};
+ let n=0;for(const [t,f,owner='resource'] of defs)if(handlerFor(t,f,owner))n++;handlersReady=n===defs.length;return{ready:handlersReady,registered:n,required:defs.length,errors:registrationErrors.slice()};
 }
 function countryIds(){
  const out=new Set(Object.keys(state()?.resource||{}).map(country).filter(Boolean));
@@ -280,10 +280,10 @@ function countryIds(){
 }
 function processCountry(c){install();const cc=country(c);if(!cc)return{status:'SKIPPED',reason:'COUNTRY_REQUIRED'};return dispatch('resource','OMEGA_RESOURCE_EXPLORATION_TICK',cc,{correlationId:'EXPLORATION-TICK:'+cc+':'+turn()});}
 function processAll(){return countryIds().map(processCountry);}
-function declareEmbargo(c,p={}){install();return dispatch('resource','OMEGA_RESOURCE_EMBARGO_DECLARE',c,p);}
-function liftEmbargo(c,p={}){install();return dispatch('resource','OMEGA_RESOURCE_EMBARGO_LIFT',c,p);}
-function declareBlockade(c,p={}){install();return dispatch('resource','OMEGA_RESOURCE_BLOCKADE_DECLARE',c,p);}
-function liftBlockade(c,p={}){install();return dispatch('resource','OMEGA_RESOURCE_BLOCKADE_LIFT',c,p);}
+function declareEmbargo(c,p={}){install();return dispatch('trade','OMEGA_RESOURCE_EMBARGO_DECLARE',c,p);}
+function liftEmbargo(c,p={}){install();return dispatch('trade','OMEGA_RESOURCE_EMBARGO_LIFT',c,p);}
+function declareBlockade(c,p={}){install();return dispatch('trade','OMEGA_RESOURCE_BLOCKADE_DECLARE',c,p);}
+function liftBlockade(c,p={}){install();return dispatch('trade','OMEGA_RESOURCE_BLOCKADE_LIFT',c,p);}
 function startExploration(c,p={}){install();return dispatch('resource','OMEGA_RESOURCE_EXPLORATION_START',c,p);}
 function approveInvestment(c,p={}){install();return investSite(c,p);}
 function commissionSite(c,p={}){install();return dispatch('resource','OMEGA_RESOURCE_EXPLORATION_COMMISSION',c,p);}
