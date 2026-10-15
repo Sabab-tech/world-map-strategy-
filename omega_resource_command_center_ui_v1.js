@@ -333,8 +333,11 @@
   }
   function panelExtraction(country) {
     const r = resourceBucket(country);
+    const policy = g.OmegaResourceStrategicPolicyRuntime || g.Omega && g.Omega.ResourceStrategicPolicyRuntime;
     const surveys = Array.isArray(r.surveyRequests) ? r.surveyRequests : [];
     const results = Array.isArray(r.surveyResults) ? r.surveyResults : [];
+    const explorations = Array.isArray(r.explorationProjects) ? r.explorationProjects : [];
+    const commissionedSites = Array.isArray(r.commissionedSites) ? r.commissionedSites : [];
     const sites = siteRows(country);
     const diag = g.Omega && g.Omega.ResourceIndustrialNetwork && g.Omega.ResourceIndustrialNetwork.diagnostics ?
       g.Omega.ResourceIndustrialNetwork.diagnostics(country) : null;
@@ -348,7 +351,21 @@
         actionButton('extract-site', 'Run authoritative site pipeline', {
           'site-id': s.siteId, 'resource-id': rid, quantity: 1
         }, !(g.Omega && g.Omega.ResourceIndustrialNetwork && g.Omega.ResourceIndustrialNetwork.executeSitePipeline && rid)) +
+        actionButton('start-exploration', 'Start canonical exploration', { 'site-id': s.siteId },
+          !(policy && typeof policy.startExploration === 'function' && s.siteId)) +
         (rid ? actionButton('survey', 'Request survey', { 'resource-id': rid }) : ''));
+    }).join('');
+    const explorationCards = explorations.map(function (p) {
+      const status = String(p.status || '').toUpperCase();
+      const action = status === 'DISCOVERED_PENDING_INVESTMENT'
+        ? actionButton('approve-exploration-investment', 'Approve required site investment', { 'project-id': p.projectId }, !(policy && typeof policy.approveInvestment === 'function'))
+        : status === 'INVESTMENT_APPROVED'
+          ? actionButton('commission-exploration-site', 'Commission site', { 'project-id': p.projectId, 'site-id': p.siteId }, !(policy && typeof policy.commissionSite === 'function'))
+          : '';
+      return card(p.siteId || p.projectId || 'Exploration project', status || 'STATUS NOT RECORDED',
+        '<div class="omega-rescc-grid2">' + kv('Project ID', p.projectId) + kv('Progress (%)', p.progress) +
+        kv('Progress turns', p.progressTurns) + kv('Required turns', p.requiredTurns) +
+        kv('Investment status', p.investmentStatus) + kv('Authority', p.authority) + '</div>', action);
     }).join('');
     const rows = resources(country).map(function (x) {
       return card(x.name || x.id, x.id,
@@ -364,6 +381,8 @@
       (siteCards || empty('No country-scoped runnable canonical site IDs were returned. Deposit records alone are not treated as executable mine sites.')) +
       '<h3 class="omega-rescc-section-title">Resource survey requests</h3>' + statusRows(surveys) +
       '<h3 class="omega-rescc-section-title">Completed survey evidence</h3>' + statusRows(results) +
+      '<h3 class="omega-rescc-section-title">Authoritative exploration projects</h3>' + (explorationCards || empty('No exploration projects have been recorded.')) +
+      '<h3 class="omega-rescc-section-title">Commissioned site records</h3>' + statusRows(commissionedSites) +
       '<h3 class="omega-rescc-section-title">Commodity survey shortcuts</h3>' + (rows || empty('No commodity rows are available.'));
   }
   function panelProcessing(country) {
@@ -900,6 +919,20 @@
     try {
       if (action === 'close') { close(); return; }
       if (action === 'refresh-panel') { render(c, activePanel); return; }
+      if (action === 'start-exploration' || action === 'approve-exploration-investment' || action === 'commission-exploration-site') {
+        const policy = g.OmegaResourceStrategicPolicyRuntime || g.Omega && g.Omega.ResourceStrategicPolicyRuntime;
+        if (!policy) result = { status: 'UNAVAILABLE', reason: 'STRATEGIC_RESOURCE_POLICY_RUNTIME_UNAVAILABLE' };
+        else if (action === 'start-exploration' && typeof policy.startExploration === 'function')
+          result = policy.startExploration(c, { siteId: d['site-id'], projectId: uniqueRequestId('EXPLORE', d['site-id']) });
+        else if (action === 'approve-exploration-investment' && typeof policy.approveInvestment === 'function')
+          result = policy.approveInvestment(c, { projectId: d['project-id'] });
+        else if (action === 'commission-exploration-site' && typeof policy.commissionSite === 'function')
+          result = policy.commissionSite(c, { projectId: d['project-id'], siteId: d['site-id'] });
+        else result = { status: 'UNAVAILABLE', reason: 'EXPLORATION_ACTION_API_UNAVAILABLE' };
+        setOutcome('Exploration lifecycle action', result);
+        render(c, activePanel);
+        return;
+      }
       if (action === 'power-project') {
         const policy = g.OmegaResourceStrategicPolicyRuntime || g.Omega && g.Omega.ResourceStrategicPolicyRuntime;
         if (!policy || typeof policy.startPowerProject !== 'function') result = { status: 'UNAVAILABLE', reason: 'POWER_PROJECT_RUNTIME_UNAVAILABLE' };
