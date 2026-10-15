@@ -136,7 +136,7 @@ test('save/load round trip preserves reserve, inventory, batch lineage and fisca
   assert.equal(state.resource.BGD.batches[0].remainingQuantity,700);
   assert.equal(state.resource.BGD.inventory.coal,700);
   assert.equal(state.finance.BGD.available,987654321);
-  assert.deepEqual(api.listSlots().slots,['milestone-c-checkpoint']);
+  assert.equal(api.listSlots().slots.join(','),'milestone-c-checkpoint');
 
   const corrupt=api.createSaveEnvelope().envelope;
   corrupt.state.simulation.turn=1000;
