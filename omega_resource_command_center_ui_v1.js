@@ -1063,6 +1063,7 @@
             .replace('Long-term bilateral offtake agreements, Letters of Credit, import/export tariffs, and sanctions.', 'Bilateral import requests, counterparty review, observed relations and sanctions, and settlement ledger.')
             .replace('Resource rent capture, Sovereign Wealth Fund capitalization, and Dutch Disease mitigation.', 'Inspect treasury and trade ledgers; sovereign-fund capitalization remains unavailable without an authoritative fund API.')
             .replace('Non-linear supply shock propagation, chokepoint blockades, and contingency war-gaming.', 'Non-mutating transport-constraint multipliers and current shipment exposure; no unverified consequence is applied.');
+          return html;
         };
         cabinet.__omegaResccCardPatch = true;
       }
