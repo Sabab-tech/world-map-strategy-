@@ -69,7 +69,7 @@ test('resource site detail uses readable, source-labelled measures and hides raw
   assert.match(html, /Observed/);
   assert.match(html, /Transport &amp; routes|Transport & routes/);
   assert.match(html, /Rail to smelter/i);
-  assert.match(html, /Copper cathode/);
+  assert.match(html, /Copper cathode/i);
   assert.match(html, /Data quality &amp; source|Data quality & source/);
   assert.doesNotMatch(html, /<pre\b|Not specified|SOURCE_STATUS_NOT_SET|undefined|NaN/i,
     'details must not leak raw JSON blobs or empty placeholder values');
