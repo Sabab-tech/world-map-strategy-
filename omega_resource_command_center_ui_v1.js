@@ -338,29 +338,82 @@
       }).join('');
   }
   function siteRows(country) {
-    const out = [];
-    const r = resourceBucket(country);
-    const candidates = [];
-    if (Array.isArray(r.mineSiteReferences)) candidates.push.apply(candidates, r.mineSiteReferences);
-    if (Array.isArray(r.mines)) candidates.push.apply(candidates, r.mines);
-    try {
-      const e = g.Omega && g.Omega.ResourceEndowmentRuntime;
-      const refs = e && e.countryMineSiteReferences && e.countryMineSiteReferences(country);
-      if (Array.isArray(refs)) candidates.push.apply(candidates, refs);
-      const mines = e && e.countryMines && e.countryMines(country);
-      if (Array.isArray(mines)) candidates.push.apply(candidates, mines);
-    } catch (_) {}
-    const seen = new Set();
-    candidates.forEach(function (site) {
-      if (!site || typeof site !== 'object') return;
-      const id = site.siteId || site.canonicalSiteId || site.occurrenceKey || site.id;
-      if (!id || seen.has(String(id))) return;
-      const sc = site.countryId || site.countryCode || site.country;
-      if (sc && normaliseCountry(sc) !== activeCountry(country)) return;
-      seen.add(String(id));
-      out.push(Object.assign({}, site, { siteId: String(id) }));
+    const selected=activeCountry(country),r=resourceBucket(country),candidates=[];
+    const append=(rows,countryHint)=>{
+      if(!Array.isArray(rows))return;
+      rows.forEach(site=>{
+        if(!site||typeof site!=='object')return;
+        const source=site.sourceSiteRecord&&typeof site.sourceSiteRecord==='object'?site.sourceSiteRecord:{};
+        const identity=site.identity&&typeof site.identity==='object'?site.identity:{};
+        const ownCountry=site.countryId||site.countryCode||site.country||identity.countryIso3||identity.countryId||source.countryId||source.countryCode||countryHint;
+        if(!ownCountry)return;
+        candidates.push(Object.assign({},site,{countryId:normaliseCountry(ownCountry)}));
+      });
+    };
+    // Source profile and the canonical site binding are primary identity sources.
+    try{
+      const e=engine(),profile=e&&typeof e.getCountryResourceProfile==='function'?e.getCountryResourceProfile(country):null;
+      const ctx=profile&&(profile.resource_infrastructure_context||profile.infrastructure_context)||{};
+      append(ctx.mineSites||ctx.resourceSites||(profile&&profile.mineSites),selected);
+    }catch(_){}
+    try{
+      const binding=g.Omega&&g.Omega.IndividualResourceSiteBinding||g.OmegaIndividualResourceSiteBinding;
+      append(binding&&binding.sites,null);
+    }catch(_){}
+    try{
+      const master=g.OmegaResourceSiteMasterResearchData||(g.Omega&&g.Omega.ResourceSiteMasterResearchData);
+      append(master&&master.sites,null);
+    }catch(_){}
+    // Existing runtime records overlay the file-backed profile rows.
+    append(r.mineSiteReferences,selected);
+    append(r.mines,selected);
+    try{
+      const runtime=g.Omega&&g.Omega.ResourceEndowmentRuntime;
+      append(runtime&&runtime.countryMineSiteReferences&&runtime.countryMineSiteReferences(country),selected);
+      append(runtime&&runtime.countryMines&&runtime.countryMines(country),selected);
+    }catch(_){}
+    const unique=new Map();
+    candidates.forEach(site=>{
+      const src=site&&site.sourceSiteRecord&&typeof site.sourceSiteRecord==='object'?site.sourceSiteRecord:{};
+      const ident=site&&site.identity&&typeof site.identity==='object'?site.identity:{};
+      const cid=site&&(site.countryId||site.countryCode||site.country||ident.countryIso3||ident.countryId||src.countryId||src.countryCode);
+      if(!site||typeof site!=='object'||!cid||normaliseCountry(cid)!==selected)return;
+      const id=site.siteId||site.canonicalSiteId||site.siteReferenceKey||site.occurrenceKey||site.id||src.siteId||src.id;
+      if(!id)return;
+      const key=selected+'|'+String(id),row=Object.assign({},site,{siteId:String(id),countryId:selected});
+      unique.set(key,unique.has(key)?mergeDataValues(unique.get(key),row):row);
     });
-    return out;
+    return [...unique.values()].sort((a,b)=>String(a.siteName||a.name||a.depositName||a.siteId).localeCompare(String(b.siteName||b.name||b.depositName||b.siteId)));
+  }
+  function siteRouteRows(country){
+    return siteRows(country).flatMap(site=>{
+      const src=site.sourceSiteRecord&&typeof site.sourceSiteRecord==='object'?site.sourceSiteRecord:{};
+      const sim=site.simulation||src.simulation||{},log=site.logistics||src.logistics||{};
+      const value=sim.transportRoute||sim.transportRoutes||site.transportRoute||log.routes||site.routes||src.transportRoute||src.routes||[];
+      return(Array.isArray(value)?value:(value?[value]:[])).map((route,index)=>({
+        siteId:site.siteId,siteName:site.siteName||site.name||site.depositName||site.siteId,
+        routeId:route&&(route.routeId||route.id)||'',
+        routeName:route&&(route.routeName||route.name||route.routeId||route.id)||('Route '+(index+1)),
+        mode:route&&(route.mode||route.transportMode||route.routeType)||'',
+        from:route&&(route.from||route.source||route.origin||route.fromNode||route.sourceNode)||'',
+        to:route&&(route.to||route.target||route.destination||route.toNode||route.destinationNode)||'',
+        distanceKm:route&&route.distanceKm!==undefined?route.distanceKm:(route&&route.distance!==undefined?route.distance:null),
+        authority:route&&(route.authority||route.sourceAuthority)||site.sourceAuthority||src.sourceAuthority||'SOURCE_PROFILE',
+        profileOnly:true,route
+      }));
+    });
+  }
+  function sourceDataStatus(country){
+    const e=engine();let report={};try{report=e&&(e.getDataLoadReport?e.getDataLoadReport():e.dataLoadReport)||{};}catch(_){}
+    const profile=e&&typeof e.getCountryResourceProfile==='function'?e.getCountryResourceProfile(country):null;
+    const ctx=profile&&(profile.resource_infrastructure_context||profile.infrastructure_context)||{};
+    const datasets=Object.entries(report.datasets||{}).map(([name,row])=>name+': '+String(row&&row.status||'NOT_RECORDED')).join(' · ');
+    return 'JSON source '+String(report.status||(e&&e.isReady?'READY':'NOT_READY'))+
+      ' · commodities '+String(report.resourceTypeCount??(e&&Array.isArray(e.resourceTypes)?e.resourceTypes.length:0))+
+      ' · deposits '+String(report.depositCount??(e&&Array.isArray(e.deposits)?e.deposits.length:0))+
+      ' · country profiles '+String(report.countryProfileCount??(e&&e.countryProfiles?Object.keys(e.countryProfiles).length:0))+
+      ' · selected-country site profiles '+String(siteRows(country).length||((ctx.mineSites||[]).length||0))+
+      (datasets?' · '+datasets:'');
   }
   function panelExtraction(country) {
     const r = resourceBucket(country);
