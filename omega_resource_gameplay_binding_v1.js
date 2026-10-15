@@ -132,7 +132,7 @@ function routeCard(route,index){
   detailRow('From',row.origin||row.from||row.source||row.startLocation),
   detailRow('To',row.destination||row.to||row.target||row.endLocation),
   detailRow('Distance',row.distanceKm??row.distance??row.lengthKm,row.distanceKm!==undefined?'km':row.distanceUnit||''),
-  detailRow('Transit time',row.transitDays??row.durationDays??row.etaDays,'days'),
+  detailRow('Transit time',row.transitDays??row.durationDays??row.etaDays,Number(row.transitDays??row.durationDays??row.etaDays)===1?'day':'days'),
   detailRow('Status',row.status||row.operationalStatus)
  ].filter(Boolean).join('');
  const extras=renderRows(rows);
@@ -225,7 +225,7 @@ function renderSiteDetail(s){
   detailRow('Upstream process',upstream),
   detailRow('Midstream process',midstream),
   detailRow('Downstream sectors',downstream)
- ])+''+(renderChips(outputs)?'<div class="omega-site-output"><span class="omega-site-row-label">Potential outputs</span>'+renderChips(outputs)+'</div>':'');
+ ])+(renderChips(outputs)?'<div class="omega-site-output"><span class="omega-site-row-label">Potential outputs</span>'+renderChips(outputs)+'</div>':'');
  const detailSections=[];
  if(operationHtml)detailSections.push('<details class="omega-site-details"><summary>Operating details</summary>'+operationHtml+'</details>');
  if(routeHtml)detailSections.push('<details class="omega-site-details"><summary>Transport & routes</summary><div class="omega-site-route-list">'+routeHtml+'</div><p class="omega-site-muted">Only routes attached to this individual site are shown.</p></details>');
@@ -234,11 +234,11 @@ function renderSiteDetail(s){
  const factRows=facts.map(f=>{
   if(!f||typeof f!=='object'||!hasValue(f.metric)||!hasValue(f.value))return '';
   const val=detailDatum(f.value,f.unit);
-  return val?detailRow(humanize(f.metric),val,'',authorityOf(f,'OBSERVED')):'';
+  return val?detailRow(humanize(f.metric),val,'',authorityOf(f,'')):'';
  }).filter(Boolean);
  if(factRows.length)detailSections.push('<details class="omega-site-details"><summary>Reported site facts</summary>'+renderRows(factRows)+'</details>');
  const coordinateStatus=coordinateStatusOf(s);
- const sourceRef=s.sourcePath||s.sourceReference?.source||s.sourceReference?.path||s.sourceReference?.url||source.sourcePath||source.source||source.provenance?.source;
+ const sourceRef=s.sourcePath||s.sourceReference?.source||s.sourceReference?.path||s.sourceReference?.url?.uri||s.sourceReference?.url||source.sourcePath||source.source||source.provenance?.source;
  const provenanceRows=[
   '<div class="omega-site-row"><span class="omega-site-row-label">Site ID</span><span class="omega-site-row-value"><code>'+esc(s.siteId||'')+'</code></span></div>',
   detailRow('Data source',sourceRef||'Resource site registry'),
