@@ -400,12 +400,12 @@ function powerProjectCreate(ctx,payload){
  const projects=Array.isArray(old)?clone(old):[],existing=projects.find(x=>String(x?.projectId||'')===projectId);
  if(existing)return String(existing.projectType)===type?{accepted:true,duplicate:true,project:existing}:{accepted:false,reason:'POWER_PROJECT_ID_CONFLICT'};
  if(projects.filter(x=>!['CANCELLED','FAILED'].includes(String(x.status||''))).length>=limit)return{accepted:false,reason:'POWER_PROJECT_LIMIT_REACHED'};
- const cost=num(rule.constructionCostUsd),capacity=num(rule.capacityMw),buildTurns=num(rule.constructionTurns);
+ const cost=num(rule.constructionCostTreasuryUnits),capacity=num(rule.capacityMw),buildTurns=num(rule.constructionTurns);
  if(cost===null||cost<0||capacity===null||capacity<=0||buildTurns===null||buildTurns<1||!Number.isInteger(buildTurns))return{accepted:false,reason:'POWER_PROJECT_RULES_INVALID'};
  const debit=dispatch('finance','OMEGA_TRADE_FINANCE_DEBIT',c,{amount:cost,reason:'RESOURCE_POWER_PROJECT_CONSTRUCTION',referenceId:projectId,transactionId:'POWER-COST:'+projectId});
  if(debit?.status!=='APPLIED'&&debit?.accepted!==true)return{accepted:false,reason:'POWER_PROJECT_TREASURY_DEBIT_FAILED',detail:debit,cost};
  const project={projectId,projectType:type,countryId:c,status:'UNDER_CONSTRUCTION',startedTurn:turn(),lastProgressTurn:turn(),
-  progressTurns:0,requiredTurns:buildTurns,progressPct:0,costUsd:cost,capacityMw:capacity,constructionCurrency:'USD',
+  progressTurns:0,requiredTurns:buildTurns,progressPct:0,costUsd:cost,capacityMw:capacity,costTreasuryUnits:cost,constructionCurrency:String(rule.constructionCurrency||'TREASURY_NATIVE_UNITS'),treasuryCurrencyCode:ctx.stateTransaction.get('finance.currencyCode')||ctx.stateTransaction.get('trade.settlementCurrency')||ctx.stateTransaction.get('economy.currencyCode')||null,
   authority:'OMEGA_RESOURCE_STRATEGIC_POLICY_RUNTIME',provenance:rule.authority||'SIMULATED_GAMEPLAY_RULESET'};
  projects.push(project);ctx.stateTransaction.set('resource.powerProjects',projects.slice(-limit));
  emit('OMEGA_RESOURCE_POWER_PROJECT_STARTED',c,project);return{accepted:true,project};
