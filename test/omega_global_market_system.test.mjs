@@ -52,4 +52,15 @@ assert.equal(q.status,'CLEARED');
 assert.equal(q.matchedQuantity,100);
 assert.equal(q.clearingPriceUsd,100);
 assert.equal(market.localPrice('BDG','crude_oil'),100);
+
+// Removing the actual seller offer leaves only inventory-derived reference liquidity.
+// It must inform the quote but must not count as an executable market trade.
+globalThis.Game.state.trade.SAU.offerBook={};
+const referenceOnlyBooks=market.rebuild();
+const referenceOnly=referenceOnlyBooks.crude_oil.clearing;
+assert(referenceOnly.microstructure.referenceAskCount>0,'inventory-derived reference liquidity should remain visible');
+assert.equal(referenceOnly.matchedQuantity,0,'reference-only ask must never fill a buyer order');
+assert.equal(referenceOnly.clearingPriceUsd,null,'reference-only liquidity must not publish an executed clearing price');
+assert.notEqual(referenceOnly.status,'CLEARED');
+assert.equal(referenceOnly.matches.some(x=>x.referenceLiquidity),false);
 console.log('OMEGA GLOBAL MARKET CLEARING TEST PASSED');
