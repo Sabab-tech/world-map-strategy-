@@ -179,7 +179,8 @@
         g.Omega.ResourceSiteReserveSimulationData=data;
         g.OmegaResourceLegacyGameplayExpansion={status:legacy.status,count:legacy.count,activeAdded:legacyAdded,loadedParts:legacy.loadedParts||0};
         g.Omega.ResourceLegacyGameplayExpansion=g.OmegaResourceLegacyGameplayExpansion;
-        return{status:'READY',count:Object.keys(map).length,baseSiteCount:Number(data?.siteCount)||rows.length,legacyAdded,legacyCandidateCount:legacy.count};
+        return{status:'READY',count:Object.keys(map).length,baseSiteCount:Number(data?.siteCount)||rows.length,
+          baseRecordCount:rows.length,declaredSiteCount:Number(data?.siteCount)||null,legacyAdded,legacyCandidateCount:legacy.count};
       }catch(e){
         simulationReserveMap={};
         return{status:'FAILED',count:0,reason:String(e?.message||e)};
@@ -273,13 +274,15 @@
     losslessReferencePromise=(async()=>{
       try{
         const inline=g.OmegaResourceLosslessReferenceData||g.Omega?.ResourceLosslessReferenceData;
-        const map={};
+        const map={};let declaredSiteCount=null;
         if(inline&&Array.isArray(inline.sites)){
           for(const row of inline.sites)if(row?.siteId)map[String(row.siteId)]=clone(row);
+          declaredSiteCount=Number(inline.siteCount)||null;
         }else{
           const manifestRes=await fetch('resource_site_reference_expanded_manifest.json',{cache:'no-store'});
           if(!manifestRes?.ok)throw new Error('RESOURCE_SITE_REFERENCE_MANIFEST_FETCH_FAILED');
           const manifest=await manifestRes.json();
+          declaredSiteCount=Number(manifest?.totalSites??manifest?.siteCount)||null;
           for(const part of (Array.isArray(manifest?.parts)?manifest.parts:[])){
             const file=String(part?.file||'').trim();
             if(!file)continue;
@@ -289,6 +292,8 @@
             for(const row of (Array.isArray(data?.sites)?data.sites:[]))if(row?.siteId)map[String(row.siteId)]=clone(row);
           }
         }
+        if(!Object.keys(map).length||(declaredSiteCount!==null&&Object.keys(map).length!==declaredSiteCount))
+          throw new Error('RESOURCE_SITE_REFERENCE_MANIFEST_COUNT_MISMATCH:'+JSON.stringify({declaredSiteCount,actual:Object.keys(map).length}));
         losslessReferenceMap=map;
         g.OmegaResourceLosslessReferenceData={siteCount:Object.keys(map).length,sites:Object.values(map)};
         g.Omega=g.Omega||{};
@@ -345,12 +350,15 @@
         const rows=Array.isArray(data?.sites)?data.sites:[];
         const map={};
         for(const row of rows)if(row?.siteId)map[String(row.siteId)]=clone(row);
-        if(rows.length!==250)throw new Error('RESOURCE_SITE_MASTER_REGISTRY_INCOMPLETE:'+rows.length);
+        const declaredCount=Number(data?.siteCount)||null;
+        if(!rows.length||Object.keys(map).length!==rows.length||
+           (declaredCount!==null&&declaredCount!==rows.length))
+          throw new Error('RESOURCE_SITE_MASTER_REGISTRY_INCOMPLETE:'+JSON.stringify({rows:rows.length,unique:Object.keys(map).length,declaredCount}));
         masterResearchMap=map;
         g.OmegaResourceSiteMasterResearchData=data;
         g.Omega=g.Omega||{};
         g.Omega.ResourceSiteMasterResearchData=data;
-        return{status:'READY',count:rows.length};
+        return{status:'READY',count:rows.length,declaredCount};
       }catch(e){masterResearchMap={};return{status:'FAILED',count:0,reason:String(e?.message||e)}}
       finally{masterResearchPromise=null;}
     })();
@@ -1769,11 +1777,16 @@ function batchFromExtraction(x,record){
         for(let i=0;i<400&&!engine()?.isReady;i++)await new Promise(r=>setTimeout(r,0));
         const [reserveData,researchData,canonicalCatalogData,losslessReferenceData,masterResearchData,executionPolicyData]=await Promise.all([loadSimulationReserveData(),loadResearchEvidenceData(),loadCanonicalSiteCatalogData(),loadLosslessResourceReferenceData(),loadMasterResourceResearchData(),loadSiteExecutionPolicyData()]);
         const dependencyLightContext=typeof g.fetch!=='function'&&typeof g.OmegaResourceSiteReserveSimulationData==='undefined'&&typeof g.Omega?.ResourceSiteReserveSimulationData==='undefined';
-        if((reserveData.status!=='READY'||Number(reserveData.baseSiteCount??reserveData.count)!==250)&&!dependencyLightContext)return{status:'FAILED',reason:'PER_SITE_RESERVE_DATASET_INCOMPLETE',detail:reserveData};
-        const canonicalCatalogCountReady=canonicalCatalogData.status==='READY'&&(canonicalCatalogData.count===250||(canonicalCatalogData.count===315&&canonicalCatalogData.legacyCanonicalCandidateCount===65&&((canonicalCatalogData.legacyExpansionSiteCount===55&&canonicalCatalogData.legacyCandidateCount===65)||(canonicalCatalogData.legacyExpansionSiteCount===105&&canonicalCatalogData.legacyCandidateCount===115))));
+        if((reserveData.status!=='READY'||Number(reserveData.baseRecordCount??reserveData.count)<=0||
+          (Number(reserveData.declaredSiteCount)>0&&Number(reserveData.declaredSiteCount)!==Number(reserveData.baseRecordCount)))&&!dependencyLightContext)
+          return{status:'FAILED',reason:'PER_SITE_RESERVE_DATASET_INCOMPLETE',detail:reserveData};
+        const canonicalCatalogCountReady=canonicalCatalogData.status==='READY'&&Number(canonicalCatalogData.count)>0&&
+          Number(canonicalCatalogData.totalSiteCount)>=Number(canonicalCatalogData.count);
         if(!canonicalCatalogCountReady&&!dependencyLightContext)return{status:'FAILED',reason:'CANONICAL_SITE_CATALOG_INCOMPLETE',detail:canonicalCatalogData};
-        if((losslessReferenceData.status!=='READY'||losslessReferenceData.count!==199)&&!dependencyLightContext)return{status:'FAILED',reason:'LOSSLESS_RESOURCE_REFERENCE_INCOMPLETE',detail:losslessReferenceData};
-        if((masterResearchData.status!=='READY'||masterResearchData.count!==250)&&!dependencyLightContext)return{status:'FAILED',reason:'RESOURCE_SITE_MASTER_RESEARCH_INCOMPLETE',detail:masterResearchData};
+        if((losslessReferenceData.status!=='READY'||Number(losslessReferenceData.count)<=0)&&!dependencyLightContext)
+          return{status:'FAILED',reason:'LOSSLESS_RESOURCE_REFERENCE_INCOMPLETE',detail:losslessReferenceData};
+        if((masterResearchData.status!=='READY'||Number(masterResearchData.count)<=0)&&!dependencyLightContext)
+          return{status:'FAILED',reason:'RESOURCE_SITE_MASTER_RESEARCH_INCOMPLETE',detail:masterResearchData};
         if(executionPolicyData.status!=='READY'&&!dependencyLightContext)return{status:'FAILED',reason:'RESOURCE_SITE_EXECUTION_POLICY_INCOMPLETE',detail:executionPolicyData};
         if(!engine()?.isReady)return{status:'FAILED',reason:'RESOURCE_MINISTRY_ENGINE_NOT_READY'};
         // Build the immutable country index once before any per-country extraction work.
