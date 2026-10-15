@@ -113,7 +113,7 @@ test('runtime projection reads real ledgers and records turn-based observations 
   commit(2);
 
   const api = sandbox.OmegaLiveOpsObservability;
-  assert.equal(api.VERSION, '1.0.0');
+  assert.equal(api.VERSION, '1.1.0');
   const data = api.snapshot();
   assert.equal(data.mines.length, 1);
   assert.equal(data.mines[0].siteId, 'MINE-A');
