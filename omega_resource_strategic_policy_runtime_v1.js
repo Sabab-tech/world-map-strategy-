@@ -381,6 +381,8 @@ function recordCarbonEmissionTx(ctx,payload){
 }
 function previewCarbonActivity(countryId,resourceId,quantity,unit,source,txContext){
  const c=country(countryId),q=num(quantity);if(!c||q===null||q<=0)return{allowed:false,reason:'CARBON_ACTIVITY_INPUT_INVALID'};
+ const environmentalScale=unitScale(unit);
+ if(environmentalScale===null||environmentalScale<=0)return{allowed:false,reason:'ENVIRONMENTAL_UNIT_SCALE_UNAVAILABLE',resourceId,unit};
  const quota=(txContext?.stateTransaction?.get('resource.carbonQuota'))||state()?.resource?.[c]?.carbonQuota;
  const active=quota&&String(quota.status||'').toUpperCase()==='ACTIVE';
  const factor=carbonFactor(resourceId,unit);
