@@ -1727,6 +1727,14 @@ function batchFromExtraction(x,record){
     return shared;
   }
   function onReady(){void initialize();}
+  function publishBootstrapStatus(snapshot){
+    const detail=Object.assign({eventType:'OMEGA_RESOURCE_BOOTSTRAP_STATUS',simulationTurn:turn(),source:'resource-endowment-runtime'},clone(snapshot||{}));
+    try{
+      if(typeof g.dispatchEvent==='function'&&typeof g.CustomEvent==='function'){
+        g.dispatchEvent(new g.CustomEvent('OMEGA_RESOURCE_BOOTSTRAP_STATUS',{detail}));
+      }
+    }catch(_){}
+  }
   // The static site catalog is not a live production ledger. Bootstrap the
   // authoritative extraction runtime as soon as its canonical registry is ready.
   // extractAll() is idempotent per simulation turn and publishes the normal
@@ -1736,18 +1744,23 @@ function batchFromExtraction(x,record){
     if(!binding||!Array.isArray(binding.sites)||binding.sites.length===0)return;
     void initialize().then(async function(initialized){
       if(initialized?.status!=='READY'){
-        g.__omegaResourceEndowmentLastBootstrap={status:'FAILED',turn:turn(),reason:initialized?.reason||'RESOURCE_RUNTIME_NOT_READY',detail:clone(initialized||null)};
+        const snapshot={status:'FAILED',turn:turn(),siteCount:binding.sites.length,
+          reason:initialized?.reason||'RESOURCE_RUNTIME_NOT_READY',detail:clone(initialized||null)};
+        g.__omegaResourceEndowmentLastBootstrap=snapshot;
+        publishBootstrapStatus(snapshot);
         return initialized;
       }
       const result=await extractAll();
-      g.__omegaResourceEndowmentLastBootstrap={
-        status:result?.status||'UNKNOWN',turn:turn(),siteCount:binding.sites.length,
-        countryCount:countries().length,reason:result?.reason||null
-      };
+      const snapshot={status:result?.status||'UNKNOWN',turn:turn(),siteCount:binding.sites.length,
+        countryCount:countries().length,reason:result?.reason||null};
+      g.__omegaResourceEndowmentLastBootstrap=snapshot;
+      publishBootstrapStatus(snapshot);
       return result;
     }).catch(function(error){
-      g.__omegaResourceEndowmentLastBootstrap={status:'FAILED',turn:turn(),reason:String(error?.message||error)};
-      g.OmegaResourceEndowmentRuntimeError=String(error?.message||error);
+      const snapshot={status:'FAILED',turn:turn(),reason:String(error?.message||error)};
+      g.__omegaResourceEndowmentLastBootstrap=snapshot;
+      g.OmegaResourceEndowmentRuntimeError=snapshot.reason;
+      publishBootstrapStatus(snapshot);
     });
   }
   function onTurn(){void extractAll();}
