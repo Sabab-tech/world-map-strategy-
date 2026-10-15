@@ -11,6 +11,66 @@ class EventTargetMock{
 class CustomEventMock{constructor(type,init={}){this.type=type;this.detail=init.detail;}}
 
 function loadJson(path){return JSON.parse(readFileSync(path,'utf8'));}
+async function repoFetch(input){
+  const file=String(input||'').split('?')[0].replace(/^\\/+/, '');
+  if(!file||file.split('/').includes('..'))return{ok:false,status:400,json:async()=>({}),text:async()=>''};
+  try{
+    const body=readFileSync(file,'utf8');
+    return{ok:true,status:200,json:async()=>JSON.parse(body),text:async()=>body};
+  }catch(_){
+    return{ok:false,status:404,json:async()=>({}),text:async()=>''};
+  }
+}
+function expectedFullSiteCoverage(){
+  const policy=loadJson('resource_site_execution_policy_v1.json');
+  const canonical=loadJson('resource_site_canonical_catalog_v1.json');
+  const canonicalIds=new Set((canonical.sites||[]).map(site=>String(site.siteId||'')));
+  const merged=new Map((canonical.sites||[]).map(site=>[String(site.siteId),site]));
+  for(let part=1;part<=6;part++){
+    const data=loadJson('resource_site_legacy_gameplay_expansion_part_'+part+'_v1.json');
+    for(const site of data.records||[]){
+      const id=String(site.siteId||'').trim();
+      if(id&&!merged.has(id))merged.set(id,site);
+    }
+  }
+  const referenceManifest=loadJson('resource_site_reference_expanded_manifest.json');
+  const references=(referenceManifest.parts||[]).flatMap(part=>loadJson(part.file).sites||[]);
+  const referenceById=new Map(references.map(site=>[String(site.siteId),site]));
+  const normalizeStatus=value=>String(value||'UNKNOWN').trim().toUpperCase()
+    .replace(/[^A-Z0-9]+/g,'_').replace(/^_+|_+$/g,'')||'UNKNOWN';
+  const placeholders=new Set(['UNKNOWN','ACTIVE_SITE_REFERENCE','SIMULATED_OPERATIONAL_SCENARIO']);
+  const knownAliasIds=new Set([
+    'SITE_AUS_olympic_dam_uranium_copper','SITE_BRA_carajas_iron_ore_mine_legacy2',
+    'SITE_CHL_escondida_copper_mine_legacy2','SITE_IDN_grasberg_copper_gold_mine',
+    'SITE_COD_tenke_fungurume_copper_cobalt_complex','SITE_COD_kibali_gold_mine_complex'
+  ]);
+  const rows=[...merged.values()].map(site=>{
+    const reference=referenceById.get(String(site.siteId))||{};
+    const canonicalStatus=normalizeStatus(site.operation?.status||site.status||site.currentStatus||site.sourceSiteRecord?.status);
+    const referenceStatus=normalizeStatus(reference.operation?.status||reference.operation?.operationalStatus||
+      reference.currentStatus||reference.sourceSiteRecord?.status||reference.status);
+    const status=placeholders.has(canonicalStatus)&&!placeholders.has(referenceStatus)?referenceStatus:canonicalStatus;
+    const commercial=site.operation?.commercialExtraction??site.sourceSiteRecord?.commercialExtraction??
+      site.commercialExtraction??Boolean(site.identity?.resourceTypeId||site.real?.resourceId||site.resourceId);
+    const alias=Boolean(site.runtime?.aliasOfSiteId||site.aliasOfSiteId||site.map?.markerEligible===false||knownAliasIds.has(String(site.siteId)));
+    const rule=commercial!==true?policy.defaults.commercialExtractionFalse:
+      policy.statuses[status]||policy.defaults.unknownStatus;
+    const eligible=commercial===true&&Number(rule.productionMultiplier)>0&&
+      !['BLOCKED','NOT_APPLICABLE','NON_EXECUTABLE_ALIAS'].includes(String(rule.state||''));
+    return{...site,status,commercial,alias,eligible,rule};
+  });
+  const aliases=rows.filter(site=>site.alias);
+  const physical=rows.filter(site=>!site.alias&&site.map?.markerEligible!==false);
+  return{
+    allIdentityCount:rows.length,physicalCount:physical.length,aliasCount:aliases.length,
+    eligibleCount:physical.filter(site=>site.eligible).length,
+    blockedCount:physical.filter(site=>!site.eligible).length,
+    canonicalCount:canonical.sites.length,
+    additiveUniqueCount:rows.length-canonicalIds.size,
+    referencesOnlyCount:references.length,
+    rows:physical
+  };
+}
 
 function buildEngine(){
   const a=loadJson('resources.json'),b=loadJson('resources_2.json');
@@ -77,9 +137,14 @@ function makeInterop(state){
   return{interop,events};
 }
 
-test('global resource pipeline runs every RESOURCE_JSON mine and keeps each result sovereign',async()=>{
+test('global resource pipeline runs every canonical and additive physical site under one policy',async()=>{
   const engine=buildEngine();
   const {mineSiteReferenceCount}=engine;
+  const fullSiteCoverage=expectedFullSiteCoverage();
+  assert.equal(fullSiteCoverage.canonicalCount,loadJson('resource_site_canonical_catalog_v1.json').sites.length);
+  assert.equal(fullSiteCoverage.allIdentityCount,fullSiteCoverage.canonicalCount+fullSiteCoverage.additiveUniqueCount);
+  assert.equal(fullSiteCoverage.physicalCount+fullSiteCoverage.aliasCount,fullSiteCoverage.allIdentityCount);
+  assert.ok(fullSiteCoverage.referencesOnlyCount>0,'199-site reference data is enrichment, not the execution limit');
   const state={simulation:{turn:1},resource:{},finance:{}};
   const identity={
     resolveCountry(v){
@@ -97,6 +162,7 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
   const context={
     console,Math,Number,String,Object,Array,Set,Map,WeakMap,Promise,JSON,Date,Intl,
     CustomEvent:CustomEventMock,
+    fetch:repoFetch,
     addEventListener(){},dispatchEvent(){return true},
     Game:{state},gameState:state,
     OmegaCanonicalIdentityRegistry:identity,
@@ -251,10 +317,14 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
   const mineCount=Object.values(state.resource).reduce((sum,row)=>sum+(Array.isArray(row?.mines)?row.mines.length:0),0);
   const activeSiteReferenceCount=Object.values(state.resource).reduce((sum,row)=>sum+(Array.isArray(row?.mineSiteReferences)?row.mineSiteReferences.length:0),0);
   const siteControllerCount=Object.values(state.resource).reduce((sum,row)=>sum+(row?.mineSiteControllers&&typeof row.mineSiteControllers==='object'?Object.keys(row.mineSiteControllers).length:0),0);
-  assert.equal(activeSiteReferenceCount,mineSiteReferenceCount);
-  assert.equal(siteControllerCount,mineSiteReferenceCount);
-  assert.equal(Object.values(state.resource).reduce((sum,row)=>sum+(Number(row?.mineSiteReferenceCount)||0),0),mineSiteReferenceCount);
-  assert.equal(Object.values(state.resource).reduce((sum,row)=>sum+(Object.values(row?.mineSiteControllers||{}).filter(x=>x?.controllerStatus==='RUNNING').length||0),0),mineSiteReferenceCount);
+  assert.equal(activeSiteReferenceCount,fullSiteCoverage.physicalCount,
+    'the runtime must materialize every unique non-alias physical identity, not only the legacy 199-site enrichment pack');
+  assert.equal(siteControllerCount,fullSiteCoverage.physicalCount,
+    'every physical identity must have its own country/site controller');
+  assert.equal(Object.values(state.resource).reduce((sum,row)=>sum+(Number(row?.mineSiteReferenceCount)||0),0),fullSiteCoverage.physicalCount,
+    'per-country site reference counts must reconcile to all physical identities');
+  assert.equal(Object.values(state.resource).reduce((sum,row)=>sum+(Object.values(row?.mineSiteControllers||{}).filter(x=>x?.controllerStatus==='RUNNING').length||0),0),fullSiteCoverage.eligibleCount,
+    'only policy-eligible physical sites may run; every other physical site must remain explicitly blocked');
   const batchCount=Object.values(state.resource).reduce((sum,row)=>sum+(Array.isArray(row?.batches)?row.batches.length:0),0);
   const pathCount=Object.values(state.resource).reduce((sum,row)=>sum+(row?.minePaths&&typeof row.minePaths==='object'?Object.keys(row.minePaths).length:0),0);
   const sitePathCount=Object.values(state.resource).reduce((sum,row)=>sum+Object.keys(row?.mineSiteControllers||{}).filter(k=>row.minePaths?.[k]).length,0);
@@ -282,10 +352,10 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
   const projectedMines=Object.values(state.resource).flatMap(row=>Array.isArray(row?.mines)?row.mines:[]);
   assert.ok(projectedMines.every(x=>x.resourceAsset&&x.resourceAsset.schemaVersion==='1.0.0'));
   assert.ok(projectedMines.every(x=>Object.keys(x.resourceAsset).sort().join('|')===unifiedSiteKeys.join('|')));
-  assert.equal(sitePathCount,mineSiteReferenceCount);
+  assert.equal(sitePathCount,fullSiteCoverage.physicalCount);
   assert.equal(occurrencePathCount,expectedOccurrencePathCount,
     'every canonical deposit and every occurrence linked from a site controller must own an individual path');
-  assert.equal(pathCount,mineSiteReferenceCount+expectedOccurrencePathCount,
+  assert.equal(pathCount,fullSiteCoverage.physicalCount+expectedOccurrencePathCount,
     'path ledger must contain one site-controller path per site plus one path per distinct linked occurrence');
   for(const [countryId,keys] of expectedOccurrencePathsByCountry){
     const row=state.resource[countryId];
