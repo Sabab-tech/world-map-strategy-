@@ -213,9 +213,11 @@
     set('status-link', known ? 'ENGINE STATE LINKED' : 'STATE NOT LINKED');
     set('status-fps', 'FPS N/A');
   }
-  function sampleAll() {
-    const turn = currentTurn();
-    if (turn !== null) countryIds().forEach(cid => sampleCountry(cid, turn));
+  function sampleAll(recordCommittedTurn = false, committedTurn = null) {
+    const turn = firstNum(committedTurn, currentTurn());
+    // History is sampled only at an authoritative turn-commit event.
+    // Opening or refreshing the UI must not freeze a mid-turn snapshot.
+    if (recordCommittedTurn && turn !== null) countryIds().forEach(cid => sampleCountry(cid, turn));
     updateHud();
   }
   function getTrendSeries(countryId, ministryId) {
@@ -638,8 +640,8 @@
         const detail = obj(e && e.detail);
         const reportedTurn = firstNum(detail.turn, detail.simulationTurn, currentTurn());
         if (reportedTurn !== null) {
+          sampleAll(true, reportedTurn);
           pushEvent(type,{...detail,simulationTurn:reportedTurn},'SIMULATION_EVENT');
-          sampleAll();
         } else pushEvent(type,detail,'SIMULATION_EVENT');
       } else pushEvent(type,e && e.detail,'ENGINE_EVENT');
     }); } catch (_) {}
