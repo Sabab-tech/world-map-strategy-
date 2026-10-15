@@ -116,6 +116,31 @@
     const b = bucket('resource', key);
     return txt(b.countryName || b.name || key);
   }
+  function resolveCountryId(value) {
+    const key = id(value);
+    if (!key) return null;
+    const known = countryIds();
+    if (known.includes(key)) return key;
+    try {
+      const resolvedId = g.Game && typeof g.Game.getCountryId === 'function' ? g.Game.getCountryId(txt(value)) : null;
+      if (resolvedId && known.includes(id(resolvedId))) return id(resolvedId);
+    } catch (_) {}
+    try {
+      const registry = g.OmegaCanonicalIdentityRegistry || g.OmegaCountrySemanticBridge ||
+        g.Omega && g.Omega.CanonicalIdentity;
+      const resolved = registry && typeof registry.resolveCountry === 'function' ? registry.resolveCountry(txt(value)) : null;
+      const candidate = resolved && (resolved.id || resolved.code || resolved.iso3 || resolved.countryId);
+      if (candidate && known.includes(id(candidate))) return id(candidate);
+    } catch (_) {}
+    const lookup = obj(g.Game && g.Game.countryLookup);
+    for (const [lookupKey, row] of Object.entries(lookup)) {
+      if (id(lookupKey) === key || id(row && row.name) === key || id(row && row.countryName) === key) {
+        const candidate = row && (row.id || row.code || row.iso3 || row.countryId) || lookupKey;
+        if (known.includes(id(candidate))) return id(candidate);
+      }
+    }
+    return key;
+  }
   function selectedIds() {
     return countryScope && countryScope !== 'WORLD' ? [id(countryScope)] : countryIds();
   }
@@ -221,7 +246,7 @@
     updateHud();
   }
   function getTrendSeries(countryId, ministryId) {
-    const cid = id(countryId), hist = arr(store.history[cid]);
+    const cid = resolveCountryId(countryId) || id(countryId), hist = arr(store.history[cid]);
     const ministry = id(ministryId || 'economy').toLowerCase();
     const output = [];
     if (!hist.length) return output;
@@ -627,7 +652,7 @@
       dataSource:'Game.state and existing engine ledgers',polling:panelOpen?'active while panel is open':'inactive while panel is closed'};
   }
   const api = {
-    VERSION:'1.0.0', diagnostics, getTrendSeries, snapshot:()=>({
+    VERSION:'1.0.0', diagnostics, resolveCountryId, getCountryMetrics:countryId => metricsFor(resolveCountryId(countryId) || id(countryId)), getTrendSeries, snapshot:()=>({
       turn:currentTurn(),scope:countryScope || 'WORLD',summary:observedStateSummary(selectedIds()),
       events:eventRows(selectedIds()),mines:minesFor(selectedIds()),shipments:allShipments(selectedIds()),
       tradeRequests:tradeRequests(selectedIds()),flows:flowRows(selectedIds()),communications:communications(selectedIds())
