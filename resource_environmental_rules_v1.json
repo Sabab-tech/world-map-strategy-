@@ -136,37 +136,57 @@
       "unit": "TONNES",
       "waterUseM3PerUnit": 0.18,
       "ghgTCO2ePerUnit": 0.006,
-      "tailingsTonnesPerUnit": 0.08
+      "tailingsTonnesPerUnit": 0.08,
+      "landDisturbanceHaPerUnit": 0
     },
     "COPPER_CONCENTRATE": {
       "unit": "TONNES",
       "waterUseM3PerUnit": 0.85,
       "ghgTCO2ePerUnit": 0.018,
-      "tailingsTonnesPerUnit": 0.12
+      "tailingsTonnesPerUnit": 0.12,
+      "landDisturbanceHaPerUnit": 0
     },
     "IRON_CONCENTRATE": {
       "unit": "TONNES",
       "waterUseM3PerUnit": 0.16,
       "ghgTCO2ePerUnit": 0.007,
-      "tailingsTonnesPerUnit": 0.1
+      "tailingsTonnesPerUnit": 0.1,
+      "landDisturbanceHaPerUnit": 0
     },
     "GOLD_CONCENTRATE": {
       "unit": "TONNES",
       "waterUseM3PerUnit": 1.4,
       "ghgTCO2ePerUnit": 0.044,
-      "tailingsTonnesPerUnit": 0.16
+      "tailingsTonnesPerUnit": 0.16,
+      "landDisturbanceHaPerUnit": 0
     },
     "TAILINGS": {
       "unit": "TONNES",
       "waterUseM3PerUnit": 0,
       "ghgTCO2ePerUnit": 0.001,
-      "tailingsTonnesPerUnit": 1
+      "tailingsTonnesPerUnit": 1,
+      "landDisturbanceHaPerUnit": 0
     },
     "PROCESSING_RESIDUE": {
       "unit": "TONNES",
       "waterUseM3PerUnit": 0,
       "ghgTCO2ePerUnit": 0.001,
-      "tailingsTonnesPerUnit": 1
+      "tailingsTonnesPerUnit": 1,
+      "landDisturbanceHaPerUnit": 0
+    },
+    "COAL_REJECT": {
+      "unit": "TONNES",
+      "landDisturbanceHaPerUnit": 0,
+      "waterUseM3PerUnit": 0.08,
+      "ghgTCO2ePerUnit": 0.003,
+      "tailingsTonnesPerUnit": 0.12
+    },
+    "COPPER_CATHODE": {
+      "unit": "TONNES",
+      "landDisturbanceHaPerUnit": 0,
+      "waterUseM3PerUnit": 0.24,
+      "ghgTCO2ePerUnit": 0.014,
+      "tailingsTonnesPerUnit": 0.04
     }
   },
   "unitAliases": {
