@@ -139,7 +139,10 @@ test('operation scope is mandatory and SWF amount must be present and positive',
     e instanceof ResourceDecisionAIError && e.code === 'DECISION_OPERATION_INVALID');
   assert.throws(() => buildResourceDecisionContext({ ...payload, operation: 'SWF_CAPITALIZATION', requestedAmount: null, projectType: null }), e =>
     e instanceof ResourceDecisionAIError && e.code === 'SWF_AMOUNT_REQUIRED');
-  assert.throws(() => buildResourceDecisionContext({ ...payload, operation: 'SWF_CAPITALIZATION', requestedAmount: 50, projectType: null }), e =>
+  const swf = buildResourceDecisionContext({ ...payload, operation: 'SWF_CAPITALIZATION', requestedAmount: 50, projectType: null });
+  assert.equal(swf.operation, 'SWF_CAPITALIZATION');
+  assert.equal(swf.operationRequirements.requestedContributionTreasuryUnits, 50);
+  assert.throws(() => buildResourceDecisionContext({ ...payload, operation: 'UNSUPPORTED_OPERATION' }), e =>
     e instanceof ResourceDecisionAIError && e.code === 'DECISION_OPERATION_INVALID');
   assert.throws(() => buildResourceDecisionContext({ ...payload, requestedAmount: 1 }), e =>
     e instanceof ResourceDecisionAIError && e.code === 'POWER_AMOUNT_RULESET_CONTROLLED');
