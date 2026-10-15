@@ -187,10 +187,35 @@
     if (hist.length > MAX_TURNS) hist.splice(0, hist.length - MAX_TURNS);
     store.lastTurnByCountry[key] = turn;
   }
+  function updateHud() {
+    if (!g.document) return;
+    const cid = playerCountry() || selectedCountry();
+    const known = !!cid && metricsFor(cid)._hasState;
+    const f = bucket('finance', cid || ''), e = bucket('economy', cid || ''), p = bucket('politics', cid || ''), gov = bucket('government', cid || ''), mil = bucket('military', cid || ''), r = bucket('resource', cid || '');
+    const set = (key, value) => { const node = g.document.getElementById(key); if (node) node.textContent = value; };
+    const currency = txt(f.currencyCode || f.currency || e.currencyCode || e.currency_code || '').trim();
+    const cash = firstNum(f.available, f.reserves, f.balance, f.treasury, f.cash, e.treasury, e.cash);
+    const power = firstNum(p.politicalPower, p.power, p.politicalCapital, gov.politicalPower, gov.power);
+    const manpower = firstNum(mil.manpower, mil.personnel, mil.activePersonnel, mil.totalPersonnel, mil.troops, mil.armedForces && mil.armedForces.personnel);
+    const energy = firstNum(e.energyProduction, e.energyProduced, e.powerProduction, e.electricityProduction, e.powerSystem && e.powerSystem.production);
+    const inventory = obj(r.inventory), oilKey = Object.keys(inventory).find(k => /(^|_)(crude_?oil|oil|petroleum)(_|$)/i.test(k));
+    const oil = oilKey ? numeric(inventory[oilKey]) : null;
+    const date = gameState().simulation && gameState().simulation.date;
+    const t = currentTurn();
+    set('res-cash', cash === null ? 'Not recorded' : fmt(cash)+' '+currency);
+    set('res-power', power === null ? 'Not recorded' : fmt(power));
+    set('res-manpower', manpower === null ? 'Not recorded' : fmt(manpower));
+    set('res-energy', energy === null ? 'Not recorded' : fmt(energy)+(e.energyUnit || e.powerUnit ? ' '+(e.energyUnit || e.powerUnit) : ' (unit not recorded)'));
+    set('res-oil', oil === null ? 'Not recorded' : fmt(oil)+(obj(r.inventoryUnits)[oilKey] ? ' '+obj(r.inventoryUnits)[oilKey] : ' (unit not recorded)'));
+    set('status-clock', (date ? txt(date) : 'GAME TIME NOT RECORDED')+(t === null ? '' : ' · TURN '+fmt(t,0)));
+    set('status-autosave', 'SAVE STATUS UNKNOWN');
+    set('status-link', known ? 'ENGINE STATE LINKED' : 'STATE NOT LINKED');
+    set('status-fps', 'FPS N/A');
+  }
   function sampleAll() {
     const turn = currentTurn();
-    if (turn === null) return;
-    countryIds().forEach(cid => sampleCountry(cid, turn));
+    if (turn !== null) countryIds().forEach(cid => sampleCountry(cid, turn));
+    updateHud();
   }
   function getTrendSeries(countryId, ministryId) {
     const cid = id(countryId), hist = arr(store.history[cid]);
@@ -464,7 +489,7 @@
       barChart('Actual site-flow status records',flowStatuses)+
       barChart('Actual shipment status records',shipmentStatuses)+
       barChart('Actual trade-request status records',requestStatuses)+
-      chartHistory(ids[0] || countryScope || '', 'economy');
+      (countryScope && countryScope !== 'WORLD' ? chartHistory(countryScope, 'economy') : '<div class="omega-liveops-section"><h3>Actual turn-by-turn history</h3><p class="omega-liveops-empty">Select one country to plot its timeline. A world total is not synthesized from different currencies, resource units or country-specific metrics.</p></div>');
   }
   function renderFlow(ids) {
     const flows = flowRows(ids), factoryRows = [];
