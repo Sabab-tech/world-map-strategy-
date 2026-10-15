@@ -229,10 +229,15 @@ function enforceRemediation(c){
   const due=Math.max(0,(num(impact.cumulative.remediationLiabilityUnits)||0)-(num(impact.remediationPaidUnits)||0));
   const fraction=Math.min(1,Math.max(0,num(loadedRules?.consequences?.remediationPaymentFractionPerTurn)??0));
   const desired=due*fraction,fin=countryBucket('finance',cid,false),available=num(fin?.available);
+  const alreadyPaidThisTurn=Number(impact.lastRemediationTurn)===turn();
   let paid=0;
-  if(desired>0&&available!==null&&available>0){paid=Math.min(desired,available);fin.available=available-paid;fin.environmentalRemediationPaidUnits=(num(fin.environmentalRemediationPaidUnits)||0)+paid;impact.remediationPaidUnits=(num(impact.remediationPaidUnits)||0)+paid;}
+  if(!alreadyPaidThisTurn&&desired>0&&available!==null&&available>0){
+    paid=Math.min(desired,available);fin.available=available-paid;
+    fin.environmentalRemediationPaidUnits=(num(fin.environmentalRemediationPaidUnits)||0)+paid;
+    impact.remediationPaidUnits=(num(impact.remediationPaidUnits)||0)+paid;
+  }
   impact.unpaidRemediationLiabilityUnits=Math.max(0,(num(impact.cumulative.remediationLiabilityUnits)||0)-(num(impact.remediationPaidUnits)||0));
-  if(Number(impact.lastRemediationTurn)!==turn()){
+  if(!alreadyPaidThisTurn){
     const ledger=Array.isArray(fin?.environmentalLedger)?fin.environmentalLedger:[];
     if(fin){
       ledger.push({receiptId:'ENV-REMEDIATION:'+cid+':T'+turn(),countryId:cid,turn:turn(),liabilityBefore:due,scheduledPayment:desired,paid,unpaidAfter:impact.unpaidRemediationLiabilityUnits,
