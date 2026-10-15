@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 
 globalThis.Game={state:{
   simulation:{turn:1},
@@ -25,8 +26,25 @@ await import('../omega_ministry_information_policy.js');
 await import('../omega_ministry_decision_framework.js');
 await import('../omega_ministry_state_transaction.js');
 await import('../omega_ministry_interoperability_system.js');
+globalThis.OmegaResourceStrategicPolicyRules=JSON.parse(fs.readFileSync(new URL('../resource_strategic_policy_rules_v1.json',import.meta.url),'utf8'));
+await import('../omega_resource_strategic_policy_runtime_v1.js');
 await import('../omega_global_market_system.js');
+const policy=globalThis.Omega?.ResourceStrategicPolicyRuntime||globalThis.OmegaResourceStrategicPolicyRuntime;
+const embargo=policy.declareEmbargo('BDG',{targetCountryId:'SAU',resourceId:'crude_oil',direction:'IMPORT',policyId:'MARKET-EMBARGO-TEST'});
+assert.equal(embargo.accepted,true,JSON.stringify(embargo));
 const market=globalThis.OmegaGlobalMarket;
+const blockedBooks=market.rebuild();
+assert.equal(blockedBooks.crude_oil.clearing.status,'NO_CROSS');
+assert.equal(blockedBooks.crude_oil.clearing.matchedQuantity,0);
+assert.equal(market.suppliers('crude_oil',1,'BDG').some(x=>x.countryId==='SAU'),false,'an embargoed seller must not appear in eligible suppliers');
+assert.equal(policy.liftEmbargo('BDG',{policyId:'MARKET-EMBARGO-TEST'}).accepted,true);
+const blockade=policy.declareBlockade('BDG',{targetCountryId:'SAU',resourceId:'crude_oil',modes:['ship'],policyId:'MARKET-BLOCKADE-TEST'});
+assert.equal(blockade.accepted,true,JSON.stringify(blockade));
+const blockedByNavalBlockade=market.rebuild();
+assert.equal(blockedByNavalBlockade.crude_oil.clearing.matchedQuantity,0);
+assert.equal(blockedByNavalBlockade.crude_oil.clearing.blockedTradePairs.some(x=>x.reason==='RESOURCE_ROUTE_BLOCKADE_ACTIVE'),true);
+assert.equal(market.suppliers('crude_oil',1,'BDG').some(x=>x.countryId==='SAU'),false,'a blockaded seller must not appear in eligible suppliers');
+assert.equal(policy.liftBlockade('BDG',{policyId:'MARKET-BLOCKADE-TEST'}).accepted,true);
 const books=market.rebuild();
 assert(books.crude_oil);
 const q=market.quote('crude_oil');

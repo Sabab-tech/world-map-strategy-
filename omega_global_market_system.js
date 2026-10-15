@@ -107,18 +107,29 @@
   function clearResource(rid,orders,history=[]){
     const bids=[...orders.bids].sort((a,b)=>b.priceUsd-a.priceUsd||a.countryId.localeCompare(b.countryId)||String(a.requestId||'').localeCompare(String(b.requestId||'')));
     const asks=[...orders.asks].sort((a,b)=>a.priceUsd-b.priceUsd||a.countryId.localeCompare(b.countryId)||String(a.offerId||'').localeCompare(String(b.offerId||'')));
-    let bi=0,ai=0,matched=0,lastBid=null,lastAsk=null,matches=[];
+    let matched=0,lastBid=null,lastAsk=null,matches=[],blockedPairs=[];
     const bidRemain=bids.map(x=>({...x,remaining:x.quantity}));
     const askRemain=asks.map(x=>({...x,remaining:x.quantity}));
-    while(bi<bidRemain.length&&ai<askRemain.length){
-      const bid=bidRemain[bi],ask=askRemain[ai];
-      if(bid.priceUsd+1e-12<ask.priceUsd)break;
-      if(bid.countryId===ask.countryId){ai+=1;continue;}
-      const q=Math.min(bid.remaining,ask.remaining);if(!(q>0))break;
-      matched+=q;lastBid=bid;lastAsk=ask;
-      matches.push({buyerCountryId:bid.countryId,sellerCountryId:ask.countryId,quantity:q,bidPriceUsd:bid.priceUsd,askPriceUsd:ask.priceUsd,bidPrice:bid.price,askPrice:ask.price,referenceLiquidity:!!ask.referenceOnly});
-      bid.remaining-=q;ask.remaining-=q;
-      if(bid.remaining<=0)bi+=1;if(ask.remaining<=0)ai+=1;
+    const strategicPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
+    // Match each buyer against price-eligible sellers independently. An embargoed pair
+    // is skipped without discarding that seller's offer for other countries.
+    for(const bid of bidRemain){
+      for(const ask of askRemain){
+        if(bid.remaining<=1e-9)break;
+        if(ask.remaining<=1e-9)continue;
+        if(bid.priceUsd+1e-12<ask.priceUsd)break;
+        if(bid.countryId===ask.countryId)continue;
+        const embargo=strategicPolicy?.isResourceEmbargoed?.(bid.countryId,ask.countryId,rid);
+        if(embargo?.blocked){blockedPairs.push({buyerCountryId:bid.countryId,sellerCountryId:ask.countryId,resourceId:rid,reason:embargo.reason||'RESOURCE_EMBARGO_ACTIVE'});continue;}
+        const routeMode=String(bid.transportMode||ask.transportMode||'ship');
+        const buyerBlockade=strategicPolicy?.isRouteBlocked?.(bid.countryId,{resourceId:rid,transportMode:routeMode,routeId:bid.routeId,siteId:bid.siteId});
+        const sellerBlockade=strategicPolicy?.isRouteBlocked?.(ask.countryId,{resourceId:rid,transportMode:routeMode,routeId:ask.routeId,siteId:ask.siteId});
+        if(buyerBlockade?.blocked||sellerBlockade?.blocked){blockedPairs.push({buyerCountryId:bid.countryId,sellerCountryId:ask.countryId,resourceId:rid,reason:'RESOURCE_ROUTE_BLOCKADE_ACTIVE',blockades:[...(buyerBlockade?.blockades||[]),...(sellerBlockade?.blockades||[])]});continue;}
+        const q=Math.min(bid.remaining,ask.remaining);if(!(q>0))continue;
+        matched+=q;lastBid=bid;lastAsk=ask;
+        matches.push({buyerCountryId:bid.countryId,sellerCountryId:ask.countryId,quantity:q,bidPriceUsd:bid.priceUsd,askPriceUsd:ask.priceUsd,bidPrice:bid.price,askPrice:ask.price,referenceLiquidity:!!ask.referenceOnly});
+        bid.remaining-=q;ask.remaining-=q;
+      }
     }
     const ref=referencePrice(rid);
     const clearing=matched>0?Number(((lastBid.priceUsd+lastAsk.priceUsd)/2).toFixed(8)):null;
@@ -132,7 +143,7 @@
     const mean=priceSamples.length?priceSamples.reduce((s,x)=>s+x,0)/priceSamples.length:null;
     const variance=priceSamples.length>1?priceSamples.reduce((s,x)=>s+Math.pow(x-mean,2),0)/priceSamples.length:null;
     const volatilityUsd=variance!==null?Number(Math.sqrt(variance).toFixed(8)):null;
-    return{resourceId:rid,status,numeraire:'USD',clearingPriceUsd:clearing,bestBidUsd:bestBid,bestAskUsd:bestAsk,matchedQuantity:matched,
+    return{resourceId:rid,status,numeraire:'USD',clearingPriceUsd:clearing,bestBidUsd:bestBid,bestAskUsd:bestAsk,matchedQuantity:matched,blockedTradePairs:blockedPairs,
       bidDepth:bids.reduce((s,x)=>s+(n(x.quantity)||0),0),askDepth:asks.reduce((s,x)=>s+(n(x.quantity)||0),0),
       priceDiscovery:clearing!==null?'ORDER_BOOK_CROSSING':(bestBid!==null&&bestAsk!==null?'NEGOTIATION_RANGE':ref?'REFERENCE_ONLY':'UNAVAILABLE'),
       referencePrice:ref?.price??null,referenceUnit:ref?.unit??null,referenceSource:ref?.source??null,matches,vwapUsd:vwap,spreadUsd:spread,volatilityUsd,
@@ -169,6 +180,12 @@
     const target=canonical(buyer),out=[];
     for(const c of countries()){
       if(c===target)continue;
+      const strategicPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
+      const embargo=target?strategicPolicy?.isResourceEmbargoed?.(target,c,rid):null;
+      if(embargo?.blocked)continue;
+      const buyerBlockade=target?strategicPolicy?.isRouteBlocked?.(target,{resourceId:rid,transportMode:'ship'}):null;
+      const sellerBlockade=strategicPolicy?.isRouteBlocked?.(c,{resourceId:rid,transportMode:'ship'});
+      if(buyerBlockade?.blocked||sellerBlockade?.blocked)continue;
       const inv=countryValue(c,'resource.inventory'),prod=countryValue(c,'resource.production'),tradeable=countryValue(c,'resource.tradeAvailability');
       const spr=countryValue(c,'resource.strategicReserve'),protectedStock=n(spr?.availableByResource?.[rid])||0;
       const available=n(tradeable?.[rid])??Math.max(0,(n(inv?.[rid])||0)-protectedStock)+(n(prod?.[rid])||0);
