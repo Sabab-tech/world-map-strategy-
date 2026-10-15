@@ -188,6 +188,13 @@
     }).join('');
   }
   function matchingAssets(country, resourceId) {
+    const network = g.Omega && g.Omega.ResourceIndustrialNetwork;
+    if (network && typeof network.candidateFactories === 'function' && resourceId) {
+      try {
+        const candidates = network.candidateFactories(country, resourceId);
+        if (Array.isArray(candidates)) return candidates.map(function (row) { return row && row.asset; }).filter(Boolean);
+      } catch (_) {}
+    }
     const econ = bucket('economy', country);
     const r = resourceBucket(country);
     const assets = Array.isArray(econ.productionAssets) ? econ.productionAssets :
@@ -368,8 +375,8 @@
       const body = '<div class="omega-rescc-grid2">' + kv('Factory ID', id) +
         kv('Stage', asset.stage || asset.facilityType || asset.factoryType) + kv('Capacity', asset.capacity) +
         kv('Input stock', asset.inputInventory && asset.inputInventory[rid]) +
-        kv('Inputs', Object.keys(asset.inputCoefficients || {}).join(', ') || 'Not recorded') +
-        kv('Outputs', Object.keys(asset.outputProfile || {}).join(', ') || 'Not recorded') + '</div>';
+        kv('Inputs', esc(Object.keys(asset.inputCoefficients || {}).join(', ') || 'Not recorded')) +
+        kv('Outputs', esc(Object.keys(asset.outputProfile || {}).join(', ') || 'Not recorded')) + '</div>';
       return card(asset.name || asset.factoryName || id, asset.status || asset.stage || 'STATUS NOT RECORDED', body,
         actionButton('process-factory', 'Run one real factory cycle', { 'factory-id': id, 'resource-id': rid, quantity: asset.capacity || 1 },
           !(g.Omega && g.Omega.ResourceIndustrialNetwork && g.Omega.ResourceIndustrialNetwork.executeFactoryCycle && id && rid)) +
@@ -1025,11 +1032,11 @@
             '09': 'industrial', '10': 'market', '11': 'trade', '12': 'value',
             '13': 'cascade', '14': 'cognitive', '15': 'power', '16': 'environment'
           };
-          html = html.replace(/<div class="dept-card" style=[\\s\\S]*?(?=<div class="dept-card" style=|$)/g, function (block) {
-            const point = block.match(/<span>(\\d{2})\\.\\s/);
+          html = html.replace(/<div class="dept-card" style=[\s\S]*?(?=<div class="dept-card" style=|$)/g, function (block) {
+            const point = block.match(/<span>(\d{2})\.\s/);
             if (!point || !panelByPoint[point[1]]) return block;
             const panel = panelByPoint[point[1]];
-            return block.replace(/onclick="[^"]*"/, 'onclick="window.ResourceMinistryEngine.openModal(\\'' + countryKey + '\\', \\' + panel + '\\');"');
+            return block.replace(/onclick="[^"]*"/, 'onclick="window.ResourceMinistryEngine.openModal(\'' + countryKey + '\', \'' + panel + '\');"');
           });
           html = html.replace('18 Commodity Ontology Matrix', 'Commodity Ontology Matrix')
             .replace('593 geocoded global mining concessions, ore purities, and spatial reserve clusters.', 'Authoritative global deposit registry; missing values remain unavailable.')
@@ -1045,7 +1052,7 @@
             .replace('Cognitive Situation & 12-Question Gate', 'Cognitive Review & 12-Question Gate')
             .replace('Red-Team counterfactual critics, 10-dimensional health evaluations, and AI briefing generation.', 'Evidence and constraint review. An authoritative AI gate result is shown only if an evaluation endpoint exists.')
             .replace('Run AI Cognitive Decision Gate', 'Open 12-Question Decision Review')
-            .replace('Tailings reprocessing, emissions cap-and-trade, industrial water recycling, and green transition.', 'Water recycling and tailings-reprocessing research are supported; carbon quota enforcement is only shown when backed by authoritative state.');          return html;
+            .replace('Tailings reprocessing, emissions cap-and-trade, industrial water recycling, and green transition.', 'Water recycling and tailings-reprocessing research are supported; carbon quota enforcement is only shown when backed by authoritative state.');
         };
         cabinet.__omegaResccCardPatch = true;
       }
