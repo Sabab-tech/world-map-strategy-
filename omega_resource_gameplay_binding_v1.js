@@ -83,7 +83,7 @@ function makeMeasure(value,unit,fallbackAuthority,authorityRecord){
  }
  if(!hasValue(raw))return null;
  const unitText=formatUnit(measureUnit),rawText=formatScalar(raw);
- const embeddedUnit=typeof raw==='string'&&/[a-z%µ/³]/i.test(raw.trim());
+ const embeddedUnit=typeof raw==='string'&&/[a-z%µ\/³]/i.test(raw.trim());
  if(!unitText&&!embeddedUnit)return null;
  const alreadyHasUnit=unitText&&String(rawText).toLowerCase().includes(unitText.toLowerCase());
  return {text:rawText+(unitText&&!alreadyHasUnit?' '+unitText:''),authority:authorityOf(record,fallbackAuthority)};
@@ -433,16 +433,16 @@ function findOccurrence(s,refs){
  return refs.find(r=>[r.siteId,r.siteReferenceKey,r.id,r.occurrenceKey,r.depositKey,r.linkedDepositId,r.canonicalOccurrenceId].some(x=>x!=null&&ids.has(String(x))))||null;
 }
 async function plan(){
- const s=chosenSite();if(!s)return setStatus('BLOCKED: select a site first');
- const net=api();if(!net)return setStatus('BLOCKED: industrial runtime not loaded');
- const r=await net.loadCatalog?.();if(r?.status==='FAILED')return setStatus('BLOCKED: industrial catalog unavailable');
+ const s=chosenSite();if(!s)return setStatus('Select a resource site first.');
+ const net=api();if(!net)return setStatus('Extraction planning is unavailable right now.');
+ const r=await net.loadCatalog?.();if(r?.status==='FAILED')return setStatus('Resource data is not ready for an extraction plan.');
  const out=net.planExtraction({countryId:s.countryId,siteId:s.siteId,resourceId:s.real?.resourceId||s.sourceSiteRecord?.resourceId});
  setStatus(out.status==='PLANNED'?'Extraction plan ready'+(hasValue(out.approvedQuantity)&&hasValue(out.unit)?' · '+formatScalar(out.approvedQuantity)+' '+formatUnit(out.unit):'')+(hasValue(out.totalDurationDays)?' · '+formatScalar(out.totalDurationDays)+' days':'')+'.':'Plan unavailable · '+(humanize(out.reason)||humanize(out.status)||'The engine could not confirm a valid plan.')+'.');
  g.__OMEGA_LAST_INDIVIDUAL_SITE_PLAN__=out;
 }
 async function execute(){
  const s=chosenSite();if(!s)return setStatus('BLOCKED: select a site first');
- const net=api();if(!net?.executeSitePipeline)return setStatus('BLOCKED · unified site-pipeline runtime unavailable; no extraction was executed.');
+ const net=api();if(!net?.executeSitePipeline)return setStatus('The extraction pipeline is unavailable. Nothing was executed.');
  setStatus('Running extraction, transport and factory delivery…');
  try{
   const result=await net.executeSitePipeline({countryId:s.countryId,siteId:s.siteId,resourceId:s.real?.resourceId||s.sourceSiteRecord?.resourceId||s.sourceSiteRecord?.resourceTypeId||s.identity?.resourceTypeId,autoCommissionFactory:true});
