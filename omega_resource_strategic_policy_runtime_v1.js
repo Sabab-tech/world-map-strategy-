@@ -160,6 +160,15 @@ function recordImpactTx(ctx,payload,kind){
  const riskValue=Math.max(0,Math.min(100,num(risk.environmental)??num(e.defaultEnvironmentalRisk)));
  const waterStress=Math.max(0,Math.min(100,num(risk.waterStress)??num(e.defaultWaterStress)));
  const scale=unitScale(p.unit);if(scale===null||scale<=0)return{accepted:false,reason:'ENVIRONMENTAL_UNIT_SCALE_UNAVAILABLE'};
+ const factor=carbonFactor(p.resourceId,p.unit),activeQuota=ctx.stateTransaction.get('resource.carbonQuota');
+ if(factor!==null){
+  const carbonResult=recordCarbonEmissionTx(ctx,{transactionId:'CARBON:'+transactionId,quantity:quantity*factor,unit:'TONNES_CO2E',
+   source:'RESOURCE_'+kind,sourceId:transactionId,siteId:p.siteId||null,resourceId:p.resourceId||null,
+   provenance:'SIMULATED_GAMEPLAY_ACTIVITY_FACTOR'});
+  if(carbonResult?.accepted===false)return carbonResult;
+ }else if(activeQuota&&String(activeQuota.status||'').toUpperCase()==='ACTIVE'){
+  return{accepted:false,reason:'CARBON_EMISSIONS_FACTOR_UNAVAILABLE',resourceId:p.resourceId||null,unit:p.unit||null};
+ }
  const intensity=Math.min(num(e.maximumBatchIntensity),quantity/scale);
  const riskInfluence=Math.max(0,Math.min(1,num(e.riskInfluence))),waterInfluence=Math.max(0,Math.min(1,num(e.waterStressInfluence)));
  const impact=kind==='PROCESSING'?num(e.batchImpact.processingWaste):num(e.batchImpact.land);
@@ -266,6 +275,208 @@ function remediate(ctx,payload){
  ctx.stateTransaction.set('resource.environmentalImpact',root);ctx.stateTransaction.set('resource.environmentalLedger',ledger.slice(-configuredLimit('policy','maxEnvironmentalLedgerRows')));
  emit('OMEGA_RESOURCE_ENVIRONMENT_REMEDIATED',c,{transactionId:txn,siteId:sid,amount:reduce,cost});return{accepted:true,transactionId:txn,cost,impact:next};
 }
+
+function carbonUnit(v){return String(v||'').trim().toUpperCase().replace(/[^A-Z0-9]+/g,'_').replace(/^_+|_+$/g,'');}
+function carbonFactor(resourceId,unit){
+ const map=rules()?.carbon?.emissionsFactorsByResourceUnit||{};
+ const key=tok(resourceId)+':'+carbonUnit(unit);
+ const value=num(map[key]);
+ return value!==null&&value>=0?value:null;
+}
+function carbonWindow(quota){
+ const starts=num(quota?.startTurn),period=num(quota?.periodTurns);
+ if(starts===null||period===null||period<1||!Number.isInteger(period))return null;
+ if(turn()<starts)return null;
+ const index=Math.floor((turn()-starts)/period);
+ return{periodIndex:index,startTurn:starts+index*period,endTurn:starts+(index+1)*period};
+}
+function quotaUsed(ctx,quota,window){
+ const ledger=ctx?.stateTransaction?.get('resource.carbonEmissionsLedger');
+ return(Array.isArray(ledger)?ledger:[]).filter(x=>String(x?.quotaId||'')===String(quota?.quotaId||'')&&Number(x?.periodIndex)===window.periodIndex)
+  .reduce((sum,x)=>sum+Math.max(0,num(x?.quantityTonnesCo2e)||0),0);
+}
+function recordCarbonEmissionTx(ctx,payload){
+ const cfg=rules()?.carbon,p=payload||{},quantity=num(p.quantityTonnesCo2e??p.quantity);
+ if(!cfg?.enabled)return{accepted:false,reason:'CARBON_RULES_UNAVAILABLE'};
+ if(quantity===null||quantity<=0)return{accepted:false,reason:'CARBON_EMISSION_QUANTITY_INVALID'};
+ if(carbonUnit(p.unit||cfg.unit)!=='TONNES_CO2E')return{accepted:false,reason:'CARBON_EMISSION_UNIT_INVALID',requiredUnit:'TONNES_CO2E'};
+ const transactionId=String(p.transactionId||'').trim();
+ if(!transactionId)return{accepted:false,reason:'CARBON_EMISSION_TRANSACTION_ID_REQUIRED'};
+ const before=ctx.stateTransaction.get('resource.carbonEmissionsLedger'),ledger=Array.isArray(before)?clone(before):[];
+ const existing=ledger.find(x=>String(x?.transactionId||'')===transactionId);
+ if(existing){
+  const same=Math.abs((num(existing.quantityTonnesCo2e)||0)-quantity)<1e-9&&String(existing.source||'')===String(p.source||'UNSPECIFIED_ACTIVITY');
+  return same?{accepted:true,duplicate:true,record:existing}:{accepted:false,reason:'CARBON_EMISSION_TRANSACTION_CONFLICT'};
+ }
+ const activeQuota=ctx.stateTransaction.get('resource.carbonQuota');
+ let quotaId=null,periodIndex=null,periodUsedBefore=0,allowance=null;
+ if(activeQuota&&String(activeQuota.status||'').toUpperCase()==='ACTIVE'){
+  const window=carbonWindow(activeQuota);
+  if(!window)return{accepted:false,reason:'CARBON_QUOTA_WINDOW_INVALID'};
+  periodUsedBefore=quotaUsed(ctx,activeQuota,window);allowance=num(activeQuota.allowanceTonnesCo2e);quotaId=activeQuota.quotaId;periodIndex=window.periodIndex;
+  if(allowance===null||allowance<0)return{accepted:false,reason:'CARBON_QUOTA_ALLOWANCE_INVALID'};
+  if(periodUsedBefore+quantity>allowance+1e-9)return{accepted:false,reason:'CARBON_QUOTA_EXCEEDED',quotaId,allowanceTonnesCo2e:allowance,
+   usedTonnesCo2e:periodUsedBefore,requestedTonnesCo2e:quantity,projectedTonnesCo2e:periodUsedBefore+quantity,periodIndex};
+ }
+ const c=country(ctx.countryId),row={transactionId,countryId:c,source:String(p.source||'UNSPECIFIED_ACTIVITY'),sourceId:p.sourceId||null,
+  siteId:p.siteId||null,resourceId:p.resourceId||null,quantityTonnesCo2e:quantity,unit:'TONNES_CO2E',turn:turn(),quotaId,periodIndex,
+  status:'COMMITTED',authority:'OMEGA_RESOURCE_STRATEGIC_POLICY_RUNTIME',
+  provenance:String(p.provenance||'EXPLICIT_SIMULATED_OR_MEASURED_ACTIVITY_RECORD')};
+ const limit=configuredLimit('carbon','maxEmissionLedgerRows');if(limit===null)return{accepted:false,reason:'CARBON_LEDGER_LIMIT_UNAVAILABLE'};
+ ledger.push(row);ctx.stateTransaction.set('resource.carbonEmissionsLedger',ledger.slice(-limit));
+ const currentQuota=ctx.stateTransaction.get('resource.carbonQuota');
+ if(currentQuota&&quotaId){
+  const window=carbonWindow(currentQuota),used=(window?quotaUsed(ctx,currentQuota,window):0);
+  ctx.stateTransaction.set('resource.carbonAccounting',{unit:'TONNES_CO2E',quotaId,currentPeriodIndex:periodIndex,
+   currentPeriodUsedTonnesCo2e:used,lastUpdatedTurn:turn(),status:used>=(num(currentQuota.allowanceTonnesCo2e)||0)?'ALLOWANCE_EXHAUSTED':'WITHIN_ALLOWANCE',
+   authority:'OMEGA_RESOURCE_STRATEGIC_POLICY_RUNTIME'});
+ }
+ emit('OMEGA_RESOURCE_CARBON_EMISSION_RECORDED',c,row);
+ return{accepted:true,record:row,periodUsedBefore,periodUsedAfter:periodUsedBefore+quantity,allowanceTonnesCo2e:allowance};
+}
+function previewCarbonActivity(countryId,resourceId,quantity,unit,source){
+ const c=country(countryId),q=num(quantity);if(!c||q===null||q<=0)return{allowed:false,reason:'CARBON_ACTIVITY_INPUT_INVALID'};
+ const quota=state()?.resource?.[c]?.carbonQuota;
+ const active=quota&&String(quota.status||'').toUpperCase()==='ACTIVE';
+ const factor=carbonFactor(resourceId,unit);
+ if(!active)return{allowed:true,emissionsKnown:factor!==null,emissionsTonnesCo2e:factor===null?null:q*factor,reason:factor===null?'NO_SIMULATED_FACTOR_CONFIGURED':null};
+ if(factor===null)return{allowed:false,reason:'CARBON_EMISSIONS_FACTOR_UNAVAILABLE',resourceId,unit};
+ const window=carbonWindow(quota);if(!window)return{allowed:false,reason:'CARBON_QUOTA_WINDOW_INVALID'};
+ const ledger=Array.isArray(state()?.resource?.[c]?.carbonEmissionsLedger)?state().resource[c].carbonEmissionsLedger:[];
+ const used=ledger.filter(x=>String(x?.quotaId||'')===String(quota.quotaId||'')&&Number(x?.periodIndex)===window.periodIndex)
+  .reduce((sum,x)=>sum+Math.max(0,num(x?.quantityTonnesCo2e)||0),0);
+ const amount=q*factor,allowance=num(quota.allowanceTonnesCo2e);
+ if(allowance===null||allowance<0)return{allowed:false,reason:'CARBON_QUOTA_ALLOWANCE_INVALID'};
+ return{allowed:used+amount<=allowance+1e-9,reason:used+amount>allowance+1e-9?'CARBON_QUOTA_EXCEEDED':null,
+  resourceId,unit,source:source||'RESOURCE_ACTIVITY',factorTonnesCo2ePerUnit:factor,emissionsTonnesCo2e:amount,
+  usedTonnesCo2e:used,projectedTonnesCo2e:used+amount,allowanceTonnesCo2e:allowance,periodIndex:window.periodIndex,quotaId:quota.quotaId};
+}
+function setCarbonQuotaTx(ctx,payload){
+ const cfg=rules()?.carbon,p=payload||{},allowance=num(p.allowanceTonnesCo2e),period=num(p.periodTurns??cfg?.defaultPeriodTurns);
+ if(!cfg?.enabled)return{accepted:false,reason:'CARBON_RULES_UNAVAILABLE'};
+ if(allowance===null||allowance<0)return{accepted:false,reason:'CARBON_QUOTA_ALLOWANCE_INVALID'};
+ if(period===null||period<1||!Number.isInteger(period))return{accepted:false,reason:'CARBON_QUOTA_PERIOD_INVALID'};
+ const c=country(ctx.countryId),quotaId=String(p.quotaId||'CARBON-QUOTA:'+c+':T'+turn()+':'+Date.now()).trim();
+ const prior=ctx.stateTransaction.get('resource.carbonQuota');
+ if(prior&&String(prior.quotaId||'')===quotaId){
+  const same=Math.abs((num(prior.allowanceTonnesCo2e)||0)-allowance)<1e-9&&Number(prior.periodTurns)===period;
+  return same?{accepted:true,duplicate:true,quota:prior}:{accepted:false,reason:'CARBON_QUOTA_ID_CONFLICT'};
+ }
+ const histBefore=ctx.stateTransaction.get('resource.carbonQuotaHistory'),history=Array.isArray(histBefore)?clone(histBefore):[];
+ if(prior&&typeof prior==='object')history.push({...clone(prior),status:'SUPERSEDED',supersededTurn:turn()});
+ const limit=configuredLimit('carbon','maxQuotaHistory');if(limit===null)return{accepted:false,reason:'CARBON_LEDGER_LIMIT_UNAVAILABLE'};
+ const quota={quotaId,countryId:c,allowanceTonnesCo2e:allowance,unit:'TONNES_CO2E',periodTurns:period,startTurn:turn(),status:'ACTIVE',
+  enforcement:'BLOCK_EMISSION_IF_ALLOWANCE_WOULD_BE_EXCEEDED',createdTurn:turn(),authority:'OMEGA_RESOURCE_STRATEGIC_POLICY_RUNTIME',
+  provenance:'PLAYER_SET_SIMULATED_POLICY_RULE'};
+ ctx.stateTransaction.set('resource.carbonQuota',quota);ctx.stateTransaction.set('resource.carbonQuotaHistory',history.slice(-limit));
+ emit('OMEGA_RESOURCE_CARBON_QUOTA_SET',c,quota);return{accepted:true,quota};
+}
+function carbonQuotaSet(countryId,payload={}){install();return dispatch('resource','OMEGA_RESOURCE_CARBON_QUOTA_SET',countryId,payload);}
+function recordCarbonEmission(countryId,payload={}){install();return dispatch('resource','OMEGA_RESOURCE_CARBON_EMISSION_RECORD',countryId,payload);}
+function evaluateCognitiveGateTx(ctx,payload){
+ const cfg=rules()?.cognitive,p=payload||{},answers=Array.isArray(p.answers)?p.answers.map(x=>String(x||'')):null;
+ const required=num(cfg?.questionsRequired),historyLimit=configuredLimit('cognitive','maxHistory');
+ if(!cfg?.enabled||required===null||historyLimit===null)return{accepted:false,reason:'COGNITIVE_RULES_UNAVAILABLE'};
+ if(!answers||answers.length!==required||answers.some(x=>!['proceed','review','block'].includes(x)))return{accepted:false,reason:'ALL_12_QUESTIONS_REQUIRE_ANSWERS',requiredAnswers:required};
+ const decisionId=String(p.decisionId||'COGNITIVE:'+country(ctx.countryId)+':T'+turn()+':'+Date.now()).trim();
+ const old=ctx.stateTransaction.get('resource.cognitiveDecisionLedger'),ledger=Array.isArray(old)?clone(old):[];
+ const existing=ledger.find(x=>String(x?.decisionId||'')===decisionId);
+ if(existing)return JSON.stringify(existing.answers)===JSON.stringify(answers)?{accepted:true,duplicate:true,decision:existing}:{accepted:false,reason:'COGNITIVE_DECISION_ID_CONFLICT'};
+ const blocks=answers.filter(x=>x==='block').length,reviews=answers.filter(x=>x==='review').length;
+ const decision=blocks?'BLOCK':reviews>=4?'REVIEW':'PROCEED_WITH_RECORDED_ASSUMPTIONS';
+ const row={decisionId,countryId:country(ctx.countryId),turn:turn(),answers:answers.slice(),answeredCount:answers.length,
+  blockCount:blocks,reviewCount:reviews,decision,status:'RECORDED',advisory:true,authority:'PLAYER_ENTERED_COGNITIVE_SCREENING',
+  aiGenerated:false,provenance:'USER_ENTERED_12_QUESTION_CHECKLIST'};
+ ledger.push(row);ctx.stateTransaction.set('resource.cognitiveDecisionLedger',ledger.slice(-historyLimit));
+ emit('OMEGA_RESOURCE_COGNITIVE_DECISION_RECORDED',ctx.countryId,row);return{accepted:true,decision:row,persisted:true};
+}
+function evaluateCognitiveGate(countryId,payload={}){install();return dispatch('resource','OMEGA_RESOURCE_COGNITIVE_GATE_EVALUATE',countryId,payload);}
+function powerProjectCreate(ctx,payload){
+ const cfg=rules()?.power,p=payload||{},type=String(p.projectType||p.type||'NUCLEAR_BASELOAD').trim().toUpperCase(),rule=cfg?.projectTypes?.[type];
+ if(!cfg?.enabled||!rule)return{accepted:false,reason:'POWER_PROJECT_TYPE_UNSUPPORTED'};
+ const c=country(ctx.countryId),limit=configuredLimit('power','maxProjectsPerCountry');if(limit===null)return{accepted:false,reason:'POWER_RULES_UNAVAILABLE'};
+ const projectId=String(p.projectId||'POWER:'+c+':'+type+':T'+turn()+':'+Date.now()).trim(),old=ctx.stateTransaction.get('resource.powerProjects');
+ const projects=Array.isArray(old)?clone(old):[],existing=projects.find(x=>String(x?.projectId||'')===projectId);
+ if(existing)return String(existing.projectType)===type?{accepted:true,duplicate:true,project:existing}:{accepted:false,reason:'POWER_PROJECT_ID_CONFLICT'};
+ if(projects.filter(x=>!['CANCELLED','FAILED'].includes(String(x.status||''))).length>=limit)return{accepted:false,reason:'POWER_PROJECT_LIMIT_REACHED'};
+ const cost=num(rule.constructionCostUsd),capacity=num(rule.capacityMw),buildTurns=num(rule.constructionTurns);
+ if(cost===null||cost<0||capacity===null||capacity<=0||buildTurns===null||buildTurns<1||!Number.isInteger(buildTurns))return{accepted:false,reason:'POWER_PROJECT_RULES_INVALID'};
+ const debit=dispatch('finance','OMEGA_TRADE_FINANCE_DEBIT',c,{amount:cost,reason:'RESOURCE_POWER_PROJECT_CONSTRUCTION',referenceId:projectId,transactionId:'POWER-COST:'+projectId});
+ if(debit?.status!=='APPLIED'&&debit?.accepted!==true)return{accepted:false,reason:'POWER_PROJECT_TREASURY_DEBIT_FAILED',detail:debit,cost};
+ const project={projectId,projectType:type,countryId:c,status:'UNDER_CONSTRUCTION',startedTurn:turn(),lastProgressTurn:turn(),
+  progressTurns:0,requiredTurns:buildTurns,progressPct:0,costUsd:cost,capacityMw:capacity,constructionCurrency:'USD',
+  authority:'OMEGA_RESOURCE_STRATEGIC_POLICY_RUNTIME',provenance:rule.authority||'SIMULATED_GAMEPLAY_RULESET'};
+ projects.push(project);ctx.stateTransaction.set('resource.powerProjects',projects.slice(-limit));
+ emit('OMEGA_RESOURCE_POWER_PROJECT_STARTED',c,project);return{accepted:true,project};
+}
+function powerTick(ctx){
+ const cfg=rules()?.power;if(!cfg?.enabled)return{accepted:false,reason:'POWER_RULES_UNAVAILABLE'};
+ const c=country(ctx.countryId),ruleSet=cfg.projectTypes||{},limit=configuredLimit('power','maxProjectsPerCountry');
+ if(limit===null)return{accepted:false,reason:'POWER_RULES_UNAVAILABLE'};
+ const p0=ctx.stateTransaction.get('resource.powerProjects'),projects=Array.isArray(p0)?clone(p0):[];
+ const a0=ctx.stateTransaction.get('resource.powerAssets'),assets=Array.isArray(a0)?clone(a0):[];
+ const created=[];
+ for(const project of projects){
+  if(project.status!=='UNDER_CONSTRUCTION'||Number(project.lastProgressTurn)===turn())continue;
+  project.progressTurns=Math.min(Number(project.requiredTurns)||1,(Number(project.progressTurns)||0)+1);
+  project.progressPct=project.progressTurns/Math.max(1,Number(project.requiredTurns)||1);project.lastProgressTurn=turn();project.updatedTurn=turn();
+  if(project.progressTurns+1e-9<(Number(project.requiredTurns)||1))continue;
+  project.status='COMMISSIONED';project.completedTurn=turn();
+  const rule=ruleSet[project.projectType]||{};
+  const assetId='POWER-ASSET:'+project.projectId;
+  let asset=assets.find(x=>String(x.assetId||'')===assetId);
+  if(!asset){
+   asset={assetId,projectId:project.projectId,countryId:c,projectType:project.projectType,status:'IDLE_FUEL_SHORTAGE',
+    capacityMw:num(rule.capacityMw)||num(project.capacityMw)||0,capacityFactor:num(rule.capacityFactor)||1,
+    fuelResourceId:String(rule.fuelResourceId||''),fuelQuantityPerTurn:num(rule.fuelQuantityPerTurn)||0,
+    emissionsTonnesCo2ePerMwh:num(rule.emissionsTonnesCo2ePerMwh),commissionedTurn:turn(),
+    authority:'OMEGA_RESOURCE_STRATEGIC_POLICY_RUNTIME',provenance:rule.authority||'SIMULATED_GAMEPLAY_RULESET'};
+   assets.push(asset);created.push(assetId);
+  }
+  emit('OMEGA_RESOURCE_POWER_ASSET_COMMISSIONED',c,asset);
+ }
+ let rawInv=ctx.stateTransaction.get('resource.inventory'),inventory=rawInv&&typeof rawInv==='object'?clone(rawInv):{};
+ let generatedMwh=0,installedCapacityMw=0;
+ const ledger0=ctx.stateTransaction.get('resource.powerGenerationLedger'),generationLedger=Array.isArray(ledger0)?clone(ledger0):[];
+ for(const asset of assets){
+  installedCapacityMw+=Math.max(0,num(asset.capacityMw)||0);
+  if(['CANCELLED','FAILED'].includes(String(asset.status||''))||Number(asset.lastGeneratedTurn)===turn())continue;
+  const fuelId=String(asset.fuelResourceId||''),fuelNeed=Math.max(0,num(asset.fuelQuantityPerTurn)||0),fuelAvailable=fuelId?Math.max(0,num(inventory[fuelId])||0):0;
+  const generation=Math.max(0,num(asset.capacityMw)||0)*24*Math.max(0,Math.min(1,num(asset.capacityFactor)||1));
+  const emission=generation*Math.max(0,num(asset.emissionsTonnesCo2ePerMwh)||0);
+  if(!fuelId||fuelNeed<=0||fuelAvailable+1e-9<fuelNeed){
+   asset.status='IDLE_FUEL_SHORTAGE';asset.generationMwh=0;asset.lastAttemptTurn=turn();asset.lastBlockedReason='POWER_FUEL_STOCK_UNAVAILABLE';
+   generationLedger.push({transactionId:'POWER-GEN:'+asset.assetId+':T'+turn(),assetId:asset.assetId,countryId:c,turn:turn(),status:'BLOCKED',reason:asset.lastBlockedReason,generationMwh:0});
+   continue;
+  }
+  const carbon=recordCarbonEmissionTx(ctx,{transactionId:'POWER-CO2:'+asset.assetId+':T'+turn(),quantity:emission,unit:'TONNES_CO2E',
+   source:'POWER_GENERATION',sourceId:asset.assetId,provenance:asset.provenance});
+  if(!carbon.accepted){
+   asset.status=carbon.reason==='CARBON_QUOTA_EXCEEDED'?'IDLE_CARBON_QUOTA':'BLOCKED_CARBON_ACCOUNTING';
+   asset.generationMwh=0;asset.lastAttemptTurn=turn();asset.lastBlockedReason=carbon.reason;
+   generationLedger.push({transactionId:'POWER-GEN:'+asset.assetId+':T'+turn(),assetId:asset.assetId,countryId:c,turn:turn(),status:'BLOCKED',reason:carbon.reason,generationMwh:0});
+   continue;
+  }
+  inventory[fuelId]=Math.max(0,fuelAvailable-fuelNeed);
+  asset.status='OPERATIONAL';asset.generationMwh=generation;asset.emissionsTonnesCo2e=emission;asset.lastGeneratedTurn=turn();
+  asset.lastBlockedReason=null;asset.lastFuelUse={resourceId:fuelId,quantity:fuelNeed,turn:turn()};
+  generatedMwh+=generation;
+  generationLedger.push({transactionId:'POWER-GEN:'+asset.assetId+':T'+turn(),assetId:asset.assetId,countryId:c,turn:turn(),status:'GENERATED',
+   capacityMw:asset.capacityMw,generationMwh:generation,emissionsTonnesCo2e:emission,fuelResourceId:fuelId,fuelQuantity:fuelNeed});
+  emit('OMEGA_RESOURCE_POWER_GENERATED',c,{assetId:asset.assetId,turn:turn(),generationMwh:generation,emissionsTonnesCo2e:emission});
+ }
+ const ledgerLimit=configuredLimit('carbon','maxEmissionLedgerRows')||4096;
+ ctx.stateTransaction.set('resource.powerProjects',projects.slice(-limit));ctx.stateTransaction.set('resource.powerAssets',assets.slice(-limit));
+ ctx.stateTransaction.set('resource.inventory',inventory);ctx.stateTransaction.set('resource.powerGenerationLedger',generationLedger.slice(-ledgerLimit));
+ const powerState={turn:turn(),unit:'MWH_PER_TURN',installedCapacityMw,generatedMwh,assets:assets.map(x=>({assetId:x.assetId,status:x.status,capacityMw:x.capacityMw,generationMwh:x.generationMwh||0,lastBlockedReason:x.lastBlockedReason||null})),
+  authority:'OMEGA_RESOURCE_STRATEGIC_POLICY_RUNTIME',provenance:'POWER_GENERATION_DERIVED_FROM_RULESET_AND_OBSERVED_INVENTORY'};
+ ctx.stateTransaction.set('resource.powerGeneration',powerState);
+ return{accepted:true,countryId:c,turn:turn(),projectsAdvanced:projects.filter(x=>Number(x.lastProgressTurn)===turn()&&x.status==='UNDER_CONSTRUCTION').length,
+  commissionedAssetIds:created,installedCapacityMw,generatedMwh,assets:powerState.assets};
+}
+function startPowerProject(countryId,payload={}){install();return dispatch('resource','OMEGA_RESOURCE_POWER_PROJECT_CREATE',countryId,payload);}
+function processPowerCountry(countryId){install();return dispatch('resource','OMEGA_RESOURCE_POWER_PROJECT_TICK',countryId,{correlationId:'POWER-TICK:'+country(countryId)+':'+turn()});}
+
 function handlerFor(type,fn,owner='resource'){const m=interop();if(!m?.registerCommandHandler)return false;try{m.registerAction?.(type,{actionId:type,stateOwnerMinistry:owner,authority:'OMEGA_RESOURCE_STRATEGIC_POLICY_RUNTIME'});m.registerCommandHandler(type,owner,fn);return true;}catch(e){registrationErrors.push(type+':'+String(e?.message||e));return false;}}
 function install(){
  registrationErrors=[];const defs=[
@@ -279,7 +490,12 @@ function install(){
  ['OMEGA_RESOURCE_EXPLORATION_COMMISSION',(cmd,ctx)=>commission(ctx,cmd?.payload||{})],
  ['OMEGA_RESOURCE_ENVIRONMENT_RECORD_EXTRACTION',(cmd,ctx)=>recordExtractionImpactTx(ctx,cmd?.payload||{})],
  ['OMEGA_RESOURCE_ENVIRONMENT_RECORD_PROCESSING',(cmd,ctx)=>recordProcessingImpactTx(ctx,cmd?.payload||{})],
- ['OMEGA_RESOURCE_ENVIRONMENTAL_REMEDIATE',(cmd,ctx)=>remediate(ctx,cmd?.payload||{})]
+ ['OMEGA_RESOURCE_ENVIRONMENTAL_REMEDIATE',(cmd,ctx)=>remediate(ctx,cmd?.payload||{})],
+ ['OMEGA_RESOURCE_CARBON_QUOTA_SET',(cmd,ctx)=>setCarbonQuotaTx(ctx,cmd?.payload||{})],
+ ['OMEGA_RESOURCE_CARBON_EMISSION_RECORD',(cmd,ctx)=>recordCarbonEmissionTx(ctx,cmd?.payload||{})],
+ ['OMEGA_RESOURCE_COGNITIVE_GATE_EVALUATE',(cmd,ctx)=>evaluateCognitiveGateTx(ctx,cmd?.payload||{})],
+ ['OMEGA_RESOURCE_POWER_PROJECT_CREATE',(cmd,ctx)=>powerProjectCreate(ctx,cmd?.payload||{})],
+ ['OMEGA_RESOURCE_POWER_PROJECT_TICK',(cmd,ctx)=>powerTick(ctx,cmd?.payload||{})]
  ];
  let n=0;for(const [t,f,owner='resource'] of defs)if(handlerFor(t,f,owner))n++;handlersReady=n===defs.length;return{ready:handlersReady,registered:n,required:defs.length,errors:registrationErrors.slice()};
 }
@@ -290,6 +506,8 @@ function countryIds(){
 }
 function processCountry(c){install();const cc=country(c);if(!cc)return{status:'SKIPPED',reason:'COUNTRY_REQUIRED'};return dispatch('resource','OMEGA_RESOURCE_EXPLORATION_TICK',cc,{correlationId:'EXPLORATION-TICK:'+cc+':'+turn()});}
 function processAll(){return countryIds().map(processCountry);}
+function setCarbonQuota(c,p={}){return carbonQuotaSet(c,p);}
+function recordEmission(c,p={}){return recordCarbonEmission(c,p);}
 function declareEmbargo(c,p={}){install();return dispatch('trade','OMEGA_RESOURCE_EMBARGO_DECLARE',c,p);}
 function liftEmbargo(c,p={}){install();return dispatch('trade','OMEGA_RESOURCE_EMBARGO_LIFT',c,p);}
 function declareBlockade(c,p={}){install();return dispatch('trade','OMEGA_RESOURCE_BLOCKADE_DECLARE',c,p);}
@@ -305,14 +523,19 @@ function diagnostics(){
   explorationProjects:Object.values(resource).reduce((n,r)=>n+(Array.isArray(r?.explorationProjects)?r.explorationProjects.filter(p=>['IN_PROGRESS','DISCOVERED_PENDING_INVESTMENT','INVESTMENT_APPROVED'].includes(p.status)).length:0),0),
   commissionedSiteCount:Object.values(resource).reduce((n,r)=>n+(Array.isArray(r?.commissionedSites)?r.commissionedSites.length:0),0),
   environmentalLedgerRows:Object.values(resource).reduce((n,r)=>n+(Array.isArray(r?.environmentalLedger)?r.environmentalLedger.length:0),0),
+  carbonEmissionLedgerRows:Object.values(resource).reduce((n,r)=>n+(Array.isArray(r?.carbonEmissionsLedger)?r.carbonEmissionsLedger.length:0),0),
+  activeCarbonQuotas:Object.values(resource).filter(r=>String(r?.carbonQuota?.status||'').toUpperCase()==='ACTIVE').length,
+  powerProjectCount:Object.values(resource).reduce((n,r)=>n+(Array.isArray(r?.powerProjects)?r.powerProjects.length:0),0),
+  powerAssetCount:Object.values(resource).reduce((n,r)=>n+(Array.isArray(r?.powerAssets)?r.powerAssets.length:0),0),
+  cognitiveDecisionRows:Object.values(resource).reduce((n,r)=>n+(Array.isArray(r?.cognitiveDecisionLedger)?r.cognitiveDecisionLedger.length:0),0),
   marketLedgerCountries:Object.keys(trade).length};
 }
-const API=Object.freeze({VERSION,loadRules,install,diagnostics,isResourceEmbargoed,isRouteBlocked,siteAvailableForExtraction,extractionMultiplier,recordExtractionImpactTx,recordProcessingImpactTx,declareEmbargo,liftEmbargo,declareBlockade,liftBlockade,startExploration,processCountry,processAll,approveInvestment,commissionSite,remediateSite});
+const API=Object.freeze({VERSION,loadRules,install,diagnostics,isResourceEmbargoed,isRouteBlocked,siteAvailableForExtraction,extractionMultiplier,recordExtractionImpactTx,recordProcessingImpactTx,declareEmbargo,liftEmbargo,declareBlockade,liftBlockade,startExploration,processCountry,processAll,approveInvestment,commissionSite,remediateSite,setCarbonQuota,recordCarbonEmission,previewCarbonActivity,evaluateCognitiveGate,startPowerProject,processPowerCountry});
 g.Omega=g.Omega||{};g.Omega.ResourceStrategicPolicyRuntime=API;g.OmegaResourceStrategicPolicyRuntime=API;
 if(typeof g.addEventListener==='function'){
  g.addEventListener('OMEGA_READY',()=>{loadRules().then(()=>install()).catch(()=>{});});
  g.addEventListener('OMEGA_GAME_SESSION_STARTED',()=>{loadRules().then(()=>install()).catch(()=>{});});
- g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED',()=>{try{processAll();}catch(_){}});
+ g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED',()=>{try{processAll();for(const c of countryIds())processPowerCountry(c);}catch(_){}});
  g.addEventListener('OMEGA_RESOURCE_PROCESSING_COMPLETED',e=>{
   const d=e?.detail||{},p=d.payload||d,cc=country(p.countryId||d.countryId);
   const tx=String(p.transactionId||p.processId||'');if(!cc||!tx)return;
