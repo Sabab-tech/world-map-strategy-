@@ -437,32 +437,38 @@ async function plan(){
  const net=api();if(!net)return setStatus('BLOCKED: industrial runtime not loaded');
  const r=await net.loadCatalog?.();if(r?.status==='FAILED')return setStatus('BLOCKED: industrial catalog unavailable');
  const out=net.planExtraction({countryId:s.countryId,siteId:s.siteId,resourceId:s.real?.resourceId||s.sourceSiteRecord?.resourceId});
- setStatus(out.status==='PLANNED'?'PLAN CREATED · '+out.approvedQuantity+' '+out.unit+' · '+out.totalDurationDays+' days':'BLOCKED · '+(out.reason||out.status));
+ setStatus(out.status==='PLANNED'?'Extraction plan ready · '+formatScalar(out.approvedQuantity)+' '+formatUnit(out.unit)+' · '+formatScalar(out.totalDurationDays)+' days':'Plan unavailable · '+(humanize(out.reason)||humanize(out.status)||'The engine could not confirm a valid plan.'));
  g.__OMEGA_LAST_INDIVIDUAL_SITE_PLAN__=out;
 }
 async function execute(){
  const s=chosenSite();if(!s)return setStatus('BLOCKED: select a site first');
  const net=api();if(!net?.executeSitePipeline)return setStatus('BLOCKED · unified site-pipeline runtime unavailable; no extraction was executed.');
- setStatus('Executing exact site through extraction → warehouse → route → factory…');
+ setStatus('Running extraction, transport and factory delivery…');
  try{
   const result=await net.executeSitePipeline({countryId:s.countryId,siteId:s.siteId,resourceId:s.real?.resourceId||s.sourceSiteRecord?.resourceId||s.sourceSiteRecord?.resourceTypeId||s.identity?.resourceTypeId,autoCommissionFactory:true});
   g.__OMEGA_LAST_INDIVIDUAL_SITE_EXTRACTION__={siteId:s.siteId,result};
   if(result?.status==='IN_TRANSIT'){
-   setStatus('EXTRACTION COMMITTED · '+s.siteId+' · batch '+(result.batchId||'created')+' · shipment '+(result.shipmentId||'dispatched')+' · factory '+result.factoryId+' · route ETA turn '+(result.shipment?.etaTurn??'pending'));
+   setStatus('Site pipeline committed · Shipment dispatched'+(result.shipment?.etaTurn!==undefined?' · estimated arrival turn '+formatScalar(result.shipment.etaTurn):'')+'.');
    return;
   }
-  setStatus('SITE PIPELINE '+String(result?.status||'BLOCKED')+' · '+String(result?.reason||result?.blockReason||'No confirmed end-to-end commit')+' · '+JSON.stringify({siteId:s.siteId,occurrenceKey:result?.occurrenceKey,extractionStatus:result?.extractionStatus,shipmentStatus:result?.shipmentStatus}).slice(0,220));
+  setStatus('Site pipeline '+(humanize(result?.status)||'blocked')+' · '+(humanize(result?.reason||result?.blockReason)||'The engine did not confirm a completed delivery.')+'.');
  }catch(e){
   const reason=String(e?.message||e);g.__OMEGA_LAST_INDIVIDUAL_SITE_EXTRACTION__={siteId:s.siteId,status:'FAILED',reason};
-  setStatus('SITE PIPELINE FAILED · '+reason.slice(0,220));
+  setStatus('Site pipeline failed · '+(humanize(reason)||'The run stopped before completion.')+'.');
  }
 }
 function mount(){
  if(document.getElementById('omega-individual-resource-open'))return;
- const btn=document.createElement('button');btn.id='omega-individual-resource-open';btn.textContent='INDIVIDUAL SITES';btn.style.cssText='position:fixed;left:12px;bottom:18px;z-index:1000001;padding:10px 12px;background:#172331;color:#e9d29a;border:1px solid #bca366;border-radius:6px;font:700 11px monospace;letter-spacing:.5px';
+ const btn=document.createElement('button');
+ btn.id='omega-individual-resource-open';btn.className='omega-resource-open-button';btn.type='button';btn.textContent='Resource sites';
  btn.addEventListener('click',show);document.body.appendChild(btn);
- panel=document.createElement('section');panel.id='omega-individual-resource-panel';panel.style.cssText='display:none;position:fixed;left:12px;bottom:62px;z-index:1000002;width:min(390px,calc(100vw - 24px));max-height:72vh;overflow:auto;padding:14px;background:#101923;color:#e8edf2;border:1px solid #9b895b;border-radius:8px;box-shadow:0 10px 36px #000b;font:12px/1.5 monospace';
- panel.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center"><b>INDIVIDUAL RESOURCE SITE</b><button id="omega-individual-close" style="background:#293440;color:#fff;border:1px solid #66717b;padding:3px 8px">CLOSE</button></div><p id="omega-individual-status">Loading individual resource sites and route profiles…</p><label for="omega-individual-select">Exact site identity</label><select id="omega-individual-select" style="display:block;width:100%;padding:8px;margin:5px 0 10px;background:#202b37;color:#fff;border:1px solid #697887"></select><div id="omega-individual-detail"></div><div style="display:flex;gap:7px;margin-top:12px"><button id="omega-individual-plan" style="flex:1;padding:9px;background:#253c4b;color:#fff;border:1px solid #547c91">PLAN EXTRACTION</button><button id="omega-individual-execute" style="flex:1;padding:9px;background:#423a27;color:#f2d99a;border:1px solid #bca366">EXECUTE SITE</button></div><small style="display:block;margin-top:9px;color:#aab4bf">No country-average substitution. Execution is reported only when an exact occurrence binding is found and the runtime confirms a committed result.</small>';
+ panel=document.createElement('section');panel.id='omega-individual-resource-panel';panel.className='omega-resource-site-panel';
+ panel.innerHTML='<div class="omega-site-panel-header"><div><p class="omega-site-eyebrow">RESOURCE MAP</p><h2>Deposit details</h2></div><button id="omega-individual-close" class="omega-site-close" type="button" aria-label="Close resource details">Close</button></div>'+
+  '<p id="omega-individual-status" class="omega-site-status" role="status" aria-live="polite">Loading resource site data…</p>'+
+  '<label class="omega-site-select-label" for="omega-individual-select">Selected site</label>'+
+  '<select id="omega-individual-select" class="omega-site-select"></select>'+
+  '<div id="omega-individual-detail" class="omega-site-detail"></div>'+
+  '<div class="omega-site-actions"><button id="omega-individual-plan" class="omega-site-action omega-site-action--plan" type="button">Plan extraction</button><button id="omega-individual-execute" class="omega-site-action omega-site-action--execute" type="button">Run site pipeline</button></div>';
  document.body.appendChild(panel);
  statusNode=panel.querySelector('#omega-individual-status');detailNode=panel.querySelector('#omega-individual-detail');selectNode=panel.querySelector('#omega-individual-select');
  panel.querySelector('#omega-individual-close').addEventListener('click',()=>panel.style.display='none');
@@ -564,7 +570,7 @@ async function init(){
   if(!sites.length)throw new Error('NO_INDIVIDUAL_RESOURCE_SITES_WITH_VALID_COORDINATES');
   if(new Set(sites.map(s=>s.siteId)).size!==sites.length)throw new Error('INDIVIDUAL_SITE_IDENTITY_NOT_UNIQUE');
   sites.sort((a,b)=>a.countryId.localeCompare(b.countryId)||a.siteName.localeCompare(b.siteName));
-  selectNode.innerHTML=sites.map(s=>'<option value="'+esc(s.siteId)+'">'+esc(s.countryId+' · '+s.siteName+' · '+(s.real?.resourceId||'?'))+'</option>').join('');
+  selectNode.innerHTML=sites.map(s=>'<option value="'+esc(s.siteId)+'">'+esc((s.siteName||s.name||'Resource site')+' · '+humanize(s.location?.countryName||s.countryName||s.countryId)+' · '+humanize(s.real?.resourceId||s.sourceSiteRecord?.resourceId||s.identity?.resourceTypeId||'Resource'))+'</option>').join('');
   selected=sites[0].siteId;selectNode.value=selected;detail(chosenSite());
   g.Omega=g.Omega||{};
   g.Omega.IndividualResourceSiteBinding={version:VERSION,sites,select:setSelected,refresh:addMapMarkers,diagnostics:()=>{
@@ -581,8 +587,8 @@ async function init(){
    return {status:'READY',siteCount:sites.length,uniqueSiteIds:new Set(sites.map(s=>s.siteId)).size,countryCount:new Set(sites.map(s=>s.countryId)).size,sourceFiles:sources.map(x=>x.url),sourceRecordCounts,coordinateStatusCounts,mergedDepositAliases,individualMapping:true};
   }};
   attachMapRefreshHooks();scheduleMarkerRender();setTimeout(()=>scheduleMarkerRender(),1000);setTimeout(()=>scheduleMarkerRender(),3000);
-  setStatus('READY · '+sites.length+' individual sites · '+new Set(sites.map(s=>s.countryId)).size+' countries · source coordinate confidence preserved');
- }catch(e){setStatus('FAILED · '+String(e?.message||e));g.OmegaIndividualResourceSiteBindingError=String(e?.message||e);g.__OMEGA_RESOURCE_SITE_BINDING_INIT__=false;}
+  setStatus('Resource site data loaded.');
+ }catch(e){setStatus('Resource site data could not be loaded · '+(humanize(e?.message)||'an unexpected loading error')+'.');g.OmegaIndividualResourceSiteBindingError=String(e?.message||e);g.__OMEGA_RESOURCE_SITE_BINDING_INIT__=false;}
 }
 g.addEventListener?.('OMEGA_READY',()=>void init());
 g.addEventListener?.('load',()=>setTimeout(()=>{if(!g.__OMEGA_RESOURCE_SITE_BINDING_INIT__)void init();else scheduleMarkerRender();},500));
