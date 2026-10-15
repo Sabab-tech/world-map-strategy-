@@ -1204,12 +1204,14 @@
           return;
         }
         const decisionId = uniqueRequestId('COGNITIVE-AI', 'screen');
+        const reviewedGameState = aiCountrySnapshot(c);
+        const reviewedGameStateJson = JSON.stringify(reviewedGameState);
         let response, body;
         try {
           response = await g.fetch('/api/resource-decision/ai-evaluate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ countryId: c, decisionId, operation, projectType, requestedAmount, answers: vals, gameState: aiCountrySnapshot(c) })
+            body: JSON.stringify({ countryId: c, decisionId, operation, projectType, requestedAmount, answers: vals, gameState: reviewedGameState })
           });
           body = await response.json();
         } catch (error) {
@@ -1231,7 +1233,9 @@
           ((projectType === null && body.assessment.projectType == null) || body.assessment.projectType === projectType) &&
           amountMatches &&
           ((requestedAmount === null && body.assessment.requestedAmount == null) || Number(body.assessment.requestedAmount) === requestedAmount);
-        const contextStillCurrent = assessedTurn === null || liveTurn === null || assessedTurn === liveTurn;
+        const liveSnapshotMatches = JSON.stringify(aiCountrySnapshot(c)) === reviewedGameStateJson;
+        const contextStillCurrent = assessedTurn !== null && liveTurn !== null &&
+          assessedTurn === liveTurn && liveSnapshotMatches;
         if (!response.ok || !body || body.ok !== true || body.status !== 'COMPLETED' ||
             !responseMatchesRequest || !contextStillCurrent ||
             !body.assessment || body.assessment.aiGenerated !== true ||
