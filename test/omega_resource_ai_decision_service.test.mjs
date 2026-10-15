@@ -26,7 +26,7 @@ const gameState = {
     powerProjects: [{ projectId: 'P1', status: 'UNDER_CONSTRUCTION', capacityMw: 2400, privateField: 'must not leak' }]
   }, SAU: { inventory: { crude_oil: 900000 } } }
 };
-const payload = { countryId: 'bgd', answers, gameState };
+const payload = { countryId: 'bgd', decisionId: 'COGNITIVE-AI-BGD-screen-9', answers, gameState };
 
 test('country context is bounded, country-scoped, and preserves unknown values', () => {
   const context = buildResourceDecisionContext(payload);
@@ -71,6 +71,7 @@ test('valid structured model assessment is returned with provenance and normaliz
   });
   assert.equal(result.ok, true);
   assert.equal(result.status, 'COMPLETED');
+  assert.equal(result.decisionId, payload.decisionId);
   assert.equal(result.assessment.decision, 'PROCEED');
   assert.equal(result.assessment.aiGenerated, true);
   assert.equal(result.assessment.authority, 'OMEGA_SERVER_RESOURCE_DECISION_AI');
