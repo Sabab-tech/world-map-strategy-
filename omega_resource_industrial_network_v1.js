@@ -468,7 +468,8 @@ function onTreasurySettlement(evt){
   const exactSourceIds=new Set(topLevelRoots);
   for(const item of transferRows)for(const id of item.roots)exactSourceIds.add(id);
   if(!exactSourceIds.size)return;
-  const transactionHasSingleRoot=exactSourceIds.size===1,sid=String(p.settlementId||'');
+  const transactionHasSingleRoot=exactSourceIds.size===1,sid=String(p.settlementId||''),
+    transactionValue=num(p.totalValue!=null?p.totalValue:(p.gross!=null?p.gross:p.sellerTotal));
   for(const row of siteFlowRows(cid)){
     const batchId=String(row.batchId),matches=transferRows.filter(item=>item.roots.includes(batchId));
     if(!matches.length)continue;
@@ -483,7 +484,7 @@ function onTreasurySettlement(evt){
         (sharedMatches.length&&uniquelyAttributed.length?'PARTIALLY_ATTRIBUTED':
           (sharedMatches.length?'SHARED_SOURCE_VALUE_UNALLOCATED':
             (uniquelyAttributed.length&&allUniqueValuesKnown?'PER_SOURCE_ALLOCATION':'SOURCE_VALUE_UNAVAILABLE'))),
-      siteValue=transactionHasSingleRoot?(num(p.totalValue)!==null?num(p.totalValue):(allUniqueValuesKnown?attributedValue:null)):
+      siteValue=transactionHasSingleRoot?(transactionValue!==null?transactionValue:(allUniqueValuesKnown?attributedValue:null)):
         (allUniqueValuesKnown?attributedValue:null),
       siteQuantity=transactionHasSingleRoot?(num(p.quantity)!==null?num(p.quantity):(attributedQuantity>0?attributedQuantity:null)):
         (uniquelyAttributed.length?attributedQuantity:null),
