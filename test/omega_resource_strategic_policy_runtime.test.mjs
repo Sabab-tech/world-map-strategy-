@@ -102,6 +102,11 @@ test('exploration requires survey completion, funded investment and commissionin
   assert.equal(project.status,'DISCOVERED_PENDING_INVESTMENT');
   assert.equal(api.siteAvailableForExtraction('BGD',siteId).allowed,false);
 
+  const fundsBeforeDiscountAttempt=h.state.finance.BGD.available;
+  const discounted=api.approveInvestment('BGD',{projectId,amount:0});
+  assert.equal(discounted.accepted,false,JSON.stringify(discounted));
+  assert.equal(discounted.reason,'EXPLORATION_INVESTMENT_AMOUNT_MISMATCH');
+  assert.equal(h.state.finance.BGD.available,fundsBeforeDiscountAttempt,'underpriced commissioning must not debit treasury');
   const invested=api.approveInvestment('BGD',{projectId});
   assert.equal(invested.accepted,true,JSON.stringify(invested));
   assert.equal(h.state.finance.BGD.available,10000000-h.sandbox.OmegaResourceStrategicPolicyRules.exploration.investmentCostPerProject);
@@ -174,4 +179,22 @@ test('canonical simulation save/load preserves resource policy, environment, res
   assert.equal(h.state.trade.BGD.resourceEmbargoes[0].policyId,'EMBARGO-RESTORE');
   assert.equal(h.state.resource.BGD.batches[0].remainingQuantity,1234);
   assert.equal(sim.diagnostics().authoritativeState.worldStateLinked,true);
+});
+
+test('incomplete embargo scope fails closed rather than silently authorizing trade',()=>{
+  const h=harness(),api=h.sandbox.Omega.ResourceStrategicPolicyRuntime;
+  const result=api.isResourceEmbargoed('BGD','SAU','');
+  assert.equal(result.blocked,true);
+  assert.equal(result.reason,'INCOMPLETE_SCOPE');
+});
+
+test('unknown environmental units are rejected without a fabricated default impact',()=>{
+  const h=harness(),api=h.sandbox.Omega.ResourceStrategicPolicyRuntime;
+  const response=h.interop.dispatchCommand('resource','OMEGA_RESOURCE_ENVIRONMENT_RECORD_EXTRACTION','BGD',{
+    transactionId:'EXT-ENV-MISSING-UNIT',siteId:'SITE_BGD_TEST_LOCKED',resourceId:'copper',quantity:1000
+  });
+  assert.equal(response.status,'REJECTED',JSON.stringify(response));
+  assert.equal(response.result.reason,'ENVIRONMENTAL_UNIT_SCALE_UNAVAILABLE');
+  assert.equal(h.state.resource.BGD.environmentalLedger,undefined);
+  assert.equal(h.state.resource.BGD.environmentalImpact,undefined);
 });
