@@ -300,7 +300,9 @@ function validateSave(envelope){
   const body={schema:envelope.schema,schemaVersion:envelope.schemaVersion,metadata:envelope.metadata||{},state:envelope.state};
   if(String(envelope.checksum||'')!==checksum(body))return{status:'INVALID',reason:'SAVE_CHECKSUM_MISMATCH'};
   if(!envelope.state.simulation||typeof envelope.state.simulation!=='object')return{status:'INVALID',reason:'SAVE_SIMULATION_STATE_MISSING'};
-  return{status:'VALID',checksum:envelope.checksum,integrity:auditState(envelope.state)};
+  const integrity=auditState(envelope.state);
+  if(integrity.status!=='HEALTHY')return{status:'INVALID',reason:'SAVE_STATE_INTEGRITY_FAILED',integrity};
+  return{status:'VALID',checksum:envelope.checksum,integrity};
 }
 function restoreSave(envelope){
   const valid=validateSave(envelope);if(valid.status!=='VALID')return{status:'REJECTED',reason:valid.reason,integrity:valid.integrity||null};
