@@ -502,42 +502,24 @@
       (batchCards || empty('No resource batches are recorded.')) +
       '<h3 class="omega-rescc-section-title">SPR request history</h3>' + statusRows(requests);
   }
-  function panelLogistics(country) {
-    const r = resourceBucket(country);
-    const log = r.logistics || {};
-    const shipments = Array.isArray(log.shipments) ? log.shipments : [];
-    const batches = Array.isArray(r.batches) ? r.batches : [];
-    const factoryRows = allFactories(country);
-    const cards = batches.map(function (batch) {
-      const id = batch.batchId;
-      const rid = batch.resourceId || batch.materialIdentity || '';
-      const qty = batch.remainingQuantity ?? batch.quantity;
-      const warehouse = batch.warehouseId || r.warehouse && r.warehouse.warehouseId || '';
-      const candidates = matchingAssets(country, rid).filter(function (a) { return a.id || a.assetId || a.factoryId || a.projectId; });
-      const candIds = candidates.map(function (a) { return a.id || a.assetId || a.factoryId || a.projectId; });
-      return card(id || 'Unidentified batch', rid || 'Resource not recorded',
-        '<div class="omega-rescc-grid2">' + kv('Quantity', qty) + kv('Unit', batch.unit) +
-        kv('Warehouse', warehouse) + kv('Compatible factories', candIds.length) + '</div>',
-        actionButton('plan-shipment', 'Plan warehouse-to-factory route', {
-          'batch-id': id, 'resource-id': rid, quantity: qty, unit: batch.unit || '',
-          'warehouse-id': warehouse, 'factory-ids': candIds.join(',')
-        }, !(id && rid && warehouse && candIds.length && g.Omega && g.Omega.ResourceLogisticsRuntime && g.Omega.ResourceLogisticsRuntime.planFromFactoryInput)));
+  function panelLogistics(country){
+    const r=resourceBucket(country),log=r.logistics||{},shipments=Array.isArray(log.shipments)?log.shipments:[],batches=Array.isArray(r.batches)?r.batches:[],factories=allFactories(country);
+    const batchCards=batches.map(batch=>{
+      const id=batch.batchId,rid=batch.resourceId||batch.materialIdentity||'',qty=batch.remainingQuantity??batch.quantity,warehouse=batch.warehouseId||r.warehouse&&r.warehouse.warehouseId||'';
+      const compatible=matchingAssets(country,rid).filter(a=>a&&(a.id||a.assetId||a.factoryId||a.projectId)),ids=compatible.map(a=>a.id||a.assetId||a.factoryId||a.projectId);
+      return card(id||'Unidentified batch',rid||'Resource not recorded','<div class="omega-rescc-grid2">'+kv('Quantity',qty)+kv('Unit',batch.unit)+kv('Warehouse',warehouse)+kv('Compatible factories',ids.length)+'</div>',
+        actionButton('plan-shipment','Plan warehouse-to-factory route',{'batch-id':id,'resource-id':rid,quantity:qty,unit:batch.unit||'','warehouse-id':warehouse,'factory-ids':ids.join(',')},!(id&&rid&&warehouse&&ids.length&&g.Omega&&g.Omega.ResourceLogisticsRuntime&&g.Omega.ResourceLogisticsRuntime.planFromFactoryInput)));
     }).join('');
-    const shipmentsHtml = shipments.slice(-100).reverse().map(function (s) {
-      return card(s.shipmentId || s.routeId || 'Shipment', s.status || s.deliveryStatus || 'STATUS NOT RECORDED',
-        '<div class="omega-rescc-grid2">' + kv('Resource', s.resourceId) + kv('Quantity', s.quantity) +
-        kv('Factory', s.factoryId) + kv('Transport mode', s.transportMode) +
-        kv('ETA turn', s.timing && s.timing.etaTurn) + kv('Constraint source', s.sourceAuthority || 'NOT_RECORDED') + '</div>' +
-        (s.reason ? '<div class="omega-rescc-warning">' + esc(s.reason) + '</div>' : ''), '');
-    }).join('');
-    return '<div class="omega-rescc-metrics"><div><span>Recorded shipments</span><strong>' + number(shipments.length) +
-      '</strong></div><div><span>Factories in state</span><strong>' + number(factoryRows.length) +
-      '</strong></div><div><span>Last plan turn</span><strong>' + number(log.lastPlanTurn) + '</strong></div></div>' +
-      '<p class="omega-rescc-note">Routes are planned from an observed warehouse batch to a compatible factory. A planned route is not the same as delivered material; delivery is shown by shipment status and ETA turn.</p>' +
-      '<h3 class="omega-rescc-section-title">Available warehouse batches</h3>' +
-      (cards || empty('No batches with a compatible registered factory are available for route planning.')) +
-      '<h3 class="omega-rescc-section-title">Shipment state</h3>' +
-      (shipmentsHtml || empty('No shipments have been recorded.'));
+    const routes=siteRouteRows(country),routeCards=routes.slice(0,200).map(x=>card(x.routeName||x.routeId||'Saved route profile','PROFILE ONLY · NOT DISPATCHED',
+      '<div class="omega-rescc-grid2">'+kv('Site',x.siteName)+kv('Site ID',x.siteId)+kv('Transport mode',x.mode)+kv('From',x.from)+kv('To',x.to)+kv('Distance (km)',x.distanceKm)+kv('Route authority',x.authority)+'</div>'+
+      '<p class="omega-rescc-note">A saved route definition is not a shipment or proof that material moved.</p>','')).join('');
+    const shipmentCards=shipments.slice(-100).reverse().map(s=>card(s.shipmentId||s.routeId||'Shipment',s.status||s.deliveryStatus||'STATUS NOT RECORDED',
+      '<div class="omega-rescc-grid2">'+kv('Resource',s.resourceId)+kv('Quantity',s.quantity)+kv('Factory',s.factoryId)+kv('Transport mode',s.transportMode)+kv('ETA turn',s.timing&&s.timing.etaTurn)+kv('Constraint source',s.sourceAuthority||'NOT_RECORDED')+'</div>'+(s.reason?'<div class="omega-rescc-warning">'+esc(s.reason)+'</div>':''),'')).join('');
+    return '<div class="omega-rescc-metrics"><div><span>Available raw batches</span><strong>'+number(batches.length)+'</strong></div><div><span>Factories in state</span><strong>'+number(factories.length)+'</strong></div><div><span>Saved site routes</span><strong>'+number(routes.length)+'</strong></div></div>'+
+      '<p class="omega-rescc-note">Saved route definitions and active shipment transactions are separate records.</p>'+
+      '<h3 class="omega-rescc-section-title">Available warehouse batches</h3>'+(batchCards||empty('No physical batch is recorded for shipment planning.'))+
+      '<h3 class="omega-rescc-section-title">Saved route profiles from existing data files</h3>'+(routeCards||empty('No saved route definition is recorded for this country.'))+
+      '<h3 class="omega-rescc-section-title">Actual shipment state</h3>'+(shipmentCards||empty('No shipments have been recorded.'));
   }
   function panelIndustrial(country) {
     const network = g.Omega && g.Omega.ResourceIndustrialNetwork;
