@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { GoogleGenAI } from '@google/genai';
+import { evaluateResourceDecision, ResourceDecisionAIError } from './omega_resource_ai_decision_service.js';
 import './omega_universal_entity_identity_engine.js';
 import './omega_production_semantic_runtime_v3.js';
 import './offline_semantic_brain.js';
@@ -159,6 +160,46 @@ app.get('/api/minister-candidates', (req, res) => {
 });
 
 app.get('/api/ai/status', (req, res) => { const hasKey = !!process.env.GEMINI_API_KEY; res.json({ ok: true, aiAvailable: hasKey, models: CANDIDATE_MODELS, primaryModel: CANDIDATE_MODELS[0], integrityLayer: '2.1.0', ministerStateSystem: '1.0.0', deepCore: OfflineQueryEngine?.VERSION || null, semanticRuntime: { authority: ProductionSemanticRuntime?.VERSION || null, diagnostics: ProductionSemanticRuntime?.diagnostics?.() || canonicalSemanticRuntime }, cognitiveBridge: { authority: OmegaReasoningDispatcher?.VERSION || null, full40: OmegaReasoningDispatcher?.full40 === true }, timestamp: new Date().toISOString() }); });
+
+app.post('/api/resource-decision/ai-evaluate', async (req, res) => {
+  const apiKey = String(process.env.GEMINI_API_KEY || '').trim();
+  if (!apiKey) {
+    return res.status(503).json({
+      ok: false, status: 'UNAVAILABLE', error: 'GEMINI_API_KEY_NOT_CONFIGURED',
+      message: 'Server-side AI decision service is not configured; no decision was issued.'
+    });
+  }
+  try {
+    const client = new GoogleGenAI({ apiKey });
+    const result = await evaluateResourceDecision({
+      payload: req.body || {},
+      generateText: async ({ prompt }) => {
+        let lastError = null;
+        for (const model of CANDIDATE_MODELS) {
+          try {
+            const response = await client.models.generateContent({ model, contents: prompt });
+            return { text: response?.text || '', model };
+          } catch (error) {
+            lastError = error;
+          }
+        }
+        throw lastError || new Error('NO_AI_MODEL_AVAILABLE');
+      }
+    });
+    return res.status(200).json(result);
+  } catch (error) {
+    const statusCode = Number(error?.statusCode);
+    const clientError = Number.isInteger(statusCode) && statusCode >= 400 && statusCode < 600 ? statusCode : 502;
+    const code = error instanceof ResourceDecisionAIError ? error.code : 'RESOURCE_DECISION_AI_FAILED';
+    console.error('[OMEGA Resource Decision AI] request failed:', code, error?.message || error);
+    return res.status(clientError).json({
+      ok: false, status: clientError === 400 ? 'INVALID_REQUEST' : 'FAILED',
+      error: code,
+      message: clientError === 400 ? String(error?.message || 'Invalid request.') : 'The AI decision could not be completed; no verdict was recorded.'
+    });
+  }
+});
+
 
 app.post('/api/minister-state/diagnostics', (req, res) => { try { const registry = globalThis.OmegaMinisterStateRegistry; if (!registry) return res.status(503).json({ ok: false, error: 'Minister state registry unavailable' }); res.json(registry.consistencyCheck()); } catch (e) { res.status(500).json({ ok: false, error: e.message }); } });
 
