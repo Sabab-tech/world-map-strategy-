@@ -575,15 +575,22 @@
     const econ = bucket('economy', country);
     const t = bucket('trade', country);
     const r = resourceBucket(country);
-    const fund = fin.sovereignWealthFund || fin.sovereign_wealth_fund || econ.sovereignWealthFund || econ.sovereign_wealth_fund || null;
+    const policy = g.OmegaResourceStrategicPolicyRuntime || g.Omega && g.Omega.ResourceStrategicPolicyRuntime;
+    const fund = r.sovereignWealthFund || fin.sovereignWealthFund || fin.sovereign_wealth_fund || econ.sovereignWealthFund || econ.sovereign_wealth_fund || null;
     const tradeLedger = t.globalTradeLedger || {};
     const receipts = fin.treasuryLedger || fin.treasuryEntries || fin.ledger || [];
+    const contributions = fund && Array.isArray(fund.contributions) ? fund.contributions : [];
+    const swfForm = '<form class="omega-rescc-form" data-search-item data-form="swf-capitalise"><h3>Capitalise sovereign wealth fund</h3>' +
+      '<p class="omega-rescc-note">This transfers native treasury units. No USD conversion or independent FX rate is assumed.</p>' +
+      '<label>Contribution amount (native treasury units)<input name="amount" type="number" min="0.000001" step="any" required placeholder="Enter amount"></label>' +
+      '<button class="omega-rescc-button" type="submit"' + (!(policy && typeof policy.capitalizeSovereignWealthFund === 'function') ? ' disabled' : '') + '>Debit treasury and capitalise fund</button></form>';
     return '<div class="omega-rescc-metrics"><div><span>Available treasury balance</span><strong>' + number(fin.available ?? fin.cash) +
       '</strong></div><div><span>Financial reserves</span><strong>' + number(fin.reserves) +
       '</strong></div><div><span>Currency</span><strong>' + esc(fin.currencyCode || t.settlementCurrency || 'Not recorded') + '</strong></div></div>' +
       card('Sovereign Wealth Fund state', fund ? 'RUNTIME RECORD FOUND' : 'NOT REGISTERED',
         fund ? '<pre class="omega-rescc-json">' + shortJson(fund) + '</pre>' :
-          '<div class="omega-rescc-warning">No sovereign wealth fund state was found at the supported finance/economy paths. This screen does not manufacture a fund or move treasury money.</div>', '') +
+          '<div class="omega-rescc-warning">No fund is capitalised yet. The form below uses an authoritative treasury debit and records a contribution only after that debit succeeds.</div>', '') +
+      swfForm + '<h3 class="omega-rescc-section-title">Fund contribution ledger</h3>' + statusRows(contributions) +
       card('Recorded fiscal and trade activity', 'OBSERVED LEDGER COUNTS',
         '<div class="omega-rescc-grid2">' + kv('Treasury records', Array.isArray(receipts) ? receipts.length : null) +
         kv('Trade requests', Array.isArray(r.importRequests) ? r.importRequests.length : (Array.isArray(t.importRequests) ? t.importRequests.length : 0)) +
@@ -1057,6 +1064,15 @@
         if (!policy || typeof policy.remediateSite !== 'function') result = { status: 'UNAVAILABLE', reason: 'REMEDIATION_RUNTIME_UNAVAILABLE' };
         else result = policy.remediateSite(c, { siteId: data.get('siteId'), amount: Number(data.get('amount')), transactionId: uniqueRequestId('REMEDIATION', data.get('siteId')) });
         setOutcome('Environmental remediation', result); return;
+      }
+      if (kind === 'swf-capitalise') {
+        const policy = g.OmegaResourceStrategicPolicyRuntime || g.Omega && g.Omega.ResourceStrategicPolicyRuntime;
+        if (!policy || typeof policy.capitalizeSovereignWealthFund !== 'function') result = { status: 'UNAVAILABLE', reason: 'SWF_CAPITALIZATION_RUNTIME_UNAVAILABLE' };
+        else result = policy.capitalizeSovereignWealthFund(c, {
+          transactionId: uniqueRequestId('SWF-CAPITAL', data.get('amount')), amount: Number(data.get('amount'))
+        });
+        setOutcome('Sovereign wealth fund capitalization', result);
+        return;
       }
       if (kind === 'trade-request') {
         const trade = g.OmegaGlobalTrade || g.Omega && g.Omega.GlobalTrade;
