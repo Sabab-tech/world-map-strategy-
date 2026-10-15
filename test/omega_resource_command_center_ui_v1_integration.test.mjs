@@ -113,7 +113,7 @@ test('legacy card names disclose feature gaps instead of claiming unsupported ac
   assert.ok(ministry.includes("executeResource16Point('p05', 'drill_oil')"));
   assert.ok(ministry.includes("executeResource16Point('p16', 'build_solar')"));
   assert.match(ui,/Open 12-Question Screening Checklist/);
-  assert.match(ui,/Inspect Treasury & SWF Records/);
+  assert.match(ui,/Open Treasury & SWF Console/);
   assert.match(ui,/tonnes CO₂e/i);
   assert.match(ui,/simulated gameplay assumptions, not measured national emissions/i);
   assert.match(ui,/data-form="carbon-quota"/);
@@ -157,6 +157,8 @@ test('value, cascade, market and logistics controls use authoritative records wi
   assert.match(ui,/policy\.capitalizeSovereignWealthFund/);
   assert.match(ui,/Fund contribution ledger/);
   assert.match(ui,/native treasury units/i);
+  assert.match(ui,/A simulated 2\.4 GW project uses native treasury units/);
+  assert.match(ui,/Emission factors are simulated assumptions, not measured data/);
   assert.match(ui,/authoritativeRoutePolicy/);
   assert.match(ui,/policy\.isRouteBlocked/);
   assert.match(ui,/mutatesGameplay: false/);
