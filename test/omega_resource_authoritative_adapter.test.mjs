@@ -197,7 +197,7 @@ test('authoritative adapter uses live resource values and disables synthetic sum
   const summary = context.ResourceMinistryEngine.getSummary('BGD');
   const iron = summary.resourcesList.find(row => row.id === 'iron_ore');
 
-  assert.equal(context.OmegaResourceAuthoritativeAdapter.VERSION, '1.0.0');
+  assert.equal(context.OmegaResourceAuthoritativeAdapter.VERSION, '1.1.0');
   const authorityRow = context.OmegaResourceAuthoritativeAdapter.getSummary('BGD').resourcesList.find(row => row.id === 'iron_ore');
   assert.equal(authorityRow.reserveAuthority, 'OBSERVED');
   assert.equal(authorityRow.productionAuthority, 'SIMULATED');
@@ -252,4 +252,22 @@ test('integrated resource state exposes live batches and warehouse without repla
   assert.equal(integrated.warehouse.warehouseId, 'WH-BGD-RAW');
   assert.equal(integrated.batches[0].purity, 0.62);
   assert.equal(integrated.authoritativeRuntimeState, true);
+});
+
+
+test('authoritative resource reads resolve country aliases and an empty canonical bucket does not hide populated state', async () => {
+  const { context, state } = createContext();
+  const populated = state.resource.BGD;
+  delete state.resource.BGD;
+  state.resource.BANGLADESH = populated;
+  state.resource.BGD = {};
+  const code = readFileSync('omega_resource_authoritative_adapter.js', 'utf8');
+  vm.runInNewContext(code, context, { filename: 'omega_resource_authoritative_adapter.js' });
+  const summary = context.ResourceMinistryEngine.getSummary('BGD');
+  const iron = summary.resourcesList.find(row => row.id === 'iron_ore');
+  assert.equal(iron.inventory, 100);
+  assert.equal(iron.dailyProduction, 20);
+  assert.equal(iron.dailyConsumption, 25);
+  assert.equal(iron.reserve, 1000);
+  assert.equal(summary.live.batches[0].batchId, 'BATCH-1');
 });
