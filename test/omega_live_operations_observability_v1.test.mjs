@@ -268,11 +268,11 @@ test('Live Operations joins canonical site profiles to shared country state by c
 
 test('Live Operations bounds event/turn work and preserves scroll during refreshes', () => {
   const source = read('omega_live_operations_observability_v1.js');
-  assert.match(source, /function scheduleRender\\(\\)/);
-  assert.match(source, /if \\(panelOpen\\) scheduleRender\\(\\);/);
-  assert.match(source, /const observe = new Set\\(\\[playerCountry\\(\\), selectedCountry\\(\\)\\]\\)/);
-  assert.match(source, /renderScheduleHandle = g\\.setTimeout/);
-  assert.match(source, /panel\\.scrollTop = scrollTop/);
-  assert.match(source, /}, 15000\\);/);
-  assert.doesNotMatch(source, /if \\(panelOpen\\) \\{ buildCountrySelect\\(\\); sampleAll\\(\\); render\\(\\); \\}/);
+  assert.ok(source.includes('function scheduleRender()'));
+  assert.ok(source.includes('if (panelOpen) scheduleRender();'));
+  assert.ok(source.includes('const observe = new Set([playerCountry(), selectedCountry()])'));
+  assert.ok(source.includes('renderScheduleHandle = g.setTimeout'));
+  assert.ok(source.includes('panel.scrollTop = scrollTop'));
+  assert.ok(source.includes('}, 15000);'));
+  assert.equal(source.includes("if (panelOpen) { buildCountrySelect(); sampleAll(); render(); }"), false);
 });
