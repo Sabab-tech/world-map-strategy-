@@ -198,3 +198,77 @@ test('unknown environmental units are rejected without a fabricated default impa
   assert.equal(h.state.resource.BGD.environmentalLedger,undefined);
   assert.equal(h.state.resource.BGD.environmentalImpact,undefined);
 });
+
+
+test('carbon quota tracks CO2e separately from environmental impact indexes and blocks over-quota emissions',()=>{
+ const h=harness(),api=h.sandbox.Omega.ResourceStrategicPolicyRuntime;
+ const set=api.setCarbonQuota('BGD',{quotaId:'CARBON-TEST-1',allowanceTonnesCo2e:100,periodTurns:10});
+ assert.equal(set.accepted,true,JSON.stringify(set));
+ const allowed=h.interop.dispatchCommand('resource','OMEGA_RESOURCE_ENVIRONMENT_RECORD_EXTRACTION','BGD',{
+  transactionId:'CARBON-ALLOW-1',siteId:'SITE_BGD_TEST_LOCKED',resourceId:'copper',quantity:500,unit:'TONNES'
+ });
+ assert.equal(allowed.status,'APPLIED',JSON.stringify(allowed));
+ assert.equal(h.state.resource.BGD.carbonEmissionsLedger[0].unit,'TONNES_CO2E');
+ assert.equal(h.state.resource.BGD.carbonEmissionsLedger[0].quantityTonnesCo2e,60);
+ const before=JSON.stringify({impact:h.state.resource.BGD.environmentalImpact,ledger:h.state.resource.BGD.environmentalLedger,carbon:h.state.resource.BGD.carbonEmissionsLedger});
+ const blocked=h.interop.dispatchCommand('resource','OMEGA_RESOURCE_ENVIRONMENT_RECORD_EXTRACTION','BGD',{
+  transactionId:'CARBON-BLOCK-1',siteId:'SITE_BGD_TEST_LOCKED',resourceId:'copper',quantity:500,unit:'TONNES'
+ });
+ assert.equal(blocked.status,'REJECTED');
+ assert.equal(blocked.result.reason,'CARBON_QUOTA_EXCEEDED');
+ assert.equal(JSON.stringify({impact:h.state.resource.BGD.environmentalImpact,ledger:h.state.resource.BGD.environmentalLedger,carbon:h.state.resource.BGD.carbonEmissionsLedger}),before,
+  'rejected emissions must not partially write impact or ledger state');
+ const unmetered=api.recordCarbonEmission('BGD',{transactionId:'CARBON-UNIT-INVALID',source:'TEST',quantity:1,unit:'KG_CO2E'});
+ assert.equal(unmetered.accepted,false);
+ assert.equal(unmetered.reason,'CARBON_EMISSION_UNIT_INVALID');
+});
+
+test('the 12-question cognitive gate persists a provenance-labelled advisory decision and idempotent retry',()=>{
+ const h=harness(),api=h.sandbox.Omega.ResourceStrategicPolicyRuntime;
+ const answers=['proceed','proceed','review','proceed','proceed','review','proceed','proceed','review','proceed','proceed','proceed'];
+ const response=api.evaluateCognitiveGate('BGD',{decisionId:'COGNITIVE-TEST-1',answers});
+ assert.equal(response.accepted,true,JSON.stringify(response));
+ assert.equal(response.persisted,true);
+ assert.equal(response.decision.decision,'PROCEED_WITH_RECORDED_ASSUMPTIONS');
+ assert.equal(response.decision.aiGenerated,false);
+ assert.equal(response.decision.authority,'PLAYER_ENTERED_COGNITIVE_SCREENING');
+ assert.equal(h.state.resource.BGD.cognitiveDecisionLedger.length,1);
+ const replay=api.evaluateCognitiveGate('BGD',{decisionId:'COGNITIVE-TEST-1',answers});
+ assert.equal(replay.duplicate,true);
+ assert.equal(h.state.resource.BGD.cognitiveDecisionLedger.length,1);
+ const incomplete=api.evaluateCognitiveGate('BGD',{decisionId:'COGNITIVE-INCOMPLETE',answers:['proceed']});
+ assert.equal(incomplete.accepted,false);
+ assert.equal(incomplete.reason,'ALL_12_QUESTIONS_REQUIRE_ANSWERS');
+});
+
+test('nuclear baseload construction debits treasury, commissions only by turns and produces fuel- and carbon-gated output',()=>{
+ const h=harness(),api=h.sandbox.Omega.ResourceStrategicPolicyRuntime;
+ h.state.finance.BGD.available=3000000000;
+ h.state.resource.BGD.inventory={uranium:10};
+ const quota=api.setCarbonQuota('BGD',{quotaId:'POWER-CARBON-LOW',allowanceTonnesCo2e:1,periodTurns:10});
+ assert.equal(quota.accepted,true);
+ const started=api.startPowerProject('BGD',{projectId:'POWER-PROJECT-2400',projectType:'NUCLEAR_BASELOAD'});
+ assert.equal(started.accepted,true,JSON.stringify(started));
+ assert.equal(started.project.capacityMw,2400);
+ assert.equal(started.project.costUsd,2000000000);
+ assert.equal(h.state.finance.BGD.available,1000000000);
+ const repeat=api.startPowerProject('BGD',{projectId:'POWER-PROJECT-2400',projectType:'NUCLEAR_BASELOAD'});
+ assert.equal(repeat.duplicate,true,'same project request must not debit treasury twice');
+ for(let t=2;t<=6;t++){h.state.simulation.turn=t;api.processPowerCountry('BGD');}
+ assert.equal(h.state.resource.BGD.powerProjects[0].status,'COMMISSIONED');
+ assert.equal(h.state.resource.BGD.powerAssets[0].status,'IDLE_CARBON_QUOTA');
+ assert.equal(h.state.resource.BGD.powerGeneration.generatedMwh,0);
+ assert.equal(h.state.resource.BGD.inventory.uranium,10,'blocked generation must not consume fuel');
+ const raised=api.setCarbonQuota('BGD',{quotaId:'POWER-CARBON-OPEN',allowanceTonnesCo2e:1000,periodTurns:10});
+ assert.equal(raised.accepted,true);
+ h.state.simulation.turn=7;
+ const generated=api.processPowerCountry('BGD');
+ assert.equal(generated.accepted,true,JSON.stringify(generated));
+ assert.equal(h.state.resource.BGD.powerAssets[0].status,'OPERATIONAL');
+ assert.equal(h.state.resource.BGD.powerGeneration.installedCapacityMw,2400);
+ assert.equal(h.state.resource.BGD.powerGeneration.generatedMwh,51840);
+ assert.equal(h.state.resource.BGD.inventory.uranium,9.99);
+ assert(h.state.resource.BGD.carbonEmissionsLedger.some(x=>x.source==='POWER_GENERATION'&&x.unit==='TONNES_CO2E'));
+ assert(h.state.resource.BGD.powerGenerationLedger.some(x=>x.status==='GENERATED'));
+});
+
