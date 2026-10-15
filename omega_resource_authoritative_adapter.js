@@ -8,7 +8,7 @@
 (function (g) {
   'use strict';
 
-  const VERSION = '1.0.0';
+  const VERSION = '1.1.0';
 
   function clone(value, seen) {
     if (value === null || typeof value !== 'object') return value;
@@ -65,17 +65,52 @@
     return raw.toUpperCase().replace(/\\s+/g, '_');
   }
 
-  function liveBucket(countryId) {
-    const state = stateRoot();
-    const cid = canonicalCountry(countryId);
-    if (!state || !cid) return null;
-    return (state.resource && state.resource[cid]) ||
-      (state.resource && state.resource[String(countryId || '').trim().toUpperCase()]) ||
-      (state.resources && state.resources[cid]) ||
-      (state.resources && state.resources[String(countryId || '').trim().toUpperCase()]) ||
-      null;
+  function stateDataIdentity(row) {
+    if (!row || typeof row !== 'object') return 'VALUE:' + String(row);
+    for (const key of ['requestId','eventId','batchId','shipmentId','projectId','reservationId','siteId','canonicalSiteId','mineId','occurrenceKey','commandId','correlationId','routeId','id']) {
+      if (row[key] !== undefined && row[key] !== null && row[key] !== '') return key + ':' + String(row[key]);
+    }
+    try { return 'JSON:' + JSON.stringify(row); } catch (_) { return 'OBJECT:' + String(row); }
   }
-
+  function mergeStateData(base, incoming) {
+    if (incoming === undefined || incoming === null || incoming === '') return clone(base);
+    if (Array.isArray(base) && Array.isArray(incoming)) {
+      const out = [], index = new Map();
+      const add = row => {
+        const key = stateDataIdentity(row);
+        if (index.has(key)) out[index.get(key)] = mergeStateData(out[index.get(key)], row);
+        else { index.set(key, out.length); out.push(clone(row)); }
+      };
+      base.forEach(add); incoming.forEach(add);
+      return out;
+    }
+    if (base && incoming && typeof base === 'object' && typeof incoming === 'object' &&
+        !Array.isArray(base) && !Array.isArray(incoming)) {
+      const out = clone(base);
+      Object.keys(incoming).forEach(key => {
+        if (key === '__proto__' || key === 'constructor') return;
+        out[key] = Object.prototype.hasOwnProperty.call(out,key) ? mergeStateData(out[key],incoming[key]) : clone(incoming[key]);
+      });
+      return out;
+    }
+    return clone(incoming);
+  }
+  function countryBucketFromMap(group, countryId) {
+    if (!group || typeof group !== 'object' || Array.isArray(group)) return {};
+    const cid = canonicalCountry(countryId);
+    if (!cid) return {};
+    const keys = Object.keys(group).filter(key =>
+      key && !['SCHEMAVERSION','VERSION','METADATA','DEFAULTS','GLOBAL','SHARED'].includes(String(key).trim().toUpperCase()) &&
+      canonicalCountry(key) === cid && group[key] && typeof group[key] === 'object' && !Array.isArray(group[key]));
+    keys.sort((a,b) => Number(String(a).trim().toUpperCase() === cid)-Number(String(b).trim().toUpperCase() === cid));
+    return keys.reduce((out,key)=>mergeStateData(out,group[key]),{});
+  }
+  function liveBucket(countryId) {
+    const state = stateRoot(), cid = canonicalCountry(countryId);
+    if (!state || !cid) return null;
+    const merged = mergeStateData(countryBucketFromMap(state.resources,cid),countryBucketFromMap(state.resource,cid));
+    return Object.keys(merged).length ? merged : null;
+  }
   function turn() {
     const state = stateRoot();
     return numberOrNull(
