@@ -316,12 +316,15 @@
     if(quantity===null||quantity<=0)return{accepted:false,reason:'QUANTITY_MUST_BE_POSITIVE'};
     if(unitPrice===null||unitPrice<0)return{accepted:false,reason:'UNIT_PRICE_MUST_BE_NON_NEGATIVE'};
     const requestId=String(p.requestId||('TRADE-'+turn()+'-'+buyer+'-'+seller+'-'+token(resourceId)+'-'+Date.now()));
-    const raw=ctx.stateTransaction.get('trade');
-    const bucket=raw&&typeof raw==='object'?clone(raw):{};
-    if(!Array.isArray(bucket.importRequests))bucket.importRequests=[];
-    if(!bucket.globalTradeLedger||typeof bucket.globalTradeLedger!=='object')bucket.globalTradeLedger={requests:[],decisions:[],settlements:[]};
-    const prior=bucket.importRequests.find(x=>String(x.requestId)===requestId);
-    if(prior)return{accepted:true,duplicate:true,request:clone(prior)};
+    const existingRequests=ctx.stateTransaction.get('trade.importRequests');
+    const requests=Array.isArray(existingRequests)?clone(existingRequests):[];
+    const duplicate=requests.find(x=>String(x.requestId)===requestId);
+    if(duplicate)return{accepted:true,duplicate:true,request:clone(duplicate)};
+    const rawLedger=ctx.stateTransaction.get('trade.globalTradeLedger');
+    const ledger=rawLedger&&typeof rawLedger==='object'?clone(rawLedger):{requests:[],decisions:[],settlements:[]};
+    if(!Array.isArray(ledger.requests))ledger.requests=[];
+    if(!Array.isArray(ledger.decisions))ledger.decisions=[];
+    if(!Array.isArray(ledger.settlements))ledger.settlements=[];
     const request={
       requestId,countryId:buyer,targetCountryId:seller,resourceId,quantity,unitPrice,
       currency:String(p.currency||currencyOf(buyer)||'').toUpperCase()||null,
@@ -330,13 +333,16 @@
       needPressure:clamp(p.needPressure)??0.5,settlementStatus:'NOT_STARTED',
       evidencePolicy:'COUNTERPARTY_REVIEW_REQUIRED'
     };
-    bucket.importRequests.push(request);
-    bucket.importRequests=bucket.importRequests.slice(-MAX_HISTORY);
-    bucket.globalTradeLedger.requests=[...(bucket.globalTradeLedger.requests||[]),{
+    requests.push(request);
+    ledger.requests.push({
       requestId,status:request.status,stage:request.stage,buyerCountryId:buyer,sellerCountryId:seller,
       resourceId,quantity,unitPrice,totalValue:request.totalValue,simulationTurn:turn(),source:request.source
-    }].slice(-MAX_HISTORY);
-    persistTradeBucket(ctx,bucket);
+    });
+    ctx.stateTransaction.set('trade.importRequests',requests.slice(-MAX_HISTORY));
+    ctx.stateTransaction.set('trade.globalTradeLedger',{
+      ...ledger,requests:ledger.requests.slice(-MAX_HISTORY),
+      decisions:ledger.decisions.slice(-MAX_HISTORY),settlements:ledger.settlements.slice(-MAX_HISTORY)
+    });
     emit('OMEGA_TRADE_REQUEST_CREATED',buyer,request);
     return{accepted:true,request:clone(request)};
   }
