@@ -38,6 +38,9 @@
   let currentResource = '';
   let currentFilter = 'ALL';
   let refreshHandle = null;
+  let renderScheduleHandle = null;
+  let lastRenderedTab = null;
+  let lastPolledTurn = null;
   let root = null;
   let panelOpen = false;
 
@@ -199,7 +202,7 @@
     };
     store.events.push(record);
     if (store.events.length > MAX_EVENTS) store.events.splice(0, store.events.length - MAX_EVENTS);
-    if (panelOpen) render();
+    if (panelOpen) scheduleRender();
   }
   function valueAt(o, paths) {
     for (const path of paths) {
@@ -283,7 +286,13 @@
     const turn = firstNum(committedTurn, currentTurn());
     // History is sampled only at an authoritative turn-commit event.
     // Opening or refreshing the UI must not freeze a mid-turn snapshot.
-    if (recordCommittedTurn && turn !== null) countryIds().forEach(cid => sampleCountry(cid, turn));
+    if (recordCommittedTurn && turn !== null) {
+      // Keep turn-commit work bounded: sample the player/currently selected country,
+      // plus the explicit country being inspected. Do not scan every country on each turn.
+      const observe = new Set([playerCountry(), selectedCountry()]);
+      if (panelOpen && countryScope && id(countryScope) !== 'WORLD') observe.add(resolveCountryId(countryScope));
+      observe.forEach(cid => { if (cid) sampleCountry(cid, turn); });
+    }
     updateHud();
   }
   function getTrendSeries(countryId, ministryId) {
@@ -577,8 +586,8 @@
       liveEvents: store.events.length
     };
   }
-  function card(label,value,note) {
-    return '<article class="omega-liveops-card"><span>'+h(label)+'</span><strong>'+h(value)+'</strong><small>'+h(note || 'Read from current simulation state')+'</small></article>';
+  function card(label,value) {
+    return '<article class="omega-liveops-card"><span>'+h(label)+'</span><strong>'+h(value)+'</strong></article>';
   }
   function table(headers, rows, empty) {
     if (!rows.length) return '<p class="omega-liveops-empty">'+h(empty || 'No records are present in the current data source.')+'</p>';
@@ -586,7 +595,7 @@
       rows.join('')+'</tbody></table></div>';
   }
   function tr(cells) { return '<tr>'+cells.map(x=>'<td>'+h(x === '' || x == null ? 'Not recorded' : x)+'</td>').join('')+'</tr>'; }
-  function sourceNote(message) { return '<p class="omega-liveops-source">'+h(message)+'</p>'; }
+  function sourceNote() { return ''; }
   function renderOverview(ids) {
     const sum = observedStateSummary(ids), scoped = countryScope === 'WORLD' ? 'all indexed countries' : countryName(countryScope || '');
     const hasState = ids.some(cid => metricsFor(cid)._hasState);
@@ -696,7 +705,8 @@
     }).join('');
   }
   function renderCharts(ids) {
-    const rows = minesFor(ids).filter(m => m.quantity !== null && (!currentResource || m.resourceId === currentResource));
+    const mineRows = minesFor(ids);
+    const rows = mineRows.filter(m => m.quantity !== null && (!currentResource || m.resourceId === currentResource));
     const resNames = [...new Set(rows.map(r=>r.resourceId).filter(Boolean))].sort();
     if (!currentResource || !resNames.includes(currentResource)) currentResource = resNames[0] || currentResource;
     const selected = rows.filter(r => !currentResource || r.resourceId === currentResource);
@@ -706,7 +716,7 @@
     const shipmentStatuses = countsByStatus(ship).map(r=>({label:r.label,value:r.count,unit:'records'}));
     const requestStatuses = countsByStatus(req).map(r=>({label:r.label,value:r.count,unit:'requests'}));
     return '<div class="omega-liveops-toolbar"><label>Production commodity <select id="omega-liveops-resource-filter"><option value="">All available site records</option>'+
-      [...new Set(minesFor(ids).map(m=>m.resourceId).filter(Boolean))].sort().map(v=>'<option value="'+h(v)+'"'+(currentResource===v?' selected':'')+'>'+h(v)+'</option>').join('')+
+      [...new Set(mineRows.map(m=>m.resourceId).filter(Boolean))].sort().map(v=>'<option value="'+h(v)+'"'+(currentResource===v?' selected':'')+'>'+h(v)+'</option>').join('')+
       '</select></label></div>'+
       barChart('Recorded site output by mine (same selected commodity)',production.slice(0,50),'site')+
       barChart('Actual site-flow status records',flowStatuses)+
@@ -728,6 +738,10 @@
     const ids = selectedIds();
     const main = root.querySelector('#omega-liveops-main');
     if (!main) return;
+    const panel = root.querySelector('#omega-liveops-panel') || main;
+    const previousTab = lastRenderedTab;
+    const scrollTop = previousTab === currentTab ? (panel.scrollTop || 0) : 0;
+    const scrollLeft = previousTab === currentTab ? (panel.scrollLeft || 0) : 0;
     const turn = currentTurn();
     const title = root.querySelector('#omega-liveops-state');
     if (title) title.textContent = 'TURN ' + (turn === null ? 'NOT REPORTED' : fmt(turn,0)) + ' · ' + (countryScope === 'WORLD' ? 'WORLD VIEW' : countryScope ? countryName(countryScope) : 'COUNTRY NOT SELECTED');
@@ -752,12 +766,23 @@
     if (resourceSelector) resourceSelector.value = currentResource;
     const filterSelector = root.querySelector('#omega-liveops-event-filter');
     if (filterSelector) filterSelector.value = currentFilter;
+    panel.scrollTop = scrollTop;
+    panel.scrollLeft = scrollLeft;
+    lastRenderedTab = currentTab;
+  }
+  function scheduleRender() {
+    if (!panelOpen || renderScheduleHandle !== null) return;
+    if (typeof g.setTimeout !== 'function') { render(); return; }
+    renderScheduleHandle = g.setTimeout(() => {
+      renderScheduleHandle = null;
+      if (panelOpen) render();
+    }, 300);
   }
   function injectUI() {
     if (!g.document || !g.document.body || g.document.getElementById('omega-liveops-root')) return;
     const style = g.document.createElement('style');
     style.id = 'omega-liveops-style';
-    style.textContent = '#omega-liveops-launch{position:fixed;left:12px;bottom:82px;z-index:1000010;background:#0b1728;border:1px solid #38bdf8;color:#e0f2fe;border-radius:9px;padding:10px 13px;font:700 11px/1.1 monospace;letter-spacing:.4px;box-shadow:0 4px 14px #0008}#omega-liveops-root{position:fixed;inset:0;z-index:1000011;display:none;background:rgba(2,6,15,.93);color:#e2e8f0;font:13px/1.45 system-ui,sans-serif}#omega-liveops-panel{position:absolute;inset:2.5%;display:flex;flex-direction:column;background:#07111f;border:1px solid #27445f;border-radius:12px;overflow:hidden}#omega-liveops-header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;border-bottom:1px solid #24384d;background:#0c1c2e;flex-wrap:wrap}#omega-liveops-header strong{font-size:13px;letter-spacing:.5px}#omega-liveops-header small{display:block;color:#94a3b8;font-size:10px}#omega-liveops-actions{display:flex;gap:6px;flex-wrap:wrap}#omega-liveops-root button,#omega-liveops-root select{font:inherit}#omega-liveops-root button{background:#102338;border:1px solid #2b4863;color:#dbeafe;border-radius:6px;padding:7px 9px;cursor:pointer}#omega-liveops-root button.active{border-color:#38bdf8;color:#7dd3fc;background:#102d43}#omega-liveops-tabs{display:flex;gap:5px;overflow-x:auto;padding:7px;background:#081522;border-bottom:1px solid #21374b;flex-shrink:0}#omega-liveops-tabs button{white-space:nowrap;font-size:11px}#omega-liveops-toolbar{padding:8px 12px;border-bottom:1px solid #21374b;display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}#omega-liveops-toolbar label,.omega-liveops-toolbar label{display:flex;gap:7px;align-items:center;color:#a9bdcf;font-size:11px}#omega-liveops-country,#omega-liveops-root select{max-width:56vw;background:#0b192a;color:#e2e8f0;border:1px solid #37536d;border-radius:5px;padding:6px}#omega-liveops-state{color:#7dd3fc;font:10px monospace}#omega-liveops-main{padding:12px;overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;flex:1;min-height:0}#omega-liveops-main h3{font-size:12px;color:#7dd3fc;margin:5px 0 10px;letter-spacing:.3px}#omega-liveops-main h3 small{color:#94a3b8;font-weight:400}#omega-liveops-main p{margin:7px 0}#omega-liveops-main .omega-liveops-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:12px}.omega-liveops-card{border:1px solid #243d53;background:#0b1a2a;border-radius:8px;padding:10px;min-width:0}.omega-liveops-card span{display:block;color:#91a9be;font-size:10px}.omega-liveops-card strong{display:block;font-size:22px;color:#e2e8f0;margin:5px 0;overflow-wrap:anywhere}.omega-liveops-card small{display:block;color:#6f879c;font-size:10px}.omega-liveops-section{margin-top:12px;border:1px solid #20364b;border-radius:8px;padding:10px;background:#091725}.omega-liveops-table-wrap{width:100%;overflow:auto;max-height:48vh}.omega-liveops-table{width:100%;border-collapse:collapse;font-size:11px;min-width:680px}.omega-liveops-table th{position:sticky;top:0;background:#102237;color:#91dfff;text-align:left;font-weight:600}.omega-liveops-table th,.omega-liveops-table td{padding:7px 8px;border-bottom:1px solid #203449;vertical-align:top;white-space:normal;overflow-wrap:anywhere}.omega-liveops-table td{color:#cbd5e1}.omega-liveops-empty{padding:14px;border:1px dashed #34495d;border-radius:7px;color:#9bb0c3;background:#0a1724}.omega-liveops-source{font-size:10px;color:#849ab0;border-left:2px solid #37536d;padding-left:8px}.omega-liveops-toolbar{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;color:#8199af;font-size:10px}.omega-liveops-bars{display:flex;flex-direction:column;gap:9px}.omega-liveops-barrow{min-width:0}.omega-liveops-barlab{display:flex;justify-content:space-between;gap:10px;font-size:11px;margin-bottom:4px}.omega-liveops-barlab span{overflow-wrap:anywhere}.omega-liveops-barlab b{white-space:nowrap;color:#cbd5e1}.omega-liveops-track{height:7px;background:#142539;border-radius:5px;overflow:hidden}.omega-liveops-track i{height:100%;display:block;background:#38bdf8;border-radius:5px}.omega-liveops-linechart{display:block;width:100%;max-height:180px}.omega-liveops-error{color:#fca5a5}@media(max-width:700px){#omega-liveops-panel{inset:0;border-radius:0}#omega-liveops-main .omega-liveops-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.omega-liveops-card strong{font-size:19px}#omega-liveops-header{padding:8px}#omega-liveops-main{padding:8px}}';
+    style.textContent = '#omega-liveops-launch{position:fixed;left:12px;bottom:82px;z-index:1000010;background:#0b1728;border:1px solid #38bdf8;color:#e0f2fe;border-radius:9px;padding:10px 13px;font:700 11px/1.1 monospace;letter-spacing:.4px;box-shadow:0 4px 14px #0008}#omega-liveops-root{position:fixed;inset:0;z-index:1000011;display:none;background:rgba(2,6,15,.93);color:#e2e8f0;font:13px/1.45 system-ui,sans-serif}#omega-liveops-panel{position:absolute;inset:2.5%;display:flex;flex-direction:column;background:#07111f;border:1px solid #27445f;border-radius:12px;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y}#omega-liveops-header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;border-bottom:1px solid #24384d;background:#0c1c2e;flex-wrap:wrap}#omega-liveops-header strong{font-size:13px;letter-spacing:.5px}#omega-liveops-header small{display:block;color:#94a3b8;font-size:10px}#omega-liveops-actions{display:flex;gap:6px;flex-wrap:wrap}#omega-liveops-root button,#omega-liveops-root select{font:inherit}#omega-liveops-root button{background:#102338;border:1px solid #2b4863;color:#dbeafe;border-radius:6px;padding:7px 9px;cursor:pointer}#omega-liveops-root button.active{border-color:#38bdf8;color:#7dd3fc;background:#102d43}#omega-liveops-tabs{display:flex;gap:5px;overflow-x:auto;padding:7px;background:#081522;border-bottom:1px solid #21374b;flex-shrink:0}#omega-liveops-tabs button{white-space:nowrap;font-size:11px}#omega-liveops-toolbar{padding:8px 12px;border-bottom:1px solid #21374b;display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}#omega-liveops-toolbar label,.omega-liveops-toolbar label{display:flex;gap:7px;align-items:center;color:#a9bdcf;font-size:11px}#omega-liveops-country,#omega-liveops-root select{max-width:56vw;background:#0b192a;color:#e2e8f0;border:1px solid #37536d;border-radius:5px;padding:6px}#omega-liveops-state{color:#7dd3fc;font:10px monospace}#omega-liveops-main{padding:12px;overflow:visible;overscroll-behavior:contain;flex:0 0 auto;min-height:0;min-width:0}#omega-liveops-main h3{font-size:12px;color:#7dd3fc;margin:5px 0 10px;letter-spacing:.3px}#omega-liveops-main h3 small{color:#94a3b8;font-weight:400}#omega-liveops-main p{margin:7px 0}#omega-liveops-main .omega-liveops-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:12px}.omega-liveops-card{border:1px solid #243d53;background:#0b1a2a;border-radius:8px;padding:10px;min-width:0}.omega-liveops-card span{display:block;color:#91a9be;font-size:10px}.omega-liveops-card strong{display:block;font-size:22px;color:#e2e8f0;margin:5px 0;overflow-wrap:anywhere}.omega-liveops-card small{display:block;color:#6f879c;font-size:10px}.omega-liveops-section{margin-top:12px;border:1px solid #20364b;border-radius:8px;padding:10px;background:#091725}.omega-liveops-table-wrap{width:100%;overflow:auto;max-height:48vh}.omega-liveops-table{width:100%;border-collapse:collapse;font-size:11px;min-width:680px}.omega-liveops-table th{position:sticky;top:0;background:#102237;color:#91dfff;text-align:left;font-weight:600}.omega-liveops-table th,.omega-liveops-table td{padding:7px 8px;border-bottom:1px solid #203449;vertical-align:top;white-space:normal;overflow-wrap:anywhere}.omega-liveops-table td{color:#cbd5e1}.omega-liveops-empty{padding:14px;border:1px dashed #34495d;border-radius:7px;color:#9bb0c3;background:#0a1724}.omega-liveops-source{font-size:10px;color:#849ab0;border-left:2px solid #37536d;padding-left:8px}.omega-liveops-toolbar{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;color:#8199af;font-size:10px}.omega-liveops-bars{display:flex;flex-direction:column;gap:9px}.omega-liveops-barrow{min-width:0}.omega-liveops-barlab{display:flex;justify-content:space-between;gap:10px;font-size:11px;margin-bottom:4px}.omega-liveops-barlab span{overflow-wrap:anywhere}.omega-liveops-barlab b{white-space:nowrap;color:#cbd5e1}.omega-liveops-track{height:7px;background:#142539;border-radius:5px;overflow:hidden}.omega-liveops-track i{height:100%;display:block;background:#38bdf8;border-radius:5px}.omega-liveops-linechart{display:block;width:100%;max-height:180px}.omega-liveops-error{color:#fca5a5}@media(max-width:700px){#omega-liveops-panel{inset:0;border-radius:0}#omega-liveops-main .omega-liveops-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.omega-liveops-card strong{font-size:19px}#omega-liveops-header{padding:8px}#omega-liveops-main{padding:8px}}';
     g.document.head.appendChild(style);
     root = g.document.createElement('div');
     root.id = 'omega-liveops-root';
@@ -782,7 +807,7 @@
       if (action) {
         const act = action.getAttribute('data-omega-liveops-action');
         if (act === 'close') closePanel();
-        else if (act === 'refresh') { sampleAll(); render(); }
+        else if (act === 'refresh') { buildCountrySelect(); sampleAll(); render(); }
         else if (act === 'export') exportData();
       }
     });
@@ -794,7 +819,6 @@
       if (target.id === 'omega-liveops-event-filter') { currentFilter = target.value || 'ALL'; render(); }
     });
     root.addEventListener('keydown', ev => { if (ev.key === 'Escape') closePanel(); });
-    buildCountrySelect();
   }
   function buildCountrySelect() {
     if (!root) return;
@@ -813,17 +837,29 @@
     if (!root) return;
     panelOpen = true;
     root.style.display = 'block';
-    buildCountrySelect();
     sampleAll();
     render();
+    lastPolledTurn = currentTurn();
     if (refreshHandle !== null) g.clearInterval(refreshHandle);
-    refreshHandle = g.setInterval(() => { if (panelOpen) { buildCountrySelect(); sampleAll(); render(); } }, 5000);
+    // Keep the low-cost HUD current; rebuild the expensive view only after a new turn/event
+    // or an explicit user refresh. This avoids repeated full-ledger scans on a short timer.
+    refreshHandle = g.setInterval(() => {
+      if (!panelOpen) return;
+      sampleAll();
+      const turn = currentTurn();
+      if (turn !== lastPolledTurn) {
+        lastPolledTurn = turn;
+        scheduleRender();
+      }
+    }, 15000);
   }
   function closePanel() {
     panelOpen = false;
     if (root) root.style.display = 'none';
     if (refreshHandle !== null) g.clearInterval(refreshHandle);
     refreshHandle = null;
+    if (renderScheduleHandle !== null && typeof g.clearTimeout === 'function') g.clearTimeout(renderScheduleHandle);
+    renderScheduleHandle = null;
   }
   function exportData() {
     if (!g.Blob || !g.URL || !g.URL.createObjectURL || !g.document) return;
@@ -846,7 +882,7 @@
   }
   function diagnostics() {
     const ids = countryIds(), summary = observedStateSummary(selectedIds());
-    return {version:'1.1.0',readOnly:true,scope:countryScope || 'WORLD',countryCount:ids.length,
+    return {version:'1.2.0',readOnly:true,scope:countryScope || 'WORLD',countryCount:ids.length,
       registeredResourceSites:summary.registeredResourceSites,runtimeMineRecords:summary.runtimeMineRecords,
       retainedLiveEvents:store.events.length,countriesWithTurnHistory:Object.keys(store.history).length,
       historyTurns:Object.keys(store.history).reduce((n,c)=>n+arr(store.history[c]).length,0),
@@ -856,7 +892,7 @@
       polling:panelOpen?'active while the panel is open':'inactive while the panel is closed'};
   }
   const api = {
-    VERSION:'1.1.0', diagnostics, resolveCountryId, getCountryMetrics:countryId => metricsFor(resolveCountryId(countryId) || id(countryId)), getCountryOperationalSummary:countryId => observedStateSummary([resolveCountryId(countryId) || id(countryId)]), getTrendSeries, snapshot:()=>({
+    VERSION:'1.2.0', diagnostics, resolveCountryId, getCountryMetrics:countryId => metricsFor(resolveCountryId(countryId) || id(countryId)), getCountryOperationalSummary:countryId => observedStateSummary([resolveCountryId(countryId) || id(countryId)]), getTrendSeries, snapshot:()=>({
       turn:currentTurn(),scope:countryScope || 'WORLD',summary:observedStateSummary(selectedIds()),
       events:eventRows(selectedIds()),mines:minesFor(selectedIds()),siteRouteProfiles:siteRouteProfiles(selectedIds()),
       shipments:allShipments(selectedIds()),tradeRequests:tradeRequests(selectedIds()),flows:flowRows(selectedIds()),communications:communications(selectedIds())
