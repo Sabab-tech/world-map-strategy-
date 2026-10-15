@@ -102,4 +102,15 @@ globalThis.Game.state.simulation.turn=Number(pressured.nextRetryTurn);
 trade.processAll();
 assert(globalThis.Game.state.trade.BGD.importRequests.some(x=>x.stage==='POLITICAL_PRESSURE_RETRY'&&x.previousRequestId==='REQ-REJECT'),
   'scheduled retry must create a new pressure-aware request after the cooldown');
+const uiCreated=trade.createRequest('BGD',{
+  requestId:'REQ-UI-CREATE',targetCountryId:'SAU',resourceId:'crude_oil',quantity:100,unitPrice:101,
+  source:'OMEGA_RESOURCE_COMMAND_CENTER_UI'
+});
+assert.equal(uiCreated?.accepted,true,JSON.stringify(uiCreated));
+const uiCreatedRequest=globalThis.Game.state.trade.BGD.importRequests.find(x=>x.requestId==='REQ-UI-CREATE');
+assert.equal(uiCreatedRequest?.status,'SENT');
+assert.equal(uiCreatedRequest?.stage,'OPEN');
+assert.equal(uiCreatedRequest?.quantity,100);
+assert.equal(uiCreatedRequest?.targetCountryId,'SAU');
+assert(globalThis.Game.state.trade.BGD.globalTradeLedger.requests.some(x=>x.requestId==='REQ-UI-CREATE'));
 console.log('OMEGA GLOBAL TRADE TEST PASSED');
