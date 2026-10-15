@@ -90,8 +90,8 @@ jobs:
         run: npm run test:resource-e2e
       - name: Autonomous per-country deposit-to-market regression
         run: npm run test:resource-global-auto
-      - name: International trade lineage regression
-        run: npm run test:global-trade
+      - name: International trade lineage and embargo-aware market regression
+        run: npm run test:global-trade && npm run test:global-market
       - name: Global raw inventory regression
         run: npm run test:resource-global-pipeline
       - name: Authoritative resource adapter regression
