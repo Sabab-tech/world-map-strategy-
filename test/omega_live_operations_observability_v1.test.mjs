@@ -35,6 +35,30 @@ test('ministry trend chart uses observed turn history rather than generated hist
   assert.doesNotMatch(method, /pFactor|sFactor|tFactor|rawGdp\s*\|\|/);
 });
 
+test('country intelligence charts use recorded economy and demographic fields', () => {
+  const source = read('country-ios.js');
+  const economyStart = source.indexOf('renderChapter4_Economy(countryKey, econ, pop) {');
+  const economyEnd = source.indexOf('renderChapter5_Resources(countryKey)', economyStart);
+  assert.ok(economyStart >= 0 && economyEnd > economyStart, 'economy chart renderer exists');
+  const economy = source.slice(economyStart, economyEnd);
+  assert.match(economy, /OmegaLiveOpsObservability/);
+  assert.match(economy, /getTrendSeries/);
+  assert.match(economy, /sectoralBreakdown/);
+  assert.match(economy, /No multi-turn GDP history is recorded/);
+  assert.match(economy, /No example percentages are substituted/);
+  assert.doesNotMatch(economy, /68\.4%|23\.2%|8\.4%|2022|2023|2024|2025|2026 PROJ/,
+    'economy charts cannot embed sample shares or a fabricated year sequence');
+
+  const societyStart = source.indexOf('renderChapter10_Society(countryKey, pop) {');
+  const societyEnd = source.indexOf('renderChapter11_Operations(countryKey)', societyStart);
+  assert.ok(societyStart >= 0 && societyEnd > societyStart, 'society chart renderer exists');
+  const society = source.slice(societyStart, societyEnd);
+  assert.match(society, /ageGroups|ageDistribution/);
+  assert.match(society, /No age-group population records are available/);
+  assert.doesNotMatch(society, /0-18 Yrs \(18%\)|19-64 Yrs \(62%\)|65\+ Yrs \(20%\)/,
+    'demographic chart cannot show hardcoded population distributions');
+});
+
 test('runtime projection reads real ledgers and records turn-based observations without writing to gameplay state', () => {
   const source = read('omega_live_operations_observability_v1.js');
   const listeners = new Map();
