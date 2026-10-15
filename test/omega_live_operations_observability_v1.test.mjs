@@ -187,3 +187,74 @@ test('resource authoritative adapter preserves unknown numeric values and only r
   assert.match(source, /No stock was fabricated or transferred/);
   assert.match(source, /Factory capacity, treasury and project state were not changed/);
 });
+
+
+test('Live Operations joins canonical site profiles to shared country state by canonical country and site identity', () => {
+  const source = read('omega_live_operations_observability_v1.js');
+  const listeners = new Map();
+  const gameState = {
+    simulation: { turn: 3 },
+    playerCountryId: 'BGD',
+    resource: {
+      BANGLADESH: {
+        mines: [{ siteId: 'SITE-BGD-1', occurrenceKey: 'SITE-BGD-1', depositName: 'Bangladesh coal mine', resourceId: 'coal', operationalStatus: 'ACTIVE' }],
+        mineOutputs: { 'SITE-BGD-1': { siteId: 'SITE-BGD-1', producedQuantity: 4, resourceId: 'coal', unit: 'tonnes', status: 'ACTIVE', turn: 3, batchId: 'B-3' } },
+        mineProductionLedger: [{ turn: 3, siteId: 'SITE-BGD-1', mineName: 'Bangladesh coal mine', resourceId: 'coal', quantity: 4, unit: 'tonnes', batchId: 'B-3' }]
+      }
+    },
+    economy: { BANGLADESH: { gdp: 1000 } }
+  };
+  const identityRegistry = {
+    resolveCountry(value) {
+      const key = String(value || '').trim().toUpperCase().replace(/[-\s]+/g, '_');
+      if (['BANGLADESH', 'BGD'].includes(key)) return { id: 'BGD', iso3: 'BGD', name: 'Bangladesh' };
+      if (['INDIA', 'IND'].includes(key)) return { id: 'IND', iso3: 'IND', name: 'India' };
+      return null;
+    }
+  };
+  const sandbox = {
+    console, Date, Math, JSON, Object, Array, String, Number, RegExp, Map, Set, WeakMap,
+    Game: { state: gameState, currentActiveCountry: 'Bangladesh' },
+    OmegaCanonicalIdentityRegistry: identityRegistry,
+    Omega: {
+      IndividualResourceSiteBinding: {
+        sites: [
+          { siteId: 'SITE-BGD-1', countryId: 'BGD', siteName: 'Canonical Bangladesh coal mine',
+            real: { resourceId: 'coal' }, operation: { status: 'ACTIVE' },
+            quantitative: { production: { rate: 5, unit: 'tonnes/day' } },
+            coordinates: { lat: 24, lng: 90 }, location: { countryName: 'Bangladesh', coordinateStatus: 'VERIFIED' } },
+          { siteId: 'SITE-IND-1', countryId: 'IND', siteName: 'Canonical India iron mine',
+            real: { resourceId: 'iron_ore' }, operation: { status: 'ACTIVE' },
+            coordinates: { lat: 20, lng: 78 }, location: { countryName: 'India' } }
+        ]
+      }
+    },
+    addEventListener(type, listener) {
+      const set = listeners.get(type) || [];
+      set.push(listener); listeners.set(type, set);
+    },
+    clearInterval() {},
+    setInterval() { return 1; }
+  };
+  sandbox.window = sandbox;
+  sandbox.globalThis = sandbox;
+  vm.runInNewContext(source, sandbox, { filename: 'omega_live_operations_observability_v1.js' });
+
+  const api = sandbox.OmegaLiveOpsObservability;
+  const snapshot = api.snapshot();
+  assert.equal(api.resolveCountryId('Bangladesh'), 'BGD');
+  assert.equal(snapshot.summary.countryCount, 2);
+  assert.equal(snapshot.mines.length, 2, 'canonical sites should appear before every site has runtime production');
+  const bangladeshMine = snapshot.mines.find(row => row.siteId === 'SITE-BGD-1');
+  assert.ok(bangladeshMine);
+  assert.equal(bangladeshMine.countryId, 'BGD', 'country aliases must resolve to the canonical identity');
+  assert.equal(bangladeshMine.registryRecord, true);
+  assert.equal(bangladeshMine.runtimeRecorded, true, 'runtime data overlays the registry profile rather than duplicating it');
+  assert.equal(bangladeshMine.quantity, 4);
+  assert.equal(bangladeshMine.profileDailyRate, 5);
+  assert.equal(snapshot.summary.registeredResourceSites, 2);
+  assert.equal(snapshot.summary.runtimeMineRecords, 1);
+  assert.equal(snapshot.summary.currentTurnMineOutputs, 1);
+  assert.equal(snapshot.mines.filter(row => row.siteId === 'SITE-BGD-1').length, 1,
+    'a site in the canonical registry and Game.state must merge by canonical country + site ID');
+});
