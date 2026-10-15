@@ -78,14 +78,21 @@ export function validateResourceDecisionRequest(payload = {}) {
   if (operation === 'POWER_PROJECT' && requestedAmount !== null) {
     throw new ResourceDecisionAIError('requestedAmount is not accepted for ruleset-priced power projects.', 400, 'POWER_AMOUNT_RULESET_CONTROLLED');
   }
+  const projectType = operation === 'POWER_PROJECT' ? text(payload.projectType || 'NUCLEAR_BASELOAD').toUpperCase() : null;
+  if (operation === 'POWER_PROJECT' && projectType !== 'NUCLEAR_BASELOAD') {
+    throw new ResourceDecisionAIError('Only the nuclear baseload ruleset is currently supported by this gate.', 400, 'POWER_PROJECT_TYPE_UNSUPPORTED');
+  }
+  if (operation === 'SWF_CAPITALIZATION' && payload.projectType != null) {
+    throw new ResourceDecisionAIError('projectType is not valid for SWF capitalization.', 400, 'SWF_PROJECT_TYPE_INVALID');
+  }
   const state = payload.gameState && typeof payload.gameState === 'object' && !Array.isArray(payload.gameState)
     ? payload.gameState : {};
-  return { countryId, answers, state, decisionId: decisionId || null, operation, requestedAmount };
+  return { countryId, answers, state, decisionId: decisionId || null, operation, requestedAmount, projectType };
 }
 
 export function buildResourceDecisionContext(payload = {}) {
   const validated = validateResourceDecisionRequest(payload);
-  const { countryId, answers, state, operation, requestedAmount } = validated;
+  const { countryId, answers, state, operation, requestedAmount, projectType } = validated;
   const resource = countryBucket(state.resource, countryId) || {};
   const finance = countryBucket(state.finance, countryId) || {};
   const economy = countryBucket(state.economy, countryId) || {};
@@ -130,6 +137,7 @@ export function buildResourceDecisionContext(payload = {}) {
     source: 'COUNTRY_SCOPED_GAME_STATE_SNAPSHOT',
     countryId,
     operation,
+    projectType,
     requestedAmount,
     operationRequirements,
     simulationTurn: turn,
@@ -233,7 +241,9 @@ function normalizeAssessment(rawValue, answers, modelName, context) {
     decision: finalDecision,
     modelDecision: decision,
     operation: context.operation,
+    projectType: context.projectType,
     requestedAmount: context.requestedAmount,
+    operationRequirements: context.operationRequirements,
     confidence,
     riskSummary: text(raw.riskSummary || raw.summary || 'No summary supplied.') .slice(0, 1200),
     findings: list(raw.findings, 12),
@@ -286,6 +296,6 @@ export async function evaluateResourceDecision({ payload, generateText }) {
     status: 'COMPLETED',
     decisionId: request.decisionId,
     assessment,
-    context: { countryId: context.countryId, operation: context.operation, requestedAmount: context.requestedAmount, simulationTurn: context.simulationTurn, source: context.source }
+    context: { countryId: context.countryId, operation: context.operation, projectType: context.projectType, requestedAmount: context.requestedAmount, simulationTurn: context.simulationTurn, source: context.source }
   };
 }
