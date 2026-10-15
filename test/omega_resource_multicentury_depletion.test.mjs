@@ -44,7 +44,7 @@ test('a site-specific simulated reserve depletes through the extraction engine o
   },null,site.countryId);
   assert.equal(model.status,'READY',JSON.stringify({siteId:site.siteId,status:model.status}));
   const stream=model.commodityStreams.find(row=>row.resourceId===resourceId);
-  assert(stream,'the site's own resource stream must resolve');
+  assert(stream, "the site's own resource stream must resolve");
   const initial=Number(stream.reserve.quantity);
   const dailyRate=Number(stream.production.activeRate);
   const horizonYears=Number(stream.production.gameplayHorizonYears);
