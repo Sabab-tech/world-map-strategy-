@@ -135,7 +135,7 @@ function routeCard(route,index){
   detailRow('Transit time',row.transitDays??row.durationDays??row.etaDays,Number(row.transitDays??row.durationDays??row.etaDays)===1?'day':'days'),
   detailRow('Status',row.status||row.operationalStatus)
  ].filter(Boolean).join('');
- const extras=renderRows(rows);
+ const extras=rows.length?'<div class="omega-site-rows">'+rows+'</div>':'';
  if(!humanize(title)&&!extras)return '';
  return '<article class="omega-site-route"><h5>'+esc(humanize(title)||('Route '+(index+1)))+'</h5>'+extras+'</article>';
 }
