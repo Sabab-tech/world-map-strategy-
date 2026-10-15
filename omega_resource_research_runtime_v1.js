@@ -302,8 +302,8 @@ function diagnostics(){
 }
 const API=Object.freeze({
   VERSION,loadCatalog,technology,technologies,register,processCountry,processAll,diagnostics,
-  startResearch:(countryId,payload={})=>{register();const r=dispatch('OMEGA_RESOURCE_RESEARCH_START',countryId,payload);return r?.result&&['APPLIED','REJECTED'].includes(String(r?.status||''))?r.result:r;},
-  importTechnology:(countryId,payload={})=>{register();const r=dispatch('OMEGA_RESOURCE_TECHNOLOGY_IMPORT',countryId,payload);return r?.result&&['APPLIED','REJECTED'].includes(String(r?.status||''))?r.result:r;},
+  startResearch:(countryId,payload={})=>{register();const r=dispatch('OMEGA_RESOURCE_RESEARCH_START',countryId,payload);return r?.result&&['APPLIED','FAILED','REJECTED'].includes(String(r?.status||''))?r.result:r;},
+  importTechnology:(countryId,payload={})=>{register();const r=dispatch('OMEGA_RESOURCE_TECHNOLOGY_IMPORT',countryId,payload);return r?.result&&['APPLIED','FAILED','REJECTED'].includes(String(r?.status||''))?r.result:r;},
   getEngineeringEffect
 });
 g.Omega=g.Omega||{};g.Omega.ResourceResearchRuntime=API;g.OmegaResourceResearchRuntime=API;
