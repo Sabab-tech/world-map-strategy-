@@ -164,6 +164,11 @@ export function buildResourceDecisionContext(payload = {}) {
     recentCarbonLedger: cleanRows(emissions, [
       'transactionId','source','sourceId','resourceId','quantityTonnesCo2e','unit','turn','quotaId','periodIndex','status'
     ], 8),
+    recentQuotaEnforcement: cleanRows(resource.carbonQuotaEnforcementLedger, [
+      'violationId','quotaId','turn','source','sourceId','transactionId','siteId','resourceId',
+      'requestedTonnesCo2e','usedTonnesCo2e','allowanceTonnesCo2e','projectedTonnesCo2e',
+      'reason','enforcementAction','productionConsequence','remediationFollowUp','status'
+    ], 8),
     environmentalImpact: { revision: finite(impact.revision), bySite: impactSites },
     powerProjects: cleanRows(resource.powerProjects, [
       'projectId','projectType','status','progressTurns','requiredTurns','capacityMw','costTreasuryUnits','lastBlockedReason'
