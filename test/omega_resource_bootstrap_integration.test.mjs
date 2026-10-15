@@ -37,6 +37,10 @@ test('canonical resource registry readiness bootstraps extraction and refreshes 
   const hotEvents = liveOps.slice(liveOps.indexOf('const HOT_EVENTS = ['), liveOps.indexOf('];', liveOps.indexOf('const HOT_EVENTS = [')));
   assert.ok(hotEvents.includes("'OMEGA_RESOURCE_SITE_BINDING_READY'"),
     'OPS Live must observe the registry readiness event');
+  assert.ok(hotEvents.includes("'OMEGA_RESOURCE_BOOTSTRAP_STATUS'"),
+    'OPS Live must expose bootstrap success/failure instead of hiding runtime startup problems');
+  assert.ok(endowment.includes("new g.CustomEvent('OMEGA_RESOURCE_BOOTSTRAP_STATUS'"),
+    'the resource runtime must publish bootstrap status for observability');
   assert.ok(liveOps.includes('if (panelOpen) render();'),
     'new runtime events must refresh an already-open OPS Live panel');
 });
