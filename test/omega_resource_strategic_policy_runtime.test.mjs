@@ -254,7 +254,7 @@ test('high-impact cognitive gate requires a server AI verdict and persists it id
  const missingAi=api.evaluateCognitiveGate('BGD',{decisionId:'COGNITIVE-NO-AI',answers});
  assert.equal(missingAi.accepted,false);
  assert.equal(missingAi.reason,'AI_ASSESSMENT_REQUIRED');
- assert.equal(h.state.resource.BGD.cognitiveDecisionLedger||[],[]);
+ assert.equal((h.state.resource.BGD.cognitiveDecisionLedger||[]).length,0);
  const payload={decisionId:'COGNITIVE-TEST-1',answers,aiAssessment:aiAssessment('PROCEED')};
  const response=api.evaluateCognitiveGate('BGD',payload);
  assert.equal(response.accepted,true,JSON.stringify(response));
