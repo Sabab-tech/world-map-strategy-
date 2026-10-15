@@ -78,11 +78,11 @@ test('actual industrial flow and technology project state paths are rendered', (
 
 
 test('resource panels avoid navigation clutter, raw diagnostics, and pinned top content', () => {
-  assert.match(ui, /omega-rescc-panel-select/);
-  assert.match(ui, /\\.omega-rescc-shell\\{[^}]*overflow-y:auto/);
-  assert.match(ui, /\\.omega-rescc-content\\{flex:0 0 auto;[^}]*overflow:visible/);
-  assert.match(ui, /\\.omega-rescc-note\\{display:none!important\\}/);
-  assert.match(ui, /function diagnosticCard\\(\\) \\{ return ''; \\}/);
-  assert.match(ui, /\\(lastOutcome \\? '<div id="omega-rescc-status"/);
-  assert.doesNotMatch(ui, /Panel: ' \\+ viewTitle\\(activePanel\\)/);
+  assert.ok(ui.includes('omega-rescc-panel-select'));
+  assert.ok(ui.includes('overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain'));
+  assert.ok(ui.includes("'.omega-rescc-content{flex:0 0 auto;min-height:0;min-width:0;overflow:visible;"));
+  assert.ok(ui.includes("'.omega-rescc-note{display:none!important}'"));
+  assert.ok(ui.includes("function diagnosticCard() { return ''; }"));
+  assert.ok(ui.includes("(lastOutcome ? '<div id=\"omega-rescc-status\""));
+  assert.equal(ui.includes("Panel: ' + viewTitle(activePanel)"), false);
 });
