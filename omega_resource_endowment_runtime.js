@@ -1399,6 +1399,8 @@ function batchFromExtraction(x,record){
     const demandTargetByResource={},windowCapacityByOccurrence={},totalWindowByResource={};
     for(const row of selected){
       let capWindow=0;try{capWindow=n(row?.capacity?.computeWindowCapacity?.(DAY_HOURS)?.windowCapacity)||0;}catch(_){capWindow=n(row?.capacity?.activeRate)||n(row?.capacity?.nominalRate)||0;}
+      const rowPolicy=siteExecutionPolicyForRow(row),policyMultiplier=Math.max(0,Math.min(1,Number(rowPolicy.productionMultiplier)||0));
+      capWindow*=policyMultiplier;
       windowCapacityByOccurrence[row.occurrenceKey]=Math.max(0,capWindow);
       const rr=rid(row?.resourceId);totalWindowByResource[rr]=(totalWindowByResource[rr]||0)+Math.max(0,capWindow);
       const domestic=valueForResource(consumption,rr),foreign=valueForResource(exportDemand,rr);
@@ -1419,19 +1421,33 @@ function batchFromExtraction(x,record){
       if(!Array.isArray(path.batchIds))path.batchIds=[];
       if(!Array.isArray(path.inventoryAllocations))path.inventoryAllocations=[];
       path.linkedOccurrenceKeys=Array.isArray(controller.linkedOccurrenceKeys)?controller.linkedOccurrenceKeys.map(String):[];
+      const controllerPolicy=siteExecutionPolicyFor(
+        controller.operationalStatus||controller.rawSiteReference?.operation?.status||controller.rawSiteReference?.status||'UNKNOWN',
+        controller.rawSiteReference?.operation?.commercialExtraction??controller.rawSiteReference?.commercialExtraction??true,
+        Boolean(controller.rawSiteReference?.runtime?.aliasOfSiteId||controller.rawSiteReference?.aliasOfSiteId));
+      const controllerPolicyEligible=Number(controllerPolicy.productionMultiplier)>0&&
+        !['BLOCKED','NOT_APPLICABLE','NON_EXECUTABLE_ALIAS'].includes(String(controllerPolicy.state||''));
+      const controllerBlockReason=controller.executionBlockReason||controllerPolicy.reason||'SITE_REFERENCE_HAS_NO_QUANTITATIVE_MINE_RECORD';
       if(path.batchIds.length===0&&hasExecutable&&path.status==='READY')path.status='CONTROLLER_ONLY';
       if(path.batchIds.length===0&&!hasExecutable){
-        path.status='BLOCKED_MISSING_QUANTITATIVE_DATA';
-        path.blockReason='SITE_REFERENCE_HAS_NO_QUANTITATIVE_MINE_RECORD';
+        path.status='BLOCKED';
+        path.blockReason=controllerBlockReason;
+      }else if(path.batchIds.length===0&&!controllerPolicyEligible){
+        path.status='BLOCKED';
+        path.blockReason=controllerBlockReason;
       }
-      if(path.stages.length===0)path.stages.push({stage:'SITE_CONTROLLER_SCAN',turn:turn(),status:hasExecutable?'EXECUTABLE':'BLOCKED_MISSING_QUANTITATIVE_DATA'});
+      if(path.stages.length===0)path.stages.push({stage:'SITE_CONTROLLER_SCAN',turn:turn(),
+        status:hasExecutable&&controllerPolicyEligible?'EXECUTABLE':'BLOCKED',reason:hasExecutable&&controllerPolicyEligible?null:controllerBlockReason,
+        executionPolicyState:controllerPolicy.state||'BLOCKED'});
       path.lastTurn=turn();
       minePaths[siteKey]=path;
       if(!hasExecutable){
         mineOutputs[siteKey]={
           siteReferenceKey:siteKey,siteName:controller.siteName,countryId:c,simulationTurn:turn(),
-          producedQuantity:0,status:'BLOCKED_MISSING_QUANTITATIVE_DATA',
-          blockReason:'SITE_REFERENCE_HAS_NO_QUANTITATIVE_MINE_RECORD',
+          producedQuantity:0,status:'BLOCKED',
+          blockReason:controllerBlockReason,
+          executionPolicyState:controllerPolicy.state||'BLOCKED',
+          operationalStatus:controller.operationalStatus||null,
           pathId
         };
       }
@@ -1473,20 +1489,28 @@ function batchFromExtraction(x,record){
         mineOutputs[x.occurrenceKey]={occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,resourceId:x.resourceId,simulationTurn:turn(),producedQuantity:0,status:'BLOCKED',blockReason:reason.reason,residualQuantity:n(reserve.residualQuantity)||0};
         markPathBlocked(reason.reason,{residualQuantity:n(reserve.residualQuantity)||0});continue;
       }
-      const operationalStatus=String(reserve.operationalStatus||'').toUpperCase().replace(/[^A-Z0-9]+/g,'_');
-      const sourceStatus=String(x.rawDeposit?.status||'').toUpperCase().replace(/[^A-Z0-9]+/g,'_');
-      const isExplicitlyNonOperational=status=>(/(^|_)(INACTIVE|NOT_ACTIVE|HISTORICAL|HISTORICALLY|CARE_AND_MAINTENANCE|SUSPEND|SUSPENDED|BLOCKED|CLOSED|ABANDON|ABANDONED|DEPLETED|DEVELOPMENT|RESTARTING|CESSATION_OF_PRODUCTION|DISRUPTED|NOT_APPLICABLE|NO_CURRENT_CONCESSION|PERMIT_PROCESSING|RESOURCE_IDENTITY_UNVERIFIED|DISPUTED_OPERATION|RESTRICTED)(_|$)/.test(status));
-      const isOperationalStatus=status=>!isExplicitlyNonOperational(status)&&
-        /(^|_)(ACTIVE_EXTRACTION|ACTIVE_PRODUCING|ACTIVE|DEPLETING|RESERVE_DEPLETING|OPERATING|RUNNING|PRODUCING)(_|$)/.test(status);
-      // Negative operational evidence wins. In particular HISTORICAL_INACTIVE must not match
-      // a plain substring search for ACTIVE.
-      const operational=!isExplicitlyNonOperational(operationalStatus)&&!isExplicitlyNonOperational(sourceStatus)&&
-        (isOperationalStatus(operationalStatus)||isOperationalStatus(sourceStatus));
-      if(!operational){
-        const reason={occurrenceKey:x.occurrenceKey,resourceId:x.resourceId,reason:'MINE_NOT_OPERATIONAL',operationalStatus:operationalStatus||'UNKNOWN',sourceStatus:sourceStatus||null};
+      const rawOperation=x.rawDeposit?.operation||{},
+        rawSourceStatus=normalizeSiteLifecycleStatus(rawOperation.status||x.rawDeposit?.status||x.rawDeposit?.operationalStatus||'UNKNOWN'),
+        canonicalSite=x.siteReferenceKey?canonicalSiteCatalogMap?.[String(x.siteReferenceKey)]:null,
+        canonicalOperation=canonicalSite?.operation||{},
+        canonicalStatus=normalizeSiteLifecycleStatus(canonicalOperation.status||''),
+        operationalStatus=canonicalStatus&&canonicalStatus!=='ACTIVE_SITE_REFERENCE'?canonicalStatus:rawSourceStatus,
+        sourceStatus=rawSourceStatus,
+        executionPolicy=siteExecutionPolicyForRow(x),
+        productionMultiplier=Math.max(0,Math.min(1,Number(executionPolicy.productionMultiplier)||0)),
+        policyEligible=productionMultiplier>0&&
+          !['BLOCKED','NOT_APPLICABLE','NON_EXECUTABLE_ALIAS'].includes(String(executionPolicy.state||''));
+      if(!policyEligible){
+        const reason={occurrenceKey:x.occurrenceKey,resourceId:x.resourceId,
+          reason:executionPolicy.reason||'SITE_LIFECYCLE_STATUS_UNCLASSIFIED',operationalStatus:operationalStatus||'UNKNOWN',
+          sourceStatus:sourceStatus||null,executionPolicyState:executionPolicy.state||'BLOCKED'};
         blocked.push(reason);
-        mineOutputs[x.occurrenceKey]={occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,resourceId:x.resourceId,simulationTurn:turn(),producedQuantity:0,status:'BLOCKED',blockReason:reason.reason,operationalStatus:operationalStatus||'UNKNOWN',sourceStatus:sourceStatus||null,residualQuantity:n(reserve.residualQuantity)||0};
-        markPathBlocked(reason.reason,{operationalStatus:operationalStatus||'UNKNOWN',sourceStatus:sourceStatus||null});continue;
+        mineOutputs[x.occurrenceKey]={occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,siteReferenceKey:x.siteReferenceKey||null,
+          resourceId:x.resourceId,simulationTurn:turn(),producedQuantity:0,status:'BLOCKED',blockReason:reason.reason,
+          operationalStatus:operationalStatus||'UNKNOWN',sourceStatus:sourceStatus||null,
+          executionPolicyState:executionPolicy.state||'BLOCKED',productionMultiplier:0,residualQuantity:n(reserve.residualQuantity)||0};
+        markPathBlocked(reason.reason,{operationalStatus:operationalStatus||'UNKNOWN',sourceStatus:sourceStatus||null,
+          executionPolicyState:executionPolicy.state||'BLOCKED'});continue;
       }
       let capacity=x.isSimulationGenerated?x.capacity:null;try{if(!capacity)capacity=r.getCapacityForOccurrence(x.occurrenceKey);}catch(_){}
       if(!capacity){
@@ -1496,6 +1520,7 @@ function batchFromExtraction(x,record){
         markPathBlocked(reason.reason);continue;
       }
       let windowQuantity=0;try{windowQuantity=n(capacity.computeWindowCapacity(DAY_HOURS)?.windowCapacity)||0;}catch(_){windowQuantity=n(capacity.nominalRate)||0;}
+      windowQuantity*=productionMultiplier;
       const resourceKey=rid(x.resourceId),demandConstrained=Object.prototype.hasOwnProperty.call(demandTargetByResource,resourceKey)&&Number(demandTargetByResource[resourceKey])>0;
       if(demandConstrained){
         const aggregateCapacity=Math.max(totalWindowByResource[resourceKey]||0,0);
