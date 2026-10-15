@@ -1029,43 +1029,60 @@ window.CountryIOS = {
     // CHAPTER 06: DIPLOMACY
     // -------------------------------------------------------------------------
     renderChapter6_Diplomacy(countryKey, rel) {
+        const metric = (domains, paths) => this.formatCountryValue(countryKey, domains, paths);
+        const escapeRelationText = value => String(value == null ? '' : value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+        const state = window.Game && window.Game.state || window.gameState || {};
+        const observer = window.OmegaLiveOpsObservability;
+        const cid = observer && observer.resolveCountryId ? observer.resolveCountryId(countryKey) : String(countryKey || '').toUpperCase();
+        const foreign = state.foreign && (state.foreign[cid] || state.foreign[String(countryKey || '').toUpperCase()]) || {};
+        const diplomacy = state.diplomacy && (state.diplomacy[cid] || state.diplomacy[String(countryKey || '').toUpperCase()]) || {};
+        const relationCandidates = [
+            Array.isArray(rel) ? rel : null,
+            rel && (rel.relationships || rel.relations || rel.bilateralRelations || rel.relationshipLedger),
+            foreign.relationships, foreign.relations, foreign.bilateralRelations, foreign.relationshipLedger,
+            diplomacy.relationships, diplomacy.relations, diplomacy.bilateralRelations, diplomacy.relationshipLedger
+        ];
+        let relationSource = relationCandidates.find(value => Array.isArray(value)) || null;
+        if (!relationSource) {
+            const relationMap = relationCandidates.find(value => value && typeof value === 'object' && !Array.isArray(value));
+            if (relationMap) relationSource = Object.entries(relationMap).map(([peer, value]) =>
+                value && typeof value === 'object' ? Object.assign({ counterpartyCountryId: peer }, value) :
+                { counterpartyCountryId: peer, relationshipScore: value });
+        }
+        const relationRows = (Array.isArray(relationSource) ? relationSource : []).map(row => ({
+            peer: String(row && (row.counterpartyCountryId || row.targetCountryId || row.peerCountryId || row.countryId || row.countryCode || row.country) || ''),
+            score: row && (row.harmony ?? row.harmonyScore ?? row.relationshipScore ?? row.relationScore ?? row.score),
+            status: String(row && (row.treatyStatus || row.status || row.relationshipStatus || row.type) || 'STATUS NOT RECORDED')
+        })).filter(row => row.peer && row.peer.toUpperCase() !== String(cid || '').toUpperCase()).slice(0,12);
+        const relationshipGraphHtml = relationRows.length
+            ? '<div style="display:flex;flex-direction:column;gap:6px;">' + relationRows.map(row =>
+                '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px;border:1px solid rgba(148,163,184,.2);border-radius:6px;">' +
+                '<strong>' + escapeRelationText(row.peer) + '</strong><span>' + escapeRelationText(row.status) + '</span><strong>' +
+                (typeof row.score === 'number' && Number.isFinite(row.score) ? escapeRelationText(row.score) : 'SCORE NOT RECORDED') +
+                '</strong></div>').join('') + '</div>'
+            : '<p style="font-size:12px;line-height:1.5;color:#94a3b8;">No bilateral relationship records are available in the selected country state. No sample allies or relationship edges are drawn.</p>';
         return `
             <div style="display:flex; flex-direction:column; gap:20px;">
                 <div class="ios-grid-3">
                     <div class="ios-card">
                         <div class="ios-card-title">STRATEGIC ALLIES</div>
-                        <div class="ios-card-val" style="color:#22c55e;">28 Nations</div>
-                        <div class="ios-card-sub">Mutual Defense Treaties Active</div>
+                        <div class="ios-card-val" style="color:#22c55e;">${metric(['foreign','diplomacy'], ['strategicAllies.length','alliances.length','activeAlliances.length','treaties.activeAlliances.length'])} Recorded Allies</div>
+                        <div class="ios-card-sub">${metric(['foreign','diplomacy'], ['activeMutualDefenseTreaties.length','mutualDefenseTreaties.length','treaties.mutualDefenseActiveCount'])} Mutual Defense Treaties</div>
                     </div>
                     <div class="ios-card">
                         <div class="ios-card-title">DIPLOMATIC INFLUENCE</div>
-                        <div class="ios-card-val">94.2 Score</div>
-                        <div class="ios-card-sub">UN Security Council Member</div>
+                        <div class="ios-card-val">${metric(['foreign','diplomacy'], ['diplomaticInfluence','influenceScore','diplomaticPower','influence'])} Score</div>
+                        <div class="ios-card-sub">UNSC membership: ${metric(['foreign','diplomacy'], ['unSecurityCouncilMember','unscMember','securityCouncilMembership'])}</div>
                     </div>
                     <div class="ios-card">
                         <div class="ios-card-title">EMBASSY NETWORK</div>
-                        <div class="ios-card-val">175 Global Embassies</div>
+                        <div class="ios-card-val">${metric(['foreign','diplomacy'], ['embassies.length','embassyNetwork.length','embassyCount','globalEmbassyCount'])} Global Embassies</div>
                     </div>
                 </div>
 
                 <div class="ios-card">
-                    <div class="ios-card-title" style="color:#00e5ff;">WORLD RELATIONSHIP DYNAMIC GRAPH</div>
-                    <svg width="100%" height="100" viewBox="0 0 300 80">
-                        <circle cx="150" cy="40" r="18" fill="#00e5ff" stroke="#fff" stroke-width="2"/>
-                        <text x="150" y="44" text-anchor="middle" fill="#000" font-size="10" font-weight="bold">${countryKey.substring(0,3)}</text>
-
-                        <circle cx="60" cy="20" r="12" fill="#22c55e"/>
-                        <line x1="150" y1="40" x2="60" y2="20" stroke="#22c55e" stroke-width="2"/>
-
-                        <circle cx="240" cy="20" r="12" fill="#22c55e"/>
-                        <line x1="150" y1="40" x2="240" y2="20" stroke="#22c55e" stroke-width="2"/>
-
-                        <circle cx="60" cy="60" r="12" fill="#ef4444"/>
-                        <line x1="150" y1="40" x2="60" y2="60" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="3,3"/>
-
-                        <circle cx="240" cy="60" r="12" fill="#ffd700"/>
-                        <line x1="150" y1="40" x2="240" y2="60" stroke="#ffd700" stroke-width="1.5"/>
-                    </svg>
+                    <div class="ios-card-title" style="color:#00e5ff;">RECORDED BILATERAL RELATIONSHIPS</div>
+                    ${relationshipGraphHtml}
                 </div>
 
                 <!-- QUICK ACTIONS -->
@@ -2121,43 +2138,60 @@ window.addEventListener('RESOURCE_STATE_UPDATED', () => {
     // CHAPTER 06: DIPLOMACY
     // -------------------------------------------------------------------------
     renderChapter6_Diplomacy(countryKey, rel) {
+        const metric = (domains, paths) => this.formatCountryValue(countryKey, domains, paths);
+        const escapeRelationText = value => String(value == null ? '' : value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+        const state = window.Game && window.Game.state || window.gameState || {};
+        const observer = window.OmegaLiveOpsObservability;
+        const cid = observer && observer.resolveCountryId ? observer.resolveCountryId(countryKey) : String(countryKey || '').toUpperCase();
+        const foreign = state.foreign && (state.foreign[cid] || state.foreign[String(countryKey || '').toUpperCase()]) || {};
+        const diplomacy = state.diplomacy && (state.diplomacy[cid] || state.diplomacy[String(countryKey || '').toUpperCase()]) || {};
+        const relationCandidates = [
+            Array.isArray(rel) ? rel : null,
+            rel && (rel.relationships || rel.relations || rel.bilateralRelations || rel.relationshipLedger),
+            foreign.relationships, foreign.relations, foreign.bilateralRelations, foreign.relationshipLedger,
+            diplomacy.relationships, diplomacy.relations, diplomacy.bilateralRelations, diplomacy.relationshipLedger
+        ];
+        let relationSource = relationCandidates.find(value => Array.isArray(value)) || null;
+        if (!relationSource) {
+            const relationMap = relationCandidates.find(value => value && typeof value === 'object' && !Array.isArray(value));
+            if (relationMap) relationSource = Object.entries(relationMap).map(([peer, value]) =>
+                value && typeof value === 'object' ? Object.assign({ counterpartyCountryId: peer }, value) :
+                { counterpartyCountryId: peer, relationshipScore: value });
+        }
+        const relationRows = (Array.isArray(relationSource) ? relationSource : []).map(row => ({
+            peer: String(row && (row.counterpartyCountryId || row.targetCountryId || row.peerCountryId || row.countryId || row.countryCode || row.country) || ''),
+            score: row && (row.harmony ?? row.harmonyScore ?? row.relationshipScore ?? row.relationScore ?? row.score),
+            status: String(row && (row.treatyStatus || row.status || row.relationshipStatus || row.type) || 'STATUS NOT RECORDED')
+        })).filter(row => row.peer && row.peer.toUpperCase() !== String(cid || '').toUpperCase()).slice(0,12);
+        const relationshipGraphHtml = relationRows.length
+            ? '<div style="display:flex;flex-direction:column;gap:6px;">' + relationRows.map(row =>
+                '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px;border:1px solid rgba(148,163,184,.2);border-radius:6px;">' +
+                '<strong>' + escapeRelationText(row.peer) + '</strong><span>' + escapeRelationText(row.status) + '</span><strong>' +
+                (typeof row.score === 'number' && Number.isFinite(row.score) ? escapeRelationText(row.score) : 'SCORE NOT RECORDED') +
+                '</strong></div>').join('') + '</div>'
+            : '<p style="font-size:12px;line-height:1.5;color:#94a3b8;">No bilateral relationship records are available in the selected country state. No sample allies or relationship edges are drawn.</p>';
         return `
             <div style="display:flex; flex-direction:column; gap:20px;">
                 <div class="ios-grid-3">
                     <div class="ios-card">
                         <div class="ios-card-title">STRATEGIC ALLIES</div>
-                        <div class="ios-card-val" style="color:#22c55e;">28 Nations</div>
-                        <div class="ios-card-sub">Mutual Defense Treaties Active</div>
+                        <div class="ios-card-val" style="color:#22c55e;">${metric(['foreign','diplomacy'], ['strategicAllies.length','alliances.length','activeAlliances.length','treaties.activeAlliances.length'])} Recorded Allies</div>
+                        <div class="ios-card-sub">${metric(['foreign','diplomacy'], ['activeMutualDefenseTreaties.length','mutualDefenseTreaties.length','treaties.mutualDefenseActiveCount'])} Mutual Defense Treaties</div>
                     </div>
                     <div class="ios-card">
                         <div class="ios-card-title">DIPLOMATIC INFLUENCE</div>
-                        <div class="ios-card-val">94.2 Score</div>
-                        <div class="ios-card-sub">UN Security Council Member</div>
+                        <div class="ios-card-val">${metric(['foreign','diplomacy'], ['diplomaticInfluence','influenceScore','diplomaticPower','influence'])} Score</div>
+                        <div class="ios-card-sub">UNSC membership: ${metric(['foreign','diplomacy'], ['unSecurityCouncilMember','unscMember','securityCouncilMembership'])}</div>
                     </div>
                     <div class="ios-card">
                         <div class="ios-card-title">EMBASSY NETWORK</div>
-                        <div class="ios-card-val">175 Global Embassies</div>
+                        <div class="ios-card-val">${metric(['foreign','diplomacy'], ['embassies.length','embassyNetwork.length','embassyCount','globalEmbassyCount'])} Global Embassies</div>
                     </div>
                 </div>
 
                 <div class="ios-card">
-                    <div class="ios-card-title" style="color:#00e5ff;">WORLD RELATIONSHIP DYNAMIC GRAPH</div>
-                    <svg width="100%" height="100" viewBox="0 0 300 80">
-                        <circle cx="150" cy="40" r="18" fill="#00e5ff" stroke="#fff" stroke-width="2"/>
-                        <text x="150" y="44" text-anchor="middle" fill="#000" font-size="10" font-weight="bold">${countryKey.substring(0,3)}</text>
-
-                        <circle cx="60" cy="20" r="12" fill="#22c55e"/>
-                        <line x1="150" y1="40" x2="60" y2="20" stroke="#22c55e" stroke-width="2"/>
-
-                        <circle cx="240" cy="20" r="12" fill="#22c55e"/>
-                        <line x1="150" y1="40" x2="240" y2="20" stroke="#22c55e" stroke-width="2"/>
-
-                        <circle cx="60" cy="60" r="12" fill="#ef4444"/>
-                        <line x1="150" y1="40" x2="60" y2="60" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="3,3"/>
-
-                        <circle cx="240" cy="60" r="12" fill="#ffd700"/>
-                        <line x1="150" y1="40" x2="240" y2="60" stroke="#ffd700" stroke-width="1.5"/>
-                    </svg>
+                    <div class="ios-card-title" style="color:#00e5ff;">RECORDED BILATERAL RELATIONSHIPS</div>
+                    ${relationshipGraphHtml}
                 </div>
 
                 <!-- QUICK ACTIONS -->
