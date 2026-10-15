@@ -4,6 +4,12 @@ on:
   push:
     branches: [main, feature/milestone-b-resource-e2e]
     paths:
+      - 'server.js'
+      - 'omega_resource_ai_decision_service.js'
+      - 'test/omega_resource_ai_decision_service.test.mjs'
+      - 'omega_resource_command_center_ui_v1.js'
+      - 'omega_global_trade_system.js'
+      - 'test/omega_global_trade_system.test.mjs'
       - 'omega_resource_strategic_policy_runtime_v1.js'
       - 'resource_strategic_policy_rules_v1.json'
       - 'omega_simulation_runtime.js'
@@ -52,6 +58,12 @@ on:
       - 'test/omega_live_operations_observability_v1.test.mjs'
   pull_request:
     paths:
+      - 'server.js'
+      - 'omega_resource_ai_decision_service.js'
+      - 'test/omega_resource_ai_decision_service.test.mjs'
+      - 'omega_resource_command_center_ui_v1.js'
+      - 'omega_global_trade_system.js'
+      - 'test/omega_global_trade_system.test.mjs'
       - 'omega_resource_strategic_policy_runtime_v1.js'
       - 'resource_strategic_policy_rules_v1.json'
       - 'omega_simulation_runtime.js'
@@ -96,6 +108,8 @@ jobs:
           node-version: 22
       - name: Repository syntax and source-integrity checks
         run: npm run lint
+      - name: Server AI resource decision contract
+        run: npm run test:resource-ai-decision
       - name: Live operations UI data-binding regression
         run: npm run test:liveops
       - name: Milestone A complete registry audit
