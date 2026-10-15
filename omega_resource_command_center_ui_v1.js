@@ -69,17 +69,49 @@
       (g.OmegaCabinetUI && g.OmegaCabinetUI.activeCountry) ||
       (g.Game && g.Game.currentActiveCountry) || state().playerCountryId || 'BGD');
   }
-  function bucket(domain, country) {
-    const root = state()[domain];
-    const c = activeCountry(country);
-    if (!root || typeof root !== 'object') return {};
-    return root[c] || root[c.toLowerCase()] || root[String(country || '').trim().toUpperCase()] || {};
+  function identityOfRow(row) {
+    if (!row || typeof row !== 'object') return 'VALUE:' + String(row);
+    for (const key of ['requestId','eventId','batchId','shipmentId','projectId','reservationId','siteId',
+      'canonicalSiteId','siteReferenceKey','mineId','occurrenceKey','commandId','correlationId','routeId','id']) {
+      if (row[key] !== undefined && row[key] !== null && row[key] !== '') return key + ':' + String(row[key]);
+    }
+    try { return 'JSON:' + JSON.stringify(row); } catch (_) { return 'OBJECT:' + String(row); }
   }
+  function mergeDataValues(base, incoming) {
+    if (incoming === undefined || incoming === null || incoming === '') return base;
+    if (Array.isArray(base) && Array.isArray(incoming)) {
+      const out = [], index = new Map();
+      const add = row => {
+        const key = identityOfRow(row);
+        if (index.has(key)) out[index.get(key)] = mergeDataValues(out[index.get(key)], row);
+        else { index.set(key, out.length); out.push(row); }
+      };
+      base.forEach(add); incoming.forEach(add); return out;
+    }
+    if (base && incoming && typeof base === 'object' && typeof incoming === 'object' &&
+        !Array.isArray(base) && !Array.isArray(incoming)) {
+      const out = Object.assign({}, base);
+      Object.keys(incoming).forEach(key => {
+        if (key === '__proto__' || key === 'constructor') return;
+        out[key] = Object.prototype.hasOwnProperty.call(out,key) ? mergeDataValues(out[key],incoming[key]) : incoming[key];
+      });
+      return out;
+    }
+    return incoming;
+  }
+  function countryBucket(domain, country) {
+    const group = state()[domain], canonical = activeCountry(country);
+    if (!group || typeof group !== 'object' || Array.isArray(group)) return {};
+    const keys = Object.keys(group).filter(key =>
+      key && !['SCHEMAVERSION','VERSION','METADATA','DEFAULTS','GLOBAL','SHARED'].includes(String(key).trim().toUpperCase()) &&
+      normaliseCountry(key) === canonical && group[key] && typeof group[key] === 'object' && !Array.isArray(group[key]));
+    // Keep old display-name buckets as fallback data, while canonical-key values win conflicts.
+    keys.sort((a,b) => Number(String(a).trim().toUpperCase() === canonical) - Number(String(b).trim().toUpperCase() === canonical));
+    return keys.reduce((out,key) => mergeDataValues(out,group[key]),{});
+  }
+  function bucket(domain, country) { return countryBucket(domain,country); }
   function resourceBucket(country) {
-    const s = state();
-    const c = activeCountry(country);
-    return (s.resource && (s.resource[c] || s.resource[String(country || '').toUpperCase()])) ||
-      (s.resources && (s.resources[c] || s.resources[String(country || '').toUpperCase()])) || {};
+    return mergeDataValues(countryBucket('resources',country),countryBucket('resource',country));
   }
   function engineSummary(country) {
     try {
@@ -268,67 +300,119 @@
       }).join('');
   }
   function panelReserves(country) {
-    const rows = resources(country);
-    const r = resourceBucket(country);
-    const endowment = r.endowment || {};
-    const reserves = r.reserves || {};
-    const inventory = r.inventory || {};
-    const body = rows.map(function (row) {
-      const rid = row.id;
-      const ev = Object.prototype.hasOwnProperty.call(endowment, rid) ? endowment[rid] : null;
-      const rv = Object.prototype.hasOwnProperty.call(reserves, rid) ? reserves[rid] : row.reserve;
-      const iv = Object.prototype.hasOwnProperty.call(inventory, rid) ? inventory[rid] : row.inventory;
-      return card(row.name || rid, rid,
-        '<div class="omega-rescc-grid2">' + kv('Endowment', ev) + kv('Reserve balance', rv) +
-        kv('Available inventory', iv) + kv('Reserve authority', row.reserveAuthority || 'NOT_RECORDED') +
-        kv('Unit', row.unit) + kv('Grade / purity', row.grade ?? row.purity) + '</div>',
-        actionButton('reserve', 'Request SPR transfer', { 'resource-id': rid }));
+    const rows=resources(country),r=resourceBucket(country),endowment=r.endowment||{},reserves=r.reserves||{},inventory=r.inventory||{};
+    const body=rows.map(row=>{
+      const rid=row.id,ev=Object.prototype.hasOwnProperty.call(endowment,rid)?endowment[rid]:null,rv=Object.prototype.hasOwnProperty.call(reserves,rid)?reserves[rid]:row.reserve,iv=Object.prototype.hasOwnProperty.call(inventory,rid)?inventory[rid]:row.inventory;
+      return card(row.name||rid,rid,'<div class="omega-rescc-grid2">'+kv('Runtime endowment',ev)+kv('Runtime reserve balance',rv)+kv('Runtime available inventory',iv)+kv('Runtime reserve authority',row.reserveAuthority||'NOT_RECORDED')+kv('Unit',row.unit)+kv('Observed grade / purity',row.grade??row.purity)+'</div>',actionButton('reserve','Request SPR transfer',{'resource-id':rid}));
     }).join('');
-    return '<p class="omega-rescc-note">This ledger shows runtime values as stored. A missing reserve is not zero; SIMULATED values are identified as such.</p>' +
-      body + (body ? '' : empty('No reserve records are available.'));
+    const profileRows=siteRows(country).map(site=>{
+      const src=site.sourceSiteRecord&&typeof site.sourceSiteRecord==='object'?site.sourceSiteRecord:{},q=site.quantitative||src.quantitative||(site.real&&site.real.quantitative)||{},sim=site.simulation||src.simulation||{},valueObject=q.reserve||q.recoverableReserve||sim.reserve||sim.recoverableReserve||site.reserve;
+      const value=valueObject&&typeof valueObject==='object'?(valueObject.quantity??valueObject.value??valueObject.amount??valueObject.reserves??null):(valueObject??site.reserveQuantity??site.simulationReserveQuantity??null);
+      if(value===null||value===undefined||value==='')return null;
+      const unit=valueObject&&typeof valueObject==='object'?(valueObject.unit||valueObject.quantityUnit):null,authority=(q.quantitativeProvenance&&(q.quantitativeProvenance.reserveAuthority||q.quantitativeProvenance.quantityAuthority))||(valueObject&&typeof valueObject==='object'&&(valueObject.authority||valueObject.dataAuthority))||site.sourceAuthority||src.sourceAuthority||src.dataAuthority||'SOURCE_STATUS_NOT_RECORDED';
+      return{site,value,unit:unit||site.unit||'',authority};
+    }).filter(Boolean);
+    const profileCards=profileRows.slice(0,150).map(row=>card(row.site.siteName||row.site.name||row.site.siteId,'FILE-BACKED SITE PROFILE',
+      '<div class="omega-rescc-grid2">'+kv('Site ID',row.site.siteId)+kv('Commodity',row.site.resourceId||row.site.real&&row.site.real.resourceId||row.site.identity&&row.site.identity.resourceTypeId)+kv('Profile reserve',row.value,row.unit?' '+row.unit:'')+kv('Authority / provenance',row.authority)+'</div>','')).join('');
+    return '<p class="omega-rescc-note">Runtime balances are read from shared country state. File-backed reserve facts below are reference profiles, not live inventory.</p>'+
+      (body||empty('No live commodity reserve state is recorded.'))+'<h3 class="omega-rescc-section-title">Site reserve facts from existing data files</h3>'+
+      (profileCards||empty('No quantified reserve field is recorded in this country site profile.'))+
+      (profileRows.length>150?'<p class="omega-rescc-note">Showing 150 of '+profileRows.length+' reserve profiles.</p>':'');
   }
   function panelDeposits(country) {
-    const rows = deposits();
-    if (!rows.length) return empty('Deposit registry is unavailable.');
-    return '<p class="omega-rescc-note">Global deposit registry: ' + rows.length +
-      ' records found. Country-specific counts and coordinate fields come from the registry, not a hard-coded concession count.</p>' +
-      rows.map(function (d) {
-        const lat = Number(d.lat), lng = Number(d.lng ?? d.lon);
-        const validCoords = Number.isFinite(lat) && Number.isFinite(lng);
-        const rid = d.resourceId || d.resId || d.resourceTypeId || d.resource || '';
-        const body = '<div class="omega-rescc-grid2">' + kv('Country', d.country || d.countryCode || d.countryId) +
-          kv('Resource', rid || d.name) + kv('Latitude', validCoords ? lat.toFixed(5) : null) +
-          kv('Longitude', validCoords ? lng.toFixed(5) : null) + kv('Reserves', d.reserves) +
-          kv('Grade', d.grade ?? d.purity) + kv('Operator', d.operator || d.owner) + '</div>';
-        return card(d.name || d.depositName || d.siteId || 'Unnamed deposit', d.status || 'STATUS NOT RECORDED', body,
-          (validCoords ? actionButton('fly-deposit', 'Fly to coordinates', { lat: lat, lng: lng, 'deposit-name': d.name || d.depositName || 'Deposit' }) : '') +
-          (rid ? actionButton('survey', 'Request resource survey', { 'resource-id': rid }) : ''));
-      }).join('');
+    const all=deposits(),selected=activeCountry(country);
+    const rows=selected==='WORLD'?all:all.filter(d=>{
+      const cid=d&&(d.countryCode||d.countryId||d.country||d.countryName||d.sovereignCountryId);
+      return cid&&normaliseCountry(cid)===selected;
+    });
+    if(!rows.length)return empty('No deposits matched '+selected+' in the loaded JSON registry.')+'<p class="omega-rescc-note">'+esc(sourceDataStatus(country))+'</p>';
+    const visible=rows.slice(0,250);
+    return '<p class="omega-rescc-note">Country-scoped JSON deposit registry: '+rows.length+' records matched '+esc(selected)+'. Showing '+visible.length+'; missing fields stay unavailable.</p>'+
+      visible.map(d=>{
+        const lat=Number(d.lat??d.latitude??(d.coordinates&&d.coordinates.lat)),lng=Number(d.lng??d.lon??d.longitude??(d.coordinates&&(d.coordinates.lng??d.coordinates.lon)));
+        const valid=Number.isFinite(lat)&&Number.isFinite(lng)&&lat>=-90&&lat<=90&&lng>=-180&&lng<=180,rid=d.resourceId||d.resId||d.resourceTypeId||d.resource||'';
+        const body='<div class="omega-rescc-grid2">'+kv('Country',d.country||d.countryCode||d.countryId)+kv('Resource',rid||d.name)+kv('Latitude',valid?lat.toFixed(5):null)+kv('Longitude',valid?lng.toFixed(5):null)+kv('Reserves',d.reserves??d.reserve)+kv('Grade',d.grade??d.purity)+kv('Operator',d.operator||d.owner)+'</div>';
+        return card(d.name||d.depositName||d.siteName||d.siteId||'Unnamed deposit',d.status||'STATUS NOT RECORDED',body,
+          (valid?actionButton('fly-deposit','Fly to coordinates',{lat,lng,'deposit-name':d.name||d.depositName||'Deposit'}):'')+(rid?actionButton('survey','Request resource survey',{'resource-id':rid}):''));
+      }).join('')+(rows.length>visible.length?'<p class="omega-rescc-note">Showing the first '+visible.length+' of '+rows.length+' matched records.</p>':'');
   }
   function siteRows(country) {
-    const out = [];
-    const r = resourceBucket(country);
-    const candidates = [];
-    if (Array.isArray(r.mineSiteReferences)) candidates.push.apply(candidates, r.mineSiteReferences);
-    if (Array.isArray(r.mines)) candidates.push.apply(candidates, r.mines);
-    try {
-      const e = g.Omega && g.Omega.ResourceEndowmentRuntime;
-      const refs = e && e.countryMineSiteReferences && e.countryMineSiteReferences(country);
-      if (Array.isArray(refs)) candidates.push.apply(candidates, refs);
-      const mines = e && e.countryMines && e.countryMines(country);
-      if (Array.isArray(mines)) candidates.push.apply(candidates, mines);
-    } catch (_) {}
-    const seen = new Set();
-    candidates.forEach(function (site) {
-      if (!site || typeof site !== 'object') return;
-      const id = site.siteId || site.canonicalSiteId || site.occurrenceKey || site.id;
-      if (!id || seen.has(String(id))) return;
-      const sc = site.countryId || site.countryCode || site.country;
-      if (sc && normaliseCountry(sc) !== activeCountry(country)) return;
-      seen.add(String(id));
-      out.push(Object.assign({}, site, { siteId: String(id) }));
+    const selected=activeCountry(country),r=resourceBucket(country),candidates=[];
+    const append=(rows,countryHint)=>{
+      if(!Array.isArray(rows))return;
+      rows.forEach(site=>{
+        if(!site||typeof site!=='object')return;
+        const source=site.sourceSiteRecord&&typeof site.sourceSiteRecord==='object'?site.sourceSiteRecord:{};
+        const identity=site.identity&&typeof site.identity==='object'?site.identity:{};
+        const ownCountry=site.countryId||site.countryCode||site.country||identity.countryIso3||identity.countryId||source.countryId||source.countryCode||countryHint;
+        if(!ownCountry)return;
+        candidates.push(Object.assign({},site,{countryId:normaliseCountry(ownCountry)}));
+      });
+    };
+    // Source profile and the canonical site binding are primary identity sources.
+    try{
+      const e=engine(),profile=e&&typeof e.getCountryResourceProfile==='function'?e.getCountryResourceProfile(country):null;
+      const ctx=profile&&(profile.resource_infrastructure_context||profile.infrastructure_context)||{};
+      append(ctx.mineSites||ctx.resourceSites||(profile&&profile.mineSites),selected);
+    }catch(_){}
+    try{
+      const binding=g.Omega&&g.Omega.IndividualResourceSiteBinding||g.OmegaIndividualResourceSiteBinding;
+      append(binding&&binding.sites,null);
+    }catch(_){}
+    try{
+      const master=g.OmegaResourceSiteMasterResearchData||(g.Omega&&g.Omega.ResourceSiteMasterResearchData);
+      append(master&&master.sites,null);
+    }catch(_){}
+    // Existing runtime records overlay the file-backed profile rows.
+    append(r.mineSiteReferences,selected);
+    append(r.mines,selected);
+    try{
+      const runtime=g.Omega&&g.Omega.ResourceEndowmentRuntime;
+      append(runtime&&runtime.countryMineSiteReferences&&runtime.countryMineSiteReferences(country),selected);
+      append(runtime&&runtime.countryMines&&runtime.countryMines(country),selected);
+    }catch(_){}
+    const unique=new Map();
+    candidates.forEach(site=>{
+      const src=site&&site.sourceSiteRecord&&typeof site.sourceSiteRecord==='object'?site.sourceSiteRecord:{};
+      const ident=site&&site.identity&&typeof site.identity==='object'?site.identity:{};
+      const cid=site&&(site.countryId||site.countryCode||site.country||ident.countryIso3||ident.countryId||src.countryId||src.countryCode);
+      if(!site||typeof site!=='object'||!cid||normaliseCountry(cid)!==selected)return;
+      const id=site.siteId||site.canonicalSiteId||site.siteReferenceKey||site.occurrenceKey||site.id||src.siteId||src.id;
+      if(!id)return;
+      const key=selected+'|'+String(id),row=Object.assign({},site,{siteId:String(id),countryId:selected});
+      unique.set(key,unique.has(key)?mergeDataValues(unique.get(key),row):row);
     });
-    return out;
+    return [...unique.values()].sort((a,b)=>String(a.siteName||a.name||a.depositName||a.siteId).localeCompare(String(b.siteName||b.name||b.depositName||b.siteId)));
+  }
+  function siteRouteRows(country){
+    return siteRows(country).flatMap(site=>{
+      const src=site.sourceSiteRecord&&typeof site.sourceSiteRecord==='object'?site.sourceSiteRecord:{};
+      const sim=site.simulation||src.simulation||{},log=site.logistics||src.logistics||{};
+      const value=sim.transportRoute||sim.transportRoutes||site.transportRoute||log.routes||site.routes||src.transportRoute||src.routes||[];
+      return(Array.isArray(value)?value:(value?[value]:[])).map((route,index)=>({
+        siteId:site.siteId,siteName:site.siteName||site.name||site.depositName||site.siteId,
+        routeId:route&&(route.routeId||route.id)||'',
+        routeName:route&&(route.routeName||route.name||route.routeId||route.id)||('Route '+(index+1)),
+        mode:route&&(route.mode||route.transportMode||route.routeType)||'',
+        from:route&&(route.from||route.source||route.origin||route.fromNode||route.sourceNode)||'',
+        to:route&&(route.to||route.target||route.destination||route.toNode||route.destinationNode)||'',
+        distanceKm:route&&route.distanceKm!==undefined?route.distanceKm:(route&&route.distance!==undefined?route.distance:null),
+        authority:route&&(route.authority||route.sourceAuthority)||site.sourceAuthority||src.sourceAuthority||'SOURCE_PROFILE',
+        profileOnly:true,route
+      }));
+    });
+  }
+  function sourceDataStatus(country){
+    const e=engine();let report={};try{report=e&&(e.getDataLoadReport?e.getDataLoadReport():e.dataLoadReport)||{};}catch(_){}
+    const profile=e&&typeof e.getCountryResourceProfile==='function'?e.getCountryResourceProfile(country):null;
+    const ctx=profile&&(profile.resource_infrastructure_context||profile.infrastructure_context)||{};
+    const datasets=Object.entries(report.datasets||{}).map(([name,row])=>name+': '+String(row&&row.status||'NOT_RECORDED')).join(' · ');
+    return 'JSON source '+String(report.status||(e&&e.isReady?'READY':'NOT_READY'))+
+      ' · commodities '+String(report.resourceTypeCount??(e&&Array.isArray(e.resourceTypes)?e.resourceTypes.length:0))+
+      ' · deposits '+String(report.depositCount??(e&&Array.isArray(e.deposits)?e.deposits.length:0))+
+      ' · country profiles '+String(report.countryProfileCount??(e&&e.countryProfiles?Object.keys(e.countryProfiles).length:0))+
+      ' · selected-country site profiles '+String(siteRows(country).length||((ctx.mineSites||[]).length||0))+
+      (datasets?' · '+datasets:'');
   }
   function panelExtraction(country) {
     const r = resourceBucket(country);
@@ -340,13 +424,13 @@
     const siteCards = sites.map(function (s) {
       const rid = s.resourceId || s.resId || s.real && s.real.resourceId || s.sourceSiteRecord && s.sourceSiteRecord.resourceId || '';
       const body = '<div class="omega-rescc-grid2">' + kv('Site ID', s.siteId) + kv('Resource', rid || s.resourceName) +
-        kv('Reserve', s.reserveQuantity ?? s.remainingReserve ?? s.reserves) +
+        kv('Reserve', s.reserveQuantity ?? s.remainingReserve ?? s.reserves ?? (s.quantitative && s.quantitative.reserve && (s.quantitative.reserve.quantity ?? s.quantitative.reserve.value))) +
         kv('Production authority', s.productionAuthority || s.productionModel && s.productionModel.authority || 'NOT_RECORDED') +
         kv('Quality authority', s.qualityAuthority || s.qualityState && s.qualityState.qualityAuthority || 'NOT_RECORDED') + '</div>';
       return card(s.name || s.siteName || s.depositName || s.siteId, s.operationalStatus || s.status || 'STATUS NOT RECORDED', body,
         actionButton('extract-site', 'Run authoritative site pipeline', {
           'site-id': s.siteId, 'resource-id': rid, quantity: 1
-        }, !(g.Omega && g.Omega.ResourceIndustrialNetwork && g.Omega.ResourceIndustrialNetwork.executeSitePipeline && rid)) +
+        }, !(g.Omega && g.Omega.ResourceIndustrialNetwork && g.Omega.ResourceIndustrialNetwork.executeSitePipeline && rid && s.extractionExecutable !== false && !(s.runtime && s.runtime.extractionExecutable === false))) +
         (rid ? actionButton('survey', 'Request survey', { 'resource-id': rid }) : ''));
     }).join('');
     const rows = resources(country).map(function (x) {
@@ -355,53 +439,37 @@
         kv('Observed reserve', x.reserve) + kv('Production authority', x.productionAuthority || 'NOT_RECORDED') + '</div>',
         actionButton('survey', 'Request survey', { 'resource-id': x.id }));
     }).join('');
-    return '<div class="omega-rescc-metrics"><div><span>Canonical runnable site records</span><strong>' +
-      number(sites.length) + '</strong></div><div><span>Survey requests</span><strong>' + number(surveys.length) +
-      '</strong></div><div><span>Survey results</span><strong>' + number(results.length) + '</strong></div></div>' +
+    return '<div class="omega-rescc-metrics"><div><span>Country site profiles</span><strong>' +
+      number(sites.length) + '</strong></div><div><span>Runtime mine records</span><strong>' + number(Array.isArray(r.mines) ? r.mines.length : 0) +
+      '</strong></div><div><span>Survey requests</span><strong>' + number(surveys.length) + '</strong></div><div><span>Survey results</span><strong>' + number(results.length) + '</strong></div></div>' +
       (diag ? diagnosticCard('Extraction runtime diagnostics', diag) : '') +
       '<h3 class="omega-rescc-section-title">Canonical site registry</h3>' +
-      (siteCards || empty('No country-scoped runnable canonical site IDs were returned. Deposit records alone are not treated as executable mine sites.')) +
+      (siteCards || empty('No country-scoped site profile matched the existing canonical registry or loaded JSON profile. ' + sourceDataStatus(country))) +
       '<h3 class="omega-rescc-section-title">Resource survey requests</h3>' + statusRows(surveys) +
       '<h3 class="omega-rescc-section-title">Completed survey evidence</h3>' + statusRows(results) +
       '<h3 class="omega-rescc-section-title">Commodity survey shortcuts</h3>' + (rows || empty('No commodity rows are available.'));
   }
   function panelProcessing(country) {
-    const assets = allFactories(country);
-    const requests = bucket('economy', country).capacityUpgradeRequests || resourceBucket(country).capacityUpgradeRequests || [];
-    const content = assets.map(function (asset) {
-      const id = asset.id || asset.assetId || asset.factoryId || asset.projectId;
-      const resourcesForAsset = Object.keys(asset.inputCoefficients || {}).concat(Object.keys(asset.outputProfile || []));
-      const rid = asset.resourceId || asset.inputResourceId || resourcesForAsset[0] ||
-        (resources(country)[0] && resources(country)[0].id) || '';
-      const body = '<div class="omega-rescc-grid2">' + kv('Factory ID', id) +
-        kv('Stage', asset.stage || asset.facilityType || asset.factoryType) + kv('Capacity', asset.capacity) +
-        kv('Input stock', asset.inputInventory && asset.inputInventory[rid]) +
-        kv('Inputs', esc(Object.keys(asset.inputCoefficients || {}).join(', ') || 'Not recorded')) +
-        kv('Outputs', esc(Object.keys(asset.outputProfile || {}).join(', ') || 'Not recorded')) + '</div>';
-      return card(asset.name || asset.factoryName || id, asset.status || asset.stage || 'STATUS NOT RECORDED', body,
-        actionButton('process-factory', 'Run one real factory cycle', { 'factory-id': id, 'resource-id': rid, quantity: asset.capacity || 1 },
-          !(g.Omega && g.Omega.ResourceIndustrialNetwork && g.Omega.ResourceIndustrialNetwork.executeFactoryCycle && id && rid)) +
-        (rid ? actionButton('expansion', 'Request capacity expansion', { 'resource-id': rid }) : ''));
+    const assets=allFactories(country),requests=bucket('economy',country).capacityUpgradeRequests||resourceBucket(country).capacityUpgradeRequests||[];
+    const liveCards=assets.map(asset=>{
+      const id=asset.id||asset.assetId||asset.factoryId||asset.projectId,inputs=Object.keys(asset.inputCoefficients||{}),outputs=Object.keys(asset.outputProfile||{}),rid=asset.resourceId||asset.inputResourceId||inputs[0]||(resources(country)[0]&&resources(country)[0].id)||'';
+      const body='<div class="omega-rescc-grid2">'+kv('Factory ID',id)+kv('Stage',asset.stage||asset.facilityType||asset.factoryType)+kv('Capacity',asset.capacity)+kv('Input stock',asset.inputInventory&&asset.inputInventory[rid])+kv('Inputs',inputs.join(', ')||'Not recorded')+kv('Outputs',outputs.join(', ')||'Not recorded')+'</div>';
+      return card(asset.name||asset.factoryName||id,asset.status||asset.stage||'STATUS NOT RECORDED',body,actionButton('process-factory','Run one real factory cycle',{'factory-id':id,'resource-id':rid,quantity:asset.capacity||1},!(g.Omega&&g.Omega.ResourceIndustrialNetwork&&g.Omega.ResourceIndustrialNetwork.executeFactoryCycle&&id&&rid))+(rid?actionButton('expansion','Request capacity expansion',{'resource-id':rid}):''));
     }).join('');
-    const resourceIndustrial = resourceBucket(country).industrialNetwork || {};
-    const projectRows = Array.isArray(resourceIndustrial.projects) ? resourceIndustrial.projects :
-      (Array.isArray(bucket('economy', country).projects) ? bucket('economy', country).projects :
-      (Array.isArray(bucket('economy', country).industrialProjects) ? bucket('economy', country).industrialProjects : []));
-    const resourceOptions = resources(country).map(function (r) {
-      return '<option value="' + esc(r.id) + '">' + esc(r.name || r.id) + '</option>';
-    }).join('');
-    const projectForm = '<form class="omega-rescc-form" data-search-item data-form="factory-project">' +
-      '<h3>Start a catalog-backed factory project</h3><div class="omega-rescc-formgrid">' +
-      '<label>Resource<select name="resourceId" required>' + resourceOptions + '</select></label>' +
-      '<label>Budget cost<input type="number" name="cost" min="1" step="1" required></label>' +
-      '<label>Capacity per day<input type="number" name="capacityPerDay" min="1" step="1" required></label>' +
-      '<label>Build days<input type="number" name="buildDays" min="1" step="1" value="180" required></label></div>' +
-      '<p class="omega-rescc-note">This API records a construction project; a treasury debit is not part of this project-creation call.</p>' +
-      '<button class="omega-rescc-button" type="submit">Create factory project</button></form>';
-    return '<h3 class="omega-rescc-section-title">Production and processing assets</h3>' +
-      (content || empty('No matching production assets are registered in the selected country.')) +
-      '<h3 class="omega-rescc-section-title">Capacity requests</h3>' + statusRows(requests) +
-      '<h3 class="omega-rescc-section-title">Industrial construction projects</h3>' + statusRows(projectRows) + projectForm;
+    const profiles=siteRows(country).map(site=>{
+      const src=site.sourceSiteRecord&&typeof site.sourceSiteRecord==='object'?site.sourceSiteRecord:{},p=site.processing||src.processing||site.processingProfile||{},sim=site.simulation||src.simulation||{};
+      const outputs=p.refinedOutputs||p.factoryOutputs||site.factoryOutputs||sim.factoryOutputs||sim.refinedOutputs||[],up=p.upstreamProcess||site.upstreamProcess||sim.upstreamProcess,mid=p.midstreamProcess||site.midstreamProcess||sim.midstreamProcess,down=p.downstreamSectors||site.downstreamSectors;
+      return([outputs,up,mid,down].some(v=>Array.isArray(v)?v.length>0:v!==null&&v!==undefined&&v!=='')?{site,outputs,up,mid,down}:null);
+    }).filter(Boolean);
+    const profileCards=profiles.slice(0,150).map(x=>card(x.site.siteName||x.site.name||x.site.siteId,'FILE-BACKED PROCESSING PROFILE',
+      '<div class="omega-rescc-grid2">'+kv('Site ID',x.site.siteId)+kv('Commodity',x.site.resourceId||x.site.real&&x.site.real.resourceId||x.site.identity&&x.site.identity.resourceTypeId)+kv('Upstream',x.up)+kv('Midstream',x.mid)+kv('Outputs',x.outputs)+kv('Downstream sectors',x.down)+'</div>','')).join('');
+    const industrial=resourceBucket(country).industrialNetwork||{},econ=bucket('economy',country),projects=Array.isArray(industrial.projects)?industrial.projects:(Array.isArray(econ.projects)?econ.projects:(Array.isArray(econ.industrialProjects)?econ.industrialProjects:[]));
+    const options=resources(country).map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name||x.id)+'</option>').join('');
+    const form='<form class="omega-rescc-form" data-search-item data-form="factory-project"><h3>Start a catalog-backed factory project</h3><div class="omega-rescc-formgrid"><label>Resource<select name="resourceId" required>'+options+'</select></label><label>Budget cost<input type="number" name="cost" min="1" step="1" required></label><label>Capacity per day<input type="number" name="capacityPerDay" min="1" step="1" required></label><label>Build days<input type="number" name="buildDays" min="1" step="1" value="180" required></label></div><p class="omega-rescc-note">Project creation does not itself debit treasury.</p><button class="omega-rescc-button" type="submit">Create factory project</button></form>';
+    return '<h3 class="omega-rescc-section-title">Live production and processing assets</h3>'+(liveCards||empty('No factory asset is recorded in this country runtime.'))+
+      '<h3 class="omega-rescc-section-title">Processing capabilities from existing site files</h3>'+(profileCards||empty('No per-site processing/output profile is recorded for this country.'))+
+      (profiles.length>150?'<p class="omega-rescc-note">Showing 150 of '+profiles.length+' site profiles.</p>':'')+
+      '<h3 class="omega-rescc-section-title">Capacity requests</h3>'+statusRows(requests)+'<h3 class="omega-rescc-section-title">Industrial construction projects</h3>'+statusRows(projects)+form;
   }
   function panelInventory(country) {
     const r = resourceBucket(country);
@@ -434,68 +502,46 @@
       (batchCards || empty('No resource batches are recorded.')) +
       '<h3 class="omega-rescc-section-title">SPR request history</h3>' + statusRows(requests);
   }
-  function panelLogistics(country) {
-    const r = resourceBucket(country);
-    const log = r.logistics || {};
-    const shipments = Array.isArray(log.shipments) ? log.shipments : [];
-    const batches = Array.isArray(r.batches) ? r.batches : [];
-    const factoryRows = allFactories(country);
-    const cards = batches.map(function (batch) {
-      const id = batch.batchId;
-      const rid = batch.resourceId || batch.materialIdentity || '';
-      const qty = batch.remainingQuantity ?? batch.quantity;
-      const warehouse = batch.warehouseId || r.warehouse && r.warehouse.warehouseId || '';
-      const candidates = matchingAssets(country, rid).filter(function (a) { return a.id || a.assetId || a.factoryId || a.projectId; });
-      const candIds = candidates.map(function (a) { return a.id || a.assetId || a.factoryId || a.projectId; });
-      return card(id || 'Unidentified batch', rid || 'Resource not recorded',
-        '<div class="omega-rescc-grid2">' + kv('Quantity', qty) + kv('Unit', batch.unit) +
-        kv('Warehouse', warehouse) + kv('Compatible factories', candIds.length) + '</div>',
-        actionButton('plan-shipment', 'Plan warehouse-to-factory route', {
-          'batch-id': id, 'resource-id': rid, quantity: qty, unit: batch.unit || '',
-          'warehouse-id': warehouse, 'factory-ids': candIds.join(',')
-        }, !(id && rid && warehouse && candIds.length && g.Omega && g.Omega.ResourceLogisticsRuntime && g.Omega.ResourceLogisticsRuntime.planFromFactoryInput)));
+  function panelLogistics(country){
+    const r=resourceBucket(country),log=r.logistics||{},shipments=Array.isArray(log.shipments)?log.shipments:[],batches=Array.isArray(r.batches)?r.batches:[],factories=allFactories(country);
+    const batchCards=batches.map(batch=>{
+      const id=batch.batchId,rid=batch.resourceId||batch.materialIdentity||'',qty=batch.remainingQuantity??batch.quantity,warehouse=batch.warehouseId||r.warehouse&&r.warehouse.warehouseId||'';
+      const compatible=matchingAssets(country,rid).filter(a=>a&&(a.id||a.assetId||a.factoryId||a.projectId)),ids=compatible.map(a=>a.id||a.assetId||a.factoryId||a.projectId);
+      return card(id||'Unidentified batch',rid||'Resource not recorded','<div class="omega-rescc-grid2">'+kv('Quantity',qty)+kv('Unit',batch.unit)+kv('Warehouse',warehouse)+kv('Compatible factories',ids.length)+'</div>',
+        actionButton('plan-shipment','Plan warehouse-to-factory route',{'batch-id':id,'resource-id':rid,quantity:qty,unit:batch.unit||'','warehouse-id':warehouse,'factory-ids':ids.join(',')},!(id&&rid&&warehouse&&ids.length&&g.Omega&&g.Omega.ResourceLogisticsRuntime&&g.Omega.ResourceLogisticsRuntime.planFromFactoryInput)));
     }).join('');
-    const shipmentsHtml = shipments.slice(-100).reverse().map(function (s) {
-      return card(s.shipmentId || s.routeId || 'Shipment', s.status || s.deliveryStatus || 'STATUS NOT RECORDED',
-        '<div class="omega-rescc-grid2">' + kv('Resource', s.resourceId) + kv('Quantity', s.quantity) +
-        kv('Factory', s.factoryId) + kv('Transport mode', s.transportMode) +
-        kv('ETA turn', s.timing && s.timing.etaTurn) + kv('Constraint source', s.sourceAuthority || 'NOT_RECORDED') + '</div>' +
-        (s.reason ? '<div class="omega-rescc-warning">' + esc(s.reason) + '</div>' : ''), '');
-    }).join('');
-    return '<div class="omega-rescc-metrics"><div><span>Recorded shipments</span><strong>' + number(shipments.length) +
-      '</strong></div><div><span>Factories in state</span><strong>' + number(factoryRows.length) +
-      '</strong></div><div><span>Last plan turn</span><strong>' + number(log.lastPlanTurn) + '</strong></div></div>' +
-      '<p class="omega-rescc-note">Routes are planned from an observed warehouse batch to a compatible factory. A planned route is not the same as delivered material; delivery is shown by shipment status and ETA turn.</p>' +
-      '<h3 class="omega-rescc-section-title">Available warehouse batches</h3>' +
-      (cards || empty('No batches with a compatible registered factory are available for route planning.')) +
-      '<h3 class="omega-rescc-section-title">Shipment state</h3>' +
-      (shipmentsHtml || empty('No shipments have been recorded.'));
+    const routes=siteRouteRows(country),routeCards=routes.slice(0,200).map(x=>card(x.routeName||x.routeId||'Saved route profile','PROFILE ONLY · NOT DISPATCHED',
+      '<div class="omega-rescc-grid2">'+kv('Route ID',x.routeId)+kv('Site',x.siteName)+kv('Site ID',x.siteId)+kv('Transport mode',x.mode)+kv('From',x.from)+kv('To',x.to)+kv('Distance (km)',x.distanceKm)+kv('Route authority',x.authority)+'</div>'+
+      '<p class="omega-rescc-note">A saved route definition is not a shipment or proof that material moved.</p>','')).join('');
+    const shipmentCards=shipments.slice(-100).reverse().map(s=>card(s.shipmentId||s.routeId||'Shipment',s.status||s.deliveryStatus||'STATUS NOT RECORDED',
+      '<div class="omega-rescc-grid2">'+kv('Resource',s.resourceId)+kv('Quantity',s.quantity)+kv('Factory',s.factoryId)+kv('Transport mode',s.transportMode)+kv('ETA turn',s.timing&&s.timing.etaTurn)+kv('Constraint source',s.sourceAuthority||'NOT_RECORDED')+'</div>'+(s.reason?'<div class="omega-rescc-warning">'+esc(s.reason)+'</div>':''),'')).join('');
+    return '<div class="omega-rescc-metrics"><div><span>Available raw batches</span><strong>'+number(batches.length)+'</strong></div><div><span>Factories in state</span><strong>'+number(factories.length)+'</strong></div><div><span>Saved site routes</span><strong>'+number(routes.length)+'</strong></div></div>'+
+      '<p class="omega-rescc-note">Saved route definitions and active shipment transactions are separate records.</p>'+
+      '<h3 class="omega-rescc-section-title">Available warehouse batches</h3>'+(batchCards||empty('No physical batch is recorded for shipment planning.'))+
+      '<h3 class="omega-rescc-section-title">Saved route profiles from existing data files</h3>'+(routeCards||empty('No saved route definition is recorded for this country.'))+
+      '<h3 class="omega-rescc-section-title">Actual shipment state</h3>'+(shipmentCards||empty('No shipments have been recorded.'));
   }
-  function panelIndustrial(country) {
+  function panelIndustrial(country){
     const network = g.Omega && g.Omega.ResourceIndustrialNetwork;
     const diag = network && network.diagnostics ? network.diagnostics(country) : null;
     const pipeline = network && network.gameplayPipelineDiagnostics ? network.gameplayPipelineDiagnostics() : null;
-    const perCountry = pipeline && Array.isArray(pipeline.perCountry) ?
-      pipeline.perCountry.find(function (x) { return normaliseCountry(x.countryId) === activeCountry(country); }) : null;
+    const perCountry = pipeline && Array.isArray(pipeline.perCountry)
+      ? pipeline.perCountry.find(x => normaliseCountry(x.countryId) === activeCountry(country)) : null;
     const r = resourceBucket(country);
     const econ = bucket('economy', country);
     const industrialState = r.industrialNetwork || {};
     const flows = Array.isArray(industrialState.siteFlowLedger) ? industrialState.siteFlowLedger :
       (Array.isArray(r.siteFlows) ? r.siteFlows : (Array.isArray(r.siteFlowLedger) ? r.siteFlowLedger : (Array.isArray(r.extractionFlows) ? r.extractionFlows : [])));
-    const projects = Array.isArray(industrialState.projects) ? industrialState.projects :
-      (Array.isArray(econ.projects) ? econ.projects : []);
-    const technologyContracts = Array.isArray(industrialState.technologyContracts) ? industrialState.technologyContracts : [];
-    const stages = perCountry && perCountry.stages || {};
+    const projects = Array.isArray(industrialState.projects) ? industrialState.projects : (Array.isArray(econ.projects) ? econ.projects : []);
+    const contracts = Array.isArray(industrialState.technologyContracts) ? industrialState.technologyContracts : [];
+    const stages = perCountry && perCountry.stages || {}, sites = siteRows(country);
     return (diag ? diagnosticCard('Country industrial network diagnostics', diag) : empty('Industrial network runtime is unavailable.')) +
       (perCountry ? diagnosticCard('End-to-end site pipeline state', perCountry) : '') +
-      '<div class="omega-rescc-metrics"><div><span>Extraction flows</span><strong>' + number(perCountry && perCountry.extractionFlows) +
-      '</strong></div><div><span>Dispatched shipments</span><strong>' + number(perCountry && perCountry.dispatched) +
-      '</strong></div><div><span>Processed flows</span><strong>' + number(perCountry && perCountry.processed) + '</strong></div></div>' +
-      '<h3 class="omega-rescc-section-title">Observed flow ledger</h3>' +
-      (Array.isArray(flows) ? statusRows(flows) : empty('No site flow ledger is exposed at this state path.')) +
-      '<h3 class="omega-rescc-section-title">Construction projects</h3>' + statusRows(projects) +
-      '<h3 class="omega-rescc-section-title">Technology project contracts</h3>' + statusRows(technologyContracts) +
-      (Object.keys(stages).length ? diagnosticCard('Pipeline stage counts', stages) : '');
+      '<div class="omega-rescc-metrics"><div><span>Country site profiles</span><strong>'+number(sites.length)+'</strong></div><div><span>Extraction flows</span><strong>'+number(perCountry&&perCountry.extractionFlows)+'</strong></div><div><span>Dispatched shipments</span><strong>'+number(perCountry&&perCountry.dispatched)+'</strong></div><div><span>Processed flows</span><strong>'+number(perCountry&&perCountry.processed)+'</strong></div></div>'+
+      '<h3 class="omega-rescc-section-title">Observed flow ledger</h3>'+(flows.length?statusRows(flows):empty('No site execution or flow records are present in this country runtime.'))+
+      '<h3 class="omega-rescc-section-title">Construction projects</h3>'+statusRows(projects)+
+      '<h3 class="omega-rescc-section-title">Technology project contracts</h3>'+statusRows(contracts)+
+      (Object.keys(stages).length?diagnosticCard('Pipeline stage counts',stages):'');
   }
   function panelMarket(country) {
     const market = g.OmegaGlobalMarket || g.Omega && g.Omega.GlobalMarket;
@@ -624,33 +670,20 @@
       kv('Profile record', profile && profile.identity && (profile.identity.name || profile.identity.officialName)) + '</div>' +
       '<p class="omega-rescc-note">A runtime object alone does not prove that a 12-question evaluation endpoint exists. This panel does not report an AI run unless a supported result is returned.</p>', '') + form;
   }
-  function panelPower(country) {
-    const network = g.Omega && g.Omega.ResourceIndustrialNetwork;
-    const r = resourceBucket(country);
-    const energyRows = resources(country).filter(function (x) {
-      return /oil|gas|uranium|coal|power|energy|hydrogen/i.test(String(x.id) + ' ' + String(x.name));
-    });
-    const projects = Array.isArray(r.industrialNetwork && r.industrialNetwork.projects) ? r.industrialNetwork.projects :
-      (Array.isArray(bucket('economy', country).projects) ? bucket('economy', country).projects : []);
-    const technologyContracts = Array.isArray(r.industrialNetwork && r.industrialNetwork.technologyContracts) ? r.industrialNetwork.technologyContracts : [];
-    const researchProjects = Array.isArray(r.technologyResearchProjects) ? r.technologyResearchProjects : [];
-    const controls = '<div class="omega-rescc-actions">' +
-      actionButton('industry-tech', 'Start advanced gas-compression research', { 'technology-id': 'ADVANCED_GAS_COMPRESSION', mode: 'RESEARCH' },
-        !(network && network.startTechnologyProject)) +
-      actionButton('industry-tech', 'Start enhanced oil-recovery research', { 'technology-id': 'ENHANCED_OIL_RECOVERY', mode: 'RESEARCH' },
-        !(network && network.startTechnologyProject)) + '</div>';
-    return '<div class="omega-rescc-warning">The installed industrial catalog does not define a nuclear reactor or electric-grid construction type. This console does not claim to build 2.4 GW of nuclear capacity. The supported energy-technology projects below use the actual catalog API.</div>' +
-      '<h3 class="omega-rescc-section-title">Observed energy resource state</h3>' +
-      (energyRows.map(function (x) {
-        return card(x.name || x.id, x.id, '<div class="omega-rescc-grid2">' +
-          kv('Production/day', x.dailyProduction) + kv('Inventory', x.inventory) +
-          kv('Reserve', x.reserve) + kv('Unit', x.unit) + '</div>', '');
-      }).join('') || empty('No matching energy resource rows are recorded.')) +
-      controls + '<h3 class="omega-rescc-section-title">Energy and infrastructure project records</h3>' + statusRows(projects) +
-      '<h3 class="omega-rescc-section-title">Industrial technology contracts</h3>' + statusRows(technologyContracts) +
-      '<h3 class="omega-rescc-section-title">Resource research runtime projects</h3>' + statusRows(researchProjects) +
-      '<h3 class="omega-rescc-section-title">Current mine and power-related outputs</h3>' +
-      statusRows(Array.isArray(r.mineProductionLedger) ? r.mineProductionLedger : []);
+  function panelPower(country){
+    const network=g.Omega&&g.Omega.ResourceIndustrialNetwork,r=resourceBucket(country),energy=resources(country).filter(x=>/oil|gas|uranium|coal|power|energy|hydrogen/i.test(String(x.id)+' '+String(x.name)));
+    const sites=siteRows(country).filter(site=>/oil|gas|uranium|coal|power|energy|hydrogen/i.test(String(site.resourceId||site.real&&site.real.resourceId||site.identity&&site.identity.resourceTypeId||'')+' '+String(site.siteName||site.name||'')));
+    const profileCards=sites.slice(0,120).map(site=>{
+      const src=site.sourceSiteRecord&&typeof site.sourceSiteRecord==='object'?site.sourceSiteRecord:{},q=site.quantitative||src.quantitative||{},prod=q.production||{},reserve=q.reserve||site.simulation&&site.simulation.reserve||{},rv=reserve&&typeof reserve==='object'?(reserve.quantity??reserve.value??reserve.amount):reserve;
+      return card(site.siteName||site.name||site.siteId,'FILE-BACKED SITE PROFILE','<div class="omega-rescc-grid2">'+kv('Site ID',site.siteId)+kv('Commodity',site.resourceId||site.real&&site.real.resourceId||site.identity&&site.identity.resourceTypeId)+kv('Profile production rate',prod.rate??site.productionRate??site.dailyRate,prod.unit||site.unit?' '+(prod.unit||site.unit):'')+kv('Profile reserve',rv,reserve&&typeof reserve==='object'?reserve.unit||'':'')+kv('Source authority',site.sourceAuthority||src.sourceAuthority||src.dataAuthority||'NOT_RECORDED')+'</div><p class="omega-rescc-note">Profile data is not proof of current-turn production.</p>','');
+    }).join('');
+    const projects=Array.isArray(r.industrialNetwork&&r.industrialNetwork.projects)?r.industrialNetwork.projects:(Array.isArray(bucket('economy',country).projects)?bucket('economy',country).projects:[]),contracts=Array.isArray(r.industrialNetwork&&r.industrialNetwork.technologyContracts)?r.industrialNetwork.technologyContracts:[],research=Array.isArray(r.technologyResearchProjects)?r.technologyResearchProjects:[];
+    const controls='<div class="omega-rescc-actions">'+actionButton('industry-tech','Start advanced gas-compression research',{'technology-id':'ADVANCED_GAS_COMPRESSION',mode:'RESEARCH'},!(network&&network.startTechnologyProject))+actionButton('industry-tech','Start enhanced oil-recovery research',{'technology-id':'ENHANCED_OIL_RECOVERY',mode:'RESEARCH'},!(network&&network.startTechnologyProject))+'</div>';
+    return '<div class="omega-rescc-warning">The installed industrial catalog does not define a nuclear reactor or electric-grid construction type. This console does not claim to build 2.4 GW of nuclear capacity.</div><h3 class="omega-rescc-section-title">Live energy commodity state</h3>'+
+      (energy.map(x=>card(x.name||x.id,x.id,'<div class="omega-rescc-grid2">'+kv('Production/day',x.dailyProduction)+kv('Inventory',x.inventory)+kv('Reserve',x.reserve)+kv('Unit',x.unit)+'</div>','')).join('')||empty('No matching energy resource rows are recorded in live commodity state.'))+
+      '<h3 class="omega-rescc-section-title">Energy site profiles from existing data files</h3>'+(profileCards||empty('No energy-related site profile is recorded for this country.'))+(sites.length>120?'<p class="omega-rescc-note">Showing 120 of '+sites.length+' profiles.</p>':'')+controls+
+      '<h3 class="omega-rescc-section-title">Energy and infrastructure project records</h3>'+statusRows(projects)+'<h3 class="omega-rescc-section-title">Industrial technology contracts</h3>'+statusRows(contracts)+
+      '<h3 class="omega-rescc-section-title">Resource research runtime projects</h3>'+statusRows(research)+'<h3 class="omega-rescc-section-title">Current mine and power-related outputs</h3>'+statusRows(Array.isArray(r.mineProductionLedger)?r.mineProductionLedger:[]);
   }
   function panelEnvironment(country) {
     const network = g.Omega && g.Omega.ResourceIndustrialNetwork;
@@ -792,6 +825,44 @@
     const id = ALIASES[raw] || raw;
     return PANELS.some(function (p) { return p.id === id; }) ? id : 'matrix';
   }
+  let resourceDataWarmupAttempted = false, resourceDataWarmupPromise = null, resourceDataRefreshBound = false;
+  function visibleModal() { return g.document && g.document.getElementById('gsrsk-intelligence-modal'); }
+  function refreshVisiblePanel() {
+    const modal = visibleModal();
+    if (!modal || !modal.style || modal.style.display === 'none') return;
+    const old = modal.querySelector ? modal.querySelector('#omega-rescc-content') : null;
+    const scrollTop = old ? old.scrollTop : 0, scrollLeft = old ? old.scrollLeft : 0;
+    render(countryId, activePanel, modal);
+    const current = modal.querySelector ? modal.querySelector('#omega-rescc-content') : null;
+    if (current) { current.scrollTop = scrollTop; current.scrollLeft = scrollLeft; }
+  }
+  function ensureResourceDataReady(force) {
+    if (resourceDataWarmupPromise) return resourceDataWarmupPromise;
+    if (!force && resourceDataWarmupAttempted) return null;
+    resourceDataWarmupAttempted = true;
+    const e = engine(), endowment = g.Omega && g.Omega.ResourceEndowmentRuntime;
+    const needsEngine = !!(e && !e.isReady && typeof e.init === 'function');
+    const needsEndowment = !!(e && e.isReady && endowment && typeof endowment.initialize === 'function' && !g.__omegaResourceEndowmentReady);
+    if (!needsEngine && !needsEndowment) return null;
+    resourceDataWarmupPromise = (async function () {
+      if (needsEngine) { try { await e.init(); } catch (_) {} }
+      if (e && e.isReady && endowment && typeof endowment.initialize === 'function' && !g.__omegaResourceEndowmentReady) {
+        try { await endowment.initialize(); } catch (_) {}
+      }
+    })().then(refreshVisiblePanel).catch(refreshVisiblePanel).finally(function () { resourceDataWarmupPromise = null; });
+    return resourceDataWarmupPromise;
+  }
+  function bindResourceDataRefreshEvents() {
+    if (resourceDataRefreshBound || typeof g.addEventListener !== 'function') return;
+    resourceDataRefreshBound = true;
+    [
+      'RESOURCE_STATE_UPDATED','OMEGA_RESOURCE_SITE_BINDING_READY','OMEGA_READY','OMEGA_GAME_SESSION_STARTED',
+      'OMEGA_SIMULATION_TURN_COMMITTED','OMEGA_RESOURCE_EXTRACTION_COMPLETED','OMEGA_RESOURCE_BATCH_CREATED',
+      'OMEGA_RESOURCE_INVENTORY_CHANGED','OMEGA_RESOURCE_PROCESSING_COMPLETED','OMEGA_TRADE_SETTLEMENT_COMPLETED'
+    ].forEach(function (name) {
+      try { g.addEventListener(name, function () { resourceDataWarmupAttempted = false; refreshVisiblePanel(); }); } catch (_) {}
+    });
+  }
   function render(country, panel, modalOverride) {
     const modal = modalOverride || ensureModal();
     if (!modal) return;
@@ -815,6 +886,8 @@
       '<main id="omega-rescc-content" class="omega-rescc-content"><h3 class="omega-rescc-section-title">' + esc(viewTitle(activePanel)) + '</h3>' +
       panelContent(activePanel, countryId) + '</main></div>';
     modal.style.display = 'flex';
+    bindResourceDataRefreshEvents();
+    ensureResourceDataReady(false);
   }
   function openPanel(panel) { lastOutcome = ''; render(countryId, panel); }
   function close() {
@@ -867,7 +940,7 @@
     let result;
     try {
       if (action === 'close') { close(); return; }
-      if (action === 'refresh-panel') { render(c, activePanel); return; }
+      if (action === 'refresh-panel') { resourceDataWarmupAttempted = false; render(c, activePanel); ensureResourceDataReady(true); return; }
       if (action === 'survey' || action === 'expansion' || action === 'reserve') {
         result = dispatchResourceCommand(action, c, d.resourceId);
         setOutcome(action + ' request for ' + (d.resourceId || 'resource'), result);
@@ -1020,6 +1093,7 @@
     }
   }
   function install() {
+    bindResourceDataRefreshEvents();
     const e = engine();
     if (!e || e.__omegaResourceCommandCenterUIPatched === VERSION) return false;
     e.__omegaResourceCommandCenterUIPatched = VERSION;
