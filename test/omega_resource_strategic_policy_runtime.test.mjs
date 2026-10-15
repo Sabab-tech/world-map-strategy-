@@ -150,3 +150,28 @@ test('policy diagnostics expose live rule load and handler registration state',(
   assert.equal(diag.rulesVersion,'1.0.0');
   assert.equal(diag.handlersReady,true,JSON.stringify(diag));
 });
+
+
+test('canonical simulation save/load preserves resource policy, environment, reserve and exploration state',()=>{
+  const h=harness();
+  const simulationSource=fs.readFileSync(new URL('../omega_simulation_runtime.js',import.meta.url),'utf8');
+  new vm.Script(simulationSource,{filename:'omega_simulation_runtime.js'}).runInContext(h.sandbox);
+  const sim=h.sandbox.Omega.Simulation;
+  sim.configure({state:h.state,interoperability:h.sandbox.Omega.MinistryInteroperability});
+  h.state.simulation.turn=12;
+  h.state.resource.BGD.mineStates={'SITE_OCC:BGD:test':{residualQuantity:987654,unit:'TONNES',stateVersion:7}};
+  h.state.resource.BGD.environmentalImpact={revision:9,bySite:{'SITE_BGD_TEST_LOCKED':{landIndex:12.5,waterIndex:8,lastUpdatedTurn:12}}};
+  h.state.resource.BGD.explorationProjects=[{projectId:'EXP-RESTORE',siteId:'SITE_BGD_TEST_LOCKED',status:'IN_PROGRESS',progressTurns:1,requiredTurns:3}];
+  h.state.trade.BGD.resourceEmbargoes=[{policyId:'EMBARGO-RESTORE',issuerCountryId:'BGD',targetCountryId:'SAU',resourceId:'copper',direction:'EXPORT',status:'ACTIVE',startsTurn:10}];
+  h.state.resource.BGD.batches=[{batchId:'BATCH-RESTORE',resourceId:'copper',remainingQuantity:1234,stage:'RAW_EXTRACTED'}];
+  const saved=sim.saveState();
+  h.state.resource.BGD.mineStates={};h.state.resource.BGD.environmentalImpact={revision:999};h.state.resource.BGD.explorationProjects=[];h.state.trade.BGD.resourceEmbargoes=[];h.state.resource.BGD.batches=[];
+  sim.loadState(saved);
+  assert.equal(h.state.simulation.turn,12);
+  assert.equal(h.state.resource.BGD.mineStates['SITE_OCC:BGD:test'].residualQuantity,987654);
+  assert.equal(h.state.resource.BGD.environmentalImpact.bySite.SITE_BGD_TEST_LOCKED.landIndex,12.5);
+  assert.equal(h.state.resource.BGD.explorationProjects[0].status,'IN_PROGRESS');
+  assert.equal(h.state.trade.BGD.resourceEmbargoes[0].policyId,'EMBARGO-RESTORE');
+  assert.equal(h.state.resource.BGD.batches[0].remainingQuantity,1234);
+  assert.equal(sim.diagnostics().authoritativeState.worldStateLinked,true);
+});
