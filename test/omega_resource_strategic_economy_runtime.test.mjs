@@ -82,6 +82,10 @@ test('environment impacts are data-driven, idempotent, persisted, and constrain 
   assert.ok(state.finance.BGD.available<availableBefore,'remediation must have a real, ledgered treasury cost');
   assert.ok(state.finance.BGD.environmentalLedger.some(x=>x.paid>0));
   assert.ok(state.finance.BGD.environmentalRemediationLiabilityUnits>0);
+  const afterFirstRemediation=state.finance.BGD.available;
+  api.processTurn();
+  assert.equal(state.finance.BGD.available,afterFirstRemediation,'re-running remediation during one turn must not charge twice');
+  assert.equal(state.finance.BGD.environmentalLedger.filter(x=>x.turn===2).length,1,'one remediation receipt per country per turn');
 
   h.context.dispatchEvent(event('OMEGA_RESOURCE_FINISHED_GOODS_AVAILABLE','BGD',{
     countryId:'BGD',transactionId:'FACTORY-TXN-1',sourceBatchIds:['BATCH-BGD-2'],
