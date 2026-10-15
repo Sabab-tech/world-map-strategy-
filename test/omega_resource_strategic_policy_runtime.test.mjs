@@ -250,7 +250,8 @@ test('nuclear baseload construction debits treasury, commissions only by turns a
  const started=api.startPowerProject('BGD',{projectId:'POWER-PROJECT-2400',projectType:'NUCLEAR_BASELOAD'});
  assert.equal(started.accepted,true,JSON.stringify(started));
  assert.equal(started.project.capacityMw,2400);
- assert.equal(started.project.costUsd,2000000000);
+ assert.equal(started.project.costTreasuryUnits,2000000000);
+ assert.equal(started.project.constructionCurrency,'TREASURY_NATIVE_UNITS');
  assert.equal(h.state.finance.BGD.available,1000000000);
  const repeat=api.startPowerProject('BGD',{projectId:'POWER-PROJECT-2400',projectType:'NUCLEAR_BASELOAD'});
  assert.equal(repeat.duplicate,true,'same project request must not debit treasury twice');
