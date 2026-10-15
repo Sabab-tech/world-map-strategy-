@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+
 /**
  * OMEGA RESOURCE DECISION AI SERVICE
  * Validates the 12-answer strategic gate, creates a bounded country-state context,
@@ -6,6 +8,11 @@
 const REQUIRED_ANSWERS = 12;
 const ANSWERS = new Set(['proceed', 'review', 'block']);
 const DECISIONS = new Set(['PROCEED', 'REVIEW', 'BLOCK']);
+const POLICY_RULES = (() => {
+  try { return JSON.parse(fs.readFileSync(new URL('./resource_strategic_policy_rules_v1.json', import.meta.url), 'utf8')); }
+  catch (_) { return null; }
+})();
+const OPERATIONS = new Set(['POWER_PROJECT', 'SWF_CAPITALIZATION']);
 const text = value => String(value == null ? '' : value).trim();
 const finite = value => {
   if (typeof value === 'number' && Number.isFinite(value)) return value;
@@ -59,14 +66,26 @@ export function validateResourceDecisionRequest(payload = {}) {
   if (decisionId && !/^[A-Za-z0-9:_-]{1,180}$/.test(decisionId)) {
     throw new ResourceDecisionAIError('decisionId contains unsupported characters.', 400, 'DECISION_ID_INVALID');
   }
+  const operation = text(payload.operation).toUpperCase();
+  if (!OPERATIONS.has(operation)) {
+    throw new ResourceDecisionAIError('A supported decision operation is required.', 400, 'DECISION_OPERATION_INVALID');
+  }
+  const requestedAmount = payload.requestedAmount == null || payload.requestedAmount === ''
+    ? null : finite(payload.requestedAmount);
+  if (operation === 'SWF_CAPITALIZATION' && (requestedAmount === null || requestedAmount <= 0)) {
+    throw new ResourceDecisionAIError('A positive requestedAmount is required for SWF capitalization.', 400, 'SWF_AMOUNT_REQUIRED');
+  }
+  if (operation === 'POWER_PROJECT' && requestedAmount !== null) {
+    throw new ResourceDecisionAIError('requestedAmount is not accepted for ruleset-priced power projects.', 400, 'POWER_AMOUNT_RULESET_CONTROLLED');
+  }
   const state = payload.gameState && typeof payload.gameState === 'object' && !Array.isArray(payload.gameState)
     ? payload.gameState : {};
-  return { countryId, answers, state, decisionId: decisionId || null };
+  return { countryId, answers, state, decisionId: decisionId || null, operation, requestedAmount };
 }
 
 export function buildResourceDecisionContext(payload = {}) {
   const validated = validateResourceDecisionRequest(payload);
-  const { countryId, answers, state } = validated;
+  const { countryId, answers, state, operation, requestedAmount } = validated;
   const resource = countryBucket(state.resource, countryId) || {};
   const finance = countryBucket(state.finance, countryId) || {};
   const economy = countryBucket(state.economy, countryId) || {};
@@ -91,9 +110,28 @@ export function buildResourceDecisionContext(payload = {}) {
     waterIndex: finite(site?.waterIndex),
     wasteIndex: finite(site?.wasteIndex)
   }));
+  const powerRule = POLICY_RULES?.power?.projectTypes?.NUCLEAR_BASELOAD || null;
+  const operationRequirements = operation === 'POWER_PROJECT' ? {
+    projectType: 'NUCLEAR_BASELOAD',
+    capacityMw: finite(powerRule?.capacityMw),
+    constructionTurns: finite(powerRule?.constructionTurns),
+    constructionCostTreasuryUnits: finite(powerRule?.constructionCostTreasuryUnits),
+    fuelResourceId: text(powerRule?.fuelResourceId) || null,
+    fuelQuantityPerTurn: finite(powerRule?.fuelQuantityPerTurn),
+    emissionsTonnesCo2ePerMwh: finite(powerRule?.emissionsTonnesCo2ePerMwh),
+    rulesetAuthority: text(powerRule?.authority) || 'SIMULATED_GAMEPLAY_RULESET'
+  } : {
+    requestedContributionTreasuryUnits: requestedAmount,
+    currencyAuthority: 'TREASURY_NATIVE_UNITS',
+    enabled: POLICY_RULES?.swf?.enabled === true,
+    maxTransactions: finite(POLICY_RULES?.swf?.maxTransactions)
+  };
   return {
     source: 'COUNTRY_SCOPED_GAME_STATE_SNAPSHOT',
     countryId,
+    operation,
+    requestedAmount,
+    operationRequirements,
     simulationTurn: turn,
     treasury: {
       available: finite(finance.available ?? finance.cash),
@@ -146,7 +184,7 @@ function extractJson(raw) {
   throw new ResourceDecisionAIError('AI response was not valid JSON.', 502, 'AI_RESPONSE_INVALID_JSON');
 }
 
-function normalizeAssessment(rawValue, answers, modelName) {
+function normalizeAssessment(rawValue, answers, modelName, context) {
   const raw = extractJson(rawValue);
   const decision = text(raw.decision).toUpperCase();
   const confidence = finite(raw.confidence);
@@ -168,9 +206,34 @@ function normalizeAssessment(rawValue, answers, modelName) {
     finalDecision = 'REVIEW';
     safetyOverride = 'FOUR_OR_MORE_UNRESOLVED_ANSWERS';
   }
+  const availableTreasury = finite(context?.treasury?.available);
+  if (context?.operation === 'POWER_PROJECT') {
+    const requiredCost = finite(context?.operationRequirements?.constructionCostTreasuryUnits);
+    if (requiredCost === null && finalDecision === 'PROCEED') {
+      finalDecision = 'REVIEW';
+      safetyOverride = 'POWER_PROJECT_RULES_UNAVAILABLE';
+    } else if (availableTreasury === null && finalDecision === 'PROCEED') {
+      finalDecision = 'REVIEW';
+      safetyOverride = 'TREASURY_BALANCE_UNOBSERVED';
+    } else if (requiredCost !== null && availableTreasury !== null && availableTreasury + 1e-9 < requiredCost) {
+      finalDecision = 'BLOCK';
+      safetyOverride = 'INSUFFICIENT_TREASURY_FOR_POWER_PROJECT';
+    }
+  } else if (context?.operation === 'SWF_CAPITALIZATION') {
+    if (availableTreasury === null && finalDecision === 'PROCEED') {
+      finalDecision = 'REVIEW';
+      safetyOverride = 'TREASURY_BALANCE_UNOBSERVED';
+    } else if (availableTreasury !== null && finite(context?.requestedAmount) !== null &&
+               finite(context.requestedAmount) > availableTreasury + 1e-9) {
+      finalDecision = 'BLOCK';
+      safetyOverride = 'INSUFFICIENT_TREASURY_FOR_REQUESTED_CAPITALIZATION';
+    }
+  }
   return {
     decision: finalDecision,
     modelDecision: decision,
+    operation: context.operation,
+    requestedAmount: context.requestedAmount,
     confidence,
     riskSummary: text(raw.riskSummary || raw.summary || 'No summary supplied.') .slice(0, 1200),
     findings: list(raw.findings, 12),
@@ -217,12 +280,12 @@ export async function evaluateResourceDecision({ payload, generateText }) {
   }
   const rawText = typeof completion === 'string' ? completion : completion?.text;
   const model = typeof completion === 'object' && completion ? completion.model : null;
-  const assessment = normalizeAssessment(rawText, context.answers.map(row => row.answer), model);
+  const assessment = normalizeAssessment(rawText, context.answers.map(row => row.answer), model, context);
   return {
     ok: true,
     status: 'COMPLETED',
     decisionId: request.decisionId,
     assessment,
-    context: { countryId: context.countryId, simulationTurn: context.simulationTurn, source: context.source }
+    context: { countryId: context.countryId, operation: context.operation, requestedAmount: context.requestedAmount, simulationTurn: context.simulationTurn, source: context.source }
   };
 }
