@@ -710,6 +710,7 @@ function diagnostics(){
   commissionedSiteCount:Object.values(resource).reduce((n,r)=>n+(Array.isArray(r?.commissionedSites)?r.commissionedSites.length:0),0),
   environmentalLedgerRows:Object.values(resource).reduce((n,r)=>n+(Array.isArray(r?.environmentalLedger)?r.environmentalLedger.length:0),0),
   carbonEmissionLedgerRows:Object.values(resource).reduce((n,r)=>n+(Array.isArray(r?.carbonEmissionsLedger)?r.carbonEmissionsLedger.length:0),0),
+  carbonQuotaEnforcementRows:Object.values(resource).reduce((n,r)=>n+(Array.isArray(r?.carbonQuotaEnforcementLedger)?r.carbonQuotaEnforcementLedger.length:0),0),
   activeCarbonQuotas:Object.values(resource).filter(r=>String(r?.carbonQuota?.status||'').toUpperCase()==='ACTIVE').length,
   powerProjectCount:Object.values(resource).reduce((n,r)=>n+(Array.isArray(r?.powerProjects)?r.powerProjects.length:0),0),
   powerAssetCount:Object.values(resource).reduce((n,r)=>n+(Array.isArray(r?.powerAssets)?r.powerAssets.length:0),0),
