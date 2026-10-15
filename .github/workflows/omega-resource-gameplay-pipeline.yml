@@ -41,6 +41,12 @@ on:
       - 'test/omega_resource_industrial_network_v1.test.mjs'
       - 'test/omega_resource_logistics_runtime_v1.test.mjs'
       - 'test/omega_resource_milestone_a_integrity.test.mjs'
+      - 'test/omega_resource_site_data_contract.test.mjs'
+      - 'test/omega_resource_site_country_expansion.test.mjs'
+      - 'test/omega_resource_legacy_gameplay_expansion.test.mjs'
+      - 'test/omega_resource_legacy_marker_recovery.test.mjs'
+      - 'test/omega_resource_reference_lossless.test.mjs'
+      - 'test/omega_resource_next_50_site_contract.test.mjs'
       - 'package.json'
   pull_request:
     paths:
@@ -59,6 +65,12 @@ on:
       - 'test/omega_resource_industrial_network_v1.test.mjs'
       - 'test/omega_resource_autonomous_global_pipeline.test.mjs'
       - 'test/omega_resource_endowment_runtime.test.mjs'
+      - 'test/omega_resource_site_data_contract.test.mjs'
+      - 'test/omega_resource_site_country_expansion.test.mjs'
+      - 'test/omega_resource_legacy_gameplay_expansion.test.mjs'
+      - 'test/omega_resource_legacy_marker_recovery.test.mjs'
+      - 'test/omega_resource_reference_lossless.test.mjs'
+      - 'test/omega_resource_next_50_site_contract.test.mjs'
       - 'test/omega_resource_economy_runtime_v2.test.mjs'
       - 'test/omega_global_trade_system.test.mjs'
       - 'package.json'
@@ -82,6 +94,8 @@ jobs:
         run: npm run lint
       - name: Milestone A complete registry audit
         run: npm run test:resource-site-integrity
+      - name: Milestone A source, provenance, expansion and legacy-data audit
+        run: npm run test:resource-country-expansion && node test/omega_resource_legacy_marker_recovery.test.mjs && node test/omega_resource_reference_lossless.test.mjs
       - name: Endowment runtime regression
         run: npm run test:resource-endowment
       - name: Every-deposit resource recipe coverage
