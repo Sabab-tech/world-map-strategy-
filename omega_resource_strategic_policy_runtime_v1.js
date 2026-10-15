@@ -95,10 +95,11 @@ function siteAvailableForExtraction(c,siteId,siteRecord=null){
  const row=siteRecord||findSite(siteId),cid=country(c),sid=String(siteId||row?.siteId||'').trim();
  if(!sid)return{allowed:false,reason:'SITE_ID_REQUIRED'};
  if(!row)return{allowed:true,reason:null,siteKnown:false};
- if(row.map?.markerEligible===false||row.runtime?.aliasOfSiteId||row.operation?.commercialExtraction===false||String(row.operation?.status||'').toUpperCase()==='NOT_APPLICABLE')
+ const locked=siteLocked(row);
+ if(row.map?.markerEligible===false||row.runtime?.aliasOfSiteId||String(row.operation?.status||'').toUpperCase()==='NOT_APPLICABLE'||(row.operation?.commercialExtraction===false&&!locked))
   return{allowed:false,reason:'SITE_NOT_COMMERCIALLY_EXECUTABLE',siteKnown:true};
  if(country(row.countryId||row.identity?.countryIso3)!==cid)return{allowed:false,reason:'SITE_COUNTRY_MISMATCH',siteKnown:true};
- if(!siteLocked(row))return{allowed:true,reason:null,siteKnown:true};
+ if(!locked)return{allowed:true,reason:null,siteKnown:true};
  const res=state()?.resource?.[cid]||{},commissioned=Array.isArray(res.commissionedSites)?res.commissionedSites:[];
  const hit=commissioned.find(x=>String(x?.siteId||'')===sid&&String(x?.status||'').toUpperCase()==='COMMISSIONED');
  return hit?{allowed:true,reason:null,siteKnown:true,commissioned:true}:{allowed:false,reason:'EXPLORATION_AND_INVESTMENT_REQUIRED',siteKnown:true};
@@ -182,7 +183,7 @@ function surveyStart(ctx,payload){
  const c=country(ctx.countryId),p=payload||{},sid=String(p.siteId||'').trim(),site=findSite(sid);
  if(!sid||!site)return{accepted:false,reason:'SITE_NOT_FOUND'};
  if(country(site.countryId||site.identity?.countryIso3)!==c)return{accepted:false,reason:'SITE_COUNTRY_MISMATCH'};
- if(site.map?.markerEligible===false||site.runtime?.aliasOfSiteId||site.operation?.commercialExtraction===false||String(site.operation?.status||'').toUpperCase()==='NOT_APPLICABLE')return{accepted:false,reason:'SITE_NOT_SURVEYABLE'};
+ if(site.map?.markerEligible===false||site.runtime?.aliasOfSiteId||String(site.operation?.status||'').toUpperCase()==='NOT_APPLICABLE'||(site.operation?.commercialExtraction===false&&!siteLocked(site)))return{accepted:false,reason:'SITE_NOT_SURVEYABLE'};
  const current=ctx.stateTransaction.get('resource.explorationProjects'),projects=Array.isArray(current)?clone(current):[];
  const activeProject=projects.find(x=>x.siteId===sid&&['IN_PROGRESS','DISCOVERED_PENDING_INVESTMENT','INVESTMENT_APPROVED','COMMISSIONED'].includes(String(x.status||'')));
  if(activeProject)return{accepted:true,duplicate:true,project:activeProject};
@@ -238,7 +239,7 @@ function commission(ctx,payload){
  if(i<0)return{accepted:false,reason:'EXPLORATION_PROJECT_NOT_FOUND'};
  const p=arr[i];if(p.status==='COMMISSIONED')return{accepted:true,duplicate:true,project:p};
  if(p.status!=='INVESTMENT_APPROVED')return{accepted:false,reason:'EXPLICIT_INVESTMENT_REQUIRED'};
- const site=findSite(p.siteId);if(!site||site.operation?.commercialExtraction===false||site.map?.markerEligible===false||site.runtime?.aliasOfSiteId)return{accepted:false,reason:'SITE_NOT_COMMERCIALLY_EXECUTABLE'};
+ const site=findSite(p.siteId);if(!site||String(site.operation?.status||'').toUpperCase()==='NOT_APPLICABLE'||(site.operation?.commercialExtraction===false&&!siteLocked(site))||site.map?.markerEligible===false||site.runtime?.aliasOfSiteId)return{accepted:false,reason:'SITE_NOT_COMMERCIALLY_EXECUTABLE'};
  const projectLimit=configuredLimit('exploration','maximumSurveyProjects');if(projectLimit===null)return{accepted:false,reason:'STRATEGIC_POLICY_RULES_NOT_READY'};
  const raw=ctx.stateTransaction.get('resource.commissionedSites'),commissioned=Array.isArray(raw)?clone(raw):[];
  if(!commissioned.some(x=>x.siteId===p.siteId))commissioned.push({siteId:p.siteId,countryId:c,resourceId:p.resourceId,status:'COMMISSIONED',projectId:p.projectId,commissionedTurn:turn(),authority:'OMEGA_RESOURCE_STRATEGIC_POLICY_RUNTIME'});
