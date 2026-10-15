@@ -478,7 +478,7 @@ window.CountryIOS = {
     // CHAPTER 04: ECONOMY
     // -------------------------------------------------------------------------
     renderChapter4_Economy(countryKey, econ, pop) {
-        const fmtNum = window.formatGameNumber || ((n) => \`$\${(n/1e9).toFixed(1)}B\`);
+        const fmtNum = window.formatGameNumber || ((n) => `${(n/1e9).toFixed(1)}B`);
         const nameClean = countryKey.replace(/_/g, " ").toUpperCase();
         const observer = window.OmegaLiveOpsObservability;
         const countryId = observer && typeof observer.resolveCountryId === 'function'
@@ -1187,7 +1187,7 @@ window.CountryIOS = {
             ? '<div style="display:flex;justify-content:space-around;align-items:flex-end;gap:9px;min-height:90px;margin-top:10px;">'+
                 finalAgeRows.map(row=>'<div style="text-align:center;min-width:0;flex:1;"><div title="'+String(row.percent.toFixed(1))+'%" style="background:#38bdf8;width:22px;height:'+Math.max(2,row.percent/100*62).toFixed(1)+'px;margin:0 auto 5px;border-radius:4px 4px 0 0;"></div><span style="font-size:10px;overflow-wrap:anywhere;">'+String(row.label).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+' ('+row.percent.toFixed(1)+'%)</span></div>').join('')+'</div>'
             : '<p style="padding:10px 0;color:#94a3b8;font-size:12px;line-height:1.5;">No age-group population records are available for this country. This chart is hidden rather than filled with sample demographics.</p>';
-        return \`
+        return `
             <div style="display:flex; flex-direction:column; gap:20px;">
                 <div class="ios-grid-4">
                     <div class="ios-card">
