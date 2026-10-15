@@ -34,4 +34,17 @@ assert.equal(q.status,'CLEARED');
 assert.equal(q.matchedQuantity,100);
 assert.equal(q.clearingPriceUsd,100);
 assert.equal(market.localPrice('BDG','crude_oil'),100);
+
+// Reference-only liquidity is indicative, not a real seller/order. Once both
+// real sides disappear, it must never manufacture a cleared dynamic price.
+globalThis.Game.state.trade.BDG.importRequests=[];
+globalThis.Game.state.trade.SAU.offerBook={};
+globalThis.ResourceMinistryEngine={resourceTypes:[{id:'crude_oil',basePrice:88,unit:'BBL'}]};
+market.rebuild();
+const referenceOnly=market.quote('crude_oil');
+assert.equal(referenceOnly.status,'REFERENCE_ONLY');
+assert.equal(referenceOnly.clearingPriceUsd,null);
+assert.equal(referenceOnly.matchedQuantity,0);
+assert.equal(referenceOnly.referencePrice,88);
+assert.equal(market.localPrice('BDG','crude_oil'),null);
 console.log('OMEGA GLOBAL MARKET CLEARING TEST PASSED');
