@@ -1593,16 +1593,35 @@ window.OmegaCabinetUI = {
         }
 
         if (activeTab === 'reports') {
+            const liveOps = window.OmegaLiveOpsObservability;
+            const reportCountry = this.activeCountry || (window.Game && window.Game.state &&
+                (window.Game.state.playerCountryId || window.Game.state.playerCountryCode)) || '';
+            const metrics = liveOps && typeof liveOps.getCountryMetrics === 'function'
+                ? liveOps.getCountryMetrics(reportCountry) : null;
+            const activity = liveOps && typeof liveOps.getCountryOperationalSummary === 'function'
+                ? liveOps.getCountryOperationalSummary(reportCountry) : null;
+            const recorded = value => typeof value === 'number' && Number.isFinite(value)
+                ? value.toLocaleString(undefined, { maximumFractionDigits: 2 }) : 'NOT RECORDED';
+            const rows = [
+                ['Recorded GDP value', metrics && metrics.gdp],
+                ['Available treasury value', metrics && metrics.treasury],
+                ['Population', metrics && metrics.population],
+                ['Military power / readiness', metrics && metrics.military],
+                ['Mine / site records', activity && activity.mineRecords],
+                ['Mine outputs this turn', activity && activity.currentTurnMineOutputs],
+                ['Shipments in transit', activity && activity.inTransit],
+                ['Settled trade requests', activity && activity.settledRequests]
+            ];
+            const rowsHtml = rows.map(([label,value]) =>
+                '<div style="background:rgba(255,255,255,0.04);padding:10px;border-radius:8px;">' +
+                '<span style="color:#94a3b8;">' + label + ':</span> <strong style="color:#7dd3fc;">' +
+                recorded(value) + '</strong></div>').join('');
             html += `
-                <div style="background:rgba(2,11,20,0.8); border:1px solid rgba(0,229,255,0.2); border-radius:12px; padding:16px; font-family:'Share Tech Mono',monospace; color:#e2e8f0;">
-                    <div style="color:#00e5ff; font-size:14px; font-weight:bold; margin-bottom:12px;">📊 SOVEREIGN SECTOR PERFORMANCE REPORT</div>
-                    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; font-size:12px;">
-                        <div style="background:rgba(255,255,255,0.04); padding:10px; border-radius:8px;">Operational Throughput: <strong style="color:#22c55e;">94.2%</strong></div>
-                        <div style="background:rgba(255,255,255,0.04); padding:10px; border-radius:8px;">Fiscal Efficiency Index: <strong style="color:#ffd700;">${m.efficiency}%</strong></div>
-                        <div style="background:rgba(255,255,255,0.04); padding:10px; border-radius:8px;">Staff Quality Rating: <strong style="color:#00e5ff;">Grade A</strong></div>
-                        <div style="background:rgba(255,255,255,0.04); padding:10px; border-radius:8px;">Corruption Index: <strong style="color:#22c55e;">1.2% (Negligible)</strong></div>
-                        <div style="background:rgba(255,255,255,0.04); padding:10px; border-radius:8px;">Public Satisfaction: <strong style="color:#22c55e;">89% Positive</strong></div>
-                        <div style="background:rgba(255,255,255,0.04); padding:10px; border-radius:8px;">Annual Budget Allocation: <strong style="color:#ffd700;">${m.budget}</strong></div>
+                <div style="background:rgba(2,11,20,0.8);border:1px solid rgba(0,229,255,0.2);border-radius:12px;padding:16px;font-family:'Share Tech Mono',monospace;color:#e2e8f0;">
+                    <div style="color:#00e5ff;font-size:14px;font-weight:bold;margin-bottom:6px;">LIVE SOVEREIGN ENGINE REPORT</div>
+                    <p style="font-size:11px;color:#94a3b8;margin:0 0 12px;">Country: ${String(reportCountry || 'NOT SELECTED')} · Read-only values from simulation state and retained ledgers. Missing fields are not estimated.</p>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;font-size:12px;">
+                        ${rowsHtml}
                     </div>
                 </div>
             `;
