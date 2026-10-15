@@ -511,7 +511,7 @@
         actionButton('plan-shipment','Plan warehouse-to-factory route',{'batch-id':id,'resource-id':rid,quantity:qty,unit:batch.unit||'','warehouse-id':warehouse,'factory-ids':ids.join(',')},!(id&&rid&&warehouse&&ids.length&&g.Omega&&g.Omega.ResourceLogisticsRuntime&&g.Omega.ResourceLogisticsRuntime.planFromFactoryInput)));
     }).join('');
     const routes=siteRouteRows(country),routeCards=routes.slice(0,200).map(x=>card(x.routeName||x.routeId||'Saved route profile','PROFILE ONLY · NOT DISPATCHED',
-      '<div class="omega-rescc-grid2">'+kv('Site',x.siteName)+kv('Site ID',x.siteId)+kv('Transport mode',x.mode)+kv('From',x.from)+kv('To',x.to)+kv('Distance (km)',x.distanceKm)+kv('Route authority',x.authority)+'</div>'+
+      '<div class="omega-rescc-grid2">'+kv('Route ID',x.routeId)+kv('Site',x.siteName)+kv('Site ID',x.siteId)+kv('Transport mode',x.mode)+kv('From',x.from)+kv('To',x.to)+kv('Distance (km)',x.distanceKm)+kv('Route authority',x.authority)+'</div>'+
       '<p class="omega-rescc-note">A saved route definition is not a shipment or proof that material moved.</p>','')).join('');
     const shipmentCards=shipments.slice(-100).reverse().map(s=>card(s.shipmentId||s.routeId||'Shipment',s.status||s.deliveryStatus||'STATUS NOT RECORDED',
       '<div class="omega-rescc-grid2">'+kv('Resource',s.resourceId)+kv('Quantity',s.quantity)+kv('Factory',s.factoryId)+kv('Transport mode',s.transportMode)+kv('ETA turn',s.timing&&s.timing.etaTurn)+kv('Constraint source',s.sourceAuthority||'NOT_RECORDED')+'</div>'+(s.reason?'<div class="omega-rescc-warning">'+esc(s.reason)+'</div>':''),'')).join('');
@@ -522,15 +522,26 @@
       '<h3 class="omega-rescc-section-title">Actual shipment state</h3>'+(shipmentCards||empty('No shipments have been recorded.'));
   }
   function panelIndustrial(country){
-    const network=g.Omega&&g.Omega.ResourceIndustrialNetwork,diag=network&&network.diagnostics?network.diagnostics(country):null,pipeline=network&&network.gameplayPipelineDiagnostics?network.gameplayPipelineDiagnostics():null;
-    const perCountry=pipeline&&Array.isArray(pipeline.perCountry)?pipeline.perCountry.find(x=>normaliseCountry(x.countryId)===activeCountry(country)):null;
-    const r=resourceBucket(country),econ=bucket('economy',country),industrial=r.industrialNetwork||{};
-    const flows=Array.isArray(industrial.siteFlowLedger)?industrial.siteFlowLedger:(Array.isArray(r.siteFlows)?r.siteFlows:(Array.isArray(r.siteFlowLedger)?r.siteFlowLedger:(Array.isArray(r.extractionFlows)?r.extractionFlows:[])));
-    const projects=Array.isArray(industrial.projects)?industrial.projects:(Array.isArray(econ.projects)?econ.projects:[]),contracts=Array.isArray(industrial.technologyContracts)?industrial.technologyContracts:[],stages=perCountry&&perCountry.stages||{},sites=siteRows(country);
-    return (diag?diagnosticCard('Country industrial network diagnostics',diag):empty('Industrial network runtime is unavailable.'))+(perCountry?diagnosticCard('End-to-end site pipeline state',perCountry):'')+
+    const network = g.Omega && g.Omega.ResourceIndustrialNetwork;
+    const diag = network && network.diagnostics ? network.diagnostics(country) : null;
+    const pipeline = network && network.gameplayPipelineDiagnostics ? network.gameplayPipelineDiagnostics() : null;
+    const perCountry = pipeline && Array.isArray(pipeline.perCountry)
+      ? pipeline.perCountry.find(x => normaliseCountry(x.countryId) === activeCountry(country)) : null;
+    const r = resourceBucket(country);
+    const econ = bucket('economy', country);
+    const industrial = r.industrialNetwork || {};
+    const flows = Array.isArray(industrial.siteFlowLedger) ? industrial.siteFlowLedger :
+      (Array.isArray(r.siteFlows) ? r.siteFlows : (Array.isArray(r.siteFlowLedger) ? r.siteFlowLedger : (Array.isArray(r.extractionFlows) ? r.extractionFlows : [])));
+    const projects = Array.isArray(industrial.projects) ? industrial.projects : (Array.isArray(econ.projects) ? econ.projects : []);
+    const contracts = Array.isArray(industrial.technologyContracts) ? industrial.technologyContracts : [];
+    const stages = perCountry && perCountry.stages || {}, sites = siteRows(country);
+    return (diag ? diagnosticCard('Country industrial network diagnostics', diag) : empty('Industrial network runtime is unavailable.')) +
+      (perCountry ? diagnosticCard('End-to-end site pipeline state', perCountry) : '') +
       '<div class="omega-rescc-metrics"><div><span>Country site profiles</span><strong>'+number(sites.length)+'</strong></div><div><span>Extraction flows</span><strong>'+number(perCountry&&perCountry.extractionFlows)+'</strong></div><div><span>Dispatched shipments</span><strong>'+number(perCountry&&perCountry.dispatched)+'</strong></div><div><span>Processed flows</span><strong>'+number(perCountry&&perCountry.processed)+'</strong></div></div>'+
       '<h3 class="omega-rescc-section-title">Observed flow ledger</h3>'+(flows.length?statusRows(flows):empty('No site execution or flow records are present in this country runtime.'))+
-      '<h3 class="omega-rescc-section-title">Construction projects</h3>'+statusRows(projects)+'<h3 class="omega-rescc-section-title">Technology project contracts</h3>'+statusRows(contracts)+(Object.keys(stages).length?diagnosticCard('Pipeline stage counts',stages):'');
+      '<h3 class="omega-rescc-section-title">Construction projects</h3>'+statusRows(projects)+
+      '<h3 class="omega-rescc-section-title">Technology project contracts</h3>'+statusRows(contracts)+
+      (Object.keys(stages).length?diagnosticCard('Pipeline stage counts',stages):'');
   }
   function panelMarket(country) {
     const market = g.OmegaGlobalMarket || g.Omega && g.Omega.GlobalMarket;
