@@ -8,6 +8,7 @@ on:
       - 'omega_global_trade_system.js'
       - 'package.json'
       - 'test/omega_resource_command_center_ui_v1.test.mjs'
+      - 'test/omega_resource_command_center_ui_runtime.test.mjs'
       - 'test/omega_global_trade_system.test.mjs'
       - '.github/workflows/resource-command-center.yml'
   push:
@@ -20,6 +21,7 @@ on:
       - 'omega_global_trade_system.js'
       - 'package.json'
       - 'test/omega_resource_command_center_ui_v1.test.mjs'
+      - 'test/omega_resource_command_center_ui_runtime.test.mjs'
       - 'test/omega_global_trade_system.test.mjs'
       - '.github/workflows/resource-command-center.yml'
 
