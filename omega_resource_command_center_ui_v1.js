@@ -657,7 +657,7 @@
       kv('Policy checklist endpoint', policy && typeof policy.evaluateCognitiveGate === 'function' ? 'Available' : null) +
       kv('Profile record', profile && profile.identity && (profile.identity.name || profile.identity.officialName)) + '</div>' +
       '<p class="omega-rescc-note">Submitted answers are persisted as a player-entered strategic gate decision, not an AI-generated verdict. PROCEED authorizes power construction and SWF capitalization; REVIEW or BLOCK prevents those actions.</p>', '') +
-      form + '<h3 class="omega-rescc-section-title">Persisted advisory decisions</h3>' + statusRows(decisions);
+      form + '<h3 class="omega-rescc-section-title">Persisted strategic gate decisions</h3>' + statusRows(decisions);
   }
   function panelPower(country) {
     const network = g.Omega && g.Omega.ResourceIndustrialNetwork;
