@@ -307,6 +307,40 @@
     return result;
   }
 
+  function createImportRequestHandler(cmd,ctx){
+    const p=cmd&&cmd.payload||{},buyer=canonical(ctx.countryId),seller=canonical(p.targetCountryId),resourceId=String(p.resourceId||'').trim();
+    const quantity=num(p.quantity),unitPrice=num(p.unitPrice);
+    if(!buyer||!seller)return{accepted:false,reason:'BUYER_AND_SELLER_COUNTRY_REQUIRED'};
+    if(buyer===seller)return{accepted:false,reason:'SELF_TRADE_NOT_ALLOWED'};
+    if(!resourceId)return{accepted:false,reason:'RESOURCE_ID_REQUIRED'};
+    if(quantity===null||quantity<=0)return{accepted:false,reason:'QUANTITY_MUST_BE_POSITIVE'};
+    if(unitPrice===null||unitPrice<0)return{accepted:false,reason:'UNIT_PRICE_MUST_BE_NON_NEGATIVE'};
+    const requestId=String(p.requestId||('TRADE-'+turn()+'-'+buyer+'-'+seller+'-'+token(resourceId)+'-'+Date.now()));
+    const raw=ctx.stateTransaction.get('trade');
+    const bucket=raw&&typeof raw==='object'?clone(raw):{};
+    if(!Array.isArray(bucket.importRequests))bucket.importRequests=[];
+    if(!bucket.globalTradeLedger||typeof bucket.globalTradeLedger!=='object')bucket.globalTradeLedger={requests:[],decisions:[],settlements:[]};
+    const prior=bucket.importRequests.find(x=>String(x.requestId)===requestId);
+    if(prior)return{accepted:true,duplicate:true,request:clone(prior)};
+    const request={
+      requestId,countryId:buyer,targetCountryId:seller,resourceId,quantity,unitPrice,
+      currency:String(p.currency||currencyOf(buyer)||'').toUpperCase()||null,
+      totalValue:Number((quantity*unitPrice).toFixed(8)),status:TYPES.SENT,stage:'OPEN',
+      attempt:1,createdTurn:turn(),requestedTurn:turn(),source:p.source||'GLOBAL_TRADE_UI',
+      needPressure:clamp(p.needPressure)??0.5,settlementStatus:'NOT_STARTED',
+      evidencePolicy:'COUNTERPARTY_REVIEW_REQUIRED'
+    };
+    bucket.importRequests.push(request);
+    bucket.importRequests=bucket.importRequests.slice(-MAX_HISTORY);
+    bucket.globalTradeLedger.requests=[...(bucket.globalTradeLedger.requests||[]),{
+      requestId,status:request.status,stage:request.stage,buyerCountryId:buyer,sellerCountryId:seller,
+      resourceId,quantity,unitPrice,totalValue:request.totalValue,simulationTurn:turn(),source:request.source
+    }].slice(-MAX_HISTORY);
+    persistTradeBucket(ctx,bucket);
+    emit('OMEGA_TRADE_REQUEST_CREATED',buyer,request);
+    return{accepted:true,request:clone(request)};
+  }
+
   function reviewHandler(cmd,ctx){
     const p=cmd?.payload||{},r=p.request||{},decision=sellerReviewDecision(r),seller=canonical(ctx.countryId);
     const ledger=ctx.stateTransaction.get('trade.globalTradeLedger');
@@ -741,6 +775,7 @@
     // leave counterpart review and settlement commands UNHANDLED.
     try{mesh?.configure?.({});}catch(e){handlerInstallReport.errors.push('MINISTRY_MESH_CONFIGURE_FAILED:'+String(e?.message||e));}
     const defs=[
+      ['OMEGA_TRADE_CREATE_IMPORT_REQUEST','trade',createImportRequestHandler],
       ['OMEGA_TRADE_COUNTERPARTY_REVIEW','trade',reviewHandler],
       ['OMEGA_TRADE_APPLY_BUYER_RESPONSE','trade',buyerResponseHandler],
       ['OMEGA_TRADE_SCHEDULE_RETRY','trade',scheduleRetryHandler],
@@ -903,7 +938,13 @@
     }
     return diagnostics();
   }
-  const API=Object.freeze({VERSION,TYPES,diagnostics,processAll,reviewRequest:sellerReviewDecision,relationScore,marketPrice,inventory,currencyOf,fxRate,settlementValues});
+  function createRequest(countryId,payload={}){
+    installHandlers();
+    const requestId=String(payload.requestId||('TRADE-'+turn()+'-'+canonical(countryId)+'-'+token(payload.resourceId||'RESOURCE')+'-'+Date.now()));
+    const result=command('trade','OMEGA_TRADE_CREATE_IMPORT_REQUEST',countryId,{...clone(payload),requestId});
+    return result&&result.status==='APPLIED'&&result.result?result.result:result;
+  }
+  const API=Object.freeze({VERSION,TYPES,diagnostics,processAll,reviewRequest:sellerReviewDecision,createRequest,relationScore,marketPrice,inventory,currencyOf,fxRate,settlementValues});
   g.Omega=g.Omega||{};g.Omega.GlobalTrade=API;g.OmegaGlobalTrade=API;
   try{init();}catch(e){g.OmegaGlobalTradeError=String(e?.message||e);}
 })(typeof window!=='undefined'?window:globalThis);
