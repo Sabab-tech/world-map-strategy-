@@ -62,5 +62,9 @@ assert(referenceOnly.microstructure.referenceAskCount>0,'inventory-derived refer
 assert.equal(referenceOnly.matchedQuantity,0,'reference-only ask must never fill a buyer order');
 assert.equal(referenceOnly.clearingPriceUsd,null,'reference-only liquidity must not publish an executed clearing price');
 assert.notEqual(referenceOnly.status,'CLEARED');
+assert.equal(referenceOnly.priceDiscovery,'REFERENCE_ONLY','a reference quote is not a negotiation range with an executable ask');
+assert.equal(referenceOnly.bestAskUsd,null,'reference ask must not be presented as executable best ask');
+assert.equal(referenceOnly.askDepth,0);
+assert.equal(referenceOnly.referenceAskDepth>0,true);
 assert.equal(referenceOnly.matches.some(x=>x.referenceLiquidity),false);
 console.log('OMEGA GLOBAL MARKET CLEARING TEST PASSED');
