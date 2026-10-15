@@ -1634,8 +1634,8 @@ window.OmegaCabinetUI = {
         html += `
             <div id="recharts-trend-container" style="background:rgba(2,11,20,0.9); border:1px solid rgba(0,229,255,0.3); border-radius:12px; padding:16px; margin-top:16px;">
                 <div style="font-family:'Share Tech Mono',monospace; color:#00e5ff; font-size:13px; font-weight:bold; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between;">
-                    <span>📈 HISTORICAL MACROECONOMIC & MILITARY POWER TREND (RECHARTS)</span>
-                    <span style="font-size:10px; color:#ffd700; background:rgba(255,215,0,0.15); border:1px solid rgba(255,215,0,0.4); padding:2px 8px; border-radius:10px;">MULTI-LINE ANALYTICS</span>
+                    <span>📈 OBSERVED SIMULATION HISTORY</span>
+                    <span style="font-size:10px; color:#ffd700; background:rgba(255,215,0,0.15); border:1px solid rgba(255,215,0,0.4); padding:2px 8px; border-radius:10px;">RECORDED TURNS ONLY</span>
                 </div>
                 <div id="recharts-gdp-mil-chart" style="width:100%; height:260px;"></div>
             </div>
@@ -1650,188 +1650,51 @@ window.OmegaCabinetUI = {
     renderRechartsChart(containerId, activeCountry, ministryId = 'economy') {
         const container = document.getElementById(containerId);
         if (!container) return;
-
-        const cDetails = this.getCountryDetails(activeCountry);
-        const cData = (window.Game && window.Game.countryLookup && window.Game.countryLookup[activeCountry]) || { gdp: cDetails.gdp || '$455.2B', militaryPower: 85 };
-        let rawGdp = typeof cData.gdp === 'number' ? cData.gdp : parseFloat(String(cData.gdp || '455.2').replace(/[^0-9.]/g, '')) || 450;
-        let rawMil = typeof cData.militaryPower === 'number' ? cData.militaryPower : parseFloat(String(cData.militaryPower || '85').replace(/[^0-9.]/g, '')) || 85;
-
-        let primaryName = "Sector Primary Index";
-        let secondaryName = "Efficiency Rating";
-        let tertiaryName = "Sovereign Stability";
-        let pColor = "#00e5ff";
-        let sColor = "#ffd700";
-        let tColor = "#22c55e";
-        let unitLeft = " %";
-
-        let pFactor = 1.0, sFactor = 1.0, tFactor = 1.0;
-
-        if (ministryId === 'defense' || ministryId === 'military') {
-            primaryName = "Military Combat Readiness Index";
-            secondaryName = "Defense Procurement ($B)";
-            tertiaryName = "Border Fortress Defense %";
-            unitLeft = "";
-            pColor = "#ef4444"; sColor = "#f59e0b"; tColor = "#3b82f6";
-            pFactor = rawMil; sFactor = rawGdp * 0.08; tFactor = 88;
-        } else if (ministryId === 'foreign_affairs' || ministryId === 'foreign') {
-            primaryName = "Global Alliance Reputation";
-            secondaryName = "Bilateral Treaties Signed";
-            tertiaryName = "Diplomatic Trust Score %";
-            pColor = "#3b82f6"; sColor = "#10b981"; tColor = "#f59e0b";
-            pFactor = 82; sFactor = 24; tFactor = 90;
-        } else if (ministryId === 'intelligence_cyber' || ministryId === 'intelligence') {
-            primaryName = "Cyber Shield Security %";
-            secondaryName = "Threat Interception Rate %";
-            tertiaryName = "Counter-Espionage Index";
-            pColor = "#a855f7"; sColor = "#00e5ff"; tColor = "#ef4444";
-            pFactor = 86; sFactor = 94; tFactor = 78;
-        } else if (ministryId === 'health' || ministryId === 'health_welfare') {
-            primaryName = "Healthcare System Capacity %";
-            secondaryName = "Pandemic Prevention Index";
-            tertiaryName = "Life Expectancy Index";
-            pColor = "#10b981"; sColor = "#00e5ff"; tColor = "#f59e0b";
-            pFactor = 89; sFactor = 92; tFactor = 84;
-        } else if (ministryId === 'education') {
-            primaryName = "Human Capital Index";
-            secondaryName = "STEM R&D Scholar Outputs";
-            tertiaryName = "Literacy & Technical Skill %";
-            pColor = "#3b82f6"; sColor = "#8b5cf6"; tColor = "#10b981";
-            pFactor = 88; sFactor = 45; tFactor = 95;
-        } else if (ministryId === 'technology' || ministryId === 'science') {
-            primaryName = "Tech Sovereignty Index %";
-            secondaryName = "Patent Output Volume";
-            tertiaryName = "Quantum AI Grid Readiness %";
-            pColor = "#00e5ff"; sColor = "#ec4899"; tColor = "#8b5cf6";
-            pFactor = 81; sFactor = 120; tFactor = 76;
-        } else if (ministryId === 'transport' || ministryId === 'infrastructure') {
-            primaryName = "Logistics Transit Velocity %";
-            secondaryName = "Power Grid Baseload Reliability %";
-            tertiaryName = "Port Cargo Throughput Index";
-            pColor = "#f97316"; sColor = "#eab308"; tColor = "#06b6d4";
-            pFactor = 85; sFactor = 96; tFactor = 79;
-        } else if (ministryId === 'energy_mining' || ministryId === 'resource') {
-            primaryName = "Strategic Energy Stockpile %";
-            secondaryName = "Domestic Power Gen (TWh)";
-            tertiaryName = "Material Reserve Ratio";
-            pColor = "#eab308"; sColor = "#f97316"; tColor = "#10b981";
-            pFactor = 91; sFactor = 320; tFactor = 84;
-        } else if (ministryId === 'interior_security' || ministryId === 'interior') {
-            primaryName = "Public Order & Law Enforcement %";
-            secondaryName = "Emergency Dispatch Velocity (min)";
-            tertiaryName = "Civil Stability Rating %";
-            pColor = "#6366f1"; sColor = "#ef4444"; tColor = "#10b981";
-            pFactor = 87; sFactor = 4.2; tFactor = 89;
-        } else {
-            // Default economy/finance/trade/cabinet
-            primaryName = "National GDP ($ Billion)";
-            secondaryName = "Treasury Reserve ($ Billion)";
-            tertiaryName = "Sovereign Stability Index";
-            unitLeft = " B";
-            pColor = "#00e5ff"; sColor = "#ffd700"; tColor = "#22c55e";
-            pFactor = rawGdp; sFactor = rawGdp * 0.25; tFactor = 92;
+        const observer = window.OmegaLiveOpsObservability;
+        const rawSeries = observer && typeof observer.getTrendSeries === 'function'
+            ? observer.getTrendSeries(activeCountry, ministryId) : [];
+        const series = (Array.isArray(rawSeries) ? rawSeries : []).map(item => ({
+            label: String(item && item.label || 'Recorded metric'),
+            unit: String(item && item.unit || ''),
+            points: (Array.isArray(item && item.points) ? item.points : [])
+                .filter(point => Number.isFinite(Number(point && point.turn)) && Number.isFinite(Number(point && point.value)))
+                .slice(-24)
+        })).filter(item => item.points.length >= 2);
+        const escape = value => String(value == null ? '' : value)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        const fmt = value => Number(value).toLocaleString(undefined, { maximumFractionDigits: 2 });
+        if (!series.length) {
+            container.innerHTML = '<div style="padding:16px;border:1px dashed rgba(148,163,184,.45);border-radius:8px;color:#cbd5e1;background:rgba(2,11,20,.85);">' +
+                '<strong style="color:#7dd3fc;">NO RECORDED MULTI-TURN HISTORY</strong>' +
+                '<p style="font-size:12px;line-height:1.5;">This chart only plots numeric observations captured from actual committed simulation turns. There are not yet two recorded observations for a metric in this country and ministry view.</p>' +
+                '<p style="font-size:11px;color:#94a3b8;">No prior-year values, synthetic trend points, or missing-value estimates are substituted.</p>' +
+                '</div>';
+            return;
         }
-
-        const data = [
-            { year: '2020', val1: Number((pFactor * 0.76).toFixed(1)), val2: Number((sFactor * 0.72).toFixed(1)), val3: Number((tFactor * 0.82).toFixed(1)) },
-            { year: '2021', val1: Number((pFactor * 0.83).toFixed(1)), val2: Number((sFactor * 0.80).toFixed(1)), val3: Number((tFactor * 0.86).toFixed(1)) },
-            { year: '2022', val1: Number((pFactor * 0.81).toFixed(1)), val2: Number((sFactor * 0.85).toFixed(1)), val3: Number((tFactor * 0.84).toFixed(1)) },
-            { year: '2023', val1: Number((pFactor * 0.90).toFixed(1)), val2: Number((sFactor * 0.91).toFixed(1)), val3: Number((tFactor * 0.90).toFixed(1)) },
-            { year: '2024', val1: Number((pFactor * 0.95).toFixed(1)), val2: Number((sFactor * 0.94).toFixed(1)), val3: Number((tFactor * 0.93).toFixed(1)) },
-            { year: '2025', val1: Number((pFactor * 0.98).toFixed(1)), val2: Number((sFactor * 0.97).toFixed(1)), val3: Number((tFactor * 0.96).toFixed(1)) },
-            { year: '2026', val1: Number((pFactor * 1.04).toFixed(1)), val2: Number((sFactor * 1.03).toFixed(1)), val3: Number((tFactor * 0.99).toFixed(1)) }
-        ];
-
-        if (window.Recharts && window.React && window.ReactDOM) {
-            try {
-                const { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } = window.Recharts;
-                const e = window.React.createElement;
-
-                const chartElement = e(ResponsiveContainer, { width: '100%', height: '100%' },
-                    e(LineChart, { data: data, margin: { top: 10, right: 20, left: 10, bottom: 5 } },
-                        e(CartesianGrid, { strokeDasharray: '3 3', stroke: 'rgba(255,255,255,0.1)' }),
-                        e(XAxis, { dataKey: 'year', stroke: '#94a3b8', tick: { fill: '#94a3b8', fontSize: 11 } }),
-                        e(YAxis, { yAxisId: 'left', stroke: pColor, tick: { fill: pColor, fontSize: 11 }, unit: unitLeft }),
-                        e(YAxis, { yAxisId: 'right', orientation: 'right', stroke: sColor, tick: { fill: sColor, fontSize: 11 } }),
-                        e(Tooltip, { contentStyle: { backgroundColor: '#0f172a', borderColor: pColor, borderRadius: '8px', color: '#fff', fontSize: '12px' } }),
-                        e(Legend, { wrapperStyle: { fontSize: '12px', color: '#cbd5e1' } }),
-                        e(Line, { yAxisId: 'left', type: 'monotone', dataKey: 'val1', name: primaryName, stroke: pColor, strokeWidth: 3, dot: { r: 5, fill: pColor } }),
-                        e(Line, { yAxisId: 'right', type: 'monotone', dataKey: 'val2', name: secondaryName, stroke: sColor, strokeWidth: 3, dot: { r: 5, fill: sColor } }),
-                        e(Line, { yAxisId: 'right', type: 'monotone', dataKey: 'val3', name: tertiaryName, stroke: tColor, strokeWidth: 2, strokeDasharray: '4 4', dot: { r: 4, fill: tColor } })
-                    )
-                );
-
-                if (window.ReactDOM.createRoot) {
-                    if (!container._reactRoot) {
-                        container._reactRoot = window.ReactDOM.createRoot(container);
-                    }
-                    container._reactRoot.render(chartElement);
-                } else {
-                    window.ReactDOM.render(chartElement, container);
-                }
-                return;
-            } catch (err) {
-                console.warn("Recharts render error, using fallback SVG:", err);
-            }
-        }
-
-        // Breathtaking Interactive SVG Fallback
-        const svgWidth = 640;
-        const svgHeight = 230;
-        const padding = 40;
-        const minVal1 = Math.min(...data.map(d => d.val1));
-        const maxVal1 = Math.max(...data.map(d => d.val1));
-        const minVal2 = Math.min(...data.map(d => d.val2));
-        const maxVal2 = Math.max(...data.map(d => d.val2));
-
-        const points1 = data.map((d, i) => {
-            const x = padding + (i / (data.length - 1)) * (svgWidth - 2 * padding);
-            const y = svgHeight - padding - (((d.val1 - minVal1 * 0.8) / (maxVal1 * 1.15 - minVal1 * 0.8 || 1)) * (svgHeight - 2 * padding));
-            return { x, y, val: d.val1, year: d.year };
-        });
-
-        const points2 = data.map((d, i) => {
-            const x = padding + (i / (data.length - 1)) * (svgWidth - 2 * padding);
-            const y = svgHeight - padding - (((d.val2 - minVal2 * 0.8) / (maxVal2 * 1.15 - minVal2 * 0.8 || 1)) * (svgHeight - 2 * padding));
-            return { x, y, val: d.val2, year: d.year };
-        });
-
-        const poly1 = points1.map(p => `${p.x},${p.y}`).join(' ');
-        const poly2 = points2.map(p => `${p.x},${p.y}`).join(' ');
-
-        container.innerHTML = `
-            <div style="font-family:'Share Tech Mono',monospace; display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:11px;">
-                <span style="color:${pColor};">${primaryName}: ${data[data.length-1].val1}</span>
-                <span style="color:${sColor};">${secondaryName}: ${data[data.length-1].val2}</span>
-                <span style="color:${tColor};">${tertiaryName}: ${data[data.length-1].val3}%</span>
-            </div>
-            <svg viewBox="0 0 ${svgWidth} ${svgHeight}" style="width:100%; height:100%; overflow:visible; background:rgba(2,8,18,0.95); border-radius:10px; border:1px solid rgba(0,229,255,0.25);">
-                <line x1="${padding}" y1="${padding}" x2="${svgWidth - padding}" y2="${padding}" stroke="rgba(255,255,255,0.08)" stroke-dasharray="4 4" />
-                <line x1="${padding}" y1="${svgHeight/2}" x2="${svgWidth - padding}" y2="${svgHeight/2}" stroke="rgba(255,255,255,0.08)" stroke-dasharray="4 4" />
-                <line x1="${padding}" y1="${svgHeight - padding}" x2="${svgWidth - padding}" y2="${svgHeight - padding}" stroke="rgba(0,229,255,0.3)" />
-
-                <polyline fill="none" stroke="${pColor}" stroke-width="3.5" points="${poly1}" />
-                <polyline fill="none" stroke="${sColor}" stroke-width="3" stroke-dasharray="6 2" points="${poly2}" />
-
-                ${points1.map((p) => `
-                    <circle cx="${p.x}" cy="${p.y}" r="5" fill="${pColor}" stroke="#fff" stroke-width="1.5">
-                        <title>Year ${p.year}: ${p.val}</title>
-                    </circle>
-                    <text x="${p.x}" y="${p.y - 10}" fill="${pColor}" font-size="9" font-family="monospace" text-anchor="middle" font-weight="bold">${p.val}</text>
-                `).join('')}
-
-                ${points2.map((p) => `
-                    <circle cx="${p.x}" cy="${p.y}" r="4" fill="${sColor}" stroke="#000" stroke-width="1">
-                        <title>Year ${p.year}: ${p.val}</title>
-                    </circle>
-                `).join('')}
-
-                <!-- X Axis Year Labels -->
-                ${data.map((d, i) => {
-                    const x = padding + (i / (data.length - 1)) * (svgWidth - 2 * padding);
-                    return `<text x="${x}" y="${svgHeight - 12}" fill="#94a3b8" font-size="10" font-family="monospace" text-anchor="middle">${d.year}</text>`;
-                }).join('')}
-            </svg>
-        `;
+        const renderSeries = item => {
+            const points = item.points;
+            const values = points.map(point => Number(point.value));
+            const min = Math.min(...values), max = Math.max(...values);
+            const span = max - min || Math.max(1, Math.abs(max) * 0.1);
+            const xy = points.map((point, index) => ({
+                x: 32 + index / Math.max(1, points.length - 1) * 576,
+                y: 80 - ((Number(point.value) - min) / span) * 52,
+                value: Number(point.value), turn: Number(point.turn)
+            }));
+            const line = xy.map(point => point.x.toFixed(1) + ',' + point.y.toFixed(1)).join(' ');
+            const latest = xy[xy.length - 1];
+            return '<section style="margin:10px 0;padding:10px;border:1px solid rgba(148,163,184,.25);border-radius:8px;background:rgba(2,11,20,.72);">' +
+                '<div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap;font-size:12px;color:#e2e8f0;"><strong>' + escape(item.label) +
+                '</strong><span style="color:#7dd3fc;">' + escape(fmt(latest.value)) + (item.unit ? ' ' + escape(item.unit) : '') + '</span></div>' +
+                '<svg viewBox="0 0 640 108" role="img" aria-label="' + escape(item.label) + ' observed over simulation turns" style="width:100%;height:auto;max-height:180px;display:block;">' +
+                '<line x1="30" y1="84" x2="610" y2="84" stroke="#334155"/><polyline fill="none" stroke="#38bdf8" stroke-width="3" points="' + line + '"/>' +
+                xy.map(point => '<circle cx="' + point.x.toFixed(1) + '" cy="' + point.y.toFixed(1) + '" r="3" fill="#38bdf8"><title>T' + point.turn + ': ' + escape(point.value) + '</title></circle>').join('') +
+                '<text x="30" y="102" font-size="11" fill="#94a3b8">T' + points[0].turn + '</text>' +
+                '<text x="610" y="102" text-anchor="end" font-size="11" fill="#94a3b8">T' + points[points.length - 1].turn + '</text></svg></section>';
+        };
+        container.innerHTML = '<div style="font-size:10px;color:#94a3b8;margin-bottom:8px;">SOURCE: LIVE SIMULATION STATE · REAL TURN RECORDS ONLY</div>' +
+            series.map(renderSeries).join('');
     },
 
     executeDeptAction(ministryId, actionType) {
@@ -2532,11 +2395,11 @@ window.OmegaCabinetUI = {
 
         html += `
             </div>
-            <!-- Historical Recharts Multi-Line Trend Chart -->
+            <!-- Observed simulation history chart; real turn records only -->
             <div id="recharts-trend-container" style="background:rgba(2,11,20,0.9); border:1px solid rgba(0,229,255,0.3); border-radius:12px; padding:16px; margin-top:16px;">
                 <div style="font-family:'Share Tech Mono',monospace; color:#00e5ff; font-size:13px; font-weight:bold; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between;">
-                    <span>📈 HISTORICAL MACROECONOMIC & MILITARY POWER TREND (RECHARTS)</span>
-                    <span style="font-size:10px; color:#ffd700; background:rgba(255,215,0,0.15); border:1px solid rgba(255,215,0,0.4); padding:2px 8px; border-radius:10px;">MULTI-LINE ANALYTICS</span>
+                    <span>📈 OBSERVED SIMULATION HISTORY</span>
+                    <span style="font-size:10px; color:#ffd700; background:rgba(255,215,0,0.15); border:1px solid rgba(255,215,0,0.4); padding:2px 8px; border-radius:10px;">RECORDED TURNS ONLY</span>
                 </div>
                 <div id="recharts-gdp-mil-chart" style="width:100%; height:240px;"></div>
             </div>
