@@ -199,13 +199,18 @@
     ctx.stateTransaction.set('trade.marketState',snap);
     const prices={};
     for(const [rid,q] of Object.entries(snap.resources||{})){
-      const px=q.clearingPriceUsd??q.referencePrice??null;
-      if(px!==null){
+      // Only a genuine cross between real bids and real asks is a transactible
+      // market price. Reference quotes remain available in marketMeta for asks/UI,
+      // but are never persisted into trade.marketPrice as if a deal had cleared.
+      const px=String(q?.status||'').toUpperCase()==='CLEARED'?num(q.clearingPriceUsd):null;
+      if(px!==null&&px>0){
         const rate=usdRate(ctx.countryId);
         if(rate!==null)prices[rid]=currency(ctx.countryId)==='USD'?px:px*rate;
       }
     }
-    if(Object.keys(prices).length)ctx.stateTransaction.set('trade.marketPrice',prices);
+    // Replace the projection even when no market cleared. Keeping yesterday's
+    // clearing price would make stale prices look current after supply/demand changed.
+    ctx.stateTransaction.set('trade.marketPrice',prices);
     const meta=ctx.stateTransaction.get('trade.marketMeta');
     const next=meta&&typeof meta==='object'?clone(meta):{};
     const history=ctx.stateTransaction.get('trade.marketHistory');
