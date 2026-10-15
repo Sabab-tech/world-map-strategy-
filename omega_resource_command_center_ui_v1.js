@@ -39,6 +39,7 @@
   }
   function number(value, unit) {
     if (value === null || value === undefined || value === '') return 'Unavailable';
+    if (typeof value === 'object') return shortJson(value);
     const n = Number(value);
     return Number.isFinite(n) ? n.toLocaleString() + (unit || '') : esc(value);
   }
@@ -227,7 +228,7 @@
       const unit = UNIT_DEFINITIONS[id];
       return '<option value="' + esc(id) + '">' + esc(unit.label) + '</option>';
     }).join('');
-    const metrology = '<form class="omega-rescc-form" data-form="metrology"><h3>Canonical unit conversion</h3>' +
+    const metrology = '<form class="omega-rescc-form" data-search-item data-form="metrology"><h3>Canonical unit conversion</h3>' +
       '<div class="omega-rescc-formgrid">' +
       '<label>Quantity<input name="value" type="number" step="any" required placeholder="Enter quantity"></label>' +
       '<label>From unit<select name="fromUnit" required>' + unitOptions + '</select></label>' +
@@ -389,7 +390,7 @@
     const resourceOptions = resources(country).map(function (r) {
       return '<option value="' + esc(r.id) + '">' + esc(r.name || r.id) + '</option>';
     }).join('');
-    const projectForm = '<form class="omega-rescc-form" data-form="factory-project">' +
+    const projectForm = '<form class="omega-rescc-form" data-search-item data-form="factory-project">' +
       '<h3>Start a catalog-backed factory project</h3><div class="omega-rescc-formgrid">' +
       '<label>Resource<select name="resourceId" required>' + resourceOptions + '</select></label>' +
       '<label>Budget cost<input type="number" name="cost" min="1" step="1" required></label>' +
@@ -532,7 +533,7 @@
     const resourceOpts = resources(country).map(function (r) {
       return '<option value="' + esc(r.id) + '">' + esc(r.name || r.id) + '</option>';
     }).join('');
-    const form = '<form class="omega-rescc-form" data-form="trade-request">' +
+    const form = '<form class="omega-rescc-form" data-search-item data-form="trade-request">' +
       '<h3>Create bilateral supply request</h3><div class="omega-rescc-formgrid">' +
       '<label>Seller country<select name="targetCountryId" required>' + countries + '</select></label>' +
       '<label>Resource<select name="resourceId" required>' + resourceOpts + '</select></label>' +
@@ -577,7 +578,7 @@
     const r = resourceBucket(country);
     const shipments = Array.isArray(r.logistics && r.logistics.shipments) ? r.logistics.shipments : [];
     const hardening = g.OmegaResourceSystemHardening || g.Omega && g.Omega.ResourceSystemHardening;
-    const form = '<form class="omega-rescc-form" data-form="cascade">' +
+    const form = '<form class="omega-rescc-form" data-search-item data-form="cascade">' +
       '<h3>Evaluate transport constraint scenario</h3><div class="omega-rescc-formgrid">' +
       '<label>Terrain multiplier<input name="terrainMultiplier" type="number" min="0.1" max="1" step="0.05" value="1"></label>' +
       '<label>Infrastructure multiplier<input name="infrastructureMultiplier" type="number" min="0.1" max="1" step="0.05" value="1"></label>' +
@@ -611,7 +612,7 @@
     ];
     const options = '<option value="">Select assessment</option><option value="proceed">Verified / proceed</option>' +
       '<option value="review">Uncertain / review</option><option value="block">Failed / block</option>';
-    const form = '<form class="omega-rescc-form" data-form="cognitive"><h3>12-question decision gate</h3>' +
+    const form = '<form class="omega-rescc-form" data-search-item data-form="cognitive"><h3>12-question decision gate</h3>' +
       '<p class="omega-rescc-note">This is a player-entered screening checklist. It is explicitly advisory and is not represented as a persisted AI decision or a backend evaluation unless such an API exists.</p>' +
       questions.map(function (q, i) {
         return '<label class="omega-rescc-question"><span>' + (i + 1) + '. ' + esc(q) + '</span>' +
@@ -1026,6 +1027,7 @@
         const oldCards = cabinet.getResource16CardsHtml;
         cabinet.getResource16CardsHtml = function () {
           let html = oldCards.call(this);
+          const routeCountry = activeCountry(this.activeCountry || countryId);
           const panelByPoint = {
             '01': 'matrix', '02': 'ontology', '03': 'reserves', '04': 'deposits',
             '05': 'extraction', '06': 'processing', '07': 'inventory', '08': 'logistics',
@@ -1036,7 +1038,7 @@
             const point = block.match(/<span>(\d{2})\.\s/);
             if (!point || !panelByPoint[point[1]]) return block;
             const panel = panelByPoint[point[1]];
-            return block.replace(/onclick="[^"]*"/, 'onclick="window.ResourceMinistryEngine.openModal(\'' + countryKey + '\', \'' + panel + '\');"');
+            return block.replace(/onclick="[^"]*"/, 'onclick="window.ResourceMinistryEngine.openModal(\'' + routeCountry + '\', \'' + panel + '\');"');
           });
           html = html.replace('18 Commodity Ontology Matrix', 'Commodity Ontology Matrix')
             .replace('593 geocoded global mining concessions, ore purities, and spatial reserve clusters.', 'Authoritative global deposit registry; missing values remain unavailable.')
