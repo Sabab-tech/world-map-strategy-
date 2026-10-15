@@ -98,8 +98,13 @@ test('legacy card names disclose feature gaps instead of claiming unsupported ac
   assert.ok(ministry.includes("executeResource16Point('p16', 'build_solar')"));
   assert.match(ui,/Open 12-Question Screening Checklist/);
   assert.match(ui,/Inspect Treasury & SWF Records/);
-  assert.match(ui,/carbon quota enforcement is only shown when backed by authoritative state/i);
-  assert.match(ui,/Nuclear construction is unavailable/);
+  assert.match(ui,/TONNES CO₂e/);
+  assert.match(ui,/SIMULATED_GAMEPLAY_ASSUMPTION_NOT_MEASURED_EMISSIONS/);
+  assert.match(ui,/data-form="carbon-quota"/);
+  assert.match(ui,/policy\.evaluateCognitiveGate\(c/);
+  assert.match(ui,/policy\.startPowerProject/);
+  assert.match(ui,/policy\.remediateSite/);
+  assert.match(ui,/2\.4 GW nuclear baseload project/);
 });
 
 test('the UI bridge loads after its data-owning engines and static HUD has no fabricated balance examples', () => {
