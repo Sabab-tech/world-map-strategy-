@@ -105,7 +105,7 @@ test('runtime projection reads real ledgers and records turn-based observations 
   const treasury = economySeries.find(series => series.key === 'treasury');
   assert.deepEqual(JSON.parse(JSON.stringify(gdp.points)), [{turn:1,value:1000},{turn:2,value:1100}]);
   assert.deepEqual(JSON.parse(JSON.stringify(treasury.points)), [{turn:1,value:500},{turn:2,value:450}]);
-  assert.equal(JSON.stringify(gameState), originalState === JSON.stringify(gameState) ? originalState : JSON.stringify(gameState),
+  assert.equal(JSON.stringify(gameState), originalState,
     'observability must not mutate Game.state to display or sample data');
   assert.equal(api.diagnostics().readOnly, true);
 });
