@@ -55,9 +55,13 @@ export function validateResourceDecisionRequest(payload = {}) {
   if (!answers || answers.length !== REQUIRED_ANSWERS || answers.some(answer => !ANSWERS.has(answer))) {
     throw new ResourceDecisionAIError('Exactly 12 valid answers are required.', 400, 'ALL_12_QUESTIONS_REQUIRE_ANSWERS');
   }
+  const decisionId = text(payload.decisionId);
+  if (decisionId && !/^[A-Za-z0-9:_-]{1,180}$/.test(decisionId)) {
+    throw new ResourceDecisionAIError('decisionId contains unsupported characters.', 400, 'DECISION_ID_INVALID');
+  }
   const state = payload.gameState && typeof payload.gameState === 'object' && !Array.isArray(payload.gameState)
     ? payload.gameState : {};
-  return { countryId, answers, state };
+  return { countryId, answers, state, decisionId: decisionId || null };
 }
 
 export function buildResourceDecisionContext(payload = {}) {
@@ -198,6 +202,7 @@ export function buildResourceDecisionPrompt(context) {
 }
 
 export async function evaluateResourceDecision({ payload, generateText }) {
+  const request = validateResourceDecisionRequest(payload);
   const context = buildResourceDecisionContext(payload);
   if (typeof generateText !== 'function') {
     throw new ResourceDecisionAIError('AI provider is unavailable.', 503, 'AI_PROVIDER_UNAVAILABLE');
@@ -216,6 +221,7 @@ export async function evaluateResourceDecision({ payload, generateText }) {
   return {
     ok: true,
     status: 'COMPLETED',
+    decisionId: request.decisionId,
     assessment,
     context: { countryId: context.countryId, simulationTurn: context.simulationTurn, source: context.source }
   };
