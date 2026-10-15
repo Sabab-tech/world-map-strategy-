@@ -1751,8 +1751,27 @@ function batchFromExtraction(x,record){
         return initialized;
       }
       const result=await extractAll();
-      const snapshot={status:result?.status||'UNKNOWN',turn:turn(),siteCount:binding.sites.length,
-        countryCount:countries().length,reason:result?.reason||null};
+      const countryResults=Array.isArray(result?.results)?result.results:[];
+      const failedCountryRows=countryResults.filter(function(row){
+        return row?.result?.status!=='APPLIED'||row?.result?.result?.accepted===false;
+      });
+      const extractedRecordCount=countryResults.reduce(function(total,row){
+        const payload=row?.result?.result||row?.result||{};
+        return total+(Array.isArray(payload.records)?payload.records.length:0);
+      },0);
+      const blockedSiteCount=countryResults.reduce(function(total,row){
+        const payload=row?.result?.result||row?.result||{};
+        return total+Math.max(0,Number(payload.blocked)||0);
+      },0);
+      const rawStatus=String(result?.status||'UNKNOWN');
+      const status=rawStatus==='COMPLETED'
+        ?(failedCountryRows.length?'DEGRADED':(extractedRecordCount>0?'COMPLETED':'NO_OUTPUT'))
+        :rawStatus;
+      const reason=failedCountryRows[0]?.result?.reason||failedCountryRows[0]?.result?.result?.reason||
+        result?.reason||(status==='NO_OUTPUT'?'NO_EXTRACTION_RECORDS_CREATED':null);
+      const snapshot={status,resultStatus:rawStatus,turn:turn(),siteCount:binding.sites.length,
+        countryCount:countryResults.length||countries().length,failedCountryCount:failedCountryRows.length,
+        extractedRecordCount,blockedSiteCount,reason};
       g.__omegaResourceEndowmentLastBootstrap=snapshot;
       publishBootstrapStatus(snapshot);
       return result;
