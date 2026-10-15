@@ -378,6 +378,17 @@ async function init(){
   }};
   attachMapRefreshHooks();scheduleMarkerRender();setTimeout(()=>scheduleMarkerRender(),1000);setTimeout(()=>scheduleMarkerRender(),3000);
   setStatus('READY · '+sites.length+' individual sites · '+new Set(sites.map(s=>s.countryId)).size+' countries · source coordinate confidence preserved');
+  // Notify dependent runtimes only after the canonical site registry is fully published.
+  // This allows resource extraction and OPS Live to consume the same loaded registry.
+  try{
+   if(typeof g.dispatchEvent==='function'&&typeof g.CustomEvent==='function'){
+    g.dispatchEvent(new g.CustomEvent('OMEGA_RESOURCE_SITE_BINDING_READY',{detail:{
+     version:VERSION,status:'READY',siteCount:sites.length,
+     countryCount:new Set(sites.map(s=>s.countryId)).size,
+     sourceFiles:sources.map(x=>x.url)
+    }}));
+   }
+  }catch(_){}
  }catch(e){setStatus('FAILED · '+String(e?.message||e));g.OmegaIndividualResourceSiteBindingError=String(e?.message||e);g.__OMEGA_RESOURCE_SITE_BINDING_INIT__=false;}
 }
 g.addEventListener?.('OMEGA_READY',()=>void init());
