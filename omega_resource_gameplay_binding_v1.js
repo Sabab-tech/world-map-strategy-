@@ -42,7 +42,10 @@ function humanize(value){
   const preferred=value.label??value.name??value.displayName??value.value??value.quantity??value.amount??value.type??value.method??value.routeName??value.routeId??value.id;
   return hasValue(preferred)?humanize(preferred):'';
  }
- return String(value).trim().replace(/[_-]+/g,' ').replace(/\s+/g,' ').replace(/\b[a-z]/g,c=>c.toUpperCase());
+ const raw=String(value).trim().replace(/[_-]+/g,' ').replace(/\s+/g,' ');
+ if(/^https?:\/\//i.test(raw))return raw;
+ const label=/^[A-Z0-9]{2,3}$/.test(raw)?raw:raw.toLowerCase();
+ return label.replace(/\b[a-z]/g,c=>c.toUpperCase());
 }
 function formatScalar(value){
  if(typeof value==='number'&&Number.isFinite(value))return new Intl.NumberFormat('en-US',{maximumFractionDigits:3}).format(value);
