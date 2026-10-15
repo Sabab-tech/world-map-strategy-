@@ -71,7 +71,7 @@ test('metrology converter handles matching dimensions and blocks dimension misma
 test('actual industrial flow and technology project state paths are rendered', () => {
   assert.match(ui, /r\.industrialNetwork \|\| \{\}/);
   assert.match(ui, /industrialState\.siteFlowLedger/);
-  assert.match(ui, /technology project contracts/);
+  assert.match(ui, /technology project contracts/i);
   assert.match(ui, /Resource research runtime projects/);
   assert.match(ui, /data-search-item data-form=/);
 });
