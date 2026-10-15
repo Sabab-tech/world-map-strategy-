@@ -133,6 +133,9 @@
       for(const ask of askRemain){
         if(bid.remaining<=1e-9)break;
         if(ask.remaining<=1e-9)continue;
+        // Resource inventory at a reference price is a quote signal, not a seller order.
+        // It must never create a fill or a fictitious clearing price.
+        if(ask.referenceOnly===true)continue;
         if(bid.priceUsd+1e-12<ask.priceUsd)break;
         if(bid.countryId===ask.countryId)continue;
         const embargo=strategicPolicy?.isResourceEmbargoed?.(bid.countryId,ask.countryId,rid);
