@@ -4,6 +4,12 @@ on:
   push:
     branches: [main, feature/milestone-b-resource-e2e]
     paths:
+      - 'omega_resource_strategic_policy_runtime_v1.js'
+      - 'resource_strategic_policy_rules_v1.json'
+      - 'omega_simulation_runtime.js'
+      - 'test/omega_resource_strategic_policy_runtime.test.mjs'
+      - 'test/omega_simulation_runtime.test.js'
+      - 'test/omega_resource_multicentury_depletion.test.mjs'
       - '.github/workflows/omega-resource-gameplay-pipeline.yml'
       - 'omega_resource_endowment_runtime.js'
       - 'omega_resource_part04_identity_runtime.js'
@@ -46,6 +52,12 @@ on:
       - 'test/omega_live_operations_observability_v1.test.mjs'
   pull_request:
     paths:
+      - 'omega_resource_strategic_policy_runtime_v1.js'
+      - 'resource_strategic_policy_rules_v1.json'
+      - 'omega_simulation_runtime.js'
+      - 'test/omega_resource_strategic_policy_runtime.test.mjs'
+      - 'test/omega_simulation_runtime.test.js'
+      - 'test/omega_resource_multicentury_depletion.test.mjs'
       - '.github/workflows/omega-resource-gameplay-pipeline.yml'
       - 'omega_resource_endowment_runtime.js'
       - 'omega_resource_industrial_network_v1.js'
@@ -112,3 +124,5 @@ jobs:
         run: npm run test:resource-industrial-network
       - name: Transport logistics regression
         run: npm run test:resource-logistics
+      - name: Strategic policy, depletion and save/load integrity regressions
+        run: npm run test:resource-strategic-policy && npm run test:resource-multicentury-depletion
