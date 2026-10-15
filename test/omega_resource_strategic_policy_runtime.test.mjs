@@ -183,6 +183,7 @@ test('canonical simulation save/load preserves resource policy, environment, res
   h.state.resource.BGD.batches=[{batchId:'BATCH-RESTORE',resourceId:'copper',remainingQuantity:1234,stage:'RAW_EXTRACTED'}];
   h.state.resource.BGD.carbonQuota={quotaId:'QUOTA-RESTORE',allowanceTonnesCo2e:50,unit:'TONNES_CO2E',periodTurns:10,status:'ACTIVE'};
   h.state.resource.BGD.carbonEmissionsLedger=[{transactionId:'CARBON-RESTORE',quantityTonnesCo2e:12,unit:'TONNES_CO2E',quotaId:'QUOTA-RESTORE',periodIndex:0}];
+  h.state.resource.BGD.carbonQuotaEnforcementLedger=[{violationId:'VIOLATION-RESTORE',quotaId:'QUOTA-RESTORE',reason:'CARBON_QUOTA_EXCEEDED',requestedTonnesCo2e:15,status:'BLOCKED',remediationFollowUp:'MONITOR_SITE_IMPACT'}];
   h.state.resource.BGD.powerProjects=[{projectId:'POWER-RESTORE',status:'UNDER_CONSTRUCTION',progressTurns:3}];
   h.state.resource.BGD.powerAssets=[{assetId:'ASSET-RESTORE',status:'OPERATIONAL',capacityMw:2400}];
   h.state.resource.BGD.powerGeneration={turn:12,installedCapacityMw:2400,generatedMwh:51840,unit:'MWH_PER_TURN'};
@@ -191,7 +192,7 @@ test('canonical simulation save/load preserves resource policy, environment, res
   h.state.resource.BGD.sovereignWealthFund={fundId:'SWF:BGD',balance:240,unit:'TREASURY_NATIVE_UNITS',contributions:[{transactionId:'SWF-RESTORE',amount:240}]};
   const saved=sim.saveState();
   h.state.resource.BGD.mineStates={};h.state.resource.BGD.environmentalImpact={revision:999};h.state.resource.BGD.explorationProjects=[];h.state.trade.BGD.resourceEmbargoes=[];h.state.resource.BGD.batches=[];
-  h.state.resource.BGD.carbonQuota=null;h.state.resource.BGD.carbonEmissionsLedger=[];h.state.resource.BGD.powerProjects=[];h.state.resource.BGD.powerAssets=[];h.state.resource.BGD.powerGeneration={};h.state.resource.BGD.powerGenerationLedger=[];h.state.resource.BGD.cognitiveDecisionLedger=[];h.state.resource.BGD.sovereignWealthFund=null;
+  h.state.resource.BGD.carbonQuota=null;h.state.resource.BGD.carbonEmissionsLedger=[];h.state.resource.BGD.carbonQuotaEnforcementLedger=[];h.state.resource.BGD.powerProjects=[];h.state.resource.BGD.powerAssets=[];h.state.resource.BGD.powerGeneration={};h.state.resource.BGD.powerGenerationLedger=[];h.state.resource.BGD.cognitiveDecisionLedger=[];h.state.resource.BGD.sovereignWealthFund=null;
   sim.loadState(saved);
   assert.equal(h.state.simulation.turn,12);
   assert.equal(h.state.resource.BGD.mineStates['SITE_OCC:BGD:test'].residualQuantity,987654);
@@ -201,6 +202,9 @@ test('canonical simulation save/load preserves resource policy, environment, res
   assert.equal(h.state.resource.BGD.batches[0].remainingQuantity,1234);
   assert.equal(h.state.resource.BGD.carbonQuota.quotaId,'QUOTA-RESTORE');
   assert.equal(h.state.resource.BGD.carbonEmissionsLedger[0].quantityTonnesCo2e,12);
+  assert.equal(h.state.resource.BGD.carbonQuotaEnforcementLedger[0].violationId,'VIOLATION-RESTORE');
+  assert.equal(h.state.resource.BGD.carbonQuotaEnforcementLedger[0].reason,'CARBON_QUOTA_EXCEEDED');
+  assert.equal(h.state.resource.BGD.carbonQuotaEnforcementLedger[0].requestedTonnesCo2e,15);
   assert.equal(h.state.resource.BGD.powerProjects[0].progressTurns,3);
   assert.equal(h.state.resource.BGD.powerAssets[0].capacityMw,2400);
   assert.equal(h.state.resource.BGD.powerGeneration.generatedMwh,51840);
