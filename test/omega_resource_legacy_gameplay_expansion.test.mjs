@@ -19,12 +19,14 @@ assert.equal(ids.size, 115, 'all expansion site IDs must be unique');
 assert.equal(canonical.siteCount, 315, 'canonical source file preserves the 250 baseline + 65 original expansion records');
 assert.equal(canonical.sites.length, 315);
 assert.equal(canonicalIds.size, 315);
-assert.equal(sites.filter(s => canonicalIds.has(s.siteId)).length, 65, 'the original 65 records remain in canonical source data');
-assert.equal(sites.filter(s => !canonicalIds.has(s.siteId)).length, 50, 'the next 50 are additive runtime records, not source-file overwrites');
+const original65 = parts.slice(0, 5).flatMap(p => p.records);
+assert.equal(original65.filter(s => canonicalIds.has(s.siteId)).length, 65, 'all 65 original legacy site IDs remain represented in canonical source data');
+assert.equal(sites.filter(s => !canonicalIds.has(s.siteId)).length, 50, 'only the next 50 site IDs are additive, not source-file overwrites');
+assert.equal(parts[5].records.filter(s => canonicalIds.has(s.siteId)).length, 0, 'the next 50 site IDs must be additive, not source-file overwrites');
 const canonicalLegacyRows = canonical.sites.filter(s => s.runtime?.identityAuthority === 'LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE');
-assert.equal(canonicalLegacyRows.length, 65, 'the original 65 gameplay records remain in the canonical file');
+assert.equal(canonicalLegacyRows.length, 59, 'canonical file retains 59 original legacy rows while six source aliases resolve to canonical targets');
 assert.equal(canonicalLegacyRows.filter(s => s.map?.markerEligible === true && !s.runtime?.aliasOfSiteId).length, 55, '55 original physical map sites are independently eligible');
-assert.equal(canonicalLegacyRows.filter(s => s.map?.markerEligible === false || s.runtime?.aliasOfSiteId).length, 10, '10 aliases are retained but not independently executable');
+assert.equal(canonicalLegacyRows.filter(s => s.map?.markerEligible === false || s.runtime?.aliasOfSiteId).length, 4, 'four aliases remain as canonical legacy rows; six more are preserved as source aliases with canonical targets');
 const master = read('resource_site_master_registry_v1.json');
 assert.equal(master.sites.length, 250, 'baseline master research registry is preserved');
 assert(master.sites.every(s => canonical.sites.slice(0, 250).some(c => c.siteId === s.siteId)), 'all original master IDs remain in the original 250 rows');
@@ -70,9 +72,17 @@ for (const s of sites) {
   assert(s.quantitative.capacity.minimum > 0 &&
     s.quantitative.capacity.minimum <= s.quantitative.capacity.nominal &&
     s.quantitative.capacity.nominal <= s.quantitative.capacity.maximum, s.siteId + ': capacity ordering invalid');
-  assert.equal(s.quantitative.quantitativeProvenance.authority, 'SCENARIO_SIMULATION_DATA');
+  if (s.runtime?.aliasOfSiteId) {
+    assert(['SIMULATION_ALIAS_REFERENCE_NOT_INDEPENDENT_ASSET', 'SCENARIO_SIMULATION_DATA'].includes(s.quantitative.quantitativeProvenance.authority), s.siteId + ': alias quantitative provenance must remain explicitly classified');
+    assert.equal(s.operation.commercialExtraction, false, s.siteId + ': alias must not extract independently');
+    assert.equal(s.map.markerEligible, false, s.siteId + ': alias must not create another map marker');
+  } else {
+    assert.equal(s.quantitative.quantitativeProvenance.authority, 'SCENARIO_SIMULATION_DATA');
+  }
   assert.equal(s.quantitative.quantitativeProvenance.externalMeasuredValuePromotion, false);
-  const horizon = Number(s.simulation.reserveHorizonYears);\n  const horizonOk = s.sourceReference?.sourcePath?.includes('_part_6_') ? horizon >= 350 && horizon <= 450 : horizon >= 400 && horizon <= 440;\n  assert(horizonOk, s.siteId + ': gameplay reserve horizon out of range');
+  const horizon = Number(s.simulation.reserveHorizonYears);
+  const horizonOk = s.sourceReference?.sourcePath?.includes('_part_6_') ? horizon >= 350 && horizon <= 450 : horizon >= 400 && horizon <= 440;
+  assert(horizonOk, s.siteId + ': gameplay reserve horizon out of range');
   assert(s.simulation.transportRoute.length > 0, s.siteId + ': per-site route missing');
   assert(s.processing.midstreamProcess, s.siteId + ': processing step missing');
   assert(s.processing.refinedOutputs.length > 0, s.siteId + ': product output missing');
