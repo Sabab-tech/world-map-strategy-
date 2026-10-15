@@ -9,8 +9,9 @@ const overlay = JSON.parse(read('resource_site_research_facts_overlay_v1.json'))
 const endowment = read('omega_resource_endowment_runtime.js');
 const mapBinding = read('omega_resource_gameplay_binding_v1.js');
 
-assert.equal(base.siteCount, 315);
-assert.equal(base.sites.length, 315);
+assert.equal(base.siteCount, base.sites.length);
+assert.ok(base.sites.length >= 315, 'canonical authority must preserve the baseline registry and permit additive future sites');
+assert.equal(new Set(base.sites.map(site=>site.siteId)).size,base.sites.length,'canonical site IDs must stay unique as new sites are added');
 assert.equal(expansion.datasetId, 'OMEGA_RESOURCE_SITE_COUNTRY_EXPANSION_V1');
 assert.equal(expansion.siteCount, 0);
 assert.equal(expansion.records.length, 0);
