@@ -402,7 +402,7 @@ function recordCarbonQuotaViolation(ctx,payload={}){
   violationId,countryId:c,quotaId:quotaId||null,turn:turn(),periodIndex:num(p.periodIndex),
   source:String(p.source||'UNSPECIFIED_ACTIVITY'),sourceId:p.sourceId||p.factoryId||null,
   transactionId:p.transactionId||null,siteId:p.siteId||null,resourceId:p.resourceId||null,
-  inputQuantity:num(p.quantity),inputUnit:p.inputUnit||p.unit||null,
+  inputQuantity:num(p.quantity??p.quantityTonnesCo2e),inputUnit:p.inputUnit||p.unit||null,
   requestedTonnesCo2e:num(p.requestedTonnesCo2e??p.emissionsTonnesCo2e??p.quantityTonnesCo2e),
   usedTonnesCo2e:num(p.usedTonnesCo2e),allowanceTonnesCo2e:num(p.allowanceTonnesCo2e),
   projectedTonnesCo2e:num(p.projectedTonnesCo2e),reason:'CARBON_QUOTA_EXCEEDED',
