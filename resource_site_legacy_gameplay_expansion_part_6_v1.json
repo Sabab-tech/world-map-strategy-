@@ -9869,8 +9869,8 @@
     },
     {
       "schemaVersion": "1.0.0",
-      "siteId": "SITE_GBR_boulby_mine",
-      "siteName": "Boulby Mine",
+      "siteId": "SITE_GBR_woodsmith_polyhalite_mine",
+      "siteName": "Woodsmith Polyhalite Mine",
       "countryId": "GBR",
       "resourceId": "potash",
       "identity": {
@@ -9884,26 +9884,26 @@
       },
       "location": {
         "countryName": "United Kingdom",
-        "adminRegion": "North Yorkshire",
-        "locality": "Boulby",
+        "adminRegion": "North Yorkshire, England",
+        "locality": "Sneatonthorpe, south of Whitby",
         "coordinates": {
-          "lat": 54.55,
-          "lng": -0.85
+          "lat": 54.435,
+          "lng": -0.6216
         },
         "coordinateStatus": "GAMEPLAY_REGIONAL_APPROXIMATION",
-        "coordinateAuthority": "REGIONAL_REFERENCE_POINT; NOT SURVEY GRADE",
+        "coordinateAuthority": "PUBLIC MINE-AREA MAP REFERENCE; NOT SURVEY GRADE",
         "coordinatePrecision": "REGIONAL_APPROXIMATION",
         "countryBoundaryKey": "GBR",
-        "locationNodeKey": "ASSET:GBR:boulby_mine"
+        "locationNodeKey": "ASSET:GBR:woodsmith_polyhalite_mine"
       },
       "ownership": {
         "owner": "United Kingdom Sovereign Resource Authority [SIMULATED]",
-        "operator": "OMEGA_SIMULATED_OPERATOR_SITE_GBR_boulby_mine",
+        "operator": "OMEGA_SIMULATED_OPERATOR_SITE_GBR_woodsmith_polyhalite_mine",
         "ownerEvidenceStatus": "SIMULATED",
         "operatorEvidenceStatus": "SIMULATED",
         "authority": "OMEGA_SCENARIO_OWNERSHIP",
         "equityControlCountry": "GBR",
-        "operatorContractId": "OPCONTRACT_SITE_GBR_boulby_mine"
+        "operatorContractId": "OPCONTRACT_SITE_GBR_woodsmith_polyhalite_mine"
       },
       "operation": {
         "status": "SIMULATED_OPERATIONAL_SCENARIO",
@@ -9916,19 +9916,19 @@
         "legacyReportedStatusTexts": [
           "REFERENCE_IDENTITY_ONLY"
         ],
-        "statusAuthority": "SIMULATED_GAMEPLAY_STATE_NOT_A_REAL_WORLD_OPERATIONAL_CLAIM"
+        "statusAuthority": "PROJECT IS UNDER DEVELOPMENT IN SOURCE CONTEXT; ACTIVE EXTRACTION IS A GAMEPLAY SCENARIO ONLY"
       },
       "processing": {
         "upstreamProcess": "UNDERGROUND_ROOM_PILLAR",
         "midstreamProcess": "POTASH_PROCESSING_PLANT",
         "refinedOutputs": [
           "potash concentrate",
-          "salt tailings"
+          "polyhalite fertilizer"
         ],
         "downstreamSectors": [
-          "fertilizer",
           "agriculture",
-          "chemicals"
+          "fertilizer",
+          "crop nutrients"
         ]
       },
       "logistics": {
@@ -9938,36 +9938,36 @@
         "factoryRouteStatus": "SIMULATED_FACTORY_BINDING_READY",
         "routeStatus": "SIMULATED_ROUTE_READY",
         "transport": {
-          "routeId": "ROUTE_SITE_GBR_boulby_mine_RAW_TO_FACTORY",
-          "routeType": "RAIL_PORT",
-          "mode": "rail_port",
-          "originSiteId": "SITE_GBR_boulby_mine",
+          "routeId": "ROUTE_SITE_GBR_woodsmith_polyhalite_mine_RAW_TO_FACTORY",
+          "routeType": "RAIL",
+          "mode": "rail",
+          "originSiteId": "SITE_GBR_woodsmith_polyhalite_mine",
           "originCountryId": "GBR",
           "warehouseId": "WH-GBR-RAW",
           "destinationFactoryId": "FACTORY_GBR_potash",
           "destinationCountryId": "GBR",
-          "distanceKm": 734,
-          "averageSpeedKmPerDay": 115,
-          "estimatedTravelDays": 7,
+          "distanceKm": 220,
+          "averageSpeedKmPerDay": 65,
+          "estimatedTravelDays": 4,
           "routeStatus": "SIMULATED_ROUTE_READY",
           "canBeBlockedByWar": true,
           "canBeBlockedByNeighborControl": true,
-          "canBeBlockedByNavalInterdiction": true,
+          "canBeBlockedByNavalInterdiction": false,
           "strategicRouteNotRoadSurvey": true,
-          "routeCapacityPerDay": 29757
+          "routeCapacityPerDay": 26000
         }
       },
       "quantitative": {
         "reserve": {
-          "quantity": 2530515800,
+          "quantity": 2616200000,
           "unit": "TONNES_ORE",
           "year": 2026,
           "status": "SIMULATED",
-          "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_353_YEARS"
+          "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_412_YEARS"
         },
         "production": {
-          "annual": 7168600,
-          "rate": 19640,
+          "annual": 6350000,
+          "rate": 17397.260273972603,
           "unit": "TONNES_PER_DAY",
           "annualUnit": "TONNES_PER_YEAR",
           "year": 2026,
@@ -9976,15 +9976,15 @@
           "basis": "PER_SITE_IDENTITY_PRODUCTION_ALLOCATION_V1"
         },
         "grade": {
-          "value": 27.02,
-          "unit": "PERCENT_K2O",
+          "value": 14.3,
+          "unit": "PERCENT_K2O_EQUIVALENT",
           "year": 2026,
-          "metric": "RESOURCE_SPECIFIC_RAW_MATERIAL_QUALITY",
+          "metric": "POTASH_ORE_QUALITY",
           "status": "SIMULATED",
-          "basis": "COMMODITY_BAND_AND_STABLE_SITE_ID_VARIATION"
+          "basis": "SITE_SPECIFIC_POLYHALITE_GAMEPLAY_GRADE"
         },
         "recovery": {
-          "value": 90.45,
+          "value": 72.2,
           "unit": "PERCENT",
           "year": 2026,
           "period": "PROCESSING_CYCLE",
@@ -9992,7 +9992,7 @@
           "basis": "SITE_SPECIFIC_PROCESSING_RECOVERY_MODEL"
         },
         "throughput": {
-          "value": 17764,
+          "value": 14100,
           "unit": "TONNES_PER_DAY",
           "year": 2026,
           "period": "DAILY",
@@ -10000,17 +10000,17 @@
           "basis": "SITE_SPECIFIC_THROUGHPUT_MODEL"
         },
         "purity": {
-          "value": 94.1,
+          "value": 93.6,
           "unit": "PERCENT",
           "year": 2026,
           "metric": "PROCESSED_PRODUCT_QUALITY",
           "status": "SIMULATED",
-          "basis": "COMMODITY_PRODUCT_QUALITY_MODEL"
+          "basis": "POTASH_PRODUCT_QUALITY_MODEL"
         },
         "capacity": {
-          "nominal": 21408,
-          "minimum": 15200,
-          "maximum": 29757,
+          "nominal": 18400,
+          "minimum": 12000,
+          "maximum": 26000,
           "unit": "TONNES_PER_DAY",
           "period": "DAILY",
           "status": "SIMULATED",
@@ -10022,9 +10022,9 @@
         "quantitativeProvenance": {
           "authority": "SCENARIO_SIMULATION_DATA",
           "method": "OMEGA_PER_SITE_IDENTITY_METRIC_ALLOCATION_V1",
-          "seedKey": "SITE_GBR_boulby_mine|GBR|potash",
-          "generatedAt": "2026-10-13",
-          "gameplayHorizonYears": 353,
+          "seedKey": "SITE_GBR_woodsmith_polyhalite_mine|GBR|potash",
+          "generatedAt": "2026-10-15",
+          "gameplayHorizonYears": 412,
           "realWorldDataRequired": false,
           "externalMeasuredValuePromotion": false
         },
@@ -10040,52 +10040,53 @@
         }
       },
       "reserve": {
-        "quantity": 2530515800,
+        "quantity": 2616200000,
         "unit": "TONNES_ORE",
+        "year": 2026,
         "status": "SIMULATED",
-        "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_353_YEARS"
+        "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_412_YEARS"
       },
       "simulation": {
         "reserve": {
-          "quantity": 2530515800,
+          "quantity": 2616200000,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
-          "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_353_YEARS"
+          "basis": "SITE_SPECIFIC_GAMEPLAY_HORIZON_412_YEARS"
         },
-        "nominalDailyCapacity": 21408,
-        "minimumDailyCapacity": 15200,
-        "maximumDailyCapacity": 29757,
-        "productionRate": 19640,
+        "nominalDailyCapacity": 18400,
+        "minimumDailyCapacity": 12000,
+        "maximumDailyCapacity": 26000,
+        "productionRate": 17397.260273972603,
         "productionRateUnit": "TONNES_PER_DAY",
-        "annualProduction": 7168600,
+        "annualProduction": 6350000,
         "annualProductionUnit": "TONNES_PER_YEAR",
-        "utilization": 0.917,
-        "recovery": 0.9045000000000001,
+        "utilization": 0.891,
+        "recovery": 0.722,
         "grade": {
-          "value": 27.02,
-          "unit": "PERCENT_K2O",
-          "metric": "RESOURCE_SPECIFIC_RAW_MATERIAL_QUALITY"
+          "value": 14.3,
+          "unit": "PERCENT_K2O_EQUIVALENT",
+          "metric": "POTASH_ORE_QUALITY"
         },
         "purity": {
-          "value": 94.1,
+          "value": 93.6,
           "unit": "PERCENT",
           "metric": "PROCESSED_PRODUCT_QUALITY"
         },
-        "reserveHorizonYears": 353,
+        "reserveHorizonYears": 412,
         "transportRoute": [
           {
-            "routeId": "ROUTE_SITE_GBR_boulby_mine_RAW_TO_FACTORY",
+            "routeId": "ROUTE_SITE_GBR_woodsmith_polyhalite_mine_RAW_TO_FACTORY",
             "countryId": "GBR",
-            "originSiteId": "SITE_GBR_boulby_mine",
+            "originSiteId": "SITE_GBR_woodsmith_polyhalite_mine",
             "warehouseId": "WH-GBR-RAW",
             "factoryId": "FACTORY_GBR_potash",
-            "mode": "rail_port",
-            "distanceKm": 734,
-            "estimatedTravelDays": 7,
+            "mode": "rail",
+            "distanceKm": 220,
+            "estimatedTravelDays": 4,
             "status": "SIMULATED_ROUTE_READY",
             "blockableByWar": true,
             "blockableByNeighborControl": true,
-            "blockableByNavalInterdiction": true
+            "blockableByNavalInterdiction": false
           }
         ],
         "rawWarehouseId": "WH-GBR-RAW",
@@ -10100,26 +10101,26 @@
         },
         "factoryOutputs": [
           "potash concentrate",
-          "salt tailings"
+          "polyhalite fertilizer"
         ],
         "naturalRisk": {
-          "geological": 41,
-          "environmental": 73,
-          "waterStress": 36,
-          "infrastructure": 59,
-          "conflictExposure": 77,
-          "maritimeExposure": 60,
+          "geological": 49,
+          "environmental": 46,
+          "waterStress": 39,
+          "infrastructure": 48,
+          "conflictExposure": 10,
+          "maritimeExposure": 18,
           "scale": "0_TO_100_SIMULATION_INDEX"
         },
         "simulationOnly": true
       },
       "naturalRisk": {
-        "geological": 41,
-        "environmental": 73,
-        "waterStress": 36,
-        "infrastructure": 59,
-        "conflictExposure": 77,
-        "maritimeExposure": 60,
+        "geological": 49,
+        "environmental": 46,
+        "waterStress": 39,
+        "infrastructure": 48,
+        "conflictExposure": 10,
+        "maritimeExposure": 18,
         "scale": "0_TO_100_SIMULATION_INDEX"
       },
       "mineLevel": 4,
@@ -10130,7 +10131,7 @@
         "markerType": "RESOURCE_SITE",
         "coordinatePrecision": "REGIONAL_APPROXIMATION",
         "aliasOfSiteId": null,
-        "collisionGroup": "SITE_GBR_boulby_mine"
+        "collisionGroup": "SITE_GBR_woodsmith_polyhalite_mine"
       },
       "runtime": {
         "identityAuthority": "LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE",
@@ -10154,25 +10155,25 @@
         }
       },
       "naturalHazards": {
-        "geologicRiskIndex": 41,
-        "environmentalRiskIndex": 73,
-        "waterStressIndex": 36,
-        "infrastructureRiskIndex": 59,
-        "conflictExposureIndex": 77,
-        "maritimeExposureIndex": 60,
+        "geologicRiskIndex": 49,
+        "environmentalRiskIndex": 46,
+        "waterStressIndex": 39,
+        "infrastructureRiskIndex": 48,
+        "conflictExposureIndex": 10,
+        "maritimeExposureIndex": 18,
         "scale": "0_TO_100_SIMULATION_INDEX"
       },
       "observedFacts": [],
       "sources": [],
       "locationSource": {
         "sourceType": "REGIONAL_REFERENCE_ESTIMATE",
-        "scope": "Approximate public mine/project reference point; not survey-grade",
-        "sourceReference": "resource_site_legacy_gameplay_expansion_part_6_v1.json"
+        "scope": "Approximate project-area reference; not survey-grade",
+        "sourceReference": "North York Moors National Park Authority, Anglo American polyhalite mine project (Woodsmith Mine): https://www.northyorkmoors.org.uk/planning/sirius-minerals-polyhalite-mine-woodsmith-mine"
       },
       "sourceReference": {
         "sourcePath": "resource_site_legacy_gameplay_expansion_part_6_v1.json",
         "sourceDatasetAuthority": "CURATED_SITE_IDENTITY_WITH_SCENARIO_QUANTITATIVES",
-        "notes": "Identity, resource and regional map point are reference metadata; every numeric reserve, production, grade, purity, recovery, throughput, capacity, logistics and risk value is generated for simulation and is not a measured fact."
+        "notes": "Public planning authority and operator context identify Woodsmith as a polyhalite mine project under development. Runtime operational state is a gameplay scenario only. All numeric reserve, production, grade, purity, recovery, throughput, capacity, logistics and risk values are simulated gameplay values, not measured site facts."
       }
     },
     {
