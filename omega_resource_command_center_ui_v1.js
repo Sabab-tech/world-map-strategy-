@@ -644,19 +644,19 @@
     ];
     const options = '<option value="">Select assessment</option><option value="proceed">Verified / proceed</option>' +
       '<option value="review">Uncertain / review</option><option value="block">Failed / block</option>';
-    const form = '<form class="omega-rescc-form" data-search-item data-form="cognitive"><h3>12-question decision gate</h3>' +
-      '<p class="omega-rescc-note">This is a player-entered screening checklist. It is explicitly advisory and is not represented as a persisted AI decision or a backend evaluation unless such an API exists.</p>' +
+    const form = '<form class="omega-rescc-form" data-search-item data-form="cognitive"><h3>12-question server AI decision gate</h3>' +
+      '<p class="omega-rescc-note">Answers and a country-scoped game snapshot are evaluated by the server-side Gemini AI endpoint. Only a validated AI response can create an approval for high-impact actions. If the API key, model, or response is unavailable, no verdict is recorded and those actions remain blocked. Simulation values and AI recommendations are not real-world measurements or guaranteed facts.</p>' +
       questions.map(function (q, i) {
         return '<label class="omega-rescc-question"><span>' + (i + 1) + '. ' + esc(q) + '</span>' +
           '<select name="q' + (i + 1) + '" required>' + options + '</select></label>';
-      }).join('') + '<button class="omega-rescc-button" type="submit">Evaluate checklist</button></form>';
+      }).join('') + '<button class="omega-rescc-button" type="submit">Evaluate with server AI</button></form>';
     const policy = g.OmegaResourceStrategicPolicyRuntime || g.Omega && g.Omega.ResourceStrategicPolicyRuntime;
     const decisions = Array.isArray(resourceBucket(country).cognitiveDecisionLedger) ? resourceBucket(country).cognitiveDecisionLedger : [];
     return card('Cognitive runtime availability', policy && typeof policy.evaluateCognitiveGate === 'function' ? 'AUTHORITATIVE CHECKLIST API AVAILABLE' : (os ? 'COGNITIVE OBJECT FOUND; CHECKLIST API UNAVAILABLE' : 'NO COGNITIVE GATE API CONFIRMED'),
       '<div class="omega-rescc-grid2">' + kv('Runtime object', os ? 'Available' : null) +
       kv('Policy checklist endpoint', policy && typeof policy.evaluateCognitiveGate === 'function' ? 'Available' : null) +
       kv('Profile record', profile && profile.identity && (profile.identity.name || profile.identity.officialName)) + '</div>' +
-      '<p class="omega-rescc-note">Submitted answers are persisted as a player-entered strategic gate decision, not an AI-generated verdict. PROCEED authorizes power construction and SWF capitalization; REVIEW or BLOCK prevents those actions.</p>', '') +
+      '<p class="omega-rescc-note">Only a server-generated AI assessment with a valid authority marker can authorize nuclear construction or SWF capitalization. Player answers alone cannot approve an action. PROCEED is still subject to deterministic blocker checks; REVIEW, BLOCK, expired, missing, or failed assessments prevent the action.</p>', '') +
       form + '<h3 class="omega-rescc-section-title">Persisted strategic gate decisions</h3>' + statusRows(decisions);
   }
   function panelPower(country) {
@@ -1131,15 +1131,50 @@
       }
       if (kind === 'cognitive') {
         const vals = [];
-        for (let i = 1; i <= 12; i++) vals.push(String(data.get('q' + i) || ''));
-        if (vals.some(function (x) { return !x; })) {
-          setOutcome('Decision gate', { status: 'BLOCKED', reason: 'ALL_12_QUESTIONS_REQUIRE_ANSWERS' });
+        for (let i = 1; i <= 12; i++) vals.push(String(data.get('q' + i) || '').toLowerCase());
+        if (vals.some(function (x) { return ['proceed', 'review', 'block'].indexOf(x) < 0; })) {
+          setOutcome('Server AI decision', { status: 'BLOCKED', reason: 'ALL_12_QUESTIONS_REQUIRE_ANSWERS' });
           return;
         }
         const policy = g.OmegaResourceStrategicPolicyRuntime || g.Omega && g.Omega.ResourceStrategicPolicyRuntime;
-        if (!policy || typeof policy.evaluateCognitiveGate !== 'function') result = { status: 'UNAVAILABLE', reason: 'COGNITIVE_CHECKLIST_RUNTIME_UNAVAILABLE' };
-        else result = policy.evaluateCognitiveGate(c, { decisionId: uniqueRequestId('COGNITIVE', 'screen'), answers: vals });
-        setOutcome('12-question persisted advisory checklist', result);
+        if (!policy || typeof policy.evaluateCognitiveGate !== 'function') {
+          setOutcome('Server AI decision', { status: 'UNAVAILABLE', reason: 'COGNITIVE_CHECKLIST_RUNTIME_UNAVAILABLE' });
+          return;
+        }
+        if (typeof g.fetch !== 'function') {
+          setOutcome('Server AI decision', { status: 'UNAVAILABLE', reason: 'SERVER_AI_FETCH_UNAVAILABLE' });
+          return;
+        }
+        let response, body;
+        try {
+          response = await g.fetch('/api/resource-decision/ai-evaluate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ countryId: c, answers: vals, gameState: state() })
+          });
+          body = await response.json();
+        } catch (error) {
+          setOutcome('Server AI decision', { status: 'UNAVAILABLE', reason: 'SERVER_AI_REQUEST_FAILED', detail: String(error && error.message || error) });
+          return;
+        }
+        if (!response.ok || !body || body.ok !== true || body.status !== 'COMPLETED' ||
+            !body.assessment || body.assessment.aiGenerated !== true ||
+            body.assessment.authority !== 'OMEGA_SERVER_RESOURCE_DECISION_AI') {
+          setOutcome('Server AI decision', {
+            status: 'UNAVAILABLE',
+            reason: body && body.error || body && body.message || 'SERVER_AI_VERDICT_UNAVAILABLE',
+            httpStatus: response.status,
+            verdictRecorded: false
+          });
+          return;
+        }
+        result = policy.evaluateCognitiveGate(c, {
+          decisionId: uniqueRequestId('COGNITIVE-AI', 'screen'),
+          answers: vals,
+          aiAssessment: body.assessment
+        });
+        setOutcome('Server AI decision', result);
+        render(c, activePanel);
         return;
       }
       setOutcome('Form submit', { status: 'FAILED', reason: 'UNHANDLED_FORM' });
