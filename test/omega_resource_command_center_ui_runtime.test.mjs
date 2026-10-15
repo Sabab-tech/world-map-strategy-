@@ -82,7 +82,10 @@ globalThis.ResourceMinistryEngine = {
     { id: 'iron_ore', name: 'Iron Ore', unit: 'METRIC_TONNE', basePrice: 100, category: 'MINERAL', processChain: ['extraction', 'smelting'] },
     { id: 'crude_oil', name: 'Crude Oil', unit: 'BARREL', basePrice: 80, category: 'ENERGY' }
   ],
-  deposits: [{ name: 'Test Deposit', country: 'Bangladesh', countryCode: 'BGD', lat: 23.7, lng: 90.4, resourceId: 'iron_ore', reserves: 100, grade: 0.5, status: 'AVAILABLE' }],
+  deposits: [
+    { name: 'Test Deposit', country: 'Bangladesh', countryCode: 'BGD', lat: 23.7, lng: 90.4, resourceId: 'iron_ore', reserves: 100, grade: 0.5, status: 'AVAILABLE' },
+    { name: 'Other Country Deposit', country: 'Saudi Arabia', countryCode: 'SAU', lat: 24, lng: 45, resourceId: 'crude_oil', reserves: 250, status: 'AVAILABLE' }
+  ],
   getAuthoritativeResourceSummary() {
     return {
       version: 'TEST_RUNTIME', briefing: 'Live test fixture', globalMetrics: { autonomyIndex: 50, strategicReservesTotalDays: 10 },
@@ -101,6 +104,14 @@ const sourceCards = Array.from({ length: 16 }, (_, index) => {
 }).join('');
 globalThis.OmegaCabinetUI = { activeCountry: 'BGD', getResource16CardsHtml() { return sourceCards; } };
 globalThis.Omega = {
+  IndividualResourceSiteBinding: { sites: [
+    { siteId: 'FILE-SITE-BGD-IRON', countryId: 'BGD', siteName: 'File-backed Bangladesh iron mine',
+      real: { resourceId: 'iron_ore' }, operation: { status: 'ACTIVE_SITE_REFERENCE' }, extractionExecutable: false,
+      quantitative: { reserve: { quantity: 700, unit: 'METRIC_TONNE' }, production: { rate: 5, unit: 'METRIC_TONNE_PER_DAY' } },
+      simulation: { transportRoute: [{ routeId: 'ROUTE-BGD-IRON-1', routeName: 'Rail to smelter', mode: 'rail', from: 'FILE-SITE-BGD-IRON', to: 'FAC-BGD-IRON', distanceKm: 42 }] },
+      processing: { upstreamProcess: 'Beneficiation', refinedOutputs: ['iron_concentrate'] },
+      coordinates: { lat: 24, lng: 90 }, location: { countryName: 'Bangladesh' } }
+  ] },
   MinistryInteroperability: {
     dispatchCommand() { return { status: 'APPLIED', result: { accepted: true } }; },
     registerCommandHandler() {}, registerAction() {}, configure() {}, emitEvent() { return { status: 'APPLIED' }; }
@@ -162,4 +173,54 @@ test('all sixteen legacy card buttons route to their own panel, including filter
     assert.ok(onclick.includes(", '" + expected[index] + "');"), 'point ' + (index + 1) + ' must route to ' + expected[index] + ', got ' + onclick);
     assert.ok(onclick.includes("openModal('BGD'"), 'point ' + (index + 1) + ' must use the selected country scope');
   });
+});
+
+
+test('canonical site profiles appear in relevant tabs without becoming live production or shipments', () => {
+  ui.open('BGD', 'extraction');
+  let modal = elements.get('gsrsk-intelligence-modal');
+  assert.match(modal.innerHTML, /File-backed Bangladesh iron mine/);
+  assert.match(modal.innerHTML, /Country site profiles/);
+  assert.match(modal.innerHTML, /FILE-SITE-BGD-IRON/);
+  assert.match(modal.innerHTML, /Runtime mine records/);
+
+  ui.open('BGD', 'reserves');
+  modal = elements.get('gsrsk-intelligence-modal');
+  assert.match(modal.innerHTML, /Site reserve facts from existing data files/);
+  assert.match(modal.innerHTML, /700/);
+  assert.match(modal.innerHTML, /Runtime reserve balance/);
+
+  ui.open('BGD', 'logistics');
+  modal = elements.get('gsrsk-intelligence-modal');
+  assert.match(modal.innerHTML, /Saved route profiles from existing data files/);
+  assert.match(modal.innerHTML, /ROUTE-BGD-IRON-1/);
+  assert.match(modal.innerHTML, /PROFILE ONLY/);
+  assert.match(modal.innerHTML, /Actual shipment state/);
+
+  ui.open('BGD', 'processing');
+  modal = elements.get('gsrsk-intelligence-modal');
+  assert.match(modal.innerHTML, /Processing capabilities from existing site files/);
+  assert.match(modal.innerHTML, /Beneficiation/);
+});
+
+test('deposit view filters loaded JSON deposits to the selected country', () => {
+  ui.open('BGD', 'deposits');
+  const modal = elements.get('gsrsk-intelligence-modal');
+  assert.match(modal.innerHTML, /Test Deposit/);
+  assert.doesNotMatch(modal.innerHTML, /Other Country Deposit/);
+  assert.match(modal.innerHTML, /Country-scoped JSON deposit registry/);
+});
+
+test('resource state readers merge name-keyed country data into canonical country views', () => {
+  Game.state.resource.BANGLADESH = {
+    batches: [{ batchId: 'B-ALIAS-1', resourceId: 'iron_ore', remainingQuantity: 17, unit: 'METRIC_TONNE' }],
+    mineSiteReferences: [{ siteId: 'SITE-ALIAS-1', countryId: 'BANGLADESH', resourceId: 'iron_ore', siteName: 'Alias-keyed mine' }]
+  };
+  ui.open('BGD', 'inventory');
+  let modal = elements.get('gsrsk-intelligence-modal');
+  assert.match(modal.innerHTML, /B-ALIAS-1/);
+  assert.match(modal.innerHTML, /17/);
+  ui.open('BGD', 'extraction');
+  modal = elements.get('gsrsk-intelligence-modal');
+  assert.match(modal.innerHTML, /Alias-keyed mine/);
 });
