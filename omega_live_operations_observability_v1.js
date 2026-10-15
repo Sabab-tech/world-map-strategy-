@@ -362,7 +362,13 @@
       const coordinates = obj(site.coordinates || obj(site.location).coordinates);
       const quantitative = obj(site.quantitative || source.quantitative);
       const production = obj(quantitative.production || obj(site.simulation).production);
-      const operation = obj(site.operation || site.real || source.operation);
+      const operation = obj(site.operation || site.operationProfile || site.real || source.operation);
+      const simulation = obj(site.simulation || source.simulation);
+      const siteLogistics = obj(site.logistics || source.logistics);
+      const routeValue = simulation.transportRoute || simulation.transportRoutes || site.transportRoute || siteLogistics.routes || site.routes ||
+        obj(source.simulation).transportRoute || obj(source.simulation).transportRoutes || source.transportRoute ||
+        obj(source.logistics).routes || source.routes || [];
+      const profileRoutes = Array.isArray(routeValue) ? routeValue : (routeValue ? [routeValue] : []);
       upsert(country, siteId, {
         name: txt(site.siteName || source.siteName || source.name || siteId),
         resourceId: txt(obj(site.real).resourceId || source.resourceId || source.resourceTypeId ||
@@ -370,8 +376,9 @@
         unit: txt(production.unit || obj(site.simulation).productionRateUnit || ''),
         status: txt(operation.status || operation.operationalStatus || obj(site.real).operationStatus || 'PROFILE_ONLY'),
         quantity: null, turn: null, batchId: '',
-        profileDailyRate: firstNum(production.rate, obj(site.simulation).productionRate),
-        profileRateUnit: txt(production.unit || obj(site.simulation).productionRateUnit || ''),
+        profileDailyRate: firstNum(production.rate, simulation.productionRate),
+        profileRateUnit: txt(production.unit || simulation.productionRateUnit || ''),
+        profileRoutes,
         siteType: txt(identity.siteType || site.siteType || source.siteType || source.type || ''),
         coordinates,
         coordinateStatus: txt(obj(site.location).coordinateStatus || obj(site.real).coordinateStatus ||
@@ -537,6 +544,19 @@
     rows.forEach(r => { const s = txt(r.status || 'STATUS_NOT_RECORDED').toUpperCase(); out[s] = (out[s] || 0) + 1; });
     return Object.keys(out).sort().map(k => ({label:k,count:out[k]}));
   }
+  function siteRouteProfiles(ids) {
+    return minesFor(ids).flatMap(site => arr(site.profileRoutes).map((route,index) => {
+      const row = obj(route);
+      return {
+        countryId:site.countryId, siteId:site.siteId,
+        routeId:txt(row.routeId || row.id || ''),
+        routeName:txt(row.routeName || row.name || row.routeId || row.id || ('Route '+(index+1))),
+        profileOnly:true,
+        source:'CANONICAL_RESOURCE_SITE_REGISTRY',
+        route
+      };
+    }));
+  }
   function observedStateSummary(ids) {
     const mine = minesFor(ids), shipments = allShipments(ids), requests = tradeRequests(ids), flows = flowRows(ids);
     const turn = currentTurn();
@@ -545,6 +565,7 @@
       mineRecords: mine.length,
       registeredResourceSites: mine.filter(row => row.registryRecord === true).length,
       runtimeMineRecords: mine.filter(row => row.runtimeRecorded === true).length,
+      siteRouteProfiles: mine.reduce((count,row) => count + arr(row.profileRoutes).length, 0),
       currentTurnMineOutputs: mine.filter(row => row.runtimeRecorded === true &&
         row.turn !== null && turn !== null && row.turn === turn && row.quantity !== null).length,
       inTransit: shipments.filter(s => /IN_TRANSIT|DISPATCHED|SHIPPED|MOVING/.test(s.status)).length,
@@ -573,6 +594,7 @@
       card('Countries in scope',fmt(sum.countryCount,0),scoped)+
       card('Registered resource sites',fmt(sum.registeredResourceSites,0),'Canonical site profiles; not proof of extraction')+
       card('Live site records',fmt(sum.runtimeMineRecords,0),'Existing Game.state mines, outputs and production ledgers')+
+      card('Saved route profiles',fmt(sum.siteRouteProfiles,0),'Existing site route definitions; not active shipments')+
       card('Recorded outputs this turn',fmt(sum.currentTurnMineOutputs,0),'Only runtime rows with explicit current-turn quantities')+
       card('Shipments in transit',fmt(sum.inTransit,0),'Existing shipments with an in-transit status')+
       card('Trade requests',fmt(sum.tradeRequests,0),'Existing import/export request records')+
@@ -597,6 +619,24 @@
       ['ALL','RESOURCE','TRADE','COMMUNICATION'].map(v=>'<option value="'+v+'"'+(currentFilter===v?' selected':'')+'>'+v+'</option>').join('')+
       '</select></label></div>'+table(['Turn','Event','Country','Details','Source'],rows,'No matching event records were observed or retained by an engine ledger.');
   }
+  function profileRouteLabel(routes) {
+    const valueLabel = value => {
+      if (value === null || value === undefined || value === '') return '';
+      if (typeof value !== 'object') return txt(value);
+      return txt(value.name || value.label || value.id || value.siteId || value.countryId || JSON.stringify(value));
+    };
+    const rows = arr(routes);
+    if (!rows.length) return 'Not recorded';
+    return rows.map(routeValue => {
+      if (!routeValue || typeof routeValue !== 'object') return valueLabel(routeValue) || 'Unnamed route';
+      const route = obj(routeValue);
+      const name = valueLabel(route.routeName || route.name || route.routeId || route.id);
+      const from = valueLabel(route.from || route.source || route.origin || route.fromNode || route.fromSiteId || route.sourceSiteId);
+      const to = valueLabel(route.to || route.target || route.destination || route.toNode || route.toSiteId || route.destinationSiteId);
+      const endpoints = [from,to].filter(Boolean).join(' → ');
+      return [name,endpoints].filter(Boolean).join(' · ') || JSON.stringify(route);
+    }).join(' | ');
+  }
   function renderResources(ids) {
     const mines = minesFor(ids), resourceNames = [...new Set(mines.map(m=>m.resourceId).filter(Boolean))].sort();
     if (!currentResource || !resourceNames.includes(currentResource)) currentResource = resourceNames[0] || '';
@@ -605,13 +645,14 @@
       .sort((a,b) => (turnOf(b.row) || -1)-(turnOf(a.row) || -1)).slice(0,100);
     return '<div class="omega-liveops-toolbar"><label>Commodity/site filter <select id="omega-liveops-resource-filter"><option value="">All recorded commodities</option>'+
       resourceNames.map(v=>'<option value="'+h(v)+'"'+(currentResource===v?' selected':'')+'>'+h(v)+'</option>').join('')+
-      '</select></label><span>Rows combine canonical site profiles and explicit live state. Profile rates are not current-turn outputs.</span></div>'+
+      '</select></label><span>Rows combine canonical site profiles and explicit live state. Profile rates and saved routes are not current-turn activity.</span></div>'+
       '<div class="omega-liveops-section"><h3>Canonical site profiles with live runtime overlay</h3>'+table(
-        ['Country','Site identity','Resource','Status','Recorded output','Unit','Profile daily rate','Turn','Batch'],
+        ['Country','Site identity','Resource','Status','Recorded output','Unit','Profile daily rate','Saved route profile','Turn','Batch'],
         filtered.slice(0,250).map(m=>tr([
           m.countryId,m.siteId,m.resourceId,m.status,
           m.quantity===null?'Not recorded':fmt(m.quantity),m.unit,
           m.profileDailyRate===null||m.profileDailyRate===undefined?'Not recorded':fmt(m.profileDailyRate)+(m.profileRateUnit?' '+m.profileRateUnit:''),
+          profileRouteLabel(m.profileRoutes),
           m.turn===null?'Not recorded':m.turn,m.batchId
         ])),
         'No canonical resource-site profiles or runtime site records exist in the selected country scope.')+'</div>'+
@@ -793,8 +834,9 @@
         canonicalResourceSiteRegistryAvailable:resourceSiteRecords().length>0,
         canonicalResourceSiteCount:resourceSiteRecords().length},
       turn:currentTurn(), scope:countryScope || 'WORLD', summary:observedStateSummary(selectedIds()),
-      events:eventRows(selectedIds()), mines:minesFor(selectedIds()), shipments:allShipments(selectedIds()),
-      tradeRequests:tradeRequests(selectedIds()), flows:flowRows(selectedIds()), communications:communications(selectedIds()),
+      events:eventRows(selectedIds()), mines:minesFor(selectedIds()), siteRouteProfiles:siteRouteProfiles(selectedIds()),
+      shipments:allShipments(selectedIds()), tradeRequests:tradeRequests(selectedIds()), flows:flowRows(selectedIds()),
+      communications:communications(selectedIds()),
       trends:obj(store.history)
     };
     const blob = new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
@@ -816,8 +858,8 @@
   const api = {
     VERSION:'1.1.0', diagnostics, resolveCountryId, getCountryMetrics:countryId => metricsFor(resolveCountryId(countryId) || id(countryId)), getCountryOperationalSummary:countryId => observedStateSummary([resolveCountryId(countryId) || id(countryId)]), getTrendSeries, snapshot:()=>({
       turn:currentTurn(),scope:countryScope || 'WORLD',summary:observedStateSummary(selectedIds()),
-      events:eventRows(selectedIds()),mines:minesFor(selectedIds()),shipments:allShipments(selectedIds()),
-      tradeRequests:tradeRequests(selectedIds()),flows:flowRows(selectedIds()),communications:communications(selectedIds())
+      events:eventRows(selectedIds()),mines:minesFor(selectedIds()),siteRouteProfiles:siteRouteProfiles(selectedIds()),
+      shipments:allShipments(selectedIds()),tradeRequests:tradeRequests(selectedIds()),flows:flowRows(selectedIds()),communications:communications(selectedIds())
     })
   };
   g.OmegaLiveOpsObservability = Object.freeze(api);
