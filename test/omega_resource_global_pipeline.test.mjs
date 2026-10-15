@@ -435,14 +435,23 @@ test('global resource pipeline runs every canonical and additive physical site u
   }
   assert.equal(crossCountryViolations.length,0);
   assert.equal(fiscalPendingCount,extractedRecords.length);
-  const siteRefsByCountry=new Map();
-  for(const s of siteRefs){
-    const arr=siteRefsByCountry.get(s.countryId)||[];arr.push(s.siteName);siteRefsByCountry.set(s.countryId,arr);
+  const siteIdsByCountry=new Map();
+  for(const site of fullSiteCoverage.rows){
+    const countryId=String(site.countryId||site.identity?.countryIso3||site.sourceSiteRecord?.countryCode||'').trim().toUpperCase();
+    const siteId=String(site.siteId||'').trim();
+    if(!countryId||!siteId)continue;
+    const arr=siteIdsByCountry.get(countryId)||[];arr.push(siteId);siteIdsByCountry.set(countryId,arr);
   }
-  for(const [countryId,row] of Object.entries(state.resource)){
-    const expected=siteRefsByCountry.get(countryId)||[];
-    const actual=Array.isArray(row.mineSiteReferences)?row.mineSiteReferences.map(x=>x.siteName):[];
-    assert.equal(actual.length,expected.length);
-    assert.deepEqual(new Set(actual),new Set(expected));
+  for(const [countryId,expectedIds] of siteIdsByCountry){
+    const row=state.resource[countryId];
+    assert(row,countryId+': owning country runtime state missing for full registry');
+    const actualIds=Array.isArray(row.mineSiteReferences)?row.mineSiteReferences.map(x=>String(x.siteReferenceKey||x.siteId||'')).filter(Boolean):[];
+    assert.equal(actualIds.length,expectedIds.length,
+      countryId+': runtime site reference quantity must match every physical canonical/additive registry identity');
+    assert.deepEqual([...new Set(actualIds)].sort(),[...new Set(expectedIds)].sort(),
+      countryId+': runtime site identities must match the authoritative per-country registry exactly');
   }
+  const countryControllerTotals=Object.values(state.resource).reduce((sum,row)=>sum+Object.keys(row?.mineSiteControllers||{}).length,0);
+  assert.equal(countryControllerTotals,fullSiteCoverage.physicalCount,
+    'all physical site controllers must remain present across their sovereign country states');
 });
