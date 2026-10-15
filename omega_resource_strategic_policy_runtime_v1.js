@@ -561,6 +561,9 @@ function diagnostics(){
 }
 const API=Object.freeze({VERSION,loadRules,install,diagnostics,isResourceEmbargoed,isRouteBlocked,siteAvailableForExtraction,extractionMultiplier,recordExtractionImpactTx,recordProcessingImpactTx,declareEmbargo,liftEmbargo,declareBlockade,liftBlockade,startExploration,processCountry,processAll,approveInvestment,commissionSite,remediateSite,setCarbonQuota,recordCarbonEmission,previewCarbonActivity,evaluateCognitiveGate,startPowerProject,processPowerCountry,capitalizeSovereignWealthFund});
 g.Omega=g.Omega||{};g.Omega.ResourceStrategicPolicyRuntime=API;g.OmegaResourceStrategicPolicyRuntime=API;
+// Load the rules immediately; OMEGA_READY may already have fired before this script loads.
+loadRules().then(()=>install()).catch(()=>{});
+install();
 if(typeof g.addEventListener==='function'){
  g.addEventListener('OMEGA_READY',()=>{loadRules().then(()=>install()).catch(()=>{});});
  g.addEventListener('OMEGA_GAME_SESSION_STARTED',()=>{loadRules().then(()=>install()).catch(()=>{});});
