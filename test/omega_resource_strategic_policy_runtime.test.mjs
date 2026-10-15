@@ -288,3 +288,21 @@ test('nuclear baseload construction debits treasury, commissions only by turns a
  assert(h.state.resource.BGD.powerGenerationLedger.some(x=>x.status==='GENERATED'));
 });
 
+
+
+test('sovereign wealth fund capitalization debits treasury once and persists contribution lineage',()=>{
+ const h=harness(),api=h.sandbox.Omega.ResourceStrategicPolicyRuntime;
+ h.state.finance.BGD.available=500;
+ const first=api.capitalizeSovereignWealthFund('BGD',{transactionId:'SWF-CAP-1',amount:200});
+ assert.equal(first.accepted,true,JSON.stringify(first));
+ assert.equal(first.fund.balance,200);
+ assert.equal(first.fund.unit,'TREASURY_NATIVE_UNITS');
+ assert.equal(h.state.finance.BGD.available,300);
+ const duplicate=api.capitalizeSovereignWealthFund('BGD',{transactionId:'SWF-CAP-1',amount:200});
+ assert.equal(duplicate.duplicate,true);
+ assert.equal(h.state.finance.BGD.available,300,'retry must not debit treasury twice');
+ const conflict=api.capitalizeSovereignWealthFund('BGD',{transactionId:'SWF-CAP-1',amount:250});
+ assert.equal(conflict.accepted,false);
+ assert.equal(conflict.reason,'SWF_TRANSACTION_ID_CONFLICT');
+ assert.equal(api.capitalizeSovereignWealthFund('BGD',{transactionId:'SWF-CAP-INVALID',amount:0}).reason,'SWF_AMOUNT_MUST_BE_POSITIVE');
+});
