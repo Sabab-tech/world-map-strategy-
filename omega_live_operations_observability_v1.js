@@ -45,7 +45,36 @@
   const obj = x => x && typeof x === 'object' ? x : {};
   const arr = x => Array.isArray(x) ? x : [];
   const id = x => String(x == null ? '' : x).trim().toUpperCase();
-  const txt = x => String(x == null ? '' : x);
+  function canonicalCountryId(value) {
+    const raw = String(value == null ? '' : value).trim();
+    if (!raw) return '';
+    const registry = g.OmegaCanonicalIdentityRegistry || g.OmegaCountrySemanticBridge ||
+      obj(g.Omega).CanonicalIdentity;
+    try {
+      const resolved = registry && typeof registry.resolveCountry === 'function' ? registry.resolveCountry(raw) : null;
+      const candidate = resolved && (resolved.id || resolved.iso3 || resolved.countryId || resolved.code || resolved.countryCode);
+      if (candidate) return id(candidate);
+    } catch (_) {}
+    const lookup = obj(g.Game && g.Game.countryLookup);
+    const entry = Object.entries(lookup).find(([key, row]) =>
+      id(key) === id(raw) || id(row && row.name) === id(raw) ||
+      id(row && row.countryName) === id(raw) || id(row && row.commonName) === id(raw));
+    if (entry) {
+      const [key, rowValue] = entry, row = obj(rowValue);
+      const candidate = row.iso3 || row.iso_a3 || row.alpha3 || row.countryId ||
+        row.countryCode3 || row.id || (id(key).length === 3 ? key : row.code || key);
+      if (candidate) return id(candidate);
+    }
+    try {
+      const candidate = g.Game && typeof g.Game.getCountryId === 'function' ? g.Game.getCountryId(raw) : null;
+      if (candidate && id(candidate) !== id(raw)) return id(candidate);
+    } catch (_) {}
+    return id(raw).replace(/[-\s]+/g, '_');
+  }
+  function resourceSiteRecords() {
+    const binding = obj(obj(g.Omega).IndividualResourceSiteBinding || g.OmegaIndividualResourceSiteBinding);
+    return arr(binding.sites);
+  }  const txt = x => String(x == null ? '' : x);
   const numeric = x => {
     if (typeof x === 'number') return Number.isFinite(x) ? x : null;
     if (typeof x === 'string' && x.trim() !== '' && /^-?\d+(?:\.\d+)?$/.test(x.trim())) {
@@ -70,91 +99,102 @@
   };
   const dataDomains = ['resource','economy','finance','trade','transport','foreign','military','industry','government','politics','society','population','intelligence','technology'];
   function bucket(domain, countryId) {
-    const s = gameState();
-    const map = obj(s[domain]);
-    if (own(map, countryId)) return obj(map[countryId]);
-    const key = Object.keys(map).find(k => id(k) === id(countryId));
-    return key ? obj(map[key]) : {};
+    const s = gameState(), map = obj(s[domain]);
+    const raw = String(countryId == null ? '' : countryId).trim();
+    if (raw && own(map, raw)) return obj(map[raw]);
+    const normalized = id(raw), canonical = canonicalCountryId(raw);
+    const exactKey = Object.keys(map).find(k => id(k) === normalized);
+    if (exactKey) return obj(map[exactKey]);
+    const aliasKey = Object.keys(map).find(k => {
+      if (!k || ['SCHEMAVERSION','VERSION','METADATA','DEFAULTS','GLOBAL','SHARED'].includes(id(k))) return false;
+      return canonicalCountryId(k) === canonical;
+    });
+    return aliasKey ? obj(map[aliasKey]) : {};
   }
   function countryIds() {
     const s = gameState(), found = new Set();
-    dataDomains.forEach(domain => {
-      const map = obj(s[domain]);
-      Object.keys(map).forEach(k => { if (k && k !== 'schemaVersion' && k !== 'version' && k !== 'metadata') found.add(id(k)); });
-    });
-    [playerCountry(), selectedCountry()].forEach(k => { if (k) found.add(id(k)); });
+    const add = value => {
+      const key = canonicalCountryId(value);
+      if (key && !['SCHEMAVERSION','VERSION','METADATA','DEFAULTS','GLOBAL','SHARED'].includes(key)) found.add(key);
+    };
+    dataDomains.forEach(domain => Object.keys(obj(s[domain])).forEach(add));
+    resourceSiteRecords().forEach(site => add(site && (site.countryId ||
+      obj(site.identity).countryIso3 || obj(site.sourceSiteRecord).countryId)));
+    [playerCountry(), selectedCountry()].forEach(add);
     return [...found].filter(Boolean).sort();
   }
   function playerCountry() {
-    const s = gameState(), p = obj(s.player);
+    const s = gameState(), p = obj(s.player), country = obj(p.country);
     const choices = [
       s.playerCountryId, s.playerCountryCode, s.sovereignCountryId,
-      p.countryId, p.countryCode, p.country && (p.country.id || p.country.code),
+      p.countryId, p.countryCode, country.iso3, country.countryId, country.id, country.code, country.name,
       g.Game && (g.Game.playerCountryId || g.Game.playerCountryCode),
       g.OMEGA_PLAYER_COUNTRY_ID
     ];
-    for (const c of choices) if (typeof c === 'string' && c.trim()) return id(c);
+    for (const c of choices) if (typeof c === 'string' && c.trim()) return canonicalCountryId(c);
     return null;
   }
   function selectedCountry() {
-    const choices = [g.Game && (g.Game.selectedCountryId || g.Game.activeCountry),
-      g.currentActiveCountry, g.CountryIOS && g.CountryIOS.activeCountry,
-      g.Game && g.Game.countryId];
-    for (const c of choices) if (typeof c === 'string' && c.trim()) return id(c);
+    const choices = [
+      g.Game && (g.Game.selectedCountryId || g.Game.activeCountry || g.Game.currentActiveCountry),
+      g.currentActiveCountry, g.CountryIOS && g.CountryIOS.activeCountry, g.Game && g.Game.countryId
+    ];
+    for (const c of choices) if (typeof c === 'string' && c.trim()) return canonicalCountryId(c);
     return null;
   }
   function countryName(cid) {
-    const key = id(cid);
+    const key = canonicalCountryId(cid) || id(cid);
     const lookup = obj(g.Game && g.Game.countryLookup);
-    const row = obj(lookup[key] || lookup[Object.keys(lookup).find(k => id(k) === key)]);
-    if (row.name || row.countryName) return txt(row.name || row.countryName);
+    const entry = Object.entries(lookup).find(([k, row]) =>
+      canonicalCountryId(k) === key || canonicalCountryId(row && (row.name || row.countryName || row.commonName)) === key);
+    const row = obj(entry && entry[1]);
+    if (row.name || row.countryName || row.commonName) return txt(row.name || row.countryName || row.commonName);
     try {
-      const r = (g.OmegaCanonicalIdentityRegistry || g.OmegaCountrySemanticBridge || g.Omega && g.Omega.CanonicalIdentity);
-      const resolved = r && typeof r.resolveCountry === 'function' ? r.resolveCountry(key) : null;
-      if (resolved && (resolved.name || resolved.canonicalName || resolved.displayName)) return txt(resolved.name || resolved.canonicalName || resolved.displayName);
+      const registry = g.OmegaCanonicalIdentityRegistry || g.OmegaCountrySemanticBridge || obj(g.Omega).CanonicalIdentity;
+      const resolved = registry && typeof registry.resolveCountry === 'function' ? registry.resolveCountry(key) : null;
+      if (resolved && (resolved.name || resolved.canonicalName || resolved.displayName)) {
+        return txt(resolved.name || resolved.canonicalName || resolved.displayName);
+      }
     } catch (_) {}
+    const site = resourceSiteRecords().find(s => canonicalCountryId(s && s.countryId) === key);
+    if (site) {
+      const source = obj(site.sourceSiteRecord), location = obj(site.location);
+      if (location.countryName || source.countryName) return txt(location.countryName || source.countryName);
+    }
     const b = bucket('resource', key);
     return txt(b.countryName || b.name || key);
   }
   function resolveCountryId(value) {
-    const key = id(value);
-    if (!key) return null;
-    const known = countryIds();
-    if (known.includes(key)) return key;
-    try {
-      const resolvedId = g.Game && typeof g.Game.getCountryId === 'function' ? g.Game.getCountryId(txt(value)) : null;
-      if (resolvedId && known.includes(id(resolvedId))) return id(resolvedId);
-    } catch (_) {}
-    try {
-      const registry = g.OmegaCanonicalIdentityRegistry || g.OmegaCountrySemanticBridge ||
-        g.Omega && g.Omega.CanonicalIdentity;
-      const resolved = registry && typeof registry.resolveCountry === 'function' ? registry.resolveCountry(txt(value)) : null;
-      const candidate = resolved && (resolved.id || resolved.code || resolved.iso3 || resolved.countryId);
-      if (candidate && known.includes(id(candidate))) return id(candidate);
-    } catch (_) {}
-    const lookup = obj(g.Game && g.Game.countryLookup);
-    for (const [lookupKey, row] of Object.entries(lookup)) {
-      if (id(lookupKey) === key || id(row && row.name) === key || id(row && row.countryName) === key) {
-        const candidate = row && (row.id || row.code || row.iso3 || row.countryId) || lookupKey;
-        if (known.includes(id(candidate))) return id(candidate);
-      }
-    }
-    return key;
+    const key = canonicalCountryId(value);
+    return key || null;
   }
   function selectedIds() {
-    return countryScope && countryScope !== 'WORLD' ? [id(countryScope)] : countryIds();
+    return countryScope && id(countryScope) !== 'WORLD'
+      ? [resolveCountryId(countryScope) || id(countryScope)] : countryIds();
   }
   function turnOf(row) { return firstNum(row && row.simulationTurn, row && row.turn, row && row.simulation && row.simulation.turn); }
   function pushEvent(type, detail, source) {
-    const d = obj(detail), p = obj(d.payload || d.data || d);
+    const envelope = obj(detail);
+    const d = obj(envelope.detail || envelope.eventDetail || envelope);
+    const p = obj(d.payload || d.data || d.eventPayload || d.context || d);
+    const nestedCountry = typeof d.country === 'string' ? d.country :
+      (d.country && (d.country.id || d.country.iso3 || d.country.countryId || d.country.code || d.country.name));
+    const payloadCountry = typeof p.country === 'string' ? p.country :
+      (p.country && (p.country.id || p.country.iso3 || p.country.countryId || p.country.code || p.country.name));
+    const countryValue = d.countryId || d.countryCode || nestedCountry ||
+      p.countryId || p.countryCode || payloadCountry || obj(p.context).countryId || '';
+    const summary = d.summary || d.eventSummary || p.summary || p.reason || p.message ||
+      p.status || p.stage || p.resourceId || p.siteId || p.mineId || p.batchId ||
+      p.shipmentId || p.requestId || p.topic || '';
     const record = {
       sequence: ++store.eventSequence,
-      type: txt(d.eventType || d.type || type || 'ENGINE_EVENT'),
-      countryId: id(d.countryId || p.countryId || p.country || ''),
-      turn: firstNum(d.simulationTurn, p.simulationTurn, d.turn, p.turn, currentTurn()),
-      summary: txt(p.reason || p.message || p.status || p.stage || p.resourceId || p.topic || p.requestId || ''),
+      type: txt(d.eventType || d.type || p.eventType || p.type || type || 'ENGINE_EVENT'),
+      countryId: canonicalCountryId(countryValue),
+      turn: firstNum(d.simulationTurn, p.simulationTurn, d.turn, p.turn,
+        d.simulation && d.simulation.turn, p.simulation && p.simulation.turn, currentTurn()),
+      summary: txt(summary),
       payload: p,
-      source: source || 'BROWSER_EVENT',
+      source: source || d.source || p.source || 'BROWSER_EVENT',
       observedAt: Date.now()
     };
     store.events.push(record);
@@ -182,7 +222,8 @@
       military: valueAt(mil, ['power','strength','readiness','combatReadiness','militaryPower']),
       tradeRequests: arr(t.importRequests).length,
       tradeSettled: arr(t.importRequests).filter(r => id(r && r.status) === 'SETTLED').length,
-      _hasState: !!(own(obj(s.resource), cid) || own(obj(s.economy), cid) || own(obj(s.finance), cid) || own(obj(s.trade), cid))
+      _hasState: ['resource','economy','finance','trade'].some(domain =>
+        Object.keys(obj(s[domain])).some(key => canonicalCountryId(key) === canonicalCountryId(cid)))
     };
   }
   function getMineLedger(cid) {
@@ -286,26 +327,113 @@
   }
   function statusText(row) { return txt(row && (row.status || row.stage || row.processingStatus || row.shipmentStatus || row.dispatchStatus) || 'STATUS_NOT_RECORDED'); }
   function minesFor(ids) {
-    const rows = [];
-    ids.forEach(cid => {
-      const r = bucket('resource', cid);
-      arr(r.mines).forEach(m => {
-        const outputMap = obj(r.mineOutputs), occurrence = txt(m.occurrenceKey || '');
-        const output = obj(outputMap[occurrence] || outputMap[txt(m.siteId || m.mineId || m.id)] || {});
-        rows.push({countryId:cid,siteId:txt(m.siteId || m.mineId || m.id || m.occurrenceKey || 'SITE_ID_MISSING'),
-          name:txt(m.depositName || m.siteName || m.name || m.mineName || m.occurrenceKey || 'Name not recorded'),
-          resourceId:txt(m.resourceId || output.resourceId || ''), unit:txt(output.unit || m.unit || m.quantityUnit || ''),
-          status:statusText(output.status ? output : m), quantity:firstNum(output.producedQuantity,output.quantity,output.outputQuantity),
-          turn:firstNum(output.turn,output.simulationTurn), batchId:txt(output.batchId || m.lastBatchId || '')});
+    const rows = new Map();
+    const includedCountries = new Set(arr(ids).map(value => canonicalCountryId(value) || id(value)));
+    const inScope = country => {
+      if (!includedCountries.size) return true;
+      const key = canonicalCountryId(country) || id(country);
+      return includedCountries.has(key);
+    };
+    const upsert = (countryId, siteId, record) => {
+      const country = canonicalCountryId(countryId) || id(countryId);
+      const site = txt(siteId || record.siteId || record.mineId || record.id || record.occurrenceKey || 'SITE_ID_MISSING').trim();
+      if (!country || !site) return;
+      const key = country + '|' + site, previous = rows.get(key) || {};
+      const next = { ...previous, countryId: country, siteId: site };
+      Object.entries(record).forEach(([field, value]) => {
+        if (value === undefined) return;
+        const preserve = ['name','resourceId','unit','quantity','turn','batchId',
+          'profileDailyRate','profileRateUnit','coordinates','coordinateStatus','sourcePath','siteType'];
+        if ((value === null || value === '') && own(previous, field) && preserve.includes(field)) return;
+        next[field] = value;
       });
-      if (!arr(r.mines).length) {
-        getMineLedger(cid).slice(-40).forEach(m => rows.push({countryId:cid,siteId:txt(m.mineId || m.siteId || 'SITE_ID_NOT_RECORDED'),
-          name:txt(m.mineName || m.siteName || m.depositName || m.mineId || 'Mine production record'),
-          resourceId:txt(m.resourceId || ''),unit:txt(m.unit || m.quantityUnit || ''),status:'PRODUCTION_LEDGER_RECORD',
-          quantity:firstNum(m.quantity,m.producedQuantity,m.outputQuantity),turn:turnOf(m),batchId:txt(m.batchId || '')}));
-      }
+      next.runtimeRecorded = previous.runtimeRecorded === true || record.runtimeRecorded === true;
+      next.registryRecord = previous.registryRecord === true || record.registryRecord === true;
+      rows.set(key, next);
+    };
+
+    // Reuse the existing canonical site registry. A static profile is not a live extraction.
+    resourceSiteRecords().forEach(site => {
+      if (!site || typeof site !== 'object') return;
+      const source = obj(site.sourceSiteRecord), identity = obj(site.identity);
+      const country = canonicalCountryId(site.countryId || identity.countryIso3 || source.countryId);
+      const siteId = txt(site.siteId || source.siteId || source.id || '');
+      if (!country || !siteId || !inScope(country)) return;
+      const coordinates = obj(site.coordinates || obj(site.location).coordinates);
+      const quantitative = obj(site.quantitative || source.quantitative);
+      const production = obj(quantitative.production || obj(site.simulation).production);
+      const operation = obj(site.operation || site.real || source.operation);
+      upsert(country, siteId, {
+        name: txt(site.siteName || source.siteName || source.name || siteId),
+        resourceId: txt(obj(site.real).resourceId || source.resourceId || source.resourceTypeId ||
+          source.resourceTypeKey || source.resId || identity.resourceTypeId || ''),
+        unit: txt(production.unit || obj(site.simulation).productionRateUnit || ''),
+        status: txt(operation.status || operation.operationalStatus || obj(site.real).operationStatus || 'PROFILE_ONLY'),
+        quantity: null, turn: null, batchId: '',
+        profileDailyRate: firstNum(production.rate, obj(site.simulation).productionRate),
+        profileRateUnit: txt(production.unit || obj(site.simulation).productionRateUnit || ''),
+        siteType: txt(identity.siteType || site.siteType || source.siteType || source.type || ''),
+        coordinates,
+        coordinateStatus: txt(obj(site.location).coordinateStatus || obj(site.real).coordinateStatus ||
+          source.coordinateStatus || obj(source.provenance).coordinateStatus || ''),
+        sourcePath: txt(site.sourcePath || obj(site.sourceReference).source || source.source || ''),
+        recordSource: 'CANONICAL_RESOURCE_SITE_REGISTRY',
+        registryRecord: true,
+        runtimeRecorded: false
+      });
     });
-    return rows;
+
+    ids.forEach(cid => {
+      const r = bucket('resource', cid), outputMap = obj(r.mineOutputs);
+      const matchingOutputKeys = new Set();
+      // Retained history is merged before current runtime state so latest state wins.
+      getMineLedger(cid).slice(-500).forEach((row, index) => {
+        const siteId = txt(row && (row.siteId || row.mineId || row.occurrenceKey || row.depositId) ||
+          'PRODUCTION_LEDGER_ROW_' + index);
+        upsert(cid, siteId, {
+          name: txt(row && (row.mineName || row.siteName || row.depositName || row.name) || ''),
+          resourceId: txt(row && (row.resourceId || row.resource || row.commodityId) || ''),
+          unit: txt(row && (row.unit || row.quantityUnit) || ''),
+          status: txt(row && (row.status || row.stage) || 'PRODUCTION_LEDGER_RECORD'),
+          quantity: firstNum(row && row.quantity, row && row.producedQuantity, row && row.outputQuantity),
+          turn: turnOf(row), batchId: txt(row && row.batchId || ''),
+          recordSource: 'GAME_STATE_PRODUCTION_LEDGER', runtimeRecorded: true
+        });
+      });
+      arr(r.mines).forEach(m => {
+        const siteId = txt(m && (m.siteId || m.mineId || m.id || m.occurrenceKey) || '');
+        const occurrence = txt(m && m.occurrenceKey || ''), mineId = txt(m && (m.mineId || m.id) || '');
+        [occurrence, siteId, mineId].filter(Boolean).forEach(key => matchingOutputKeys.add(key));
+        const output = obj(outputMap[occurrence] || outputMap[siteId] || outputMap[mineId]);
+        upsert(cid, siteId, {
+          name: txt(m && (m.depositName || m.siteName || m.name || m.mineName || '') || ''),
+          resourceId: txt(m && m.resourceId || output.resourceId || ''),
+          unit: txt(output.unit || output.quantityUnit || (m && (m.unit || m.quantityUnit)) || ''),
+          status: statusText(output.status ? output : m),
+          quantity: firstNum(output.producedQuantity, output.quantity, output.outputQuantity),
+          turn: firstNum(output.turn, output.simulationTurn, turnOf(m)),
+          batchId: txt(output.batchId || (m && m.lastBatchId) || ''),
+          recordSource: 'GAME_STATE_RUNTIME', runtimeRecorded: true
+        });
+      });
+      Object.entries(outputMap).forEach(([key, outputValue]) => {
+        const output = obj(outputValue);
+        if (!Object.keys(output).length || matchingOutputKeys.has(key)) return;
+        const siteId = txt(output.siteId || output.mineId || output.occurrenceKey || key);
+        upsert(cid, siteId, {
+          name: txt(output.siteName || output.mineName || output.depositName || ''),
+          resourceId: txt(output.resourceId || output.resource || ''),
+          unit: txt(output.unit || output.quantityUnit || ''),
+          status: statusText(output),
+          quantity: firstNum(output.producedQuantity, output.quantity, output.outputQuantity),
+          turn: firstNum(output.turn, output.simulationTurn),
+          batchId: txt(output.batchId || ''),
+          recordSource: 'GAME_STATE_RUNTIME', runtimeRecorded: true
+        });
+      });
+    });
+    return [...rows.values()].sort((a, b) =>
+      a.countryId.localeCompare(b.countryId) || a.name.localeCompare(b.name) || a.siteId.localeCompare(b.siteId));
   }
   function allShipments(ids) {
     const rows = [], seen = new Set();
@@ -319,7 +447,8 @@
         const shipmentId = txt(x.shipmentId || x.id || x.batchId || (owner+':'+i+':'+txt(x.resourceId)));
         const key = source+'|'+dest+'|'+shipmentId;
         if (seen.has(key)) return; seen.add(key);
-        if (countryScope && countryScope !== 'WORLD' && source !== id(countryScope) && dest !== id(countryScope) && owner !== id(countryScope)) return;
+        const scoped = countryScope && id(countryScope) !== 'WORLD' ? canonicalCountryId(countryScope) : null;
+        if (scoped && canonicalCountryId(source) !== scoped && canonicalCountryId(dest) !== scoped && canonicalCountryId(owner) !== scoped) return;
         rows.push({source,dest,id:shipmentId,resourceId:txt(x.resourceId || x.commodityId || ''),quantity:firstNum(x.quantity,x.dispatchedQuantity,x.remainingQuantity),
           unit:txt(x.unit || x.quantityUnit || ''),status:statusText(x),turn:turnOf(x),siteId:txt(x.sourceSiteId || x.siteId || x.occurrenceKey || ''),
           batchId:txt(x.batchId || ''),factoryId:txt(x.factoryId || ''),row:x});
@@ -336,8 +465,8 @@
           const rid = txt(r.requestId || r.id || r.correlationId || '');
           const key = owner+'|'+(rid || JSON.stringify([r.resourceId,r.status,r.quantity,r.turn]));
           if (seen.has(key)) return; seen.add(key);
-          rows.push({owner,buyer:id(r.buyerCountryId || r.importerCountryId || r.sourceCountryId || owner),
-            seller:id(r.sellerCountryId || r.exporterCountryId || r.targetCountryId || r.counterpartyCountryId || r.supplierCountryId || ''),
+          rows.push({owner,buyer:canonicalCountryId(r.buyerCountryId || r.importerCountryId || r.sourceCountryId || owner),
+            seller:canonicalCountryId(r.sellerCountryId || r.exporterCountryId || r.targetCountryId || r.counterpartyCountryId || r.supplierCountryId || ''),
             requestId:rid,resourceId:txt(r.resourceId || r.commodityId || ''),quantity:firstNum(r.quantity,r.requestedQuantity,r.amount),
             unit:txt(r.unit || r.quantityUnit || ''),status:statusText(r),turn:turnOf(r),stage:txt(r.stage || ''),row:r});
         });
@@ -346,7 +475,8 @@
     return rows;
   }
   function eventRows(ids) {
-    const rows = store.events.filter(e => !countryScope || countryScope === 'WORLD' || !e.countryId || e.countryId === id(countryScope)).map(e => ({
+    const scopedCountry = countryScope && id(countryScope) !== 'WORLD' ? canonicalCountryId(countryScope) : null;
+    const rows = store.events.filter(e => !scopedCountry || !e.countryId || canonicalCountryId(e.countryId) === scopedCountry).map(e => ({
       turn:e.turn,type:e.type,countryId:e.countryId,summary:e.summary || '',source:e.source,observedAt:e.observedAt
     }));
     ids.forEach(cid => {
@@ -391,7 +521,7 @@
       const f = bucket('foreign', cid);
       ['communicationLedger','communicationLog','messages','messageLedger','diplomaticLog','contacts','contactHistory','diplomacyEvents'].forEach(k => {
         arr(f[k]).forEach(row => rows.push({countryId:cid,turn:turnOf(row),type:txt(row.eventType || row.type || row.topic || row.kind || k),
-          peer:id(row.targetCountryId || row.counterpartyCountryId || row.peerCountryId || row.toCountryId || row.countryId || ''),
+          peer:canonicalCountryId(row.targetCountryId || row.counterpartyCountryId || row.peerCountryId || row.toCountryId || row.countryId || ''),
           status:statusText(row),summary:txt(row.message || row.topic || row.reason || row.requestId || row.id || ''),source:'COUNTRY_LEDGER'}));
       });
     });
@@ -411,13 +541,19 @@
     const mine = minesFor(ids), shipments = allShipments(ids), requests = tradeRequests(ids), flows = flowRows(ids);
     const turn = currentTurn();
     return {
-      countryCount:ids.length, mineRecords:mine.length,
-      currentTurnMineOutputs:mine.filter(m => m.turn !== null && turn !== null && m.turn === turn && m.quantity !== null).length,
-      inTransit:shipments.filter(s => /IN_TRANSIT|DISPATCHED|SHIPPED|MOVING/.test(s.status)).length,
-      shipmentRecords:shipments.length, tradeRequests:requests.length,
-      pendingRequests:requests.filter(r => /SENT|ACCEPTED|PENDING|WAITING|NEGOTIAT/.test(r.status)).length,
-      settledRequests:requests.filter(r => /SETTLED|COMPLETED/.test(r.status)).length,
-      siteFlowRecords:flows.length, liveEvents:store.events.length
+      countryCount: ids.length,
+      mineRecords: mine.length,
+      registeredResourceSites: mine.filter(row => row.registryRecord === true).length,
+      runtimeMineRecords: mine.filter(row => row.runtimeRecorded === true).length,
+      currentTurnMineOutputs: mine.filter(row => row.runtimeRecorded === true &&
+        row.turn !== null && turn !== null && row.turn === turn && row.quantity !== null).length,
+      inTransit: shipments.filter(s => /IN_TRANSIT|DISPATCHED|SHIPPED|MOVING/.test(s.status)).length,
+      shipmentRecords: shipments.length,
+      tradeRequests: requests.length,
+      pendingRequests: requests.filter(r => /SENT|ACCEPTED|PENDING|WAITING|NEGOTIAT/.test(r.status)).length,
+      settledRequests: requests.filter(r => /SETTLED|COMPLETED/.test(r.status)).length,
+      siteFlowRecords: flows.length,
+      liveEvents: store.events.length
     };
   }
   function card(label,value,note) {
@@ -432,16 +568,18 @@
   function sourceNote(message) { return '<p class="omega-liveops-source">'+h(message)+'</p>'; }
   function renderOverview(ids) {
     const sum = observedStateSummary(ids), scoped = countryScope === 'WORLD' ? 'all indexed countries' : countryName(countryScope || '');
-    const s = gameState(), hasState = ids.some(cid => metricsFor(cid)._hasState);
+    const hasState = ids.some(cid => metricsFor(cid)._hasState);
     return '<div class="omega-liveops-grid">'+
       card('Countries in scope',fmt(sum.countryCount,0),scoped)+
-      card('Mine records',fmt(sum.mineRecords,0),'Existing resource.mine registry records')+
-      card('Mine outputs this turn',fmt(sum.currentTurnMineOutputs,0),'Only rows with an explicit current-turn value')+
+      card('Registered resource sites',fmt(sum.registeredResourceSites,0),'Canonical site profiles; not proof of extraction')+
+      card('Live site records',fmt(sum.runtimeMineRecords,0),'Existing Game.state mines, outputs and production ledgers')+
+      card('Recorded outputs this turn',fmt(sum.currentTurnMineOutputs,0),'Only runtime rows with explicit current-turn quantities')+
       card('Shipments in transit',fmt(sum.inTransit,0),'Existing shipments with an in-transit status')+
       card('Trade requests',fmt(sum.tradeRequests,0),'Existing import/export request records')+
       card('Site flow records',fmt(sum.siteFlowRecords,0),'Existing site execution/flow ledger rows')+
-      '</div>'+sourceNote(hasState ? 'Source: Game.state country buckets and runtime ledgers. Missing numeric fields are not inferred. The live event tape starts when this UI loads; older history is shown only where an engine ledger retains it.' :
-      'No country-scoped Game.state records were found for the current scope. This screen does not invent replacement numbers.')+
+      '</div>'+sourceNote(sum.registeredResourceSites || hasState
+        ? 'Source: existing canonical resource-site registry + Game.state country buckets and runtime ledgers. Registry profiles are not counted as live production; missing numeric fields remain unknown. The event tape starts when this UI loads; older activity is shown only where an engine ledger retains it.'
+        : 'No canonical site profiles or country-scoped Game.state records were found for the current scope. This screen does not invent replacement numbers.')+
       '<div class="omega-liveops-section"><h3>Latest engine activity</h3>'+renderEventTable(ids,12)+'</div>';
   }
   function renderEventTable(ids, limit) {
@@ -463,13 +601,29 @@
     const mines = minesFor(ids), resourceNames = [...new Set(mines.map(m=>m.resourceId).filter(Boolean))].sort();
     if (!currentResource || !resourceNames.includes(currentResource)) currentResource = resourceNames[0] || '';
     const filtered = mines.filter(m => !currentResource || m.resourceId === currentResource);
-    const ledgerRows = ids.flatMap(cid => getMineLedger(cid).map(m => ({countryId:cid,row:m})))
+    const ledgerRows = ids.flatMap(cid => getMineLedger(cid).map(m => ({countryId:canonicalCountryId(cid),row:m})))
       .sort((a,b) => (turnOf(b.row) || -1)-(turnOf(a.row) || -1)).slice(0,100);
     return '<div class="omega-liveops-toolbar"><label>Commodity/site filter <select id="omega-liveops-resource-filter"><option value="">All recorded commodities</option>'+
       resourceNames.map(v=>'<option value="'+h(v)+'"'+(currentResource===v?' selected':'')+'>'+h(v)+'</option>').join('')+
-      '</select></label><span>Rows are engine records, not reserve estimates.</span></div>'+
-      '<div class="omega-liveops-section"><h3>Mine / site state</h3>'+table(['Country','Site identity','Resource','Status','Recorded quantity','Unit','Turn','Batch'],filtered.slice(0,250).map(m=>tr([m.countryId,m.siteId,m.resourceId,m.status,m.quantity===null?'Not recorded':fmt(m.quantity),m.unit,m.turn===null?'Not recorded':m.turn,m.batchId])), 'No mine records exist in the selected country scope.')+'</div>'+
-      '<div class="omega-liveops-section"><h3>Production ledger</h3>'+table(['Country','Turn','Mine/site','Resource','Quantity','Unit','Batch','Purity'],ledgerRows.filter(x=>!currentResource||txt(x.row.resourceId)===currentResource).map(x=>tr([x.countryId,turnOf(x.row)===null?'Not recorded':turnOf(x.row),x.row.mineName||x.row.siteName||x.row.mineId||x.row.siteId,x.row.resourceId,firstNum(x.row.quantity,x.row.producedQuantity,x.row.outputQuantity)===null?'Not recorded':fmt(firstNum(x.row.quantity,x.row.producedQuantity,x.row.outputQuantity)),x.row.unit||x.row.quantityUnit,x.row.batchId,firstNum(x.row.purity,x.row.quality&&x.row.quality.purity)===null?'Not recorded':fmt(firstNum(x.row.purity,x.row.quality&&x.row.quality.purity))])), 'The engine has not retained mine production ledger rows in this scope.')+'</div>';
+      '</select></label><span>Rows combine canonical site profiles and explicit live state. Profile rates are not current-turn outputs.</span></div>'+
+      '<div class="omega-liveops-section"><h3>Canonical site profiles with live runtime overlay</h3>'+table(
+        ['Country','Site identity','Resource','Status','Recorded output','Unit','Profile daily rate','Turn','Batch'],
+        filtered.slice(0,250).map(m=>tr([
+          m.countryId,m.siteId,m.resourceId,m.status,
+          m.quantity===null?'Not recorded':fmt(m.quantity),m.unit,
+          m.profileDailyRate===null||m.profileDailyRate===undefined?'Not recorded':fmt(m.profileDailyRate)+(m.profileRateUnit?' '+m.profileRateUnit:''),
+          m.turn===null?'Not recorded':m.turn,m.batchId
+        ])),
+        'No canonical resource-site profiles or runtime site records exist in the selected country scope.')+'</div>'+
+      '<div class="omega-liveops-section"><h3>Production ledger</h3>'+table(['Country','Turn','Mine/site','Resource','Quantity','Unit','Batch','Purity'],
+        ledgerRows.filter(x=>!currentResource||txt(x.row.resourceId)===currentResource).map(x=>tr([
+          x.countryId,turnOf(x.row)===null?'Not recorded':turnOf(x.row),
+          x.row.mineName||x.row.siteName||x.row.mineId||x.row.siteId,x.row.resourceId,
+          firstNum(x.row.quantity,x.row.producedQuantity,x.row.outputQuantity)===null?'Not recorded':fmt(firstNum(x.row.quantity,x.row.producedQuantity,x.row.outputQuantity)),
+          x.row.unit||x.row.quantityUnit,x.row.batchId,
+          firstNum(x.row.purity,x.row.quality&&x.row.quality.purity)===null?'Not recorded':fmt(firstNum(x.row.purity,x.row.quality&&x.row.quality.purity))
+        ])),
+        'The engine has not retained mine production ledger rows in this scope.')+'</div>';
   }
   function renderTrade(ids) {
     const requests = tradeRequests(ids), shipments = allShipments(ids);
@@ -622,7 +776,7 @@
     sampleAll();
     render();
     if (refreshHandle !== null) g.clearInterval(refreshHandle);
-    refreshHandle = g.setInterval(() => { if (panelOpen) { sampleAll(); render(); } }, 5000);
+    refreshHandle = g.setInterval(() => { if (panelOpen) { buildCountrySelect(); sampleAll(); render(); } }, 5000);
   }
   function closePanel() {
     panelOpen = false;
@@ -634,6 +788,10 @@
     if (!g.Blob || !g.URL || !g.URL.createObjectURL || !g.document) return;
     const data = {
       schemaVersion:'OMEGA_LIVEOPS_EXPORT_V1', exportedAt:new Date().toISOString(),
+      dataSourceContract:'OMEGA_SHARED_AUTHORITATIVE_STATE_V1',
+      authoritativeSources:{gameStateRoot:g.Game && g.Game.state ? 'Game.state' : (g.gameState ? 'gameState compatibility root' : 'NOT_AVAILABLE'),
+        canonicalResourceSiteRegistryAvailable:resourceSiteRecords().length>0,
+        canonicalResourceSiteCount:resourceSiteRecords().length},
       turn:currentTurn(), scope:countryScope || 'WORLD', summary:observedStateSummary(selectedIds()),
       events:eventRows(selectedIds()), mines:minesFor(selectedIds()), shipments:allShipments(selectedIds()),
       tradeRequests:tradeRequests(selectedIds()), flows:flowRows(selectedIds()), communications:communications(selectedIds()),
@@ -645,14 +803,18 @@
     g.document.body.appendChild(a); a.click(); a.remove(); g.URL.revokeObjectURL(url);
   }
   function diagnostics() {
-    const ids = countryIds();
-    return {version:'1.0.0',readOnly:true,scope:countryScope || 'WORLD',countryCount:ids.length,
+    const ids = countryIds(), summary = observedStateSummary(selectedIds());
+    return {version:'1.1.0',readOnly:true,scope:countryScope || 'WORLD',countryCount:ids.length,
+      registeredResourceSites:summary.registeredResourceSites,runtimeMineRecords:summary.runtimeMineRecords,
       retainedLiveEvents:store.events.length,countriesWithTurnHistory:Object.keys(store.history).length,
       historyTurns:Object.keys(store.history).reduce((n,c)=>n+arr(store.history[c]).length,0),
-      dataSource:'Game.state and existing engine ledgers',polling:panelOpen?'active while panel is open':'inactive while panel is closed'};
+      authoritativeStateRoot:g.Game && g.Game.state ? 'Game.state' : (g.gameState ? 'gameState compatibility root' : 'NOT_AVAILABLE'),
+      canonicalSiteRegistryAvailable:resourceSiteRecords().length>0,
+      dataSource:'Game.state + existing canonical resource-site registry + existing engine ledgers',
+      polling:panelOpen?'active while the panel is open':'inactive while the panel is closed'};
   }
   const api = {
-    VERSION:'1.0.0', diagnostics, resolveCountryId, getCountryMetrics:countryId => metricsFor(resolveCountryId(countryId) || id(countryId)), getCountryOperationalSummary:countryId => observedStateSummary([resolveCountryId(countryId) || id(countryId)]), getTrendSeries, snapshot:()=>({
+    VERSION:'1.1.0', diagnostics, resolveCountryId, getCountryMetrics:countryId => metricsFor(resolveCountryId(countryId) || id(countryId)), getCountryOperationalSummary:countryId => observedStateSummary([resolveCountryId(countryId) || id(countryId)]), getTrendSeries, snapshot:()=>({
       turn:currentTurn(),scope:countryScope || 'WORLD',summary:observedStateSummary(selectedIds()),
       events:eventRows(selectedIds()),mines:minesFor(selectedIds()),shipments:allShipments(selectedIds()),
       tradeRequests:tradeRequests(selectedIds()),flows:flowRows(selectedIds()),communications:communications(selectedIds())
