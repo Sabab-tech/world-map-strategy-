@@ -39,6 +39,10 @@ on:
       - 'test/omega_resource_logistics_runtime_v1.test.mjs'
       - 'test/omega_resource_milestone_a_integrity.test.mjs'
       - 'package.json'
+      - 'index.html'
+      - 'ministry_engine.js'
+      - 'omega_live_operations_observability_v1.js'
+      - 'test/omega_live_operations_observability_v1.test.mjs'
   pull_request:
     paths:
       - '.github/workflows/omega-resource-gameplay-pipeline.yml'
@@ -56,6 +60,10 @@ on:
       - 'test/omega_resource_economy_runtime_v2.test.mjs'
       - 'test/omega_global_trade_system.test.mjs'
       - 'package.json'
+      - 'index.html'
+      - 'ministry_engine.js'
+      - 'omega_live_operations_observability_v1.js'
+      - 'test/omega_live_operations_observability_v1.test.mjs'
   workflow_dispatch:
 
 permissions:
@@ -74,6 +82,8 @@ jobs:
           node-version: 22
       - name: Repository syntax and source-integrity checks
         run: npm run lint
+      - name: Live operations UI data-binding regression
+        run: npm run test:liveops
       - name: Milestone A complete registry audit
         run: npm run test:resource-site-integrity
       - name: Endowment runtime regression
