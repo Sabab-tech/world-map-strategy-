@@ -132,10 +132,16 @@
     return policy?.statuses?.[key]||policy?.defaults?.unknownStatus||{state:'BLOCKED',reason:'SITE_LIFECYCLE_STATUS_UNCLASSIFIED',productionMultiplier:0};
   }
   function siteExecutionPolicyForRow(row){
-    const raw=row?.rawDeposit||{},operation=raw.operation||{};
-    const commercial=operation.commercialExtraction??raw.commercialExtraction??true;
-    const alias=raw.runtime?.aliasOfSiteId||raw.aliasOfSiteId;
-    const status=operation.status||raw.status||raw.operationalStatus||row?.lifecycle?.status||row?.reserveState?.operationalStatus||'UNKNOWN';
+    const raw=row?.rawDeposit||{},operation=raw.operation||{},
+      siteId=String(row?.siteReferenceKey||raw.siteReferenceKey||raw.siteId||'').trim(),
+      canonicalSite=siteId?canonicalSiteCatalogMap?.[siteId]:null,
+      canonicalOperation=canonicalSite?.operation||{},
+      sourceStatus=operation.status||raw.status||raw.operationalStatus||row?.lifecycle?.status||row?.reserveState?.operationalStatus||'UNKNOWN',
+      canonicalStatus=canonicalOperation.status||'',
+      status=!canonicalStatus||normalizeSiteLifecycleStatus(canonicalStatus)==='ACTIVE_SITE_REFERENCE'
+        ?sourceStatus:canonicalStatus,
+      commercial=canonicalOperation.commercialExtraction??operation.commercialExtraction??raw.commercialExtraction??row?.commercialExtraction??true,
+      alias=raw.runtime?.aliasOfSiteId||raw.aliasOfSiteId||canonicalSite?.runtime?.aliasOfSiteId;
     return siteExecutionPolicyFor(status,commercial,Boolean(alias));
   }
   // Runtime indexes: these datasets are immutable during a simulation turn. Reusing the indexes avoids rebuilding and deep-enriching the same country/site rows for every gate and extraction pass.
@@ -841,9 +847,14 @@
           const rawSite=site?.rawSiteReference||site?.resourceAsset||site||{};
           const operation=rawSite.operation||{},runtime=rawSite.runtime||{},map=rawSite.map||{};
           const siteResource=rid(site?.resourceId||site?.resourceTypeId||rawSite?.identity?.resourceTypeId||rawSite?.resourceId||rawSite?.resourceTypeId);
-          if(!siteId||!siteResource||site.commercialExtraction===false||operation.commercialExtraction===false||
-             String(operation.status||rawSite.status||'').toUpperCase()==='NOT_APPLICABLE'||runtime.aliasOfSiteId||
-             site.map?.markerEligible===false||map.markerEligible===false)continue;
+          const lifecycleStatus=normalizeSiteLifecycleStatus(operation.status||rawSite.status||rawSite.operationalStatus||site.status||'UNKNOWN');
+          const lifecyclePolicy=siteExecutionPolicyFor(lifecycleStatus,
+            operation.commercialExtraction??site.commercialExtraction??rawSite.commercialExtraction??true,
+            Boolean(runtime.aliasOfSiteId||site.runtime?.aliasOfSiteId||rawSite.aliasOfSiteId));
+          // Preserve non-operational and non-commercial physical identities as explicit blocked
+          // site flows. Only aliases/duplicate markers are omitted from independent execution.
+          if(!siteId||!siteResource||runtime.aliasOfSiteId||site.runtime?.aliasOfSiteId||
+             map.markerEligible===false||site.map?.markerEligible===false)continue;
           if(out.some(x=>String(x.siteReferenceKey||'')===siteId&&rid(x.resourceId)===siteResource))continue;
           const existingReserve=[...(rr.reserveStates?.values?.()||[])].find(x=>
             String(x?.siteReferenceKey||x?.siteId||'')===siteId&&rid(x?.resourceId)===siteResource);
@@ -869,7 +880,7 @@
             reserve=reserve||new reserveCtor({
               occurrenceKey,countryId:wanted,siteReferenceKey:siteId,siteId,depositKey:'SIM_SITE:'+siteId,
               resourceId:siteResource,geologicalQuantity:reserveQuantity,recoverableQuantity:reserveQuantity,residualQuantity:reserveQuantity,
-              unit,operationalStatus:'ACTIVE_EXTRACTION',stateVersion:1,simulationOnly:reserveAuthority!=='OBSERVED',
+              unit,operationalStatus:lifecycleStatus,stateVersion:1,simulationOnly:reserveAuthority!=='OBSERVED',
               provenance:{sourceAuthority:reserveAuthority==='OBSERVED'?'OBSERVED':'SIMULATED',
                 quantityAuthority:reserveAuthority==='OBSERVED'?'OBSERVED':'SIMULATED',authorityDetail:reserveAuthority,
                 sourceDatasetId:site.sourceDatasetId||rawSite.sourceDatasetId||'resource_site_canonical_catalog_v1.json',
@@ -890,9 +901,11 @@
             if(rr.registerReserveState)rr.registerReserveState(reserve);
             else rr.reserveStates?.set?.(occurrenceKey,reserve);
             rr.capacities?.set?.(occurrenceKey,capacity);
-            rr.lifecycles?.set?.(occurrenceKey,{occurrenceKey,countryId:wanted,siteReferenceKey:siteId,status:'ACTIVE_EXTRACTION',
-              mode:'CANONICAL_SITE_SIMULATION_BRIDGE',sourceAuthority:'SIMULATED'});
-            rr.accessibilityStates?.set?.(occurrenceKey,{state:'AVAILABLE',sourceAuthority:'SIMULATED'});
+            rr.lifecycles?.set?.(occurrenceKey,{occurrenceKey,countryId:wanted,siteReferenceKey:siteId,status:lifecycleStatus,
+              executionState:lifecyclePolicy.state,blockReason:lifecyclePolicy.reason||null,productionMultiplier:Number(lifecyclePolicy.productionMultiplier)||0,
+              mode:'CANONICAL_SITE_SIMULATION_BRIDGE',sourceAuthority:operation.status?'CANONICAL_SITE_CATALOG':'SIMULATED'});
+            rr.accessibilityStates?.set?.(occurrenceKey,{state:Number(lifecyclePolicy.productionMultiplier)>0?'AVAILABLE':'BLOCKED',
+              blockReason:lifecyclePolicy.reason||null,sourceAuthority:operation.status?'CANONICAL_SITE_CATALOG':'SIMULATED'});
           }
           const rawDeposit={
             ...clone(rawSite),siteId,siteReferenceKey:siteId,siteName:site.siteName||rawSite.siteName||siteId,
@@ -1017,6 +1030,14 @@ function batchFromExtraction(x,record){
       const attachedRows=(rows||[]).filter(x=>String(x?.siteReferenceKey||'')===siteKey);
       const attachedKeys=attachedRows.map(x=>String(x.occurrenceKey||'')).filter(Boolean);
       const linked=[...new Set([...existingLinked,...attachedKeys])].filter(k=>executableKeys.has(String(k)));
+      const rawSite=site.rawSiteReference||site.rawSite||{},
+        lifecycleStatus=normalizeSiteLifecycleStatus(rawSite.operation?.status||site.status||rawSite.status||'UNKNOWN'),
+        policy=siteExecutionPolicyFor(lifecycleStatus,
+          rawSite.operation?.commercialExtraction??site.commercialExtraction??rawSite.commercialExtraction??true,
+          Boolean(rawSite.runtime?.aliasOfSiteId||rawSite.aliasOfSiteId));
+      const hasOperationalPolicy=Number(policy.productionMultiplier)>0&&
+        !['BLOCKED','NOT_APPLICABLE','NON_EXECUTABLE_ALIAS'].includes(String(policy.state||''));
+      const blockedReason=policy.reason||(!linked.length?'SITE_REFERENCE_HAS_NO_QUANTITATIVE_MINE_RECORD':null);
       controllers[siteKey]={
         ...prior,
         siteReferenceKey:siteKey,
@@ -1026,15 +1047,21 @@ function batchFromExtraction(x,record){
         sourcePath:site.sourcePath||null,
         sourceDatasetId:site.sourceDatasetId||'RESOURCE_JSON.countryProfiles',
         sourceAuthority:'RESOURCE_JSON',
-        activationState:'ACTIVE_SITE_CONTROLLER',
-        controllerStatus:'RUNNING',
+        activationState:hasOperationalPolicy?'ACTIVE_SITE_CONTROLLER':'LIFECYCLE_BLOCKED_SITE_CONTROLLER',
+        controllerStatus:hasOperationalPolicy&&linked.length?'RUNNING':'BLOCKED',
         extractionExecutable:linked.length>0,
+        operationallyEligible:hasOperationalPolicy,
+        operationalStatus:lifecycleStatus,
+        executionPolicyState:policy.state||'BLOCKED',
+        productionMultiplier:Math.max(0,Math.min(1,Number(policy.productionMultiplier)||0)),
+        executionBlockReason:blockedReason,
         quantitativeDataState:linked.length>0?'AVAILABLE':'MISSING_FROM_SITE_REFERENCE',
         linkedOccurrenceKeys:linked,
         pathId,
-        extractionPathStatus:linked.length>0?'EXECUTABLE_OCCURRENCE_ATTACHED':'BLOCKED_MISSING_QUANTITATIVE_DATA',
+        extractionPathStatus:!hasOperationalPolicy?'BLOCKED_'+String(blockedReason||'SITE_NOT_OPERATIONAL'):
+          linked.length>0?'EXECUTABLE_OCCURRENCE_ATTACHED':'BLOCKED_MISSING_QUANTITATIVE_DATA',
         lastEvaluationTurn:turn(),
-        rawSiteReference:clone(site.rawSiteReference||site.rawSite||null)
+        rawSiteReference:clone(rawSite)
       };
     }
     return controllers;
