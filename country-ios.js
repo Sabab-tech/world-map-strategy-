@@ -478,7 +478,7 @@ window.CountryIOS = {
     // CHAPTER 04: ECONOMY
     // -------------------------------------------------------------------------
     renderChapter4_Economy(countryKey, econ, pop) {
-        const fmtNum = window.formatGameNumber || ((n) => '
+        const fmtNum = window.formatGameNumber || ((n) => String.fromCharCode(36) + (n/1e9).toFixed(1) + String.fromCharCode(66));
         const nameClean = countryKey.replace(/_/g, " ").toUpperCase();
         const observer = window.OmegaLiveOpsObservability;
         const countryId = observer && typeof observer.resolveCountryId === 'function'
