@@ -697,15 +697,25 @@
         authority:'SIMULATED',stateAuthority:'SIMULATED',dataStatus:'SIMULATED',productionAuthority:'SIMULATED'
       };
       const profile=best?.row||{};
+      const declaredStatus=normalizeSiteLifecycleStatus(operation.status||site.status||'');
+      const profileStatus=normalizeSiteLifecycleStatus(profile?.rawSiteReference?.operation?.status||
+        profile?.rawSiteReference?.status||profile?.status||profile?.operationalStatus||'');
+      // ACTIVE_SITE_REFERENCE is a catalog placeholder, not stronger evidence than an
+      // identity-matched source row. Keep explicit inactive/current states from the source.
+      const operationStatus=(!declaredStatus||declaredStatus==='ACTIVE_SITE_REFERENCE')&&profileStatus&&profileStatus!=='ACTIVE_SITE_REFERENCE'
+        ?profileStatus:(declaredStatus||profileStatus||'ACTIVE_SITE_REFERENCE');
+      const effectiveOperation={...clone(operation),status:operationStatus,operationalStatus:operationStatus};
       const rawSite={
         ...clone(profile?.rawSiteReference||profile||{}),
         ...clone(site),
+        operation:effectiveOperation,
         siteId,siteReferenceKey:siteId,siteName,name:siteName,
         countryId:wanted,countryCode:wanted,
         resourceId:identity.resourceTypeId||profile?.resourceId||null,
         resourceTypeId:identity.resourceTypeId||profile?.resourceTypeId||null,
         siteType:identity.siteType||profile?.siteType||null,
-        status:operation.status||profile?.status||'ACTIVE_SITE_REFERENCE',commercialExtraction:operation.commercialExtraction!==false&&String(operation.status||'').toUpperCase()!=='NOT_APPLICABLE',
+        status:operationStatus,operationalStatus:operationStatus,
+        commercialExtraction:operation.commercialExtraction!==false&&operationStatus!=='NOT_APPLICABLE',
         owner:ownership.owner||profile?.owner||null,operator:ownership.operator||profile?.operator||null,
         lat:location.coordinates?.lat??profile?.lat??null,lon:location.coordinates?.lng??profile?.lon??null,
         quantitative:clone(q),simulation:clone(sim),quantitativeProvenance:clone(q.quantitativeProvenance||{}),
@@ -731,7 +741,7 @@
         countryId:wanted,countryCode:wanted,resourceId:identity.resourceTypeId||profile?.resourceId||null,
         resourceTypeId:identity.resourceTypeId||profile?.resourceTypeId||null,resourceTypeKey:identity.resourceTypeId||profile?.resourceTypeKey||null,
         profileKey:'CANONICAL_SITE_CATALOG',
-        siteName,status:'ACTIVE_SITE_REFERENCE',activationState:'ACTIVE_REFERENCE',extractionExecutable:false,
+        siteName,status:operationStatus,operationalStatus:operationStatus,activationState:'ACTIVE_REFERENCE',extractionExecutable:false,
         quantitativeExtractionDataAvailable:resourceAsset.quantitativeExtractionDataAvailable===true,
         sourceAuthority:rawSite.sourceAuthority||'RESOURCE_JSON',sourceDatasetId:rawSite.sourceDatasetId,
         sourcePath:rawSite.sourcePath,sourceProfileReferenceKey:rawSite.sourceProfileReferenceKey,
