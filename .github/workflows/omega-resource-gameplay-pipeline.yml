@@ -2,9 +2,27 @@ name: OMEGA Resource Gameplay Pipeline
 
 on:
   push:
-    branches: [main, feature/milestone-b-resource-e2e]
+    branches: [main, feature/milestone-b-resource-e2e, feature/milestone-c-strategic-resource-economy]
     paths:
       - '.github/workflows/omega-resource-gameplay-pipeline.yml'
+      - 'omega_resource_strategic_economy_runtime_v1.js'
+      - 'resource_environmental_rules_v1.json'
+      - 'test/omega_resource_strategic_economy_runtime.test.mjs'
+      - 'test/omega_global_trade_embargo_blockade.test.mjs'
+      - 'omega_global_market_system.js'
+      - 'test/omega_global_market_system.test.mjs'
+      - 'index.html'
+      - 'server_bootstrap.js'
+      - 'server.js'
+      - 'omega_resource_strategic_economy_runtime_v1.js'
+      - 'resource_environmental_rules_v1.json'
+      - 'test/omega_resource_strategic_economy_runtime.test.mjs'
+      - 'test/omega_global_trade_embargo_blockade.test.mjs'
+      - 'omega_global_market_system.js'
+      - 'test/omega_global_market_system.test.mjs'
+      - 'index.html'
+      - 'server_bootstrap.js'
+      - 'server.js'
       - 'omega_resource_endowment_runtime.js'
       - 'omega_resource_part04_identity_runtime.js'
       - 'omega_resource_part05_reserve_extraction_runtime.js'
@@ -64,7 +82,7 @@ permissions:
 jobs:
   real-resource-gameplay-pipeline:
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -100,3 +118,5 @@ jobs:
         run: npm run test:resource-industrial-network
       - name: Transport logistics regression
         run: npm run test:resource-logistics
+      - name: Strategic economy, embargo, environment and persistence
+        run: npm run test:resource-strategic-economy && npm run test:global-market && npm run test:resource-research
