@@ -23,6 +23,28 @@ const resourceFiles=new Map([
   ['resource_site_legacy_gameplay_expansion_part_6_v1.json',new URL('../resource_site_legacy_gameplay_expansion_part_6_v1.json',import.meta.url)],
   ['resource_industrial_catalog_v1.json',new URL('../resource_industrial_catalog_v1.json',import.meta.url)]
 ]);
+const readRepoJson=name=>JSON.parse(fs.readFileSync(new URL('../'+name,import.meta.url),'utf8'));
+const LEGACY_SITE_ALIAS_IDS=new Set([
+  'SITE_AUS_olympic_dam_uranium_copper','SITE_BRA_carajas_iron_ore_mine_legacy2',
+  'SITE_CHL_escondida_copper_mine_legacy2','SITE_IDN_grasberg_copper_gold_mine',
+  'SITE_COD_tenke_fungurume_copper_cobalt_complex','SITE_COD_kibali_gold_mine_complex'
+]);
+const authoritativeSiteRows=(()=>{
+  const canonical=readRepoJson('resource_site_canonical_catalog_v1.json');
+  const ids=new Set((canonical.sites||[]).map(x=>String(x.siteId||'').trim()));
+  const rows=[...(canonical.sites||[])];
+  for(let part=1;part<=6;part++){
+    const data=readRepoJson('resource_site_legacy_gameplay_expansion_part_'+part+'_v1.json');
+    for(const site of data.records||[]){
+      const id=String(site.siteId||'').trim();
+      if(id&&!ids.has(id)){ids.add(id);rows.push(site);}
+    }
+  }
+  return rows;
+})();
+const expectedPhysicalSiteCount=authoritativeSiteRows.filter(site=>
+  !site.runtime?.aliasOfSiteId&&!site.aliasOfSiteId&&site.map?.markerEligible!==false&&
+  !LEGACY_SITE_ALIAS_IDS.has(String(site.siteId||''))).length;
 const nativeFetch=globalThis.fetch;
 globalThis.fetch=async function(input){
   const name=String(input).split('?')[0].replace(/^\.\//,'');
@@ -225,8 +247,8 @@ assert(seen.some(x=>x&&x.payload&&x.payload.batch&&x.payload.batch.batchId===bat
 const preGlobal=runtime.diagnostics();
 const expectedResourceCountries=Object.keys(engine.countryProfiles||{});
 assert.equal(preGlobal.countryCount,expectedResourceCountries.length);
-assert.equal(preGlobal.mineSiteReferenceCount,355);
-assert.equal(preGlobal.mineSiteControllerCount,355);
+assert.equal(preGlobal.mineSiteReferenceCount,expectedPhysicalSiteCount);
+assert.equal(preGlobal.mineSiteControllerCount,expectedPhysicalSiteCount);
 const extractionPromiseA=runtime.extractAll();
 const extractionPromiseB=runtime.extractAll();
 assert.equal(extractionPromiseA,extractionPromiseB,'concurrent turn listeners must share one in-flight world extraction');
@@ -246,8 +268,8 @@ const profileMineOutputs=allMineOutputs.filter(x=>x?.assetType==='MINE_SITE');
 const siteLinkedExecutionOutputs=allMineOutputs.filter(x=>x?.siteReferenceKey&&Number(x?.producedQuantity)>0);
 const simulatedMineOutputs=profileMineOutputs.filter(x=>x?.simulationGenerated===true);
 const simulatedFieldOutputs=allMineOutputs.filter(x=>x?.simulationGenerated===true&&['OIL_FIELD','GAS_FIELD'].includes(x?.assetType));
-assert.equal(siteReferenceRows,355);
-assert.equal(siteControllerRows,355);
+assert.equal(siteReferenceRows,expectedPhysicalSiteCount);
+assert.equal(siteControllerRows,expectedPhysicalSiteCount);
 
 // Every new Part 6 mine must use the same authoritative runtime identity and extraction path.
 const part6Data=JSON.parse(fs.readFileSync(new URL('../resource_site_legacy_gameplay_expansion_part_6_v1.json',import.meta.url),'utf8'));
