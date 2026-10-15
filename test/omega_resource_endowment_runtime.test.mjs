@@ -459,9 +459,23 @@ for(const [countryId,row] of Object.entries(worldState)){
       assert(row.mineProductionLedger.some(x=>x.batchId===output.batchId&&x.mineId===occurrenceKey),countryId+' missing site production ledger '+siteKey);
       controllerCountrySets.add(countryId);
     }else{
-      assert.equal(controller.extractionExecutable,false,countryId+' non-commercial controller unexpectedly executable '+siteKey);
-      assert.equal(controller.extractionPathStatus,'BLOCKED_MISSING_QUANTITATIVE_DATA');
-      assert.deepEqual(controller.linkedOccurrenceKeys,[]);
+      assert.equal(controller.controllerStatus,'BLOCKED',countryId+' non-commercial/unknown site must remain visibly blocked '+siteKey);
+      assert.equal(controller.operationallyEligible,false,countryId+' blocked site cannot be operationally eligible '+siteKey);
+      assert.equal(controller.executionPolicyState,controllerRule?.state||'BLOCKED',
+        countryId+' blocked site policy state mismatch '+siteKey);
+      assert.equal(controller.extractionPathStatus,'BLOCKED_'+String(controller.executionBlockReason||controllerRule?.reason||'SITE_LIFECYCLE_STATUS_UNCLASSIFIED'),
+        countryId+' blocked site path must preserve its exact policy reason '+siteKey);
+      const blockedOutputKeys=[siteKey,...(controller.linkedOccurrenceKeys||[])];
+      const blockedOutput=blockedOutputKeys.map(key=>row.mineOutputs?.[key])
+        .find(output=>Number(output?.producedQuantity)===0&&
+          String(output?.blockReason||'')===String(controllerRule?.reason||'SITE_LIFECYCLE_STATUS_UNCLASSIFIED'));
+      assert(blockedOutput,countryId+' blocked site must expose a zero-quantity policy diagnostic '+siteKey);
+      assert.equal(blockedOutput.batchId,undefined,countryId+' blocked site cannot create a batch '+siteKey);
+      const blockedPath=row.minePaths?.[siteKey];
+      assert(blockedPath,countryId+' blocked site path missing '+siteKey);
+      assert.equal(blockedPath.status,'BLOCKED',countryId+' blocked site path status mismatch '+siteKey);
+      assert.equal(blockedPath.blockReason,controllerRule?.reason||'SITE_LIFECYCLE_STATUS_UNCLASSIFIED',
+        countryId+' blocked site path reason mismatch '+siteKey);
     }
   }
 }
