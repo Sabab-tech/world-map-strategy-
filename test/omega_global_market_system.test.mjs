@@ -26,6 +26,9 @@ await import('../omega_ministry_information_policy.js');
 await import('../omega_ministry_decision_framework.js');
 await import('../omega_ministry_state_transaction.js');
 await import('../omega_ministry_interoperability_system.js');
+// Production boot loads the authoritative resource catalog before market discovery;
+// mirror that order here so reference-only prices come from real catalog entries.
+await import('../resource_ministry_engine.js');
 globalThis.OmegaResourceStrategicPolicyRules=JSON.parse(fs.readFileSync(new URL('../resource_strategic_policy_rules_v1.json',import.meta.url),'utf8'));
 await import('../omega_resource_strategic_policy_runtime_v1.js');
 await import('../omega_global_market_system.js');
