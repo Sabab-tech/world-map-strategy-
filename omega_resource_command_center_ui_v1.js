@@ -116,6 +116,7 @@
         production: r.production || {},
         carbonQuota: r.carbonQuota || null,
         carbonEmissionsLedger: (Array.isArray(r.carbonEmissionsLedger) ? r.carbonEmissionsLedger : []).slice(-50),
+        carbonQuotaEnforcementLedger: (Array.isArray(r.carbonQuotaEnforcementLedger) ? r.carbonQuotaEnforcementLedger : []).slice(-12),
         environmentalImpact: { revision: impact.revision, bySite: boundedSites },
         powerProjects: (Array.isArray(r.powerProjects) ? r.powerProjects : []).slice(-12),
         powerAssets: (Array.isArray(r.powerAssets) ? r.powerAssets : []).slice(-12),
@@ -753,6 +754,7 @@
     const researchProjects = Array.isArray(r.technologyResearchProjects) ? r.technologyResearchProjects : [];
     const quota = r.carbonQuota || null;
     const carbonLedger = Array.isArray(r.carbonEmissionsLedger) ? r.carbonEmissionsLedger : [];
+    const enforcementLedger = Array.isArray(r.carbonQuotaEnforcementLedger) ? r.carbonQuotaEnforcementLedger : [];
     const envLedger = Array.isArray(r.environmentalLedger) ? r.environmentalLedger : [];
     const quotaForm = '<form class="omega-rescc-form" data-search-item data-form="carbon-quota"><h3>Set carbon allowance</h3>' +
       '<p class="omega-rescc-note">Separate CO₂-equivalent accounting in tonnes. Factors are simulated gameplay assumptions, not measured national emissions.</p>' +
@@ -780,6 +782,8 @@
         kv('Period (turns)', quota && quota.periodTurns) + kv('Start turn', quota && quota.startTurn) + kv('Unit', quota && quota.unit) + '</div>', '') +
       quotaForm + emissionForm + remediationForm + controls +
       '<h3 class="omega-rescc-section-title">CO₂e emission ledger</h3>' + statusRows(carbonLedger) +
+      '<h3 class="omega-rescc-section-title">Carbon quota enforcement violations and remediation follow-up</h3>' +
+      (enforcementLedger.length ? statusRows(enforcementLedger) : empty('No quota violation has been recorded. Blocked attempts are kept separately from emissions actually committed.')) +
       '<h3 class="omega-rescc-section-title">Environmental impact and remediation ledger</h3>' + statusRows(envLedger) +
       '<h3 class="omega-rescc-section-title">Construction projects</h3>' + statusRows(projects) +
       '<h3 class="omega-rescc-section-title">Industrial technology contracts</h3>' + statusRows(technologyContracts) +
