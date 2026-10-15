@@ -1761,16 +1761,15 @@ window.OmegaCabinetUI = {
     },
 
     executeDeptAction(ministryId, actionType) {
-        const m = this.ministriesDatabase[ministryId];
-        if (!m) return;
-
-        if (window.showOmegaNotification) {
-            window.showOmegaNotification(
-                "DIRECTIVE EXECUTED",
-                `Successfully issued directive [${actionType.toUpperCase()}] for ${m.title}!`,
-                "success"
-            );
+        const ministry = this.ministriesDatabase[ministryId];
+        const name = ministry && ministry.title ? ministry.title : String(ministryId || 'Unknown ministry');
+        const message = String(actionType || 'Unknown action').toUpperCase() +
+            ' was not executed for ' + name + ': this UI action has no registered authoritative gameplay handler. ' +
+            'The game state was not changed.';
+        if (typeof window.showOmegaNotification === 'function') {
+            window.showOmegaNotification('ACTION NOT EXECUTED', message, 'error');
         }
+        return { status:'UNHANDLED', stateChanged:false, reason:'AUTHORITATIVE_ACTION_HANDLER_NOT_REGISTERED' };
     },
 
     setMoDSubview(subviewId) {
