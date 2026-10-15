@@ -66,7 +66,7 @@ function harness(){
       const c=String(countryId||'').toUpperCase(),fn=handlers.get(owner+':'+type);
       if(!fn)return{status:'UNAVAILABLE',reason:'HANDLER_NOT_FOUND',commandId:'TEST-'+type};
       const result=fn({commandId:'TEST-'+type,payload},{countryId:c,stateTransaction:txFactory(c)});
-      return{status:result?.accepted===false?'REJECTED':'APPLIED',result,commandId:'TEST-'+type};
+      return{status:result?.accepted===false?'FAILED':'APPLIED',result,commandId:'TEST-'+type};
     },
     emitEvent(type,c,source,payload,meta){sandbox.dispatchEvent(new CustomEventMock(type,{detail:{eventType:type,countryId:c,source,payload,meta}}));return true;}
   };
@@ -224,7 +224,7 @@ test('unknown environmental units are rejected without a fabricated default impa
   const response=h.interop.dispatchCommand('resource','OMEGA_RESOURCE_ENVIRONMENT_RECORD_EXTRACTION','BGD',{
     transactionId:'EXT-ENV-MISSING-UNIT',siteId:'SITE_BGD_TEST_LOCKED',resourceId:'copper',quantity:1000
   });
-  assert.equal(response.status,'REJECTED',JSON.stringify(response));
+  assert.equal(response.status,'FAILED',JSON.stringify(response));
   assert.equal(response.result.reason,'ENVIRONMENTAL_UNIT_SCALE_UNAVAILABLE');
   assert.equal(h.state.resource.BGD.environmentalLedger,undefined);
   assert.equal(h.state.resource.BGD.environmentalImpact,undefined);
