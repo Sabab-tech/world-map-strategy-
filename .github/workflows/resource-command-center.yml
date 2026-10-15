@@ -59,13 +59,5 @@ jobs:
         run: npm run test:resource-actions
       - name: Test authoritative state adapter
         run: npm run test:resource-authoritative
-      - name: Test reserve and extraction runtime
-        run: npm run test:resource-endowment
-      - name: Test constrained logistics and resource integrity
-        run: npm run test:resource-system-hardening
-      - name: Test industrial extraction-to-processing pipeline
-        run: npm run test:resource-industrial-network
-      - name: Test gameplay binding and end-to-end resource pipeline
-        run: |
-          npm run test:resource-gameplay-binding
-          npm run test:resource-e2e
+      # Extraction, logistics, industrial-network and resource E2E checks run in
+      # the repository's dedicated OMEGA Resource Gameplay Pipeline workflow.
