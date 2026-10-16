@@ -430,9 +430,6 @@ function attachMapRefreshHooks(){
   }
  }
 }
-function show(){
- if(!panel)return;panel.style.display=panel.style.display==='none'?'block':'none';
-}
 function findOccurrence(s,refs){
  const ids=new Set([s.siteId,s.sourceSiteRecord?.id,s.sourceSiteRecord?.linkedDepositId,s.sourceSiteRecord?.depositKey,s.sourceSiteRecord?.occurrenceKey].filter(Boolean).map(String));
  return refs.find(r=>[r.siteId,r.siteReferenceKey,r.id,r.occurrenceKey,r.depositKey,r.linkedDepositId,r.canonicalOccurrenceId].some(x=>x!=null&&ids.has(String(x))))||null;
@@ -463,10 +460,7 @@ async function execute(){
  }
 }
 function mount(){
- if(document.getElementById('omega-individual-resource-open'))return;
- const btn=document.createElement('button');
- btn.id='omega-individual-resource-open';btn.className='omega-resource-open-button';btn.type='button';btn.textContent='Resource sites';
- btn.addEventListener('click',show);document.body.appendChild(btn);
+ if(document.getElementById('omega-individual-resource-panel'))return;
  panel=document.createElement('section');panel.id='omega-individual-resource-panel';panel.className='omega-resource-site-panel';
  panel.innerHTML='<div class="omega-site-panel-header"><div><p class="omega-site-eyebrow">RESOURCE MAP</p><h2>Deposit details</h2></div><button id="omega-individual-close" class="omega-site-close" type="button" aria-label="Close resource details">Close</button></div>'+
   '<p id="omega-individual-status" class="omega-site-status" role="status" aria-live="polite">Loading resource site data…</p>'+
