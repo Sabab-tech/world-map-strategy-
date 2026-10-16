@@ -75,7 +75,7 @@ test('all sixteen resource panels are registered, selectable and safe to render'
       IndividualResourceSiteBinding:{sites:[
         {siteId:'SITE_GBR_LITHIUM_1',siteName:'Cornish Lithium Site',resourceName:'Lithium',countryId:'GBR',resourceId:'lithium',lat:50.2,lng:-5.3,unit:'TONNES'}
       ]},
-      ResourceIndustrialNetwork:{diagnostics(){return {};},gameplayPipelineDiagnostics(){return {};},
+      ResourceIndustrialNetwork:{diagnostics(){return {};},gameplayPipelineDiagnostics(){return {}; }},
       ResourceLogisticsRuntime:{diagnostics(){return {};}},
       GlobalMarket:{quote(){return {status:'UNAVAILABLE'};},rebuild(){return {};},diagnostics(){return {};}},
       GlobalTrade:{diagnostics(){return {};}}
