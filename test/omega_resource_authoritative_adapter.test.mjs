@@ -78,7 +78,7 @@ function createContext() {
         }]
       }
     },
-    finance: { BGD: { available: 100000, reserves: 100000 } }
+    finance: { BGD: { available: 100000, reserves: 100000, currencyCode: 'BDT', treasuryLedger: [] } }
   };
 
   const handlers = new Map();
@@ -117,12 +117,32 @@ function createContext() {
       handlers.set(actionId, handler);
     },
     dispatchCommand(_owner, actionId, countryId, payload) {
-      const handler = handlers.get(actionId);
-      if (!handler) return { status: 'UNAVAILABLE', reason: 'HANDLER_NOT_FOUND' };
-      const result = handler(
-        { commandId: 'CMD-' + actionId, payload },
-        { countryId, stateTransaction: stateTransaction(countryId) }
-      );
+      let result;
+      if (actionId === 'OMEGA_TRADE_FINANCE_DEBIT') {
+        const tx = stateTransaction(countryId);
+        const finance = tx.get('finance') || {};
+        const amount = Number(payload?.amount);
+        const transactionId = String(payload?.transactionId || '');
+        const ledger = Array.isArray(finance.treasuryLedger) ? finance.treasuryLedger : [];
+        if (transactionId && ledger.some(row => row.transactionId === transactionId)) {
+          result = { accepted: true, duplicate: true, transactionId };
+        } else if (!Number.isFinite(amount) || amount < 0 || Number(finance.available) < amount) {
+          result = { accepted: false, reason: 'INSUFFICIENT_TREASURY', requiredAmount: amount };
+        } else {
+          tx.set('finance.available', Number(finance.available) - amount);
+          tx.set('finance.treasuryLedger', ledger.concat([{
+            transactionId, amount, reason: payload?.reason || 'UNSPECIFIED', status: 'COMMITTED'
+          }]));
+          result = { accepted: true, amount, transactionId };
+        }
+      } else {
+        const handler = handlers.get(actionId);
+        if (!handler) return { status: 'UNAVAILABLE', reason: 'HANDLER_NOT_FOUND' };
+        result = handler(
+          { commandId: 'CMD-' + actionId, payload },
+          { countryId, stateTransaction: stateTransaction(countryId) }
+        );
+      }
       return { status: result?.accepted === false ? 'REJECTED' : 'APPLIED', result };
     },
     emitEvent(type, countryId, source, payload, meta) {
@@ -151,6 +171,7 @@ function createContext() {
     addEventListener: events.addEventListener.bind(events),
     dispatchEvent: events.dispatchEvent.bind(events),
     Game: { state },
+    __OmegaResourceEconomyRules: { schemaVersion: '1.0.0', actions: { survey: { durationTurns: 2, maxResultRecords: 64, budgetUnitsPerSurvey: 25000, budgetPolicy: 'DEBIT_NATIVE_TREASURY_ON_ACCEPTANCE' } } },
     Omega: { MinistryInteroperability: interop },
     OmegaCanonicalIdentityRegistry: {
       resolveCountry(value) {
@@ -234,7 +255,20 @@ test('legacy resource directives no longer fabricate discovery, capacity or stoc
   assert.equal(state.resource.BGD.inventory.iron_ore, inventoryBefore);
   assert.equal(state.economy.BGD.productionAssets[0].capacity, capacityBefore);
 
-  assert.equal(state.resource.BGD.surveyRequests.at(-1).status, 'REQUESTED');
+  const surveyRequest = state.resource.BGD.surveyRequests.at(-1);
+  assert.equal(surveyRequest.status, 'REQUESTED');
+  assert.equal(surveyRequest.estimatedDurationTurns, 2);
+  assert.equal(surveyRequest.surveyBudgetUnits, 25000);
+  assert.equal(surveyRequest.budgetStatus, 'CHARGED');
+  assert.equal(state.finance.BGD.available, 75000, 'survey request must debit the configured native-treasury budget');
+  assert.equal(state.finance.BGD.treasuryLedger.filter(row => row.reason === 'RESOURCE_GEOLOGICAL_SURVEY').length, 1);
+  const duplicate = context.Omega.MinistryInteroperability.dispatchCommand(
+    'resource', 'OMEGA_RESOURCE_UI_SURVEY_REQUEST', 'BGD',
+    { resourceId: 'iron_ore', requestId: surveyRequest.requestId }
+  );
+  assert.equal(duplicate.status, 'APPLIED');
+  assert.equal(duplicate.result.duplicate, true);
+  assert.equal(state.finance.BGD.available, 75000, 'idempotent retry must not debit treasury twice');
   assert.equal(state.economy.BGD.capacityUpgradeRequests.at(-1).status, 'REQUESTED');
   assert.equal(state.resource.BGD.reserveBufferRequests.at(-1).status, 'REQUESTED');
 });
