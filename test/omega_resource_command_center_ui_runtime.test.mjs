@@ -65,14 +65,6 @@ globalThis.Game = {
   }
 };
 globalThis.CountryIOS = { activeCountry: 'BGD' };
-globalThis.Omega = {
-  IndividualResourceSiteBinding: {
-    sites: [
-      { siteId: 'SITE_BGD_TEST_DEPOSIT', countryId: 'BGD', siteName: 'Test Deposit', real: { resourceId: 'iron_ore' }, coordinates: { lat: 23.7, lng: 90.4 } },
-      { siteId: 'SITE_SAU_OTHER_DEPOSIT', countryId: 'SAU', siteName: 'Other Country Deposit', real: { resourceId: 'crude_oil' }, coordinates: { lat: 24, lng: 45 } }
-    ]
-  }
-};
 globalThis.OmegaCanonicalIdentityRegistry = {
   resolveCountry(value) {
     const raw = String(value || '').trim().toUpperCase();
@@ -118,7 +110,9 @@ globalThis.Omega = {
       quantitative: { reserve: { quantity: 700, unit: 'METRIC_TONNE' }, production: { rate: 5, unit: 'METRIC_TONNE_PER_DAY' } },
       simulation: { transportRoute: [{ routeId: 'ROUTE-BGD-IRON-1', routeName: 'Rail to smelter', mode: 'rail', from: 'FILE-SITE-BGD-IRON', to: 'FAC-BGD-IRON', distanceKm: 42 }] },
       processing: { upstreamProcess: 'Beneficiation', refinedOutputs: ['iron_concentrate'] },
-      coordinates: { lat: 24, lng: 90 }, location: { countryName: 'Bangladesh' } }
+      coordinates: { lat: 24, lng: 90 }, location: { countryName: 'Bangladesh' } },
+    { siteId: 'FILE-SITE-SAU-OIL', countryId: 'SAU', siteName: 'Other Country Deposit',
+      real: { resourceId: 'crude_oil' }, coordinates: { lat: 24, lng: 45 }, location: { countryName: 'Saudi Arabia' } }
   ] },
   MinistryInteroperability: {
     dispatchCommand() { return { status: 'APPLIED', result: { accepted: true } }; },
@@ -214,11 +208,11 @@ test('canonical site profiles appear in relevant tabs without becoming live prod
 test('site locator uses canonical geocoded records and filters them to the selected country', () => {
   ui.open('BGD', 'deposits');
   const modal = elements.get('gsrsk-intelligence-modal');
-  assert.match(modal.innerHTML, /Test Deposit/);
+  assert.match(modal.innerHTML, /File-backed Bangladesh iron mine/);
   assert.doesNotMatch(modal.innerHTML, /Other Country Deposit/);
   assert.match(modal.innerHTML, /Find a specific mine or field/);
   assert.match(modal.innerHTML, /Locate this site/);
-  assert.match(modal.innerHTML, /SITE_BGD_TEST_DEPOSIT/);
+  assert.match(modal.innerHTML, /FILE-SITE-BGD-IRON/);
 });
 
 test('resource state readers merge name-keyed country data into canonical country views', () => {
