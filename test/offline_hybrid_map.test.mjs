@@ -2,14 +2,15 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-const [html, js, css, world] = await Promise.all([
+const [html, js, css, world, mapEngine] = await Promise.all([
   readFile(new URL("../index.html", import.meta.url), "utf8"),
   readFile(new URL("../offline-hybrid-map.js", import.meta.url), "utf8"),
   readFile(new URL("../offline-hybrid-map.css", import.meta.url), "utf8"),
-  readFile(new URL("../world.json", import.meta.url), "utf8")
+  readFile(new URL("../world.json", import.meta.url), "utf8"),
+  readFile(new URL("../map-engine-1.js", import.meta.url), "utf8")
 ]);
 
-test("offline atlas uses existing controls and local style assets", () => {
+test("hybrid atlas uses existing map-layer controls and stylesheet", () => {
   assert.match(html, /data-layer="offline-hybrid"/);
   assert.match(html, /offline-hybrid-map\.js/);
   assert.match(html, /offline-hybrid-map\.css/);
@@ -17,16 +18,33 @@ test("offline atlas uses existing controls and local style assets", () => {
   assert.match(html, /data-layer="political"/);
 });
 
-test("recognizable country shapes and boundaries use the canonical GeoJSON layer", () => {
-  assert.match(js, /Game\.geojsonLayer/);
-  assert.match(js, /countries\.eachLayer/);
-  assert.match(js, /fillOpacity:\s*0\.91/);
-  assert.match(js, /color:\s*"#c0c8bb"/);
-  assert.doesNotMatch(js, /L\.GridLayer\.extend|tileLayer\(/i);
-  assert.doesNotMatch(js, /https?:\/\/|\bfetch\s*\(|XMLHttpRequest|WebSocket/i);
+test("detailed real imagery is the primary layer, with NASA raster fallback", () => {
+  assert.match(js, /ArcGIS\/rest\/services\/World_Imagery\/MapServer\/tile/);
+  assert.match(js, /assets\.science\.nasa\.gov/);
+  assert.match(js, /NASA Blue Marble: Next Generation/);
+  assert.match(js, /indexedDB/);
+  assert.match(js, /CACHE_KEY/);
+  assert.match(js, /L\.GridLayer\.extend/);
+  assert.match(js, /sourceYForMercatorPixel/);
+  assert.match(js, /zIndex:\s*180/);
+  assert.match(js, /zIndex:\s*230/);
+  assert.match(js, /fillOpacity:\s*hasImagery\s*\?\s*0\.055/);
 });
 
-test("real geographic coordinate graticule and degree labels are available", () => {
+test("country geometry remains the canonical interactive GeoJSON layer", () => {
+  assert.match(js, /Game\.geojsonLayer/);
+  assert.match(js, /countries\.eachLayer/);
+  assert.match(js, /originalRenderGeoJSON\.apply/);
+  assert.match(js, /originalSelectCountry\.apply/);
+  assert.match(html, /resource_ministry_engine\.js/);
+  assert.match(html, /map-engine-2\.js/);
+  const parsed = JSON.parse(world);
+  assert.equal(parsed.type, "FeatureCollection");
+  assert.ok(Array.isArray(parsed.features));
+  assert.ok(parsed.features.length > 100);
+});
+
+test("latitude and longitude graticule stays subtle and accurate", () => {
   assert.match(js, /L\.polyline/);
   assert.match(js, /longitudeText/);
   assert.match(js, /latitudeText/);
@@ -35,22 +53,18 @@ test("real geographic coordinate graticule and degree labels are available", () 
   assert.match(css, /omega-offline-coordinate-label/);
 });
 
-test("country selection, city and resource systems remain connected", () => {
-  assert.match(js, /originalRenderGeoJSON\.apply/);
-  assert.match(js, /originalSelectCountry\.apply/);
-  assert.match(html, /resource_ministry_engine\.js/);
-  assert.match(html, /map-engine-2\.js/);
-});
-
-test("Android offline shell automatically activates the vector atlas", () => {
+test("Android prefers real imagery and can cache its overview fallback", () => {
   assert.match(js, /if \(window\.OMEGA_ANDROID_OFFLINE\) activate\(\)/);
+  assert.match(js, /if \(active && !blueMarbleImage\)/);
+  assert.match(js, /first online connection is needed to cache/);
   assert.match(css, /omega-offline-hybrid-active/);
   assert.doesNotMatch(css, /animation:\s*resMarkerPulse/);
+  assert.match(mapEngine, /permitSatelliteInOfflineShell/);
 });
 
-test("country geometry is present in the bundled world data", () => {
-  const parsed = JSON.parse(world);
-  assert.equal(parsed.type, "FeatureCollection");
-  assert.ok(Array.isArray(parsed.features));
-  assert.ok(parsed.features.length > 100);
+test("imagery failures do not substitute fake map tiles", () => {
+  assert.doesNotMatch(js, /SATELLITE TILE/);
+  assert.doesNotMatch(js, /data:image\/svg\+xml/);
+  assert.match(js, /tileerror/);
+  assert.match(js, /cached global raster will be used/);
 });
