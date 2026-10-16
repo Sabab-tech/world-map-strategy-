@@ -62,6 +62,15 @@
     if (turn === null) turn = finite(g.Omega && g.Omega.Simulation && g.Omega.Simulation.clock && g.Omega.Simulation.clock.turn);
     return turn === null ? 0 : turn;
   }
+  function simulationTurnDays() {
+    var s = state(), clock = g.Omega && g.Omega.Simulation && g.Omega.Simulation.clock;
+    var milliseconds = finite(clock && clock.stepDurationMs);
+    if (milliseconds === null) milliseconds = finite(s && s.simulation && s.simulation.stepDurationMs);
+    if (milliseconds === null) milliseconds = finite(rules().defaultTurnDurationMs);
+    // The current simulation clock defaults to one simulated hour per turn.
+    if (milliseconds === null || milliseconds <= 0) milliseconds = 3600000;
+    return Math.max(1 / 86400000, milliseconds / 86400000);
+  }
   function bucket(countryId, domain) {
     var root = state()[domain];
     if (!root || typeof root !== 'object' || Array.isArray(root)) return null;
@@ -460,7 +469,7 @@
     if (coefficient !== null && coefficient > 0 && metrics.current.population.value !== null && metrics.current.population.value > 0) {
       return {
         rate: coefficient * metrics.current.population.value / 1000000,
-        source: 'RULE_PROFILE_POPULATION_BASELINE',
+        source: 'RULE_PROFILE_POPULATION_BASELINE_PER_DAY',
         createdTurn: currentTurn()
       };
     }
@@ -471,7 +480,7 @@
     if (produced !== null && produced > 0) {
       return { rate: produced * clamp(domesticShare, 0, 1), source: 'OBSERVED_PRODUCTION_DOMESTIC_SHARE', createdTurn: currentTurn() };
     }
-    if (factoryInput > 0) return { rate: factoryInput, source: 'OBSERVED_FACTORY_INPUT_FLOOR', createdTurn: currentTurn() };
+    if (factoryInput > 0) return { rate: factoryInput, source: 'OBSERVED_FACTORY_INPUT_FLOOR_PER_DAY', createdTurn: currentTurn() };
     return null;
   }
 
@@ -482,14 +491,33 @@
     if (!resource || typeof resource !== 'object') {
       return { countryId: cid, turn: currentTurn(), status: 'WAITING_FOR_EVIDENCE', reason: 'RESOURCE_STATE_NOT_OBSERVED' };
     }
+    var savedRuntime = object(resource.demandRuntime);
+    if (savedRuntime && finite(savedRuntime.lastTurn) === currentTurn() && object(savedRuntime.lastSummary) && object(savedRuntime.byResource)) {
+      var cachedRows = Object.keys(savedRuntime.byResource).map(function (key) { return clone(savedRuntime.byResource[key]); });
+      return {
+        countryId: cid, turn: currentTurn(), status: savedRuntime.status || 'ACTIVE',
+        publishStatus: savedRuntime.publishStatus || null, resourceCount: cachedRows.length,
+        modeled: finite(savedRuntime.lastSummary.modeled) || 0,
+        unknown: finite(savedRuntime.lastSummary.unknown) || 0,
+        shortages: finite(savedRuntime.lastSummary.shortages) || 0,
+        consumedResourceCount: finite(savedRuntime.lastSummary.consumedResourceCount) || 0,
+        procurement: (Array.isArray(savedRuntime.procurementDecisions) ? savedRuntime.procurementDecisions : []).filter(function (row) { return finite(row.turn) === currentTurn(); }).map(function (row) { return clone(row); }),
+        resources: cachedRows, cached: true
+      };
+    }
     var inventory = object(resource.inventory);
-    var runtime = clone(object(resource.demandRuntime) || {});
+    var runtime = clone(savedRuntime || {});
+    var turnDays = simulationTurnDays();
     if (!object(runtime.baselineByResource)) runtime.baselineByResource = {};
     if (!Array.isArray(runtime.history)) runtime.history = [];
     if (!Array.isArray(runtime.procurementDecisions)) runtime.procurementDecisions = [];
     var metrics = referenceContext(resource, cid, runtime);
     runtime.referenceContext = metrics.reference;
     var factoryInputs = factoryInputTotals(completedFactoryRows);
+    var factoryInputDailyRates = {};
+    Object.keys(factoryInputs).forEach(function (resourceId) {
+      factoryInputDailyRates[resourceId] = factoryInputs[resourceId] / turnDays;
+    });
     var allConsumption = object(resource.consumption) || {};
     var resourceIds = Object.keys(profiles());
     Object.keys(allConsumption).forEach(function (rid) {
@@ -501,9 +529,9 @@
     var outputConsumption = clone(allConsumption), summaries = [], pendingByResource = {};
     var hasInventoryBook = !!inventory;
     var maxLedger = Math.max(1, Math.floor(finite(cfg.maxLedgerEntries) || 2048));
-    var minCoverage = Math.max(0, finite(cfg.stockCoverageTurns) || 240);
-    var bufferTurns = Math.max(0, finite(cfg.procurementBufferTurns) || 2);
-    var maxPurchaseTurns = Math.max(bufferTurns, finite(cfg.maxPurchaseCoverageTurns) || 6);
+    var minCoverageDays = Math.max(0, finite(cfg.stockCoverageDays) || finite(cfg.stockCoverageTurns) || 3);
+    var bufferDays = Math.max(0, finite(cfg.procurementBufferDays) || finite(cfg.procurementBufferTurns) || 2);
+    var maxPurchaseDays = Math.max(bufferDays, finite(cfg.maxPurchaseCoverageDays) || finite(cfg.maxPurchaseCoverageTurns) || 6);
     var player = playerCountryId();
     var allowPlayerProcurement = !!(cfg.automaticProcurement && cfg.automaticProcurement.forPlayerCountry === true);
     var autoProcure = !!(cfg.automaticProcurement && cfg.automaticProcurement.enabled === true);
@@ -521,7 +549,9 @@
       var profile = profileFor(rid) || {};
       var inputQty = resourceValue(factoryInputs, rid);
       if (inputQty === null) inputQty = 0;
-      var baseline = baselineFor(rid, resource, profile, runtime, metrics, inputQty);
+      var inputDailyRate = resourceValue(factoryInputDailyRates, rid);
+      if (inputDailyRate === null) inputDailyRate = 0;
+      var baseline = baselineFor(rid, resource, profile, runtime, metrics, inputDailyRate);
       if (!baseline) {
         summaries.push({
           resourceId: rid, status: 'UNKNOWN', source: 'NO_BASELINE_OR_REQUIRED_METRICS',
@@ -547,13 +577,17 @@
         priceSource: currentPrice.source,
         policyMultiplier: policyMultiplier(resource, rid), warActive: warActive(cid)
       });
-      var demanded = Math.max(inputQty, factors.demand);
+      // resource.consumption remains a stable daily rate for existing targetDays logic.
+      // Inventory debits use only this turn's fraction of that rate. Factory usage,
+      // which is already debited by production, is converted to a daily equivalent.
+      var demanded = Math.max(inputDailyRate, factors.demand);
+      var demandThisTurn = demanded * turnDays;
       var consumptionKey = resourceKey(outputConsumption, rid) || rid;
       outputConsumption[consumptionKey] = demanded;
       var stock = hasInventoryBook ? (resourceValue(inventory, rid) == null ? 0 : Math.max(0, resourceValue(inventory, rid))) : null;
       var protectedQty = stock === null ? null : Math.min(stock, protectedStock(resource, rid));
       var spendable = stock === null ? null : Math.max(0, stock - protectedQty);
-      var nonFactoryDemand = Math.max(0, demanded - inputQty);
+      var nonFactoryDemand = Math.max(0, demandThisTurn - inputQty);
       var consumeRequest = stock === null ? 0 : Math.min(nonFactoryDemand, spendable);
       var consumed = 0, consumeStatus = stock === null ? 'UNKNOWN_INVENTORY' : (consumeRequest > 0 ? 'NOT_ATTEMPTED' : 'NO_DEBIT_REQUIRED');
       if (consumeRequest > 0) {
@@ -571,25 +605,31 @@
       }
       var inventoryAfter = hasInventoryBook ? resourceValue((bucket(cid, 'resource') || {}).inventory, rid) : null;
       if (hasInventoryBook && inventoryAfter === null) inventoryAfter = 0;
-      var fulfilled = stock === null ? null : Math.min(demanded, inputQty + consumed);
-      var unmet = fulfilled === null ? null : Math.max(0, demanded - fulfilled);
+      var fulfilled = stock === null ? null : Math.min(demandThisTurn, inputQty + consumed);
+      var unmet = fulfilled === null ? null : Math.max(0, demandThisTurn - fulfilled);
       var remainingSpendable = inventoryAfter === null ? null : Math.max(0, inventoryAfter - protectedStock(bucket(cid, 'resource') || resource, rid));
       var coverage = remainingSpendable === null ? null : (demanded > 0 ? remainingSpendable / demanded : null);
       var pending = pendingByResource[token(rid)] || 0;
-      var coverageTarget = Math.max(0, finite(profile.stockCoverageTurns) === null ? minCoverage : finite(profile.stockCoverageTurns));
+      var coverageTarget = Math.max(0, finite(profile.stockCoverageDays) === null
+        ? (finite(profile.stockCoverageTurns) === null ? minCoverageDays : finite(profile.stockCoverageTurns))
+        : finite(profile.stockCoverageDays));
       var lowStockCoverage = coverage !== null && demanded > 0 && coverage < coverageTarget;
-      var score = unmet !== null && demanded > 0 ? (unmet / demanded) * (finite(profile.priority) || 1) : 0;
+      var shortagePressure = unmet !== null && demandThisTurn > 0 ? clamp(unmet / demandThisTurn, 0, 1) : 0;
+      var coveragePressure = coverage !== null && coverageTarget > 0 ? clamp((coverageTarget - coverage) / coverageTarget, 0, 1) : 0;
+      var score = Math.max(shortagePressure, lowStockCoverage ? coveragePressure : 0) * (finite(profile.priority) || 1);
       var summary = {
         resourceId: rid, unit: profile.unit || null,
-        status: stock === null ? 'WAITING_FOR_INVENTORY' : (unmet > 1e-9 ? 'SHORTAGE' : 'BALANCED'),
+        status: stock === null ? 'WAITING_FOR_INVENTORY' : (unmet > 1e-9 ? 'SHORTAGE' : (lowStockCoverage ? 'LOW_COVERAGE' : 'BALANCED')),
         baselineRate: baseline.rate, baselineSource: baseline.source,
-        demand: demanded, factoryConsumption: inputQty, nationalConsumption: consumed,
+        demand: demanded, demandPerDay: demanded, demandThisTurn: demandThisTurn,
+        factoryConsumption: inputQty, nationalConsumption: consumed,
         fulfilledDemand: fulfilled, unmetDemand: unmet,
         inventoryBefore: stock, inventoryAfter: inventoryAfter, protectedStock: protectedQty,
-        spendableStockAfter: remainingSpendable, stockCoverageTurns: coverage,
-        stockCoverageTargetTurns: coverageTarget, lowStockCoverage: lowStockCoverage,
-        pendingImportQuantity: pending, priority: finite(profile.priority) || 1,
-        consumeStatus: consumeStatus, price: currentPrice.value,
+        spendableStockAfter: remainingSpendable, stockCoverageDays: coverage, stockCoverageTurns: coverage,
+        stockCoverageTargetDays: coverageTarget, stockCoverageTargetTurns: coverageTarget,
+        lowStockCoverage: lowStockCoverage, pendingImportQuantity: pending,
+        priority: finite(profile.priority) || 1, procurementScore: score,
+        consumeStatus: consumeStatus, price: currentPrice.value, turnDurationDays: turnDays,
         formula: factors
       };
       summaries.push(summary);
@@ -615,9 +655,10 @@
       turn: currentTurn(), status: runtime.status,
       resources: summaries.map(function (row) {
         return {
-          resourceId: row.resourceId, status: row.status, demand: row.demand,
-          nationalConsumption: row.nationalConsumption, unmetDemand: row.unmetDemand,
-          inventoryAfter: row.inventoryAfter, stockCoverageTurns: row.stockCoverageTurns,
+          resourceId: row.resourceId, status: row.status, demandPerDay: row.demandPerDay,
+          demandThisTurn: row.demandThisTurn, nationalConsumption: row.nationalConsumption,
+          unmetDemand: row.unmetDemand, inventoryAfter: row.inventoryAfter,
+          stockCoverageDays: row.stockCoverageDays,
           totalFactor: row.formula && row.formula.totalFactor
         };
       }),
@@ -643,17 +684,17 @@
       hasInventoryBook && g.OmegaOpponentAutonomy && typeof g.OmegaOpponentAutonomy.routeDecision === 'function';
     if (canProcure) {
       summaries.forEach(function (row) {
-        if (row.demand === null || row.demand <= 0 ||
+        if (row.demandPerDay === null || row.demandPerDay <= 0 ||
             !((row.unmetDemand !== null && row.unmetDemand > 1e-9) || row.lowStockCoverage === true)) return;
         var availablePending = pendingByResource[token(row.resourceId)] || 0;
-        var targetTurns = Math.max(bufferTurns, finite(row.stockCoverageTargetTurns) || 0);
+        var targetDays = Math.max(bufferDays, finite(row.stockCoverageTargetDays) || finite(row.stockCoverageTargetTurns) || 0);
         var spendable = Math.max(0, row.spendableStockAfter || 0);
-        var bufferTarget = Math.max(0, row.demand * targetTurns - spendable - availablePending);
+        var bufferTarget = Math.max(0, row.demandPerDay * targetDays - spendable - availablePending);
         var uncoveredDemand = Math.max(0, (row.unmetDemand || 0) - availablePending);
         var quantity = Math.max(uncoveredDemand, bufferTarget);
-        quantity = Math.min(quantity, row.demand * maxPurchaseTurns);
+        quantity = Math.min(quantity, row.demandPerDay * maxPurchaseDays);
         if (!(quantity > 1e-9)) return;
-        procurement.push({ row: row, quantity: quantity, score: row.priority * (row.unmetDemand / row.demand) });
+        procurement.push({ row: row, quantity: quantity, score: row.procurementScore || 0 });
       });
       procurement.sort(function (a, b) { return b.score - a.score || token(a.row.resourceId).localeCompare(token(b.row.resourceId)); });
       var maxDecisions = Math.max(0, Math.floor(finite(cfg.maxProcurementDecisionsPerCountryPerTurn) || 2));
@@ -665,7 +706,8 @@
           candidateActions: ['IMPORT', 'RESERVE_RELEASE', 'DOMESTIC_EXPANSION', 'SUBSTITUTION', 'EFFICIENCY', 'SUPPLIER_CHANGE'],
           goal: { priorityClass: entry.row.priority >= 8 ? 'PRESSURE' : 'OPPORTUNITY' },
           runtimeMeasurement: {
-            resourceId: entry.row.resourceId, required: entry.row.demand,
+            resourceId: entry.row.resourceId, required: entry.row.demandThisTurn,
+            requiredPerDay: entry.row.demandPerDay,
             available: Math.max(0, entry.row.spendableStockAfter || 0), gap: entry.row.unmetDemand,
             quantity: entry.quantity,
             selected: { action: 'IMPORT', quantity: entry.quantity },
