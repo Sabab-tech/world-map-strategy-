@@ -1631,6 +1631,9 @@ Game.Map.applyResourceMapFilter = function(resourceType) {
     if (!(state.selectedResources instanceof Set)) {
         state.selectedResources = new Set(Array.isArray(state.selectedResources) ? state.selectedResources : []);
     }
+    // An explicit resource choice must survive asynchronous site-binding initialization.
+    // Otherwise the late initializer adds every known commodity and effectively resets the locator.
+    if (!isNone && !isAll && !isCountrySentinel) state.__omegaDefaultSelection = false;
     const countrySelected = !!(Game.currentActiveCountry ||
         (window.CountryIOS && window.CountryIOS.activeCountry));
     state.scope = countrySelected ? 'NATION' : 'WORLD';
@@ -1735,8 +1738,8 @@ Game.Map.focusResource = function(resourceType, countryId) {
     );
     const coordinatesOf = site => {
         const coordinates = site && (site.coordinates || site.location && site.location.coordinates) || {};
-        const lat = Number(coordinates.lat ?? coordinates.latitude ?? site && (site.lat ?? site.latitude));
-        const lng = Number(coordinates.lng ?? coordinates.lon ?? coordinates.longitude ?? site && (site.lng ?? site.lon ?? site.longitude));
+        const lat = Number(coordinates.lat ?? coordinates.latitude ?? (site && (site.lat ?? site.latitude)));
+        const lng = Number(coordinates.lng ?? coordinates.lon ?? coordinates.longitude ?? (site && (site.lng ?? site.lon ?? site.longitude)));
         return Number.isFinite(lat) && lat >= -90 && lat <= 90 &&
             Number.isFinite(lng) && lng >= -180 && lng <= 180 ? { lat, lng } : null;
     };
