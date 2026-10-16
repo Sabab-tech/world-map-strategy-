@@ -479,39 +479,140 @@
       (row.provenance && row.provenance[field + 'Authority']));
     return value || 'NOT_RECORDED';
   }
-  function panelMatrix(country) {
-    const summary = engineSummary(country);
-    const rows = resources(country);
-    const metrics = summary.globalMetrics || {};
-    const unitOptions = Object.keys(UNIT_DEFINITIONS).map(function (id) {
-      const unit = UNIT_DEFINITIONS[id];
-      return '<option value="' + esc(id) + '">' + esc(unit.label) + '</option>';
+  function progressMarkup(value) {
+    const raw = Number(value);
+    const pct = Number.isFinite(raw) ? Math.max(0, Math.min(100, Math.round(raw))) : 0;
+    return '<div class="omega-rescc-progress" role="progressbar" aria-valuenow="' + pct +
+      '" aria-valuemin="0" aria-valuemax="100"><span style="width:' + pct + '%"></span></div>' +
+      '<div class="omega-rescc-muted">' + pct + '% complete</div>';
+  }
+  function surveyStatusRows(list, country, isResult) {
+    if (!Array.isArray(list) || !list.length) {
+      return empty(isResult ? 'No completed survey evidence is recorded yet.' : 'No survey has been requested for this country.');
+    }
+    const requests = Array.isArray(resourceBucket(country).surveyRequests) ? resourceBucket(country).surveyRequests : [];
+    return list.slice(-40).reverse().map(function (row) {
+      const request = isResult ? (requests.find(function (item) { return String(item.requestId) === String(row.requestId); }) || {}) : row;
+      const status = String(row.status || request.status || 'NOT_RECORDED').toUpperCase();
+      const resourceId = row.resourceId || request.resourceId || '';
+      const pctValue = row.progress == null ? request.progress : row.progress;
+      const pct = status === 'COMPLETED' || status === 'OBSERVED_DEPOSIT_RECORDS' || status === 'NO_AUTHORITATIVE_RECORDS' ? 100 : pctValue;
+      const duration = row.estimatedDurationTurns ?? request.estimatedDurationTurns ??
+        (row.startedTurn != null && row.completionTurn != null ? Number(row.completionTurn) - Number(row.startedTurn) : null);
+      const amount = row.surveyBudgetUnits ?? request.surveyBudgetUnits;
+      const currency = row.currencyCode || request.currencyCode || resourceSurveyPlan(country).currencyCode;
+      const records = row.recordCount ?? request.recordCount;
+      const statusLabel = status === 'REQUESTED' ? 'QUEUED' :
+        status === 'IN_PROGRESS' ? 'SURVEY IN PROGRESS' :
+        status === 'OBSERVED_DEPOSIT_RECORDS' ? 'COMPLETED · RECORDS FOUND' :
+        status === 'NO_AUTHORITATIVE_RECORDS' ? 'COMPLETED · NO MATCHING RECORDS' : status.replace(/_/g, ' ');
+      const body = '<div class="omega-rescc-grid2">' +
+        kv('Request reference', row.requestId || request.requestId || '—') +
+        kv('Simulation turn', row.completedTurn ?? request.startedTurn ?? request.requestedTurn ?? '—') +
+        kv('Estimated duration', duration == null ? null : duration, ' turns') +
+        kv('Survey budget', amount == null ? null : amount, ' ' + currency) +
+        (records == null ? '' : kv('Registry records found', records)) +
+        kv('Budget status', row.budgetStatus || request.budgetStatus || 'NOT_RECORDED') + '</div>' +
+        progressMarkup(pct) +
+        (row.reason || row.blockReason ? '<div class="omega-rescc-warning">' + esc(row.reason || row.blockReason) + '</div>' : '') +
+        (status === 'NO_AUTHORITATIVE_RECORDS' ? '<p class="omega-rescc-muted">No matching record exists in the loaded authoritative registry. No deposit, reserve or production value was fabricated.</p>' : '') +
+        (status === 'OBSERVED_DEPOSIT_RECORDS' ? '<p class="omega-rescc-muted">Evidence source: existing resource JSON registry. This records found data; it does not automatically start extraction.</p>' : '');
+      return card(resourceName(resourceId), statusLabel, body, '');
     }).join('');
-    const metrology = '<form class="omega-rescc-form" data-search-item data-form="metrology"><h3>Canonical unit conversion</h3>' +
+  }
+  function resourceFinderDetail(country, resource, availability, plan) {
+    const active = availability.activeSurvey;
+    const latest = availability.latestResult;
+    const cost = active && active.surveyBudgetUnits != null ? active.surveyBudgetUnits : plan.budgetUnits;
+    const currency = active && active.currencyCode || plan.currencyCode;
+    const duration = active && active.estimatedDurationTurns != null ? active.estimatedDurationTurns : plan.durationTurns;
+    const body = '<div class="omega-rescc-grid2">' +
+      kv('Country', country) +
+      kv('Availability', availability.label) +
+      kv('Survey time', duration == null ? null : duration, ' turns') +
+      kv('Survey budget', cost == null ? null : cost, ' ' + currency) +
+      kv('Budget status', active && active.budgetStatus || (plan.ready ? 'CHARGED WHEN SURVEY STARTS' : 'RULES NOT READY')) +
+      kv('Evidence source', availability.available ? availability.evidence.join(' · ') : (latest ? latest.evidenceSource || latest.sourceAuthority || 'Survey registry result' : 'No country-matched record')) +
+      '</div>' +
+      (active ? progressMarkup(active.progress) : '') +
+      (availability.available
+        ? '<p class="omega-rescc-muted">This country has a matching resource record. Presence does not guarantee an operational mine or available extraction capacity.</p>'
+        : (availability.status === 'NOT_FOUND'
+          ? '<div class="omega-rescc-warning">The survey completed, but the current authoritative registry returned no matching record for this country and resource. It remains unavailable.</div>'
+          : (active ? '<p class="omega-rescc-muted">The request is queued or running. Progress updates with simulation turns; the final result is taken from the loaded resource registry.</p>'
+            : '<p class="omega-rescc-muted">The resource is in the global catalogue but has no confirmed record for this country. A survey checks existing registry data; it does not invent a mine if no source record exists.</p>')));
+    let actions = '';
+    if (availability.available) {
+      actions = actionButton('focus-map', 'Show resource on map', { 'resource-id': resource.id });
+    } else if (active) {
+      actions = actionButton('survey', 'Survey in progress', { 'resource-id': resource.id }, true);
+    } else if (plan.ready) {
+      actions = actionButton('survey', 'Start geological survey', { 'resource-id': resource.id });
+    } else {
+      actions = actionButton('survey', 'Survey rules loading', { 'resource-id': resource.id }, true);
+    }
+    return card(resource.name || resource.id, availability.label, body, actions);
+  }
+  function panelMatrix(country) {
+    const catalog = resourceTypes().filter(function (row) { return row && row.id; }).slice().sort(function (a, b) {
+      return String(a.name || a.id).localeCompare(String(b.name || b.id));
+    });
+    const known = countryResources(country);
+    const source = resourceBucket(country);
+    const requests = Array.isArray(source.surveyRequests) ? source.surveyRequests : [];
+    const activeCount = requests.filter(function (row) {
+      return ['REQUESTED', 'IN_PROGRESS', 'PENDING', 'ACTIVE'].indexOf(String(row && row.status || '').toUpperCase()) >= 0;
+    }).length;
+    const selectedResource = catalog.find(function (row) {
+      return resourceToken(row.id) === resourceToken(selectedResourceFinderId);
+    }) || null;
+    const plan = resourceSurveyPlan(country);
+    const options = '<option value="">Select resource</option>' + catalog.map(function (row) {
+      return '<option value="' + esc(row.id) + '"' +
+        (selectedResource && resourceToken(selectedResource.id) === resourceToken(row.id) ? ' selected' : '') + '>' +
+        esc(row.name || row.id) + '</option>';
+    }).join('');
+    const finder = '<section class="omega-rescc-discovery" data-search-item><div class="omega-rescc-cardhead">' +
+      '<strong>Find a resource</strong><span class="omega-rescc-pill">GLOBAL CATALOGUE</span></div>' +
+      '<p class="omega-rescc-muted">Choose any catalogued resource. Only verified local resources appear in the list below; unavailable resources can be surveyed.</p>' +
+      '<div class="omega-rescc-finder-row"><label for="omega-rescc-resource-select">Select resource' +
+      '<select id="omega-rescc-resource-select" aria-label="Select resource">' + options + '</select></label>' +
+      '<button type="button" class="omega-rescc-button" data-action="find-resource">Find</button></div></section>';
+    const detail = selectedResource
+      ? resourceFinderDetail(country, selectedResource, resourceAvailability(country, selectedResource.id), plan)
+      : empty('Select a resource above and press Find to check its availability in ' + country + '.');
+    const localRows = known.map(function (row) {
+      const body = '<div class="omega-rescc-grid2">' +
+        kv('Current production', row.dailyProduction) +
+        kv('Inventory', row.inventory) +
+        kv('Recorded reserve', row.reserve) +
+        kv('Stock days', row.stockDays) + '</div>' +
+        '<div class="omega-rescc-muted">Shown because existing country data or a visible site record confirms this resource. Unknown values remain unavailable.</div>';
+      return card(row.name || row.id, row.id + ' · ' + (row.unit || 'unit not specified'), body,
+        actionButton('focus-map', 'Show on map', { 'resource-id': row.id }));
+    }).join('');
+    const unitOptions = Object.keys(UNIT_DEFINITIONS).map(function (id) {
+      return '<option value="' + esc(id) + '">' + esc(UNIT_DEFINITIONS[id].label) + '</option>';
+    }).join('');
+    const optionalMetrology = '<details class="omega-rescc-optional-tool"><summary>Optional unit conversion</summary>' +
+      '<form class="omega-rescc-form" data-search-item data-form="metrology">' +
       '<div class="omega-rescc-formgrid">' +
       '<label>Quantity<input name="value" type="number" step="any" required placeholder="Enter quantity"></label>' +
       '<label>From unit<select name="fromUnit" required>' + unitOptions + '</select></label>' +
       '<label>To unit<select name="toUnit" required>' + unitOptions + '</select></label></div>' +
-      '<p class="omega-rescc-note">Only conversions within the same physical dimension are allowed. Volume, mass and energy are never converted across dimensions.</p>' +
-      '<button class="omega-rescc-button" type="submit">Convert quantity</button></form>';
-    const top = metrology + '<div class="omega-rescc-metrics">' +
-      '<div><span>Autonomy index</span><strong>' + number(metrics.autonomyIndex, '%') + '</strong></div>' +
-      '<div><span>Reserve duration</span><strong>' + number(metrics.strategicReservesTotalDays, ' days') + '</strong></div>' +
-      '<div><span>Runtime source</span><strong>' + esc(summary.version || 'Unavailable') + '</strong></div></div>' +
-      '<p class="omega-rescc-note">' + esc(summary.briefing || 'Missing values remain unavailable; no synthetic values are shown.') + '</p>';
-    const content = rows.map(function (r) {
-      return card(r.name || r.id, r.id + ' · ' + (r.unit || 'unit not specified'),
-        '<div class="omega-rescc-grid2">' + kv('Production/day', r.dailyProduction) +
-        kv('Demand/day', r.dailyConsumption) + kv('Net balance', r.netBalance) +
-        kv('Inventory', r.inventory) + kv('Reserve', r.reserve) + kv('Stock days', r.stockDays) + '</div>' +
-        '<div class="omega-rescc-muted">Production authority: ' + esc(r.productionAuthority || 'NOT_RECORDED') +
-        ' · Reserve authority: ' + esc(r.reserveAuthority || 'NOT_RECORDED') + '</div>',
-        actionButton('survey', 'Request survey', { 'resource-id': r.id }) +
-        actionButton('expansion', 'Request capacity review', { 'resource-id': r.id }) +
-        actionButton('reserve', 'Request SPR transfer', { 'resource-id': r.id }) +
-        actionButton('focus-map', 'Focus map', { 'resource-id': r.id }));
-    }).join('');
-    return top + (content || empty('No authoritative commodity rows are available for this country.'));
+      '<button class="omega-rescc-button" type="submit">Convert quantity</button></form></details>';
+    return '<div class="omega-rescc-metrics">' +
+      '<div><span>Resources confirmed in country</span><strong>' + number(known.length) + '</strong></div>' +
+      '<div><span>Global catalog options</span><strong>' + number(catalog.length) + '</strong></div>' +
+      '<div><span>Active surveys</span><strong>' + number(activeCount) + '</strong></div></div>' +
+      finder + detail +
+      '<h3 class="omega-rescc-section-title">Resources present in ' + esc(country) + '</h3>' +
+      (localRows || empty('No resource record is currently confirmed for this country. Use Find to select a catalog resource and request a survey.')) +
+      '<h3 class="omega-rescc-section-title">Survey activity</h3>' +
+      surveyStatusRows(requests, country, false) +
+      '<h3 class="omega-rescc-section-title">Survey results</h3>' +
+      surveyStatusRows(Array.isArray(source.surveyResults) ? source.surveyResults : [], country, true) +
+      optionalMetrology;
   }
   function panelOntology(country) {
     const types = resourceTypes();
