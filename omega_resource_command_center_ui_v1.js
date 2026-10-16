@@ -15,7 +15,7 @@
     { id: 'inventory', num: '07', title: 'Strategic reserve inventory' },
     { id: 'logistics', num: '08', title: 'Transport corridors' },
     { id: 'industrial', num: '09', title: 'Industrial value chain' },
-    { id: 'market', num: '10', title: 'Commodity market' },
+    { id: 'market', num: '10', title: 'Global Commodity Market & Prices' },
     { id: 'trade', num: '11', title: 'Supply contracts & tariffs' },
     { id: 'value', num: '12', title: 'Resource rent & sovereign wealth' },
     { id: 'cascade', num: '13', title: 'Cascade disruption sandbox' },
@@ -1097,19 +1097,34 @@
       '<div><span>Executable bid / ask orders</span><strong>' + number(orderCount) + '</strong></div>' +
       '<div><span>Markets tracked by runtime</span><strong>' + number(diagnostics.resourceMarkets ?? Object.keys(books || {}).length) + '</strong></div></div>';
     return top + '<p class="omega-rescc-muted">GLOBAL COMMODITY MARKET · All resources found in the global catalog, deposit registry and market order books. Clearing prices appear only when real in-game bids and asks match. Catalog reference prices are shown separately and never count as sales.</p>' +
-      '<div class="omega-rescc-actions">' + actionButton('refresh-market', 'Rebuild global market snapshot', {}) +
+      '<div class="omega-rescc-actions">' +
+      '<button type="button" class="omega-rescc-button" data-panel="trade">Open trade requests &amp; settlement</button>' +
+      actionButton('refresh-market', 'Rebuild global market snapshot', {}) +
       actionButton('open-global-deposits', 'Browse worldwide deposits', {}) + '</div>' +
       (marketRows || empty('No resource IDs were found in the loaded global catalog, site registry or market order books.'));
   }
   function panelTrade(country) {
     const trade = g.OmegaGlobalTrade || g.Omega && g.Omega.GlobalTrade;
-    const requests = Array.isArray(bucket('trade', country).importRequests) ? bucket('trade', country).importRequests : [];
-    const ledger = bucket('trade', country).globalTradeLedger || {};
-    const others = countryList().filter(function (c) { return c !== activeCountry(country); });
-    const countries = others.map(function (c) { return '<option value="' + esc(c) + '">' + esc(c) + '</option>'; }).join('');
-    const resourceOpts = resources(country).map(function (r) {
+    const tradeBucket = bucket('trade', country);
+    const requests = Array.isArray(tradeBucket.importRequests) ? tradeBucket.importRequests : [];
+    const ledger = tradeBucket.globalTradeLedger || {};
+    const settlements = Array.isArray(ledger.settlements) ? ledger.settlements : [];
+    const decisions = Array.isArray(ledger.decisions) ? ledger.decisions : [];
+    const offers = tradeBucket.offerBook;
+    const offerCount = Array.isArray(offers) ? offers.length :
+      (offers && typeof offers === 'object' ? Object.values(offers).reduce(function (count, row) {
+        return count + (Array.isArray(row) ? row.length : (row && typeof row === 'object' ? 1 : 0));
+      }, 0) : 0);
+    const others = resourceCountryChoices().filter(function (c) { return c !== 'WORLD' && c !== activeCountry(country); });
+    const countries = others.map(function (c) { return '<option value="' + esc(c) + '">' + esc(countryDisplayName(c)) + '</option>'; }).join('');
+    const resourceOpts = resourceChoices(country).map(function (r) {
       return '<option value="' + esc(r.id) + '">' + esc(r.name || r.id) + '</option>';
     }).join('');
+    const metrics = '<div class="omega-rescc-metrics">' +
+      '<div><span>Import requests</span><strong>' + number(requests.length) + '</strong></div>' +
+      '<div><span>Recorded decisions</span><strong>' + number(decisions.length) + '</strong></div>' +
+      '<div><span>Completed / failed settlements</span><strong>' + number(settlements.length) + '</strong></div>' +
+      '<div><span>Stored seller offers</span><strong>' + number(offerCount) + '</strong></div></div>';
     const form = '<form class="omega-rescc-form" data-search-item data-form="trade-request">' +
       '<h3>Create bilateral supply request</h3><div class="omega-rescc-formgrid">' +
       '<label>Seller country<select name="targetCountryId" required>' + countries + '</select></label>' +
@@ -1119,13 +1134,11 @@
       '<p class="omega-rescc-note">Submitting records a request as SENT/OPEN. Counterparty review, observed relations, sanctions, price evidence, stock and settlement rules determine what happens next.</p>' +
       '<button class="omega-rescc-button" type="submit"' + ((!trade || typeof trade.createRequest !== 'function' || !others.length || !resourceOpts) ? ' disabled' : '') +
       '>Submit supply request</button></form>';
-    return (trade && trade.diagnostics ? diagnosticCard('Global trade diagnostics', trade.diagnostics()) : empty('Global trade engine is not available.')) +
+    return metrics +
+      '<p class="omega-rescc-muted">Market prices and executable order counts are in the Global Commodity Market panel. This panel submits the selected nation’s real import request through the trade runtime; it does not fabricate seller offers or settlement results.</p>' +
+      (trade && trade.createRequest ? '' : empty('Global trade engine is not available.')) +
       form + '<h3 class="omega-rescc-section-title">Import requests and settlement status</h3>' + statusRows(requests) +
-      '<h3 class="omega-rescc-section-title">Global trade ledger</h3>' + diagnosticCard('Ledger counters', {
-        requests: Array.isArray(ledger.requests) ? ledger.requests.length : 0,
-        decisions: Array.isArray(ledger.decisions) ? ledger.decisions.length : 0,
-        settlements: Array.isArray(ledger.settlements) ? ledger.settlements.length : 0
-      }) + statusRows(Array.isArray(ledger.settlements) ? ledger.settlements : []);
+      '<h3 class="omega-rescc-section-title">Recorded settlements</h3>' + statusRows(settlements);
   }
   function panelValue(country) {
     const fin = bucket('finance', country);
