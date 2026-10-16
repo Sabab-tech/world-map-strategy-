@@ -1512,8 +1512,8 @@
     modal.innerHTML = '<style>' + css() + '</style><div class="omega-rescc-shell" role="dialog" aria-modal="true" aria-label="Resource Command Center">' +
       '<div class="omega-rescc-top"><div class="omega-rescc-heading"><h2>Resource Command Center</h2>' +
       '<div class="omega-rescc-headtools"><select id="omega-rescc-country" aria-label="Country scope">' + options + '</select>' +
-      '<button type="button" class="omega-rescc-button" data-panel="market">Global Commodity Market</button>' +
-      '<button type="button" class="omega-rescc-button" data-panel="deposits">Worldwide Deposits</button>' +
+      '<button type="button" class="omega-rescc-button" data-action="open-global-market">Global Commodity Market</button>' +
+      '<button type="button" class="omega-rescc-button" data-action="open-global-deposits">Worldwide Deposits</button>' +
       '<button type="button" class="omega-rescc-button" data-action="refresh-panel">Refresh</button>' +
       '<button type="button" class="omega-rescc-button" data-action="close">Close</button></div></div>' +
       '<div class="omega-rescc-headtools"><input id="omega-rescc-search" class="omega-rescc-input omega-rescc-search" type="search" placeholder="Search this section…" aria-label="Search current section"></div>' +
@@ -1599,6 +1599,10 @@
         const pages = Math.max(1, Math.ceil(count / DEPOSIT_PAGE_SIZE));
         depositPage = Math.max(0, Math.min(pages - 1, depositPage + (d.direction === 'previous' ? -1 : 1)));
         render(c, 'deposits');
+        return;
+      }
+      if (action === 'open-global-market') {
+        render(c, 'market');
         return;
       }
       if (action === 'open-global-deposits') {
