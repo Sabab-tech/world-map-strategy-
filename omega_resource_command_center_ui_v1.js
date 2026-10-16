@@ -510,8 +510,11 @@
     const gameRow = g.Game && g.Game.countryLookup && (g.Game.countryLookup[key] || g.Game.countryLookup[id]);
     const e = engine();
     const profile = e && e.getCountryResourceProfile ? e.getCountryResourceProfile(key) : null;
-    const name = gameRow && (gameRow.name || gameRow.officialName) ||
-      profile && profile.identity && (profile.identity.name || profile.identity.officialName);
+    const identity = profile && profile.identity || {};
+    const profileCountry = identity.countryCode || identity.countryIso3 || identity.iso3 || identity.countryId;
+    const profileMatches = profileCountry && normaliseCountry(profileCountry) === key;
+    const profileName = profileMatches ? (identity.name || identity.officialName) : null;
+    const name = gameRow && (gameRow.name || gameRow.officialName) || profileName;
     return name && String(name).toUpperCase() !== String(key).toUpperCase() ? String(name) + ' (' + key + ')' : key;
   }
   function resourceCountryOptionsHtml(selected) {
@@ -763,7 +766,11 @@
     const rows = resources(country);
     const metrics = summary.globalMetrics || {};
     const choices = resourceChoices(country);
-    const selectedId = choices.length ? String(choices[0].id) : '';
+    const localRow = rows.find(function (row) { return row && (row.id || row.resourceId || row.resourceTypeId || row.code); });
+    const declaredType = resourceTypes().find(function (row) { return row && (row.id || row.code || row.resourceId || row.resourceTypeId); });
+    const selectedId = String((localRow && (localRow.id || localRow.resourceId || localRow.resourceTypeId || localRow.code)) ||
+      (declaredType && (declaredType.id || declaredType.code || declaredType.resourceId || declaredType.resourceTypeId)) ||
+      (choices[0] && choices[0].id) || '');
     const declaredUnit = selectedId ? resourceUnitId(selectedId, 'WORLD') : null;
     const defaultTarget = targetUnitId(declaredUnit);
     const resourceOptions = choices.length ? choices.map(function (row) {
