@@ -83,13 +83,16 @@ test('each numbered legacy card maps explicitly to its intended panel, independe
   assert.match(ui, /network\.candidateFactories\(country, resourceId\)/);
 });
 
-test('metrology converter handles matching dimensions and blocks dimension mismatches', () => {
-  assert.ok(commandCenter && typeof commandCenter.convertUnits === 'function');
-  assert.equal(commandCenter.convertUnits(1000, 'kg', 'metric_tonne').value, 1);
-  assert.equal(commandCenter.convertUnits(1, 'bbl', 'litre').value, 158.987294928);
-  assert.equal(commandCenter.convertUnits(1, 'mmbtu', 'gj').value, 1.05505585262);
-  assert.equal(commandCenter.convertUnits(1, 'kg', 'gj').reason, 'UNIT_DIMENSION_MISMATCH');
-  assert.equal(commandCenter.convertUnits('not-a-number', 'kg', 'lb').reason, 'FINITE_QUANTITY_REQUIRED');
+test('the overview removes the irrelevant unit converter and exposes six practical tasks', () => {
+  assert.ok(commandCenter);
+  assert.equal(typeof commandCenter.convertUnits, 'undefined');
+  assert.doesNotMatch(ui, /data-form="metrology"|Canonical unit conversion|Convert quantity|UNIT_DEFINITIONS/);
+  const nav = ui.slice(ui.indexOf('const NAV_PANELS = ['), ui.indexOf('];', ui.indexOf('const NAV_PANELS = [')) + 2);
+  assert.equal((nav.match(/\{ id: '/g) || []).length, 6);
+  assert.match(ui, /Manage the country’s resources/);
+  assert.match(ui, /Set import or export quantity/);
+  assert.match(ui, /trade\.createExportOffer/);
+  assert.match(ui, /Export creates a seller offer/);
 });
 
 test('actual industrial flow and technology project state paths are rendered', () => {
