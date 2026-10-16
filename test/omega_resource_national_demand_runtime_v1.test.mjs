@@ -184,6 +184,28 @@ test('a finite inventory shortfall is recorded as unmet demand rather than negat
   assert.equal(report.shortages > 0, true);
 });
 
+
+test('daily demand remains stable over 365 turns and keeps bounded history without inventory underflow', async () => {
+  const { context, worldState } = createRuntimeContext({ inventory: { iron_ore: 10000 }, consumption: { iron_ore: 10 } });
+  context.Omega.Simulation.clock.stepDurationMs = 86400000;
+  const runtime = context.OmegaResourceNationalDemandRuntime;
+  await runtime.prepare();
+
+  for (let day = 1; day <= 365; day++) {
+    worldState.simulation.turn = day;
+    const report = runtime.processCountry('BGD', []);
+    assert.equal(report.status, 'ACTIVE');
+    assert.equal(worldState.resource.BGD.demandRuntime.byResource.iron_ore.demandPerDay, 10);
+    assert.equal(worldState.resource.BGD.consumption.iron_ore, 10);
+    assert.ok(worldState.resource.BGD.inventory.iron_ore >= 0);
+  }
+
+  const persisted = worldState.resource.BGD.demandRuntime;
+  assert.equal(persisted.history.length, 128, 'long-run demand history is bounded by the configured retention');
+  assert.equal(persisted.lastTurn, 365);
+  assert.equal(worldState.resource.BGD.inventory.iron_ore, 6350);
+});
+
 test('opponent procurement is evidence-routed, rate-limited, and never auto-issued for the player country by default', async () => {
   const { context, worldState } = createRuntimeContext({ inventory: {}, consumption: {} });
   const decisions = [];
