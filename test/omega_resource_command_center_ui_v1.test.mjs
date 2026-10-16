@@ -91,6 +91,8 @@ test('the overview removes the irrelevant unit converter and exposes six practic
   assert.equal((nav.match(/\{ id: '/g) || []).length, 6);
   assert.match(ui, /Manage the country’s resources/);
   assert.match(ui, /Set import or export quantity/);
+  assert.match(ui, /data-unit=/);
+  assert.match(ui, /UNIT NOT RECORDED/);
   assert.match(ui, /trade\.createExportOffer/);
   assert.match(ui, /Blank uses the current quote/);
   assert.match(ui, /MARKET_PRICE_NOT_OBSERVED/);
