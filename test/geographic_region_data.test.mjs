@@ -54,6 +54,7 @@ assert.ok(countries.find(c => c.code === 'NF').oceanAccess.includes('PACIFIC'), 
 assert.ok(countries.find(c => c.code === 'JO').oceanAccess.includes('INDIAN'), 'Jordan has a Red Sea/Gulf of Aqaba connection');
 assert.ok(countries.find(c => c.code === 'MC').oceanAccess.includes('ATLANTIC'), 'Monaco belongs to the connected Mediterranean/Atlantic basin');
 assert.ok(countries.find(c => c.code === 'GS').oceanAccess.includes('ATLANTIC'), 'South Georgia and the South Sandwich Islands belong to the South Atlantic');
+assert.ok(countries.find(c => c.code === 'GE').oceanAccess.includes('ATLANTIC'), 'Georgia has Black Sea access connected to the Atlantic basin');
 assert.equal(countries.find(c => c.code === 'GS').continent, 'South America', 'South Georgia should not be grouped with North America');
 assert.equal(oceans.type, 'FeatureCollection');
 assert.equal(oceans.features.length, 5, 'Exactly five ocean basin geometries are required.');
