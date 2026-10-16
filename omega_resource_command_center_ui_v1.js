@@ -380,22 +380,26 @@
       });
     });
     const world = state();
-    const resourceRoot = world.resource || world.resources || {};
-    Object.keys(resourceRoot).forEach(function (country) {
-      const bucket = resourceRoot[country];
-      if (!bucket || typeof bucket !== 'object') return;
-      for (const field of ['inventory','production','consumption','tradeAvailability','endowment','reserves']) {
-        const values = bucket[field];
-        if (values && typeof values === 'object' && !Array.isArray(values)) {
-          Object.keys(values).forEach(function (rid) { add({ id: rid, name: resourceName(rid) }); });
+    const resourceRoots = [world.resource, world.resources].filter(function (root) {
+      return root && typeof root === 'object' && !Array.isArray(root);
+    });
+    resourceRoots.forEach(function (resourceRoot) {
+      Object.keys(resourceRoot).forEach(function (country) {
+        const bucket = resourceRoot[country];
+        if (!bucket || typeof bucket !== 'object') return;
+        for (const field of ['inventory','production','consumption','tradeAvailability','endowment','reserves']) {
+          const values = bucket[field];
+          if (values && typeof values === 'object' && !Array.isArray(values)) {
+            Object.keys(values).forEach(function (rid) { add({ id: rid, name: resourceName(rid) }); });
+          }
         }
-      }
-      for (const field of ['availableByResource','reservedByResource']) {
-        const values = bucket.warehouse && bucket.warehouse[field];
-        if (values && typeof values === 'object') Object.keys(values).forEach(function (rid) { add({ id: rid, name: resourceName(rid) }); });
-      }
-      const requests = Array.isArray(bucket.importRequests) ? bucket.importRequests : [];
-      requests.forEach(function (row) { add(row); });
+        for (const field of ['availableByResource','reservedByResource']) {
+          const values = bucket.warehouse && bucket.warehouse[field];
+          if (values && typeof values === 'object') Object.keys(values).forEach(function (rid) { add({ id: rid, name: resourceName(rid) }); });
+        }
+        const requests = Array.isArray(bucket.importRequests) ? bucket.importRequests : [];
+        requests.forEach(function (row) { add(row); });
+      });
     });
     Object.keys(world.trade || {}).forEach(function (country) {
       const bucket = world.trade[country] || {};
