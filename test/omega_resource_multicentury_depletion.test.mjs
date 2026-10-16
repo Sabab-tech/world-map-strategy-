@@ -29,6 +29,8 @@ test('a site-specific simulated reserve depletes through the extraction engine o
   vm.createContext(context);
   vm.runInContext(read('omega_resource_production_capacity_contract_v1.js'),context,{filename:'omega_resource_production_capacity_contract_v1.js'});
   vm.runInContext(read('omega_resource_realism_runtime_v1.js'),context,{filename:'omega_resource_realism_runtime_v1.js'});
+  // The production hardening layer owns the declared 300-500 year gameplay horizon.
+  vm.runInContext(read('omega_resource_system_hardening_v1.js'),context,{filename:'omega_resource_system_hardening_v1.js'});
   vm.runInContext(read('omega_resource_part05_reserve_extraction_runtime.js'),context,{filename:'omega_resource_part05_reserve_extraction_runtime.js'});
 
   const site=master.sites.find(row=>row.sourceSiteRecord?.commercialExtraction===true);
