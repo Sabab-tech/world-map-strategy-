@@ -596,7 +596,7 @@
     // Rank unmet critical needs and ask the existing autonomy orchestrator to route
     // at most N procurement decisions. It may wait for supplier/price/access evidence.
     var procurement = [];
-    var canProcure = autoProcure && (!player || player !== cid || allowPlayerProcurement) &&
+    var canProcure = autoProcure && !!player && (player !== cid || allowPlayerProcurement) &&
       hasInventoryBook && g.OmegaOpponentAutonomy && typeof g.OmegaOpponentAutonomy.routeDecision === 'function';
     if (canProcure) {
       summaries.forEach(function (row) {
