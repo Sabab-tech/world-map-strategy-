@@ -385,12 +385,12 @@
       const unit=valueObject&&typeof valueObject==='object'?(valueObject.unit||valueObject.quantityUnit):null,authority=(q.quantitativeProvenance&&(q.quantitativeProvenance.reserveAuthority||q.quantitativeProvenance.quantityAuthority))||(valueObject&&typeof valueObject==='object'&&(valueObject.authority||valueObject.dataAuthority))||site.sourceAuthority||src.sourceAuthority||src.dataAuthority||'SOURCE_STATUS_NOT_RECORDED';
       return{site,value,unit:unit||site.unit||'',authority};
     }).filter(Boolean);
-    const profileCards=profileRows.slice(0,150).map(row=>card(row.site.siteName||row.site.name||row.site.siteId,'FILE-BACKED SITE PROFILE',
+    const profileCards=profileRows.slice(0,12).map(row=>card(row.site.siteName||row.site.name||row.site.siteId,'FILE-BACKED SITE PROFILE',
       '<div class="omega-rescc-grid2">'+kv('Site ID',row.site.siteId)+kv('Commodity',row.site.resourceId||row.site.real&&row.site.real.resourceId||row.site.identity&&row.site.identity.resourceTypeId)+kv('Profile reserve',row.value,row.unit?' '+row.unit:'')+kv('Authority / provenance',row.authority)+'</div>','')).join('');
     return '<p class="omega-rescc-note">Runtime balances are read from shared country state. File-backed reserve facts below are reference profiles, not live inventory.</p>'+
       (body||empty('No live commodity reserve state is recorded.'))+'<h3 class="omega-rescc-section-title">Site reserve facts from existing data files</h3>'+
       (profileCards||empty('No quantified reserve field is recorded in this country site profile.'))+
-      (profileRows.length>150?'<p class="omega-rescc-note">Showing 150 of '+profileRows.length+' reserve profiles.</p>':'');
+      (profileRows.length>12?'<p class="omega-rescc-note">Showing 12 of '+profileRows.length+' reserve profiles.</p>':'');
   }
   function panelDeposits(country) {
     const selected = activeCountry(country);
@@ -591,17 +591,17 @@
       const outputs=p.refinedOutputs||p.factoryOutputs||site.factoryOutputs||sim.factoryOutputs||sim.refinedOutputs||[],up=p.upstreamProcess||site.upstreamProcess||sim.upstreamProcess,mid=p.midstreamProcess||site.midstreamProcess||sim.midstreamProcess,down=p.downstreamSectors||site.downstreamSectors;
       return([outputs,up,mid,down].some(v=>Array.isArray(v)?v.length>0:v!==null&&v!==undefined&&v!=='')?{site,outputs,up,mid,down}:null);
     }).filter(Boolean);
-    const profileCards=profiles.slice(0,150).map(x=>card(x.site.siteName||x.site.name||x.site.siteId,'FILE-BACKED PROCESSING PROFILE',
+    const profileCards=profiles.slice(0,12).map(x=>card(x.site.siteName||x.site.name||x.site.siteId,'FILE-BACKED PROCESSING PROFILE',
       '<div class="omega-rescc-grid2">'+kv('Site ID',x.site.siteId)+kv('Commodity',x.site.resourceId||x.site.real&&x.site.real.resourceId||x.site.identity&&x.site.identity.resourceTypeId)+kv('Upstream',x.up)+kv('Midstream',x.mid)+kv('Outputs',x.outputs)+kv('Downstream sectors',x.down)+'</div>','')).join('');
     const industrial=resourceBucket(country).industrialNetwork||{},econ=bucket('economy',country),projects=Array.isArray(industrial.projects)?industrial.projects:(Array.isArray(econ.projects)?econ.projects:(Array.isArray(econ.industrialProjects)?econ.industrialProjects:[]));
     const options=resources(country).map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name||x.id)+'</option>').join('');
     const form='<form class="omega-rescc-form" data-search-item data-form="factory-project"><h3>Start a catalog-backed factory project</h3><div class="omega-rescc-formgrid"><label>Resource<select name="resourceId" required>'+options+'</select></label><label>Budget cost<input type="number" name="cost" min="1" step="1" required></label><label>Capacity per day<input type="number" name="capacityPerDay" min="1" step="1" required></label><label>Build days<input type="number" name="buildDays" min="1" step="1" value="180" required></label></div><p class="omega-rescc-note">Project creation does not itself debit treasury.</p><button class="omega-rescc-button" type="submit">Create factory project</button></form>';
     return '<h3 class="omega-rescc-section-title">Live production and processing assets</h3>'+(liveCards||empty('No factory asset is recorded in this country runtime.'))+
       '<h3 class="omega-rescc-section-title">Processing capabilities from existing site files</h3>'+(profileCards||empty('No per-site processing/output profile is recorded for this country.'))+
-      (profiles.length>150?'<p class="omega-rescc-note">Showing 150 of '+profiles.length+' site profiles.</p>':'')+
+      (profiles.length>12?'<p class="omega-rescc-note">Showing 12 of '+profiles.length+' site profiles.</p>':'')+
       '<h3 class="omega-rescc-section-title">Capacity requests</h3>'+statusRows(requests)+'<h3 class="omega-rescc-section-title">Industrial construction projects</h3>'+statusRows(projects)+form;
   }
-  function panelInventory(country) {
+  function panelInventoryBase(country) {
     const r = resourceBucket(country);
     const warehouse = r.warehouse || {};
     const spr = r.strategicReserve || {};
@@ -632,6 +632,20 @@
       (batchCards || empty('No resource batches are recorded.')) +
       '<h3 class="omega-rescc-section-title">SPR request history</h3>' + statusRows(requests);
   }
+  function panelInventory(country) {
+    const inventoryHtml = panelInventoryBase(country);
+    const reserveHtml = panelReserves(country);
+    const processingHtml = panelProcessing(country);
+    const marker = '<h3 class="omega-rescc-section-title">Processing capabilities from existing site files</h3>';
+    const after = '<h3 class="omega-rescc-section-title">Capacity requests</h3>';
+    const start = processingHtml.indexOf(marker);
+    const end = start >= 0 ? processingHtml.indexOf(after, start + marker.length) : -1;
+    const processingProfiles = start >= 0
+      ? processingHtml.slice(start, end >= 0 ? end : processingHtml.length)
+      : '';
+    return inventoryHtml + reserveHtml + processingProfiles;
+  }
+
   function panelLogistics(country){
     const r=resourceBucket(country),log=r.logistics||{},shipments=Array.isArray(log.shipments)?log.shipments:[],batches=Array.isArray(r.batches)?r.batches:[],factories=allFactories(country);
     const batchCards=batches.map(batch=>{
@@ -640,10 +654,10 @@
       return card(id||'Unidentified batch',rid||'Resource not recorded','<div class="omega-rescc-grid2">'+kv('Quantity',qty)+kv('Unit',batch.unit)+kv('Warehouse',warehouse)+kv('Compatible factories',ids.length)+'</div>',
         actionButton('plan-shipment','Plan warehouse-to-factory route',{'batch-id':id,'resource-id':rid,quantity:qty,unit:batch.unit||'','warehouse-id':warehouse,'factory-ids':ids.join(',')},!(id&&rid&&warehouse&&ids.length&&g.Omega&&g.Omega.ResourceLogisticsRuntime&&g.Omega.ResourceLogisticsRuntime.planFromFactoryInput)));
     }).join('');
-    const routes=siteRouteRows(country),routeCards=routes.slice(0,200).map(x=>card(x.routeName||x.routeId||'Saved route profile','PROFILE ONLY · NOT DISPATCHED',
+    const routes=siteRouteRows(country),routeCards=routes.slice(0,12).map(x=>card(x.routeName||x.routeId||'Saved route profile','PROFILE ONLY · NOT DISPATCHED',
       '<div class="omega-rescc-grid2">'+kv('Route ID',x.routeId)+kv('Site',x.siteName)+kv('Site ID',x.siteId)+kv('Transport mode',x.mode)+kv('From',x.from)+kv('To',x.to)+kv('Distance (km)',x.distanceKm)+kv('Route authority',x.authority)+'</div>'+
       '<p class="omega-rescc-note">A saved route definition is not a shipment or proof that material moved.</p>','')).join('');
-    const shipmentCards=shipments.slice(-100).reverse().map(s=>card(s.shipmentId||s.routeId||'Shipment',s.status||s.deliveryStatus||'STATUS NOT RECORDED',
+    const shipmentCards=shipments.slice(-12).reverse().map(s=>card(s.shipmentId||s.routeId||'Shipment',s.status||s.deliveryStatus||'STATUS NOT RECORDED',
       '<div class="omega-rescc-grid2">'+kv('Resource',s.resourceId)+kv('Quantity',s.quantity)+kv('Factory',s.factoryId)+kv('Transport mode',s.transportMode)+kv('ETA turn',s.timing&&s.timing.etaTurn)+kv('Constraint source',s.sourceAuthority||'NOT_RECORDED')+'</div>'+(s.reason?'<div class="omega-rescc-warning">'+esc(s.reason)+'</div>':''),'')).join('');
     return '<div class="omega-rescc-metrics"><div><span>Available raw batches</span><strong>'+number(batches.length)+'</strong></div><div><span>Factories in state</span><strong>'+number(factories.length)+'</strong></div><div><span>Saved site routes</span><strong>'+number(routes.length)+'</strong></div></div>'+
       '<p class="omega-rescc-note">Saved route definitions and active shipment transactions are separate records.</p>'+
@@ -743,6 +757,14 @@
       return String(r && r.status || '').toUpperCase() === 'OPEN';
     }).length;
     const settlements = Array.isArray(ledger.settlements) ? ledger.settlements : [];
+    const logisticsHtml = panelLogistics(country);
+    const routeHeading = '<h3 class="omega-rescc-section-title">Saved route profiles from existing data files</h3>';
+    const shipmentHeading = '<h3 class="omega-rescc-section-title">Actual shipment state</h3>';
+    const routeStart = logisticsHtml.indexOf(routeHeading);
+    const shipmentStart = logisticsHtml.indexOf(shipmentHeading, routeStart >= 0 ? routeStart : 0);
+    const routeProfiles = routeStart >= 0 && shipmentStart > routeStart
+      ? logisticsHtml.slice(routeStart, shipmentStart) : '';
+    const shipmentState = shipmentStart >= 0 ? logisticsHtml.slice(shipmentStart) : '';
     return '<div class="omega-rescc-metrics">' +
         '<div><span>Settled import value</span><strong>' + number(t.importValue) + '</strong></div>' +
         '<div><span>Settled export value</span><strong>' + number(t.exportValue) + '</strong></div>' +
@@ -751,7 +773,8 @@
       '</div>' + form +
       '<h3 class="omega-rescc-section-title">Import requests</h3>' + statusRows(requests) +
       '<h3 class="omega-rescc-section-title">Export offers</h3>' + statusRows(exportOffers) +
-      '<h3 class="omega-rescc-section-title">Trade settlements</h3>' + statusRows(settlements);
+      '<h3 class="omega-rescc-section-title">Trade settlements</h3>' + statusRows(settlements) +
+      routeProfiles + shipmentState;
   }
   function panelValue(country) {
     const fin = bucket('finance', country);
