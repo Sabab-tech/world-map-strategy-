@@ -46,6 +46,9 @@ assert.ok(world.features.some(f => f.properties?.name === 'Somaliland'), 'Existi
 assert.equal(oceans.type, 'FeatureCollection');
 assert.equal(oceans.features.length, 5, 'Exactly five ocean basin geometries are required.');
 assert.equal(new Set(oceans.features.map(f => f.properties?.oceanId)).size, 5, 'Ocean IDs must be unique.');
+for (const oceanId of oceanIds) {
+  assert.ok(countries.some(c => c.oceanAccess.includes(oceanId)), 'Every ocean must have at least one assigned country/area: ' + oceanId);
+}
 for (const f of oceans.features) {
   assert.ok(oceanIds.has(f.properties.oceanId), 'Unsupported ocean: ' + f.properties.oceanId);
   assert.ok(f.geometry && ['Polygon','MultiPolygon'].includes(f.geometry.type), f.properties.name + ': invalid ocean geometry');
