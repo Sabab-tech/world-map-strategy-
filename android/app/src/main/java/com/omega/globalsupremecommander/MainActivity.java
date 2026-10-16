@@ -125,13 +125,12 @@ public final class MainActivity extends Activity {
         final String host = uri.getHost();
         if (host == null) return false;
         final String h = host.toLowerCase(Locale.ROOT);
+        // Block optional remote libraries/fonts in the offline shell, but do not
+        // intercept map imagery. Esri tiles can load when connected; when not,
+        // the atlas uses its locally cached NASA overview raster.
         return h.equals("unpkg.com")
                 || h.equals("fonts.googleapis.com")
-                || h.equals("fonts.gstatic.com")
-                || h.endsWith(".basemaps.cartocdn.com")
-                || h.equals("basemaps.cartocdn.com")
-                || h.equals("server.arcgisonline.com")
-                || h.equals("tile.opentopomap.org");
+                || h.equals("fonts.gstatic.com");
     }
 
     private WebResourceResponse offlineResponse(Uri uri) {
