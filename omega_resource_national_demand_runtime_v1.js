@@ -604,10 +604,11 @@
             !((row.unmetDemand !== null && row.unmetDemand > 1e-9) || row.lowStockCoverage === true)) return;
         var availablePending = pendingByResource[token(row.resourceId)] || 0;
         var targetTurns = Math.max(bufferTurns, finite(row.stockCoverageTargetTurns) || 0);
-        var bufferTarget = Math.max(0, row.demand * targetTurns - Math.max(0, row.inventoryAfter || 0) - availablePending);
-        var quantity = Math.max(row.unmetDemand || 0, bufferTarget);
+        var spendable = Math.max(0, row.spendableStockAfter || 0);
+        var bufferTarget = Math.max(0, row.demand * targetTurns - spendable - availablePending);
+        var uncoveredDemand = Math.max(0, (row.unmetDemand || 0) - availablePending);
+        var quantity = Math.max(uncoveredDemand, bufferTarget);
         quantity = Math.min(quantity, row.demand * maxPurchaseTurns);
-        quantity = Math.max(0, quantity - Math.max(0, availablePending - row.unmetDemand));
         if (!(quantity > 1e-9)) return;
         procurement.push({ row: row, quantity: quantity, score: row.priority * (row.unmetDemand / row.demand) });
       });
@@ -622,7 +623,7 @@
           goal: { priorityClass: entry.row.priority >= 8 ? 'PRESSURE' : 'OPPORTUNITY' },
           runtimeMeasurement: {
             resourceId: entry.row.resourceId, required: entry.row.demand,
-            available: Math.max(0, entry.row.inventoryAfter || 0), gap: entry.row.unmetDemand,
+            available: Math.max(0, entry.row.spendableStockAfter || 0), gap: entry.row.unmetDemand,
             quantity: entry.quantity,
             selected: { action: 'IMPORT', quantity: entry.quantity },
             source: 'OMEGA_RESOURCE_NATIONAL_DEMAND_RUNTIME'
