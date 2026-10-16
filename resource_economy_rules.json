@@ -178,7 +178,7 @@
       },
       "gold": {
         "unit": "TROY_OUNCES",
-        "basePerMillionPopulation": 0.05,
+        "basePerMillionPopulation": 50,
         "priority": 3,
         "domesticUseShare": 0.03,
         "populationElasticity": 0.03,
