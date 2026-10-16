@@ -421,11 +421,11 @@
         const operation = site.operation || site.operationProfile || source.operation || {};
         const status = site.real && site.real.operationStatus || operation.operationalStatus || operation.status || site.operationalStatus || site.status;
         const quantitative = site.quantitative || {};
-        const reserve = site.simulation && (site.simulation.reserve ?? site.simulation.recoverableReserve) ??
-          quantitative.reserve && (quantitative.reserve.quantity ?? quantitative.reserve.value) ??
-          source.reserve && (source.reserve.quantity ?? source.reserve.value);
-        const production = quantitative.production && (quantitative.production.rate ?? quantitative.production.annual) ??
-          site.simulation && (site.simulation.productionRate ?? site.simulation.annualProduction);
+        const reserve = (site.simulation && (site.simulation.reserve ?? site.simulation.recoverableReserve)) ??
+          (quantitative.reserve && (quantitative.reserve.quantity ?? quantitative.reserve.value)) ??
+          (source.reserve && (source.reserve.quantity ?? source.reserve.value));
+        const production = (quantitative.production && (quantitative.production.rate ?? quantitative.production.annual)) ??
+          (site.simulation && (site.simulation.productionRate ?? site.simulation.annualProduction));
         const body = '<div class="omega-rescc-grid2">' +
           kv('Resource', resourceId ? resourceName(resourceId) : 'Not recorded') +
           kv('Site ID', site.siteId) +
