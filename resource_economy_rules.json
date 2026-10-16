@@ -553,6 +553,7 @@
         "wartimeMultiplier": 1.15,
         "stockCoverageTurns": 3
       }
-    }
+    },
+    "maxHistoryTurns": 128
   }
 }
