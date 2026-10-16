@@ -71,24 +71,6 @@
   function mapInstance() {
     return global.Game && global.Game.Map && global.Game.Map.map || global.map || null;
   }
-  function ensureStyle() {
-    if (document.getElementById("omega-region-system-style")) return;
-    const style = document.createElement("style");
-    style.id = "omega-region-system-style";
-    style.textContent = [
-      ".omega-region-control{width:min(270px,calc(100vw - 34px));max-width:270px;background:rgba(3,13,22,.96);color:#e5f1f8;border:1px solid rgba(91,190,220,.55);border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,.45);padding:10px;font:12px/1.35 Inter,Arial,sans-serif;}",
-      ".omega-region-title{font-size:11px;font-weight:800;letter-spacing:1px;color:#9deeff;margin:0 0 7px;text-transform:uppercase;}",
-      ".omega-region-control select{box-sizing:border-box;width:100%;background:#091d2b;color:#f2f8fc;border:1px solid #477083;border-radius:5px;padding:8px;font-size:12px;}",
-      ".omega-region-summary{display:flex;justify-content:space-between;gap:8px;margin:8px 0;color:#cad9e3;font-size:11px;}",
-      ".omega-region-count{color:#9deeff;font-weight:800;white-space:nowrap;}",
-      ".omega-region-list{max-height:180px;overflow-y:auto;overscroll-behavior:contain;border-top:1px solid rgba(148,190,207,.22);padding-top:5px;}",
-      ".omega-region-item{display:block;width:100%;text-align:left;border:0;border-radius:4px;background:transparent;color:#e1eaf0;padding:5px 6px;font-size:11px;cursor:pointer;}",
-      ".omega-region-item:hover,.omega-region-item:focus{background:rgba(65,155,190,.24);outline:1px solid rgba(125,220,255,.45);}",
-      ".omega-region-empty{color:#9bacb7;padding:8px 3px;font-size:11px;}",
-      "@media(max-width:600px){.omega-region-control{width:min(250px,calc(100vw - 28px));padding:8px}.omega-region-list{max-height:145px}}"
-    ].join("");
-    document.head.appendChild(style);
-  }
   function safeText(element, value) { element.textContent = String(value == null ? "" : value); }
   function activeMembers() {
     if (!state.selected) return [];
@@ -197,8 +179,11 @@
   function setSelection(value) {
     if (!value) {
       state.selected = null;
+      if (state.control) {
+        state.control.select.value = "";
+        renderList(state.control.list,state.control.summary,state.control.count,[]);
+      }
       applySelectionStyles();
-      if (state.control) renderList(state.control.list,state.control.summary,state.control.count,[]);
       return true;
     }
     const parts = String(value).split(":");
@@ -212,44 +197,37 @@
     if (!label) return false;
     state.selected={kind:kind,key:key,label:label};
     const rows=activeMembers();
+    if (state.control) state.control.select.value = kind + ":" + key;
     applySelectionStyles();
     if (state.control) renderList(state.control.list,state.control.summary,state.control.count,rows);
     return true;
   }
   function createControl() {
-    const map=mapInstance(), L=global.L;
-    if (!map || !L || !L.control || state.control) return;
-    ensureStyle();
-    const control=L.control({position:"bottomright"});
-    control.onAdd=function(){
-      const root=document.createElement("section");
-      root.className="omega-region-control";
-      root.setAttribute("aria-label","Continent and ocean selector");
-      const title=document.createElement("div");title.className="omega-region-title";
-      safeText(title,"Geographic regions");
-      const select=document.createElement("select");select.setAttribute("aria-label","Select a continent or ocean");
-      const placeholder=document.createElement("option");placeholder.value="";safeText(placeholder,"Select a continent or ocean…");select.appendChild(placeholder);
-      const continentGroup=document.createElement("optgroup");continentGroup.label="Continents";
-      continentOrder.forEach(function(name){const option=document.createElement("option");option.value="continent:"+name;safeText(option,name);continentGroup.appendChild(option);});
-      select.appendChild(continentGroup);
-      const oceanGroup=document.createElement("optgroup");oceanGroup.label="Oceans";
-      oceanOrder.forEach(function(o){const option=document.createElement("option");option.value="ocean:"+o[0];safeText(option,o[1]);oceanGroup.appendChild(option);});
-      select.appendChild(oceanGroup);
-      const summary=document.createElement("div");summary.className="omega-region-summary";
-      const heading=document.createElement("span");heading.className="omega-region-label";safeText(heading,"All geographic layers");
-      const count=document.createElement("span");count.className="omega-region-count";safeText(count,"");
-      summary.appendChild(heading);summary.appendChild(count);
-      const list=document.createElement("div");list.className="omega-region-list";
-      root.appendChild(title);root.appendChild(select);root.appendChild(summary);root.appendChild(list);
-      select.addEventListener("change",function(){setSelection(select.value);});
-      L.DomEvent && L.DomEvent.disableClickPropagation && L.DomEvent.disableClickPropagation(root);
-      L.DomEvent && L.DomEvent.disableScrollPropagation && L.DomEvent.disableScrollPropagation(root);
-      state.control={root:root,select:select,list:list,summary:heading,count:count};
-      renderList(list,heading,count,[]);
-      return root;
-    };
-    control.addTo(map);
-    state.controlInstance=control;
+    const root = document.getElementById("omega-geographic-region-selector");
+    const select = document.getElementById("omega-region-select");
+    const summary = document.getElementById("omega-region-summary");
+    const count = document.getElementById("omega-region-count");
+    const list = document.getElementById("omega-region-country-list");
+    if (!root || !select || !summary || !count || !list) {
+      if (global.console && console.warn) {
+        console.warn("[OMEGA geography] Region controls were not found inside the map layer drawer.");
+      }
+      return false;
+    }
+    if (state.control) return true;
+    state.control = { root: root, select: select, list: list, summary: summary, count: count };
+    select.addEventListener("change", function () {
+      const selected = setSelection(select.value);
+      if (!selected && global.console && console.warn) {
+        console.warn("[OMEGA geography] Unsupported region selection:", select.value);
+      }
+    });
+    renderList(list, summary, count, []);
+    if (state.selected) {
+      select.value = state.selected.kind + ":" + state.selected.key;
+      renderList(list, summary, count, activeMembers());
+    }
+    return true;
   }
   function installMapLayers() {
     const map=mapInstance(), L=global.L;
