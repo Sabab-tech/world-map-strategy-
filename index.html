@@ -379,11 +379,45 @@
                     <button id="btn-close-layers" class="drawer-close">✕</button>
                 </div>
                 <div class="drawer-body layer-options-grid">
+                    <div class="layer-options-caption">MAP DISPLAY</div>
                     <button class="layer-opt-btn active" data-layer="satellite">🌐 Ultra HD Satellite Terrain</button>
                     <button class="layer-opt-btn" data-layer="political">🗺️ Political Border Focus</button>
                     <button class="layer-opt-btn" data-layer="night">🌃 Night Lights & Power Grid</button>
                     <button class="layer-opt-btn" data-layer="weather">🌧️ Dynamic Weather Radar</button>
                     <button class="layer-opt-btn" data-layer="resources">💎 Resource Heatmap</button>
+
+                    <section id="omega-geographic-region-selector" class="omega-region-drawer-section" aria-label="Continent and ocean selection">
+                        <div class="omega-region-section-heading">
+                            <span>GEOGRAPHIC REGION</span>
+                            <span class="omega-region-section-tag">HIGHLIGHT</span>
+                        </div>
+                        <label class="omega-region-field-label" for="omega-region-select">Select a continent or ocean</label>
+                        <select id="omega-region-select" aria-label="Select a continent or ocean">
+                            <option value="">All regions · no highlight</option>
+                            <optgroup label="Continents">
+                                <option value="continent:Africa">Africa</option>
+                                <option value="continent:Antarctica">Antarctica</option>
+                                <option value="continent:Asia">Asia</option>
+                                <option value="continent:Europe">Europe</option>
+                                <option value="continent:North America">North America</option>
+                                <option value="continent:Oceania">Oceania</option>
+                                <option value="continent:South America">South America</option>
+                            </optgroup>
+                            <optgroup label="Oceans">
+                                <option value="ocean:ARCTIC">Arctic Ocean</option>
+                                <option value="ocean:ATLANTIC">Atlantic Ocean</option>
+                                <option value="ocean:INDIAN">Indian Ocean</option>
+                                <option value="ocean:PACIFIC">Pacific Ocean</option>
+                                <option value="ocean:SOUTHERN">Southern Ocean</option>
+                            </optgroup>
+                        </select>
+                        <div class="omega-region-summary">
+                            <span id="omega-region-summary">All geographic layers</span>
+                            <span id="omega-region-count" class="omega-region-count">Choose a region</span>
+                        </div>
+                        <div id="omega-region-country-list" class="omega-region-list" role="list" aria-label="Countries and areas in the selected region"></div>
+                        <div class="omega-region-note">Choose a name below to zoom to its map boundary. The layer buttons above remain independent.</div>
+                    </section>
                 </div>
             </div>
 
@@ -823,6 +857,7 @@
 <script src="map-engine-1.js" defer onload="window.__OMEGA_DIAG__.boot.scriptStatus['map-engine-1.js']='LOADED'"></script>
 
 <script src="map-engine-2.js" defer onload="window.__OMEGA_DIAG__.boot.scriptStatus['map-engine-2.js']='LOADED'"></script>
+<script src="omega_geographic_region_system_v1.js" defer></script>
 
 <script src="omega_ministry_registry.js" defer></script>
 <script src="omega_ministry_state_provider.js" defer></script>
