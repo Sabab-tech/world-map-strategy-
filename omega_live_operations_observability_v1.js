@@ -10,7 +10,7 @@
   const MAX_EVENTS = 400;
   const MAX_TURNS = 160;
   const HOT_EVENTS = [
-    'OMEGA_READY','OMEGA_GAME_SESSION_STARTED',
+    'OMEGA_READY','OMEGA_GAME_SESSION_STARTED','OMEGA_RESOURCE_SITE_BINDING_READY','OMEGA_RESOURCE_BOOTSTRAP_STATUS',
     'OMEGA_SIMULATION_TURN_COMMITTED','OMEGA_RESOURCE_EXTRACTION_BLOCKED',
     'OMEGA_RESOURCE_EXTRACTION_COMPLETED','OMEGA_RESOURCE_EXTRACTION_PLAN_CREATED',
     'OMEGA_RESOURCE_FACTORY_INPUT_AVAILABLE','OMEGA_RESOURCE_FACTORY_INPUT_LEDGER_RECONCILED',
@@ -596,6 +596,45 @@
   }
   function tr(cells) { return '<tr>'+cells.map(x=>'<td>'+h(x === '' || x == null ? 'Not recorded' : x)+'</td>').join('')+'</tr>'; }
   function sourceNote() { return ''; }
+  function renderProductionReadiness() {
+    const snapshot=g.__omegaResourceEndowmentLastBootstrap;
+    if(!snapshot){
+      const count=resourceSiteRecords().length;
+      return '<div class="omega-liveops-section"><h3>Mine production readiness</h3><p class="omega-liveops-empty">Runtime activation report has not arrived yet. '+h(fmt(count,0))+' site profiles are currently visible; profile counts alone do not prove production.</p></div>';
+    }
+    const capable=snapshot.productionCapableSiteCount;
+    const total=snapshot.commercialCandidateCount;
+    const turnActive=snapshot.currentTurnProducingSiteCount;
+    const blockedCount=snapshot.blockedSiteCount;
+    const hasPercent=snapshot.productionCapablePercent!==null&&snapshot.productionCapablePercent!==undefined&&Number.isFinite(Number(snapshot.productionCapablePercent));
+    const readyValue=capable!==null&&capable!==undefined&&Number.isFinite(Number(capable))&&total!==null&&total!==undefined
+      ?fmt(capable,0)+' / '+fmt(total,0)
+      :'Not evaluated';
+    const percent=hasPercent?Number(snapshot.productionCapablePercent).toFixed(1)+'%':'Not evaluated';
+    const active=turnActive!==null&&turnActive!==undefined&&Number.isFinite(Number(turnActive))?fmt(turnActive,0):'Not evaluated';
+    const blocked=blockedCount!==null&&blockedCount!==undefined&&Number.isFinite(Number(blockedCount))?fmt(blockedCount,0):'Not evaluated';
+    const rows=arr(snapshot.blockedSites).slice(0,30).map(site=>tr([
+      site.countryId,site.siteName||site.siteId,site.siteId,site.reason
+    ]));
+    const stateNote=snapshot.status==='FAILED'
+      ?'Bootstrap failed: '+txt(snapshot.reason||'runtime initialisation failed')
+      :snapshot.status==='DEGRADED'
+        ?'Some country extraction commands failed. Check the site-level blocker list and recorded engine events.'
+        :snapshot.status==='NO_OUTPUT'
+          ?'The bootstrap pass ran, but no current-turn production batches were confirmed.'
+          :'The status is based on current Game.state, attached extraction controllers and current-turn production/batch ledgers.';
+    return '<div class="omega-liveops-section"><h3>Mine production readiness</h3><div class="omega-liveops-grid">'+
+      card('Production-capable sites',readyValue,'Commercial site profiles with an attached, unblocked simulation extraction path')+
+      card('Production-capable share',percent,'Of bound commercial site candidates; gameplay simulation, not real-world output')+
+      card('Producing sites this turn',active,'Unique site IDs with positive current-turn output')+
+      card('Sites requiring repair',blocked,'Missing controller/occurrence link or a current extraction blocker')+
+      '</div><p class="omega-liveops-empty">'+h(stateNote)+'</p>'+
+      '<p class="omega-liveops-empty">Data boundary: simulated reserves/rates are game values unless explicitly marked OBSERVED. This report does not assign market prices or post sale revenue.</p>'+
+      '<h4>Sites not confirmed production-capable</h4>'+
+      table(['Country','Site','Site ID','Current blocker'],rows,
+        Number(snapshot.unverifiedSiteCount)>0?'Runtime did not finish. Site eligibility remains unverified for '+fmt(snapshot.unverifiedSiteCount,0)+' commercial candidates.':'No blocked site details were returned for this snapshot.')+
+      '</div>';
+  }
   function renderOverview(ids) {
     const sum = observedStateSummary(ids), scoped = countryScope === 'WORLD' ? 'all indexed countries' : countryName(countryScope || '');
     const hasState = ids.some(cid => metricsFor(cid)._hasState);
@@ -608,7 +647,7 @@
       card('Shipments in transit',fmt(sum.inTransit,0),'Existing shipments with an in-transit status')+
       card('Trade requests',fmt(sum.tradeRequests,0),'Existing import/export request records')+
       card('Site flow records',fmt(sum.siteFlowRecords,0),'Existing site execution/flow ledger rows')+
-      '</div>'+sourceNote(sum.registeredResourceSites || hasState
+      '</div>'+renderProductionReadiness()+sourceNote(sum.registeredResourceSites || hasState
         ? 'Source: existing canonical resource-site registry + Game.state country buckets and runtime ledgers. Registry profiles are not counted as live production; missing numeric fields remain unknown. The event tape starts when this UI loads; older activity is shown only where an engine ledger retains it.'
         : 'No canonical site profiles or country-scoped Game.state records were found for the current scope. This screen does not invent replacement numbers.')+
       '<div class="omega-liveops-section"><h3>Latest engine activity</h3>'+renderEventTable(ids,12)+'</div>';
