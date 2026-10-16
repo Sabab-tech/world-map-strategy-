@@ -44,8 +44,8 @@
   "demand": {
     "enabled": true,
     "ruleVersion": "1.0.0",
-    "description": "Rule-driven national resource consumption. Profile coefficients are simulated game-native quantities per million people per simulation turn; physical-unit conversion is deliberately not inferred. Existing positive resource.consumption rates are pinned as the initial baseline.",
-    "quantityBasis": "RESOURCE_NATIVE_UNITS_PER_SIMULATION_TURN",
+    "description": "Rule-driven national resource consumption. Profile coefficients are game-native simulated quantities per million people per daily simulation turn, tuned to avoid large-scale depletion shocks; physical units are retained as authored and are not inferred across source datasets. Existing positive resource.consumption rates are pinned as the initial baseline.",
+    "quantityBasis": "RESOURCE_NATIVE_UNITS_PER_DAILY_SIMULATION_TURN",
     "baselinePolicy": "PIN_FIRST_OBSERVED_POSITIVE_RATE_OR_PROFILE_RATE",
     "defaultElasticities": {
       "population": 0.72,
@@ -74,7 +74,7 @@
     "resourceProfiles": {
       "rare_earth": {
         "unit": "METRIC_TONS",
-        "basePerMillionPopulation": 35,
+        "basePerMillionPopulation": 0.12,
         "priority": 9.5,
         "domesticUseShare": 0.25,
         "populationElasticity": 0.42,
@@ -87,7 +87,7 @@
       },
       "lithium": {
         "unit": "METRIC_TONS_LCE",
-        "basePerMillionPopulation": 120,
+        "basePerMillionPopulation": 0.08,
         "priority": 9.5,
         "domesticUseShare": 0.22,
         "populationElasticity": 0.38,
@@ -100,7 +100,7 @@
       },
       "cobalt": {
         "unit": "METRIC_TONS",
-        "basePerMillionPopulation": 25,
+        "basePerMillionPopulation": 0.1,
         "priority": 9.2,
         "domesticUseShare": 0.25,
         "populationElasticity": 0.34,
@@ -113,7 +113,7 @@
       },
       "nickel": {
         "unit": "METRIC_TONS",
-        "basePerMillionPopulation": 400,
+        "basePerMillionPopulation": 1.1,
         "priority": 8.8,
         "domesticUseShare": 0.25,
         "populationElasticity": 0.32,
@@ -126,7 +126,7 @@
       },
       "copper": {
         "unit": "METRIC_TONS",
-        "basePerMillionPopulation": 3000,
+        "basePerMillionPopulation": 10.3,
         "priority": 9,
         "domesticUseShare": 0.25,
         "populationElasticity": 0.35,
@@ -152,7 +152,7 @@
       },
       "natural_gas": {
         "unit": "BCM",
-        "basePerMillionPopulation": 0.5,
+        "basePerMillionPopulation": 0.0014,
         "priority": 9.7,
         "domesticUseShare": 0.27,
         "populationElasticity": 0.28,
@@ -165,7 +165,7 @@
       },
       "uranium": {
         "unit": "METRIC_TONS_U",
-        "basePerMillionPopulation": 8,
+        "basePerMillionPopulation": 0.02,
         "priority": 9,
         "domesticUseShare": 0.2,
         "populationElasticity": 0.28,
@@ -178,7 +178,7 @@
       },
       "gold": {
         "unit": "TROY_OUNCES",
-        "basePerMillionPopulation": 1000,
+        "basePerMillionPopulation": 0.05,
         "priority": 3,
         "domesticUseShare": 0.03,
         "populationElasticity": 0.03,
@@ -191,7 +191,7 @@
       },
       "bauxite": {
         "unit": "METRIC_TONS",
-        "basePerMillionPopulation": 9000,
+        "basePerMillionPopulation": 137,
         "priority": 7.2,
         "domesticUseShare": 0.25,
         "populationElasticity": 0.35,
@@ -204,7 +204,7 @@
       },
       "phosphate": {
         "unit": "METRIC_TONS",
-        "basePerMillionPopulation": 18000,
+        "basePerMillionPopulation": 85,
         "priority": 8.5,
         "domesticUseShare": 0.32,
         "populationElasticity": 0.22,
@@ -217,7 +217,7 @@
       },
       "potash": {
         "unit": "METRIC_TONS",
-        "basePerMillionPopulation": 8000,
+        "basePerMillionPopulation": 0.031,
         "priority": 8.5,
         "domesticUseShare": 0.32,
         "populationElasticity": 0.2,
@@ -230,7 +230,7 @@
       },
       "iron_ore": {
         "unit": "METRIC_TONS",
-        "basePerMillionPopulation": 300000,
+        "basePerMillionPopulation": 850,
         "priority": 8.8,
         "domesticUseShare": 0.27,
         "populationElasticity": 0.38,
@@ -243,7 +243,7 @@
       },
       "coal": {
         "unit": "METRIC_TONS",
-        "basePerMillionPopulation": 1000000,
+        "basePerMillionPopulation": 2900,
         "priority": 9.2,
         "domesticUseShare": 0.25,
         "populationElasticity": 0.26,
@@ -256,7 +256,7 @@
       },
       "graphite": {
         "unit": "METRIC_TONS",
-        "basePerMillionPopulation": 120,
+        "basePerMillionPopulation": 0.55,
         "priority": 7.8,
         "domesticUseShare": 0.23,
         "populationElasticity": 0.35,
@@ -269,7 +269,7 @@
       },
       "rutile": {
         "unit": "METRIC_TONS",
-        "basePerMillionPopulation": 250,
+        "basePerMillionPopulation": 0.35,
         "priority": 6.8,
         "domesticUseShare": 0.2,
         "populationElasticity": 0.3,
@@ -282,7 +282,7 @@
       },
       "manganese": {
         "unit": "METRIC_TONS",
-        "basePerMillionPopulation": 1800,
+        "basePerMillionPopulation": 7,
         "priority": 7.8,
         "domesticUseShare": 0.25,
         "populationElasticity": 0.35,
@@ -295,7 +295,7 @@
       },
       "diamond": {
         "unit": "CARATS",
-        "basePerMillionPopulation": 25,
+        "basePerMillionPopulation": 34,
         "priority": 2.5,
         "domesticUseShare": 0.02,
         "populationElasticity": 0.05,
@@ -308,7 +308,7 @@
       },
       "tin": {
         "unit": "METRIC_TONS",
-        "basePerMillionPopulation": 70,
+        "basePerMillionPopulation": 0.12,
         "priority": 7.2,
         "domesticUseShare": 0.2,
         "populationElasticity": 0.32,
@@ -321,7 +321,7 @@
       },
       "tungsten": {
         "unit": "METRIC_TONS",
-        "basePerMillionPopulation": 12,
+        "basePerMillionPopulation": 0.04,
         "priority": 8.2,
         "domesticUseShare": 0.18,
         "populationElasticity": 0.34,
@@ -334,7 +334,7 @@
       },
       "chromite": {
         "unit": "METRIC_TONS",
-        "basePerMillionPopulation": 650,
+        "basePerMillionPopulation": 14,
         "priority": 7.8,
         "domesticUseShare": 0.25,
         "populationElasticity": 0.34,
@@ -347,7 +347,7 @@
       },
       "silver": {
         "unit": "TROY_OUNCES",
-        "basePerMillionPopulation": 100000,
+        "basePerMillionPopulation": 275,
         "priority": 3.5,
         "domesticUseShare": 0.05,
         "populationElasticity": 0.09,
@@ -360,7 +360,7 @@
       },
       "zinc": {
         "unit": "METRIC_TONS",
-        "basePerMillionPopulation": 1900,
+        "basePerMillionPopulation": 4.5,
         "priority": 7.5,
         "domesticUseShare": 0.25,
         "populationElasticity": 0.33,
@@ -373,7 +373,7 @@
       },
       "platinum": {
         "unit": "TROY_OUNCES",
-        "basePerMillionPopulation": 500,
+        "basePerMillionPopulation": 2.2,
         "priority": 4.2,
         "domesticUseShare": 0.08,
         "populationElasticity": 0.18,
@@ -386,7 +386,7 @@
       },
       "basalt": {
         "unit": "METRIC_TONS",
-        "basePerMillionPopulation": 1200000,
+        "basePerMillionPopulation": 15000,
         "priority": 5.5,
         "domesticUseShare": 0.3,
         "populationElasticity": 0.12,
@@ -399,7 +399,7 @@
       },
       "construction_aggregate": {
         "unit": "METRIC_TONS",
-        "basePerMillionPopulation": 5000000,
+        "basePerMillionPopulation": 17000,
         "priority": 6.2,
         "domesticUseShare": 0.34,
         "populationElasticity": 0.1,
@@ -412,7 +412,7 @@
       },
       "coral_aggregate": {
         "unit": "METRIC_TONS",
-        "basePerMillionPopulation": 25000,
+        "basePerMillionPopulation": 0.5,
         "priority": 3,
         "domesticUseShare": 0.2,
         "populationElasticity": 0.08,
@@ -425,7 +425,7 @@
       },
       "salt": {
         "unit": "METRIC_TONS",
-        "basePerMillionPopulation": 25000,
+        "basePerMillionPopulation": 14,
         "priority": 6.3,
         "domesticUseShare": 0.32,
         "populationElasticity": 0.1,
@@ -438,7 +438,7 @@
       },
       "dolomite": {
         "unit": "METRIC_TONS",
-        "basePerMillionPopulation": 40000,
+        "basePerMillionPopulation": 3,
         "priority": 5.5,
         "domesticUseShare": 0.28,
         "populationElasticity": 0.12,
@@ -451,7 +451,7 @@
       },
       "magnesite": {
         "unit": "METRIC_TONS",
-        "basePerMillionPopulation": 1500,
+        "basePerMillionPopulation": 0.5,
         "priority": 6,
         "domesticUseShare": 0.2,
         "populationElasticity": 0.18,
@@ -464,7 +464,7 @@
       },
       "oil_shale": {
         "unit": "METRIC_TONS",
-        "basePerMillionPopulation": 150000,
+        "basePerMillionPopulation": 0.2,
         "priority": 5.8,
         "domesticUseShare": 0.25,
         "populationElasticity": 0.21,
@@ -477,7 +477,7 @@
       },
       "marble": {
         "unit": "METRIC_TONS",
-        "basePerMillionPopulation": 50000,
+        "basePerMillionPopulation": 2,
         "priority": 4,
         "domesticUseShare": 0.14,
         "populationElasticity": 0.08,
@@ -490,7 +490,7 @@
       },
       "boron": {
         "unit": "METRIC_TONS",
-        "basePerMillionPopulation": 120,
+        "basePerMillionPopulation": 0.2,
         "priority": 6.8,
         "domesticUseShare": 0.19,
         "populationElasticity": 0.22,
@@ -503,7 +503,7 @@
       },
       "aragonite": {
         "unit": "METRIC_TONS",
-        "basePerMillionPopulation": 20000,
+        "basePerMillionPopulation": 0.05,
         "priority": 3,
         "domesticUseShare": 0.2,
         "populationElasticity": 0.08,
@@ -516,7 +516,7 @@
       },
       "granite": {
         "unit": "METRIC_TONS",
-        "basePerMillionPopulation": 100000,
+        "basePerMillionPopulation": 5,
         "priority": 5,
         "domesticUseShare": 0.23,
         "populationElasticity": 0.1,
@@ -529,7 +529,7 @@
       },
       "diatomite": {
         "unit": "METRIC_TONS",
-        "basePerMillionPopulation": 150,
+        "basePerMillionPopulation": 0.05,
         "priority": 4.2,
         "domesticUseShare": 0.16,
         "populationElasticity": 0.12,
@@ -542,7 +542,7 @@
       },
       "ilmenite": {
         "unit": "METRIC_TONS",
-        "basePerMillionPopulation": 900,
+        "basePerMillionPopulation": 1,
         "priority": 7,
         "domesticUseShare": 0.22,
         "populationElasticity": 0.28,
