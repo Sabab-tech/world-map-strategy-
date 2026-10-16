@@ -289,6 +289,7 @@
     return site && (site.resourceId || site.resourceTypeId || site.resId || site.resource_id || site.resource || site.commodity ||
       site.real && (site.real.resourceId || site.real.resourceTypeId || site.real.resId) ||
       site.identity && (site.identity.resourceTypeId || site.identity.resourceId) ||
+      site.resourceIdentity && (site.resourceIdentity.resourceTypeId || site.resourceIdentity.resourceId) ||
       site.sourceSiteRecord && (site.sourceSiteRecord.resourceId || site.sourceSiteRecord.resourceTypeId || site.sourceSiteRecord.resId) ||
       site.siteDataPackage && (site.siteDataPackage.resourceId || site.siteDataPackage.resourceTypeId ||
         site.siteDataPackage.resId || site.siteDataPackage.identity && site.siteDataPackage.identity.resourceTypeId));
@@ -306,11 +307,19 @@
     const currentState = state();
     const binding = g.Omega && g.Omega.IndividualResourceSiteBinding || g.OmegaIndividualResourceSiteBinding;
     const master = g.OmegaResourceSiteMasterResearchData || (g.Omega && g.Omega.ResourceSiteMasterResearchData);
+    const canonical = g.OmegaResourceSiteCanonicalCatalogData || (g.Omega && g.Omega.ResourceSiteCanonicalCatalogData);
+    const reserves = g.OmegaResourceSiteReserveSimulationData || (g.Omega && g.Omega.ResourceSiteReserveSimulationData);
+    const lossless = g.OmegaResourceLosslessReferenceData || (g.Omega && g.Omega.ResourceLosslessReferenceData);
+    const scenarios = g.OmegaResourceScenarioEngineeringData || (g.Omega && g.Omega.ResourceScenarioEngineeringData);
     const cacheSources = [
       resourceEngine && resourceEngine.deposits,
       resourceEngine && resourceEngine.countryProfiles,
       binding && binding.sites,
       master && master.sites,
+      canonical && canonical.sites,
+      reserves && reserves.records,
+      lossless && (lossless.sites || lossless.records),
+      scenarios && (scenarios.sites || scenarios.records),
       currentState.resource,
       currentState.resources,
       currentState.simulation && currentState.simulation.turn
@@ -320,7 +329,21 @@
         cacheSources.every(function (source, index) { return source === globalDepositRecordsCacheSources[index]; })) {
       return globalDepositRecordsCache;
     }
-    const candidates = deposits().concat(siteRows('WORLD'));
+    function rowsOf(source, keys) {
+      if (!source || typeof source !== 'object') return [];
+      for (const key of keys) if (Array.isArray(source[key])) return source[key];
+      return [];
+    }
+    // Canonical catalog is the master identity source (315 current entries). The
+    // 250-row master/reserve datasets and older site bindings enrich it, rather
+    // than restricting the player to whichever subset happened to load first.
+    const sourceRows = []
+      .concat(rowsOf(canonical, ['sites']))
+      .concat(rowsOf(master, ['sites']))
+      .concat(rowsOf(reserves, ['records']))
+      .concat(rowsOf(lossless, ['sites', 'records']))
+      .concat(rowsOf(scenarios, ['sites', 'records']));
+    const candidates = deposits().concat(sourceRows, siteRows('WORLD'));
     const rows = [];
     const aliasToIndex = new Map();
     candidates.forEach(function (raw) {
