@@ -565,6 +565,61 @@
         };
     }
 
+    // Chrome mobile can shrink the visible viewport when its address/search bars are shown.
+    // Keep the layer drawer inside that visible region instead of behind browser chrome.
+    function updateVisibleViewportSize() {
+        var viewport = window.visualViewport;
+        var height = viewport && viewport.height ? viewport.height : window.innerHeight;
+        var offsetTop = viewport && Number.isFinite(viewport.offsetTop) ? viewport.offsetTop : 0;
+        document.documentElement.style.setProperty("--omega-visible-height", Math.max(180, Math.round(height)) + "px");
+        document.documentElement.style.setProperty("--omega-visible-offset-top", Math.max(0, Math.round(offsetTop)) + "px");
+    }
+
+    function handleLayerOptionClick(event) {
+        var target = event.target;
+        var button = target && typeof target.closest === "function"
+            ? target.closest("#layers-drawer .layer-opt-btn[data-layer]")
+            : null;
+        if (!button) return;
+
+        // Capture-phase routing makes the offline control work even if the legacy
+        // Game.init() click binding was skipped or another UI layer changed event order.
+        event.preventDefault();
+        event.stopPropagation();
+        if (typeof event.stopImmediatePropagation === "function") event.stopImmediatePropagation();
+
+        var layerType = button.getAttribute("data-layer");
+        try {
+            var switcher = window.Game && window.Game.switchMapLayer;
+            if (typeof switcher !== "function") throw new Error("Map layer controller is unavailable.");
+            switcher.call(window.Game, layerType);
+
+            document.querySelectorAll("#layers-drawer .layer-opt-btn").forEach(function (item) {
+                item.classList.toggle("active", item === button);
+                item.setAttribute("aria-pressed", String(item === button));
+            });
+
+            if (layerType === "offline-hybrid" && window.OmegaOfflineHybridAtlas) {
+                window.OmegaOfflineHybridAtlas.activate();
+            }
+        } catch (error) {
+            console.error("[OMEGA Atlas] Map-layer button action failed:", error);
+            if (typeof window.Game.showNotification === "function") {
+                window.Game.showNotification("MAP LAYER ERROR", "The selected map layer could not be activated. See the browser console for details.", "warning");
+            }
+        }
+    }
+
+    // One reliable touch/mouse path for every button in the existing layer drawer.
+    document.addEventListener("click", handleLayerOptionClick, true);
+    updateVisibleViewportSize();
+    window.addEventListener("resize", updateVisibleViewportSize, { passive: true });
+    window.addEventListener("orientationchange", updateVisibleViewportSize, { passive: true });
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener("resize", updateVisibleViewportSize, { passive: true });
+        window.visualViewport.addEventListener("scroll", updateVisibleViewportSize, { passive: true });
+    }
+
     window.map.on("moveend zoomend", updateCoordinateLabels);
     window.addEventListener("online", function () {
         if (active && !blueMarbleImage) {
