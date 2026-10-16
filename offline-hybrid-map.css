@@ -1,0 +1,75 @@
+/* OMEGA Offline Hybrid Atlas: restrained, low-noise cartography */
+body.omega-offline-hybrid-active #map,
+body.omega-offline-hybrid-active .leaflet-container {
+    background: #0a1b27 !important;
+}
+
+body.omega-offline-hybrid-active .country-label-inner {
+    color: #e2e8df !important;
+    font-size: 9px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.8px !important;
+    text-shadow: 0 1px 2px rgba(3, 10, 14, 0.95), 0 0 5px rgba(3, 10, 14, 0.85) !important;
+}
+
+body.omega-offline-hybrid-active .ocean-label-marker div,
+body.omega-offline-hybrid-active .ocean-label-text {
+    color: rgba(151, 177, 180, 0.58) !important;
+    letter-spacing: 1.8px !important;
+    text-shadow: 0 1px 3px rgba(2, 12, 18, 0.85) !important;
+}
+
+body.omega-offline-hybrid-active .city-btn-marker {
+    background: rgba(15, 30, 35, 0.96) !important;
+    border-color: #a0b1a8 !important;
+    box-shadow: none !important;
+}
+
+body.omega-offline-hybrid-active .city-btn-dot {
+    background: #b6c4b8 !important;
+    box-shadow: none !important;
+}
+
+body.omega-offline-hybrid-active .city-btn-label {
+    color: #e0e7df !important;
+    text-shadow: 0 1px 2px rgba(3, 10, 14, 0.96) !important;
+}
+
+body.omega-offline-hybrid-active .resource-deposit-compact-icon > div {
+    background: rgba(13, 27, 34, 0.97) !important;
+    border-color: #a6b4aa !important;
+    box-shadow: none !important;
+    animation: none !important;
+    transition: none !important;
+}
+
+body.omega-offline-hybrid-active .resource-deposit-compact-icon .omega-resource-glyph--map {
+    color: #e0e7df !important;
+    border-color: #899c91 !important;
+    box-shadow: none !important;
+}
+
+body.omega-offline-hybrid-active .resource-deposit-compact-icon [style*="animation"] {
+    display: none !important;
+}
+
+body.omega-offline-hybrid-active .leaflet-popup-content-wrapper,
+body.omega-offline-hybrid-active .leaflet-popup-tip {
+    background: #101f27 !important;
+    border-color: #61776f !important;
+    color: #e0e7df !important;
+}
+
+.layer-opt-btn[data-layer="offline-hybrid"] {
+    border-color: rgba(157, 180, 167, 0.5) !important;
+    color: #d4dfd6 !important;
+    background: rgba(22, 39, 41, 0.94) !important;
+    letter-spacing: 0.2px;
+}
+
+.layer-opt-btn[data-layer="offline-hybrid"].active {
+    border-color: #a8b9aa !important;
+    color: #f0f3ec !important;
+    background: rgba(71, 90, 76, 0.84) !important;
+    box-shadow: inset 0 0 0 1px rgba(188, 203, 189, 0.12) !important;
+}
