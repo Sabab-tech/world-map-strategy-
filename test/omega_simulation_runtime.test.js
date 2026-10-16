@@ -157,6 +157,43 @@ test('save and load restores the canonical session without creating a second sta
   assert.equal(state.simulation.turn,3);
   assert.equal(sandbox.Omega.GameSession.clock.turn,3);
   assert.equal(sandbox.Omega.GameSession.diagnostics().authoritativeState.worldStateLinked,true);
+  assert.equal(saved.checksum?.length,8,'new saves must carry a deterministic integrity checksum');
+  assert.equal(sandbox.Omega.GameSession.diagnostics().lastLoadIntegrity,'VERIFIED');
 });
 
 console.log('OMEGA SIMULATION AUTHORITY TESTS: PASS');
+
+test('save checksum and resource ownership integrity reject corruption before changing live state',()=>{
+  const {sandbox,state}=makeSandbox();
+  loadScript('omega_simulation_runtime.js',sandbox);
+  const runtime=sandbox.Omega.Simulation;
+  state.resource={
+    BGD:{inventory:{coal:50},batches:[{batchId:'SAVE-BATCH-1',countryId:'BGD',ownerCountryCode:'BGD',resourceId:'coal',quantity:50,remainingQuantity:50,stage:'RAW_EXTRACTED'}]}
+  };
+  const saved=runtime.saveState();
+  assert.equal(typeof saved.checksum,'string');
+  const tampered=JSON.parse(JSON.stringify(saved));
+  tampered.worldState.resource.BGD.inventory.coal=999;
+  assert.throws(()=>runtime.loadState(tampered),/SIMULATION_SAVE_CHECKSUM_MISMATCH/);
+  assert.equal(state.resource.BGD.inventory.coal,50,'checksum failure must not partially restore world state');
+
+  state.resource.BGD.batches[0].ownerCountryCode='SAU';
+  const semanticallyInvalid=runtime.saveState();
+  state.resource.BGD.batches[0].ownerCountryCode='BGD';
+  const before=JSON.stringify(state);
+  assert.throws(()=>runtime.loadState(semanticallyInvalid),/SIMULATION_SAVE_STATE_INTEGRITY_FAILED/);
+  assert.equal(JSON.stringify(state),before,'semantic integrity failure must be rejected before mutating live state');
+});
+
+test('legacy save snapshots remain loadable but are explicitly marked unverified',()=>{
+  const {sandbox,state}=makeSandbox();
+  loadScript('omega_simulation_runtime.js',sandbox);
+  const runtime=sandbox.Omega.Simulation;
+  state.simulation.turn=17;
+  const snapshot=runtime.saveState();
+  delete snapshot.checksum;
+  state.simulation.turn=20;
+  runtime.loadState(snapshot);
+  assert.equal(state.simulation.turn,17);
+  assert.equal(runtime.diagnostics().lastLoadIntegrity,'LEGACY_UNVERIFIED');
+});

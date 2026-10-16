@@ -3,6 +3,9 @@ on:
   pull_request:
     branches: [main]
     paths:
+      - 'server.js'
+      - 'omega_resource_ai_decision_service.js'
+      - 'test/omega_resource_ai_decision_service.test.mjs'
       - 'index.html'
       - 'omega_resource_command_center_ui_v1.js'
       - 'omega_global_trade_system.js'
@@ -18,6 +21,9 @@ on:
       - main
       - fix/resource-command-center-ui-routing-v2
     paths:
+      - 'server.js'
+      - 'omega_resource_ai_decision_service.js'
+      - 'test/omega_resource_ai_decision_service.test.mjs'
       - 'index.html'
       - 'omega_resource_command_center_ui_v1.js'
       - 'omega_global_trade_system.js'
@@ -47,8 +53,13 @@ jobs:
         run: npm install --no-package-lock
       - name: Check edited JavaScript syntax
         run: |
+          node --check server.js
+          node --check omega_resource_ai_decision_service.js
+          node --check test/omega_resource_ai_decision_service.test.mjs
           node --check omega_resource_command_center_ui_v1.js
           node --check omega_global_trade_system.js
+      - name: Test server resource decision AI contract
+        run: npm run test:resource-ai-decision
       - name: Test all sixteen panel routes and metrology
         run: npm run test:ui-visual
       - name: Test bilateral trade request and settlement

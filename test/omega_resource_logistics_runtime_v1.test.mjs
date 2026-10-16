@@ -46,4 +46,28 @@ assert.equal(advanced.delivered,1);
 assert.equal(state.resource.logistics.shipments[0].deliveryStatus,'DELIVERED_TO_FACTORY');
 assert(events.some(x=>x.type==='OMEGA_RESOURCE_DELIVERY_COMPLETED'));
 
+// A blockade is checked before a planned route is committed as IN_TRANSIT.
+context.OmegaResourceStrategicPolicyRuntime={
+  isRouteBlocked(countryId,scope){
+    const blocked=countryId==='BGD'&&scope.transportMode==='rail'&&scope.resourceId==='iron_ore';
+    return{blocked,reason:blocked?'RESOURCE_ROUTE_BLOCKADE_ACTIVE':null,blockades:blocked?[{policyId:'TEST-RAIL-BLOCKADE',modes:['rail']}]:[]};
+  }
+};
+const blockedPlan=handlers.get('OMEGA_RESOURCE_LOGISTICS_PLAN')({payload:{
+  countryId:'BGD',targetCountryId:'SAU',warehouseId:'WH-BGD-RAW',batchId:'B2',resourceId:'iron_ore',
+  quantity:500,unit:'TONNES',candidateFactoryIds:['FACTORY-BLOCKED']
+}},{countryId:'BGD',stateTransaction:tx});
+assert.equal(blockedPlan.accepted,true);
+assert.equal(blockedPlan.plans[0].status,'BLOCKED');
+assert.equal(blockedPlan.plans[0].reason,'RESOURCE_ROUTE_BLOCKADE_ACTIVE');
+const blockedShipment=state.resource.logistics.shipments.find(x=>x.batchId==='B2');
+assert.ok(blockedShipment,'the blocked attempt is auditable');
+assert.equal(blockedShipment.status,'BLOCKED');
+assert.equal(blockedShipment.deliveryStatus,'BLOCKED');
+assert.equal(blockedShipment.quantity,0);
+context.Game.state.simulation.turn=100;
+const afterBlockadeAdvance=handlers.get('OMEGA_RESOURCE_LOGISTICS_ADVANCE')({payload:{countryId:'BGD'}},{countryId:'BGD',stateTransaction:tx});
+assert.equal(afterBlockadeAdvance.delivered,0,'a blocked route must never be delivered later');
+assert.equal(blockedShipment.status,'BLOCKED');
+
 console.log('OMEGA RESOURCE LOGISTICS V1 TEST PASSED');

@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 
 globalThis.Game={state:{
   simulation:{turn:1},
@@ -25,8 +26,45 @@ await import('../omega_ministry_information_policy.js');
 await import('../omega_ministry_decision_framework.js');
 await import('../omega_ministry_state_transaction.js');
 await import('../omega_ministry_interoperability_system.js');
+// Production boot loads the authoritative resource catalog before market discovery.
+// This Node test supplies only the same checked-in JSON files, not invented prices.
+const nativeFetch=globalThis.fetch;
+globalThis.fetch=async function resourceCatalogTestFetch(input,init){
+  const raw=String(typeof input==='string'?input:input?.url||input);
+  const file=raw.split('?')[0];
+  if(file==='resources.json'||file==='resources_2.json'){
+    const data=JSON.parse(fs.readFileSync(new URL('../'+file,import.meta.url),'utf8'));
+    return {ok:true,status:200,json:async()=>data};
+  }
+  if(typeof nativeFetch==='function')return nativeFetch(input,init);
+  throw new Error('UNSUPPORTED_TEST_FETCH:'+file);
+};
+await import('../resource_ministry_engine.js');
+await globalThis.ResourceMinistryEngine?._initializationPromise;
+globalThis.fetch=nativeFetch;
+assert.equal(globalThis.ResourceMinistryEngine?.isReady,true,JSON.stringify(globalThis.ResourceMinistryEngine?.getDataLoadReport?.()));
+globalThis.OmegaResourceStrategicPolicyRules=JSON.parse(fs.readFileSync(new URL('../resource_strategic_policy_rules_v1.json',import.meta.url),'utf8'));
+await import('../omega_resource_strategic_policy_runtime_v1.js');
 await import('../omega_global_market_system.js');
+const policy=globalThis.Omega?.ResourceStrategicPolicyRuntime||globalThis.OmegaResourceStrategicPolicyRuntime;
+const policyDiagnostics=policy.diagnostics();
+assert.equal(policyDiagnostics.handlersReady,true,JSON.stringify(policyDiagnostics));
+assert.equal(policyDiagnostics.handlerErrors.length,0,JSON.stringify(policyDiagnostics.handlerErrors));
+const embargo=policy.declareEmbargo('BDG',{targetCountryId:'SAU',resourceId:'crude_oil',direction:'IMPORT',policyId:'MARKET-EMBARGO-TEST'});
+assert.equal(embargo.accepted,true,JSON.stringify(embargo));
 const market=globalThis.OmegaGlobalMarket;
+const blockedBooks=market.rebuild();
+assert.equal(blockedBooks.crude_oil.clearing.status,'NO_CROSS');
+assert.equal(blockedBooks.crude_oil.clearing.matchedQuantity,0);
+assert.equal(market.suppliers('crude_oil',1,'BDG').some(x=>x.countryId==='SAU'),false,'an embargoed seller must not appear in eligible suppliers');
+assert.equal(policy.liftEmbargo('BDG',{policyId:'MARKET-EMBARGO-TEST'}).accepted,true);
+const blockade=policy.declareBlockade('BDG',{targetCountryId:'SAU',resourceId:'crude_oil',modes:['ship'],policyId:'MARKET-BLOCKADE-TEST'});
+assert.equal(blockade.accepted,true,JSON.stringify(blockade));
+const blockedByNavalBlockade=market.rebuild();
+assert.equal(blockedByNavalBlockade.crude_oil.clearing.matchedQuantity,0);
+assert.equal(blockedByNavalBlockade.crude_oil.clearing.blockedTradePairs.some(x=>x.reason==='RESOURCE_ROUTE_BLOCKADE_ACTIVE'),true);
+assert.equal(market.suppliers('crude_oil',1,'BDG').some(x=>x.countryId==='SAU'),false,'a blockaded seller must not appear in eligible suppliers');
+assert.equal(policy.liftBlockade('BDG',{policyId:'MARKET-BLOCKADE-TEST'}).accepted,true);
 const books=market.rebuild();
 assert(books.crude_oil);
 const q=market.quote('crude_oil');
@@ -34,4 +72,19 @@ assert.equal(q.status,'CLEARED');
 assert.equal(q.matchedQuantity,100);
 assert.equal(q.clearingPriceUsd,100);
 assert.equal(market.localPrice('BDG','crude_oil'),100);
+
+// Removing the actual seller offer leaves only inventory-derived reference liquidity.
+// It must inform the quote but must not count as an executable market trade.
+globalThis.Game.state.trade.SAU.offerBook={};
+const referenceOnlyBooks=market.rebuild();
+const referenceOnly=referenceOnlyBooks.crude_oil.clearing;
+assert(referenceOnly.microstructure.referenceAskCount>0,'inventory-derived reference liquidity should remain visible');
+assert.equal(referenceOnly.matchedQuantity,0,'reference-only ask must never fill a buyer order');
+assert.equal(referenceOnly.clearingPriceUsd,null,'reference-only liquidity must not publish an executed clearing price');
+assert.notEqual(referenceOnly.status,'CLEARED');
+assert.equal(referenceOnly.priceDiscovery,'REFERENCE_ONLY','a reference quote is not a negotiation range with an executable ask');
+assert.equal(referenceOnly.bestAskUsd,null,'reference ask must not be presented as executable best ask');
+assert.equal(referenceOnly.askDepth,0);
+assert.equal(referenceOnly.referenceAskDepth>0,true);
+assert.equal(referenceOnly.matches.some(x=>x.referenceLiquidity),false);
 console.log('OMEGA GLOBAL MARKET CLEARING TEST PASSED');
