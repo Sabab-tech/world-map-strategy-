@@ -152,3 +152,29 @@ test('a finite inventory shortfall is recorded as unmet demand rather than negat
   assert.equal(row.status, 'SHORTAGE');
   assert.equal(report.shortages > 0, true);
 });
+
+test('opponent procurement is evidence-routed, rate-limited, and never auto-issued for the player country by default', async () => {
+  const { context, worldState } = createRuntimeContext({ inventory: {}, consumption: {} });
+  const decisions = [];
+  context.OmegaOpponentAutonomy = {
+    routeDecision(decision, turn) {
+      decisions.push({ decision, turn });
+      return { status: 'READY_TO_QUEUE', command: { commandId: 'QUEUED-' + decision.decisionId },
+        route: { selectedAction: 'IMPORT' } };
+    }
+  };
+  await context.OmegaResourceNationalDemandRuntime.prepare();
+  const opponentReport = context.OmegaResourceNationalDemandRuntime.processCountry('BGD', []);
+  assert.equal(decisions.length, 2, 'the per-country per-turn procurement cap is obeyed');
+  assert.ok(decisions.every(x => x.decision.countryId === 'BGD'));
+  assert.ok(decisions.every(x => x.decision.runtimeMeasurement.gap > 0));
+  assert.equal(opponentReport.procurement.length, 2);
+  assert.ok(opponentReport.procurement.every(x => x.status === 'QUEUED'));
+
+  worldState.simulation.turn = 2;
+  worldState.simulation.session.playerCountryId = 'BGD';
+  const before = decisions.length;
+  const playerReport = context.OmegaResourceNationalDemandRuntime.processCountry('BGD', []);
+  assert.equal(decisions.length, before, 'player-country automatic procurement is disabled by default');
+  assert.equal(playerReport.procurement.length, 0);
+});
