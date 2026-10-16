@@ -628,9 +628,9 @@
       }).join('');
   }
   function panelReserves(country) {
-    const rows=resources(country),r=resourceBucket(country),endowment=r.endowment||{},reserves=r.reserves||{},inventory=r.inventory||{};
+    const rows=countryResources(country),r=resourceBucket(country),endowment=r.endowment||{},reserves=r.reserves||{},inventory=r.inventory||{};
     const body=rows.map(row=>{
-      const rid=row.id,ev=Object.prototype.hasOwnProperty.call(endowment,rid)?endowment[rid]:null,rv=Object.prototype.hasOwnProperty.call(reserves,rid)?reserves[rid]:row.reserve,iv=Object.prototype.hasOwnProperty.call(inventory,rid)?inventory[rid]:row.inventory;
+      const rid=row.id,ev=resourceKeyValue(endowment,rid),rv=resourceKeyValue(reserves,rid)??row.reserve,iv=resourceKeyValue(inventory,rid)??row.inventory;
       return card(row.name||rid,rid,'<div class="omega-rescc-grid2">'+kv('Runtime endowment',ev)+kv('Runtime reserve balance',rv)+kv('Runtime available inventory',iv)+kv('Runtime reserve authority',row.reserveAuthority||'NOT_RECORDED')+kv('Unit',row.unit)+kv('Observed grade / purity',row.grade??row.purity)+'</div>',actionButton('reserve','Request SPR transfer',{'resource-id':rid}));
     }).join('');
     const profileRows=siteRows(country).map(site=>{
@@ -648,7 +648,12 @@
       (profileRows.length>150?'<p class="omega-rescc-note">Showing 150 of '+profileRows.length+' reserve profiles.</p>':'');
   }
   function panelDeposits(country) {
-    const all=deposits(),selected=activeCountry(country);
+    const all=deposits().filter(function (d) {
+      if (!isHiddenResourceRecord(d)) return true;
+      const resourceId = d && (d.resourceId || d.resId || d.resourceTypeId || d.resource || '');
+      const country = d && (d.countryCode || d.countryId || d.country || d.countryName || d.sovereignCountryId);
+      return !!(resourceId && country && resourceHasSurveyEvidence(normaliseCountry(country), resourceId));
+    }),selected=activeCountry(country);
     const rows=selected==='WORLD'?all:all.filter(d=>{
       const cid=d&&(d.countryCode||d.countryId||d.country||d.countryName||d.sovereignCountryId);
       return cid&&normaliseCountry(cid)===selected;
@@ -661,7 +666,7 @@
         const valid=Number.isFinite(lat)&&Number.isFinite(lng)&&lat>=-90&&lat<=90&&lng>=-180&&lng<=180,rid=d.resourceId||d.resId||d.resourceTypeId||d.resource||'';
         const body='<div class="omega-rescc-grid2">'+kv('Country',d.country||d.countryCode||d.countryId)+kv('Resource',rid||d.name)+kv('Latitude',valid?lat.toFixed(5):null)+kv('Longitude',valid?lng.toFixed(5):null)+kv('Reserves',d.reserves??d.reserve)+kv('Grade',d.grade??d.purity)+kv('Operator',d.operator||d.owner)+'</div>';
         return card(d.name||d.depositName||d.siteName||d.siteId||'Unnamed deposit',d.status||'STATUS NOT RECORDED',body,
-          (valid?actionButton('fly-deposit','Fly to coordinates',{lat,lng,'deposit-name':d.name||d.depositName||'Deposit'}):'')+(rid?actionButton('survey','Request resource survey',{'resource-id':rid}):''));
+          (valid?actionButton('fly-deposit','Fly to coordinates',{lat,lng,'deposit-name':d.name||d.depositName||'Deposit'}):''));
       }).join('')+(rows.length>visible.length?'<p class="omega-rescc-note">Showing the first '+visible.length+' of '+rows.length+' matched records.</p>':'');
   }
   function siteRows(country) {
@@ -674,7 +679,11 @@
         const identity=site.identity&&typeof site.identity==='object'?site.identity:{};
         const ownCountry=site.countryId||site.countryCode||site.country||identity.countryIso3||identity.countryId||source.countryId||source.countryCode||countryHint;
         if(!ownCountry)return;
-        candidates.push(Object.assign({},site,{countryId:normaliseCountry(ownCountry)}));
+        const canonical=normaliseCountry(ownCountry);
+        const resourceId=site.resourceId||site.resId||site.resourceTypeId||site.resourceTypeKey||
+          (site.real&&site.real.resourceId)||(identity&&identity.resourceTypeId)||source.resourceId||source.resourceTypeId||source.resId||'';
+        if(isHiddenResourceRecord(site)&&!resourceHasSurveyEvidence(canonical,resourceId))return;
+        candidates.push(Object.assign({},site,{countryId:canonical}));
       });
     };
     // Source profile and the canonical site binding are primary identity sources.
@@ -764,7 +773,7 @@
         }, !(g.Omega && g.Omega.ResourceIndustrialNetwork && g.Omega.ResourceIndustrialNetwork.executeSitePipeline && rid && s.extractionExecutable !== false && !(s.runtime && s.runtime.extractionExecutable === false))) +
         actionButton('start-exploration', 'Start canonical exploration', { 'site-id': s.siteId },
           !(policy && typeof policy.startExploration === 'function' && s.siteId)) +
-        (rid ? actionButton('survey', 'Request survey', { 'resource-id': rid }) : ''));
+        '');
     }).join('');
     const explorationCards = explorations.map(function (p) {
       const status = String(p.status || '').toUpperCase();
@@ -778,20 +787,14 @@
         kv('Progress turns', p.progressTurns) + kv('Required turns', p.requiredTurns) +
         kv('Investment status', p.investmentStatus) + kv('Authority', p.authority) + '</div>', action);
     }).join('');
-    const rows = resources(country).map(function (x) {
-      return card(x.name || x.id, x.id,
-        '<div class="omega-rescc-grid2">' + kv('Observed production/day', x.dailyProduction) +
-        kv('Observed reserve', x.reserve) + kv('Production authority', x.productionAuthority || 'NOT_RECORDED') + '</div>',
-        actionButton('survey', 'Request survey', { 'resource-id': x.id }));
-    }).join('');
     return '<div class="omega-rescc-metrics"><div><span>Country site profiles</span><strong>' +
       number(sites.length) + '</strong></div><div><span>Runtime mine records</span><strong>' + number(Array.isArray(r.mines) ? r.mines.length : 0) +
       '</strong></div><div><span>Survey requests</span><strong>' + number(surveys.length) + '</strong></div><div><span>Survey results</span><strong>' + number(results.length) + '</strong></div></div>' +
       (diag ? diagnosticCard('Extraction runtime diagnostics', diag) : '') +
       '<h3 class="omega-rescc-section-title">Canonical site registry</h3>' +
       (siteCards || empty('No country-scoped site profile matched the existing canonical registry or loaded JSON profile. ' + sourceDataStatus(country))) +
-      '<h3 class="omega-rescc-section-title">Resource survey requests</h3>' + statusRows(surveys) +
-      '<h3 class="omega-rescc-section-title">Completed survey evidence</h3>' + statusRows(results) +
+      '<h3 class="omega-rescc-section-title">Resource survey requests</h3>' + surveyStatusRows(surveys, country, false) +
+      '<h3 class="omega-rescc-section-title">Completed survey evidence</h3>' + surveyStatusRows(results, country, true) +
       '<h3 class="omega-rescc-section-title">Authoritative exploration projects</h3>' + (explorationCards || empty('No exploration projects have been recorded.')) +
       '<h3 class="omega-rescc-section-title">Commissioned site records</h3>' + statusRows(commissionedSites) +
       '<h3 class="omega-rescc-section-title">Commodity survey shortcuts</h3>' + (rows || empty('No commodity rows are available.'));
@@ -824,7 +827,7 @@
     const spr = r.strategicReserve || {};
     const batches = Array.isArray(r.batches) ? r.batches : [];
     const requests = Array.isArray(r.reserveBufferRequests) ? r.reserveBufferRequests : [];
-    const stock = resources(country).map(function (row) {
+    const stock = countryResources(country).map(function (row) {
       const id = row.id;
       const wh = warehouse.availableByResource && warehouse.availableByResource[id];
       const reserved = spr.availableByResource && spr.availableByResource[id];
@@ -1036,7 +1039,7 @@
   }
   function panelPower(country){
     const network=g.Omega&&g.Omega.ResourceIndustrialNetwork,r=resourceBucket(country);
-    const energy=resources(country).filter(x=>/oil|gas|uranium|coal|power|energy|hydrogen/i.test(String(x.id)+' '+String(x.name)));
+    const energy=countryResources(country).filter(x=>/oil|gas|uranium|coal|power|energy|hydrogen/i.test(String(x.id)+' '+String(x.name)));
     const sites=siteRows(country).filter(site=>/oil|gas|uranium|coal|power|energy|hydrogen/i.test(String(site.resourceId||site.real&&site.real.resourceId||site.identity&&site.identity.resourceTypeId||'')+' '+String(site.siteName||site.name||'')));
     const profileCards=sites.slice(0,120).map(site=>{
       const src=site.sourceSiteRecord&&typeof site.sourceSiteRecord==='object'?site.sourceSiteRecord:{},q=site.quantitative||src.quantitative||{},prod=q.production||{},reserve=q.reserve||site.simulation&&site.simulation.reserve||{},rv=reserve&&typeof reserve==='object'?(reserve.quantity??reserve.value??reserve.amount):reserve;
@@ -1171,6 +1174,14 @@
       '.omega-rescc-form h3{font-size:13px;margin:0;color:#a5f3fc}.omega-rescc-formgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:9px}' +
       '.omega-rescc-form label,.omega-rescc-question{display:flex;flex-direction:column;gap:5px;color:#cbd5e1;font-size:11px;min-width:0}' +
       '.omega-rescc-question{border:1px solid #1b3245;border-radius:7px;padding:8px}.omega-rescc-question span{line-height:1.4}' +
+      '.omega-rescc-discovery{border:1px solid #1f485f;background:#081827;border-radius:9px;padding:12px;display:flex;flex-direction:column;gap:8px}' +
+      '.omega-rescc-finder-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:end}' +
+      '.omega-rescc-finder-row label{display:flex;flex-direction:column;gap:5px;color:#cbd5e1;font-size:11px;min-width:0}' +
+      '.omega-rescc-finder-row select{width:100%;background:#030b15;color:#f1f5f9;border:1px solid #334b60;border-radius:6px;padding:9px;min-width:0;font:inherit}' +
+      '.omega-rescc-progress{height:7px;width:100%;overflow:hidden;background:#142638;border:1px solid #28465d;border-radius:9px;margin-top:7px}' +
+      '.omega-rescc-progress span{display:block;height:100%;background:#22d3ee;transition:width .2s ease}' +
+      '.omega-rescc-optional-tool{border:1px solid #1b3245;border-radius:8px;padding:9px;color:#a8c3d3}' +
+      '.omega-rescc-optional-tool summary{cursor:pointer;font-weight:600;font-size:11px}' +
       '@media(max-width:600px){.omega-rescc-shell{width:100vw;height:100dvh;max-height:none;border-radius:0}.omega-rescc-heading h2{font-size:13px}.omega-rescc-top{padding:9px}.omega-rescc-content{padding:9px}.omega-rescc-headtools{width:100%}.omega-rescc-search{width:100%;flex-basis:100%}}';
   }
   function ensureModal() {
@@ -1201,6 +1212,10 @@
         if (event.target && event.target.id === 'omega-rescc-search') applySearch(event.target.value);
       });
       modal.addEventListener('change', function (event) {
+        if (event.target && event.target.id === 'omega-rescc-resource-select') {
+          selectedResourceFinderId = String(event.target.value || '').trim();
+          return;
+        }
         if (event.target && event.target.id === 'omega-rescc-panel-select') {
           openPanel(event.target.value);
           return;
@@ -1266,7 +1281,8 @@
     [
       'RESOURCE_STATE_UPDATED','OMEGA_RESOURCE_SITE_BINDING_READY','OMEGA_READY','OMEGA_GAME_SESSION_STARTED',
       'OMEGA_SIMULATION_TURN_COMMITTED','OMEGA_RESOURCE_EXTRACTION_COMPLETED','OMEGA_RESOURCE_BATCH_CREATED',
-      'OMEGA_RESOURCE_INVENTORY_CHANGED','OMEGA_RESOURCE_PROCESSING_COMPLETED','OMEGA_TRADE_SETTLEMENT_COMPLETED'
+      'OMEGA_RESOURCE_INVENTORY_CHANGED','OMEGA_RESOURCE_PROCESSING_COMPLETED','OMEGA_TRADE_SETTLEMENT_COMPLETED',
+      'OMEGA_RESOURCE_SURVEY_REQUESTED','OMEGA_RESOURCE_SURVEY_STARTED','OMEGA_RESOURCE_SURVEY_COMPLETED'
     ].forEach(function (name) {
       try { g.addEventListener(name, function () { resourceDataWarmupAttempted = false; refreshVisiblePanel(); }); } catch (_) {}
     });
@@ -1311,6 +1327,16 @@
     const request = inner.request || inner.shipment || inner.project || inner.result || {};
     const reason = inner.reason || outer.reason || inner.blockReason || '';
     const id = request.requestId || request.shipmentId || request.projectId || inner.requestId || '';
+    if (String(label).indexOf('survey request for ') === 0) {
+      const resourceId = request.resourceId || String(label).slice('survey request for '.length);
+      if (fail || request.accepted === false) return 'Survey not started · ' + resourceName(resourceId) +
+        (reason ? ' · ' + String(reason).replace(/_/g, ' ') : ' · Budget or survey runtime unavailable');
+      return 'Survey queued · ' + resourceName(resourceId) +
+        (request.estimatedDurationTurns != null ? ' · ' + number(request.estimatedDurationTurns, ' turns') : '') +
+        (request.surveyBudgetUnits != null ? ' · Budget ' + number(request.surveyBudgetUnits, ' ' + (request.currencyCode || 'native treasury units')) : '') +
+        (request.budgetStatus ? ' · Budget status: ' + String(request.budgetStatus).replace(/_/g, ' ') : '') +
+        (request.status ? ' · Status: ' + String(request.status).replace(/_/g, ' ') : '') + (id ? ' · Ref: ' + id : '');
+    }
     return label + ' · ' + (fail ? 'NOT COMPLETED' : 'Runtime response received') + ' · Status: ' + status +
       (id ? ' · ID: ' + id : '') + (reason ? ' · Reason: ' + reason : '');
   }
@@ -1347,6 +1373,15 @@
     const d = button.dataset || {};
     let result;
     try {
+      if (action === 'find-resource') {
+        if (!selectedResourceFinderId) {
+          setOutcome('Resource finder', { status: 'REJECTED', reason: 'SELECT_A_RESOURCE_FIRST' });
+          return;
+        }
+        lastOutcome = '';
+        render(c, activePanel);
+        return;
+      }
       if (action === 'close') { close(); return; }
       if (action === 'refresh-panel') { resourceDataWarmupAttempted = false; render(c, activePanel); ensureResourceDataReady(true); return; }
       if (action === 'start-exploration' || action === 'approve-exploration-investment' || action === 'commission-exploration-site') {
