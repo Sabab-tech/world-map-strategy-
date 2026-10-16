@@ -10,7 +10,16 @@
     "minZoom": 3.5,
     "maxZoom": 9,
     "importance": 3,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Asia",
+    "continents": [
+      "Asia"
+    ],
+    "subregion": "Southern Asia",
+    "subregionCode": "034",
+    "oceanAccess": [],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "AX",
@@ -18,7 +27,18 @@
     "iso2": "AX",
     "iso3": "ALA",
     "numericCode": "248",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Europe",
+    "continents": [
+      "Europe"
+    ],
+    "subregion": "Northern Europe",
+    "subregionCode": "154",
+    "oceanAccess": [],
+    "lat": 60.188632,
+    "lng": 19.879999,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "AL",
@@ -31,7 +51,18 @@
     "minZoom": 4,
     "maxZoom": 9,
     "importance": 2,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Europe",
+    "continents": [
+      "Europe"
+    ],
+    "subregion": "Southern Europe",
+    "subregionCode": "039",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "DZ",
@@ -44,7 +75,18 @@
     "minZoom": 3.5,
     "maxZoom": 8.5,
     "importance": 3,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Northern Africa",
+    "subregionCode": "015",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "AS",
@@ -52,7 +94,20 @@
     "iso2": "AS",
     "iso3": "ASM",
     "numericCode": "016",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Oceania",
+    "continents": [
+      "Oceania"
+    ],
+    "subregion": "Polynesia",
+    "subregionCode": "061",
+    "oceanAccess": [
+      "PACIFIC"
+    ],
+    "lat": -14.303997,
+    "lng": -170.708894,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "AD",
@@ -65,7 +120,16 @@
     "minZoom": 5,
     "maxZoom": 9,
     "importance": 1,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Europe",
+    "continents": [
+      "Europe"
+    ],
+    "subregion": "Southern Europe",
+    "subregionCode": "039",
+    "oceanAccess": [],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "AO",
@@ -78,7 +142,20 @@
     "minZoom": 3.8,
     "maxZoom": 8.8,
     "importance": 3,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Sub-Saharan Africa",
+    "subregionCode": "202",
+    "intermediateRegion": "Middle Africa",
+    "intermediateRegionCode": "017",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "AI",
@@ -86,7 +163,22 @@
     "iso2": "AI",
     "iso3": "AIA",
     "numericCode": "660",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "North America",
+    "continents": [
+      "North America"
+    ],
+    "subregion": "Latin America and the Caribbean",
+    "subregionCode": "419",
+    "intermediateRegion": "Caribbean",
+    "intermediateRegionCode": "029",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 18.234356,
+    "lng": -63.037148,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "AQ",
@@ -94,7 +186,17 @@
     "iso2": "AQ",
     "iso3": "ATA",
     "numericCode": "010",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Antarctica",
+    "continents": [
+      "Antarctica"
+    ],
+    "subregion": "Antarctica",
+    "oceanAccess": [],
+    "lat": -79.843222,
+    "lng": 35.885455,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "AG",
@@ -102,7 +204,22 @@
     "iso2": "AG",
     "iso3": "ATG",
     "numericCode": "028",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "North America",
+    "continents": [
+      "North America"
+    ],
+    "subregion": "Latin America and the Caribbean",
+    "subregionCode": "419",
+    "intermediateRegion": "Caribbean",
+    "intermediateRegionCode": "029",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 17.071357,
+    "lng": -61.800452,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "AR",
@@ -115,7 +232,20 @@
     "minZoom": 3.5,
     "maxZoom": 8.5,
     "importance": 4,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "South America",
+    "continents": [
+      "South America"
+    ],
+    "subregion": "Latin America and the Caribbean",
+    "subregionCode": "419",
+    "intermediateRegion": "South America",
+    "intermediateRegionCode": "005",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "AM",
@@ -128,7 +258,17 @@
     "minZoom": 4,
     "maxZoom": 9,
     "importance": 2,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Asia",
+    "continents": [
+      "Asia",
+      "Europe"
+    ],
+    "subregion": "Western Asia",
+    "subregionCode": "145",
+    "oceanAccess": [],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "AW",
@@ -136,7 +276,22 @@
     "iso2": "AW",
     "iso3": "ABW",
     "numericCode": "533",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "North America",
+    "continents": [
+      "North America"
+    ],
+    "subregion": "Latin America and the Caribbean",
+    "subregionCode": "419",
+    "intermediateRegion": "Caribbean",
+    "intermediateRegionCode": "029",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 12.502581,
+    "lng": -69.964497,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "AU",
@@ -149,7 +304,19 @@
     "minZoom": 3,
     "maxZoom": 7.5,
     "importance": 5,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Oceania",
+    "continents": [
+      "Oceania"
+    ],
+    "subregion": "Australia and New Zealand",
+    "subregionCode": "053",
+    "oceanAccess": [
+      "INDIAN",
+      "PACIFIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "AT",
@@ -162,7 +329,16 @@
     "minZoom": 4.5,
     "maxZoom": 9,
     "importance": 3,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Europe",
+    "continents": [
+      "Europe"
+    ],
+    "subregion": "Western Europe",
+    "subregionCode": "155",
+    "oceanAccess": [],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "AZ",
@@ -175,7 +351,17 @@
     "minZoom": 4,
     "maxZoom": 9,
     "importance": 3,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Asia",
+    "continents": [
+      "Asia",
+      "Europe"
+    ],
+    "subregion": "Western Asia",
+    "subregionCode": "145",
+    "oceanAccess": [],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "BS",
@@ -183,7 +369,22 @@
     "iso2": "BS",
     "iso3": "BHS",
     "numericCode": "044",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "North America",
+    "continents": [
+      "North America"
+    ],
+    "subregion": "Latin America and the Caribbean",
+    "subregionCode": "419",
+    "intermediateRegion": "Caribbean",
+    "intermediateRegionCode": "029",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 26.401789,
+    "lng": -77.146688,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "BH",
@@ -196,7 +397,18 @@
     "minZoom": 5,
     "maxZoom": 9.5,
     "importance": 4,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Asia",
+    "continents": [
+      "Asia"
+    ],
+    "subregion": "Western Asia",
+    "subregionCode": "145",
+    "oceanAccess": [
+      "INDIAN"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "BD",
@@ -209,7 +421,18 @@
     "minZoom": 3.8,
     "maxZoom": 9,
     "importance": 3,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Asia",
+    "continents": [
+      "Asia"
+    ],
+    "subregion": "Southern Asia",
+    "subregionCode": "034",
+    "oceanAccess": [
+      "INDIAN"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "BB",
@@ -217,7 +440,22 @@
     "iso2": "BB",
     "iso3": "BRB",
     "numericCode": "052",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "North America",
+    "continents": [
+      "North America"
+    ],
+    "subregion": "Latin America and the Caribbean",
+    "subregionCode": "419",
+    "intermediateRegion": "Caribbean",
+    "intermediateRegionCode": "029",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 13.180202,
+    "lng": -59.563196,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "BY",
@@ -225,7 +463,18 @@
     "iso2": "BY",
     "iso3": "BLR",
     "numericCode": "112",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Europe",
+    "continents": [
+      "Europe"
+    ],
+    "subregion": "Eastern Europe",
+    "subregionCode": "151",
+    "oceanAccess": [],
+    "lat": 53.821888,
+    "lng": 28.417701,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "BE",
@@ -238,7 +487,18 @@
     "minZoom": 4.5,
     "maxZoom": 9,
     "importance": 3,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Europe",
+    "continents": [
+      "Europe"
+    ],
+    "subregion": "Western Europe",
+    "subregionCode": "155",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "BZ",
@@ -246,7 +506,22 @@
     "iso2": "BZ",
     "iso3": "BLZ",
     "numericCode": "084",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "North America",
+    "continents": [
+      "North America"
+    ],
+    "subregion": "Latin America and the Caribbean",
+    "subregionCode": "419",
+    "intermediateRegion": "Central America",
+    "intermediateRegionCode": "013",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 17.202068,
+    "lng": -88.712962,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "BJ",
@@ -254,7 +529,22 @@
     "iso2": "BJ",
     "iso3": "BEN",
     "numericCode": "204",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Sub-Saharan Africa",
+    "subregionCode": "202",
+    "intermediateRegion": "Western Africa",
+    "intermediateRegionCode": "011",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 10.324775,
+    "lng": 2.352018,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "BM",
@@ -262,7 +552,20 @@
     "iso2": "BM",
     "iso3": "BMU",
     "numericCode": "060",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "North America",
+    "continents": [
+      "North America"
+    ],
+    "subregion": "Northern America",
+    "subregionCode": "021",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 32.358318,
+    "lng": -64.696407,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "BT",
@@ -270,7 +573,18 @@
     "iso2": "BT",
     "iso3": "BTN",
     "numericCode": "064",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Asia",
+    "continents": [
+      "Asia"
+    ],
+    "subregion": "Southern Asia",
+    "subregionCode": "034",
+    "oceanAccess": [],
+    "lat": 27.536685,
+    "lng": 90.040294,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "BO",
@@ -282,7 +596,20 @@
     "aliases": [
       "Bolivia",
       "Bolivia (Plurinational State of)"
-    ]
+    ],
+    "continent": "South America",
+    "continents": [
+      "South America"
+    ],
+    "subregion": "Latin America and the Caribbean",
+    "subregionCode": "419",
+    "intermediateRegion": "South America",
+    "intermediateRegionCode": "005",
+    "oceanAccess": [],
+    "lat": -16.666015,
+    "lng": -64.593433,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "BQ",
@@ -290,7 +617,22 @@
     "iso2": "BQ",
     "iso3": "BES",
     "numericCode": "535",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "North America",
+    "continents": [
+      "North America"
+    ],
+    "subregion": "Latin America and the Caribbean",
+    "subregionCode": "419",
+    "intermediateRegion": "Caribbean",
+    "intermediateRegionCode": "029",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 12.247819,
+    "lng": -68.326716,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "BA",
@@ -298,7 +640,20 @@
     "iso2": "BA",
     "iso3": "BIH",
     "numericCode": "070",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Europe",
+    "continents": [
+      "Europe"
+    ],
+    "subregion": "Southern Europe",
+    "subregionCode": "039",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 44.091051,
+    "lng": 18.06841,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "BW",
@@ -306,7 +661,20 @@
     "iso2": "BW",
     "iso3": "BWA",
     "numericCode": "072",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Sub-Saharan Africa",
+    "subregionCode": "202",
+    "intermediateRegion": "Southern Africa",
+    "intermediateRegionCode": "018",
+    "oceanAccess": [],
+    "lat": -22.102634,
+    "lng": 24.179216,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "BV",
@@ -314,7 +682,20 @@
     "iso2": "BV",
     "iso3": "BVT",
     "numericCode": "074",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Antarctica",
+    "continents": [
+      "Antarctica"
+    ],
+    "subregion": "Latin America and the Caribbean",
+    "subregionCode": "419",
+    "intermediateRegion": "South America",
+    "intermediateRegionCode": "005",
+    "oceanAccess": [],
+    "lat": -54.424194,
+    "lng": 3.403729,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "BR",
@@ -327,7 +708,20 @@
     "minZoom": 3,
     "maxZoom": 7.5,
     "importance": 5,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "South America",
+    "continents": [
+      "South America"
+    ],
+    "subregion": "Latin America and the Caribbean",
+    "subregionCode": "419",
+    "intermediateRegion": "South America",
+    "intermediateRegionCode": "005",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "IO",
@@ -335,7 +729,20 @@
     "iso2": "IO",
     "iso3": "IOT",
     "numericCode": "086",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Sub-Saharan Africa",
+    "subregionCode": "202",
+    "intermediateRegion": "Eastern Africa",
+    "intermediateRegionCode": "014",
+    "oceanAccess": [],
+    "lat": -6.191769,
+    "lng": 71.348514,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "BN",
@@ -347,7 +754,20 @@
     "aliases": [
       "Brunei",
       "Brunei Darussalam"
-    ]
+    ],
+    "continent": "Asia",
+    "continents": [
+      "Asia"
+    ],
+    "subregion": "South-eastern Asia",
+    "subregionCode": "035",
+    "oceanAccess": [
+      "PACIFIC"
+    ],
+    "lat": 4.448298,
+    "lng": 114.551943,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "BG",
@@ -355,7 +775,20 @@
     "iso2": "BG",
     "iso3": "BGR",
     "numericCode": "100",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Europe",
+    "continents": [
+      "Europe"
+    ],
+    "subregion": "Eastern Europe",
+    "subregionCode": "151",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 42.508785,
+    "lng": 25.15709,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "BF",
@@ -368,7 +801,18 @@
     "minZoom": 4.5,
     "maxZoom": 9,
     "importance": 2,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Sub-Saharan Africa",
+    "subregionCode": "202",
+    "intermediateRegion": "Western Africa",
+    "intermediateRegionCode": "011",
+    "oceanAccess": [],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "BI",
@@ -381,7 +825,18 @@
     "minZoom": 4.5,
     "maxZoom": 9,
     "importance": 2,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Sub-Saharan Africa",
+    "subregionCode": "202",
+    "intermediateRegion": "Eastern Africa",
+    "intermediateRegionCode": "014",
+    "oceanAccess": [],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "CV",
@@ -392,7 +847,22 @@
     "identityStatus": "ISO3166_IDENTITY_ONLY",
     "aliases": [
       "Cape Verde"
-    ]
+    ],
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Sub-Saharan Africa",
+    "subregionCode": "202",
+    "intermediateRegion": "Western Africa",
+    "intermediateRegionCode": "011",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 15.086688,
+    "lng": -23.63785,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "KH",
@@ -400,7 +870,20 @@
     "iso2": "KH",
     "iso3": "KHM",
     "numericCode": "116",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Asia",
+    "continents": [
+      "Asia"
+    ],
+    "subregion": "South-eastern Asia",
+    "subregionCode": "035",
+    "oceanAccess": [
+      "PACIFIC"
+    ],
+    "lat": 12.647584,
+    "lng": 104.50487,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "CM",
@@ -413,7 +896,20 @@
     "minZoom": 4,
     "maxZoom": 9,
     "importance": 3,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Sub-Saharan Africa",
+    "subregionCode": "202",
+    "intermediateRegion": "Middle Africa",
+    "intermediateRegionCode": "017",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "CA",
@@ -426,7 +922,20 @@
     "minZoom": 3,
     "maxZoom": 7.5,
     "importance": 5,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "North America",
+    "continents": [
+      "North America"
+    ],
+    "subregion": "Northern America",
+    "subregionCode": "021",
+    "oceanAccess": [
+      "ARCTIC",
+      "ATLANTIC",
+      "PACIFIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "KY",
@@ -434,7 +943,22 @@
     "iso2": "KY",
     "iso3": "CYM",
     "numericCode": "136",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "North America",
+    "continents": [
+      "North America"
+    ],
+    "subregion": "Latin America and the Caribbean",
+    "subregionCode": "419",
+    "intermediateRegion": "Caribbean",
+    "intermediateRegionCode": "029",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 19.330185,
+    "lng": -81.21102,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "CF",
@@ -442,7 +966,20 @@
     "iso2": "CF",
     "iso3": "CAF",
     "numericCode": "140",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Sub-Saharan Africa",
+    "subregionCode": "202",
+    "intermediateRegion": "Middle Africa",
+    "intermediateRegionCode": "017",
+    "oceanAccess": [],
+    "lat": 6.989681,
+    "lng": 20.906897,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "TD",
@@ -450,7 +987,20 @@
     "iso2": "TD",
     "iso3": "TCD",
     "numericCode": "148",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Sub-Saharan Africa",
+    "subregionCode": "202",
+    "intermediateRegion": "Middle Africa",
+    "intermediateRegionCode": "017",
+    "oceanAccess": [],
+    "lat": 15.142959,
+    "lng": 18.645041,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "CL",
@@ -463,7 +1013,20 @@
     "minZoom": 3.8,
     "maxZoom": 8.5,
     "importance": 4,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "South America",
+    "continents": [
+      "South America"
+    ],
+    "subregion": "Latin America and the Caribbean",
+    "subregionCode": "419",
+    "intermediateRegion": "South America",
+    "intermediateRegionCode": "005",
+    "oceanAccess": [
+      "PACIFIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "CN",
@@ -476,7 +1039,18 @@
     "minZoom": 3,
     "maxZoom": 7.5,
     "importance": 5,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Asia",
+    "continents": [
+      "Asia"
+    ],
+    "subregion": "Eastern Asia",
+    "subregionCode": "030",
+    "oceanAccess": [
+      "PACIFIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "CX",
@@ -484,7 +1058,20 @@
     "iso2": "CX",
     "iso3": "CXR",
     "numericCode": "162",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Oceania",
+    "continents": [
+      "Oceania"
+    ],
+    "subregion": "Australia and New Zealand",
+    "subregionCode": "053",
+    "oceanAccess": [
+      "INDIAN"
+    ],
+    "lat": -10.489835,
+    "lng": 105.676057,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "CC",
@@ -492,7 +1079,20 @@
     "iso2": "CC",
     "iso3": "CCK",
     "numericCode": "166",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Oceania",
+    "continents": [
+      "Oceania"
+    ],
+    "subregion": "Australia and New Zealand",
+    "subregionCode": "053",
+    "oceanAccess": [
+      "INDIAN"
+    ],
+    "lat": -12.166093,
+    "lng": 96.838197,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "CO",
@@ -505,7 +1105,21 @@
     "minZoom": 3.8,
     "maxZoom": 8.5,
     "importance": 4,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "South America",
+    "continents": [
+      "South America"
+    ],
+    "subregion": "Latin America and the Caribbean",
+    "subregionCode": "419",
+    "intermediateRegion": "South America",
+    "intermediateRegionCode": "005",
+    "oceanAccess": [
+      "ATLANTIC",
+      "PACIFIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "KM",
@@ -513,7 +1127,22 @@
     "iso2": "KM",
     "iso3": "COM",
     "numericCode": "174",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Sub-Saharan Africa",
+    "subregionCode": "202",
+    "intermediateRegion": "Eastern Africa",
+    "intermediateRegionCode": "014",
+    "oceanAccess": [
+      "INDIAN"
+    ],
+    "lat": -11.680398,
+    "lng": 43.339034,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "CG",
@@ -531,7 +1160,20 @@
       "Congo",
       "Republic of the Congo",
       "Congo-Brazzaville"
-    ]
+    ],
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Sub-Saharan Africa",
+    "subregionCode": "202",
+    "intermediateRegion": "Middle Africa",
+    "intermediateRegionCode": "017",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "CD",
@@ -550,7 +1192,20 @@
       "Democratic Republic of the Congo",
       "DR Congo",
       "DRC"
-    ]
+    ],
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Sub-Saharan Africa",
+    "subregionCode": "202",
+    "intermediateRegion": "Middle Africa",
+    "intermediateRegionCode": "017",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "CK",
@@ -558,7 +1213,20 @@
     "iso2": "CK",
     "iso3": "COK",
     "numericCode": "184",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Oceania",
+    "continents": [
+      "Oceania"
+    ],
+    "subregion": "Polynesia",
+    "subregionCode": "061",
+    "oceanAccess": [
+      "PACIFIC"
+    ],
+    "lat": -21.223316,
+    "lng": -159.785574,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "CR",
@@ -566,7 +1234,23 @@
     "iso2": "CR",
     "iso3": "CRI",
     "numericCode": "188",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "North America",
+    "continents": [
+      "North America"
+    ],
+    "subregion": "Latin America and the Caribbean",
+    "subregionCode": "419",
+    "intermediateRegion": "Central America",
+    "intermediateRegionCode": "013",
+    "oceanAccess": [
+      "ATLANTIC",
+      "PACIFIC"
+    ],
+    "lat": 10.0651,
+    "lng": -84.077922,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "CI",
@@ -584,7 +1268,20 @@
       "Côte d'Ivoire",
       "Cote d'Ivoire",
       "Ivory Coast"
-    ]
+    ],
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Sub-Saharan Africa",
+    "subregionCode": "202",
+    "intermediateRegion": "Western Africa",
+    "intermediateRegionCode": "011",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "HR",
@@ -592,7 +1289,20 @@
     "iso2": "HR",
     "iso3": "HRV",
     "numericCode": "191",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Europe",
+    "continents": [
+      "Europe"
+    ],
+    "subregion": "Southern Europe",
+    "subregionCode": "039",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 45.805799,
+    "lng": 16.37241,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "CU",
@@ -605,7 +1315,20 @@
     "minZoom": 4.5,
     "maxZoom": 9,
     "importance": 3,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "North America",
+    "continents": [
+      "North America"
+    ],
+    "subregion": "Latin America and the Caribbean",
+    "subregionCode": "419",
+    "intermediateRegion": "Caribbean",
+    "intermediateRegionCode": "029",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "CW",
@@ -617,7 +1340,22 @@
     "aliases": [
       "Curacao",
       "Curaçao"
-    ]
+    ],
+    "continent": "North America",
+    "continents": [
+      "North America"
+    ],
+    "subregion": "Latin America and the Caribbean",
+    "subregionCode": "419",
+    "intermediateRegion": "Caribbean",
+    "intermediateRegionCode": "029",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 12.197683,
+    "lng": -68.980963,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "CY",
@@ -625,7 +1363,21 @@
     "iso2": "CY",
     "iso3": "CYP",
     "numericCode": "196",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Asia",
+    "continents": [
+      "Asia",
+      "Europe"
+    ],
+    "subregion": "Western Asia",
+    "subregionCode": "145",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 34.913329,
+    "lng": 33.084182,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "CZ",
@@ -636,7 +1388,18 @@
     "identityStatus": "ISO3166_IDENTITY_ONLY",
     "aliases": [
       "Czech Republic"
-    ]
+    ],
+    "continent": "Europe",
+    "continents": [
+      "Europe"
+    ],
+    "subregion": "Eastern Europe",
+    "subregionCode": "151",
+    "oceanAccess": [],
+    "lat": 49.882364,
+    "lng": 15.377555,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "DK",
@@ -644,7 +1407,21 @@
     "iso2": "DK",
     "iso3": "DNK",
     "numericCode": "208",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Europe",
+    "continents": [
+      "Europe"
+    ],
+    "subregion": "Northern Europe",
+    "subregionCode": "154",
+    "oceanAccess": [
+      "ARCTIC",
+      "ATLANTIC"
+    ],
+    "lat": 55.966965,
+    "lng": 9.018163,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "DJ",
@@ -652,7 +1429,22 @@
     "iso2": "DJ",
     "iso3": "DJI",
     "numericCode": "262",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Sub-Saharan Africa",
+    "subregionCode": "202",
+    "intermediateRegion": "Eastern Africa",
+    "intermediateRegionCode": "014",
+    "oceanAccess": [
+      "INDIAN"
+    ],
+    "lat": 11.976343,
+    "lng": 42.498825,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "DM",
@@ -660,7 +1452,22 @@
     "iso2": "DM",
     "iso3": "DMA",
     "numericCode": "212",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "North America",
+    "continents": [
+      "North America"
+    ],
+    "subregion": "Latin America and the Caribbean",
+    "subregionCode": "419",
+    "intermediateRegion": "Caribbean",
+    "intermediateRegionCode": "029",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 15.41004,
+    "lng": -61.359919,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "DO",
@@ -673,7 +1480,20 @@
     "minZoom": 4.5,
     "maxZoom": 9,
     "importance": 3,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "North America",
+    "continents": [
+      "North America"
+    ],
+    "subregion": "Latin America and the Caribbean",
+    "subregionCode": "419",
+    "intermediateRegion": "Caribbean",
+    "intermediateRegionCode": "029",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "EC",
@@ -681,7 +1501,22 @@
     "iso2": "EC",
     "iso3": "ECU",
     "numericCode": "218",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "South America",
+    "continents": [
+      "South America"
+    ],
+    "subregion": "Latin America and the Caribbean",
+    "subregionCode": "419",
+    "intermediateRegion": "South America",
+    "intermediateRegionCode": "005",
+    "oceanAccess": [
+      "PACIFIC"
+    ],
+    "lat": -1.259076,
+    "lng": -78.188375,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "EG",
@@ -694,7 +1529,20 @@
     "minZoom": 3.8,
     "maxZoom": 8.8,
     "importance": 4,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Africa",
+    "continents": [
+      "Africa",
+      "Asia"
+    ],
+    "subregion": "Northern Africa",
+    "subregionCode": "015",
+    "oceanAccess": [
+      "ATLANTIC",
+      "INDIAN"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "SV",
@@ -702,7 +1550,23 @@
     "iso2": "SV",
     "iso3": "SLV",
     "numericCode": "222",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "North America",
+    "continents": [
+      "North America"
+    ],
+    "subregion": "Latin America and the Caribbean",
+    "subregionCode": "419",
+    "intermediateRegion": "Central America",
+    "intermediateRegionCode": "013",
+    "oceanAccess": [
+      "ATLANTIC",
+      "PACIFIC"
+    ],
+    "lat": 13.685371,
+    "lng": -88.890124,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "GQ",
@@ -710,7 +1574,22 @@
     "iso2": "GQ",
     "iso3": "GNQ",
     "numericCode": "226",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Sub-Saharan Africa",
+    "subregionCode": "202",
+    "intermediateRegion": "Middle Africa",
+    "intermediateRegionCode": "017",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 2.333,
+    "lng": 8.9902,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "ER",
@@ -718,7 +1597,22 @@
     "iso2": "ER",
     "iso3": "ERI",
     "numericCode": "232",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Sub-Saharan Africa",
+    "subregionCode": "202",
+    "intermediateRegion": "Eastern Africa",
+    "intermediateRegionCode": "014",
+    "oceanAccess": [
+      "INDIAN"
+    ],
+    "lat": 15.787401,
+    "lng": 38.285566,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "EE",
@@ -726,7 +1620,20 @@
     "iso2": "EE",
     "iso3": "EST",
     "numericCode": "233",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Europe",
+    "continents": [
+      "Europe"
+    ],
+    "subregion": "Northern Europe",
+    "subregionCode": "154",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 58.724865,
+    "lng": 25.867126,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "SZ",
@@ -734,7 +1641,20 @@
     "iso2": "SZ",
     "iso3": "SWZ",
     "numericCode": "748",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Sub-Saharan Africa",
+    "subregionCode": "202",
+    "intermediateRegion": "Southern Africa",
+    "intermediateRegionCode": "018",
+    "oceanAccess": [],
+    "lat": -26.533676,
+    "lng": 31.467264,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "ET",
@@ -747,7 +1667,18 @@
     "minZoom": 4,
     "maxZoom": 9,
     "importance": 3,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Sub-Saharan Africa",
+    "subregionCode": "202",
+    "intermediateRegion": "Eastern Africa",
+    "intermediateRegionCode": "014",
+    "oceanAccess": [],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "FK",
@@ -759,7 +1690,22 @@
     "aliases": [
       "Falkland Islands",
       "Falkland Islands (Malvinas)"
-    ]
+    ],
+    "continent": "South America",
+    "continents": [
+      "South America"
+    ],
+    "subregion": "Latin America and the Caribbean",
+    "subregionCode": "419",
+    "intermediateRegion": "South America",
+    "intermediateRegionCode": "005",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": -51.608913,
+    "lng": -58.738602,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "FO",
@@ -767,7 +1713,20 @@
     "iso2": "FO",
     "iso3": "FRO",
     "numericCode": "234",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Europe",
+    "continents": [
+      "Europe"
+    ],
+    "subregion": "Northern Europe",
+    "subregionCode": "154",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 62.114254,
+    "lng": -6.98227,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "FJ",
@@ -780,7 +1739,18 @@
     "minZoom": 5,
     "maxZoom": 9.5,
     "importance": 2,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Oceania",
+    "continents": [
+      "Oceania"
+    ],
+    "subregion": "Melanesia",
+    "subregionCode": "054",
+    "oceanAccess": [
+      "PACIFIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "FI",
@@ -793,7 +1763,18 @@
     "minZoom": 4.5,
     "maxZoom": 9,
     "importance": 4,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Europe",
+    "continents": [
+      "Europe"
+    ],
+    "subregion": "Northern Europe",
+    "subregionCode": "154",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "FR",
@@ -806,7 +1787,18 @@
     "minZoom": 4,
     "maxZoom": 8.5,
     "importance": 5,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Europe",
+    "continents": [
+      "Europe"
+    ],
+    "subregion": "Western Europe",
+    "subregionCode": "155",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "GF",
@@ -814,7 +1806,22 @@
     "iso2": "GF",
     "iso3": "GUF",
     "numericCode": "254",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "South America",
+    "continents": [
+      "South America"
+    ],
+    "subregion": "Latin America and the Caribbean",
+    "subregionCode": "419",
+    "intermediateRegion": "South America",
+    "intermediateRegionCode": "005",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 3.922525,
+    "lng": -53.246785,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "PF",
@@ -822,7 +1829,20 @@
     "iso2": "PF",
     "iso3": "PYF",
     "numericCode": "258",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Oceania",
+    "continents": [
+      "Oceania"
+    ],
+    "subregion": "Polynesia",
+    "subregionCode": "061",
+    "oceanAccess": [
+      "PACIFIC"
+    ],
+    "lat": -17.665716,
+    "lng": -149.446551,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "TF",
@@ -830,7 +1850,22 @@
     "iso2": "TF",
     "iso3": "ATF",
     "numericCode": "260",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Sub-Saharan Africa",
+    "subregionCode": "202",
+    "intermediateRegion": "Eastern Africa",
+    "intermediateRegionCode": "014",
+    "oceanAccess": [
+      "INDIAN"
+    ],
+    "lat": -49.303721,
+    "lng": 69.122136,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "GA",
@@ -843,7 +1878,20 @@
     "minZoom": 4.5,
     "maxZoom": 9,
     "importance": 3,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Sub-Saharan Africa",
+    "subregionCode": "202",
+    "intermediateRegion": "Middle Africa",
+    "intermediateRegionCode": "017",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "GM",
@@ -851,7 +1899,22 @@
     "iso2": "GM",
     "iso3": "GMB",
     "numericCode": "270",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Sub-Saharan Africa",
+    "subregionCode": "202",
+    "intermediateRegion": "Western Africa",
+    "intermediateRegionCode": "011",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 13.641721,
+    "lng": -14.998318,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "GE",
@@ -859,7 +1922,19 @@
     "iso2": "GE",
     "iso3": "GEO",
     "numericCode": "268",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Asia",
+    "continents": [
+      "Asia",
+      "Europe"
+    ],
+    "subregion": "Western Asia",
+    "subregionCode": "145",
+    "oceanAccess": [],
+    "lat": 41.870087,
+    "lng": 43.735724,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "DE",
@@ -872,7 +1947,18 @@
     "minZoom": 4,
     "maxZoom": 8.5,
     "importance": 5,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Europe",
+    "continents": [
+      "Europe"
+    ],
+    "subregion": "Western Europe",
+    "subregionCode": "155",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "GH",
@@ -885,7 +1971,20 @@
     "minZoom": 4.5,
     "maxZoom": 9,
     "importance": 3,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Sub-Saharan Africa",
+    "subregionCode": "202",
+    "intermediateRegion": "Western Africa",
+    "intermediateRegionCode": "011",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "GI",
@@ -893,7 +1992,20 @@
     "iso2": "GI",
     "iso3": "GIB",
     "numericCode": "292",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Europe",
+    "continents": [
+      "Europe"
+    ],
+    "subregion": "Southern Europe",
+    "subregionCode": "039",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 36.132214,
+    "lng": -5.347511,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "GR",
@@ -906,7 +2018,18 @@
     "minZoom": 4.5,
     "maxZoom": 9,
     "importance": 4,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Europe",
+    "continents": [
+      "Europe"
+    ],
+    "subregion": "Southern Europe",
+    "subregionCode": "039",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "GL",
@@ -914,7 +2037,21 @@
     "iso2": "GL",
     "iso3": "GRL",
     "numericCode": "304",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "North America",
+    "continents": [
+      "North America"
+    ],
+    "subregion": "Northern America",
+    "subregionCode": "021",
+    "oceanAccess": [
+      "ARCTIC",
+      "ATLANTIC"
+    ],
+    "lat": 74.319387,
+    "lng": -39.335251,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "GD",
@@ -922,7 +2059,22 @@
     "iso2": "GD",
     "iso3": "GRD",
     "numericCode": "308",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "North America",
+    "continents": [
+      "North America"
+    ],
+    "subregion": "Latin America and the Caribbean",
+    "subregionCode": "419",
+    "intermediateRegion": "Caribbean",
+    "intermediateRegionCode": "029",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 12.144449,
+    "lng": -61.666838,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "GP",
@@ -930,7 +2082,22 @@
     "iso2": "GP",
     "iso3": "GLP",
     "numericCode": "312",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "North America",
+    "continents": [
+      "North America"
+    ],
+    "subregion": "Latin America and the Caribbean",
+    "subregionCode": "419",
+    "intermediateRegion": "Caribbean",
+    "intermediateRegionCode": "029",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 16.296213,
+    "lng": -61.390629,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "GU",
@@ -938,7 +2105,20 @@
     "iso2": "GU",
     "iso3": "GUM",
     "numericCode": "316",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Oceania",
+    "continents": [
+      "Oceania"
+    ],
+    "subregion": "Micronesia",
+    "subregionCode": "057",
+    "oceanAccess": [
+      "PACIFIC"
+    ],
+    "lat": 13.515966,
+    "lng": 144.809599,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "GT",
@@ -946,7 +2126,23 @@
     "iso2": "GT",
     "iso3": "GTM",
     "numericCode": "320",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "North America",
+    "continents": [
+      "North America"
+    ],
+    "subregion": "Latin America and the Caribbean",
+    "subregionCode": "419",
+    "intermediateRegion": "Central America",
+    "intermediateRegionCode": "013",
+    "oceanAccess": [
+      "ATLANTIC",
+      "PACIFIC"
+    ],
+    "lat": 14.982133,
+    "lng": -90.497134,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "GG",
@@ -954,7 +2150,20 @@
     "iso2": "GG",
     "iso3": "GGY",
     "numericCode": "831",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Europe",
+    "continents": [
+      "Europe"
+    ],
+    "subregion": "Northern Europe",
+    "subregionCode": "154",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 49.459095,
+    "lng": -2.580626,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "GN",
@@ -962,7 +2171,22 @@
     "iso2": "GN",
     "iso3": "GIN",
     "numericCode": "324",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Sub-Saharan Africa",
+    "subregionCode": "202",
+    "intermediateRegion": "Western Africa",
+    "intermediateRegionCode": "011",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 10.618516,
+    "lng": -10.016402,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "GW",
@@ -970,7 +2194,22 @@
     "iso2": "GW",
     "iso3": "GNB",
     "numericCode": "624",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Sub-Saharan Africa",
+    "subregionCode": "202",
+    "intermediateRegion": "Western Africa",
+    "intermediateRegionCode": "011",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 12.163712,
+    "lng": -14.52413,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "GY",
@@ -978,7 +2217,22 @@
     "iso2": "GY",
     "iso3": "GUY",
     "numericCode": "328",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "South America",
+    "continents": [
+      "South America"
+    ],
+    "subregion": "Latin America and the Caribbean",
+    "subregionCode": "419",
+    "intermediateRegion": "South America",
+    "intermediateRegionCode": "005",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 5.124317,
+    "lng": -58.942643,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "HT",
@@ -991,7 +2245,20 @@
     "minZoom": 4.5,
     "maxZoom": 9,
     "importance": 2,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "North America",
+    "continents": [
+      "North America"
+    ],
+    "subregion": "Latin America and the Caribbean",
+    "subregionCode": "419",
+    "intermediateRegion": "Caribbean",
+    "intermediateRegionCode": "029",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "HM",
@@ -999,7 +2266,18 @@
     "iso2": "HM",
     "iso3": "HMD",
     "numericCode": "334",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Oceania",
+    "continents": [
+      "Oceania"
+    ],
+    "subregion": "Australia and New Zealand",
+    "subregionCode": "053",
+    "oceanAccess": [],
+    "lat": -53.091196,
+    "lng": 73.521326,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "VA",
@@ -1015,7 +2293,16 @@
     "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
     "aliases": [
       "Holy See"
-    ]
+    ],
+    "continent": "Europe",
+    "continents": [
+      "Europe"
+    ],
+    "subregion": "Southern Europe",
+    "subregionCode": "039",
+    "oceanAccess": [],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "HN",
@@ -1023,7 +2310,23 @@
     "iso2": "HN",
     "iso3": "HND",
     "numericCode": "340",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "North America",
+    "continents": [
+      "North America"
+    ],
+    "subregion": "Latin America and the Caribbean",
+    "subregionCode": "419",
+    "intermediateRegion": "Central America",
+    "intermediateRegionCode": "013",
+    "oceanAccess": [
+      "ATLANTIC",
+      "PACIFIC"
+    ],
+    "lat": 14.794801,
+    "lng": -86.887604,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "HK",
@@ -1031,7 +2334,18 @@
     "iso2": "HK",
     "iso3": "HKG",
     "numericCode": "344",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Asia",
+    "continents": [
+      "Asia"
+    ],
+    "subregion": "Eastern Asia",
+    "subregionCode": "030",
+    "oceanAccess": [],
+    "lat": 22.428271,
+    "lng": 114.210466,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "HU",
@@ -1039,7 +2353,18 @@
     "iso2": "HU",
     "iso3": "HUN",
     "numericCode": "348",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Europe",
+    "continents": [
+      "Europe"
+    ],
+    "subregion": "Eastern Europe",
+    "subregionCode": "151",
+    "oceanAccess": [],
+    "lat": 47.086841,
+    "lng": 19.447867,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "IS",
@@ -1052,7 +2377,19 @@
     "minZoom": 5,
     "maxZoom": 9.5,
     "importance": 3,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Europe",
+    "continents": [
+      "Europe"
+    ],
+    "subregion": "Northern Europe",
+    "subregionCode": "154",
+    "oceanAccess": [
+      "ARCTIC",
+      "ATLANTIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "IN",
@@ -1065,7 +2402,18 @@
     "minZoom": 3.5,
     "maxZoom": 8.5,
     "importance": 5,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Asia",
+    "continents": [
+      "Asia"
+    ],
+    "subregion": "Southern Asia",
+    "subregionCode": "034",
+    "oceanAccess": [
+      "INDIAN"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "ID",
@@ -1078,7 +2426,20 @@
     "minZoom": 3.5,
     "maxZoom": 8.5,
     "importance": 4,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Asia",
+    "continents": [
+      "Asia",
+      "Oceania"
+    ],
+    "subregion": "South-eastern Asia",
+    "subregionCode": "035",
+    "oceanAccess": [
+      "INDIAN",
+      "PACIFIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "IR",
@@ -1094,7 +2455,18 @@
     "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
     "aliases": [
       "Iran, Islamic Republic of"
-    ]
+    ],
+    "continent": "Asia",
+    "continents": [
+      "Asia"
+    ],
+    "subregion": "Southern Asia",
+    "subregionCode": "034",
+    "oceanAccess": [
+      "INDIAN"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "IQ",
@@ -1107,7 +2479,18 @@
     "minZoom": 4,
     "maxZoom": 9,
     "importance": 3,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Asia",
+    "continents": [
+      "Asia"
+    ],
+    "subregion": "Western Asia",
+    "subregionCode": "145",
+    "oceanAccess": [
+      "INDIAN"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "IE",
@@ -1115,7 +2498,20 @@
     "iso2": "IE",
     "iso3": "IRL",
     "numericCode": "372",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Europe",
+    "continents": [
+      "Europe"
+    ],
+    "subregion": "Northern Europe",
+    "subregionCode": "154",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 53.078726,
+    "lng": -7.798588,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "IM",
@@ -1123,7 +2519,20 @@
     "iso2": "IM",
     "iso3": "IMN",
     "numericCode": "833",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Europe",
+    "continents": [
+      "Europe"
+    ],
+    "subregion": "Northern Europe",
+    "subregionCode": "154",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 54.238701,
+    "lng": -4.519994,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "IL",
@@ -1136,7 +2545,18 @@
     "minZoom": 4.5,
     "maxZoom": 9,
     "importance": 4,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Asia",
+    "continents": [
+      "Asia"
+    ],
+    "subregion": "Western Asia",
+    "subregionCode": "145",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "IT",
@@ -1149,7 +2569,18 @@
     "minZoom": 4,
     "maxZoom": 8.5,
     "importance": 4,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Europe",
+    "continents": [
+      "Europe"
+    ],
+    "subregion": "Southern Europe",
+    "subregionCode": "039",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "JM",
@@ -1157,7 +2588,22 @@
     "iso2": "JM",
     "iso3": "JAM",
     "numericCode": "388",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "North America",
+    "continents": [
+      "North America"
+    ],
+    "subregion": "Latin America and the Caribbean",
+    "subregionCode": "419",
+    "intermediateRegion": "Caribbean",
+    "intermediateRegionCode": "029",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 18.137124,
+    "lng": -77.318767,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "JP",
@@ -1170,7 +2616,18 @@
     "minZoom": 4,
     "maxZoom": 9,
     "importance": 5,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Asia",
+    "continents": [
+      "Asia"
+    ],
+    "subregion": "Eastern Asia",
+    "subregionCode": "030",
+    "oceanAccess": [
+      "PACIFIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "JE",
@@ -1178,7 +2635,20 @@
     "iso2": "JE",
     "iso3": "JEY",
     "numericCode": "832",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Europe",
+    "continents": [
+      "Europe"
+    ],
+    "subregion": "Northern Europe",
+    "subregionCode": "154",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 49.215176,
+    "lng": -2.127515,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "JO",
@@ -1191,7 +2661,16 @@
     "minZoom": 4,
     "maxZoom": 9,
     "importance": 3,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Asia",
+    "continents": [
+      "Asia"
+    ],
+    "subregion": "Western Asia",
+    "subregionCode": "145",
+    "oceanAccess": [],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "KZ",
@@ -1204,7 +2683,17 @@
     "minZoom": 3.5,
     "maxZoom": 8.5,
     "importance": 4,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Asia",
+    "continents": [
+      "Asia",
+      "Europe"
+    ],
+    "subregion": "Central Asia",
+    "subregionCode": "143",
+    "oceanAccess": [],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "KE",
@@ -1217,7 +2706,20 @@
     "minZoom": 4,
     "maxZoom": 9,
     "importance": 3,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Sub-Saharan Africa",
+    "subregionCode": "202",
+    "intermediateRegion": "Eastern Africa",
+    "intermediateRegionCode": "014",
+    "oceanAccess": [
+      "INDIAN"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "KI",
@@ -1225,7 +2727,20 @@
     "iso2": "KI",
     "iso3": "KIR",
     "numericCode": "296",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Oceania",
+    "continents": [
+      "Oceania"
+    ],
+    "subregion": "Micronesia",
+    "subregionCode": "057",
+    "oceanAccess": [
+      "PACIFIC"
+    ],
+    "lat": 1.806476,
+    "lng": -157.344973,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "KP",
@@ -1238,7 +2753,20 @@
       "North Korea",
       "DPRK",
       "Democratic People's Republic of Korea"
-    ]
+    ],
+    "continent": "Asia",
+    "continents": [
+      "Asia"
+    ],
+    "subregion": "Eastern Asia",
+    "subregionCode": "030",
+    "oceanAccess": [
+      "PACIFIC"
+    ],
+    "lat": 39.885252,
+    "lng": 126.444516,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "KR",
@@ -1254,7 +2782,18 @@
     "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
     "aliases": [
       "Korea, Republic of"
-    ]
+    ],
+    "continent": "Asia",
+    "continents": [
+      "Asia"
+    ],
+    "subregion": "Eastern Asia",
+    "subregionCode": "030",
+    "oceanAccess": [
+      "PACIFIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "KW",
@@ -1267,7 +2806,18 @@
     "minZoom": 5,
     "maxZoom": 9.5,
     "importance": 4,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Asia",
+    "continents": [
+      "Asia"
+    ],
+    "subregion": "Western Asia",
+    "subregionCode": "145",
+    "oceanAccess": [
+      "INDIAN"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "KG",
@@ -1280,7 +2830,16 @@
     "minZoom": 4,
     "maxZoom": 9,
     "importance": 3,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Asia",
+    "continents": [
+      "Asia"
+    ],
+    "subregion": "Central Asia",
+    "subregionCode": "143",
+    "oceanAccess": [],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "LA",
@@ -1292,7 +2851,18 @@
     "aliases": [
       "Laos",
       "Lao People's Democratic Republic"
-    ]
+    ],
+    "continent": "Asia",
+    "continents": [
+      "Asia"
+    ],
+    "subregion": "South-eastern Asia",
+    "subregionCode": "035",
+    "oceanAccess": [],
+    "lat": 19.431821,
+    "lng": 102.533912,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "LV",
@@ -1300,7 +2870,20 @@
     "iso2": "LV",
     "iso3": "LVA",
     "numericCode": "428",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Europe",
+    "continents": [
+      "Europe"
+    ],
+    "subregion": "Northern Europe",
+    "subregionCode": "154",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 57.066872,
+    "lng": 25.458723,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "LB",
@@ -1313,7 +2896,18 @@
     "minZoom": 4.5,
     "maxZoom": 9,
     "importance": 3,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Asia",
+    "continents": [
+      "Asia"
+    ],
+    "subregion": "Western Asia",
+    "subregionCode": "145",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "LS",
@@ -1321,7 +2915,20 @@
     "iso2": "LS",
     "iso3": "LSO",
     "numericCode": "426",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Sub-Saharan Africa",
+    "subregionCode": "202",
+    "intermediateRegion": "Southern Africa",
+    "intermediateRegionCode": "018",
+    "oceanAccess": [],
+    "lat": -29.480158,
+    "lng": 28.246639,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "LR",
@@ -1329,7 +2936,22 @@
     "iso2": "LR",
     "iso3": "LBR",
     "numericCode": "430",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Sub-Saharan Africa",
+    "subregionCode": "202",
+    "intermediateRegion": "Western Africa",
+    "intermediateRegionCode": "011",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 6.447177,
+    "lng": -9.460379,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "LY",
@@ -1342,7 +2964,18 @@
     "minZoom": 4,
     "maxZoom": 8.8,
     "importance": 3,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Northern Africa",
+    "subregionCode": "015",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "LI",
@@ -1350,7 +2983,18 @@
     "iso2": "LI",
     "iso3": "LIE",
     "numericCode": "438",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Europe",
+    "continents": [
+      "Europe"
+    ],
+    "subregion": "Western Europe",
+    "subregionCode": "155",
+    "oceanAccess": [],
+    "lat": 47.165366,
+    "lng": 9.528695,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "LT",
@@ -1358,7 +3002,20 @@
     "iso2": "LT",
     "iso3": "LTU",
     "numericCode": "440",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Europe",
+    "continents": [
+      "Europe"
+    ],
+    "subregion": "Northern Europe",
+    "subregionCode": "154",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 55.103703,
+    "lng": 24.089932,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "LU",
@@ -1366,7 +3023,20 @@
     "iso2": "LU",
     "iso3": "LUX",
     "numericCode": "442",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Europe",
+    "continents": [
+      "Europe"
+    ],
+    "subregion": "Western Europe",
+    "subregionCode": "155",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 49.733732,
+    "lng": 6.07762,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "MO",
@@ -1378,7 +3048,18 @@
     "aliases": [
       "Macau",
       "Macao"
-    ]
+    ],
+    "continent": "Asia",
+    "continents": [
+      "Asia"
+    ],
+    "subregion": "Eastern Asia",
+    "subregionCode": "030",
+    "oceanAccess": [],
+    "lat": 22.138306,
+    "lng": 113.553775,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "MG",
@@ -1391,7 +3072,20 @@
     "minZoom": 4.5,
     "maxZoom": 9,
     "importance": 3,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Sub-Saharan Africa",
+    "subregionCode": "202",
+    "intermediateRegion": "Eastern Africa",
+    "intermediateRegionCode": "014",
+    "oceanAccess": [
+      "INDIAN"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "MW",
@@ -1399,7 +3093,20 @@
     "iso2": "MW",
     "iso3": "MWI",
     "numericCode": "454",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Sub-Saharan Africa",
+    "subregionCode": "202",
+    "intermediateRegion": "Eastern Africa",
+    "intermediateRegionCode": "014",
+    "oceanAccess": [],
+    "lat": -13.386737,
+    "lng": 33.608082,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "MY",
@@ -1412,7 +3119,19 @@
     "minZoom": 4,
     "maxZoom": 9,
     "importance": 4,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Asia",
+    "continents": [
+      "Asia"
+    ],
+    "subregion": "South-eastern Asia",
+    "subregionCode": "035",
+    "oceanAccess": [
+      "INDIAN",
+      "PACIFIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "MV",
@@ -1425,7 +3144,18 @@
     "minZoom": 5,
     "maxZoom": 9.5,
     "importance": 4,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Asia",
+    "continents": [
+      "Asia"
+    ],
+    "subregion": "Southern Asia",
+    "subregionCode": "034",
+    "oceanAccess": [
+      "INDIAN"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "ML",
@@ -1438,7 +3168,18 @@
     "minZoom": 4,
     "maxZoom": 9,
     "importance": 3,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Sub-Saharan Africa",
+    "subregionCode": "202",
+    "intermediateRegion": "Western Africa",
+    "intermediateRegionCode": "011",
+    "oceanAccess": [],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "MT",
@@ -1446,7 +3187,20 @@
     "iso2": "MT",
     "iso3": "MLT",
     "numericCode": "470",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Europe",
+    "continents": [
+      "Europe"
+    ],
+    "subregion": "Southern Europe",
+    "subregionCode": "039",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 35.881232,
+    "lng": 14.460073,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "MH",
@@ -1454,7 +3208,20 @@
     "iso2": "MH",
     "iso3": "MHL",
     "numericCode": "584",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Oceania",
+    "continents": [
+      "Oceania"
+    ],
+    "subregion": "Micronesia",
+    "subregionCode": "057",
+    "oceanAccess": [
+      "PACIFIC"
+    ],
+    "lat": 7.094845,
+    "lng": 171.163112,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "MQ",
@@ -1462,7 +3229,22 @@
     "iso2": "MQ",
     "iso3": "MTQ",
     "numericCode": "474",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "North America",
+    "continents": [
+      "North America"
+    ],
+    "subregion": "Latin America and the Caribbean",
+    "subregionCode": "419",
+    "intermediateRegion": "Caribbean",
+    "intermediateRegionCode": "029",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 14.596324,
+    "lng": -60.990959,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "MR",
@@ -1470,7 +3252,22 @@
     "iso2": "MR",
     "iso3": "MRT",
     "numericCode": "478",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Sub-Saharan Africa",
+    "subregionCode": "202",
+    "intermediateRegion": "Western Africa",
+    "intermediateRegionCode": "011",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 19.587062,
+    "lng": -9.740299,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "MU",
@@ -1478,7 +3275,22 @@
     "iso2": "MU",
     "iso3": "MUS",
     "numericCode": "480",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Sub-Saharan Africa",
+    "subregionCode": "202",
+    "intermediateRegion": "Eastern Africa",
+    "intermediateRegionCode": "014",
+    "oceanAccess": [
+      "INDIAN"
+    ],
+    "lat": -20.287042,
+    "lng": 57.577791,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "YT",
@@ -1486,7 +3298,22 @@
     "iso2": "YT",
     "iso3": "MYT",
     "numericCode": "175",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Sub-Saharan Africa",
+    "subregionCode": "202",
+    "intermediateRegion": "Eastern Africa",
+    "intermediateRegionCode": "014",
+    "oceanAccess": [
+      "INDIAN"
+    ],
+    "lat": -12.842022,
+    "lng": 45.147451,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "MX",
@@ -1499,7 +3326,21 @@
     "minZoom": 3.8,
     "maxZoom": 8.5,
     "importance": 4,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "North America",
+    "continents": [
+      "North America"
+    ],
+    "subregion": "Latin America and the Caribbean",
+    "subregionCode": "419",
+    "intermediateRegion": "Central America",
+    "intermediateRegionCode": "013",
+    "oceanAccess": [
+      "ATLANTIC",
+      "PACIFIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "FM",
@@ -1511,7 +3352,20 @@
     "aliases": [
       "Micronesia",
       "Federated States of Micronesia"
-    ]
+    ],
+    "continent": "Oceania",
+    "continents": [
+      "Oceania"
+    ],
+    "subregion": "Micronesia",
+    "subregionCode": "057",
+    "oceanAccess": [
+      "PACIFIC"
+    ],
+    "lat": 6.883766,
+    "lng": 158.231416,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "MD",
@@ -1523,7 +3377,18 @@
     "aliases": [
       "Moldova",
       "Republic of Moldova"
-    ]
+    ],
+    "continent": "Europe",
+    "continents": [
+      "Europe"
+    ],
+    "subregion": "Eastern Europe",
+    "subregionCode": "151",
+    "oceanAccess": [],
+    "lat": 47.434999,
+    "lng": 28.487904,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "MC",
@@ -1536,7 +3401,16 @@
     "minZoom": 6,
     "maxZoom": 10,
     "importance": 2,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Europe",
+    "continents": [
+      "Europe"
+    ],
+    "subregion": "Western Europe",
+    "subregionCode": "155",
+    "oceanAccess": [],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "MN",
@@ -1544,7 +3418,18 @@
     "iso2": "MN",
     "iso3": "MNG",
     "numericCode": "496",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Asia",
+    "continents": [
+      "Asia"
+    ],
+    "subregion": "Eastern Asia",
+    "subregionCode": "030",
+    "oceanAccess": [],
+    "lat": 45.997488,
+    "lng": 104.150405,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "ME",
@@ -1552,7 +3437,20 @@
     "iso2": "ME",
     "iso3": "MNE",
     "numericCode": "499",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Europe",
+    "continents": [
+      "Europe"
+    ],
+    "subregion": "Southern Europe",
+    "subregionCode": "039",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 42.803101,
+    "lng": 19.143727,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "MS",
@@ -1560,7 +3458,22 @@
     "iso2": "MS",
     "iso3": "MSR",
     "numericCode": "500",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "North America",
+    "continents": [
+      "North America"
+    ],
+    "subregion": "Latin America and the Caribbean",
+    "subregionCode": "419",
+    "intermediateRegion": "Caribbean",
+    "intermediateRegionCode": "029",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 16.763467,
+    "lng": -62.192422,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "MA",
@@ -1573,7 +3486,18 @@
     "minZoom": 4,
     "maxZoom": 8.8,
     "importance": 4,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Northern Africa",
+    "subregionCode": "015",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "MZ",
@@ -1586,7 +3510,20 @@
     "minZoom": 4,
     "maxZoom": 9,
     "importance": 3,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Sub-Saharan Africa",
+    "subregionCode": "202",
+    "intermediateRegion": "Eastern Africa",
+    "intermediateRegionCode": "014",
+    "oceanAccess": [
+      "INDIAN"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "MM",
@@ -1599,7 +3536,18 @@
     "minZoom": 4,
     "maxZoom": 9,
     "importance": 3,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Asia",
+    "continents": [
+      "Asia"
+    ],
+    "subregion": "South-eastern Asia",
+    "subregionCode": "035",
+    "oceanAccess": [
+      "INDIAN"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "NA",
@@ -1607,7 +3555,22 @@
     "iso2": "NA",
     "iso3": "NAM",
     "numericCode": "516",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Sub-Saharan Africa",
+    "subregionCode": "202",
+    "intermediateRegion": "Southern Africa",
+    "intermediateRegionCode": "018",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": -20.575298,
+    "lng": 17.108166,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "NR",
@@ -1615,7 +3578,20 @@
     "iso2": "NR",
     "iso3": "NRU",
     "numericCode": "520",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Oceania",
+    "continents": [
+      "Oceania"
+    ],
+    "subregion": "Micronesia",
+    "subregionCode": "057",
+    "oceanAccess": [
+      "PACIFIC"
+    ],
+    "lat": -0.516317,
+    "lng": 166.931604,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "NP",
@@ -1628,7 +3604,16 @@
     "minZoom": 4,
     "maxZoom": 9,
     "importance": 3,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Asia",
+    "continents": [
+      "Asia"
+    ],
+    "subregion": "Southern Asia",
+    "subregionCode": "034",
+    "oceanAccess": [],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "NL",
@@ -1644,7 +3629,18 @@
     "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
     "aliases": [
       "Netherlands, Kingdom of the"
-    ]
+    ],
+    "continent": "Europe",
+    "continents": [
+      "Europe"
+    ],
+    "subregion": "Western Europe",
+    "subregionCode": "155",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "NC",
@@ -1652,7 +3648,20 @@
     "iso2": "NC",
     "iso3": "NCL",
     "numericCode": "540",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Oceania",
+    "continents": [
+      "Oceania"
+    ],
+    "subregion": "Melanesia",
+    "subregionCode": "054",
+    "oceanAccess": [
+      "PACIFIC"
+    ],
+    "lat": -21.064697,
+    "lng": 165.084004,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "NZ",
@@ -1665,7 +3674,18 @@
     "minZoom": 4,
     "maxZoom": 8.5,
     "importance": 4,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Oceania",
+    "continents": [
+      "Oceania"
+    ],
+    "subregion": "Australia and New Zealand",
+    "subregionCode": "053",
+    "oceanAccess": [
+      "PACIFIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "NI",
@@ -1673,7 +3693,23 @@
     "iso2": "NI",
     "iso3": "NIC",
     "numericCode": "558",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "North America",
+    "continents": [
+      "North America"
+    ],
+    "subregion": "Latin America and the Caribbean",
+    "subregionCode": "419",
+    "intermediateRegion": "Central America",
+    "intermediateRegionCode": "013",
+    "oceanAccess": [
+      "ATLANTIC",
+      "PACIFIC"
+    ],
+    "lat": 12.670697,
+    "lng": -85.069347,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "NE",
@@ -1686,7 +3722,18 @@
     "minZoom": 4,
     "maxZoom": 9,
     "importance": 2,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Sub-Saharan Africa",
+    "subregionCode": "202",
+    "intermediateRegion": "Western Africa",
+    "intermediateRegionCode": "011",
+    "oceanAccess": [],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "NG",
@@ -1699,7 +3746,20 @@
     "minZoom": 3.8,
     "maxZoom": 8.8,
     "importance": 4,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Sub-Saharan Africa",
+    "subregionCode": "202",
+    "intermediateRegion": "Western Africa",
+    "intermediateRegionCode": "011",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "NU",
@@ -1707,7 +3767,20 @@
     "iso2": "NU",
     "iso3": "NIU",
     "numericCode": "570",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Oceania",
+    "continents": [
+      "Oceania"
+    ],
+    "subregion": "Polynesia",
+    "subregionCode": "061",
+    "oceanAccess": [
+      "PACIFIC"
+    ],
+    "lat": -19.057824,
+    "lng": -169.87118,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "NF",
@@ -1715,7 +3788,18 @@
     "iso2": "NF",
     "iso3": "NFK",
     "numericCode": "574",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Oceania",
+    "continents": [
+      "Oceania"
+    ],
+    "subregion": "Australia and New Zealand",
+    "subregionCode": "053",
+    "oceanAccess": [],
+    "lat": -29.035253,
+    "lng": 167.952792,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "MK",
@@ -1728,7 +3812,18 @@
       "Macedonia",
       "North Macedonia",
       "Republic of North Macedonia"
-    ]
+    ],
+    "continent": "Europe",
+    "continents": [
+      "Europe"
+    ],
+    "subregion": "Southern Europe",
+    "subregionCode": "039",
+    "oceanAccess": [],
+    "lat": 41.558223,
+    "lng": 21.555839,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "MP",
@@ -1736,7 +3831,20 @@
     "iso2": "MP",
     "iso3": "MNP",
     "numericCode": "580",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Oceania",
+    "continents": [
+      "Oceania"
+    ],
+    "subregion": "Micronesia",
+    "subregionCode": "057",
+    "oceanAccess": [
+      "PACIFIC"
+    ],
+    "lat": 15.200744,
+    "lng": 145.754057,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "NO",
@@ -1749,7 +3857,19 @@
     "minZoom": 4.5,
     "maxZoom": 9,
     "importance": 4,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Europe",
+    "continents": [
+      "Europe"
+    ],
+    "subregion": "Northern Europe",
+    "subregionCode": "154",
+    "oceanAccess": [
+      "ARCTIC",
+      "ATLANTIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "OM",
@@ -1762,7 +3882,18 @@
     "minZoom": 4.5,
     "maxZoom": 9,
     "importance": 3,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Asia",
+    "continents": [
+      "Asia"
+    ],
+    "subregion": "Western Asia",
+    "subregionCode": "145",
+    "oceanAccess": [
+      "INDIAN"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "PK",
@@ -1775,7 +3906,18 @@
     "minZoom": 3.8,
     "maxZoom": 9,
     "importance": 4,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Asia",
+    "continents": [
+      "Asia"
+    ],
+    "subregion": "Southern Asia",
+    "subregionCode": "034",
+    "oceanAccess": [
+      "INDIAN"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "PW",
@@ -1783,7 +3925,20 @@
     "iso2": "PW",
     "iso3": "PLW",
     "numericCode": "585",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Oceania",
+    "continents": [
+      "Oceania"
+    ],
+    "subregion": "Micronesia",
+    "subregionCode": "057",
+    "oceanAccess": [
+      "PACIFIC"
+    ],
+    "lat": 7.513976,
+    "lng": 134.571886,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "PS",
@@ -1799,7 +3954,18 @@
     "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
     "aliases": [
       "Palestine, State of"
-    ]
+    ],
+    "continent": "Asia",
+    "continents": [
+      "Asia"
+    ],
+    "subregion": "Western Asia",
+    "subregionCode": "145",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "PA",
@@ -1807,7 +3973,23 @@
     "iso2": "PA",
     "iso3": "PAN",
     "numericCode": "591",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "North America",
+    "continents": [
+      "North America"
+    ],
+    "subregion": "Latin America and the Caribbean",
+    "subregionCode": "419",
+    "intermediateRegion": "Central America",
+    "intermediateRegionCode": "013",
+    "oceanAccess": [
+      "ATLANTIC",
+      "PACIFIC"
+    ],
+    "lat": 8.72198,
+    "lng": -80.352106,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "PG",
@@ -1820,7 +4002,18 @@
     "minZoom": 4,
     "maxZoom": 8.5,
     "importance": 3,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Oceania",
+    "continents": [
+      "Oceania"
+    ],
+    "subregion": "Melanesia",
+    "subregionCode": "054",
+    "oceanAccess": [
+      "PACIFIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "PY",
@@ -1828,7 +4021,20 @@
     "iso2": "PY",
     "iso3": "PRY",
     "numericCode": "600",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "South America",
+    "continents": [
+      "South America"
+    ],
+    "subregion": "Latin America and the Caribbean",
+    "subregionCode": "419",
+    "intermediateRegion": "South America",
+    "intermediateRegionCode": "005",
+    "oceanAccess": [],
+    "lat": -21.674509,
+    "lng": -60.146394,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "PE",
@@ -1841,7 +4047,20 @@
     "minZoom": 3.8,
     "maxZoom": 8.5,
     "importance": 4,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "South America",
+    "continents": [
+      "South America"
+    ],
+    "subregion": "Latin America and the Caribbean",
+    "subregionCode": "419",
+    "intermediateRegion": "South America",
+    "intermediateRegionCode": "005",
+    "oceanAccess": [
+      "PACIFIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "PH",
@@ -1854,7 +4073,18 @@
     "minZoom": 4,
     "maxZoom": 9,
     "importance": 4,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Asia",
+    "continents": [
+      "Asia"
+    ],
+    "subregion": "South-eastern Asia",
+    "subregionCode": "035",
+    "oceanAccess": [
+      "PACIFIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "PN",
@@ -1865,7 +4095,20 @@
     "identityStatus": "ISO3166_IDENTITY_ONLY",
     "aliases": [
       "Pitcairn Islands"
-    ]
+    ],
+    "continent": "Oceania",
+    "continents": [
+      "Oceania"
+    ],
+    "subregion": "Polynesia",
+    "subregionCode": "061",
+    "oceanAccess": [
+      "PACIFIC"
+    ],
+    "lat": -24.361447,
+    "lng": -128.318188,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "PL",
@@ -1878,7 +4121,18 @@
     "minZoom": 4,
     "maxZoom": 8.5,
     "importance": 4,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Europe",
+    "continents": [
+      "Europe"
+    ],
+    "subregion": "Eastern Europe",
+    "subregionCode": "151",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "PT",
@@ -1891,7 +4145,18 @@
     "minZoom": 4.5,
     "maxZoom": 9,
     "importance": 4,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Europe",
+    "continents": [
+      "Europe"
+    ],
+    "subregion": "Southern Europe",
+    "subregionCode": "039",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "PR",
@@ -1899,7 +4164,22 @@
     "iso2": "PR",
     "iso3": "PRI",
     "numericCode": "630",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "North America",
+    "continents": [
+      "North America"
+    ],
+    "subregion": "Latin America and the Caribbean",
+    "subregionCode": "419",
+    "intermediateRegion": "Caribbean",
+    "intermediateRegionCode": "029",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 18.234668,
+    "lng": -66.481065,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "QA",
@@ -1912,7 +4192,18 @@
     "minZoom": 5,
     "maxZoom": 9.5,
     "importance": 4,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Asia",
+    "continents": [
+      "Asia"
+    ],
+    "subregion": "Western Asia",
+    "subregionCode": "145",
+    "oceanAccess": [
+      "INDIAN"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "RE",
@@ -1920,7 +4211,22 @@
     "iso2": "RE",
     "iso3": "REU",
     "numericCode": "638",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Sub-Saharan Africa",
+    "subregionCode": "202",
+    "intermediateRegion": "Eastern Africa",
+    "intermediateRegionCode": "014",
+    "oceanAccess": [
+      "INDIAN"
+    ],
+    "lat": -21.123977,
+    "lng": 55.539119,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "RO",
@@ -1933,7 +4239,18 @@
     "minZoom": 4,
     "maxZoom": 9,
     "importance": 3,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Europe",
+    "continents": [
+      "Europe"
+    ],
+    "subregion": "Eastern Europe",
+    "subregionCode": "151",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "RU",
@@ -1949,7 +4266,21 @@
     "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
     "aliases": [
       "Russian Federation"
-    ]
+    ],
+    "continent": "Europe",
+    "continents": [
+      "Europe",
+      "Asia"
+    ],
+    "subregion": "Eastern Europe",
+    "subregionCode": "151",
+    "oceanAccess": [
+      "ARCTIC",
+      "ATLANTIC",
+      "PACIFIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "RW",
@@ -1962,7 +4293,18 @@
     "minZoom": 4.5,
     "maxZoom": 9,
     "importance": 2,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Sub-Saharan Africa",
+    "subregionCode": "202",
+    "intermediateRegion": "Eastern Africa",
+    "intermediateRegionCode": "014",
+    "oceanAccess": [],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "BL",
@@ -1970,7 +4312,22 @@
     "iso2": "BL",
     "iso3": "BLM",
     "numericCode": "652",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "North America",
+    "continents": [
+      "North America"
+    ],
+    "subregion": "Latin America and the Caribbean",
+    "subregionCode": "419",
+    "intermediateRegion": "Caribbean",
+    "intermediateRegionCode": "029",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 17.907149,
+    "lng": -62.829628,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "SH",
@@ -1978,7 +4335,22 @@
     "iso2": "SH",
     "iso3": "SHN",
     "numericCode": "654",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Sub-Saharan Africa",
+    "subregionCode": "202",
+    "intermediateRegion": "Western Africa",
+    "intermediateRegionCode": "011",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": -15.962614,
+    "lng": -5.717743,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "KN",
@@ -1986,7 +4358,22 @@
     "iso2": "KN",
     "iso3": "KNA",
     "numericCode": "659",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "North America",
+    "continents": [
+      "North America"
+    ],
+    "subregion": "Latin America and the Caribbean",
+    "subregionCode": "419",
+    "intermediateRegion": "Caribbean",
+    "intermediateRegionCode": "029",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 17.345466,
+    "lng": -62.761519,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "LC",
@@ -1994,7 +4381,22 @@
     "iso2": "LC",
     "iso3": "LCA",
     "numericCode": "662",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "North America",
+    "continents": [
+      "North America"
+    ],
+    "subregion": "Latin America and the Caribbean",
+    "subregionCode": "419",
+    "intermediateRegion": "Caribbean",
+    "intermediateRegionCode": "029",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 13.873588,
+    "lng": -60.96721,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "MF",
@@ -2002,7 +4404,22 @@
     "iso2": "MF",
     "iso3": "MAF",
     "numericCode": "663",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "North America",
+    "continents": [
+      "North America"
+    ],
+    "subregion": "Latin America and the Caribbean",
+    "subregionCode": "419",
+    "intermediateRegion": "Caribbean",
+    "intermediateRegionCode": "029",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 18.072102,
+    "lng": -63.04683,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "PM",
@@ -2010,7 +4427,20 @@
     "iso2": "PM",
     "iso3": "SPM",
     "numericCode": "666",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "North America",
+    "continents": [
+      "North America"
+    ],
+    "subregion": "Northern America",
+    "subregionCode": "021",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 46.964038,
+    "lng": -56.315895,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "VC",
@@ -2018,7 +4448,22 @@
     "iso2": "VC",
     "iso3": "VCT",
     "numericCode": "670",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "North America",
+    "continents": [
+      "North America"
+    ],
+    "subregion": "Latin America and the Caribbean",
+    "subregionCode": "419",
+    "intermediateRegion": "Caribbean",
+    "intermediateRegionCode": "029",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 13.287856,
+    "lng": -61.202412,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "WS",
@@ -2026,7 +4471,20 @@
     "iso2": "WS",
     "iso3": "WSM",
     "numericCode": "882",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Oceania",
+    "continents": [
+      "Oceania"
+    ],
+    "subregion": "Polynesia",
+    "subregionCode": "061",
+    "oceanAccess": [
+      "PACIFIC"
+    ],
+    "lat": -13.635193,
+    "lng": -172.450761,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "SM",
@@ -2039,7 +4497,16 @@
     "minZoom": 6,
     "maxZoom": 10,
     "importance": 2,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Europe",
+    "continents": [
+      "Europe"
+    ],
+    "subregion": "Southern Europe",
+    "subregionCode": "039",
+    "oceanAccess": [],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "ST",
@@ -2051,7 +4518,22 @@
     "aliases": [
       "São Tomé and Príncipe",
       "Sao Tome and Principe"
-    ]
+    ],
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Sub-Saharan Africa",
+    "subregionCode": "202",
+    "intermediateRegion": "Middle Africa",
+    "intermediateRegionCode": "017",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 0.240281,
+    "lng": 6.607866,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "SA",
@@ -2064,7 +4546,18 @@
     "minZoom": 3.8,
     "maxZoom": 8.8,
     "importance": 4,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Asia",
+    "continents": [
+      "Asia"
+    ],
+    "subregion": "Western Asia",
+    "subregionCode": "145",
+    "oceanAccess": [
+      "INDIAN"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "SN",
@@ -2077,7 +4570,20 @@
     "minZoom": 4.5,
     "maxZoom": 9,
     "importance": 3,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Sub-Saharan Africa",
+    "subregionCode": "202",
+    "intermediateRegion": "Western Africa",
+    "intermediateRegionCode": "011",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "RS",
@@ -2085,7 +4591,18 @@
     "iso2": "RS",
     "iso3": "SRB",
     "numericCode": "688",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Europe",
+    "continents": [
+      "Europe"
+    ],
+    "subregion": "Southern Europe",
+    "subregionCode": "039",
+    "oceanAccess": [],
+    "lat": 44.189919,
+    "lng": 20.787989,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "SC",
@@ -2093,7 +4610,22 @@
     "iso2": "SC",
     "iso3": "SYC",
     "numericCode": "690",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Sub-Saharan Africa",
+    "subregionCode": "202",
+    "intermediateRegion": "Eastern Africa",
+    "intermediateRegionCode": "014",
+    "oceanAccess": [
+      "INDIAN"
+    ],
+    "lat": -4.635992,
+    "lng": 55.450754,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "SL",
@@ -2101,7 +4633,22 @@
     "iso2": "SL",
     "iso3": "SLE",
     "numericCode": "694",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Sub-Saharan Africa",
+    "subregionCode": "202",
+    "intermediateRegion": "Western Africa",
+    "intermediateRegionCode": "011",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 8.617449,
+    "lng": -11.763677,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "SG",
@@ -2114,7 +4661,19 @@
     "minZoom": 5,
     "maxZoom": 9.5,
     "importance": 5,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Asia",
+    "continents": [
+      "Asia"
+    ],
+    "subregion": "South-eastern Asia",
+    "subregionCode": "035",
+    "oceanAccess": [
+      "INDIAN",
+      "PACIFIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "SX",
@@ -2126,7 +4685,22 @@
     "aliases": [
       "Sint Maarten",
       "Saint Martin (Dutch part)"
-    ]
+    ],
+    "continent": "North America",
+    "continents": [
+      "North America"
+    ],
+    "subregion": "Latin America and the Caribbean",
+    "subregionCode": "419",
+    "intermediateRegion": "Caribbean",
+    "intermediateRegionCode": "029",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 18.043742,
+    "lng": -63.073231,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "SK",
@@ -2134,7 +4708,18 @@
     "iso2": "SK",
     "iso3": "SVK",
     "numericCode": "703",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Europe",
+    "continents": [
+      "Europe"
+    ],
+    "subregion": "Eastern Europe",
+    "subregionCode": "151",
+    "oceanAccess": [],
+    "lat": 48.734044,
+    "lng": 19.049868,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "SI",
@@ -2142,7 +4727,20 @@
     "iso2": "SI",
     "iso3": "SVN",
     "numericCode": "705",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Europe",
+    "continents": [
+      "Europe"
+    ],
+    "subregion": "Southern Europe",
+    "subregionCode": "039",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 46.06076,
+    "lng": 14.915312,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "SB",
@@ -2150,7 +4748,20 @@
     "iso2": "SB",
     "iso3": "SLB",
     "numericCode": "090",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Oceania",
+    "continents": [
+      "Oceania"
+    ],
+    "subregion": "Melanesia",
+    "subregionCode": "054",
+    "oceanAccess": [
+      "PACIFIC"
+    ],
+    "lat": -8.029548,
+    "lng": 159.170468,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "SO",
@@ -2158,7 +4769,22 @@
     "iso2": "SO",
     "iso3": "SOM",
     "numericCode": "706",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Sub-Saharan Africa",
+    "subregionCode": "202",
+    "intermediateRegion": "Eastern Africa",
+    "intermediateRegionCode": "014",
+    "oceanAccess": [
+      "INDIAN"
+    ],
+    "lat": 3.568925,
+    "lng": 45.19238,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "ZA",
@@ -2171,7 +4797,21 @@
     "minZoom": 3.8,
     "maxZoom": 8.8,
     "importance": 4,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Sub-Saharan Africa",
+    "subregionCode": "202",
+    "intermediateRegion": "Southern Africa",
+    "intermediateRegionCode": "018",
+    "oceanAccess": [
+      "ATLANTIC",
+      "INDIAN"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "GS",
@@ -2179,7 +4819,20 @@
     "iso2": "GS",
     "iso3": "SGS",
     "numericCode": "239",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "North America",
+    "continents": [
+      "North America"
+    ],
+    "subregion": "Latin America and the Caribbean",
+    "subregionCode": "419",
+    "intermediateRegion": "South America",
+    "intermediateRegionCode": "005",
+    "oceanAccess": [],
+    "lat": -54.40286,
+    "lng": -36.537182,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "SS",
@@ -2192,7 +4845,18 @@
     "minZoom": 4,
     "maxZoom": 9,
     "importance": 2,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Sub-Saharan Africa",
+    "subregionCode": "202",
+    "intermediateRegion": "Eastern Africa",
+    "intermediateRegionCode": "014",
+    "oceanAccess": [],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "ES",
@@ -2205,7 +4869,18 @@
     "minZoom": 4,
     "maxZoom": 8.5,
     "importance": 4,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Europe",
+    "continents": [
+      "Europe"
+    ],
+    "subregion": "Southern Europe",
+    "subregionCode": "039",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "LK",
@@ -2218,7 +4893,18 @@
     "minZoom": 4,
     "maxZoom": 9,
     "importance": 3,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Asia",
+    "continents": [
+      "Asia"
+    ],
+    "subregion": "Southern Asia",
+    "subregionCode": "034",
+    "oceanAccess": [
+      "INDIAN"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "SD",
@@ -2231,7 +4917,18 @@
     "minZoom": 4,
     "maxZoom": 8.8,
     "importance": 3,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Northern Africa",
+    "subregionCode": "015",
+    "oceanAccess": [
+      "INDIAN"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "SR",
@@ -2239,7 +4936,22 @@
     "iso2": "SR",
     "iso3": "SUR",
     "numericCode": "740",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "South America",
+    "continents": [
+      "South America"
+    ],
+    "subregion": "Latin America and the Caribbean",
+    "subregionCode": "419",
+    "intermediateRegion": "South America",
+    "intermediateRegionCode": "005",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 4.143987,
+    "lng": -55.91094,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "SJ",
@@ -2247,7 +4959,21 @@
     "iso2": "SJ",
     "iso3": "SJM",
     "numericCode": "744",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Europe",
+    "continents": [
+      "Europe"
+    ],
+    "subregion": "Northern Europe",
+    "subregionCode": "154",
+    "oceanAccess": [
+      "ARCTIC",
+      "ATLANTIC"
+    ],
+    "lat": 78.629995,
+    "lng": 15.773096,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "SE",
@@ -2260,7 +4986,18 @@
     "minZoom": 4.5,
     "maxZoom": 9,
     "importance": 4,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Europe",
+    "continents": [
+      "Europe"
+    ],
+    "subregion": "Northern Europe",
+    "subregionCode": "154",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "CH",
@@ -2273,7 +5010,16 @@
     "minZoom": 4.5,
     "maxZoom": 9,
     "importance": 4,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Europe",
+    "continents": [
+      "Europe"
+    ],
+    "subregion": "Western Europe",
+    "subregionCode": "155",
+    "oceanAccess": [],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "SY",
@@ -2289,7 +5035,18 @@
     "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
     "aliases": [
       "Syrian Arab Republic"
-    ]
+    ],
+    "continent": "Asia",
+    "continents": [
+      "Asia"
+    ],
+    "subregion": "Western Asia",
+    "subregionCode": "145",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "TW",
@@ -2301,7 +5058,20 @@
     "aliases": [
       "Taiwan",
       "Republic of China"
-    ]
+    ],
+    "continent": "Asia",
+    "continents": [
+      "Asia"
+    ],
+    "subregion": "Eastern Asia",
+    "subregionCode": "030",
+    "oceanAccess": [
+      "PACIFIC"
+    ],
+    "lat": 23.652408,
+    "lng": 120.868204,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "TJ",
@@ -2314,7 +5084,16 @@
     "minZoom": 4,
     "maxZoom": 9,
     "importance": 3,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Asia",
+    "continents": [
+      "Asia"
+    ],
+    "subregion": "Central Asia",
+    "subregionCode": "143",
+    "oceanAccess": [],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "TZ",
@@ -2330,7 +5109,20 @@
     "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
     "aliases": [
       "Tanzania, United Republic of"
-    ]
+    ],
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Sub-Saharan Africa",
+    "subregionCode": "202",
+    "intermediateRegion": "Eastern Africa",
+    "intermediateRegionCode": "014",
+    "oceanAccess": [
+      "INDIAN"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "TH",
@@ -2343,7 +5135,19 @@
     "minZoom": 4,
     "maxZoom": 9,
     "importance": 4,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Asia",
+    "continents": [
+      "Asia"
+    ],
+    "subregion": "South-eastern Asia",
+    "subregionCode": "035",
+    "oceanAccess": [
+      "INDIAN",
+      "PACIFIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "TL",
@@ -2351,7 +5155,21 @@
     "iso2": "TL",
     "iso3": "TLS",
     "numericCode": "626",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Asia",
+    "continents": [
+      "Asia"
+    ],
+    "subregion": "South-eastern Asia",
+    "subregionCode": "035",
+    "oceanAccess": [
+      "INDIAN",
+      "PACIFIC"
+    ],
+    "lat": -8.803705,
+    "lng": 125.854679,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "TG",
@@ -2359,7 +5177,22 @@
     "iso2": "TG",
     "iso3": "TGO",
     "numericCode": "768",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Sub-Saharan Africa",
+    "subregionCode": "202",
+    "intermediateRegion": "Western Africa",
+    "intermediateRegionCode": "011",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 8.80722,
+    "lng": 1.058113,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "TK",
@@ -2367,7 +5200,20 @@
     "iso2": "TK",
     "iso3": "TKL",
     "numericCode": "772",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Oceania",
+    "continents": [
+      "Oceania"
+    ],
+    "subregion": "Polynesia",
+    "subregionCode": "061",
+    "oceanAccess": [
+      "PACIFIC"
+    ],
+    "lat": -8.561706,
+    "lng": -172.486725,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "TO",
@@ -2375,7 +5221,20 @@
     "iso2": "TO",
     "iso3": "TON",
     "numericCode": "776",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Oceania",
+    "continents": [
+      "Oceania"
+    ],
+    "subregion": "Polynesia",
+    "subregionCode": "061",
+    "oceanAccess": [
+      "PACIFIC"
+    ],
+    "lat": -21.168655,
+    "lng": -175.223112,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "TT",
@@ -2383,7 +5242,22 @@
     "iso2": "TT",
     "iso3": "TTO",
     "numericCode": "780",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "North America",
+    "continents": [
+      "North America"
+    ],
+    "subregion": "Latin America and the Caribbean",
+    "subregionCode": "419",
+    "intermediateRegion": "Caribbean",
+    "intermediateRegionCode": "029",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 10.9989,
+    "lng": -60.9184,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "TN",
@@ -2396,7 +5270,18 @@
     "minZoom": 4.5,
     "maxZoom": 9,
     "importance": 3,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Northern Africa",
+    "subregionCode": "015",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "TR",
@@ -2412,7 +5297,19 @@
     "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
     "aliases": [
       "Türkiye"
-    ]
+    ],
+    "continent": "Asia",
+    "continents": [
+      "Asia",
+      "Europe"
+    ],
+    "subregion": "Western Asia",
+    "subregionCode": "145",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "TM",
@@ -2425,7 +5322,16 @@
     "minZoom": 4,
     "maxZoom": 9,
     "importance": 3,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Asia",
+    "continents": [
+      "Asia"
+    ],
+    "subregion": "Central Asia",
+    "subregionCode": "143",
+    "oceanAccess": [],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "TC",
@@ -2433,7 +5339,22 @@
     "iso2": "TC",
     "iso3": "TCA",
     "numericCode": "796",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "North America",
+    "continents": [
+      "North America"
+    ],
+    "subregion": "Latin America and the Caribbean",
+    "subregionCode": "419",
+    "intermediateRegion": "Caribbean",
+    "intermediateRegionCode": "029",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 21.812902,
+    "lng": -71.742639,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "TV",
@@ -2441,7 +5362,20 @@
     "iso2": "TV",
     "iso3": "TUV",
     "numericCode": "798",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Oceania",
+    "continents": [
+      "Oceania"
+    ],
+    "subregion": "Polynesia",
+    "subregionCode": "061",
+    "oceanAccess": [
+      "PACIFIC"
+    ],
+    "lat": -8.520226,
+    "lng": 179.209192,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "UG",
@@ -2454,7 +5388,18 @@
     "minZoom": 4.5,
     "maxZoom": 9,
     "importance": 3,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Sub-Saharan Africa",
+    "subregionCode": "202",
+    "intermediateRegion": "Eastern Africa",
+    "intermediateRegionCode": "014",
+    "oceanAccess": [],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "UA",
@@ -2467,7 +5412,18 @@
     "minZoom": 3.8,
     "maxZoom": 8.5,
     "importance": 4,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Europe",
+    "continents": [
+      "Europe"
+    ],
+    "subregion": "Eastern Europe",
+    "subregionCode": "151",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "AE",
@@ -2484,7 +5440,18 @@
     "aliases": [
       "UAE",
       "United Arab Emirates"
-    ]
+    ],
+    "continent": "Asia",
+    "continents": [
+      "Asia"
+    ],
+    "subregion": "Western Asia",
+    "subregionCode": "145",
+    "oceanAccess": [
+      "INDIAN"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "GB",
@@ -2500,7 +5467,18 @@
     "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
     "aliases": [
       "United Kingdom of Great Britain and Northern Ireland"
-    ]
+    ],
+    "continent": "Europe",
+    "continents": [
+      "Europe"
+    ],
+    "subregion": "Northern Europe",
+    "subregionCode": "154",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "US",
@@ -2516,7 +5494,20 @@
     "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
     "aliases": [
       "United States of America"
-    ]
+    ],
+    "continent": "North America",
+    "continents": [
+      "North America"
+    ],
+    "subregion": "Northern America",
+    "subregionCode": "021",
+    "oceanAccess": [
+      "ARCTIC",
+      "ATLANTIC",
+      "PACIFIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "UM",
@@ -2524,7 +5515,20 @@
     "iso2": "UM",
     "iso3": "UMI",
     "numericCode": "581",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Oceania",
+    "continents": [
+      "Oceania"
+    ],
+    "subregion": "Micronesia",
+    "subregionCode": "057",
+    "oceanAccess": [
+      "PACIFIC"
+    ],
+    "lat": 19.290306,
+    "lng": 166.643266,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "UY",
@@ -2537,7 +5541,20 @@
     "minZoom": 4.5,
     "maxZoom": 9,
     "importance": 3,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "South America",
+    "continents": [
+      "South America"
+    ],
+    "subregion": "Latin America and the Caribbean",
+    "subregionCode": "419",
+    "intermediateRegion": "South America",
+    "intermediateRegionCode": "005",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "UZ",
@@ -2550,7 +5567,16 @@
     "minZoom": 4,
     "maxZoom": 9,
     "importance": 3,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Asia",
+    "continents": [
+      "Asia"
+    ],
+    "subregion": "Central Asia",
+    "subregionCode": "143",
+    "oceanAccess": [],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "VU",
@@ -2558,7 +5584,20 @@
     "iso2": "VU",
     "iso3": "VUT",
     "numericCode": "548",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Oceania",
+    "continents": [
+      "Oceania"
+    ],
+    "subregion": "Melanesia",
+    "subregionCode": "054",
+    "oceanAccess": [
+      "PACIFIC"
+    ],
+    "lat": -15.37153,
+    "lng": 166.908762,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "VE",
@@ -2574,7 +5613,20 @@
     "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
     "aliases": [
       "Venezuela, Bolivarian Republic of"
-    ]
+    ],
+    "continent": "South America",
+    "continents": [
+      "South America"
+    ],
+    "subregion": "Latin America and the Caribbean",
+    "subregionCode": "419",
+    "intermediateRegion": "South America",
+    "intermediateRegionCode": "005",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "VN",
@@ -2587,7 +5639,18 @@
     "minZoom": 4,
     "maxZoom": 9,
     "importance": 3,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Asia",
+    "continents": [
+      "Asia"
+    ],
+    "subregion": "South-eastern Asia",
+    "subregionCode": "035",
+    "oceanAccess": [
+      "PACIFIC"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "VG",
@@ -2598,7 +5661,22 @@
     "identityStatus": "ISO3166_IDENTITY_ONLY",
     "aliases": [
       "British Virgin Islands"
-    ]
+    ],
+    "continent": "North America",
+    "continents": [
+      "North America"
+    ],
+    "subregion": "Latin America and the Caribbean",
+    "subregionCode": "419",
+    "intermediateRegion": "Caribbean",
+    "intermediateRegionCode": "029",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 18.426319,
+    "lng": -64.633247,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "VI",
@@ -2611,7 +5689,22 @@
       "US Virgin Islands",
       "United States Virgin Islands",
       "U.S. Virgin Islands"
-    ]
+    ],
+    "continent": "North America",
+    "continents": [
+      "North America"
+    ],
+    "subregion": "Latin America and the Caribbean",
+    "subregionCode": "419",
+    "intermediateRegion": "Caribbean",
+    "intermediateRegionCode": "029",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 17.743931,
+    "lng": -64.744848,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "WF",
@@ -2619,7 +5712,20 @@
     "iso2": "WF",
     "iso3": "WLF",
     "numericCode": "876",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Oceania",
+    "continents": [
+      "Oceania"
+    ],
+    "subregion": "Polynesia",
+    "subregionCode": "061",
+    "oceanAccess": [
+      "PACIFIC"
+    ],
+    "lat": -14.277732,
+    "lng": -178.141767,
+    "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "EH",
@@ -2627,7 +5733,20 @@
     "iso2": "EH",
     "iso3": "ESH",
     "numericCode": "732",
-    "identityStatus": "ISO3166_IDENTITY_ONLY"
+    "identityStatus": "ISO3166_IDENTITY_ONLY",
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Northern Africa",
+    "subregionCode": "015",
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
+    "lat": 23.967592,
+    "lng": -12.630304,
+    "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "YE",
@@ -2640,7 +5759,18 @@
     "minZoom": 4,
     "maxZoom": 9,
     "importance": 3,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Asia",
+    "continents": [
+      "Asia"
+    ],
+    "subregion": "Western Asia",
+    "subregionCode": "145",
+    "oceanAccess": [
+      "INDIAN"
+    ],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "ZM",
@@ -2653,7 +5783,18 @@
     "minZoom": 4.5,
     "maxZoom": 9,
     "importance": 3,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Sub-Saharan Africa",
+    "subregionCode": "202",
+    "intermediateRegion": "Eastern Africa",
+    "intermediateRegionCode": "014",
+    "oceanAccess": [],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
   {
     "code": "ZW",
@@ -2666,6 +5807,17 @@
     "minZoom": 4.5,
     "maxZoom": 9,
     "importance": 3,
-    "identityStatus": "MERGED_EXISTING_GEOGRAPHY"
+    "identityStatus": "MERGED_EXISTING_GEOGRAPHY",
+    "continent": "Africa",
+    "continents": [
+      "Africa"
+    ],
+    "subregion": "Sub-Saharan Africa",
+    "subregionCode": "202",
+    "intermediateRegion": "Eastern Africa",
+    "intermediateRegionCode": "014",
+    "oceanAccess": [],
+    "mapPointSource": "COUNTRIES_JSON_EXISTING",
+    "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   }
 ]
