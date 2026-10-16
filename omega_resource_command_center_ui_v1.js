@@ -727,7 +727,9 @@
     }).join('');
     const availableResources = resources(country).length ? resources(country) : resourceTypes();
     const resourceOpts = availableResources.map(function (r) {
-      return '<option value="' + esc(r.id) + '">' + esc(r.name || r.id) + '</option>';
+      const unit = r.unit || r.canonicalUnit || r.baseUnit || r.standardUnit || r.defaultUnit || 'UNIT NOT RECORDED';
+      return '<option value="' + esc(r.id) + '" data-unit="' + esc(unit) + '">' +
+        esc(r.name || r.id) + ' · ' + esc(unit) + '</option>';
     }).join('');
     const canImport = !!(trade && typeof trade.createRequest === 'function');
     const canExport = !!(trade && typeof trade.createExportOffer === 'function');
@@ -743,7 +745,7 @@
         '<label>Quantity<input name="quantity" type="number" min="0.000001" step="any" required placeholder="Enter quantity"></label>' +
         '<label>Unit price (optional)<input name="unitPrice" type="number" min="0" step="any" placeholder="Blank uses the current quote"></label>' +
       '</div>' +
-      '<p class="omega-rescc-locator-source" data-trade-help>Set the quantity. Leave unit price blank to use the supplier’s current market quote. Stock and treasury move only if the trade engine accepts and settles the request.</p>' +
+      '<p class="omega-rescc-locator-source" data-trade-help>Enter quantity in the unit displayed beside the selected resource. Leave unit price blank to use the supplier’s current market quote. No manual unit conversion is needed. Stock and treasury move only after the trade engine accepts and settles the request.</p>' +
       '<button class="omega-rescc-button" type="submit" data-trade-submit' +
         ((!canImport || !others.length || !resourceOpts) ? ' disabled' : '') +
       '>Create import request</button></form>' +
