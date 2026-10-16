@@ -1939,7 +1939,9 @@
     ],
     "subregion": "Western Asia",
     "subregionCode": "145",
-    "oceanAccess": [],
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
     "lat": 41.870087,
     "lng": 43.735724,
     "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
