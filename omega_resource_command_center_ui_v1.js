@@ -200,7 +200,7 @@
     }
     if (candidate === undefined || candidate === null || String(candidate).trim() === '') return null;
     const original = String(candidate).trim();
-    if (/^Mt$/i.test(original) && original !== 'MT') return 'megatonne';
+    if (original === 'Mt') return 'megatonne';
     const key = original.toUpperCase().replace(/[\\s-]+/g, '_').replace(/[().]/g, '');
     const aliases = {
       G: 'g', GRAM: 'g', GRAMS: 'g', GM: 'g',
@@ -323,6 +323,12 @@
   function targetUnitId(sourceUnitId) {
     const source = UNIT_DEFINITIONS[sourceUnitId];
     if (!source) return null;
+    const preferred = {
+      g: 'kg', kg: 'metric_tonne', metric_tonne: 'kg', kilotonne: 'metric_tonne',
+      megatonne: 'kilotonne', lb: 'kg', litre: 'cubic_metre', bbl: 'litre',
+      cubic_metre: 'litre', gj: 'mwh', mmbtu: 'gj', kwh: 'gj', mwh: 'gj', gwh: 'mwh'
+    }[sourceUnitId];
+    if (preferred && UNIT_DEFINITIONS[preferred] && UNIT_DEFINITIONS[preferred].dimension === source.dimension) return preferred;
     return Object.keys(UNIT_DEFINITIONS).find(function (id) {
       return UNIT_DEFINITIONS[id].dimension === source.dimension && id !== sourceUnitId;
     }) || sourceUnitId;
