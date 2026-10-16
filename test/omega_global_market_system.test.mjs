@@ -67,6 +67,12 @@ assert.equal(market.suppliers('crude_oil',1,'BDG').some(x=>x.countryId==='SAU'),
 assert.equal(policy.liftBlockade('BDG',{policyId:'MARKET-BLOCKADE-TEST'}).accepted,true);
 const books=market.rebuild();
 assert(books.crude_oil);
+const depositResourceIds=[...new Set((globalThis.ResourceMinistryEngine?.deposits||[])
+  .map(site=>site?.resourceId||site?.resId||site?.resourceTypeId||site?.resource_id||site?.resource)
+  .filter(Boolean).map(String))];
+for(const resourceId of depositResourceIds){
+  assert.ok(books[resourceId], 'global market must index the resource referenced by registered deposits: '+resourceId);
+}
 const q=market.quote('crude_oil');
 assert.equal(q.status,'CLEARED');
 assert.equal(q.matchedQuantity,100);
