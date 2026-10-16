@@ -1,84 +1,108 @@
-/* OMEGA Offline Hybrid Atlas: geography first, quiet visual hierarchy */
+/* OMEGA Hybrid Satellite Atlas
+   Real imagery is the primary visual layer; vectors remain functional overlays. */
 body.omega-offline-hybrid-active #map,
 body.omega-offline-hybrid-active .leaflet-container {
-    background: #122530 !important;
+    background: #183541 !important;
 }
+
 body.omega-offline-hybrid-active .country-label-inner {
-    color: #f0f0e6 !important;
-    font-size: 9px !important;
+    color: #f5f5eb !important;
+    font-size: 9.5px !important;
     font-weight: 700 !important;
-    letter-spacing: 0.65px !important;
-    text-shadow: 0 1px 2px rgba(2, 8, 12, 0.98), 0 0 4px rgba(2, 8, 12, 0.94) !important;
+    letter-spacing: 0.35px !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.98), 0 0 5px rgba(0, 0, 0, 0.92) !important;
 }
+
 body.omega-offline-hybrid-active .ocean-label-marker div,
 body.omega-offline-hybrid-active .ocean-label-text {
-    color: rgba(174, 197, 197, 0.64) !important;
-    letter-spacing: 1.7px !important;
-    text-shadow: 0 1px 3px rgba(2, 12, 18, 0.95) !important;
+    color: rgba(226, 238, 239, 0.7) !important;
+    letter-spacing: 1.25px !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.98) !important;
 }
+
 body.omega-offline-hybrid-active .omega-offline-coordinate-icon {
     background: transparent !important;
     border: 0 !important;
     pointer-events: none !important;
 }
+
 body.omega-offline-hybrid-active .omega-offline-coordinate-label {
     display: inline-block;
     box-sizing: border-box;
     min-width: 35px;
     padding: 2px 4px;
-    border: 1px solid rgba(178, 196, 188, 0.27);
+    border: 1px solid rgba(223, 234, 226, 0.22);
     border-radius: 3px;
-    background: rgba(8, 20, 28, 0.88);
-    color: #d5e0d9;
+    background: rgba(5, 13, 17, 0.72);
+    color: #e9f0eb;
     font: 600 9px/1.2 "Share Tech Mono", "Courier New", monospace;
     text-align: center;
     white-space: nowrap;
     box-shadow: none;
     pointer-events: none;
 }
+
 body.omega-offline-hybrid-active .city-btn-marker {
-    background: rgba(15, 30, 35, 0.97) !important;
-    border-color: #c0cbbd !important;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.45) !important;
+    background: rgba(8, 17, 19, 0.9) !important;
+    border-color: rgba(229, 239, 229, 0.82) !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.6) !important;
 }
+
 body.omega-offline-hybrid-active .city-btn-dot {
-    background: #d4ddcf !important;
-    box-shadow: none !important;
+    background: #f0f3e9 !important;
+    box-shadow: 0 0 1px rgba(0, 0, 0, 0.95) !important;
 }
+
 body.omega-offline-hybrid-active .city-btn-label {
-    color: #f1f2e9 !important;
-    text-shadow: 0 1px 2px rgba(3, 10, 14, 0.98) !important;
+    color: #ffffff !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.98) !important;
 }
+
 body.omega-offline-hybrid-active .resource-deposit-compact-icon > div {
-    background: rgba(11, 25, 33, 0.98) !important;
-    border-color: #d0d7c9 !important;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.55) !important;
+    background: rgba(8, 17, 19, 0.96) !important;
+    border-color: rgba(226, 237, 225, 0.88) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.68) !important;
     animation: none !important;
     transition: none !important;
 }
+
 body.omega-offline-hybrid-active .resource-deposit-compact-icon .omega-resource-glyph--map {
-    color: #edf0e7 !important;
-    border-color: #abb9aa !important;
+    color: #f5f5ed !important;
+    border-color: #d3dfd1 !important;
     box-shadow: none !important;
 }
+
 body.omega-offline-hybrid-active .resource-deposit-compact-icon [style*="animation"] {
     display: none !important;
 }
+
 body.omega-offline-hybrid-active .leaflet-popup-content-wrapper,
 body.omega-offline-hybrid-active .leaflet-popup-tip {
-    background: #132630 !important;
-    border-color: #758a85 !important;
-    color: #edf0e7 !important;
+    background: rgba(10, 22, 26, 0.97) !important;
+    border-color: rgba(201, 218, 207, 0.72) !important;
+    color: #f1f4ed !important;
 }
+
+body.omega-offline-hybrid-active .leaflet-control-attribution {
+    background: rgba(4, 11, 14, 0.72) !important;
+    color: rgba(231, 238, 231, 0.75) !important;
+    font-size: 8px !important;
+}
+
+body.omega-offline-hybrid-active .leaflet-control-attribution a {
+    color: #e4eee4 !important;
+}
+
 .layer-opt-btn[data-layer="offline-hybrid"] {
-    border-color: rgba(175, 195, 182, 0.65) !important;
-    color: #e1e8de !important;
-    background: rgba(21, 39, 43, 0.98) !important;
+    border-color: rgba(206, 223, 208, 0.76) !important;
+    color: #edf4ed !important;
+    background: rgba(11, 26, 29, 0.98) !important;
     letter-spacing: 0.1px;
 }
+
 .layer-opt-btn[data-layer="offline-hybrid"].active {
-    border-color: #d0dfcf !important;
+    border-color: #e7f0e4 !important;
     color: #ffffff !important;
-    background: rgba(62, 83, 73, 0.98) !important;
-    box-shadow: inset 0 0 0 1px rgba(213, 226, 211, 0.12) !important;
+    background: rgba(44, 72, 61, 0.98) !important;
+    box-shadow: inset 0 0 0 1px rgba(236, 246, 233, 0.14) !important;
 }
