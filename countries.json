@@ -192,7 +192,9 @@
       "Antarctica"
     ],
     "subregion": "Antarctica",
-    "oceanAccess": [],
+    "oceanAccess": [
+      "SOUTHERN"
+    ],
     "lat": -79.843222,
     "lng": 35.885455,
     "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
@@ -1860,7 +1862,8 @@
     "intermediateRegion": "Eastern Africa",
     "intermediateRegionCode": "014",
     "oceanAccess": [
-      "INDIAN"
+      "INDIAN",
+      "SOUTHERN"
     ],
     "lat": -49.303721,
     "lng": 69.122136,
