@@ -2,12 +2,13 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-const [html, js, css, world, mapEngine] = await Promise.all([
+const [html, js, css, world, mapEngine, mainActivity] = await Promise.all([
   readFile(new URL("../index.html", import.meta.url), "utf8"),
   readFile(new URL("../offline-hybrid-map.js", import.meta.url), "utf8"),
   readFile(new URL("../offline-hybrid-map.css", import.meta.url), "utf8"),
   readFile(new URL("../world.json", import.meta.url), "utf8"),
-  readFile(new URL("../map-engine-1.js", import.meta.url), "utf8")
+  readFile(new URL("../map-engine-1.js", import.meta.url), "utf8"),
+  readFile(new URL("../android/app/src/main/java/com/omega/globalsupremecommander/MainActivity.java", import.meta.url), "utf8")
 ]);
 
 test("hybrid atlas uses existing map-layer controls and stylesheet", () => {
@@ -60,6 +61,14 @@ test("Android prefers real imagery and can cache its overview fallback", () => {
   assert.match(css, /omega-offline-hybrid-active/);
   assert.doesNotMatch(css, /animation:\s*resMarkerPulse/);
   assert.match(mapEngine, /permitSatelliteInOfflineShell/);
+});
+
+
+test("Android WebView allows real map imagery requests through to the network", () => {
+  assert.doesNotMatch(mainActivity, /h\.equals\("server\.arcgisonline\.com"\)/);
+  assert.doesNotMatch(mainActivity, /basemaps\.cartocdn\.com/);
+  assert.match(mainActivity, /h\.equals\("unpkg\.com"\)/);
+  assert.match(mainActivity, /do not\\s*\\n?\\s*intercept map imagery/i);
 });
 
 test("imagery failures do not substitute fake map tiles", () => {
