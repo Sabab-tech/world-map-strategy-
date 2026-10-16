@@ -148,7 +148,7 @@ test('all sixteen resource panels are registered, selectable and safe to render'
   const located=api.locateResource('WORLD','coal','SITE_BGD_BARAPUKURIA');
   assert.equal(located.status,'APPLIED','locating a registered site produces an actual map-focus result');
   assert.equal(located.result.matchedSiteCount,1,'the locator reports matching global site records');
-  assert.equal(JSON.stringify(sandbox.Game.Map.map.lastView.coords),JSON.stringify([24.8,88.9]),'the map centers on the selected site's recorded coordinates');
+  assert.equal(JSON.stringify(sandbox.Game.Map.map.lastView.coords),JSON.stringify([24.8,88.9]),"the map centers on the selected site coordinates recorded in source data");
   assert.equal(sandbox.Game.Map.resourceState.scope,'WORLD','the resource filter is switched to worldwide scope');
   assert.deepEqual(Array.from(sandbox.Game.Map.filteredResourceIds),['coal'],'the map is filtered to the selected resource');
   assert.equal(api.locateResource('WORLD','unregistered_mineral','').status,'UNAVAILABLE','missing global deposits are reported honestly');
