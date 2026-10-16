@@ -66,6 +66,14 @@
     const ids=new Set;
     const rt=g.ResourceMinistryEngine?.resourceTypes;
     if(Array.isArray(rt))for(const x of rt)if(x?.id)ids.add(String(x.id));
+    // The global market index must include every resource referenced by the
+    // authoritative deposit registry, even before a country has inventory,
+    // production, an offer, or an import request for that commodity.
+    const deposits=g.ResourceMinistryEngine?.deposits;
+    if(Array.isArray(deposits))for(const site of deposits){
+      const rid=site?.resourceId||site?.resId||site?.resourceTypeId||site?.resource_id||site?.resource;
+      if(rid)ids.add(String(rid));
+    }
     for(const c of countries()){
       const inv=countryValue(c,'resource.inventory'),prod=countryValue(c,'resource.production'),cons=countryValue(c,'resource.consumption');
       for(const source of [inv,prod,cons])if(source&&typeof source==='object')for(const k of Object.keys(source))ids.add(k);
