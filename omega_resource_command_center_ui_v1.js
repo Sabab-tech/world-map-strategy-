@@ -691,7 +691,8 @@
       '<p class="omega-rescc-muted">' + esc(sourceDataStatus(country)) + '</p>';
     const allSites = deposits();
     const uniqueCountries = new Set(allSites.map(function (site) {
-      return normaliseCountry(site && (site.countryCode || site.countryId || site.country || site.countryName || site.sovereignCountryId));
+      const raw = site && (site.countryCode || site.countryId || site.country || site.countryName || site.sovereignCountryId);
+      return raw ? normaliseCountry(raw) : '';
     }).filter(Boolean));
     const header = '<div class="omega-rescc-metrics">' +
       '<div><span>Global resource types</span><strong>' + number(types.length) + '</strong></div>' +
@@ -1704,7 +1705,8 @@
     try {
       if (kind === 'metrology') {
         const resourceId = String(data.get('resourceId') || '');
-        const declaredUnit = resourceUnitId(resourceId, c);
+        const scopeCountry = String(data.get('searchCountry') || c);
+        const declaredUnit = resourceUnitId(resourceId, scopeCountry);
         const fromUnit = String(data.get('fromUnit') || '');
         const toUnit = String(data.get('toUnit') || '');
         if (!declaredUnit || !UNIT_DEFINITIONS[declaredUnit]) {
@@ -1721,7 +1723,7 @@
           return;
         }
         const selectedSiteId = String(data.get('siteId') || '');
-        const selectedSite = selectedSiteId ? sitesForResource(c, resourceId).find(function (site) {
+        const selectedSite = selectedSiteId ? sitesForResource(scopeCountry, resourceId).find(function (site) {
           return String(site.siteId || site.id || site.siteKey || site.assetId || site.siteName || '') === selectedSiteId;
         }) : null;
         const context = selectedSite ? ' · Location: ' + String(selectedSite.siteName || selectedSite.name || selectedSite.siteId || selectedSiteId) : '';
