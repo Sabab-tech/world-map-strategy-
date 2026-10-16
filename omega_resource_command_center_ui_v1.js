@@ -1092,10 +1092,9 @@
       }
       if (action === 'focus-map') {
         const map = g.Game && g.Game.Map;
-        if (map && typeof map.activateResourceMode === 'function') {
-          map.activateResourceMode([d.resourceId]);
-          setOutcome('Map focus', { status: 'APPLIED', result: { accepted: true, resourceId: d.resourceId } });
-        } else if (map && typeof map.applyResourceMapFilter === 'function') {
+        if (map && typeof map.focusResource === 'function') {
+          setOutcome('Map focus', map.focusResource(d.resourceId, c));
+        } else if (map && typeof map.applyResourceMapFilter === 'function' && d.resourceId) {
           map.applyResourceMapFilter(d.resourceId);
           setOutcome('Map filter', { status: 'APPLIED', result: { accepted: true, resourceId: d.resourceId } });
         } else setOutcome('Map focus', { status: 'UNAVAILABLE', reason: 'RESOURCE_MAP_FILTER_API_UNAVAILABLE' });
