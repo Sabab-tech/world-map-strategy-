@@ -18,6 +18,30 @@ test('all sixteen resource cards have a dedicated command-center panel', () => {
   assert.match(ui, /omega-rescc-country/);
 });
 
+test('deposit panel is an explicit country-scoped exact-site locator, not a generic deposit dump', () => {
+  assert.match(ui, /function panelDeposits\(country\)/);
+  const panel = ui.slice(ui.indexOf('function panelDeposits(country)'), ui.indexOf('function siteRows(country)', ui.indexOf('function panelDeposits(country)')));
+  assert.match(panel, /siteRows\(selected\)/, 'site results must come from the existing canonical site registry');
+  assert.match(panel, /Find a specific mine or field/);
+  assert.match(panel, /Locate this site/);
+  assert.match(panel, /Site ID/);
+  assert.match(ui, /label class="omega-rescc-control-label" for="omega-rescc-country">Country/);
+  assert.match(ui, /Mine, oil field, gas field or resource/);
+  assert.match(ui, /action === 'focus-site'/);
+  assert.match(ui, /binding\.locate\(siteId\)/, 'exact-site actions must use the canonical site's locate API');
+  assert.match(readTestFile('omega_resource_gameplay_binding_v1.js'), /locate:locateSite/,
+    'the canonical site binding must expose the map locate operation');
+});
+
+function readTestFile(path) {
+  return fs.readFileSync(path, 'utf8');
+}
+
+test('resource-wide navigation clearly differs from exact mine or field location', () => {
+  assert.match(ui, /Show matching sites/);
+  assert.match(ui, /Locate this site/);
+});
+
 test('legacy p05/p06/p15/p16 cards route to panels instead of unsupported fake build successes', () => {
   assert.match(ui, /p05: 'extraction'/);
   assert.match(ui, /p06: 'processing'/);
