@@ -485,9 +485,13 @@
       return String(site.siteId || site.id || site.siteKey || site.assetId || site.siteName || '') === String(selectedSiteId);
     }) : matches[0];
     if (!chosen) return { status: 'BLOCKED', reason: 'SELECTED_SITE_NOT_IN_RESOURCE_SCOPE', resourceId: rid, selectedSiteId };
-    const coords = chosen.coordinates || chosen.location && chosen.location.coordinates || {};
-    const lat = Number(chosen.lat ?? chosen.latitude ?? coords.lat ?? coords.latitude);
-    const lng = Number(chosen.lng ?? chosen.lon ?? chosen.longitude ?? coords.lng ?? coords.lon ?? coords.longitude);
+    const coords = chosen.coordinates || chosen.location && chosen.location.coordinates ||
+      chosen.locationIdentity && chosen.locationIdentity.coordinates ||
+      chosen.siteDataPackage && chosen.siteDataPackage.location && chosen.siteDataPackage.location.coordinates || {};
+    const latRaw = chosen.lat ?? chosen.latitude ?? coords.lat ?? coords.latitude;
+    const lngRaw = chosen.lng ?? chosen.lon ?? chosen.longitude ?? coords.lng ?? coords.lon ?? coords.longitude;
+    const lat = latRaw === undefined || latRaw === null || String(latRaw).trim() === '' ? NaN : Number(latRaw);
+    const lng = lngRaw === undefined || lngRaw === null || String(lngRaw).trim() === '' ? NaN : Number(lngRaw);
     const valid = Number.isFinite(lat) && Number.isFinite(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
     const mapApi = g.Game && g.Game.Map;
     if (!mapApi) return { status: 'UNAVAILABLE', reason: 'RESOURCE_MAP_UNAVAILABLE', matchedSiteCount: matches.length };
@@ -660,7 +664,7 @@
         : 'This resource has no resolvable declared unit. Conversion stays unavailable until the source data defines one.') +
       '</div>' +
       '<div class="omega-rescc-actions">' +
-      '<button class="omega-rescc-button" type="button" data-action="locate-resource"' + (!selectedId ? ' disabled' : '') + '>Locate resource / deposit on map</button>' +
+      '<button class="omega-rescc-button" type="button" data-action="locate-resource"' + (!selectedId || sitesForResource('WORLD', selectedId).length === 0 ? ' disabled' : '') + '>Locate resource / deposit on map</button>' +
       '<button class="omega-rescc-button" type="submit"' + (!resourceUnitId(selectedId, 'WORLD') ? ' disabled' : '') + '>Convert quantity</button></div></form>';
     const top = metrology + '<div class="omega-rescc-metrics">' +
       '<div><span>Autonomy index</span><strong>' + number(metrics.autonomyIndex, '%') + '</strong></div>' +
@@ -772,8 +776,10 @@
       : 'No deposits matched ' + selected + ' in the loaded JSON registry.') +
       '<p class="omega-rescc-muted">' + esc(sourceDataStatus(country)) + '</p>';
     const body = visible.map(function (d) {
-      const lat = Number(d.lat ?? d.latitude ?? (d.coordinates && d.coordinates.lat));
-      const lng = Number(d.lng ?? d.lon ?? d.longitude ?? (d.coordinates && (d.coordinates.lng ?? d.coordinates.lon)));
+      const latRaw = d.lat ?? d.latitude ?? (d.coordinates && (d.coordinates.lat ?? d.coordinates.latitude));
+      const lngRaw = d.lng ?? d.lon ?? d.longitude ?? (d.coordinates && (d.coordinates.lng ?? d.coordinates.lon ?? d.coordinates.longitude));
+      const lat = latRaw === undefined || latRaw === null || String(latRaw).trim() === '' ? NaN : Number(latRaw);
+      const lng = lngRaw === undefined || lngRaw === null || String(lngRaw).trim() === '' ? NaN : Number(lngRaw);
       const valid = Number.isFinite(lat) && Number.isFinite(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
       const rid = d.resourceId || d.resId || d.resourceTypeId || d.resource || '';
       const siteName = d.name || d.depositName || d.siteName || d.siteId || d.id || 'Unnamed deposit';
