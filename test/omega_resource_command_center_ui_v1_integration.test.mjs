@@ -79,7 +79,7 @@ test('all sixteen resource panels are registered, selectable and safe to render'
   for (const panel of panelIds) {
     assert.doesNotThrow(()=>api.open('BGD',panel), 'panel must render: '+panel);
     assert.equal(api.getState().panel,panel,'the requested panel route must remain selected');
-    assert.match(document.getElementById('gsrsk-intelligence-modal').innerHTML,/Sixteen resource command panels/);
+    assert.match(document.getElementById('gsrsk-intelligence-modal').innerHTML,/Resource Command Center/);
   }
   const clickRoutes = [
     ['p01','matrix'],['p02','ontology'],['p03','reserves'],['p04','deposits'],
@@ -93,7 +93,7 @@ test('all sixteen resource panels are registered, selectable and safe to render'
     assert.equal(outcome.panel,panel,'card '+point+' must open its corresponding panel');
     assert.equal(api.getState().panel,panel,'selected panel must match card '+point);
   }
-  assert.match(document.getElementById('gsrsk-intelligence-modal').innerHTML,/Sixteen resource command panels/);
+  assert.match(document.getElementById('gsrsk-intelligence-modal').innerHTML,/Resource Command Center/);
 });
 
 test('legacy card names disclose feature gaps instead of claiming unsupported actions', () => {
