@@ -49,14 +49,19 @@ test('all sixteen resource panels are registered, selectable and safe to render'
   ]};
   const sandbox = {
     document,
-    Game:{state,countryLookup:{BGD:{name:'Bangladesh'}}},
+    Game:{state,countryLookup:{BGD:{name:'Bangladesh'}},Map:{
+      resourceState:{enabled:false,scope:'NATION',selectedResources:new Set()},
+      applyResourceMapFilter(ids){this.filteredResourceIds=ids;this.resourceState.enabled=true;},
+      renderResourceDeposits(){this.renderCount=(this.renderCount||0)+1;},
+      map:{setView(coords,zoom){this.lastView={coords,zoom};},getZoom(){return 4;}}
+    }},
     ResourceMinistryEngine:{
       resourceTypes:[
         {id:'coal',name:'Coal',unit:'TONNES'},
         {id:'rare_earth',name:'Rare earth elements',unit:'UNKNOWN_UNIT'}
       ],
       deposits:[
-        {siteId:'SITE_BGD_BARAPUKURIA',siteName:'Barapukuria Coal Mine',countryId:'BGD',resourceId:'coal',reserve:{quantity:100,unit:'TONNES'}}
+        {siteId:'SITE_BGD_BARAPUKURIA',siteName:'Barapukuria Coal Mine',countryId:'BGD',resourceId:'coal',lat:24.8,lng:88.9,reserve:{quantity:100,unit:'TONNES'}}
       ],
       getSummary(){ return resourceSummary; },
       getAuthoritativeResourceSummary(){ return resourceSummary; },
@@ -137,6 +142,14 @@ test('all sixteen resource panels are registered, selectable and safe to render'
   assert.match(modal.innerHTML,/value="WORLD" selected/,'worldwide deposit scope can be selected in the running panel');
   assert.match(modal.innerHTML,/Worldwide · all countries/,'global selection has explicit user-facing scope');
   assert.match(modal.innerHTML,/Resource deposits worldwide/,'the worldwide view uses the global deposit table');
+
+  const located=api.locateResource('WORLD','coal','SITE_BGD_BARAPUKURIA');
+  assert.equal(located.status,'APPLIED','locating a registered site produces an actual map-focus result');
+  assert.equal(located.result.matchedSiteCount,1,'the locator reports matching global site records');
+  assert.equal(JSON.stringify(sandbox.Game.Map.map.lastView.coords),JSON.stringify([24.8,88.9]),'the map centers on the selected site's recorded coordinates');
+  assert.equal(sandbox.Game.Map.resourceState.scope,'WORLD','the resource filter is switched to worldwide scope');
+  assert.deepEqual(Array.from(sandbox.Game.Map.filteredResourceIds),['coal'],'the map is filtered to the selected resource');
+  assert.equal(api.locateResource('WORLD','unregistered_mineral','').status,'UNAVAILABLE','missing global deposits are reported honestly');
 });
 
 test('legacy card names disclose feature gaps instead of claiming unsupported actions', () => {
