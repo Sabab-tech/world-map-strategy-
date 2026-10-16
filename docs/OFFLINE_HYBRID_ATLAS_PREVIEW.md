@@ -1,25 +1,19 @@
 # OMEGA Offline Hybrid Atlas Preview
 
-This branch adds an isolated offline map mode. It does not merge into main.
+This branch remains separate from main.
 
-## What the preview does
+## Cartographic design
+- Uses the canonical bundled world.json through the existing interactive Leaflet GeoJSON country layer.
+- Renders actual country polygons with visible borders and muted natural fills. Landmasses are no longer represented by generated raster relief.
+- Adds a low-contrast latitude/longitude graticule, with longitude spacing of 30 degrees and latitude spacing of 15 degrees, plus degree labels.
+- Reuses existing country selection, city/hub points, resource deposit points, search and popups. No second country or deposit dataset is introduced.
+- Offline atlas mode requests no remote basemap tile or map data. The Android offline shell selects the atlas automatically.
 
-- Adds an Offline Hybrid Atlas option to the existing map-layer drawer.
-- Draws the basemap locally with Leaflet canvas tiles. It uses the application's bundled world.json country geometry and does not request remote map tiles or new remote data.
-- Reuses the existing GeoJSON country selection, country labels, city/hub layer, resource-deposit layer, search and popups. The new mode does not introduce a second copy of country or resource data.
-- Uses subdued earth/sea colors, fine country borders, restrained labels and low-contrast illustrative relief strokes rather than neon/glowing marker effects.
-- Selects the local atlas automatically in the packaged Android offline shell. In a normal browser, the current online map remains available and the offline atlas is an explicit layer choice.
+## Accuracy boundary
+The online map uses Esri World Imagery, but the repository has no equivalent licensed offline satellite tile package. This is therefore a real-geometry offline vector atlas, not a pixel-identical satellite image. The coordinate graticule is geographic, not an elevation model.
 
-## Important accuracy boundary
-
-The current online satellite background comes from Esri World Imagery. The repository does not contain an equivalent, licensed offline satellite imagery tile package. This preview therefore cannot truthfully reproduce every satellite pixel from the online map. It supplies a local, stylized vector/relief basemap while preserving the app's existing local country geometry and its live interactive overlays. The relief strokes are visual texture, not a measured elevation model.
-
-A genuinely pixel-close satellite mode would require packaging a large, legally redistributable offline imagery dataset at the target zoom levels, plus its attribution and storage budget. No such dataset is fabricated or downloaded in this change.
-
-## Scope and review
-
+## Validation
 - Branch: feature/offline-hybrid-atlas-preview
-- No changes are made to main by this branch.
-- No existing country, city, resource, or online basemap data files are removed or rewritten.
-- Focused static test: node --test test/offline_hybrid_map.test.mjs
-- Android APK build and visual device/browser verification remain separate validation steps; this branch should be reviewed before any merge.
+- Draft PR: #83
+- The UI regression workflow syntax-checks this JavaScript and runs the focused offline map tests.
+- Review the rendered output on a device before any merge.
