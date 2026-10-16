@@ -43,6 +43,8 @@ assert.ok(world.features.some(f => f.properties?.name === 'Kosovo' || f.id === '
 assert.ok(world.features.some(f => f.properties?.name === 'Northern Cyprus'), 'Existing Northern Cyprus map feature must be preserved.');
 assert.ok(world.features.some(f => f.properties?.name === 'Somaliland'), 'Existing Somaliland map feature must be preserved.');
 
+assert.ok(!countries.find(c => c.code === 'LU').oceanAccess.length, 'Luxembourg must remain landlocked');
+assert.ok(countries.find(c => c.code === 'HM').oceanAccess.includes('INDIAN'), 'Heard and McDonald Islands should be associated with the Indian Ocean');
 assert.equal(oceans.type, 'FeatureCollection');
 assert.equal(oceans.features.length, 5, 'Exactly five ocean basin geometries are required.');
 assert.equal(new Set(oceans.features.map(f => f.properties?.oceanId)).size, 5, 'Ocean IDs must be unique.');
