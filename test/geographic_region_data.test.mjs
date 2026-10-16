@@ -5,6 +5,8 @@ const countries = JSON.parse(await fs.readFile(new URL('../countries.json', impo
 const world = JSON.parse(await fs.readFile(new URL('../world.json', import.meta.url), 'utf8'));
 const oceans = JSON.parse(await fs.readFile(new URL('../world_oceans_v1.json', import.meta.url), 'utf8'));
 const runtime = await fs.readFile(new URL('../omega_geographic_region_system_v1.js', import.meta.url), 'utf8');
+const html = await fs.readFile(new URL('../index.html', import.meta.url), 'utf8');
+const css = await fs.readFile(new URL('../style.css', import.meta.url), 'utf8');
 
 const continents = new Set(['Africa','Antarctica','Asia','Europe','North America','Oceania','South America']);
 const oceanIds = new Set(['ARCTIC','ATLANTIC','INDIAN','PACIFIC','SOUTHERN']);
@@ -69,6 +71,17 @@ for (const f of oceans.features) {
 assert.ok(runtime.includes('OMEGAGeographicRegionSystem'), 'Region selector runtime must expose its public API.');
 assert.ok(runtime.includes('featureMember'), 'Region selection must update actual polygon layers.');
 assert.ok(runtime.includes('zoomToCountry'), 'Country list entries must navigate to the map polygon.');
+assert.ok(html.includes('id="btn-quick-layers"'), 'The satellite/layer quick-tool must remain available.');
+assert.ok(html.includes('id="layers-drawer"'), 'The existing map layer drawer must remain available.');
+assert.ok(html.includes('id="omega-geographic-region-selector"'), 'The region selector must be embedded in the map layer drawer.');
+assert.ok(html.includes('id="omega-region-select"'), 'The region dropdown must be present in the layer drawer markup.');
+for (const value of ['continent:Africa','continent:Antarctica','continent:Asia','continent:Europe','continent:North America','continent:Oceania','continent:South America','ocean:ARCTIC','ocean:ATLANTIC','ocean:INDIAN','ocean:PACIFIC','ocean:SOUTHERN']) {
+  assert.ok(html.includes('value="' + value + '"'), 'Missing drawer region option: ' + value);
+}
+assert.ok(runtime.includes('document.getElementById("omega-region-select")'), 'Runtime must bind the embedded drawer dropdown.');
+assert.ok(!runtime.includes('L.control({position:"bottomright"})'), 'The region picker must not create a separate floating Leaflet control.');
+assert.ok(css.includes('.omega-region-drawer-section'), 'Drawer-integrated region selector must be styled.');
+
 
 console.log(JSON.stringify({
   countries: countries.length,
