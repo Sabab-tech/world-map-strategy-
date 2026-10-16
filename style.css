@@ -4268,3 +4268,19 @@ body.modal-open .ui-bottom-navigation {
     .omega-region-list { max-height: 135px; }
     #omega-region-select { min-height: 42px; font-size: 13px; }
 }
+
+
+/* Geographic region selection: keep the real basemap visible and glow the
+   selected country/ocean boundaries. Two compact SVG shadows avoid heavy
+   full-screen effects on lower-end Android devices. */
+.leaflet-overlay-pane path.omega-region-boundary-glow {
+    filter:
+        drop-shadow(0 0 1px rgba(245, 252, 255, 0.98))
+        drop-shadow(0 0 4px var(--omega-region-glow-color, #58a6ff));
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+}
+.leaflet-overlay-pane path.omega-region-ocean-glow {
+    stroke-width: 1.9px;
+}
