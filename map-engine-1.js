@@ -743,10 +743,17 @@ var Game = window.Game = {
             attr = 'OpenTopoMap Weather Grid';
         }
 
-        if (window.OMEGA_ANDROID_OFFLINE) {
+        const permitSatelliteInOfflineShell = window.OMEGA_ANDROID_OFFLINE && layerType === 'satellite';
+        if (window.OMEGA_ANDROID_OFFLINE && !permitSatelliteInOfflineShell) {
             window.currentMapTileLayer = null;
         } else {
-            window.currentMapTileLayer = L.tileLayer(tileUrl, { attribution: attr, maxZoom: 18, opacity: 0.95 }).addTo(window.map);
+            window.currentMapTileLayer = L.tileLayer(tileUrl, {
+                attribution: attr,
+                maxZoom: 18,
+                opacity: 0.95,
+                keepBuffer: 2,
+                updateWhenIdle: true
+            }).addTo(window.map);
             window.currentMapTileLayer.bringToBack();
         }
         if (layerType === "resources") {
