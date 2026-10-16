@@ -590,18 +590,21 @@
 
         var layerType = button.getAttribute("data-layer");
         try {
-            var switcher = window.Game && window.Game.switchMapLayer;
-            if (typeof switcher !== "function") throw new Error("Map layer controller is unavailable.");
-            switcher.call(window.Game, layerType);
+            if (layerType === "offline-hybrid") {
+                if (!window.OmegaOfflineHybridAtlas || typeof window.OmegaOfflineHybridAtlas.activate !== "function") {
+                    throw new Error("Offline hybrid atlas runtime is unavailable.");
+                }
+                window.OmegaOfflineHybridAtlas.activate();
+            } else {
+                var switcher = window.Game && window.Game.switchMapLayer;
+                if (typeof switcher !== "function") throw new Error("Map layer controller is unavailable.");
+                switcher.call(window.Game, layerType);
+            }
 
             document.querySelectorAll("#layers-drawer .layer-opt-btn").forEach(function (item) {
                 item.classList.toggle("active", item === button);
                 item.setAttribute("aria-pressed", String(item === button));
             });
-
-            if (layerType === "offline-hybrid" && window.OmegaOfflineHybridAtlas) {
-                window.OmegaOfflineHybridAtlas.activate();
-            }
         } catch (error) {
             console.error("[OMEGA Atlas] Map-layer button action failed:", error);
             if (typeof window.Game.showNotification === "function") {
