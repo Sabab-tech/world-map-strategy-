@@ -35,6 +35,8 @@ jobs:
         with:
           node-version: 24
       - name: Syntax-check map UI
-        run: node --check map-engine-2.js
+        run: |
+          node --check map-engine-2.js
+          node --check offline-hybrid-map.js
       - name: Run UI visual and map-layer regression tests
         run: npm run test:ui-visual
