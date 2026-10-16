@@ -72,7 +72,10 @@ test('all sixteen resource panels are registered, selectable and safe to render'
     },
     OmegaCabinetUI:{getResource16CardsHtml(){return '<div class="test-cards"></div>';}},
     Omega:{
-      ResourceIndustrialNetwork:{diagnostics(){return {};},gameplayPipelineDiagnostics(){return {};}},
+      IndividualResourceSiteBinding:{sites:[
+        {siteId:'SITE_GBR_LITHIUM_1',siteName:'Cornish Lithium Site',resourceName:'Lithium',countryId:'GBR',resourceId:'lithium',lat:50.2,lng:-5.3,unit:'TONNES'}
+      ]},
+      ResourceIndustrialNetwork:{diagnostics(){return {};},gameplayPipelineDiagnostics(){return {};},
       ResourceLogisticsRuntime:{diagnostics(){return {};}},
       GlobalMarket:{quote(){return {status:'UNAVAILABLE'};},rebuild(){return {};},diagnostics(){return {};}},
       GlobalTrade:{diagnostics(){return {};}}
@@ -126,6 +129,8 @@ test('all sixteen resource panels are registered, selectable and safe to render'
   const ontologyHtml=document.getElementById('gsrsk-intelligence-modal').innerHTML;
   assert.match(ontologyHtml,/Global resource types/,'the catalog panel reports the worldwide commodity count');
   assert.match(ontologyHtml,/Rare earth elements/,"the catalog panel lists resources outside the selected country summary");
+  assert.match(ontologyHtml,/Lithium/,'the global catalog also includes commodities from canonical site bindings');
+  assert.match(ontologyHtml,/Cornish Lithium Site/,'worldwide resource-site records contribute to the global registry');
   assert.match(ontologyHtml,/Registered deposits \/ sites/,'the catalog panel reports the global deposit registry size');
 
   api.open('BGD','market');
@@ -133,6 +138,7 @@ test('all sixteen resource panels are registered, selectable and safe to render'
   assert.match(marketHtml,/GLOBAL COMMODITY MARKET/,'market panel identifies itself as the global market');
   assert.match(marketHtml,/Global resources tracked/,'market panel has a global market summary');
   assert.match(marketHtml,/Rare earth elements/,'market panel quotes resources from the global catalog, not only local country inventory');
+  assert.match(marketHtml,/Lithium/,'market view includes a resource known only to the canonical global site registry');
   assert.match(marketHtml,/Worldwide Deposits/,'the global deposit registry is reachable from the command-center header');
 
   api.open('BGD','deposits');
