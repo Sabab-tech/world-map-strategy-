@@ -187,7 +187,7 @@
     const e = engine();
     return e && Array.isArray(e.resourceTypes) ? e.resourceTypes : [];
   }
-  function deposits() {  function deposits() {
+  function deposits() {
     const e = engine();
     return e && Array.isArray(e.deposits) ? e.deposits : [];
   }
