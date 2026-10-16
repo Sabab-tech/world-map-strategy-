@@ -57,7 +57,7 @@ test("latitude and longitude graticule stays subtle and accurate", () => {
 test("Android prefers real imagery and can cache its overview fallback", () => {
   assert.match(js, /if \(window\.OMEGA_ANDROID_OFFLINE\) activate\(\)/);
   assert.match(js, /if \(active && !blueMarbleImage\)/);
-  assert.match(js, /first online connection is needed to cache/);
+  assert.match(js, /first online connection is needed to fetch/);
   assert.match(css, /omega-offline-hybrid-active/);
   assert.doesNotMatch(css, /animation:\s*resMarkerPulse/);
   assert.match(mapEngine, /permitSatelliteInOfflineShell/);
