@@ -9,7 +9,7 @@ const [html, js, css, world] = await Promise.all([
   readFile(new URL("../world.json", import.meta.url), "utf8")
 ]);
 
-test("offline atlas control and assets are included without replacing online map controls", () => {
+test("offline atlas uses existing controls and local style assets", () => {
   assert.match(html, /data-layer="offline-hybrid"/);
   assert.match(html, /offline-hybrid-map\.js/);
   assert.match(html, /offline-hybrid-map\.css/);
@@ -17,29 +17,38 @@ test("offline atlas control and assets are included without replacing online map
   assert.match(html, /data-layer="political"/);
 });
 
-test("atlas renderer has no remote tile or remote data dependency", () => {
-  assert.match(js, /L\.GridLayer\.extend/);
-  assert.match(js, /sourceGeoJSON/);
-  assert.match(js, /world\.json|geojsonLayer/);
-  assert.doesNotMatch(js, /https?:\/\/|tileLayer\(/i);
-  assert.doesNotMatch(js, /\bfetch\s*\(|XMLHttpRequest|WebSocket/);
+test("recognizable country shapes and boundaries use the canonical GeoJSON layer", () => {
+  assert.match(js, /Game\.geojsonLayer/);
+  assert.match(js, /countries\.eachLayer/);
+  assert.match(js, /fillOpacity:\s*0\.91/);
+  assert.match(js, /color:\s*"#c0c8bb"/);
+  assert.doesNotMatch(js, /L\.GridLayer\.extend|tileLayer\(/i);
+  assert.doesNotMatch(js, /https?:\/\/|\bfetch\s*\(|XMLHttpRequest|WebSocket/i);
 });
 
-test("atlas keeps existing country interaction and resource/city layers authoritative", () => {
+test("real geographic coordinate graticule and degree labels are available", () => {
+  assert.match(js, /L\.polyline/);
+  assert.match(js, /longitudeText/);
+  assert.match(js, /latitudeText/);
+  assert.match(js, /lon \+= 30/);
+  assert.match(js, /parallel \+= 15/);
+  assert.match(css, /omega-offline-coordinate-label/);
+});
+
+test("country selection, city and resource systems remain connected", () => {
   assert.match(js, /originalRenderGeoJSON\.apply/);
-  assert.match(js, /Game\.geojsonLayer/);
+  assert.match(js, /originalSelectCountry\.apply/);
   assert.match(html, /resource_ministry_engine\.js/);
   assert.match(html, /map-engine-2\.js/);
-  assert.match(js, /OmegaOfflineHybridAtlas/);
 });
 
-test("Android offline mode selects the local atlas and the map styling stays restrained", () => {
+test("Android offline shell automatically activates the vector atlas", () => {
   assert.match(js, /if \(window\.OMEGA_ANDROID_OFFLINE\) activate\(\)/);
   assert.match(css, /omega-offline-hybrid-active/);
   assert.doesNotMatch(css, /animation:\s*resMarkerPulse/);
 });
 
-test("bundled world geometry is available for an offline map", () => {
+test("country geometry is present in the bundled world data", () => {
   const parsed = JSON.parse(world);
   assert.equal(parsed.type, "FeatureCollection");
   assert.ok(Array.isArray(parsed.features));
