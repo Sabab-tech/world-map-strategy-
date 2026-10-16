@@ -6,7 +6,7 @@
 - Every country/area row now includes `continent` (primary), `continents` (membership used by the selector), `subregion`, `oceanAccess`, `lat`, `lng`, and `mapPointSource`.
 - `world.json` remains the Leaflet polygon source. Existing geometries are retained, canonical ISO alpha-2/alpha-3 properties are added, and missing canonical polygons are appended. Geometry and country metadata join by ISO code, not display-name guesses.
 - `world_oceans_v1.json` contains five ocean-basin highlighting geometries. North/South Atlantic polygons are grouped into Atlantic Ocean; North/South Pacific polygons are grouped into Pacific Ocean.
-- `omega_geographic_region_system_v1.js` adds a compact map selector for seven continents and five oceans. Selecting a region recolors its member polygons and lists its country/area records. Selecting a list entry zooms to that polygon.
+- `omega_geographic_region_system_v1.js` binds the region selector directly inside the existing satellite/layer drawer opened by the 🛰 quick-tool icon. The same drawer now contains a grouped continent/ocean dropdown, selected-region count and scrollable country/area list. Selecting a region recolors its member polygons; selecting a list entry zooms to that polygon. It intentionally does not add a second floating Leaflet control.
 
 ## Classification rules
 
