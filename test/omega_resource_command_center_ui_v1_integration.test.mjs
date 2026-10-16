@@ -10,6 +10,7 @@ const market = fs.readFileSync('omega_global_market_system.js', 'utf8');
 const logistics = fs.readFileSync('omega_resource_logistics_runtime_v1.js', 'utf8');
 const policyRuntime = fs.readFileSync('omega_resource_strategic_policy_runtime_v1.js', 'utf8');
 const panelIds = ['matrix','ontology','reserves','deposits','extraction','processing','inventory','logistics','industrial','market','trade','value','cascade','cognitive','power','environment'];
+const corePanel = panel => ({ontology:'matrix',reserves:'inventory',processing:'inventory',logistics:'trade',industrial:'extraction',value:'matrix',cascade:'matrix',cognitive:'matrix',power:'extraction',environment:'inventory'})[panel] || panel;
 
 test('all sixteen resource panels are registered, selectable and safe to render', () => {
   for (const id of panelIds) {
@@ -78,14 +79,14 @@ test('all sixteen resource panels are registered, selectable and safe to render'
   assert.ok(api,'resource command-center UI API must install');
   for (const panel of panelIds) {
     assert.doesNotThrow(()=>api.open('BGD',panel), 'panel must render: '+panel);
-    assert.equal(api.getState().panel,panel,'the requested panel route must remain selected');
+    assert.equal(api.getState().panel,corePanel(panel),'legacy route must collapse into a functional task: '+panel);
     assert.match(document.getElementById('gsrsk-intelligence-modal').innerHTML,/Resource Command Center/);
   }
   const clickRoutes = [
-    ['p01','matrix'],['p02','ontology'],['p03','reserves'],['p04','deposits'],
-    ['p05','extraction'],['p06','processing'],['p07','inventory'],['p08','logistics'],
-    ['p09','industrial'],['p10','market'],['p11','trade'],['p12','value'],
-    ['p13','cascade'],['p14','cognitive'],['p15','power'],['p16','environment']
+    ['p01','matrix'],['p02','matrix'],['p03','inventory'],['p04','deposits'],
+    ['p05','extraction'],['p06','inventory'],['p07','inventory'],['p08','trade'],
+    ['p09','extraction'],['p10','market'],['p11','trade'],['p12','matrix'],
+    ['p13','matrix'],['p14','matrix'],['p15','extraction'],['p16','inventory']
   ];
   for (const [point,panel] of clickRoutes) {
     const outcome=sandbox.OmegaCabinetUI.executeResource16Point(point,'legacy-directive-must-not-run');
@@ -150,6 +151,9 @@ test('the UI bridge loads after its data-owning engines and static HUD has no fa
 
 test('trade form submits through the authoritative request runtime and action feedback rejects unsupported commands', () => {
   assert.match(ui,/trade\.createRequest/);
+  assert.match(ui,/trade\.createExportOffer/);
+  assert.match(ui,/name=\"direction\"/);
+  assert.match(ui,/data-trade-counterparty-label/);
   assert.match(ui,/acceptedFalse/);
   assert.match(ui,/referenceLiquidity === true/);
   assert.match(ui,/NO_COMPATIBLE_FACTORY/);
