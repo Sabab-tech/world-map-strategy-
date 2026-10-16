@@ -201,7 +201,7 @@
     if (candidate === undefined || candidate === null || String(candidate).trim() === '') return null;
     const original = String(candidate).trim();
     if (original === 'Mt') return 'megatonne';
-    const key = original.toUpperCase().replace(/[\\s-]+/g, '_').replace(/[().]/g, '');
+    const key = original.toUpperCase().replace(/[\s-]+/g, '_').replace(/[().]/g, '');
     const aliases = {
       G: 'g', GRAM: 'g', GRAMS: 'g', GM: 'g',
       KG: 'kg', KGS: 'kg', KILOGRAM: 'kg', KILOGRAMS: 'kg',
@@ -227,7 +227,7 @@
     return Object.keys(UNIT_DEFINITIONS).find(function (id) { return id.toUpperCase() === key; }) || null;
   }
   function resourceKey(value) {
-    return String(value === undefined || value === null ? '' : value).trim().toLowerCase().replace(/[\\s-]+/g, '_');
+    return String(value === undefined || value === null ? '' : value).trim().toLowerCase().replace(/[\s-]+/g, '_');
   }
   function resourceUnitId(resourceId, country) {
     const wanted = resourceKey(resourceId);
