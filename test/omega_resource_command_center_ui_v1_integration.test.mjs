@@ -109,7 +109,7 @@ test('all sixteen resource panels are registered, selectable and safe to render'
   assert.match(matrixHtml,/id="omega-rescc-location-select"/,'site location is an inline dropdown, not a separate button');
   assert.match(matrixHtml,/class="omega-rescc-table"/,'resource balances render as a compact table rather than repeated cards');
   assert.match(matrixHtml,/Barapukuria Coal Mine/,'location options come from canonical deposit records');
-  assert.match(matrixHtml,/name="fromUnit" required>[\\s\\S]*?value="metric_tonne" selected/,'TONNES resolves to a preselected metric-tonne unit');
+  assert.match(matrixHtml,/name="fromUnit" required>[\s\S]*?value="metric_tonne" selected/,'TONNES resolves to a preselected metric-tonne unit');
   assert.equal(api.getResourceUnit('coal','BGD'),'metric_tonne','resource unit is resolved from catalog metadata');
   assert.equal(api.getResourceUnit('rare_earth','BGD'),null,'unknown catalog units are not guessed');
   assert.equal(api.convertUnits(1,'megatonne','metric_tonne').value,1000000,'megatonne conversion is available');
