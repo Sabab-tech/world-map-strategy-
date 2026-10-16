@@ -51,6 +51,9 @@ globalThis.Omega=globalThis.Omega||{};
 globalThis.Omega.IndividualResourceSiteBinding={sites:[
   {siteId:'SITE_GLOBAL_CATALOG_ONLY_1',countryId:'SAU',resourceId:'site_only_mineral',siteName:'Catalog-only site'}
 ]};
+globalThis.OmegaResourceSiteCanonicalCatalogData={siteCount:315,sites:[
+  {siteId:'SITE_CANONICAL_ONLY_1',countryId:'AUS',resourceId:'canonical_only_mineral',siteName:'Canonical-only site'}
+]};
 globalThis.Game.state.resources={CAN:{inventory:{namespace_only_mineral:5}}};
 await import('../omega_global_market_system.js');
 const policy=globalThis.Omega?.ResourceStrategicPolicyRuntime||globalThis.OmegaResourceStrategicPolicyRuntime;
@@ -83,6 +86,9 @@ for(const resourceId of depositResourceIds){
 assert.ok(books.site_only_mineral, 'global market must also index resources found only in the canonical site-binding registry');
 assert.equal(market.quote('site_only_mineral').status,'NO_ORDERS',
   'site-binding resources without bids or asks are visible without an invented executable market price');
+assert.ok(books.canonical_only_mineral, 'global market indexes every commodity represented in the full canonical site catalog');
+assert.equal(market.quote('canonical_only_mineral').status,'NO_ORDERS',
+  'canonical-only commodities without orders have a visible no-orders state, not a made-up price');
 assert.ok(books.namespace_only_mineral, 'global market includes resource IDs under the plural resources namespace');
 assert.equal(market.quote('namespace_only_mineral').status,'NO_ORDERS',
   'plural-namespace resources without orders remain visible without a fabricated price');
