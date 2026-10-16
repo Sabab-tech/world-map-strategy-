@@ -1,0 +1,66 @@
+import fs from 'node:fs/promises';
+import assert from 'node:assert/strict';
+
+const countries = JSON.parse(await fs.readFile(new URL('../countries.json', import.meta.url), 'utf8'));
+const world = JSON.parse(await fs.readFile(new URL('../world.json', import.meta.url), 'utf8'));
+const oceans = JSON.parse(await fs.readFile(new URL('../world_oceans_v1.json', import.meta.url), 'utf8'));
+const runtime = await fs.readFile(new URL('../omega_geographic_region_system_v1.js', import.meta.url), 'utf8');
+
+const continents = new Set(['Africa','Antarctica','Asia','Europe','North America','Oceania','South America']);
+const oceanIds = new Set(['ARCTIC','ATLANTIC','INDIAN','PACIFIC','SOUTHERN']);
+assert.equal(countries.length, 249, 'Do not change the canonical ISO roster size.');
+assert.equal(new Set(countries.map(c => c.code)).size, 249, 'ISO alpha-2 codes must be unique.');
+assert.equal(new Set(countries.map(c => c.iso3)).size, 249, 'ISO alpha-3 codes must be unique.');
+assert.ok(countries.every(c => /^[A-Z]{2}$/.test(String(c.code))), 'Every record needs a valid ISO alpha-2 code.');
+assert.ok(countries.every(c => /^[A-Z]{3}$/.test(String(c.iso3))), 'Every record needs a valid ISO alpha-3 code.');
+
+for (const c of countries) {
+  assert.ok(continents.has(c.continent), c.name + ': invalid primary continent');
+  assert.ok(Array.isArray(c.continents) && c.continents.includes(c.continent), c.name + ': continent memberships must include primary continent');
+  assert.ok(c.continents.every(x => continents.has(x)), c.name + ': unsupported continent membership');
+  assert.ok(typeof c.subregion === 'string' && c.subregion.trim(), c.name + ': subregion is missing');
+  assert.ok(Array.isArray(c.oceanAccess), c.name + ': oceanAccess must be an array, including [] for landlocked entities');
+  assert.equal(new Set(c.oceanAccess).size, c.oceanAccess.length, c.name + ': duplicate ocean membership');
+  assert.ok(c.oceanAccess.every(x => oceanIds.has(x)), c.name + ': unknown ocean membership');
+  assert.ok(Number.isFinite(c.lat) && c.lat >= -90 && c.lat <= 90, c.name + ': invalid or missing representative latitude');
+  assert.ok(Number.isFinite(c.lng) && c.lng >= -180 && c.lng <= 180, c.name + ': invalid or missing representative longitude');
+  assert.ok(['COUNTRIES_JSON_EXISTING','NATURAL_EARTH_LABEL_POINT','TOPOJSON_POLYGON_CENTROID'].includes(c.mapPointSource), c.name + ': missing coordinate provenance');
+  assert.equal(c.regionalClassificationSource, 'UNSD_M49_AND_NATURAL_EARTH', c.name + ': missing regional provenance');
+}
+for (const continent of continents) assert.ok(countries.some(c => c.continents.includes(continent)), 'No rows assigned to ' + continent);
+
+assert.equal(world.type, 'FeatureCollection');
+assert.equal(world.features.length, 252, 'Expected 249 canonical ISO polygons plus the 3 retained map-only features.');
+const codeCounts = new Map();
+for (const f of world.features) {
+  assert.ok(f.geometry && ['Polygon','MultiPolygon'].includes(f.geometry.type), 'Every land feature must have polygon geometry.');
+  const code = String(f.properties?.ISO_A3 || f.properties?.iso_a3 || (/^[A-Z]{3}$/.test(String(f.id)) ? f.id : '')).toUpperCase();
+  if (countries.some(c => c.iso3 === code)) codeCounts.set(code, (codeCounts.get(code)||0)+1);
+}
+assert.equal(codeCounts.size, 249, 'Every canonical country/area must have a polygon.');
+for (const c of countries) assert.equal(codeCounts.get(c.iso3), 1, c.name + ': expected exactly one polygon keyed by ISO3.');
+assert.ok(world.features.some(f => f.properties?.name === 'Kosovo' || f.id === 'CS-KM'), 'Existing Kosovo map feature must be preserved.');
+assert.ok(world.features.some(f => f.properties?.name === 'Northern Cyprus'), 'Existing Northern Cyprus map feature must be preserved.');
+assert.ok(world.features.some(f => f.properties?.name === 'Somaliland'), 'Existing Somaliland map feature must be preserved.');
+
+assert.equal(oceans.type, 'FeatureCollection');
+assert.equal(oceans.features.length, 5, 'Exactly five ocean basin geometries are required.');
+assert.equal(new Set(oceans.features.map(f => f.properties?.oceanId)).size, 5, 'Ocean IDs must be unique.');
+for (const f of oceans.features) {
+  assert.ok(oceanIds.has(f.properties.oceanId), 'Unsupported ocean: ' + f.properties.oceanId);
+  assert.ok(f.geometry && ['Polygon','MultiPolygon'].includes(f.geometry.type), f.properties.name + ': invalid ocean geometry');
+}
+assert.ok(runtime.includes('OMEGAGeographicRegionSystem'), 'Region selector runtime must expose its public API.');
+assert.ok(runtime.includes('featureMember'), 'Region selection must update actual polygon layers.');
+assert.ok(runtime.includes('zoomToCountry'), 'Country list entries must navigate to the map polygon.');
+
+console.log(JSON.stringify({
+  countries: countries.length,
+  allCountryRecordsHaveCoordinates: countries.every(c => Number.isFinite(c.lat) && Number.isFinite(c.lng)),
+  continentMemberships: Object.fromEntries([...continents].map(x => [x,countries.filter(c => c.continents.includes(x)).length])),
+  oceanMemberships: Object.fromEntries([...oceanIds].map(x => [x,countries.filter(c => c.oceanAccess.includes(x)).length])),
+  polygonFeatures: world.features.length,
+  canonicalPolygonCount: codeCounts.size,
+  oceanGeometryCount: oceans.features.length,
+  result: 'PASS'
+}, null, 2));
