@@ -276,3 +276,23 @@ test('Live Operations bounds event/turn work and preserves scroll during refresh
   assert.ok(source.includes('}, 15000);'));
   assert.equal(source.includes("if (panelOpen) { buildCountrySelect(); sampleAll(); render(); }"), false);
 });
+
+
+test('Live Operations is opened from Resource Ministry, without redundant map launchers', () => {
+  const liveOps = read('omega_live_operations_observability_v1.js');
+  const ministry = read('ministry_engine.js');
+  const binding = read('omega_resource_gameplay_binding_v1.js');
+  const css = read('omega_ui_visual_system_v1.css');
+  const dashboardStart = ministry.indexOf('renderResourceMinistryDashboard(m, container)');
+  const dashboardEnd = ministry.indexOf('setResource16Filter(filterKey)', dashboardStart);
+  assert.ok(dashboardStart >= 0 && dashboardEnd > dashboardStart, 'resource ministry dashboard section must exist');
+  const dashboard = ministry.slice(dashboardStart, dashboardEnd);
+  assert.match(dashboard, /LIVE OPERATIONS/, 'the action should live inside the Resource Ministry dashboard');
+  assert.match(dashboard, /OmegaLiveOpsObservability\.open\(\)/, 'the button must open the existing observability panel');
+  assert.match(liveOps, /open:openPanel/, 'the existing panel exposes a callable open method');
+  assert.doesNotMatch(liveOps, /omega-liveops-launch/, 'the global floating Live Ops launcher is removed');
+  assert.doesNotMatch(binding, /omega-individual-resource-open/, 'no separate Individual Sites button is injected');
+  assert.match(binding, /m\.on\('click',\(\)=>setSelected\(s\.siteId\)\)/, 'clicking a resource marker still selects that exact site');
+  assert.match(binding, /if\(panel\)panel\.style\.display='block'/, 'the selected-site details panel still opens from marker selection');
+  assert.doesNotMatch(css, /omega-resource-open-button/, 'removed launcher styling does not remain');
+});
