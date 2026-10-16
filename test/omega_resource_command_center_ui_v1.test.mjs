@@ -92,7 +92,8 @@ test('the overview removes the irrelevant unit converter and exposes six practic
   assert.match(ui, /Manage the country’s resources/);
   assert.match(ui, /Set import or export quantity/);
   assert.match(ui, /trade\.createExportOffer/);
-  assert.match(ui, /Export creates a seller offer/);
+  assert.match(ui, /Blank uses the current quote/);
+  assert.match(ui, /MARKET_PRICE_NOT_OBSERVED/);
 });
 
 test('actual industrial flow and technology project state paths are rendered', () => {
