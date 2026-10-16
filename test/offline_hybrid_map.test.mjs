@@ -77,3 +77,23 @@ test("imagery failures do not substitute fake map tiles", () => {
   assert.match(js, /tileerror/);
   assert.match(js, /cached global raster will be used/);
 });
+
+
+test("Chrome mobile layer drawer fits the visible viewport and supports vertical touch scrolling", () => {
+  assert.match(css, /#layers-drawer\s*\{[\s\S]*?z-index:\s*100100\s*!important/);
+  assert.match(css, /height:\s*calc\(var\(--omega-visible-height,\s*100dvh\)/);
+  assert.match(css, /#layers-drawer \.drawer-body\.layer-options-grid\s*\{[\s\S]*?overflow-y:\s*auto\s*!important/);
+  assert.match(css, /overscroll-behavior-y:\s*contain\s*!important/);
+  assert.match(css, /-webkit-overflow-scrolling:\s*touch\s*!important/);
+  assert.match(js, /function updateVisibleViewportSize/);
+  assert.match(js, /window\.visualViewport\.addEventListener\("resize", updateVisibleViewportSize/);
+});
+
+test("map layer buttons have a reliable capture-phase click route", () => {
+  assert.match(js, /function handleLayerOptionClick/);
+  assert.match(js, /document\.addEventListener\("click", handleLayerOptionClick, true\)/);
+  assert.match(js, /stopImmediatePropagation/);
+  assert.match(js, /window\.OmegaOfflineHybridAtlas\.activate\(\)/);
+  assert.match(css, /#layers-drawer \.layer-opt-btn[\s\S]*?pointer-events:\s*auto\s*!important/);
+  assert.match(css, /touch-action:\s*manipulation\s*!important/);
+});
