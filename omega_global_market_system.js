@@ -74,6 +74,31 @@
       const rid=site?.resourceId||site?.resId||site?.resourceTypeId||site?.resource_id||site?.resource;
       if(rid)ids.add(String(rid));
     }
+    // The individual-site binder resolves canonical mine/field records from country
+    // profiles and registered site JSON sources. Include its commodities even when
+    // the runtime has not yet generated stock, production, offers, or import requests.
+    const siteResourceId=site=>site?.resourceId||site?.resourceTypeId||site?.resId||site?.resource_id||
+      site?.resource||site?.commodity||site?.real?.resourceId||site?.sourceSiteRecord?.resourceId||
+      site?.sourceSiteRecord?.resourceTypeId||site?.sourceSiteRecord?.resId||
+      site?.identity?.resourceTypeId||site?.identity?.resourceId||
+      site?.siteDataPackage?.resourceId||site?.siteDataPackage?.resourceTypeId||
+      site?.siteDataPackage?.identity?.resourceTypeId;
+    const siteSources=[
+      g.Omega?.IndividualResourceSiteBinding?.sites,
+      g.OmegaIndividualResourceSiteBinding?.sites,
+      g.OmegaResourceSiteMasterResearchData?.sites,
+      g.Omega?.ResourceSiteMasterResearchData?.sites
+    ];
+    for(const rows of siteSources)if(Array.isArray(rows))for(const site of rows){
+      const rid=siteResourceId(site);if(rid)ids.add(String(rid));
+    }
+    const profiles=g.ResourceMinistryEngine?.countryProfiles||{};
+    for(const profile of Object.values(profiles)){
+      const context=profile?.resource_infrastructure_context||profile?.infrastructure_context||{};
+      for(const rows of [context.mineSites,context.resourceSites,profile?.mineSites])if(Array.isArray(rows)){
+        for(const site of rows){const rid=siteResourceId(site);if(rid)ids.add(String(rid));}
+      }
+    }
     for(const c of countries()){
       const inv=countryValue(c,'resource.inventory'),prod=countryValue(c,'resource.production'),cons=countryValue(c,'resource.consumption');
       for(const source of [inv,prod,cons])if(source&&typeof source==='object')for(const k of Object.keys(source))ids.add(k);
