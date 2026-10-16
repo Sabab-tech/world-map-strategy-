@@ -408,25 +408,75 @@
     const cid = canonicalCountry(ctx.countryId);
     const rid = String(p.resourceId || '').trim();
     if (!rid) return { accepted: false, reason: 'RESOURCE_ID_REQUIRED' };
+
+    const rootRules = g.__OmegaResourceEconomyRules;
+    const surveyRules = rootRules && rootRules.actions && rootRules.actions.survey;
+    const duration = numberOrNull(surveyRules && surveyRules.durationTurns);
+    const budgetUnits = numberOrNull(surveyRules && surveyRules.budgetUnitsPerSurvey);
+    if (duration === null || duration < 1 || !Number.isInteger(duration) || budgetUnits === null || budgetUnits < 0) {
+      return { accepted: false, reason: 'SURVEY_RULES_NOT_READY' };
+    }
+
+    const types = Array.isArray(g.ResourceMinistryEngine && g.ResourceMinistryEngine.resourceTypes)
+      ? g.ResourceMinistryEngine.resourceTypes : [];
+    if (types.length && !types.some(function (row) { return row && token(row.id) === token(rid); })) {
+      return { accepted: false, reason: 'RESOURCE_NOT_IN_CATALOG', resourceId: rid };
+    }
+
+    const existing = ctx.stateTransaction.get('resource.surveyRequests');
+    const rows = Array.isArray(existing) ? existing : [];
+    const requestId = String(p.requestId || ('RES-SURVEY-' + turn() + '-' + cid + '-' + token(rid)));
+    const previous = rows.find(function (row) { return String(row && row.requestId) === requestId; });
+    if (previous) {
+      if (token(previous.resourceId) !== token(rid) || canonicalCountry(previous.countryId) !== cid) {
+        return { accepted: false, reason: 'SURVEY_REQUEST_ID_CONFLICT', requestId: requestId };
+      }
+      return { accepted: true, duplicate: true, request: clone(previous) };
+    }
+
+    const financeState = countryBucketFromMap(stateRoot() && stateRoot().finance, cid);
+    let debit = { status: 'APPLIED', accepted: true, amount: 0, noCharge: true };
+    if (budgetUnits > 0) {
+      debit = command('finance', 'OMEGA_TRADE_FINANCE_DEBIT', cid, {
+        amount: budgetUnits,
+        reason: 'RESOURCE_GEOLOGICAL_SURVEY',
+        referenceId: requestId,
+        transactionId: 'RESOURCE_SURVEY:' + requestId,
+        currency: financeState.currencyCode || null
+      });
+      const debitResult = debit && debit.result && typeof debit.result === 'object' ? debit.result : debit;
+      const debitStatus = String(debit && debit.status || debitResult && debitResult.status || '').toUpperCase();
+      if (!debit || debitResult && debitResult.accepted === false ||
+          ['FAILED', 'UNAVAILABLE', 'REJECTED', 'BLOCKED', 'ERROR'].indexOf(debitStatus) >= 0 ||
+          (debitStatus !== 'APPLIED' && !(debitResult && debitResult.accepted === true))) {
+        return {
+          accepted: false,
+          reason: 'SURVEY_BUDGET_DEBIT_FAILED',
+          requiredBudgetUnits: budgetUnits,
+          currencyCode: financeState.currencyCode || null,
+          detail: clone(debit)
+        };
+      }
+    }
+
     const request = {
-      requestId: String(p.requestId || ('RES-SURVEY-' + turn() + '-' + cid + '-' + token(rid))),
+      requestId: requestId,
       countryId: cid,
       resourceId: rid,
       status: 'REQUESTED',
       requestedTurn: turn(),
+      estimatedDurationTurns: duration,
+      surveyBudgetUnits: budgetUnits,
+      budgetStatus: budgetUnits > 0 ? 'CHARGED' : 'NO_CHARGE',
+      currencyCode: financeState.currencyCode || null,
       source: 'RESOURCE_UI_DIRECTIVE',
       evidencePolicy: 'NO_AUTOMATIC_DISCOVERY',
-      note: 'Request recorded. Reserve, purity, confidence and production remain unchanged until an authoritative survey result exists.'
+      note: 'Survey queued. Treasury charge is recorded separately; reserve, purity and production change only when an authoritative survey result exists.'
     };
-    const existing = ctx.stateTransaction.get('resource.surveyRequests');
-    if (Array.isArray(existing) && existing.some(function (row) { return row.requestId === request.requestId; })) {
-      return { accepted: true, duplicate: true, request: clone(request) };
-    }
-    ctx.stateTransaction.set('resource.surveyRequests', (Array.isArray(existing) ? existing : []).concat([clone(request)]).slice(-256));
+    ctx.stateTransaction.set('resource.surveyRequests', rows.concat([clone(request)]).slice(-256));
     emit('OMEGA_RESOURCE_SURVEY_REQUESTED', cid, request, cmd && cmd.commandId);
-    return { accepted: true, request: request };
+    return { accepted: true, request: request, budgetDebit: clone(debit) };
   }
-
   function expansionRequestHandler(cmd, ctx) {
     const p = cmd && cmd.payload || {};
     const cid = canonicalCountry(ctx.countryId);
