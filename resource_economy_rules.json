@@ -44,7 +44,7 @@
   "demand": {
     "enabled": true,
     "ruleVersion": "1.0.0",
-    "description": "Rule-driven national resource consumption. Profile coefficients are simulated resource-native quantities per million people per day. resource.consumption remains a daily rate for existing stockpile targetDays logic; the runtime debits only the fraction attributable to the actual simulation step. Units are not inferred across commodity datasets.",
+    "description": "Rule-driven national resource consumption. Profile coefficients are simulated resource-native quantities per million people per day. resource.consumption remains a daily rate for existing stockpile targetDays logic; consumption and extraction quantities are scaled to the actual simulation-step duration when the authoritative clock is available. Runtime-only legacy contexts without a clock use a daily step.",
     "quantityBasis": "RESOURCE_NATIVE_UNITS_PER_DAY",
     "baselinePolicy": "PIN_FIRST_OBSERVED_POSITIVE_RATE_OR_PROFILE_RATE",
     "defaultElasticities": {
@@ -592,7 +592,7 @@
       }
     },
     "maxHistoryTurns": 128,
-    "defaultTurnDurationMs": 3600000,
+    "defaultTurnDurationMs": 86400000,
     "stockCoverageDays": 3,
     "procurementBufferDays": 2,
     "maxPurchaseCoverageDays": 6
