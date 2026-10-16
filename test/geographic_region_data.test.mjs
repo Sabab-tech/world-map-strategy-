@@ -45,6 +45,16 @@ assert.ok(world.features.some(f => f.properties?.name === 'Somaliland'), 'Existi
 
 assert.ok(!countries.find(c => c.code === 'LU').oceanAccess.length, 'Luxembourg must remain landlocked');
 assert.ok(countries.find(c => c.code === 'HM').oceanAccess.includes('INDIAN'), 'Heard and McDonald Islands should be associated with the Indian Ocean');
+assert.ok(countries.find(c => c.code === 'AX').oceanAccess.includes('ATLANTIC'), 'Aland Islands belong to the connected Atlantic basin');
+assert.ok(countries.find(c => c.code === 'BV').oceanAccess.includes('ATLANTIC'), 'Bouvet Island belongs to the South Atlantic');
+assert.ok(countries.find(c => c.code === 'IO').oceanAccess.includes('INDIAN'), 'British Indian Ocean Territory must be in the Indian Ocean');
+assert.ok(countries.find(c => c.code === 'HK').oceanAccess.includes('PACIFIC'), 'Hong Kong belongs to the Pacific basin');
+assert.ok(countries.find(c => c.code === 'MO').oceanAccess.includes('PACIFIC'), 'Macao belongs to the Pacific basin');
+assert.ok(countries.find(c => c.code === 'NF').oceanAccess.includes('PACIFIC'), 'Norfolk Island belongs to the Pacific');
+assert.ok(countries.find(c => c.code === 'JO').oceanAccess.includes('INDIAN'), 'Jordan has a Red Sea/Gulf of Aqaba connection');
+assert.ok(countries.find(c => c.code === 'MC').oceanAccess.includes('ATLANTIC'), 'Monaco belongs to the connected Mediterranean/Atlantic basin');
+assert.ok(countries.find(c => c.code === 'GS').oceanAccess.includes('ATLANTIC'), 'South Georgia and the South Sandwich Islands belong to the South Atlantic');
+assert.equal(countries.find(c => c.code === 'GS').continent, 'South America', 'South Georgia should not be grouped with North America');
 assert.equal(oceans.type, 'FeatureCollection');
 assert.equal(oceans.features.length, 5, 'Exactly five ocean basin geometries are required.');
 assert.equal(new Set(oceans.features.map(f => f.properties?.oceanId)).size, 5, 'Ocean IDs must be unique.');
