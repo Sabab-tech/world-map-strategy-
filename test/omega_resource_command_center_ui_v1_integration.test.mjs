@@ -125,7 +125,7 @@ test('all sixteen resource panels are registered, selectable and safe to render'
   api.open('BGD','ontology');
   const ontologyHtml=document.getElementById('gsrsk-intelligence-modal').innerHTML;
   assert.match(ontologyHtml,/Global resource types/,'the catalog panel reports the worldwide commodity count');
-  assert.match(ontologyHtml,/Rare earth elements/,'the catalog panel lists resources outside the selected country's summary');
+  assert.match(ontologyHtml,/Rare earth elements/,"the catalog panel lists resources outside the selected country summary");
   assert.match(ontologyHtml,/Registered deposits \/ sites/,'the catalog panel reports the global deposit registry size');
 
   api.open('BGD','market');
