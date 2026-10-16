@@ -354,7 +354,7 @@ function addMapMarkers(){
  if(resourceState.enabled&&mapApi.resourceDepositsLayer?.clearLayers)mapApi.resourceDepositsLayer.clearLayers();
  if(!resourceState.enabled)return;
  const scope=String(resourceState.scope||'NATION').toUpperCase();
- const activeCountry=String(g.Game?.currentActiveCountry||g.CountryIOS?.activeCountry||'').trim();
+ const activeCountry=String(resourceState.targetCountryId||g.Game?.currentActiveCountry||g.CountryIOS?.activeCountry||'').trim();
  if(scope!=='WORLD'&&!activeCountry)return;
  const norm=v=>String(v||'').replace(/[_-]+/g,' ').replace(/\s+/g,' ').trim().toUpperCase();
  const aliases={oil:'crude_oil',crudeoil:'crude_oil',gas:'natural_gas',naturalgas:'natural_gas',iron:'iron_ore',ironore:'iron_ore',rareearth:'rare_earth'};
