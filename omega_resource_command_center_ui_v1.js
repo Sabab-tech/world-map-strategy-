@@ -252,11 +252,15 @@
       });
     });
     sites.forEach(function (site) {
-      ['reserve', 'recoverableReserve', 'quantitative', 'quantity'].forEach(function (key) {
-        if (site[key] !== undefined && site[key] !== null) candidates.push(site[key]);
-      });
-      ['reserveUnit', 'standardUnit', 'unitOfMeasure', 'measurementUnit', 'unit'].forEach(function (key) {
-        if (site[key] !== undefined && site[key] !== null) candidates.push(site[key]);
+      const source = site.sourceSiteRecord && typeof site.sourceSiteRecord === 'object' ? site.sourceSiteRecord : {};
+      const pkg = site.siteDataPackage && typeof site.siteDataPackage === 'object' ? site.siteDataPackage : {};
+      [site, source, pkg].forEach(function (record) {
+        ['reserve', 'reserves', 'recoverableReserve', 'quantitative', 'quantity', 'measurement'].forEach(function (key) {
+          if (record[key] !== undefined && record[key] !== null) candidates.push(record[key]);
+        });
+        ['declaredStandardUnit', 'standardUnit', 'quantityUnit', 'reserveUnit', 'unitOfMeasure', 'measurementUnit', 'unit'].forEach(function (key) {
+          if (record[key] !== undefined && record[key] !== null) candidates.push(record[key]);
+        });
       });
     });
     for (const candidate of candidates) {
@@ -281,8 +285,11 @@
   }
   function siteResourceId(site) {
     return site && (site.resourceId || site.resourceTypeId || site.resId || site.resource_id || site.resource || site.commodity ||
+      site.real && (site.real.resourceId || site.real.resourceTypeId || site.real.resId) ||
       site.identity && (site.identity.resourceTypeId || site.identity.resourceId) ||
-      site.sourceSiteRecord && (site.sourceSiteRecord.resourceId || site.sourceSiteRecord.resourceTypeId || site.sourceSiteRecord.resId));
+      site.sourceSiteRecord && (site.sourceSiteRecord.resourceId || site.sourceSiteRecord.resourceTypeId || site.sourceSiteRecord.resId) ||
+      site.siteDataPackage && (site.siteDataPackage.resourceId || site.siteDataPackage.resourceTypeId ||
+        site.siteDataPackage.resId || site.siteDataPackage.identity && site.siteDataPackage.identity.resourceTypeId));
   }
   function siteCountryId(site) {
     const source = site && site.sourceSiteRecord && typeof site.sourceSiteRecord === 'object' ? site.sourceSiteRecord : {};
