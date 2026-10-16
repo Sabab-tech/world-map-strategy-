@@ -727,9 +727,9 @@
         '<label><span data-trade-counterparty-label>Supplier country</span><select name="targetCountryId" required>' + countries + '</select></label>' +
         '<label>Resource<select name="resourceId" required>' + resourceOpts + '</select></label>' +
         '<label>Quantity<input name="quantity" type="number" min="0.000001" step="any" required placeholder="Enter quantity"></label>' +
-        '<label>Unit price<input name="unitPrice" type="number" min="0" step="any" required placeholder="Enter price per unit"></label>' +
+        '<label>Unit price (optional)<input name="unitPrice" type="number" min="0" step="any" placeholder="Blank uses the current quote"></label>' +
       '</div>' +
-      '<p class="omega-rescc-locator-source" data-trade-help>Import creates a request to the chosen supplier. The trade engine checks agreements, relations, stock, price, route and settlement before any stock or money moves.</p>' +
+      '<p class="omega-rescc-locator-source" data-trade-help>Set the quantity. Leave unit price blank to use the supplier’s current market quote. Stock and treasury move only if the trade engine accepts and settles the request.</p>' +
       '<button class="omega-rescc-button" type="submit" data-trade-submit' +
         ((!canImport || !others.length || !resourceOpts) ? ' disabled' : '') +
       '>Create import request</button></form>' +
@@ -740,7 +740,7 @@
       return ['SENT', 'ACCEPTED', 'OPEN'].includes(String(r && r.status || '').toUpperCase());
     }).length;
     const openOffers = exportOffers.filter(function (r) {
-      return ['OPEN', 'REQUESTED'].includes(String(r && r.status || '').toUpperCase());
+      return String(r && r.status || '').toUpperCase() === 'OPEN';
     }).length;
     const settlements = Array.isArray(ledger.settlements) ? ledger.settlements : [];
     return '<div class="omega-rescc-metrics">' +
@@ -1041,8 +1041,8 @@
               !target || !target.options || !target.options.length || !resource || !resource.options || !resource.options.length;
           }
           if (help) help.textContent = isExport
-            ? 'Export creates a seller offer to the selected buyer. The buyer-side trade review must accept it; inventory and treasury change only when the standard settlement succeeds.'
-            : 'Import creates a request to the chosen supplier. The trade engine checks agreements, relations, stock, price, route and settlement before any stock or money moves.';
+            ? 'Set the quantity to offer. Leave price blank to use this country’s current quote. The buyer’s trade review must accept the offer; inventory and treasury move only after settlement.'
+            : 'Set the quantity to import. Leave price blank to use the selected supplier’s current quote. Agreements, stock, route, treasury and settlement checks still apply.';
           return;
         }
         if (event.target && event.target.id === 'omega-rescc-country') {
@@ -1347,9 +1347,24 @@
       if (kind === 'trade-request') {
         const trade = g.OmegaGlobalTrade || g.Omega && g.Omega.GlobalTrade;
         const direction = String(data.get('direction') || 'IMPORT').toUpperCase();
+        const targetCountryId = String(data.get('targetCountryId') || '');
+        const resourceId = String(data.get('resourceId') || '');
+        const rawUnitPrice = String(data.get('unitPrice') || '').trim();
+        let unitPrice = rawUnitPrice === '' ? null : Number(rawUnitPrice);
+        if (unitPrice === null) {
+          const quoteCountry = direction === 'EXPORT' ? c : targetCountryId;
+          unitPrice = trade && typeof trade.marketPrice === 'function' ? Number(trade.marketPrice(quoteCountry, resourceId)) : NaN;
+          if (!Number.isFinite(unitPrice) || unitPrice < 0) {
+            setOutcome(direction === 'EXPORT' ? 'Export offer' : 'Import request', {
+              status: 'BLOCKED', reason: 'MARKET_PRICE_NOT_OBSERVED',
+              message: 'Enter an explicit unit price or wait until the selected market has a current quote.'
+            });
+            return;
+          }
+        }
         const payload = {
-          targetCountryId: data.get('targetCountryId'), resourceId: data.get('resourceId'),
-          quantity: Number(data.get('quantity')), unitPrice: Number(data.get('unitPrice')),
+          targetCountryId, resourceId,
+          quantity: Number(data.get('quantity')), unitPrice,
           source: 'OMEGA_RESOURCE_COMMAND_CENTER_UI'
         };
         if (direction === 'EXPORT') {
