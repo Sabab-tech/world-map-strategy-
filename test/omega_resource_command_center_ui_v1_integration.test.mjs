@@ -114,6 +114,29 @@ test('all sixteen resource panels are registered, selectable and safe to render'
   assert.equal(api.getResourceUnit('rare_earth','BGD'),null,'unknown catalog units are not guessed');
   assert.equal(api.convertUnits(1,'megatonne','metric_tonne').value,1000000,'megatonne conversion is available');
   assert.equal(api.convertUnits(1,'megatonne','kg').value,1000000000,'megatonne conversion preserves mass dimensions');
+
+  api.open('BGD','ontology');
+  const ontologyHtml=document.getElementById('gsrsk-intelligence-modal').innerHTML;
+  assert.match(ontologyHtml,/Global resource types/,'the catalog panel reports the worldwide commodity count');
+  assert.match(ontologyHtml,/Rare earth elements/,'the catalog panel lists resources outside the selected country's summary');
+  assert.match(ontologyHtml,/Registered deposits \/ sites/,'the catalog panel reports the global deposit registry size');
+
+  api.open('BGD','market');
+  const marketHtml=document.getElementById('gsrsk-intelligence-modal').innerHTML;
+  assert.match(marketHtml,/GLOBAL COMMODITY MARKET/,'market panel identifies itself as the global market');
+  assert.match(marketHtml,/Global resources tracked/,'market panel has a global market summary');
+  assert.match(marketHtml,/Rare earth elements/,'market panel quotes resources from the global catalog, not only local country inventory');
+  assert.match(marketHtml,/Worldwide Deposits/,'the global deposit registry is reachable from the command-center header');
+
+  api.open('BGD','deposits');
+  const modal=document.getElementById('gsrsk-intelligence-modal');
+  assert.match(modal.innerHTML,/id="omega-rescc-deposit-scope"/,'deposit panel offers country/global scope selection');
+  const changeHandler=(modal.listeners.change||[])[0];
+  assert.equal(typeof changeHandler,'function','the command center installs a change handler');
+  changeHandler({target:{id:'omega-rescc-deposit-scope',value:'WORLD'}});
+  assert.match(modal.innerHTML,/value="WORLD" selected/,'worldwide deposit scope can be selected in the running panel');
+  assert.match(modal.innerHTML,/Worldwide · all countries/,'global selection has explicit user-facing scope');
+  assert.match(modal.innerHTML,/Resource deposits worldwide/,'the worldwide view uses the global deposit table');
 });
 
 test('legacy card names disclose feature gaps instead of claiming unsupported actions', () => {
