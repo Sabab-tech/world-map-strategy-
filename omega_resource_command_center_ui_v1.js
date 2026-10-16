@@ -638,7 +638,7 @@
     const defaultTarget = targetUnitId(declaredUnit);
     const resourceOptions = choices.length ? choices.map(function (row) {
       const id = String(row.id);
-      const unit = resourceUnitId(id, country);
+      const unit = resourceUnitId(id, 'WORLD');
       const detail = unit && UNIT_DEFINITIONS[unit] ? ' · ' + UNIT_DEFINITIONS[unit].label : ' · unit not recorded';
       return '<option value="' + esc(id) + '"' + (id === selectedId ? ' selected' : '') + '>' +
         esc(row.name || id) + esc(detail) + '</option>';
