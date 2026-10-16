@@ -67,8 +67,8 @@
     var milliseconds = finite(clock && clock.stepDurationMs);
     if (milliseconds === null) milliseconds = finite(s && s.simulation && s.simulation.stepDurationMs);
     if (milliseconds === null) milliseconds = finite(rules().defaultTurnDurationMs);
-    // The current simulation clock defaults to one simulated hour per turn.
-    if (milliseconds === null || milliseconds <= 0) milliseconds = 3600000;
+    // Match the endowment runtime's daily fallback when no authoritative clock exists.
+    if (milliseconds === null || milliseconds <= 0) milliseconds = 86400000;
     return Math.max(1 / 86400000, milliseconds / 86400000);
   }
   function bucket(countryId, domain) {
