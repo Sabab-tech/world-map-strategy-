@@ -288,10 +288,28 @@
   }
   function playerCountryId() {
     var s = state(), session = s.simulation && s.simulation.session || {};
-    var candidates = [session.playerCountryId, s.playerCountryId, s.countryId,
-      g.OmegaCabinetUI && g.OmegaCabinetUI.activeCountry,
-      g.CountryIOS && g.CountryIOS.activeCountry, g.Game && g.Game.currentActiveCountry];
-    for (var i = 0; i < candidates.length; i++) if (candidates[i]) return canonical(candidates[i]);
+    var player = object(s.player) || {}, playerCountry = object(player.country) || {};
+    var candidates = [
+      session.playerCountryId,
+      s.playerCountryId, s.playerCountryCode, s.sovereignCountryId, s.countryId,
+      player.countryId, player.countryCode, playerCountry.iso3, playerCountry.countryId,
+      playerCountry.id, playerCountry.code, playerCountry.name,
+      g.Game && (g.Game.playerCountryId || g.Game.playerCountryCode),
+      g.OMEGA_PLAYER_COUNTRY_ID
+    ];
+    for (var i = 0; i < candidates.length; i++) {
+      if (typeof candidates[i] === 'string' && candidates[i].trim()) return canonical(candidates[i]);
+    }
+    // Selected/active UI country is only a fallback, never preferred to a
+    // stored sovereign identity. Procurement remains disabled if identity is unknown.
+    var selected = [
+      s.currentActiveCountry, g.Game && (g.Game.selectedCountryId || g.Game.activeCountry || g.Game.currentActiveCountry),
+      g.currentActiveCountry, g.CountryIOS && g.CountryIOS.activeCountry,
+      g.OmegaCabinetUI && g.OmegaCabinetUI.activeCountry
+    ];
+    for (var j = 0; j < selected.length; j++) {
+      if (typeof selected[j] === 'string' && selected[j].trim()) return canonical(selected[j]);
+    }
     return null;
   }
   function dispatch(owner, type, countryId, payload) {
