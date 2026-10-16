@@ -21,6 +21,7 @@
     var blueMarbleImage = null;
     var blueMarblePromise = null;
     var textureReady = false;
+    var textureStored = false;
     var remoteImageryReady = false;
     var GRID_PANE = "omegaOfflineGraticulePane";
     var LABEL_PANE = "omegaOfflineCoordinateLabelsPane";
@@ -274,7 +275,10 @@
             return response.blob();
         }).then(function (blob) {
             if (!blob || !blob.size) throw new Error("NASA raster response was empty");
-            return writeCachedTexture(blob).then(function () { return blob; });
+            return writeCachedTexture(blob).then(function (stored) {
+                textureStored = !!stored;
+                return blob;
+            });
         }).catch(function (error) {
             console.warn("[OMEGA Atlas] Offline raster cache unavailable:", error && error.message ? error.message : error);
             return null;
@@ -284,6 +288,7 @@
     function loadBlueMarbleImage() {
         if (blueMarblePromise) return blueMarblePromise;
         blueMarblePromise = readCachedTexture().then(function (cachedBlob) {
+            if (cachedBlob) textureStored = true;
             return cachedBlob || fetchBlueMarbleTexture();
         }).then(function (blob) {
             if (!blob) return null;
@@ -298,6 +303,7 @@
                 var image = new Image();
                 image.onload = function () {
                     blueMarbleImage = image;
+                    URL.revokeObjectURL(objectUrl);
                     resolve(image);
                 };
                 image.onerror = function () {
@@ -430,7 +436,7 @@
                     window.OMEGA_OFFLINE_ATLAS_STATUS = {
                         active: active,
                         remoteImagery: true,
-                        offlineRasterCached: textureReady,
+                        offlineRasterCached: textureStored,
                         rasterSource: textureReady ? "NASA Blue Marble: Next Generation" : null
                     };
                 }
@@ -484,7 +490,7 @@
                     remoteImagery: remoteImageryReady,
                     offlineRasterCached: false,
                     rasterSource: null,
-                    note: "A first online connection is needed to cache the NASA overview image."
+                    note: "A first online connection is needed to fetch the NASA overview image; persistent offline use also requires browser storage."
                 };
             }
         });
@@ -492,7 +498,7 @@
         if (typeof Game.showNotification === "function") {
             Game.showNotification(
                 "HYBRID SATELLITE ATLAS",
-                "Detailed satellite tiles are preferred. A NASA Blue Marble overview is cached locally after a successful online load for later offline use.",
+                "Detailed satellite tiles are preferred. A NASA Blue Marble overview can be cached locally after a successful online load for later offline use.",
                 "info"
             );
         }
@@ -513,7 +519,7 @@
         window.OMEGA_OFFLINE_ATLAS_STATUS = {
             active: false,
             remoteImagery: false,
-            offlineRasterCached: !!blueMarbleImage,
+            offlineRasterCached: textureStored,
             rasterSource: blueMarbleImage ? "NASA Blue Marble: Next Generation" : null
         };
     }
@@ -527,7 +533,7 @@
             return window.OMEGA_OFFLINE_ATLAS_STATUS || {
                 active: active,
                 remoteImagery: remoteImageryReady,
-                offlineRasterCached: !!blueMarbleImage
+                offlineRasterCached: textureStored
             };
         }
     };
