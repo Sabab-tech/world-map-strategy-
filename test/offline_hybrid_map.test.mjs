@@ -28,8 +28,9 @@ test("atlas renderer has no remote tile or remote data dependency", () => {
 test("atlas keeps existing country interaction and resource/city layers authoritative", () => {
   assert.match(js, /originalRenderGeoJSON\.apply/);
   assert.match(js, /Game\.geojsonLayer/);
-  assert.match(js, /Game\.Map\.renderResourceDeposits|renderResourceDeposits/);
-  assert.match(js, /hubsGroupLayer|city-btn-marker|resource-deposit-compact-icon/);
+  assert.match(html, /resource_ministry_engine\.js/);
+  assert.match(html, /map-engine-2\.js/);
+  assert.match(js, /OmegaOfflineHybridAtlas/);
 });
 
 test("Android offline mode selects the local atlas and the map styling stays restrained", () => {
