@@ -307,10 +307,17 @@
     }
   }
   function formulaFactor(value, reference, elasticity, config) {
-    if (value === null || reference === null || reference <= 0 || value < 0) return { value: 1, available: false, ratio: null };
+    if (value === null || reference === null || value < 0) return { value: 1, available: false, ratio: null };
     var minRatio = finite(config.minContextRatio); if (minRatio === null || minRatio <= 0) minRatio = 0.25;
     var maxRatio = finite(config.maxContextRatio); if (maxRatio === null || maxRatio < minRatio) maxRatio = 4;
-    var ratio = clamp(value / reference, minRatio, maxRatio);
+    var ratio;
+    if (reference === 0) {
+      if (value === 0) ratio = 1;
+      else {
+        var zeroScale = finite(config.zeroReferenceScale); if (zeroScale === null || zeroScale <= 0) zeroScale = 1;
+        ratio = clamp(1 + value / zeroScale, minRatio, maxRatio);
+      }
+    } else ratio = clamp(value / reference, minRatio, maxRatio);
     return { value: Math.pow(ratio, Math.max(-2, Math.min(2, finite(elasticity) === null ? 0 : finite(elasticity)))), available: true, ratio: ratio };
   }
   function referenceContext(resource, countryId, runtime) {
