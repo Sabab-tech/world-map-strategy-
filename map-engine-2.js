@@ -1861,6 +1861,25 @@ Game.Map.applyResourceMapFilter = function(resourceType) {
     });
 };
 
+if (!Game.Map.__omegaCanonicalResourceRefreshBound && typeof window.addEventListener === 'function') {
+    Game.Map.__omegaCanonicalResourceRefreshBound = true;
+    [
+        'OMEGA_RESOURCE_SITE_BINDING_READY',
+        'OMEGA_RESOURCE_CATALOG_READY',
+        'OMEGA_READY',
+        'OMEGA_GAME_SESSION_STARTED',
+        'OMEGA_RESOURCE_EXTRACTION_COMPLETED',
+        'OMEGA_RESOURCE_BATCH_CREATED',
+        'OMEGA_RESOURCE_INVENTORY_CHANGED'
+    ].forEach(eventName => {
+        window.addEventListener(eventName, () => {
+            const mapApi = Game.Map;
+            if (!mapApi?.resourceState?.enabled || typeof mapApi.renderResourceDeposits !== 'function') return;
+            mapApi.renderResourceDeposits();
+        });
+    });
+}
+
 Game.Map.toggleRelationOverlay = function() {
     if (Game.dom.relFilterBox.style.display === 'flex') {
         Game.dom.relFilterBox.style.display = 'none';
