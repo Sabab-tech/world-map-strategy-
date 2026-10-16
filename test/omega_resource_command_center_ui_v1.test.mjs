@@ -28,7 +28,7 @@ test('deposit panel is an explicit country-scoped exact-site locator, not a gene
   assert.match(ui, /label class="omega-rescc-control-label" for="omega-rescc-country">Country/);
   assert.match(ui, /Mine, oil field, gas field or resource/);
   assert.match(ui, /action === 'focus-site'/);
-  assert.match(ui, /binding\.locate\(siteId\)/, 'exact-site actions must use the canonical site's locate API');
+  assert.match(ui, /binding\.locate\(siteId\)/, "exact-site actions must use the canonical site's locate API");
   assert.match(readTestFile('omega_resource_gameplay_binding_v1.js'), /locate:locateSite/,
     'the canonical site binding must expose the map locate operation');
 });
