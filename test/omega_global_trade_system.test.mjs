@@ -195,4 +195,31 @@ const conflictingUiRequest=trade.createRequest('BGD',{
 });
 assert.equal(conflictingUiRequest?.accepted,false,'conflicting request ID reuse must fail');
 assert.equal(conflictingUiRequest?.reason,'TRADE_REQUEST_ID_CONFLICT');
+
+const exportOffer=trade.createExportOffer('SAU',{
+  offerId:'EXP-UI-CREATE',targetCountryId:'BGD',resourceId:'crude_oil',quantity:50,unitPrice:101,
+  source:'OMEGA_RESOURCE_COMMAND_CENTER_UI'
+});
+assert.equal(exportOffer?.accepted,true,JSON.stringify(exportOffer));
+assert.equal(exportOffer.offer?.status,'OPEN');
+assert.equal(globalThis.Game.state.trade.SAU.exportOffers.find(x=>x.offerId==='EXP-UI-CREATE')?.quantity,50);
+const duplicateExportOffer=trade.createExportOffer('SAU',{
+  offerId:'EXP-UI-CREATE',targetCountryId:'BGD',resourceId:'crude_oil',quantity:50,unitPrice:101,
+  source:'OMEGA_RESOURCE_COMMAND_CENTER_UI'
+});
+assert.equal(duplicateExportOffer?.duplicate,true,'identical export offer retries must be idempotent');
+const conflictingExportOffer=trade.createExportOffer('SAU',{
+  offerId:'EXP-UI-CREATE',targetCountryId:'BGD',resourceId:'crude_oil',quantity:51,unitPrice:101,
+  source:'OMEGA_RESOURCE_COMMAND_CENTER_UI'
+});
+assert.equal(conflictingExportOffer?.accepted,false,'conflicting export offer ID reuse must fail');
+assert.equal(conflictingExportOffer?.reason,'EXPORT_OFFER_ID_CONFLICT');
+
+trade.processAll();
+const linkedOffer=globalThis.Game.state.trade.SAU.exportOffers.find(x=>x.offerId==='EXP-UI-CREATE');
+assert.equal(linkedOffer?.status,'REQUESTED',JSON.stringify({linkedOffer,trace:globalThis.__OMEGA_LAST_TRADE_PROCESS_TRACE}));
+assert.ok(linkedOffer?.linkedRequestId,'accepted export offer must create a normal import request');
+const linkedImport=globalThis.Game.state.trade.BGD.importRequests.find(x=>x.requestId===linkedOffer.linkedRequestId);
+assert.ok(linkedImport,'export offer must use the existing trade request pipeline');
+assert.equal(linkedImport?.status,'SETTLED',JSON.stringify({linkedImport,trace:globalThis.__OMEGA_LAST_TRADE_PROCESS_TRACE}));
 console.log('OMEGA GLOBAL TRADE TEST PASSED');
