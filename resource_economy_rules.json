@@ -28,7 +28,9 @@
   "actions": {
     "survey": {
       "durationTurns": 2,
-      "maxResultRecords": 64
+      "maxResultRecords": 64,
+      "budgetUnitsPerSurvey": 25000,
+      "budgetPolicy": "DEBIT_NATIVE_TREASURY_ON_ACCEPTANCE"
     },
     "facilityExpansion": {
       "capacityIncreaseFraction": 0.25,
