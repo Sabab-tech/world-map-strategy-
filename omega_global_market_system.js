@@ -81,13 +81,24 @@
       site?.resource||site?.commodity||site?.real?.resourceId||site?.sourceSiteRecord?.resourceId||
       site?.sourceSiteRecord?.resourceTypeId||site?.sourceSiteRecord?.resId||
       site?.identity?.resourceTypeId||site?.identity?.resourceId||
+      site?.resourceIdentity?.resourceTypeId||site?.resourceIdentity?.resourceId||
       site?.siteDataPackage?.resourceId||site?.siteDataPackage?.resourceTypeId||
       site?.siteDataPackage?.identity?.resourceTypeId;
+    const canonicalCatalog=g.OmegaResourceSiteCanonicalCatalogData||g.Omega?.ResourceSiteCanonicalCatalogData;
+    const masterRegistry=g.OmegaResourceSiteMasterResearchData||g.Omega?.ResourceSiteMasterResearchData;
+    const reserveData=g.OmegaResourceSiteReserveSimulationData||g.Omega?.ResourceSiteReserveSimulationData;
+    const losslessData=g.OmegaResourceLosslessReferenceData||g.Omega?.ResourceLosslessReferenceData;
+    const scenarioData=g.OmegaResourceScenarioEngineeringData||g.Omega?.ResourceScenarioEngineeringData;
     const siteSources=[
       g.Omega?.IndividualResourceSiteBinding?.sites,
       g.OmegaIndividualResourceSiteBinding?.sites,
-      g.OmegaResourceSiteMasterResearchData?.sites,
-      g.Omega?.ResourceSiteMasterResearchData?.sites
+      canonicalCatalog?.sites,
+      masterRegistry?.sites,
+      reserveData?.records,
+      losslessData?.sites,
+      losslessData?.records,
+      scenarioData?.sites,
+      scenarioData?.records
     ];
     for(const rows of siteSources)if(Array.isArray(rows))for(const site of rows){
       const rid=siteResourceId(site);if(rid)ids.add(String(rid));
