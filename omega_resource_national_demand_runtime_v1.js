@@ -644,17 +644,20 @@
         }
       });
       runtime.procurementDecisions = (runtime.procurementDecisions || []).concat(procurement).slice(-rowLimit);
-      // A final telemetry-only update avoids changing the authoritative consumption
-      // state again; the decision history remains inspectable on this resource runtime.
-      var latest = bucket(cid, 'resource') || {};
-      var latestRuntime = clone(object(latest.demandRuntime) || runtime);
-      latestRuntime.procurementDecisions = clone(runtime.procurementDecisions);
-      latestRuntime.lastProcurementTurn = currentTurn();
-      dispatch('resource', 'OMEGA_RESOURCE_ECON_PUBLISH_DEMAND_RUNTIME', cid, {
-        consumption: {}, demandRuntime: latestRuntime,
-        correlationId: 'DEMAND-DECISIONS-' + currentTurn() + '-' + cid
-      });
+      runtime.lastProcurementTurn = currentTurn();
     }
+    var finalPublish = dispatch('resource', 'OMEGA_RESOURCE_ECON_PUBLISH_DEMAND_RUNTIME', cid, {
+      consumption: {}, demandRuntime: clone(runtime),
+      correlationId: 'DEMAND-TELEMETRY-' + currentTurn() + '-' + cid
+    });
+    if (finalPublish && finalPublish.status !== 'APPLIED') runtime.telemetryPublishStatus = finalPublish.reason || finalPublish.status;
+    try {
+      if (typeof g.dispatchEvent === 'function' && typeof g.CustomEvent === 'function') {
+        g.dispatchEvent(new g.CustomEvent('OMEGA_RESOURCE_NATIONAL_DEMAND_UPDATED', {
+          detail: { countryId: cid, turn: currentTurn(), summary: clone(runtime.lastSummary), resources: clone(runtime.byResource) }
+        }));
+      }
+    } catch (_) {}
     return {
       countryId: cid, turn: currentTurn(),
       status: runtime.status, publishStatus: runtime.publishStatus || publishStatus,
