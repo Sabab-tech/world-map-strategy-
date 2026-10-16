@@ -111,6 +111,8 @@ test('all sixteen resource panels are registered, selectable and safe to render'
   api.open('BGD','matrix');
   const matrixHtml=document.getElementById('gsrsk-intelligence-modal').innerHTML;
   assert.match(matrixHtml,/id="omega-rescc-resource-select"/,'the workspace uses one catalog-backed resource selector');
+  assert.match(matrixHtml,/id="omega-rescc-search-country"/,'the locator can search a selected country or the whole world');
+  assert.match(matrixHtml,/Locate resource \/ deposit on map/,'the selected resource can trigger a real map-locator action');
   assert.match(matrixHtml,/id="omega-rescc-location-select"/,'site location is an inline dropdown, not a separate button');
   assert.match(matrixHtml,/class="omega-rescc-table"/,'resource balances render as a compact table rather than repeated cards');
   assert.match(matrixHtml,/Barapukuria Coal Mine/,'location options come from canonical deposit records');
