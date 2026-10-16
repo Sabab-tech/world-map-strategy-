@@ -309,6 +309,11 @@
     function syncButtonState() {
         atlasButton = atlasButton || document.querySelector('.layer-opt-btn[data-layer="offline-hybrid"]');
         if (!atlasButton) return;
+        if (active) {
+            document.querySelectorAll(".layer-opt-btn").forEach(function (button) {
+                if (button !== atlasButton) button.classList.remove("active");
+            });
+        }
         atlasButton.classList.toggle("active", active);
         atlasButton.setAttribute("aria-pressed", String(active));
     }
