@@ -289,8 +289,14 @@
   function playerCountryId() {
     var s = state(), session = s.simulation && s.simulation.session || {};
     var player = object(s.player) || {}, playerCountry = object(player.country) || {};
+    var simulation = g.Omega && g.Omega.Simulation;
+    var simulationPlayer = null;
+    try {
+      simulationPlayer = simulation && typeof simulation.getPlayerCountryId === 'function'
+        ? simulation.getPlayerCountryId() : null;
+    } catch (_) {}
     var candidates = [
-      session.playerCountryId,
+      session.playerCountryId, simulationPlayer,
       s.playerCountryId, s.playerCountryCode, s.sovereignCountryId, s.countryId,
       player.countryId, player.countryCode, playerCountry.iso3, playerCountry.countryId,
       playerCountry.id, playerCountry.code, playerCountry.name,
