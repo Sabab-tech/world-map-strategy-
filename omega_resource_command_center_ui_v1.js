@@ -1211,7 +1211,7 @@
       '<div><span>Markets tracked by runtime</span><strong>' + number(diagnostics.resourceMarkets ?? Object.keys(books || {}).length) + '</strong></div></div>';
     return top + '<p class="omega-rescc-muted">GLOBAL COMMODITY MARKET · All resources found in the global catalog, deposit registry and market order books. Clearing prices appear only when real in-game bids and asks match. Catalog reference prices are shown separately and never count as sales.</p>' +
       '<div class="omega-rescc-actions">' +
-      '<button type="button" class="omega-rescc-button" data-panel="trade">Open trade requests &amp; settlement</button>' +
+      '<button type="button" class="omega-rescc-button" data-action="open-trade">Open trade requests &amp; settlement</button>' +
       actionButton('refresh-market', 'Rebuild global market snapshot', {}) +
       actionButton('open-global-deposits', 'Browse worldwide deposits', {}) + '</div>' +
       (marketRows || empty('No resource IDs were found in the loaded global catalog, site registry or market order books.'));
@@ -1713,6 +1713,10 @@
       }
       if (action === 'open-global-market') {
         render(c, 'market');
+        return;
+      }
+      if (action === 'open-trade') {
+        render(c, 'trade');
         return;
       }
       if (action === 'open-global-deposits') {
