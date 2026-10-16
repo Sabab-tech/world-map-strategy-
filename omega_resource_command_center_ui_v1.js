@@ -276,6 +276,7 @@
         countryCode = normaliseCountry(countryCode);
       }
     } catch (_) {}
+    if (countryCode === 'WORLD' || countryCode === 'GLOBAL' || countryCode === 'ALL_COUNTRIES') return true;
     return siteCode === countryCode;
   }
   function sitesForResource(country, resourceId) {
@@ -367,16 +368,45 @@
         esc(UNIT_DEFINITIONS[id].label) + '</option>';
     }).join('');
   }
+  function resourceCountryChoices() {
+    const ids = new Set(countryList().filter(function (id) { return id && id !== 'WORLD'; }));
+    deposits().forEach(function (site) {
+      const raw = site && (site.countryCode || site.countryId || site.country || site.countryName || site.sovereignCountryId);
+      if (raw) ids.add(normaliseCountry(raw));
+    });
+    const e = engine();
+    Object.keys(e && e.countryProfiles || {}).forEach(function (id) { if (id) ids.add(normaliseCountry(id)); });
+    return ['WORLD'].concat(Array.from(ids).filter(function (id) { return id && id !== 'WORLD'; }).sort());
+  }
+  function countryDisplayName(id) {
+    if (id === 'WORLD' || id === 'GLOBAL' || id === 'ALL_COUNTRIES') return 'Worldwide · all countries';
+    const key = normaliseCountry(id);
+    const gameRow = g.Game && g.Game.countryLookup && (g.Game.countryLookup[key] || g.Game.countryLookup[id]);
+    const e = engine();
+    const profile = e && e.getCountryResourceProfile ? e.getCountryResourceProfile(key) : null;
+    const name = gameRow && (gameRow.name || gameRow.officialName) ||
+      profile && profile.identity && (profile.identity.name || profile.identity.officialName);
+    return name && String(name).toUpperCase() !== String(key).toUpperCase() ? String(name) + ' (' + key + ')' : key;
+  }
+  function resourceCountryOptionsHtml(selected) {
+    return resourceCountryChoices().map(function (id) {
+      return '<option value="' + esc(id) + '"' + (id === selected ? ' selected' : '') + '>' +
+        esc(countryDisplayName(id)) + '</option>';
+    }).join('');
+  }
   function locationOptionsHtml(country, resourceId) {
     const sites = sitesForResource(country, resourceId);
     const options = sites.map(function (site, index) {
       const id = site.siteId || site.id || site.siteKey || site.assetId || site.siteName || ('DEPOSIT_' + index);
       const name = site.siteName || site.name || site.label || String(id);
       const region = site.region || site.locality || site.adminRegion;
-      return '<option value="' + esc(id) + '">' + esc(region ? name + ' · ' + region : name) + '</option>';
+      const siteCountry = site.countryName || site.country || site.countryCode || site.countryId || site.sovereignCountryId;
+      const label = [name, region, String(country || '').toUpperCase() === 'WORLD' ? countryDisplayName(normaliseCountry(siteCountry)) : '']
+        .filter(Boolean).join(' · ');
+      return '<option value="' + esc(id) + '">' + esc(label) + '</option>';
     }).join('');
-    return '<option value="">All locations / no specific site</option>' +
-      (options || '<option value="" disabled>No matching site records for this resource and country</option>');
+    return '<option value="">Select a specific deposit (or choose all matching sites)</option>' +
+      (options || '<option value="" disabled>No matching site records for this resource and scope</option>');
   }
   function targetUnitId(sourceUnitId) {
     const source = UNIT_DEFINITIONS[sourceUnitId];
@@ -417,21 +447,71 @@
   function syncResourceForm(form, country) {
     if (!form || typeof form.querySelector !== 'function') return;
     const resourceSelect = form.querySelector('#omega-rescc-resource-select');
+    const countrySelect = form.querySelector('#omega-rescc-search-country');
     const sourceSelect = form.querySelector('[name="fromUnit"]');
     const targetSelect = form.querySelector('[name="toUnit"]');
     const locationSelect = form.querySelector('#omega-rescc-location-select');
     const help = form.querySelector('#omega-rescc-unit-help');
+    const matchCount = form.querySelector('#omega-rescc-resource-match-count');
     const submit = form.querySelector('button[type="submit"]');
     const resourceId = resourceSelect && resourceSelect.value;
-    const unitId = resourceUnitId(resourceId, country);
-    const choices = unitOptionsHtml(unitId, unitId);
-    replaceSelectOptions(sourceSelect, choices, unitId || '');
+    const selectedCountry = countrySelect && countrySelect.value || country || countryId || activeCountry();
+    const unitId = resourceUnitId(resourceId, selectedCountry);
+    const matchingSites = sitesForResource(selectedCountry, resourceId);
+    const unitChoices = unitOptionsHtml(unitId, unitId);
+    replaceSelectOptions(sourceSelect, unitChoices, unitId || '');
     syncTargetUnitOptions(form, unitId, targetUnitId(unitId));
-    if (locationSelect) replaceSelectOptions(locationSelect, locationOptionsHtml(country, resourceId), '');
+    if (locationSelect) replaceSelectOptions(locationSelect, locationOptionsHtml(selectedCountry, resourceId), '');
     if (help) help.textContent = unitId
-      ? 'Unit auto-selected from the resource catalog/site data. Available conversions are limited to the same physical dimension.'
-      : 'No unit is declared for this resource. A safe conversion cannot be offered until its source data defines one.';
+      ? 'Unit auto-selected from this resource’s catalog/site records. Conversion choices are restricted to the same physical dimension.'
+      : 'No compatible unit is recorded for this resource. The source data must define one before safe conversion is enabled.';
+    if (matchCount) {
+      const countryCount = new Set(matchingSites.map(function (site) {
+        return normaliseCountry(site.countryCode || site.countryId || site.country || site.countryName || site.sovereignCountryId);
+      }).filter(Boolean)).size;
+      matchCount.textContent = matchingSites.length + ' matching site/deposit records' +
+        (selectedCountry === 'WORLD' ? ' across ' + countryCount + ' countries' : ' in ' + countryDisplayName(selectedCountry)) + '.';
+    }
     if (submit) submit.disabled = !unitId;
+    const locate = form.querySelector('[data-action="locate-resource"]');
+    if (locate) locate.disabled = !resourceId || matchingSites.length === 0;
+  }
+  function locateResourceOnMap(scopeCountry, resourceId, selectedSiteId) {
+    const rid = String(resourceId || '').trim();
+    if (!rid) return { status: 'BLOCKED', reason: 'RESOURCE_ID_REQUIRED' };
+    const matches = sitesForResource(scopeCountry || 'WORLD', rid);
+    if (!matches.length) return { status: 'UNAVAILABLE', reason: 'NO_MATCHING_RESOURCE_SITES', resourceId: rid, scopeCountry: scopeCountry || 'WORLD' };
+    const chosen = selectedSiteId ? matches.find(function (site) {
+      return String(site.siteId || site.id || site.siteKey || site.assetId || site.siteName || '') === String(selectedSiteId);
+    }) : matches[0];
+    if (!chosen) return { status: 'BLOCKED', reason: 'SELECTED_SITE_NOT_IN_RESOURCE_SCOPE', resourceId: rid, selectedSiteId };
+    const coords = chosen.coordinates || chosen.location && chosen.location.coordinates || {};
+    const lat = Number(chosen.lat ?? chosen.latitude ?? coords.lat ?? coords.latitude);
+    const lng = Number(chosen.lng ?? chosen.lon ?? chosen.longitude ?? coords.lng ?? coords.lon ?? coords.longitude);
+    const valid = Number.isFinite(lat) && Number.isFinite(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+    const mapApi = g.Game && g.Game.Map;
+    if (!mapApi) return { status: 'UNAVAILABLE', reason: 'RESOURCE_MAP_UNAVAILABLE', matchedSiteCount: matches.length };
+    if (typeof mapApi.applyResourceMapFilter === 'function') {
+      mapApi.applyResourceMapFilter([rid]);
+      if (mapApi.resourceState) {
+        mapApi.resourceState.scope = 'WORLD';
+        mapApi.resourceState.enabled = true;
+        if (!(mapApi.resourceState.selectedResources instanceof Set)) mapApi.resourceState.selectedResources = new Set();
+        mapApi.resourceState.selectedResources.add(resourceKey(rid));
+      }
+      if (typeof mapApi.renderResourceDeposits === 'function') mapApi.renderResourceDeposits();
+    } else if (typeof mapApi.activateResourceMode === 'function') {
+      mapApi.activateResourceMode([rid]);
+    } else {
+      return { status: 'UNAVAILABLE', reason: 'RESOURCE_MAP_FILTER_API_UNAVAILABLE', matchedSiteCount: matches.length };
+    }
+    const map = mapApi.map || g.map;
+    if (valid && map && typeof map.setView === 'function') {
+      map.setView([lat, lng], Math.max(7, Number(typeof map.getZoom === 'function' ? map.getZoom() : 4)));
+    } else if (selectedSiteId && !valid) {
+      return { status: 'APPLIED_WITH_WARNINGS', reason: 'SELECTED_SITE_COORDINATES_UNAVAILABLE', resourceId: rid, siteId: selectedSiteId, matchedSiteCount: matches.length, mapFiltered: true };
+    }
+    return { status: 'APPLIED', result: { resourceId: rid, scopeCountry: scopeCountry || 'WORLD', siteId: chosen.siteId || chosen.id || chosen.siteName, matchedSiteCount: matches.length, mapFiltered: true, centeredOnSelectedSite: valid } };
   }
   function convertUnits(value, fromUnit, toUnit) {
     if (value === null || value === undefined || String(value).trim() === '') return { status: 'BLOCKED', reason: 'QUANTITY_REQUIRED' };
@@ -554,7 +634,7 @@
     const metrics = summary.globalMetrics || {};
     const choices = resourceChoices(country);
     const selectedId = choices.length ? String(choices[0].id) : '';
-    const declaredUnit = selectedId ? resourceUnitId(selectedId, country) : null;
+    const declaredUnit = selectedId ? resourceUnitId(selectedId, 'WORLD') : null;
     const defaultTarget = targetUnitId(declaredUnit);
     const resourceOptions = choices.length ? choices.map(function (row) {
       const id = String(row.id);
@@ -563,21 +643,25 @@
       return '<option value="' + esc(id) + '"' + (id === selectedId ? ' selected' : '') + '>' +
         esc(row.name || id) + esc(detail) + '</option>';
     }).join('') : '<option value="" selected disabled>No resource catalog entries loaded</option>';
-    const locationOptions = locationOptionsHtml(country, selectedId);
+    const locationOptions = locationOptionsHtml('WORLD', selectedId);
     const metrology = '<form class="omega-rescc-form omega-rescc-resource-form" data-search-item data-form="metrology">' +
       '<h3>Resource quantity &amp; unit workspace</h3>' +
       '<div class="omega-rescc-formgrid omega-rescc-resource-grid">' +
       '<label>Resource<select id="omega-rescc-resource-select" name="resourceId" required>' + resourceOptions + '</select></label>' +
-      '<label>Location / deposit<select id="omega-rescc-location-select" name="siteId">' + locationOptions + '</select></label>' +
+      '<label>Country / scope<select id="omega-rescc-search-country" name="searchCountry" required>' + resourceCountryOptionsHtml('WORLD') + '</select></label>' +
+      '<label>Location / deposit<select id="omega-rescc-location-select" name="siteId">' + locationOptionsHtml('WORLD', selectedId) + '</select></label>' +
       '<label>Quantity<input name="value" type="number" min="0" step="any" required placeholder="Enter amount"></label>' +
-      '<label>Current unit<select id="omega-rescc-from-unit" name="fromUnit" required>' + unitOptionsHtml(declaredUnit, declaredUnit) + '</select></label>' +
-      '<label>Convert to<select id="omega-rescc-to-unit" name="toUnit" required>' + unitOptionsHtml(declaredUnit, defaultTarget) + '</select></label></div>' +
+      '<label>Current unit<select id="omega-rescc-from-unit" name="fromUnit" required>' + unitOptionsHtml(resourceUnitId(selectedId, 'WORLD'), resourceUnitId(selectedId, 'WORLD')) + '</select></label>' +
+      '<label>Convert to<select id="omega-rescc-to-unit" name="toUnit" required>' + unitOptionsHtml(resourceUnitId(selectedId, 'WORLD'), targetUnitId(resourceUnitId(selectedId, 'WORLD'))) + '</select></label></div>' +
+      '<div id="omega-rescc-resource-match-count" class="omega-rescc-unit-note">' + sitesForResource('WORLD', selectedId).length + ' matching site/deposit records worldwide.</div>' +
       '<div id="omega-rescc-unit-help" class="omega-rescc-unit-note">' +
       (declaredUnit && UNIT_DEFINITIONS[declaredUnit]
         ? 'Unit defaults from this resource’s declared catalog/site data. You can choose another unit of the same physical dimension.'
         : 'This resource has no resolvable declared unit. Conversion stays unavailable until the source data defines one.') +
       '</div>' +
-      '<button class="omega-rescc-button" type="submit"' + (!declaredUnit ? ' disabled' : '') + '>Convert quantity</button></form>';
+      '<div class="omega-rescc-actions">' +
+      '<button class="omega-rescc-button" type="button" data-action="locate-resource"' + (!selectedId ? ' disabled' : '') + '>Locate resource / deposit on map</button>' +
+      '<button class="omega-rescc-button" type="submit"' + (!resourceUnitId(selectedId, 'WORLD') ? ' disabled' : '') + '>Convert quantity</button></div></form>';
     const top = metrology + '<div class="omega-rescc-metrics">' +
       '<div><span>Autonomy index</span><strong>' + number(metrics.autonomyIndex, '%') + '</strong></div>' +
       '<div><span>Reserve duration</span><strong>' + number(metrics.strategicReservesTotalDays, ' days') + '</strong></div>' +
@@ -1322,7 +1406,7 @@
           render(countryId, 'deposits');
           return;
         }
-        if (event.target && event.target.id === 'omega-rescc-resource-select') {
+        if (event.target && (event.target.id === 'omega-rescc-resource-select' || event.target.id === 'omega-rescc-search-country')) {
           const form = event.target.closest && event.target.closest('form[data-form="metrology"]');
           if (form) syncResourceForm(form, countryId);
           return;
@@ -1472,6 +1556,20 @@
     try {
       if (action === 'close') { close(); return; }
       if (action === 'refresh-panel') { resourceDataWarmupAttempted = false; render(c, activePanel); ensureResourceDataReady(true); return; }
+      if (action === 'locate-resource') {
+        const form = button.closest && button.closest('form[data-form="metrology"]');
+        if (!form) {
+          setOutcome('Resource locator', { status: 'UNAVAILABLE', reason: 'RESOURCE_LOCATOR_FORM_NOT_FOUND' });
+          return;
+        }
+        const formData = new FormData(form);
+        const scopeCountry = String(formData.get('searchCountry') || 'WORLD');
+        const resourceId = String(formData.get('resourceId') || '');
+        const siteId = String(formData.get('siteId') || '');
+        result = locateResourceOnMap(scopeCountry, resourceId, siteId);
+        setOutcome('Resource locator · ' + resourceName(resourceId), result);
+        return;
+      }
       if (action === 'deposit-page') {
         const count = deposits().filter(function (site) {
           const cid = site && (site.countryCode || site.countryId || site.country || site.countryName || site.sovereignCountryId);
@@ -1907,7 +2005,9 @@
     close,
     convertUnits,
     getResourceUnit: function (resourceId, country) { return resourceUnitId(resourceId, country || countryId); },
-    getState: function () { return { countryId: countryId, panel: activePanel, lastOutcome: lastOutcome }; }
+    getGlobalResourceCatalog: function () { return globalResourceCatalog().map(function (row) { return Object.assign({}, row); }); },
+    locateResource: locateResourceOnMap,
+    getState: function () { return { countryId: countryId, panel: activePanel, lastOutcome: lastOutcome, depositScope: depositScope, depositPage: depositPage }; }
   });
   g.Omega = g.Omega || {};
   g.Omega.ResourceCommandCenterUI = API;
