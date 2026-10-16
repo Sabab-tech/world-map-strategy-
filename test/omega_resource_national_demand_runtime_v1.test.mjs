@@ -55,7 +55,13 @@ function createRuntimeContext(options = {}) {
     gameState: worldState,
     __OmegaResourceEconomyRules: { demand: structuredClone(demandRules) },
     OmegaMinistryInteroperability: interoperability,
-    Omega: { MinistryInteroperability: interoperability },
+    Omega: {
+      MinistryInteroperability: interoperability,
+      Simulation: {
+        clock: { turn: 1, stepDurationMs: 86400000 },
+        getPlayerCountryId() { return 'USA'; }
+      }
+    },
     OmegaCanonicalIdentityRegistry: {
       resolveCountry(value) {
         const key = String(value || '').toUpperCase();
@@ -117,7 +123,14 @@ test('country demand is updated once per turn, factory inputs are not double-cha
   assert.equal(firstDemand.nationalConsumption, 8);
   assert.equal(firstDemand.unmetDemand, 0);
   assert.equal(firstDemand.protectedStock, 20);
+  assert.equal(firstDemand.demandThisTurn, 10);
   assert.ok(calls.some(x => x.type === 'OMEGA_RESOURCE_ECON_CONSUME_INVENTORY' && x.payload.resourceId === 'iron_ore'));
+
+  const callsBeforeReplay = calls.filter(x => x.type === 'OMEGA_RESOURCE_ECON_CONSUME_INVENTORY').length;
+  const replay = runtime.processCountry('BGD', [{ inputQuantities: { iron_ore: 2 } }]);
+  assert.equal(replay.cached, true, 'a repeated call in the same turn returns the persisted decision rather than consuming again');
+  assert.equal(worldState.resource.BGD.inventory.iron_ore, stockAfterFirst);
+  assert.equal(calls.filter(x => x.type === 'OMEGA_RESOURCE_ECON_CONSUME_INVENTORY').length, callsBeforeReplay);
 
   worldState.simulation.turn = 2;
   const second = runtime.processCountry('BGD', [{ inputQuantities: { iron_ore: 2 } }]);
@@ -127,6 +140,24 @@ test('country demand is updated once per turn, factory inputs are not double-cha
   assert.equal(second.turn, 2);
   assert.equal(worldState.resource.BGD.demandRuntime.history.length, 2);
   assert.equal(worldState.resource.BGD.demandRuntime.publishStatus, 'APPLIED');
+});
+
+
+test('hourly simulation steps debit only one twenty-fourth of a daily consumer demand rate', async () => {
+  const { context, worldState } = createRuntimeContext({ inventory: { iron_ore: 100 }, consumption: { iron_ore: 10 } });
+  context.Omega.Simulation.clock.stepDurationMs = 3600000;
+  await context.OmegaResourceNationalDemandRuntime.prepare();
+  const report = context.OmegaResourceNationalDemandRuntime.processCountry('BGD', []);
+  const row = worldState.resource.BGD.demandRuntime.byResource.iron_ore;
+
+  assert.equal(report.status, 'ACTIVE');
+  assert.equal(row.demandPerDay, 10);
+  assert.ok(Math.abs(row.demandThisTurn - (10 / 24)) < 1e-10);
+  assert.ok(Math.abs(row.nationalConsumption - (10 / 24)) < 1e-10);
+  assert.ok(Math.abs(worldState.resource.BGD.inventory.iron_ore - (100 - 10 / 24)) < 1e-10);
+  assert.ok(Math.abs(worldState.resource.BGD.consumption.iron_ore - 10) < 1e-10,
+    'existing stockpile and buffer code continues to read the stable daily rate');
+  assert.ok(Math.abs(row.stockCoverageDays - ((100 - 10 / 24 - 20) / 10)) < 1e-10);
 });
 
 test('missing inventory remains unknown and never fabricates a debit', async () => {
