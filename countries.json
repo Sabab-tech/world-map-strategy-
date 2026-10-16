@@ -34,7 +34,9 @@
     ],
     "subregion": "Northern Europe",
     "subregionCode": "154",
-    "oceanAccess": [],
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
     "lat": 60.188632,
     "lng": 19.879999,
     "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
@@ -693,7 +695,9 @@
     "subregionCode": "419",
     "intermediateRegion": "South America",
     "intermediateRegionCode": "005",
-    "oceanAccess": [],
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
     "lat": -54.424194,
     "lng": 3.403729,
     "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
@@ -740,7 +744,9 @@
     "subregionCode": "202",
     "intermediateRegion": "Eastern Africa",
     "intermediateRegionCode": "014",
-    "oceanAccess": [],
+    "oceanAccess": [
+      "INDIAN"
+    ],
     "lat": -6.191769,
     "lng": 71.348514,
     "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
@@ -2346,7 +2352,9 @@
     ],
     "subregion": "Eastern Asia",
     "subregionCode": "030",
-    "oceanAccess": [],
+    "oceanAccess": [
+      "PACIFIC"
+    ],
     "lat": 22.428271,
     "lng": 114.210466,
     "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
@@ -2673,7 +2681,9 @@
     ],
     "subregion": "Western Asia",
     "subregionCode": "145",
-    "oceanAccess": [],
+    "oceanAccess": [
+      "INDIAN"
+    ],
     "mapPointSource": "COUNTRIES_JSON_EXISTING",
     "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
@@ -3058,7 +3068,9 @@
     ],
     "subregion": "Eastern Asia",
     "subregionCode": "030",
-    "oceanAccess": [],
+    "oceanAccess": [
+      "PACIFIC"
+    ],
     "lat": 22.138306,
     "lng": 113.553775,
     "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
@@ -3411,7 +3423,9 @@
     ],
     "subregion": "Western Europe",
     "subregionCode": "155",
-    "oceanAccess": [],
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
     "mapPointSource": "COUNTRIES_JSON_EXISTING",
     "regionalClassificationSource": "UNSD_M49_AND_NATURAL_EARTH"
   },
@@ -3798,7 +3812,9 @@
     ],
     "subregion": "Australia and New Zealand",
     "subregionCode": "053",
-    "oceanAccess": [],
+    "oceanAccess": [
+      "PACIFIC"
+    ],
     "lat": -29.035253,
     "lng": 167.952792,
     "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
@@ -4823,15 +4839,17 @@
     "iso3": "SGS",
     "numericCode": "239",
     "identityStatus": "ISO3166_IDENTITY_ONLY",
-    "continent": "North America",
+    "continent": "South America",
     "continents": [
-      "North America"
+      "South America"
     ],
     "subregion": "Latin America and the Caribbean",
     "subregionCode": "419",
     "intermediateRegion": "South America",
     "intermediateRegionCode": "005",
-    "oceanAccess": [],
+    "oceanAccess": [
+      "ATLANTIC"
+    ],
     "lat": -54.40286,
     "lng": -36.537182,
     "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
