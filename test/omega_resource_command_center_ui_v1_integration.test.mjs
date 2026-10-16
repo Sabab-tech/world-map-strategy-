@@ -71,6 +71,9 @@ test('all sixteen resource panels are registered, selectable and safe to render'
       normalizeCountryCode(x){ return String(x||'BGD').toUpperCase(); }
     },
     OmegaCabinetUI:{getResource16CardsHtml(){return '<div class="test-cards"></div>';}},
+    OmegaResourceSiteCanonicalCatalogData:{siteCount:315,sites:[
+      {siteId:'SITE_AUS_CANONICAL_ONLY_1',siteName:'Western Australia Bauxite Deposit',resourceName:'Bauxite',countryId:'AUS',resourceId:'bauxite',coordinates:{lat:-23.4,lng:121.2},unit:'TONNES'}
+    ]},
     Omega:{
       IndividualResourceSiteBinding:{sites:[
         {siteId:'SITE_GBR_LITHIUM_1',siteName:'Cornish Lithium Site',resourceName:'Lithium',countryId:'GBR',resourceId:'lithium',lat:50.2,lng:-5.3,unit:'TONNES'}
@@ -130,6 +133,7 @@ test('all sixteen resource panels are registered, selectable and safe to render'
   assert.match(ontologyHtml,/Global resource types/,'the catalog panel reports the worldwide commodity count');
   assert.match(ontologyHtml,/Rare earth elements/,"the catalog panel lists resources outside the selected country summary");
   assert.match(ontologyHtml,/Lithium/,'the global catalog also includes commodities from canonical site bindings');
+  assert.match(ontologyHtml,/Bauxite/,'the full canonical catalog contributes site resources beyond the 250-row master registry');
   assert.match(ontologyHtml,/Registered deposits \/ sites/,'the catalog panel reports the global deposit registry size');
 
   api.open('BGD','market');
@@ -138,6 +142,7 @@ test('all sixteen resource panels are registered, selectable and safe to render'
   assert.match(marketHtml,/Global resources tracked/,'market panel has a global market summary');
   assert.match(marketHtml,/Rare earth elements/,'market panel quotes resources from the global catalog, not only local country inventory');
   assert.match(marketHtml,/Lithium/,'market view includes a resource known only to the canonical global site registry');
+  assert.match(marketHtml,/Bauxite/,'market view includes resources from the complete canonical site catalog');
   assert.match(marketHtml,/Worldwide Deposits/,'the global deposit registry is reachable from the command-center header');
 
   api.open('BGD','deposits');
@@ -149,12 +154,15 @@ test('all sixteen resource panels are registered, selectable and safe to render'
   assert.match(modal.innerHTML,/value="WORLD" selected/,'worldwide deposit scope can be selected in the running panel');
   assert.match(modal.innerHTML,/Worldwide · all countries/,'global selection has explicit user-facing scope');
   assert.match(modal.innerHTML,/Cornish Lithium Site/,'worldwide deposit scope includes canonical site-binding records outside the selected country');
+  assert.match(modal.innerHTML,/Western Australia Bauxite Deposit/,'worldwide deposit scope includes catalog-only sites outside the master registry subset');
   assert.match(modal.innerHTML,/Resource deposits worldwide/,'the worldwide view uses the global deposit table');
 
   const located=api.locateResource('WORLD','coal','SITE_BGD_BARAPUKURIA');
   assert.equal(located.status,'APPLIED','locating a registered site produces an actual map-focus result');
   assert.equal(located.result.matchedSiteCount,1,'the locator reports matching global site records');
-  assert.equal(JSON.stringify(sandbox.Game.Map.map.lastView.coords),JSON.stringify([24.8,88.9]),"the map centers on the selected site coordinates recorded in source data");
+  const canonicalLocated=api.locateResource('WORLD','bauxite','SITE_AUS_CANONICAL_ONLY_1');
+  assert.equal(canonicalLocated.status,'APPLIED','catalog-only deposits can also be located on the map');
+  assert.equal(JSON.stringify(sandbox.Game.Map.map.lastView.coords),JSON.stringify([-23.4,121.2]),'catalog-only site coordinates are used by map focus');
   assert.equal(sandbox.Game.Map.resourceState.scope,'WORLD','the resource filter is switched to worldwide scope');
   assert.deepEqual(Array.from(sandbox.Game.Map.filteredResourceIds),['coal'],'the map is filtered to the selected resource');
   assert.equal(api.locateResource('WORLD','unregistered_mineral','').status,'UNAVAILABLE','missing global deposits are reported honestly');
