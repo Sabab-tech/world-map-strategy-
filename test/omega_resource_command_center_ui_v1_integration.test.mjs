@@ -160,11 +160,13 @@ test('all sixteen resource panels are registered, selectable and safe to render'
   const located=api.locateResource('WORLD','coal','SITE_BGD_BARAPUKURIA');
   assert.equal(located.status,'APPLIED','locating a registered site produces an actual map-focus result');
   assert.equal(located.result.matchedSiteCount,1,'the locator reports matching global site records');
+  assert.equal(JSON.stringify(sandbox.Game.Map.map.lastView.coords),JSON.stringify([24.8,88.9]),'the map first centers on the selected coal mine');
+  assert.equal(sandbox.Game.Map.resourceState.scope,'WORLD','the resource filter is switched to worldwide scope');
+  assert.deepEqual(Array.from(sandbox.Game.Map.filteredResourceIds),['coal'],'the map is filtered to the first selected resource');
   const canonicalLocated=api.locateResource('WORLD','bauxite','SITE_AUS_CANONICAL_ONLY_1');
   assert.equal(canonicalLocated.status,'APPLIED','catalog-only deposits can also be located on the map');
   assert.equal(JSON.stringify(sandbox.Game.Map.map.lastView.coords),JSON.stringify([-23.4,121.2]),'catalog-only site coordinates are used by map focus');
-  assert.equal(sandbox.Game.Map.resourceState.scope,'WORLD','the resource filter is switched to worldwide scope');
-  assert.deepEqual(Array.from(sandbox.Game.Map.filteredResourceIds),['coal'],'the map is filtered to the selected resource');
+  assert.deepEqual(Array.from(sandbox.Game.Map.filteredResourceIds),['bauxite'],'map focus switches the resource filter to the newly selected catalog-only commodity');
   assert.equal(api.locateResource('WORLD','unregistered_mineral','').status,'UNAVAILABLE','missing global deposits are reported honestly');
 });
 
