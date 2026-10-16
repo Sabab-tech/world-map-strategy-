@@ -303,8 +303,12 @@
       const source = raw.sourceSiteRecord && typeof raw.sourceSiteRecord === 'object' ? raw.sourceSiteRecord : {};
       const pkg = raw.siteDataPackage && typeof raw.siteDataPackage === 'object' ? raw.siteDataPackage : {};
       const resourceId = siteResourceId(raw);
-      const siteId = raw.siteId || raw.canonicalSiteId || raw.siteReferenceKey || raw.occurrenceKey ||
-        raw.id || raw.assetId || source.siteId || source.id || pkg.siteId || raw.name || raw.siteName || raw.depositName;
+      const explicitSiteIds = [
+        raw.siteId, raw.canonicalSiteId, raw.siteReferenceKey, raw.occurrenceKey, raw.id, raw.assetId,
+        source.siteId, source.canonicalSiteId, source.siteReferenceKey, source.occurrenceKey, source.id,
+        pkg.siteId, pkg.canonicalSiteId
+      ].filter(function (value) { return value !== undefined && value !== null && String(value).trim() !== ''; });
+      const siteId = explicitSiteIds[0] || raw.name || raw.siteName || raw.depositName;
       const siteName = raw.siteName || raw.name || raw.depositName || raw.mineName || raw.fieldName ||
         source.siteName || source.name || source.depositName || pkg.siteName || String(siteId || 'Unnamed site');
       const coords = raw.coordinates || raw.location && raw.location.coordinates ||
@@ -319,11 +323,11 @@
         coordinates: Object.keys(coords).length ? coords : raw.coordinates
       });
       const identityKey = 'ID:' + countryId + ':' + resourceKey(resourceId) + ':' + String(siteId || '');
-      const nameKey = 'NAME:' + countryId + ':' + resourceKey(resourceId) + ':' +
-        resourceKey(siteName);
-      const keys = [identityKey, nameKey].filter(function (key) {
-        return key.split(':').pop() !== '';
-      });
+      const nameKey = 'NAME:' + countryId + ':' + resourceKey(resourceId) + ':' + resourceKey(siteName);
+      // Use names as a deduplication alias only when neither source provides an
+      // explicit stable ID. Different sites can legitimately share a similar name.
+      const keys = [identityKey].filter(function (key) { return key.split(':').pop() !== ''; });
+      if (!explicitSiteIds.length && nameKey.split(':').pop() !== '') keys.push(nameKey);
       let index = null;
       for (const key of keys) {
         if (aliasToIndex.has(key)) { index = aliasToIndex.get(key); break; }
@@ -435,7 +439,7 @@
   }
   function resourceCountryChoices() {
     const ids = new Set(countryList().filter(function (id) { return id && id !== 'WORLD'; }));
-    deposits().forEach(function (site) {
+    globalDepositRecords().forEach(function (site) {
       const raw = site && (site.countryCode || site.countryId || site.country || site.countryName || site.sovereignCountryId);
       if (raw) ids.add(normaliseCountry(raw));
     });
