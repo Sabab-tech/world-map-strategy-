@@ -478,7 +478,7 @@ test('resource locator keeps a single selected commodity and focuses canonical g
   ]) {
     const start = mapEngine.indexOf(method);
     assert.notEqual(start, -1, method + ' must exist');
-    const end = mapEngine.indexOf('\\n};', start);
+    const end = mapEngine.indexOf('\n};', start);
     assert.notEqual(end, -1, method + ' must terminate');
     vm.runInContext(mapEngine.slice(start, end + 3), context, { timeout: 1000 });
   }
@@ -495,7 +495,7 @@ test('resource locator keeps a single selected commodity and focuses canonical g
   assert.equal(context.Game.Map.resourceState.targetCountryId, 'BGD');
   assert.equal(moved.length, 1);
   assert.equal(moved[0].type, 'bounds');
-  assert.deepEqual(moved[0].points, [[23.7,90.4],[24.1,90.2]]);
+  assert.deepEqual(Array.from(moved[0].points, point => Array.from(point)), [[23.7,90.4],[24.1,90.2]]);
   assert.equal(refreshed.length, 1);
 });
 
