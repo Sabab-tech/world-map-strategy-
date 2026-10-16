@@ -1039,7 +1039,7 @@
     }finally{g.__omegaGlobalTradeProcessing=false;}
   }
 
-  function diagnostics(){  function diagnostics(){
+  function diagnostics(){
     let requests=0,pending=0,settled=0;
     for(const c of ids()){
       const arr=countryValue(c,'trade.importRequests');if(!Array.isArray(arr))continue;
