@@ -126,7 +126,7 @@ test('country demand is updated once per turn, factory inputs are not double-cha
   assert.equal(secondDemand.nationalConsumption, 8);
   assert.equal(second.turn, 2);
   assert.equal(worldState.resource.BGD.demandRuntime.history.length, 2);
-  assert.equal(worldState.resource.BGD.demandRuntime.publishStatus, undefined);
+  assert.equal(worldState.resource.BGD.demandRuntime.publishStatus, 'APPLIED');
 });
 
 test('missing inventory remains unknown and never fabricates a debit', async () => {
