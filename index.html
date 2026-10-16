@@ -156,6 +156,7 @@
     </script>
     <link rel="stylesheet" href="omega_ui_interaction_fix_v2.css">
     <link rel="stylesheet" href="omega_ui_visual_system_v1.css">
+    <link rel="stylesheet" href="offline-hybrid-map.css">
 </head>
 <body>
 
@@ -379,6 +380,7 @@
                     <button id="btn-close-layers" class="drawer-close">✕</button>
                 </div>
                 <div class="drawer-body layer-options-grid">
+                    <button class="layer-opt-btn offline-hybrid-opt" data-layer="offline-hybrid" aria-pressed="false">Offline Hybrid Atlas · Local</button>
                     <button class="layer-opt-btn active" data-layer="satellite">🌐 Ultra HD Satellite Terrain</button>
                     <button class="layer-opt-btn" data-layer="political">🗺️ Political Border Focus</button>
                     <button class="layer-opt-btn" data-layer="night">🌃 Night Lights & Power Grid</button>
@@ -823,6 +825,8 @@
 <script src="map-engine-1.js" defer onload="window.__OMEGA_DIAG__.boot.scriptStatus['map-engine-1.js']='LOADED'"></script>
 
 <script src="map-engine-2.js" defer onload="window.__OMEGA_DIAG__.boot.scriptStatus['map-engine-2.js']='LOADED'"></script>
+
+<script src="offline-hybrid-map.js" defer></script>
 
 <script src="omega_ministry_registry.js" defer></script>
 <script src="omega_ministry_state_provider.js" defer></script>
