@@ -45,6 +45,12 @@ globalThis.fetch=nativeFetch;
 assert.equal(globalThis.ResourceMinistryEngine?.isReady,true,JSON.stringify(globalThis.ResourceMinistryEngine?.getDataLoadReport?.()));
 globalThis.OmegaResourceStrategicPolicyRules=JSON.parse(fs.readFileSync(new URL('../resource_strategic_policy_rules_v1.json',import.meta.url),'utf8'));
 await import('../omega_resource_strategic_policy_runtime_v1.js');
+// This source-backed site exists in the canonical global site-binding registry, but has
+// no country inventory, production row, offer, or import request yet.
+globalThis.Omega=globalThis.Omega||{};
+globalThis.Omega.IndividualResourceSiteBinding={sites:[
+  {siteId:'SITE_GLOBAL_CATALOG_ONLY_1',countryId:'SAU',resourceId:'site_only_mineral',siteName:'Catalog-only site'}
+]};
 await import('../omega_global_market_system.js');
 const policy=globalThis.Omega?.ResourceStrategicPolicyRuntime||globalThis.OmegaResourceStrategicPolicyRuntime;
 const policyDiagnostics=policy.diagnostics();
@@ -73,6 +79,9 @@ const depositResourceIds=[...new Set((globalThis.ResourceMinistryEngine?.deposit
 for(const resourceId of depositResourceIds){
   assert.ok(books[resourceId], 'global market must index the resource referenced by registered deposits: '+resourceId);
 }
+assert.ok(books.site_only_mineral, 'global market must also index resources found only in the canonical site-binding registry');
+assert.equal(market.quote('site_only_mineral').status,'NO_ORDERS',
+  'site-binding resources without bids or asks are visible without an invented executable market price');
 const q=market.quote('crude_oil');
 assert.equal(q.status,'CLEARED');
 assert.equal(q.matchedQuantity,100);
