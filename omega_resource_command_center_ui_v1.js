@@ -769,7 +769,8 @@
       '<label>Registry scope<select id="omega-rescc-deposit-scope" aria-label="Deposit registry scope">' +
       '<option value="COUNTRY"' + (depositScope === 'COUNTRY' ? ' selected' : '') + '>Selected country: ' + esc(selected) + '</option>' +
       '<option value="WORLD"' + (depositScope === 'WORLD' ? ' selected' : '') + '>Worldwide · all countries</option>' +
-      '</select></label><span>' + number(rows.length) + ' sites in scope · ' +
+      '</select></label><span>' + (depositScope === 'WORLD' ? 'Worldwide JSON deposit registry' : 'Country-scoped JSON deposit registry') +
+      ' · ' + number(rows.length) + ' sites in scope · ' +
       number(commodityIds.size) + ' catalog resource types · ' + number(siteResourceIds.size) + ' resource IDs in deposit records</span></div>';
     if (!rows.length) return toolbar + empty(depositScope === 'WORLD'
       ? 'No deposit records are loaded from the existing global JSON registry.'
