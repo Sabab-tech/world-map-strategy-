@@ -82,6 +82,15 @@ assert.ok(runtime.includes('document.getElementById("omega-region-select")'), 'R
 assert.ok(!runtime.includes('L.control({position:"bottomright"})'), 'The region picker must not create a separate floating Leaflet control.');
 assert.ok(css.includes('.omega-region-drawer-section'), 'Drawer-integrated region selector must be styled.');
 
+assert.ok(runtime.includes('function setBoundaryGlow('), 'Selected region borders must use the dedicated glow helper.');
+assert.ok(runtime.includes('omega-region-boundary-glow'), 'Region highlighting must mark actual Leaflet path elements for glow styling.');
+assert.ok(runtime.includes('originalSelectCountry.apply(this, arguments)'), 'Manual country selection must continue to work after group selection.');
+assert.ok(runtime.includes('if (state.selected) setSelection("")'), 'Direct country clicks must clear stale continent/ocean selection.');
+assert.match(runtime, /fillOpacity: 0\.16/, 'Group highlighting should preserve satellite visibility instead of flooding country interiors.');
+assert.ok(css.includes('.leaflet-overlay-pane path.omega-region-boundary-glow'), 'Glow must be applied to the actual SVG polygon paths.');
+assert.ok(css.includes('drop-shadow('), 'Selected boundaries require a visible colored glow.');
+
+
 
 console.log(JSON.stringify({
   countries: countries.length,
