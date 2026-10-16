@@ -130,7 +130,6 @@ test('all sixteen resource panels are registered, selectable and safe to render'
   assert.match(ontologyHtml,/Global resource types/,'the catalog panel reports the worldwide commodity count');
   assert.match(ontologyHtml,/Rare earth elements/,"the catalog panel lists resources outside the selected country summary");
   assert.match(ontologyHtml,/Lithium/,'the global catalog also includes commodities from canonical site bindings');
-  assert.match(ontologyHtml,/Cornish Lithium Site/,'worldwide resource-site records contribute to the global registry');
   assert.match(ontologyHtml,/Registered deposits \/ sites/,'the catalog panel reports the global deposit registry size');
 
   api.open('BGD','market');
@@ -149,6 +148,7 @@ test('all sixteen resource panels are registered, selectable and safe to render'
   changeHandler({target:{id:'omega-rescc-deposit-scope',value:'WORLD'}});
   assert.match(modal.innerHTML,/value="WORLD" selected/,'worldwide deposit scope can be selected in the running panel');
   assert.match(modal.innerHTML,/Worldwide · all countries/,'global selection has explicit user-facing scope');
+  assert.match(modal.innerHTML,/Cornish Lithium Site/,'worldwide deposit scope includes canonical site-binding records outside the selected country');
   assert.match(modal.innerHTML,/Resource deposits worldwide/,'the worldwide view uses the global deposit table');
 
   const located=api.locateResource('WORLD','coal','SITE_BGD_BARAPUKURIA');
