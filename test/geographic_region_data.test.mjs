@@ -70,6 +70,10 @@ for (const f of oceans.features) {
 }
 assert.ok(runtime.includes('OMEGAGeographicRegionSystem'), 'Region selector runtime must expose its public API.');
 assert.ok(runtime.includes('featureMember'), 'Region selection must update actual polygon layers.');
+assert.ok(runtime.includes('"NORTHERN CYPRUS": ["Asia", "Europe"]'), 'Northern Cyprus must remain included in geographic group highlighting.');
+assert.ok(runtime.includes('"SOMALILAND": ["Africa"]'), 'Somaliland must remain included in Africa group highlighting.');
+assert.ok(runtime.includes('"SOMALILAND": ["INDIAN"]'), 'Somaliland must remain included in the Indian Ocean group where appropriate.');
+
 assert.ok(runtime.includes('zoomToCountry'), 'Country list entries must navigate to the map polygon.');
 assert.ok(html.includes('id="btn-quick-layers"'), 'The satellite/layer quick-tool must remain available.');
 assert.ok(html.includes('id="layers-drawer"'), 'The existing map layer drawer must remain available.');
