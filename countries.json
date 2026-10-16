@@ -2276,7 +2276,9 @@
     ],
     "subregion": "Australia and New Zealand",
     "subregionCode": "053",
-    "oceanAccess": [],
+    "oceanAccess": [
+      "INDIAN"
+    ],
     "lat": -53.091196,
     "lng": 73.521326,
     "mapPointSource": "TOPOJSON_POLYGON_CENTROID",
@@ -3033,9 +3035,7 @@
     ],
     "subregion": "Western Europe",
     "subregionCode": "155",
-    "oceanAccess": [
-      "ATLANTIC"
-    ],
+    "oceanAccess": [],
     "lat": 49.733732,
     "lng": 6.07762,
     "mapPointSource": "NATURAL_EARTH_LABEL_POINT",
