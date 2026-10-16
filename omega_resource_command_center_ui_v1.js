@@ -28,6 +28,8 @@
   let activePanel = 'matrix';
   let lastOutcome = '';
   let lastCascade = null;
+  let globalDepositRecordsCache = null;
+  let globalDepositRecordsCacheSources = null;
   let depositScope = 'COUNTRY';
   let depositPage = 0;
   const DEPOSIT_PAGE_SIZE = 100;
@@ -300,6 +302,24 @@
       source.countryId || source.countryCode || source.countryIso3 || source.countryName));
   }
   function globalDepositRecords() {
+    const resourceEngine = engine();
+    const currentState = state();
+    const binding = g.Omega && g.Omega.IndividualResourceSiteBinding || g.OmegaIndividualResourceSiteBinding;
+    const master = g.OmegaResourceSiteMasterResearchData || (g.Omega && g.Omega.ResourceSiteMasterResearchData);
+    const cacheSources = [
+      resourceEngine && resourceEngine.deposits,
+      resourceEngine && resourceEngine.countryProfiles,
+      binding && binding.sites,
+      master && master.sites,
+      currentState.resource,
+      currentState.resources,
+      currentState.simulation && currentState.simulation.turn
+    ];
+    if (globalDepositRecordsCache && globalDepositRecordsCacheSources &&
+        cacheSources.length === globalDepositRecordsCacheSources.length &&
+        cacheSources.every(function (source, index) { return source === globalDepositRecordsCacheSources[index]; })) {
+      return globalDepositRecordsCache;
+    }
     const candidates = deposits().concat(siteRows('WORLD'));
     const rows = [];
     const aliasToIndex = new Map();
@@ -347,13 +367,16 @@
       }
       keys.forEach(function (key) { aliasToIndex.set(key, index); });
     });
-    return rows.sort(function (a, b) {
+    const sorted = rows.sort(function (a, b) {
       const countryCompare = String(a.countryId || '').localeCompare(String(b.countryId || ''));
       if (countryCompare) return countryCompare;
       const resourceCompare = String(siteResourceId(a) || '').localeCompare(String(siteResourceId(b) || ''));
       if (resourceCompare) return resourceCompare;
       return String(a.siteName || a.siteId || '').localeCompare(String(b.siteName || b.siteId || ''));
     });
+    globalDepositRecordsCache = sorted;
+    globalDepositRecordsCacheSources = cacheSources;
+    return sorted;
   }
   function sitesForResource(country, resourceId) {
     const wanted = resourceKey(resourceId);
@@ -1576,7 +1599,12 @@
       'OMEGA_SIMULATION_TURN_COMMITTED','OMEGA_RESOURCE_EXTRACTION_COMPLETED','OMEGA_RESOURCE_BATCH_CREATED',
       'OMEGA_RESOURCE_INVENTORY_CHANGED','OMEGA_RESOURCE_PROCESSING_COMPLETED','OMEGA_TRADE_SETTLEMENT_COMPLETED'
     ].forEach(function (name) {
-      try { g.addEventListener(name, function () { resourceDataWarmupAttempted = false; refreshVisiblePanel(); }); } catch (_) {}
+      try { g.addEventListener(name, function () {
+        resourceDataWarmupAttempted = false;
+        globalDepositRecordsCache = null;
+        globalDepositRecordsCacheSources = null;
+        refreshVisiblePanel();
+      }); } catch (_) {}
     });
   }
   function render(country, panel, modalOverride) {
