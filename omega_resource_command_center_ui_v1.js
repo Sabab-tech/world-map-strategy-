@@ -988,7 +988,7 @@
         kv('Live bid / ask orders', bids.length + ' / ' + actualAsks.length) +
         kv('Bid / ask depth', (q.bidDepth ?? 0) + ' / ' + (q.askDepth ?? 0)) +
         kv('Price discovery', q.priceDiscovery || (price !== null && price !== undefined ? 'CLEARED' : status)) +
-        kv('Simulation turn', q.generatedTurn ?? state().simulation && state().simulation.turn ?? 'Not recorded') + '</div>' +
+        kv('Simulation turn', q.generatedTurn ?? (state().simulation && state().simulation.turn) ?? 'Not recorded') + '</div>' +
         '<div class="omega-rescc-muted">Resource unit: ' + esc(r.unit || 'not declared') +
         ' · Discovery status: ' + esc(status) +
         (bids.length || actualAsks.length ? '' : ' · No executable order exists; no live transaction price is available.') + '</div>' +
