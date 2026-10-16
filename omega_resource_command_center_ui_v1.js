@@ -4,9 +4,9 @@
  */
 (function (g) {
   'use strict';
-  const VERSION = '1.1.0';
+  const VERSION = '1.2.0';
   const PANELS = [
-    { id: 'matrix', num: '01', title: 'Unit standards & metrology' },
+    { id: 'matrix', num: '01', title: 'Resource availability & discovery' },
     { id: 'ontology', num: '02', title: 'Commodity ontology' },
     { id: 'reserves', num: '03', title: 'Reserves & in-situ ledger' },
     { id: 'deposits', num: '04', title: 'Deposit registry' },
@@ -28,6 +28,7 @@
   let activePanel = 'matrix';
   let lastOutcome = '';
   let lastCascade = null;
+  let selectedResourceFinderId = '';
 
   function state() { return (g.Game && g.Game.state) || g.gameState || {}; }
   function engine() { return g.ResourceMinistryEngine || null; }
@@ -171,6 +172,189 @@
   function resourceTypes() {
     const e = engine();
     return e && Array.isArray(e.resourceTypes) ? e.resourceTypes : [];
+  }
+  function resourceToken(value) {
+    return String(value == null ? '' : value).normalize('NFKC').toLowerCase()
+      .replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+  }
+  function resourceAliases(resourceId) {
+    const tokens = new Set([resourceToken(resourceId)]);
+    const wanted = resourceToken(resourceId);
+    resourceTypes().forEach(function (row) {
+      if (!row) return;
+      const identityValues = [row.id, row.resourceId, row.resourceTypeId, row.resourceTypeKey, row.name, row.bnName];
+      if (identityValues.some(function (value) { return resourceToken(value) === wanted; })) {
+        identityValues.forEach(function (value) { if (value != null && value !== '') tokens.add(resourceToken(value)); });
+      }
+    });
+    const aliasMap = {
+      crude_oil: ['oil', 'crude', 'petroleum'],
+      natural_gas: ['gas'],
+      iron_ore: ['iron'],
+      rare_earth: ['rareearth', 'rare_earth_elements', 'rare earth elements']
+    };
+    const aliases = aliasMap[wanted] || [];
+    aliases.forEach(function (value) { tokens.add(resourceToken(value)); });
+    return tokens;
+  }
+  function resourceValues(record) {
+    if (!record || typeof record !== 'object') return [];
+    const source = record.sourceSiteRecord && typeof record.sourceSiteRecord === 'object' ? record.sourceSiteRecord : {};
+    const real = record.real && typeof record.real === 'object' ? record.real : {};
+    const identity = record.identity && typeof record.identity === 'object' ? record.identity : {};
+    const values = [
+      record.resourceId, record.resId, record.resourceTypeId, record.resourceTypeKey, record.resource,
+      record.commodity, record.mineral, record.materialIdentity, real.resourceId,
+      identity.resourceTypeId, identity.resourceId, source.resourceId, source.resId,
+      source.resourceTypeId, source.resourceTypeKey, source.resource, source.commodity,
+      record.resource && typeof record.resource === 'object' ? record.resource.id || record.resource.name : null
+    ];
+    return values.filter(function (value) { return value != null && typeof value !== 'object' && value !== ''; });
+  }
+  function recordMatchesResource(record, resourceId) {
+    const aliases = resourceAliases(resourceId);
+    return resourceValues(record).some(function (value) { return aliases.has(resourceToken(value)); });
+  }
+  function isHiddenResourceRecord(record) {
+    const rows = [record, record && record.sourceSiteRecord, record && record.identity,
+      record && record.discovery, record && record.knowledge, record && record.runtime, record && record.visibilityState]
+      .filter(function (row) { return row && typeof row === 'object'; });
+    const hiddenStates = new Set(['HIDDEN', 'UNDISCOVERED', 'UNREVEALED', 'NOT_DISCOVERED', 'SURVEY_REQUIRED', 'UNSURVEYED', 'SECRET']);
+    for (const row of rows) {
+      for (const key of ['hidden', 'isHidden', 'undiscovered', 'isUndiscovered', 'requiresSurvey', 'surveyRequired', 'visibleToPlayerOnlyAfterSurvey']) {
+        if (row[key] === true) return true;
+      }
+      for (const key of ['visible', 'isVisible', 'discovered', 'isDiscovered']) {
+        if (row[key] === false) return true;
+      }
+      for (const key of ['visibility', 'discoveryStatus', 'discoveryState', 'knowledgeStatus', 'playerDiscoveryStatus']) {
+        if (hiddenStates.has(resourceToken(row[key]).toUpperCase())) return true;
+      }
+    }
+    return false;
+  }
+  function positiveQuantity(value) {
+    if (value && typeof value === 'object') value = value.quantity ?? value.value ?? value.amount ??
+      value.available ?? value.remainingQuantity ?? value.stock;
+    if (value === null || value === undefined || value === '') return false;
+    const n = Number(value);
+    return Number.isFinite(n) && n > 0;
+  }
+  function resourceKeyValue(object, resourceId) {
+    if (!object || typeof object !== 'object' || Array.isArray(object)) return null;
+    const aliases = resourceAliases(resourceId);
+    const key = Object.keys(object).find(function (name) { return aliases.has(resourceToken(name)); });
+    return key === undefined ? null : object[key];
+  }
+  function surveyRowsFor(country, resourceId, key) {
+    const bucket = resourceBucket(country);
+    const rows = Array.isArray(bucket[key]) ? bucket[key] : [];
+    const aliases = resourceAliases(resourceId);
+    return rows.filter(function (row) {
+      return row && aliases.has(resourceToken(row.resourceId || row.resId || row.resourceTypeId));
+    });
+  }
+  function resourceHasSurveyEvidence(country, resourceId) {
+    if (!resourceId) return false;
+    return surveyRowsFor(country, resourceId, 'surveyResults').some(function (row) {
+      return String(row.status || row.resultStatus || '').toUpperCase() === 'OBSERVED_DEPOSIT_RECORDS' &&
+        (Number(row.recordCount) > 0 || (Array.isArray(row.records) && row.records.length > 0));
+    });
+  }
+  function resourceSurveyPlan(country) {
+    const root = g.__OmegaResourceEconomyRules;
+    const cfg = root && root.actions && root.actions.survey;
+    const duration = cfg && Number(cfg.durationTurns);
+    const budget = cfg && Number(cfg.budgetUnitsPerSurvey);
+    const finance = bucket('finance', country);
+    return {
+      ready: !!cfg && Number.isFinite(duration) && Number.isInteger(duration) && duration >= 1 &&
+        Number.isFinite(budget) && budget >= 0,
+      durationTurns: Number.isFinite(duration) && duration >= 1 ? Math.floor(duration) : null,
+      budgetUnits: Number.isFinite(budget) && budget >= 0 ? budget : null,
+      currencyCode: finance.currencyCode || finance.currency || 'native treasury units'
+    };
+  }
+  function resourceAvailability(country, resourceId) {
+    const c = activeCountry(country);
+    const aliases = resourceAliases(resourceId);
+    const source = resourceBucket(c);
+    const evidence = [];
+    const quantitySources = [
+      ['Inventory', source.inventory],
+      ['Current production', source.production],
+      ['Recorded reserve', source.reserves],
+      ['Endowment record', source.endowment],
+      ['Trade-available stock', source.tradeAvailability],
+      ['Raw warehouse', source.warehouse && source.warehouse.availableByResource],
+      ['Strategic stockpile', source.strategicReserve && source.strategicReserve.availableByResource],
+      ['Mine output', source.mineOutputs]
+    ];
+    quantitySources.forEach(function (entry) {
+      const value = resourceKeyValue(entry[1], resourceId);
+      if (positiveQuantity(value)) evidence.push(entry[0]);
+    });
+    const row = resources(c).find(function (item) {
+      return item && aliases.has(resourceToken(item.id || item.resourceId));
+    });
+    if (row) {
+      [['Inventory', row.inventory], ['Current production', row.dailyProduction],
+        ['Recorded reserve', row.reserve], ['Endowment record', row.endowment],
+        ['Warehouse', row.warehouseStock]].forEach(function (entry) {
+        if (positiveQuantity(entry[1]) && evidence.indexOf(entry[0]) < 0) evidence.push(entry[0]);
+      });
+    }
+    const batchRows = Array.isArray(source.batches) ? source.batches : [];
+    if (batchRows.some(function (batch) {
+      return recordMatchesResource(batch, resourceId) && positiveQuantity(batch.remainingQuantity ?? batch.availableQuantity ?? batch.quantity);
+    })) evidence.push('Material batch record');
+
+    const knownSites = siteRows(c).filter(function (site) {
+      return !isHiddenResourceRecord(site) && recordMatchesResource(site, resourceId);
+    });
+    if (knownSites.length) evidence.push(knownSites.length + ' visible site record' + (knownSites.length === 1 ? '' : 's'));
+
+    const knownDeposits = deposits().filter(function (deposit) {
+      const depCountry = deposit && (deposit.countryCode || deposit.countryId || deposit.sovereignCountryId || deposit.country || deposit.countryName);
+      return depCountry && normaliseCountry(depCountry) === c && !isHiddenResourceRecord(deposit) &&
+        recordMatchesResource(deposit, resourceId);
+    });
+    if (knownDeposits.length) evidence.push(knownDeposits.length + ' visible deposit record' + (knownDeposits.length === 1 ? '' : 's'));
+
+    const results = surveyRowsFor(c, resourceId, 'surveyResults');
+    const successful = results.filter(function (result) {
+      return String(result.status || result.resultStatus || '').toUpperCase() === 'OBSERVED_DEPOSIT_RECORDS' &&
+        (Number(result.recordCount) > 0 || (Array.isArray(result.records) && result.records.length > 0));
+    }).sort(function (a, b) { return Number(b.completedTurn || 0) - Number(a.completedTurn || 0); })[0] || null;
+    if (successful) evidence.push('Survey confirmed ' + Number(successful.recordCount || (successful.records || []).length || 0) + ' record(s)');
+
+    const requests = surveyRowsFor(c, resourceId, 'surveyRequests');
+    const activeSurvey = requests.filter(function (request) {
+      return ['REQUESTED', 'IN_PROGRESS', 'PENDING', 'ACTIVE'].indexOf(String(request.status || '').toUpperCase()) >= 0;
+    }).sort(function (a, b) { return Number(b.requestedTurn || 0) - Number(a.requestedTurn || 0); })[0] || null;
+    const latestResult = results.slice().sort(function (a, b) {
+      return Number(b.completedTurn || 0) - Number(a.completedTurn || 0);
+    })[0] || null;
+    if (evidence.length) return { available: true, status: 'AVAILABLE', label: 'AVAILABLE IN COUNTRY', evidence: evidence, activeSurvey: activeSurvey, latestResult: latestResult };
+    if (activeSurvey) return { available: false, status: String(activeSurvey.status || 'IN_PROGRESS').toUpperCase(), label: 'SURVEY IN PROGRESS', evidence: [], activeSurvey: activeSurvey, latestResult: latestResult };
+    if (latestResult && ['NO_AUTHORITATIVE_RECORDS', 'NOT_FOUND'].indexOf(String(latestResult.status || latestResult.resultStatus || '').toUpperCase()) >= 0) {
+      return { available: false, status: 'NOT_FOUND', label: 'UNAVAILABLE · NO MATCHING RECORDS', evidence: [], activeSurvey: null, latestResult: latestResult };
+    }
+    return { available: false, status: 'NOT_SURVEYED', label: 'UNAVAILABLE · NOT YET SURVEYED', evidence: [], activeSurvey: null, latestResult: latestResult };
+  }
+  function countryResources(country) {
+    const candidates = new Map();
+    resources(country).forEach(function (row) {
+      if (row && (row.id || row.resourceId)) candidates.set(resourceToken(row.id || row.resourceId), row);
+    });
+    resourceTypes().forEach(function (row) {
+      if (row && row.id && !candidates.has(resourceToken(row.id))) candidates.set(resourceToken(row.id), row);
+    });
+    return Array.from(candidates.values()).filter(function (row) {
+      return resourceAvailability(country, row.id || row.resourceId).available;
+    }).sort(function (a, b) {
+      return String(a.name || a.id || '').localeCompare(String(b.name || b.id || ''));
+    });
   }
   const UNIT_DEFINITIONS = Object.freeze({
     kg: { label: 'Kilogram (kg)', dimension: 'MASS', factor: 1, base: 'kg' },
