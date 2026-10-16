@@ -16,7 +16,7 @@
     runtime:{maxLedgerEntries:2048,maxBatches:8192},
     market:{offerFractionOfObservedInventory:0.25,minOfferQuantity:1},
     actions:{
-       survey:{durationTurns:2,maxResultRecords:64},
+       survey:{durationTurns:2,maxResultRecords:64,budgetUnitsPerSurvey:25000,budgetPolicy:'DEBIT_NATIVE_TREASURY_ON_ACCEPTANCE'},
        facilityExpansion:{capacityIncreaseFraction:0.25,durationTurns:4,budgetUnitsPerCapacityUnit:10,reservationExpiresAfterTurns:64},
        strategicBuffer:{targetDays:30,maxTransferBatches:128}
      },
