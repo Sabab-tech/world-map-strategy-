@@ -224,14 +224,6 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 
 
 /* Resource deposit details: compact hierarchy, human-readable data, no raw engine dumps. */
-#omega-individual-resource-open.omega-resource-open-button{
- position:fixed;left:12px;bottom:18px;z-index:1000001;padding:10px 15px;
- background:var(--ui-surface,#172331);color:var(--ui-text,#edf3f8);
- border:1px solid var(--ui-accent,#6ba8c7);border-radius:10px;
- box-shadow:0 5px 18px rgba(0,0,0,.28);font:650 12px/1.2 system-ui,-apple-system,"Segoe UI",sans-serif;
- letter-spacing:.1px;cursor:pointer
-}
-#omega-individual-resource-open.omega-resource-open-button:hover{border-color:var(--ui-accent,#6ba8c7);filter:brightness(1.08)}
 #omega-individual-resource-panel.omega-resource-site-panel{
  box-sizing:border-box;display:none;position:fixed;left:12px;bottom:64px;z-index:1000002;
  width:min(430px,calc(100vw - 24px));max-height:78vh;overflow:auto;overscroll-behavior:contain;
@@ -298,7 +290,6 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 #omega-individual-resource-panel .omega-site-action--execute{background:var(--ui-bg,#162332);color:var(--ui-text,#e8edf2)}
 #omega-individual-resource-panel button:focus-visible,#omega-individual-resource-panel select:focus-visible{outline:2px solid var(--ui-accent,#6ba8c7);outline-offset:2px}
 @media(max-width:480px){
- #omega-individual-resource-open.omega-resource-open-button{left:8px;bottom:12px;padding:9px 12px}
  #omega-individual-resource-panel.omega-resource-site-panel{left:8px;bottom:58px;width:calc(100vw - 16px);max-height:78vh;padding:13px}
  .omega-site-metric{padding:9px}
  .omega-site-metric>strong{font-size:13px}
