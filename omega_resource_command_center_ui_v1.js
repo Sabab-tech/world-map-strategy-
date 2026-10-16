@@ -9,7 +9,7 @@
     { id: 'matrix', num: '01', title: 'Unit standards & metrology' },
     { id: 'ontology', num: '02', title: 'Commodity ontology' },
     { id: 'reserves', num: '03', title: 'Reserves & in-situ ledger' },
-    { id: 'deposits', num: '04', title: 'Deposit registry' },
+    { id: 'deposits', num: '04', title: 'Find a mine or field' },
     { id: 'extraction', num: '05', title: 'Extraction & depletion' },
     { id: 'processing', num: '06', title: 'Processing & smelting' },
     { id: 'inventory', num: '07', title: 'Strategic reserve inventory' },
@@ -216,6 +216,31 @@
     } catch (_) {}
     return Array.from(out).filter(Boolean).sort();
   }
+  function countryLabel(raw) {
+    const code = normaliseCountry(raw);
+    const matches = function (row) {
+      if (!row || typeof row !== 'object') return false;
+      return [row.iso3, row.iso3Code, row.countryCode, row.countryId, row.id, row.code]
+        .filter(Boolean).some(function (value) { return normaliseCountry(value) === code; });
+    };
+    try {
+      const lookup = g.Game && g.Game.countryLookup;
+      const values = lookup && typeof lookup === 'object' ? Object.values(lookup) : [];
+      const row = values.find(matches);
+      if (row && (row.name || row.commonName || row.displayName)) {
+        return String(row.name || row.commonName || row.displayName) + ' (' + code + ')';
+      }
+    } catch (_) {}
+    try {
+      const registry = g.OmegaCanonicalIdentityRegistry || g.OmegaCountrySemanticBridge;
+      const values = registry && typeof registry.list === 'function' ? (registry.list('COUNTRY') || registry.list() || []) : [];
+      const row = Array.isArray(values) ? values.find(matches) : null;
+      if (row && (row.name || row.canonicalName || row.displayName || row.label)) {
+        return String(row.name || row.canonicalName || row.displayName || row.label) + ' (' + code + ')';
+      }
+    } catch (_) {}
+    return code;
+  }
   function resourceName(id) {
     const row = resourceTypes().find(function (x) { return String(x.id) === String(id); });
     return row ? (row.name || id) : String(id || 'Resource');
@@ -339,7 +364,7 @@
           kv('Base price evidence', r.basePrice) + kv('Chemical formula', r.chemicalFormula || r.formula) + '</div>' +
           '<div class="omega-rescc-kv"><span>Process chain</span><strong>' +
           esc(Array.isArray(r.processChain) ? r.processChain.join(' → ') : (r.processChain || 'Not recorded')) + '</strong></div>',
-          actionButton('focus-map', 'Locate deposits', { 'resource-id': r.id }));
+          actionButton('focus-map', 'Show matching sites', { 'resource-id': r.id }));
       }).join('');
   }
   function panelReserves(country) {
@@ -363,21 +388,59 @@
       (profileRows.length>150?'<p class="omega-rescc-note">Showing 150 of '+profileRows.length+' reserve profiles.</p>':'');
   }
   function panelDeposits(country) {
-    const all=deposits(),selected=activeCountry(country);
-    const rows=selected==='WORLD'?all:all.filter(d=>{
-      const cid=d&&(d.countryCode||d.countryId||d.country||d.countryName||d.sovereignCountryId);
-      return cid&&normaliseCountry(cid)===selected;
-    });
-    if(!rows.length)return empty('No deposits matched '+selected+' in the loaded JSON registry.')+'<p class="omega-rescc-note">'+esc(sourceDataStatus(country))+'</p>';
-    const visible=rows.slice(0,250);
-    return '<p class="omega-rescc-note">Country-scoped JSON deposit registry: '+rows.length+' records matched '+esc(selected)+'. Showing '+visible.length+'; missing fields stay unavailable.</p>'+
-      visible.map(d=>{
-        const lat=Number(d.lat??d.latitude??(d.coordinates&&d.coordinates.lat)),lng=Number(d.lng??d.lon??d.longitude??(d.coordinates&&(d.coordinates.lng??d.coordinates.lon)));
-        const valid=Number.isFinite(lat)&&Number.isFinite(lng)&&lat>=-90&&lat<=90&&lng>=-180&&lng<=180,rid=d.resourceId||d.resId||d.resourceTypeId||d.resource||'';
-        const body='<div class="omega-rescc-grid2">'+kv('Country',d.country||d.countryCode||d.countryId)+kv('Resource',rid||d.name)+kv('Latitude',valid?lat.toFixed(5):null)+kv('Longitude',valid?lng.toFixed(5):null)+kv('Reserves',d.reserves??d.reserve)+kv('Grade',d.grade??d.purity)+kv('Operator',d.operator||d.owner)+'</div>';
-        return card(d.name||d.depositName||d.siteName||d.siteId||'Unnamed deposit',d.status||'STATUS NOT RECORDED',body,
-          (valid?actionButton('fly-deposit','Fly to coordinates',{lat,lng,'deposit-name':d.name||d.depositName||'Deposit'}):'')+(rid?actionButton('survey','Request resource survey',{'resource-id':rid}):''));
-      }).join('')+(rows.length>visible.length?'<p class="omega-rescc-note">Showing the first '+visible.length+' of '+rows.length+' matched records.</p>':'');
+    const selected = activeCountry(country);
+    const rows = siteRows(selected);
+    const label = countryLabel(selected);
+    if (!rows.length) {
+      return '<section class="omega-rescc-locator-intro"><h3>Find a specific mine or field</h3>' +
+        '<p>No mapped site records were found for <strong>' + esc(label) + '</strong>.</p>' +
+        '<p>Choose another country from the Country menu above, or refresh after resource data finishes loading.</p></section>' +
+        '<p class="omega-rescc-locator-source">' + esc(sourceDataStatus(selected)) + '</p>';
+    }
+    const visible = rows.slice(0, 250);
+    return '<section class="omega-rescc-locator-intro">' +
+      '<h3>Find a specific mine or field</h3>' +
+      '<p>1. Choose the country in the <strong>Country</strong> menu above. 2. Search by mine name, field name or resource. 3. Select <strong>Locate this site</strong> to move the map to that exact site and open its details.</p>' +
+      '<div class="omega-rescc-locator-count">' + esc(label) + ' <strong>' + number(rows.length) + '</strong> mapped site records</div>' +
+      '<p class="omega-rescc-locator-source">This list uses the existing canonical site registry and loaded resource JSON. Missing data remains unavailable.</p>' +
+      '</section>' +
+      '<h3 class="omega-rescc-section-title">Sites in ' + esc(label) + '</h3>' +
+      visible.map(function (site) {
+        const source = site.sourceSiteRecord && typeof site.sourceSiteRecord === 'object' ? site.sourceSiteRecord : {};
+        const location = site.location && typeof site.location === 'object' ? site.location : {};
+        const coordinates = site.coordinates || location.coordinates || {};
+        const lat = Number(coordinates.lat ?? coordinates.latitude ?? site.lat ?? site.latitude);
+        const lng = Number(coordinates.lng ?? coordinates.lon ?? coordinates.longitude ?? site.lng ?? site.lon ?? site.longitude);
+        const valid = Number.isFinite(lat) && lat >= -90 && lat <= 90 && Number.isFinite(lng) && lng >= -180 && lng <= 180;
+        const resourceId = site.real && site.real.resourceId || source.resourceId || source.resourceTypeId || source.resId ||
+          site.identity && site.identity.resourceTypeId || site.resourceId || site.resId || '';
+        const siteName = site.siteName || site.name || site.depositName || site.siteId || 'Unnamed resource site';
+        const place = [location.locality, location.adminRegion, location.region, site.region].filter(function (value, index, list) {
+          return value && list.indexOf(value) === index;
+        }).join(', ');
+        const operation = site.operation || site.operationProfile || source.operation || {};
+        const status = site.real && site.real.operationStatus || operation.operationalStatus || operation.status || site.operationalStatus || site.status;
+        const quantitative = site.quantitative || {};
+        const reserve = site.simulation && (site.simulation.reserve ?? site.simulation.recoverableReserve) ??
+          quantitative.reserve && (quantitative.reserve.quantity ?? quantitative.reserve.value) ??
+          source.reserve && (source.reserve.quantity ?? source.reserve.value);
+        const production = quantitative.production && (quantitative.production.rate ?? quantitative.production.annual) ??
+          site.simulation && (site.simulation.productionRate ?? site.simulation.annualProduction);
+        const body = '<div class="omega-rescc-grid2">' +
+          kv('Resource', resourceId ? resourceName(resourceId) : 'Not recorded') +
+          kv('Site ID', site.siteId) +
+          kv('Location', place || countryLabel(site.countryId || selected)) +
+          kv('Coordinates', valid ? lat.toFixed(4) + ', ' + lng.toFixed(4) : null) +
+          kv('Reserve', reserve) + kv('Production profile', production) +
+          '</div>' +
+          (!valid ? '<p class="omega-rescc-locator-warning">Coordinates are unavailable or invalid. This site cannot be located on the map.</p>' : '');
+        return card(siteName, status || 'STATUS NOT RECORDED', body,
+          actionButton('focus-site', valid ? 'Locate this site' : 'Location unavailable', {
+            'site-id': site.siteId, 'resource-id': resourceId, 'country-id': site.countryId || selected,
+            lat: valid ? lat : null, lng: valid ? lng : null, 'site-name': siteName
+          }, !valid || !site.siteId));
+      }).join('') +
+      (rows.length > visible.length ? '<p class="omega-rescc-locator-source">Showing ' + visible.length + ' of ' + rows.length + ' sites. Use the search field above to narrow the country list.</p>' : '');
   }
   function siteRows(country) {
     const selected=activeCountry(country),r=resourceBucket(country),candidates=[];
@@ -881,6 +944,14 @@
       '.omega-rescc-button{background:#0b4b63;color:#e0f2fe;border:1px solid #1686a7;border-radius:6px;padding:8px 10px;font:inherit;font-size:11px;font-weight:700;cursor:pointer}' +
       '.omega-rescc-button:disabled{opacity:.38;cursor:not-allowed}.omega-rescc-button:hover:not(:disabled){background:#0e7490}' +
       '.omega-rescc-empty{padding:18px;border:1px dashed #345065;border-radius:8px;color:#9eb3c7;text-align:center}' +
+      '.omega-rescc-control-label{font-size:11px;font-weight:700;color:#a8bdcc;white-space:nowrap}' +
+      '.omega-rescc-locator-intro{border:1px solid #294356;border-radius:9px;padding:13px 14px;background:#0b1926;margin-bottom:10px}' +
+      '.omega-rescc-locator-intro h3{margin:0 0 7px;color:#e7f2f8;font-size:15px;font-weight:750}' +
+      '.omega-rescc-locator-intro p{margin:5px 0;color:#b6c7d3;font-size:12px;line-height:1.55}' +
+      '.omega-rescc-locator-count{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px;padding:9px 10px;border-radius:7px;background:#102536;color:#dbe8ef;font-size:12px}' +
+      '.omega-rescc-locator-count strong{font-size:17px;color:#f2f7fa;font-variant-numeric:tabular-nums}' +
+      '.omega-rescc-locator-source{font-size:11px!important;color:#8ea4b4!important}' +
+      '.omega-rescc-locator-warning{font-size:11px;color:#f2c98a;margin:2px 0}' +
       '.omega-rescc-json{white-space:pre-wrap;overflow-wrap:anywhere;max-height:300px;overflow:auto;color:#cbd5e1;background:#030b15;border-radius:6px;padding:9px;margin:0;font-size:11px}' +
       '.omega-rescc-section-title{font-size:13px;color:#67e8f9;margin:8px 0 0}.omega-rescc-form{border:1px solid #25475f;border-radius:9px;padding:13px;display:flex;flex-direction:column;gap:10px;background:#081625}' +
       '.omega-rescc-form h3{font-size:13px;margin:0;color:#a5f3fc}.omega-rescc-formgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:9px}' +
@@ -992,7 +1063,7 @@
     countryId = activeCountry(country || countryId);
     activePanel = panelId(panel || activePanel);
     const options = countryList().map(function (c) {
-      return '<option value="' + esc(c) + '"' + (c === countryId ? ' selected' : '') + '>' + esc(c) + '</option>';
+      return '<option value="' + esc(c) + '"' + (c === countryId ? ' selected' : '') + '>' + esc(countryLabel(c)) + '</option>';
     }).join('');
     const navOptions = PANELS.map(function (p) {
       return '<option value="' + p.id + '"' + (p.id === activePanel ? ' selected' : '') + '>' +
@@ -1000,10 +1071,10 @@
     }).join('');
     modal.innerHTML = '<style>' + css() + '</style><div class="omega-rescc-shell" role="dialog" aria-modal="true" aria-label="Resource Command Center">' +
       '<div class="omega-rescc-top"><div class="omega-rescc-heading"><h2>Resource Command Center</h2>' +
-      '<div class="omega-rescc-headtools"><select id="omega-rescc-country" aria-label="Country scope">' + options + '</select>' +
-      '<button type="button" class="omega-rescc-button" data-action="refresh-panel">Refresh</button>' +
+      '<div class="omega-rescc-headtools"><label class="omega-rescc-control-label" for="omega-rescc-country">Country</label><select id="omega-rescc-country" aria-label="Country">' + options + '</select>' +
+      '<button type="button" class="omega-rescc-button" data-action="refresh-panel">Refresh data</button>' +
       '<button type="button" class="omega-rescc-button" data-action="close">Close</button></div></div>' +
-      '<div class="omega-rescc-headtools"><input id="omega-rescc-search" class="omega-rescc-input omega-rescc-search" type="search" placeholder="Search this section…" aria-label="Search current section"></div>' +
+      '<div class="omega-rescc-headtools"><label class="omega-rescc-control-label" for="omega-rescc-search">Search</label><input id="omega-rescc-search" class="omega-rescc-input omega-rescc-search" type="search" placeholder="' + (activePanel === 'deposits' ? 'Mine, oil field, gas field or resource…' : 'Search this section…') + '" aria-label="Search current section"></div>' +
       '<nav class="omega-rescc-nav" aria-label="Resource section selector"><label class="omega-rescc-panel-label" for="omega-rescc-panel-select">Section</label><select id="omega-rescc-panel-select" aria-label="Resource section">' + navOptions + '</select></nav></div>' +
       (lastOutcome ? '<div id="omega-rescc-status" class="omega-rescc-status" role="status">' + esc(lastOutcome) + '</div>' : '') +
       '<main id="omega-rescc-content" class="omega-rescc-content"><h3 class="omega-rescc-section-title">' + esc(viewTitle(activePanel)) + '</h3>' +
@@ -1088,6 +1159,24 @@
       if (action === 'survey' || action === 'expansion' || action === 'reserve') {
         result = dispatchResourceCommand(action, c, d.resourceId);
         setOutcome(action + ' request for ' + (d.resourceId || 'resource'), result);
+        return;
+      }
+      if (action === 'focus-site') {
+        const siteId = String(d.siteId || '').trim();
+        const binding = g.Omega && g.Omega.IndividualResourceSiteBinding || g.OmegaIndividualResourceSiteBinding;
+        const site = binding && Array.isArray(binding.sites)
+          ? binding.sites.find(function (row) { return String(row && row.siteId || '') === siteId; })
+          : null;
+        if (site && binding && typeof binding.locate === 'function') {
+          const located = binding.locate(siteId);
+          if (located && located.status === 'APPLIED') {
+            close();
+            return;
+          }
+          setOutcome('Locate site', located || { status: 'UNAVAILABLE', reason: 'SITE_LOCATION_NOT_CONFIRMED' });
+          return;
+        }
+        setOutcome('Locate site', { status: 'UNAVAILABLE', reason: binding ? 'SITE_NOT_FOUND_IN_CANONICAL_MAP_REGISTRY' : 'CANONICAL_SITE_BINDING_NOT_READY' });
         return;
       }
       if (action === 'focus-map') {
@@ -1379,7 +1468,9 @@
             return block.replace(/onclick="[^"]*"/, 'onclick="window.ResourceMinistryEngine.openModal(\'' + routeCountry + '\', \'' + panel + '\');"');
           });
           html = html.replace('18 Commodity Ontology Matrix', 'Commodity Ontology Matrix')
-            .replace('593 geocoded global mining concessions, ore purities, and spatial reserve clusters.', 'Authoritative global deposit registry; missing values remain unavailable.')
+            .replace('593 geocoded global mining concessions, ore purities, and spatial reserve clusters.', 'Search a country’s specific mines, oil fields and gas fields, then locate one site on the map.')
+            .replace('Deposit Registry & Geocoded Mines', 'Find a Specific Mine or Field')
+            .replace('Explore Geocoded Deposits', 'Find a Mine or Field')
             .replace('Upgrade Extraction & RRR ($800M)', 'Open Extraction & Depletion Console')
             .replace('Commission Smelter Complex ($1.2B)', 'Open Processing & Factory Console')
             .replace('Drawdown / Expand SPR Silos', 'Inspect Inventory / Request SPR Transfer')
