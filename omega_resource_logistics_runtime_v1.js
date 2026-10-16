@@ -28,7 +28,24 @@ function plan(payload){
 }
 function handler(cmd,ctx){
  const p=cmd?.payload||{},c=canonical(ctx.countryId),rs=clone(ctx.stateTransaction.get('resource')||{}),log=clone(rs.logistics||{});
- const shipments=Array.isArray(log.shipments)?log.shipments:[],plans=plan(p);
+ const shipments=Array.isArray(log.shipments)?log.shipments:[];
+ const planned=plan(p);
+ if(!Array.isArray(planned))return{accepted:false,reason:planned?.reason||'LOGISTICS_PLAN_UNAVAILABLE',status:planned?.status||'UNAVAILABLE'};
+ const policy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
+ const targetCountry=canonical(p.targetCountryId||p.destinationCountryId||p.factoryCountryId||'');
+ const plans=planned.map(x=>{
+   if(!policy||typeof policy.isRouteBlocked!=='function')return x;
+   const scope={resourceId:x.resourceId,transportMode:x.transportMode||p.transportMode,routeId:x.routeId,
+     siteId:p.siteId||null,factoryId:x.factoryId||null};
+   const endpoints=[c,targetCountry].filter((v,i,a)=>v&&a.indexOf(v)===i);
+   const checks=endpoints.map(countryId=>({countryId,...policy.isRouteBlocked(countryId,scope)}));
+   const blockers=checks.flatMap(y=>Array.isArray(y.blockades)?y.blockades:[]);
+   if(!blockers.length)return{...x,routePolicy:{status:'ALLOWED',checkedCountries:endpoints,blockades:[]}};
+   const reason='RESOURCE_ROUTE_BLOCKADE_ACTIVE';
+   return{...x,status:'BLOCKED',reason,dispatchQuantity:0,deliveryStatus:'BLOCKED',
+     policyDecision:{status:'BLOCKED',reason,checkedCountries:endpoints,blockades:blockers},
+     delivery:{...(x.delivery||{}),status:'BLOCKED',quantity:0}};
+ });
  for(const x of plans){
    const shipmentId=x.delivery?.shipmentId||null;
    if(shipments.some(s=>String(s?.shipmentId)===String(shipmentId)))continue;
@@ -37,8 +54,8 @@ function handler(cmd,ctx){
      route:{sourceNode:x.sourceNode,destinationNode:x.destinationNode,distanceKm:x.distanceKm,capacity:x.capacity},
      economics:{costEstimate:x.costEstimate,costUnit:x.costUnit,costAuthority:x.costAuthority},
      timing:{travelTimeDays:x.travelTimeDays,timeAuthority:x.timeAuthority,plannedTurn:turn(),etaTurn:turn()+Math.max(1,Math.ceil(x.travelTimeDays))},
-     status:x.dispatchQuantity>0?'IN_TRANSIT':'BLOCKED',deliveryStatus:x.dispatchQuantity>0?'IN_TRANSIT':'BLOCKED',
-     sourceAuthority:p.sourceAuthority||p.batch?.stateAuthority||'UNOBSERVED',simulationTurn:turn(),createdTurn:turn()});
+     status:x.status==='BLOCKED'||!(x.dispatchQuantity>0)?'BLOCKED':'IN_TRANSIT',deliveryStatus:x.status==='BLOCKED'||!(x.dispatchQuantity>0)?'BLOCKED':'IN_TRANSIT',
+     sourceAuthority:p.sourceAuthority||p.batch?.stateAuthority||'UNOBSERVED',policyDecision:x.policyDecision||x.routePolicy||null,blockedReason:x.reason||null,simulationTurn:turn(),createdTurn:turn()});
  }
  while(shipments.length>MAX)shipments.shift();
  log.shipments=shipments;log.lastPlanTurn=turn();log.status='OPERATIONAL';log.routeCount=shipments.length;
