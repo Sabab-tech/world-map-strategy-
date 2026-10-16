@@ -1,0 +1,33 @@
+name: OMEGA Geographic Region Data
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'countries.json'
+      - 'world.json'
+      - 'world_oceans_v1.json'
+      - 'omega_geographic_region_system_v1.js'
+      - 'test/geographic_region_data.test.mjs'
+      - '.github/workflows/geographic-region-data.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  geographic-region-data:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: JavaScript syntax gates
+        run: |
+          node --check omega_geographic_region_system_v1.js
+          node --check test/geographic_region_data.test.mjs
+      - name: Geographic roster and geometry contract
+        run: node test/geographic_region_data.test.mjs
