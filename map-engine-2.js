@@ -1523,12 +1523,43 @@ Game.Map.renderResourceDeposits = function() {
     
     const normCountry = (c) => {
         if (!c) return '';
-        let s = String(c).replace(/_/g, " ").toUpperCase().trim();
+        const raw = String(c).trim();
+        let s = raw.replace(/_/g, " ").toUpperCase().trim();
+        // Resolve human-readable country names through the canonical identity system
+        // before falling back to local aliases. Map scope must treat "Saudi Arabia"
+        // and "SAU" as the same country, not accidentally hide all of its deposits.
+        try {
+            const resolver = window.OmegaCanonicalIdentityRegistry || window.OmegaCountrySemanticBridge || window.Omega?.CanonicalIdentity;
+            const hit = resolver && typeof resolver.resolveCountry === 'function' ? resolver.resolveCountry(raw) : null;
+            const resolved = hit && (hit.id || hit.iso3 || hit.iso3Code || hit.countryCode ||
+                hit.raw?.iso3 || hit.raw?.countryCode || hit.canonical?.iso3);
+            if (resolved && /^[A-Z]{2,3}$/i.test(String(resolved).trim())) return String(resolved).trim().toUpperCase();
+        } catch (_) {}
+        try {
+            const lookup = Game.countryLookup || window.Game?.countryLookup || {};
+            const match = Object.entries(lookup).find(([key, row]) => {
+                const wanted = s.replace(/\s+/g, ' ');
+                return [key, row?.name, row?.officialName, row?.countryName, row?.adminName]
+                    .filter(Boolean).some(value => String(value).trim().replace(/_/g, ' ').toUpperCase().replace(/\s+/g, ' ') === wanted);
+            });
+            if (match) {
+                const row = match[1] && typeof match[1] === 'object' ? match[1] : {};
+                const code = row.iso3 || row.iso3Code || row.countryCode || row.countryId || row.code || match[0];
+                if (/^[A-Z]{2,3}$/i.test(String(code).trim())) return String(code).trim().toUpperCase();
+            }
+        } catch (_) {}
         const map = {
             'UNITED STATES OF AMERICA': 'USA', 'UNITED STATES': 'USA', 'AMERICA': 'USA',
+            'UNITED KINGDOM': 'GBR', 'GREAT BRITAIN': 'GBR', 'BRITAIN': 'GBR', 'UK': 'GBR',
+            'SAUDI ARABIA': 'SAU', 'AUSTRALIA': 'AUS', 'CANADA': 'CAN', 'SOUTH AFRICA': 'ZAF',
+            'NEW ZEALAND': 'NZL', 'SOUTH KOREA': 'KOR', 'NORTH KOREA': 'PRK',
             'IVORY COAST': "COTE D'IVOIRE", "CÔTE D'IVOIRE": "COTE D'IVOIRE",
-            'DEMOCRATIC REPUBLIC OF THE CONGO': 'DR CONGO', 'CONGO (KINSHASA)': 'DR CONGO', 'CONGO': 'DR CONGO',
-            'BANGLADESH': 'BANGLADESH', 'INDIA': 'INDIA', 'PAKISTAN': 'PAKISTAN', 'CHINA': 'CHINA', 'RUSSIA': 'RUSSIA'
+            'DEMOCRATIC REPUBLIC OF THE CONGO': 'COD', 'CONGO (KINSHASA)': 'COD',
+            'CONGO': 'COG', 'DR CONGO': 'COD', 'BANGLADESH': 'BGD', 'INDIA': 'IND',
+            'PAKISTAN': 'PAK', 'CHINA': 'CHN', 'RUSSIA': 'RUS', 'UNITED ARAB EMIRATES': 'ARE',
+            'IRAN': 'IRN', 'TURKEY': 'TUR', 'TÜRKIYE': 'TUR', 'EGYPT': 'EGY',
+            'JAPAN': 'JPN', 'INDONESIA': 'IDN', 'MONGOLIA': 'MNG', 'BRAZIL': 'BRA',
+            'CHILE': 'CHL', 'PERU': 'PER', 'ZAMBIA': 'ZMB', 'GHANA': 'GHA'
         };
         return map[s] || s;
     };
