@@ -35,7 +35,7 @@
       if(Array.isArray(rows))rows.forEach(resolveRow);
     }catch(_){}
     const s=state()||{};
-    for(const domain of ['trade','resource','finance','foreign','economy']){
+    for(const domain of ['trade','resource','resources','finance','foreign','economy']){
       const root=s[domain];
       if(root&&typeof root==='object')Object.keys(root).forEach(resolveRow);
     }
@@ -100,8 +100,12 @@
       }
     }
     for(const c of countries()){
-      const inv=countryValue(c,'resource.inventory'),prod=countryValue(c,'resource.production'),cons=countryValue(c,'resource.consumption');
-      for(const source of [inv,prod,cons])if(source&&typeof source==='object')for(const k of Object.keys(source))ids.add(k);
+      for(const domain of ['resource','resources']){
+        for(const field of ['inventory','production','consumption','tradeAvailability','endowment','reserves']){
+          const values=countryValue(c,domain+'.'+field);
+          if(values&&typeof values==='object'&&!Array.isArray(values))for(const k of Object.keys(values))ids.add(k);
+        }
+      }
       const req=countryValue(c,'trade.importRequests');if(Array.isArray(req))for(const x of req)if(x?.resourceId)ids.add(x.resourceId);
       const offers=countryValue(c,'trade.offerBook');
       if(offers&&typeof offers==='object'){
