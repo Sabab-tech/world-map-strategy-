@@ -16,7 +16,11 @@ on:
   pull_request:
     paths:
       - 'index.html'
+      - 'map-engine-1.js'
       - 'map-engine-2.js'
+      - 'offline-hybrid-map.js'
+      - 'offline-hybrid-map.css'
+      - 'test/offline_hybrid_map.test.mjs'
       - 'omega_ui_visual_system_v1.css'
       - 'test/omega_ui_visual_system.test.mjs'
       - 'package.json'
