@@ -545,6 +545,8 @@
       var remainingSpendable = inventoryAfter === null ? null : Math.max(0, inventoryAfter - protectedStock(bucket(cid, 'resource') || resource, rid));
       var coverage = remainingSpendable === null ? null : (demanded > 0 ? remainingSpendable / demanded : null);
       var pending = pendingByResource[token(rid)] || 0;
+      var coverageTarget = Math.max(0, finite(profile.stockCoverageTurns) === null ? minCoverage : finite(profile.stockCoverageTurns));
+      var lowStockCoverage = coverage !== null && demanded > 0 && coverage < coverageTarget;
       var score = unmet !== null && demanded > 0 ? (unmet / demanded) * (finite(profile.priority) || 1) : 0;
       var summary = {
         resourceId: rid, unit: profile.unit || null,
@@ -554,6 +556,7 @@
         fulfilledDemand: fulfilled, unmetDemand: unmet,
         inventoryBefore: stock, inventoryAfter: inventoryAfter, protectedStock: protectedQty,
         spendableStockAfter: remainingSpendable, stockCoverageTurns: coverage,
+        stockCoverageTargetTurns: coverageTarget, lowStockCoverage: lowStockCoverage,
         pendingImportQuantity: pending, priority: finite(profile.priority) || 1,
         consumeStatus: consumeStatus, price: currentPrice.value,
         formula: factors
@@ -597,10 +600,12 @@
       hasInventoryBook && g.OmegaOpponentAutonomy && typeof g.OmegaOpponentAutonomy.routeDecision === 'function';
     if (canProcure) {
       summaries.forEach(function (row) {
-        if (row.unmetDemand === null || row.unmetDemand <= 1e-9 || row.demand <= 0) return;
+        if (row.demand === null || row.demand <= 0 ||
+            !((row.unmetDemand !== null && row.unmetDemand > 1e-9) || row.lowStockCoverage === true)) return;
         var availablePending = pendingByResource[token(row.resourceId)] || 0;
-        var bufferTarget = Math.max(0, row.demand * bufferTurns - Math.max(0, row.inventoryAfter || 0) - availablePending);
-        var quantity = Math.max(row.unmetDemand, bufferTarget);
+        var targetTurns = Math.max(bufferTurns, finite(row.stockCoverageTargetTurns) || 0);
+        var bufferTarget = Math.max(0, row.demand * targetTurns - Math.max(0, row.inventoryAfter || 0) - availablePending);
+        var quantity = Math.max(row.unmetDemand || 0, bufferTarget);
         quantity = Math.min(quantity, row.demand * maxPurchaseTurns);
         quantity = Math.max(0, quantity - Math.max(0, availablePending - row.unmetDemand));
         if (!(quantity > 1e-9)) return;
