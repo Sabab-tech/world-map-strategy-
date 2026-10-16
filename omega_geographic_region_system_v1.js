@@ -84,9 +84,24 @@
     if (row) return memberCodes.has(row.iso3);
     const p = feature && feature.properties || {};
     const name = normalize(p.ADMIN || p.name || p.NAME || "");
-    // Preserve the existing Kosovo boundary as a map-only European entity without inventing an ISO row.
-    return state.selected && state.selected.kind === "continent" &&
-      state.selected.key === "Europe" && name === "KOSOVO";
+    // Keep the three intentional map-only boundaries in regional selection too.
+    // They remain separate map features and are not fabricated as ISO roster rows.
+    const mapOnlyContinents = {
+      "KOSOVO": ["Europe"],
+      "NORTHERN CYPRUS": ["Asia", "Europe"],
+      "SOMALILAND": ["Africa"]
+    };
+    const mapOnlyOceans = {
+      "NORTHERN CYPRUS": ["ATLANTIC"],
+      "SOMALILAND": ["INDIAN"]
+    };
+    if (state.selected && state.selected.kind === "continent") {
+      return (mapOnlyContinents[name] || []).includes(state.selected.key);
+    }
+    if (state.selected && state.selected.kind === "ocean") {
+      return (mapOnlyOceans[name] || []).includes(state.selected.key);
+    }
+    return false;
   }
   function setBoundaryGlow(layer, enabled, color, kind) {
     const element = layer && (typeof layer.getElement === "function" ? layer.getElement() : layer._path);
