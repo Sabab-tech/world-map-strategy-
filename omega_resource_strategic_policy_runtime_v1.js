@@ -488,7 +488,7 @@ function previewCarbonActivity(countryId,resourceId,quantity,unit,source,txConte
  const result={allowed,reason:allowed?null:'CARBON_QUOTA_EXCEEDED',resourceId,unit,source:source||'RESOURCE_ACTIVITY',
   factorTonnesCo2ePerUnit:factor,emissionsTonnesCo2e:amount,usedTonnesCo2e:used,
   projectedTonnesCo2e:used+amount,allowanceTonnesCo2e:allowance,periodIndex:window.periodIndex,quotaId:quota.quotaId};
- if(!allowed)recordCarbonQuotaViolation(txContext,{transactionId:activityContext.transactionId||null,
+ if(!allowed)recordCarbonQuotaViolation(txContext,{countryId:c,transactionId:activityContext.transactionId||null,
   attemptId:activityContext.activityId||null,siteId:activityContext.siteId||null,factoryId:activityContext.factoryId||null,
   source:source||'RESOURCE_ACTIVITY',sourceId:activityContext.sourceId||activityContext.factoryId||null,
   resourceId,quantity:q,inputUnit:unit,emissionsTonnesCo2e:amount,usedTonnesCo2e:used,
