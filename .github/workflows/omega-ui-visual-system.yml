@@ -6,6 +6,9 @@ on:
     paths:
       - 'index.html'
       - 'map-engine-2.js'
+      - 'offline-hybrid-map.js'
+      - 'offline-hybrid-map.css'
+      - 'test/offline_hybrid_map.test.mjs'
       - 'omega_ui_visual_system_v1.css'
       - 'test/omega_ui_visual_system.test.mjs'
       - 'package.json'
@@ -36,6 +39,7 @@ jobs:
           node-version: 24
       - name: Syntax-check map UI
         run: |
+          node --check map-engine-1.js
           node --check map-engine-2.js
           node --check offline-hybrid-map.js
       - name: Run UI visual and map-layer regression tests
