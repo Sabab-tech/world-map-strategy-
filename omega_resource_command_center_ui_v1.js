@@ -28,6 +28,9 @@
   let activePanel = 'matrix';
   let lastOutcome = '';
   let lastCascade = null;
+  let depositScope = 'COUNTRY';
+  let depositPage = 0;
+  const DEPOSIT_PAGE_SIZE = 100;
 
   function state() { return (g.Game && g.Game.state) || g.gameState || {}; }
   function engine() { return g.ResourceMinistryEngine || null; }
@@ -283,15 +286,70 @@
       return resourceKey(id) === wanted && siteBelongsToCountry(site, country);
     });
   }
+  function globalResourceCatalog() {
+    const byId = new Map();
+    function add(row, fallbackId) {
+      if (!row || typeof row !== 'object') return;
+      const id = row.id || row.code || row.resourceId || row.resourceTypeId || row.resId || row.resource || fallbackId;
+      if (!id) return;
+      const key = resourceKey(id);
+      if (!key) return;
+      const existing = byId.get(key) || {};
+      byId.set(key, Object.assign({}, existing, row, {
+        id: String(existing.id || id),
+        name: row.name || row.label || row.displayName || existing.name || String(id)
+      }));
+    }
+    resourceTypes().forEach(function (row) { add(row); });
+    deposits().forEach(function (site) {
+      add({
+        id: site.resourceId || site.resourceTypeId || site.resId || site.resource,
+        name: site.resourceName || site.commodityName || site.commodity || site.resourceTypeName,
+        unit: site.unit || site.reserve && site.reserve.unit || site.reserves && site.reserves.unit,
+        category: site.category || site.resourceCategory
+      });
+    });
+    const world = state();
+    const resourceRoot = world.resource || world.resources || {};
+    Object.keys(resourceRoot).forEach(function (country) {
+      const bucket = resourceRoot[country];
+      if (!bucket || typeof bucket !== 'object') return;
+      for (const field of ['inventory','production','consumption','tradeAvailability','endowment','reserves']) {
+        const values = bucket[field];
+        if (values && typeof values === 'object' && !Array.isArray(values)) {
+          Object.keys(values).forEach(function (rid) { add({ id: rid, name: resourceName(rid) }); });
+        }
+      }
+      for (const field of ['availableByResource','reservedByResource']) {
+        const values = bucket.warehouse && bucket.warehouse[field];
+        if (values && typeof values === 'object') Object.keys(values).forEach(function (rid) { add({ id: rid, name: resourceName(rid) }); });
+      }
+      const requests = Array.isArray(bucket.importRequests) ? bucket.importRequests : [];
+      requests.forEach(function (row) { add(row); });
+    });
+    Object.keys(world.trade || {}).forEach(function (country) {
+      const bucket = world.trade[country] || {};
+      const requests = Array.isArray(bucket.importRequests) ? bucket.importRequests : [];
+      requests.forEach(function (row) { add(row); });
+      const offers = bucket.offerBook;
+      if (Array.isArray(offers)) offers.forEach(function (row) { add(row); });
+      else if (offers && typeof offers === 'object') Object.entries(offers).forEach(function ([rid, row]) {
+        add(Object.assign({ id: rid }, row && typeof row === 'object' ? row : {}));
+      });
+    });
+    return Array.from(byId.values()).sort(function (a, b) {
+      return String(a.name || a.id).localeCompare(String(b.name || b.id));
+    });
+  }
   function resourceChoices(country) {
     const byId = new Map();
-    resourceTypes().concat(resources(country)).forEach(function (row) {
+    globalResourceCatalog().concat(resources(country)).forEach(function (row) {
       if (!row || typeof row !== 'object') return;
       const id = row.id || row.code || row.resourceId || row.resourceTypeId;
       if (!id) return;
       const key = resourceKey(id);
       const existing = byId.get(key) || {};
-      byId.set(key, Object.assign({}, existing, row, { id: String(id), name: row.name || row.label || existing.name || String(id) }));
+      byId.set(key, Object.assign({}, existing, row, { id: String(existing.id || id), name: row.name || row.label || existing.name || String(id) }));
     });
     return Array.from(byId.values()).sort(function (a, b) {
       return String(a.name || a.id).localeCompare(String(b.name || b.id));
@@ -409,8 +467,11 @@
     return Array.from(out).filter(Boolean).sort();
   }
   function resourceName(id) {
-    const row = resourceTypes().find(function (x) { return String(x.id) === String(id); });
-    return row ? (row.name || id) : String(id || 'Resource');
+    const wanted = resourceKey(id);
+    const row = resourceTypes().find(function (x) {
+      return resourceKey(x && (x.id || x.code || x.resourceId || x.resourceTypeId)) === wanted;
+    });
+    return row ? (row.name || row.label || id) : String(id || 'Resource');
   }
   function viewTitle(id) {
     return (PANELS.find(function (p) { return p.id === id; }) || PANELS[0]).title;
@@ -541,17 +602,36 @@
     return top + table;
   }
   function panelOntology(country) {
-    const types = resourceTypes();
-    if (!types.length) return empty('Commodity ontology catalog is not loaded.');
-    return '<p class="omega-rescc-note">Canonical resource identifiers, units and process chains exposed by the installed catalog. Unset chemistry or grade fields are not inferred.</p>' +
-      types.map(function (r) {
-        return card(r.name || r.id, r.id + ' · ' + (r.unit || 'unit not specified'),
-          '<div class="omega-rescc-grid2">' + kv('Category', r.category) + kv('Unit', r.unit) +
-          kv('Base price evidence', r.basePrice) + kv('Chemical formula', r.chemicalFormula || r.formula) + '</div>' +
-          '<div class="omega-rescc-kv"><span>Process chain</span><strong>' +
-          esc(Array.isArray(r.processChain) ? r.processChain.join(' → ') : (r.processChain || 'Not recorded')) + '</strong></div>',
-          actionButton('focus-map', 'Locate deposits', { 'resource-id': r.id }));
-      }).join('');
+    const types = globalResourceCatalog();
+    if (!types.length) return empty('Global commodity catalog is not loaded.') +
+      '<p class="omega-rescc-muted">' + esc(sourceDataStatus(country)) + '</p>';
+    const allSites = deposits();
+    const uniqueCountries = new Set(allSites.map(function (site) {
+      return normaliseCountry(site && (site.countryCode || site.countryId || site.country || site.countryName || site.sovereignCountryId));
+    }).filter(Boolean));
+    const header = '<div class="omega-rescc-metrics">' +
+      '<div><span>Global resource types</span><strong>' + number(types.length) + '</strong></div>' +
+      '<div><span>Registered deposits / sites</span><strong>' + number(allSites.length) + '</strong></div>' +
+      '<div><span>Countries represented in deposit data</span><strong>' + number(uniqueCountries.size) + '</strong></div></div>' +
+      '<p class="omega-rescc-muted">Global catalog combines declared commodity types with resource IDs found in the existing deposit registry and country resource/trade state. It does not invent missing commodities or site records.</p>';
+    const cards = types.map(function (r) {
+      const id = r.id || r.resourceId || r.resourceTypeId;
+      const matches = allSites.filter(function (site) {
+        return resourceKey(site && (site.resourceId || site.resourceTypeId || site.resId || site.resource)) === resourceKey(id);
+      });
+      const countries = new Set(matches.map(function (site) {
+        return normaliseCountry(site && (site.countryCode || site.countryId || site.country || site.countryName || site.sovereignCountryId));
+      }).filter(Boolean));
+      return card(r.name || id, id + ' · ' + (r.unit || 'unit not specified'),
+        '<div class="omega-rescc-grid2">' + kv('Category', r.category) + kv('Unit', r.unit) +
+        kv('Deposits worldwide', matches.length) + kv('Countries with records', countries.size) +
+        kv('Base price evidence', r.basePrice) + kv('Chemical formula', r.chemicalFormula || r.formula) + '</div>' +
+        '<div class="omega-rescc-kv"><span>Process chain</span><strong>' +
+        esc(Array.isArray(r.processChain) ? r.processChain.join(' → ') : (r.processChain || 'Not recorded')) + '</strong></div>',
+        actionButton('focus-map', 'Locate deposits on map', { 'resource-id': id }) +
+        actionButton('open-global-deposits', 'View worldwide deposits', { 'resource-id': id }));
+    }).join('');
+    return header + cards;
   }
   function panelReserves(country) {
     const rows=resources(country),r=resourceBucket(country),endowment=r.endowment||{},reserves=r.reserves||{},inventory=r.inventory||{};
@@ -574,21 +654,73 @@
       (profileRows.length>150?'<p class="omega-rescc-note">Showing 150 of '+profileRows.length+' reserve profiles.</p>':'');
   }
   function panelDeposits(country) {
-    const all=deposits(),selected=activeCountry(country);
-    const rows=selected==='WORLD'?all:all.filter(d=>{
-      const cid=d&&(d.countryCode||d.countryId||d.country||d.countryName||d.sovereignCountryId);
-      return cid&&normaliseCountry(cid)===selected;
+    const all = deposits();
+    const selected = activeCountry(country);
+    const rows = (depositScope === 'WORLD' ? all : all.filter(function (d) {
+      const cid = d && (d.countryCode || d.countryId || d.country || d.countryName || d.sovereignCountryId);
+      return cid && normaliseCountry(cid) === selected;
+    })).slice().sort(function (a, b) {
+      const ac = String(a.countryCode || a.countryId || a.country || '');
+      const bc = String(b.countryCode || b.countryId || b.country || '');
+      if (ac !== bc) return ac.localeCompare(bc);
+      const ar = String(a.resourceId || a.resId || a.resourceTypeId || a.resource || '');
+      const br = String(b.resourceId || b.resId || b.resourceTypeId || b.resource || '');
+      if (ar !== br) return ar.localeCompare(br);
+      return String(a.name || a.siteName || a.depositName || a.id || '').localeCompare(String(b.name || b.siteName || b.depositName || b.id || ''));
     });
-    if(!rows.length)return empty('No deposits matched '+selected+' in the loaded JSON registry.')+'<p class="omega-rescc-note">'+esc(sourceDataStatus(country))+'</p>';
-    const visible=rows.slice(0,250);
-    return '<p class="omega-rescc-note">Country-scoped JSON deposit registry: '+rows.length+' records matched '+esc(selected)+'. Showing '+visible.length+'; missing fields stay unavailable.</p>'+
-      visible.map(d=>{
-        const lat=Number(d.lat??d.latitude??(d.coordinates&&d.coordinates.lat)),lng=Number(d.lng??d.lon??d.longitude??(d.coordinates&&(d.coordinates.lng??d.coordinates.lon)));
-        const valid=Number.isFinite(lat)&&Number.isFinite(lng)&&lat>=-90&&lat<=90&&lng>=-180&&lng<=180,rid=d.resourceId||d.resId||d.resourceTypeId||d.resource||'';
-        const body='<div class="omega-rescc-grid2">'+kv('Country',d.country||d.countryCode||d.countryId)+kv('Resource',rid||d.name)+kv('Latitude',valid?lat.toFixed(5):null)+kv('Longitude',valid?lng.toFixed(5):null)+kv('Reserves',d.reserves??d.reserve)+kv('Grade',d.grade??d.purity)+kv('Operator',d.operator||d.owner)+'</div>';
-        return card(d.name||d.depositName||d.siteName||d.siteId||'Unnamed deposit',d.status||'STATUS NOT RECORDED',body,
-          (valid?actionButton('fly-deposit','Fly to coordinates',{lat,lng,'deposit-name':d.name||d.depositName||'Deposit'}):'')+(rid?actionButton('survey','Request resource survey',{'resource-id':rid}):''));
-      }).join('')+(rows.length>visible.length?'<p class="omega-rescc-note">Showing the first '+visible.length+' of '+rows.length+' matched records.</p>':'');
+    const pageCount = Math.max(1, Math.ceil(rows.length / DEPOSIT_PAGE_SIZE));
+    depositPage = Math.max(0, Math.min(depositPage, pageCount - 1));
+    const start = depositPage * DEPOSIT_PAGE_SIZE;
+    const visible = rows.slice(start, start + DEPOSIT_PAGE_SIZE);
+    const commodityIds = new Set(globalResourceCatalog().map(function (row) { return resourceKey(row.id); }).filter(Boolean));
+    const siteResourceIds = new Set(all.map(function (site) {
+      return resourceKey(site && (site.resourceId || site.resourceTypeId || site.resId || site.resource));
+    }).filter(Boolean));
+    const toolbar = '<div class="omega-rescc-deposit-tools">' +
+      '<label>Registry scope<select id="omega-rescc-deposit-scope" aria-label="Deposit registry scope">' +
+      '<option value="COUNTRY"' + (depositScope === 'COUNTRY' ? ' selected' : '') + '>Selected country: ' + esc(selected) + '</option>' +
+      '<option value="WORLD"' + (depositScope === 'WORLD' ? ' selected' : '') + '>Worldwide · all countries</option>' +
+      '</select></label><span>' + number(rows.length) + ' sites in scope · ' +
+      number(commodityIds.size) + ' catalog resource types · ' + number(siteResourceIds.size) + ' resource IDs in deposit records</span></div>';
+    if (!rows.length) return toolbar + empty(depositScope === 'WORLD'
+      ? 'No deposit records are loaded from the existing global JSON registry.'
+      : 'No deposits matched ' + selected + ' in the loaded JSON registry.') +
+      '<p class="omega-rescc-muted">' + esc(sourceDataStatus(country)) + '</p>';
+    const body = visible.map(function (d) {
+      const lat = Number(d.lat ?? d.latitude ?? (d.coordinates && d.coordinates.lat));
+      const lng = Number(d.lng ?? d.lon ?? d.longitude ?? (d.coordinates && (d.coordinates.lng ?? d.coordinates.lon)));
+      const valid = Number.isFinite(lat) && Number.isFinite(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+      const rid = d.resourceId || d.resId || d.resourceTypeId || d.resource || '';
+      const siteName = d.name || d.depositName || d.siteName || d.siteId || d.id || 'Unnamed deposit';
+      const countryName = d.country || d.countryName || d.countryCode || d.countryId || d.sovereignCountryId;
+      const reserve = d.reserve ?? d.reserves ?? d.recoverableReserve;
+      const reserveValue = reserve && typeof reserve === 'object'
+        ? (reserve.quantity ?? reserve.value ?? reserve.amount ?? reserve.reserves)
+        : reserve;
+      const reserveUnit = reserve && typeof reserve === 'object' ? (reserve.unit || reserve.quantityUnit) : d.unit;
+      const reserveText = reserveValue === undefined || reserveValue === null || reserveValue === ''
+        ? 'Unavailable'
+        : number(reserveValue, reserveUnit ? ' ' + reserveUnit : '');
+      return '<tr data-search-item><th scope="row">' + esc(siteName) + '</th>' +
+        '<td>' + esc(countryName || 'Not recorded') + '</td>' +
+        '<td>' + esc(resourceName(rid) + (rid ? ' (' + rid + ')' : '')) + '</td>' +
+        '<td>' + (valid ? esc(lat.toFixed(4) + ', ' + lng.toFixed(4)) : 'Coordinates unavailable') + '</td>' +
+        '<td>' + esc(reserveText) + '</td>' +
+        '<td>' + esc(d.grade ?? d.purity ?? 'Unavailable') + '</td>' +
+        '<td><div class="omega-rescc-actions">' +
+        actionButton('fly-deposit', 'Map', { lat: valid ? lat : '', lng: valid ? lng : '', 'deposit-name': siteName }, !valid) +
+        actionButton('survey', 'Survey', { 'resource-id': rid }, !rid) +
+        '</div></td></tr>';
+    }).join('');
+    const pagination = '<div class="omega-rescc-deposit-pagination"><span>Showing ' + number(start + 1) + '–' +
+      number(Math.min(start + visible.length, rows.length)) + ' of ' + number(rows.length) +
+      ' · Page ' + number(depositPage + 1) + ' of ' + number(pageCount) + '</span><div class="omega-rescc-actions">' +
+      actionButton('deposit-page', 'Previous', { direction: 'previous' }, depositPage <= 0) +
+      actionButton('deposit-page', 'Next', { direction: 'next' }, depositPage >= pageCount - 1) + '</div></div>';
+    return toolbar + '<div class="omega-rescc-table-wrap"><table class="omega-rescc-table omega-rescc-deposit-table" aria-label="Resource deposits worldwide">' +
+      '<thead><tr><th>Deposit / site</th><th>Country</th><th>Resource</th><th>Coordinates</th><th>Reserve</th><th>Grade / purity</th><th>Actions</th></tr></thead>' +
+      '<tbody>' + body + '</tbody></table></div>' + pagination +
+      '<p class="omega-rescc-muted">Source: existing resource JSON registry. Unknown fields remain unavailable; the map action only uses recorded coordinates.</p>';
   }
   function siteRows(country) {
     const selected=activeCountry(country),r=resourceBucket(country),candidates=[];
@@ -818,30 +950,72 @@
   }
   function panelMarket(country) {
     const market = g.OmegaGlobalMarket || g.Omega && g.Omega.GlobalMarket;
-    if (!market || !market.quote) return empty('Global market runtime is unavailable; no price is fabricated.');
+    if (!market || typeof market.quote !== 'function') return empty('Global market runtime is unavailable; no price is fabricated.');
     let books = {};
     try { books = market.rebuild ? market.rebuild() : g.__OmegaMarketBooks || {}; } catch (_) { books = g.__OmegaMarketBooks || {}; }
-    const rows = resources(country).map(function (r) {
-      const q = market.quote(r.id);
-      const book = books[r.id] || {};
-      const matches = Array.isArray(q.matches) ? q.matches : [];
-      const referenceMatched = matches.some(function (m) { return m.referenceLiquidity === true; });
-      const body = '<div class="omega-rescc-grid2">' + kv('Clearing price (USD)', q.clearingPriceUsd) +
-        kv('Reference quote', q.referencePrice) + kv('Best bid (USD)', q.bestBidUsd) +
-        kv('Best ask (USD)', q.bestAskUsd) + kv('Matched quantity', q.matchedQuantity) +
-        kv('Bid / ask depth', (q.bidDepth ?? '—') + ' / ' + (q.askDepth ?? '—')) +
-        kv('Price discovery', q.priceDiscovery) + kv('Turn', q.generatedTurn) + '</div>' +
-        (referenceMatched || q.priceDiscovery === 'REFERENCE_ONLY' ?
-          '<div class="omega-rescc-warning">Reference-only liquidity contributed to this quote. This is not proof of a completed physical transfer.</div>' : '') +
-        '<div class="omega-rescc-muted">Order rows: ' + number((book.orders && book.orders.bids || []).length) +
-        ' bids / ' + number((book.orders && book.orders.asks || []).length) + ' asks · Discovery status: ' + esc(q.status || 'UNAVAILABLE') + '</div>';
-      return card(r.name || r.id, q.status || 'NO MARKET RESULT', body, '');
+    const byId = new Map();
+    globalResourceCatalog().concat(resources(country)).forEach(function (row) {
+      const id = row && (row.id || row.code || row.resourceId || row.resourceTypeId);
+      if (!id) return;
+      const key = resourceKey(id);
+      const prior = byId.get(key) || {};
+      byId.set(key, Object.assign({}, prior, row, { id: String(prior.id || id), name: row.name || row.label || prior.name || String(id) }));
+    });
+    Object.keys(books || {}).forEach(function (id) {
+      const key = resourceKey(id);
+      if (!byId.has(key)) byId.set(key, { id: String(id), name: resourceName(id) });
+    });
+    const items = Array.from(byId.values()).sort(function (a, b) {
+      return String(a.name || a.id).localeCompare(String(b.name || b.id));
+    });
+    const marketRows = items.map(function (r) {
+      const q = market.quote(r.id) || {};
+      const bookKey = Object.keys(books || {}).find(function (id) { return resourceKey(id) === resourceKey(r.id); });
+      const book = bookKey ? books[bookKey] || {} : {};
+      const bids = book.orders && Array.isArray(book.orders.bids) ? book.orders.bids : [];
+      const asks = book.orders && Array.isArray(book.orders.asks) ? book.orders.asks : [];
+      const actualAsks = asks.filter(function (order) { return order && order.referenceOnly !== true; });
+      const referenceMatched = Array.isArray(q.matches) && q.matches.some(function (match) { return match.referenceLiquidity === true; });
+      const status = q.status || (bids.length || actualAsks.length ? 'ORDERS_PRESENT' : 'NO_ORDERS');
+      const price = q.clearingPriceUsd;
+      const refPrice = q.referencePrice;
+      const body = '<div class="omega-rescc-grid2">' +
+        kv('Executed clearing price (USD)', price) +
+        kv('Catalog reference price (USD)', refPrice) +
+        kv('Best executable bid (USD)', q.bestBidUsd) +
+        kv('Best executable ask (USD)', q.bestAskUsd) +
+        kv('Matched quantity', q.matchedQuantity) +
+        kv('Live bid / ask orders', bids.length + ' / ' + actualAsks.length) +
+        kv('Bid / ask depth', (q.bidDepth ?? 0) + ' / ' + (q.askDepth ?? 0)) +
+        kv('Price discovery', q.priceDiscovery || (price !== null && price !== undefined ? 'CLEARED' : status)) +
+        kv('Simulation turn', q.generatedTurn ?? state().simulation && state().simulation.turn ?? 'Not recorded') + '</div>' +
+        '<div class="omega-rescc-muted">Resource unit: ' + esc(r.unit || 'not declared') +
+        ' · Discovery status: ' + esc(status) +
+        (bids.length || actualAsks.length ? '' : ' · No executable order exists; no live transaction price is available.') + '</div>' +
+        (referenceMatched || q.priceDiscovery === 'REFERENCE_ONLY' || (refPrice !== null && refPrice !== undefined && price === null)
+          ? '<div class="omega-rescc-warning">Catalog reference prices are informational only. They are not completed trades and do not create physical deliveries.</div>' : '');
+      return card(r.name || r.id, status, body, '');
     }).join('');
-    const diag = market.diagnostics ? market.diagnostics() : null;
-    return '<p class="omega-rescc-note">Price discovery is read from the existing order-book runtime. Quotes that include reference-only resource availability are labeled and are not treated as trades.</p>' +
-      (diag ? diagnosticCard('Global market diagnostics', diag) : '') +
-      actionButton('refresh-market', 'Rebuild current market snapshot', {}) +
-      (rows || empty('No resource IDs are available to quote.'));
+    const diagnostics = market.diagnostics ? market.diagnostics() : {};
+    const orderCount = items.reduce(function (sum, row) {
+      const key = Object.keys(books || {}).find(function (id) { return resourceKey(id) === resourceKey(row.id); });
+      const book = key ? books[key] : {};
+      return sum + (book && book.orders && Array.isArray(book.orders.bids) ? book.orders.bids.length : 0) +
+        (book && book.orders && Array.isArray(book.orders.asks) ? book.orders.asks.filter(function (order) { return order && order.referenceOnly !== true; }).length : 0);
+    }, 0);
+    const clearedCount = items.filter(function (row) {
+      const quote = market.quote(row.id) || {};
+      return quote.status === 'CLEARED' && quote.clearingPriceUsd !== null && quote.clearingPriceUsd !== undefined;
+    }).length;
+    const top = '<div class="omega-rescc-metrics">' +
+      '<div><span>Global resources tracked</span><strong>' + number(items.length) + '</strong></div>' +
+      '<div><span>Resources with executed market price</span><strong>' + number(clearedCount) + '</strong></div>' +
+      '<div><span>Executable bid / ask orders</span><strong>' + number(orderCount) + '</strong></div>' +
+      '<div><span>Markets tracked by runtime</span><strong>' + number(diagnostics.resourceMarkets ?? Object.keys(books || {}).length) + '</strong></div></div>';
+    return top + '<p class="omega-rescc-muted">GLOBAL COMMODITY MARKET · All resources found in the global catalog, deposit registry and market order books. Clearing prices appear only when real in-game bids and asks match. Catalog reference prices are shown separately and never count as sales.</p>' +
+      '<div class="omega-rescc-actions">' + actionButton('refresh-market', 'Rebuild global market snapshot', {}) +
+      actionButton('open-global-deposits', 'Browse worldwide deposits', {}) + '</div>' +
+      (marketRows || empty('No resource IDs were found in the loaded global catalog, site registry or market order books.'));
   }
   function panelTrade(country) {
     const trade = g.OmegaGlobalTrade || g.Omega && g.Omega.GlobalTrade;
@@ -1096,6 +1270,8 @@
       '.omega-rescc-section-title{font-size:13px;color:#67e8f9;margin:8px 0 0}.omega-rescc-form{border:1px solid #25475f;border-radius:9px;padding:13px;display:flex;flex-direction:column;gap:10px;background:#081625}' +
       '.omega-rescc-form h3{font-size:13px;margin:0;color:#a5f3fc}.omega-rescc-formgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:9px}' +
       '.omega-rescc-resource-grid{grid-template-columns:repeat(auto-fit,minmax(145px,1fr));align-items:end}.omega-rescc-unit-note{color:#8fb8c9;font-size:11px;line-height:1.4}' +
+      '.omega-rescc-deposit-tools,.omega-rescc-deposit-pagination{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:8px 10px;border:1px solid #243e53;border-radius:7px;background:#081625;color:#a9c4d8;font-size:11px}' +
+      '.omega-rescc-deposit-tools label{display:flex;align-items:center;gap:8px}.omega-rescc-deposit-tools select{background:#030b15;color:#f1f5f9;border:1px solid #334b60;border-radius:6px;padding:7px;font:inherit;max-width:65vw}' +
       '.omega-rescc-table-wrap{width:100%;max-width:100%;overflow:auto;border:1px solid #243e53;border-radius:8px;background:#071421;-webkit-overflow-scrolling:touch}' +
       '.omega-rescc-table{width:100%;min-width:760px;border-collapse:collapse;font-size:11px}.omega-rescc-table th,.omega-rescc-table td{padding:8px 9px;border-bottom:1px solid #1c3042;text-align:left;white-space:nowrap}.omega-rescc-table thead th{position:sticky;top:0;background:#102438;color:#9feafa;font-weight:700}.omega-rescc-table tbody th{color:#e2f6ff;font-weight:600}.omega-rescc-table tbody tr:hover{background:#0c2032}.omega-rescc-row-actions summary{color:#a5f3fc;cursor:pointer;border:1px solid #315267;border-radius:5px;padding:5px 7px}.omega-rescc-row-actions .omega-rescc-actions{min-width:180px;flex-direction:column}' +
       '.omega-rescc-form label,.omega-rescc-question{display:flex;flex-direction:column;gap:5px;color:#cbd5e1;font-size:11px;min-width:0}' +
@@ -1138,6 +1314,12 @@
           countryId = activeCountry(event.target.value);
           lastOutcome = '';
           render();
+          return;
+        }
+        if (event.target && event.target.id === 'omega-rescc-deposit-scope') {
+          depositScope = event.target.value === 'WORLD' ? 'WORLD' : 'COUNTRY';
+          depositPage = 0;
+          render(countryId, 'deposits');
           return;
         }
         if (event.target && event.target.id === 'omega-rescc-resource-select') {
@@ -1225,6 +1407,8 @@
     modal.innerHTML = '<style>' + css() + '</style><div class="omega-rescc-shell" role="dialog" aria-modal="true" aria-label="Resource Command Center">' +
       '<div class="omega-rescc-top"><div class="omega-rescc-heading"><h2>Resource Command Center</h2>' +
       '<div class="omega-rescc-headtools"><select id="omega-rescc-country" aria-label="Country scope">' + options + '</select>' +
+      '<button type="button" class="omega-rescc-button" data-panel="market">Global Commodity Market</button>' +
+      '<button type="button" class="omega-rescc-button" data-panel="deposits">Worldwide Deposits</button>' +
       '<button type="button" class="omega-rescc-button" data-action="refresh-panel">Refresh</button>' +
       '<button type="button" class="omega-rescc-button" data-action="close">Close</button></div></div>' +
       '<div class="omega-rescc-headtools"><input id="omega-rescc-search" class="omega-rescc-input omega-rescc-search" type="search" placeholder="Search this section…" aria-label="Search current section"></div>' +
@@ -1288,6 +1472,22 @@
     try {
       if (action === 'close') { close(); return; }
       if (action === 'refresh-panel') { resourceDataWarmupAttempted = false; render(c, activePanel); ensureResourceDataReady(true); return; }
+      if (action === 'deposit-page') {
+        const count = deposits().filter(function (site) {
+          const cid = site && (site.countryCode || site.countryId || site.country || site.countryName || site.sovereignCountryId);
+          return depositScope === 'WORLD' || (cid && normaliseCountry(cid) === c);
+        }).length;
+        const pages = Math.max(1, Math.ceil(count / DEPOSIT_PAGE_SIZE));
+        depositPage = Math.max(0, Math.min(pages - 1, depositPage + (d.direction === 'previous' ? -1 : 1)));
+        render(c, 'deposits');
+        return;
+      }
+      if (action === 'open-global-deposits') {
+        depositScope = 'WORLD';
+        depositPage = 0;
+        render(c, 'deposits');
+        return;
+      }
       if (action === 'start-exploration' || action === 'approve-exploration-investment' || action === 'commission-exploration-site') {
         const policy = g.OmegaResourceStrategicPolicyRuntime || g.Omega && g.Omega.ResourceStrategicPolicyRuntime;
         if (!policy) result = { status: 'UNAVAILABLE', reason: 'STRATEGIC_RESOURCE_POLICY_RUNTIME_UNAVAILABLE' };
