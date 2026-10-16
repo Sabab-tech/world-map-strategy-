@@ -1376,7 +1376,9 @@
         let unitPrice = rawUnitPrice === '' ? null : Number(rawUnitPrice);
         if (unitPrice === null) {
           const quoteCountry = direction === 'EXPORT' ? c : targetCountryId;
-          unitPrice = trade && typeof trade.marketPrice === 'function' ? Number(trade.marketPrice(quoteCountry, resourceId)) : NaN;
+          const observedQuote = trade && typeof trade.marketPrice === 'function' ? trade.marketPrice(quoteCountry, resourceId) : null;
+          unitPrice = observedQuote === null || observedQuote === undefined || observedQuote === ''
+            ? NaN : Number(observedQuote);
           if (!Number.isFinite(unitPrice) || unitPrice < 0) {
             setOutcome(direction === 'EXPORT' ? 'Export offer' : 'Import request', {
               status: 'BLOCKED', reason: 'MARKET_PRICE_NOT_OBSERVED',
