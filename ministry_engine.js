@@ -2545,6 +2545,9 @@ window.OmegaCabinetUI = {
                     <button onclick="if(window.ResourceMinistryEngine && typeof window.ResourceMinistryEngine.openModal === 'function') { window.ResourceMinistryEngine.openModal('${normKey}', 'cascade'); }" style="background:rgba(239,68,68,0.2); border:1.5px solid #ef4444; color:#ef4444; font-weight:800; font-family:'Share Tech Mono',monospace; font-size:12px; padding:10px 14px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:6px;">
                         ⚠️ CASCADE SANDBOX
                     </button>
+                    <button onclick="if(window.OmegaLiveOpsObservability && typeof window.OmegaLiveOpsObservability.open === 'function') { window.OmegaLiveOpsObservability.open(); }" title="Inspect recorded site output, inventories, transport, trade and engine events" aria-label="Open Live Operations" style="background:rgba(56,189,248,0.12); border:1.5px solid #38bdf8; color:#7dd3fc; font-weight:800; font-family:'Share Tech Mono',monospace; font-size:12px; padding:10px 14px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:6px;">
+                        LIVE OPERATIONS
+                    </button>
                     <button onclick="window.OmegaLayerManager.setLayer(5, { ministryId: '${m.id}' });" style="background:linear-gradient(135deg,#eab308,#f59e0b); border:none; color:#000; font-weight:800; font-family:'Share Tech Mono',monospace; font-size:12px; padding:10px 14px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:6px; box-shadow:0 0 15px rgba(234,179,8,0.3);">
                         🎙️ INTERROGATE MINISTER
                     </button>
