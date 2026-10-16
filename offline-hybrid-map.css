@@ -106,3 +106,88 @@ body.omega-offline-hybrid-active .leaflet-control-attribution a {
     background: rgba(44, 72, 61, 0.98) !important;
     box-shadow: inset 0 0 0 1px rgba(236, 246, 233, 0.14) !important;
 }
+
+
+/* Mobile Chrome: keep the layer drawer inside the visible viewport and let its body scroll. */
+#layers-drawer {
+    position: fixed !important;
+    top: calc(var(--omega-visible-offset-top, 0px) + 8px + env(safe-area-inset-top, 0px)) !important;
+    right: calc(8px + env(safe-area-inset-right, 0px)) !important;
+    bottom: auto !important;
+    left: auto !important;
+    width: min(340px, calc(100vw - 16px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px))) !important;
+    max-width: calc(100vw - 16px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)) !important;
+    height: calc(var(--omega-visible-height, 100dvh) - 16px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
+    max-height: none !important;
+    min-height: 0 !important;
+    box-sizing: border-box !important;
+    z-index: 100100 !important;
+    pointer-events: auto !important;
+    overflow: hidden !important;
+    isolation: isolate !important;
+    touch-action: pan-y !important;
+}
+
+#layers-drawer .drawer-header {
+    flex: 0 0 auto !important;
+    min-height: 42px !important;
+    box-sizing: border-box !important;
+    pointer-events: auto !important;
+}
+
+#layers-drawer .drawer-body.layer-options-grid {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    height: auto !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior-y: contain !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+    padding-bottom: max(12px, env(safe-area-inset-bottom, 0px)) !important;
+}
+
+#layers-drawer .layer-opt-btn,
+#layers-drawer #btn-close-layers {
+    position: relative !important;
+    z-index: 100101 !important;
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    touch-action: manipulation !important;
+    -webkit-tap-highlight-color: rgba(214, 230, 220, 0.16);
+}
+
+#layers-drawer .layer-opt-btn {
+    display: block !important;
+    flex: 0 0 auto !important;
+    width: 100% !important;
+    min-height: 42px !important;
+    box-sizing: border-box !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+}
+
+#layers-drawer #btn-close-layers {
+    min-width: 36px !important;
+    min-height: 36px !important;
+}
+
+@media (max-width: 700px) {
+    #layers-drawer .drawer-header {
+        font-size: 12px !important;
+        padding: 8px 10px !important;
+    }
+
+    #layers-drawer .drawer-body.layer-options-grid {
+        gap: 7px !important;
+        padding: 8px !important;
+    }
+
+    #layers-drawer .layer-opt-btn {
+        padding: 11px 9px !important;
+        font-size: 11px !important;
+        line-height: 1.35 !important;
+    }
+}
