@@ -325,8 +325,20 @@
         createdTurn: currentTurn()
       };
     } else {
-      // Re-base only when a static fallback is replaced by live state. This prevents
-      // a dataset/runtime unit mismatch from creating a one-turn demand shock.
+      // If a metric was initially unavailable, its first valid observation becomes
+      // the reference. Re-base only once when a static fallback is replaced by live state.
+      if ((prior.population == null || prior.populationSource == null) && pop.value !== null) {
+        prior.population = pop.value; prior.populationSource = pop.source;
+      }
+      if ((prior.gdpPerCapita == null || prior.gdpSource == null) && gdp.value !== null) {
+        prior.gdpPerCapita = gdp.value; prior.gdpSource = gdp.source;
+      }
+      if ((prior.industry == null || prior.industrySource == null) && industry.value !== null) {
+        prior.industry = industry.value; prior.industrySource = industry.source;
+      }
+      if ((prior.militaryPersonnel == null || prior.militarySource == null) && military.value !== null) {
+        prior.militaryPersonnel = military.value; prior.militarySource = military.source;
+      }
       if (prior.populationSource && String(prior.populationSource).indexOf('STATIC_DATASET:') === 0 &&
           pop.source && String(pop.source).indexOf('RUNTIME_STATE:') === 0 && pop.value !== null) {
         prior.population = pop.value; prior.populationSource = pop.source;
@@ -505,7 +517,8 @@
         policyMultiplier: policyMultiplier(resource, rid), warActive: warActive(cid)
       });
       var demanded = Math.max(inputQty, factors.demand);
-      outputConsumption[rid] = demanded;
+      var consumptionKey = resourceKey(outputConsumption, rid) || rid;
+      outputConsumption[consumptionKey] = demanded;
       var stock = hasInventoryBook ? (resourceValue(inventory, rid) == null ? 0 : Math.max(0, resourceValue(inventory, rid))) : null;
       var protectedQty = stock === null ? null : Math.min(stock, protectedStock(resource, rid));
       var spendable = stock === null ? null : Math.max(0, stock - protectedQty);
