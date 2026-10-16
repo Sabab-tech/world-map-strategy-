@@ -567,6 +567,7 @@
     // The per-resource consumption rate and decision snapshot are written through
     // the existing resource-economy command authority, never as a parallel save file.
     var rowLimit = maxLedger;
+    var maxHistoryTurns = Math.max(1, Math.floor(finite(cfg.maxHistoryTurns) || 128));
     runtime.lastTurn = currentTurn();
     runtime.status = hasInventoryBook ? 'ACTIVE' : 'WAITING_FOR_INVENTORY';
     runtime.resourceCount = summaries.length;
@@ -579,8 +580,19 @@
       shortages: summaries.filter(function (x) { return x.unmetDemand !== null && x.unmetDemand > 1e-9; }).length,
       consumedResourceCount: summaries.filter(function (x) { return x.nationalConsumption > 0; }).length
     };
-    runtime.history.push({ turn: currentTurn(), status: runtime.status, resources: clone(runtime.byResource), summary: clone(runtime.lastSummary) });
-    if (runtime.history.length > rowLimit) runtime.history.splice(0, runtime.history.length - rowLimit);
+    runtime.history.push({
+      turn: currentTurn(), status: runtime.status,
+      resources: summaries.map(function (row) {
+        return {
+          resourceId: row.resourceId, status: row.status, demand: row.demand,
+          nationalConsumption: row.nationalConsumption, unmetDemand: row.unmetDemand,
+          inventoryAfter: row.inventoryAfter, stockCoverageTurns: row.stockCoverageTurns,
+          totalFactor: row.formula && row.formula.totalFactor
+        };
+      }),
+      summary: clone(runtime.lastSummary)
+    });
+    if (runtime.history.length > maxHistoryTurns) runtime.history.splice(0, runtime.history.length - maxHistoryTurns);
 
     var publish = dispatch('resource', 'OMEGA_RESOURCE_ECON_PUBLISH_DEMAND_RUNTIME', cid, {
       consumption: outputConsumption, demandRuntime: runtime,
@@ -655,7 +667,7 @@
     try {
       if (typeof g.dispatchEvent === 'function' && typeof g.CustomEvent === 'function') {
         g.dispatchEvent(new g.CustomEvent('OMEGA_RESOURCE_NATIONAL_DEMAND_UPDATED', {
-          detail: { countryId: cid, turn: currentTurn(), summary: clone(runtime.lastSummary), resources: clone(runtime.byResource) }
+          detail: { countryId: cid, turn: currentTurn(), summary: clone(runtime.lastSummary) }
         }));
       }
     } catch (_) {}
