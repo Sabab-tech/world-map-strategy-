@@ -81,8 +81,9 @@
         "gdpPerCapitaElasticity": 0.3,
         "industryElasticity": 0.1,
         "militaryElasticity": 0.08,
-        "priceElasticity": 3,
-        "wartimeMultiplier": 1.4
+        "priceElasticity": 0.08,
+        "wartimeMultiplier": 1.4,
+        "stockCoverageTurns": 4
       },
       "lithium": {
         "unit": "METRIC_TONS_LCE",
@@ -93,8 +94,9 @@
         "gdpPerCapitaElasticity": 0.25,
         "industryElasticity": 0.08,
         "militaryElasticity": 0.1,
-        "priceElasticity": 3,
-        "wartimeMultiplier": 1.4
+        "priceElasticity": 0.08,
+        "wartimeMultiplier": 1.4,
+        "stockCoverageTurns": 4
       },
       "cobalt": {
         "unit": "METRIC_TONS",
@@ -105,8 +107,9 @@
         "gdpPerCapitaElasticity": 0.25,
         "industryElasticity": 0.12,
         "militaryElasticity": 0.12,
-        "priceElasticity": 3,
-        "wartimeMultiplier": 1.15
+        "priceElasticity": 0.08,
+        "wartimeMultiplier": 1.15,
+        "stockCoverageTurns": 4
       },
       "nickel": {
         "unit": "METRIC_TONS",
@@ -117,8 +120,9 @@
         "gdpPerCapitaElasticity": 0.3,
         "industryElasticity": 0.1,
         "militaryElasticity": 0.1,
-        "priceElasticity": 3,
-        "wartimeMultiplier": 1.15
+        "priceElasticity": 0.08,
+        "wartimeMultiplier": 1.15,
+        "stockCoverageTurns": 3
       },
       "copper": {
         "unit": "METRIC_TONS",
@@ -129,8 +133,9 @@
         "gdpPerCapitaElasticity": 0.3,
         "industryElasticity": 0.1,
         "militaryElasticity": 0.1,
-        "priceElasticity": 3,
-        "wartimeMultiplier": 1.4
+        "priceElasticity": 0.08,
+        "wartimeMultiplier": 1.4,
+        "stockCoverageTurns": 4
       },
       "crude_oil": {
         "unit": "BARRELS_PER_DAY",
@@ -141,8 +146,9 @@
         "gdpPerCapitaElasticity": 0.2,
         "industryElasticity": 0.15,
         "militaryElasticity": 0.08,
-        "priceElasticity": 4,
-        "wartimeMultiplier": 1.4
+        "priceElasticity": 0.08,
+        "wartimeMultiplier": 1.4,
+        "stockCoverageTurns": 4
       },
       "natural_gas": {
         "unit": "BCM",
@@ -153,8 +159,9 @@
         "gdpPerCapitaElasticity": 0.25,
         "industryElasticity": 0.1,
         "militaryElasticity": 0.08,
-        "priceElasticity": 4,
-        "wartimeMultiplier": 1.4
+        "priceElasticity": 0.08,
+        "wartimeMultiplier": 1.4,
+        "stockCoverageTurns": 4
       },
       "uranium": {
         "unit": "METRIC_TONS_U",
@@ -165,8 +172,9 @@
         "gdpPerCapitaElasticity": 0.2,
         "industryElasticity": 0.22,
         "militaryElasticity": 0.04,
-        "priceElasticity": 4,
-        "wartimeMultiplier": 1.4
+        "priceElasticity": 0.08,
+        "wartimeMultiplier": 1.4,
+        "stockCoverageTurns": 4
       },
       "gold": {
         "unit": "TROY_OUNCES",
@@ -177,8 +185,9 @@
         "gdpPerCapitaElasticity": 0.05,
         "industryElasticity": 0,
         "militaryElasticity": 0.22,
-        "priceElasticity": 2,
-        "wartimeMultiplier": 1.15
+        "priceElasticity": 0.18,
+        "wartimeMultiplier": 1.15,
+        "stockCoverageTurns": 2
       },
       "bauxite": {
         "unit": "METRIC_TONS",
@@ -189,8 +198,9 @@
         "gdpPerCapitaElasticity": 0.35,
         "industryElasticity": 0.08,
         "militaryElasticity": 0.1,
-        "priceElasticity": 3,
-        "wartimeMultiplier": 1.15
+        "priceElasticity": 0.08,
+        "wartimeMultiplier": 1.15,
+        "stockCoverageTurns": 3
       },
       "phosphate": {
         "unit": "METRIC_TONS",
@@ -201,8 +211,9 @@
         "gdpPerCapitaElasticity": 0.15,
         "industryElasticity": 0.04,
         "militaryElasticity": 0.06,
-        "priceElasticity": 4,
-        "wartimeMultiplier": 1.15
+        "priceElasticity": 0.08,
+        "wartimeMultiplier": 1.15,
+        "stockCoverageTurns": 3
       },
       "potash": {
         "unit": "METRIC_TONS",
@@ -213,8 +224,9 @@
         "gdpPerCapitaElasticity": 0.15,
         "industryElasticity": 0.03,
         "militaryElasticity": 0.06,
-        "priceElasticity": 4,
-        "wartimeMultiplier": 1.15
+        "priceElasticity": 0.08,
+        "wartimeMultiplier": 1.15,
+        "stockCoverageTurns": 3
       },
       "iron_ore": {
         "unit": "METRIC_TONS",
@@ -225,8 +237,9 @@
         "gdpPerCapitaElasticity": 0.42,
         "industryElasticity": 0.1,
         "militaryElasticity": 0.08,
-        "priceElasticity": 3,
-        "wartimeMultiplier": 1.15
+        "priceElasticity": 0.08,
+        "wartimeMultiplier": 1.15,
+        "stockCoverageTurns": 3
       },
       "coal": {
         "unit": "METRIC_TONS",
@@ -237,8 +250,9 @@
         "gdpPerCapitaElasticity": 0.3,
         "industryElasticity": 0.12,
         "militaryElasticity": 0.08,
-        "priceElasticity": 4,
-        "wartimeMultiplier": 1.4
+        "priceElasticity": 0.08,
+        "wartimeMultiplier": 1.4,
+        "stockCoverageTurns": 4
       },
       "graphite": {
         "unit": "METRIC_TONS",
@@ -249,8 +263,9 @@
         "gdpPerCapitaElasticity": 0.3,
         "industryElasticity": 0.08,
         "militaryElasticity": 0.1,
-        "priceElasticity": 3,
-        "wartimeMultiplier": 1.15
+        "priceElasticity": 0.08,
+        "wartimeMultiplier": 1.15,
+        "stockCoverageTurns": 3
       },
       "rutile": {
         "unit": "METRIC_TONS",
@@ -261,8 +276,9 @@
         "gdpPerCapitaElasticity": 0.28,
         "industryElasticity": 0.05,
         "militaryElasticity": 0.08,
-        "priceElasticity": 3,
-        "wartimeMultiplier": 1.15
+        "priceElasticity": 0.08,
+        "wartimeMultiplier": 1.15,
+        "stockCoverageTurns": 3
       },
       "manganese": {
         "unit": "METRIC_TONS",
@@ -273,8 +289,9 @@
         "gdpPerCapitaElasticity": 0.32,
         "industryElasticity": 0.1,
         "militaryElasticity": 0.08,
-        "priceElasticity": 3,
-        "wartimeMultiplier": 1.15
+        "priceElasticity": 0.08,
+        "wartimeMultiplier": 1.15,
+        "stockCoverageTurns": 3
       },
       "diamond": {
         "unit": "CARATS",
@@ -285,8 +302,9 @@
         "gdpPerCapitaElasticity": 0.06,
         "industryElasticity": 0,
         "militaryElasticity": 0.2,
-        "priceElasticity": 2,
-        "wartimeMultiplier": 1.15
+        "priceElasticity": 0.18,
+        "wartimeMultiplier": 1.15,
+        "stockCoverageTurns": 2
       },
       "tin": {
         "unit": "METRIC_TONS",
@@ -297,8 +315,9 @@
         "gdpPerCapitaElasticity": 0.25,
         "industryElasticity": 0.08,
         "militaryElasticity": 0.1,
-        "priceElasticity": 3,
-        "wartimeMultiplier": 1.15
+        "priceElasticity": 0.08,
+        "wartimeMultiplier": 1.15,
+        "stockCoverageTurns": 3
       },
       "tungsten": {
         "unit": "METRIC_TONS",
@@ -309,8 +328,9 @@
         "gdpPerCapitaElasticity": 0.3,
         "industryElasticity": 0.18,
         "militaryElasticity": 0.1,
-        "priceElasticity": 3,
-        "wartimeMultiplier": 1.4
+        "priceElasticity": 0.08,
+        "wartimeMultiplier": 1.4,
+        "stockCoverageTurns": 3
       },
       "chromite": {
         "unit": "METRIC_TONS",
@@ -321,8 +341,9 @@
         "gdpPerCapitaElasticity": 0.32,
         "industryElasticity": 0.12,
         "militaryElasticity": 0.1,
-        "priceElasticity": 3,
-        "wartimeMultiplier": 1.15
+        "priceElasticity": 0.08,
+        "wartimeMultiplier": 1.15,
+        "stockCoverageTurns": 3
       },
       "silver": {
         "unit": "TROY_OUNCES",
@@ -333,8 +354,9 @@
         "gdpPerCapitaElasticity": 0.1,
         "industryElasticity": 0.03,
         "militaryElasticity": 0.18,
-        "priceElasticity": 2,
-        "wartimeMultiplier": 1.15
+        "priceElasticity": 0.18,
+        "wartimeMultiplier": 1.15,
+        "stockCoverageTurns": 2
       },
       "zinc": {
         "unit": "METRIC_TONS",
@@ -345,8 +367,9 @@
         "gdpPerCapitaElasticity": 0.3,
         "industryElasticity": 0.08,
         "militaryElasticity": 0.1,
-        "priceElasticity": 3,
-        "wartimeMultiplier": 1.15
+        "priceElasticity": 0.08,
+        "wartimeMultiplier": 1.15,
+        "stockCoverageTurns": 3
       },
       "platinum": {
         "unit": "TROY_OUNCES",
@@ -357,8 +380,9 @@
         "gdpPerCapitaElasticity": 0.15,
         "industryElasticity": 0.08,
         "militaryElasticity": 0.18,
-        "priceElasticity": 2,
-        "wartimeMultiplier": 1.15
+        "priceElasticity": 0.08,
+        "wartimeMultiplier": 1.15,
+        "stockCoverageTurns": 3
       },
       "basalt": {
         "unit": "METRIC_TONS",
@@ -369,8 +393,9 @@
         "gdpPerCapitaElasticity": 0.18,
         "industryElasticity": 0.02,
         "militaryElasticity": 0.05,
-        "priceElasticity": 3,
-        "wartimeMultiplier": 1.15
+        "priceElasticity": 0.08,
+        "wartimeMultiplier": 1.15,
+        "stockCoverageTurns": 3
       },
       "construction_aggregate": {
         "unit": "METRIC_TONS",
@@ -381,8 +406,9 @@
         "gdpPerCapitaElasticity": 0.2,
         "industryElasticity": 0.03,
         "militaryElasticity": 0.05,
-        "priceElasticity": 3,
-        "wartimeMultiplier": 1.15
+        "priceElasticity": 0.08,
+        "wartimeMultiplier": 1.15,
+        "stockCoverageTurns": 3
       },
       "coral_aggregate": {
         "unit": "METRIC_TONS",
@@ -393,8 +419,9 @@
         "gdpPerCapitaElasticity": 0.1,
         "industryElasticity": 0.01,
         "militaryElasticity": 0.06,
-        "priceElasticity": 2,
-        "wartimeMultiplier": 1.15
+        "priceElasticity": 0.18,
+        "wartimeMultiplier": 1.15,
+        "stockCoverageTurns": 2
       },
       "salt": {
         "unit": "METRIC_TONS",
@@ -405,8 +432,9 @@
         "gdpPerCapitaElasticity": 0.12,
         "industryElasticity": 0.02,
         "militaryElasticity": 0.04,
-        "priceElasticity": 3,
-        "wartimeMultiplier": 1.15
+        "priceElasticity": 0.08,
+        "wartimeMultiplier": 1.15,
+        "stockCoverageTurns": 3
       },
       "dolomite": {
         "unit": "METRIC_TONS",
@@ -417,8 +445,9 @@
         "gdpPerCapitaElasticity": 0.18,
         "industryElasticity": 0.02,
         "militaryElasticity": 0.05,
-        "priceElasticity": 3,
-        "wartimeMultiplier": 1.15
+        "priceElasticity": 0.08,
+        "wartimeMultiplier": 1.15,
+        "stockCoverageTurns": 3
       },
       "magnesite": {
         "unit": "METRIC_TONS",
@@ -429,8 +458,9 @@
         "gdpPerCapitaElasticity": 0.25,
         "industryElasticity": 0.05,
         "militaryElasticity": 0.08,
-        "priceElasticity": 3,
-        "wartimeMultiplier": 1.15
+        "priceElasticity": 0.08,
+        "wartimeMultiplier": 1.15,
+        "stockCoverageTurns": 3
       },
       "oil_shale": {
         "unit": "METRIC_TONS",
@@ -441,8 +471,9 @@
         "gdpPerCapitaElasticity": 0.28,
         "industryElasticity": 0.12,
         "militaryElasticity": 0.1,
-        "priceElasticity": 3,
-        "wartimeMultiplier": 1.15
+        "priceElasticity": 0.08,
+        "wartimeMultiplier": 1.15,
+        "stockCoverageTurns": 3
       },
       "marble": {
         "unit": "METRIC_TONS",
@@ -453,8 +484,9 @@
         "gdpPerCapitaElasticity": 0.15,
         "industryElasticity": 0.01,
         "militaryElasticity": 0.09,
-        "priceElasticity": 2,
-        "wartimeMultiplier": 1.15
+        "priceElasticity": 0.18,
+        "wartimeMultiplier": 1.15,
+        "stockCoverageTurns": 2
       },
       "boron": {
         "unit": "METRIC_TONS",
@@ -465,8 +497,9 @@
         "gdpPerCapitaElasticity": 0.2,
         "industryElasticity": 0.06,
         "militaryElasticity": 0.09,
-        "priceElasticity": 3,
-        "wartimeMultiplier": 1.15
+        "priceElasticity": 0.08,
+        "wartimeMultiplier": 1.15,
+        "stockCoverageTurns": 3
       },
       "aragonite": {
         "unit": "METRIC_TONS",
@@ -477,8 +510,9 @@
         "gdpPerCapitaElasticity": 0.12,
         "industryElasticity": 0.01,
         "militaryElasticity": 0.06,
-        "priceElasticity": 2,
-        "wartimeMultiplier": 1.15
+        "priceElasticity": 0.18,
+        "wartimeMultiplier": 1.15,
+        "stockCoverageTurns": 2
       },
       "granite": {
         "unit": "METRIC_TONS",
@@ -489,8 +523,9 @@
         "gdpPerCapitaElasticity": 0.16,
         "industryElasticity": 0.01,
         "militaryElasticity": 0.07,
-        "priceElasticity": 3,
-        "wartimeMultiplier": 1.15
+        "priceElasticity": 0.08,
+        "wartimeMultiplier": 1.15,
+        "stockCoverageTurns": 3
       },
       "diatomite": {
         "unit": "METRIC_TONS",
@@ -501,8 +536,9 @@
         "gdpPerCapitaElasticity": 0.18,
         "industryElasticity": 0.02,
         "militaryElasticity": 0.1,
-        "priceElasticity": 3,
-        "wartimeMultiplier": 1.15
+        "priceElasticity": 0.08,
+        "wartimeMultiplier": 1.15,
+        "stockCoverageTurns": 3
       },
       "ilmenite": {
         "unit": "METRIC_TONS",
@@ -513,8 +549,9 @@
         "gdpPerCapitaElasticity": 0.28,
         "industryElasticity": 0.08,
         "militaryElasticity": 0.1,
-        "priceElasticity": 3,
-        "wartimeMultiplier": 1.15
+        "priceElasticity": 0.08,
+        "wartimeMultiplier": 1.15,
+        "stockCoverageTurns": 3
       }
     }
   }
