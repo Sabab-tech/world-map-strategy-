@@ -173,16 +173,202 @@
     return e && Array.isArray(e.resourceTypes) ? e.resourceTypes : [];
   }
   const UNIT_DEFINITIONS = Object.freeze({
+    g: { label: 'Gram (g)', dimension: 'MASS', factor: 0.001, base: 'kg' },
     kg: { label: 'Kilogram (kg)', dimension: 'MASS', factor: 1, base: 'kg' },
     metric_tonne: { label: 'Metric tonne (t)', dimension: 'MASS', factor: 1000, base: 'kg' },
+    kilotonne: { label: 'Kilotonne (kt)', dimension: 'MASS', factor: 1000000, base: 'kg' },
+    megatonne: { label: 'Megatonne (Mt)', dimension: 'MASS', factor: 1000000000, base: 'kg' },
     lb: { label: 'Pound (lb)', dimension: 'MASS', factor: 0.45359237, base: 'kg' },
     litre: { label: 'Litre (L)', dimension: 'VOLUME', factor: 1, base: 'L' },
     bbl: { label: 'Oil barrel (bbl)', dimension: 'VOLUME', factor: 158.987294928, base: 'L' },
     cubic_metre: { label: 'Cubic metre (m³)', dimension: 'VOLUME', factor: 1000, base: 'L' },
     gj: { label: 'Gigajoule (GJ)', dimension: 'ENERGY', factor: 1, base: 'GJ' },
     mmbtu: { label: 'Million Btu (MMBtu)', dimension: 'ENERGY', factor: 1.05505585262, base: 'GJ' },
-    kwh: { label: 'Kilowatt-hour (kWh)', dimension: 'ENERGY', factor: 0.0036, base: 'GJ' }
+    kwh: { label: 'Kilowatt-hour (kWh)', dimension: 'ENERGY', factor: 0.0036, base: 'GJ' },
+    mwh: { label: 'Megawatt-hour (MWh)', dimension: 'ENERGY', factor: 3.6, base: 'GJ' },
+    gwh: { label: 'Gigawatt-hour (GWh)', dimension: 'ENERGY', factor: 3600, base: 'GJ' }
   });
+  function unitIdFromDeclaration(candidate) {
+    if (candidate && typeof candidate === 'object') {
+      for (const key of ['unit', 'standardUnit', 'declaredStandardUnit', 'unitOfMeasure', 'measurementUnit', 'symbol', 'value', 'name']) {
+        if (candidate[key] !== undefined && candidate[key] !== null) {
+          const resolved = unitIdFromDeclaration(candidate[key]);
+          if (resolved) return resolved;
+        }
+      }
+      return null;
+    }
+    if (candidate === undefined || candidate === null || String(candidate).trim() === '') return null;
+    const original = String(candidate).trim();
+    if (/^Mt$/i.test(original) && original !== 'MT') return 'megatonne';
+    const key = original.toUpperCase().replace(/[\\s-]+/g, '_').replace(/[().]/g, '');
+    const aliases = {
+      G: 'g', GRAM: 'g', GRAMS: 'g', GM: 'g',
+      KG: 'kg', KGS: 'kg', KILOGRAM: 'kg', KILOGRAMS: 'kg',
+      T: 'metric_tonne', TON: 'metric_tonne', TONS: 'metric_tonne', TONNE: 'metric_tonne', TONNES: 'metric_tonne',
+      METRIC_TON: 'metric_tonne', METRIC_TONS: 'metric_tonne', METRIC_TONNE: 'metric_tonne', METRIC_TONNES: 'metric_tonne',
+      MT: 'metric_tonne', METRIC_TONNES: 'metric_tonne',
+      KT: 'kilotonne', KTON: 'kilotonne', KTONS: 'kilotonne', KILOTON: 'kilotonne', KILOTONS: 'kilotonne',
+      KILOTONNE: 'kilotonne', KILOTONNES: 'kilotonne', THOUSAND_TONNES: 'kilotonne',
+      MEGATON: 'megatonne', MEGATONS: 'megatonne', MEGATONNE: 'megatonne', MEGATONNES: 'megatonne',
+      MILLION_TONNES: 'megatonne', MILLION_TONS: 'megatonne', MT_OF: 'megatonne',
+      LB: 'lb', LBS: 'lb', POUND: 'lb', POUNDS: 'lb',
+      L: 'litre', LT: 'litre', LITER: 'litre', LITERS: 'litre', LITRE: 'litre', LITRES: 'litre',
+      BBL: 'bbl', BBLS: 'bbl', BARREL: 'bbl', BARRELS: 'bbl', BOE: 'bbl',
+      M3: 'cubic_metre', CUBIC_METER: 'cubic_metre', CUBIC_METERS: 'cubic_metre',
+      CUBIC_METRE: 'cubic_metre', CUBIC_METRES: 'cubic_metre',
+      GJ: 'gj', GIGAJOULE: 'gj', GIGAJOULES: 'gj',
+      MMBTU: 'mmbtu', BTU: 'mmbtu',
+      KWH: 'kwh', KILOWATT_HOUR: 'kwh', KILOWATT_HOURS: 'kwh',
+      MWH: 'mwh', MEGAWATT_HOUR: 'mwh', MEGAWATT_HOURS: 'mwh',
+      GWH: 'gwh', GIGAWATT_HOUR: 'gwh', GIGAWATT_HOURS: 'gwh'
+    };
+    if (aliases[key]) return aliases[key];
+    return Object.keys(UNIT_DEFINITIONS).find(function (id) { return id.toUpperCase() === key; }) || null;
+  }
+  function resourceKey(value) {
+    return String(value === undefined || value === null ? '' : value).trim().toLowerCase().replace(/[\\s-]+/g, '_');
+  }
+  function resourceUnitId(resourceId, country) {
+    const wanted = resourceKey(resourceId);
+    if (!wanted) return null;
+    const type = resourceTypes().find(function (row) {
+      return resourceKey(row && (row.id || row.code || row.resourceId || row.resourceTypeId)) === wanted;
+    });
+    const summary = resources(country).find(function (row) {
+      return resourceKey(row && (row.id || row.code || row.resourceId || row.resourceTypeId)) === wanted;
+    });
+    const sites = deposits().filter(function (site) {
+      const id = site && (site.resourceId || site.resourceTypeId || site.resId);
+      return resourceKey(id) === wanted && siteBelongsToCountry(site, country);
+    });
+    const candidates = [];
+    [type, summary].filter(Boolean).forEach(function (row) {
+      ['declaredStandardUnit', 'standardUnit', 'unitOfMeasure', 'measurementUnit', 'quantityUnit', 'unit'].forEach(function (key) {
+        if (row[key] !== undefined && row[key] !== null) candidates.push(row[key]);
+      });
+    });
+    sites.forEach(function (site) {
+      ['reserve', 'recoverableReserve', 'quantitative', 'quantity'].forEach(function (key) {
+        if (site[key] !== undefined && site[key] !== null) candidates.push(site[key]);
+      });
+      ['reserveUnit', 'standardUnit', 'unitOfMeasure', 'measurementUnit', 'unit'].forEach(function (key) {
+        if (site[key] !== undefined && site[key] !== null) candidates.push(site[key]);
+      });
+    });
+    for (const candidate of candidates) {
+      const resolved = unitIdFromDeclaration(candidate);
+      if (resolved) return resolved;
+    }
+    return null;
+  }
+  function siteBelongsToCountry(site, country) {
+    const siteCountry = site && (site.countryId || site.countryCode || site.countryIso3 || site.country || site.hostCountryIso3);
+    if (!siteCountry) return false;
+    let siteCode = String(siteCountry).trim().toUpperCase();
+    let countryCode = String(country || activeCountry()).trim().toUpperCase();
+    try {
+      if (typeof normaliseCountry === 'function') {
+        siteCode = normaliseCountry(siteCode);
+        countryCode = normaliseCountry(countryCode);
+      }
+    } catch (_) {}
+    return siteCode === countryCode;
+  }
+  function sitesForResource(country, resourceId) {
+    const wanted = resourceKey(resourceId);
+    if (!wanted) return [];
+    return deposits().filter(function (site) {
+      const id = site && (site.resourceId || site.resourceTypeId || site.resId);
+      return resourceKey(id) === wanted && siteBelongsToCountry(site, country);
+    });
+  }
+  function resourceChoices(country) {
+    const byId = new Map();
+    resourceTypes().concat(resources(country)).forEach(function (row) {
+      if (!row || typeof row !== 'object') return;
+      const id = row.id || row.code || row.resourceId || row.resourceTypeId;
+      if (!id) return;
+      const key = resourceKey(id);
+      const existing = byId.get(key) || {};
+      byId.set(key, Object.assign({}, existing, row, { id: String(id), name: row.name || row.label || existing.name || String(id) }));
+    });
+    return Array.from(byId.values()).sort(function (a, b) {
+      return String(a.name || a.id).localeCompare(String(b.name || b.id));
+    });
+  }
+  function unitOptionsHtml(unitId, selectedUnitId) {
+    if (!unitId || !UNIT_DEFINITIONS[unitId]) {
+      return '<option value="" selected disabled>Unit not declared in source data</option>';
+    }
+    const dimension = UNIT_DEFINITIONS[unitId].dimension;
+    return Object.keys(UNIT_DEFINITIONS).filter(function (id) {
+      return UNIT_DEFINITIONS[id].dimension === dimension;
+    }).map(function (id) {
+      return '<option value="' + esc(id) + '"' + (id === selectedUnitId ? ' selected' : '') + '>' +
+        esc(UNIT_DEFINITIONS[id].label) + '</option>';
+    }).join('');
+  }
+  function locationOptionsHtml(country, resourceId) {
+    const sites = sitesForResource(country, resourceId);
+    const options = sites.map(function (site, index) {
+      const id = site.siteId || site.id || site.siteKey || site.assetId || site.siteName || ('DEPOSIT_' + index);
+      const name = site.siteName || site.name || site.label || String(id);
+      const region = site.region || site.locality || site.adminRegion;
+      return '<option value="' + esc(id) + '">' + esc(region ? name + ' · ' + region : name) + '</option>';
+    }).join('');
+    return '<option value="">All locations / no specific site</option>' +
+      (options || '<option value="" disabled>No matching site records for this resource and country</option>');
+  }
+  function targetUnitId(sourceUnitId) {
+    const source = UNIT_DEFINITIONS[sourceUnitId];
+    if (!source) return null;
+    return Object.keys(UNIT_DEFINITIONS).find(function (id) {
+      return UNIT_DEFINITIONS[id].dimension === source.dimension && id !== sourceUnitId;
+    }) || sourceUnitId;
+  }
+  function replaceSelectOptions(select, optionsHtml, selectedValue) {
+    if (!select) return;
+    select.innerHTML = optionsHtml;
+    if (selectedValue !== undefined && selectedValue !== null) select.value = String(selectedValue);
+  }
+  function syncTargetUnitOptions(form, sourceUnitId, preferredTarget) {
+    if (!form || typeof form.querySelector !== 'function') return;
+    const target = form.querySelector('[name="toUnit"]');
+    const source = UNIT_DEFINITIONS[sourceUnitId];
+    if (!target) return;
+    if (!source) {
+      replaceSelectOptions(target, '<option value="" selected disabled>Select a resource with a declared unit</option>', '');
+      return;
+    }
+    const candidates = Object.keys(UNIT_DEFINITIONS).filter(function (id) {
+      return UNIT_DEFINITIONS[id].dimension === source.dimension;
+    });
+    const selected = candidates.indexOf(preferredTarget) >= 0 ? preferredTarget :
+      (candidates.find(function (id) { return id !== sourceUnitId; }) || sourceUnitId);
+    replaceSelectOptions(target, candidates.map(function (id) {
+      return '<option value="' + esc(id) + '"' + (id === selected ? ' selected' : '') + '>' + esc(UNIT_DEFINITIONS[id].label) + '</option>';
+    }).join(''), selected);
+  }
+  function syncResourceForm(form, country) {
+    if (!form || typeof form.querySelector !== 'function') return;
+    const resourceSelect = form.querySelector('#omega-rescc-resource-select');
+    const sourceSelect = form.querySelector('[name="fromUnit"]');
+    const targetSelect = form.querySelector('[name="toUnit"]');
+    const locationSelect = form.querySelector('#omega-rescc-location-select');
+    const help = form.querySelector('#omega-rescc-unit-help');
+    const submit = form.querySelector('button[type="submit"]');
+    const resourceId = resourceSelect && resourceSelect.value;
+    const unitId = resourceUnitId(resourceId, country);
+    const choices = unitOptionsHtml(unitId, unitId);
+    replaceSelectOptions(sourceSelect, choices, unitId || '');
+    syncTargetUnitOptions(form, unitId, targetUnitId(unitId));
+    if (locationSelect) replaceSelectOptions(locationSelect, locationOptionsHtml(country, resourceId), '');
+    if (help) help.textContent = unitId
+      ? 'Unit auto-selected from the resource catalog/site data. Available conversions are limited to the same physical dimension.'
+      : 'No unit is declared for this resource. A safe conversion cannot be offered until its source data defines one.';
+    if (submit) submit.disabled = !unitId;
+  }
   function convertUnits(value, fromUnit, toUnit) {
     if (value === null || value === undefined || String(value).trim() === '') return { status: 'BLOCKED', reason: 'QUANTITY_REQUIRED' };
     const amount = Number(value), from = UNIT_DEFINITIONS[String(fromUnit || '')], to = UNIT_DEFINITIONS[String(toUnit || '')];
@@ -299,35 +485,54 @@
     const summary = engineSummary(country);
     const rows = resources(country);
     const metrics = summary.globalMetrics || {};
-    const unitOptions = Object.keys(UNIT_DEFINITIONS).map(function (id) {
-      const unit = UNIT_DEFINITIONS[id];
-      return '<option value="' + esc(id) + '">' + esc(unit.label) + '</option>';
-    }).join('');
-    const metrology = '<form class="omega-rescc-form" data-search-item data-form="metrology"><h3>Canonical unit conversion</h3>' +
-      '<div class="omega-rescc-formgrid">' +
-      '<label>Quantity<input name="value" type="number" step="any" required placeholder="Enter quantity"></label>' +
-      '<label>From unit<select name="fromUnit" required>' + unitOptions + '</select></label>' +
-      '<label>To unit<select name="toUnit" required>' + unitOptions + '</select></label></div>' +
-      '<p class="omega-rescc-note">Only conversions within the same physical dimension are allowed. Volume, mass and energy are never converted across dimensions.</p>' +
-      '<button class="omega-rescc-button" type="submit">Convert quantity</button></form>';
+    const choices = resourceChoices(country);
+    const selectedId = choices.length ? String(choices[0].id) : '';
+    const declaredUnit = selectedId ? resourceUnitId(selectedId, country) : null;
+    const defaultTarget = targetUnitId(declaredUnit);
+    const resourceOptions = choices.length ? choices.map(function (row) {
+      const id = String(row.id);
+      const unit = resourceUnitId(id, country);
+      const detail = unit && UNIT_DEFINITIONS[unit] ? ' · ' + UNIT_DEFINITIONS[unit].label : ' · unit not recorded';
+      return '<option value="' + esc(id) + '"' + (id === selectedId ? ' selected' : '') + '>' +
+        esc(row.name || id) + esc(detail) + '</option>';
+    }).join('') : '<option value="" selected disabled>No resource catalog entries loaded</option>';
+    const locationOptions = locationOptionsHtml(country, selectedId);
+    const metrology = '<form class="omega-rescc-form omega-rescc-resource-form" data-search-item data-form="metrology">' +
+      '<h3>Resource quantity &amp; unit workspace</h3>' +
+      '<div class="omega-rescc-formgrid omega-rescc-resource-grid">' +
+      '<label>Resource<select id="omega-rescc-resource-select" name="resourceId" required>' + resourceOptions + '</select></label>' +
+      '<label>Location / deposit<select id="omega-rescc-location-select" name="siteId">' + locationOptions + '</select></label>' +
+      '<label>Quantity<input name="value" type="number" min="0" step="any" required placeholder="Enter amount"></label>' +
+      '<label>Current unit<select id="omega-rescc-from-unit" name="fromUnit" required>' + unitOptionsHtml(declaredUnit, declaredUnit) + '</select></label>' +
+      '<label>Convert to<select id="omega-rescc-to-unit" name="toUnit" required>' + unitOptionsHtml(declaredUnit, defaultTarget) + '</select></label></div>' +
+      '<div id="omega-rescc-unit-help" class="omega-rescc-unit-note">' +
+      (declaredUnit && UNIT_DEFINITIONS[declaredUnit]
+        ? 'Unit defaults from this resource’s declared catalog/site data. You can choose another unit of the same physical dimension.'
+        : 'This resource has no resolvable declared unit. Conversion stays unavailable until the source data defines one.') +
+      '</div>' +
+      '<button class="omega-rescc-button" type="submit"' + (!declaredUnit ? ' disabled' : '') + '>Convert quantity</button></form>';
     const top = metrology + '<div class="omega-rescc-metrics">' +
       '<div><span>Autonomy index</span><strong>' + number(metrics.autonomyIndex, '%') + '</strong></div>' +
       '<div><span>Reserve duration</span><strong>' + number(metrics.strategicReservesTotalDays, ' days') + '</strong></div>' +
       '<div><span>Runtime source</span><strong>' + esc(summary.version || 'Unavailable') + '</strong></div></div>' +
       '<p class="omega-rescc-note">' + esc(summary.briefing || 'Missing values remain unavailable; no synthetic values are shown.') + '</p>';
-    const content = rows.map(function (r) {
-      return card(r.name || r.id, r.id + ' · ' + (r.unit || 'unit not specified'),
-        '<div class="omega-rescc-grid2">' + kv('Production/day', r.dailyProduction) +
-        kv('Demand/day', r.dailyConsumption) + kv('Net balance', r.netBalance) +
-        kv('Inventory', r.inventory) + kv('Reserve', r.reserve) + kv('Stock days', r.stockDays) + '</div>' +
-        '<div class="omega-rescc-muted">Production authority: ' + esc(r.productionAuthority || 'NOT_RECORDED') +
-        ' · Reserve authority: ' + esc(r.reserveAuthority || 'NOT_RECORDED') + '</div>',
-        actionButton('survey', 'Request survey', { 'resource-id': r.id }) +
-        actionButton('expansion', 'Request capacity review', { 'resource-id': r.id }) +
-        actionButton('reserve', 'Request SPR transfer', { 'resource-id': r.id }) +
-        actionButton('focus-map', 'Focus map', { 'resource-id': r.id }));
-    }).join('');
-    return top + (content || empty('No authoritative commodity rows are available for this country.'));
+    const table = rows.length ? '<div class="omega-rescc-table-wrap"><table class="omega-rescc-table" aria-label="Resource balances">' +
+      '<thead><tr><th>Resource</th><th>Unit</th><th>Production/day</th><th>Demand/day</th><th>Net balance</th><th>Inventory</th><th>Reserve</th><th>Stock days</th><th>Actions</th></tr></thead><tbody>' +
+      rows.map(function (row) {
+        const rid = row.id || row.resourceId || row.resourceTypeId || '';
+        const unit = row.unit || (resourceUnitId(rid, country) && UNIT_DEFINITIONS[resourceUnitId(rid, country)].label) || 'Not recorded';
+        const actions = '<details class="omega-rescc-row-actions"><summary>Open</summary><div class="omega-rescc-actions">' +
+          actionButton('survey', 'Request survey', { 'resource-id': rid }) +
+          actionButton('expansion', 'Request capacity review', { 'resource-id': rid }) +
+          actionButton('reserve', 'Request SPR transfer', { 'resource-id': rid }) +
+          actionButton('focus-map', 'Focus map', { 'resource-id': rid }) +
+          '</div></details>';
+        return '<tr><th scope="row">' + esc(row.name || rid || 'Resource') + '</th>' +
+          '<td>' + esc(unit) + '</td><td>' + number(row.dailyProduction) + '</td><td>' + number(row.dailyConsumption) +
+          '</td><td>' + number(row.netBalance) + '</td><td>' + number(row.inventory) + '</td><td>' + number(row.reserve) +
+          '</td><td>' + number(row.stockDays, ' days') + '</td><td>' + actions + '</td></tr>';
+      }).join('') + '</tbody></table></div>' : empty('No authoritative commodity rows are available for this country.');
+    return top + table;
   }
   function panelOntology(country) {
     const types = resourceTypes();
@@ -884,6 +1089,9 @@
       '.omega-rescc-json{white-space:pre-wrap;overflow-wrap:anywhere;max-height:300px;overflow:auto;color:#cbd5e1;background:#030b15;border-radius:6px;padding:9px;margin:0;font-size:11px}' +
       '.omega-rescc-section-title{font-size:13px;color:#67e8f9;margin:8px 0 0}.omega-rescc-form{border:1px solid #25475f;border-radius:9px;padding:13px;display:flex;flex-direction:column;gap:10px;background:#081625}' +
       '.omega-rescc-form h3{font-size:13px;margin:0;color:#a5f3fc}.omega-rescc-formgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:9px}' +
+      '.omega-rescc-resource-grid{grid-template-columns:repeat(auto-fit,minmax(145px,1fr));align-items:end}.omega-rescc-unit-note{color:#8fb8c9;font-size:11px;line-height:1.4}' +
+      '.omega-rescc-table-wrap{width:100%;max-width:100%;overflow:auto;border:1px solid #243e53;border-radius:8px;background:#071421;-webkit-overflow-scrolling:touch}' +
+      '.omega-rescc-table{width:100%;min-width:760px;border-collapse:collapse;font-size:11px}.omega-rescc-table th,.omega-rescc-table td{padding:8px 9px;border-bottom:1px solid #1c3042;text-align:left;white-space:nowrap}.omega-rescc-table thead th{position:sticky;top:0;background:#102438;color:#9feafa;font-weight:700}.omega-rescc-table tbody th{color:#e2f6ff;font-weight:600}.omega-rescc-table tbody tr:hover{background:#0c2032}.omega-rescc-row-actions summary{color:#a5f3fc;cursor:pointer;border:1px solid #315267;border-radius:5px;padding:5px 7px}.omega-rescc-row-actions .omega-rescc-actions{min-width:180px;flex-direction:column}' +
       '.omega-rescc-form label,.omega-rescc-question{display:flex;flex-direction:column;gap:5px;color:#cbd5e1;font-size:11px;min-width:0}' +
       '.omega-rescc-question{border:1px solid #1b3245;border-radius:7px;padding:8px}.omega-rescc-question span{line-height:1.4}' +
       '@media(max-width:600px){.omega-rescc-shell{width:100vw;height:100dvh;max-height:none;border-radius:0}.omega-rescc-heading h2{font-size:13px}.omega-rescc-top{padding:9px}.omega-rescc-content{padding:9px}.omega-rescc-headtools{width:100%}.omega-rescc-search{width:100%;flex-basis:100%}}';
@@ -924,6 +1132,16 @@
           countryId = activeCountry(event.target.value);
           lastOutcome = '';
           render();
+          return;
+        }
+        if (event.target && event.target.id === 'omega-rescc-resource-select') {
+          const form = event.target.closest && event.target.closest('form[data-form="metrology"]');
+          if (form) syncResourceForm(form, countryId);
+          return;
+        }
+        if (event.target && event.target.id === 'omega-rescc-from-unit') {
+          const form = event.target.closest && event.target.closest('form[data-form="metrology"]');
+          if (form) syncTargetUnitOptions(form, event.target.value, form.querySelector('[name="toUnit"]') && form.querySelector('[name="toUnit"]').value);
         }
       });
       modal.addEventListener('submit', function (event) {
@@ -1168,13 +1386,31 @@
     let result;
     try {
       if (kind === 'metrology') {
-        const converted = convertUnits(data.get('value'), data.get('fromUnit'), data.get('toUnit'));
-        if (converted.status !== 'APPLIED') {
-          setOutcome('Metrology conversion', converted);
+        const resourceId = String(data.get('resourceId') || '');
+        const declaredUnit = resourceUnitId(resourceId, c);
+        const fromUnit = String(data.get('fromUnit') || '');
+        const toUnit = String(data.get('toUnit') || '');
+        if (!declaredUnit || !UNIT_DEFINITIONS[declaredUnit]) {
+          setOutcome('Resource quantity conversion', { status: 'BLOCKED', reason: 'RESOURCE_UNIT_NOT_DECLARED' });
           return;
         }
-        lastOutcome = 'Metrology conversion · ' + Number(converted.value).toLocaleString(undefined, { maximumFractionDigits: 10 }) +
-          ' ' + converted.label + ' · Dimension: ' + converted.dimension + ' · ' + converted.source;
+        if (!UNIT_DEFINITIONS[fromUnit] || UNIT_DEFINITIONS[fromUnit].dimension !== UNIT_DEFINITIONS[declaredUnit].dimension) {
+          setOutcome('Resource quantity conversion', { status: 'BLOCKED', reason: 'SOURCE_UNIT_DOES_NOT_MATCH_RESOURCE_DIMENSION' });
+          return;
+        }
+        const converted = convertUnits(data.get('value'), fromUnit, toUnit);
+        if (converted.status !== 'APPLIED') {
+          setOutcome('Resource quantity conversion', converted);
+          return;
+        }
+        const selectedSiteId = String(data.get('siteId') || '');
+        const selectedSite = selectedSiteId ? sitesForResource(c, resourceId).find(function (site) {
+          return String(site.siteId || site.id || site.siteKey || site.assetId || site.siteName || '') === selectedSiteId;
+        }) : null;
+        const context = selectedSite ? ' · Location: ' + String(selectedSite.siteName || selectedSite.name || selectedSite.siteId || selectedSiteId) : '';
+        lastOutcome = resourceName(resourceId) + ' · ' + Number(converted.value).toLocaleString(undefined, { maximumFractionDigits: 10 }) +
+          ' ' + converted.label + ' · Dimension: ' + converted.dimension + context +
+          ' · Conversion only; live reserves, inventory and production are unchanged.';
         render(countryId, activePanel);
         return;
       }
@@ -1464,6 +1700,7 @@
     open: function (country, panel) { render(country, panel); },
     close,
     convertUnits,
+    getResourceUnit: function (resourceId, country) { return resourceUnitId(resourceId, country || countryId); },
     getState: function () { return { countryId: countryId, panel: activePanel, lastOutcome: lastOutcome }; }
   });
   g.Omega = g.Omega || {};
