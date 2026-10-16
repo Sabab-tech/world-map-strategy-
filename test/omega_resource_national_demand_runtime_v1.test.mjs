@@ -96,7 +96,7 @@ test('demand formula combines population, income, industry and military elastici
     currentPrice: null, referencePrice: null, priceSource: null, policyMultiplier: 1, warActive: false
   });
   assert.ok(Math.abs(formula.demand - 400) < 1e-8);
-  assert.equal(formula.totalFactor, 4);
+  assert.ok(Math.abs(formula.totalFactor - 4) < 1e-10, 'floating-point multiplication stays within numeric tolerance');
   assert.equal(formula.factors.population.available, true);
   assert.equal(formula.factors.price.multiplier, 1);
 });
