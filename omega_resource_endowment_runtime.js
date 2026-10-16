@@ -1438,7 +1438,13 @@ function batchFromExtraction(x,record){
       if(demandConstrained){
         const aggregateCapacity=Math.max(totalWindowByResource[resourceKey]||0,0);
         const turnDemand=Math.max(0,remainingDemandByResource[resourceKey]||0);
-        const allocation=aggregateCapacity>0?Math.min(windowQuantity,turnDemand*(windowQuantity/aggregateCapacity)):0;
+        // Allocate against the original country target, not the shrinking remainder.
+        // Using turnDemand * share here repeatedly compounds the share and silently
+        // under-produces when several deposits feed the same national demand.
+        const countryTarget=Math.max(0,demandTargetByResource[resourceKey]||0);
+        const siteShare=aggregateCapacity>0?windowCapacityByOccurrence[x.occurrenceKey]/aggregateCapacity:0;
+        const proportionalTarget=countryTarget*siteShare;
+        const allocation=aggregateCapacity>0?Math.min(windowQuantity,proportionalTarget,turnDemand):0;
         windowQuantity=Math.max(0,allocation);
         remainingDemandByResource[resourceKey]=Math.max(0,turnDemand-windowQuantity);
       }
