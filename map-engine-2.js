@@ -1413,8 +1413,12 @@ Game.Map.collectGlobalResourceDeposits = function() {
         const sourceIdentity = source?.identity || source?.siteIdentity || {};
         const location = raw?.location || packageData.location || raw?.locationIdentity || {};
         const sourceLocation = source?.location || source?.locationIdentity || source?.siteDataPackage?.location || {};
-        const coordinates = raw?.coordinates || location.coordinates || raw?.locationIdentity?.coordinates ||
-            packageData.location?.coordinates || source.coordinates || sourceLocation.coordinates || {};
+        const coordinates = [
+            raw?.coordinates, location.coordinates, raw?.locationIdentity?.coordinates,
+            packageData.location?.coordinates, source.coordinates, sourceLocation.coordinates
+        ].find(candidate => candidate && typeof candidate === 'object' &&
+            (candidate.lat !== undefined || candidate.latitude !== undefined ||
+             candidate.lng !== undefined || candidate.lon !== undefined || candidate.longitude !== undefined)) || {};
         const latRaw = raw?.lat ?? raw?.latitude ?? coordinates.lat ?? coordinates.latitude ??
             location.lat ?? location.latitude ?? source.lat ?? source.latitude;
         const lngRaw = raw?.lng ?? raw?.lon ?? raw?.longitude ?? coordinates.lng ?? coordinates.lon ?? coordinates.longitude ??
