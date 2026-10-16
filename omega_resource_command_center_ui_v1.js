@@ -241,7 +241,7 @@
     const summary = resources(country).find(function (row) {
       return resourceKey(row && (row.id || row.code || row.resourceId || row.resourceTypeId)) === wanted;
     });
-    const sites = deposits().filter(function (site) {
+    const sites = globalDepositRecords().filter(function (site) {
       const id = site && (site.resourceId || site.resourceTypeId || site.resId);
       return resourceKey(id) === wanted && siteBelongsToCountry(site, country);
     });
@@ -279,12 +279,76 @@
     if (countryCode === 'WORLD' || countryCode === 'GLOBAL' || countryCode === 'ALL_COUNTRIES') return true;
     return siteCode === countryCode;
   }
+  function siteResourceId(site) {
+    return site && (site.resourceId || site.resourceTypeId || site.resId || site.resource_id || site.resource || site.commodity ||
+      site.identity && (site.identity.resourceTypeId || site.identity.resourceId) ||
+      site.sourceSiteRecord && (site.sourceSiteRecord.resourceId || site.sourceSiteRecord.resourceTypeId || site.sourceSiteRecord.resId));
+  }
+  function siteCountryId(site) {
+    const source = site && site.sourceSiteRecord && typeof site.sourceSiteRecord === 'object' ? site.sourceSiteRecord : {};
+    const identity = site && site.identity && typeof site.identity === 'object' ? site.identity : {};
+    const pkgIdentity = site && site.siteDataPackage && site.siteDataPackage.identity || {};
+    return normaliseCountry(site && (site.countryId || site.countryCode || site.countryIso3 || site.country || site.countryName ||
+      site.sovereignCountryId || identity.countryIso3 || identity.countryId || pkgIdentity.countryIso3 || pkgIdentity.countryId ||
+      source.countryId || source.countryCode || source.countryIso3 || source.countryName));
+  }
+  function globalDepositRecords() {
+    const candidates = deposits().concat(siteRows('WORLD'));
+    const rows = [];
+    const aliasToIndex = new Map();
+    candidates.forEach(function (raw) {
+      if (!raw || typeof raw !== 'object') return;
+      const countryId = siteCountryId(raw);
+      if (!countryId) return;
+      const source = raw.sourceSiteRecord && typeof raw.sourceSiteRecord === 'object' ? raw.sourceSiteRecord : {};
+      const pkg = raw.siteDataPackage && typeof raw.siteDataPackage === 'object' ? raw.siteDataPackage : {};
+      const resourceId = siteResourceId(raw);
+      const siteId = raw.siteId || raw.canonicalSiteId || raw.siteReferenceKey || raw.occurrenceKey ||
+        raw.id || raw.assetId || source.siteId || source.id || pkg.siteId || raw.name || raw.siteName || raw.depositName;
+      const siteName = raw.siteName || raw.name || raw.depositName || raw.mineName || raw.fieldName ||
+        source.siteName || source.name || source.depositName || pkg.siteName || String(siteId || 'Unnamed site');
+      const coords = raw.coordinates || raw.location && raw.location.coordinates ||
+        raw.locationIdentity && raw.locationIdentity.coordinates ||
+        pkg.location && pkg.location.coordinates || source.coordinates || {};
+      const normalized = Object.assign({}, raw, {
+        countryId,
+        countryCode: raw.countryCode || countryId,
+        resourceId: resourceId || raw.resourceId,
+        siteId: siteId == null ? '' : String(siteId),
+        siteName,
+        coordinates: Object.keys(coords).length ? coords : raw.coordinates
+      });
+      const identityKey = 'ID:' + countryId + ':' + resourceKey(resourceId) + ':' + String(siteId || '');
+      const nameKey = 'NAME:' + countryId + ':' + resourceKey(resourceId) + ':' +
+        resourceKey(siteName);
+      const keys = [identityKey, nameKey].filter(function (key) {
+        return key.split(':').pop() !== '';
+      });
+      let index = null;
+      for (const key of keys) {
+        if (aliasToIndex.has(key)) { index = aliasToIndex.get(key); break; }
+      }
+      if (index === null) {
+        index = rows.length;
+        rows.push(normalized);
+      } else {
+        rows[index] = mergeDataValues(rows[index], normalized);
+      }
+      keys.forEach(function (key) { aliasToIndex.set(key, index); });
+    });
+    return rows.sort(function (a, b) {
+      const countryCompare = String(a.countryId || '').localeCompare(String(b.countryId || ''));
+      if (countryCompare) return countryCompare;
+      const resourceCompare = String(siteResourceId(a) || '').localeCompare(String(siteResourceId(b) || ''));
+      if (resourceCompare) return resourceCompare;
+      return String(a.siteName || a.siteId || '').localeCompare(String(b.siteName || b.siteId || ''));
+    });
+  }
   function sitesForResource(country, resourceId) {
     const wanted = resourceKey(resourceId);
     if (!wanted) return [];
-    return deposits().filter(function (site) {
-      const id = site && (site.resourceId || site.resourceTypeId || site.resId);
-      return resourceKey(id) === wanted && siteBelongsToCountry(site, country);
+    return globalDepositRecords().filter(function (site) {
+      return resourceKey(siteResourceId(site)) === wanted && siteBelongsToCountry(site, country);
     });
   }
   function globalResourceCatalog() {
@@ -302,11 +366,12 @@
       }));
     }
     resourceTypes().forEach(function (row) { add(row); });
-    deposits().forEach(function (site) {
+    globalDepositRecords().forEach(function (site) {
       add({
-        id: site.resourceId || site.resourceTypeId || site.resId || site.resource,
+        id: siteResourceId(site),
         name: site.resourceName || site.commodityName || site.commodity || site.resourceTypeName,
-        unit: site.unit || site.reserve && site.reserve.unit || site.reserves && site.reserves.unit,
+        unit: site.unit || site.reserve && site.reserve.unit || site.reserves && site.reserves.unit ||
+          site.quantitative && site.quantitative.reserve && site.quantitative.reserve.unit,
         category: site.category || site.resourceCategory
       });
     });
@@ -693,7 +758,7 @@
     const types = globalResourceCatalog();
     if (!types.length) return empty('Global commodity catalog is not loaded.') +
       '<p class="omega-rescc-muted">' + esc(sourceDataStatus(country)) + '</p>';
-    const allSites = deposits();
+    const allSites = globalDepositRecords();
     const uniqueCountries = new Set(allSites.map(function (site) {
       const raw = site && (site.countryCode || site.countryId || site.country || site.countryName || site.sovereignCountryId);
       return raw ? normaliseCountry(raw) : '';
@@ -743,7 +808,7 @@
       (profileRows.length>150?'<p class="omega-rescc-note">Showing 150 of '+profileRows.length+' reserve profiles.</p>':'');
   }
   function panelDeposits(country) {
-    const all = deposits();
+    const all = globalDepositRecords();
     const selected = activeCountry(country);
     const rows = (depositScope === 'WORLD' ? all : all.filter(function (d) {
       const cid = d && (d.countryCode || d.countryId || d.country || d.countryName || d.sovereignCountryId);
@@ -763,7 +828,7 @@
     const visible = rows.slice(start, start + DEPOSIT_PAGE_SIZE);
     const commodityIds = new Set(globalResourceCatalog().map(function (row) { return resourceKey(row.id); }).filter(Boolean));
     const siteResourceIds = new Set(all.map(function (site) {
-      return resourceKey(site && (site.resourceId || site.resourceTypeId || site.resId || site.resource));
+      return resourceKey(siteResourceId(site));
     }).filter(Boolean));
     const toolbar = '<div class="omega-rescc-deposit-tools">' +
       '<label>Registry scope<select id="omega-rescc-deposit-scope" aria-label="Deposit registry scope">' +
@@ -815,14 +880,15 @@
       '<p class="omega-rescc-muted">Source: existing resource JSON registry. Unknown fields remain unavailable; the map action only uses recorded coordinates.</p>';
   }
   function siteRows(country) {
-    const selected=activeCountry(country),r=resourceBucket(country),candidates=[];
+    const selected=activeCountry(country),worldScope=['WORLD','GLOBAL','ALL_COUNTRIES'].includes(selected),r=resourceBucket(country),candidates=[];
     const append=(rows,countryHint)=>{
       if(!Array.isArray(rows))return;
       rows.forEach(site=>{
         if(!site||typeof site!=='object')return;
         const source=site.sourceSiteRecord&&typeof site.sourceSiteRecord==='object'?site.sourceSiteRecord:{};
         const identity=site.identity&&typeof site.identity==='object'?site.identity:{};
-        const ownCountry=site.countryId||site.countryCode||site.country||identity.countryIso3||identity.countryId||source.countryId||source.countryCode||countryHint;
+        const pkgIdentity=site.siteDataPackage&&site.siteDataPackage.identity||{};
+        const ownCountry=site.countryId||site.countryCode||site.countryIso3||site.country||site.countryName||site.sovereignCountryId||identity.countryIso3||identity.countryId||pkgIdentity.countryIso3||pkgIdentity.countryId||source.countryId||source.countryCode||source.countryIso3||source.countryName||countryHint;
         if(!ownCountry)return;
         candidates.push(Object.assign({},site,{countryId:normaliseCountry(ownCountry)}));
       });
@@ -854,10 +920,11 @@
       const src=site&&site.sourceSiteRecord&&typeof site.sourceSiteRecord==='object'?site.sourceSiteRecord:{};
       const ident=site&&site.identity&&typeof site.identity==='object'?site.identity:{};
       const cid=site&&(site.countryId||site.countryCode||site.country||ident.countryIso3||ident.countryId||src.countryId||src.countryCode);
-      if(!site||typeof site!=='object'||!cid||normaliseCountry(cid)!==selected)return;
+      if(!site||typeof site!=='object'||!cid||(!worldScope&&normaliseCountry(cid)!==selected))return;
+      const canonicalCountry=normaliseCountry(cid);
       const id=site.siteId||site.canonicalSiteId||site.siteReferenceKey||site.occurrenceKey||site.id||src.siteId||src.id;
       if(!id)return;
-      const key=selected+'|'+String(id),row=Object.assign({},site,{siteId:String(id),countryId:selected});
+      const key=canonicalCountry+'|'+String(id),row=Object.assign({},site,{siteId:String(id),countryId:canonicalCountry,countryCode:site.countryCode||canonicalCountry});
       unique.set(key,unique.has(key)?mergeDataValues(unique.get(key),row):row);
     });
     return [...unique.values()].sort((a,b)=>String(a.siteName||a.name||a.depositName||a.siteId).localeCompare(String(b.siteName||b.name||b.depositName||b.siteId)));
