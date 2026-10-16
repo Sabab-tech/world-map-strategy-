@@ -44,8 +44,8 @@
   "demand": {
     "enabled": true,
     "ruleVersion": "1.0.0",
-    "description": "Rule-driven national resource consumption. Profile coefficients are game-native simulated quantities per million people per daily simulation turn, tuned to avoid large-scale depletion shocks; physical units are retained as authored and are not inferred across source datasets. Existing positive resource.consumption rates are pinned as the initial baseline.",
-    "quantityBasis": "RESOURCE_NATIVE_UNITS_PER_DAILY_SIMULATION_TURN",
+    "description": "Rule-driven national resource consumption. Profile coefficients are simulated resource-native quantities per million people per day. resource.consumption remains a daily rate for existing stockpile targetDays logic; the runtime debits only the fraction attributable to the actual simulation step. Units are not inferred across commodity datasets.",
+    "quantityBasis": "RESOURCE_NATIVE_UNITS_PER_DAY",
     "baselinePolicy": "PIN_FIRST_OBSERVED_POSITIVE_RATE_OR_PROFILE_RATE",
     "defaultElasticities": {
       "population": 0.72,
@@ -73,7 +73,7 @@
     },
     "resourceProfiles": {
       "rare_earth": {
-        "unit": "METRIC_TONS",
+        "unit": "METRIC_TONS_PER_DAY",
         "basePerMillionPopulation": 0.12,
         "priority": 9.5,
         "domesticUseShare": 0.25,
@@ -83,10 +83,11 @@
         "militaryElasticity": 0.08,
         "priceElasticity": 0.08,
         "wartimeMultiplier": 1.4,
-        "stockCoverageTurns": 4
+        "stockCoverageTurns": 4,
+        "stockCoverageDays": 4
       },
       "lithium": {
-        "unit": "METRIC_TONS_LCE",
+        "unit": "METRIC_TONS_LCE_PER_DAY",
         "basePerMillionPopulation": 0.08,
         "priority": 9.5,
         "domesticUseShare": 0.22,
@@ -96,10 +97,11 @@
         "militaryElasticity": 0.1,
         "priceElasticity": 0.08,
         "wartimeMultiplier": 1.4,
-        "stockCoverageTurns": 4
+        "stockCoverageTurns": 4,
+        "stockCoverageDays": 4
       },
       "cobalt": {
-        "unit": "METRIC_TONS",
+        "unit": "METRIC_TONS_PER_DAY",
         "basePerMillionPopulation": 0.1,
         "priority": 9.2,
         "domesticUseShare": 0.25,
@@ -109,10 +111,11 @@
         "militaryElasticity": 0.12,
         "priceElasticity": 0.08,
         "wartimeMultiplier": 1.15,
-        "stockCoverageTurns": 4
+        "stockCoverageTurns": 4,
+        "stockCoverageDays": 4
       },
       "nickel": {
-        "unit": "METRIC_TONS",
+        "unit": "METRIC_TONS_PER_DAY",
         "basePerMillionPopulation": 1.1,
         "priority": 8.8,
         "domesticUseShare": 0.25,
@@ -122,10 +125,11 @@
         "militaryElasticity": 0.1,
         "priceElasticity": 0.08,
         "wartimeMultiplier": 1.15,
-        "stockCoverageTurns": 3
+        "stockCoverageTurns": 3,
+        "stockCoverageDays": 3
       },
       "copper": {
-        "unit": "METRIC_TONS",
+        "unit": "METRIC_TONS_PER_DAY",
         "basePerMillionPopulation": 10.3,
         "priority": 9,
         "domesticUseShare": 0.25,
@@ -135,7 +139,8 @@
         "militaryElasticity": 0.1,
         "priceElasticity": 0.08,
         "wartimeMultiplier": 1.4,
-        "stockCoverageTurns": 4
+        "stockCoverageTurns": 4,
+        "stockCoverageDays": 4
       },
       "crude_oil": {
         "unit": "BARRELS_PER_DAY",
@@ -148,10 +153,11 @@
         "militaryElasticity": 0.08,
         "priceElasticity": 0.08,
         "wartimeMultiplier": 1.4,
-        "stockCoverageTurns": 4
+        "stockCoverageTurns": 4,
+        "stockCoverageDays": 4
       },
       "natural_gas": {
-        "unit": "BCM",
+        "unit": "BCM_PER_DAY",
         "basePerMillionPopulation": 0.0014,
         "priority": 9.7,
         "domesticUseShare": 0.27,
@@ -161,7 +167,8 @@
         "militaryElasticity": 0.08,
         "priceElasticity": 0.08,
         "wartimeMultiplier": 1.4,
-        "stockCoverageTurns": 4
+        "stockCoverageTurns": 4,
+        "stockCoverageDays": 4
       },
       "uranium": {
         "unit": "METRIC_TONS_U",
@@ -174,10 +181,11 @@
         "militaryElasticity": 0.04,
         "priceElasticity": 0.08,
         "wartimeMultiplier": 1.4,
-        "stockCoverageTurns": 4
+        "stockCoverageTurns": 4,
+        "stockCoverageDays": 4
       },
       "gold": {
-        "unit": "TROY_OUNCES",
+        "unit": "TROY_OUNCES_PER_DAY",
         "basePerMillionPopulation": 50,
         "priority": 3,
         "domesticUseShare": 0.03,
@@ -187,10 +195,11 @@
         "militaryElasticity": 0.22,
         "priceElasticity": 0.18,
         "wartimeMultiplier": 1.15,
-        "stockCoverageTurns": 2
+        "stockCoverageTurns": 2,
+        "stockCoverageDays": 2
       },
       "bauxite": {
-        "unit": "METRIC_TONS",
+        "unit": "METRIC_TONS_PER_DAY",
         "basePerMillionPopulation": 137,
         "priority": 7.2,
         "domesticUseShare": 0.25,
@@ -200,10 +209,11 @@
         "militaryElasticity": 0.1,
         "priceElasticity": 0.08,
         "wartimeMultiplier": 1.15,
-        "stockCoverageTurns": 3
+        "stockCoverageTurns": 3,
+        "stockCoverageDays": 3
       },
       "phosphate": {
-        "unit": "METRIC_TONS",
+        "unit": "METRIC_TONS_PER_DAY",
         "basePerMillionPopulation": 85,
         "priority": 8.5,
         "domesticUseShare": 0.32,
@@ -213,10 +223,11 @@
         "militaryElasticity": 0.06,
         "priceElasticity": 0.08,
         "wartimeMultiplier": 1.15,
-        "stockCoverageTurns": 3
+        "stockCoverageTurns": 3,
+        "stockCoverageDays": 3
       },
       "potash": {
-        "unit": "METRIC_TONS",
+        "unit": "METRIC_TONS_PER_DAY",
         "basePerMillionPopulation": 0.031,
         "priority": 8.5,
         "domesticUseShare": 0.32,
@@ -226,10 +237,11 @@
         "militaryElasticity": 0.06,
         "priceElasticity": 0.08,
         "wartimeMultiplier": 1.15,
-        "stockCoverageTurns": 3
+        "stockCoverageTurns": 3,
+        "stockCoverageDays": 3
       },
       "iron_ore": {
-        "unit": "METRIC_TONS",
+        "unit": "METRIC_TONS_PER_DAY",
         "basePerMillionPopulation": 850,
         "priority": 8.8,
         "domesticUseShare": 0.27,
@@ -239,10 +251,11 @@
         "militaryElasticity": 0.08,
         "priceElasticity": 0.08,
         "wartimeMultiplier": 1.15,
-        "stockCoverageTurns": 3
+        "stockCoverageTurns": 3,
+        "stockCoverageDays": 3
       },
       "coal": {
-        "unit": "METRIC_TONS",
+        "unit": "METRIC_TONS_PER_DAY",
         "basePerMillionPopulation": 2900,
         "priority": 9.2,
         "domesticUseShare": 0.25,
@@ -252,10 +265,11 @@
         "militaryElasticity": 0.08,
         "priceElasticity": 0.08,
         "wartimeMultiplier": 1.4,
-        "stockCoverageTurns": 4
+        "stockCoverageTurns": 4,
+        "stockCoverageDays": 4
       },
       "graphite": {
-        "unit": "METRIC_TONS",
+        "unit": "METRIC_TONS_PER_DAY",
         "basePerMillionPopulation": 0.55,
         "priority": 7.8,
         "domesticUseShare": 0.23,
@@ -265,10 +279,11 @@
         "militaryElasticity": 0.1,
         "priceElasticity": 0.08,
         "wartimeMultiplier": 1.15,
-        "stockCoverageTurns": 3
+        "stockCoverageTurns": 3,
+        "stockCoverageDays": 3
       },
       "rutile": {
-        "unit": "METRIC_TONS",
+        "unit": "METRIC_TONS_PER_DAY",
         "basePerMillionPopulation": 0.35,
         "priority": 6.8,
         "domesticUseShare": 0.2,
@@ -278,10 +293,11 @@
         "militaryElasticity": 0.08,
         "priceElasticity": 0.08,
         "wartimeMultiplier": 1.15,
-        "stockCoverageTurns": 3
+        "stockCoverageTurns": 3,
+        "stockCoverageDays": 3
       },
       "manganese": {
-        "unit": "METRIC_TONS",
+        "unit": "METRIC_TONS_PER_DAY",
         "basePerMillionPopulation": 7,
         "priority": 7.8,
         "domesticUseShare": 0.25,
@@ -291,10 +307,11 @@
         "militaryElasticity": 0.08,
         "priceElasticity": 0.08,
         "wartimeMultiplier": 1.15,
-        "stockCoverageTurns": 3
+        "stockCoverageTurns": 3,
+        "stockCoverageDays": 3
       },
       "diamond": {
-        "unit": "CARATS",
+        "unit": "CARATS_PER_DAY",
         "basePerMillionPopulation": 34,
         "priority": 2.5,
         "domesticUseShare": 0.02,
@@ -304,10 +321,11 @@
         "militaryElasticity": 0.2,
         "priceElasticity": 0.18,
         "wartimeMultiplier": 1.15,
-        "stockCoverageTurns": 2
+        "stockCoverageTurns": 2,
+        "stockCoverageDays": 2
       },
       "tin": {
-        "unit": "METRIC_TONS",
+        "unit": "METRIC_TONS_PER_DAY",
         "basePerMillionPopulation": 0.12,
         "priority": 7.2,
         "domesticUseShare": 0.2,
@@ -317,10 +335,11 @@
         "militaryElasticity": 0.1,
         "priceElasticity": 0.08,
         "wartimeMultiplier": 1.15,
-        "stockCoverageTurns": 3
+        "stockCoverageTurns": 3,
+        "stockCoverageDays": 3
       },
       "tungsten": {
-        "unit": "METRIC_TONS",
+        "unit": "METRIC_TONS_PER_DAY",
         "basePerMillionPopulation": 0.04,
         "priority": 8.2,
         "domesticUseShare": 0.18,
@@ -330,10 +349,11 @@
         "militaryElasticity": 0.1,
         "priceElasticity": 0.08,
         "wartimeMultiplier": 1.4,
-        "stockCoverageTurns": 3
+        "stockCoverageTurns": 3,
+        "stockCoverageDays": 3
       },
       "chromite": {
-        "unit": "METRIC_TONS",
+        "unit": "METRIC_TONS_PER_DAY",
         "basePerMillionPopulation": 14,
         "priority": 7.8,
         "domesticUseShare": 0.25,
@@ -343,10 +363,11 @@
         "militaryElasticity": 0.1,
         "priceElasticity": 0.08,
         "wartimeMultiplier": 1.15,
-        "stockCoverageTurns": 3
+        "stockCoverageTurns": 3,
+        "stockCoverageDays": 3
       },
       "silver": {
-        "unit": "TROY_OUNCES",
+        "unit": "TROY_OUNCES_PER_DAY",
         "basePerMillionPopulation": 275,
         "priority": 3.5,
         "domesticUseShare": 0.05,
@@ -356,10 +377,11 @@
         "militaryElasticity": 0.18,
         "priceElasticity": 0.18,
         "wartimeMultiplier": 1.15,
-        "stockCoverageTurns": 2
+        "stockCoverageTurns": 2,
+        "stockCoverageDays": 2
       },
       "zinc": {
-        "unit": "METRIC_TONS",
+        "unit": "METRIC_TONS_PER_DAY",
         "basePerMillionPopulation": 4.5,
         "priority": 7.5,
         "domesticUseShare": 0.25,
@@ -369,10 +391,11 @@
         "militaryElasticity": 0.1,
         "priceElasticity": 0.08,
         "wartimeMultiplier": 1.15,
-        "stockCoverageTurns": 3
+        "stockCoverageTurns": 3,
+        "stockCoverageDays": 3
       },
       "platinum": {
-        "unit": "TROY_OUNCES",
+        "unit": "TROY_OUNCES_PER_DAY",
         "basePerMillionPopulation": 2.2,
         "priority": 4.2,
         "domesticUseShare": 0.08,
@@ -382,10 +405,11 @@
         "militaryElasticity": 0.18,
         "priceElasticity": 0.08,
         "wartimeMultiplier": 1.15,
-        "stockCoverageTurns": 3
+        "stockCoverageTurns": 3,
+        "stockCoverageDays": 3
       },
       "basalt": {
-        "unit": "METRIC_TONS",
+        "unit": "METRIC_TONS_PER_DAY",
         "basePerMillionPopulation": 15000,
         "priority": 5.5,
         "domesticUseShare": 0.3,
@@ -395,10 +419,11 @@
         "militaryElasticity": 0.05,
         "priceElasticity": 0.08,
         "wartimeMultiplier": 1.15,
-        "stockCoverageTurns": 3
+        "stockCoverageTurns": 3,
+        "stockCoverageDays": 3
       },
       "construction_aggregate": {
-        "unit": "METRIC_TONS",
+        "unit": "METRIC_TONS_PER_DAY",
         "basePerMillionPopulation": 17000,
         "priority": 6.2,
         "domesticUseShare": 0.34,
@@ -408,10 +433,11 @@
         "militaryElasticity": 0.05,
         "priceElasticity": 0.08,
         "wartimeMultiplier": 1.15,
-        "stockCoverageTurns": 3
+        "stockCoverageTurns": 3,
+        "stockCoverageDays": 3
       },
       "coral_aggregate": {
-        "unit": "METRIC_TONS",
+        "unit": "METRIC_TONS_PER_DAY",
         "basePerMillionPopulation": 0.5,
         "priority": 3,
         "domesticUseShare": 0.2,
@@ -421,10 +447,11 @@
         "militaryElasticity": 0.06,
         "priceElasticity": 0.18,
         "wartimeMultiplier": 1.15,
-        "stockCoverageTurns": 2
+        "stockCoverageTurns": 2,
+        "stockCoverageDays": 2
       },
       "salt": {
-        "unit": "METRIC_TONS",
+        "unit": "METRIC_TONS_PER_DAY",
         "basePerMillionPopulation": 14,
         "priority": 6.3,
         "domesticUseShare": 0.32,
@@ -434,10 +461,11 @@
         "militaryElasticity": 0.04,
         "priceElasticity": 0.08,
         "wartimeMultiplier": 1.15,
-        "stockCoverageTurns": 3
+        "stockCoverageTurns": 3,
+        "stockCoverageDays": 3
       },
       "dolomite": {
-        "unit": "METRIC_TONS",
+        "unit": "METRIC_TONS_PER_DAY",
         "basePerMillionPopulation": 3,
         "priority": 5.5,
         "domesticUseShare": 0.28,
@@ -447,10 +475,11 @@
         "militaryElasticity": 0.05,
         "priceElasticity": 0.08,
         "wartimeMultiplier": 1.15,
-        "stockCoverageTurns": 3
+        "stockCoverageTurns": 3,
+        "stockCoverageDays": 3
       },
       "magnesite": {
-        "unit": "METRIC_TONS",
+        "unit": "METRIC_TONS_PER_DAY",
         "basePerMillionPopulation": 0.5,
         "priority": 6,
         "domesticUseShare": 0.2,
@@ -460,10 +489,11 @@
         "militaryElasticity": 0.08,
         "priceElasticity": 0.08,
         "wartimeMultiplier": 1.15,
-        "stockCoverageTurns": 3
+        "stockCoverageTurns": 3,
+        "stockCoverageDays": 3
       },
       "oil_shale": {
-        "unit": "METRIC_TONS",
+        "unit": "METRIC_TONS_PER_DAY",
         "basePerMillionPopulation": 0.2,
         "priority": 5.8,
         "domesticUseShare": 0.25,
@@ -473,10 +503,11 @@
         "militaryElasticity": 0.1,
         "priceElasticity": 0.08,
         "wartimeMultiplier": 1.15,
-        "stockCoverageTurns": 3
+        "stockCoverageTurns": 3,
+        "stockCoverageDays": 3
       },
       "marble": {
-        "unit": "METRIC_TONS",
+        "unit": "METRIC_TONS_PER_DAY",
         "basePerMillionPopulation": 2,
         "priority": 4,
         "domesticUseShare": 0.14,
@@ -486,10 +517,11 @@
         "militaryElasticity": 0.09,
         "priceElasticity": 0.18,
         "wartimeMultiplier": 1.15,
-        "stockCoverageTurns": 2
+        "stockCoverageTurns": 2,
+        "stockCoverageDays": 2
       },
       "boron": {
-        "unit": "METRIC_TONS",
+        "unit": "METRIC_TONS_PER_DAY",
         "basePerMillionPopulation": 0.2,
         "priority": 6.8,
         "domesticUseShare": 0.19,
@@ -499,10 +531,11 @@
         "militaryElasticity": 0.09,
         "priceElasticity": 0.08,
         "wartimeMultiplier": 1.15,
-        "stockCoverageTurns": 3
+        "stockCoverageTurns": 3,
+        "stockCoverageDays": 3
       },
       "aragonite": {
-        "unit": "METRIC_TONS",
+        "unit": "METRIC_TONS_PER_DAY",
         "basePerMillionPopulation": 0.05,
         "priority": 3,
         "domesticUseShare": 0.2,
@@ -512,10 +545,11 @@
         "militaryElasticity": 0.06,
         "priceElasticity": 0.18,
         "wartimeMultiplier": 1.15,
-        "stockCoverageTurns": 2
+        "stockCoverageTurns": 2,
+        "stockCoverageDays": 2
       },
       "granite": {
-        "unit": "METRIC_TONS",
+        "unit": "METRIC_TONS_PER_DAY",
         "basePerMillionPopulation": 5,
         "priority": 5,
         "domesticUseShare": 0.23,
@@ -525,10 +559,11 @@
         "militaryElasticity": 0.07,
         "priceElasticity": 0.08,
         "wartimeMultiplier": 1.15,
-        "stockCoverageTurns": 3
+        "stockCoverageTurns": 3,
+        "stockCoverageDays": 3
       },
       "diatomite": {
-        "unit": "METRIC_TONS",
+        "unit": "METRIC_TONS_PER_DAY",
         "basePerMillionPopulation": 0.05,
         "priority": 4.2,
         "domesticUseShare": 0.16,
@@ -538,10 +573,11 @@
         "militaryElasticity": 0.1,
         "priceElasticity": 0.08,
         "wartimeMultiplier": 1.15,
-        "stockCoverageTurns": 3
+        "stockCoverageTurns": 3,
+        "stockCoverageDays": 3
       },
       "ilmenite": {
-        "unit": "METRIC_TONS",
+        "unit": "METRIC_TONS_PER_DAY",
         "basePerMillionPopulation": 1,
         "priority": 7,
         "domesticUseShare": 0.22,
@@ -551,9 +587,14 @@
         "militaryElasticity": 0.1,
         "priceElasticity": 0.08,
         "wartimeMultiplier": 1.15,
-        "stockCoverageTurns": 3
+        "stockCoverageTurns": 3,
+        "stockCoverageDays": 3
       }
     },
-    "maxHistoryTurns": 128
+    "maxHistoryTurns": 128,
+    "defaultTurnDurationMs": 3600000,
+    "stockCoverageDays": 3,
+    "procurementBufferDays": 2,
+    "maxPurchaseCoverageDays": 6
   }
 }
