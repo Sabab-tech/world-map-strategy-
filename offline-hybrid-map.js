@@ -1,11 +1,14 @@
-/* OMEGA Offline Hybrid Atlas
- * Uses the canonical bundled world.json through the existing Leaflet GeoJSON layer.
- * Actual country polygons, readable borders and a real latitude/longitude graticule.
+/* OMEGA Hybrid Satellite Atlas
+ * Uses the existing canonical country GeoJSON and Leaflet map.
+ * Online: detailed Esri World Imagery.
+ * Offline after the first successful online load: cached NASA Blue Marble raster.
+ * No parallel country/deposit data is introduced.
  */
 (function () {
     "use strict";
+
     if (!window.L || !window.Game || !window.Game.Map || !window.map) {
-        console.warn("[Offline Atlas] Map runtime is not ready.");
+        console.warn("[OMEGA Atlas] Map runtime is not ready.");
         return;
     }
 
@@ -13,13 +16,26 @@
     var gridLayer = null;
     var coordinateLabels = null;
     var atlasButton = null;
+    var atlasSatelliteLayer = null;
+    var blueMarbleLayer = null;
+    var blueMarbleImage = null;
+    var blueMarblePromise = null;
+    var textureReady = false;
+    var remoteImageryReady = false;
+    var GRID_PANE = "omegaOfflineGraticulePane";
+    var LABEL_PANE = "omegaOfflineCoordinateLabelsPane";
+    var BLUE_MARBLE_URL = "https://assets.science.nasa.gov/content/dam/science/esd/eo/images/bmng/bmng-base/january/world.200401.3x5400x2700.jpg";
+    var CACHE_DB = "omega-map-imagery-cache-v1";
+    var CACHE_STORE = "raster";
+    var CACHE_KEY = "nasa-blue-marble-5400x2700-january-2004";
+
     var originalSwitchMapLayer = window.Game.switchMapLayer;
     var originalRenderGeoJSON = window.Game.Map.renderGeoJSON;
     var originalSelectCountry = window.Game.selectCountryByName;
-    var GRID_PANE = "omegaOfflineGraticulePane";
-    var LABEL_PANE = "omegaOfflineCoordinateLabelsPane";
 
-    function clamp(value, min, max) { return Math.max(min, Math.min(max, value)); }
+    function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+    }
 
     function sourceName(feature) {
         var props = feature && feature.properties ? feature.properties : {};
@@ -31,7 +47,11 @@
     function rgb(hex) {
         var match = /^#?([0-9a-f]{6})$/i.exec(String(hex || ""));
         if (!match) return [82, 100, 88];
-        return [parseInt(match[1].slice(0, 2), 16), parseInt(match[1].slice(2, 4), 16), parseInt(match[1].slice(4, 6), 16)];
+        return [
+            parseInt(match[1].slice(0, 2), 16),
+            parseInt(match[1].slice(2, 4), 16),
+            parseInt(match[1].slice(4, 6), 16)
+        ];
     }
 
     function hex(channels) {
@@ -47,16 +67,23 @@
             : "#536458";
         var base = rgb(raw);
         var slateSage = [82, 98, 85];
-        return hex(base.map(function (channel, index) { return channel * 0.69 + slateSage[index] * 0.31; }));
+        return hex(base.map(function (channel, index) {
+            return channel * 0.69 + slateSage[index] * 0.31;
+        }));
+    }
+
+    function imageryAvailable() {
+        return textureReady || remoteImageryReady;
     }
 
     function countryStyle(feature) {
+        var hasImagery = imageryAvailable();
         return {
-            color: "#c0c8bb",
-            weight: 0.85,
-            opacity: 0.9,
+            color: "#dce6df",
+            weight: window.map.getZoom() >= 5 ? 0.55 : 0.8,
+            opacity: 0.88,
             fillColor: mutedFill(sourceName(feature)),
-            fillOpacity: 0.91,
+            fillOpacity: hasImagery ? 0.055 : 0.88,
             lineCap: "round",
             lineJoin: "round",
             dashArray: null
@@ -64,7 +91,13 @@
     }
 
     function selectedStyle() {
-        return { color: "#f0d6a0", weight: 2.15, opacity: 1, fillOpacity: 0.95, dashArray: null };
+        return {
+            color: "#ffe0a0",
+            weight: 2.0,
+            opacity: 1,
+            fillOpacity: imageryAvailable() ? 0.13 : 0.94,
+            dashArray: null
+        };
     }
 
     function styleCountries() {
@@ -101,8 +134,14 @@
 
     function addGridLine(points) {
         gridLayer.addLayer(L.polyline(points, {
-            pane: GRID_PANE, color: "#aab9b5", opacity: 0.24, weight: 0.65,
-            dashArray: "2 5", lineCap: "round", interactive: false, smoothFactor: 1
+            pane: GRID_PANE,
+            color: "#d3ddd7",
+            opacity: 0.13,
+            weight: 0.55,
+            dashArray: "2 7",
+            lineCap: "round",
+            interactive: false,
+            smoothFactor: 1
         }));
     }
 
@@ -135,6 +174,7 @@
     function updateCoordinateLabels() {
         if (!active || !coordinateLabels || !window.map) return;
         coordinateLabels.clearLayers();
+
         var bounds = window.map.getBounds();
         var west = Math.max(-180, bounds.getWest());
         var east = Math.min(180, bounds.getEast());
@@ -144,19 +184,266 @@
 
         var labelLat = clamp(north - Math.max(3, (north - south) * 0.08), south + 1, north - 1);
         var labelLon = clamp(west + Math.max(3, (east - west) * 0.04), west + 1, east - 1);
+
         for (var lon = Math.ceil(west / 30) * 30; lon <= east && lon <= 180; lon += 30) {
             if (lon < -180) continue;
             coordinateLabels.addLayer(L.marker([labelLat, lon], {
-                pane: LABEL_PANE, icon: labelIcon(longitudeText(lon), "longitude"),
-                interactive: false, keyboard: false
+                pane: LABEL_PANE,
+                icon: labelIcon(longitudeText(lon), "longitude"),
+                interactive: false,
+                keyboard: false
             }));
         }
         for (var lat = Math.ceil(south / 15) * 15; lat <= north; lat += 15) {
             coordinateLabels.addLayer(L.marker([lat, labelLon], {
-                pane: LABEL_PANE, icon: labelIcon(latitudeText(lat), "latitude"),
-                interactive: false, keyboard: false
+                pane: LABEL_PANE,
+                icon: labelIcon(latitudeText(lat), "latitude"),
+                interactive: false,
+                keyboard: false
             }));
         }
+    }
+
+    function openCacheDb() {
+        if (!window.indexedDB) return Promise.resolve(null);
+        return new Promise(function (resolve) {
+            var request;
+            try {
+                request = window.indexedDB.open(CACHE_DB, 1);
+            } catch (_) {
+                resolve(null);
+                return;
+            }
+            request.onupgradeneeded = function () {
+                var db = request.result;
+                if (!db.objectStoreNames.contains(CACHE_STORE)) db.createObjectStore(CACHE_STORE);
+            };
+            request.onsuccess = function () { resolve(request.result); };
+            request.onerror = function () { resolve(null); };
+            request.onblocked = function () { resolve(null); };
+        });
+    }
+
+    function readCachedTexture() {
+        return openCacheDb().then(function (db) {
+            if (!db) return null;
+            return new Promise(function (resolve) {
+                var request;
+                try {
+                    request = db.transaction(CACHE_STORE, "readonly").objectStore(CACHE_STORE).get(CACHE_KEY);
+                } catch (_) {
+                    db.close();
+                    resolve(null);
+                    return;
+                }
+                request.onsuccess = function () { db.close(); resolve(request.result || null); };
+                request.onerror = function () { db.close(); resolve(null); };
+            });
+        }).catch(function () { return null; });
+    }
+
+    function writeCachedTexture(blob) {
+        return openCacheDb().then(function (db) {
+            if (!db) return false;
+            return new Promise(function (resolve) {
+                var transaction;
+                try {
+                    transaction = db.transaction(CACHE_STORE, "readwrite");
+                    transaction.objectStore(CACHE_STORE).put(blob, CACHE_KEY);
+                } catch (_) {
+                    db.close();
+                    resolve(false);
+                    return;
+                }
+                transaction.oncomplete = function () { db.close(); resolve(true); };
+                transaction.onerror = function () { db.close(); resolve(false); };
+                transaction.onabort = function () { db.close(); resolve(false); };
+            });
+        }).catch(function () { return false; });
+    }
+
+    function fetchBlueMarbleTexture() {
+        if (navigator.onLine === false || typeof window.fetch !== "function") return Promise.resolve(null);
+        return window.fetch(BLUE_MARBLE_URL, {
+            method: "GET",
+            mode: "cors",
+            credentials: "omit",
+            cache: "force-cache"
+        }).then(function (response) {
+            if (!response.ok) throw new Error("NASA raster request returned " + response.status);
+            return response.blob();
+        }).then(function (blob) {
+            if (!blob || !blob.size) throw new Error("NASA raster response was empty");
+            return writeCachedTexture(blob).then(function () { return blob; });
+        }).catch(function (error) {
+            console.warn("[OMEGA Atlas] Offline raster cache unavailable:", error && error.message ? error.message : error);
+            return null;
+        });
+    }
+
+    function loadBlueMarbleImage() {
+        if (blueMarblePromise) return blueMarblePromise;
+        blueMarblePromise = readCachedTexture().then(function (cachedBlob) {
+            return cachedBlob || fetchBlueMarbleTexture();
+        }).then(function (blob) {
+            if (!blob) return null;
+            return new Promise(function (resolve) {
+                var objectUrl;
+                try {
+                    objectUrl = URL.createObjectURL(blob);
+                } catch (_) {
+                    resolve(null);
+                    return;
+                }
+                var image = new Image();
+                image.onload = function () {
+                    blueMarbleImage = image;
+                    resolve(image);
+                };
+                image.onerror = function () {
+                    URL.revokeObjectURL(objectUrl);
+                    resolve(null);
+                };
+                image.src = objectUrl;
+            });
+        }).catch(function () { return null; });
+        return blueMarblePromise;
+    }
+
+    function createBlueMarbleLayer() {
+        if (blueMarbleLayer || !L.GridLayer || !blueMarbleImage) return blueMarbleLayer;
+
+        var RasterGridLayer = L.GridLayer.extend({
+            createTile: function (coords, done) {
+                var size = this.getTileSize();
+                var canvas = document.createElement("canvas");
+                canvas.width = size.x;
+                canvas.height = size.y;
+                var context = canvas.getContext("2d", { alpha: false });
+                if (!context || !blueMarbleImage) {
+                    if (context) {
+                        context.fillStyle = "#183541";
+                        context.fillRect(0, 0, size.x, size.y);
+                    }
+                    done(null, canvas);
+                    return canvas;
+                }
+
+                var divisions = Math.pow(2, coords.z);
+                if (coords.y < 0 || coords.y >= divisions) {
+                    context.fillStyle = "#183541";
+                    context.fillRect(0, 0, size.x, size.y);
+                    done(null, canvas);
+                    return canvas;
+                }
+
+                var wrappedX = ((coords.x % divisions) + divisions) % divisions;
+                var sourceWidth = blueMarbleImage.naturalWidth / divisions;
+                var sourceX = wrappedX * sourceWidth;
+                var worldPixelHeight = size.y * divisions;
+
+                function sourceYForMercatorPixel(pixelY) {
+                    var normalizedY = pixelY / worldPixelHeight;
+                    var mercator = Math.PI * (1 - 2 * normalizedY);
+                    var latitude = Math.atan(Math.sinh(mercator)) * 180 / Math.PI;
+                    return (90 - latitude) / 180 * blueMarbleImage.naturalHeight;
+                }
+
+                var sourceY = sourceYForMercatorPixel(coords.y * size.y);
+                var sourceYBottom = sourceYForMercatorPixel((coords.y + 1) * size.y);
+                var sourceHeight = Math.max(1, sourceYBottom - sourceY);
+
+                try {
+                    context.drawImage(
+                        blueMarbleImage,
+                        sourceX,
+                        sourceY,
+                        sourceWidth,
+                        sourceHeight,
+                        0,
+                        0,
+                        size.x,
+                        size.y
+                    );
+                } catch (_) {
+                    context.fillStyle = "#183541";
+                    context.fillRect(0, 0, size.x, size.y);
+                }
+                done(null, canvas);
+                return canvas;
+            }
+        });
+
+        blueMarbleLayer = new RasterGridLayer({
+            tileSize: 256,
+            minZoom: 0,
+            maxZoom: 8,
+            noWrap: false,
+            opacity: 1,
+            zIndex: 180,
+            updateWhenIdle: true,
+            keepBuffer: 1,
+            attribution: "NASA Blue Marble: Next Generation (NASA/GSFC; Reto Stöckli and collaborators)"
+        });
+        return blueMarbleLayer;
+    }
+
+    function attachBlueMarbleFallback() {
+        if (!active || !blueMarbleImage) return;
+        textureReady = true;
+        var layer = createBlueMarbleLayer();
+        if (layer && !window.map.hasLayer(layer)) layer.addTo(window.map);
+        styleCountries();
+        window.OMEGA_OFFLINE_ATLAS_STATUS = {
+            active: active,
+            remoteImagery: remoteImageryReady,
+            offlineRasterCached: true,
+            rasterSource: "NASA Blue Marble: Next Generation"
+        };
+    }
+
+    function ensureSatelliteLayer() {
+        var URL = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
+
+        if (window.currentMapTileLayer && window.map.hasLayer(window.currentMapTileLayer)) {
+            window.map.removeLayer(window.currentMapTileLayer);
+        }
+        window.currentMapTileLayer = null;
+
+        if (window.satelliteLayer && window.map.hasLayer(window.satelliteLayer)) {
+            window.map.removeLayer(window.satelliteLayer);
+        }
+
+        if (!atlasSatelliteLayer) {
+            atlasSatelliteLayer = L.tileLayer(URL, {
+                attribution: "Esri, Maxar, Earthstar Geographics, and the GIS User Community",
+                maxZoom: 8,
+                opacity: 0.97,
+                zIndex: 230,
+                keepBuffer: 2,
+                updateWhenIdle: true
+            });
+            atlasSatelliteLayer.on("tileload", function () {
+                if (!remoteImageryReady) {
+                    remoteImageryReady = true;
+                    styleCountries();
+                    window.OMEGA_OFFLINE_ATLAS_STATUS = {
+                        active: active,
+                        remoteImagery: true,
+                        offlineRasterCached: textureReady,
+                        rasterSource: textureReady ? "NASA Blue Marble: Next Generation" : null
+                    };
+                }
+            });
+            atlasSatelliteLayer.on("tileerror", function (event) {
+                if (!remoteImageryReady) {
+                    console.info("[OMEGA Atlas] Satellite tile unavailable; cached global raster will be used when present.", event && event.coords);
+                }
+            });
+        }
+
+        atlasSatelliteLayer.setZIndex(230);
+        if (!window.map.hasLayer(atlasSatelliteLayer)) atlasSatelliteLayer.addTo(window.map);
     }
 
     function syncButton() {
@@ -174,37 +461,75 @@
     function activate() {
         if (!active) {
             active = true;
-            if (window.satelliteLayer && window.map.hasLayer(window.satelliteLayer)) window.map.removeLayer(window.satelliteLayer);
-            if (window.currentMapTileLayer && window.map.hasLayer(window.currentMapTileLayer)) window.map.removeLayer(window.currentMapTileLayer);
-            window.currentMapTileLayer = null;
+            ensureSatelliteLayer();
             if (!gridLayer) createGraticule();
             gridLayer.addTo(window.map);
-            coordinateLabels.addTo(window.map);
+            if (coordinateLabels) coordinateLabels.addTo(window.map);
             if (document.body) document.body.classList.add("omega-offline-hybrid-active");
         }
+
+        if (blueMarbleImage) attachBlueMarbleFallback();
         styleCountries();
         updateCoordinateLabels();
         syncButton();
+
+        loadBlueMarbleImage().then(function (image) {
+            if (image) {
+                textureReady = true;
+                attachBlueMarbleFallback();
+            } else {
+                styleCountries();
+                window.OMEGA_OFFLINE_ATLAS_STATUS = {
+                    active: active,
+                    remoteImagery: remoteImageryReady,
+                    offlineRasterCached: false,
+                    rasterSource: null,
+                    note: "A first online connection is needed to cache the NASA overview image."
+                };
+            }
+        });
+
         if (typeof Game.showNotification === "function") {
-            Game.showNotification("OFFLINE HYBRID ATLAS", "Actual country geometry, clear political borders and geographic coordinates are active. No online map tiles are used.", "info");
+            Game.showNotification(
+                "HYBRID SATELLITE ATLAS",
+                "Detailed satellite tiles are preferred. A NASA Blue Marble overview is cached locally after a successful online load for later offline use.",
+                "info"
+            );
         }
     }
 
     function deactivate() {
         if (!active) return;
         active = false;
-        if (gridLayer && window.map.hasLayer(gridLayer)) window.map.removeLayer(gridLayer);
-        if (coordinateLabels && window.map.hasLayer(coordinateLabels)) window.map.removeLayer(coordinateLabels);
+
+        [atlasSatelliteLayer, blueMarbleLayer, gridLayer, coordinateLabels].forEach(function (layer) {
+            if (layer && window.map.hasLayer(layer)) window.map.removeLayer(layer);
+        });
+
+        remoteImageryReady = false;
         if (document.body) document.body.classList.remove("omega-offline-hybrid-active");
         styleCountries();
         syncButton();
+        window.OMEGA_OFFLINE_ATLAS_STATUS = {
+            active: false,
+            remoteImagery: false,
+            offlineRasterCached: !!blueMarbleImage,
+            rasterSource: blueMarbleImage ? "NASA Blue Marble: Next Generation" : null
+        };
     }
 
     window.OmegaOfflineHybridAtlas = {
         activate: activate,
         deactivate: deactivate,
         isActive: function () { return active; },
-        redraw: updateCoordinateLabels
+        redraw: updateCoordinateLabels,
+        getStatus: function () {
+            return window.OMEGA_OFFLINE_ATLAS_STATUS || {
+                active: active,
+                remoteImagery: remoteImageryReady,
+                offlineRasterCached: !!blueMarbleImage
+            };
+        }
     };
 
     if (typeof originalRenderGeoJSON === "function") {
@@ -235,6 +560,18 @@
     }
 
     window.map.on("moveend zoomend", updateCoordinateLabels);
+    window.addEventListener("online", function () {
+        if (active && !blueMarbleImage) {
+            blueMarblePromise = null;
+            loadBlueMarbleImage().then(function (image) {
+                if (image) {
+                    textureReady = true;
+                    attachBlueMarbleFallback();
+                }
+            });
+        }
+    });
+
     document.addEventListener("DOMContentLoaded", function () {
         syncButton();
         if (window.OMEGA_ANDROID_OFFLINE) activate();
