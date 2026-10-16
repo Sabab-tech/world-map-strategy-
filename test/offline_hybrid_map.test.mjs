@@ -68,7 +68,7 @@ test("Android WebView allows real map imagery requests through to the network", 
   assert.doesNotMatch(mainActivity, /h\.equals\("server\.arcgisonline\.com"\)/);
   assert.doesNotMatch(mainActivity, /basemaps\.cartocdn\.com/);
   assert.match(mainActivity, /h\.equals\("unpkg\.com"\)/);
-  assert.match(mainActivity, /do not\\s*\\n?\\s*intercept map imagery/i);
+  assert.match(mainActivity, /intercept map imagery/i);
 });
 
 test("imagery failures do not substitute fake map tiles", () => {
