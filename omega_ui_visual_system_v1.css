@@ -683,3 +683,18 @@ button:disabled,.c-ministry-btn[data-om-state="locked"]{
     animation:none!important;
   }
 }
+
+
+/* Preserve the existing low-end Android policy: visual feedback is immediate
+   on coarse pointers and never starts a costly transition/animation storm. */
+@media(pointer:coarse){
+  #ui-engine-root .speed-controls .speed-btn,
+  #ui-engine-root .icon-btn,
+  .special-btn,.metric-opt-btn,.layer-opt-btn,.tab-btn,.cabinet-btn,
+  .res-quick-btn,.city-bar-btn,.drawer-close,#btn-view-map,#btn-card-cabinet,
+  #resource-filter-box button,#omega-individual-resource-panel button,
+  .sel-country-eye-btn,.access-card,.c-ministry-btn{
+    transition:none!important;
+    animation:none!important;
+  }
+}
