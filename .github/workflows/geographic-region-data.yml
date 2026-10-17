@@ -1,5 +1,17 @@
 name: OMEGA Geographic Region Data
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'countries.json'
+      - 'world.json'
+      - 'world_oceans_v1.json'
+      - 'omega_geographic_region_system_v1.js'
+      - 'map-engine-1.js'
+      - 'style.css'
+      - 'index.html'
+      - 'test/geographic_region_data.test.mjs'
+      - '.github/workflows/geographic-region-data.yml'
   pull_request:
     branches: [main]
     paths:
@@ -7,6 +19,9 @@ on:
       - 'world.json'
       - 'world_oceans_v1.json'
       - 'omega_geographic_region_system_v1.js'
+      - 'map-engine-1.js'
+      - 'style.css'
+      - 'index.html'
       - 'test/geographic_region_data.test.mjs'
       - '.github/workflows/geographic-region-data.yml'
   workflow_dispatch:
