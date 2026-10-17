@@ -285,8 +285,12 @@ test('vehicle compatibility and fleet repair controls are visible and interactiv
   assert.match(ui, /home-police-guard-environment/);
   assert.match(ui, /home-police-guard-road/);
   assert.match(ui, /home-police-route-wear/);
+  assert.match(ui, /Fleet strategy recommendation/);
+  assert.match(ui, /data-home-choose-vehicle/);
+  assert.match(ui, /e\.getVehicleRecommendations\(missionId, environmentId, roadId/);
   assert.match(ui, /Only 12 vehicle cards are rendered per page/);
   assert.match(ui, /REPAIR & RETURN TO FULL CONDITION/);
+  assert.match(ui, /prefers-reduced-motion:reduce/);
 });
 
 test('responsive UI keeps the guard and vehicle forms usable on narrow screens', () => {
