@@ -58,9 +58,14 @@
     if(raw===null||raw<=0)return null;
     return raw;
   }
-  function toUsd(c,price){
-    const p=n(price),r=usdRate(c);if(p===null||r===null)return null;
-    return currency(c)==='USD'?p:p/r;
+  function toUsd(c,price,currencyOverride){
+    const p=n(price),localCode=currency(c),code=String(currencyOverride||localCode||'').trim().toUpperCase();
+    if(p===null||!code)return null;
+    if(code==='USD')return p;
+    // No guessed FX cross-rates: a non-USD offer must use the seller's recorded currency.
+    if(!localCode||code!==localCode)return null;
+    const r=usdRate(c);if(r===null)return null;
+    return p/r;
   }
   function resourceIds(){
     const ids=new Set;
@@ -91,8 +96,9 @@
       const reqs=countryValue(c,'trade.importRequests');
       if(Array.isArray(reqs))for(const q of reqs.slice(-256)){
         if(token(q?.resourceId)!==token(rid)||!['SENT','COUNTER_OFFERED','ACCEPTED'].includes(id(q?.status)))continue;
-        const usd=toUsd(c,q.unitPrice);if(usd===null)continue;
-        pushOrder({[rid]:book},{resourceId:rid,side:'bids',countryId:canonical(c),quantity:n(q.quantity)||0,price:n(q.unitPrice),priceUsd:usd,currency:currency(c),source:'TRADE_IMPORT_REQUEST',referenceOnly:false,requestId:q.requestId});
+        const orderCurrency=String(q.currencyCode||q.currency||currency(c)||'').trim().toUpperCase()||null;
+        const usd=toUsd(c,q.unitPrice,orderCurrency);if(usd===null)continue;
+        pushOrder({[rid]:book},{resourceId:rid,side:'bids',countryId:canonical(c),quantity:n(q.quantity)||0,price:n(q.unitPrice),priceUsd:usd,currency:orderCurrency,source:'TRADE_IMPORT_REQUEST',referenceOnly:false,requestId:q.requestId});
       }
       const offers=countryValue(c,'trade.offerBook');
       const rows=[];
@@ -105,8 +111,9 @@
       }
       for(const q of rows){
         if(token(q?.resourceId||q?.resource)!==token(rid))continue;
-        const usd=toUsd(c,q.unitPrice??q.price);if(usd===null)continue;
-        pushOrder({[rid]:book},{resourceId:rid,side:'asks',countryId:canonical(c),quantity:n(q.quantity)||n(q.available)||0,price:n(q.unitPrice??q.price),priceUsd:usd,currency:currency(c),source:'TRADE_OFFER_BOOK',referenceOnly:false,offerId:q.offerId||q.id||null});
+        const askCurrency=String(q.currencyCode||q.currency||currency(c)||'').trim().toUpperCase()||null;
+        const askPrice=n(q.unitPrice??q.price),usd=toUsd(c,askPrice,askCurrency);if(usd===null)continue;
+        pushOrder({[rid]:book},{resourceId:rid,side:'asks',countryId:canonical(c),quantity:n(q.quantity)||n(q.available)||0,price:askPrice,priceUsd:usd,currency:askCurrency,source:'TRADE_OFFER_BOOK',referenceOnly:false,offerId:q.offerId||q.id||null});
       }
       const inv=countryValue(c,'resource.inventory'),prod=countryValue(c,'resource.production'),tradeable=countryValue(c,'resource.tradeAvailability');
       const spr=countryValue(c,'resource.strategicReserve'),protectedStock=n(spr?.availableByResource?.[rid])||0;
@@ -190,8 +197,9 @@
   }
   function localPrice(countryId,rid){
     const q=quote(rid),c=canonical(countryId);
-    const usd=q.clearingPriceUsd??q.referencePrice;
-    if(usd===null||usd===undefined)return null;
+    // A geology/catalog reference is not an observed market price.
+    const usd=n(q.clearingPriceUsd);
+    if(usd===null||usd<=0)return null;
     const rate=usdRate(c);if(rate===null)return null;
     return currency(c)==='USD'?usd:usd*rate;
   }
@@ -214,6 +222,56 @@
     }
     return out.sort((a,b)=>a.countryId.localeCompare(b.countryId));
   }
+  function mappedValue(obj,rid){
+    if(!obj||typeof obj!=='object')return null;
+    const key=Object.prototype.hasOwnProperty.call(obj,rid)?rid:Object.keys(obj).find(k=>token(k)===token(rid));
+    return key===undefined?null:n(obj[key]);
+  }
+  function offerRows(countryId){
+    const offers=countryValue(countryId,'trade.offerBook'),rows=[];
+    if(Array.isArray(offers))offers.forEach(x=>{if(x&&typeof x==='object')rows.push({...clone(x),countryId:x.countryId||countryId});});
+    else if(offers&&typeof offers==='object')for(const [rid,value] of Object.entries(offers)){
+      if(Array.isArray(value))value.forEach(x=>{if(x&&typeof x==='object')rows.push({...clone(x),resourceId:x.resourceId||rid,countryId:x.countryId||countryId});});
+      else if(value&&typeof value==='object')rows.push({...clone(value),resourceId:value.resourceId||rid,countryId:value.countryId||countryId});
+    }
+    return rows;
+  }
+  function listings(){
+    const out=[],published=new Set();
+    const types=Array.isArray(g.ResourceMinistryEngine?.resourceTypes)?g.ResourceMinistryEngine.resourceTypes:[];
+    function unitFor(rid){const row=types.find(x=>token(x?.id)===token(rid));return row?.unit||null;}
+    for(const rawCountry of countries()){
+      const c=canonical(rawCountry),offers=offerRows(c);
+      for(const row of offers){
+        const rid=String(row.resourceId||row.resource||'').trim(),quantity=n(row.quantity??row.available)||0;
+        if(!rid||quantity<=0||row.referenceOnly===true)continue;
+        const price=n(row.unitPrice??row.price);
+        const code=String(row.currencyCode||row.currency||currency(c)||'').trim().toUpperCase()||null;
+        const priceUsd=price!==null?toUsd(c,price,code):null;
+        const status=price===null||price<=0?'UNPRICED_OFFER':(!code||priceUsd===null?'AWAITING_FX':'FOR_SALE');
+        out.push({countryId:c,resourceId:rid,quantity,unit:row.unit||unitFor(rid),unitPrice:price,currencyCode:code,priceUsd,status,
+          source:row.source||'TRADE_OFFER_BOOK',priceAuthority:row.priceAuthority||'NOT_RECORDED',
+          offerId:row.offerId||row.id||null,simulationTurn:n(row.simulationTurn??row.createdTurn),
+          sourceBatchIds:Array.isArray(row.sourceBatchIds)?row.sourceBatchIds.slice():[],
+          sourceSiteIds:Array.isArray(row.sourceSiteIds)?row.sourceSiteIds.slice():[]});
+        published.add(c+'::'+token(rid));
+      }
+      const inventory=countryValue(c,'resource.inventory')||{},tradeable=countryValue(c,'resource.tradeAvailability')||{};
+      const resourceState=countryValue(c,'resource')||{};
+      const strategic=resourceState.strategicReserve||resourceState.strategicReserveState||{};
+      const protectedStock=strategic.availableByResource||{};
+      for(const [rid,rawQty] of Object.entries(inventory)){
+        const total=n(rawQty),availableFromTrade=mappedValue(tradeable,rid);
+        const held=mappedValue(protectedStock,rid)||0;
+        const available=Math.max(0,availableFromTrade!==null?availableFromTrade:(total===null?0:total-held));
+        if(available<=0||published.has(c+'::'+token(rid)))continue;
+        out.push({countryId:c,resourceId:rid,quantity:available,unit:unitFor(rid),unitPrice:null,currencyCode:currency(c),
+          priceUsd:null,status:'UNPRICED_STOCK',source:'LIVE_INVENTORY_NO_PUBLISHED_OFFER',
+          priceAuthority:'PRICE_UNAVAILABLE',offerId:null,simulationTurn:turn(),sourceBatchIds:[],sourceSiteIds:[]});
+      }
+    }
+    return out.sort((a,b)=>a.countryId.localeCompare(b.countryId)||token(a.resourceId).localeCompare(token(b.resourceId)));
+  }
   function writeProjection(c,markets){
     const m=interop();if(!m?.dispatchCommand)return null;
     const snapshot={turn:turn(),numeraire:'USD',resources:{}};
@@ -225,16 +283,22 @@
   function projectionHandler(cmd,ctx){
     const p=cmd?.payload||{},snap=clone(p.snapshot||{});
     ctx.stateTransaction.set('trade.marketState',snap);
-    const prices={};
+    const previousMeta=ctx.stateTransaction.get('trade.marketMeta');
+    const previous=previousMeta&&typeof previousMeta==='object'?clone(previousMeta):{};
+    const prices=clone(ctx.stateTransaction.get('trade.marketPrice')||{});
     for(const [rid,q] of Object.entries(snap.resources||{})){
-      const px=q.clearingPriceUsd??q.referencePrice??null;
-      if(px!==null){
+      const px=n(q.clearingPriceUsd);
+      if(px!==null&&px>0){
         const rate=usdRate(ctx.countryId);
         if(rate!==null)prices[rid]=currency(ctx.countryId)==='USD'?px:px*rate;
+      }else{
+        const prior=previous[rid]||previous[Object.keys(previous).find(k=>token(k)===token(rid))];
+        // Older builds copied catalog reference prices into marketPrice. Remove those stale pseudo-quotes.
+        if(prior&&['REFERENCE_ONLY','UNAVAILABLE'].includes(String(prior.priceDiscovery||'').toUpperCase()))delete prices[rid];
       }
     }
-    if(Object.keys(prices).length)ctx.stateTransaction.set('trade.marketPrice',prices);
-    const meta=ctx.stateTransaction.get('trade.marketMeta');
+    ctx.stateTransaction.set('trade.marketPrice',prices);
+    const meta=previous; 
     const next=meta&&typeof meta==='object'?clone(meta):{};
     const history=ctx.stateTransaction.get('trade.marketHistory');
     const h=history&&typeof history==='object'?clone(history):{};
@@ -277,7 +341,7 @@
     if(state()?.simulation?.turn!==undefined)rebuild();
     return diagnostics();
   }
-  const API=Object.freeze({VERSION,diagnostics,rebuild,quote,localPrice,suppliers});
+  const API=Object.freeze({VERSION,diagnostics,rebuild,quote,localPrice,suppliers,listings});
   g.Omega=g.Omega||{};g.Omega.GlobalMarket=API;g.OmegaGlobalMarket=API;
   try{init();}catch(e){g.OmegaGlobalMarketError=String(e?.message||e);}
 })(typeof window!=='undefined'?window:globalThis);
