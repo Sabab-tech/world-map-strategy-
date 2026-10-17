@@ -15,6 +15,7 @@
     operatingAllocation:{workerIncomeRate:0.12,transportRevenueRate:0.05},
     runtime:{maxLedgerEntries:2048,maxBatches:8192},
     market:{offerFractionOfObservedInventory:0.25,minOfferQuantity:1},
+    demand:{enabled:false,resourceProfiles:{}},
     actions:{
        survey:{durationTurns:2,maxResultRecords:64},
        facilityExpansion:{capacityIncreaseFraction:0.25,durationTurns:4,budgetUnitsPerCapacityUnit:10,reservationExpiresAfterTurns:64},
@@ -127,6 +128,7 @@
         operatingAllocation:Object.assign({},DEFAULT_RULES.operatingAllocation,d.operatingAllocation||{}),
         runtime:Object.assign({},DEFAULT_RULES.runtime,d.runtime||{}),
         market:Object.assign({},DEFAULT_RULES.market,d.market||{}),
+        demand:Object.assign({},DEFAULT_RULES.demand,d.demand||{}),
         actions:Object.assign({},DEFAULT_RULES.actions,d.actions||{})
       };
       return g.__OmegaResourceEconomyRules;
@@ -843,12 +845,24 @@
     var p=cmd&&cmd.payload||{};ctx.stateTransaction.set('economy.industrialRuntime',clone(p.industrialRuntime||{}));ctx.stateTransaction.set('economy.companyAccounts',clone(p.companyAccounts||{}));ctx.stateTransaction.set('economy.workerIncome',clone(p.workerIncome||{}));ctx.stateTransaction.set('economy.supplierRevenue',clone(p.supplierRevenue||{}));ctx.stateTransaction.set('economy.factoryOutput',clone(p.factoryOutput||{}));emit('OMEGA_INDUSTRIAL_RUNTIME_PUBLISHED',ctx.countryId,{turn:turn()},'economy');return{accepted:true};
   }
 
+  function demandRuntimePublishHandler(cmd,ctx){
+    var p=cmd&&cmd.payload||{},current=ctx.stateTransaction.get('resource.consumption');
+    var next=clone(current&&typeof current==='object'&&!Array.isArray(current)?current:{});
+    var incoming=p.consumption&&typeof p.consumption==='object'&&!Array.isArray(p.consumption)?p.consumption:{};
+    Object.keys(incoming).forEach(function(key){var value=num(incoming[key]);if(value!==null&&value>=0)next[key]=value;});
+    var runtime=p.demandRuntime&&typeof p.demandRuntime==='object'?clone(p.demandRuntime):{};
+    ctx.stateTransaction.set('resource.consumption',next);
+    ctx.stateTransaction.set('resource.demandRuntime',runtime);
+    return{accepted:true,resourceCount:Object.keys(incoming).length,turn:turn(),runtimeStatus:runtime.status||'UNKNOWN'};
+  }
+
   function installHandlers(){
     var m=interop();
     var list=[
       ['OMEGA_RESOURCE_ECON_RECONCILE_INVENTORY','resource',reconcileHandler],
       ['OMEGA_RESOURCE_ECON_REGISTER_BATCH','resource',registerBatchHandler],
       ['OMEGA_RESOURCE_ECON_CONSUME_INVENTORY','resource',consumeHandler],
+      ['OMEGA_RESOURCE_ECON_PUBLISH_DEMAND_RUNTIME','resource',demandRuntimePublishHandler],
       ['OMEGA_RESOURCE_ECON_ADD_INVENTORY','resource',addInventoryHandler],
       ['OMEGA_RESOURCE_ECON_APPLY_PRODUCTION','resource',applyProductionHandler],
       ['OMEGA_RESOURCE_ECON_PUBLISH_RESOURCE_RUNTIME','resource',publishResourceRuntimeHandler],
@@ -961,7 +975,12 @@
   function processCountry(c){
     var cid=canonical(c),extractionFiscal=valueExtractionFiscalPending(cid),rs=bucket(cid,'resource')||{},before=clone(rs.inventory||{}),
       recon=dispatch('resource','OMEGA_RESOURCE_ECON_RECONCILE_INVENTORY',cid,{correlationId:'RECON-'+turn()+'-'+cid}),
-      prod=executeFactories(cid),afterState=bucket(cid,'resource')||{},after=clone(afterState.inventory||{}),delta={},keys={};
+      prod=executeFactories(cid),nationalDemand=null,afterState=null,after=null,delta={},keys={};
+    if(g.OmegaResourceNationalDemandRuntime&&typeof g.OmegaResourceNationalDemandRuntime.processCountry==='function'){
+      try{nationalDemand=g.OmegaResourceNationalDemandRuntime.processCountry(cid,prod.executed);}
+      catch(error){nationalDemand={countryId:cid,turn:turn(),status:'FAILED',reason:String(error&&error.message||error)};emit('OMEGA_RESOURCE_DEMAND_RUNTIME_HEALTH',cid,nationalDemand,'resource-economy');}
+    }
+    afterState=bucket(cid,'resource')||{};after=clone(afterState.inventory||{});
     Object.keys(before).forEach(function(k){keys[k]=true;});Object.keys(after).forEach(function(k){keys[k]=true;});Object.keys(keys).forEach(function(k){delta[k]=(num(after[k])||0)-(num(before[k])||0);});
     var updateResource=dispatch('resource','OMEGA_RESOURCE_ECON_PUBLISH_RESOURCE_RUNTIME',cid,{inventoryDelta:delta,integrity:clone(afterState.inventoryIntegrity||((recon&&recon.result)||null)),correlationId:'RES-RUNTIME-'+turn()+'-'+cid});
     publishOffers(cid);
@@ -971,7 +990,7 @@
     dispatch('economy','OMEGA_RESOURCE_ECON_PUBLISH_ECONOMY',cid,{industrialRuntime:runtime,companyAccounts:accounts,workerIncome:workers,supplierRevenue:suppliers,factoryOutput:out,correlationId:'ECO-'+turn()+'-'+cid});
     emit('OMEGA_RESOURCE_INVENTORY_RECONCILED',cid,{turn:turn(),delta:delta,factoriesExecuted:prod.executed.length,factoriesBlocked:prod.blocked.length},'resource-economy');
     return{countryId:cid,turn:turn(),mineCount:Array.isArray(rs.mines)?rs.mines.length:0,inventoryBefore:before,inventoryAfter:after,inventoryDelta:delta,
-      extractionFiscal:extractionFiscal,factoriesExecuted:prod.executed.length,factoriesBlocked:prod.blocked.length,blockedFacilities:prod.blocked};
+      extractionFiscal:extractionFiscal,factoriesExecuted:prod.executed.length,factoriesBlocked:prod.blocked.length,blockedFacilities:prod.blocked,nationalDemand:nationalDemand};
   }
 
   function dashboard(c){
@@ -980,7 +999,7 @@
     var active=rows.filter(function(x){return /ACTIVE|DEPLETING|OPERATING|RUNNING/.test(x.status);}).length,blocked=rows.filter(function(x){return /BLOCKED|FAILED|UNAVAILABLE|UNKNOWN/.test(x.status);}).length,world=0,worldActive=0,worldBlocked=0;
     countries().forEach(function(x){var rr=bucket(x,'resource')||{},mm=Array.isArray(rr.mines)?rr.mines:[];world+=mm.length;mm.forEach(function(m){var o=rr.mineOutputs&&m.occurrenceKey?rr.mineOutputs[m.occurrenceKey]:null,s=String(o&&o.status||m.operationalStatus||'UNKNOWN').toUpperCase();if(/ACTIVE|DEPLETING|OPERATING|RUNNING/.test(s))worldActive++;if(/BLOCKED|FAILED|UNAVAILABLE|UNKNOWN/.test(s))worldBlocked++;});});
     var fiscalPending=Array.isArray(fin.resourceExtractionFiscalLedger)?fin.resourceExtractionFiscalLedger:[],minePaths=rs.minePaths&&typeof rs.minePaths==='object'?rs.minePaths:{},inventoryLots=rs.inventoryLots&&typeof rs.inventoryLots==='object'?rs.inventoryLots:{};
-    return{version:VERSION,countryId:cid,turn:turn(),mines:{total:mines.length,active:active,blocked:blocked,rows:rows},inventory:{actual:clone(inv),delta:clone(rs.inventoryDelta||{}),batches:Array.isArray(rs.batches)?rs.batches.length:0,batchRows:Array.isArray(rs.batches)?clone(rs.batches.slice(-64)):[],lotCount:Object.keys(inventoryLots).length,warehouse:clone(warehouse),integrity:clone(rs.inventoryIntegrity||null),minePathCount:Object.keys(minePaths).length,minePaths:clone(minePaths)},telemetry:{mineProductionHistory:clone(mineHistory.slice(-64)),factoryInputEvents:clone(factoryInputEvents.slice(-64))},industry:{runtime:clone(runtime),factoryOutput:clone(econ.factoryOutput||{}),blockedFacilities:clone(runtime.blockedFacilities||[])},market:{prices:clone(tr.marketPrice||{}),domesticSalesTotal:sales.length,domesticSalesThisTurn:sales.filter(function(x){return num(x.turn)===turn();}).length,autoOffers:offerRows.filter(function(x){return x&&x.source==='OMEGA_RESOURCE_ECON_AUTO_OFFER';}).length},treasury:{fiscalThisTurn:clone(currentFiscal),fiscalCumulative:clone(fisc.cumulative||{}),revenue:num(fin.revenue),taxRevenue:num(fin.taxRevenue),available:num(fin.available),reserves:num(fin.reserves),resourceBudgetContribution:num(fin.resourceBudgetContribution),resourceBudgetContributionThisTurn:fisc.lastTurn===turn()?(num(fin.resourceBudgetContributionThisTurn)||0):0,transportRevenue:num(tp.resourceRevenue&&tp.resourceRevenue.totalSinceRuntimeStart),companyAccounts:clone(econ.companyAccounts||{}),extractionFiscalPendingCount:fiscalPending.length,extractionFiscalPending:clone(fiscalPending.slice(-64))},health:{status:blocked>0||runtime.status==='DEGRADED'||rs.inventoryIntegrity&&rs.inventoryIntegrity.status==='DEGRADED'?'DEGRADED':(mines.length?'HEALTHY':'NO_MINE_RECORDS'),worldMineCount:world,worldActiveMines:worldActive,worldBlockedMines:worldBlocked,runtimeVersion:VERSION,rulesVersion:rules().schemaVersion,warehouseAuthoritative:!!warehouse.warehouseId,dataAuthority:rs.resourceAuthority?.source||'UNKNOWN'},fiscalReceiptThisTurn:num(currentFiscal.total)||0};
+    return{version:VERSION,countryId:cid,turn:turn(),mines:{total:mines.length,active:active,blocked:blocked,rows:rows},inventory:{actual:clone(inv),delta:clone(rs.inventoryDelta||{}),batches:Array.isArray(rs.batches)?rs.batches.length:0,batchRows:Array.isArray(rs.batches)?clone(rs.batches.slice(-64)):[],lotCount:Object.keys(inventoryLots).length,warehouse:clone(warehouse),integrity:clone(rs.inventoryIntegrity||null),minePathCount:Object.keys(minePaths).length,minePaths:clone(minePaths)},telemetry:{mineProductionHistory:clone(mineHistory.slice(-64)),factoryInputEvents:clone(factoryInputEvents.slice(-64))},industry:{runtime:clone(runtime),factoryOutput:clone(econ.factoryOutput||{}),blockedFacilities:clone(runtime.blockedFacilities||[])},market:{prices:clone(tr.marketPrice||{}),domesticSalesTotal:sales.length,domesticSalesThisTurn:sales.filter(function(x){return num(x.turn)===turn();}).length,autoOffers:offerRows.filter(function(x){return x&&x.source==='OMEGA_RESOURCE_ECON_AUTO_OFFER';}).length},nationalDemand:(function(){var d=rs.demandRuntime&&typeof rs.demandRuntime==='object'?rs.demandRuntime:{},s=d.lastSummary&&typeof d.lastSummary==='object'?d.lastSummary:null,by=d.byResource&&typeof d.byResource==='object'?d.byResource:{};var resources=Object.keys(by).map(function(k){return clone(by[k]);});resources.sort(function(a,b){return(num(b.priority)||0)-(num(a.priority)||0)||String(a.resourceId||'').localeCompare(String(b.resourceId||''));});return{status:d.status||'NOT_INITIALIZED',lastTurn:num(d.lastTurn),resourceCount:num(d.resourceCount),modeled:s?num(s.modeled):null,unknown:s?num(s.unknown):null,shortages:s?num(s.shortages):null,consumedResourceCount:s?num(s.consumedResourceCount):null,procurementDecisions:Array.isArray(d.procurementDecisions)?d.procurementDecisions.length:0,procurementLastTurn:num(d.lastProcurementTurn),resources:resources};})(),treasury:{fiscalThisTurn:clone(currentFiscal),fiscalCumulative:clone(fisc.cumulative||{}),revenue:num(fin.revenue),taxRevenue:num(fin.taxRevenue),available:num(fin.available),reserves:num(fin.reserves),resourceBudgetContribution:num(fin.resourceBudgetContribution),resourceBudgetContributionThisTurn:fisc.lastTurn===turn()?(num(fin.resourceBudgetContributionThisTurn)||0):0,transportRevenue:num(tp.resourceRevenue&&tp.resourceRevenue.totalSinceRuntimeStart),companyAccounts:clone(econ.companyAccounts||{}),extractionFiscalPendingCount:fiscalPending.length,extractionFiscalPending:clone(fiscalPending.slice(-64))},health:{status:blocked>0||runtime.status==='DEGRADED'||rs.inventoryIntegrity&&rs.inventoryIntegrity.status==='DEGRADED'?'DEGRADED':(mines.length?'HEALTHY':'NO_MINE_RECORDS'),worldMineCount:world,worldActiveMines:worldActive,worldBlockedMines:worldBlocked,runtimeVersion:VERSION,rulesVersion:rules().schemaVersion,warehouseAuthoritative:!!warehouse.warehouseId,dataAuthority:rs.resourceAuthority?.source||'UNKNOWN'},fiscalReceiptThisTurn:num(currentFiscal.total)||0};
   }
 
   function diagnostics(){var cs=countries(),mine=0,active=0,blocked=0;cs.forEach(function(c){var d=dashboard(c);mine+=d.mines.total;active+=d.mines.active;blocked+=d.mines.blocked;});return{version:VERSION,countryCount:cs.length,mineCount:mine,activeMines:active,blockedMines:blocked,allMineRowsUncapped:true,handlersReady:handlerInstallReport.ready,commandHandlersInstalled:handlerInstallReport.registered,commandHandlerCount:handlerInstallReport.total,handlerInstallErrors:clone(handlerInstallReport.errors),actionRegistrationWarnings:clone(handlerInstallReport.actionRegistrationWarnings),rulesLoaded:!!g.__OmegaResourceEconomyRules};}
@@ -988,6 +1007,10 @@
   function runTurn(){
     return loadRules().then(async function(){
       installHandlers();installEvents();
+      if(g.OmegaResourceNationalDemandRuntime&&typeof g.OmegaResourceNationalDemandRuntime.prepare==='function'){
+        try{await g.OmegaResourceNationalDemandRuntime.prepare();}
+        catch(error){emit('OMEGA_RESOURCE_DEMAND_RUNTIME_HEALTH','GLOBAL',{status:'DEGRADED',reason:String(error&&error.message||error),turn:turn()},'resource-economy');}
+      }
       var extractionResult=null;
       if(g.OmegaResourceEndowmentRuntime&&typeof g.OmegaResourceEndowmentRuntime.extractAll==='function'){
         try{
@@ -1049,6 +1072,7 @@
       var d=dashboard(c);if(!d||!d.countryId)return uiOriginal.call(this,c);
       var mines=d.mines.rows.map(function(m){return'<div class="omega-re2-row"><div><b>'+esc(m.depositName)+'</b><small>'+esc(m.resourceId)+' · '+esc(m.sourceDatasetId||'RESOURCE_JSON')+'</small></div><span>'+esc(m.status)+'</span><strong>'+money(m.outputThisTurn)+'</strong><strong>'+pct(m.purity)+'</strong><strong>'+money(m.outputCumulative)+'</strong><em>'+esc(m.batchId||'—')+'</em><small>'+esc(m.warehouseId||'—')+'</small></div>';}).join('')||'<div class="omega-re2-empty">No authoritative mine records are observed.</div>';
       var inv=Object.keys(d.inventory.actual).sort().map(function(r){return'<div class="omega-re2-line"><span>'+esc(r)+'</span><strong>'+money(d.inventory.actual[r])+'</strong><em>'+sig(d.inventory.delta[r])+'</em></div>';}).join('')||'<div class="omega-re2-empty">No authoritative inventory is observed.</div>';
+      var demandRows=(d.nationalDemand&&Array.isArray(d.nationalDemand.resources)?d.nationalDemand.resources:[]).map(function(r){return'<div class="omega-re2-row"><div><b>'+esc(r.resourceId)+'</b><small>'+esc(r.unit||'UNIT UNOBSERVED')+' · priority '+esc(r.priority==null?'—':r.priority)+'</small></div><span>'+esc(r.status||'UNKNOWN')+'</span><strong>'+money(r.demandPerDay!=null?r.demandPerDay:r.demand)+'</strong><strong>'+money(r.nationalConsumption)+'</strong><strong>'+money(r.unmetDemand)+'</strong><em>'+money(r.inventoryAfter)+'</em><small>'+(r.stockCoverageDays==null?'coverage unknown':money(r.stockCoverageDays)+' days')+'</small></div>';}).join('')||'<div class="omega-re2-empty">National demand has not been calculated for this country yet.</div>';
       var warehouse=Object.keys(d.inventory.warehouse.availableByResource||{}).sort().map(function(r){return'<div class="omega-re2-line"><span>'+esc(r)+'</span><strong>'+money(d.inventory.warehouse.availableByResource[r])+'</strong><em>stored</em></div>';}).join('')||'<div class="omega-re2-empty">Warehouse is empty.</div>';
       var batches=d.inventory.batchRows.map(function(b){return'<div class="omega-re2-line"><span>'+esc(b.batchId)+'<small>'+esc(b.resourceId)+' · '+esc(b.stage||'RAW')+'</small></span><strong>'+money(b.remainingQuantity!=null?b.remainingQuantity:b.quantity)+'</strong><em>'+pct(b.purity)+'</em></div>';}).join('')||'<div class="omega-re2-empty">No material batches recorded.</div>';
       var history=d.telemetry.mineProductionHistory.slice().reverse().slice(0,16).map(function(x){return'<div class="omega-re2-line"><span>'+esc(x.mineName||x.mineId)+'<small>T'+esc(x.turn)+' · '+esc(x.resourceId)+' · '+esc(x.batchId)+'</small></span><strong>'+money(x.quantity)+'</strong><em>'+pct(x.purity)+'</em></div>';}).join('')||'<div class="omega-re2-empty">No mine production history recorded.</div>';
@@ -1060,7 +1084,8 @@
         '<section class="omega-re2-head"><div><small>RESOURCE ECONOMIC CONTROL // LIVE</small><h3>'+esc(d.countryId)+' RESOURCE → INDUSTRY → MARKET → TREASURY</h3><p>Turn '+d.turn+' · local mines '+d.mines.total+' · world mines '+d.health.worldMineCount+' · world active '+d.health.worldActiveMines+' · world blocked '+d.health.worldBlockedMines+'</p></div><b>'+esc(d.health.status)+'</b></section>'+
         '<section class="omega-re2-kpi"><div><small>MINES</small><strong>'+d.mines.total+'</strong><em>'+d.mines.active+' active · '+d.mines.blocked+' blocked</em></div><div><small>INVENTORY LOTS</small><strong>'+d.inventory.lotCount+'</strong><em>'+d.inventory.batches+' tracked batches</em></div><div><small>MINE PATHS</small><strong>'+d.inventory.minePathCount+'</strong><em>sovereign paths</em></div><div><small>TREASURY RECEIPTS</small><strong>+'+money(d.fiscalReceiptThisTurn)+'</strong><em>'+d.treasury.extractionFiscalPendingCount+' extraction entries pending valuation</em></div></section>'+
         '<section class="omega-re2-flow"><b>LIVE MATERIAL & MONEY FLOW</b><div>DEPOSIT ↓ EXTRACTION ↓ BATCH ↓ RAW INVENTORY ↓ PROCESSING ↓ INTERMEDIATE ↓ FACTORY ↓ FINISHED GOODS ↓ MARKET ↓ SETTLEMENT ↓ TREASURY</div></section>'+
-        '<section class="omega-re2-grid"><div class="omega-re2-panel wide"><header>OPERATING MINE REGISTER <span>'+d.mines.total+' sites · output / purity / batch</span></header><div class="omega-re2-scroll">'+mines+'</div></div>'+
+        '<section class="omega-re2-grid"><div class="omega-re2-panel wide"><header>NATIONAL DEMAND & CONSUMPTION <span>'+esc(d.nationalDemand.status)+' · '+(d.nationalDemand.modeled||0)+' modeled · '+(d.nationalDemand.shortages||0)+' shortages · '+(d.nationalDemand.unknown||0)+' unknown</span></header><div class="omega-re2-scroll">'+demandRows+'</div><footer>Demand is displayed as a daily rate; consumption and unmet demand are quantities for the current simulation turn. Coverage estimates usable-stock days.</footer></div>'+
+        '<div class="omega-re2-panel wide"><header>OPERATING MINE REGISTER <span>'+d.mines.total+' sites · output / purity / batch</span></header><div class="omega-re2-scroll">'+mines+'</div></div>'+
         '<div class="omega-re2-panel"><header>AUTHORITATIVE INVENTORY <span>aggregate physical state</span></header><div class="omega-re2-scroll">'+inv+'</div></div>'+
         '<div class="omega-re2-panel"><header>RAW-MATERIAL WAREHOUSE <span>'+esc(d.inventory.warehouse.warehouseId||'UNAVAILABLE')+'</span></header><div class="omega-re2-scroll">'+warehouse+'</div></div>'+
         '<div class="omega-re2-panel"><header>TRACKED MATERIAL BATCHES <span>'+d.inventory.batches+' lots</span></header><div class="omega-re2-scroll">'+batches+'</div></div>'+
