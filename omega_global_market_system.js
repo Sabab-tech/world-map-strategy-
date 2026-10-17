@@ -68,20 +68,22 @@
     return p/r;
   }
   function resourceIds(){
-    const ids=new Set;
+    const ids=new Map;
+    const add=v=>{const raw=String(v||'').trim(),key=token(raw);if(key&&!ids.has(key))ids.set(key,raw);};
     const rt=g.ResourceMinistryEngine?.resourceTypes;
-    if(Array.isArray(rt))for(const x of rt)if(x?.id)ids.add(String(x.id));
+    if(Array.isArray(rt))for(const x of rt)if(x?.id)add(x.id);
     for(const c of countries()){
-      const inv=countryValue(c,'resource.inventory'),prod=countryValue(c,'resource.production'),cons=countryValue(c,'resource.consumption');
-      for(const source of [inv,prod,cons])if(source&&typeof source==='object')for(const k of Object.keys(source))ids.add(k);
-      const req=countryValue(c,'trade.importRequests');if(Array.isArray(req))for(const x of req)if(x?.resourceId)ids.add(x.resourceId);
+      const inv=countryValue(c,'resource.inventory'),prod=countryValue(c,'resource.production'),cons=countryValue(c,'resource.consumption'),
+        tradeable=countryValue(c,'resource.tradeAvailability');
+      for(const source of [inv,prod,cons,tradeable])if(source&&typeof source==='object')for(const k of Object.keys(source))add(k);
+      const req=countryValue(c,'trade.importRequests');if(Array.isArray(req))for(const x of req)if(x?.resourceId)add(x.resourceId);
       const offers=countryValue(c,'trade.offerBook');
       if(offers&&typeof offers==='object'){
-        if(Array.isArray(offers))for(const x of offers)if(x?.resourceId)ids.add(x.resourceId);
-        else for(const [k,v] of Object.entries(offers))if(v&&typeof v==='object')ids.add(v.resourceId||k);
+        if(Array.isArray(offers))for(const x of offers)if(x?.resourceId)add(x.resourceId);
+        else for(const [k,v] of Object.entries(offers))if(v&&typeof v==='object')add(v.resourceId||k);
       }
     }
-    return [...ids].map(String).filter(Boolean).sort((a,b)=>token(a).localeCompare(token(b)));
+    return [...ids.values()].sort((a,b)=>token(a).localeCompare(token(b)));
   }
   function referencePrice(rid){
     const rt=g.ResourceMinistryEngine?.resourceTypes||[];
@@ -110,7 +112,7 @@
         }
       }
       for(const q of rows){
-        if(token(q?.resourceId||q?.resource)!==token(rid))continue;
+        if(q?.referenceOnly===true||token(q?.resourceId||q?.resource)!==token(rid))continue;
         const askCurrency=String(q.currencyCode||q.currency||currency(c)||'').trim().toUpperCase()||null;
         const askPrice=n(q.unitPrice??q.price),usd=toUsd(c,askPrice,askCurrency);if(usd===null)continue;
         pushOrder({[rid]:book},{resourceId:rid,side:'asks',countryId:canonical(c),quantity:n(q.quantity)||n(q.available)||0,price:askPrice,priceUsd:usd,currency:askCurrency,source:'TRADE_OFFER_BOOK',referenceOnly:false,offerId:q.offerId||q.id||null});
@@ -260,10 +262,16 @@
       const resourceState=countryValue(c,'resource')||{};
       const strategic=resourceState.strategicReserve||resourceState.strategicReserveState||{};
       const protectedStock=strategic.availableByResource||{};
+      const rawWarehouse=resourceState.warehouse||{},processedWarehouse=resourceState.processedWarehouse||{};
       for(const [rid,rawQty] of Object.entries(inventory)){
-        const total=n(rawQty),availableFromTrade=mappedValue(tradeable,rid);
-        const held=mappedValue(protectedStock,rid)||0;
-        const available=Math.max(0,availableFromTrade!==null?availableFromTrade:(total===null?0:total-held));
+        const total=n(rawQty),availableFromTrade=mappedValue(tradeable,rid),held=mappedValue(protectedStock,rid)||0;
+        const rawAvailable=mappedValue(rawWarehouse.availableByResource||{},rid)||0,processedAvailable=mappedValue(processedWarehouse.availableByResource||{},rid)||0;
+        const rawReserved=mappedValue(rawWarehouse.reservedByResource||{},rid)||0,processedReserved=mappedValue(processedWarehouse.reservedByResource||{},rid)||0;
+        const hasWarehouse=!!(rawWarehouse.warehouseId||processedWarehouse.warehouseId);
+        const physicalAvailable=Math.max(0,rawAvailable-rawReserved)+Math.max(0,processedAvailable-processedReserved);
+        const aggregateAvailable=Math.max(0,total===null?0:total-held);
+        let available=Math.max(0,Math.min(aggregateAvailable,availableFromTrade!==null?availableFromTrade:aggregateAvailable));
+        if(hasWarehouse)available=Math.min(available,physicalAvailable);
         if(available<=0||published.has(c+'::'+token(rid)))continue;
         out.push({countryId:c,resourceId:rid,quantity:available,unit:unitFor(rid),unitPrice:null,currencyCode:currency(c),
           priceUsd:null,status:'UNPRICED_STOCK',source:'LIVE_INVENTORY_NO_PUBLISHED_OFFER',
