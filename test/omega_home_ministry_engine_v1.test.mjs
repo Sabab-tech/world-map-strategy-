@@ -118,6 +118,16 @@ test('agents can be assigned to an existing rival and reports expose only record
   assert.ok(reports[0].observations.every(item => item.value !== null && Number.isFinite(item.value)));
 });
 
+test('finance available ledger is authoritative when economy treasury is also present', () => {
+  const state = setup();
+  const economyTreasury = state.economy.AAA.treasury;
+  state.finance = { AAA: { available: 100000, reserves: 200000 } };
+  assert.equal(api.getTreasury('AAA').source, 'FINANCE_AVAILABLE');
+  assert.equal(api.recruitPolice(2, 'AAA').ok, true);
+  assert.equal(state.finance.AAA.available, 95000);
+  assert.equal(state.economy.AAA.treasury, economyTreasury);
+});
+
 test('missing treasury does not mark a due payroll day as paid', () => {
   const state = setup(null);
   api.getState('AAA');
