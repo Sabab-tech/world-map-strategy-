@@ -4,12 +4,13 @@ import fs from 'node:fs';
 
 const ui = fs.readFileSync('omega_resource_command_center_ui_v1.js', 'utf8');
 const ministry = fs.readFileSync('ministry_engine.js', 'utf8');
+const resourceEngine = fs.readFileSync('resource_ministry_engine.js', 'utf8');
 const html = fs.readFileSync('index.html', 'utf8');
 await import('../omega_resource_command_center_ui_v1.js');
 const commandCenter = globalThis.OmegaResourceCommandCenterUI;
 
-test('all sixteen resource cards have a dedicated command-center panel', () => {
-  for (const id of ['matrix','ontology','reserves','deposits','extraction','processing','inventory','logistics','industrial','market','trade','value','cascade','cognitive','power','environment']) {
+test('all seventeen command-center panels, including live country offers, have dedicated routes', () => {
+  for (const id of ['matrix','ontology','reserves','deposits','extraction','processing','inventory','logistics','industrial','market','trade','value','cascade','cognitive','power','environment','offers']) {
     assert.match(ui, new RegExp("id: '" + id + "'"));
     assert.match(ui, new RegExp("case '" + id + "'"));
   }
@@ -18,11 +19,15 @@ test('all sixteen resource cards have a dedicated command-center panel', () => {
   assert.match(ui, /omega-rescc-country/);
 });
 
-test('legacy p05/p06/p15/p16 cards route to panels instead of unsupported fake build successes', () => {
+test('legacy p05/p06/p15/p16 cards still route to existing panels instead of fake build successes', () => {
   assert.match(ui, /p05: 'extraction'/);
   assert.match(ui, /p06: 'processing'/);
   assert.match(ui, /p15: 'power'/);
   assert.match(ui, /p16: 'environment'/);
+  assert.match(ui, /p17: 'offers'/);
+  assert.match(ui, /open-offers/);
+  assert.match(ui, /market\.listings\(\)/);
+  assert.doesNotMatch(resourceEngine, /basePrice:\s*t\.basePrice\s*\|\|\s*1000/);
   assert.match(ui, /cabinet\.executeResource16Point = function/);
   assert.match(ui, /AUTHORITATIVE TIME-SERIES NOT AVAILABLE/);
   assert.doesNotMatch(ui, /Math\.random\(/);
