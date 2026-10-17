@@ -50,3 +50,8 @@ button > .omega-ui-icon, [role="button"] > .omega-ui-icon, .icon-btn > .omega-ui
 @media (prefers-reduced-motion: reduce) {
     .omega-ui-icon { animation: none !important; transition: none !important; }
 }
+
+/* Semantic traffic-light icons retain their original status meaning. */
+.omega-ui-icon.omega-ui-icon--blue-dot { color: #60a5fa !important; }
+.omega-ui-icon.omega-ui-icon--red-dot { color: #f87171 !important; }
+.omega-ui-icon.omega-ui-icon--green-dot { color: #4ade80 !important; }

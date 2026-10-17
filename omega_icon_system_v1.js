@@ -74,7 +74,41 @@
         'route': '<circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 18h3a4 4 0 0 0 4-4V10a4 4 0 0 1 4-4"/>',
         'clipboard-check': '<rect x="5" y="4" width="14" height="18" rx="2"/><path d="M9 4.5h6V2H9v2.5Zm-1 9 2.5 2.5L16 10"/>',
         'leaf': '<path d="M20 4C10 4 4 8 4 15a5 5 0 0 0 5 5c7 0 11-6 11-16Z"/><path d="M3 22c3-6 7-9 13-13"/>',
-        'hammer': '<path d="m14 6 4-4 4 4-4 4M3 21l11-11M9 5l5-3 5 5-3 5"/>'
+        'hammer': '<path d="m14 6 4-4 4 4-4 4M3 21l11-11M9 5l5-3 5 5-3 5"/>',
+        'scale': '<path d="M12 3v18M5 6h14M4 6l-3 7h6L4 6Zm16 0-3 7h6l-3-7ZM7 21h10M8 18h8"/>',
+        'mic': '<rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3m-4 0h8"/>',
+        'message-square': '<path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5 9 9 0 0 1-4-.9L3 21l1.9-5.5a9 9 0 0 1-.9-4A8.5 8.5 0 0 1 12.5 3h.5a8.5 8.5 0 0 1 8 8v.5Z"/>',
+        'folder': '<path d="M3 6a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6Z"/>',
+        'package': '<path d="m12 3 9 5-9 5-9-5 9-5ZM3 8v9l9 5 9-5V8M12 13v9"/>',
+        'fast-forward': '<path d="m3 5 8 7-8 7V5Zm10 0 8 7-8 7V5Z"/>',
+        'dove': '<path d="M22 3 9 16M22 3l-7 19-4-8-8-4 19-7Z"/><path d="M3 21h8"/>',
+        'radiation': '<circle cx="12" cy="12" r="2"/><path d="M10 10 6 3a10 10 0 0 0-4 8h8m4-1 4-7a10 10 0 0 1 4 8h-8m-2 3 4 7a10 10 0 0 1-10 0l4-7"/>',
+        'atom': '<circle cx="12" cy="12" r="2"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(30 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(-30 12 12)"/>',
+        'sun': '<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>',
+        'flag': '<path d="M5 21V4m0 0c5-4 9 4 14 0v11c-5 4-9-4-14 0"/>',
+        'mountain': '<path d="m3 20 7-13 4 7 2-4 5 10H3Z"/><path d="m8 11 2 2 2-1"/>',
+        'link': '<path d="M10 13a5 5 0 0 0 7.1 0l3-3A5 5 0 0 0 13 2.9l-1.7 1.7M14 11a5 5 0 0 0-7.1 0l-3 3A5 5 0 0 0 11 21.1l1.7-1.7"/>',
+        'battery-charging': '<rect x="3" y="7" width="17" height="10" rx="2"/><path d="M23 10v4M12 8l-3 5h4l-1 3 4-6h-4l1-2"/>',
+        'heart': '<path d="M20.8 8.7c0 5.2-8.8 11.3-8.8 11.3S3.2 13.9 3.2 8.7A4.7 4.7 0 0 1 12 6.3a4.7 4.7 0 0 1 8.8 2.4Z"/>',
+        'map-pin': '<path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/>',
+        'tractor': '<path d="M3 17h11V8H8l-2 5H3v4Zm11-6h4l3 4v2h-7v-6ZM8 8V4h4l2 4"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/>',
+        'anchor': '<circle cx="12" cy="5" r="3"/><path d="M12 8v13M5 12H2a10 10 0 0 0 20 0h-3M8 12h8"/>',
+        'bird': '<path d="M2 19c5-1 8-6 10-12 2 3 5 5 10 5-2 5-7 8-13 7l-5 3"/><path d="m12 7 2-4 3 5"/>',
+        'flame': '<path d="M12 22a7 7 0 0 0 7-7c0-4-3-6-3-10-2 2-3 4-3 6-3-2-3-5-3-7-4 4-6 8-6 12a8 8 0 0 0 8 6Z"/><path d="M12 22a4 4 0 0 0 4-4c0-2-2-4-3-5 0 2-1 3-2 4-1-1-1-2-1-3-2 2-2 3-2 4a4 4 0 0 0 4 4Z"/>',
+        'circle-dot': '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2"/>',
+        'blue-dot': '<circle cx="12" cy="12" r="7" fill="currentColor" stroke="none"/>',
+        'red-dot': '<circle cx="12" cy="12" r="7" fill="currentColor" stroke="none"/>',
+        'green-dot': '<circle cx="12" cy="12" r="7" fill="currentColor" stroke="none"/>',
+        'ban': '<circle cx="12" cy="12" r="9"/><path d="m5.6 5.6 12.8 12.8"/>',
+        'door': '<path d="M4 21h16M6 21V3h12v18M10 12h.01"/>',
+        'broom': '<path d="m14 3 7 7M3 21l8-8M12 12l5 5-4 4-5-5M5 19l-2-2"/>',
+        'hourglass': '<path d="M5 3h14M5 21h14M7 3c0 5 5 5 5 9s-5 4-5 9m10-18c0 5-5 5-5 9s5 4 5 9"/>',
+        'user-round': '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+        'laptop': '<rect x="4" y="4" width="16" height="12" rx="2"/><path d="M2 20h20l-2-4H4l-2 4Z"/>',
+        'megaphone': '<path d="m3 11 18-6v14l-18-6v-2ZM3 13l2 7h5l-3-6M21 10h1v6h-1"/>',
+        'rocket': '<path d="M12 22s4-4 4-9V6l-4-4-4 4v7c0 5 4 9 4 9Z"/><path d="M8 13H4l-2 5 6-1m8-4h4l2 5-6-1M10 8h4M10 18l-2 4m6-4 2 4"/>',
+        'smile': '<circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 3 4 3 4-3 4-3M9 9h.01M15 9h.01"/>',
+        'droplet': '<path d="M12 22a7 7 0 0 0 7-7c0-4-7-13-7-13S5 11 5 15a7 7 0 0 0 7 7Z"/>'
     });
 
     const normalizeEmoji = (value) => String(value || '')
@@ -116,38 +150,86 @@
         ['🪙', 'wallet'], ['🌡️', 'activity'], ['🌡', 'activity'], ['🪖', 'shield'],
         ['🎖️', 'trophy'], ['🎖', 'trophy'], ['🧱', 'building'], ['🧰', 'settings'],
         ['🧪', 'microscope'], ['🛠️', 'settings'], ['🛠', 'settings'], ['🪪', 'clipboard-check'],
-        ['🔒', 'lock'], ['🔓', 'lock'], ['📖', 'book-open']
+        ['🔒', 'lock'], ['🔓', 'lock'], ['📖', 'book-open'],
+        ['⚖️', 'scale'], ['⚖', 'scale'], ['👤', 'user-round'], ['❓', 'circle-help'],
+        ['🎙️', 'mic'], ['🎙', 'mic'], ['💬', 'message-square'], ['🤝', 'network'],
+        ['🚪', 'door'], ['🧹', 'broom'], ['⌛', 'hourglass'], ['🌾', 'leaf'], ['⭐', 'trophy'],
+        ['📁', 'folder'], ['📦', 'package'], ['🚜', 'tractor'], ['⚓', 'anchor'], ['🦅', 'bird'],
+        ['💻', 'laptop'], ['⏩', 'fast-forward'], ['🕊️', 'dove'], ['🕊', 'dove'], ['🛂', 'shield-check'],
+        ['🎁', 'package'], ['☢️', 'radiation'], ['☢', 'radiation'], ['⚛️', 'atom'], ['⚛', 'atom'],
+        ['☀️', 'sun'], ['☀', 'sun'], ['🚩', 'flag'], ['💖', 'heart'], ['🚫', 'ban'],
+        ['📣', 'megaphone'], ['🔥', 'flame'], ['🔵', 'blue-dot'], ['🔴', 'red-dot'], ['🟢', 'green-dot'],
+        ['⛔', 'ban'], ['📍', 'map-pin'], ['🪨', 'mountain'], ['⛓️', 'link'], ['⛓', 'link'],
+        ['🛑', 'alert-triangle'], ['🔋', 'battery-charging'], ['💧', 'droplet'], ['🥇', 'trophy'],
+        ['😊', 'smile'], ['✖️', 'circle-help'], ['✖', 'circle-help']
     ];
     const EMOJI_TO_ICON = new Map(EMOJI_ENTRIES.map(([emoji, icon]) => [normalizeEmoji(emoji), icon]));
 
-    const iconForEmoji = (emoji) => EMOJI_TO_ICON.get(normalizeEmoji(emoji)) || 'circle-help';
+    const iconForEmoji = (emoji) => EMOJI_TO_ICON.get(normalizeEmoji(emoji)) || null;
     const ICON_RE = /\p{Extended_Pictographic}(?:\uFE0E|\uFE0F)?(?:\u200D\p{Extended_Pictographic}(?:\uFE0E|\uFE0F)?)*/gu;
-    const EXCLUDED_SELECTOR = 'script,style,textarea,input,select,option,pre,code,svg,[contenteditable="true"],.omega-icon-sprite,.omega-ui-icon';
+    const SKIP_SUBTREE_SELECTOR = [
+        'script', 'style', 'textarea', 'input', 'select', 'option', 'pre', 'code', 'svg',
+        '[contenteditable="true"]', '.omega-icon-sprite', '.omega-ui-icon', '#debug-root',
+        '.leaflet-tile-pane', '.leaflet-shadow-pane',
+        '.leaflet-marker-pane', '.leaflet-overlay-pane', '.leaflet-control-container', '.leaflet-control'
+    ].join(',');
+    const MAX_ROOTS_PER_FRAME = 24;
+    const FRAME_BUDGET_MS = 4;
+    const pendingRoots = new Set();
+    const deepObservedRoots = new WeakSet();
+    const activeObservers = [];
+    let queueScheduled = false;
+    const perfNow = () => (window.performance && typeof window.performance.now === 'function')
+        ? window.performance.now() : Date.now();
+    const metrics = {
+        scanRoots: 0, visitedElements: 0, visitedTextNodes: 0, convertedIcons: 0,
+        skippedSubtrees: 0, skippedMutations: 0, mutationRecords: 0, queuedRoots: 0,
+        flushes: 0, maxBatchRoots: 0, totalScanMs: 0
+    };
+
+    function matchesSkipSelector(element) {
+        if (!element || element.nodeType !== 1) return false;
+        try { return !!(element.matches && element.matches(SKIP_SUBTREE_SELECTOR)); }
+        catch (_) { return false; }
+    }
+
+    function insideSkippedSubtree(node) {
+        const element = node && (node.nodeType === 1 ? node : node.parentElement);
+        if (!element) return false;
+        if (matchesSkipSelector(element)) return true;
+        try { return !!(element.closest && element.closest(SKIP_SUBTREE_SELECTOR)); }
+        catch (_) { return false; }
+    }
+
+    function hasKnownIcon(text) {
+        if (!text || !text.length) return false;
+        ICON_RE.lastIndex = 0;
+        let match;
+        while ((match = ICON_RE.exec(text))) {
+            if (iconForEmoji(match[0])) { ICON_RE.lastIndex = 0; return true; }
+        }
+        ICON_RE.lastIndex = 0;
+        return false;
+    }
 
     function makeIcon(name) {
         const svg = document.createElementNS(SVG_NS, 'svg');
-        svg.setAttribute('class', 'omega-ui-icon');
+        svg.setAttribute('class', 'omega-ui-icon omega-ui-icon--' + name);
         svg.setAttribute('viewBox', '0 0 24 24');
         svg.setAttribute('aria-hidden', 'true');
         svg.setAttribute('focusable', 'false');
         const use = document.createElementNS(SVG_NS, 'use');
         const href = '#omega-icon-' + (SYMBOLS[name] ? name : 'circle-help');
         use.setAttribute('href', href);
-        try { use.setAttributeNS(XLINK_NS, 'xlink:href', href); } catch (_) { /* SVG2 href remains the primary path. */ }
+        try { use.setAttributeNS(XLINK_NS, 'xlink:href', href); } catch (_) { /* SVG2 href remains primary. */ }
         svg.appendChild(use);
         return svg;
     }
 
-    function excluded(textNode) {
-        const parent = textNode && textNode.parentElement;
-        return !parent || (typeof parent.closest === 'function' && !!parent.closest(EXCLUDED_SELECTOR));
-    }
-
     function replaceTextNode(textNode) {
-        if (!textNode || textNode.nodeType !== 3 || excluded(textNode)) return 0;
+        if (!textNode || textNode.nodeType !== 3 || insideSkippedSubtree(textNode)) return 0;
         const text = textNode.nodeValue || '';
-        ICON_RE.lastIndex = 0;
-        if (!ICON_RE.test(text)) return 0;
+        if (!hasKnownIcon(text)) return 0;
         ICON_RE.lastIndex = 0;
         const fragment = document.createDocumentFragment();
         let cursor = 0;
@@ -156,14 +238,21 @@
         while ((match = ICON_RE.exec(text))) {
             const before = text.slice(cursor, match.index);
             if (before) fragment.appendChild(document.createTextNode(before));
-            fragment.appendChild(makeIcon(iconForEmoji(match[0])));
+            const name = iconForEmoji(match[0]);
+            if (name) {
+                fragment.appendChild(makeIcon(name));
+                count++;
+            } else {
+                fragment.appendChild(document.createTextNode(match[0]));
+            }
             cursor = match.index + match[0].length;
-            count++;
         }
         const after = text.slice(cursor);
         if (after) fragment.appendChild(document.createTextNode(after));
+        ICON_RE.lastIndex = 0;
         if (!count || !textNode.parentNode) return 0;
         textNode.parentNode.replaceChild(fragment, textNode);
+        metrics.convertedIcons += count;
         return count;
     }
 
@@ -172,16 +261,162 @@
         if (root.nodeType === 3) return replaceTextNode(root);
         if (root.nodeType !== 1 && root.nodeType !== 9 && root.nodeType !== 11) return 0;
         if (root.nodeType === 1) {
-            if (root.matches && root.matches(EXCLUDED_SELECTOR)) return 0;
+            if (matchesSkipSelector(root) || insideSkippedSubtree(root)) {
+                metrics.skippedSubtrees++;
+                return 0;
+            }
             if (root.tagName === 'TEMPLATE' && root.content) return scanNode(root.content);
         }
-        let converted = 0;
-        const walker = document.createTreeWalker(root, document.defaultView?.NodeFilter?.SHOW_TEXT || 4);
+        const started = perfNow();
+        metrics.scanRoots++;
+        const NF = document.defaultView && document.defaultView.NodeFilter
+            ? document.defaultView.NodeFilter
+            : { SHOW_ELEMENT: 1, SHOW_TEXT: 4, FILTER_ACCEPT: 1, FILTER_REJECT: 2 };
+        const templates = [];
+        const pendingText = [];
+        const walker = document.createTreeWalker(root, NF.SHOW_ELEMENT | NF.SHOW_TEXT, function (node) {
+            if (node.nodeType === 1) {
+                metrics.visitedElements++;
+                if (matchesSkipSelector(node)) {
+                    metrics.skippedSubtrees++;
+                    return NF.FILTER_REJECT;
+                }
+                if (node.tagName === 'TEMPLATE') {
+                    templates.push(node);
+                    return NF.FILTER_REJECT;
+                }
+                return NF.FILTER_ACCEPT;
+            }
+            if (node.nodeType === 3) {
+                metrics.visitedTextNodes++;
+                return hasKnownIcon(node.nodeValue || '') ? NF.FILTER_ACCEPT : NF.FILTER_REJECT;
+            }
+            return NF.FILTER_REJECT;
+        });
         let node;
-        const pending = [];
-        while ((node = walker.nextNode())) pending.push(node);
-        for (const textNode of pending) converted += replaceTextNode(textNode);
+        while ((node = walker.nextNode())) {
+            if (node.nodeType === 3) pendingText.push(node);
+        }
+        let converted = 0;
+        for (const textNode of pendingText) converted += replaceTextNode(textNode);
+        for (const template of templates) {
+            if (template.content) converted += scanNode(template.content);
+        }
+        metrics.totalScanMs += Math.max(0, perfNow() - started);
         return converted;
+    }
+
+    function scheduleFlush() {
+        if (queueScheduled) return;
+        queueScheduled = true;
+        const run = function () { flushQueue(); };
+        if (typeof window.requestAnimationFrame === 'function') window.requestAnimationFrame(run);
+        else if (typeof window.setTimeout === 'function') window.setTimeout(run, 16);
+        else { queueScheduled = false; flushQueue(); }
+    }
+
+    function queueScan(root) {
+        if (!root || (root.nodeType !== 1 && root.nodeType !== 3 && root.nodeType !== 11)) return;
+        if (root.nodeType === 1 && insideSkippedSubtree(root)) {
+            metrics.skippedMutations++;
+            return;
+        }
+        if (root.nodeType === 3 && (insideSkippedSubtree(root) || !hasKnownIcon(root.nodeValue || ''))) {
+            metrics.skippedMutations++;
+            return;
+        }
+        for (const queued of pendingRoots) {
+            if (queued === root) return;
+            if (queued.nodeType === 1 && queued.contains && queued.contains(root)) return;
+            if (root.nodeType === 1 && root.contains && root.contains(queued)) pendingRoots.delete(queued);
+        }
+        pendingRoots.add(root);
+        metrics.queuedRoots++;
+        scheduleFlush();
+    }
+
+    function flushQueue() {
+        queueScheduled = false;
+        const started = perfNow();
+        let count = 0;
+        metrics.flushes++;
+        while (pendingRoots.size && count < MAX_ROOTS_PER_FRAME) {
+            if (count > 0 && perfNow() - started >= FRAME_BUDGET_MS) break;
+            const root = pendingRoots.values().next().value;
+            pendingRoots.delete(root);
+            scanNode(root);
+            count++;
+        }
+        metrics.maxBatchRoots = Math.max(metrics.maxBatchRoots, count);
+        if (pendingRoots.size) scheduleFlush();
+    }
+
+    function observerMutationHandler(records) {
+        metrics.mutationRecords += records.length;
+        for (const record of records) {
+            if (insideSkippedSubtree(record.target)) {
+                metrics.skippedMutations += record.addedNodes ? record.addedNodes.length || 1 : 1;
+                continue;
+            }
+            if (record.type === 'characterData') {
+                queueScan(record.target);
+            } else if (record.type === 'childList') {
+                record.addedNodes.forEach(queueScan);
+            }
+        }
+    }
+
+    function attachDeepObserver(root) {
+        if (!root || root.nodeType !== 1 || matchesSkipSelector(root) || insideSkippedSubtree(root) ||
+            deepObservedRoots.has(root) || typeof MutationObserver !== 'function') return;
+        const observer = new MutationObserver(observerMutationHandler);
+        observer.observe(root, { subtree: true, childList: true, characterData: true });
+        activeObservers.push(observer);
+        deepObservedRoots.add(root);
+    }
+
+    function attachShallowObserver(root, registerChildRoot) {
+        if (!root || root.nodeType !== 1 || typeof MutationObserver !== 'function') return;
+        const observer = new MutationObserver(function (records) {
+            for (const record of records) {
+                if (record.type !== 'childList') continue;
+                record.addedNodes.forEach(function (node) {
+                    if (node.nodeType !== 1 || matchesSkipSelector(node) || insideSkippedSubtree(node)) return;
+                    registerChildRoot(node);
+                    queueScan(node);
+                });
+            }
+        });
+        observer.observe(root, { childList: true, subtree: false });
+        activeObservers.push(observer);
+    }
+
+    function installObservers() {
+        if (typeof MutationObserver !== 'function' || !document.body) return;
+        attachShallowObserver(document.body, attachDeepObserver);
+        const app = document.getElementById('app');
+        if (!app) {
+            Array.from(document.body.children || []).forEach(attachDeepObserver);
+            return;
+        }
+        attachShallowObserver(app, attachDeepObserver);
+        Array.from(app.children || []).forEach(attachDeepObserver);
+    }
+
+    function diagnosticsSnapshot() {
+        return Object.freeze({
+            version: '1.1.0',
+            iconCount: Object.keys(SYMBOLS).length,
+            mappedEmojiCount: EMOJI_TO_ICON.size,
+            initialized: !!window.__OMEGA_ICON_SYSTEM_INIT_V1__,
+            offline: true,
+            observerMode: 'segmented-ui-roots',
+            frameBudgetMs: FRAME_BUDGET_MS,
+            maxRootsPerFrame: MAX_ROOTS_PER_FRAME,
+            pendingRoots: pendingRoots.size,
+            observers: activeObservers.length,
+            ...metrics
+        });
     }
 
     function installSprite() {
@@ -202,31 +437,18 @@
         window.__OMEGA_ICON_SYSTEM_INIT_V1__ = true;
         installSprite();
         scanNode(document.body);
-        if (typeof MutationObserver === 'function') {
-            const observer = new MutationObserver((records) => {
-                for (const record of records) {
-                    if (record.type === 'characterData') replaceTextNode(record.target);
-                    if (record.type === 'childList') record.addedNodes.forEach(scanNode);
-                }
-            });
-            observer.observe(document.body, { subtree: true, childList: true, characterData: true });
-            window.__OMEGA_ICON_SYSTEM_OBSERVER_V1__ = observer;
-        }
-        window.__OMEGA_ICON_SYSTEM_DIAGNOSTICS_V1__ = Object.freeze({
-            version: '1.0.0',
-            iconCount: Object.keys(SYMBOLS).length,
-            mappedEmojiCount: EMOJI_TO_ICON.size,
-            initialized: true,
-            offline: true
-        });
+        installObservers();
+        window.__OMEGA_ICON_SYSTEM_DIAGNOSTICS_V1__ = diagnosticsSnapshot;
     }
 
     window.OMEGA_ICON_SYSTEM_V1 = Object.freeze({
-        version: '1.0.0',
+        version: '1.1.0',
         iconNames: Object.freeze(Object.keys(SYMBOLS)),
         nameForEmoji: iconForEmoji,
         normalizeEmoji,
         scanNode,
+        replaceTextNode,
+        diagnostics: diagnosticsSnapshot,
         initialize: init
     });
 
