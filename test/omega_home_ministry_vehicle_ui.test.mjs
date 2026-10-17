@@ -13,8 +13,15 @@ function makeUiHarness(vehicleInventory = null) {
   let api = null;
   const standDownButtons = [];
   function node(id = '') {
+    const defaults = {
+      'home-police-vehicle-amount': '1',
+      'home-police-guard-vehicle': '1',
+      'home-police-guard-mission': 'urban_patrol',
+      'home-police-guard-quantity': '1',
+      'home-police-guard-sector': 'General Sector',
+    };
     return {
-      id, value: '', textContent: '', innerHTML: '', className: '', disabled: false,
+      id, value: defaults[id] || '', textContent: '', innerHTML: '', className: '', disabled: false,
       style: { display: '', width: '', opacity: '', pointerEvents: '' },
       onclick: null, oninput: null, onchange: null, attributes: {},
       setAttribute(key, value) { this.attributes[key] = String(value); },
