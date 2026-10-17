@@ -1423,7 +1423,7 @@
             '01': 'matrix', '02': 'ontology', '03': 'reserves', '04': 'deposits',
             '05': 'extraction', '06': 'processing', '07': 'inventory', '08': 'logistics',
             '09': 'industrial', '10': 'market', '11': 'trade', '12': 'value',
-            '13': 'cascade', '14': 'cognitive', '15': 'power', '16': 'environment', '17': 'offers'
+            '13': 'cascade', '14': 'cognitive', '15': 'power', '16': 'environment'
           };
           html = html.replace(/<div class="dept-card" style=[\s\S]*?(?=<div class="dept-card" style=|$)/g, function (block) {
             const point = block.match(/<span>(\d{2})\.\s/);
