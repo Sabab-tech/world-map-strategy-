@@ -253,7 +253,7 @@
   function processIncident(country,s,day){
     const week=Math.floor(day/7);if(day<7||s.lastIncidentWeek===week)return false;
     const roll=deterministicRoll(country,week,turn()),chance=clamp(Math.round(s.sabotageRisk/3),1,30);
-    if(roll>=chance){s.lastIncidentWeek=week;return false;}
+    if(roll>=chance){s.lastIncidentWeek=week;return true;}
     const types=['CIVIL_UNREST','SMUGGLING_NETWORK','INDUSTRIAL_SABOTAGE'],type=types[roll%types.length];
     const mitigation=clamp((s.specialAgents*8)+(s.tacticsResearched.counterTerror?20:0)+(s.tacticsResearched.assetProtection?18:0)+(s.tacticsResearched.intelligenceFusion?14:0),0,85);
     const detected=deterministicRoll(country,week+313,turn())<mitigation+15;
@@ -269,7 +269,7 @@
     const now=simulationTimeMs(),day=Math.floor(now/DAY_MS),s=getState(cid);let changed=false;
     if(s.lastPayrollDay===null||s.lastPayrollDay===undefined){s.lastPayrollDay=day;changed=true;}
     else if(day>s.lastPayrollDay){
-      const days=Math.min(3650,day-s.lastPayrollDay),due=(s.policeCount*POLICE_SALARY_PER_DAY)+(s.specialAgents*AGENT_SALARY_PER_DAY),treasury=getTreasury(cid);
+      const days=Math.min(3650,day-s.lastPayrollDay),due=((s.policeCount*POLICE_SALARY_PER_DAY)+(s.specialAgents*AGENT_SALARY_PER_DAY))*days,treasury=getTreasury(cid);
       if(treasury.available){const paid=Math.min(due,treasury.balance),debit=debitTreasury(cid,paid);if(debit.ok){
         if(paid<due){s.unpaidPayroll+=due-paid;s.policeTrust=clamp(s.policeTrust-Math.min(5,days),0,100);s.policeEfficiency=clamp(s.policeEfficiency-Math.min(5,days),0,100);s.sabotageRisk=clamp(s.sabotageRisk+Math.min(5,days),5,95);}
         emit('OMEGA_HOME_POLICE_PAYROLL_SETTLED',{countryId:cid,days:days,due:due,paid:paid,unpaid:Math.max(0,due-paid),turn:turn()});
