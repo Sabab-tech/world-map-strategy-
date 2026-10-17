@@ -439,7 +439,7 @@
       const wear30=environmentAssessment.wearPerDay*30;
       const maintenanceExposure=environmentAssessment.damageRisk;
       const costPerDay=vehicle.maintenancePerDay*(1+(100-health)/100*0.6+Math.max(0,70-environmentAssessment.fit)/100*0.45+road.wearPerDay*0.25);
-      const strategicScore=Math.round(clamp(effectiveness-wear30*0.35-Math.max(0,55-environmentAssessment.fit)*0.18-costPerDay/100,0,100));
+      const strategicScore=Math.round(clamp(effectiveness*0.55+environmentAssessment.fit*0.30+Math.max(0,100-wear30)*0.15-costPerDay/500,0,100));
       const strengths=[];
       if(environmentAssessment.fit>=80)strengths.push('Strong route fit');
       if(effectiveness>=65)strengths.push('High mission effectiveness');
