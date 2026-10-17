@@ -402,6 +402,8 @@
       ? availableTiers.map(v => '<option value="' + v.level + '"' + (selected && selected.level === v.level ? ' selected' : '') + '>TIER ' + v.level + ' · ' + esc(v.name) + ' · free ' + (Number(capacity.availableVehicles[v.level]) || 0) + '</option>').join('')
       : '<option value="">No unassigned vehicles available</option>';
     const missionOptions = e.GUARD_MISSIONS.map(m => '<option value="' + m.id + '">' + m.emoji + ' ' + esc(m.name) + '</option>').join('');
+    const guardableAssets = typeof e.getGuardableAssets === 'function' ? e.getGuardableAssets() : [];
+    const guardAssetOptions = '<option value="">General mission coverage · no single asset</option>' + guardableAssets.map(asset => '<option value="' + esc(asset.id) + '">' + esc(asset.name) + ' · ' + esc(asset.category) + '</option>').join('');
     const activeDeployments = (state.guardDeployments || []).slice().reverse();
     const deploymentCards = activeDeployments.length ? activeDeployments.map(unit => {
       const vehicle = e.VEHICLES.find(v => v.level === Number(unit.vehicleLevel)), mission = e.GUARD_MISSIONS.find(m => m.id === unit.missionId);
@@ -416,6 +418,7 @@
         '<div class="home-police-score-line"><span>Assigned officers</span><strong>' + Number(unit.officers).toLocaleString() + '</strong></div>' +
         '<div class="home-police-score-line"><span>Mission effectiveness</span><strong>' + score + ' / 100</strong></div>' +
         '<div class="home-police-progress"><div class="home-police-progress-fill" style="width:' + score + '%"></div></div>' +
+        (unit.assetId ? '<span class="home-police-tag home-police-tag-gold">TARGETED ASSET · ' + esc(unit.assetName || unit.assetId) + '</span>' : '<span class="home-police-tag">GENERAL AREA COVERAGE</span>') +
         '<p class="home-police-note">' + esc(mission.description) + '</p>' +
         '<button type="button" class="home-police-btn home-police-btn-red" data-home-standdown="' + esc(unit.id) + '">↩ STAND DOWN · RETURN TO POOL</button>' +
       '</article>';
@@ -434,6 +437,8 @@
           '<select id="home-police-guard-vehicle" class="home-police-field" ' + (availableTiers.length ? '' : 'disabled') + '>' + vehicleOptions + '</select>' +
           (selected ? '<div class="home-police-detail-top">' + vehicleSvg(selected, 'guard-preview') + '<p class="home-police-note">' + esc(selected.specialty) + ' · capacity ' + selected.capacity + ' officers per vehicle</p></div>' : '<div class="home-police-alert">No dispatchable vehicles found. Open Fleet & Facility Ascension to order the unlocked tier and let its 180-day delivery finish.</div>') +
           '<label class="home-police-label" for="home-police-guard-mission">Guard mission</label><select id="home-police-guard-mission" class="home-police-field">' + missionOptions + '</select>' +
+          '<label class="home-police-label" for="home-police-guard-asset">Recorded factory / infrastructure target (optional)</label><select id="home-police-guard-asset" class="home-police-field">' + guardAssetOptions + '</select>' +
+          '<p class="home-police-note">Only assets already recorded in this country are listed. An empty selection keeps the unit on general mission coverage; targeted guards affect the matching asset event only.</p>' +
           '<div class="home-police-form-row"><div class="home-police-field-wrap"><label class="home-police-label" for="home-police-guard-quantity">Vehicles to deploy</label><input id="home-police-guard-quantity" class="home-police-field" type="number" min="1" max="' + (selected ? Number(capacity.availableVehicles[selected.level]) || 1 : 1) + '" step="1" value="1" inputmode="numeric" ' + (selected ? '' : 'disabled') + '></div>' +
           '<div class="home-police-cost"><strong id="home-police-guard-officers">' + (selected ? selected.capacity : 0) + '</strong><span>Officers assigned</span></div></div>' +
           '<label class="home-police-label" for="home-police-guard-sector">Area / sector assignment</label><input id="home-police-guard-sector" class="home-police-field" type="text" maxlength="80" placeholder="e.g. Aluminium Plant North Gate or Sector 4" value="General Sector" ' + (selected ? '' : 'disabled') + '>' +
@@ -450,7 +455,7 @@
         backButton('home-police-guard-back', '← BACK TO POLICE COMMAND') +
       '</div>';
     const vehicleSelect = g.document.getElementById('home-police-guard-vehicle'), missionSelect = g.document.getElementById('home-police-guard-mission');
-    const quantityInput = g.document.getElementById('home-police-guard-quantity'), sectorInput = g.document.getElementById('home-police-guard-sector');
+    const quantityInput = g.document.getElementById('home-police-guard-quantity'), sectorInput = g.document.getElementById('home-police-guard-sector'), assetSelect = g.document.getElementById('home-police-guard-asset');
     const officerLabel = g.document.getElementById('home-police-guard-officers'), effectLabel = g.document.getElementById('home-police-guard-effectiveness');
     const fitNote = g.document.getElementById('home-police-guard-fit-note'), availabilityLabel = g.document.getElementById('home-police-guard-availability');
     const availabilityNote = g.document.getElementById('home-police-guard-availability-note'), errorBox = g.document.getElementById('home-police-guard-error');
@@ -474,10 +479,15 @@
     vehicleSelect.onchange = refresh;
     missionSelect.onchange = refresh;
     quantityInput.oninput = refresh;
+    assetSelect.onchange = () => {
+      const asset = guardableAssets.find(row => row.id === assetSelect.value);
+      if (asset && (!sectorInput.value.trim() || sectorInput.value.trim() === 'General Sector')) sectorInput.value = asset.name;
+      refresh();
+    };
     g.document.getElementById('home-police-guard-refresh').onclick = () => this.renderGuardOut(Number(vehicleSelect.value) || undefined);
     deployButton.onclick = () => {
       const level = Math.floor(Number(vehicleSelect.value) || 0), quantity = Math.floor(Number(quantityInput.value) || 0), missionId = missionSelect.value;
-      const result = e.deployGuard(level, quantity, missionId, sectorInput.value);
+      const result = e.deployGuard(level, quantity, missionId, sectorInput.value, e.getCurrentCountryId(), assetSelect.value || null);
       if (!result.ok) { report(result); this.renderGuardOut(level); return; }
       report(result, 'GUARD DEPLOYMENT COMMITTED', result.deployment.quantity + ' × ' + result.vehicle + ' assigned to ' + result.mission + ' at ' + result.deployment.sector + '. ' + result.assignedOfficers + ' officers reserved; current mission rating ' + result.estimatedEffectiveness + ' / 100.');
       this.renderGuardOut(level);
