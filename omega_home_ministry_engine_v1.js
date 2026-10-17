@@ -323,9 +323,10 @@
     fit=Math.round(clamp(fit,0,100));
     const roadWear={smooth:0,congested:0.07,wet:0.05,rough:0.13,muddy:0.20}[road.id]||0;
     const missionOverhead=0.025,fragility=Math.max(0,70-vehicle.durability)*0.001;
-    const wearPerDay=Number((0.045+Math.max(0,60-baseFit)*0.0025+roadWear+missionOverhead+fragility).toFixed(4));
-    const dailyDistance=Math.round((environment.id==='highway'?180:environment.id==='border'?135:environment.id==='mountain'?70:environment.id==='rural'?105:environment.id==='coastal'?85:90)*road.damageRisk);
-    const damageRisk=Number((road.damageRisk*(1+Math.max(0,60-baseFit)/70+Math.max(0,80-vehicle.durability)/160)).toFixed(2));
+    const wearPerDay=Number((0.035+Math.max(0,70-fit)*0.004+roadWear+missionOverhead+fragility).toFixed(4));
+    const distanceMultiplier={smooth:1,congested:0.58,wet:0.78,rough:0.52,muddy:0.34}[road.id]||1;
+    const dailyDistance=Math.round((environment.id==='highway'?180:environment.id==='border'?135:environment.id==='mountain'?70:environment.id==='rural'?105:environment.id==='coastal'?85:90)*distanceMultiplier);
+    const damageRisk=Number((road.damageRisk*(1+Math.max(0,60-fit)/70+Math.max(0,80-vehicle.durability)/160)).toFixed(2));
     const status=fit>=80?'OPTIMAL':fit>=60?'SUITABLE':fit>=40?'STRAINED':'POOR FIT';
     return{ok:true,vehicleId:vehicle.id,vehicleName:vehicle.name,environment:clone(environment),road:clone(road),baseFit:baseFit,fit:fit,status:status,wearPerDay:wearPerDay,dailyDistanceKm:dailyDistance,damageRisk:damageRisk,penalties:penalties,summary:fit>=80?'Well-matched platform; normal wear for this route.':fit>=60?'Usable deployment with manageable handling and maintenance trade-offs.':fit>=40?'Poor route fit. Expect slower response, higher wear and more maintenance.':'Unsuitable match. The route can be completed, but performance loss and damage risk are high.'};
   }
