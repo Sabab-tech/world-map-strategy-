@@ -69,7 +69,7 @@
 
   function vehicleSvg(vehicle, slot) {
     const art = VEHICLE_ART[vehicle && vehicle.iconId] || VEHICLE_ART.cityline;
-    const key = String(slot || 'card') + '-' + String(vehicle.level);
+    const key = (String(slot || 'card') + '-' + String(vehicle.level)).replace(/[^A-Za-z0-9_-]/g, '-').slice(0, 80);
     const wheels = art.wheels.map(function (x) {
       return '<circle cx="' + x + '" cy="111" r="' + art.wheelR + '" fill="#08111b" stroke="#8ea9bf" stroke-width="2.2"/><circle cx="' + x + '" cy="111" r="' + Math.round(art.wheelR * .52) + '" fill="#8ba0b0" stroke="#dce8f1" stroke-width="2"/><circle cx="' + x + '" cy="111" r="3" fill="#243849"/>';
     }).join('');
