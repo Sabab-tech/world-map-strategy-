@@ -191,7 +191,7 @@ test('Guard Out asset selector only targets recorded factories and passes the se
   const harness = makeUiHarness({ 1: 1 }, assets);
   harness.ui.renderGuardOut(1);
   const assetSelect = harness.nodes.get('home-police-guard-asset');
-  assert.ok(assetSelect.innerHTML.includes('AL-01') || assetSelect, 'the recorded target selector must exist');
+  assert.ok(harness.nodes.get('cabinet-body').innerHTML.includes('AL-01') && harness.nodes.get('cabinet-body').innerHTML.includes('Aluminium Plant North Gate'), 'only actual recorded target rows should populate the selector');
   assetSelect.value = 'AL-01';
   harness.nodes.get('home-police-guard-mission').value = 'industrial_guard';
   harness.nodes.get('home-police-guard-sector').value = 'Aluminium Plant North Gate';
