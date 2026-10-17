@@ -688,9 +688,14 @@
       rawBook=raw.availableByResource||{},procBook=processed.availableByResource||{},
       rawKey=matchingStockKey(rawBook,rid),procKey=matchingStockKey(procBook,rid);
     if(rawKey===null&&procKey===null){
-      // Aggregate-only legacy stock without authoritative warehouses remains visible for compatibility.
-      // If a country warehouse contract exists, never offer stock that has no physical warehouse balance.
-      return raw.warehouseId||processed.warehouseId?0:Math.max(0,aggregate);
+      // Aggregate-only legacy stock is tradeable only after protected strategic stock is removed.
+      if(raw.warehouseId||processed.warehouseId)return 0;
+      var legacyState=bucket(c,'resource')||{},legacyTrade=legacyState.tradeAvailability||{},legacyKey=matchingStockKey(legacyTrade,rid),
+        legacyTradeable=legacyKey===null?null:num(legacyTrade[legacyKey]);
+      if(legacyTradeable!==null)return Math.max(0,Math.min(Math.max(0,aggregate),legacyTradeable));
+      var legacyProtected=legacyState.strategicReserve?.availableByResource||legacyState.strategicReserveState?.availableByResource||{},
+        legacyProtectedKey=matchingStockKey(legacyProtected,rid),legacyProtectedQty=legacyProtectedKey===null?0:Math.max(0,num(legacyProtected[legacyProtectedKey])||0);
+      return Math.max(0,aggregate-legacyProtectedQty);
     }
     var rawAvailable=rawKey===null?0:Math.max(0,num(rawBook[rawKey])||0),
       procAvailable=procKey===null?0:Math.max(0,num(procBook[procKey])||0),
