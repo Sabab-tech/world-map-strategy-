@@ -462,6 +462,83 @@
       return {deployment:clone(removed),releasedOfficers:removed.officers,releasedVehicles:removed.quantity,releasedVehicleIds:clone(removed.vehicleIds||[])};
     });
   }
+  function serviceVehicle(vehicleId,country){
+    const cid=normalizeCountry(country||currentCountry()),id=String(vehicleId||'').trim();
+    if(!id)return{ok:false,reason:'VEHICLE_ID_REQUIRED'};
+    const state=getState(cid),unit=state.vehicleFleet.find(function(row){return row.id===id;});
+    if(!unit)return{ok:false,reason:'VEHICLE_UNIT_NOT_FOUND'};
+    const active=(state.guardDeployments||[]).some(function(row){return Array.isArray(row.vehicleIds)&&row.vehicleIds.includes(id);});
+    if(active||unit.status==='DEPLOYED')return{ok:false,reason:'VEHICLE_STILL_DEPLOYED',message:'Stand down the active guard assignment before servicing this vehicle.'};
+    if(unit.status==='AVAILABLE'&&Number(unit.condition)>=99&&Number(unit.odometerKm)<Number(unit.nextServiceAtKm||5000))return{ok:false,reason:'SERVICE_NOT_REQUIRED'};
+    const cost=estimateVehicleRepairCost(unit);
+    return mutation(cid,cost,'POLICE_VEHICLE_REPAIR',function(next){
+      const target=next.vehicleFleet.find(function(row){return row.id===id;});
+      if(!target)return{ok:false,reason:'VEHICLE_UNIT_NOT_FOUND'};
+      const before=Number(target.condition)||0,oldStatus=target.status;
+      target.condition=100;target.status='AVAILABLE';target.nextServiceAtKm=Math.max(Number(target.nextServiceAtKm)||0,Number(target.odometerKm)||0)+5000;
+      target.lastMaintenanceSimulationDay=Math.floor(simulationTimeMs()/DAY_MS);target.lastEnvironment=null;target.lastRoadCondition=null;target.maintenanceEvents=(Math.max(0,Math.floor(num(target.maintenanceEvents)||0))+1);
+      const record={vehicleId:id,vehicleLevel:target.vehicleLevel,action:'FULL_SERVICE_AND_REPAIR',conditionBefore:before,conditionAfter:100,odometerKm:target.odometerKm,cost:cost,simulationDay:Math.floor(simulationTimeMs()/DAY_MS),turn:turn()};
+      next.vehicleMaintenanceLog.push(record);next.vehicleMaintenanceLog=next.vehicleMaintenanceLog.slice(-100);
+      emit('OMEGA_POLICE_VEHICLE_SERVICED',{countryId:cid,record:clone(record),previousStatus:oldStatus});
+      return{vehicle:clone(target),conditionBefore:before,conditionAfter:100,serviceCost:cost,maintenanceRecord:clone(record)};
+    });
+  }
+  function advanceFleetSimulation(state,country,toDay){
+    const last=num(state.lastFleetSimulationDay);
+    if(last===null||last<0){state.lastFleetSimulationDay=toDay;return false;}
+    if(toDay<=last)return false;
+    const fromDay=Math.max(0,Math.floor(last)),elapsedDays=Math.min(3650,Math.floor(toDay)-fromDay);
+    if(elapsedDays<=0)return false;
+    const fromMs=fromDay*DAY_MS,toMs=Math.floor(toDay)*DAY_MS;
+    let changed=false;
+    const log=function(entry){state.vehicleMaintenanceLog.push(Object.assign({countryId:country,simulationDay:Math.floor(toDay),turn:turn()},entry));changed=true;};
+    const originalDeployments=(state.guardDeployments||[]).slice();
+    originalDeployments.forEach(function(deployment){
+      const vehicle=VEHICLES.find(function(row){return row.level===Number(deployment.vehicleLevel);});
+      const environment=environmentSpec(deployment.environmentId),road=roadSpec(deployment.roadCondition);
+      const use=vehicleUseAssessment(deployment.vehicleLevel,environment.id,road.id,country);
+      const kept=[];
+      (deployment.vehicleIds||[]).forEach(function(vehicleId){
+        const unit=state.vehicleFleet.find(function(row){return row.id===vehicleId;});
+        if(!unit)return;
+        const startMs=Math.max(fromMs,Number(deployment.deployedAtSimulationMs)||fromMs,Number(unit.acquiredAtSimulationMs)||fromMs);
+        const activeDays=Math.max(0,Math.min(elapsedDays,(toMs-startMs)/DAY_MS));
+        if(activeDays>0){
+          const conditionBefore=Number(unit.condition)||0;
+          unit.condition=Math.round(clamp(conditionBefore-use.wearPerDay*activeDays,0,100)*100)/100;
+          unit.odometerKm=Math.round((Math.max(0,Number(unit.odometerKm)||0)+use.dailyDistanceKm*activeDays)*10)/10;
+          unit.lastEnvironment=environment.id;unit.lastRoadCondition=road.id;
+          changed=true;
+        }
+        if(Number(unit.condition)<=15){
+          unit.condition=Math.max(0,Number(unit.condition)||0);unit.status='REPAIR_REQUIRED';
+          log({vehicleId:unit.id,vehicleLevel:unit.vehicleLevel,action:'BREAKDOWN_REQUIRES_REPAIR',condition:unit.condition,environment:environment.id,roadCondition:road.id,missionId:deployment.missionId,sector:deployment.sector,damageRisk:use.damageRisk});
+          emit('OMEGA_POLICE_VEHICLE_BREAKDOWN',{countryId:country,vehicle:clone(unit),deploymentId:deployment.id,environment:environment.id,roadCondition:road.id,turn:turn()});
+        }else if(Number(unit.odometerKm||0)>=Number(unit.nextServiceAtKm||5000)){
+          unit.status='MAINTENANCE_DUE';
+          log({vehicleId:unit.id,vehicleLevel:unit.vehicleLevel,action:'SCHEDULED_SERVICE_DUE',condition:unit.condition,odometerKm:unit.odometerKm,nextServiceAtKm:unit.nextServiceAtKm,environment:environment.id,roadCondition:road.id,missionId:deployment.missionId,sector:deployment.sector});
+          emit('OMEGA_POLICE_VEHICLE_SERVICE_DUE',{countryId:country,vehicle:clone(unit),deploymentId:deployment.id,turn:turn()});
+        }else{unit.status='DEPLOYED';kept.push(unit.id);}
+      });
+      if(kept.length!==(deployment.vehicleIds||[]).length){
+        const removed=(deployment.vehicleIds||[]).filter(function(id){return !kept.includes(id);});
+        deployment.vehicleIds=kept;deployment.quantity=kept.length;deployment.officers=kept.length*(vehicle&&vehicle.capacity||0);
+        deployment.effectiveness=kept.length?deploymentEffectiveness(state,deployment,country):0;deployment.status=kept.length?'PARTIAL_FORCE_AFTER_MAINTENANCE':'AUTO_STOOD_DOWN_MAINTENANCE';
+        log({action:'GUARD_FORCE_REDUCED',deploymentId:deployment.id,missionId:deployment.missionId,sector:deployment.sector,removedVehicleIds:removed,remainingVehicleCount:kept.length,releasedOfficers:removed.length*(vehicle&&vehicle.capacity||0),reason:'VEHICLE_DAMAGED_OR_SERVICE_DUE'});
+      }
+    });
+    state.guardDeployments=state.guardDeployments.filter(function(row){return(row.vehicleIds||[]).length>0;});
+    state.vehicleFleet.forEach(function(unit){
+      if(unit.status==='DEPLOYED'&&(state.guardDeployments||[]).some(function(row){return(row.vehicleIds||[]).includes(unit.id);}))return;
+      if(unit.status==='DEPLOYED')unit.status=fleetUnitStatus(unit);
+      if(unit.status==='AVAILABLE'){
+        const status=fleetUnitStatus(unit);if(status!=='AVAILABLE'){unit.status=status;log({vehicleId:unit.id,vehicleLevel:unit.vehicleLevel,action:status==='MAINTENANCE_DUE'?'SCHEDULED_SERVICE_DUE':'CONDITION_INSPECTION_DUE',condition:unit.condition,odometerKm:unit.odometerKm,nextServiceAtKm:unit.nextServiceAtKm});}
+      }
+    });
+    state.vehicleMaintenanceLog=state.vehicleMaintenanceLog.slice(-100);
+    state.lastFleetSimulationDay=Math.floor(toDay);
+    return true;
+  }
   function recruitPolice(amount,country){
     const qty=Math.floor(num(amount)||0),cid=normalizeCountry(country||currentCountry());if(qty<1||qty>100000)return{ok:false,reason:'RECRUITMENT_QUANTITY_INVALID',message:'Recruitment must be between 1 and 100000 officers.'};
     return mutation(cid,qty*POLICE_RECRUITMENT_COST,'POLICE_RECRUITMENT',function(s){s.policeCount+=qty;s.policeEfficiency=clamp(s.policeEfficiency+Math.min(5,qty/100),0,100);return{amount:qty,addedDailyPayroll:qty*POLICE_SALARY_PER_DAY,newPoliceCount:s.policeCount};});
@@ -567,7 +644,20 @@
     emit('OMEGA_HOME_MINISTRY_SECURITY_INCIDENT',incident);return true;
   }
   function dailyPayroll(s){return s.policeCount*POLICE_SALARY_PER_DAY+s.specialAgents*AGENT_SALARY_PER_DAY;}
-  function dailyOperatingCost(s){let total=dailyPayroll(s);VEHICLES.forEach(v=>{total+=(Math.max(0,num(s.vehiclesOwned[v.level])||0)*v.maintenancePerDay);});return total;}
+  function dailyOperatingCost(s){
+    let total=dailyPayroll(s);
+    if(Array.isArray(s.vehicleFleet)&&s.vehicleFleet.length){
+      s.vehicleFleet.forEach(function(unit){
+        const vehicle=VEHICLES.find(function(v){return v.level===Number(unit.vehicleLevel);});if(!vehicle)return;
+        const condition=clamp(Number(unit.condition)||0,0,100),healthSurcharge=(100-condition)/100*0.6;
+        const deployment=(s.guardDeployments||[]).find(function(row){return Array.isArray(row.vehicleIds)&&row.vehicleIds.includes(unit.id);});
+        let routeSurcharge=0;
+        if(deployment){const use=vehicleUseAssessment(unit.vehicleLevel,deployment.environmentId,deployment.roadCondition,s.countryId);routeSurcharge=Math.max(0,70-use.fit)/100*0.45+use.road.wearPerDay*0.25;}
+        total+=vehicle.maintenancePerDay*(1+healthSurcharge+routeSurcharge);
+      });
+    }else VEHICLES.forEach(function(v){total+=(Math.max(0,num(s.vehiclesOwned[v.level])||0)*v.maintenancePerDay);});
+    return Math.round(total*100)/100;
+  }
   function collectIntelligence(country,s,day){
     const week=Math.floor(day/7);if(day<7||s.lastIntelWeek===week)return false;
     const targets=Object.keys(s.agentDeployments||{}).filter(id=>id!=='UNASSIGNED'&&id!==country&&(num(s.agentDeployments[id])||0)>0&&knownCountry(id));if(!targets.length)return false;
@@ -598,6 +688,7 @@
       const delivered=clone(order);delivered.status='DELIVERED';delivered.deliveredAtMs=now;s.pendingVehicleOrder=null;
       emit('OMEGA_POLICE_VEHICLE_DELIVERED',{countryId:cid,order:delivered,vehicle:v,unlockedVehicleLevel:s.unlockedVehicleLevel,turn:turn()});changed=true;
     }}
+    if(advanceFleetSimulation(s,cid,day))changed=true;
     const research=s.pendingResearch;
     if(research&&now>=research.completesAtMs){const t=TACTICS.find(x=>x.id===research.id);if(t&&!s.tacticsResearched[t.id]){
       s.tacticsResearched[t.id]=true;s.policeEfficiency=clamp(s.policeEfficiency+t.efficiency,0,100);s.sabotageRisk=clamp(s.sabotageRisk-t.riskReduction,5,95);s.policeTrust=clamp(s.policeTrust+2,0,100);s.pendingResearch=null;
@@ -665,7 +756,7 @@
     estimateFacilityCost:function(id,amount,country){return estimateFacilityCostFrom(getState(country||currentCountry()),id,amount);},
     estimateTrainingCost:function(target,country){return estimateTrainingCostFrom(getState(country||currentCountry()),Math.floor(num(target)||0));},
     advice:advice,recruitPolice:recruitPolice,firePolice:firePolice,orderVehicle:orderVehicle,buildFacility:buildFacility,
-    getGuardCapacity:guardCapacity,getGuardDeploymentPreview:guardPreview,deployGuard:deployGuard,standDownGuard:standDownGuard,getGuardEffectiveness:guardEffectiveness,getGuardableAssets:function(country){return clone(guardableAssets(country||currentCountry()));},getGuardCoverageForIncident:function(type,country,targetAssetId){return guardCoverageForIncident(getState(country||currentCountry()),String(type||''),targetAssetId||null);},
+    getGuardCapacity:guardCapacity,getGuardDeploymentPreview:guardPreview,deployGuard:deployGuard,standDownGuard:standDownGuard,getGuardEffectiveness:guardEffectiveness,getOperatingEnvironments:function(){return clone(OPERATING_ENVIRONMENTS);},getRoadConditions:function(){return clone(ROAD_CONDITIONS);},getVehicleUseAssessment:vehicleUseAssessment,getVehicleFleet:vehicleFleetSummary,serviceVehicle:serviceVehicle,estimateVehicleRepairCost:estimateVehicleRepairCost,getGuardableAssets:function(country){return clone(guardableAssets(country||currentCountry()));},getGuardCoverageForIncident:function(type,country,targetAssetId){return guardCoverageForIncident(getState(country||currentCountry()),String(type||''),targetAssetId||null);},
     startResearch:startResearch,upgradeTraining:upgradeTraining,recruitAgents:recruitAgents,issueMinisterDirective:issueMinisterDirective,
     processTurn:onTurnCommitted,applyExistingAssetIncident:markExistingAsset
   });
