@@ -89,24 +89,27 @@
   }
   function interop(){return g.Omega&&g.Omega.MinistryInteroperability||g.OmegaMinistryInteroperability||null;}
   function treasuryRecords(country){
-    const found=[], roots=[g.Game&&g.Game.state,g.gameState].filter(Boolean);
-    roots.forEach(root=>{const row=root&&root.economy&&root.economy[country];if(row&&typeof row==='object'&&num(row.treasury)!==null&&!found.some(x=>x.row===row))found.push({row:row});});
-    return found;
+    const roots=[g.Game&&g.Game.state,g.gameState].filter(Boolean),finance=[];
+    roots.forEach(root=>{const row=root&&root.finance&&root.finance[country];if(row&&typeof row==='object'&&num(row.available)!==null&&!finance.some(x=>x.row===row))finance.push({row:row,key:'available',source:'FINANCE_AVAILABLE'});});
+    if(finance.length)return finance;
+    const economy=[];
+    roots.forEach(root=>{const row=root&&root.economy&&root.economy[country];if(row&&typeof row==='object'&&num(row.treasury)!==null&&!economy.some(x=>x.row===row))economy.push({row:row,key:'treasury',source:'ECONOMY_TREASURY'});});
+    return economy;
   }
   function getTreasury(country){
     const records=treasuryRecords(normalizeCountry(country||currentCountry()));
-    return records.length?{available:true,balance:num(records[0].row.treasury),reason:null}:{available:false,balance:null,reason:'TREASURY_DATA_UNAVAILABLE'};
+    return records.length?{available:true,balance:num(records[0].row[records[0].key]),source:records[0].source,reason:null}:{available:false,balance:null,source:null,reason:'TREASURY_DATA_UNAVAILABLE'};
   }
   function debitTreasury(country,amount){
     const cost=Math.max(0,num(amount)||0);if(!cost)return{ok:true,amount:0,previous:[]};
     const records=treasuryRecords(country);if(!records.length)return{ok:false,reason:'TREASURY_DATA_UNAVAILABLE'};
-    const balance=num(records[0].row.treasury);if(balance===null||balance<cost)return{ok:false,reason:'INSUFFICIENT_TREASURY',balance:balance};
-    const previous=records.map(e=>({row:e.row,value:e.row.treasury}));
-    records.forEach(e=>{const old=num(e.row.treasury);if(old!==null)e.row.treasury=Math.max(0,old-cost);});
+    const balance=num(records[0].row[records[0].key]);if(balance===null||balance<cost)return{ok:false,reason:'INSUFFICIENT_TREASURY',balance:balance};
+    const previous=records.map(e=>({row:e.row,key:e.key,value:e.row[e.key]}));
+    records.forEach(e=>{const old=num(e.row[e.key]);if(old!==null)e.row[e.key]=Math.max(0,old-cost);});
     try{if(typeof g.updateGlobalResourceHUD==='function')g.updateGlobalResourceHUD(country);}catch(_){}
     return{ok:true,amount:cost,previous:previous};
   }
-  function refundTreasury(debit){(debit&&debit.previous||[]).forEach(e=>{e.row.treasury=e.value;});}
+  function refundTreasury(debit){(debit&&debit.previous||[]).forEach(e=>{e.row[e.key]=e.value;});}
   function baseState(){const s=clone(DEFAULT_STATE);s.lastPayrollDay=Math.floor(simulationTimeMs()/DAY_MS);return s;}
   function mergeState(raw){
     const d=clone(DEFAULT_STATE);if(!raw||typeof raw!=='object')return baseState();
@@ -272,7 +275,7 @@
   function collectIntelligence(country,s,day){
     const week=Math.floor(day/7);if(day<7||s.lastIntelWeek===week)return false;
     const targets=Object.keys(s.agentDeployments||{}).filter(id=>id!=='UNASSIGNED'&&id!==country&&(num(s.agentDeployments[id])||0)>0&&knownCountry(id));if(!targets.length)return false;
-    targets.forEach(target=>{const observations=[],roots=[g.Game&&g.Game.state,g.gameState].filter(Boolean);for(const root of roots){const economy=root.economy&&root.economy[target],population=root.population&&root.population[target],police=root.interior&&root.interior[target]&&root.interior[target].police;[['economy.gdp',economy&&economy.gdp],['economy.debt',economy&&economy.debt],['economy.treasury',economy&&economy.treasury],['economy.stability',economy&&economy.stability],['population.population',population&&(population.population||population.population_2015||population.total)],['police.policeCount',police&&police.policeCount],['police.efficiency',police&&police.policeEfficiency],['police.threatExposure',police&&police.sabotageRisk]].forEach(pair=>{const value=num(pair[1]);if(value!==null)observations.push({field:pair[0],value:value});});}
+    targets.forEach(target=>{const observations=[],roots=[g.Game&&g.Game.state,g.gameState].filter(Boolean);for(const root of roots){const economy=root.economy&&root.economy[target],population=root.population&&root.population[target],police=root.interior&&root.interior[target]&&root.interior[target].police;[['economy.gdp',economy&&economy.gdp],['economy.debt',economy&&economy.debt],['economy.treasury',economy&&economy.treasury],['finance.available',root.finance&&root.finance[target]&&root.finance[target].available],['finance.reserves',root.finance&&root.finance[target]&&root.finance[target].reserves],['economy.stability',economy&&economy.stability],['population.population',population&&(population.population||population.population_2015||population.total)],['police.policeCount',police&&police.policeCount],['police.efficiency',police&&police.policeEfficiency],['police.threatExposure',police&&police.sabotageRisk]].forEach(pair=>{const value=num(pair[1]);if(value!==null)observations.push({field:pair[0],value:value});});}
       const report={reportId:'POLICE-INTEL-'+country+'-'+target+'-'+week+'-'+turn(),sourceCountryId:country,targetCountryId:target,simulationWeek:week,simulationTurn:turn(),agentCount:Math.max(0,num(s.agentDeployments[target])||0),confidencePercent:clamp(30+Math.max(0,num(s.agentDeployments[target])||0)*8,30,95),sourceType:'AUTHORITATIVE_GAME_STATE_OBSERVATION',observations:observations,assessment:observations.length?'SIGNALS_COLLECTED':'INSUFFICIENT_OBSERVABLE_FIELDS'};
       s.intelligenceReports.push(report);emit('OMEGA_HOME_MINISTRY_INTELLIGENCE_REPORT',report);
     });s.intelligenceReports=s.intelligenceReports.slice(-100);s.lastIntelWeek=week;return true;
