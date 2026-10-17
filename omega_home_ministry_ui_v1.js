@@ -49,6 +49,48 @@
     if (result && result.ok) ui.showAdvisePopup(successTitle || 'MINISTERIAL ORDER ACCEPTED', successText || 'The command has been committed to the country state.');
     else ui.showAdvisePopup('ORDER NOT EXECUTED', failMessage(result));
   }
+  const VEHICLE_ART = Object.freeze({
+    cityline:{body:'M24 102 L34 87 L62 82 L86 59 Q92 53 104 53 H150 Q161 54 174 75 L208 82 Q224 86 234 101 L235 113 H22 Z',glass:'M84 78 L102 58 H126 V78 Z M132 58 H149 Q158 59 167 78 Z',wheels:[65,197],wheelR:16,siren:[119,49],stripe:'M29 94 L226 94 L231 101 L27 101 Z',addon:'<path d="M54 82 L72 82" stroke="#d8f5ff" stroke-width="2"/>',colors:['#355d86','#14263b','#4bdcff']},
+    falcon:{body:'M18 103 L29 91 L60 86 L85 70 L112 62 L158 64 L179 80 L211 86 L238 100 L238 112 H19 Z',glass:'M90 77 L115 66 H137 V79 Z M142 66 L156 67 L171 79 H142 Z',wheels:[63,202],wheelR:15,siren:[121,59],stripe:'M25 96 L230 96 L234 102 L22 102 Z',addon:'<path d="M206 85 L225 83 L239 93 L237 98 L215 92 Z" fill="#dcecff" opacity=".8"/><path d="M38 84 L51 77" stroke="#d9e8f7" stroke-width="2"/>',colors:['#43678c','#172b41','#ff5d70']},
+    ranger:{body:'M20 104 L30 85 L52 80 L65 55 Q71 49 86 49 H153 Q165 51 179 77 L212 82 L237 98 L237 114 H20 Z',glass:'M70 77 L78 57 H108 V77 Z M114 57 H151 Q160 59 168 77 Z',wheels:[62,200],wheelR:18,siren:[119,45],stripe:'M25 94 L230 94 L235 102 L23 102 Z',addon:'<path d="M72 48 H157 L165 53 H70 Z" fill="#d0b56d"/><path d="M30 81 L48 81" stroke="#e7ebd6" stroke-width="3"/>',colors:['#4f7059','#21352d','#edce69']},
+    sentinel:{body:'M20 103 L30 86 L52 82 L60 47 Q63 42 76 42 H151 Q160 43 167 58 L178 79 L213 85 L236 99 L236 114 H20 Z',glass:'M68 76 L73 50 H105 V76 Z M111 50 H148 Q154 50 159 62 L166 76 Z',wheels:[61,199],wheelR:17,siren:[117,38],stripe:'M23 94 L231 94 L235 102 L22 102 Z',addon:'<path d="M69 42 H153" stroke="#dceaf7" stroke-width="4"/><path d="M177 83 H210" stroke="#d0f4fa" stroke-width="2"/>',colors:['#61788d','#26384a','#5be2ed']},
+    bastion:{body:'M20 104 L28 88 L50 83 L56 58 Q59 52 70 52 H157 L179 78 L212 84 L236 100 L236 115 H20 Z',glass:'M65 76 L70 59 H105 V76 Z M112 59 H151 L166 76 H112 Z',wheels:[61,199],wheelR:17,siren:[117,48],stripe:'M23 95 L231 95 L235 103 L22 103 Z',addon:'<path d="M52 82 L59 57 M173 77 L178 86" stroke="#c8d1da" stroke-width="3"/><path d="M80 88 L93 88" stroke="#efc95e" stroke-width="3"/>',colors:['#5a6572','#202b36','#f2c65b']},
+    interceptor:{body:'M16 105 L31 95 L56 89 L86 74 L112 69 H158 L183 82 L211 87 L240 101 L240 111 H16 Z',glass:'M89 79 L115 73 H135 V82 Z M141 73 H157 L174 82 H141 Z',wheels:[62,204],wheelR:14,siren:[121,64],stripe:'M22 98 L231 98 L237 103 L20 103 Z',addon:'<path d="M31 91 L27 82 L41 84 L51 89 Z" fill="#f2f4fa"/><path d="M195 87 L211 78 L224 83 L218 88 Z" fill="#202a3c"/><path d="M20 110 H241" stroke="#a5c7e8" stroke-width="2"/>',colors:['#2d5d82','#12233a','#ff4d67']},
+    terraguard:{body:'M19 103 L29 83 L53 78 L65 52 Q69 46 83 46 H151 L174 73 L210 79 L236 98 L236 114 H18 Z',glass:'M70 75 L78 53 H108 V75 Z M114 53 H149 L165 75 H114 Z',wheels:[60,199],wheelR:20,siren:[118,42],stripe:'M24 93 L230 93 L235 102 L22 102 Z',addon:'<path d="M66 43 H155 L166 47 H61 Z" fill="#e3cf77"/><path d="M47 80 L57 64 L60 80 Z" fill="#cfdbb6"/><circle cx="224" cy="91" r="3" fill="#f6d56f"/>',colors:['#667448','#293a2b','#f3d66c']},
+    beacon:{body:'M20 104 L30 86 L55 82 L64 57 Q68 51 82 51 H151 L174 76 L211 82 L236 99 L236 114 H20 Z',glass:'M71 77 L79 57 H109 V77 Z M115 57 H148 L164 77 H115 Z',wheels:[61,199],wheelR:17,siren:[117,47],stripe:'M24 94 L230 94 L235 102 L22 102 Z',addon:'<path d="M130 45 L133 32 L139 32 L142 45" fill="#63d9ff" stroke="#d8f9ff" stroke-width="1.3"/><path d="M135 32 L135 25 M129 29 L141 29" stroke="#6be4ff" stroke-width="2"/><rect x="74" y="82" width="34" height="4" rx="2" fill="#6ce6ff"/>',colors:['#3e6784','#192f45','#5fe4ff']},
+    civicshield:{body:'M13 104 L23 90 L37 87 L42 49 Q44 43 54 43 H174 Q183 44 188 57 L196 83 L224 87 L243 100 L243 115 H13 Z',glass:'M49 75 L52 50 H81 V75 Z M87 50 H118 V75 H87 Z M124 50 H160 Q169 50 173 61 L178 75 H124 Z',wheels:[54,202],wheelR:17,siren:[113,39],stripe:'M17 94 L238 94 L242 102 L16 102 Z',addon:'<path d="M43 43 H175" stroke="#b9c9d8" stroke-width="3"/><path d="M188 79 H216 L233 92 H196 Z" fill="#d3dce4"/><rect x="82" y="85" width="35" height="3" rx="1.5" fill="#f7ca59"/>',colors:['#596f82','#263746','#ffc84d']},
+    ironwall:{body:'M13 103 L24 88 L48 82 L59 58 H147 L166 78 H194 L215 65 H226 L228 84 L244 98 L244 115 H13 Z',glass:'M64 63 H100 V77 H57 Z M107 63 H145 L157 77 H107 Z M191 70 H215 V82 H191 Z',wheels:[56,169,221],wheelR:16,siren:[113,52],stripe:'M17 93 L239 93 L243 102 L15 102 Z',addon:'<path d="M178 63 H218 L226 70 H178 Z" fill="#6f7f8d"/><path d="M211 65 L219 55 H229 L229 83" stroke="#dfe9f2" stroke-width="3"/><rect x="27" y="83" width="21" height="5" fill="#dfe9f2"/>',colors:['#5b6874','#27323d','#ff6c72']},
+    aegis:{body:'M21 103 L31 88 L58 83 L79 62 H151 Q162 62 175 79 L208 83 L235 99 L235 113 H20 Z',glass:'M85 78 L99 66 H126 V78 Z M132 66 H150 Q159 67 168 78 H132 Z',wheels:[63,198],wheelR:15,siren:[117,57],stripe:'M25 94 L230 94 L234 102 L22 102 Z',addon:'<path d="M125 61 L130 47 H139 L143 61" stroke="#9effff" stroke-width="2" fill="none"/><circle cx="134" cy="45" r="4" fill="#6ff5ee"/><path d="M72 84 L94 84" stroke="#94fbff" stroke-width="3"/>',colors:['#248991','#143f4c','#91fff3']},
+    nexus:{body:'M19 104 L30 85 L53 80 L66 53 Q70 47 84 47 H152 L176 75 L210 81 L237 99 L237 114 H19 Z',glass:'M71 76 L79 54 H110 V76 Z M116 54 H149 L166 76 H116 Z',wheels:[61,199],wheelR:18,siren:[117,43],stripe:'M23 94 L230 94 L235 102 L22 102 Z',addon:'<path d="M134 44 L138 26 L142 26 L146 44" stroke="#c2aaff" stroke-width="2" fill="none"/><path d="M128 32 H150 M130 28 H148" stroke="#b794ff" stroke-width="2"/><circle cx="139" cy="23" r="4" fill="#c5a7ff"/>',colors:['#5a4a8e','#242443','#c5a1ff']},
+    viper:{body:'M17 105 L28 94 L56 88 L84 74 Q96 67 111 67 H160 L183 81 L212 86 L239 101 L239 112 H16 Z',glass:'M91 79 L115 71 H137 V80 Z M143 71 H158 L174 80 H143 Z',wheels:[62,204],wheelR:14,siren:[122,62],stripe:'M22 98 L231 98 L236 103 L20 103 Z',addon:'<path d="M188 81 L211 70 L225 75 L215 85 Z" fill="#17233e"/><path d="M21 96 L34 83 L49 86" fill="none" stroke="#dbe8ff" stroke-width="2"/><path d="M95 86 L123 86" stroke="#f7a4c0" stroke-width="3"/>',colors:['#4f65ab','#192542','#ff7f9f']},
+    guardian:{body:'M17 104 L27 86 L51 81 L61 54 Q65 48 79 48 H159 L181 75 L211 81 L239 99 L239 114 H17 Z',glass:'M67 77 L74 55 H107 V77 Z M113 55 H155 L173 77 H113 Z',wheels:[59,201],wheelR:18,siren:[118,44],stripe:'M21 94 L233 94 L237 102 L19 102 Z',addon:'<path d="M58 48 H158 L171 53 H55 Z" fill="#e3d18b"/><path d="M177 78 L202 78 L221 88" fill="none" stroke="#f0e1ab" stroke-width="2"/><rect x="82" y="84" width="35" height="4" rx="2" fill="#e7d28b"/>',colors:['#3d5c78','#172e43','#e5d086']},
+    sovereign:{body:'M15 104 L27 87 L51 82 L66 55 Q71 47 86 47 H158 Q171 49 182 74 L213 80 L242 99 L242 115 H15 Z',glass:'M74 76 L84 53 H113 V76 Z M119 53 H155 L175 76 H119 Z',wheels:[58,204],wheelR:18,siren:[122,42],stripe:'M19 94 L235 94 L240 102 L18 102 Z',addon:'<path d="M64 47 H159 L175 52 H58 Z" fill="#8afff3"/><path d="M181 76 L215 80 L233 95 L202 88 Z" fill="#55e1db"/><path d="M84 84 H133" stroke="#a8fff4" stroke-width="3"/><circle cx="137" cy="43" r="5" fill="#77fff4"/>',colors:['#1f8691','#122e3c','#6dfff1']}
+  });
+
+  function vehicleSvg(vehicle, slot) {
+    const art = VEHICLE_ART[vehicle && vehicle.iconId] || VEHICLE_ART.cityline;
+    const key = String(slot || 'card') + '-' + String(vehicle.level);
+    const wheels = art.wheels.map(function (x) {
+      return '<circle cx="' + x + '" cy="111" r="' + art.wheelR + '" fill="#08111b" stroke="#8ea9bf" stroke-width="2.2"/><circle cx="' + x + '" cy="111" r="' + Math.round(art.wheelR * .52) + '" fill="#8ba0b0" stroke="#dce8f1" stroke-width="2"/><circle cx="' + x + '" cy="111" r="3" fill="#243849"/>';
+    }).join('');
+    return '<svg class="home-police-vehicle-art ' + (slot === 'hero' ? 'home-police-vehicle-art-hero' : '') + '" viewBox="0 0 260 150" role="img" aria-label="' + esc(vehicle.name) + ' police vehicle illustration" xmlns="http://www.w3.org/2000/svg">' +
+      '<defs><linearGradient id="police-body-' + key + '" x1="0" y1="0" x2="0.15" y2="1"><stop offset="0" stop-color="' + art.colors[0] + '"/><stop offset="1" stop-color="' + art.colors[1] + '"/></linearGradient><linearGradient id="police-glass-' + key + '" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#c7f3ff"/><stop offset=".43" stop-color="#35637c"/><stop offset="1" stop-color="#0b1b2b"/></linearGradient></defs>' +
+      '<ellipse cx="132" cy="128" rx="112" ry="8" fill="#02060c" opacity=".68"/>' +
+      '<path d="' + art.body + '" fill="url(#police-body-' + key + ')" stroke="#e2edf8" stroke-width="2.2" stroke-linejoin="round"/>' +
+      '<path d="' + art.stripe + '" fill="' + art.colors[2] + '" opacity=".93"/>' +
+      '<path d="' + art.glass + '" fill="url(#police-glass-' + key + ')" stroke="#cde5f0" stroke-width="1.7" stroke-linejoin="round"/>' +
+      '<path d="M132 57 L132 78 M177 79 L174 93" stroke="#a6c5d7" stroke-width="1.4" opacity=".8"/>' +
+      '<path d="M28 103 L44 103" stroke="#edfaff" stroke-width="3" stroke-linecap="round"/><path d="M222 100 L233 101" stroke="#fff3bf" stroke-width="4" stroke-linecap="round"/>' +
+      '<path d="M108 49 H137" stroke="#d5e9f7" stroke-width="3" stroke-linecap="round"/>' +
+      '<rect x="' + art.siren[0] + '" y="' + art.siren[1] + '" width="14" height="5" rx="2" fill="#f4485b" stroke="#ffe5e7" stroke-width=".7"/><rect x="' + (art.siren[0] + 14) + '" y="' + art.siren[1] + '" width="14" height="5" rx="2" fill="#33dcff" stroke="#e0fbff" stroke-width=".7"/>' +
+      '<path d="M109 86 L127 86" stroke="#f7fbff" stroke-width="2" opacity=".8"/><path d="M123 90 L128 86 L123 82" fill="none" stroke="#f7fbff" stroke-width="1.5"/>' +
+      '<circle cx="143" cy="91" r="7" fill="#0b1622" stroke="' + art.colors[2] + '" stroke-width="1.7"/><path d="M143 85 L145 89 L150 90 L146 93 L147 98 L143 95 L139 98 L140 93 L136 90 L141 89 Z" fill="#f5d77a" stroke="#fff0be" stroke-width=".5"/>' +
+      '<text x="160" y="107" font-size="7.5" font-weight="900" fill="#f7fbff" stroke="#122638" stroke-width=".45" paint-order="stroke" letter-spacing=".65">POLICE</text>' +
+      art.addon + wheels +
+      '<path d="M29 115 L42 115 M222 115 L233 115" stroke="' + art.colors[2] + '" stroke-width="3" stroke-linecap="round"/>' +
+      '</svg>';
+  }
+
   function injectStyles() {
     if (!g.document || g.document.getElementById(STYLE_ID)) return;
     const style = g.document.createElement('style');
@@ -82,6 +124,19 @@
       '.home-police-card.is-selected{border-color:#f4cf71;box-shadow:0 0 0 1px rgba(244,207,113,.16),0 0 18px rgba(0,205,255,.08)}',
       '.home-police-card.is-locked{opacity:.57;border-style:dashed}',
       '.home-police-card-emoji{font-size:30px;line-height:1.2;min-height:36px}',
+      '.home-police-vehicle-art{display:block;width:100%;height:76px;max-width:220px;overflow:visible;filter:drop-shadow(0 7px 7px rgba(0,0,0,.32))}',
+      '.home-police-vehicle-art-hero{height:122px;max-width:340px;margin:0 auto 8px}',
+      '.home-police-feature-list{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin:10px 0}',
+      '.home-police-feature-chip{display:inline-flex;align-items:center;gap:6px;padding:7px 9px;border-radius:7px;background:rgba(72,197,221,.1);border:1px solid rgba(92,204,232,.24);color:#cbeaf4;font-size:10px;line-height:1.35}',
+      '.home-police-vehicle-brief{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0}',
+      '.home-police-brief-card{border:1px solid rgba(128,163,191,.2);border-radius:9px;background:rgba(0,0,0,.18);padding:10px;font-size:11px;line-height:1.5;color:#9fb7ca;min-width:0}',
+      '.home-police-brief-card strong{display:block;font-size:12px;color:#f4f7fb;margin:4px 0;overflow-wrap:anywhere}',
+      '.home-police-mission-icon{font-size:24px;line-height:1}',
+      '.home-police-deployment-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}',
+      '.home-police-deployment-card{min-width:0;padding:12px;border:1px solid rgba(98,180,218,.28);background:linear-gradient(150deg,rgba(18,43,63,.95),rgba(7,15,26,.97));border-radius:11px}',
+      '.home-police-deployment-card h3{font-size:12px;color:#ffdfa0;line-height:1.4;margin:5px 0}',
+      '.home-police-score-line{display:flex;justify-content:space-between;gap:10px;font-size:10px;color:#9fb7ca;margin-top:9px}',
+      '@media(max-width:540px){.home-police-vehicle-art{height:68px}.home-police-vehicle-art-hero{height:108px}.home-police-deployment-list{grid-template-columns:1fr}.home-police-vehicle-brief{gap:6px}.home-police-feature-chip{font-size:9px;padding:6px 7px}}',
       '.home-police-card-name{font-size:11px;font-weight:850;line-height:1.35;overflow-wrap:anywhere}',
       '.home-police-tag{display:inline-flex;align-items:center;justify-content:center;padding:4px 7px;border-radius:5px;background:rgba(13,173,211,.15);color:#7cdeff;border:1px solid rgba(13,173,211,.32);font-size:9px;font-weight:900;letter-spacing:.07em}',
       '.home-police-tag-gold{color:#ffe199;background:rgba(200,154,38,.13);border-color:rgba(245,207,104,.42)}',
