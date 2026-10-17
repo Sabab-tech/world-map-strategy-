@@ -353,12 +353,12 @@
     const service=serviceDue?vehicle.maintenancePerDay*18:0;
     return Math.round(Math.max(vehicle.cost*0.025,deterioration+service));
   }
-  function deploymentEffectiveness(state,deployment){
+  function deploymentEffectiveness(state,deployment,country){
     const vehicle=VEHICLES.find(function(row){return row.level===Number(deployment.vehicleLevel);});
     const base=guardEffectiveness(deployment.vehicleLevel,deployment.missionId,state);
     const units=(deployment.vehicleIds||[]).map(function(id){return(state.vehicleFleet||[]).find(function(row){return row.id===id;});}).filter(Boolean);
     const health=units.length?units.reduce(function(total,unit){return total+clamp(Number(unit.condition)||0,0,100);},0)/units.length:100;
-    const use=vehicleUseAssessment(deployment.vehicleLevel,deployment.environmentId,deployment.roadCondition,state.countryId);
+    const use=vehicleUseAssessment(deployment.vehicleLevel,deployment.environmentId,deployment.roadCondition,country||currentCountry());
     return Math.round(clamp(base*(0.55+0.0045*use.fit)*(0.35+0.0065*health),0,100));
   }
   function guardOfficerCount(state){
@@ -390,7 +390,7 @@
       const vehicle=VEHICLES.find(function(row){return row.level===Number(unit.vehicleLevel);});
       if(!mission||!vehicle||!mission.coverageTypes.includes(incidentType))return;
       if(unit.assetId&&String(unit.assetId)!==String(targetAssetId||''))return;
-      const rating=guardEffectiveness(vehicle.level,mission.id,state);
+      const rating=deploymentEffectiveness(state,unit,currentCountry());
       coverage+=(rating*Math.max(0,Number(unit.quantity)||0))*(mission.id==='urban_patrol'&&incidentType!=='CIVIL_UNREST'?0.55:1)/7;
     });
     return Math.round(clamp(coverage,0,35));
@@ -485,7 +485,7 @@
   }
   function advanceFleetSimulation(state,country,toDay){
     const last=num(state.lastFleetSimulationDay);
-    if(last===null||last<0){state.lastFleetSimulationDay=toDay;return false;}
+    if(last===null||last<0){state.lastFleetSimulationDay=toDay;return true;}
     if(toDay<=last)return false;
     const fromDay=Math.max(0,Math.floor(last)),elapsedDays=Math.min(3650,Math.floor(toDay)-fromDay);
     if(elapsedDays<=0)return false;
