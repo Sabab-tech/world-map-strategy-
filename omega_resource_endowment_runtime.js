@@ -71,6 +71,14 @@
   const tok=v=>String(v??'').trim().toLowerCase().replace(/[\s-]+/g,'_');
   const n=v=>{if(v===null||v===undefined||v==='')return null;const x=Number(v);return Number.isFinite(x)?x:null;};
   const state=()=>g.Game?.state||g.gameState||{};
+  const simulationWindowHours=()=>{
+    const clock=g.Omega?.Simulation?.clock;
+    let milliseconds=n(clock?.stepDurationMs);
+    if(milliseconds===null)milliseconds=n(state()?.simulation?.stepDurationMs);
+    // Older runtime-only harnesses have no simulation clock; preserve their daily tick.
+    if(milliseconds===null||milliseconds<=0)return DAY_HOURS;
+    return Math.max(1/3600,milliseconds/3600000);
+  };
   const simulationYear=()=>{const d=state()?.simulation?.date;if(d){const y=Number(String(d).slice(0,4));if(Number.isFinite(y))return y;}const sy=Number(state()?.simulation?.startYear);return Number.isFinite(sy)?sy:2015;};
   let simulationReserveMap=null,simulationReservePromise=null,researchEvidenceMap=null,researchEvidencePromise=null;
   let canonicalSiteCatalogMap=null,canonicalSiteCatalogPromise=null;
@@ -1307,18 +1315,20 @@ function batchFromExtraction(x,record){
     const mineOutputs=clone(ctx.stateTransaction.get('resource.mineOutputs')||{});
     const mineSiteControllers=clone(ctx.stateTransaction.get('resource.mineSiteControllers')||{});
     const mines=clone(ctx.stateTransaction.get('resource.mines')||[]);
-    // Prevent every active site from extracting its full capacity when the country has a finite daily demand.
-    // When no demand record exists for a commodity, preserve the existing scenario-production behavior.
+    // Capacity and demand are both expressed as rates per day, while extraction
+    // commits one simulation-step quantity. Keep production and consumption on
+    // the same time window; legacy harnesses without a clock retain a daily tick.
+    const windowHours=simulationWindowHours(),turnDays=windowHours/DAY_HOURS;
     const consumption=ctx.stateTransaction.get('resource.consumption')||{};
     const exportDemand=ctx.stateTransaction.get('resource.exportDemand')||ctx.stateTransaction.get('trade.exportDemand')||{};
     const valueForResource=(obj,resourceId)=>{if(!obj||typeof obj!=='object')return null;if(Object.prototype.hasOwnProperty.call(obj,resourceId))return n(obj[resourceId]);const wanted=tok(resourceId);for(const k of Object.keys(obj))if(tok(k)===wanted)return n(obj[k]);return null;};
     const demandTargetByResource={},windowCapacityByOccurrence={},totalWindowByResource={};
     for(const row of selected){
-      let capWindow=0;try{capWindow=n(row?.capacity?.computeWindowCapacity?.(DAY_HOURS)?.windowCapacity)||0;}catch(_){capWindow=n(row?.capacity?.activeRate)||n(row?.capacity?.nominalRate)||0;}
+      let capWindow=0;try{capWindow=n(row?.capacity?.computeWindowCapacity?.(windowHours)?.windowCapacity)||0;}catch(_){capWindow=(n(row?.capacity?.activeRate)||n(row?.capacity?.nominalRate)||0)*turnDays;}
       windowCapacityByOccurrence[row.occurrenceKey]=Math.max(0,capWindow);
       const rr=rid(row?.resourceId);totalWindowByResource[rr]=(totalWindowByResource[rr]||0)+Math.max(0,capWindow);
       const domestic=valueForResource(consumption,rr),foreign=valueForResource(exportDemand,rr);
-      if(domestic!==null||foreign!==null)demandTargetByResource[rr]=Math.max(0,(domestic||0)+(foreign||0));
+      if(domestic!==null||foreign!==null)demandTargetByResource[rr]=Math.max(0,((domestic||0)+(foreign||0))*turnDays);
     }
     let remainingDemandByResource={...demandTargetByResource};
     const allSiteKeys=Object.keys(mineSiteControllers);
@@ -1421,14 +1431,20 @@ function batchFromExtraction(x,record){
         mineOutputs[x.occurrenceKey]={occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,resourceId:x.resourceId,simulationTurn:turn(),producedQuantity:0,status:'BLOCKED',blockReason:reason.reason,residualQuantity:n(reserve.residualQuantity)||0};
         markPathBlocked(reason.reason);continue;
       }
-      let windowQuantity=0;try{windowQuantity=n(capacity.computeWindowCapacity(DAY_HOURS)?.windowCapacity)||0;}catch(_){windowQuantity=n(capacity.nominalRate)||0;}
+      let windowQuantity=0;try{windowQuantity=n(capacity.computeWindowCapacity(windowHours)?.windowCapacity)||0;}catch(_){windowQuantity=(n(capacity.activeRate)||n(capacity.nominalRate)||0)*turnDays;}
       const environmentalMultiplier=strategicPolicy?.extractionMultiplier?.(c,policySiteId||x.occurrenceKey,x.resourceId,ctx.stateTransaction);
       if(n(environmentalMultiplier)!==null)windowQuantity*=Math.max(0,Math.min(1,n(environmentalMultiplier)));
       const resourceKey=rid(x.resourceId),demandConstrained=Object.prototype.hasOwnProperty.call(demandTargetByResource,resourceKey)&&Number(demandTargetByResource[resourceKey])>0;
       if(demandConstrained){
         const aggregateCapacity=Math.max(totalWindowByResource[resourceKey]||0,0);
         const turnDemand=Math.max(0,remainingDemandByResource[resourceKey]||0);
-        const allocation=aggregateCapacity>0?Math.min(windowQuantity,turnDemand*(windowQuantity/aggregateCapacity)):0;
+        // Allocate against the original country target, not the shrinking remainder.
+        // Using turnDemand * share here repeatedly compounds the share and silently
+        // under-produces when several deposits feed the same national demand.
+        const countryTarget=Math.max(0,demandTargetByResource[resourceKey]||0);
+        const siteShare=aggregateCapacity>0?windowCapacityByOccurrence[x.occurrenceKey]/aggregateCapacity:0;
+        const proportionalTarget=countryTarget*siteShare;
+        const allocation=aggregateCapacity>0?Math.min(windowQuantity,proportionalTarget,turnDemand):0;
         windowQuantity=Math.max(0,allocation);
         remainingDemandByResource[resourceKey]=Math.max(0,turnDemand-windowQuantity);
       }
@@ -1441,7 +1457,7 @@ function batchFromExtraction(x,record){
       const request=new p5.ExtractionRequest({
         occurrenceKey:x.occurrenceKey,requestedQuantity:windowQuantity,requestedUnit:reserve.unit,
         requestedPeriod:p5.TemporalWindowUnit?.PER_DAY||'PER_DAY',assetReference:capacity.assetReference,
-        expectedStateVersion:n(reserve.stateVersion)||1,simulationTick:turn(),timeWindowDurationHours:DAY_HOURS,
+        expectedStateVersion:n(reserve.stateVersion)||1,simulationTick:turn(),timeWindowDurationHours:windowHours,
         extractionMethod:p5.ExtractionMethodEnum?.UNKNOWN||'UNKNOWN',
         provenance:{sourceSubsystem:'OMEGA_RESOURCE_ENDOWMENT_RUNTIME',sourceId:x.depositKey,timestamp:0,
           sourceAuthority:x.isSimulationGenerated?'SIMULATED':'OBSERVED',sourceDatasetId:x.sourceDatasetId||x.rawDeposit?.sourceDatasetId||null,

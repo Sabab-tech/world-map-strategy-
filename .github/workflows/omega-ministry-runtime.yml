@@ -67,6 +67,8 @@ jobs:
           node --check omega_resource_action_execution_runtime.js
           node --check test/omega_resource_country_boundary.test.mjs
           node --check omega_resource_economy_runtime_v2.js
+          node --check omega_resource_national_demand_runtime_v1.js
+          node --check test/omega_resource_national_demand_runtime_v1.test.mjs
           node --check omega_resource_authoritative_adapter.js
           node --check omega_global_market_system.js
           node --check test/omega_resource_economy_runtime_v2.test.mjs
@@ -91,6 +93,7 @@ jobs:
           node test/omega_resource_milestone_a_integrity.test.mjs
           node test/omega_resource_endowment_runtime.test.mjs
           node --test test/omega_resource_economy_runtime_v2.test.mjs
+          node --test test/omega_resource_national_demand_runtime_v1.test.mjs
           node --test test/omega_resource_authoritative_adapter.test.mjs
           node --test test/omega_resource_action_execution_runtime.test.mjs
           node --test test/omega_resource_country_boundary.test.mjs
