@@ -125,7 +125,8 @@ public final class MainActivity extends Activity {
         final String host = uri.getHost();
         if (host == null) return false;
         final String h = host.toLowerCase(Locale.ROOT);
-        // Keep optional remote libraries/fonts blocked, but allow basemap imagery when connected.
+        // We do not intercept map imagery: Esri tiles can load when connected.
+        // The cached NASA overview is only the lower-resolution offline fallback.
         return h.equals("unpkg.com")
                 || h.equals("fonts.googleapis.com")
                 || h.equals("fonts.gstatic.com");
