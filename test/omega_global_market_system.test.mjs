@@ -72,6 +72,13 @@ assert.equal(q.status,'CLEARED');
 assert.equal(q.matchedQuantity,100);
 assert.equal(q.clearingPriceUsd,100);
 assert.equal(market.localPrice('BDG','crude_oil'),100);
+const liveSellerListing=market.listings().find(x=>x.countryId==='SAU'&&x.resourceId==='crude_oil');
+assert(liveSellerListing,'seller runtime offer must appear in the public seller register');
+assert.equal(liveSellerListing.status,'FOR_SALE');
+assert.equal(liveSellerListing.quantity,100);
+assert.equal(liveSellerListing.unitPrice,90);
+assert.equal(liveSellerListing.priceUsd,90);
+assert.equal(liveSellerListing.currencyCode,'USD');
 
 // Removing the actual seller offer leaves only inventory-derived reference liquidity.
 // It must inform the quote but must not count as an executable market trade.
@@ -87,4 +94,14 @@ assert.equal(referenceOnly.bestAskUsd,null,'reference ask must not be presented 
 assert.equal(referenceOnly.askDepth,0);
 assert.equal(referenceOnly.referenceAskDepth>0,true);
 assert.equal(referenceOnly.matches.some(x=>x.referenceLiquidity),false);
+const unpricedListing=market.listings().find(x=>x.countryId==='SAU'&&x.resourceId==='crude_oil');
+assert(unpricedListing,'inventory without an actual offer remains visible without becoming an order');
+assert.equal(unpricedListing.status,'UNPRICED_STOCK');
+assert.equal(unpricedListing.unitPrice,null);
+assert.equal(market.localPrice('BDG','crude_oil'),null,'a reference-only quote is not returned as a real market price');
+
+globalThis.Game.state.trade.SAU.offerBook={crude_oil:{offerId:'ASK-FX-UNKNOWN',resourceId:'crude_oil',quantity:20,unitPrice:90,currencyCode:'SAR'}};
+const noCrossCurrencyBooks=market.rebuild();
+assert.equal(noCrossCurrencyBooks.crude_oil.clearing.askDepth,0,'foreign offers without an observed FX conversion cannot enter the USD book');
+assert.equal(market.listings().find(x=>x.countryId==='SAU'&&x.resourceId==='crude_oil').status,'AWAITING_FX');
 console.log('OMEGA GLOBAL MARKET CLEARING TEST PASSED');
