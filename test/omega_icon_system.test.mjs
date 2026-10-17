@@ -80,6 +80,11 @@ test('runtime batches dynamic icon work and excludes high-churn map/render subtr
   assert.match(iconSource, /'\.leaflet-tile-pane'/);
   assert.doesNotMatch(iconSource, /observer\.observe\(document\.body, \{ subtree: true/);
   assert.match(iconSource, /observerMode: 'segmented-ui-roots'/);
+  assert.match(iconSource, /root\.id === 'render-engine-root'/);
+  assert.match(iconSource, /observer\.observe\(mapRoot, \{ childList: true, subtree: false \}\)/);
+  assert.match(iconSource, /mapRoot\.querySelector\('\.leaflet-popup-pane'\)/);
+  assert.match(iconSource, /attachMapPopupObserver\(\)/);
+  assert.doesNotMatch(iconSource, /observer\.observe\(root, \{ subtree: true, childList: true, characterData: true \}\);[\s\S]{0,80}render-engine-root/);
 });
 
 class FakeNode {
