@@ -230,6 +230,82 @@
     if(tier>s.unlockedVehicleLevel)return{ok:false,reason:'VEHICLE_TIER_LOCKED',unlockedVehicleLevel:s.unlockedVehicleLevel};
     const cost=v.cost*qty;return mutation(cid,cost,'VEHICLE_ORDER',function(next){const now=simulationTimeMs();next.pendingVehicleOrder={level:tier,quantity:qty,totalCost:cost,orderedAtTurn:turn(),startedAtMs:now,completesAtMs:now+VEHICLE_UNLOCK_MS,durationMs:VEHICLE_UNLOCK_MS,status:'IN_TRANSIT'};return{amount:qty,vehicle:v.name,estimatedDeliveryMs:now+VEHICLE_UNLOCK_MS,totalCost:cost};});
   }
+  function guardOfficerCount(state){
+    return (state.guardDeployments||[]).reduce(function(total,unit){return total+Math.max(0,Math.floor(num(unit.officers)||0));},0);
+  }
+  function guardVehicleCount(state,level){
+    return (state.guardDeployments||[]).reduce(function(total,unit){return total+(Number(unit.vehicleLevel)===Number(level)?Math.max(0,Math.floor(num(unit.quantity)||0)):0);},0);
+  }
+  function guardEffectiveness(vehicleLevel,missionId,state){
+    const vehicle=VEHICLES.find(function(row){return row.level===Math.floor(num(vehicleLevel)||0);});
+    const mission=GUARD_MISSIONS.find(function(row){return row.id===String(missionId||'');});
+    if(!vehicle||!mission)return 0;
+    let weighted=0,weightTotal=0;
+    Object.keys(mission.weights).forEach(function(key){const weight=mission.weights[key];weighted+=(Number(vehicle.capabilities[key])||0)*weight;weightTotal+=weight;});
+    const core=weightTotal?weighted/weightTotal:0;
+    const trainingBoost=Math.min(10,Math.max(0,Number(state.trainingQualityLevel)||1)*1.7);
+    const facilityBoost=Math.min(8,((Number(state.facilityLevels.station)||0)+(Number(state.facilityLevels.patrol)||0)+(Number(state.facilityLevels.dispatch)||0))*1.15);
+    const tacticBoost=(mission.id==='public_order'&&state.tacticsResearched.antiRiot?6:0)+
+      (mission.id==='border_interdiction'&&state.tacticsResearched.smugglerInterdict?6:0)+
+      (mission.id==='industrial_guard'&&state.tacticsResearched.assetProtection?7:0)+
+      ((mission.id==='rapid_response'||mission.id==='vip_escort')&&state.tacticsResearched.counterTerror?4:0)+
+      (state.tacticsResearched.intelligenceFusion?3:0);
+    return Math.round(clamp(core+trainingBoost+facilityBoost+tacticBoost,0,100));
+  }
+  function guardCoverageForIncident(state,incidentType){
+    let coverage=0;
+    (state.guardDeployments||[]).forEach(function(unit){
+      const mission=GUARD_MISSIONS.find(function(row){return row.id===unit.missionId;});
+      const vehicle=VEHICLES.find(function(row){return row.level===Number(unit.vehicleLevel);});
+      if(!mission||!vehicle||!mission.coverageTypes.includes(incidentType))return;
+      const rating=guardEffectiveness(vehicle.level,mission.id,state);
+      coverage+=(rating*Math.max(0,Number(unit.quantity)||0))*(mission.id==='urban_patrol'&&incidentType!=='CIVIL_UNREST'?0.55:1)/7;
+    });
+    return Math.round(clamp(coverage,0,35));
+  }
+  function guardCapacity(country){
+    const state=getState(country||currentCountry());
+    const ownedVehicles=Object.keys(state.vehiclesOwned||{}).reduce(function(out,key){out[key]=Math.max(0,Math.floor(num(state.vehiclesOwned[key])||0))-guardVehicleCount(state,Number(key));return out;},{});
+    return {policeCount:state.policeCount,deployedOfficers:guardOfficerCount(state),availableOfficers:Math.max(0,state.policeCount-guardOfficerCount(state)),ownedVehicles:clone(state.vehiclesOwned),deployedVehicles:Object.keys(state.vehiclesOwned||{}).reduce(function(out,key){out[key]=guardVehicleCount(state,Number(key));return out;},{}),availableVehicles:ownedVehicles};
+  }
+  function guardPreview(vehicleLevel,missionId,quantity,country){
+    const state=getState(country||currentCountry()),vehicle=VEHICLES.find(function(row){return row.level===Math.floor(num(vehicleLevel)||0);});
+    const mission=GUARD_MISSIONS.find(function(row){return row.id===String(missionId||'');});
+    const requested=Math.floor(num(quantity)||0),capacity=guardCapacity(country||currentCountry()),availableVehicles=capacity.availableVehicles[vehicleLevel]||0,score=vehicle&&mission?guardEffectiveness(vehicle.level,mission.id,state):0;
+    const count=vehicle&&mission?Math.max(0,Math.min(100,requested)):0;
+    return {ok:Boolean(vehicle&&mission&&count>=1&&count<=availableVehicles&&count*vehicle.capacity<=capacity.availableOfficers),vehicle:vehicle?clone(vehicle):null,mission:mission?clone(mission):null,quantity:count,availableVehicles:availableVehicles,requiredOfficers:vehicle?count*vehicle.capacity:0,availableOfficers:capacity.availableOfficers,effectiveness:score,estimatedCoverage:vehicle&&mission?Math.round(clamp(score*count/7,0,35)):0,reason:!vehicle?'VEHICLE_TIER_INVALID':!mission?'GUARD_MISSION_INVALID':count<1?'GUARD_QUANTITY_INVALID':count>availableVehicles?'INSUFFICIENT_UNASSIGNED_VEHICLES':count*vehicle.capacity>capacity.availableOfficers?'INSUFFICIENT_UNASSIGNED_OFFICERS':null};
+  }
+  function deployGuard(vehicleLevel,quantity,missionId,sector,country){
+    const level=Math.floor(num(vehicleLevel)||0),qty=Math.floor(num(quantity)||0),cid=normalizeCountry(country||currentCountry());
+    const vehicle=VEHICLES.find(function(row){return row.level===level;}),mission=GUARD_MISSIONS.find(function(row){return row.id===String(missionId||'');});
+    if(!vehicle)return{ok:false,reason:'VEHICLE_TIER_INVALID'};
+    if(!mission)return{ok:false,reason:'GUARD_MISSION_INVALID'};
+    if(qty<1||qty>100)return{ok:false,reason:'GUARD_QUANTITY_INVALID'};
+    const state=getState(cid);
+    if(level>state.unlockedVehicleLevel)return{ok:false,reason:'VEHICLE_TIER_LOCKED',unlockedVehicleLevel:state.unlockedVehicleLevel};
+    const preview=guardPreview(level,mission.id,qty,cid);
+    if(!preview.ok)return{ok:false,reason:preview.reason,availableVehicles:preview.availableVehicles,availableOfficers:preview.availableOfficers,requiredOfficers:preview.requiredOfficers};
+    const location=String(sector||'General Sector').trim().slice(0,80)||'General Sector';
+    return mutation(cid,0,'POLICE_GUARD_DEPLOYMENT',function(next){
+      const id='GUARD-'+cid+'-'+String(next.nextGuardDeploymentId||1);
+      next.nextGuardDeploymentId=Math.max(1,Math.floor(num(next.nextGuardDeploymentId)||1))+1;
+      const deployment={id:id,vehicleLevel:level,quantity:qty,missionId:mission.id,sector:location,officers:qty*vehicle.capacity,deployedAtTurn:turn(),deployedAtSimulationMs:simulationTimeMs(),effectiveness:guardEffectiveness(level,mission.id,next),status:'ACTIVE'};
+      next.guardDeployments.push(deployment);
+      return {deployment:clone(deployment),vehicle:vehicle.name,mission:mission.name,estimatedEffectiveness:deployment.effectiveness,assignedOfficers:deployment.officers,availableVehicleCount:guardCapacity(cid).availableVehicles[level]-qty};
+    });
+  }
+  function standDownGuard(deploymentId,country){
+    const cid=normalizeCountry(country||currentCountry()),id=String(deploymentId||'').trim();
+    if(!id)return{ok:false,reason:'GUARD_DEPLOYMENT_ID_REQUIRED'};
+    const state=getState(cid),unit=(state.guardDeployments||[]).find(function(row){return row.id===id;});
+    if(!unit)return{ok:false,reason:'GUARD_DEPLOYMENT_NOT_FOUND'};
+    return mutation(cid,0,'POLICE_GUARD_STAND_DOWN',function(next){
+      const index=next.guardDeployments.findIndex(function(row){return row.id===id;});
+      if(index<0)return{ok:false,reason:'GUARD_DEPLOYMENT_NOT_FOUND'};
+      const removed=next.guardDeployments.splice(index,1)[0];
+      return {deployment:clone(removed),releasedOfficers:removed.officers,releasedVehicles:removed.quantity};
+    });
+  }
   function recruitPolice(amount,country){
     const qty=Math.floor(num(amount)||0),cid=normalizeCountry(country||currentCountry());if(qty<1||qty>100000)return{ok:false,reason:'RECRUITMENT_QUANTITY_INVALID',message:'Recruitment must be between 1 and 100000 officers.'};
     return mutation(cid,qty*POLICE_RECRUITMENT_COST,'POLICE_RECRUITMENT',function(s){s.policeCount+=qty;s.policeEfficiency=clamp(s.policeEfficiency+Math.min(5,qty/100),0,100);return{amount:qty,addedDailyPayroll:qty*POLICE_SALARY_PER_DAY,newPoliceCount:s.policeCount};});
@@ -389,7 +465,7 @@
   const api=Object.freeze({
     VERSION:VERSION,POLICE_SALARY_PER_DAY:POLICE_SALARY_PER_DAY,POLICE_RECRUITMENT_COST:POLICE_RECRUITMENT_COST,
     AGENT_RECRUITMENT_COST:AGENT_RECRUITMENT_COST,AGENT_SALARY_PER_DAY:AGENT_SALARY_PER_DAY,VEHICLE_UNLOCK_MS:VEHICLE_UNLOCK_MS,
-    VEHICLES:VEHICLES,FACILITIES:FACILITIES,TACTICS:TACTICS,init:init,getCurrentCountryId:currentCountry,
+    VEHICLES:VEHICLES,GUARD_MISSIONS:GUARD_MISSIONS,FACILITIES:FACILITIES,TACTICS:TACTICS,init:init,getCurrentCountryId:currentCountry,
     getState:function(country){return clone(getState(country));},getTreasury:function(country){return clone(getTreasury(country||currentCountry()));},getSimulationTimeMs:simulationTimeMs,
     getDailyPayroll:function(country){return dailyPayroll(getState(country||currentCountry()));},getDailyOperatingCost:function(country){return dailyOperatingCost(getState(country||currentCountry()));},getAvailableCountries:availableCountries,
     getResearchProgress:function(country){const s=getState(country||currentCountry()),p=s.pendingResearch;if(!p)return null;const remain=Math.max(0,p.completesAtMs-simulationTimeMs());return{id:p.id,name:p.name,startedAtMs:p.startedAtMs,completesAtMs:p.completesAtMs,remainingMs:remain,progress:clamp(100*(1-remain/Math.max(1,p.durationDays*DAY_MS)),0,100)};},
@@ -398,6 +474,7 @@
     estimateFacilityCost:function(id,amount,country){return estimateFacilityCostFrom(getState(country||currentCountry()),id,amount);},
     estimateTrainingCost:function(target,country){return estimateTrainingCostFrom(getState(country||currentCountry()),Math.floor(num(target)||0));},
     advice:advice,recruitPolice:recruitPolice,firePolice:firePolice,orderVehicle:orderVehicle,buildFacility:buildFacility,
+    getGuardCapacity:guardCapacity,getGuardDeploymentPreview:guardPreview,deployGuard:deployGuard,standDownGuard:standDownGuard,getGuardEffectiveness:guardEffectiveness,
     startResearch:startResearch,upgradeTraining:upgradeTraining,recruitAgents:recruitAgents,issueMinisterDirective:issueMinisterDirective,
     processTurn:onTurnCommitted,applyExistingAssetIncident:markExistingAsset
   });
