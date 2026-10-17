@@ -373,7 +373,7 @@
         const identity=String(row.factoryId||row.factory_id||row.assetId||row.id||row.name||'').toLowerCase();
         const kind=String(row.type||row.kind||row.category||'').toLowerCase();
         const factoryLike=/factory|plant|smelt|industrial|aluminium|aluminum|civilian/.test(identity+' '+kind);
-        const unavailable=/destroyed|offline|damaged|closed/.test(String(row.operationalStatus||row.status||row.securityCondition||'').toLowerCase());
+        const unavailable=/destroyed|offline|damaged|closed|suspend|decommission|retired|abandon|disused|inactive|planned|development|maintenance|non.?operat|not.?operat|under.?repair/.test(String(row.operationalStatus||row.status||row.securityCondition||'').toLowerCase());
         if(!factoryLike||unavailable)return;
         const id=String(row.factoryId||row.factory_id||row.assetId||row.id||row.name||'').trim();
         const name=String(row.name||row.factoryName||row.assetName||row.facilityName||id||'Unnamed recorded asset').trim();
@@ -483,7 +483,7 @@
         found.forEach(entry=>entry.rows.forEach((row,index)=>{
           if(!row||typeof row!=='object'||Array.isArray(row))return;
           const identity=String(row.factoryId||row.factory_id||row.assetId||row.id||row.name||'').toLowerCase(),kind=String(row.type||row.kind||row.category||'').toLowerCase();
-          const factoryLike=/factory|plant|smelt|industrial|aluminium|aluminum|civilian/.test(identity+' '+kind),unavailable=/destroyed|offline|damaged|closed/.test(String(row.operationalStatus||row.status||row.securityCondition||'').toLowerCase());
+          const factoryLike=/factory|plant|smelt|industrial|aluminium|aluminum|civilian/.test(identity+' '+kind),unavailable=/destroyed|offline|damaged|closed|suspend|decommission|retired|abandon|disused|inactive|planned|development|maintenance|non.?operat|not.?operat|under.?repair/.test(String(row.operationalStatus||row.status||row.securityCondition||'').toLowerCase());
           if(factoryLike&&!unavailable)candidates.push({row:row,index:index,array:entry.key});
         }));
         if(!candidates.length)return{accepted:true,assetImpact:null,reason:'NO_REGISTERED_FACTORY_OR_CIVILIAN_ASSET_TO_DAMAGE'};
