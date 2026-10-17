@@ -426,19 +426,29 @@
       ? availableTiers.map(v => '<option value="' + v.level + '"' + (selected && selected.level === v.level ? ' selected' : '') + '>TIER ' + v.level + ' · ' + esc(v.name) + ' · free ' + (Number(capacity.availableVehicles[v.level]) || 0) + '</option>').join('')
       : '<option value="">No unassigned vehicles available</option>';
     const missionOptions = e.GUARD_MISSIONS.map(m => '<option value="' + m.id + '">' + m.emoji + ' ' + esc(m.name) + '</option>').join('');
+    const environments = e.getOperatingEnvironments(), roads = e.getRoadConditions();
+    const routeOptions = Object.assign({ environment: 'city', road: 'congested' }, filters || {});
+    const environmentOptions = environments.map(env => '<option value="' + env.id + '"' + (routeOptions.environment === env.id ? ' selected' : '') + '>' + env.emoji + ' ' + esc(env.name) + '</option>').join('');
+    const currentEnvironment = environments.find(env => env.id === routeOptions.environment) || environments[0];
+    const allowedRoads = roads.filter(road => currentEnvironment.roadConditions.includes(road.id));
+    const selectedRoad = allowedRoads.find(road => road.id === routeOptions.road) || allowedRoads.find(road => road.id === currentEnvironment.roadDefault) || allowedRoads[0] || roads[0];
+    const roadOptions = allowedRoads.map(road => '<option value="' + road.id + '"' + (selectedRoad.id === road.id ? ' selected' : '') + '>' + esc(road.name) + '</option>').join('');
     const guardableAssets = typeof e.getGuardableAssets === 'function' ? e.getGuardableAssets() : [];
     const guardAssetOptions = '<option value="">General mission coverage · no single asset</option>' + guardableAssets.map(asset => '<option value="' + esc(asset.id) + '">' + esc(asset.name) + ' · ' + esc(asset.category) + '</option>').join('');
     const activeDeployments = (state.guardDeployments || []).slice().reverse();
     const deploymentCards = activeDeployments.length ? activeDeployments.map(unit => {
       const vehicle = e.VEHICLES.find(v => v.level === Number(unit.vehicleLevel)), mission = e.GUARD_MISSIONS.find(m => m.id === unit.missionId);
       if (!vehicle || !mission) return '';
-      const preview = e.getGuardDeploymentPreview(vehicle.level, mission.id, unit.quantity);
-      const score = Number(preview.effectiveness) || Number(unit.effectiveness) || 0;
+      const score = Number(unit.effectiveness) || 0;
+      const assignedFleet = e.getVehicleFleet().filter(row => (unit.vehicleIds || []).includes(row.id));
+      const condition = assignedFleet.length ? Math.round(assignedFleet.reduce((sum,row) => sum + Number(row.condition || 0),0) / assignedFleet.length) : 100;
       return '<article class="home-police-deployment-card">' +
         vehicleSvg(vehicle, 'guard-' + unit.id) +
         '<span class="home-police-tag home-police-tag-green">DEPLOYED · ' + esc(mission.id.replace(/_/g, ' ').toUpperCase()) + '</span>' +
         '<h3>' + esc(vehicle.name) + ' × ' + Number(unit.quantity) + '</h3>' +
         '<p class="home-police-note">' + esc(mission.name) + ' · ' + esc(unit.sector || 'General Sector') + '</p>' +
+        '<span class="home-police-tag">' + esc(environments.find(env => env.id === unit.environmentId)?.name || unit.environmentId || 'Dense City') + ' · ' + esc(roads.find(road => road.id === unit.roadCondition)?.name || unit.roadCondition || 'congested') + '</span>' +
+        '<div class="home-police-score-line"><span>Average vehicle condition</span><strong>' + condition + ' / 100</strong></div><div class="home-police-condition"><span style="width:' + condition + '%"></span></div>' +
         '<div class="home-police-score-line"><span>Assigned officers</span><strong>' + Number(unit.officers).toLocaleString() + '</strong></div>' +
         '<div class="home-police-score-line"><span>Mission effectiveness</span><strong>' + score + ' / 100</strong></div>' +
         '<div class="home-police-progress"><div class="home-police-progress-fill" style="width:' + score + '%"></div></div>' +
@@ -461,6 +471,9 @@
           '<select id="home-police-guard-vehicle" class="home-police-field" ' + (availableTiers.length ? '' : 'disabled') + '>' + vehicleOptions + '</select>' +
           (selected ? '<div class="home-police-detail-top">' + vehicleSvg(selected, 'guard-preview') + '<p class="home-police-note">' + esc(selected.specialty) + ' · capacity ' + selected.capacity + ' officers per vehicle</p></div>' : '<div class="home-police-alert">No dispatchable vehicles found. Open Fleet & Facility Ascension to order the unlocked tier and let its 180-day delivery finish.</div>') +
           '<label class="home-police-label" for="home-police-guard-mission">Guard mission</label><select id="home-police-guard-mission" class="home-police-field">' + missionOptions + '</select>' +
+          '<div class="home-police-form-row"><div class="home-police-field-wrap"><label class="home-police-label" for="home-police-guard-environment">Operating environment</label><select id="home-police-guard-environment" class="home-police-field">' + environmentOptions + '</select></div><div class="home-police-field-wrap"><label class="home-police-label" for="home-police-guard-road">Road / weather condition</label><select id="home-police-guard-road" class="home-police-field">' + roadOptions + '</select></div></div>' +
+          '<div class="home-police-vehicle-brief"><div class="home-police-brief-card"><span class="home-police-tag home-police-tag-gold">ROUTE FIT</span><strong id="home-police-route-fit">-- / 100</strong><span id="home-police-route-status">Select a vehicle and route.</span></div><div class="home-police-brief-card"><span class="home-police-tag home-police-tag-gold">30-DAY WEAR FORECAST</span><strong id="home-police-route-wear">-- condition points</strong><span id="home-police-route-risk">Maintenance exposure unavailable</span></div></div>' +
+          '<div id="home-police-route-warnings" class="home-police-alert" aria-live="polite">Choose a route. Each vehicle has individual environment fit; poor matches wear faster and may break down.</div>' +
           '<label class="home-police-label" for="home-police-guard-asset">Recorded factory / infrastructure target (optional)</label><select id="home-police-guard-asset" class="home-police-field">' + guardAssetOptions + '</select>' +
           '<p class="home-police-note">Only assets already recorded in this country are listed. An empty selection keeps the unit on general mission coverage; targeted guards affect the matching asset event only.</p>' +
           '<div class="home-police-form-row"><div class="home-police-field-wrap"><label class="home-police-label" for="home-police-guard-quantity">Vehicles to deploy</label><input id="home-police-guard-quantity" class="home-police-field" type="number" min="1" max="' + (selected ? Number(capacity.availableVehicles[selected.level]) || 1 : 1) + '" step="1" value="1" inputmode="numeric" ' + (selected ? '' : 'disabled') + '></div>' +
@@ -479,39 +492,60 @@
         backButton('home-police-guard-back', '← BACK TO POLICE COMMAND') +
       '</div>';
     const vehicleSelect = g.document.getElementById('home-police-guard-vehicle'), missionSelect = g.document.getElementById('home-police-guard-mission');
+    const environmentSelect = g.document.getElementById('home-police-guard-environment'), roadSelect = g.document.getElementById('home-police-guard-road');
     const quantityInput = g.document.getElementById('home-police-guard-quantity'), sectorInput = g.document.getElementById('home-police-guard-sector'), assetSelect = g.document.getElementById('home-police-guard-asset');
     const officerLabel = g.document.getElementById('home-police-guard-officers'), effectLabel = g.document.getElementById('home-police-guard-effectiveness');
     const fitNote = g.document.getElementById('home-police-guard-fit-note'), availabilityLabel = g.document.getElementById('home-police-guard-availability');
     const availabilityNote = g.document.getElementById('home-police-guard-availability-note'), errorBox = g.document.getElementById('home-police-guard-error');
+    const routeFit = g.document.getElementById('home-police-route-fit'), routeStatus = g.document.getElementById('home-police-route-status');
+    const routeWear = g.document.getElementById('home-police-route-wear'), routeRisk = g.document.getElementById('home-police-route-risk'), routeWarnings = g.document.getElementById('home-police-route-warnings');
     const deployButton = g.document.getElementById('home-police-confirm-guard');
     const refresh = () => {
       const level = Math.floor(Number(vehicleSelect.value) || 0), missionId = missionSelect.value, quantity = Math.floor(Number(quantityInput.value) || 0);
-      const v = e.VEHICLES.find(row => row.level === level), preview = e.getGuardDeploymentPreview(level, missionId, quantity);
+      const environmentId = environmentSelect.value, roadId = roadSelect.value;
+      const v = e.VEHICLES.find(row => row.level === level), preview = e.getGuardDeploymentPreview(level, missionId, quantity, e.getCurrentCountryId(), environmentId, roadId);
+      const use = preview.environment || e.getVehicleUseAssessment(level, environmentId, roadId);
+      routeFit.textContent = use.fit + ' / 100';
+      routeStatus.textContent = use.status + ' · ' + use.environment.name;
+      routeWear.textContent = (use.wearPerDay * 30).toFixed(1) + ' condition points';
+      routeRisk.textContent = 'Damage exposure ×' + use.damageRisk + ' · approx. ' + use.dailyDistanceKm + ' km/day';
+      routeWarnings.textContent = (use.summary || 'Route profile unavailable.') + (use.penalties.length ? ' ' + use.penalties.join(' ') : '') + (preview.estimatedConditionLoss30Days > 5 ? ' Expected wear is high; schedule maintenance.' : '');
       officerLabel.textContent = String(preview.requiredOfficers || 0);
       effectLabel.textContent = String(preview.effectiveness || 0) + ' / 100';
-      fitNote.textContent = preview.mission && v ? preview.mission.name + ' · ' + preview.effectiveness + '% based on this vehicle and current training.' : 'Select a vehicle and mission.';
+      fitNote.textContent = preview.mission && v ? preview.mission.name + ' · ' + preview.effectiveness + '% after route-fit and condition adjustments.' : 'Select a vehicle and mission.';
       availabilityLabel.textContent = preview.availableVehicles + ' vehicle(s) free';
       availabilityNote.textContent = preview.availableOfficers + ' unassigned officer(s) · ' + (v ? v.capacity + ' crew per vehicle' : 'no vehicle');
       quantityInput.max = String(Math.max(1, preview.availableVehicles || 1));
-      deployButton.disabled = !preview.ok;
+      deployButton.disabled = !preview.ok || use.fit < 20;
       if (!v) errorBox.textContent = 'No owned, unassigned vehicle is available. Purchase and receive one before deployment.';
       else if (preview.reason === 'INSUFFICIENT_UNASSIGNED_VEHICLES') errorBox.textContent = 'Not enough vehicles are free. Available for this tier: ' + preview.availableVehicles + '. Reduce the order quantity or stand down another assignment.';
       else if (preview.reason === 'INSUFFICIENT_UNASSIGNED_OFFICERS') errorBox.textContent = 'Not enough free officers for this assignment. ' + preview.availableOfficers + ' are available, but ' + preview.requiredOfficers + ' are required.';
+      else if (use.fit < 20) errorBox.textContent = 'DEPLOYMENT BLOCKED: this vehicle is a poor match for the selected route. Choose a more suitable model or change the environment.';
       else if (preview.reason) errorBox.textContent = 'Deployment is blocked: ' + preview.reason.replace(/_/g, ' ').toLowerCase() + '.';
-      else errorBox.textContent = 'Ready to deploy ' + quantity + ' × ' + v.name + ' to ' + (preview.mission ? preview.mission.name : 'the selected mission') + '. Estimated mission effectiveness: ' + preview.effectiveness + ' / 100.';
+      else errorBox.textContent = 'Ready: ' + quantity + ' × ' + v.name + ' to ' + (preview.mission ? preview.mission.name : 'the selected mission') + '. Route fit ' + use.fit + '/100, estimated effectiveness ' + preview.effectiveness + '/100. Approximate wear over 30 simulation days: ' + (use.wearPerDay * 30).toFixed(1) + ' condition points.';
     };
     vehicleSelect.onchange = refresh;
     missionSelect.onchange = refresh;
     quantityInput.oninput = refresh;
+    const updateRoadOptions = () => {
+      const env = environments.find(row => row.id === environmentSelect.value) || environments[0];
+      const previousRoad = roadSelect.value;
+      const allowed = roads.filter(row => env.roadConditions.includes(row.id));
+      roadSelect.innerHTML = allowed.map(row => '<option value="' + row.id + '">' + esc(row.name) + '</option>').join('');
+      roadSelect.value = allowed.some(row => row.id === previousRoad) ? previousRoad : env.roadDefault;
+      refresh();
+    };
+    environmentSelect.onchange = updateRoadOptions;
+    roadSelect.onchange = refresh;
     assetSelect.onchange = () => {
       const asset = guardableAssets.find(row => row.id === assetSelect.value);
       if (asset && (!sectorInput.value.trim() || sectorInput.value.trim() === 'General Sector')) sectorInput.value = asset.name;
       refresh();
     };
-    g.document.getElementById('home-police-guard-refresh').onclick = () => this.renderGuardOut(Number(vehicleSelect.value) || undefined);
+    g.document.getElementById('home-police-guard-refresh').onclick = () => this.renderGuardOut(Number(vehicleSelect.value) || undefined, { environment: environmentSelect.value, road: roadSelect.value });
     deployButton.onclick = () => {
       const level = Math.floor(Number(vehicleSelect.value) || 0), quantity = Math.floor(Number(quantityInput.value) || 0), missionId = missionSelect.value;
-      const result = e.deployGuard(level, quantity, missionId, sectorInput.value, e.getCurrentCountryId(), assetSelect.value || null);
+      const result = e.deployGuard(level, quantity, missionId, sectorInput.value, e.getCurrentCountryId(), assetSelect.value || null, environmentSelect.value, roadSelect.value);
       if (!result.ok) { report(result); this.renderGuardOut(level); return; }
       report(result, 'GUARD DEPLOYMENT COMMITTED', result.deployment.quantity + ' × ' + result.vehicle + ' assigned to ' + result.mission + ' at ' + result.deployment.sector + '. ' + result.assignedOfficers + ' officers reserved; current mission rating ' + result.estimatedEffectiveness + ' / 100.');
       this.renderGuardOut(level);
@@ -525,7 +559,7 @@
       };
     });
     g.document.getElementById('home-police-guard-back').onclick = () => this.openPoliceCommand();
-    refresh();
+    updateRoadOptions();
   };
 
   ui.renderFleetMaintenance = function (filters) {
