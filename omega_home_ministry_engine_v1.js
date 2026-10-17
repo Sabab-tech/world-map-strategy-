@@ -12,21 +12,21 @@
   const ECONOMY_INCIDENT_COMMAND = 'HOME_POLICE_APPLY_SECURITY_INCIDENT';
 
   const VEHICLES = Object.freeze([
-    {level:1,name:'Patrol Cruiser Basic',emoji:'🚓',className:'ENTRY PATROL',speed:120,capacity:4,durability:40,rangeKm:420,cost:5000,maintenancePerDay:45,role:'Routine urban patrol and first response'},
-    {level:2,name:'Rapid Response Sedan',emoji:'🚔',className:'RAPID RESPONSE',speed:140,capacity:4,durability:45,rangeKm:480,cost:8000,maintenancePerDay:60,role:'Fast response across the city grid'},
-    {level:3,name:'Tactical SUV',emoji:'🚙',className:'MULTI-ROLE',speed:130,capacity:6,durability:60,rangeKm:520,cost:12000,maintenancePerDay:85,role:'Mixed urban and rural patrol'},
-    {level:4,name:'Police Transport Van',emoji:'🚐',className:'PERSONNEL TRANSPORT',speed:100,capacity:12,durability:65,rangeKm:500,cost:15000,maintenancePerDay:95,role:'Officer transport and support deployment'},
-    {level:5,name:'Armored Patrol Vehicle',emoji:'🚘🛡️',className:'ARMORED RESPONSE',speed:110,capacity:6,durability:85,rangeKm:460,cost:25000,maintenancePerDay:150,role:'Protected transport in high-risk incidents'},
-    {level:6,name:'Advanced Interceptor',emoji:'🚨',className:'HIGH-SPEED INTERCEPTOR',speed:180,capacity:2,durability:50,rangeKm:400,cost:35000,maintenancePerDay:180,role:'High-speed vehicle interception'},
-    {level:7,name:'Urban Defense SUV',emoji:'🚙⚡',className:'URBAN DEFENSE',speed:135,capacity:6,durability:75,rangeKm:560,cost:45000,maintenancePerDay:230,role:'Reinforced city and perimeter patrol'},
-    {level:8,name:'Command Cruiser',emoji:'🚔💠',className:'MOBILE COMMAND',speed:145,capacity:5,durability:70,rangeKm:620,cost:60000,maintenancePerDay:300,role:'Field command, dispatch and coordination'},
-    {level:9,name:'Riot Control Carrier',emoji:'🚐🛡️',className:'PUBLIC-ORDER SUPPORT',speed:90,capacity:20,durability:95,rangeKm:440,cost:85000,maintenancePerDay:380,role:'Protected personnel deployment and evacuation'},
-    {level:10,name:'Heavy Security Vehicle',emoji:'🛻',className:'HEAVY SECURITY',speed:105,capacity:8,durability:100,rangeKm:600,cost:110000,maintenancePerDay:470,role:'High-durability critical-site security'},
-    {level:11,name:'AI Assisted Patrol',emoji:'🚓🤖',className:'SMART PATROL',speed:160,capacity:4,durability:60,rangeKm:720,cost:150000,maintenancePerDay:600,role:'Sensor-assisted dispatch and patrol coverage'},
-    {level:12,name:'Smart Tactical Unit',emoji:'🚔🔷',className:'TACTICAL NETWORK',speed:150,capacity:6,durability:80,rangeKm:760,cost:200000,maintenancePerDay:760,role:'Integrated mobile operations and field coordination'},
-    {level:13,name:'Elite Response Vehicle',emoji:'🏎️',className:'ELITE RESPONSE',speed:175,capacity:4,durability:75,rangeKm:680,cost:280000,maintenancePerDay:950,role:'Specialist rapid response and critical escort'},
-    {level:14,name:'National Security Cruiser',emoji:'🚓👑',className:'NATIONAL SECURITY',speed:165,capacity:5,durability:90,rangeKm:900,cost:400000,maintenancePerDay:1250,role:'Long-range national security command support'},
-    {level:15,name:'Sovereign Guardian Vehicle',emoji:'🏆🚔',className:'FLAGSHIP / TIER XV',speed:200,capacity:6,durability:120,rangeKm:1100,cost:750000,maintenancePerDay:1800,role:'Flagship multi-system protection and rapid command response'}
+    {level:1,name:'Patrol Cruiser Basic',emoji:'🚓',className:'ENTRY PATROL',speed:120,capacity:4,durability:40,rangeKm:420,enduranceHours:8,cost:5000,maintenancePerDay:45,role:'Routine urban patrol and first response'},
+    {level:2,name:'Rapid Response Sedan',emoji:'🚔',className:'RAPID RESPONSE',speed:140,capacity:4,durability:45,rangeKm:480,enduranceHours:10,cost:8000,maintenancePerDay:60,role:'Fast response across the city grid'},
+    {level:3,name:'Tactical SUV',emoji:'🚙',className:'MULTI-ROLE',speed:130,capacity:6,durability:60,rangeKm:520,enduranceHours:11,cost:12000,maintenancePerDay:85,role:'Mixed urban and rural patrol'},
+    {level:4,name:'Police Transport Van',emoji:'🚐',className:'PERSONNEL TRANSPORT',speed:100,capacity:12,durability:65,rangeKm:500,enduranceHours:10,cost:15000,maintenancePerDay:95,role:'Officer transport and support deployment'},
+    {level:5,name:'Armored Patrol Vehicle',emoji:'🚘🛡️',className:'ARMORED RESPONSE',speed:110,capacity:6,durability:85,rangeKm:460,enduranceHours:8,cost:25000,maintenancePerDay:150,role:'Protected transport in high-risk incidents'},
+    {level:6,name:'Advanced Interceptor',emoji:'🚨',className:'HIGH-SPEED INTERCEPTOR',speed:180,capacity:2,durability:50,rangeKm:400,enduranceHours:7,cost:35000,maintenancePerDay:180,role:'High-speed vehicle interception'},
+    {level:7,name:'Urban Defense SUV',emoji:'🚙⚡',className:'URBAN DEFENSE',speed:135,capacity:6,durability:75,rangeKm:560,enduranceHours:12,cost:45000,maintenancePerDay:230,role:'Reinforced city and perimeter patrol'},
+    {level:8,name:'Command Cruiser',emoji:'🚔💠',className:'MOBILE COMMAND',speed:145,capacity:5,durability:70,rangeKm:620,enduranceHours:12,cost:60000,maintenancePerDay:300,role:'Field command, dispatch and coordination'},
+    {level:9,name:'Riot Control Carrier',emoji:'🚐🛡️',className:'PUBLIC-ORDER SUPPORT',speed:90,capacity:20,durability:95,rangeKm:440,enduranceHours:10,cost:85000,maintenancePerDay:380,role:'Protected personnel deployment and evacuation'},
+    {level:10,name:'Heavy Security Vehicle',emoji:'🛻',className:'HEAVY SECURITY',speed:105,capacity:8,durability:100,rangeKm:600,enduranceHours:14,cost:110000,maintenancePerDay:470,role:'High-durability critical-site security'},
+    {level:11,name:'AI Assisted Patrol',emoji:'🚓🤖',className:'SMART PATROL',speed:160,capacity:4,durability:60,rangeKm:720,enduranceHours:18,cost:150000,maintenancePerDay:600,role:'Sensor-assisted dispatch and patrol coverage'},
+    {level:12,name:'Smart Tactical Unit',emoji:'🚔🔷',className:'TACTICAL NETWORK',speed:150,capacity:6,durability:80,rangeKm:760,enduranceHours:16,cost:200000,maintenancePerDay:760,role:'Integrated mobile operations and field coordination'},
+    {level:13,name:'Elite Response Vehicle',emoji:'🏎️',className:'ELITE RESPONSE',speed:175,capacity:4,durability:75,rangeKm:680,enduranceHours:10,cost:280000,maintenancePerDay:950,role:'Specialist rapid response and critical escort'},
+    {level:14,name:'National Security Cruiser',emoji:'🚓👑',className:'NATIONAL SECURITY',speed:165,capacity:5,durability:90,rangeKm:900,enduranceHours:18,cost:400000,maintenancePerDay:1250,role:'Long-range national security command support'},
+    {level:15,name:'Sovereign Guardian Vehicle',emoji:'🏆🚔',className:'FLAGSHIP / TIER XV',speed:200,capacity:6,durability:120,rangeKm:1100,enduranceHours:24,cost:750000,maintenancePerDay:1800,role:'Flagship multi-system protection and rapid command response'}
   ]);
 
   const FACILITIES = Object.freeze([
@@ -279,15 +279,19 @@
   }
   function onTurnCommitted(event){
     const detail=event&&event.detail||{},payload=detail.payload||detail,cid=normalizeCountry(payload.countryId||detail.countryId||currentCountry());if(!cid)return;
-    const now=simulationTimeMs(),day=Math.floor(now/DAY_MS),s=getState(cid);let changed=false;
+    const now=simulationTimeMs(),day=Math.floor(now/DAY_MS),s=getState(cid);let changed=false,payrollDebit=null;
     if(s.lastPayrollDay===null||s.lastPayrollDay===undefined){s.lastPayrollDay=day;changed=true;}
     else if(day>s.lastPayrollDay){
       const days=Math.min(3650,day-s.lastPayrollDay),due=dailyOperatingCost(s)*days,treasury=getTreasury(cid);
-      if(treasury.available){const paid=Math.min(due,treasury.balance),debit=debitTreasury(cid,paid);if(debit.ok){
-        if(paid<due){s.unpaidPayroll+=due-paid;s.policeTrust=clamp(s.policeTrust-Math.min(5,days),0,100);s.policeEfficiency=clamp(s.policeEfficiency-Math.min(5,days),0,100);s.sabotageRisk=clamp(s.sabotageRisk+Math.min(5,days),5,95);}
-        emit('OMEGA_HOME_POLICE_PAYROLL_SETTLED',{countryId:cid,days:days,due:due,paid:paid,unpaid:Math.max(0,due-paid),turn:turn()});
-      }}
-      s.lastPayrollDay=day;changed=true;
+      if(treasury.available){
+        const paid=Math.min(due,Math.max(0,treasury.balance)),debit=debitTreasury(cid,paid);
+        if(debit.ok){
+          payrollDebit=debit;
+          if(paid<due){s.unpaidPayroll+=due-paid;s.policeTrust=clamp(s.policeTrust-Math.min(5,days),0,100);s.policeEfficiency=clamp(s.policeEfficiency-Math.min(5,days),0,100);s.sabotageRisk=clamp(s.sabotageRisk+Math.min(5,days),5,95);}
+          emit('OMEGA_HOME_POLICE_PAYROLL_SETTLED',{countryId:cid,days:days,due:due,paid:paid,unpaid:Math.max(0,due-paid),turn:turn()});
+          s.lastPayrollDay=day;changed=true;
+        }
+      }
     }
     const order=s.pendingVehicleOrder;
     if(order&&now>=order.completesAtMs){const v=VEHICLES.find(x=>x.level===order.level);if(v){
@@ -300,7 +304,7 @@
       s.tacticsResearched[t.id]=true;s.policeEfficiency=clamp(s.policeEfficiency+t.efficiency,0,100);s.sabotageRisk=clamp(s.sabotageRisk-t.riskReduction,5,95);s.policeTrust=clamp(s.policeTrust+2,0,100);s.pendingResearch=null;
       emit('OMEGA_POLICE_RESEARCH_COMPLETED',{countryId:cid,tacticId:t.id,name:t.name,effects:clone(t),turn:turn()});changed=true;
     }}
-    if(processIncident(cid,s,day))changed=true;if(collectIntelligence(cid,s,day))changed=true;s.lastUpdatedTurn=turn();if(changed)dispatchState(cid,s,'OMEGA_HOME_MINISTRY_SIMULATION_UPDATE');
+    if(processIncident(cid,s,day))changed=true;if(collectIntelligence(cid,s,day))changed=true;s.lastUpdatedTurn=turn();if(changed){const committed=dispatchState(cid,s,'OMEGA_HOME_MINISTRY_SIMULATION_UPDATE');if(!committed.ok&&payrollDebit)refundTreasury(payrollDebit);}
   }
 
   let handlerRegistered=false,economyHandlerRegistered=false;
