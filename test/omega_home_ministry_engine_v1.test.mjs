@@ -308,6 +308,75 @@ test('simulation incident records the deterministic target asset and matching gu
   assert.equal(incident.activeGuardDeployments, 1);
 });
 
+test('vehicle route suitability differentiates urban, highway and border platforms', () => {
+  setup();
+  const environments = api.getOperatingEnvironments();
+  assert.deepEqual(environments.map(x => x.id), ['city', 'highway', 'rural', 'border', 'industrial', 'mountain', 'coastal']);
+  assert.equal(api.getRoadConditions().length, 5);
+  const cityCar = api.getVehicleUseAssessment(1, 'city', 'congested', 'AAA');
+  const cityCarAtBorder = api.getVehicleUseAssessment(1, 'border', 'rough', 'AAA');
+  const borderSUV = api.getVehicleUseAssessment(7, 'border', 'rough', 'AAA');
+  assert.ok(cityCar.fit > cityCarAtBorder.fit, JSON.stringify({ cityCar, cityCarAtBorder }));
+  assert.ok(borderSUV.fit > cityCarAtBorder.fit + 45, JSON.stringify({ cityCarAtBorder, borderSUV }));
+  assert.ok(cityCarAtBorder.wearPerDay > cityCar.wearPerDay);
+  assert.ok(cityCarAtBorder.damageRisk > cityCar.damageRisk);
+  assert.ok(borderSUV.dailyDistanceKm < api.getVehicleUseAssessment(7, 'border', 'smooth', 'AAA').dailyDistanceKm);
+});
+
+test('deployment rejects severely mismatched vehicles and reserves individually identified fleet units', () => {
+  const state = setup();
+  api.getState('AAA');
+  state.interior.AAA.police.vehiclesOwned = { 1: 1, 7: 1 };
+  const inventory = api.getVehicleFleet('AAA');
+  assert.equal(inventory.length, 2);
+  assert.equal(new Set(inventory.map(x => x.id)).size, 2);
+  assert.equal(api.deployGuard(1, 1, 'border_interdiction', 'Remote border', 'AAA', null, 'border', 'rough').reason, 'VEHICLE_ROUTE_MISMATCH');
+  const suited = api.deployGuard(7, 1, 'border_interdiction', 'Remote border', 'AAA', null, 'border', 'rough');
+  assert.equal(suited.ok, true, JSON.stringify(suited));
+  assert.equal(suited.deployment.environmentId, 'border');
+  assert.equal(suited.deployment.roadCondition, 'rough');
+  assert.equal(suited.deployment.vehicleIds.length, 1);
+  assert.equal(api.getVehicleFleet('AAA').find(x => x.id === suited.deployment.vehicleIds[0]).status, 'DEPLOYED');
+  assert.equal(api.serviceVehicle(suited.deployment.vehicleIds[0], 'AAA').reason, 'VEHICLE_STILL_DEPLOYED');
+});
+
+test('wrong-route driving degrades vehicle condition and forces scheduled service before it can be reassigned', () => {
+  const state = setup();
+  api.getState('AAA');
+  state.interior.AAA.police.vehiclesOwned = { 1: 1 };
+  const deployment = api.deployGuard(1, 1, 'urban_patrol', 'Secondary roads', 'AAA', null, 'rural', 'rough');
+  assert.equal(deployment.ok, true, JSON.stringify(deployment));
+  assert.ok(deployment.environmentAssessment.fit < 40);
+  api.processTurn({ detail: { payload: { countryId: 'AAA', turn: 0 } } });
+  state.simulation.simulationTimeMs = 100 * DAY;
+  state.simulation.turn = 2400;
+  api.processTurn({ detail: { payload: { countryId: 'AAA', turn: 2400 } } });
+  let fleet = api.getVehicleFleet('AAA');
+  assert.equal(fleet.length, 1);
+  assert.equal(fleet[0].status, 'MAINTENANCE_DUE');
+  assert.ok(fleet[0].condition < 70, JSON.stringify(fleet[0]));
+  assert.ok(fleet[0].odometerKm >= fleet[0].nextServiceAtKm);
+  assert.equal(api.getGuardCapacity('AAA').availableVehicles[1], 0);
+  assert.equal(api.getState('AAA').guardDeployments.length, 0);
+  const before = state.economy.AAA.treasury;
+  const repair = api.serviceVehicle(fleet[0].id, 'AAA');
+  assert.equal(repair.ok, true, JSON.stringify(repair));
+  fleet = api.getVehicleFleet('AAA');
+  assert.equal(fleet[0].condition, 100);
+  assert.equal(fleet[0].status, 'AVAILABLE');
+  assert.ok(fleet[0].nextServiceAtKm > fleet[0].odometerKm);
+  assert.ok(state.economy.AAA.treasury < before);
+  assert.ok(api.getGuardCapacity('AAA').availableVehicles[1] === 1);
+});
+
+test('poorly matched and harsh routes have a higher wear forecast than well matched smooth routes', () => {
+  setup();
+  const suited = api.getVehicleUseAssessment(7, 'border', 'smooth', 'AAA');
+  const harsh = api.getVehicleUseAssessment(1, 'rural', 'rough', 'AAA');
+  assert.ok(harsh.wearPerDay > suited.wearPerDay * 2, JSON.stringify({ suited, harsh }));
+  assert.ok(harsh.damageRisk > suited.damageRisk);
+});
+
 test('purchases fail closed when treasury is unavailable and advice is non-mutating', () => {
   setup(null);
   assert.equal(api.recruitPolice(5, 'AAA').reason, 'TREASURY_DATA_UNAVAILABLE');
