@@ -759,13 +759,11 @@
             </div>
 
             <nav class="ui-bottom-navigation" role="navigation" aria-label="Main Command Navigation">
-                <button id="btn-ministry-dock" class="nav-btn active" title="State Ministries & Strategic Cabinet Dashboard" onclick="window.openMainMinistryView(event);">
-                    <span class="nav-icon">🏛️</span>
+                <button id="btn-ministry-dock" class="nav-btn active" type="button"
+                        aria-label="Open Ministries" title="Open Ministries"
+                        onclick="window.openMainMinistryView(event);">
+                    <span class="nav-icon" aria-hidden="true">≡</span>
                     <span class="nav-text">MINISTRIES</span>
-                </button>
-                <button id="btn-view-map" class="nav-btn" title="Toggle Map Layer Spectrum & Camera Focus" onclick="window.openMainMapView(event);">
-                    <span class="nav-icon">👁️</span>
-                    <span class="nav-text">VIEW MAP</span>
                 </button>
             </nav>
         </div>

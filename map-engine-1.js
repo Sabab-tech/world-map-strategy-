@@ -202,18 +202,6 @@ var Game = window.Game = {
             });
         }
 
-        // 👁️ BOTTOM BAR: VIEW SELECTED COUNTRY BUTTON
-        const btnViewMap = document.getElementById('btn-view-map');
-        if (btnViewMap) {
-            btnViewMap.addEventListener('click', (e) => {
-                if (typeof window.openMainMapView === 'function') {
-                    window.openMainMapView(e);
-                } else if (window.OmegaLayerManager) {
-                    window.OmegaLayerManager.setLayer(0);
-                }
-            });
-        }
-
         // 🎛️ RIGHT QUICK DOCK BINDINGS
         const btnSearch = document.getElementById('btn-quick-search');
         const drawerSearch = document.getElementById('search-drawer');
