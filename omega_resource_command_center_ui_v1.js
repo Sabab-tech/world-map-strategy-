@@ -1,5 +1,5 @@
-/* OMEGA Resource Command Center UI v1.1.0
- * Binds all sixteen Resource Ministry cards to scoped live-data panels.
+/* OMEGA Resource Command Center UI v1.2.0
+ * Binds all sixteen legacy Resource Ministry cards plus live market listings to runtime panels.
  * Actions report authoritative runtime outcomes; unavailable systems never report success.
  */
 (function (g) {
@@ -21,7 +21,8 @@
     { id: 'cascade', num: '13', title: 'Cascade disruption sandbox' },
     { id: 'cognitive', num: '14', title: 'Cognitive decision gate' },
     { id: 'power', num: '15', title: 'Power systems & energy projects' },
-    { id: 'environment', num: '16', title: 'Circular industry & environmental controls' }
+    { id: 'environment', num: '16', title: 'Circular industry & environmental controls' },
+    { id: 'offers', num: '17', title: 'Live country offers' }
   ];
   const ALIASES = { profile: 'cognitive', inventory: 'inventory', deposits: 'deposits', matrix: 'matrix' };
   let countryId = null;
@@ -610,7 +611,12 @@
     if (!market || !market.quote) return empty('Global market runtime is unavailable; no price is fabricated.');
     let books = {};
     try { books = market.rebuild ? market.rebuild() : g.__OmegaMarketBooks || {}; } catch (_) { books = g.__OmegaMarketBooks || {}; }
-    const rows = resources(country).map(function (r) {
+    const observedRows = resources(country);
+    const observedTypes = Array.isArray(engine()?.resourceTypes) ? engine().resourceTypes : [];
+    const marketIds = typeof market.resourceIds === 'function' ? market.resourceIds() : observedRows.map(function (r) { return r.id; });
+    const rows = marketIds.map(function (id) {
+      const r = Object.assign({}, observedTypes.find(function (x) { return String(x.id) === String(id); }) || {},
+        observedRows.find(function (x) { return String(x.id) === String(id); }) || {}, { id: id });
       const q = market.quote(r.id);
       const book = books[r.id] || {};
       const matches = Array.isArray(q.matches) ? q.matches : [];
@@ -627,10 +633,51 @@
       return card(r.name || r.id, q.status || 'NO MARKET RESULT', body, '');
     }).join('');
     const diag = market.diagnostics ? market.diagnostics() : null;
-    return '<p class="omega-rescc-note">Price discovery is read from the existing order-book runtime. Quotes that include reference-only resource availability are labeled and are not treated as trades.</p>' +
+    return '<p class="omega-rescc-note">The market catalogue contains every runtime-known resource. Clearing prices only appear after executable buyer and seller orders cross; catalog reference prices are not reported as completed trades.</p>' +
       (diag ? diagnosticCard('Global market diagnostics', diag) : '') +
       actionButton('refresh-market', 'Rebuild current market snapshot', {}) +
+      actionButton('open-offers', 'Open live country offers', {}) +
       (rows || empty('No resource IDs are available to quote.'));
+  }
+  function panelOffers(country) {
+    const market = g.OmegaGlobalMarket || g.Omega && g.Omega.GlobalMarket;
+    if (!market || typeof market.listings !== 'function') return empty('Live country listings API is unavailable; no offers have been fabricated.');
+    let rows = [];
+    try { if (typeof market.rebuild === 'function') market.rebuild(); rows = market.listings() || []; }
+    catch (error) { return empty('Live country listings failed to load: ' + String(error && error.message || error)); }
+    const priced = rows.filter(function (r) { return r.status === 'FOR_SALE'; }).length;
+    const unpriced = rows.filter(function (r) { return r.status === 'UNPRICED_STOCK' || r.status === 'UNPRICED_OFFER'; }).length;
+    const waitingFx = rows.filter(function (r) { return r.status === 'AWAITING_FX'; }).length;
+    const cards = rows.map(function (r) {
+      const type = (Array.isArray(engine()?.resourceTypes) ? engine().resourceTypes : []).find(function (x) { return String(x.id) === String(r.resourceId); });
+      const unit = r.unit || type && type.unit || 'unit unavailable';
+      const ask = r.unitPrice === null || r.unitPrice === undefined ? 'No verified asking price' :
+        number(r.unitPrice, ' ' + (r.currencyCode || 'currency unknown') + ' / ' + unit);
+      const meta = r.status === 'FOR_SALE' ? 'FOR SALE' : r.status === 'AWAITING_FX' ? 'WAITING FOR FX' :
+        r.status === 'UNPRICED_OFFER' ? 'OFFER NEEDS PRICE' : 'UNPRICED STOCK';
+      const body = '<div class="omega-rescc-grid2">' +
+        '<div class="omega-rescc-kv"><span>Seller country</span><strong>' + esc(r.countryId) + '</strong></div>' +
+        '<div class="omega-rescc-kv"><span>Resource</span><strong>' + esc(r.resourceId) + '</strong></div>' +
+        '<div class="omega-rescc-kv"><span>Available / offered</span><strong>' + number(r.quantity, ' ' + unit) + '</strong></div>' +
+        '<div class="omega-rescc-kv"><span>Asking price</span><strong>' + esc(ask) + '</strong></div>' +
+        '<div class="omega-rescc-kv"><span>USD-normalized ask</span><strong>' + number(r.priceUsd, ' USD / ' + unit) + '</strong></div>' +
+        '<div class="omega-rescc-kv"><span>Price authority</span><strong>' + esc(r.priceAuthority || 'NOT_RECORDED') + '</strong></div>' +
+        '<div class="omega-rescc-kv"><span>Turn</span><strong>' + esc(r.simulationTurn == null ? '—' : r.simulationTurn) + '</strong></div>' +
+        '<div class="omega-rescc-kv"><span>Batch / site lineage</span><strong>' + number((r.sourceBatchIds || []).length) + ' batches / ' + number((r.sourceSiteIds || []).length) + ' sites</strong></div>' +
+        '</div>' +
+        (r.status === 'UNPRICED_STOCK' ? '<div class="omega-rescc-warning">Physical stock is observed, but no trustworthy asking price is available yet. It is visible here, not inserted into the executable order book.</div>' : '') +
+        (r.status === 'AWAITING_FX' ? '<div class="omega-rescc-warning">A price exists, but the seller currency or exchange-rate evidence is insufficient for global price matching.</div>' : '') +
+        (r.priceAuthority === 'CATALOG_REFERENCE_PRICE' ? '<div class="omega-rescc-muted">Asking price seeded from an explicit catalog reference; this is not a completed market trade.</div>' : '');
+      return card((type && type.name || r.resourceId) + ' · ' + r.countryId, meta, body, '');
+    }).join('');
+    const diagnostics = market.diagnostics ? market.diagnostics() : {};
+    return '<p class="omega-rescc-note">This is the live, country-by-country seller register. Offers use real runtime inventory and available batches. Unknown prices remain unpriced instead of receiving the old hardcoded 1000 value.</p>' +
+      '<div class="omega-rescc-metrics"><div><span>Listings</span><strong>' + number(rows.length) + '</strong></div>' +
+      '<div><span>Priced for sale</span><strong>' + number(priced) + '</strong></div>' +
+      '<div><span>Stock awaiting a real price</span><strong>' + number(unpriced) + '</strong></div>' +
+      '<div><span>Waiting for FX data</span><strong>' + number(waitingFx) + '</strong></div></div>' +
+      actionButton('refresh-market', 'Refresh live market', {}) +
+      (cards || empty('No positive tradeable stock or live seller offers are currently available.'));
   }
   function panelTrade(country) {
     const trade = g.OmegaGlobalTrade || g.Omega && g.Omega.GlobalTrade;
@@ -843,6 +890,7 @@
       case 'logistics': return panelLogistics(country);
       case 'industrial': return panelIndustrial(country);
       case 'market': return panelMarket(country);
+      case 'offers': return panelOffers(country);
       case 'trade': return panelTrade(country);
       case 'value': return panelValue(country);
       case 'cascade': return panelCascade(country);
@@ -1149,6 +1197,10 @@
         setOutcome('Technology project ' + (d.technologyId || ''), result);
         return;
       }
+      if (action === 'open-offers') {
+        render(c, 'offers');
+        return;
+      }
       if (action === 'refresh-market') {
         const market = g.OmegaGlobalMarket || g.Omega && g.Omega.GlobalMarket;
         if (!market || typeof market.rebuild !== 'function') result = { status: 'UNAVAILABLE', reason: 'GLOBAL_MARKET_REBUILD_API_UNAVAILABLE' };
@@ -1371,7 +1423,7 @@
             '01': 'matrix', '02': 'ontology', '03': 'reserves', '04': 'deposits',
             '05': 'extraction', '06': 'processing', '07': 'inventory', '08': 'logistics',
             '09': 'industrial', '10': 'market', '11': 'trade', '12': 'value',
-            '13': 'cascade', '14': 'cognitive', '15': 'power', '16': 'environment'
+            '13': 'cascade', '14': 'cognitive', '15': 'power', '16': 'environment', '17': 'offers'
           };
           html = html.replace(/<div class="dept-card" style=[\s\S]*?(?=<div class="dept-card" style=|$)/g, function (block) {
             const point = block.match(/<span>(\d{2})\.\s/);
@@ -1412,7 +1464,7 @@
         cabinet.__omegaResccCardPatch = true;
       }
       cabinet.executeResource16Point = function (pointKey, directiveType) {
-        const routes = { p01: 'matrix', p02: 'ontology', p03: 'reserves', p04: 'deposits', p05: 'extraction', p06: 'processing', p07: 'inventory', p08: 'logistics', p09: 'industrial', p10: 'market', p11: 'trade', p12: 'value', p13: 'cascade', p14: 'cognitive', p15: 'power', p16: 'environment' };
+        const routes = { p01: 'matrix', p02: 'ontology', p03: 'reserves', p04: 'deposits', p05: 'extraction', p06: 'processing', p07: 'inventory', p08: 'logistics', p09: 'industrial', p10: 'market', p11: 'trade', p12: 'value', p13: 'cascade', p14: 'cognitive', p15: 'power', p16: 'environment', p17: 'offers' };
         const route = routes[String(pointKey || '').toLowerCase()];
         if (route) { render(activeCountry(), route); return { status: 'OPENED_PANEL', panel: route }; }
         if (typeof cabinet.executeResourceDirective === 'function') {
