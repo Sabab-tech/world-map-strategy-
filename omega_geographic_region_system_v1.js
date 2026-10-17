@@ -23,9 +23,10 @@
   };
   const state = {
     countries: [], by2: new Map(), by3: new Map(), byName: new Map(),
-    oceans: null, mapLayer: null, oceanLayer: null, oceanLayerKey: null,
+    oceans: null, oceansPromise: null, mapLayer: null, oceanLayer: null, oceanLayerKey: null,
     oceanLabelMarker: null, control: null, highlightedLayers: new Set(),
     highlightedLayerOwner: null, appliedHighlightKey: null,
+    styleQueue: [], styleFrame: null, styleGeneration: 0,
     selected: null, pendingGeoData: null, initialized: false, ready: false
   };
   const continentOrder = ["Africa","Antarctica","Asia","Europe","North America","Oceania","South America"];
@@ -213,11 +214,22 @@
   function applyOceanStyle() {
     const map = mapInstance(), L = global.L;
     if (!map || !L || !state.selected || state.selected.kind !== "ocean" ||
-        !state.oceans || typeof L.geoJSON !== "function") {
+        typeof L.geoJSON !== "function") {
       removeOceanOverlay();
       return;
     }
     const key = state.selected.key;
+    // Basin geometry is intentionally lazy-loaded so it cannot delay the base map.
+    if (!state.oceans) {
+      removeOceanOverlay();
+      loadOceans().then(function (oceans) {
+        if (oceans && state.selected && state.selected.kind === "ocean" &&
+            state.selected.key === key) {
+          installMapLayers();
+        }
+      });
+      return;
+    }
     if (state.oceanLayer && state.oceanLayerKey === key) return;
     removeOceanOverlay();
     const feature = state.oceans.features.find(function (item) {
@@ -256,6 +268,55 @@
       }).addTo(map);
     }
   }
+  function scheduleStyleOperations(operations) {
+    if (state.styleFrame !== null) {
+      if (typeof global.cancelAnimationFrame === "function") {
+        global.cancelAnimationFrame(state.styleFrame);
+      } else if (typeof global.clearTimeout === "function") {
+        global.clearTimeout(state.styleFrame);
+      }
+    }
+    const generation = ++state.styleGeneration;
+    state.styleQueue = Array.isArray(operations) ? operations.slice() : [];
+    state.styleFrame = null;
+    if (!state.styleQueue.length) return;
+
+    const now = function () {
+      return global.performance && typeof global.performance.now === "function" ?
+        global.performance.now() : Date.now();
+    };
+    const runBatch = function () {
+      if (generation !== state.styleGeneration) return;
+      state.styleFrame = null;
+      const started = now();
+      let processed = 0;
+      // Bound both work per frame and elapsed time to keep touch/zoom responsive on phones.
+      while (state.styleQueue.length && processed < 6) {
+        const operation = state.styleQueue.shift();
+        try {
+          operation();
+        } catch (error) {
+          if (global.console && typeof global.console.warn === "function") {
+            global.console.warn("[OMEGA geography] Deferred layer styling failed:", error);
+          }
+        }
+        processed += 1;
+        if (now() - started >= 7) break;
+      }
+      if (state.styleQueue.length) {
+        if (typeof global.requestAnimationFrame === "function") {
+          state.styleFrame = global.requestAnimationFrame(runBatch);
+        } else {
+          state.styleFrame = global.setTimeout(runBatch, 0);
+        }
+      }
+    };
+    if (typeof global.requestAnimationFrame === "function") {
+      state.styleFrame = global.requestAnimationFrame(runBatch);
+    } else {
+      state.styleFrame = global.setTimeout(runBatch, 0);
+    }
+  }
   function applySelectionStyles() {
     const layer = state.mapLayer || global.Game && global.Game.geojsonLayer;
     if (!layer || typeof layer.eachLayer !== "function") {
@@ -272,8 +333,7 @@
       state.appliedHighlightKey = null;
     }
 
-    // Continents illuminate member country boundaries. Oceans use their own
-    // dedicated basin overlay, so coastal countries are not mis-marked as ocean.
+    // Continent membership is indexed cheaply; expensive polygon restyling is deferred in small batches.
     const highlightCountries = !!(state.selected && state.selected.kind === "continent");
     const nextLayers = new Set();
     if (highlightCountries) {
@@ -285,29 +345,45 @@
     }
     const targetColor = highlightCountries ? continentColors[state.selected.key] : null;
     const highlightKey = highlightCountries ? state.selected.key + ":" + targetColor : null;
+
+    // A repeated map-ready event for the same selection must not cancel a partially completed batch.
+    if (state.highlightedLayerOwner === layer &&
+        state.appliedHighlightKey === highlightKey &&
+        state.styleFrame !== null && state.styleQueue.length) {
+      applyOceanStyle();
+      return;
+    }
+
     const mustRestyle = state.appliedHighlightKey !== highlightKey;
-    state.highlightedLayers.forEach(function (child) {
+    const operations = [];
+    Array.from(state.highlightedLayers).forEach(function (child) {
       if (nextLayers.has(child)) return;
-      if (typeof layer.resetStyle === "function") layer.resetStyle(child);
-      setBoundaryGlow(child, false);
+      operations.push(function () {
+        if (typeof layer.resetStyle === "function") layer.resetStyle(child);
+        setBoundaryGlow(child, false);
+        state.highlightedLayers.delete(child);
+      });
     });
     if (highlightCountries) {
       nextLayers.forEach(function (child) {
         if (state.highlightedLayers.has(child) && !mustRestyle) return;
-        child.setStyle({
-          color: targetColor,
-          weight: 2.45,
-          opacity: 1,
-          dashArray: null,
-          fillColor: targetColor,
-          fillOpacity: 0.16
+        operations.push(function () {
+          child.setStyle({
+            color: targetColor,
+            weight: 2.45,
+            opacity: 1,
+            dashArray: null,
+            fillColor: targetColor,
+            fillOpacity: 0.16
+          });
+          setBoundaryGlow(child, true, targetColor, "continent");
+          state.highlightedLayers.add(child);
         });
-        setBoundaryGlow(child, true, targetColor, "continent");
       });
     }
-    state.highlightedLayers = nextLayers;
     state.highlightedLayerOwner = layer;
     state.appliedHighlightKey = highlightKey;
+    scheduleStyleOperations(operations);
     applyOceanStyle();
   }
   function zoomToCountry(row) {
@@ -440,17 +516,34 @@
   }
   function getJson(url) {
     if (typeof global.fetch!=="function") return Promise.resolve(null);
-    const path=url+(url.indexOf("?")>=0?"&":"?")+"v=omega-geography-v1";
-    return global.fetch(path,{cache:"no-store"}).then(function(response){
+    const path=url+(url.indexOf("?")>=0?"&":"?")+"v=omega-geography-v2";
+    // Let the browser cache versioned local assets instead of forcing a network read on every launch.
+    return global.fetch(path,{cache:"default"}).then(function(response){
       if (!response || !response.ok) throw new Error("Unable to load "+url);
       return response.json();
     });
   }
+  function loadOceans() {
+    if (state.oceans) return Promise.resolve(state.oceans);
+    if (state.oceansPromise) return state.oceansPromise;
+    state.oceansPromise = getJson("world_oceans_v1.json").then(function(collection) {
+      if (!collection || collection.type !== "FeatureCollection" || !Array.isArray(collection.features)) {
+        throw new Error("Invalid ocean basin GeoJSON");
+      }
+      state.oceans = collection;
+      return collection;
+    }).catch(function(error) {
+      state.oceansPromise = null;
+      if (global.console && typeof global.console.warn === "function") {
+        global.console.warn("[OMEGA geography] Ocean basin data unavailable:", error);
+      }
+      return null;
+    });
+    return state.oceansPromise;
+  }
   const countriesPromise=getJson("countries.json").catch(function(){return null;});
-  const oceansPromise=getJson("world_oceans_v1.json").catch(function(){return null;});
-  state.readyPromise=Promise.all([countriesPromise,oceansPromise]).then(function(results){
-    if(Array.isArray(results[0])) indexCountries(results[0]);
-    if(results[1] && results[1].type==="FeatureCollection") state.oceans=results[1];
+  state.readyPromise=countriesPromise.then(function(rows){
+    if(Array.isArray(rows)) indexCountries(rows);
     state.ready=true;
     if(global.Game && typeof global.Game.findCountryConfig==="function" && !global.Game.findCountryConfig.__omegaRegionWrapped){
       const originalFind=global.Game.findCountryConfig;
@@ -473,7 +566,7 @@
     return state;
   });
   global.OMEGAGeographicRegionSystem={
-    version:"1.1.0",
+    version:"1.2.0",
     ready:state.readyPromise,
     select:function(value, options){return setSelection(value, options);},
     search:searchRegions,
@@ -499,16 +592,10 @@
     const wrappedRender=function(collection){
       state.pendingGeoData=collection;
       if(!state.ready){
-        const self=this;
-        state.readyPromise.then(function(){
-          if(state.pendingGeoData===collection && !state.initialized){
-            enrichFeatureCollection(collection);
-            originalRender.call(self,collection);
-            state.mapLayer=global.Game.geojsonLayer||state.mapLayer;
-            installMapLayers();
-          }
-        });
-        return;
+        // Render the country's canonical polygons immediately; region metadata can enhance them afterward.
+        const result=originalRender.call(this,collection);
+        state.mapLayer=global.Game.geojsonLayer||state.mapLayer;
+        return result;
       }
       enrichFeatureCollection(collection);
       const result=originalRender.call(this,collection);
