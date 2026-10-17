@@ -18,6 +18,30 @@ test('all sixteen resource cards have a dedicated command-center panel', () => {
   assert.match(ui, /omega-rescc-country/);
 });
 
+test('deposit panel is an explicit country-scoped exact-site locator, not a generic deposit dump', () => {
+  assert.match(ui, /function panelDeposits\(country\)/);
+  const panel = ui.slice(ui.indexOf('function panelDeposits(country)'), ui.indexOf('function siteRows(country)', ui.indexOf('function panelDeposits(country)')));
+  assert.match(panel, /siteRows\(selected\)/, 'site results must come from the existing canonical site registry');
+  assert.match(panel, /Find a specific mine or field/);
+  assert.match(panel, /Locate this site/);
+  assert.match(panel, /Site ID/);
+  assert.match(ui, /label class="omega-rescc-control-label" for="omega-rescc-country">Country/);
+  assert.match(ui, /Mine, oil field, gas field or resource/);
+  assert.match(ui, /action === 'focus-site'/);
+  assert.match(ui, /binding\.locate\(siteId\)/, "exact-site actions must use the canonical site's locate API");
+  assert.match(readTestFile('omega_resource_gameplay_binding_v1.js'), /locate:locateSite/,
+    'the canonical site binding must expose the map locate operation');
+});
+
+function readTestFile(path) {
+  return fs.readFileSync(path, 'utf8');
+}
+
+test('resource-wide navigation clearly differs from exact mine or field location', () => {
+  assert.match(ui, /Show matching sites/);
+  assert.match(ui, /Locate this site/);
+});
+
 test('legacy p05/p06/p15/p16 cards route to panels instead of unsupported fake build successes', () => {
   assert.match(ui, /p05: 'extraction'/);
   assert.match(ui, /p06: 'processing'/);
@@ -59,13 +83,19 @@ test('each numbered legacy card maps explicitly to its intended panel, independe
   assert.match(ui, /network\.candidateFactories\(country, resourceId\)/);
 });
 
-test('metrology converter handles matching dimensions and blocks dimension mismatches', () => {
-  assert.ok(commandCenter && typeof commandCenter.convertUnits === 'function');
-  assert.equal(commandCenter.convertUnits(1000, 'kg', 'metric_tonne').value, 1);
-  assert.equal(commandCenter.convertUnits(1, 'bbl', 'litre').value, 158.987294928);
-  assert.equal(commandCenter.convertUnits(1, 'mmbtu', 'gj').value, 1.05505585262);
-  assert.equal(commandCenter.convertUnits(1, 'kg', 'gj').reason, 'UNIT_DIMENSION_MISMATCH');
-  assert.equal(commandCenter.convertUnits('not-a-number', 'kg', 'lb').reason, 'FINITE_QUANTITY_REQUIRED');
+test('the overview removes the irrelevant unit converter and exposes six practical tasks', () => {
+  assert.ok(commandCenter);
+  assert.equal(typeof commandCenter.convertUnits, 'undefined');
+  assert.doesNotMatch(ui, /data-form="metrology"|Canonical unit conversion|Convert quantity|UNIT_DEFINITIONS/);
+  const nav = ui.slice(ui.indexOf('const NAV_PANELS = ['), ui.indexOf('];', ui.indexOf('const NAV_PANELS = [')) + 2);
+  assert.equal((nav.match(/\{ id: '/g) || []).length, 6);
+  assert.match(ui, /Manage the country’s resources/);
+  assert.match(ui, /Set import or export quantity/);
+  assert.match(ui, /data-unit=/);
+  assert.match(ui, /UNIT NOT RECORDED/);
+  assert.match(ui, /trade\.createExportOffer/);
+  assert.match(ui, /Blank uses the current quote/);
+  assert.match(ui, /MARKET_PRICE_NOT_OBSERVED/);
 });
 
 test('actual industrial flow and technology project state paths are rendered', () => {

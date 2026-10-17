@@ -411,6 +411,8 @@ test('legacy resource filter selection synchronizes individual site scope and co
     'an active country must restrict individual markers to that country');
   assert.deepEqual(Array.from(context.Game.Map.resourceState.selectedResources), ['crude_oil'],
     'the selected commodity must be applied to the individual marker layer');
+  assert.equal(context.Game.Map.resourceState.__omegaDefaultSelection, false,
+    'an explicit commodity selection must disable the late-binding default that adds every resource back');
   assert.equal(calls.length, 1);
 
   context.Game.currentActiveCountry = '';
@@ -420,11 +422,83 @@ test('legacy resource filter selection synchronizes individual site scope and co
   assert.deepEqual(Array.from(context.Game.Map.resourceState.selectedResources), ['iron_ore', 'copper'],
     'multi-resource selection must normalize IDs and apply all selected commodities');
 
+  context.Game.Map.applyResourceMapFilter('natural-gas');
+  assert.deepEqual(Array.from(context.Game.Map.resourceState.selectedResources), ['natural_gas'],
+    'resource IDs containing the letter s must retain canonical spelling during normalization');
+  context.Game.Map.applyResourceMapFilter('manganese');
+  assert.deepEqual(Array.from(context.Game.Map.resourceState.selectedResources), ['manganese'],
+    'resource IDs with s must not silently stop matching after normalization');
+
   context.Game.Map.applyResourceMapFilter('NONE');
   assert.equal(context.Game.Map.resourceState.enabled, false,
     'NONE must hide individual site markers as well as legacy deposits');
   assert.equal(context.Game.Map.isResourceModeActive, false);
 });
+
+
+test('resource locator keeps a single selected commodity and focuses canonical geocoded sites', () => {
+  const mapEngine = read('map-engine-2.js');
+  const moved = [];
+  const refreshed = [];
+  const map = {
+    getZoom(){ return 3; },
+    flyTo(point, zoom){ moved.push({ type:'point', point, zoom }); },
+    flyToBounds(points, options){ moved.push({ type:'bounds', points, options }); }
+  };
+  const sites = [
+    { siteId:'SITE_BGD_GAS_A', countryId:'BGD', real:{ resourceId:'natural_gas' }, coordinates:{ lat:23.7, lng:90.4 } },
+    { siteId:'SITE_BGD_GAS_B', countryId:'BGD', real:{ resourceId:'natural_gas' }, coordinates:{ lat:24.1, lng:90.2 } },
+    { siteId:'SITE_SAU_GAS_A', countryId:'SAU', real:{ resourceId:'natural_gas' }, coordinates:{ lat:24.0, lng:45.0 } }
+  ];
+  const context = {
+    document:{ getElementById(){ return null; } },
+    window:{
+      CountryIOS:null,
+      map,
+      Omega:{ IndividualResourceSiteBinding:{ sites, refresh(){ refreshed.push(true); } } }
+    },
+    Game:{
+      currentActiveCountry:'SAU',
+      Map:{
+        map,
+        isResourceModeActive:false,
+        resourceState:{ enabled:false, scope:'NATION', selectedResources:new Set(['coal','natural_gas']), __omegaDefaultSelection:true },
+        resourceCatalog:[{id:'natural_gas'},{id:'coal'}],
+        resourceDepositsLayer:{ clearLayers(){} },
+        renderResourceDeposits(){},
+        renderCountryHubs(){}
+      }
+    }
+  };
+  context.window.Game = context.Game;
+  vm.createContext(context);
+  for (const method of [
+    'Game.Map.applyResourceMapFilter = function(resourceType)',
+    'Game.Map.focusResource = function(resourceType, countryId)'
+  ]) {
+    const start = mapEngine.indexOf(method);
+    assert.notEqual(start, -1, method + ' must exist');
+    const end = mapEngine.indexOf('\n};', start);
+    assert.notEqual(end, -1, method + ' must terminate');
+    vm.runInContext(mapEngine.slice(start, end + 3), context, { timeout: 1000 });
+  }
+
+  const result = context.Game.Map.focusResource('natural-gas', 'BGD');
+  assert.equal(result.status, 'APPLIED');
+  assert.equal(result.result.resourceId, 'natural_gas');
+  assert.equal(result.result.scope, 'NATION');
+  assert.equal(result.result.countryId, 'BGD');
+  assert.equal(result.result.siteCount, 2);
+  assert.equal(context.Game.Map.resourceState.enabled, true);
+  assert.equal(context.Game.Map.resourceState.__omegaDefaultSelection, false);
+  assert.deepEqual(Array.from(context.Game.Map.resourceState.selectedResources), ['natural_gas']);
+  assert.equal(context.Game.Map.resourceState.targetCountryId, 'BGD');
+  assert.equal(moved.length, 1);
+  assert.equal(moved[0].type, 'bounds');
+  assert.deepEqual(Array.from(moved[0].points, point => Array.from(point)), [[23.7,90.4],[24.1,90.2]]);
+  assert.equal(refreshed.length, 1);
+});
+
 
 test('coordinate confidence is reported without claiming every stored point is exact', () => {
   const binding = read('omega_resource_gameplay_binding_v1.js');

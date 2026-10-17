@@ -1039,8 +1039,15 @@ Game.Map.renderGeoJSON = function(geoData) {
     Game.LabelSystem.updateCountryLabels();
     this.renderOceanLabels();
     setTimeout(() => {
+        // GeoJSON may finish loading after a player starts locating a resource.
+        // Repaint the current selection without sending the legacy NONE sentinel,
+        // which can overwrite a live filter in older or wrapped map renderers.
         if (typeof this.renderResourceDeposits === 'function') {
-            this.renderResourceDeposits('NONE');
+            if (this.resourceState && this.resourceState.enabled) {
+                this.renderResourceDeposits();
+            } else if (this.resourceDepositsLayer && typeof this.resourceDepositsLayer.clearLayers === 'function') {
+                this.resourceDepositsLayer.clearLayers();
+            }
         }
     }, 200);
 };
@@ -1608,12 +1615,12 @@ Game.Map.applyResourceMapFilter = function(resourceType) {
     const btn = document.getElementById('btn-resource-overlay') || (Game.dom && Game.dom.btnResOverlay);
     const requested = Array.isArray(resourceType) ? resourceType : [resourceType];
     const normalizedIds = requested.map(value => String(value ?? '').trim().toLowerCase()
-        .replace(/[\\s-]+/g, '_')).filter(Boolean);
+        .replace(/[\s-]+/g, '_')).filter(Boolean);
     const isNone = normalizedIds.length > 0 && normalizedIds.every(value => value === 'none');
     const isAll = normalizedIds.includes('all');
     const isCountrySentinel = normalizedIds.length > 0 && normalizedIds.every(value => value === 'country');
     const aliasResourceId = value => {
-        const id = String(value ?? '').trim().toLowerCase().replace(/[\\s-]+/g, '_');
+        const id = String(value ?? '').trim().toLowerCase().replace(/[\s-]+/g, '_');
         const compact = id.replace(/_/g, '');
         return ({
             oil: 'crude_oil', crudeoil: 'crude_oil', gas: 'natural_gas', naturalgas: 'natural_gas',
@@ -1624,6 +1631,9 @@ Game.Map.applyResourceMapFilter = function(resourceType) {
     if (!(state.selectedResources instanceof Set)) {
         state.selectedResources = new Set(Array.isArray(state.selectedResources) ? state.selectedResources : []);
     }
+    // An explicit resource choice must survive asynchronous site-binding initialization.
+    // Otherwise the late initializer adds every known commodity and effectively resets the locator.
+    if (!isNone && !isAll && !isCountrySentinel) state.__omegaDefaultSelection = false;
     const countrySelected = !!(Game.currentActiveCountry ||
         (window.CountryIOS && window.CountryIOS.activeCountry));
     state.scope = countrySelected ? 'NATION' : 'WORLD';
@@ -1689,6 +1699,136 @@ Game.Map.applyResourceMapFilter = function(resourceType) {
         if (hasResource) layer.setStyle({ fillColor: '#ca8a04', fillOpacity: 0.85, color: '#ffffff', weight: 1.5 });
         else layer.setStyle({ fillColor: '#0f172a', fillOpacity: 0.15, color: 'rgba(255,255,255,0.05)', weight: 0.5 });
     });
+};
+
+
+Game.Map.focusResource = function(resourceType, countryId) {
+    const normalize = value => String(value ?? '').trim().toLowerCase().replace(/[\s-]+/g, '_');
+    const canonical = value => {
+        const id = normalize(value);
+        const compact = id.replace(/_/g, '');
+        return ({
+            oil: 'crude_oil', crudeoil: 'crude_oil',
+            gas: 'natural_gas', naturalgas: 'natural_gas',
+            ironore: 'iron_ore', rareearth: 'rare_earth'
+        })[compact] || id;
+    };
+    const resourceId = canonical(resourceType);
+    if (!resourceId || ['none', 'all', 'country'].includes(resourceId)) {
+        return { status: 'BLOCKED', reason: 'SINGLE_RESOURCE_ID_REQUIRED' };
+    }
+
+    // Apply the ordinary map filter first so legacy country shading and marker state stay in sync.
+    if (typeof this.applyResourceMapFilter === 'function') this.applyResourceMapFilter(resourceId);
+    const state = this.resourceState || (this.resourceState = {});
+    state.enabled = true;
+    state.__omegaDefaultSelection = false;
+    state.selectedResources = new Set([resourceId]);
+    this.isResourceModeActive = true;
+    this.activeResourceFilter = resourceId;
+
+    const requestedCountry = String(countryId || '').trim().toUpperCase();
+    const binding = window.Omega && window.Omega.IndividualResourceSiteBinding;
+    const registeredSites = binding && Array.isArray(binding.sites) ? binding.sites : [];
+    const resourceOf = site => site && (
+        site.real && site.real.resourceId ||
+        site.sourceSiteRecord && (site.sourceSiteRecord.resourceId || site.sourceSiteRecord.resourceTypeId || site.sourceSiteRecord.resId) ||
+        site.identity && site.identity.resourceTypeId ||
+        site.resourceId || site.resourceTypeId || site.resId
+    );
+    const coordinatesOf = site => {
+        const coordinates = site && (site.coordinates || site.location && site.location.coordinates) || {};
+        const lat = Number(coordinates.lat ?? coordinates.latitude ?? (site && (site.lat ?? site.latitude)));
+        const lng = Number(coordinates.lng ?? coordinates.lon ?? coordinates.longitude ?? (site && (site.lng ?? site.lon ?? site.longitude)));
+        return Number.isFinite(lat) && lat >= -90 && lat <= 90 &&
+            Number.isFinite(lng) && lng >= -180 && lng <= 180 ? { lat, lng } : null;
+    };
+    const countryOf = site => String(
+        site && (site.countryId || site.countryCode || site.country || site.countryName) ||
+        site && site.identity && (site.identity.countryIso3 || site.identity.countryId) ||
+        site && site.sourceSiteRecord && (site.sourceSiteRecord.countryId || site.sourceSiteRecord.countryCode || site.sourceSiteRecord.country) ||
+        ''
+    ).trim().toUpperCase();
+    const resourceSites = registeredSites.filter(site =>
+        canonical(resourceOf(site)) === resourceId && coordinatesOf(site)
+    );
+
+    // Prefer the selected ministry country, but fall back to a worldwide search when
+    // that country has no geocoded site for this commodity.
+    const countrySites = requestedCountry
+        ? resourceSites.filter(site => countryOf(site) === requestedCountry)
+        : [];
+    const selectedSites = countrySites.length ? countrySites : resourceSites;
+    state.scope = countrySites.length ? 'NATION' : 'WORLD';
+    state.targetCountryId = countrySites.length ? requestedCountry : null;
+
+    // If the canonical site binding is still loading, try the existing runtime deposit registry.
+    let matchingSites = selectedSites;
+    if (!matchingSites.length) {
+        const engine = window.ResourceMinistryEngine;
+        const deposits = engine && Array.isArray(engine.deposits) ? engine.deposits : [];
+        matchingSites = deposits.filter(dep => {
+            const depResource = canonical(dep && (dep.resourceId || dep.resId || dep.resourceTypeId));
+            const lat = Number(dep && (dep.lat ?? dep.latitude));
+            const lng = Number(dep && (dep.lng ?? dep.lon ?? dep.longitude));
+            const depCountry = String(dep && (dep.countryId || dep.countryCode || dep.country) || '').trim().toUpperCase();
+            return depResource === resourceId &&
+                Number.isFinite(lat) && lat >= -90 && lat <= 90 &&
+                Number.isFinite(lng) && lng >= -180 && lng <= 180 &&
+                (!requestedCountry || !countrySites.length || depCountry === requestedCountry);
+        }).map(dep => ({
+            countryId: dep.countryId || dep.countryCode || dep.country,
+            coordinates: { lat: Number(dep.lat ?? dep.latitude), lng: Number(dep.lng ?? dep.lon ?? dep.longitude) }
+        }));
+        if (matchingSites.length && requestedCountry) {
+            const local = matchingSites.filter(site => String(site.countryId || '').trim().toUpperCase() === requestedCountry);
+            if (local.length) {
+                matchingSites = local;
+                state.scope = 'NATION';
+                state.targetCountryId = requestedCountry;
+            } else {
+                state.scope = 'WORLD';
+                state.targetCountryId = null;
+            }
+        }
+    }
+
+    if (typeof this.renderResourceDeposits === 'function') this.renderResourceDeposits();
+    if (binding && typeof binding.refresh === 'function') binding.refresh();
+
+    const points = matchingSites.map(coordinatesOf).filter(Boolean);
+    const mapInstance = this.map || window.map;
+    if (mapInstance && points.length) {
+        const bounds = points.map(point => [point.lat, point.lng]);
+        if (bounds.length > 1 && typeof mapInstance.flyToBounds === 'function') {
+            mapInstance.flyToBounds(bounds, { padding: [28, 28], maxZoom: 6, duration: 0.6 });
+        } else if (typeof mapInstance.flyTo === 'function') {
+            const point = points[0];
+            const currentZoom = typeof mapInstance.getZoom === 'function' ? Number(mapInstance.getZoom()) : 4;
+            mapInstance.flyTo([point.lat, point.lng], Math.max(5, Math.min(7, Number.isFinite(currentZoom) ? currentZoom : 4)), { duration: 0.6 });
+        } else if (typeof mapInstance.setView === 'function') {
+            mapInstance.setView([points[0].lat, points[0].lng], 6);
+        }
+    }
+
+    if (!points.length) {
+        return {
+            status: 'UNAVAILABLE',
+            reason: registeredSites.length ? 'NO_GEOCODED_MATCHING_RESOURCE_SITES' : 'RESOURCE_SITE_DATA_NOT_READY',
+            resourceId,
+            scope: state.scope
+        };
+    }
+    return {
+        status: 'APPLIED',
+        result: {
+            accepted: true,
+            resourceId,
+            scope: state.scope,
+            countryId: state.targetCountryId,
+            siteCount: points.length
+        }
+    };
 };
 
 Game.Map.toggleRelationOverlay = function() {

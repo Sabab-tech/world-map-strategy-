@@ -110,7 +110,9 @@ globalThis.Omega = {
       quantitative: { reserve: { quantity: 700, unit: 'METRIC_TONNE' }, production: { rate: 5, unit: 'METRIC_TONNE_PER_DAY' } },
       simulation: { transportRoute: [{ routeId: 'ROUTE-BGD-IRON-1', routeName: 'Rail to smelter', mode: 'rail', from: 'FILE-SITE-BGD-IRON', to: 'FAC-BGD-IRON', distanceKm: 42 }] },
       processing: { upstreamProcess: 'Beneficiation', refinedOutputs: ['iron_concentrate'] },
-      coordinates: { lat: 24, lng: 90 }, location: { countryName: 'Bangladesh' } }
+      coordinates: { lat: 24, lng: 90 }, location: { countryName: 'Bangladesh' } },
+    { siteId: 'FILE-SITE-SAU-OIL', countryId: 'SAU', siteName: 'Other Country Deposit',
+      real: { resourceId: 'crude_oil' }, coordinates: { lat: 24, lng: 45 }, location: { countryName: 'Saudi Arabia' } }
   ] },
   MinistryInteroperability: {
     dispatchCommand() { return { status: 'APPLIED', result: { accepted: true } }; },
@@ -148,16 +150,18 @@ globalThis.OmegaCognitiveOS = {};
 
 await import('../omega_resource_command_center_ui_v1.js');
 const ui = globalThis.OmegaResourceCommandCenterUI;
+const corePanel = panel => ({ontology:'matrix',reserves:'inventory',processing:'inventory',logistics:'trade',industrial:'extraction',value:'matrix',cascade:'matrix',cognitive:'matrix',power:'extraction',environment:'inventory'})[panel] || panel;
 
 test('all sixteen panels render without runtime exceptions', () => {
   const panels = ['matrix','ontology','reserves','deposits','extraction','processing','inventory','logistics','industrial','market','trade','value','cascade','cognitive','power','environment'];
   for (const panel of panels) {
     ui.open('BGD', panel);
-    assert.equal(ui.getState().panel, panel);
+    assert.equal(ui.getState().panel, corePanel(panel), 'legacy sections should resolve to a core resource task');
     const modal = elements.get('gsrsk-intelligence-modal');
     assert.ok(modal && modal.innerHTML.includes('Resource Command Center'), panel + ' should render the command center shell');
-    assert.ok(modal.innerHTML.includes('value="' + panel + '" selected'), panel + ' should be the sole selected section in the compact navigator');
-    assert.equal((modal.innerHTML.match(/<button[^>]*data-panel=/g) || []).length, 0, 'the panel must not duplicate all sixteen points as visible buttons');
+    assert.ok(modal.innerHTML.includes('value="' + corePanel(panel) + '" selected'), panel + ' should resolve to one of the six core tasks');
+    const taskButtons = (modal.innerHTML.match(/<button[^>]*data-panel=/g) || []).length;
+    assert.equal(taskButtons, corePanel(panel) === 'matrix' ? 5 : 0, 'only the overview may show its five explicit task shortcuts');
   }
 });
 
@@ -203,12 +207,14 @@ test('canonical site profiles appear in relevant tabs without becoming live prod
   assert.match(modal.innerHTML, /Beneficiation/);
 });
 
-test('deposit view filters loaded JSON deposits to the selected country', () => {
+test('site locator uses canonical geocoded records and filters them to the selected country', () => {
   ui.open('BGD', 'deposits');
   const modal = elements.get('gsrsk-intelligence-modal');
-  assert.match(modal.innerHTML, /Test Deposit/);
+  assert.match(modal.innerHTML, /File-backed Bangladesh iron mine/);
   assert.doesNotMatch(modal.innerHTML, /Other Country Deposit/);
-  assert.match(modal.innerHTML, /Country-scoped JSON deposit registry/);
+  assert.match(modal.innerHTML, /Find a specific mine or field/);
+  assert.match(modal.innerHTML, /Locate this site/);
+  assert.match(modal.innerHTML, /FILE-SITE-BGD-IRON/);
 });
 
 test('resource state readers merge name-keyed country data into canonical country views', () => {
