@@ -65,7 +65,12 @@ function createContext(){
       }
     },
     finance:{BGD:{available:1000,reserves:2000,revenue:0,taxRevenue:0}},
-    trade:{BGD:{marketPrice:{iron_ore:10},offerBook:[]}},
+    trade:{BGD:{
+      marketPrice:{iron_ore:10},
+      marketMeta:{iron_ore:{priceDiscovery:'ORDER_BOOK_CROSSING'}},
+      marketHistory:{iron_ore:[{turn:0,status:'CLEARED',clearingPriceUsd:10}]},
+      offerBook:[]
+    }},
     transport:{BGD:{}}
   };
 
@@ -202,10 +207,14 @@ test('resource economy v2 completes mine-backed processing, domestic settlement 
 
   assert.equal(worldState.trade.BGD.domesticSales.length,1);
   assert.equal(worldState.trade.BGD.domesticSales[0].sale.status,'SETTLED');
-  assert.ok(worldState.trade.BGD.offerBook.length>=2);
+  assert.ok(worldState.trade.BGD.offerBook.length>=1);
   assert.ok(worldState.trade.BGD.offerBook.every(x=>x.source==='OMEGA_RESOURCE_ECON_AUTO_OFFER'));
-  assert.ok(worldState.trade.BGD.offerBook.some(x=>x.resourceId==='iron_intermediate'&&x.quantity>0&&x.priceAuthority),
-    'finished goods with no observed quote must use an explicitly simulated market offer price');
+  const observedIronOffer=worldState.trade.BGD.offerBook.find(x=>x.resourceId==='iron_ore');
+  assert.ok(observedIronOffer&&observedIronOffer.quantity>0);
+  assert.equal(observedIronOffer.priceAuthority,'OBSERVED_MARKET_CLEARING_HISTORY');
+  assert.equal(observedIronOffer.currencyCode,'USD');
+  assert.equal(worldState.trade.BGD.offerBook.some(x=>x.resourceId==='iron_intermediate'),false,
+    'finished goods without an observed or explicitly sourced catalog price must not receive a synthetic ask price');
 
   assert.equal(worldState.resource.BGD.warehouse.availableByResource.iron_ore,50);
   assert.equal(worldState.resource.BGD.warehouse.availableByResource.iron_intermediate||0,0);
