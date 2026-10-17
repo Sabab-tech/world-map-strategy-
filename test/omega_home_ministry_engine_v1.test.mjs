@@ -280,6 +280,32 @@ test('guard deployments bind to recorded factories and only protect their select
   assert.equal(api.standDownGuard(deployed.deployment.id, 'AAA').ok, true);
 });
 
+test('simulation incident records the deterministic target asset and matching guard coverage', () => {
+  const state = setup();
+  state.economy.AAA.factories = [
+    { factoryId: 'AL-01', name: 'Aluminium Plant North Gate', type: 'factory', productionCapacity: 100, operationalStatus: 'ACTIVE' },
+    { factoryId: 'ST-02', name: 'Steelworks South', type: 'industrial factory', productionCapacity: 120, operationalStatus: 'ACTIVE' }
+  ];
+  api.getState('AAA');
+  state.interior.AAA.police.vehiclesOwned = { 1: 1 };
+  const deployment = api.deployGuard(1, 1, 'industrial_guard', 'Aluminium Plant North Gate', 'AAA', 'AL-01');
+  assert.equal(deployment.ok, true, JSON.stringify(deployment));
+
+  // Deterministic fixture: week 10 / turn 1680 selects Industrial Sabotage
+  // and has a detection roll high enough to preserve an actionable incident.
+  const week = 10;
+  state.simulation.simulationTimeMs = week * 7 * DAY;
+  state.simulation.turn = 1680;
+  api.processTurn({ detail: { payload: { countryId: 'AAA', turn: 1680 } } });
+  const incident = api.getState('AAA').incidentLedger.at(-1);
+  assert.ok(incident);
+  assert.equal(incident.type, 'INDUSTRIAL_SABOTAGE');
+  assert.equal(incident.targetAssetId, 'AL-01');
+  assert.equal(incident.targetAssetName, 'Aluminium Plant North Gate');
+  assert.ok(incident.guardMitigationPercent > 0);
+  assert.equal(incident.activeGuardDeployments, 1);
+});
+
 test('purchases fail closed when treasury is unavailable and advice is non-mutating', () => {
   setup(null);
   assert.equal(api.recruitPolice(5, 'AAA').reason, 'TREASURY_DATA_UNAVAILABLE');
