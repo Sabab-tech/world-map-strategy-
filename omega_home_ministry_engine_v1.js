@@ -247,6 +247,115 @@
     if(tier>s.unlockedVehicleLevel)return{ok:false,reason:'VEHICLE_TIER_LOCKED',unlockedVehicleLevel:s.unlockedVehicleLevel};
     const cost=v.cost*qty;return mutation(cid,cost,'VEHICLE_ORDER',function(next){const now=simulationTimeMs();next.pendingVehicleOrder={level:tier,quantity:qty,totalCost:cost,orderedAtTurn:turn(),startedAtMs:now,completesAtMs:now+VEHICLE_UNLOCK_MS,durationMs:VEHICLE_UNLOCK_MS,status:'IN_TRANSIT'};return{amount:qty,vehicle:v.name,estimatedDeliveryMs:now+VEHICLE_UNLOCK_MS,totalCost:cost};});
   }
+  function fleetUnitStatus(unit){
+    if(!unit||Number(unit.condition)<=15)return 'REPAIR_REQUIRED';
+    if(Number(unit.odometerKm||0)>=Number(unit.nextServiceAtKm||5000))return 'MAINTENANCE_DUE';
+    return 'AVAILABLE';
+  }
+  function ensureFleetInventory(state,country){
+    let changed=false;
+    if(!Array.isArray(state.vehicleFleet)){state.vehicleFleet=[];changed=true;}
+    if(!Number.isFinite(Number(state.nextVehicleUnitId))||Number(state.nextVehicleUnitId)<1){state.nextVehicleUnitId=1;changed=true;}
+    state.vehiclesOwned=state.vehiclesOwned&&typeof state.vehiclesOwned==='object'?state.vehiclesOwned:{};
+    VEHICLES.forEach(function(vehicle){
+      const tier=String(vehicle.level);
+      let have=state.vehicleFleet.filter(function(unit){return Number(unit.vehicleLevel)===vehicle.level;}).length;
+      let owned=Math.max(0,Math.floor(num(state.vehiclesOwned[tier])||0));
+      if(owned<have){state.vehiclesOwned[tier]=have;owned=have;changed=true;}
+      while(have<owned){
+        const seq=state.nextVehicleUnitId++;
+        state.vehicleFleet.push({id:String(country||'COUNTRY')+'-POLICE-'+String(vehicle.level).padStart(2,'0')+'-'+String(seq).padStart(5,'0'),vehicleLevel:vehicle.level,condition:100,odometerKm:0,nextServiceAtKm:5000,status:'AVAILABLE',acquiredAtTurn:turn(),acquiredAtSimulationMs:simulationTimeMs(),lastEnvironment:null,lastRoadCondition:null,lastMaintenanceSimulationDay:Math.floor(simulationTimeMs()/DAY_MS),maintenanceEvents:0});
+        have++;changed=true;
+      }
+    });
+    const claimed=new Set();
+    state.guardDeployments=Array.isArray(state.guardDeployments)?state.guardDeployments:[];
+    state.guardDeployments.forEach(function(deployment){
+      if(!Array.isArray(deployment.vehicleIds)){deployment.vehicleIds=[];changed=true;}
+      const vehicle=VEHICLES.find(function(v){return v.level===Number(deployment.vehicleLevel);});
+      if(!vehicle)return;
+      deployment.vehicleIds=deployment.vehicleIds.filter(function(id){return state.vehicleFleet.some(function(unit){return unit.id===id&&Number(unit.vehicleLevel)===vehicle.level;})&&!claimed.has(id);});
+      deployment.vehicleIds.forEach(function(id){claimed.add(id);});
+      const needed=Math.max(0,Math.floor(num(deployment.quantity)||0))-deployment.vehicleIds.length;
+      if(needed>0){
+        const available=state.vehicleFleet.filter(function(unit){return Number(unit.vehicleLevel)===vehicle.level&&!claimed.has(unit.id)&&Number(unit.condition)>15&&Number(unit.odometerKm||0)<Number(unit.nextServiceAtKm||5000);}).slice().sort(function(a,b){return(Number(b.condition)||0)-(Number(a.condition)||0);});
+        available.slice(0,needed).forEach(function(unit){deployment.vehicleIds.push(unit.id);claimed.add(unit.id);changed=true;});
+      }
+      if(deployment.vehicleIds.length!==Math.max(0,Math.floor(num(deployment.quantity)||0))){
+        deployment.quantity=deployment.vehicleIds.length;deployment.officers=deployment.quantity*vehicle.capacity;changed=true;
+      }
+    });
+    state.vehicleFleet.forEach(function(unit){
+      if(claimed.has(unit.id)){
+        if(unit.status!=='DEPLOYED'&&Number(unit.condition)>15&&Number(unit.odometerKm||0)<Number(unit.nextServiceAtKm||5000)){unit.status='DEPLOYED';changed=true;}
+        return;
+      }
+      if(unit.status==='DEPLOYED'){unit.status=fleetUnitStatus(unit);changed=true;}
+      else if(unit.status==='AVAILABLE'){
+        const next=fleetUnitStatus(unit);if(next!=='AVAILABLE'){unit.status=next;changed=true;}
+      }
+    });
+    if(state.vehicleFleet.length&&state.nextVehicleUnitId<=state.vehicleFleet.length)state.nextVehicleUnitId=state.vehicleFleet.length+1;
+    return changed;
+  }
+  function environmentSpec(environmentId){
+    return OPERATING_ENVIRONMENTS.find(function(row){return row.id===String(environmentId||'');})||OPERATING_ENVIRONMENTS[0];
+  }
+  function roadSpec(roadId){
+    return ROAD_CONDITIONS.find(function(row){return row.id===String(roadId||'');})||ROAD_CONDITIONS[0];
+  }
+  function vehicleUseAssessment(vehicleLevel,environmentId,roadCondition,country){
+    const cid=normalizeCountry(country||currentCountry()),vehicle=VEHICLES.find(function(row){return row.level===Math.floor(num(vehicleLevel)||0);});
+    const environment=environmentSpec(environmentId),road=roadSpec(roadCondition);
+    if(!vehicle)return{ok:false,reason:'VEHICLE_TIER_INVALID',environment:clone(environment),road:clone(road),fit:0,baseFit:0,wearPerDay:0,damageRisk:0,penalties:[]};
+    const baseFit=Number(vehicle.environmentFit[environment.id])||0,penalties=[];
+    let fit=baseFit*road.fitMultiplier;
+    if(environment.id==='city'&&road.id==='congested'&&vehicle.capacity>=12){fit-=12;penalties.push('Vehicle is too large for dense urban turns and curb access.');}
+    if(environment.id==='city'&&road.id==='congested'&&vehicle.speed>=165){fit-=10;penalties.push('High-speed performance is wasted in traffic; low-speed manoeuvring risk rises.');}
+    if(environment.id==='mountain'&&vehicle.speed>=165){fit-=8;penalties.push('High power and speed require extra brake and tyre control on steep bends.');}
+    if((environment.id==='border'||environment.id==='mountain'||road.id==='muddy'||road.id==='rough')&&(Number(vehicle.capabilities.offRoad)||0)<45){fit-=14;penalties.push('Low off-road capability increases traction and underbody damage risk.');}
+    if(environment.id==='coastal'&&road.id==='wet'&&(Number(vehicle.durability)||0)<65){fit-=6;penalties.push('Limited weather protection increases corrosion and electrical-maintenance exposure.');}
+    fit=Math.round(clamp(fit,0,100));
+    const roadWear={smooth:0,congested:0.07,wet:0.05,rough:0.13,muddy:0.20}[road.id]||0;
+    const missionOverhead=0.025,fragility=Math.max(0,70-vehicle.durability)*0.001;
+    const wearPerDay=Number((0.045+Math.max(0,60-baseFit)*0.0025+roadWear+missionOverhead+fragility).toFixed(4));
+    const dailyDistance=Math.round((environment.id==='highway'?180:environment.id==='border'?135:environment.id==='mountain'?70:environment.id==='rural'?105:environment.id==='coastal'?85:90)*road.damageRisk);
+    const damageRisk=Number((road.damageRisk*(1+Math.max(0,60-baseFit)/70+Math.max(0,80-vehicle.durability)/160)).toFixed(2));
+    const status=fit>=80?'OPTIMAL':fit>=60?'SUITABLE':fit>=40?'STRAINED':'POOR FIT';
+    return{ok:true,vehicleId:vehicle.id,vehicleName:vehicle.name,environment:clone(environment),road:clone(road),baseFit:baseFit,fit:fit,status:status,wearPerDay:wearPerDay,dailyDistanceKm:dailyDistance,damageRisk:damageRisk,penalties:penalties,summary:fit>=80?'Well-matched platform; normal wear for this route.':fit>=60?'Usable deployment with manageable handling and maintenance trade-offs.':fit>=40?'Poor route fit. Expect slower response, higher wear and more maintenance.':'Unsuitable match. The route can be completed, but performance loss and damage risk are high.'};
+  }
+  function fleetUnitsForTier(state,level){
+    return (state.vehicleFleet||[]).filter(function(unit){return Number(unit.vehicleLevel)===Number(level);});
+  }
+  function availableFleetUnits(state,level){
+    return fleetUnitsForTier(state,level).filter(function(unit){return unit.status==='AVAILABLE'&&Number(unit.condition)>15&&Number(unit.odometerKm||0)<Number(unit.nextServiceAtKm||5000);});
+  }
+  function vehicleFleetSummary(country){
+    const cid=normalizeCountry(country||currentCountry()),state=getState(cid);
+    return state.vehicleFleet.map(function(unit){
+      const vehicle=VEHICLES.find(function(row){return row.level===Number(unit.vehicleLevel);});
+      const deployment=(state.guardDeployments||[]).find(function(row){return Array.isArray(row.vehicleIds)&&row.vehicleIds.includes(unit.id);});
+      const assessment=deployment?vehicleUseAssessment(unit.vehicleLevel,deployment.environmentId,deployment.roadCondition,cid):null;
+      return Object.assign(clone(unit),{vehicleName:vehicle&&vehicle.name||'Unknown vehicle',className:vehicle&&vehicle.className||'Unknown class',purchaseCost:vehicle&&vehicle.cost||0,maintenancePerDay:vehicle&&vehicle.maintenancePerDay||0,deploymentId:deployment&&deployment.id||null,deploymentMission:deployment&&deployment.missionId||null,sector:deployment&&deployment.sector||null,environmentAssessment:assessment,repairEstimate:estimateVehicleRepairCost(unit),maxCondition:100});
+    });
+  }
+  function estimateVehicleRepairCost(unit){
+    const vehicle=unit&&VEHICLES.find(function(row){return row.level===Number(unit.vehicleLevel);});
+    if(!vehicle)return 0;
+    const health=clamp(num(unit.condition)===null?100:num(unit.condition),0,100);
+    const serviceDue=Number(unit.odometerKm||0)>=Number(unit.nextServiceAtKm||5000);
+    const deterioration=vehicle.cost*Math.max(0,100-health)/100*0.22;
+    const service=serviceDue?vehicle.maintenancePerDay*18:0;
+    return Math.round(Math.max(vehicle.cost*0.025,deterioration+service));
+  }
+  function deploymentEffectiveness(state,deployment){
+    const vehicle=VEHICLES.find(function(row){return row.level===Number(deployment.vehicleLevel);});
+    const base=guardEffectiveness(deployment.vehicleLevel,deployment.missionId,state);
+    const units=(deployment.vehicleIds||[]).map(function(id){return(state.vehicleFleet||[]).find(function(row){return row.id===id;});}).filter(Boolean);
+    const health=units.length?units.reduce(function(total,unit){return total+clamp(Number(unit.condition)||0,0,100);},0)/units.length:100;
+    const use=vehicleUseAssessment(deployment.vehicleLevel,deployment.environmentId,deployment.roadCondition,state.countryId);
+    return Math.round(clamp(base*(0.55+0.0045*use.fit)*(0.35+0.0065*health),0,100));
+  }
   function guardOfficerCount(state){
     return (state.guardDeployments||[]).reduce(function(total,unit){return total+Math.max(0,Math.floor(num(unit.officers)||0));},0);
   }
