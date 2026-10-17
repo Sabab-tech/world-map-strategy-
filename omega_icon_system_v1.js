@@ -1,4 +1,4 @@
-/* OMEGA UI ICON SYSTEM v1.0.0
+/* OMEGA UI ICON SYSTEM v1.2.0
  * Self-hosted, offline-safe SVG iconography. No CDN, fonts, or raster dependencies.
  * Original compact line icons designed for the OMEGA strategic command interface.
  */
@@ -20,6 +20,8 @@
         'building-2': '<path d="M3 21h18M5 21V5l7-3 7 3v16M9 8h1m4 0h1M9 12h1m4 0h1M9 16h1m4 0h1M11 21v-3h2v3"/>',
         'plane': '<path d="m3 11 18-8-6 18-3-7-9-3Z"/><path d="m12 14 4-4"/>',
         'pickaxe': '<path d="m3 7 9-4 9 4M8 5l5 5M13 10l-7 11M13 10l5 2"/>',
+        'industrial-production': '<path d="M2.5 21V12.5l5 3.1V12l5 3.6V11l4 2.4V5.5h3V21H2.5Z" fill="#123c63" stroke="#60c7ff" stroke-width="1.25"/><path d="M17 8V3h2.5v8" fill="#f59e0b" stroke="#fbbf24" stroke-width="1.2"/><rect x="5.5" y="17" width="2.2" height="2.3" rx=".35" fill="#fbbf24" stroke="#fde68a" stroke-width=".6"/><rect x="10" y="17" width="2.2" height="2.3" rx=".35" fill="#34d399" stroke="#a7f3d0" stroke-width=".6"/><circle cx="18.2" cy="5" r="1.2" fill="#fde68a" stroke="#f97316" stroke-width=".6"/>',
+        'mine-extraction': '<path d="M3 21h18" stroke="#34d399" stroke-width="1.8"/><path d="M3.5 20 6.5 15l3.2-1.4 2.4-3.8 3.1 2.8 2.4-.8 2.9 8.2Z" fill="#475569" stroke="#cbd5e1" stroke-width="1.1"/><path d="M10.3 6.7 14.8 20" stroke="#92400e" stroke-width="2.2"/><path d="M3.6 6.9c3.7-2.3 8.1-2.6 12.4-.9L20 8.2l-1.7 1.2c-3.4-1.6-6.8-1.4-9.5.3Z" fill="#64748b" stroke="#e2e8f0" stroke-width="1.2"/><path d="m6.2 15.5 2-2.1 1.8 2-1.8 2.2Z" fill="#22d3ee" stroke="#a5f3fc" stroke-width=".6"/><path d="m15.6 14.8 1.3-1.5 1.4 1.5-1.4 1.7Z" fill="#facc15" stroke="#fef08a" stroke-width=".6"/>',
         'heart-pulse': '<path d="M20.8 8.7c0 5.2-8.8 11.3-8.8 11.3S3.2 13.9 3.2 8.7A4.7 4.7 0 0 1 12 6.3a4.7 4.7 0 0 1 8.8 2.4Z"/><path d="M4 12h4l2-3 3.2 6 2-3H20"/>',
         'book-open': '<path d="M3 5.5A2.5 2.5 0 0 1 5.5 3H12v17H5.5A2.5 2.5 0 0 0 3 22V5.5ZM21 5.5A2.5 2.5 0 0 0 18.5 3H12v17h6.5A2.5 2.5 0 0 1 21 22V5.5Z"/>',
         'microscope': '<path d="m9 3 6 6M7 5l4-4 5 5-4 4M10 10l-5 5M7 13l4 4M4 21h16M8 17a6 6 0 0 0 12 0v-1"/>',
@@ -58,7 +60,7 @@
         'briefcase': '<rect x="3" y="7" width="18" height="14" rx="2"/><path d="M8 7V4h8v3M3 12h18M10 12v2h4v-2"/>',
         'activity': '<path d="M3 12h4l3-8 4 16 3-8h4"/>',
         'database': '<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/>',
-        'settings': '<circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1 1.4 1.1-1.4 2.4-1.7-.7a8 8 0 0 1-1.8 1l-.3 1.8h-2.8l-.3-1.8a8 8 0 0 1-1.8-1l-1.7.7-1.4-2.4L7.1 15a7 7 0 0 1 0-2l-1.4-1.1 1.4-2.4 1.7.7a8 8 0 0 1 1.8-1l.3-1.8h2.8l.3 1.8a8 8 0 0 1 1.8 1l1.7-.7 1.4 2.4-1.4 1.1a7 7 0 0 1-.1 2Z"/>',
+        'settings': '<circle cx="12" cy="12" r="3.75"/><path d="M19.4 13.6a7.6 7.6 0 0 0 0-3.2l1.45-1.12-1.5-2.6-1.73.68a7.1 7.1 0 0 0-2.77-1.6L14.6 3.9h-3.2l-.25 1.86a7.1 7.1 0 0 0-2.77 1.6l-1.73-.68-1.5 2.6L6.6 10.4a7.6 7.6 0 0 0 0 3.2l-1.45 1.12 1.5 2.6 1.73-.68a7.1 7.1 0 0 0 2.77 1.6l.25 1.86h3.2l.25-1.86a7.1 7.1 0 0 0 2.77-1.6l1.73.68 1.5-2.6Z"/>',
         'graduation-cap': '<path d="m2 9 10-5 10 5-10 5L2 9Z"/><path d="M6 11v5c3.5 3 8.5 3 12 0v-5M22 9v6"/>',
         'network': '<circle cx="12" cy="5" r="2.5"/><circle cx="5" cy="19" r="2.5"/><circle cx="19" cy="19" r="2.5"/><path d="m10.8 7.3-4.6 9.4m7-9.4 4.6 9.4M7.5 19h9"/>',
         'circle-help': '<circle cx="12" cy="12" r="9"/><path d="M9.6 9a2.5 2.5 0 1 1 4.6 1.4c-1.2 1.3-2.2 1.5-2.2 3.1M12 17h.01"/>',
@@ -165,7 +167,34 @@
     ];
     const EMOJI_TO_ICON = new Map(EMOJI_ENTRIES.map(([emoji, icon]) => [normalizeEmoji(emoji), icon]));
 
-    const iconForEmoji = (emoji) => EMOJI_TO_ICON.get(normalizeEmoji(emoji)) || null;
+    function iconForEmoji(emoji, contextText) {
+        const name = EMOJI_TO_ICON.get(normalizeEmoji(emoji)) || null;
+        if (!name) return null;
+        const context = String(contextText || '').normalize('NFKC').toLowerCase();
+        if (name === 'settings' && /\b(production|manufactur\w*|industr\w*|steel|refin\w*|smelt\w*|foundry|factory|metalworks|forge|mill)\b|উৎপাদন|শিল্প|কারখানা/i.test(context)) {
+            return 'industrial-production';
+        }
+        if (name === 'pickaxe') return 'mine-extraction';
+        return name;
+    }
+
+    function iconContextForNode(textNode) {
+        const parts = [String(textNode && textNode.nodeValue || '')];
+        let parent = textNode && textNode.parentElement;
+        for (let depth = 0; parent && depth < 3; depth++, parent = parent.parentElement) {
+            const attrs = [];
+            if (typeof parent.getAttribute === 'function') {
+                for (const attr of ['aria-label', 'title', 'id', 'class']) {
+                    const value = parent.getAttribute(attr);
+                    if (value) attrs.push(String(value));
+                }
+            }
+            parts.push(attrs.join(' '), String(parent.id || ''), String(parent.className || ''));
+            const localText = String(parent.textContent || '').trim();
+            if (localText.length > 0 && localText.length <= 180) parts.push(localText);
+        }
+        return parts.join(' ');
+    }
     const ICON_RE = /\p{Extended_Pictographic}(?:\uFE0E|\uFE0F)?(?:\u200D\p{Extended_Pictographic}(?:\uFE0E|\uFE0F)?)*/gu;
     const SKIP_SUBTREE_SELECTOR = [
         'script', 'style', 'textarea', 'input', 'select', 'option', 'pre', 'code', 'svg',
@@ -238,10 +267,11 @@
         let cursor = 0;
         let match;
         let count = 0;
+        const contextText = iconContextForNode(textNode);
         while ((match = ICON_RE.exec(text))) {
             const before = text.slice(cursor, match.index);
             if (before) fragment.appendChild(document.createTextNode(before));
-            const name = iconForEmoji(match[0]);
+            const name = iconForEmoji(match[0], contextText);
             if (name) {
                 fragment.appendChild(makeIcon(name));
                 count++;
@@ -467,7 +497,7 @@
 
     function diagnosticsSnapshot() {
         return Object.freeze({
-            version: '1.1.0',
+            version: '1.2.0',
             iconCount: Object.keys(SYMBOLS).length,
             mappedEmojiCount: EMOJI_TO_ICON.size,
             initialized: !!window.__OMEGA_ICON_SYSTEM_INIT_V1__,
@@ -504,7 +534,7 @@
     }
 
     window.OMEGA_ICON_SYSTEM_V1 = Object.freeze({
-        version: '1.1.0',
+        version: '1.2.0',
         iconNames: Object.freeze(Object.keys(SYMBOLS)),
         nameForEmoji: iconForEmoji,
         normalizeEmoji,
