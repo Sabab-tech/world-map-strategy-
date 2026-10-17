@@ -8733,8 +8733,8 @@ _globalScope.GSRSK_DataFoundation = (() => {
                         color: t.color || '#00e5ff',
                         unit: t.unit || 'TONS',
                         basePrice: Number.isFinite(Number(t.basePrice)) && Number(t.basePrice) > 0 ? Number(t.basePrice) : null,
-                        dailyOutput: Number.isFinite(Number(t.dailyOutput)) && Number(t.dailyOutput) >= 0 ? Number(t.dailyOutput) : null,
-                        dailyDemand: Number.isFinite(Number(t.dailyDemand)) && Number(t.dailyDemand) >= 0 ? Number(t.dailyDemand) : null,
+                        dailyOutput: t.dailyOutput !== null && t.dailyOutput !== undefined && t.dailyOutput !== '' && Number.isFinite(Number(t.dailyOutput)) && Number(t.dailyOutput) >= 0 ? Number(t.dailyOutput) : null,
+                        dailyDemand: t.dailyDemand !== null && t.dailyDemand !== undefined && t.dailyDemand !== '' && Number.isFinite(Number(t.dailyDemand)) && Number(t.dailyDemand) >= 0 ? Number(t.dailyDemand) : null,
                         strategicImportance: t.strategicImportance || 'high',
                         processChain: t.description || 'Extraction ➔ Refining ➔ National Stockpile'
                     });
