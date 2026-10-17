@@ -417,9 +417,37 @@
     const health=candidateUnits.length?candidateUnits.reduce(function(total,unit){return total+Number(unit.condition||0);},0)/candidateUnits.length:100;
     const baseScore=vehicle&&mission?guardEffectiveness(vehicle.level,mission.id,state):0;
     const score=vehicle&&mission&&environment?Math.round(clamp(baseScore*(0.55+0.0045*environment.fit)*(0.35+0.0065*health),0,100)):0;
-    const usePenalty=environment&&environment.fit<60;
     const wearForecast=environment?Number((environment.wearPerDay*30).toFixed(1)):0;
     return {ok:Boolean(vehicle&&mission&&environment&&count>=1&&count<=100&&count<=availableVehicles&&count*vehicle.capacity<=capacity.availableOfficers),vehicle:vehicle?clone(vehicle):null,mission:mission?clone(mission):null,quantity:count,availableVehicles:availableVehicles,requiredOfficers:vehicle&&count>0?count*vehicle.capacity:0,availableOfficers:capacity.availableOfficers,effectiveness:score,baseEffectiveness:baseScore,estimatedCoverage:vehicle&&mission?Math.round(clamp(score*Math.max(0,count)/7,0,35)):0,environment:environment,estimatedConditionLoss30Days:wearForecast,estimatedMaintenanceExposure:environment?environment.damageRisk:null,reason:!vehicle?'VEHICLE_TIER_INVALID':!mission?'GUARD_MISSION_INVALID':count<1||count>100?'GUARD_QUANTITY_INVALID':count>availableVehicles?'INSUFFICIENT_UNASSIGNED_VEHICLES':count*vehicle.capacity>capacity.availableOfficers?'INSUFFICIENT_UNASSIGNED_OFFICERS':null};
+  }
+  function vehicleRecommendations(missionId,environmentId,roadCondition,quantity,country){
+    const cid=normalizeCountry(country||currentCountry()),state=getState(cid),mission=GUARD_MISSIONS.find(function(row){return row.id===String(missionId||'');});
+    if(!mission)return [];
+    const environment=environmentSpec(environmentId),road=roadSpec(roadCondition),requested=Math.max(1,Math.min(100,Math.floor(num(quantity)||1)));
+    const freeOfficers=Math.max(0,state.policeCount-guardOfficerCount(state)),candidates=[];
+    VEHICLES.forEach(function(vehicle){
+      if(vehicle.level>state.unlockedVehicleLevel)return;
+      const ready=availableFleetUnits(state,vehicle.level).slice().sort(function(a,b){return(Number(b.condition)||0)-(Number(a.condition)||0);});
+      if(!ready.length)return;
+      const environmentAssessment=vehicleUseAssessment(vehicle.level,environment.id,road.id,cid);
+      if(environmentAssessment.fit<20)return;
+      const units=ready.slice(0,Math.min(requested,ready.length,Math.floor(freeOfficers/vehicle.capacity)));
+      if(!units.length)return;
+      const health=units.reduce(function(total,unit){return total+(Number(unit.condition)||0);},0)/units.length;
+      const baseScore=guardEffectiveness(vehicle.level,mission.id,state);
+      const effectiveness=Math.round(clamp(baseScore*(0.55+0.0045*environmentAssessment.fit)*(0.35+0.0065*health),0,100));
+      const wear30=environmentAssessment.wearPerDay*30;
+      const maintenanceExposure=environmentAssessment.damageRisk;
+      const costPerDay=vehicle.maintenancePerDay*(1+(100-health)/100*0.6+Math.max(0,70-environmentAssessment.fit)/100*0.45+road.wearPerDay*0.25);
+      const strategicScore=Math.round(clamp(effectiveness-wear30*0.35-Math.max(0,55-environmentAssessment.fit)*0.18-costPerDay/100,0,100));
+      const strengths=[];
+      if(environmentAssessment.fit>=80)strengths.push('Strong route fit');
+      if(effectiveness>=65)strengths.push('High mission effectiveness');
+      if(wear30<=5)strengths.push('Low expected wear');
+      if((vehicle.capabilities[mission.weights?Object.keys(mission.weights).sort(function(a,b){return mission.weights[b]-mission.weights[a];})[0]:'response']||0)>=80)strengths.push('Specialist mission capability');
+      candidates.push({vehicleLevel:vehicle.level,vehicleId:vehicle.id,vehicleName:vehicle.name,className:vehicle.className,availableVehicles:ready.length,recommendedQuantity:units.length,averageCondition:Math.round(health),missionId:mission.id,missionName:mission.name,environmentId:environment.id,environmentName:environment.name,roadCondition:road.id,roadName:road.name,environmentFit:environmentAssessment.fit,effectiveness:effectiveness,strategicScore:strategicScore,estimatedWear30Days:Number(wear30.toFixed(1)),damageRisk:environmentAssessment.damageRisk,maintenancePerDay:vehicle.maintenancePerDay,estimatedMaintenancePerDay:Math.round(costPerDay),strengths:strengths,tradeoff:environmentAssessment.summary,why:environmentAssessment.fit>=80?'Best-fit platform for this route.':environmentAssessment.fit>=60?'Usable platform with manageable wear and response trade-offs.':'Available only as a compromise; condition and maintenance costs rise faster.'});
+    });
+    return candidates.sort(function(a,b){return b.strategicScore-a.strategicScore||b.environmentFit-a.environmentFit||a.estimatedWear30Days-b.estimatedWear30Days||a.vehicleLevel-b.vehicleLevel;}).slice(0,3);
   }
   function deployGuard(vehicleLevel,quantity,missionId,sector,country,assetId,environmentId,roadCondition){
     const level=Math.floor(num(vehicleLevel)||0),qty=Math.floor(num(quantity)||0),cid=normalizeCountry(country||currentCountry());
@@ -757,7 +785,7 @@
     estimateFacilityCost:function(id,amount,country){return estimateFacilityCostFrom(getState(country||currentCountry()),id,amount);},
     estimateTrainingCost:function(target,country){return estimateTrainingCostFrom(getState(country||currentCountry()),Math.floor(num(target)||0));},
     advice:advice,recruitPolice:recruitPolice,firePolice:firePolice,orderVehicle:orderVehicle,buildFacility:buildFacility,
-    getGuardCapacity:guardCapacity,getGuardDeploymentPreview:guardPreview,deployGuard:deployGuard,standDownGuard:standDownGuard,getGuardEffectiveness:guardEffectiveness,getOperatingEnvironments:function(){return clone(OPERATING_ENVIRONMENTS);},getRoadConditions:function(){return clone(ROAD_CONDITIONS);},getVehicleUseAssessment:vehicleUseAssessment,getVehicleFleet:vehicleFleetSummary,serviceVehicle:serviceVehicle,estimateVehicleRepairCost:estimateVehicleRepairCost,getGuardableAssets:function(country){return clone(guardableAssets(country||currentCountry()));},getGuardCoverageForIncident:function(type,country,targetAssetId){return guardCoverageForIncident(getState(country||currentCountry()),String(type||''),targetAssetId||null);},
+    getGuardCapacity:guardCapacity,getGuardDeploymentPreview:guardPreview,deployGuard:deployGuard,standDownGuard:standDownGuard,getGuardEffectiveness:guardEffectiveness,getOperatingEnvironments:function(){return clone(OPERATING_ENVIRONMENTS);},getRoadConditions:function(){return clone(ROAD_CONDITIONS);},getVehicleUseAssessment:vehicleUseAssessment,getVehicleRecommendations:vehicleRecommendations,getVehicleFleet:vehicleFleetSummary,serviceVehicle:serviceVehicle,estimateVehicleRepairCost:estimateVehicleRepairCost,getGuardableAssets:function(country){return clone(guardableAssets(country||currentCountry()));},getGuardCoverageForIncident:function(type,country,targetAssetId){return guardCoverageForIncident(getState(country||currentCountry()),String(type||''),targetAssetId||null);},
     startResearch:startResearch,upgradeTraining:upgradeTraining,recruitAgents:recruitAgents,issueMinisterDirective:issueMinisterDirective,
     processTurn:onTurnCommitted,applyExistingAssetIncident:markExistingAsset
   });
