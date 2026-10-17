@@ -482,17 +482,21 @@
         loadBlueMarbleImage().then(function (image) {
             if (image) {
                 textureReady = true;
-                attachBlueMarbleFallback();
-            } else {
-                styleCountries();
-                window.OMEGA_OFFLINE_ATLAS_STATUS = {
-                    active: active,
-                    remoteImagery: remoteImageryReady,
-                    offlineRasterCached: false,
-                    rasterSource: null,
-                    note: "A first online connection is needed to fetch the NASA overview image; persistent offline use also requires browser storage."
-                };
+                if (active) attachBlueMarbleFallback();
+                return;
             }
+
+            // A late cache/network failure must not overwrite the status of a
+            // different map layer selected while the image request was pending.
+            if (!active) return;
+            styleCountries();
+            window.OMEGA_OFFLINE_ATLAS_STATUS = {
+                active: true,
+                remoteImagery: remoteImageryReady,
+                offlineRasterCached: textureStored,
+                rasterSource: null,
+                note: "A first online connection is needed to fetch the NASA overview image; persistent offline use also requires browser storage."
+            };
         });
 
         if (typeof Game.showNotification === "function") {
@@ -577,10 +581,12 @@
 
     function handleLayerOptionClick(event) {
         var target = event.target;
+        // Clicks can originate from nested SVG/text nodes inside a button.
+        if (target && target.nodeType === 3) target = target.parentElement;
         var button = target && typeof target.closest === "function"
             ? target.closest("#layers-drawer .layer-opt-btn[data-layer]")
             : null;
-        if (!button) return;
+        if (!button || button.disabled) return;
 
         // Capture-phase routing makes the offline control work even if the legacy
         // Game.init() click binding was skipped or another UI layer changed event order.
@@ -607,7 +613,7 @@
             });
         } catch (error) {
             console.error("[OMEGA Atlas] Map-layer button action failed:", error);
-            if (typeof window.Game.showNotification === "function") {
+            if (window.Game && typeof window.Game.showNotification === "function") {
                 window.Game.showNotification("MAP LAYER ERROR", "The selected map layer could not be activated. See the browser console for details.", "warning");
             }
         }
