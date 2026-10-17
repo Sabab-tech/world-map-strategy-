@@ -259,7 +259,8 @@ test('guard deployments bind to recorded factories and only protect their select
   state.economy.AAA.factories = [
     { factoryId: 'AL-01', name: 'Aluminium Plant North Gate', type: 'factory', productionCapacity: 100, operationalStatus: 'ACTIVE' },
     { factoryId: 'ST-02', name: 'Steelworks South', type: 'industrial factory', productionCapacity: 120, operationalStatus: 'ACTIVE' },
-    { factoryId: 'OLD-03', name: 'Closed old plant', type: 'factory', productionCapacity: 0, operationalStatus: 'CLOSED' }
+    { factoryId: 'OLD-03', name: 'Closed old plant', type: 'factory', productionCapacity: 0, operationalStatus: 'CLOSED' },
+    { factoryId: 'PL-04', name: 'Future planned plant', type: 'factory', productionCapacity: 0, operationalStatus: 'PLANNED' }
   ];
   api.getState('AAA');
   state.interior.AAA.police.vehiclesOwned = { 1: 1 };
