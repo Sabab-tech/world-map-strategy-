@@ -28,6 +28,8 @@
   let activePanel = 'matrix';
   let lastOutcome = '';
   let lastCascade = null;
+  let selectedReserveResourceId = '';
+  let selectedReserveCountryId = '';
 
   function state() { return (g.Game && g.Game.state) || g.gameState || {}; }
   function engine() { return g.ResourceMinistryEngine || null; }
@@ -342,25 +344,191 @@
           actionButton('focus-map', 'Locate deposits', { 'resource-id': r.id }));
       }).join('');
   }
+  function resourceToken(value) {
+    return String(value || '').trim().toLowerCase().replace(/^res_type:/, '').replace(/[\s-]+/g, '_');
+  }
+  function positiveLedgerQuantity(value) {
+    const quantity = ledgerQuantity(value);
+    if (quantity === null || quantity === undefined || quantity === '') return false;
+    const numeric = typeof quantity === 'number' ? quantity : Number(String(quantity).replace(/,/g, ''));
+    return Number.isFinite(numeric) && numeric > 0;
+  }
+  function siteResourceId(site) {
+    const source = site && site.sourceSiteRecord && typeof site.sourceSiteRecord === 'object' ? site.sourceSiteRecord : {};
+    const identity = site && site.identity && typeof site.identity === 'object' ? site.identity : {};
+    const real = site && site.real && typeof site.real === 'object' ? site.real : {};
+    return site && (site.resourceId || site.resId || site.resourceTypeId || site.commodityId || real.resourceId ||
+      identity.resourceTypeId || identity.resourceId || source.resourceId || source.resId || source.resourceTypeId) || '';
+  }
+  function depositResourceId(deposit) {
+    return deposit && (deposit.resourceId || deposit.resId || deposit.resourceTypeId || deposit.resource || deposit.commodityId) || '';
+  }
+  function ledgerResourceHasCountryEvidence(country, type, row, sites, localDeposits) {
+    const runtime = resourceBucket(country);
+    const id = type && type.id || row && row.id || '';
+    const quantities = [
+      row && row.endowment, resourceMapValue(runtime.endowment, id),
+      row && row.reserve, resourceMapValue(runtime.reserves, id),
+      row && row.inventory, resourceMapValue(runtime.inventory, id),
+      row && row.dailyProduction, resourceMapValue(runtime.production, id)
+    ];
+    if (quantities.some(positiveLedgerQuantity)) return true;
+    const wanted = resourceToken(id);
+    return (Array.isArray(sites) ? sites : []).some(function (site) {
+      return resourceToken(siteResourceId(site)) === wanted;
+    }) || (Array.isArray(localDeposits) ? localDeposits : []).some(function (deposit) {
+      return resourceToken(depositResourceId(deposit)) === wanted;
+    });
+  }
+  function ledgerResourceOptions(rows, country) {
+    const out = [], positions = new Map(), selectedCountry = activeCountry(country);
+    const sites = siteRows(selectedCountry);
+    const localDeposits = deposits().filter(function (deposit) {
+      const id = deposit && (deposit.countryCode || deposit.countryId || deposit.country || deposit.countryName || deposit.sovereignCountryId);
+      return id && normaliseCountry(id) === selectedCountry;
+    });
+    function add(row) {
+      if (!row || typeof row !== 'object') return;
+      const id = row.id || row.resourceId || row.resId || row.resourceTypeId || row.resource || '';
+      const key = resourceToken(id);
+      if (!key) return;
+      const catalogue = resourceTypes().find(function (type) { return resourceToken(type.id) === key; }) || {};
+      const normalized = Object.assign({}, catalogue, row, { id: String(id) });
+      const pos = positions.get(key);
+      if (pos === undefined) {
+        positions.set(key, out.length);
+        out.push(normalized);
+      } else {
+        const previous = out[pos];
+        const merged = Object.assign({}, previous, normalized);
+        ['name', 'bnName', 'icon', 'color', 'unit', 'category'].forEach(function (field) {
+          if (!merged[field]) merged[field] = previous[field];
+        });
+        out[pos] = merged;
+      }
+    }
+    // Start with this country's authoritative rows, not the global commodity catalogue.
+    (Array.isArray(rows) ? rows : []).forEach(add);
+    // Country-bound mine/site and deposit evidence can establish a resource even before
+    // its quantity has been surveyed or a runtime reserve has been initialized.
+    sites.forEach(function (site) {
+      const id = siteResourceId(site);
+      if (!id) return;
+      add({ id: id, name: site.resourceName || site.commodityName || resourceName(id), unit: site.unit || '' });
+    });
+    localDeposits.forEach(function (deposit) {
+      const id = depositResourceId(deposit);
+      if (!id) return;
+      add({ id: id, name: deposit.resourceName || deposit.commodityName || resourceName(id), unit: deposit.unit || '' });
+    });
+    return out.filter(function (type) {
+      const row = (Array.isArray(rows) ? rows : []).find(function (candidate) {
+        return candidate && resourceToken(candidate.id) === resourceToken(type.id);
+      });
+      return ledgerResourceHasCountryEvidence(selectedCountry, type, row, sites, localDeposits);
+    });
+  }
+  function resourceMapValue(map, resourceId) {
+    if (!map || typeof map !== 'object' || Array.isArray(map)) return undefined;
+    if (Object.prototype.hasOwnProperty.call(map, resourceId)) return map[resourceId];
+    const wanted = resourceToken(resourceId);
+    const key = Object.keys(map).find(function (candidate) { return resourceToken(candidate) === wanted; });
+    return key === undefined ? undefined : map[key];
+  }
+  function ledgerQuantity(value) {
+    if (value && typeof value === 'object') {
+      for (const key of ['quantity', 'value', 'amount', 'total', 'balance', 'remainingQuantity', 'reserveQuantity']) {
+        if (value[key] !== null && value[key] !== undefined && value[key] !== '') return value[key];
+      }
+      return null;
+    }
+    return value === '' || value === undefined ? null : value;
+  }
+  function hasLedgerValue(value) {
+    return value !== null && value !== undefined && value !== '';
+  }
+  function ledgerField(rowValue, map, resourceId) {
+    const fromRow = ledgerQuantity(rowValue);
+    if (hasLedgerValue(fromRow)) return fromRow;
+    return ledgerQuantity(resourceMapValue(map, resourceId));
+  }
+  function resourceLedgerData(country, type, row) {
+    const runtime = resourceBucket(country);
+    const id = type && type.id || row && row.id || '';
+    const data = {
+      endowment: ledgerField(row && row.endowment, runtime.endowment, id),
+      reserve: ledgerField(row && row.reserve, runtime.reserves, id),
+      inventory: ledgerField(row && row.inventory, runtime.inventory, id),
+      dailyProduction: ledgerField(row && row.dailyProduction, runtime.production, id),
+      dailyConsumption: ledgerField(row && row.dailyConsumption, runtime.consumption, id),
+      netBalance: ledgerQuantity(row && row.netBalance),
+      stockDays: ledgerQuantity(row && row.stockDays)
+    };
+    data.present = Object.keys(data).some(function (key) {
+      return key !== 'present' && hasLedgerValue(data[key]);
+    });
+    return data;
+  }
+  function ledgerMetric(icon, label, value, unit) {
+    return '<div class="omega-rescc-ledger-metric"><span class="omega-rescc-ledger-metric-icon">' + esc(icon) +
+      '</span><div class="omega-rescc-ledger-metric-copy"><span>' + esc(label) + '</span><strong>' +
+      number(value, unit ? ' ' + unit : '') + '</strong></div></div>';
+  }
   function panelReserves(country) {
-    const rows=resources(country),r=resourceBucket(country),endowment=r.endowment||{},reserves=r.reserves||{},inventory=r.inventory||{};
-    const body=rows.map(row=>{
-      const rid=row.id,ev=Object.prototype.hasOwnProperty.call(endowment,rid)?endowment[rid]:null,rv=Object.prototype.hasOwnProperty.call(reserves,rid)?reserves[rid]:row.reserve,iv=Object.prototype.hasOwnProperty.call(inventory,rid)?inventory[rid]:row.inventory;
-      return card(row.name||rid,rid,'<div class="omega-rescc-grid2">'+kv('Runtime endowment',ev)+kv('Runtime reserve balance',rv)+kv('Runtime available inventory',iv)+kv('Runtime reserve authority',row.reserveAuthority||'NOT_RECORDED')+kv('Unit',row.unit)+kv('Observed grade / purity',row.grade??row.purity)+'</div>',actionButton('reserve','Request SPR transfer',{'resource-id':rid}));
+    const rows = resources(country), selectedCountry = activeCountry(country);
+    const options = ledgerResourceOptions(rows, country);
+    if (selectedReserveCountryId !== selectedCountry) {
+      const firstLive = options.find(function (type) {
+        const row = rows.find(function (candidate) { return resourceToken(candidate.id) === resourceToken(type.id); });
+        return resourceLedgerData(country, type, row).present;
+      });
+      selectedReserveResourceId = (firstLive || options[0] || {}).id || '';
+      selectedReserveCountryId = selectedCountry;
+    }
+    let selected = options.find(function (type) {
+      return resourceToken(type.id) === resourceToken(selectedReserveResourceId);
+    });
+    if (!selected && options.length) selected = options[0];
+    if (!selected) {
+      selectedReserveResourceId = '';
+      return empty('No country-specific reserves, endowment, or resource-site records are available.');
+    }
+    selectedReserveResourceId = selected.id;
+    const row = rows.find(function (candidate) { return resourceToken(candidate.id) === resourceToken(selected.id); });
+    const data = resourceLedgerData(country, selected, row);
+    const name = selected.name || row && row.name || String(selected.id).replace(/_/g, ' ');
+    const icon = selected.icon || row && row.icon || '🪨';
+    const unit = row && row.unit || selected.unit || '';
+    const optionsHtml = options.map(function (type) {
+      const id = String(type.id);
+      const label = (type.name || type.bnName || id) + (type.unit ? ' · ' + type.unit : '');
+      return '<option value="' + esc(id) + '"' +
+        (resourceToken(id) === resourceToken(selected.id) ? ' selected' : '') + '>' +
+        esc(label) + '</option>';
     }).join('');
-    const profileRows=siteRows(country).map(site=>{
-      const src=site.sourceSiteRecord&&typeof site.sourceSiteRecord==='object'?site.sourceSiteRecord:{},q=site.quantitative||src.quantitative||(site.real&&site.real.quantitative)||{},sim=site.simulation||src.simulation||{},valueObject=q.reserve||q.recoverableReserve||sim.reserve||sim.recoverableReserve||site.reserve;
-      const value=valueObject&&typeof valueObject==='object'?(valueObject.quantity??valueObject.value??valueObject.amount??valueObject.reserves??null):(valueObject??site.reserveQuantity??site.simulationReserveQuantity??null);
-      if(value===null||value===undefined||value==='')return null;
-      const unit=valueObject&&typeof valueObject==='object'?(valueObject.unit||valueObject.quantityUnit):null,authority=(q.quantitativeProvenance&&(q.quantitativeProvenance.reserveAuthority||q.quantitativeProvenance.quantityAuthority))||(valueObject&&typeof valueObject==='object'&&(valueObject.authority||valueObject.dataAuthority))||site.sourceAuthority||src.sourceAuthority||src.dataAuthority||'SOURCE_STATUS_NOT_RECORDED';
-      return{site,value,unit:unit||site.unit||'',authority};
-    }).filter(Boolean);
-    const profileCards=profileRows.slice(0,150).map(row=>card(row.site.siteName||row.site.name||row.site.siteId,'FILE-BACKED SITE PROFILE',
-      '<div class="omega-rescc-grid2">'+kv('Site ID',row.site.siteId)+kv('Commodity',row.site.resourceId||row.site.real&&row.site.real.resourceId||row.site.identity&&row.site.identity.resourceTypeId)+kv('Profile reserve',row.value,row.unit?' '+row.unit:'')+kv('Authority / provenance',row.authority)+'</div>','')).join('');
-    return '<p class="omega-rescc-note">Runtime balances are read from shared country state. File-backed reserve facts below are reference profiles, not live inventory.</p>'+
-      (body||empty('No live commodity reserve state is recorded.'))+'<h3 class="omega-rescc-section-title">Site reserve facts from existing data files</h3>'+
-      (profileCards||empty('No quantified reserve field is recorded in this country site profile.'))+
-      (profileRows.length>150?'<p class="omega-rescc-note">Showing 150 of '+profileRows.length+' reserve profiles.</p>':'');
+    const picker = '<div class="omega-rescc-ledger-picker" data-search-item>' +
+      '<label for="omega-rescc-resource-select">Select one national resource</label>' +
+      '<select id="omega-rescc-resource-select" aria-label="Select resource for sovereign reserves">' +
+      optionsHtml + '</select></div>';
+    const status = data.present
+      ? '<span class="omega-rescc-ledger-status">IN LIVE COUNTRY STATE</span>'
+      : '<span class="omega-rescc-ledger-status is-missing">UNAVAILABLE</span>';
+    const heading = '<div class="omega-rescc-ledger-intro"><span class="omega-rescc-ledger-icon">' + esc(icon) +
+      '</span><div class="omega-rescc-ledger-ident"><strong>' + esc(name) + '</strong><span>' +
+      esc(unit || 'Unit not recorded') + ' · Sovereign reserve and in-situ snapshot</span></div>' + status + '</div>';
+    const metrics = '<div class="omega-rescc-ledger-grid">' +
+      ledgerMetric('⛏️', 'Production / day', data.dailyProduction, unit) +
+      ledgerMetric('🏭', 'Consumption / day', data.dailyConsumption, unit) +
+      ledgerMetric('⚖️', 'Net balance', data.netBalance, unit) +
+      ledgerMetric('📦', 'Available inventory', data.inventory, unit) +
+      ledgerMetric('💎', 'Proven reserves', data.reserve, unit) +
+      ledgerMetric('🌍', 'In-situ endowment', data.endowment, unit) +
+      ledgerMetric('📅', 'Stock duration', data.stockDays, 'days') +
+      '</div>';
+    const survey = data.present ? '' : '<div class="omega-rescc-actions">' +
+      actionButton('survey', 'Survey Resource', { 'resource-id': selected.id }) + '</div>';
+    const detail = '<article class="omega-rescc-card" data-search-item>' + heading + metrics + survey + '</article>';
+    return picker + detail;
   }
   function panelDeposits(country) {
     const all=deposits(),selected=activeCountry(country);
@@ -882,6 +1050,23 @@
       '.omega-rescc-button:disabled{opacity:.38;cursor:not-allowed}.omega-rescc-button:hover:not(:disabled){background:#0e7490}' +
       '.omega-rescc-empty{padding:18px;border:1px dashed #345065;border-radius:8px;color:#9eb3c7;text-align:center}' +
       '.omega-rescc-json{white-space:pre-wrap;overflow-wrap:anywhere;max-height:300px;overflow:auto;color:#cbd5e1;background:#030b15;border-radius:6px;padding:9px;margin:0;font-size:11px}' +
+      '.omega-rescc-ledger-picker{display:flex;flex-direction:column;gap:7px;border:1px solid #24526c;background:linear-gradient(135deg,#0a1b2b,#07111f);border-radius:10px;padding:12px}' +
+      '.omega-rescc-ledger-picker label{font-size:11px;color:#a8c3d3;font-weight:700}' +
+      '.omega-rescc-ledger-picker select{width:100%;min-height:40px;background:#030b15;color:#f1f5f9;border:1px solid #1686a7;border-radius:7px;padding:10px;font:inherit}' +
+      '.omega-rescc-ledger-intro{display:flex;align-items:center;gap:10px;border:1px solid #214c65;border-radius:10px;background:#091827;padding:12px}' +
+      '.omega-rescc-ledger-icon{font-size:27px;line-height:1;flex:0 0 auto}' +
+      '.omega-rescc-ledger-ident{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}' +
+      '.omega-rescc-ledger-ident strong{font-size:14px;color:#e2f6ff;overflow-wrap:anywhere}' +
+      '.omega-rescc-ledger-ident span{font-size:10px;color:#94a3b8}' +
+      '.omega-rescc-ledger-status{border:1px solid #1d7a5b;color:#86efac;background:#052e25;border-radius:20px;padding:3px 7px;font-size:10px;font-weight:800;white-space:nowrap}' +
+      '.omega-rescc-ledger-status.is-missing{border-color:#854d0e;color:#fcd34d;background:#422006}' +
+      '.omega-rescc-ledger-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}' +
+      '.omega-rescc-ledger-metric{display:grid;grid-template-columns:27px minmax(0,1fr);align-items:center;gap:8px;border:1px solid #1b3449;background:linear-gradient(135deg,#081523,#0a1b2c);border-radius:9px;padding:10px;min-width:0}' +
+      '.omega-rescc-ledger-metric-icon{font-size:20px;text-align:center}' +
+      '.omega-rescc-ledger-metric-copy{display:flex;flex-direction:column;gap:4px;min-width:0}' +
+      '.omega-rescc-ledger-metric-copy span{font-size:10px;color:#819aaf}' +
+      '.omega-rescc-ledger-metric-copy strong{font-size:13px;color:#e2f6ff;overflow-wrap:anywhere}' +
+      '@media(max-width:420px){.omega-rescc-ledger-grid{grid-template-columns:1fr}.omega-rescc-ledger-intro{align-items:flex-start}.omega-rescc-ledger-status{white-space:normal}}' +
       '.omega-rescc-section-title{font-size:13px;color:#67e8f9;margin:8px 0 0}.omega-rescc-form{border:1px solid #25475f;border-radius:9px;padding:13px;display:flex;flex-direction:column;gap:10px;background:#081625}' +
       '.omega-rescc-form h3{font-size:13px;margin:0;color:#a5f3fc}.omega-rescc-formgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:9px}' +
       '.omega-rescc-form label,.omega-rescc-question{display:flex;flex-direction:column;gap:5px;color:#cbd5e1;font-size:11px;min-width:0}' +
@@ -918,6 +1103,13 @@
       modal.addEventListener('change', function (event) {
         if (event.target && event.target.id === 'omega-rescc-panel-select') {
           openPanel(event.target.value);
+          return;
+        }
+        if (event.target && event.target.id === 'omega-rescc-resource-select') {
+          selectedReserveResourceId = String(event.target.value || '');
+          selectedReserveCountryId = activeCountry(countryId);
+          lastOutcome = '';
+          render(countryId, 'reserves');
           return;
         }
         if (event.target && event.target.id === 'omega-rescc-country') {

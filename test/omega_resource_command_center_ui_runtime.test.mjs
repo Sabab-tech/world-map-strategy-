@@ -79,8 +79,9 @@ globalThis.ResourceMinistryEngine = {
     return raw === 'BANGLADESH' ? 'BGD' : raw;
   },
   resourceTypes: [
-    { id: 'iron_ore', name: 'Iron Ore', unit: 'METRIC_TONNE', basePrice: 100, category: 'MINERAL', processChain: ['extraction', 'smelting'] },
-    { id: 'crude_oil', name: 'Crude Oil', unit: 'BARREL', basePrice: 80, category: 'ENERGY' }
+    { id: 'iron_ore', name: 'Iron Ore', unit: 'METRIC_TONNE', icon: '⛏️', basePrice: 100, category: 'MINERAL', processChain: ['extraction', 'smelting'] },
+    { id: 'crude_oil', name: 'Crude Oil', unit: 'BARREL', icon: '🛢️', basePrice: 80, category: 'ENERGY' },
+    { id: 'coal', name: 'Coal', unit: 'METRIC_TONNE', icon: '⚫', category: 'ENERGY' }
   ],
   deposits: [
     { name: 'Test Deposit', country: 'Bangladesh', countryCode: 'BGD', lat: 23.7, lng: 90.4, resourceId: 'iron_ore', reserves: 100, grade: 0.5, status: 'AVAILABLE' },
@@ -186,9 +187,12 @@ test('canonical site profiles appear in relevant tabs without becoming live prod
 
   ui.open('BGD', 'reserves');
   modal = elements.get('gsrsk-intelligence-modal');
-  assert.match(modal.innerHTML, /Site reserve facts from existing data files/);
-  assert.match(modal.innerHTML, /700/);
-  assert.match(modal.innerHTML, /Runtime reserve balance/);
+  assert.match(modal.innerHTML, /value="iron_ore" selected/);
+  assert.match(modal.innerHTML, /Proven reserves/);
+  assert.match(modal.innerHTML, /900/);
+  assert.doesNotMatch(modal.innerHTML, /Site reserve facts from existing data files|FILE-BACKED SITE PROFILE/);
+  assert.doesNotMatch(modal.innerHTML, /Survey Resource/);
+  assert.equal((modal.innerHTML.match(/class="omega-rescc-ledger-metric"/g) || []).length, 7);
 
   ui.open('BGD', 'logistics');
   modal = elements.get('gsrsk-intelligence-modal');
@@ -201,6 +205,47 @@ test('canonical site profiles appear in relevant tabs without becoming live prod
   modal = elements.get('gsrsk-intelligence-modal');
   assert.match(modal.innerHTML, /Processing capabilities from existing site files/);
   assert.match(modal.innerHTML, /Beneficiation/);
+});
+
+test('reserves ledger lists only resources backed by country quantities or local resource records', () => {
+  const originalSummary = ResourceMinistryEngine.getAuthoritativeResourceSummary;
+  ResourceMinistryEngine.getAuthoritativeResourceSummary = function () {
+    const summary = originalSummary.apply(this, arguments);
+    return Object.assign({}, summary, {
+      resourcesList: (summary.resourcesList || []).concat([{
+        id: 'coal', name: 'Coal', unit: 'METRIC_TONNE',
+        endowment: 0, reserve: 0, inventory: 0, dailyProduction: 0,
+        dailyConsumption: 0, netBalance: 0, stockDays: 0
+      }])
+    });
+  };
+  try {
+    ui.open('BGD', 'reserves');
+    let modal = elements.get('gsrsk-intelligence-modal');
+    assert.match(modal.innerHTML, /omega-rescc-resource-select/);
+    assert.match(modal.innerHTML, /value="iron_ore" selected/);
+    assert.match(modal.innerHTML, /value="crude_oil"/);
+    assert.doesNotMatch(modal.innerHTML, /value="coal"/,
+      'a global-catalogue resource with only zero quantities must not appear');
+    assert.match(modal.innerHTML, /100 METRIC_TONNE/);
+    assert.match(modal.innerHTML, /900 METRIC_TONNE/);
+    assert.doesNotMatch(modal.innerHTML, /Survey Resource/);
+
+    modal.listeners.change({ target: { id: 'omega-rescc-resource-select', value: 'crude_oil' } });
+    assert.match(modal.innerHTML, /value="crude_oil" selected/);
+    assert.match(modal.innerHTML, /50 BARREL/);
+    assert.match(modal.innerHTML, /500 BARREL/);
+    assert.equal((modal.innerHTML.match(/class="omega-rescc-ledger-metric"/g) || []).length, 7,
+      'only one resource detail card should be rendered at a time');
+
+    modal.listeners.change({ target: { id: 'omega-rescc-resource-select', value: 'coal' } });
+    assert.doesNotMatch(modal.innerHTML, /value="coal"/,
+      'the ledger must not allow selecting a resource absent from country state');
+    assert.doesNotMatch(modal.innerHTML, /Survey Resource/,
+      'an absent catalogue-only commodity is hidden, not presented as a survey prompt');
+  } finally {
+    ResourceMinistryEngine.getAuthoritativeResourceSummary = originalSummary;
+  }
 });
 
 test('deposit view filters loaded JSON deposits to the selected country', () => {
