@@ -288,6 +288,7 @@ test('simulation incident records the deterministic target asset and matching gu
   ];
   api.getState('AAA');
   state.interior.AAA.police.vehiclesOwned = { 1: 1 };
+  state.interior.AAA.police.sabotageRisk = 95;
   const deployment = api.deployGuard(1, 1, 'industrial_guard', 'Aluminium Plant North Gate', 'AAA', 'AL-01');
   assert.equal(deployment.ok, true, JSON.stringify(deployment));
 
