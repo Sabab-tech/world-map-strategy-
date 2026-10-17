@@ -65,3 +65,19 @@ test('health ministry logo fills the existing icon box, including already-mounte
   assert.match(js, /maxWidth:'100%', maxHeight:'100%', objectFit:'fill'/);
   assert.match(js, /element\.replaceChildren\(makeLogo\(\)\)/);
 });
+
+
+test('button design has consistent tactical surfaces, clear states, and mobile-safe targets', () => {
+  const css = read('omega_ui_visual_system_v1.css');
+  for (const token of ['--ui-btn-bg:', '--ui-btn-border:', '--ui-btn-radius:', '--ui-btn-primary:']) {
+    assert.ok(css.includes(token), `missing button design token ${token}`);
+  }
+  assert.match(css, /#ui-engine-root \.speed-controls \.speed-btn\.active/);
+  assert.match(css, /#ui-engine-root \.icon-btn > \.omega-ui-icon/);
+  assert.match(css, /min-height:36px!important/);
+  assert.match(css, /\.access-card:focus-visible/);
+  assert.match(css, /\.c-ministry-btn:focus-visible/);
+  assert.match(css, /@media\(hover:hover\) and \(pointer:fine\)/);
+  assert.match(css, /@media\(prefers-reduced-motion:reduce\)/);
+  assert.match(css, /#btn-ministry-dock:active:not\(:disabled\)/);
+});
