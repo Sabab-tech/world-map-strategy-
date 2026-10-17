@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises';
 import assert from 'node:assert/strict';
+import vm from 'node:vm';
 
 const countries = JSON.parse(await fs.readFile(new URL('../countries.json', import.meta.url), 'utf8'));
 const world = JSON.parse(await fs.readFile(new URL('../world.json', import.meta.url), 'utf8'));
@@ -7,6 +8,7 @@ const oceans = JSON.parse(await fs.readFile(new URL('../world_oceans_v1.json', i
 const runtime = await fs.readFile(new URL('../omega_geographic_region_system_v1.js', import.meta.url), 'utf8');
 const html = await fs.readFile(new URL('../index.html', import.meta.url), 'utf8');
 const css = await fs.readFile(new URL('../style.css', import.meta.url), 'utf8');
+const searchRuntime = await fs.readFile(new URL('../map-engine-1.js', import.meta.url), 'utf8');
 
 const continents = new Set(['Africa','Antarctica','Asia','Europe','North America','Oceania','South America']);
 const oceanIds = new Set(['ARCTIC','ATLANTIC','INDIAN','PACIFIC','SOUTHERN']);
@@ -92,7 +94,30 @@ assert.ok(runtime.includes('originalSelectCountry.apply(this, arguments)'), 'Man
 assert.ok(runtime.includes('if (state.selected) setSelection("")'), 'Direct country clicks must clear stale continent/ocean selection.');
 assert.match(runtime, /fillOpacity: 0\.16/, 'Group highlighting should preserve satellite visibility instead of flooding country interiors.');
 assert.ok(css.includes('.leaflet-overlay-pane path.omega-region-boundary-glow'), 'Glow must be applied to the actual SVG polygon paths.');
-assert.ok(css.includes('drop-shadow('), 'Selected boundaries require a visible colored glow.');
+assert.ok(runtime.includes('typeof L.canvas === "function"'), 'Ocean basins must use Canvas when available on mobile.');
+assert.ok(runtime.includes('function removeOceanOverlay()'), 'Ocean geometries must be removed when not selected.');
+assert.ok(runtime.includes('function searchRegions(query)'), 'The geographic search API must be available.');
+assert.ok(searchRuntime.includes('geographicSearch.exclusive'), 'Exact ocean/continent searches must filter unrelated result types.');
+assert.ok(searchRuntime.includes("type === 'region'"), 'Global search must select geographic regions.');
+assert.ok(searchRuntime.includes('window.setTimeout'), 'Global search input must be debounced on mobile.');
+assert.ok(css.includes('filter: none !important'), 'Selected boundaries must avoid expensive SVG filters.');
+assert.ok(!css.slice(css.indexOf('/* Keep region markings')).includes('drop-shadow('), 'Region highlighting must not use costly SVG drop shadows.');
+assert.ok(css.includes('.omega-ocean-label-card'), 'Selected oceans must have a visible, readable map label.');
+
+const isolatedWindow = {};
+vm.runInNewContext(runtime, { window: isolatedWindow, console });
+const geographicSearch = isolatedWindow.OMEGAGeographicRegionSystem.search;
+const seaSearch = geographicSearch('sea');
+assert.equal(seaSearch.exclusive, true, 'The generic word sea must be treated as an ocean-only search.');
+assert.deepEqual(Array.from(seaSearch.matches, item => item.value), [
+  'ocean:ARCTIC', 'ocean:ATLANTIC', 'ocean:INDIAN', 'ocean:PACIFIC', 'ocean:SOUTHERN'
+]);
+assert.equal(geographicSearch('ocean').matches.length, 5, 'Ocean searches must return exactly the five ocean basins.');
+assert.equal(geographicSearch('সমুদ্র').matches.length, 5, 'Bengali sea searches must find ocean basins.');
+assert.equal(geographicSearch('প্রশান্ত মহাসাগর').matches[0]?.value, 'ocean:PACIFIC', 'Bengali ocean names must resolve.');
+assert.equal(geographicSearch('Africa').matches[0]?.value, 'continent:Africa', 'Continent names must be searchable.');
+assert.equal(geographicSearch('continent').matches.length, 7, 'Generic continent searches must return the seven continents.');
+assert.equal(geographicSearch('Bangladesh').matches.length, 0, 'Country-only searches must not be misclassified as regions.');
 
 
 
