@@ -1275,7 +1275,6 @@ window.OmegaCabinetUI = {
                 const clickFn = isCab ? "window.OmegaCabinetUI.setCabinetMainView('council');" : `window.OmegaLayerManager.setLayer(2, { ministryId: '${m.id}' });`;
                 html += `
                     <div class="parchment-card-btn" data-ministry-id="${m.id}" onclick="${clickFn}" title="Open ${m.title} Control Room">
-                        <div style="font-size:10px; font-weight:800; color:${isCab ? '#ca8a04' : '#16a34a'}; background:${isCab ? 'rgba(234,179,8,0.2)' : 'rgba(34,197,94,0.15)'}; border:1px solid ${isCab ? '#eab308' : '#22c55e'}; padding:1px 8px; border-radius:10px;">${isCab ? '🏛️ CABINET' : '⚡ ' + m.efficiency + '% EFF'}</div>
                         <div class="parchment-icon-box">${this.getMinistryIconHtml(m, 32)}</div>
                         <div class="parchment-card-title">${m.title}</div>
                     </div>

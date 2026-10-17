@@ -88,3 +88,15 @@ test('button polish preserves the low-end Android no-transition policy on touch 
   assert.match(css, /#ui-engine-root \.icon-btn/);
   assert.match(css, /#resource-filter-box button,#omega-individual-resource-panel button,[\s\S]*?transition:none!important/);
 });
+
+
+test('parchment ministry cards omit efficiency badges and health logo fills only its own card', () => {
+  const engine = read('ministry_engine.js');
+  const css = read('style.css');
+  const renderStart = engine.indexOf('data-ministry-id="${m.id}"');
+  const renderEnd = engine.indexOf('this.initViewportScrollHandlers();', renderStart);
+  assert.ok(renderStart >= 0 && renderEnd > renderStart, 'ministry card renderer must exist');
+  assert.doesNotMatch(engine.slice(renderStart, renderEnd), /% EFF/, 'efficiency badge must not render on ministry cards');
+  assert.match(css, /\.parchment-card-btn\[data-ministry-id="health_welfare"\] \.parchment-icon-box\s*\{[^}]*position:\s*absolute;[^}]*inset:\s*0;[^}]*width:\s*100%;[^}]*height:\s*100%/s);
+  assert.match(css, /\.parchment-card-btn\[data-ministry-id="health_welfare"\] \.parchment-icon-box img\s*\{[^}]*object-fit:\s*fill/s);
+});
