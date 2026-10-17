@@ -6,6 +6,77 @@ import vm from 'node:vm';
 const engine = readFileSync(new URL('../omega_home_ministry_engine_v1.js', import.meta.url), 'utf8');
 const ui = readFileSync(new URL('../omega_home_ministry_ui_v1.js', import.meta.url), 'utf8');
 
+
+function makeUiHarness(vehicleInventory = null) {
+  const nodes = new Map();
+  const events = new Map();
+  let api = null;
+  const standDownButtons = [];
+  function node(id = '') {
+    return {
+      id, value: '', textContent: '', innerHTML: '', className: '', disabled: false,
+      style: { display: '', width: '', opacity: '', pointerEvents: '' },
+      onclick: null, oninput: null, onchange: null, attributes: {},
+      setAttribute(key, value) { this.attributes[key] = String(value); },
+      getAttribute(key) { return this.attributes[key] ?? null; },
+      dispatchEvent() { return true; },
+      appendChild() {},
+    };
+  }
+  const document = {
+    head: { appendChild(element) { if (element.id) nodes.set(element.id, element); } },
+    createElement() { return node(); },
+    getElementById(id) {
+      if (id === 'omega-home-police-ui-v1') return nodes.get(id) || null;
+      if (!nodes.has(id)) nodes.set(id, node(id));
+      return nodes.get(id);
+    },
+    querySelectorAll(selector) {
+      if (selector === '[data-home-standdown]' && api) {
+        const rows = api.getState('AAA').guardDeployments || [];
+        return rows.map(row => {
+          const button = node('standdown-' + row.id);
+          button.getAttribute = key => key === 'data-home-standdown' ? row.id : null;
+          standDownButtons.push(button);
+          return button;
+        });
+      }
+      return [];
+    }
+  };
+  const state = {
+    economy: { AAA: { treasury: 10000000, gdp: 1000000 } },
+    population: { AAA: { population: 1000000 } },
+    simulation: { turn: 0, simulationTimeMs: 0 }
+  };
+  const uiAdapter = {
+    showAdvisePopup(title, message) { this.lastAdvice = { title, message }; },
+    renderInteriorHQ() {},
+    renderUpgradeMenu() {},
+    renderTacticsMenu() {},
+  };
+  const world = {
+    Game: { state, countryId: 'AAA' },
+    CountryIOS: { activeCountry: 'AAA' },
+    Omega: {},
+    OMEGA_UI_ADAPTER: uiAdapter,
+    document,
+    CustomEvent: class CustomEvent { constructor(type, init = {}) { this.type = type; this.detail = init.detail || null; } },
+    Event: class Event { constructor(type) { this.type = type; } },
+    addEventListener(type, fn) { const rows = events.get(type) || []; rows.push(fn); events.set(type, rows); },
+    dispatchEvent(event) { (events.get(event.type) || []).forEach(fn => fn(event)); return true; },
+    updateGlobalResourceHUD() {},
+  };
+  const context = vm.createContext(world);
+  context.window = context;
+  vm.runInContext(engine, context, { filename: 'omega_home_ministry_engine_v1.js' });
+  api = context.OmegaHomeMinistryEngine;
+  api.getState('AAA');
+  if (vehicleInventory) context.Game.state.interior.AAA.police.vehiclesOwned = { ...vehicleInventory };
+  vm.runInContext(ui, context, { filename: 'omega_home_ministry_ui_v1.js' });
+  return { context, state, api, ui: context.OMEGA_UI_ADAPTER, nodes, standDownButtons };
+}
+
 test('the Home Ministry vehicle engine and UI scripts parse as JavaScript', () => {
   assert.doesNotThrow(() => new vm.Script(engine, { filename: 'omega_home_ministry_engine_v1.js' }));
   assert.doesNotThrow(() => new vm.Script(ui, { filename: 'omega_home_ministry_ui_v1.js' }));
@@ -54,6 +125,39 @@ test('guard-out UI and engine wire deploy, capacity preview, coverage, and stand
   assert.match(engine, /INSUFFICIENT_UNASSIGNED_VEHICLES/);
   assert.match(engine, /INSUFFICIENT_UNASSIGNED_OFFICERS/);
   assert.match(engine, /count\*vehicle\.capacity/);
+});
+
+
+test('vehicle hangar button click submits an order and updates the authoritative treasury state', () => {
+  const harness = makeUiHarness();
+  harness.ui.renderVehicleCatalog(1);
+  const button = harness.nodes.get('home-police-buy-vehicle');
+  assert.equal(typeof button.onclick, 'function');
+  button.onclick();
+  const state = harness.api.getState('AAA');
+  assert.equal(state.pendingVehicleOrder.level, 1);
+  assert.equal(state.pendingVehicleOrder.quantity, 1);
+  assert.equal(harness.state.economy.AAA.treasury, 10000000 - harness.api.VEHICLES[0].cost);
+});
+
+test('Guard Out screen dispatches a vehicle, reserves crew, and its stand-down button returns both', () => {
+  const harness = makeUiHarness({ 1: 1 });
+  harness.ui.renderGuardOut(1);
+  assert.equal(harness.nodes.get('home-police-confirm-guard').disabled, false);
+  harness.nodes.get('home-police-guard-mission').value = 'industrial_guard';
+  harness.nodes.get('home-police-guard-sector').value = 'Aluminium Plant North Gate';
+  harness.nodes.get('home-police-confirm-guard').onclick();
+  let state = harness.api.getState('AAA');
+  assert.equal(state.guardDeployments.length, 1);
+  assert.equal(state.guardDeployments[0].sector, 'Aluminium Plant North Gate');
+  assert.equal(harness.api.getGuardCapacity('AAA').availableVehicles[1], 0);
+  const standDown = harness.standDownButtons[harness.standDownButtons.length - 1];
+  assert.equal(typeof standDown.onclick, 'function');
+  standDown.onclick();
+  state = harness.api.getState('AAA');
+  assert.equal(state.guardDeployments.length, 0);
+  assert.equal(harness.api.getGuardCapacity('AAA').availableVehicles[1], 1);
+  assert.equal(harness.api.getGuardCapacity('AAA').availableOfficers, 250);
 });
 
 test('responsive UI keeps the guard and vehicle forms usable on narrow screens', () => {
