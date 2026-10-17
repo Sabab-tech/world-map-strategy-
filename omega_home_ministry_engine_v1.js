@@ -181,8 +181,13 @@
   }
   function getState(country){
     const cid=normalizeCountry(country||currentCountry());if(!cid)return baseState();
-    const existing=storedState(cid);if(existing)return existing;
-    const initial=baseState();dispatchState(cid,initial,'OMEGA_HOME_MINISTRY_INITIALIZED');return initial;
+    const existing=storedState(cid);
+    if(existing){
+      if(ensureFleetInventory(existing,cid))dispatchState(cid,existing,'OMEGA_HOME_POLICE_FLEET_MIGRATED');
+      return existing;
+    }
+    const initial=baseState();ensureFleetInventory(initial,cid);
+    dispatchState(cid,initial,'OMEGA_HOME_MINISTRY_INITIALIZED');return initial;
   }
   function money(value){const n=num(value);return n===null?'Unavailable':'$'+Math.round(n).toLocaleString('en-US');}
   function mutation(country,cost,action,mutator){
