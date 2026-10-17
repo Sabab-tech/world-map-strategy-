@@ -1,0 +1,193 @@
+/* OMEGA Hybrid Satellite Atlas
+   Real imagery is the primary visual layer; vectors remain functional overlays. */
+body.omega-offline-hybrid-active #map,
+body.omega-offline-hybrid-active .leaflet-container {
+    background: #183541 !important;
+}
+
+body.omega-offline-hybrid-active .country-label-inner {
+    color: #f5f5eb !important;
+    font-size: 9.5px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.35px !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.98), 0 0 5px rgba(0, 0, 0, 0.92) !important;
+}
+
+body.omega-offline-hybrid-active .ocean-label-marker div,
+body.omega-offline-hybrid-active .ocean-label-text {
+    color: rgba(226, 238, 239, 0.7) !important;
+    letter-spacing: 1.25px !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.98) !important;
+}
+
+body.omega-offline-hybrid-active .omega-offline-coordinate-icon {
+    background: transparent !important;
+    border: 0 !important;
+    pointer-events: none !important;
+}
+
+body.omega-offline-hybrid-active .omega-offline-coordinate-label {
+    display: inline-block;
+    box-sizing: border-box;
+    min-width: 35px;
+    padding: 2px 4px;
+    border: 1px solid rgba(223, 234, 226, 0.22);
+    border-radius: 3px;
+    background: rgba(5, 13, 17, 0.72);
+    color: #e9f0eb;
+    font: 600 9px/1.2 "Share Tech Mono", "Courier New", monospace;
+    text-align: center;
+    white-space: nowrap;
+    box-shadow: none;
+    pointer-events: none;
+}
+
+body.omega-offline-hybrid-active .city-btn-marker {
+    background: rgba(8, 17, 19, 0.9) !important;
+    border-color: rgba(229, 239, 229, 0.82) !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.6) !important;
+}
+
+body.omega-offline-hybrid-active .city-btn-dot {
+    background: #f0f3e9 !important;
+    box-shadow: 0 0 1px rgba(0, 0, 0, 0.95) !important;
+}
+
+body.omega-offline-hybrid-active .city-btn-label {
+    color: #ffffff !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.98) !important;
+}
+
+body.omega-offline-hybrid-active .resource-deposit-compact-icon > div {
+    background: rgba(8, 17, 19, 0.96) !important;
+    border-color: rgba(226, 237, 225, 0.88) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.68) !important;
+    animation: none !important;
+    transition: none !important;
+}
+
+body.omega-offline-hybrid-active .resource-deposit-compact-icon .omega-resource-glyph--map {
+    color: #f5f5ed !important;
+    border-color: #d3dfd1 !important;
+    box-shadow: none !important;
+}
+
+body.omega-offline-hybrid-active .resource-deposit-compact-icon [style*="animation"] {
+    display: none !important;
+}
+
+body.omega-offline-hybrid-active .leaflet-popup-content-wrapper,
+body.omega-offline-hybrid-active .leaflet-popup-tip {
+    background: rgba(10, 22, 26, 0.97) !important;
+    border-color: rgba(201, 218, 207, 0.72) !important;
+    color: #f1f4ed !important;
+}
+
+body.omega-offline-hybrid-active .leaflet-control-attribution {
+    background: rgba(4, 11, 14, 0.72) !important;
+    color: rgba(231, 238, 231, 0.75) !important;
+    font-size: 8px !important;
+}
+
+body.omega-offline-hybrid-active .leaflet-control-attribution a {
+    color: #e4eee4 !important;
+}
+
+.layer-opt-btn[data-layer="offline-hybrid"] {
+    border-color: rgba(206, 223, 208, 0.76) !important;
+    color: #edf4ed !important;
+    background: rgba(11, 26, 29, 0.98) !important;
+    letter-spacing: 0.1px;
+}
+
+.layer-opt-btn[data-layer="offline-hybrid"].active {
+    border-color: #e7f0e4 !important;
+    color: #ffffff !important;
+    background: rgba(44, 72, 61, 0.98) !important;
+    box-shadow: inset 0 0 0 1px rgba(236, 246, 233, 0.14) !important;
+}
+
+
+/* Mobile Chrome: keep the layer drawer inside the visible viewport and let its body scroll. */
+#layers-drawer {
+    position: fixed !important;
+    top: calc(var(--omega-visible-offset-top, 0px) + 8px + env(safe-area-inset-top, 0px)) !important;
+    right: calc(8px + env(safe-area-inset-right, 0px)) !important;
+    bottom: auto !important;
+    left: auto !important;
+    width: min(340px, calc(100vw - 16px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px))) !important;
+    max-width: calc(100vw - 16px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)) !important;
+    height: calc(var(--omega-visible-height, 100dvh) - 16px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
+    max-height: none !important;
+    min-height: 0 !important;
+    box-sizing: border-box !important;
+    z-index: 100100 !important;
+    pointer-events: auto !important;
+    overflow: hidden !important;
+    isolation: isolate !important;
+    touch-action: pan-y !important;
+}
+
+#layers-drawer .drawer-header {
+    flex: 0 0 auto !important;
+    min-height: 42px !important;
+    box-sizing: border-box !important;
+    pointer-events: auto !important;
+}
+
+#layers-drawer .drawer-body.layer-options-grid {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    height: auto !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior-y: contain !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+    padding-bottom: max(12px, env(safe-area-inset-bottom, 0px)) !important;
+}
+
+#layers-drawer .layer-opt-btn,
+#layers-drawer #btn-close-layers {
+    position: relative !important;
+    z-index: 100101 !important;
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    touch-action: manipulation !important;
+    -webkit-tap-highlight-color: rgba(214, 230, 220, 0.16);
+}
+
+#layers-drawer .layer-opt-btn {
+    display: block !important;
+    flex: 0 0 auto !important;
+    width: 100% !important;
+    min-height: 42px !important;
+    box-sizing: border-box !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+}
+
+#layers-drawer #btn-close-layers {
+    min-width: 36px !important;
+    min-height: 36px !important;
+}
+
+@media (max-width: 700px) {
+    #layers-drawer .drawer-header {
+        font-size: 12px !important;
+        padding: 8px 10px !important;
+    }
+
+    #layers-drawer .drawer-body.layer-options-grid {
+        gap: 7px !important;
+        padding: 8px !important;
+    }
+
+    #layers-drawer .layer-opt-btn {
+        padding: 11px 9px !important;
+        font-size: 11px !important;
+        line-height: 1.35 !important;
+    }
+}
