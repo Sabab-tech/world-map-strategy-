@@ -12,6 +12,7 @@ function makeUiHarness(vehicleInventory = null, recordedAssets = null) {
   const events = new Map();
   let api = null;
   const standDownButtons = [];
+  const serviceButtons = new Map();
   function node(id = '') {
     const defaults = {
       'home-police-vehicle-amount': '1',
@@ -54,9 +55,12 @@ function makeUiHarness(vehicleInventory = null, recordedAssets = null) {
       if (selector === '[data-home-service]') {
         const html = nodes.get('cabinet-body')?.innerHTML || '';
         return [...html.matchAll(/data-home-service="([^"]+)"/g)].map(match => {
-          const button = node('service-' + match[1]);
-          button.getAttribute = key => key === 'data-home-service' ? match[1] : null;
-          return button;
+          if (!serviceButtons.has(match[1])) {
+            const button = node('service-' + match[1]);
+            button.getAttribute = key => key === 'data-home-service' ? match[1] : null;
+            serviceButtons.set(match[1], button);
+          }
+          return serviceButtons.get(match[1]);
         });
       }
       return [];
