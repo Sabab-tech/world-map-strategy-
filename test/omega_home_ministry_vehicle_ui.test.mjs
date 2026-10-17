@@ -15,6 +15,7 @@ function makeUiHarness(vehicleInventory = null) {
   function node(id = '') {
     const defaults = {
       'home-police-vehicle-amount': '1',
+      'home-police-amount': '10',
       'home-police-guard-vehicle': '1',
       'home-police-guard-mission': 'urban_patrol',
       'home-police-guard-quantity': '1',
@@ -135,6 +136,20 @@ test('guard-out UI and engine wire deploy, capacity preview, coverage, and stand
   assert.match(engine, /count\*vehicle\.capacity/);
 });
 
+
+test('Recruit and fire buttons update headcount and fire does not apply a purchase charge', () => {
+  const harness = makeUiHarness();
+  const originalTreasury = harness.state.economy.AAA.treasury;
+  harness.ui.renderRecruitScreen();
+  harness.nodes.get('home-police-mode-recruit').onclick();
+  harness.nodes.get('home-police-confirm').onclick();
+  assert.equal(harness.api.getState('AAA').policeCount, 260);
+  assert.equal(harness.state.economy.AAA.treasury, originalTreasury - 10 * harness.api.POLICE_RECRUITMENT_COST);
+  harness.nodes.get('home-police-mode-fire').onclick();
+  harness.nodes.get('home-police-confirm').onclick();
+  assert.equal(harness.api.getState('AAA').policeCount, 250);
+  assert.equal(harness.state.economy.AAA.treasury, originalTreasury - 10 * harness.api.POLICE_RECRUITMENT_COST);
+});
 
 test('vehicle hangar button click submits an order and updates the authoritative treasury state', () => {
   const harness = makeUiHarness();
