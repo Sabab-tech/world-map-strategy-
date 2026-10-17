@@ -540,7 +540,14 @@
     roadSelect.onchange = refresh;
     assetSelect.onchange = () => {
       const asset = guardableAssets.find(row => row.id === assetSelect.value);
-      if (asset && (!sectorInput.value.trim() || sectorInput.value.trim() === 'General Sector')) sectorInput.value = asset.name;
+      if (asset) {
+        if (!sectorInput.value.trim() || sectorInput.value.trim() === 'General Sector') sectorInput.value = asset.name;
+        if (/factory|industrial|plant|smelt/i.test(String(asset.category || '') + ' ' + String(asset.name || ''))) {
+          environmentSelect.value = 'industrial';
+          updateRoadOptions();
+          return;
+        }
+      }
       refresh();
     };
     g.document.getElementById('home-police-guard-refresh').onclick = () => this.renderGuardOut(Number(vehicleSelect.value) || undefined, { environment: environmentSelect.value, road: roadSelect.value });
