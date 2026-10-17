@@ -347,27 +347,86 @@
   function resourceToken(value) {
     return String(value || '').trim().toLowerCase().replace(/^res_type:/, '').replace(/[\s-]+/g, '_');
   }
-  function ledgerResourceOptions(rows) {
-    const out = [], positions = new Map();
+  function positiveLedgerQuantity(value) {
+    const quantity = ledgerQuantity(value);
+    if (quantity === null || quantity === undefined || quantity === '') return false;
+    const numeric = typeof quantity === 'number' ? quantity : Number(String(quantity).replace(/,/g, ''));
+    return Number.isFinite(numeric) && numeric > 0;
+  }
+  function siteResourceId(site) {
+    const source = site && site.sourceSiteRecord && typeof site.sourceSiteRecord === 'object' ? site.sourceSiteRecord : {};
+    const identity = site && site.identity && typeof site.identity === 'object' ? site.identity : {};
+    const real = site && site.real && typeof site.real === 'object' ? site.real : {};
+    return site && (site.resourceId || site.resId || site.resourceTypeId || site.commodityId || real.resourceId ||
+      identity.resourceTypeId || identity.resourceId || source.resourceId || source.resId || source.resourceTypeId) || '';
+  }
+  function depositResourceId(deposit) {
+    return deposit && (deposit.resourceId || deposit.resId || deposit.resourceTypeId || deposit.resource || deposit.commodityId) || '';
+  }
+  function ledgerResourceHasCountryEvidence(country, type, row, sites, localDeposits) {
+    const runtime = resourceBucket(country);
+    const id = type && type.id || row && row.id || '';
+    const quantities = [
+      row && row.endowment, resourceMapValue(runtime.endowment, id),
+      row && row.reserve, resourceMapValue(runtime.reserves, id),
+      row && row.inventory, resourceMapValue(runtime.inventory, id),
+      row && row.dailyProduction, resourceMapValue(runtime.production, id)
+    ];
+    if (quantities.some(positiveLedgerQuantity)) return true;
+    const wanted = resourceToken(id);
+    return (Array.isArray(sites) ? sites : []).some(function (site) {
+      return resourceToken(siteResourceId(site)) === wanted;
+    }) || (Array.isArray(localDeposits) ? localDeposits : []).some(function (deposit) {
+      return resourceToken(depositResourceId(deposit)) === wanted;
+    });
+  }
+  function ledgerResourceOptions(rows, country) {
+    const out = [], positions = new Map(), selectedCountry = activeCountry(country);
+    const sites = siteRows(selectedCountry);
+    const localDeposits = deposits().filter(function (deposit) {
+      const id = deposit && (deposit.countryCode || deposit.countryId || deposit.country || deposit.countryName || deposit.sovereignCountryId);
+      return id && normaliseCountry(id) === selectedCountry;
+    });
     function add(row) {
-      if (!row || !row.id) return;
-      const key = resourceToken(row.id);
+      if (!row || typeof row !== 'object') return;
+      const id = row.id || row.resourceId || row.resId || row.resourceTypeId || row.resource || '';
+      const key = resourceToken(id);
       if (!key) return;
+      const catalogue = resourceTypes().find(function (type) { return resourceToken(type.id) === key; }) || {};
+      const normalized = Object.assign({}, catalogue, row, { id: String(id) });
       const pos = positions.get(key);
       if (pos === undefined) {
         positions.set(key, out.length);
-        out.push(Object.assign({}, row));
+        out.push(normalized);
       } else {
         const previous = out[pos];
-        out[pos] = Object.assign({}, previous, row);
+        const merged = Object.assign({}, previous, normalized);
         ['name', 'bnName', 'icon', 'color', 'unit', 'category'].forEach(function (field) {
-          if (!out[pos][field]) out[pos][field] = previous[field];
+          if (!merged[field]) merged[field] = previous[field];
         });
+        out[pos] = merged;
       }
     }
-    resourceTypes().forEach(add);
+    // Start with this country's authoritative rows, not the global commodity catalogue.
     (Array.isArray(rows) ? rows : []).forEach(add);
-    return out;
+    // Country-bound mine/site and deposit evidence can establish a resource even before
+    // its quantity has been surveyed or a runtime reserve has been initialized.
+    sites.forEach(function (site) {
+      const id = siteResourceId(site);
+      if (!id) return;
+      add({ id: id, name: site.resourceName || site.commodityName || resourceName(id), unit: site.unit || '' });
+    });
+    localDeposits.forEach(function (deposit) {
+      const id = depositResourceId(deposit);
+      if (!id) return;
+      add({ id: id, name: deposit.resourceName || deposit.commodityName || resourceName(id), unit: deposit.unit || '' });
+    });
+    return out.filter(function (type) {
+      const row = (Array.isArray(rows) ? rows : []).find(function (candidate) {
+        return candidate && resourceToken(candidate.id) === resourceToken(type.id);
+      });
+      return ledgerResourceHasCountryEvidence(selectedCountry, type, row, sites, localDeposits);
+    });
   }
   function resourceMapValue(map, resourceId) {
     if (!map || typeof map !== 'object' || Array.isArray(map)) return undefined;
@@ -417,7 +476,7 @@
   }
   function panelReserves(country) {
     const rows = resources(country), selectedCountry = activeCountry(country);
-    const options = ledgerResourceOptions(rows);
+    const options = ledgerResourceOptions(rows, country);
     if (selectedReserveCountryId !== selectedCountry) {
       const firstLive = options.find(function (type) {
         const row = rows.find(function (candidate) { return resourceToken(candidate.id) === resourceToken(type.id); });
@@ -432,7 +491,7 @@
     if (!selected && options.length) selected = options[0];
     if (!selected) {
       selectedReserveResourceId = '';
-      return empty('No resource types or live commodity records are available in the installed runtime.');
+      return empty('No country-specific reserves, endowment, or resource-site records are available.');
     }
     selectedReserveResourceId = selected.id;
     const row = rows.find(function (candidate) { return resourceToken(candidate.id) === resourceToken(selected.id); });
