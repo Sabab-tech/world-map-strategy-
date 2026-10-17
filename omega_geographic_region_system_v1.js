@@ -23,7 +23,9 @@
   };
   const state = {
     countries: [], by2: new Map(), by3: new Map(), byName: new Map(),
-    oceans: null, mapLayer: null, oceanLayer: null, control: null,
+    oceans: null, mapLayer: null, oceanLayer: null, oceanLayerKey: null,
+    oceanLabelMarker: null, control: null, highlightedLayers: new Set(),
+    highlightedLayerOwner: null, appliedHighlightKey: null,
     selected: null, pendingGeoData: null, initialized: false, ready: false
   };
   const continentOrder = ["Africa","Antarctica","Asia","Europe","North America","Oceania","South America"];
@@ -31,6 +33,69 @@
     ["ARCTIC","Arctic Ocean"],["ATLANTIC","Atlantic Ocean"],["INDIAN","Indian Ocean"],
     ["PACIFIC","Pacific Ocean"],["SOUTHERN","Southern Ocean"]
   ];
+  const regionFocus = {
+    "continent:Africa": [2, 20, 3],
+    "continent:Antarctica": [-82, 0, 2],
+    "continent:Asia": [34, 88, 2],
+    "continent:Europe": [52, 15, 3],
+    "continent:North America": [45, -100, 2],
+    "continent:Oceania": [-20, 140, 3],
+    "continent:South America": [-15, -60, 3],
+    "ocean:ARCTIC": [76, 0, 2],
+    "ocean:ATLANTIC": [5, -30, 2],
+    "ocean:INDIAN": [-20, 80, 2],
+    "ocean:PACIFIC": [0, 170, 2],
+    "ocean:SOUTHERN": [-62, 0, 2]
+  };
+  const continentAliases = {
+    "Africa": ["Africa", "African continent", "আফ্রিকা", "আফ্রিকা মহাদেশ"],
+    "Antarctica": ["Antarctica", "Antarctic continent", "অ্যান্টার্কটিকা", "অ্যান্টার্কটিকা মহাদেশ"],
+    "Asia": ["Asia", "Asian continent", "এশিয়া", "এশিয়া", "এশিয়া মহাদেশ", "এশিয়া মহাদেশ"],
+    "Europe": ["Europe", "European continent", "ইউরোপ", "ইউরোপ মহাদেশ"],
+    "North America": ["North America", "উত্তর আমেরিকা", "উত্তর আমেরিকা মহাদেশ"],
+    "Oceania": ["Oceania", "Australia continent", "ওশেনিয়া", "ওশেনিয়া", "অস্ট্রেলিয়া মহাদেশ", "অস্ট্রেলিয়া মহাদেশ"],
+    "South America": ["South America", "দক্ষিণ আমেরিকা", "দক্ষিণ আমেরিকা মহাদেশ"]
+  };
+  const oceanAliases = {
+    "ARCTIC": ["Arctic", "Arctic Ocean", "আর্কটিক", "আর্কটিক মহাসাগর", "উত্তর মেরু মহাসাগর"],
+    "ATLANTIC": ["Atlantic", "Atlantic Ocean", "আটলান্টিক", "আটলান্টিক মহাসাগর"],
+    "INDIAN": ["Indian Ocean", "ভারত মহাসাগর", "ভারতীয় মহাসাগর", "ভারতীয় মহাসাগর"],
+    "PACIFIC": ["Pacific", "Pacific Ocean", "প্রশান্ত মহাসাগর"],
+    "SOUTHERN": ["Southern Ocean", "Antarctic Ocean", "দক্ষিণ মহাসাগর", "দক্ষিণী মহাসাগর"]
+  };
+  const genericOceanSearchTerms = ["ocean", "oceans", "sea", "seas", "সমুদ্র", "সাগর", "মহাসাগর", "sagar", "shagor"];
+  const genericContinentSearchTerms = ["continent", "continents", "মহাদেশ"];
+  function normalizeSearch(value) {
+    return String(value == null ? "" : value).normalize("NFKC").toLocaleLowerCase()
+      .replace(/[^\\p{L}\\p{N}]+/gu, " ").trim();
+  }
+  function regionCatalog() {
+    return continentOrder.map(function (key) {
+      return {type:"continent", key:key, label:key, value:"continent:"+key,
+        aliases:continentAliases[key] || [key]};
+    }).concat(oceanOrder.map(function (item) {
+      return {type:"ocean", key:item[0], label:item[1], value:"ocean:"+item[0],
+        aliases:[item[1]].concat(oceanAliases[item[0]] || [])};
+    }));
+  }
+  function searchRegions(query) {
+    const q = normalizeSearch(query);
+    const catalog = regionCatalog();
+    if (!q) return {matches:[], exclusive:false};
+    if (genericOceanSearchTerms.map(normalizeSearch).includes(q)) {
+      return {matches:catalog.filter(function (item) { return item.type === "ocean"; }), exclusive:true};
+    }
+    if (genericContinentSearchTerms.map(normalizeSearch).includes(q)) {
+      return {matches:catalog.filter(function (item) { return item.type === "continent"; }), exclusive:true};
+    }
+    const matches = catalog.filter(function (item) {
+      return item.aliases.some(function (alias) { return normalizeSearch(alias).includes(q); });
+    });
+    const exactMatch = catalog.some(function (item) {
+      return item.aliases.some(function (alias) { return normalizeSearch(alias) === q; });
+    });
+    return {matches:matches, exclusive:exactMatch};
+  }
   function normalize(value) {
     return String(value == null ? "" : value).normalize("NFKD").replace(/[\u0300-\u036f]/g,"")
       .toUpperCase().replace(/&/g," AND ").replace(/[^A-Z0-9]+/g," ").trim();
@@ -131,58 +196,118 @@
       setBoundaryGlow(child, false);
     });
   }
+  function removeOceanOverlay() {
+    const map = mapInstance();
+    const overlayMap = state.oceanLayer && state.oceanLayer._map || map;
+    if (state.oceanLayer && overlayMap && typeof overlayMap.removeLayer === "function") {
+      overlayMap.removeLayer(state.oceanLayer);
+    }
+    const markerMap = state.oceanLabelMarker && state.oceanLabelMarker._map || map;
+    if (state.oceanLabelMarker && markerMap && typeof markerMap.removeLayer === "function") {
+      markerMap.removeLayer(state.oceanLabelMarker);
+    }
+    state.oceanLayer = null;
+    state.oceanLayerKey = null;
+    state.oceanLabelMarker = null;
+  }
   function applyOceanStyle() {
-    if (!state.oceanLayer || typeof state.oceanLayer.eachLayer !== "function") return;
-    state.oceanLayer.eachLayer(function (child) {
-      const feature = child && child.feature;
-      const props = feature && feature.properties || {};
-      const selected = !!(state.selected && state.selected.kind === "ocean" &&
-        props.oceanId === state.selected.key);
-      const color = selected ? oceanColors[state.selected.key] : "transparent";
-      if (typeof child.setStyle === "function") {
-        child.setStyle({
-          color: color,
-          weight: selected ? 1.85 : 0,
-          opacity: selected ? 1 : 0,
-          fillColor: color,
-          fillOpacity: selected ? 0.055 : 0
-        });
-      }
-      setBoundaryGlow(child, selected, color, "ocean");
+    const map = mapInstance(), L = global.L;
+    if (!map || !L || !state.selected || state.selected.kind !== "ocean" ||
+        !state.oceans || typeof L.geoJSON !== "function") {
+      removeOceanOverlay();
+      return;
+    }
+    const key = state.selected.key;
+    if (state.oceanLayer && state.oceanLayerKey === key) return;
+    removeOceanOverlay();
+    const feature = state.oceans.features.find(function (item) {
+      return item && item.properties && item.properties.oceanId === key;
     });
+    if (!feature) return;
+    const color = oceanColors[key] || "#4da6ff";
+    const options = {
+      pane: "omegaOceanRegionPane",
+      style: {
+        color: color, weight: 2.4, opacity: 0.95,
+        fillColor: color, fillOpacity: 0.12,
+        lineCap: "round", lineJoin: "round"
+      },
+      interactive: false
+    };
+    // Canvas avoids a giant SVG path and expensive per-path filters on mobile.
+    if (typeof L.canvas === "function") {
+      options.renderer = L.canvas({pane:"omegaOceanRegionPane", padding:0.25});
+    }
+    state.oceanLayer = L.geoJSON(feature, options).addTo(map);
+    state.oceanLayerKey = key;
+
+    const focus = regionFocus["ocean:" + key];
+    const label = oceanOrder.find(function (item) { return item[0] === key; });
+    if (focus && label && typeof L.marker === "function" && typeof L.divIcon === "function") {
+      const icon = L.divIcon({
+        className: "omega-ocean-region-label",
+        html: '<div class="omega-ocean-label-card" style="--omega-ocean-accent:' + color + '">' +
+          '<span>OCEAN BASIN</span><strong>' + label[1] + '</strong></div>',
+        iconSize: [0, 0],
+        iconAnchor: [0, 0]
+      });
+      state.oceanLabelMarker = L.marker([focus[0], focus[1]], {
+        icon: icon, interactive: false, keyboard: false, zIndexOffset: 1000
+      }).addTo(map);
+    }
   }
   function applySelectionStyles() {
     const layer = state.mapLayer || global.Game && global.Game.geojsonLayer;
-    if (!layer || typeof layer.eachLayer !== "function") return;
-    if (!state.selected) {
-      resetMainStyles();
+    if (!layer || typeof layer.eachLayer !== "function") {
       applyOceanStyle();
       return;
     }
-    // Restore the normal map first; selection should illuminate boundaries,
-    // not replace the entire satellite map with a dark/flood-filled overlay.
-    resetMainStyles();
-    const memberRows = activeMembers();
-    const memberCodes = new Set(memberRows.map(function (c) { return c.iso3; }));
-    const targetColor = state.selected.kind === "continent" ?
-      continentColors[state.selected.key] : oceanColors[state.selected.key];
-    const boundaryKind = state.selected.kind === "ocean" ? "ocean" : "continent";
-    layer.eachLayer(function (child) {
-      const member = featureMember(child.feature, memberCodes);
-      if (!member) {
+    if (state.highlightedLayerOwner && state.highlightedLayerOwner !== layer) {
+      const oldOwner = state.highlightedLayerOwner;
+      state.highlightedLayers.forEach(function (child) {
+        if (typeof oldOwner.resetStyle === "function") oldOwner.resetStyle(child);
         setBoundaryGlow(child, false);
-        return;
-      }
-      child.setStyle({
-        color: targetColor,
-        weight: 1.85,
-        opacity: 1,
-        dashArray: null,
-        fillColor: targetColor,
-        fillOpacity: 0.16
       });
-      setBoundaryGlow(child, true, targetColor, boundaryKind);
+      state.highlightedLayers = new Set();
+      state.appliedHighlightKey = null;
+    }
+
+    // Continents illuminate member country boundaries. Oceans use their own
+    // dedicated basin overlay, so coastal countries are not mis-marked as ocean.
+    const highlightCountries = !!(state.selected && state.selected.kind === "continent");
+    const nextLayers = new Set();
+    if (highlightCountries) {
+      const memberRows = activeMembers();
+      const memberCodes = new Set(memberRows.map(function (c) { return c.iso3; }));
+      layer.eachLayer(function (child) {
+        if (featureMember(child.feature, memberCodes)) nextLayers.add(child);
+      });
+    }
+    const targetColor = highlightCountries ? continentColors[state.selected.key] : null;
+    const highlightKey = highlightCountries ? state.selected.key + ":" + targetColor : null;
+    const mustRestyle = state.appliedHighlightKey !== highlightKey;
+    state.highlightedLayers.forEach(function (child) {
+      if (nextLayers.has(child)) return;
+      if (typeof layer.resetStyle === "function") layer.resetStyle(child);
+      setBoundaryGlow(child, false);
     });
+    if (highlightCountries) {
+      nextLayers.forEach(function (child) {
+        if (state.highlightedLayers.has(child) && !mustRestyle) return;
+        child.setStyle({
+          color: targetColor,
+          weight: 2.45,
+          opacity: 1,
+          dashArray: null,
+          fillColor: targetColor,
+          fillOpacity: 0.16
+        });
+        setBoundaryGlow(child, true, targetColor, "continent");
+      });
+    }
+    state.highlightedLayers = nextLayers;
+    state.highlightedLayerOwner = layer;
+    state.appliedHighlightKey = highlightKey;
     applyOceanStyle();
   }
   function zoomToCountry(row) {
@@ -232,7 +357,15 @@
       list.appendChild(button);
     });
   }
-  function setSelection(value) {
+  function focusSelectedRegion() {
+    const map = mapInstance();
+    if (!map || !state.selected || typeof map.setView !== "function") return false;
+    const focus = regionFocus[state.selected.kind + ":" + state.selected.key];
+    if (!focus) return false;
+    map.setView([focus[0], focus[1]], focus[2], {animate:false});
+    return true;
+  }
+  function setSelection(value, options) {
     if (!value) {
       state.selected = null;
       if (state.control) {
@@ -256,6 +389,7 @@
     if (state.control) state.control.select.value = kind + ":" + key;
     applySelectionStyles();
     if (state.control) renderList(state.control.list,state.control.summary,state.control.count,rows);
+    if (options && options.focus) focusSelectedRegion();
     return true;
   }
   function createControl() {
@@ -273,7 +407,7 @@
     if (state.control) return true;
     state.control = { root: root, select: select, list: list, summary: summary, count: count };
     select.addEventListener("change", function () {
-      const selected = setSelection(select.value);
+      const selected = setSelection(select.value, {focus:true});
       if (!selected && global.console && console.warn) {
         console.warn("[OMEGA geography] Unsupported region selection:", select.value);
       }
@@ -291,17 +425,13 @@
     state.mapLayer=global.Game.geojsonLayer || state.mapLayer;
     if (!state.mapLayer) return false;
     enrichFeatureCollection(state.pendingGeoData);
-    if (!state.oceanLayer && state.oceans && typeof L.geoJSON==="function") {
-      if (typeof map.createPane==="function") {
-        let pane=map.getPane && map.getPane("omegaOceanRegionPane");
-        if (!pane) pane=map.createPane("omegaOceanRegionPane");
-        if (pane && pane.style) { pane.style.zIndex="350"; pane.style.pointerEvents="none"; }
+    if (state.oceans && typeof map.createPane==="function") {
+      let pane=map.getPane && map.getPane("omegaOceanRegionPane");
+      if (!pane) pane=map.createPane("omegaOceanRegionPane");
+      if (pane && pane.style) {
+        pane.style.zIndex="350";
+        pane.style.pointerEvents="none";
       }
-      state.oceanLayer=L.geoJSON(state.oceans,{
-        pane:"omegaOceanRegionPane",
-        style:function(){return {color:"transparent",weight:0,opacity:0,fillColor:"transparent",fillOpacity:0};},
-        interactive:false
-      }).addTo(map);
     }
     createControl();
     applySelectionStyles();
@@ -343,9 +473,10 @@
     return state;
   });
   global.OMEGAGeographicRegionSystem={
-    version:"1.0.0",
+    version:"1.1.0",
     ready:state.readyPromise,
-    select:setSelection,
+    select:function(value, options){return setSelection(value, options);},
+    search:searchRegions,
     clear:function(){return setSelection("");},
     getState:function(){return {ready:state.ready,countryCount:state.countries.length,oceanCount:state.oceans?.features?.length||0,selection:state.selected,initialized:state.initialized};},
     getCountry:function(code){return state.by2.get(String(code||"").toUpperCase())||state.by3.get(String(code||"").toUpperCase())||null;}
