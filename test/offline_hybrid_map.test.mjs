@@ -12,6 +12,15 @@ const [html, js, css, world, mapEngine, mainActivity] = await Promise.all([
   readFile(new URL("../android/app/src/main/java/com/omega/globalsupremecommander/MainActivity.java", import.meta.url), "utf8")
 ]);
 
+test("offline map has a Bengali label and stays in the existing satellite control", () => {
+  assert.match(html, /id="btn-quick-layers"[^>]*title="অফলাইন মানচিত্র[^"]*"[^>]*aria-label="অফলাইন মানচিত্র/);
+  assert.match(html, /class="layer-opt-btn offline-hybrid-opt" data-layer="offline-hybrid" aria-pressed="false" title="অফলাইন বিশ্বমানচিত্র">🛰️ অফলাইন মানচিত্র<\/button>/);
+  assert.ok(
+    html.indexOf('data-layer="offline-hybrid"') < html.indexOf('data-layer="satellite"'),
+    "Offline Map must remain the first option in the existing satellite/layer drawer."
+  );
+});
+
 test("hybrid atlas uses existing map-layer controls and stylesheet", () => {
   assert.match(html, /data-layer="offline-hybrid"/);
   assert.match(html, /offline-hybrid-map\.js/);
