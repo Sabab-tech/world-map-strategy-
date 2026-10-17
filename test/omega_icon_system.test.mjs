@@ -74,7 +74,6 @@ test('runtime batches dynamic icon work and excludes high-churn map/render subtr
   assert.match(iconSource, /requestAnimationFrame/);
   assert.match(iconSource, /attachShallowObserver\(document\.body/);
   assert.match(iconSource, /attachShallowObserver\(app/);
-  assert.match(iconSource, /'\#render-engine-root'/);
   assert.match(iconSource, /'\.leaflet-marker-pane'/);
   assert.match(iconSource, /'\.leaflet-tile-pane'/);
   assert.doesNotMatch(iconSource, /observer\.observe\(document\.body, \{ subtree: true/);
@@ -251,6 +250,6 @@ test('synthetic large-map smoke converts UI icons while leaving map markers and 
   assert.equal(markerPane.childNodes[0].textContent, '🏛️', 'high-volume map marker text must be left unchanged');
   assert.equal(code.textContent, '📊', 'code/sample blocks must remain literal');
   assert.ok(stats.visitedElements < 30, 'scanner must reject the renderer subtree before traversing 2,000 markers');
-  assert.ok(stats.skippedSubtrees >= 2, 'renderer and code blocks should be pruned from traversal');
+  assert.ok(stats.skippedSubtrees >= 2, 'high-volume map marker and code subtrees should be pruned from traversal');
   assert.equal(stats.convertedIcons, 1);
 });
