@@ -25,7 +25,7 @@ test('custom icon system is wired locally before UI renderers and has no remote 
 test('original line icon set includes semantic symbols for all main command areas', () => {
   assert.ok(icons, 'icon registry should export its local API');
   for (const name of ['landmark', 'shield', 'wallet', 'chart-column', 'globe', 'search', 'satellite',
-    'pickaxe', 'factory', 'heart-pulse', 'book-open', 'microscope', 'scroll', 'bot', 'eye',
+    'pickaxe', 'factory', 'industrial-production', 'mine-extraction', 'heart-pulse', 'book-open', 'microscope', 'scroll', 'bot', 'eye',
     'arrow-left', 'clock', 'settings', 'users', 'gem', 'car-front', 'circle-help']) {
     assert.ok(icons.iconNames.includes(name), 'missing icon symbol: ' + name);
   }
@@ -35,7 +35,7 @@ test('original line icon set includes semantic symbols for all main command area
 test('legacy emoji labels resolve to consistent SVG icon names', () => {
   const cases = [
     ['🏛️', 'landmark'], ['🛡️', 'shield'], ['⚔️', 'swords'], ['💰', 'wallet'],
-    ['📊', 'chart-column'], ['🌐', 'globe'], ['🛰️', 'satellite'], ['⛏️', 'pickaxe'],
+    ['📊', 'chart-column'], ['🌐', 'globe'], ['🛰️', 'satellite'], ['⛏️', 'mine-extraction'],
     ['🚔', 'car-front'], ['🤖', 'bot'], ['👁️', 'eye'], ['⏸', 'pause'],
     ['⚕️', 'heart-pulse'], ['📚', 'book-open'], ['🔍', 'search'], ['💾', 'save'],
     ['⚖️', 'scale'], ['🎙️', 'mic'], ['💬', 'message-square'], ['🤝', 'network'],
@@ -47,6 +47,9 @@ test('legacy emoji labels resolve to consistent SVG icon names', () => {
   for (const [emoji, expected] of cases) {
     assert.equal(icons.nameForEmoji(emoji), expected, 'wrong icon mapping for ' + emoji);
   }
+  assert.equal(icons.nameForEmoji('⚙️', 'Steel Production (T/s)'), 'industrial-production', 'production gears should use an industrial visual rather than settings');
+  assert.equal(icons.nameForEmoji('⚙️', 'Quick Settings'), 'settings', 'actual settings controls should retain a settings glyph');
+  assert.equal(icons.nameForEmoji('⛏️'), 'mine-extraction', 'extraction should use the colorful mine-specific glyph');
   assert.equal(icons.nameForEmoji('🕵️'), 'user-search');
   assert.equal(icons.nameForEmoji('🦄'), null, 'unmapped pictographs should remain intact rather than turn into a misleading help icon');
 });
@@ -61,9 +64,13 @@ test('icon runtime observes new UI nodes and excludes editable/script content', 
   assert.match(iconSource, /setAttribute\('href', href\)/);
 });
 
-test('icon CSS uses currentColor line art and honors reduced motion', () => {
+test('icon CSS uses mobile-safe geometry, semantic color palettes and honors reduced motion', () => {
   const css = read('omega_icon_system_v1.css');
   assert.match(css, /stroke: currentColor/);
+  assert.match(css, /--omega-icon-color/);
+  assert.match(css, /\.omega-ui-icon--industrial-production/);
+  assert.match(css, /\.omega-ui-icon--mine-extraction/);
+  assert.match(css, /@media \(max-width: 480px\)/);
   assert.match(css, /shape-rendering: geometricPrecision/);
   assert.match(css, /prefers-reduced-motion: reduce/);
   assert.doesNotMatch(css, /font-family:/);
