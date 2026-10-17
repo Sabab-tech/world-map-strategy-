@@ -6,6 +6,11 @@ on:
     paths:
       - 'index.html'
       - 'map-engine-2.js'
+      - 'map-engine-1.js'
+      - 'offline-hybrid-map.js'
+      - 'offline-hybrid-map.css'
+      - 'test/offline_hybrid_map.test.mjs'
+      - 'android/app/src/main/java/com/omega/globalsupremecommander/MainActivity.java'
       - 'omega_ui_visual_system_v1.css'
       - 'omega_icon_system_v1.js'
       - 'omega_icon_system_v1.css'
@@ -16,7 +21,12 @@ on:
   pull_request:
     paths:
       - 'index.html'
+      - 'map-engine-1.js'
       - 'map-engine-2.js'
+      - 'offline-hybrid-map.js'
+      - 'offline-hybrid-map.css'
+      - 'test/offline_hybrid_map.test.mjs'
+      - 'android/app/src/main/java/com/omega/globalsupremecommander/MainActivity.java'
       - 'omega_ui_visual_system_v1.css'
       - 'omega_icon_system_v1.js'
       - 'omega_icon_system_v1.css'
@@ -41,6 +51,9 @@ jobs:
         with:
           node-version: 24
       - name: Syntax-check map UI
-        run: node --check map-engine-2.js
+        run: |
+          node --check map-engine-1.js
+          node --check map-engine-2.js
+          node --check offline-hybrid-map.js
       - name: Run UI visual and map-layer regression tests
         run: npm run test:ui-visual
