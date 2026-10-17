@@ -150,7 +150,7 @@
         ['🪙', 'wallet'], ['🌡️', 'activity'], ['🌡', 'activity'], ['🪖', 'shield'],
         ['🎖️', 'trophy'], ['🎖', 'trophy'], ['🧱', 'building'], ['🧰', 'settings'],
         ['🧪', 'microscope'], ['🛠️', 'settings'], ['🛠', 'settings'], ['🪪', 'clipboard-check'],
-        ['🔒', 'lock'], ['🔓', 'lock'], ['📖', 'book-open']
+        ['🔒', 'lock'], ['🔓', 'lock'], ['📖', 'book-open'],
         ['⚖️', 'scale'], ['⚖', 'scale'], ['👤', 'user-round'], ['❓', 'circle-help'],
         ['🎙️', 'mic'], ['🎙', 'mic'], ['💬', 'message-square'], ['🤝', 'network'],
         ['🚪', 'door'], ['🧹', 'broom'], ['⌛', 'hourglass'], ['🌾', 'leaf'], ['⭐', 'trophy'],
