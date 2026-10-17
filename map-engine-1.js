@@ -731,10 +731,17 @@ var Game = window.Game = {
             attr = 'OpenTopoMap Weather Grid';
         }
 
-        if (window.OMEGA_ANDROID_OFFLINE) {
+        const permitSatelliteInOfflineShell = window.OMEGA_ANDROID_OFFLINE && layerType === 'satellite';
+        if (window.OMEGA_ANDROID_OFFLINE && !permitSatelliteInOfflineShell) {
             window.currentMapTileLayer = null;
         } else {
-            window.currentMapTileLayer = L.tileLayer(tileUrl, { attribution: attr, maxZoom: 18, opacity: 0.95 }).addTo(window.map);
+            window.currentMapTileLayer = L.tileLayer(tileUrl, {
+                attribution: attr,
+                maxZoom: 18,
+                opacity: 0.95,
+                keepBuffer: 2,
+                updateWhenIdle: true
+            }).addTo(window.map);
             window.currentMapTileLayer.bringToBack();
         }
         if (layerType === "resources") {
@@ -860,7 +867,8 @@ if (!window.OMEGA_ANDROID_OFFLINE) {
         attribution: 'Esri World Imagery Satellite',
         maxZoom: 18,
         opacity: 0.95,
-        errorTileUrl: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256"><rect width="256" height="256" fill="%231a2620"/><text x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%23384e3d" font-family="monospace" font-size="12">SATELLITE TILE</text></svg>'
+        keepBuffer: 2,
+        updateWhenIdle: true,
     }).addTo(window.map);
 
     window.satelliteLayer.on('tileerror', function(e) {
