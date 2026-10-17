@@ -203,6 +203,55 @@ test('finance spending uses the finance-owned transaction when OMEGA interop is 
   assert.equal(state.interior.AAA.police.policeCount, 251);
 });
 
+
+test('each police vehicle has a distinct role, visual ID and feature profile', () => {
+  setup();
+  assert.equal(api.VEHICLES.length, 15);
+  assert.equal(new Set(api.VEHICLES.map(v => v.id)).size, 15);
+  assert.equal(new Set(api.VEHICLES.map(v => v.iconId)).size, 15);
+  assert.equal(new Set(api.VEHICLES.map(v => v.name)).size, 15);
+  assert.ok(api.VEHICLES.every(v => v.specialFeatures.length >= 3));
+  assert.ok(api.VEHICLES.every(v => v.strengths && v.tradeoff && v.specialty && v.terrain));
+  assert.ok(api.VEHICLES.every(v => Object.keys(v.capabilities).length === 8 &&
+    Object.values(v.capabilities).every(n => n >= 0 && n <= 100)));
+  assert.equal(api.GUARD_MISSIONS.length, 6);
+});
+
+test('guard-out deployment reserves owned vehicles and police officers until stand-down', () => {
+  const state = setup();
+  api.getState('AAA');
+  state.interior.AAA.police.vehiclesOwned = { 1: 2 };
+  const preview = api.getGuardDeploymentPreview(1, 'industrial_guard', 2, 'AAA');
+  assert.equal(preview.ok, true);
+  assert.equal(preview.requiredOfficers, api.VEHICLES[0].capacity * 2);
+  const deployed = api.deployGuard(1, 2, 'industrial_guard', 'Aluminium Plant North Gate', 'AAA');
+  assert.equal(deployed.ok, true);
+  assert.equal(deployed.deployment.quantity, 2);
+  assert.equal(deployed.deployment.sector, 'Aluminium Plant North Gate');
+  assert.equal(api.getGuardCapacity('AAA').availableVehicles[1], 0);
+  assert.equal(api.getGuardCapacity('AAA').availableOfficers, 250 - api.VEHICLES[0].capacity * 2);
+  assert.equal(api.deployGuard(1, 1, 'urban_patrol', 'Sector 5', 'AAA').reason, 'INSUFFICIENT_UNASSIGNED_VEHICLES');
+  assert.ok(api.getGuardCoverageForIncident('INDUSTRIAL_SABOTAGE', 'AAA') > 0);
+  assert.equal(api.getGuardCoverageForIncident('INDUSTRIAL_SABOTAGE', 'AAA') >=
+    api.getGuardCoverageForIncident('CIVIL_UNREST', 'AAA'), true);
+  const stoodDown = api.standDownGuard(deployed.deployment.id, 'AAA');
+  assert.equal(stoodDown.ok, true);
+  assert.equal(stoodDown.releasedVehicles, 2);
+  assert.equal(api.getGuardCapacity('AAA').availableVehicles[1], 2);
+  assert.equal(api.getGuardCapacity('AAA').availableOfficers, 250);
+});
+
+test('guard-out refuses deployments without owned vehicles, enough officers, or valid mission', () => {
+  const state = setup();
+  assert.equal(api.deployGuard(1, 1, 'urban_patrol', 'City Centre', 'AAA').reason, 'INSUFFICIENT_UNASSIGNED_VEHICLES');
+  api.getState('AAA');
+  state.interior.AAA.police.vehiclesOwned = { 1: 1 };
+  state.interior.AAA.police.policeCount = 2;
+  assert.equal(api.deployGuard(1, 1, 'industrial_guard', 'Factory Gate', 'AAA').reason, 'INSUFFICIENT_UNASSIGNED_OFFICERS');
+  assert.equal(api.deployGuard(1, 1, 'not-a-mission', 'Factory Gate', 'AAA').reason, 'GUARD_MISSION_INVALID');
+  assert.equal(api.getGuardDeploymentPreview(1, 'urban_patrol', 101, 'AAA').reason, 'GUARD_QUANTITY_INVALID');
+});
+
 test('purchases fail closed when treasury is unavailable and advice is non-mutating', () => {
   setup(null);
   assert.equal(api.recruitPolice(5, 'AAA').reason, 'TREASURY_DATA_UNAVAILABLE');
