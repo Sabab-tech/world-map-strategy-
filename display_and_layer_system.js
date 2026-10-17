@@ -855,7 +855,6 @@
 
         bindDockBtn('btn-ministry-dock', window.openMainMinistryView);
         bindDockBtn('btn-religion-ideology', window.openReligionIdeologySystem);
-        bindDockBtn('btn-view-map', window.openMainMapView);
 
         // Global Touch Scroll Lockup Prevention for Mobile WebViews & Touch Devices
         document.addEventListener('touchstart', (e) => {
