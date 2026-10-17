@@ -252,12 +252,13 @@
       (state.tacticsResearched.intelligenceFusion?3:0);
     return Math.round(clamp(core+trainingBoost+facilityBoost+tacticBoost,0,100));
   }
-  function guardCoverageForIncident(state,incidentType){
+  function guardCoverageForIncident(state,incidentType,targetAssetId){
     let coverage=0;
     (state.guardDeployments||[]).forEach(function(unit){
       const mission=GUARD_MISSIONS.find(function(row){return row.id===unit.missionId;});
       const vehicle=VEHICLES.find(function(row){return row.level===Number(unit.vehicleLevel);});
       if(!mission||!vehicle||!mission.coverageTypes.includes(incidentType))return;
+      if(unit.assetId&&String(unit.assetId)!==String(targetAssetId||''))return;
       const rating=guardEffectiveness(vehicle.level,mission.id,state);
       coverage+=(rating*Math.max(0,Number(unit.quantity)||0))*(mission.id==='urban_patrol'&&incidentType!=='CIVIL_UNREST'?0.55:1)/7;
     });
@@ -275,7 +276,7 @@
     const count=vehicle&&mission?requested:0;
     return {ok:Boolean(vehicle&&mission&&count>=1&&count<=100&&count<=availableVehicles&&count*vehicle.capacity<=capacity.availableOfficers),vehicle:vehicle?clone(vehicle):null,mission:mission?clone(mission):null,quantity:count,availableVehicles:availableVehicles,requiredOfficers:vehicle&&count>0?count*vehicle.capacity:0,availableOfficers:capacity.availableOfficers,effectiveness:score,estimatedCoverage:vehicle&&mission?Math.round(clamp(score*Math.max(0,count)/7,0,35)):0,reason:!vehicle?'VEHICLE_TIER_INVALID':!mission?'GUARD_MISSION_INVALID':count<1||count>100?'GUARD_QUANTITY_INVALID':count>availableVehicles?'INSUFFICIENT_UNASSIGNED_VEHICLES':count*vehicle.capacity>capacity.availableOfficers?'INSUFFICIENT_UNASSIGNED_OFFICERS':null};
   }
-  function deployGuard(vehicleLevel,quantity,missionId,sector,country){
+  function deployGuard(vehicleLevel,quantity,missionId,sector,country,assetId){
     const level=Math.floor(num(vehicleLevel)||0),qty=Math.floor(num(quantity)||0),cid=normalizeCountry(country||currentCountry());
     const vehicle=VEHICLES.find(function(row){return row.level===level;}),mission=GUARD_MISSIONS.find(function(row){return row.id===String(missionId||'');});
     if(!vehicle)return{ok:false,reason:'VEHICLE_TIER_INVALID'};
@@ -283,15 +284,18 @@
     if(qty<1||qty>100)return{ok:false,reason:'GUARD_QUANTITY_INVALID'};
     const state=getState(cid);
     if(level>state.unlockedVehicleLevel)return{ok:false,reason:'VEHICLE_TIER_LOCKED',unlockedVehicleLevel:state.unlockedVehicleLevel};
+    const requestedAssetId=String(assetId||'').trim();
+    const asset=requestedAssetId?guardableAssets(cid).find(function(row){return row.id===requestedAssetId;}):null;
+    if(requestedAssetId&&!asset)return{ok:false,reason:'GUARD_ASSET_UNAVAILABLE',message:'The chosen guard target is not a currently recorded, eligible country asset.'};
     const preview=guardPreview(level,mission.id,qty,cid);
     if(!preview.ok)return{ok:false,reason:preview.reason,availableVehicles:preview.availableVehicles,availableOfficers:preview.availableOfficers,requiredOfficers:preview.requiredOfficers};
-    const location=String(sector||'General Sector').trim().slice(0,80)||'General Sector';
+    const location=String(sector||asset&&asset.name||'General Sector').trim().slice(0,80)||'General Sector';
     return mutation(cid,0,'POLICE_GUARD_DEPLOYMENT',function(next){
       const id='GUARD-'+cid+'-'+String(next.nextGuardDeploymentId||1);
       next.nextGuardDeploymentId=Math.max(1,Math.floor(num(next.nextGuardDeploymentId)||1))+1;
-      const deployment={id:id,vehicleLevel:level,quantity:qty,missionId:mission.id,sector:location,officers:qty*vehicle.capacity,deployedAtTurn:turn(),deployedAtSimulationMs:simulationTimeMs(),effectiveness:guardEffectiveness(level,mission.id,next),status:'ACTIVE'};
+      const deployment={id:id,vehicleLevel:level,quantity:qty,missionId:mission.id,sector:location,assetId:asset?asset.id:null,assetName:asset?asset.name:null,assetCategory:asset?asset.category:null,officers:qty*vehicle.capacity,deployedAtTurn:turn(),deployedAtSimulationMs:simulationTimeMs(),effectiveness:guardEffectiveness(level,mission.id,next),status:'ACTIVE'};
       next.guardDeployments.push(deployment);
-      return {deployment:clone(deployment),vehicle:vehicle.name,mission:mission.name,estimatedEffectiveness:deployment.effectiveness,assignedOfficers:deployment.officers,availableVehicleCount:guardCapacity(cid).availableVehicles[level]-qty};
+      return {deployment:clone(deployment),vehicle:vehicle.name,mission:mission.name,guardAsset:asset?clone(asset):null,estimatedEffectiveness:deployment.effectiveness,assignedOfficers:deployment.officers,availableVehicleCount:guardCapacity(cid).availableVehicles[level]-qty};
     });
   }
   function standDownGuard(deploymentId,country){
@@ -356,6 +360,39 @@
     if(!root||typeof root!=='object'||depth>5)return;
     Object.keys(root).forEach(key=>{const val=root[key],name=key.toLowerCase().replace(/[^a-z]/g,'');if(names.indexOf(name)>=0&&Array.isArray(val))out.push({key:key,rows:val});if(val&&typeof val==='object'&&!Array.isArray(val))findNamedArrays(val,names,depth+1,out);});
   }
+  function securityAssetCandidates(country){
+    const cid=normalizeCountry(country||currentCountry()),root=rootState()||(g.gameState&&typeof g.gameState==='object'?g.gameState:null);
+    const economy=root&&root.economy&&root.economy[cid];
+    if(!economy||typeof economy!=='object')return [];
+    const found=[];
+    findNamedArrays(economy,['factories','industrialfacilities','plants','civilianfacilities','infrastructureassets'],0,found);
+    const candidates=[];
+    found.forEach(function(entry){
+      entry.rows.forEach(function(row,index){
+        if(!row||typeof row!=='object'||Array.isArray(row))return;
+        const identity=String(row.factoryId||row.factory_id||row.assetId||row.id||row.name||'').toLowerCase();
+        const kind=String(row.type||row.kind||row.category||'').toLowerCase();
+        const factoryLike=/factory|plant|smelt|industrial|aluminium|aluminum|civilian/.test(identity+' '+kind);
+        const unavailable=/destroyed|offline|damaged|closed/.test(String(row.operationalStatus||row.status||row.securityCondition||'').toLowerCase());
+        if(!factoryLike||unavailable)return;
+        const id=String(row.factoryId||row.factory_id||row.assetId||row.id||row.name||'').trim();
+        const name=String(row.name||row.factoryName||row.assetName||row.facilityName||id||'Unnamed recorded asset').trim();
+        candidates.push({id:id||null,name:name,category:String(row.type||row.kind||row.category||entry.key),array:entry.key,index:index});
+      });
+    });
+    return candidates;
+  }
+  function guardableAssets(country){
+    return securityAssetCandidates(country).filter(function(row){return Boolean(row.id);}).map(function(row){
+      return {id:row.id,name:row.name,category:row.category,array:row.array,index:row.index};
+    });
+  }
+  function expectedIncidentAsset(country,week){
+    const rows=securityAssetCandidates(country);
+    if(!rows.length)return null;
+    const row=rows[Math.max(0,Math.floor(num(week)||0))%rows.length];
+    return {id:row.id,name:row.name,category:row.category,array:row.array,index:row.index};
+  }
   function markExistingAsset(country,incident){
     const mesh=interop();if(!mesh||typeof mesh.dispatchCommand!=='function'||!economyHandlerRegistered)return null;
     const row=mesh.dispatchCommand('economy',ECONOMY_INCIDENT_COMMAND,country,{incident:clone(incident)},{turn:turn(),commandType:ECONOMY_INCIDENT_COMMAND,correlationId:incident.id});
@@ -364,13 +401,14 @@
   function processIncident(country,s,day){
     const week=Math.floor(day/7);if(day<7||s.lastIncidentWeek===week)return false;
     const roll=deterministicRoll(country,week,turn()),types=['CIVIL_UNREST','SMUGGLING_NETWORK','INDUSTRIAL_SABOTAGE'],type=types[roll%types.length];
-    const guardMitigation=guardCoverageForIncident(s,type);
+    const targetAsset=(type==='INDUSTRIAL_SABOTAGE'||type==='CIVIL_UNREST')?expectedIncidentAsset(country,week):null;
+    const guardMitigation=guardCoverageForIncident(s,type,targetAsset&&targetAsset.id);
     const chance=clamp(Math.round(s.sabotageRisk/3-guardMitigation/10),1,30);
     if(roll>=chance){s.lastIncidentWeek=week;return true;}
     const mitigation=clamp((s.specialAgents*8)+(s.tacticsResearched.counterTerror?20:0)+(s.tacticsResearched.assetProtection?18:0)+(s.tacticsResearched.intelligenceFusion?14:0),0,85);
     const detected=deterministicRoll(country,week+313,turn())<clamp(mitigation+15+guardMitigation,0,100);
     s.incidentSequence+=1;
-    const incident={id:'POLICE-INCIDENT-'+country+'-'+week+'-'+s.incidentSequence,countryId:country,simulationWeek:week,simulationDay:day,simulationTurn:turn(),type:type,baselineRiskPercent:s.sabotageRisk,detected:detected,mitigationPercent:mitigation,guardMitigationPercent:guardMitigation,activeGuardDeployments:(s.guardDeployments||[]).filter(function(unit){const mission=GUARD_MISSIONS.find(function(row){return row.id===unit.missionId;});return mission&&mission.coverageTypes.includes(type);}).length,status:detected?'DETECTED_AND_CONTAINED':'RESPONSE_REQUIRED',assetImpact:null};
+    const incident={id:'POLICE-INCIDENT-'+country+'-'+week+'-'+s.incidentSequence,countryId:country,simulationWeek:week,simulationDay:day,simulationTurn:turn(),type:type,baselineRiskPercent:s.sabotageRisk,detected:detected,mitigationPercent:mitigation,guardMitigationPercent:guardMitigation,targetAssetId:targetAsset&&targetAsset.id||null,targetAssetName:targetAsset&&targetAsset.name||null,activeGuardDeployments:(s.guardDeployments||[]).filter(function(unit){const mission=GUARD_MISSIONS.find(function(row){return row.id===unit.missionId;});return mission&&mission.coverageTypes.includes(type)&&(!unit.assetId||String(unit.assetId)===String(targetAsset&&targetAsset.id||''));}).length,status:detected?'DETECTED_AND_CONTAINED':'RESPONSE_REQUIRED',assetImpact:null};
     if(!detected&&(type==='INDUSTRIAL_SABOTAGE'||type==='CIVIL_UNREST'))incident.assetImpact=markExistingAsset(country,incident);
     s.incidentLedger.push(incident);s.incidentLedger=s.incidentLedger.slice(-100);s.lastIncidentWeek=week;
     if(!detected){s.policeTrust=clamp(s.policeTrust-2,0,100);s.policeEfficiency=clamp(s.policeEfficiency-1,0,100);s.sabotageRisk=clamp(s.sabotageRisk+1,5,95);}else{s.policeTrust=clamp(s.policeTrust+0.5,0,100);}
@@ -475,7 +513,7 @@
     estimateFacilityCost:function(id,amount,country){return estimateFacilityCostFrom(getState(country||currentCountry()),id,amount);},
     estimateTrainingCost:function(target,country){return estimateTrainingCostFrom(getState(country||currentCountry()),Math.floor(num(target)||0));},
     advice:advice,recruitPolice:recruitPolice,firePolice:firePolice,orderVehicle:orderVehicle,buildFacility:buildFacility,
-    getGuardCapacity:guardCapacity,getGuardDeploymentPreview:guardPreview,deployGuard:deployGuard,standDownGuard:standDownGuard,getGuardEffectiveness:guardEffectiveness,getGuardCoverageForIncident:function(type,country){return guardCoverageForIncident(getState(country||currentCountry()),String(type||''));},
+    getGuardCapacity:guardCapacity,getGuardDeploymentPreview:guardPreview,deployGuard:deployGuard,standDownGuard:standDownGuard,getGuardEffectiveness:guardEffectiveness,getGuardableAssets:function(country){return clone(guardableAssets(country||currentCountry()));},getGuardCoverageForIncident:function(type,country,targetAssetId){return guardCoverageForIncident(getState(country||currentCountry()),String(type||''),targetAssetId||null);},
     startResearch:startResearch,upgradeTraining:upgradeTraining,recruitAgents:recruitAgents,issueMinisterDirective:issueMinisterDirective,
     processTurn:onTurnCommitted,applyExistingAssetIncident:markExistingAsset
   });
