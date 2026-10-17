@@ -475,6 +475,7 @@
           '<div class="home-police-form-row"><div class="home-police-field-wrap"><label class="home-police-label" for="home-police-guard-environment">Operating environment</label><select id="home-police-guard-environment" class="home-police-field">' + environmentOptions + '</select></div><div class="home-police-field-wrap"><label class="home-police-label" for="home-police-guard-road">Road / weather condition</label><select id="home-police-guard-road" class="home-police-field">' + roadOptions + '</select></div></div>' +
           '<div class="home-police-vehicle-brief"><div class="home-police-brief-card"><span class="home-police-tag home-police-tag-gold">ROUTE FIT</span><strong id="home-police-route-fit">-- / 100</strong><span id="home-police-route-status">Select a vehicle and route.</span></div><div class="home-police-brief-card"><span class="home-police-tag home-police-tag-gold">30-DAY WEAR FORECAST</span><strong id="home-police-route-wear">-- condition points</strong><span id="home-police-route-risk">Maintenance exposure unavailable</span></div></div>' +
           '<div id="home-police-route-warnings" class="home-police-alert" aria-live="polite">Choose a route. Each vehicle has individual environment fit; poor matches wear faster and may break down.</div>' +
+          '<div class="home-police-section-title">Fleet strategy recommendation</div><div id="home-police-route-recommendations" class="home-police-deployment-list"><div class="home-police-alert">Checking available fleet and route fit…</div></div>' +
           '<label class="home-police-label" for="home-police-guard-asset">Recorded factory / infrastructure target (optional)</label><select id="home-police-guard-asset" class="home-police-field">' + guardAssetOptions + '</select>' +
           '<p class="home-police-note">Only assets already recorded in this country are listed. An empty selection keeps the unit on general mission coverage; targeted guards affect the matching asset event only.</p>' +
           '<div class="home-police-form-row"><div class="home-police-field-wrap"><label class="home-police-label" for="home-police-guard-quantity">Vehicles to deploy</label><input id="home-police-guard-quantity" class="home-police-field" type="number" min="1" max="' + (selected ? Number(capacity.availableVehicles[selected.level]) || 1 : 1) + '" step="1" value="1" inputmode="numeric" ' + (selected ? '' : 'disabled') + '></div>' +
@@ -500,6 +501,7 @@
     const availabilityNote = g.document.getElementById('home-police-guard-availability-note'), errorBox = g.document.getElementById('home-police-guard-error');
     const routeFit = g.document.getElementById('home-police-route-fit'), routeStatus = g.document.getElementById('home-police-route-status');
     const routeWear = g.document.getElementById('home-police-route-wear'), routeRisk = g.document.getElementById('home-police-route-risk'), routeWarnings = g.document.getElementById('home-police-route-warnings');
+    const routeRecommendations = g.document.getElementById('home-police-route-recommendations');
     const deployButton = g.document.getElementById('home-police-confirm-guard');
     const refresh = () => {
       const level = Math.floor(Number(vehicleSelect.value) || 0), missionId = missionSelect.value, quantity = Math.floor(Number(quantityInput.value) || 0);
@@ -511,6 +513,25 @@
       routeWear.textContent = (use.wearPerDay * 30).toFixed(1) + ' condition points';
       routeRisk.textContent = 'Damage exposure ×' + use.damageRisk + ' · approx. ' + use.dailyDistanceKm + ' km/day';
       routeWarnings.textContent = (use.summary || 'Route profile unavailable.') + (use.penalties.length ? ' ' + use.penalties.join(' ') : '') + (preview.estimatedConditionLoss30Days > 5 ? ' Expected wear is high; schedule maintenance.' : '');
+      const recommendations = e.getVehicleRecommendations(missionId, environmentId, roadId, Math.max(1, quantity), e.getCurrentCountryId());
+      routeRecommendations.innerHTML = recommendations.length ? recommendations.map((row, index) =>
+        '<article class="home-police-deployment-card">' +
+          '<span class="home-police-tag ' + (index === 0 ? 'home-police-tag-green' : '') + '">' + (index === 0 ? 'BEST STRATEGIC FIT' : 'ALTERNATIVE ' + index) + ' · SCORE ' + row.strategicScore + '</span>' +
+          vehicleSvg(e.VEHICLES.find(v => v.level === row.vehicleLevel), 'recommend-' + row.vehicleLevel) +
+          '<h3>' + esc(row.vehicleName) + '</h3>' +
+          '<p class="home-police-note">' + esc(row.why) + '</p>' +
+          '<div class="home-police-fleet-meta"><div>Route suitability<strong>' + row.environmentFit + ' / 100</strong></div><div>Mission effectiveness<strong>' + row.effectiveness + ' / 100</strong></div><div>Wear over 30 days<strong>' + row.estimatedWear30Days + ' points</strong></div><div>Estimated upkeep<strong>' + money(e, row.estimatedMaintenancePerDay) + ' / day</strong></div></div>' +
+          '<p class="home-police-note">Ready units ' + row.availableVehicles + ' · Recommended quantity ' + row.recommendedQuantity + ' · ' + esc(row.tradeoff) + '</p>' +
+          '<button type="button" class="home-police-btn home-police-btn-plain" data-home-choose-vehicle="' + row.vehicleLevel + '" data-home-recommend-quantity="' + row.recommendedQuantity + '">USE THIS VEHICLE SETUP</button>' +
+        '</article>'
+      ).join('') : '<div class="home-police-alert">No unlocked, ready vehicle currently matches this mission and route. Buy an unlocked unit or service vehicles that are due.</div>';
+      Array.from(g.document.querySelectorAll('[data-home-choose-vehicle]')).forEach(button => {
+        button.onclick = () => {
+          vehicleSelect.value = button.getAttribute('data-home-choose-vehicle');
+          quantityInput.value = button.getAttribute('data-home-recommend-quantity') || '1';
+          refresh();
+        };
+      });
       officerLabel.textContent = String(preview.requiredOfficers || 0);
       effectLabel.textContent = String(preview.effectiveness || 0) + ' / 100';
       fitNote.textContent = preview.mission && v ? preview.mission.name + ' · ' + preview.effectiveness + '% after route-fit and condition adjustments.' : 'Select a vehicle and mission.';
