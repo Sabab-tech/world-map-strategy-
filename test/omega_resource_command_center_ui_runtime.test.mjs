@@ -79,8 +79,9 @@ globalThis.ResourceMinistryEngine = {
     return raw === 'BANGLADESH' ? 'BGD' : raw;
   },
   resourceTypes: [
-    { id: 'iron_ore', name: 'Iron Ore', unit: 'METRIC_TONNE', basePrice: 100, category: 'MINERAL', processChain: ['extraction', 'smelting'] },
-    { id: 'crude_oil', name: 'Crude Oil', unit: 'BARREL', basePrice: 80, category: 'ENERGY' }
+    { id: 'iron_ore', name: 'Iron Ore', unit: 'METRIC_TONNE', icon: '⛏️', basePrice: 100, category: 'MINERAL', processChain: ['extraction', 'smelting'] },
+    { id: 'crude_oil', name: 'Crude Oil', unit: 'BARREL', icon: '🛢️', basePrice: 80, category: 'ENERGY' },
+    { id: 'coal', name: 'Coal', unit: 'METRIC_TONNE', icon: '⚫', category: 'ENERGY' }
   ],
   deposits: [
     { name: 'Test Deposit', country: 'Bangladesh', countryCode: 'BGD', lat: 23.7, lng: 90.4, resourceId: 'iron_ore', reserves: 100, grade: 0.5, status: 'AVAILABLE' },
@@ -186,9 +187,12 @@ test('canonical site profiles appear in relevant tabs without becoming live prod
 
   ui.open('BGD', 'reserves');
   modal = elements.get('gsrsk-intelligence-modal');
-  assert.match(modal.innerHTML, /Site reserve facts from existing data files/);
-  assert.match(modal.innerHTML, /700/);
-  assert.match(modal.innerHTML, /Runtime reserve balance/);
+  assert.match(modal.innerHTML, /value="iron_ore" selected/);
+  assert.match(modal.innerHTML, /Proven reserves/);
+  assert.match(modal.innerHTML, /900/);
+  assert.doesNotMatch(modal.innerHTML, /Site reserve facts from existing data files|FILE-BACKED SITE PROFILE/);
+  assert.doesNotMatch(modal.innerHTML, /Survey Resource/);
+  assert.equal((modal.innerHTML.match(/class="omega-rescc-ledger-metric"/g) || []).length, 7);
 
   ui.open('BGD', 'logistics');
   modal = elements.get('gsrsk-intelligence-modal');
@@ -201,6 +205,26 @@ test('canonical site profiles appear in relevant tabs without becoming live prod
   modal = elements.get('gsrsk-intelligence-modal');
   assert.match(modal.innerHTML, /Processing capabilities from existing site files/);
   assert.match(modal.innerHTML, /Beneficiation/);
+});
+
+test('reserves ledger switches between one live resource and an unavailable resource', () => {
+  ui.open('BGD', 'reserves');
+  const modal = elements.get('gsrsk-intelligence-modal');
+  assert.match(modal.innerHTML, /omega-rescc-resource-select/);
+  assert.match(modal.innerHTML, /value="iron_ore" selected/);
+  assert.match(modal.innerHTML, /100 METRIC_TONNE/);
+  assert.match(modal.innerHTML, /900 METRIC_TONNE/);
+  assert.doesNotMatch(modal.innerHTML, /Survey Resource/);
+
+  modal.listeners.change({ target: { id: 'omega-rescc-resource-select', value: 'coal' } });
+  assert.match(modal.innerHTML, /value="coal" selected/);
+  assert.match(modal.innerHTML, /UNAVAILABLE/);
+  assert.match(modal.innerHTML, /Survey Resource/);
+  assert.match(modal.innerHTML, /data-action="survey" data-resource-id="coal"/);
+  assert.equal((modal.innerHTML.match(/<strong>Unavailable<\/strong>/g) || []).length, 7,
+    'a resource absent from runtime state must not inherit another resource values');
+  assert.equal((modal.innerHTML.match(/class="omega-rescc-ledger-metric"/g) || []).length, 7,
+    'only one resource detail card should be rendered at a time');
 });
 
 test('deposit view filters loaded JSON deposits to the selected country', () => {
