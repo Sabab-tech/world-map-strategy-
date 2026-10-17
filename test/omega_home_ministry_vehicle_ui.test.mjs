@@ -51,6 +51,14 @@ function makeUiHarness(vehicleInventory = null, recordedAssets = null) {
           return button;
         });
       }
+      if (selector === '[data-home-service]') {
+        const html = nodes.get('cabinet-body')?.innerHTML || '';
+        return [...html.matchAll(/data-home-service="([^"]+)"/g)].map(match => {
+          const button = node('service-' + match[1]);
+          button.getAttribute = key => key === 'data-home-service' ? match[1] : null;
+          return button;
+        });
+      }
       return [];
     }
   };
@@ -208,6 +216,28 @@ test('Guard Out asset selector only targets recorded factories and passes the se
   assert.equal(unit.roadCondition, 'rough');
   assert.equal(harness.api.getGuardCoverageForIncident('INDUSTRIAL_SABOTAGE', 'AAA', 'AL-01') > 0, true);
   assert.equal(harness.api.getGuardCoverageForIncident('INDUSTRIAL_SABOTAGE', 'AAA', 'ST-02'), 0);
+});
+
+test('Fleet maintenance service button invokes the real repair API and refreshes vehicle health', () => {
+  const harness = makeUiHarness({ 1: 1 });
+  const state = harness.api.getState('AAA');
+  const unit = state.vehicleFleet[0];
+  assert.ok(unit, 'legacy vehicle counter should migrate to a unique fleet unit');
+  harness.state.interior.AAA.police.vehicleFleet[0].condition = 42;
+  harness.state.interior.AAA.police.vehicleFleet[0].status = 'REPAIR_REQUIRED';
+  const treasury = harness.state.economy.AAA.treasury;
+  harness.ui.renderFleetMaintenance();
+  const repairButton = harness.nodes.get('cabinet-body').innerHTML.includes('data-home-service="' + unit.id + '"');
+  assert.equal(repairButton, true);
+  const action = harness.nodes.get('cabinet-body').innerHTML;
+  assert.match(action, /REPAIR & RETURN TO FULL CONDITION/);
+  const button = harness.context.document.querySelectorAll('[data-home-service]')[0];
+  assert.equal(typeof button.onclick, 'function');
+  button.onclick();
+  const repaired = harness.api.getVehicleFleet('AAA')[0];
+  assert.equal(repaired.condition, 100);
+  assert.equal(repaired.status, 'AVAILABLE');
+  assert.ok(harness.state.economy.AAA.treasury < treasury);
 });
 
 test('vehicle compatibility and fleet repair controls are visible and interactive in UI source', () => {
