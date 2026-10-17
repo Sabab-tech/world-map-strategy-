@@ -385,3 +385,301 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
         flex-basis: 40px !important;
     }
 }
+
+
+/* ==========================================================================
+   OMEGA BUTTON FINISH v1.1
+   Shared tactile surface, deliberate action hierarchy, consistent touch targets.
+   Keep this additive: legacy IDs, click handlers, and layout contracts stay intact.
+   ========================================================================== */
+:root{
+  --ui-btn-bg:#17263a;
+  --ui-btn-bg-top:#1b2d43;
+  --ui-btn-bg-hover:#203750;
+  --ui-btn-border:#3c526a;
+  --ui-btn-border-hover:#648ba8;
+  --ui-btn-shadow:inset 0 1px 0 rgba(255,255,255,.045),0 2px 5px rgba(0,0,0,.22);
+  --ui-btn-radius:9px;
+  --ui-btn-height:38px;
+  --ui-btn-primary:#1d4058;
+  --ui-btn-primary-border:#579abd;
+}
+
+/* Common text-action controls. Icon-only buttons and tiny close controls are
+   intentionally excluded so this never stretches their hitboxes unexpectedly. */
+#ui-engine-root .speed-controls .speed-btn,
+.special-btn,
+.metric-opt-btn,
+.layer-opt-btn,
+.tab-btn,
+.cabinet-btn,
+.res-quick-btn,
+.city-bar-btn,
+.drawer-close,
+#btn-view-map,
+#btn-card-cabinet,
+#resource-filter-box #btn-exit-res-filter,
+#resource-filter-box #btn-clear-res-filter,
+#resource-filter-box #btn-apply-res-filter,
+#resource-filter-box #btn-scope-nation,
+#resource-filter-box #btn-scope-world,
+#omega-individual-resource-panel .omega-site-close,
+#omega-individual-resource-panel .omega-site-action,
+.sel-country-eye-btn{
+  box-sizing:border-box!important;
+  min-width:0;
+  min-height:36px!important;
+  padding:8px 11px!important;
+  border:1px solid var(--ui-btn-border)!important;
+  border-radius:var(--ui-btn-radius)!important;
+  background:linear-gradient(180deg,var(--ui-btn-bg-top),var(--ui-btn-bg))!important;
+  color:var(--ui-text)!important;
+  font-family:var(--ui-font)!important;
+  font-size:12px!important;
+  font-weight:650!important;
+  line-height:1.25!important;
+  letter-spacing:.01em!important;
+  text-shadow:none!important;
+  box-shadow:var(--ui-btn-shadow)!important;
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+  transition:background-color .14s ease,border-color .14s ease,box-shadow .14s ease,transform .14s ease!important;
+}
+
+/* Four-state speed selector: compact, even and easy to read at a glance. */
+#ui-engine-root .speed-controls .speed-btn{
+  min-width:36px!important;
+  min-height:36px!important;
+  padding:0 9px!important;
+  border-radius:8px!important;
+  color:var(--ui-muted)!important;
+  font-size:11px!important;
+  font-weight:750!important;
+  font-variant-numeric:tabular-nums;
+}
+#ui-engine-root .speed-controls .speed-btn.active{
+  background:linear-gradient(180deg,#244960,#1b374d)!important;
+  border-color:var(--ui-accent)!important;
+  color:#e5f6ff!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 0 0 1px rgba(118,183,216,.10)!important;
+}
+
+/* Floating map controls have one consistent shape, with the ministry dock
+   retaining its deliberate circular silhouette and original 40–42px geometry. */
+#ui-engine-root .icon-btn{
+  box-sizing:border-box!important;
+  width:42px!important;
+  height:42px!important;
+  min-width:42px!important;
+  min-height:42px!important;
+  padding:0!important;
+  border:1px solid var(--ui-btn-border)!important;
+  border-radius:10px!important;
+  background:linear-gradient(180deg,#1b2c41,#111e2f)!important;
+  color:var(--ui-text)!important;
+  box-shadow:var(--ui-btn-shadow)!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  line-height:1!important;
+  transition:background-color .14s ease,border-color .14s ease,box-shadow .14s ease,transform .14s ease!important;
+}
+#ui-engine-root .icon-btn > .omega-ui-icon{
+  border-color:transparent!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+#ui-engine-root .icon-btn.active,
+#ui-engine-root .icon-btn[aria-pressed="true"]{
+  background:linear-gradient(180deg,#23445c,#19364b)!important;
+  border-color:var(--ui-accent)!important;
+  color:#dff5ff!important;
+}
+
+/* Clickable metric and dropdown pills read like controls, not loose labels. */
+.metric-pill-btn,#top-bar-dropdown-trigger{
+  box-sizing:border-box!important;
+  min-height:34px!important;
+  padding:5px 10px!important;
+  border:1px solid var(--ui-btn-border)!important;
+  border-radius:9px!important;
+  background:linear-gradient(180deg,var(--ui-btn-bg-top),var(--ui-btn-bg))!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04)!important;
+  color:var(--ui-text)!important;
+}
+
+/* Selected states stay visible without turning every button into a neon sign. */
+.tab-btn.active,
+.special-btn.active,
+.metric-opt-btn[aria-pressed="true"],
+.layer-opt-btn[aria-pressed="true"],
+.res-quick-btn.active,
+.city-bar-btn.active{
+  background:linear-gradient(180deg,#24465d,#19374c)!important;
+  border-color:var(--ui-accent)!important;
+  color:#e5f6ff!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 0 0 1px rgba(118,183,216,.08)!important;
+}
+#resource-filter-box #btn-apply-res-filter,
+#omega-individual-resource-panel .omega-site-action--plan{
+  background:linear-gradient(180deg,#28526b,#1c4057)!important;
+  border-color:var(--ui-primary-border)!important;
+  color:#f0f9ff!important;
+}
+#resource-filter-box #btn-clear-res-filter{
+  color:#e8cb8d!important;
+  border-color:rgba(216,179,106,.48)!important;
+}
+#resource-filter-box #btn-exit-res-filter{
+  color:#f0aaaa!important;
+  border-color:rgba(215,124,124,.52)!important;
+}
+
+/* Main back/action controls keep their existing placement and handlers. */
+#global-back-btn.global-back-btn{
+  box-sizing:border-box!important;
+  min-height:40px!important;
+  padding:8px 12px!important;
+  border:1px solid var(--ui-btn-border)!important;
+  border-radius:10px!important;
+  background:linear-gradient(180deg,#1b2d43,#101d2d)!important;
+  color:var(--ui-text)!important;
+  box-shadow:var(--ui-btn-shadow)!important;
+  font-family:var(--ui-font)!important;
+  font-size:12px!important;
+  font-weight:750!important;
+  letter-spacing:.04em!important;
+}
+#btn-ministry-dock:focus-visible,
+#global-back-btn:focus-visible,
+#ui-engine-root .icon-btn:focus-visible,
+#ui-engine-root .speed-controls .speed-btn:focus-visible,
+.special-btn:focus-visible,
+.metric-opt-btn:focus-visible,
+.layer-opt-btn:focus-visible,
+.tab-btn:focus-visible,
+.cabinet-btn:focus-visible,
+.res-quick-btn:focus-visible,
+.city-bar-btn:focus-visible,
+.drawer-close:focus-visible,
+#resource-filter-box button:focus-visible,
+#omega-individual-resource-panel button:focus-visible,
+.sel-country-eye-btn:focus-visible,
+.c-ministry-btn:focus-visible,
+.access-card:focus-visible,
+.om-royal-card:focus-visible{
+  outline:2px solid #9bd9f2!important;
+  outline-offset:2px!important;
+}
+
+/* Smooth tactile feedback on pointer devices only; no hover-lift on touch screens. */
+@media(hover:hover) and (pointer:fine){
+  #ui-engine-root .speed-controls .speed-btn:hover:not(:disabled),
+  #ui-engine-root .icon-btn:hover:not(:disabled),
+  .special-btn:hover:not(:disabled),
+  .metric-opt-btn:hover:not(:disabled),
+  .layer-opt-btn:hover:not(:disabled),
+  .tab-btn:hover:not(:disabled),
+  .cabinet-btn:hover:not(:disabled),
+  .res-quick-btn:hover:not(:disabled),
+  .city-bar-btn:hover:not(:disabled),
+  .drawer-close:hover:not(:disabled),
+  #btn-view-map:hover:not(:disabled),
+  #btn-card-cabinet:hover:not(:disabled),
+  #resource-filter-box button:hover:not(:disabled),
+  #omega-individual-resource-panel button:hover:not(:disabled),
+  .sel-country-eye-btn:hover:not(:disabled){
+    background:linear-gradient(180deg,#203650,#17283b)!important;
+    border-color:var(--ui-btn-border-hover)!important;
+    color:#f4f8fc!important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.055),0 3px 8px rgba(0,0,0,.26)!important;
+  }
+  #ui-engine-root .speed-controls .speed-btn:hover:not(:disabled),
+  #ui-engine-root .icon-btn:hover:not(:disabled),
+  .special-btn:hover:not(:disabled),
+  .metric-opt-btn:hover:not(:disabled),
+  .layer-opt-btn:hover:not(:disabled),
+  .tab-btn:hover:not(:disabled),
+  .cabinet-btn:hover:not(:disabled),
+  .res-quick-btn:hover:not(:disabled),
+  .city-bar-btn:hover:not(:disabled),
+  #btn-view-map:hover:not(:disabled),
+  #btn-card-cabinet:hover:not(:disabled){
+    transform:translateY(-1px)!important;
+  }
+}
+#ui-engine-root .speed-controls .speed-btn:active:not(:disabled),
+#ui-engine-root .icon-btn:active:not(:disabled),
+.special-btn:active:not(:disabled),
+.metric-opt-btn:active:not(:disabled),
+.layer-opt-btn:active:not(:disabled),
+.tab-btn:active:not(:disabled),
+.cabinet-btn:active:not(:disabled),
+.res-quick-btn:active:not(:disabled),
+.city-bar-btn:active:not(:disabled),
+.drawer-close:active:not(:disabled),
+#btn-view-map:active:not(:disabled),
+#btn-card-cabinet:active:not(:disabled),
+#resource-filter-box button:active:not(:disabled),
+#omega-individual-resource-panel button:active:not(:disabled),
+.sel-country-eye-btn:active:not(:disabled){
+  transform:translateY(1px)!important;
+  box-shadow:inset 0 1px 3px rgba(0,0,0,.28)!important;
+}
+#btn-ministry-dock:active:not(:disabled){
+  transform:scale(.97)!important;
+  box-shadow:inset 0 1px 3px rgba(0,0,0,.3)!important;
+}
+
+/* Rounded, calmer ministry action tiles; locked/alert states remain semantic. */
+.c-ministry-btn{
+  border-radius:10px!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 3px 8px rgba(0,0,0,.22)!important;
+}
+.c-ministry-btn:hover:not(:disabled):not([data-om-state="locked"]){
+  border-color:var(--ui-btn-border-hover)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 5px 12px rgba(0,0,0,.28)!important;
+}
+.c-ministry-btn[data-om-state="locked"],.c-ministry-btn:disabled{
+  opacity:.48!important;
+  cursor:not-allowed!important;
+  transform:none!important;
+}
+.access-card:focus-visible{
+  outline:2px solid #9bd9f2!important;
+  outline-offset:3px!important;
+}
+.access-card:active{
+  transform:translateY(1px) scale(.995)!important;
+  box-shadow:inset 0 1px 4px rgba(0,0,0,.3)!important;
+}
+button:disabled,.c-ministry-btn[data-om-state="locked"]{
+  cursor:not-allowed!important;
+}
+@media(max-width:700px){
+  #ui-engine-root .icon-btn{
+    width:40px!important;
+    height:40px!important;
+    min-width:40px!important;
+    min-height:40px!important;
+    border-radius:9px!important;
+  }
+  #ui-engine-root .speed-controls .speed-btn{
+    min-width:36px!important;
+    min-height:36px!important;
+  }
+  .tab-btn{padding:8px 5px!important;font-size:11px!important;}
+  .cabinet-btn{min-height:68px!important;padding:9px 6px!important;}
+}
+@media(prefers-reduced-motion:reduce){
+  #ui-engine-root .speed-controls .speed-btn,
+  #ui-engine-root .icon-btn,
+  .special-btn,.metric-opt-btn,.layer-opt-btn,.tab-btn,.cabinet-btn,
+  .res-quick-btn,.city-bar-btn,.drawer-close,#btn-view-map,#btn-card-cabinet,
+  #resource-filter-box button,#omega-individual-resource-panel button,
+  .sel-country-eye-btn,.access-card,.c-ministry-btn{
+    transition:none!important;
+    animation:none!important;
+  }
+}
