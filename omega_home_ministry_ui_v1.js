@@ -319,12 +319,13 @@
         '<header class="home-police-head"><div class="home-police-orb">🚔</div><h1 class="home-police-title">AAA FLEET & FACILITY ASCENSION</h1><p class="home-police-subtitle">A sequential procurement ladder and scalable public-safety infrastructure grid.</p></header>' +
         '<div class="home-police-kpis"><div class="home-police-kpi"><strong>Tier ' + s.unlockedVehicleLevel + ' / 15</strong><span>Highest unlocked vehicle</span></div><div class="home-police-kpi"><strong>' + Object.keys(s.vehiclesOwned).reduce((n, k) => n + (Number(s.vehiclesOwned[k]) || 0), 0).toLocaleString() + '</strong><span>Vehicles delivered</span></div><div class="home-police-kpi"><strong>' + Object.values(s.facilityLevels).reduce((n, v) => n + (Number(v) || 0), 0).toLocaleString() + '</strong><span>Facility levels</span></div></div>' +
         (order ? '<div class="home-police-panel"><strong>🚚 PROCUREMENT IN TRANSIT · TIER ' + order.level + '</strong><p class="home-police-note">' + esc(e.VEHICLES[order.level - 1].name) + ' · Quantity ' + order.quantity + ' · Cost ' + money(e, order.totalCost) + '</p><div class="home-police-progress"><div class="home-police-progress-fill" style="width:' + progress + '%"></div></div><div id="home-police-vehicle-countdown" class="home-police-note">Estimated simulation-time delivery: ' + formatDuration(order.completesAtMs - e.getSimulationTimeMs()) + '</div></div>' : '') +
-        '<div class="home-police-actions"><button id="home-police-open-vehicles" class="home-police-btn home-police-btn-gold">🚓 VEHICLE HANGAR · 15 TIERS</button><button id="home-police-open-facilities" class="home-police-btn home-police-btn-green">🏗️ FACILITY COMMAND GRID</button></div>' +
+        '<div class="home-police-actions"><button id="home-police-open-vehicles" class="home-police-btn home-police-btn-gold">🚓 VEHICLE HANGAR · 15 TIERS</button><button id="home-police-open-facilities" class="home-police-btn home-police-btn-green">🏗️ FACILITY COMMAND GRID</button><button id="home-police-open-fleet-maintenance" class="home-police-btn home-police-btn-purple">🧰 FLEET HEALTH & REPAIR</button></div>' +
         '<div class="home-police-alert">Progression rule: only the next uncompleted tier unlocks after the previous tier is delivered. Each tier requires 180 simulation days; skipping directly to Tier XV is blocked.</div>' +
         backButton('home-police-upgrade-back', '← BACK TO POLICE COMMAND') +
       '</div>';
     g.document.getElementById('home-police-open-vehicles').onclick = () => this.renderVehicleCatalog(s.unlockedVehicleLevel);
     g.document.getElementById('home-police-open-facilities').onclick = () => this.renderFacilitiesPanel();
+    g.document.getElementById('home-police-open-fleet-maintenance').onclick = () => this.renderFleetMaintenance();
     g.document.getElementById('home-police-upgrade-back').onclick = () => this.openPoliceCommand();
     bindGlobalProgressListener();
   };
@@ -339,12 +340,14 @@
     const cards = e.VEHICLES.map(v => {
       const unlocked = v.level <= s.unlockedVehicleLevel, chosen = v.level === selected.level;
       const stock = Number(s.vehiclesOwned[v.level]) || 0, free = Math.max(0, Number(guardCapacity.availableVehicles[v.level]) || 0);
+      const bestEnvironments = [['city','City'],['highway','Highway'],['border','Border']].map(item => ({name:item[1],fit:Number(v.environmentFit[item[0]])||0})).sort((a,b)=>b.fit-a.fit).slice(0,2);
+      const fitLine = bestEnvironments.map(item => '<span class="home-police-tag">' + esc(item.name) + ' ' + item.fit + '</span>').join(' ');
       return '<button type="button" aria-label="View Tier ' + v.level + ' ' + esc(v.name) + '" class="home-police-card ' + (chosen ? 'is-selected ' : '') + (!unlocked ? 'is-locked' : '') + '" data-home-vehicle="' + v.level + '">' +
         vehicleSvg(v, 'card') +
         '<span class="home-police-tag ' + (unlocked ? 'home-police-tag-green' : 'home-police-tag-gold') + '">' + (unlocked ? 'TIER UNLOCKED' : '🔒 RESEARCH / TIER LOCKED') + '</span>' +
         '<span class="home-police-card-name">TIER ' + v.level + ' · ' + esc(v.name) + '</span>' +
         '<span class="home-police-note">' + money(e, v.cost) + ' / vehicle</span>' +
-        '<span class="home-police-note">Owned ' + stock + ' · Guard-ready ' + free + '</span></button>';
+        '<span class="home-police-note">Owned ' + stock + ' · Ready ' + free + '</span><span>' + fitLine + '</span></button>';
     }).join('');
     const locked = selected.level > s.unlockedVehicleLevel;
     const progress = order ? Math.max(0, Math.min(100, 100 * (1 - (order.completesAtMs - e.getSimulationTimeMs()) / order.durationMs))) : 0;
@@ -352,6 +355,12 @@
     const capabilityRows = Object.keys(capabilityNames).map(key => {
       const val = Number(selected.capabilities[key]) || 0;
       return '<div class="home-police-stat">' + capabilityNames[key] + '<strong>' + val + ' / 100</strong><div class="home-police-progress"><div class="home-police-progress-fill" style="width:' + val + '%"></div></div></div>';
+    }).join('');
+    const environments = typeof e.getOperatingEnvironments === 'function' ? e.getOperatingEnvironments() : [];
+    const environmentRows = environments.map(env => {
+      const fit = Number(selected.environmentFit[env.id]) || 0;
+      const label = fit >= 80 ? 'Excellent' : fit >= 65 ? 'Good' : fit >= 45 ? 'Strained' : 'Poor fit';
+      return '<div class="home-police-route-cell"><strong><span>' + env.emoji + ' ' + esc(env.name) + '</span><span>' + fit + '/100</span></strong><div class="home-police-route-track"><span style="width:' + fit + '%"></span></div><span>' + label + '</span></div>';
     }).join('');
     const featureChips = selected.specialFeatures.map(item => '<span class="home-police-feature-chip"><span style="color:#79e7ff">✦</span>' + esc(item) + '</span>').join('');
     const orderPanel = locked
@@ -371,6 +380,8 @@
         '<section class="home-police-detail"><div class="home-police-detail-top">' + vehicleSvg(selected, 'hero') + '<span class="home-police-tag home-police-tag-gold">' + esc(selected.className) + '</span><h3>TIER ' + selected.level + ' · ' + esc(selected.name) + '</h3><p class="home-police-note">' + esc(selected.specialty) + ' · Best terrain: ' + esc(selected.terrain) + '</p></div>' +
           '<div class="home-police-stats"><div class="home-police-stat">Top speed<strong>' + selected.speed + ' km/h</strong></div><div class="home-police-stat">Acceleration<strong>' + selected.acceleration + ' / 100</strong></div><div class="home-police-stat">Officer capacity<strong>' + selected.capacity + ' persons / vehicle</strong></div><div class="home-police-stat">Durability<strong>' + selected.durability + ' / 120</strong></div><div class="home-police-stat">Operational range<strong>' + selected.rangeKm.toLocaleString() + ' km</strong></div><div class="home-police-stat">Shift endurance<strong>' + selected.enduranceHours + ' hours</strong></div><div class="home-police-stat">Purchase price<strong>' + money(e, selected.cost) + '</strong></div><div class="home-police-stat">Maintenance<strong>' + money(e, selected.maintenancePerDay) + ' / day</strong></div><div class="home-police-stat">Owned / guard-ready<strong>' + owned + ' / ' + available + '</strong></div><div class="home-police-stat">Currently assigned<strong>' + Math.max(0, Number(guardCapacity.deployedVehicles[selected.level]) || 0) + '</strong></div></div>' +
           '<div class="home-police-section-title">Distinct capability profile</div><div class="home-police-stats">' + capabilityRows + '</div>' +
+          '<div class="home-police-section-title">Environment suitability · 0–100</div><div class="home-police-route-matrix">' + environmentRows + '</div>' +
+          '<p class="home-police-note">The same vehicle can behave differently across city traffic, highways, borders, rough tracks and wetland roads. Poor fit reduces mission effectiveness and accelerates wear.</p>' +
           '<div class="home-police-section-title">Vehicle-specific equipment</div><div class="home-police-feature-list">' + featureChips + '</div>' +
           '<div class="home-police-vehicle-brief"><div class="home-police-brief-card"><span class="home-police-tag home-police-tag-green">STRENGTH</span><strong>' + esc(selected.strengths) + '</strong></div><div class="home-police-brief-card"><span class="home-police-tag home-police-tag-gold">TRADE-OFF</span><strong>' + esc(selected.tradeoff) + '</strong></div></div>' +
           '<div class="home-police-note"><strong>Operational role:</strong> ' + esc(selected.role) + '</div>' +
