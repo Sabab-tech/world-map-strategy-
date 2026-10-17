@@ -67,7 +67,7 @@
   const genericContinentSearchTerms = ["continent", "continents", "মহাদেশ"];
   function normalizeSearch(value) {
     return String(value == null ? "" : value).normalize("NFKC").toLocaleLowerCase()
-      .replace(/[^\\p{L}\\p{N}]+/gu, " ").trim();
+      .replace(/[^\p{L}\p{N}]+/gu, " ").trim();
   }
   function regionCatalog() {
     return continentOrder.map(function (key) {
