@@ -1,4 +1,4 @@
-/* OMEGA UI ICON SYSTEM v1.0.0: offline-safe custom SVG icon styling */
+/* OMEGA UI ICON SYSTEM v1.2.0: mobile-safe, colorful, offline SVG icon styling */
 .omega-icon-sprite {
     position: absolute !important;
     width: 0 !important;
@@ -9,49 +9,130 @@
 }
 .omega-ui-icon {
     display: inline-block !important;
-    width: 1em !important;
-    height: 1em !important;
+    width: 1.14em !important;
+    height: 1.14em !important;
     min-width: 0 !important;
     min-height: 0 !important;
-    max-width: 1.35em !important;
-    max-height: 1.35em !important;
-    vertical-align: -0.16em !important;
+    max-width: 1.42em !important;
+    max-height: 1.42em !important;
+    box-sizing: border-box !important;
+    vertical-align: -0.2em !important;
     flex: 0 0 auto !important;
     overflow: visible !important;
-    color: currentColor !important;
+    border: 1px solid var(--omega-icon-border, rgba(125, 211, 252, .25)) !important;
+    border-radius: .3em !important;
+    background: var(--omega-icon-bg, rgba(56, 189, 248, .14)) !important;
+    color: var(--omega-icon-color, #7dd3fc) !important;
     fill: none !important;
     stroke: currentColor !important;
-    stroke-width: 1.8 !important;
+    stroke-width: 2 !important;
     stroke-linecap: round !important;
     stroke-linejoin: round !important;
     pointer-events: none !important;
     shape-rendering: geometricPrecision;
 }
 button > .omega-ui-icon, [role="button"] > .omega-ui-icon, .icon-btn > .omega-ui-icon {
-    width: 1.1em !important;
-    height: 1.1em !important;
+    width: 1.14em !important;
+    height: 1.14em !important;
 }
-.icon-btn > .omega-ui-icon { width: 21px !important; height: 21px !important; }
+.icon-btn > .omega-ui-icon {
+    width: 21px !important;
+    height: 21px !important;
+    max-width: 21px !important;
+    max-height: 21px !important;
+}
 .status-item .omega-ui-icon, .res-icon .omega-ui-icon, .status-item > .icon .omega-ui-icon {
-    width: 1.05em !important;
-    height: 1.05em !important;
+    width: 1.16em !important;
+    height: 1.16em !important;
     margin-right: 0.15em;
 }
 .m-emoji-icon { display: inline-flex !important; align-items: center !important; justify-content: center !important; }
 .m-emoji-icon > .omega-ui-icon {
-    width: 1em !important;
-    height: 1em !important;
+    width: 1.1em !important;
+    height: 1.1em !important;
     max-width: 100% !important;
     max-height: 100% !important;
-    filter: drop-shadow(0 0 5px var(--om-m-accent, currentColor));
+    filter: drop-shadow(0 1px 2px var(--omega-icon-color, currentColor));
 }
 .interior-logo > .omega-ui-icon { width: 0.92em !important; height: 0.92em !important; }
 .omega-ui-icon + .omega-ui-icon { margin-left: 0.16em; }
+
+/* Deliberate semantic palettes keep pictograms legible without remote fonts or assets. */
+.omega-ui-icon--industrial-production {
+    --omega-icon-color: #fbbf24;
+    --omega-icon-bg: rgba(249, 115, 22, .19);
+    --omega-icon-border: rgba(251, 191, 36, .48);
+}
+.omega-ui-icon--mine-extraction, .omega-ui-icon--pickaxe {
+    --omega-icon-color: #f97316;
+    --omega-icon-bg: rgba(249, 115, 22, .18);
+    --omega-icon-border: rgba(251, 146, 60, .5);
+}
+.omega-ui-icon--settings, .omega-ui-icon--sliders-horizontal, .omega-ui-icon--bot {
+    --omega-icon-color: #a5b4fc;
+    --omega-icon-bg: rgba(99, 102, 241, .17);
+    --omega-icon-border: rgba(165, 180, 252, .38);
+}
+.omega-ui-icon--factory, .omega-ui-icon--building, .omega-ui-icon--building-2, .omega-ui-icon--landmark, .omega-ui-icon--warehouse {
+    --omega-icon-color: #60a5fa;
+    --omega-icon-bg: rgba(59, 130, 246, .16);
+    --omega-icon-border: rgba(96, 165, 250, .38);
+}
+.omega-ui-icon--wallet, .omega-ui-icon--chart-column, .omega-ui-icon--chart-line, .omega-ui-icon--database, .omega-ui-icon--cylinder, .omega-ui-icon--package, .omega-ui-icon--briefcase, .omega-ui-icon--gem {
+    --omega-icon-color: #4ade80;
+    --omega-icon-bg: rgba(34, 197, 94, .15);
+    --omega-icon-border: rgba(74, 222, 128, .36);
+}
+.omega-ui-icon--shield, .omega-ui-icon--shield-check, .omega-ui-icon--lock, .omega-ui-icon--key-round, .omega-ui-icon--radio-tower {
+    --omega-icon-color: #67e8f9;
+    --omega-icon-bg: rgba(6, 182, 212, .15);
+    --omega-icon-border: rgba(103, 232, 249, .38);
+}
+.omega-ui-icon--heart-pulse, .omega-ui-icon--heart, .omega-ui-icon--siren, .omega-ui-icon--alert-triangle {
+    --omega-icon-color: #fb7185;
+    --omega-icon-bg: rgba(244, 63, 94, .14);
+    --omega-icon-border: rgba(251, 113, 133, .36);
+}
+.omega-ui-icon--globe, .omega-ui-icon--satellite, .omega-ui-icon--map, .omega-ui-icon--map-pin, .omega-ui-icon--route, .omega-ui-icon--plane, .omega-ui-icon--ship {
+    --omega-icon-color: #7dd3fc;
+    --omega-icon-bg: rgba(14, 165, 233, .15);
+    --omega-icon-border: rgba(125, 211, 252, .36);
+}
+.omega-ui-icon--zap, .omega-ui-icon--flame, .omega-ui-icon--sun, .omega-ui-icon--battery-charging, .omega-ui-icon--trophy {
+    --omega-icon-color: #fbbf24;
+    --omega-icon-bg: rgba(245, 158, 11, .16);
+    --omega-icon-border: rgba(251, 191, 36, .38);
+}
+.omega-ui-icon--users, .omega-ui-icon--user-round, .omega-ui-icon--network, .omega-ui-icon--graduation-cap {
+    --omega-icon-color: #c4b5fd;
+    --omega-icon-bg: rgba(139, 92, 246, .16);
+    --omega-icon-border: rgba(196, 181, 253, .38);
+}
+
+/* Status dots stay plain circles, not colored tiles. */
+.omega-ui-icon.omega-ui-icon--blue-dot { color: #60a5fa !important; background: transparent !important; border-color: transparent !important; }
+.omega-ui-icon.omega-ui-icon--red-dot { color: #f87171 !important; background: transparent !important; border-color: transparent !important; }
+.omega-ui-icon.omega-ui-icon--green-dot { color: #4ade80 !important; background: transparent !important; border-color: transparent !important; }
+
+@media (max-width: 480px) {
+    .omega-ui-icon {
+        width: 1.18em !important;
+        height: 1.18em !important;
+        max-width: 1.46em !important;
+        max-height: 1.46em !important;
+        stroke-width: 2.1 !important;
+    }
+    .status-item .omega-ui-icon, .res-icon .omega-ui-icon, .status-item > .icon .omega-ui-icon {
+        width: 1.2em !important;
+        height: 1.2em !important;
+    }
+    .icon-btn > .omega-ui-icon {
+        width: 21px !important;
+        height: 21px !important;
+        max-width: 21px !important;
+        max-height: 21px !important;
+    }
+}
 @media (prefers-reduced-motion: reduce) {
     .omega-ui-icon { animation: none !important; transition: none !important; }
 }
-
-/* Semantic traffic-light icons retain their original status meaning. */
-.omega-ui-icon.omega-ui-icon--blue-dot { color: #60a5fa !important; }
-.omega-ui-icon.omega-ui-icon--red-dot { color: #f87171 !important; }
-.omega-ui-icon.omega-ui-icon--green-dot { color: #4ade80 !important; }
