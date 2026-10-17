@@ -91,6 +91,32 @@ test('agent hiring reduces modeled risk and payroll settles elapsed simulation d
   assert.equal(state.economy.AAA.treasury, before - (250 * 65 + 500));
 });
 
+test('vehicle maintenance is included in daily security operating cost', () => {
+  const state = setup();
+  api.getState('AAA');
+  state.interior.AAA.police.vehiclesOwned[1] = 2;
+  assert.equal(api.getDailyPayroll('AAA'), 250 * api.POLICE_SALARY_PER_DAY);
+  assert.equal(api.getDailyOperatingCost('AAA'), 250 * api.POLICE_SALARY_PER_DAY + 2 * api.VEHICLES[0].maintenancePerDay);
+});
+
+test('agents can be assigned to an existing rival and reports expose only recorded fields', () => {
+  const state = setup();
+  state.economy.BBB = { treasury: 4000000, gdp: 50000000 };
+  state.population.BBB = { population: 500000 };
+  assert.deepEqual(api.getAvailableCountries('AAA'), ['BBB']);
+  const recruited = api.recruitAgents(2, 'AAA', 'BBB');
+  assert.equal(recruited.ok, true);
+  assert.equal(api.getState('AAA').agentDeployments.BBB, 2);
+  state.simulation.simulationTimeMs = 7 * DAY;
+  state.simulation.turn = 168;
+  api.processTurn({ detail: { payload: { countryId: 'AAA', turn: 168 } } });
+  const reports = api.getState('AAA').intelligenceReports;
+  assert.ok(reports.length >= 1);
+  assert.equal(reports[0].targetCountryId, 'BBB');
+  assert.ok(reports[0].observations.some(item => item.field === 'economy.gdp' && item.value === 50000000));
+  assert.ok(reports[0].observations.every(item => item.value !== null && Number.isFinite(item.value)));
+});
+
 test('purchases fail closed when treasury is unavailable and advice is non-mutating', () => {
   setup(null);
   assert.equal(api.recruitPolice(5, 'AAA').reason, 'TREASURY_DATA_UNAVAILABLE');
