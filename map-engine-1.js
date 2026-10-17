@@ -234,7 +234,13 @@ var Game = window.Game = {
         if (searchInput) {
             searchInput.addEventListener('input', (e) => {
                 if (e && e.stopPropagation) e.stopPropagation();
-                self.renderSearch(e.target.value);
+                if (self._searchDebounceTimer && typeof window.clearTimeout === 'function') {
+                    window.clearTimeout(self._searchDebounceTimer);
+                }
+                self._searchDebounceTimer = window.setTimeout(() => {
+                    self._searchDebounceTimer = null;
+                    self.renderSearch(searchInput.value);
+                }, 120);
             });
             if (typeof L !== 'undefined' && L.DomEvent) {
                 L.DomEvent.disableClickPropagation(searchInput);
@@ -520,6 +526,23 @@ var Game = window.Game = {
 
         const q = query.toLowerCase().trim();
         let html = '';
+        const geographicApi = window.OMEGAGeographicRegionSystem;
+        const geographicSearch = geographicApi && typeof geographicApi.search === 'function' ?
+            geographicApi.search(query) : { matches: [], exclusive: false };
+        const regionMatches = Array.isArray(geographicSearch.matches) ? geographicSearch.matches : [];
+        const appendRegionMatches = function () {
+            regionMatches.forEach(region => {
+                const isOcean = region.type === 'ocean';
+                const accent = isOcean ? '#55d8ff' : '#8be0b1';
+                const symbol = isOcean ? '≈' : '◉';
+                const label = isOcean ? 'OCEAN BASIN' : 'CONTINENT';
+                html += `<button type="button" class="search-item omega-region-search-item" onclick="window.GameEngine.handleSearchSelect('region', '${region.value}', null, null, null, event)" style="width:100%; box-sizing:border-box; cursor:pointer; padding:9px 10px; background:rgba(8,36,52,0.94); border:0; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; align-items:center; gap:9px; color:#e5f7ff; text-align:left;">
+                    <span style="font-size:21px; line-height:1; color:${accent}; width:25px; text-align:center;">${symbol}</span>
+                    <span style="flex:1; min-width:0;"><strong style="display:block; font-family:var(--font-mono); color:${accent}; font-size:12px;">${region.label}</strong><small style="display:block; color:#93a9b8; font-size:9px; letter-spacing:1px; margin-top:3px;">${label}</small></span>
+                    <span style="font-size:9px; white-space:nowrap; padding:4px 6px; border:1px solid ${accent}; border-radius:4px; color:${accent};">HIGHLIGHT</span>
+                </button>`;
+            });
+        };
 
         // Bengali name mappings
         const bnCountryMap = {
@@ -556,6 +579,15 @@ var Game = window.Game = {
             return;
         }
 
+        // Exact geographic region searches (for example, "sea" or "ocean")
+        // must not be polluted with unrelated country, city, and resource results.
+        if (geographicSearch.exclusive && regionMatches.length) {
+            appendRegionMatches();
+            container.innerHTML = html;
+            return;
+        }
+        appendRegionMatches();
+
         // 1. Search Country Matches
         const countryMatches = allCountries.filter(c => {
             const normC = c.toLowerCase().replace(/_/g, " ");
@@ -567,9 +599,11 @@ var Game = window.Game = {
         const cityMatches = [];
         if (Game.locationsRegistry) {
             for (let cId in Game.locationsRegistry) {
+                if (cityMatches.length >= 6) break;
                 const cData = Game.locationsRegistry[cId];
                 if (cData && cData.cities && Array.isArray(cData.cities)) {
-                    cData.cities.forEach(city => {
+                    for (let cityIndex = 0; cityIndex < cData.cities.length && cityMatches.length < 6; cityIndex++) {
+                        const city = cData.cities[cityIndex];
                         if (city.name && city.name.toLowerCase().includes(q)) {
                             cityMatches.push({
                                 name: city.name,
@@ -579,7 +613,7 @@ var Game = window.Game = {
                                 role: city.role || 'CITY'
                             });
                         }
-                    });
+                    }
                 }
             }
         }
@@ -587,13 +621,15 @@ var Game = window.Game = {
         // 3. Search Strategic Resource Deposits
         const depositMatches = [];
         const deposits = (window.ResourceMinistryEngine && window.ResourceMinistryEngine.deposits) ? window.ResourceMinistryEngine.deposits : [];
-        deposits.forEach(dep => {
-            if (dep.name.toLowerCase().includes(q) || (dep.country && dep.country.toLowerCase().includes(q))) {
+        for (let depositIndex = 0; depositIndex < deposits.length && depositMatches.length < 6; depositIndex++) {
+            const dep = deposits[depositIndex];
+            if (dep && dep.name && (dep.name.toLowerCase().includes(q) ||
+                (dep.country && dep.country.toLowerCase().includes(q)))) {
                 depositMatches.push(dep);
             }
-        });
+        }
 
-        if (countryMatches.length === 0 && cityMatches.length === 0 && depositMatches.length === 0) {
+        if (regionMatches.length === 0 && countryMatches.length === 0 && cityMatches.length === 0 && depositMatches.length === 0) {
             container.innerHTML = `<div style="font-size:11px; color:#ef4444; font-family:var(--font-mono); padding:8px;">❌ No matching nation, city, or strategic deposit found for "${query}".</div>`;
             return;
         }
@@ -645,7 +681,19 @@ var Game = window.Game = {
         const drawers = document.querySelectorAll('.omega-drawer');
         drawers.forEach(d => d.style.display = 'none');
 
-        if (type === 'country') {
+        if (type === 'region') {
+            const regionSystem = window.OMEGAGeographicRegionSystem;
+            const selected = regionSystem && typeof regionSystem.select === 'function' ?
+                regionSystem.select(name, { focus: true }) : false;
+            if (selected) {
+                const result = typeof regionSystem.search === 'function' ?
+                    regionSystem.search(name.split(':').slice(1).join(':')).matches.find(region => region.value === name) : null;
+                const regionLabel = result ? result.label : name.split(':').slice(1).join(':');
+                this.showNotification("GEOGRAPHIC SEARCH FOCUS", `HIGHLIGHTED REGION: ${regionLabel.toUpperCase()}`, "info");
+            } else {
+                this.showNotification("GEOGRAPHIC SEARCH", "GEOGRAPHIC REGION DATA IS NOT READY", "warning");
+            }
+        } else if (type === 'country') {
             const cleanName = name.replace(/_/g, " ").trim();
             if (window.Game && typeof window.Game.selectCountryByName === 'function') {
                 window.Game.selectCountryByName(cleanName);
