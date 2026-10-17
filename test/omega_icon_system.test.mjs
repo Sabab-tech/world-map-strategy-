@@ -19,7 +19,7 @@ test('custom icon system is wired locally before UI renderers and has no remote 
   assert.ok(html.indexOf('omega_icon_system_v1.css') < html.indexOf('</head>'));
   assert.ok(html.indexOf('omega_icon_system_v1.js') < html.indexOf('map-engine-1.js'));
   assert.ok(html.indexOf('omega_icon_system_v1.js') < html.indexOf('ui_engine_core.js'));
-  assert.doesNotMatch(iconSource, /https?:\\/\\/(?:unpkg\\.com|cdn\\.jsdelivr\\.net|cdnjs\\.cloudflare\\.com|fonts\\.googleapis\\.com)/i);
+  assert.doesNotMatch(iconSource, /https?:\/\/(?:unpkg\.com|cdn\.jsdelivr\.net|cdnjs\.cloudflare\.com|fonts\.googleapis\.com)/i);
 });
 
 test('original line icon set includes semantic symbols for all main command areas', () => {
