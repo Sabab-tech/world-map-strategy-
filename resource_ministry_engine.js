@@ -8732,9 +8732,9 @@ _globalScope.GSRSK_DataFoundation = (() => {
                         category: t.category || 'strategic_minerals',
                         color: t.color || '#00e5ff',
                         unit: t.unit || 'TONS',
-                        basePrice: t.basePrice || 1000,
-                        dailyOutput: t.dailyOutput || 5000,
-                        dailyDemand: t.dailyDemand || 4500,
+                        basePrice: Number.isFinite(Number(t.basePrice)) && Number(t.basePrice) > 0 ? Number(t.basePrice) : null,
+                        dailyOutput: Number.isFinite(Number(t.dailyOutput)) && Number(t.dailyOutput) >= 0 ? Number(t.dailyOutput) : null,
+                        dailyDemand: Number.isFinite(Number(t.dailyDemand)) && Number(t.dailyDemand) >= 0 ? Number(t.dailyDemand) : null,
                         strategicImportance: t.strategicImportance || 'high',
                         processChain: t.description || 'Extraction ➔ Refining ➔ National Stockpile'
                     });
