@@ -53,8 +53,10 @@ test('legacy emoji labels resolve to consistent SVG icon names', () => {
 
 test('icon runtime observes new UI nodes and excludes editable/script content', () => {
   assert.match(iconSource, /new MutationObserver/);
-  assert.match(iconSource, /observer\.observe\(document\.body, \{ subtree: true, childList: true, characterData: true \}\)/);
-  assert.match(iconSource, /textarea,input,select,option,pre,code,svg,\[contenteditable="true"\]/);
+  assert.match(iconSource, /observer\.observe\(root, \{ subtree: true, childList: true, characterData: true \}\)/);
+  assert.match(iconSource, /observer\.observe\(root, \{ childList: true, subtree: false \}\)/);
+  assert.match(iconSource, /'textarea'.*'input'.*'select'.*'option'.*'pre'.*'code'.*'svg'/s);
+  assert.match(iconSource, /\[contenteditable="true"\]/);
   assert.match(iconSource, /createDocumentFragment/);
   assert.match(iconSource, /setAttribute\('href', href\)/);
 });
