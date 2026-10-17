@@ -110,7 +110,7 @@
       const command=mesh.dispatchCommand('interior',FINANCE_CASH_COMMAND,cid,{delta:-cost,reason:'HOME_MINISTRY_POLICE_SPENDING'},{turn:turn(),commandType:FINANCE_CASH_COMMAND,correlationId:'POLICE-FINANCE-'+cid+'-'+turn()+'-'+Math.floor(simulationTimeMs())});
       if(!command||command.status!=='APPLIED')return{ok:false,reason:command&&command.result&&command.result.reason||command&&command.result&&command.result.error||'FINANCE_TRANSACTION_FAILED',balance:balance};
       try{if(typeof g.updateGlobalResourceHUD==='function')g.updateGlobalResourceHUD(cid);}catch(_){}
-      return{ok:true,amount:cost,previous:[{remote:true,country:cid,amount:cost}]};
+      return{ok:true,amount:cost,previous:[{remote:true,country:cid,amount:cost,expectedBalance:balance-cost}]};
     }
     const previous=records.map(e=>({row:e.row,key:e.key,value:e.row[e.key]}));
     records.forEach(e=>{const old=num(e.row[e.key]);if(old!==null)e.row[e.key]=Math.max(0,old-cost);});
@@ -120,9 +120,12 @@
   function refundTreasury(debit){
     (debit&&debit.previous||[]).forEach(e=>{
       if(e.remote){
-        const mesh=interop();if(!mesh||typeof mesh.dispatchCommand!=='function'||!financeHandlerRegistered)return;
-        const result=mesh.dispatchCommand('interior',FINANCE_CASH_COMMAND,e.country,{delta:e.amount,reason:'HOME_MINISTRY_POLICE_ROLLBACK'},{turn:turn(),commandType:FINANCE_CASH_COMMAND,correlationId:'POLICE-FINANCE-REFUND-'+e.country+'-'+turn()+'-'+Math.floor(simulationTimeMs())});
-        if(!result||result.status!=='APPLIED')emit('OMEGA_HOME_POLICE_FINANCE_REFUND_FAILED',{countryId:e.country,amount:e.amount,reason:result&&result.result&&result.result.reason||'FINANCE_REFUND_FAILED'});
+        const root=rootState(),row=root&&root.finance&&root.finance[e.country],current=row&&num(row.available);
+        if(row&&current!==null&&current===e.expectedBalance){
+          row.available=current+e.amount;
+          try{if(typeof g.updateGlobalResourceHUD==='function')g.updateGlobalResourceHUD(e.country);}catch(_){}
+          emit('OMEGA_HOME_POLICE_FINANCE_ROLLBACK',{countryId:e.country,amount:e.amount,reason:'INTERIOR_STATE_COMMIT_FAILED'});
+        }else emit('OMEGA_HOME_POLICE_FINANCE_REFUND_FAILED',{countryId:e.country,amount:e.amount,reason:'FINANCE_BALANCE_CHANGED_BEFORE_ROLLBACK'});
       }else e.row[e.key]=e.value;
     });
   }
@@ -339,6 +342,7 @@
       try{mesh.registerCommandHandler(FINANCE_CASH_COMMAND,'finance',function(packet,ctx){
         const payload=packet&&packet.payload||{},delta=num(payload.delta),current=num(ctx&&ctx.stateTransaction&&ctx.stateTransaction.get('finance.available'));
         if(delta===null||!ctx||!ctx.stateTransaction)return{accepted:false,reason:'FINANCE_DELTA_OR_TRANSACTION_MISSING'};
+        if(delta>=0)return{accepted:false,reason:'POSITIVE_FINANCE_ADJUSTMENT_FORBIDDEN'};
         if(current===null)return{accepted:false,reason:'FINANCE_AVAILABLE_UNAVAILABLE'};
         if(delta<0&&current<Math.abs(delta))return{accepted:false,reason:'INSUFFICIENT_TREASURY',balance:current,required:Math.abs(delta)};
         const next=Math.max(0,current+delta);
