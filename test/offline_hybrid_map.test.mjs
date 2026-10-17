@@ -76,7 +76,7 @@ test("imagery failures do not substitute fake map tiles", () => {
   assert.doesNotMatch(js, /SATELLITE TILE/);
   assert.doesNotMatch(js, /data:image\/svg\+xml/);
   assert.doesNotMatch(mapEngine, /errorTileUrl:\s*['"]data:image\/svg\+xml/i);
-  assert.doesNotMatch(mapEngine, /<text[^>]*>SATELLITE TILE<\\/text>/i);
+  assert.doesNotMatch(mapEngine, /<text[^>]*>SATELLITE TILE<\/text>/i);
   assert.match(mapEngine, /tileerror/);
   assert.match(js, /cached global raster will be used/);
 });
