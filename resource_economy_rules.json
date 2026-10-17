@@ -22,7 +22,7 @@
     "maxBatches": 8192
   },
   "market": {
-    "offerFractionOfObservedInventory": 0.25,
+    "offerFractionOfObservedInventory": 1,
     "minOfferQuantity": 1
   },
   "actions": {
