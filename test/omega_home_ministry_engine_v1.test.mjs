@@ -23,12 +23,14 @@ await import('../omega_home_ministry_engine_v1.js');
 const api = globalThis.OmegaHomeMinistryEngine;
 const DAY = 86400000;
 
-test('15 fixed vehicle tiers have unique names, emoji and progressive stats', () => {
+test('15 fixed vehicle tiers have unique names, SVG identities and progressive stats', () => {
   assert.equal(api.VEHICLES.length, 15);
   assert.equal(new Set(api.VEHICLES.map(v => v.name)).size, 15);
-  assert.equal(new Set(api.VEHICLES.map(v => v.emoji)).size, 15);
+  assert.equal(new Set(api.VEHICLES.map(v => v.id)).size, 15);
+  assert.equal(new Set(api.VEHICLES.map(v => v.iconId)).size, 15);
   assert.deepEqual(api.VEHICLES.map(v => v.level), Array.from({ length: 15 }, (_, i) => i + 1));
   assert.ok(api.VEHICLES.every(v => v.enduranceHours > 0 && v.rangeKm > 0 && v.maintenancePerDay > 0));
+  assert.ok(api.VEHICLES.every(v => v.specialFeatures.length >= 3 && v.strengths && v.tradeoff));
 });
 
 test('recruiting charges upfront cost, increases daily payroll and firing does not charge money', () => {
