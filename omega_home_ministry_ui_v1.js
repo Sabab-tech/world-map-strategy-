@@ -544,6 +544,7 @@
         if (!sectorInput.value.trim() || sectorInput.value.trim() === 'General Sector') sectorInput.value = asset.name;
         if (/factory|industrial|plant|smelt/i.test(String(asset.category || '') + ' ' + String(asset.name || ''))) {
           environmentSelect.value = 'industrial';
+          roadSelect.value = 'rough';
           updateRoadOptions();
           return;
         }
