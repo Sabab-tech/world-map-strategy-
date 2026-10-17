@@ -273,6 +273,9 @@ test('guard deployments bind to recorded factories and only protect their select
   assert.ok(api.getGuardCoverageForIncident('INDUSTRIAL_SABOTAGE', 'AAA', 'AL-01') > 0);
   assert.equal(api.getGuardCoverageForIncident('INDUSTRIAL_SABOTAGE', 'AAA', 'ST-02'), 0);
   assert.equal(api.getGuardCoverageForIncident('INDUSTRIAL_SABOTAGE', 'AAA'), 0);
+  assert.match(sourceText, /rows\[Math\.max\(0,Math\.floor\(num\(week\)\)\|\|0\)%rows\.length\]/, 'guard preview must use the recorded asset selection index');
+  assert.match(sourceText, /incident\.simulationWeek%candidates\.length/, 'the economy damage transaction must use the same incident-to-asset index');
+
   assert.equal(api.deployGuard(1, 1, 'industrial_guard', 'Imaginary factory', 'AAA', 'FAKE-99').reason, 'GUARD_ASSET_UNAVAILABLE');
   assert.equal(api.standDownGuard(deployed.deployment.id, 'AAA').ok, true);
 });
