@@ -170,7 +170,7 @@
     const SKIP_SUBTREE_SELECTOR = [
         'script', 'style', 'textarea', 'input', 'select', 'option', 'pre', 'code', 'svg',
         '[contenteditable="true"]', '.omega-icon-sprite', '.omega-ui-icon', '#debug-root',
-        '#render-engine-root', '#map', '.leaflet-tile-pane', '.leaflet-shadow-pane',
+        '.leaflet-tile-pane', '.leaflet-shadow-pane',
         '.leaflet-marker-pane', '.leaflet-overlay-pane', '.leaflet-control-container', '.leaflet-control'
     ].join(',');
     const MAX_ROOTS_PER_FRAME = 24;
