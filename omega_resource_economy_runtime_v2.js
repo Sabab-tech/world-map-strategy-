@@ -803,7 +803,7 @@
     return allocations;
   }
   function publishOffers(c){
-    var inv=invObj(c),prices=read(c,'trade.marketPrice')||{},offers=[],f=num(rules().market.offerFractionOfObservedInventory);if(f===null)f=0.25;f=Math.max(0,Math.min(1,f));
+    var inv=invObj(c),prices=read(c,'trade.marketPrice')||{},offers=[],f=num(rules().market.offerFractionOfObservedInventory);if(f===null)f=1;f=Math.max(0,Math.min(1,f));
     var min=num(rules().market.minOfferQuantity);if(min===null)min=1;
     Object.keys(inv).forEach(function(rid){
       var aggregate=Math.max(0,num(inv[rid])||0),q=marketFreeQuantity(c,rid,aggregate);if(q<min)return;
