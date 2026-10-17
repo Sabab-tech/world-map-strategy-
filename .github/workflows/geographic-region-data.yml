@@ -43,6 +43,7 @@ jobs:
       - name: JavaScript syntax gates
         run: |
           node --check omega_geographic_region_system_v1.js
+          node --check map-engine-1.js
           node --check test/geographic_region_data.test.mjs
       - name: Geographic roster and geometry contract
         run: node test/geographic_region_data.test.mjs
