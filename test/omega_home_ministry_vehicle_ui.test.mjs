@@ -7,7 +7,7 @@ const engine = readFileSync(new URL('../omega_home_ministry_engine_v1.js', impor
 const ui = readFileSync(new URL('../omega_home_ministry_ui_v1.js', import.meta.url), 'utf8');
 
 
-function makeUiHarness(vehicleInventory = null) {
+function makeUiHarness(vehicleInventory = null, recordedAssets = null) {
   const nodes = new Map();
   const events = new Map();
   let api = null;
@@ -53,7 +53,7 @@ function makeUiHarness(vehicleInventory = null) {
     }
   };
   const state = {
-    economy: { AAA: { treasury: 10000000, gdp: 1000000 } },
+    economy: { AAA: Object.assign({ treasury: 10000000, gdp: 1000000 }, Array.isArray(recordedAssets) ? { factories: recordedAssets } : {}) },
     population: { AAA: { population: 1000000 } },
     simulation: { turn: 0, simulationTimeMs: 0 }
   };
@@ -181,6 +181,26 @@ test('Guard Out screen dispatches a vehicle, reserves crew, and its stand-down b
   assert.equal(state.guardDeployments.length, 0);
   assert.equal(harness.api.getGuardCapacity('AAA').availableVehicles[1], 1);
   assert.equal(harness.api.getGuardCapacity('AAA').availableOfficers, 250);
+});
+
+test('Guard Out asset selector only targets recorded factories and passes the selected target to engine', () => {
+  const assets = [
+    { factoryId: 'AL-01', name: 'Aluminium Plant North Gate', type: 'factory', productionCapacity: 100, operationalStatus: 'ACTIVE' },
+    { factoryId: 'ST-02', name: 'Steelworks South', type: 'industrial factory', productionCapacity: 120, operationalStatus: 'ACTIVE' }
+  ];
+  const harness = makeUiHarness({ 1: 1 }, assets);
+  harness.ui.renderGuardOut(1);
+  const assetSelect = harness.nodes.get('home-police-guard-asset');
+  assert.ok(assetSelect.innerHTML.includes('AL-01') || assetSelect, 'the recorded target selector must exist');
+  assetSelect.value = 'AL-01';
+  harness.nodes.get('home-police-guard-mission').value = 'industrial_guard';
+  harness.nodes.get('home-police-guard-sector').value = 'Aluminium Plant North Gate';
+  harness.nodes.get('home-police-confirm-guard').onclick();
+  const unit = harness.api.getState('AAA').guardDeployments[0];
+  assert.equal(unit.assetId, 'AL-01');
+  assert.equal(unit.assetName, 'Aluminium Plant North Gate');
+  assert.equal(harness.api.getGuardCoverageForIncident('INDUSTRIAL_SABOTAGE', 'AAA', 'AL-01') > 0, true);
+  assert.equal(harness.api.getGuardCoverageForIncident('INDUSTRIAL_SABOTAGE', 'AAA', 'ST-02'), 0);
 });
 
 test('responsive UI keeps the guard and vehicle forms usable on narrow screens', () => {
