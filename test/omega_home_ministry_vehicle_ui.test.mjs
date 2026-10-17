@@ -13,6 +13,7 @@ function makeUiHarness(vehicleInventory = null, recordedAssets = null) {
   let api = null;
   const standDownButtons = [];
   const serviceButtons = new Map();
+  const recommendationButtons = new Map();
   function node(id = '') {
     const defaults = {
       'home-police-vehicle-amount': '1',
@@ -61,6 +62,20 @@ function makeUiHarness(vehicleInventory = null, recordedAssets = null) {
             serviceButtons.set(match[1], button);
           }
           return serviceButtons.get(match[1]);
+        });
+      }
+      if (selector === '[data-home-choose-vehicle]') {
+        const html = nodes.get('home-police-route-recommendations')?.innerHTML || '';
+        return [...html.matchAll(/data-home-choose-vehicle="([^"]+)" data-home-recommend-quantity="([^"]+)"/g)].map(match => {
+          const key = match[1];
+          if (!recommendationButtons.has(key)) {
+            const button = node('recommend-' + key);
+            button.getAttribute = attr => attr === 'data-home-choose-vehicle' ? match[1] : attr === 'data-home-recommend-quantity' ? match[2] : null;
+            recommendationButtons.set(key, button);
+          }
+          const button = recommendationButtons.get(key);
+          button.getAttribute = attr => attr === 'data-home-choose-vehicle' ? match[1] : attr === 'data-home-recommend-quantity' ? match[2] : null;
+          return button;
         });
       }
       return [];
@@ -220,6 +235,25 @@ test('Guard Out asset selector only targets recorded factories and passes the se
   assert.equal(unit.roadCondition, 'rough');
   assert.equal(harness.api.getGuardCoverageForIncident('INDUSTRIAL_SABOTAGE', 'AAA', 'AL-01') > 0, true);
   assert.equal(harness.api.getGuardCoverageForIncident('INDUSTRIAL_SABOTAGE', 'AAA', 'ST-02'), 0);
+});
+
+test('one-tap route recommendation selects the best owned vehicle for the chosen environment', () => {
+  const harness = makeUiHarness({ 1: 1, 7: 1 });
+  harness.api.getState('AAA');
+  harness.state.interior.AAA.police.unlockedVehicleLevel = 7;
+  harness.ui.renderGuardOut(1);
+  const environment = harness.nodes.get('home-police-guard-environment');
+  environment.value = 'border';
+  environment.onchange();
+  const html = harness.nodes.get('home-police-route-recommendations').innerHTML;
+  assert.match(html, /TerraGuard All-Terrain SUV/);
+  const choose = harness.context.document.querySelectorAll('[data-home-choose-vehicle]').find(button => button.getAttribute('data-home-choose-vehicle') === '7');
+  assert.ok(choose, 'the frontier recommendation should provide a one-tap choice');
+  choose.onclick();
+  assert.equal(harness.nodes.get('home-police-guard-vehicle').value, '7');
+  assert.equal(harness.nodes.get('home-police-guard-environment').value, 'border');
+  assert.equal(harness.nodes.get('home-police-guard-road').value, 'rough');
+  assert.equal(harness.nodes.get('home-police-confirm-guard').disabled, false);
 });
 
 test('Fleet maintenance service button invokes the real repair API and refreshes vehicle health', () => {
