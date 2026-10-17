@@ -254,6 +254,29 @@ test('guard-out refuses deployments without owned vehicles, enough officers, or 
   assert.equal(api.getGuardDeploymentPreview(1, 'urban_patrol', 101, 'AAA').reason, 'GUARD_QUANTITY_INVALID');
 });
 
+test('guard deployments bind to recorded factories and only protect their selected asset', () => {
+  const state = setup();
+  state.economy.AAA.factories = [
+    { factoryId: 'AL-01', name: 'Aluminium Plant North Gate', type: 'factory', productionCapacity: 100, operationalStatus: 'ACTIVE' },
+    { factoryId: 'ST-02', name: 'Steelworks South', type: 'industrial factory', productionCapacity: 120, operationalStatus: 'ACTIVE' },
+    { factoryId: 'OLD-03', name: 'Closed old plant', type: 'factory', productionCapacity: 0, operationalStatus: 'CLOSED' }
+  ];
+  api.getState('AAA');
+  state.interior.AAA.police.vehiclesOwned = { 1: 1 };
+  const assets = api.getGuardableAssets('AAA');
+  assert.deepEqual(assets.map(x => x.id), ['AL-01', 'ST-02']);
+  assert.equal(assets[0].name, 'Aluminium Plant North Gate');
+  const deployed = api.deployGuard(1, 1, 'industrial_guard', 'Aluminium Plant North Gate', 'AAA', 'AL-01');
+  assert.equal(deployed.ok, true, JSON.stringify(deployed));
+  assert.equal(deployed.deployment.assetId, 'AL-01');
+  assert.equal(deployed.deployment.assetName, 'Aluminium Plant North Gate');
+  assert.ok(api.getGuardCoverageForIncident('INDUSTRIAL_SABOTAGE', 'AAA', 'AL-01') > 0);
+  assert.equal(api.getGuardCoverageForIncident('INDUSTRIAL_SABOTAGE', 'AAA', 'ST-02'), 0);
+  assert.equal(api.getGuardCoverageForIncident('INDUSTRIAL_SABOTAGE', 'AAA'), 0);
+  assert.equal(api.deployGuard(1, 1, 'industrial_guard', 'Imaginary factory', 'AAA', 'FAKE-99').reason, 'GUARD_ASSET_UNAVAILABLE');
+  assert.equal(api.standDownGuard(deployed.deployment.id, 'AAA').ok, true);
+});
+
 test('purchases fail closed when treasury is unavailable and advice is non-mutating', () => {
   setup(null);
   assert.equal(api.recruitPolice(5, 'AAA').reason, 'TREASURY_DATA_UNAVAILABLE');
