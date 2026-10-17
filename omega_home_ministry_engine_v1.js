@@ -396,18 +396,31 @@
     return Math.round(clamp(coverage,0,35));
   }
   function guardCapacity(country){
-    const state=getState(country||currentCountry());
-    const ownedVehicles=Object.keys(state.vehiclesOwned||{}).reduce(function(out,key){out[key]=Math.max(0,Math.max(0,Math.floor(num(state.vehiclesOwned[key])||0))-guardVehicleCount(state,Number(key)));return out;},{});
-    return {policeCount:state.policeCount,deployedOfficers:guardOfficerCount(state),availableOfficers:Math.max(0,state.policeCount-guardOfficerCount(state)),ownedVehicles:clone(state.vehiclesOwned),deployedVehicles:Object.keys(state.vehiclesOwned||{}).reduce(function(out,key){out[key]=guardVehicleCount(state,Number(key));return out;},{}),availableVehicles:ownedVehicles};
+    const cid=normalizeCountry(country||currentCountry()),state=getState(cid),ownedVehicles={},deployedVehicles={},repairRequired={},maintenanceDue={};
+    VEHICLES.forEach(function(vehicle){
+      ownedVehicles[vehicle.level]=fleetUnitsForTier(state,vehicle.level).length;
+      deployedVehicles[vehicle.level]=guardVehicleCount(state,vehicle.level);
+      repairRequired[vehicle.level]=fleetUnitsForTier(state,vehicle.level).filter(function(unit){return unit.status==='REPAIR_REQUIRED';}).length;
+      maintenanceDue[vehicle.level]=fleetUnitsForTier(state,vehicle.level).filter(function(unit){return unit.status==='MAINTENANCE_DUE';}).length;
+    });
+    const availableVehicles={};
+    VEHICLES.forEach(function(vehicle){availableVehicles[vehicle.level]=availableFleetUnits(state,vehicle.level).length;});
+    return {policeCount:state.policeCount,deployedOfficers:guardOfficerCount(state),availableOfficers:Math.max(0,state.policeCount-guardOfficerCount(state)),ownedVehicles:ownedVehicles,deployedVehicles:deployedVehicles,availableVehicles:availableVehicles,repairRequired:repairRequired,maintenanceDue:maintenanceDue};
   }
-  function guardPreview(vehicleLevel,missionId,quantity,country){
-    const state=getState(country||currentCountry()),vehicle=VEHICLES.find(function(row){return row.level===Math.floor(num(vehicleLevel)||0);});
+  function guardPreview(vehicleLevel,missionId,quantity,country,environmentId,roadCondition){
+    const cid=normalizeCountry(country||currentCountry()),state=getState(cid),vehicle=VEHICLES.find(function(row){return row.level===Math.floor(num(vehicleLevel)||0);});
     const mission=GUARD_MISSIONS.find(function(row){return row.id===String(missionId||'');});
-    const requested=Math.floor(num(quantity)||0),capacity=guardCapacity(country||currentCountry()),availableVehicles=capacity.availableVehicles[vehicleLevel]||0,score=vehicle&&mission?guardEffectiveness(vehicle.level,mission.id,state):0;
-    const count=vehicle&&mission?requested:0;
-    return {ok:Boolean(vehicle&&mission&&count>=1&&count<=100&&count<=availableVehicles&&count*vehicle.capacity<=capacity.availableOfficers),vehicle:vehicle?clone(vehicle):null,mission:mission?clone(mission):null,quantity:count,availableVehicles:availableVehicles,requiredOfficers:vehicle&&count>0?count*vehicle.capacity:0,availableOfficers:capacity.availableOfficers,effectiveness:score,estimatedCoverage:vehicle&&mission?Math.round(clamp(score*Math.max(0,count)/7,0,35)):0,reason:!vehicle?'VEHICLE_TIER_INVALID':!mission?'GUARD_MISSION_INVALID':count<1||count>100?'GUARD_QUANTITY_INVALID':count>availableVehicles?'INSUFFICIENT_UNASSIGNED_VEHICLES':count*vehicle.capacity>capacity.availableOfficers?'INSUFFICIENT_UNASSIGNED_OFFICERS':null};
+    const requested=Math.floor(num(quantity)||0),capacity=guardCapacity(cid),availableVehicles=capacity.availableVehicles[vehicleLevel]||0,count=vehicle&&mission?requested:0;
+    const environment=vehicle?vehicleUseAssessment(vehicle.level,environmentId,roadCondition,cid):null;
+    const candidateUnits=vehicle?availableFleetUnits(state,vehicle.level).slice().sort(function(a,b){return(Number(b.condition)||0)-(Number(a.condition)||0);}).slice(0,Math.max(0,count)):[];
+    const health=candidateUnits.length?candidateUnits.reduce(function(total,unit){return total+Number(unit.condition||0);},0)/candidateUnits.length:100;
+    const baseScore=vehicle&&mission?guardEffectiveness(vehicle.level,mission.id,state):0;
+    const score=vehicle&&mission&&environment?Math.round(clamp(baseScore*(0.55+0.0045*environment.fit)*(0.35+0.0065*health),0,100)):0;
+    const usePenalty=environment&&environment.fit<60;
+    const wearForecast=environment?Number((environment.wearPerDay*30).toFixed(1)):0;
+    return {ok:Boolean(vehicle&&mission&&environment&&count>=1&&count<=100&&count<=availableVehicles&&count*vehicle.capacity<=capacity.availableOfficers),vehicle:vehicle?clone(vehicle):null,mission:mission?clone(mission):null,quantity:count,availableVehicles:availableVehicles,requiredOfficers:vehicle&&count>0?count*vehicle.capacity:0,availableOfficers:capacity.availableOfficers,effectiveness:score,baseEffectiveness:baseScore,estimatedCoverage:vehicle&&mission?Math.round(clamp(score*Math.max(0,count)/7,0,35)):0,environment:environment,estimatedConditionLoss30Days:wearForecast,estimatedMaintenanceExposure:environment?environment.damageRisk:null,reason:!vehicle?'VEHICLE_TIER_INVALID':!mission?'GUARD_MISSION_INVALID':count<1||count>100?'GUARD_QUANTITY_INVALID':count>availableVehicles?'INSUFFICIENT_UNASSIGNED_VEHICLES':count*vehicle.capacity>capacity.availableOfficers?'INSUFFICIENT_UNASSIGNED_OFFICERS':null};
   }
-  function deployGuard(vehicleLevel,quantity,missionId,sector,country,assetId){
+  function deployGuard(vehicleLevel,quantity,missionId,sector,country,assetId,environmentId,roadCondition){
     const level=Math.floor(num(vehicleLevel)||0),qty=Math.floor(num(quantity)||0),cid=normalizeCountry(country||currentCountry());
     const vehicle=VEHICLES.find(function(row){return row.level===level;}),mission=GUARD_MISSIONS.find(function(row){return row.id===String(missionId||'');});
     if(!vehicle)return{ok:false,reason:'VEHICLE_TIER_INVALID'};
@@ -418,15 +431,22 @@
     const requestedAssetId=String(assetId||'').trim();
     const asset=requestedAssetId?guardableAssets(cid).find(function(row){return row.id===requestedAssetId;}):null;
     if(requestedAssetId&&!asset)return{ok:false,reason:'GUARD_ASSET_UNAVAILABLE',message:'The chosen guard target is not a currently recorded, eligible country asset.'};
-    const preview=guardPreview(level,mission.id,qty,cid);
-    if(!preview.ok)return{ok:false,reason:preview.reason,availableVehicles:preview.availableVehicles,availableOfficers:preview.availableOfficers,requiredOfficers:preview.requiredOfficers};
+    const environment=environmentSpec(environmentId),road=roadSpec(roadCondition);
+    const preview=guardPreview(level,mission.id,qty,cid,environment.id,road.id);
+    if(!preview.ok)return{ok:false,reason:preview.reason,availableVehicles:preview.availableVehicles,availableOfficers:preview.availableOfficers,requiredOfficers:preview.requiredOfficers,environmentAssessment:preview.environment};
+    if(preview.environment.fit<20)return{ok:false,reason:'VEHICLE_ROUTE_MISMATCH',message:'This vehicle is too poorly matched to the selected environment. Choose a better platform or accept a different route.',environmentAssessment:preview.environment};
     const location=String(sector||asset&&asset.name||'General Sector').trim().slice(0,80)||'General Sector';
     return mutation(cid,0,'POLICE_GUARD_DEPLOYMENT',function(next){
+      const fleetCandidates=availableFleetUnits(next,level).slice().sort(function(a,b){return(Number(b.condition)||0)-(Number(a.condition)||0);});
+      const picked=fleetCandidates.slice(0,qty);
+      if(picked.length!==qty)return{ok:false,reason:'FLEET_CHANGED_RETRY'};
       const id='GUARD-'+cid+'-'+String(next.nextGuardDeploymentId||1);
       next.nextGuardDeploymentId=Math.max(1,Math.floor(num(next.nextGuardDeploymentId)||1))+1;
-      const deployment={id:id,vehicleLevel:level,quantity:qty,missionId:mission.id,sector:location,assetId:asset?asset.id:null,assetName:asset?asset.name:null,assetCategory:asset?asset.category:null,officers:qty*vehicle.capacity,deployedAtTurn:turn(),deployedAtSimulationMs:simulationTimeMs(),effectiveness:guardEffectiveness(level,mission.id,next),status:'ACTIVE'};
+      const deployment={id:id,vehicleLevel:level,quantity:qty,vehicleIds:picked.map(function(unit){return unit.id;}),missionId:mission.id,sector:location,assetId:asset?asset.id:null,assetName:asset?asset.name:null,assetCategory:asset?asset.category:null,environmentId:environment.id,roadCondition:road.id,environmentFit:preview.environment.fit,predictedWearPerDay:preview.environment.wearPerDay,officers:qty*vehicle.capacity,deployedAtTurn:turn(),deployedAtSimulationMs:simulationTimeMs(),effectiveness:0,status:'ACTIVE'};
+      picked.forEach(function(unit){unit.status='DEPLOYED';unit.lastEnvironment=environment.id;unit.lastRoadCondition=road.id;});
       next.guardDeployments.push(deployment);
-      return {deployment:clone(deployment),vehicle:vehicle.name,mission:mission.name,guardAsset:asset?clone(asset):null,estimatedEffectiveness:deployment.effectiveness,assignedOfficers:deployment.officers,availableVehicleCount:guardCapacity(cid).availableVehicles[level]-qty};
+      deployment.effectiveness=deploymentEffectiveness(next,deployment,cid);
+      return {deployment:clone(deployment),vehicle:vehicle.name,mission:mission.name,guardAsset:asset?clone(asset):null,environmentAssessment:clone(preview.environment),estimatedEffectiveness:deployment.effectiveness,assignedOfficers:deployment.officers,availableVehicleCount:guardCapacity(cid).availableVehicles[level]-qty};
     });
   }
   function standDownGuard(deploymentId,country){
@@ -438,7 +458,8 @@
       const index=next.guardDeployments.findIndex(function(row){return row.id===id;});
       if(index<0)return{ok:false,reason:'GUARD_DEPLOYMENT_NOT_FOUND'};
       const removed=next.guardDeployments.splice(index,1)[0];
-      return {deployment:clone(removed),releasedOfficers:removed.officers,releasedVehicles:removed.quantity};
+      (removed.vehicleIds||[]).forEach(function(vehicleId){const unit=next.vehicleFleet.find(function(row){return row.id===vehicleId;});if(unit&&unit.status==='DEPLOYED')unit.status=fleetUnitStatus(unit);});
+      return {deployment:clone(removed),releasedOfficers:removed.officers,releasedVehicles:removed.quantity,releasedVehicleIds:clone(removed.vehicleIds||[])};
     });
   }
   function recruitPolice(amount,country){
