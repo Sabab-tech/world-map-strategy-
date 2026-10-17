@@ -391,6 +391,109 @@
     g.document.getElementById('home-police-vehicles-back').onclick = () => this.renderUpgradeMenu();
   };
 
+  ui.renderGuardOut = function (preferredVehicleLevel) {
+    injectStyles();
+    const body = bodyNode(), e = engine();
+    if (!body || !e) return;
+    const state = e.getState(), capacity = e.getGuardCapacity();
+    const availableTiers = e.VEHICLES.filter(v => v.level <= state.unlockedVehicleLevel && (Number(capacity.availableVehicles[v.level]) || 0) > 0);
+    const selected = availableTiers.find(v => v.level === Number(preferredVehicleLevel)) || availableTiers[0] || null;
+    const vehicleOptions = availableTiers.length
+      ? availableTiers.map(v => '<option value="' + v.level + '"' + (selected && selected.level === v.level ? ' selected' : '') + '>TIER ' + v.level + ' · ' + esc(v.name) + ' · free ' + (Number(capacity.availableVehicles[v.level]) || 0) + '</option>').join('')
+      : '<option value="">No unassigned vehicles available</option>';
+    const missionOptions = e.GUARD_MISSIONS.map(m => '<option value="' + m.id + '">' + m.emoji + ' ' + esc(m.name) + '</option>').join('');
+    const activeDeployments = (state.guardDeployments || []).slice().reverse();
+    const deploymentCards = activeDeployments.length ? activeDeployments.map(unit => {
+      const vehicle = e.VEHICLES.find(v => v.level === Number(unit.vehicleLevel)), mission = e.GUARD_MISSIONS.find(m => m.id === unit.missionId);
+      if (!vehicle || !mission) return '';
+      const preview = e.getGuardDeploymentPreview(vehicle.level, mission.id, unit.quantity);
+      const score = Number(preview.effectiveness) || Number(unit.effectiveness) || 0;
+      return '<article class="home-police-deployment-card">' +
+        vehicleSvg(vehicle, 'guard-' + unit.id) +
+        '<span class="home-police-tag home-police-tag-green">DEPLOYED · ' + esc(mission.id.replace(/_/g, ' ').toUpperCase()) + '</span>' +
+        '<h3>' + esc(vehicle.name) + ' × ' + Number(unit.quantity) + '</h3>' +
+        '<p class="home-police-note">' + esc(mission.name) + ' · ' + esc(unit.sector || 'General Sector') + '</p>' +
+        '<div class="home-police-score-line"><span>Assigned officers</span><strong>' + Number(unit.officers).toLocaleString() + '</strong></div>' +
+        '<div class="home-police-score-line"><span>Mission effectiveness</span><strong>' + score + ' / 100</strong></div>' +
+        '<div class="home-police-progress"><div class="home-police-progress-fill" style="width:' + score + '%"></div></div>' +
+        '<p class="home-police-note">' + esc(mission.description) + '</p>' +
+        '<button type="button" class="home-police-btn home-police-btn-red" data-home-standdown="' + esc(unit.id) + '">↩ STAND DOWN · RETURN TO POOL</button>' +
+      '</article>';
+    }).join('') : '<div class="home-police-alert">No active guard-out assignments. Buy and receive a vehicle first, then assign it to a mission.</div>';
+    body.innerHTML =
+      '<div class="home-police-shell">' +
+        '<header class="home-police-head"><div class="home-police-orb">🚧</div><h1 class="home-police-title">GUARD OUT · DEPLOYMENT CONTROL</h1><p class="home-police-subtitle">Dispatch owned police vehicles to specific guard missions. Fleet and staff are reserved while on duty and returned to the pool when stood down.</p></header>' +
+        '<div class="home-police-kpis">' +
+          '<div class="home-police-kpi"><strong>' + Number(capacity.availableOfficers).toLocaleString() + '</strong><span>Unassigned officers</span></div>' +
+          '<div class="home-police-kpi"><strong>' + activeDeployments.length + '</strong><span>Active guard assignments</span></div>' +
+          '<div class="home-police-kpi"><strong>' + (Number(capacity.availableVehicles[selected ? selected.level : 0]) || 0) + '</strong><span>Available selected-tier vehicles</span></div>' +
+        '</div>' +
+        '<div class="home-police-panel">' +
+          '<div class="home-police-section-title">1 · Deployment order</div>' +
+          '<label class="home-police-label" for="home-police-guard-vehicle">Select owned and unassigned vehicle</label>' +
+          '<select id="home-police-guard-vehicle" class="home-police-field" ' + (availableTiers.length ? '' : 'disabled') + '>' + vehicleOptions + '</select>' +
+          (selected ? '<div class="home-police-detail-top">' + vehicleSvg(selected, 'guard-preview') + '<p class="home-police-note">' + esc(selected.specialty) + ' · capacity ' + selected.capacity + ' officers per vehicle</p></div>' : '<div class="home-police-alert">No dispatchable vehicles found. Open Fleet & Facility Ascension to order the unlocked tier and let its 180-day delivery finish.</div>') +
+          '<label class="home-police-label" for="home-police-guard-mission">Guard mission</label><select id="home-police-guard-mission" class="home-police-field">' + missionOptions + '</select>' +
+          '<div class="home-police-form-row"><div class="home-police-field-wrap"><label class="home-police-label" for="home-police-guard-quantity">Vehicles to deploy</label><input id="home-police-guard-quantity" class="home-police-field" type="number" min="1" max="' + (selected ? Number(capacity.availableVehicles[selected.level]) || 1 : 1) + '" step="1" value="1" inputmode="numeric" ' + (selected ? '' : 'disabled') + '></div>' +
+          '<div class="home-police-cost"><strong id="home-police-guard-officers">' + (selected ? selected.capacity : 0) + '</strong><span>Officers assigned</span></div></div>' +
+          '<label class="home-police-label" for="home-police-guard-sector">Area / sector assignment</label><input id="home-police-guard-sector" class="home-police-field" type="text" maxlength="80" placeholder="e.g. Aluminium Plant North Gate or Sector 4" value="General Sector" ' + (selected ? '' : 'disabled') + '>' +
+          '<div class="home-police-vehicle-brief">' +
+            '<div class="home-police-brief-card"><span class="home-police-tag home-police-tag-green">MISSION FIT</span><strong id="home-police-guard-effectiveness">0 / 100</strong><span id="home-police-guard-fit-note">Select a vehicle and mission.</span></div>' +
+            '<div class="home-police-brief-card"><span class="home-police-tag home-police-tag-gold">AVAILABILITY CHECK</span><strong id="home-police-guard-availability">Checking…</strong><span id="home-police-guard-availability-note">Vehicles and officers are reserved at dispatch.</span></div>' +
+          '</div>' +
+          '<div id="home-police-guard-error" class="home-police-alert" aria-live="polite">Choose an available owned vehicle and a mission. Deployment itself has no procurement fee; vehicle upkeep continues while the vehicle remains in the fleet.</div>' +
+          '<div class="home-police-actions"><button id="home-police-confirm-guard" class="home-police-btn home-police-btn-green" ' + (selected ? '' : 'disabled') + '>🚧 CONFIRM GUARD DEPLOYMENT</button><button id="home-police-guard-refresh" class="home-police-btn home-police-btn-plain">↻ REFRESH CAPACITY</button></div>' +
+        '</div>' +
+        '<div class="home-police-section-title">2 · Active guard-out assignments</div>' +
+        '<div id="home-police-active-guards" class="home-police-deployment-list">' + deploymentCards + '</div>' +
+        '<p class="home-police-note">Mission effectiveness is calculated from the selected vehicle’s individual capability ratings, training quality, police facilities and completed tactics. Guard missions affect modeled incident frequency and detection. They do not guarantee zero incidents.</p>' +
+        backButton('home-police-guard-back', '← BACK TO POLICE COMMAND') +
+      '</div>';
+    const vehicleSelect = g.document.getElementById('home-police-guard-vehicle'), missionSelect = g.document.getElementById('home-police-guard-mission');
+    const quantityInput = g.document.getElementById('home-police-guard-quantity'), sectorInput = g.document.getElementById('home-police-guard-sector');
+    const officerLabel = g.document.getElementById('home-police-guard-officers'), effectLabel = g.document.getElementById('home-police-guard-effectiveness');
+    const fitNote = g.document.getElementById('home-police-guard-fit-note'), availabilityLabel = g.document.getElementById('home-police-guard-availability');
+    const availabilityNote = g.document.getElementById('home-police-guard-availability-note'), errorBox = g.document.getElementById('home-police-guard-error');
+    const deployButton = g.document.getElementById('home-police-confirm-guard');
+    const refresh = () => {
+      const level = Math.floor(Number(vehicleSelect.value) || 0), missionId = missionSelect.value, quantity = Math.floor(Number(quantityInput.value) || 0);
+      const v = e.VEHICLES.find(row => row.level === level), preview = e.getGuardDeploymentPreview(level, missionId, quantity);
+      officerLabel.textContent = String(preview.requiredOfficers || 0);
+      effectLabel.textContent = String(preview.effectiveness || 0) + ' / 100';
+      fitNote.textContent = preview.mission && v ? preview.mission.name + ' · ' + preview.effectiveness + '% based on this vehicle and current training.' : 'Select a vehicle and mission.';
+      availabilityLabel.textContent = preview.availableVehicles + ' vehicle(s) free';
+      availabilityNote.textContent = preview.availableOfficers + ' unassigned officer(s) · ' + (v ? v.capacity + ' crew per vehicle' : 'no vehicle');
+      quantityInput.max = String(Math.max(1, preview.availableVehicles || 1));
+      deployButton.disabled = !preview.ok;
+      if (!v) errorBox.textContent = 'No owned, unassigned vehicle is available. Purchase and receive one before deployment.';
+      else if (preview.reason === 'INSUFFICIENT_UNASSIGNED_VEHICLES') errorBox.textContent = 'Not enough vehicles are free. Available for this tier: ' + preview.availableVehicles + '. Reduce the order quantity or stand down another assignment.';
+      else if (preview.reason === 'INSUFFICIENT_UNASSIGNED_OFFICERS') errorBox.textContent = 'Not enough free officers for this assignment. ' + preview.availableOfficers + ' are available, but ' + preview.requiredOfficers + ' are required.';
+      else if (preview.reason) errorBox.textContent = 'Deployment is blocked: ' + preview.reason.replace(/_/g, ' ').toLowerCase() + '.';
+      else errorBox.textContent = 'Ready to deploy ' + quantity + ' × ' + v.name + ' to ' + (preview.mission ? preview.mission.name : 'the selected mission') + '. Estimated mission effectiveness: ' + preview.effectiveness + ' / 100.';
+    };
+    vehicleSelect.onchange = refresh;
+    missionSelect.onchange = refresh;
+    quantityInput.oninput = refresh;
+    g.document.getElementById('home-police-guard-refresh').onclick = () => this.renderGuardOut(Number(vehicleSelect.value) || undefined);
+    deployButton.onclick = () => {
+      const level = Math.floor(Number(vehicleSelect.value) || 0), quantity = Math.floor(Number(quantityInput.value) || 0), missionId = missionSelect.value;
+      const result = e.deployGuard(level, quantity, missionId, sectorInput.value);
+      if (!result.ok) { report(result); this.renderGuardOut(level); return; }
+      report(result, 'GUARD DEPLOYMENT COMMITTED', result.deployment.quantity + ' × ' + result.vehicle + ' assigned to ' + result.mission + ' at ' + result.deployment.sector + '. ' + result.assignedOfficers + ' officers reserved; current mission rating ' + result.estimatedEffectiveness + ' / 100.');
+      this.renderGuardOut(level);
+    };
+    Array.from(g.document.querySelectorAll('[data-home-standdown]')).forEach(button => {
+      button.onclick = () => {
+        const id = button.getAttribute('data-home-standdown'), result = e.standDownGuard(id);
+        if (!result.ok) { report(result); return; }
+        report(result, 'GUARD UNIT STOOD DOWN', result.releasedVehicles + ' vehicle(s) and ' + result.releasedOfficers + ' officer(s) have returned to the available pool.');
+        this.renderGuardOut();
+      };
+    });
+    g.document.getElementById('home-police-guard-back').onclick = () => this.openPoliceCommand();
+    refresh();
+  };
+
   ui.renderFacilitiesPanel = function (selectedId, showBuildForm) {
     injectStyles();
     const body = bodyNode(), e = engine();
