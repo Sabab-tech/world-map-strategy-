@@ -211,6 +211,7 @@ test('resource economy v2 completes mine-backed processing, domestic settlement 
   assert.ok(worldState.trade.BGD.offerBook.every(x=>x.source==='OMEGA_RESOURCE_ECON_AUTO_OFFER'));
   const observedIronOffer=worldState.trade.BGD.offerBook.find(x=>x.resourceId==='iron_ore');
   assert.ok(observedIronOffer&&observedIronOffer.quantity>0);
+  assert.equal(observedIronOffer.quantity,50,'all unreserved warehouse-backed stock is offered when the configured fraction is 1');
   assert.equal(observedIronOffer.priceAuthority,'OBSERVED_MARKET_CLEARING_HISTORY');
   assert.equal(observedIronOffer.currencyCode,'USD');
   assert.equal(worldState.trade.BGD.offerBook.some(x=>x.resourceId==='iron_intermediate'),false,
