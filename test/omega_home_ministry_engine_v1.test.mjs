@@ -26,6 +26,7 @@ test('15 fixed vehicle tiers have unique names, emoji and progressive stats', ()
   assert.equal(new Set(api.VEHICLES.map(v => v.name)).size, 15);
   assert.equal(new Set(api.VEHICLES.map(v => v.emoji)).size, 15);
   assert.deepEqual(api.VEHICLES.map(v => v.level), Array.from({ length: 15 }, (_, i) => i + 1));
+  assert.ok(api.VEHICLES.every(v => v.enduranceHours > 0 && v.rangeKm > 0 && v.maintenancePerDay > 0));
 });
 
 test('recruiting charges upfront cost, increases daily payroll and firing does not charge money', () => {
@@ -115,6 +116,19 @@ test('agents can be assigned to an existing rival and reports expose only record
   assert.equal(reports[0].targetCountryId, 'BBB');
   assert.ok(reports[0].observations.some(item => item.field === 'economy.gdp' && item.value === 50000000));
   assert.ok(reports[0].observations.every(item => item.value !== null && Number.isFinite(item.value)));
+});
+
+test('missing treasury does not mark a due payroll day as paid', () => {
+  const state = setup(null);
+  api.getState('AAA');
+  state.simulation.simulationTimeMs = DAY;
+  state.simulation.turn = 24;
+  api.processTurn({ detail: { payload: { countryId: 'AAA', turn: 24 } } });
+  assert.equal(api.getState('AAA').lastPayrollDay, 0);
+  state.economy.AAA.treasury = 1000000;
+  api.processTurn({ detail: { payload: { countryId: 'AAA', turn: 24 } } });
+  assert.equal(api.getState('AAA').lastPayrollDay, 1);
+  assert.equal(state.economy.AAA.treasury, 1000000 - 250 * api.POLICE_SALARY_PER_DAY);
 });
 
 test('purchases fail closed when treasury is unavailable and advice is non-mutating', () => {
