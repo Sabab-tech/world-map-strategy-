@@ -378,6 +378,24 @@ test('poorly matched and harsh routes have a higher wear forecast than well matc
   assert.ok(harsh.damageRisk > suited.damageRisk);
 });
 
+test('strategic recommendations prefer a city vehicle in traffic and a border platform on rough frontier routes', () => {
+  const state = setup();
+  api.getState('AAA');
+  state.interior.AAA.police.vehiclesOwned = { 1: 1, 7: 1, 10: 1 };
+  state.interior.AAA.police.unlockedVehicleLevel = 10;
+  const urban = api.getVehicleRecommendations('urban_patrol', 'city', 'congested', 1, 'AAA');
+  assert.ok(urban.length >= 2);
+  assert.equal(urban[0].vehicleLevel, 1, JSON.stringify(urban));
+  assert.ok(urban[0].environmentFit > urban[1].environmentFit);
+  assert.ok(urban[0].strategicScore > urban[1].strategicScore);
+
+  const frontier = api.getVehicleRecommendations('border_interdiction', 'border', 'rough', 1, 'AAA');
+  assert.ok(frontier.length >= 1);
+  assert.equal(frontier[0].vehicleLevel, 7, JSON.stringify(frontier));
+  assert.ok(frontier[0].environmentFit >= 65);
+  assert.ok(frontier[0].estimatedWear30Days < 10);
+});
+
 test('purchases fail closed when treasury is unavailable and advice is non-mutating', () => {
   setup(null);
   assert.equal(api.recruitPolice(5, 'AAA').reason, 'TREASURY_DATA_UNAVAILABLE');
