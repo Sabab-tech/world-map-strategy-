@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
+const sourceText = readFileSync(new URL('../omega_home_ministry_engine_v1.js', import.meta.url), 'utf8');
 const events = new Map();
 globalThis.window = globalThis;
 globalThis.CustomEvent = class CustomEvent { constructor(type, init = {}) { this.type = type; this.detail = init.detail || null; } };
@@ -139,6 +141,66 @@ test('missing treasury does not mark a due payroll day as paid', () => {
   api.processTurn({ detail: { payload: { countryId: 'AAA', turn: 24 } } });
   assert.equal(api.getState('AAA').lastPayrollDay, 1);
   assert.equal(state.economy.AAA.treasury, 1000000 - 250 * api.POLICE_SALARY_PER_DAY);
+});
+
+test('finance spending uses the finance-owned transaction when OMEGA interop is available', () => {
+  const state = {
+    economy: { AAA: { treasury: 987654 } },
+    finance: { AAA: { available: 100000, reserves: 200000 } },
+    population: { AAA: { population: 1000000 } },
+    simulation: { turn: 0, simulationTimeMs: 0 }
+  };
+  const handlers = new Map();
+  const mesh = {
+    registerCommandHandler(commandType, owner, handler) {
+      handlers.set(commandType, { owner, handler });
+    },
+    dispatchCommand(source, action, country, payload = {}, options = {}) {
+      const type = options.commandType || action;
+      const registered = handlers.get(type);
+      if (!registered) return { status: 'UNHANDLED' };
+      const staged = {};
+      const transaction = {
+        get(path) {
+          if (path === 'finance.available') return state.finance[country]?.available;
+          if (path === 'economy') return state.economy[country];
+          if (path === 'interior.police') return state.interior?.[country]?.police;
+          return undefined;
+        },
+        set(path, value) { staged[path] = value; }
+      };
+      const result = registered.handler({ countryId: country, payload, simulationTurn: options.turn || 0 }, {
+        countryId: country, simulationTurn: options.turn || 0, stateTransaction: transaction
+      });
+      if (result && result.accepted === false) return { status: 'FAILED', result };
+      for (const [path, value] of Object.entries(staged)) {
+        if (path === 'finance.available') state.finance[country].available = value;
+        else if (path === 'interior.police') {
+          state.interior ||= {};
+          state.interior[country] ||= {};
+          state.interior[country].police = value;
+        } else if (path === 'economy') state.economy[country] = value;
+      }
+      return { status: 'APPLIED', result };
+    }
+  };
+  const world = {
+    Game: { state, countryId: 'AAA' },
+    CountryIOS: { activeCountry: 'AAA' },
+    Omega: { MinistryInteroperability: mesh },
+    CustomEvent: class CustomEvent { constructor(type, init = {}) { this.type = type; this.detail = init.detail || null; } },
+    addEventListener() {},
+    dispatchEvent() { return true; },
+    updateGlobalResourceHUD() {}
+  };
+  world.window = world;
+  new Function('window', sourceText)(world);
+  const result = world.OmegaHomeMinistryEngine.recruitPolice(1, 'AAA');
+  assert.equal(result.ok, true);
+  assert.equal(state.finance.AAA.available, 97500);
+  assert.equal(state.economy.AAA.treasury, 987654);
+  assert.equal(handlers.get('HOME_POLICE_FINANCE_CASH_ADJUST').owner, 'finance');
+  assert.equal(state.interior.AAA.police.policeCount, 251);
 });
 
 test('purchases fail closed when treasury is unavailable and advice is non-mutating', () => {
