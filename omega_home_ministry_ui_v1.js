@@ -160,7 +160,7 @@
           '<div class="home-police-kpi"><strong>' + Number(s.specialAgents).toLocaleString() + '</strong><span>Intelligence agents</span></div>' +
           '<div class="home-police-kpi"><strong>' + Math.round(s.sabotageRisk) + '%</strong><span>Threat exposure</span></div>' +
         '</div>' +
-        '<div class="home-police-alert">' + (t.available ? 'Verified Treasury balance: <strong>' + money(e, t.balance) + '</strong>. Staffing, procurement and daily payroll use the active country balance.' : 'Treasury is currently unavailable. Costly orders remain blocked until the game provides a real country treasury.') + '</div>' +
+        '<div class="home-police-alert">' + (t.available ? 'Verified ' + (t.source === 'FINANCE_AVAILABLE' ? 'Finance ledger' : 'economy treasury field') + ' balance: <strong>' + money(e, t.balance) + '</strong>. Staffing, procurement and operating costs use the active country balance.' : 'Treasury / finance cash balance is unavailable. Costly orders remain blocked until the game provides an authoritative country balance.') + '</div>' +
         '<div class="home-police-section-title">Personnel & capability</div>' +
         '<div class="home-police-actions">' +
           '<button id="btn-recruit-police" class="home-police-btn home-police-btn-green">👮 1.1 · RECRUIT / FIRE PERSONNEL</button>' +
