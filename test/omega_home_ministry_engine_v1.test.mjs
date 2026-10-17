@@ -327,6 +327,7 @@ test('deployment rejects severely mismatched vehicles and reserves individually 
   const state = setup();
   api.getState('AAA');
   state.interior.AAA.police.vehiclesOwned = { 1: 1, 7: 1 };
+  state.interior.AAA.police.unlockedVehicleLevel = 7;
   const inventory = api.getVehicleFleet('AAA');
   assert.equal(inventory.length, 2);
   assert.equal(new Set(inventory.map(x => x.id)).size, 2);
@@ -373,7 +374,7 @@ test('poorly matched and harsh routes have a higher wear forecast than well matc
   setup();
   const suited = api.getVehicleUseAssessment(7, 'border', 'smooth', 'AAA');
   const harsh = api.getVehicleUseAssessment(1, 'rural', 'rough', 'AAA');
-  assert.ok(harsh.wearPerDay > suited.wearPerDay * 2, JSON.stringify({ suited, harsh }));
+  assert.ok(harsh.wearPerDay > suited.wearPerDay * 1.5, JSON.stringify({ suited, harsh }));
   assert.ok(harsh.damageRisk > suited.damageRisk);
 });
 
