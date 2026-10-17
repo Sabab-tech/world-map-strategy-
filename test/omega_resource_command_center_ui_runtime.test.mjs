@@ -140,7 +140,8 @@ globalThis.Omega.ResourceSystemHardening = {
 globalThis.OmegaGlobalMarket = {
   rebuild() { return { iron_ore: { orders: { bids: [], asks: [] } } }; },
   quote(resourceId) { return { resourceId, status: 'NO_CROSS', priceDiscovery: 'REFERENCE_ONLY', referencePrice: 100, referenceLiquidity: true, matches: [], matchedQuantity: 0 }; },
-  diagnostics() { return { resourceMarkets: 2 }; }
+  diagnostics() { return { resourceMarkets: 2 }; },
+  listings() { return [{ countryId: 'SAU', resourceId: 'crude_oil', quantity: 500, unit: 'BARREL', unitPrice: 75, currencyCode: 'SAR', priceUsd: null, status: 'AWAITING_FX', source: 'OMEGA_RESOURCE_ECON_AUTO_OFFER', priceAuthority: 'CATALOG_REFERENCE_PRICE', simulationTurn: 2, sourceBatchIds: ['BATCH-SAU-OIL'], sourceSiteIds: ['SAU-OIL-1'] }]; }
 };
 globalThis.OmegaGlobalTrade = { diagnostics() { return {}; }, createRequest() { return { accepted: true, status: 'SENT' }; } };
 globalThis.OmegaResourceAuthoritativeAdapter = { install() { return true; } };
