@@ -109,6 +109,7 @@ test('custom vehicle artwork uses vector police signals and accessible names, no
   assert.match(ui, /aria-label="'\s*\+\s*esc\(vehicle\.name\)\s*\+\s*' police vehicle illustration"/);
   assert.match(ui, /<text x="160" y="107"[^>]*>POLICE<\/text>/);
   assert.match(ui, /police-body-/);
+  assert.ok(ui.includes("replace(/[^A-Za-z0-9_-]/g, '-').slice(0, 80)"), 'SVG IDs must be sanitized before entering markup');
   assert.match(ui, /<rect x="' \+ art\.siren\[0\]/);
   assert.doesNotMatch(ui, /https?:\/\/[^'"]+\.(png|jpe?g|webp|svg)/i);
 });
