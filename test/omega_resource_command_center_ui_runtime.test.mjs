@@ -149,8 +149,8 @@ globalThis.OmegaCognitiveOS = {};
 await import('../omega_resource_command_center_ui_v1.js');
 const ui = globalThis.OmegaResourceCommandCenterUI;
 
-test('all sixteen panels render without runtime exceptions', () => {
-  const panels = ['matrix','ontology','reserves','deposits','extraction','processing','inventory','logistics','industrial','market','trade','value','cascade','cognitive','power','environment'];
+test('all seventeen panels render without runtime exceptions', () => {
+  const panels = ['matrix','ontology','reserves','deposits','extraction','processing','inventory','logistics','industrial','market','trade','value','cascade','cognitive','power','environment','offers'];
   for (const panel of panels) {
     ui.open('BGD', panel);
     assert.equal(ui.getState().panel, panel);
@@ -159,6 +159,25 @@ test('all sixteen panels render without runtime exceptions', () => {
     assert.ok(modal.innerHTML.includes('value="' + panel + '" selected'), panel + ' should be the sole selected section in the compact navigator');
     assert.equal((modal.innerHTML.match(/<button[^>]*data-panel=/g) || []).length, 0, 'the panel must not duplicate all sixteen points as visible buttons');
   }
+});
+
+test('live country offers display seller, quantity, asking price and FX status from runtime data', () => {
+  ui.open('BGD', 'offers');
+  const modal = elements.get('gsrsk-intelligence-modal');
+  assert.match(modal.innerHTML, /Live country offers/);
+  assert.match(modal.innerHTML, /SAU/);
+  assert.match(modal.innerHTML, /crude_oil/);
+  assert.match(modal.innerHTML, /500/);
+  assert.match(modal.innerHTML, /75/);
+  assert.match(modal.innerHTML, /WAITING FOR FX/);
+  assert.match(modal.innerHTML, /Batch \/ site lineage/);
+});
+
+test('the commodity market has a visible route to the country offers tab', () => {
+  ui.open('BGD', 'market');
+  const modal = elements.get('gsrsk-intelligence-modal');
+  assert.match(modal.innerHTML, /Open live country offers/);
+  assert.match(modal.innerHTML, /data-action="open-offers"/);
 });
 
 test('all sixteen legacy card buttons route to their own panel, including filtered cards', () => {
