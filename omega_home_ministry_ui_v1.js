@@ -321,50 +321,69 @@
     const body = bodyNode(), e = engine();
     if (!body || !e) return;
     const s = e.getState(), selected = e.VEHICLES.find(v => v.level === Number(selectedLevel)) || e.VEHICLES.find(v => v.level === s.unlockedVehicleLevel) || e.VEHICLES[0];
-    const order = s.pendingVehicleOrder, owned = Number(s.vehiclesOwned[selected.level]) || 0;
+    const order = s.pendingVehicleOrder, owned = Number(s.vehiclesOwned[selected.level]) || 0, guardCapacity = e.getGuardCapacity();
+    const available = Math.max(0, Number(guardCapacity.availableVehicles[selected.level]) || 0);
     const cards = e.VEHICLES.map(v => {
-      const unlocked = v.level <= s.unlockedVehicleLevel;
-      const chosen = v.level === selected.level;
-      return '<button type="button" class="home-police-card ' + (chosen ? 'is-selected ' : '') + (!unlocked ? 'is-locked' : '') + '" data-home-vehicle="' + v.level + '">' +
-        '<span class="home-police-card-emoji">' + v.emoji + '</span><span class="home-police-tag ' + (unlocked ? 'home-police-tag-green' : 'home-police-tag-gold') + '">' + (unlocked ? 'UNLOCKED' : '🔒 TIER LOCKED') + '</span>' +
-        '<span class="home-police-card-name">TIER ' + v.level + ' · ' + esc(v.name) + '</span><span class="home-police-note">' + money(e, v.cost) + ' / vehicle</span></button>';
+      const unlocked = v.level <= s.unlockedVehicleLevel, chosen = v.level === selected.level;
+      const stock = Number(s.vehiclesOwned[v.level]) || 0, free = Math.max(0, Number(guardCapacity.availableVehicles[v.level]) || 0);
+      return '<button type="button" aria-label="View Tier ' + v.level + ' ' + esc(v.name) + '" class="home-police-card ' + (chosen ? 'is-selected ' : '') + (!unlocked ? 'is-locked' : '') + '" data-home-vehicle="' + v.level + '">' +
+        vehicleSvg(v, 'card') +
+        '<span class="home-police-tag ' + (unlocked ? 'home-police-tag-green' : 'home-police-tag-gold') + '">' + (unlocked ? 'TIER UNLOCKED' : '🔒 RESEARCH / TIER LOCKED') + '</span>' +
+        '<span class="home-police-card-name">TIER ' + v.level + ' · ' + esc(v.name) + '</span>' +
+        '<span class="home-police-note">' + money(e, v.cost) + ' / vehicle</span>' +
+        '<span class="home-police-note">Owned ' + stock + ' · Guard-ready ' + free + '</span></button>';
     }).join('');
     const locked = selected.level > s.unlockedVehicleLevel;
     const progress = order ? Math.max(0, Math.min(100, 100 * (1 - (order.completesAtMs - e.getSimulationTimeMs()) / order.durationMs))) : 0;
+    const capabilityNames = {response:'Response',patrol:'Patrol',protection:'Protection',crowdControl:'Crowd control',surveillance:'Surveillance',offRoad:'Off-road',command:'Command',counterSmuggling:'Anti-smuggling'};
+    const capabilityRows = Object.keys(capabilityNames).map(key => {
+      const val = Number(selected.capabilities[key]) || 0;
+      return '<div class="home-police-stat">' + capabilityNames[key] + '<strong>' + val + ' / 100</strong><div class="home-police-progress"><div class="home-police-progress-fill" style="width:' + val + '%"></div></div></div>';
+    }).join('');
+    const featureChips = selected.specialFeatures.map(item => '<span class="home-police-feature-chip"><span style="color:#79e7ff">✦</span>' + esc(item) + '</span>').join('');
+    const orderPanel = locked
+      ? '<div class="home-police-alert">🔒 Tier ' + selected.level + ' is locked. Review its full specification now; purchasing is enabled only after prior vehicle deliveries unlock this tier. Current frontier: Tier ' + s.unlockedVehicleLevel + '.</div>'
+      : order
+        ? '<div class="home-police-alert"><strong>PROCUREMENT LOCK:</strong> ' + esc(e.VEHICLES[order.level - 1].name) + ' × ' + order.quantity + ' is in transit. Another order opens after delivery.<div class="home-police-progress"><div id="home-police-vehicle-progress" class="home-police-progress-fill" style="width:' + progress + '%"></div></div><div id="home-police-vehicle-countdown" class="home-police-note">' + formatDuration(order.completesAtMs - e.getSimulationTimeMs()) + ' remaining in simulation time</div></div>'
+        : '<div class="home-police-section-title">Procurement console</div>' +
+          '<div class="home-police-form-row"><div class="home-police-field-wrap"><label class="home-police-label" for="home-police-vehicle-amount">Order quantity · 1 to 100</label><input id="home-police-vehicle-amount" class="home-police-field" type="number" min="1" max="100" step="1" value="1" inputmode="numeric"></div><div class="home-police-cost"><strong id="home-police-vehicle-cost">' + money(e, selected.cost) + '</strong><span>Quoted order total</span></div></div>' +
+          '<div class="home-police-note">One purchase begins a 180-simulation-day procurement window. Previously unlocked vehicles may be reordered, but only one vehicle order can run at once.</div>' +
+          '<div class="home-police-actions"><button id="home-police-buy-vehicle" class="home-police-btn home-police-btn-green">🛒 CONFIRM VEHICLE ORDER</button><button id="home-police-vehicle-advice" class="home-police-btn home-police-btn-gold">🏛️ MINISTER BUDGET ADVICE</button></div>';
     body.innerHTML =
-      '<div class="home-police-shell"><header class="home-police-head"><div class="home-police-orb">🚘</div><h1 class="home-police-title">POLICE VEHICLE HANGAR</h1><p class="home-police-subtitle">15 vehicle platforms · persistent emoji identifiers · locked tiers require sequential procurement.</p></header>' +
-      '<div class="home-police-section-title">Vehicle technology ladder</div><div class="home-police-grid">' + cards + '</div>' +
-      '<section class="home-police-detail"><div class="home-police-detail-top"><div class="home-police-detail-emoji">' + selected.emoji + '</div><span class="home-police-tag home-police-tag-gold">' + esc(selected.className) + '</span><h3>TIER ' + selected.level + ' · ' + esc(selected.name) + '</h3><p class="home-police-note">' + esc(selected.role) + '</p></div>' +
-        (locked ? '<div class="home-police-alert">🔒 Locked. Tier ' + selected.level + ' becomes available only after Tier ' + (selected.level - 1) + ' completes its procurement cycle. Current unlocked tier: ' + s.unlockedVehicleLevel + '.</div>' :
-        '<div class="home-police-stats"><div class="home-police-stat">Top speed<strong>' + selected.speed + ' km/h</strong></div><div class="home-police-stat">Officer capacity<strong>' + selected.capacity + ' personnel</strong></div><div class="home-police-stat">Durability rating<strong>' + selected.durability + ' / 120</strong></div><div class="home-police-stat">Operational range<strong>' + selected.rangeKm.toLocaleString() + ' km</strong></div><div class="home-police-stat">Duty endurance<strong>' + selected.enduranceHours + ' hours per shift</strong></div><div class="home-police-stat">Maintenance estimate<strong>' + money(e, selected.maintenancePerDay) + ' / day</strong></div><div class="home-police-stat">Fleet currently owned<strong>' + owned.toLocaleString() + '</strong></div></div>' +
-          '<div class="home-police-form-row"><div class="home-police-field-wrap"><label class="home-police-label" for="home-police-vehicle-amount">Order quantity</label><input id="home-police-vehicle-amount" class="home-police-field" type="number" min="1" max="100" step="1" value="1" inputmode="numeric"></div><div class="home-police-cost"><strong id="home-police-vehicle-cost">' + money(e, selected.cost) + '</strong><span>Total procurement cost</span></div></div>' +
-          '<p class="home-police-note">Order is charged at procurement start. Delivery takes 180 simulation days (approximately six in-game months). No tier jump is permitted while delivery is pending.</p>' +
-          '<div class="home-police-actions"><button id="home-police-buy-vehicle" class="home-police-btn home-police-btn-green" ' + (order ? 'disabled' : '') + '>🛒 BUY / ORDER VEHICLE</button><button id="home-police-vehicle-advice" class="home-police-btn home-police-btn-gold">🏛️ MINISTER ADVICE</button></div>') +
-        (order ? '<div class="home-police-alert"><strong>Active order:</strong> ' + esc(e.VEHICLES[order.level - 1].name) + ' × ' + order.quantity + '<div class="home-police-progress"><div id="home-police-vehicle-progress" class="home-police-progress-fill" style="width:' + progress + '%"></div></div><div id="home-police-vehicle-countdown" class="home-police-note">' + formatDuration(order.completesAtMs - e.getSimulationTimeMs()) + ' remaining in simulation time</div></div>' : '') +
-      '</section>' + backButton('home-police-vehicles-back', '← BACK TO FLEET COMMAND') + '</div>';
+      '<div class="home-police-shell">' +
+        '<header class="home-police-head"><div class="home-police-orb">🚔</div><h1 class="home-police-title">POLICE VEHICLE HANGAR</h1><p class="home-police-subtitle">15 individually styled SVG vehicles · eight capability ratings · strengths, trade-offs and mission fit.</p></header>' +
+        '<div class="home-police-kpis"><div class="home-police-kpi"><strong>TIER ' + s.unlockedVehicleLevel + ' / 15</strong><span>Unlock frontier</span></div><div class="home-police-kpi"><strong>' + Object.keys(s.vehiclesOwned).reduce((n,k)=>n+(Number(s.vehiclesOwned[k])||0),0).toLocaleString() + '</strong><span>Total vehicles owned</span></div><div class="home-police-kpi"><strong>' + available.toLocaleString() + '</strong><span>Selected tier · guard-ready</span></div></div>' +
+        (order ? '<div class="home-police-panel"><strong>🚚 ORDER IN TRANSIT · TIER ' + order.level + '</strong><p class="home-police-note">' + esc(e.VEHICLES[order.level - 1].name) + ' · Quantity ' + order.quantity + ' · Total ' + money(e, order.totalCost) + '</p><div class="home-police-progress"><div class="home-police-progress-fill" style="width:' + progress + '%"></div></div><div id="home-police-vehicle-countdown" class="home-police-note">Delivery estimate: ' + formatDuration(order.completesAtMs - e.getSimulationTimeMs()) + '</div></div>' : '') +
+        '<div class="home-police-section-title">Select vehicle · inspect every tier</div><div class="home-police-grid">' + cards + '</div>' +
+        '<section class="home-police-detail"><div class="home-police-detail-top">' + vehicleSvg(selected, 'hero') + '<span class="home-police-tag home-police-tag-gold">' + esc(selected.className) + '</span><h3>TIER ' + selected.level + ' · ' + esc(selected.name) + '</h3><p class="home-police-note">' + esc(selected.specialty) + ' · Best terrain: ' + esc(selected.terrain) + '</p></div>' +
+          '<div class="home-police-stats"><div class="home-police-stat">Top speed<strong>' + selected.speed + ' km/h</strong></div><div class="home-police-stat">Acceleration<strong>' + selected.acceleration + ' / 100</strong></div><div class="home-police-stat">Officer capacity<strong>' + selected.capacity + ' persons / vehicle</strong></div><div class="home-police-stat">Durability<strong>' + selected.durability + ' / 120</strong></div><div class="home-police-stat">Operational range<strong>' + selected.rangeKm.toLocaleString() + ' km</strong></div><div class="home-police-stat">Shift endurance<strong>' + selected.enduranceHours + ' hours</strong></div><div class="home-police-stat">Purchase price<strong>' + money(e, selected.cost) + '</strong></div><div class="home-police-stat">Maintenance<strong>' + money(e, selected.maintenancePerDay) + ' / day</strong></div><div class="home-police-stat">Owned / guard-ready<strong>' + owned + ' / ' + available + '</strong></div><div class="home-police-stat">Currently assigned<strong>' + Math.max(0, Number(guardCapacity.deployedVehicles[selected.level]) || 0) + '</strong></div></div>' +
+          '<div class="home-police-section-title">Distinct capability profile</div><div class="home-police-stats">' + capabilityRows + '</div>' +
+          '<div class="home-police-section-title">Vehicle-specific equipment</div><div class="home-police-feature-list">' + featureChips + '</div>' +
+          '<div class="home-police-vehicle-brief"><div class="home-police-brief-card"><span class="home-police-tag home-police-tag-green">STRENGTH</span><strong>' + esc(selected.strengths) + '</strong></div><div class="home-police-brief-card"><span class="home-police-tag home-police-tag-gold">TRADE-OFF</span><strong>' + esc(selected.tradeoff) + '</strong></div></div>' +
+          '<div class="home-police-note"><strong>Operational role:</strong> ' + esc(selected.role) + '</div>' +
+          orderPanel +
+          '<div class="home-police-actions"><button id="home-police-deploy-selected" class="home-police-btn home-police-btn-purple" ' + (!available ? 'disabled' : '') + '>🚧 DEPLOY TO GUARD DUTY</button>' + backButton('home-police-vehicles-back', '← BACK TO FLEET COMMAND') + '</div>' +
+        '</section></div>';
     Array.from(g.document.querySelectorAll('[data-home-vehicle]')).forEach(button => {
-      button.onclick = () => {
-        const level = Number(button.getAttribute('data-home-vehicle'));
-        if (level > e.getState().unlockedVehicleLevel) {
-          const pending = e.getState().pendingVehicleOrder;
-          this.showAdvisePopup('VEHICLE TIER LOCKED', pending ? 'Current Tier ' + pending.level + ' procurement has ' + formatDuration(pending.completesAtMs - e.getSimulationTimeMs()) + ' of simulation time remaining. Complete delivery before advancing.' : 'Tier ' + level + ' requires sequential completion of Tier ' + (level - 1) + '.');
-          return;
-        }
-        this.renderVehicleCatalog(level);
-      };
+      button.onclick = () => this.renderVehicleCatalog(Number(button.getAttribute('data-home-vehicle')));
     });
+    const deployButton = g.document.getElementById('home-police-deploy-selected');
+    deployButton.onclick = () => this.renderGuardOut(selected.level);
     if (!locked && !order) {
       const input = g.document.getElementById('home-police-vehicle-amount'), cost = g.document.getElementById('home-police-vehicle-cost');
-      input.oninput = () => { const n = Math.max(0, Math.min(100, Math.floor(Number(input.value) || 0))); cost.textContent = money(e, e.estimateVehicleCost(selected.level, n)); };
+      input.oninput = () => {
+        const n = Math.max(0, Math.min(100, Math.floor(Number(input.value) || 0)));
+        cost.textContent = money(e, e.estimateVehicleCost(selected.level, n));
+      };
       g.document.getElementById('home-police-buy-vehicle').onclick = () => {
         const n = Math.floor(Number(input.value) || 0), result = e.orderVehicle(selected.level, n);
         if (!result.ok) { report(result); return; }
-        report(result, 'VEHICLE ORDER ACCEPTED', selected.name + ' × ' + n + ' ordered for ' + money(e, result.cost) + '. Delivery countdown follows simulation time.');
+        report(result, 'VEHICLE ORDER ACCEPTED', selected.name + ' × ' + n + ' ordered for ' + money(e, result.cost) + '. The 180-day delivery timer follows game simulation time.');
         this.renderVehicleCatalog(selected.level);
       };
       g.document.getElementById('home-police-vehicle-advice').onclick = () => {
         const result = e.advice('vehicle', { level: selected.level });
-        if (Number.isFinite(Number(result.amount))) input.value = result.amount;
+        if (Number.isFinite(Number(result.amount)) && result.amount > 0) input.value = result.amount;
         input.dispatchEvent(new Event('input', { bubbles: true }));
         this.showAdvisePopup('MINISTER OF HOME AFFAIRS · PROCUREMENT ADVICE', result.text);
       };
