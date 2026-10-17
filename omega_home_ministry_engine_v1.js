@@ -265,15 +265,15 @@
   }
   function guardCapacity(country){
     const state=getState(country||currentCountry());
-    const ownedVehicles=Object.keys(state.vehiclesOwned||{}).reduce(function(out,key){out[key]=Math.max(0,Math.floor(num(state.vehiclesOwned[key])||0))-guardVehicleCount(state,Number(key));return out;},{});
+    const ownedVehicles=Object.keys(state.vehiclesOwned||{}).reduce(function(out,key){out[key]=Math.max(0,Math.max(0,Math.floor(num(state.vehiclesOwned[key])||0))-guardVehicleCount(state,Number(key)));return out;},{});
     return {policeCount:state.policeCount,deployedOfficers:guardOfficerCount(state),availableOfficers:Math.max(0,state.policeCount-guardOfficerCount(state)),ownedVehicles:clone(state.vehiclesOwned),deployedVehicles:Object.keys(state.vehiclesOwned||{}).reduce(function(out,key){out[key]=guardVehicleCount(state,Number(key));return out;},{}),availableVehicles:ownedVehicles};
   }
   function guardPreview(vehicleLevel,missionId,quantity,country){
     const state=getState(country||currentCountry()),vehicle=VEHICLES.find(function(row){return row.level===Math.floor(num(vehicleLevel)||0);});
     const mission=GUARD_MISSIONS.find(function(row){return row.id===String(missionId||'');});
     const requested=Math.floor(num(quantity)||0),capacity=guardCapacity(country||currentCountry()),availableVehicles=capacity.availableVehicles[vehicleLevel]||0,score=vehicle&&mission?guardEffectiveness(vehicle.level,mission.id,state):0;
-    const count=vehicle&&mission?Math.max(0,Math.min(100,requested)):0;
-    return {ok:Boolean(vehicle&&mission&&count>=1&&count<=availableVehicles&&count*vehicle.capacity<=capacity.availableOfficers),vehicle:vehicle?clone(vehicle):null,mission:mission?clone(mission):null,quantity:count,availableVehicles:availableVehicles,requiredOfficers:vehicle?count*vehicle.capacity:0,availableOfficers:capacity.availableOfficers,effectiveness:score,estimatedCoverage:vehicle&&mission?Math.round(clamp(score*count/7,0,35)):0,reason:!vehicle?'VEHICLE_TIER_INVALID':!mission?'GUARD_MISSION_INVALID':count<1?'GUARD_QUANTITY_INVALID':count>availableVehicles?'INSUFFICIENT_UNASSIGNED_VEHICLES':count*vehicle.capacity>capacity.availableOfficers?'INSUFFICIENT_UNASSIGNED_OFFICERS':null};
+    const count=vehicle&&mission?requested:0;
+    return {ok:Boolean(vehicle&&mission&&count>=1&&count<=100&&count<=availableVehicles&&count*vehicle.capacity<=capacity.availableOfficers),vehicle:vehicle?clone(vehicle):null,mission:mission?clone(mission):null,quantity:count,availableVehicles:availableVehicles,requiredOfficers:vehicle&&count>0?count*vehicle.capacity:0,availableOfficers:capacity.availableOfficers,effectiveness:score,estimatedCoverage:vehicle&&mission?Math.round(clamp(score*Math.max(0,count)/7,0,35)):0,reason:!vehicle?'VEHICLE_TIER_INVALID':!mission?'GUARD_MISSION_INVALID':count<1||count>100?'GUARD_QUANTITY_INVALID':count>availableVehicles?'INSUFFICIENT_UNASSIGNED_VEHICLES':count*vehicle.capacity>capacity.availableOfficers?'INSUFFICIENT_UNASSIGNED_OFFICERS':null};
   }
   function deployGuard(vehicleLevel,quantity,missionId,sector,country){
     const level=Math.floor(num(vehicleLevel)||0),qty=Math.floor(num(quantity)||0),cid=normalizeCountry(country||currentCountry());
@@ -475,7 +475,7 @@
     estimateFacilityCost:function(id,amount,country){return estimateFacilityCostFrom(getState(country||currentCountry()),id,amount);},
     estimateTrainingCost:function(target,country){return estimateTrainingCostFrom(getState(country||currentCountry()),Math.floor(num(target)||0));},
     advice:advice,recruitPolice:recruitPolice,firePolice:firePolice,orderVehicle:orderVehicle,buildFacility:buildFacility,
-    getGuardCapacity:guardCapacity,getGuardDeploymentPreview:guardPreview,deployGuard:deployGuard,standDownGuard:standDownGuard,getGuardEffectiveness:guardEffectiveness,
+    getGuardCapacity:guardCapacity,getGuardDeploymentPreview:guardPreview,deployGuard:deployGuard,standDownGuard:standDownGuard,getGuardEffectiveness:guardEffectiveness,getGuardCoverageForIncident:function(type,country){return guardCoverageForIncident(getState(country||currentCountry()),String(type||''));},
     startResearch:startResearch,upgradeTraining:upgradeTraining,recruitAgents:recruitAgents,issueMinisterDirective:issueMinisterDirective,
     processTurn:onTurnCommitted,applyExistingAssetIncident:markExistingAsset
   });
