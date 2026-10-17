@@ -649,7 +649,8 @@
       button.onclick = () => {
         const id = button.getAttribute('data-home-service'), result = e.serviceVehicle(id);
         if (!result.ok) { report(result); return; }
-        report(result, 'VEHICLE SERVICE COMPLETE', result.vehicle.vehicleName || result.vehicle.id + ' is restored to full condition. Service cost: ' + money(e, result.serviceCost) + '.');
+        const vehicleName = e.VEHICLES.find(row => row.level === Number(result.vehicle.vehicleLevel))?.name || result.vehicle.id;
+        report(result, 'VEHICLE SERVICE COMPLETE', vehicleName + ' is restored to full condition. Service cost: ' + money(e, result.serviceCost) + '.');
         this.renderFleetMaintenance(options);
       };
     });
