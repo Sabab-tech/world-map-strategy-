@@ -18,6 +18,8 @@ function makeUiHarness(vehicleInventory = null, recordedAssets = null) {
       'home-police-amount': '10',
       'home-police-guard-vehicle': '1',
       'home-police-guard-mission': 'urban_patrol',
+      'home-police-guard-environment': 'city',
+      'home-police-guard-road': 'congested',
       'home-police-guard-quantity': '1',
       'home-police-guard-sector': 'General Sector',
     };
@@ -193,14 +195,30 @@ test('Guard Out asset selector only targets recorded factories and passes the se
   const assetSelect = harness.nodes.get('home-police-guard-asset');
   assert.ok(harness.nodes.get('cabinet-body').innerHTML.includes('AL-01') && harness.nodes.get('cabinet-body').innerHTML.includes('Aluminium Plant North Gate'), 'only actual recorded target rows should populate the selector');
   assetSelect.value = 'AL-01';
+  assetSelect.onchange();
+  assert.equal(harness.nodes.get('home-police-guard-environment').value, 'industrial');
+  assert.equal(harness.nodes.get('home-police-guard-road').value, 'rough');
   harness.nodes.get('home-police-guard-mission').value = 'industrial_guard';
   harness.nodes.get('home-police-guard-sector').value = 'Aluminium Plant North Gate';
   harness.nodes.get('home-police-confirm-guard').onclick();
   const unit = harness.api.getState('AAA').guardDeployments[0];
   assert.equal(unit.assetId, 'AL-01');
   assert.equal(unit.assetName, 'Aluminium Plant North Gate');
+  assert.equal(unit.environmentId, 'industrial');
+  assert.equal(unit.roadCondition, 'rough');
   assert.equal(harness.api.getGuardCoverageForIncident('INDUSTRIAL_SABOTAGE', 'AAA', 'AL-01') > 0, true);
   assert.equal(harness.api.getGuardCoverageForIncident('INDUSTRIAL_SABOTAGE', 'AAA', 'ST-02'), 0);
+});
+
+test('vehicle compatibility and fleet repair controls are visible and interactive in UI source', () => {
+  assert.match(ui, /Environment suitability · 0–100/);
+  assert.match(ui, /ui\.renderFleetMaintenance = function/);
+  assert.match(ui, /e\.serviceVehicle\(id\)/);
+  assert.match(ui, /home-police-guard-environment/);
+  assert.match(ui, /home-police-guard-road/);
+  assert.match(ui, /home-police-route-wear/);
+  assert.match(ui, /Only 12 vehicle cards are rendered per page/);
+  assert.match(ui, /REPAIR & RETURN TO FULL CONDITION/);
 });
 
 test('responsive UI keeps the guard and vehicle forms usable on narrow screens', () => {
