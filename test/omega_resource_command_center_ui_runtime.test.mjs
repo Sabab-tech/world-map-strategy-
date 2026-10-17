@@ -207,24 +207,45 @@ test('canonical site profiles appear in relevant tabs without becoming live prod
   assert.match(modal.innerHTML, /Beneficiation/);
 });
 
-test('reserves ledger switches between one live resource and an unavailable resource', () => {
-  ui.open('BGD', 'reserves');
-  const modal = elements.get('gsrsk-intelligence-modal');
-  assert.match(modal.innerHTML, /omega-rescc-resource-select/);
-  assert.match(modal.innerHTML, /value="iron_ore" selected/);
-  assert.match(modal.innerHTML, /100 METRIC_TONNE/);
-  assert.match(modal.innerHTML, /900 METRIC_TONNE/);
-  assert.doesNotMatch(modal.innerHTML, /Survey Resource/);
+test('reserves ledger lists only resources backed by country quantities or local resource records', () => {
+  const originalSummary = ResourceMinistryEngine.getAuthoritativeResourceSummary;
+  ResourceMinistryEngine.getAuthoritativeResourceSummary = function () {
+    const summary = originalSummary.apply(this, arguments);
+    return Object.assign({}, summary, {
+      resourcesList: (summary.resourcesList || []).concat([{
+        id: 'coal', name: 'Coal', unit: 'METRIC_TONNE',
+        endowment: 0, reserve: 0, inventory: 0, dailyProduction: 0,
+        dailyConsumption: 0, netBalance: 0, stockDays: 0
+      }])
+    });
+  };
+  try {
+    ui.open('BGD', 'reserves');
+    let modal = elements.get('gsrsk-intelligence-modal');
+    assert.match(modal.innerHTML, /omega-rescc-resource-select/);
+    assert.match(modal.innerHTML, /value="iron_ore" selected/);
+    assert.match(modal.innerHTML, /value="crude_oil"/);
+    assert.doesNotMatch(modal.innerHTML, /value="coal"/,
+      'a global-catalogue resource with only zero quantities must not appear');
+    assert.match(modal.innerHTML, /100 METRIC_TONNE/);
+    assert.match(modal.innerHTML, /900 METRIC_TONNE/);
+    assert.doesNotMatch(modal.innerHTML, /Survey Resource/);
 
-  modal.listeners.change({ target: { id: 'omega-rescc-resource-select', value: 'coal' } });
-  assert.match(modal.innerHTML, /value="coal" selected/);
-  assert.match(modal.innerHTML, /UNAVAILABLE/);
-  assert.match(modal.innerHTML, /Survey Resource/);
-  assert.match(modal.innerHTML, /data-action="survey" data-resource-id="coal"/);
-  assert.equal((modal.innerHTML.match(/<strong>Unavailable<\/strong>/g) || []).length, 7,
-    'a resource absent from runtime state must not inherit another resource values');
-  assert.equal((modal.innerHTML.match(/class="omega-rescc-ledger-metric"/g) || []).length, 7,
-    'only one resource detail card should be rendered at a time');
+    modal.listeners.change({ target: { id: 'omega-rescc-resource-select', value: 'crude_oil' } });
+    assert.match(modal.innerHTML, /value="crude_oil" selected/);
+    assert.match(modal.innerHTML, /50 BARREL/);
+    assert.match(modal.innerHTML, /500 BARREL/);
+    assert.equal((modal.innerHTML.match(/class="omega-rescc-ledger-metric"/g) || []).length, 7,
+      'only one resource detail card should be rendered at a time');
+
+    modal.listeners.change({ target: { id: 'omega-rescc-resource-select', value: 'coal' } });
+    assert.doesNotMatch(modal.innerHTML, /value="coal"/,
+      'the ledger must not allow selecting a resource absent from country state');
+    assert.doesNotMatch(modal.innerHTML, /Survey Resource/,
+      'an absent catalogue-only commodity is hidden, not presented as a survey prompt');
+  } finally {
+    ResourceMinistryEngine.getAuthoritativeResourceSummary = originalSummary;
+  }
 });
 
 test('deposit view filters loaded JSON deposits to the selected country', () => {
