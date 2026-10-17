@@ -81,3 +81,10 @@ test('button design has consistent tactical surfaces, clear states, and mobile-s
   assert.match(css, /@media\(prefers-reduced-motion:reduce\)/);
   assert.match(css, /#btn-ministry-dock:active:not\(:disabled\)/);
 });
+
+test('button polish preserves the low-end Android no-transition policy on touch devices', () => {
+  const css = read('omega_ui_visual_system_v1.css');
+  assert.match(css, /@media\(pointer:coarse\)/);
+  assert.match(css, /\.ui-right-controls \.icon-btn/);
+  assert.match(css, /#resource-filter-box button,#omega-individual-resource-panel button,[\s\S]*?transition:none!important/);
+});
