@@ -220,6 +220,7 @@
         '<div class="home-police-actions">' +
           '<button id="btn-recruit-police" class="home-police-btn home-police-btn-green">👮 1.1 · RECRUIT / FIRE PERSONNEL</button>' +
           '<button id="btn-upgrade-vehicles" class="home-police-btn home-police-btn-gold">🚔 1.2 · AAA FLEET & FACILITY ASCENSION</button>' +
+          '<button id="btn-police-guard-out" class="home-police-btn home-police-btn-green">🚧 GUARD OUT · PATROL DEPLOYMENT</button>' +
           '<button id="btn-tactics-police" class="home-police-btn home-police-btn-purple">🛡️ 1.3 · TACTICS, TRAINING & INTELLIGENCE</button>' +
           '<button id="btn-police-incident-log" class="home-police-btn">📋 SECURITY INCIDENT LEDGER</button>' +
         '</div>' +
@@ -228,6 +229,7 @@
       '</div>';
     g.document.getElementById('btn-recruit-police').onclick = () => this.renderRecruitScreen();
     g.document.getElementById('btn-upgrade-vehicles').onclick = () => this.renderUpgradeMenu();
+    g.document.getElementById('btn-police-guard-out').onclick = () => this.renderGuardOut();
     g.document.getElementById('btn-tactics-police').onclick = () => this.renderTacticsMenu();
     g.document.getElementById('btn-police-incident-log').onclick = () => this.renderPoliceIncidentLog();
     g.document.getElementById('btn-back-interior').onclick = () => this.renderInteriorHQ();
