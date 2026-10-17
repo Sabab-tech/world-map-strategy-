@@ -177,6 +177,9 @@
     const FRAME_BUDGET_MS = 4;
     const pendingRoots = new Set();
     const deepObservedRoots = new WeakSet();
+    const shallowObservedRoots = new WeakSet();
+    const mapPopupObservedRoots = new WeakSet();
+    const mapPopupPreparedPanes = new WeakSet();
     const activeObservers = [];
     let queueScheduled = false;
     const perfNow = () => (window.performance && typeof window.performance.now === 'function')
@@ -317,6 +320,11 @@
 
     function queueScan(root) {
         if (!root || (root.nodeType !== 1 && root.nodeType !== 3 && root.nodeType !== 11)) return;
+        if (root.nodeType === 1 && (root.id === 'app' || root.id === 'render-engine-root')) {
+            metrics.skippedMutations++;
+            if (root.id === 'render-engine-root') attachMapPopupObserver();
+            return;
+        }
         if (root.nodeType === 1 && insideSkippedSubtree(root)) {
             metrics.skippedMutations++;
             return;
@@ -366,9 +374,60 @@
         }
     }
 
+    function attachMapPopupObserver() {
+        if (typeof MutationObserver !== 'function' || !document.getElementById) return;
+        const mapRoot = document.getElementById('map');
+        if (!mapRoot) return;
+
+        const connectPopupPane = function () {
+            const popupPane = typeof mapRoot.querySelector === 'function'
+                ? mapRoot.querySelector('.leaflet-popup-pane') : null;
+            if (!popupPane) return;
+            attachDeepObserver(popupPane);
+            if (!mapPopupPreparedPanes.has(popupPane)) {
+                mapPopupPreparedPanes.add(popupPane);
+                queueScan(popupPane);
+            }
+        };
+
+        connectPopupPane();
+        if (mapPopupObservedRoots.has(mapRoot)) return;
+        const observer = new MutationObserver(connectPopupPane);
+        observer.observe(mapRoot, { childList: true, subtree: false });
+        activeObservers.push(observer);
+        mapPopupObservedRoots.add(mapRoot);
+    }
+
+    function attachAppChildRoot(root) {
+        if (!root || root.nodeType !== 1) return;
+        if (root.id === 'render-engine-root') {
+            attachMapPopupObserver();
+            return;
+        }
+        attachDeepObserver(root);
+    }
+
+    function attachTopLevelRoot(root) {
+        if (!root || root.nodeType !== 1) return;
+        if (root.id === 'app') {
+            attachShallowObserver(root, attachAppChildRoot);
+            Array.from(root.children || []).forEach(attachAppChildRoot);
+            return;
+        }
+        attachDeepObserver(root);
+    }
+
     function attachDeepObserver(root) {
         if (!root || root.nodeType !== 1 || matchesSkipSelector(root) || insideSkippedSubtree(root) ||
             deepObservedRoots.has(root) || typeof MutationObserver !== 'function') return;
+        if (root.id === 'render-engine-root') {
+            attachMapPopupObserver();
+            return;
+        }
+        if (root.id === 'app') {
+            attachTopLevelRoot(root);
+            return;
+        }
         const observer = new MutationObserver(observerMutationHandler);
         observer.observe(root, { subtree: true, childList: true, characterData: true });
         activeObservers.push(observer);
@@ -376,31 +435,34 @@
     }
 
     function attachShallowObserver(root, registerChildRoot) {
-        if (!root || root.nodeType !== 1 || typeof MutationObserver !== 'function') return;
+        if (!root || root.nodeType !== 1 || shallowObservedRoots.has(root) ||
+            typeof MutationObserver !== 'function') return;
         const observer = new MutationObserver(function (records) {
             for (const record of records) {
                 if (record.type !== 'childList') continue;
                 record.addedNodes.forEach(function (node) {
                     if (node.nodeType !== 1 || matchesSkipSelector(node) || insideSkippedSubtree(node)) return;
                     registerChildRoot(node);
-                    queueScan(node);
+                    if (node.id !== 'app' && node.id !== 'render-engine-root') queueScan(node);
                 });
             }
         });
         observer.observe(root, { childList: true, subtree: false });
         activeObservers.push(observer);
+        shallowObservedRoots.add(root);
     }
 
     function installObservers() {
         if (typeof MutationObserver !== 'function' || !document.body) return;
-        attachShallowObserver(document.body, attachDeepObserver);
+        attachShallowObserver(document.body, attachTopLevelRoot);
         const app = document.getElementById('app');
-        if (!app) {
-            Array.from(document.body.children || []).forEach(attachDeepObserver);
-            return;
+        if (app) {
+            attachShallowObserver(app, attachAppChildRoot);
+            Array.from(app.children || []).forEach(attachAppChildRoot);
+        } else {
+            Array.from(document.body.children || []).forEach(attachTopLevelRoot);
         }
-        attachShallowObserver(app, attachDeepObserver);
-        Array.from(app.children || []).forEach(attachDeepObserver);
+        attachMapPopupObserver();
     }
 
     function diagnosticsSnapshot() {
