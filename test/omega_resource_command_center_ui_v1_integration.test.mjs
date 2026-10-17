@@ -44,12 +44,25 @@ test('all sixteen resource panels are registered, selectable and safe to render'
     finance:{BGD:{available:1000,currencyCode:'USD',reserves:500}},
     trade:{BGD:{importRequests:[],globalTradeLedger:{requests:[],decisions:[],settlements:[]}}}
   };
-  const resourceSummary={briefing:'',globalMetrics:{},resourcesList:[]};
+  const resourceSummary={briefing:'',globalMetrics:{},resourcesList:[
+    {id:'coal',name:'Coal',unit:'TONNES',dailyProduction:10,dailyConsumption:3,netBalance:7,inventory:20,reserve:100,stockDays:3}
+  ]};
   const sandbox = {
     document,
-    Game:{state,countryLookup:{BGD:{name:'Bangladesh'}}},
+    Game:{state,countryLookup:{BGD:{name:'Bangladesh'}},Map:{
+      resourceState:{enabled:false,scope:'NATION',selectedResources:new Set()},
+      applyResourceMapFilter(ids){this.filteredResourceIds=ids;this.resourceState.enabled=true;},
+      renderResourceDeposits(){this.renderCount=(this.renderCount||0)+1;},
+      map:{setView(coords,zoom){this.lastView={coords,zoom};},getZoom(){return 4;}}
+    }},
     ResourceMinistryEngine:{
-      resourceTypes:[],
+      resourceTypes:[
+        {id:'coal',name:'Coal',unit:'TONNES'},
+        {id:'rare_earth',name:'Rare earth elements',unit:'UNKNOWN_UNIT'}
+      ],
+      deposits:[
+        {siteId:'SITE_BGD_BARAPUKURIA',siteName:'Barapukuria Coal Mine',countryId:'BGD',resourceId:'coal',lat:24.8,lng:88.9,reserve:{quantity:100,unit:'TONNES'}}
+      ],
       getSummary(){ return resourceSummary; },
       getAuthoritativeResourceSummary(){ return resourceSummary; },
       getCountryResourceProfile(){ return {identity:{name:'Bangladesh',officialName:'Bangladesh'}}; },
@@ -58,8 +71,14 @@ test('all sixteen resource panels are registered, selectable and safe to render'
       normalizeCountryCode(x){ return String(x||'BGD').toUpperCase(); }
     },
     OmegaCabinetUI:{getResource16CardsHtml(){return '<div class="test-cards"></div>';}},
+    OmegaResourceSiteCanonicalCatalogData:{siteCount:315,sites:[
+      {siteId:'SITE_AUS_CANONICAL_ONLY_1',siteName:'Western Australia Bauxite Deposit',resourceName:'Bauxite',countryId:'AUS',resourceId:'bauxite',coordinates:{lat:-23.4,lng:121.2},unit:'TONNES'}
+    ]},
     Omega:{
-      ResourceIndustrialNetwork:{diagnostics(){return {};},gameplayPipelineDiagnostics(){return {};}},
+      IndividualResourceSiteBinding:{sites:[
+        {siteId:'SITE_GBR_LITHIUM_1',siteName:'Cornish Lithium Site',resourceName:'Lithium',countryId:'GBR',resourceId:'lithium',lat:50.2,lng:-5.3,unit:'TONNES'}
+      ]},
+      ResourceIndustrialNetwork:{diagnostics(){return {};},gameplayPipelineDiagnostics(){return {}; }},
       ResourceLogisticsRuntime:{diagnostics(){return {};}},
       GlobalMarket:{quote(){return {status:'UNAVAILABLE'};},rebuild(){return {};},diagnostics(){return {};}},
       GlobalTrade:{diagnostics(){return {};}}
@@ -94,6 +113,61 @@ test('all sixteen resource panels are registered, selectable and safe to render'
     assert.equal(api.getState().panel,panel,'selected panel must match card '+point);
   }
   assert.match(document.getElementById('gsrsk-intelligence-modal').innerHTML,/Resource Command Center/);
+
+  api.open('BGD','matrix');
+  const matrixHtml=document.getElementById('gsrsk-intelligence-modal').innerHTML;
+  assert.match(matrixHtml,/id="omega-rescc-resource-select"/,'the workspace uses one catalog-backed resource selector');
+  assert.match(matrixHtml,/id="omega-rescc-search-country"/,'the locator can search a selected country or the whole world');
+  assert.match(matrixHtml,/Locate resource \/ deposit on map/,'the selected resource can trigger a real map-locator action');
+  assert.match(matrixHtml,/id="omega-rescc-location-select"/,'site location is an inline dropdown, not a separate button');
+  assert.match(matrixHtml,/class="omega-rescc-table"/,'resource balances render as a compact table rather than repeated cards');
+  assert.match(matrixHtml,/Barapukuria Coal Mine/,'location options come from canonical deposit records');
+  assert.match(matrixHtml,/name="fromUnit" required>[\s\S]*?value="metric_tonne" selected/,'TONNES resolves to a preselected metric-tonne unit');
+  assert.equal(api.getResourceUnit('coal','BGD'),'metric_tonne','resource unit is resolved from catalog metadata');
+  assert.equal(api.getResourceUnit('rare_earth','BGD'),null,'unknown catalog units are not guessed');
+  assert.equal(api.convertUnits(1,'megatonne','metric_tonne').value,1000000,'megatonne conversion is available');
+  assert.equal(api.convertUnits(1,'megatonne','kg').value,1000000000,'megatonne conversion preserves mass dimensions');
+
+  api.open('BGD','ontology');
+  const ontologyHtml=document.getElementById('gsrsk-intelligence-modal').innerHTML;
+  assert.match(ontologyHtml,/Global resource types/,'the catalog panel reports the worldwide commodity count');
+  assert.match(ontologyHtml,/Rare earth elements/,"the catalog panel lists resources outside the selected country summary");
+  assert.match(ontologyHtml,/Lithium/,'the global catalog also includes commodities from canonical site bindings');
+  assert.match(ontologyHtml,/Bauxite/,'the full canonical catalog contributes site resources beyond the 250-row master registry');
+  assert.match(ontologyHtml,/Registered deposits \/ sites/,'the catalog panel reports the global deposit registry size');
+
+  api.open('BGD','market');
+  const marketHtml=document.getElementById('gsrsk-intelligence-modal').innerHTML;
+  assert.match(marketHtml,/GLOBAL COMMODITY MARKET/,'market panel identifies itself as the global market');
+  assert.match(marketHtml,/Global resources tracked/,'market panel has a global market summary');
+  assert.match(marketHtml,/Rare earth elements/,'market panel quotes resources from the global catalog, not only local country inventory');
+  assert.match(marketHtml,/Lithium/,'market view includes a resource known only to the canonical global site registry');
+  assert.match(marketHtml,/Bauxite/,'market view includes resources from the complete canonical site catalog');
+  assert.match(marketHtml,/Worldwide Deposits/,'the global deposit registry is reachable from the command-center header');
+
+  api.open('BGD','deposits');
+  const modal=document.getElementById('gsrsk-intelligence-modal');
+  assert.match(modal.innerHTML,/id="omega-rescc-deposit-scope"/,'deposit panel offers country/global scope selection');
+  const changeHandler=(modal.listeners.change||[])[0];
+  assert.equal(typeof changeHandler,'function','the command center installs a change handler');
+  changeHandler({target:{id:'omega-rescc-deposit-scope',value:'WORLD'}});
+  assert.match(modal.innerHTML,/value="WORLD" selected/,'worldwide deposit scope can be selected in the running panel');
+  assert.match(modal.innerHTML,/Worldwide · all countries/,'global selection has explicit user-facing scope');
+  assert.match(modal.innerHTML,/Cornish Lithium Site/,'worldwide deposit scope includes canonical site-binding records outside the selected country');
+  assert.match(modal.innerHTML,/Western Australia Bauxite Deposit/,'worldwide deposit scope includes catalog-only sites outside the master registry subset');
+  assert.match(modal.innerHTML,/Resource deposits worldwide/,'the worldwide view uses the global deposit table');
+
+  const located=api.locateResource('WORLD','coal','SITE_BGD_BARAPUKURIA');
+  assert.equal(located.status,'APPLIED','locating a registered site produces an actual map-focus result');
+  assert.equal(located.result.matchedSiteCount,1,'the locator reports matching global site records');
+  assert.equal(JSON.stringify(sandbox.Game.Map.map.lastView.coords),JSON.stringify([24.8,88.9]),'the map first centers on the selected coal mine');
+  assert.equal(sandbox.Game.Map.resourceState.scope,'WORLD','the resource filter is switched to worldwide scope');
+  assert.deepEqual(Array.from(sandbox.Game.Map.filteredResourceIds),['coal'],'the map is filtered to the first selected resource');
+  const canonicalLocated=api.locateResource('WORLD','bauxite','SITE_AUS_CANONICAL_ONLY_1');
+  assert.equal(canonicalLocated.status,'APPLIED','catalog-only deposits can also be located on the map');
+  assert.equal(JSON.stringify(sandbox.Game.Map.map.lastView.coords),JSON.stringify([-23.4,121.2]),'catalog-only site coordinates are used by map focus');
+  assert.deepEqual(Array.from(sandbox.Game.Map.filteredResourceIds),['bauxite'],'map focus switches the resource filter to the newly selected catalog-only commodity');
+  assert.equal(api.locateResource('WORLD','unregistered_mineral','').status,'UNAVAILABLE','missing global deposits are reported honestly');
 });
 
 test('legacy card names disclose feature gaps instead of claiming unsupported actions', () => {

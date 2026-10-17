@@ -15,7 +15,7 @@
     { id: 'inventory', num: '07', title: 'Strategic reserve inventory' },
     { id: 'logistics', num: '08', title: 'Transport corridors' },
     { id: 'industrial', num: '09', title: 'Industrial value chain' },
-    { id: 'market', num: '10', title: 'Commodity market' },
+    { id: 'market', num: '10', title: 'Global Commodity Market & Prices' },
     { id: 'trade', num: '11', title: 'Supply contracts & tariffs' },
     { id: 'value', num: '12', title: 'Resource rent & sovereign wealth' },
     { id: 'cascade', num: '13', title: 'Cascade disruption sandbox' },
@@ -28,6 +28,11 @@
   let activePanel = 'matrix';
   let lastOutcome = '';
   let lastCascade = null;
+  let globalDepositRecordsCache = null;
+  let globalDepositRecordsCacheSources = null;
+  let depositScope = 'COUNTRY';
+  let depositPage = 0;
+  const DEPOSIT_PAGE_SIZE = 100;
 
   function state() { return (g.Game && g.Game.state) || g.gameState || {}; }
   function engine() { return g.ResourceMinistryEngine || null; }
@@ -173,16 +178,474 @@
     return e && Array.isArray(e.resourceTypes) ? e.resourceTypes : [];
   }
   const UNIT_DEFINITIONS = Object.freeze({
+    g: { label: 'Gram (g)', dimension: 'MASS', factor: 0.001, base: 'kg' },
     kg: { label: 'Kilogram (kg)', dimension: 'MASS', factor: 1, base: 'kg' },
     metric_tonne: { label: 'Metric tonne (t)', dimension: 'MASS', factor: 1000, base: 'kg' },
+    kilotonne: { label: 'Kilotonne (kt)', dimension: 'MASS', factor: 1000000, base: 'kg' },
+    megatonne: { label: 'Megatonne (Mt)', dimension: 'MASS', factor: 1000000000, base: 'kg' },
     lb: { label: 'Pound (lb)', dimension: 'MASS', factor: 0.45359237, base: 'kg' },
     litre: { label: 'Litre (L)', dimension: 'VOLUME', factor: 1, base: 'L' },
     bbl: { label: 'Oil barrel (bbl)', dimension: 'VOLUME', factor: 158.987294928, base: 'L' },
     cubic_metre: { label: 'Cubic metre (m³)', dimension: 'VOLUME', factor: 1000, base: 'L' },
     gj: { label: 'Gigajoule (GJ)', dimension: 'ENERGY', factor: 1, base: 'GJ' },
     mmbtu: { label: 'Million Btu (MMBtu)', dimension: 'ENERGY', factor: 1.05505585262, base: 'GJ' },
-    kwh: { label: 'Kilowatt-hour (kWh)', dimension: 'ENERGY', factor: 0.0036, base: 'GJ' }
+    kwh: { label: 'Kilowatt-hour (kWh)', dimension: 'ENERGY', factor: 0.0036, base: 'GJ' },
+    mwh: { label: 'Megawatt-hour (MWh)', dimension: 'ENERGY', factor: 3.6, base: 'GJ' },
+    gwh: { label: 'Gigawatt-hour (GWh)', dimension: 'ENERGY', factor: 3600, base: 'GJ' }
   });
+  function unitIdFromDeclaration(candidate) {
+    if (candidate && typeof candidate === 'object') {
+      for (const key of ['unit', 'standardUnit', 'declaredStandardUnit', 'unitOfMeasure', 'measurementUnit', 'symbol', 'value', 'name']) {
+        if (candidate[key] !== undefined && candidate[key] !== null) {
+          const resolved = unitIdFromDeclaration(candidate[key]);
+          if (resolved) return resolved;
+        }
+      }
+      return null;
+    }
+    if (candidate === undefined || candidate === null || String(candidate).trim() === '') return null;
+    const original = String(candidate).trim();
+    if (original === 'Mt') return 'megatonne';
+    const key = original.toUpperCase().replace(/[\s-]+/g, '_').replace(/[().]/g, '');
+    const aliases = {
+      G: 'g', GRAM: 'g', GRAMS: 'g', GM: 'g',
+      KG: 'kg', KGS: 'kg', KILOGRAM: 'kg', KILOGRAMS: 'kg',
+      T: 'metric_tonne', TON: 'metric_tonne', TONS: 'metric_tonne', TONNE: 'metric_tonne', TONNES: 'metric_tonne',
+      METRIC_TON: 'metric_tonne', METRIC_TONS: 'metric_tonne', METRIC_TONNE: 'metric_tonne', METRIC_TONNES: 'metric_tonne',
+      MT: 'metric_tonne', METRIC_TONNES: 'metric_tonne',
+      KT: 'kilotonne', KTON: 'kilotonne', KTONS: 'kilotonne', KILOTON: 'kilotonne', KILOTONS: 'kilotonne',
+      KILOTONNE: 'kilotonne', KILOTONNES: 'kilotonne', THOUSAND_TONNES: 'kilotonne',
+      MEGATON: 'megatonne', MEGATONS: 'megatonne', MEGATONNE: 'megatonne', MEGATONNES: 'megatonne',
+      MILLION_TONNES: 'megatonne', MILLION_TONS: 'megatonne', MT_OF: 'megatonne',
+      LB: 'lb', LBS: 'lb', POUND: 'lb', POUNDS: 'lb',
+      L: 'litre', LT: 'litre', LITER: 'litre', LITERS: 'litre', LITRE: 'litre', LITRES: 'litre',
+      BBL: 'bbl', BBLS: 'bbl', BARREL: 'bbl', BARRELS: 'bbl', BOE: 'bbl',
+      M3: 'cubic_metre', CUBIC_METER: 'cubic_metre', CUBIC_METERS: 'cubic_metre',
+      CUBIC_METRE: 'cubic_metre', CUBIC_METRES: 'cubic_metre',
+      GJ: 'gj', GIGAJOULE: 'gj', GIGAJOULES: 'gj',
+      MMBTU: 'mmbtu', BTU: 'mmbtu',
+      KWH: 'kwh', KILOWATT_HOUR: 'kwh', KILOWATT_HOURS: 'kwh',
+      MWH: 'mwh', MEGAWATT_HOUR: 'mwh', MEGAWATT_HOURS: 'mwh',
+      GWH: 'gwh', GIGAWATT_HOUR: 'gwh', GIGAWATT_HOURS: 'gwh'
+    };
+    if (aliases[key]) return aliases[key];
+    return Object.keys(UNIT_DEFINITIONS).find(function (id) { return id.toUpperCase() === key; }) || null;
+  }
+  function resourceKey(value) {
+    return String(value === undefined || value === null ? '' : value).trim().toLowerCase().replace(/[\s-]+/g, '_');
+  }
+  function resourceUnitId(resourceId, country) {
+    const wanted = resourceKey(resourceId);
+    if (!wanted) return null;
+    const type = resourceTypes().find(function (row) {
+      return resourceKey(row && (row.id || row.code || row.resourceId || row.resourceTypeId)) === wanted;
+    });
+    const summary = resources(country).find(function (row) {
+      return resourceKey(row && (row.id || row.code || row.resourceId || row.resourceTypeId)) === wanted;
+    });
+    const sites = globalDepositRecords().filter(function (site) {
+      const id = site && (site.resourceId || site.resourceTypeId || site.resId);
+      return resourceKey(id) === wanted && siteBelongsToCountry(site, country);
+    });
+    const candidates = [];
+    [type, summary].filter(Boolean).forEach(function (row) {
+      ['declaredStandardUnit', 'standardUnit', 'unitOfMeasure', 'measurementUnit', 'quantityUnit', 'unit'].forEach(function (key) {
+        if (row[key] !== undefined && row[key] !== null) candidates.push(row[key]);
+      });
+    });
+    sites.forEach(function (site) {
+      const source = site.sourceSiteRecord && typeof site.sourceSiteRecord === 'object' ? site.sourceSiteRecord : {};
+      const pkg = site.siteDataPackage && typeof site.siteDataPackage === 'object' ? site.siteDataPackage : {};
+      [site, source, pkg].forEach(function (record) {
+        ['reserve', 'reserves', 'recoverableReserve', 'quantitative', 'quantity', 'measurement'].forEach(function (key) {
+          if (record[key] !== undefined && record[key] !== null) candidates.push(record[key]);
+        });
+        ['declaredStandardUnit', 'standardUnit', 'quantityUnit', 'reserveUnit', 'unitOfMeasure', 'measurementUnit', 'unit'].forEach(function (key) {
+          if (record[key] !== undefined && record[key] !== null) candidates.push(record[key]);
+        });
+      });
+    });
+    for (const candidate of candidates) {
+      const resolved = unitIdFromDeclaration(candidate);
+      if (resolved) return resolved;
+    }
+    return null;
+  }
+  function siteBelongsToCountry(site, country) {
+    const siteCountry = site && (site.countryId || site.countryCode || site.countryIso3 || site.country || site.hostCountryIso3);
+    if (!siteCountry) return false;
+    let siteCode = String(siteCountry).trim().toUpperCase();
+    let countryCode = String(country || activeCountry()).trim().toUpperCase();
+    try {
+      if (typeof normaliseCountry === 'function') {
+        siteCode = normaliseCountry(siteCode);
+        countryCode = normaliseCountry(countryCode);
+      }
+    } catch (_) {}
+    if (countryCode === 'WORLD' || countryCode === 'GLOBAL' || countryCode === 'ALL_COUNTRIES') return true;
+    return siteCode === countryCode;
+  }
+  function siteResourceId(site) {
+    return site && (site.resourceId || site.resourceTypeId || site.resId || site.resource_id || site.resource || site.commodity ||
+      site.real && (site.real.resourceId || site.real.resourceTypeId || site.real.resId) ||
+      site.identity && (site.identity.resourceTypeId || site.identity.resourceId) ||
+      site.resourceIdentity && (site.resourceIdentity.resourceTypeId || site.resourceIdentity.resourceId) ||
+      site.sourceSiteRecord && (site.sourceSiteRecord.resourceId || site.sourceSiteRecord.resourceTypeId || site.sourceSiteRecord.resId) ||
+      site.siteDataPackage && (site.siteDataPackage.resourceId || site.siteDataPackage.resourceTypeId ||
+        site.siteDataPackage.resId || site.siteDataPackage.identity && site.siteDataPackage.identity.resourceTypeId));
+  }
+  function siteCountryId(site) {
+    const source = site && site.sourceSiteRecord && typeof site.sourceSiteRecord === 'object' ? site.sourceSiteRecord : {};
+    const identity = site && site.identity && typeof site.identity === 'object' ? site.identity : {};
+    const pkgIdentity = site && site.siteDataPackage && site.siteDataPackage.identity || {};
+    return normaliseCountry(site && (site.countryId || site.countryCode || site.countryIso3 || site.country || site.countryName ||
+      site.sovereignCountryId || identity.countryIso3 || identity.countryId || pkgIdentity.countryIso3 || pkgIdentity.countryId ||
+      source.countryId || source.countryCode || source.countryIso3 || source.countryName));
+  }
+  function globalDepositRecords() {
+    const resourceEngine = engine();
+    const currentState = state();
+    const binding = g.Omega && g.Omega.IndividualResourceSiteBinding || g.OmegaIndividualResourceSiteBinding;
+    const master = g.OmegaResourceSiteMasterResearchData || (g.Omega && g.Omega.ResourceSiteMasterResearchData);
+    const canonical = g.OmegaResourceSiteCanonicalCatalogData || (g.Omega && g.Omega.ResourceSiteCanonicalCatalogData);
+    const reserves = g.OmegaResourceSiteReserveSimulationData || (g.Omega && g.Omega.ResourceSiteReserveSimulationData);
+    const lossless = g.OmegaResourceLosslessReferenceData || (g.Omega && g.Omega.ResourceLosslessReferenceData);
+    const scenarios = g.OmegaResourceScenarioEngineeringData || (g.Omega && g.Omega.ResourceScenarioEngineeringData);
+    const cacheSources = [
+      resourceEngine && resourceEngine.deposits,
+      resourceEngine && resourceEngine.countryProfiles,
+      binding && binding.sites,
+      master && master.sites,
+      canonical && canonical.sites,
+      reserves && reserves.records,
+      lossless && (lossless.sites || lossless.records),
+      scenarios && (scenarios.sites || scenarios.records),
+      currentState.resource,
+      currentState.resources,
+      currentState.simulation && currentState.simulation.turn
+    ];
+    if (globalDepositRecordsCache && globalDepositRecordsCacheSources &&
+        cacheSources.length === globalDepositRecordsCacheSources.length &&
+        cacheSources.every(function (source, index) { return source === globalDepositRecordsCacheSources[index]; })) {
+      return globalDepositRecordsCache;
+    }
+    function rowsOf(source, keys) {
+      if (!source || typeof source !== 'object') return [];
+      for (const key of keys) if (Array.isArray(source[key])) return source[key];
+      return [];
+    }
+    // Canonical catalog is the master identity source (315 current entries). The
+    // 250-row master/reserve datasets and older site bindings enrich it, rather
+    // than restricting the player to whichever subset happened to load first.
+    const sourceRows = []
+      .concat(rowsOf(canonical, ['sites']))
+      .concat(rowsOf(master, ['sites']))
+      .concat(rowsOf(reserves, ['records']))
+      .concat(rowsOf(lossless, ['sites', 'records']))
+      .concat(rowsOf(scenarios, ['sites', 'records']));
+    const candidates = deposits().concat(sourceRows, siteRows('WORLD'));
+    const rows = [];
+    const aliasToIndex = new Map();
+    candidates.forEach(function (raw) {
+      if (!raw || typeof raw !== 'object') return;
+      const countryId = siteCountryId(raw);
+      if (!countryId) return;
+      const source = raw.sourceSiteRecord && typeof raw.sourceSiteRecord === 'object' ? raw.sourceSiteRecord : {};
+      const pkg = raw.siteDataPackage && typeof raw.siteDataPackage === 'object' ? raw.siteDataPackage : {};
+      const resourceId = siteResourceId(raw);
+      const explicitSiteIds = [
+        raw.siteId, raw.canonicalSiteId, raw.siteReferenceKey, raw.occurrenceKey, raw.id, raw.assetId,
+        source.siteId, source.canonicalSiteId, source.siteReferenceKey, source.occurrenceKey, source.id,
+        pkg.siteId, pkg.canonicalSiteId
+      ].filter(function (value) { return value !== undefined && value !== null && String(value).trim() !== ''; });
+      const siteId = explicitSiteIds[0] || raw.name || raw.siteName || raw.depositName;
+      const siteName = raw.siteName || raw.name || raw.depositName || raw.mineName || raw.fieldName ||
+        source.siteName || source.name || source.depositName || pkg.siteName || String(siteId || 'Unnamed site');
+      const coords = raw.coordinates || raw.location && raw.location.coordinates ||
+        raw.locationIdentity && raw.locationIdentity.coordinates ||
+        pkg.location && pkg.location.coordinates || source.coordinates || {};
+      const normalized = Object.assign({}, raw, {
+        countryId,
+        countryCode: raw.countryCode || countryId,
+        resourceId: resourceId || raw.resourceId,
+        siteId: siteId == null ? '' : String(siteId),
+        siteName,
+        coordinates: Object.keys(coords).length ? coords : raw.coordinates
+      });
+      const identityKey = 'ID:' + countryId + ':' + resourceKey(resourceId) + ':' + String(siteId || '');
+      const nameKey = 'NAME:' + countryId + ':' + resourceKey(resourceId) + ':' + resourceKey(siteName);
+      // Use names as a deduplication alias only when neither source provides an
+      // explicit stable ID. Different sites can legitimately share a similar name.
+      const keys = [identityKey].filter(function (key) { return key.split(':').pop() !== ''; });
+      if (!explicitSiteIds.length && nameKey.split(':').pop() !== '') keys.push(nameKey);
+      let index = null;
+      for (const key of keys) {
+        if (aliasToIndex.has(key)) { index = aliasToIndex.get(key); break; }
+      }
+      if (index === null) {
+        index = rows.length;
+        rows.push(normalized);
+      } else {
+        rows[index] = mergeDataValues(rows[index], normalized);
+      }
+      keys.forEach(function (key) { aliasToIndex.set(key, index); });
+    });
+    const sorted = rows.sort(function (a, b) {
+      const countryCompare = String(a.countryId || '').localeCompare(String(b.countryId || ''));
+      if (countryCompare) return countryCompare;
+      const resourceCompare = String(siteResourceId(a) || '').localeCompare(String(siteResourceId(b) || ''));
+      if (resourceCompare) return resourceCompare;
+      return String(a.siteName || a.siteId || '').localeCompare(String(b.siteName || b.siteId || ''));
+    });
+    globalDepositRecordsCache = sorted;
+    globalDepositRecordsCacheSources = cacheSources;
+    return sorted;
+  }
+  function sitesForResource(country, resourceId) {
+    const wanted = resourceKey(resourceId);
+    if (!wanted) return [];
+    return globalDepositRecords().filter(function (site) {
+      return resourceKey(siteResourceId(site)) === wanted && siteBelongsToCountry(site, country);
+    });
+  }
+  function globalResourceCatalog() {
+    const byId = new Map();
+    function add(row, fallbackId) {
+      if (!row || typeof row !== 'object') return;
+      const id = row.id || row.code || row.resourceId || row.resourceTypeId || row.resId || row.resource || fallbackId;
+      if (!id) return;
+      const key = resourceKey(id);
+      if (!key) return;
+      const existing = byId.get(key) || {};
+      byId.set(key, Object.assign({}, existing, row, {
+        id: String(existing.id || id),
+        name: row.name || row.label || row.displayName || existing.name || String(id)
+      }));
+    }
+    resourceTypes().forEach(function (row) { add(row); });
+    globalDepositRecords().forEach(function (site) {
+      add({
+        id: siteResourceId(site),
+        name: site.resourceName || site.commodityName || site.commodity || site.resourceTypeName,
+        unit: site.unit || site.reserve && site.reserve.unit || site.reserves && site.reserves.unit ||
+          site.quantitative && site.quantitative.reserve && site.quantitative.reserve.unit,
+        category: site.category || site.resourceCategory
+      });
+    });
+    const world = state();
+    const resourceRoots = [world.resource, world.resources].filter(function (root) {
+      return root && typeof root === 'object' && !Array.isArray(root);
+    });
+    resourceRoots.forEach(function (resourceRoot) {
+      Object.keys(resourceRoot).forEach(function (country) {
+        const bucket = resourceRoot[country];
+        if (!bucket || typeof bucket !== 'object') return;
+        for (const field of ['inventory','production','consumption','tradeAvailability','endowment','reserves']) {
+          const values = bucket[field];
+          if (values && typeof values === 'object' && !Array.isArray(values)) {
+            Object.keys(values).forEach(function (rid) { add({ id: rid, name: resourceName(rid) }); });
+          }
+        }
+        for (const field of ['availableByResource','reservedByResource']) {
+          const values = bucket.warehouse && bucket.warehouse[field];
+          if (values && typeof values === 'object') Object.keys(values).forEach(function (rid) { add({ id: rid, name: resourceName(rid) }); });
+        }
+        const requests = Array.isArray(bucket.importRequests) ? bucket.importRequests : [];
+        requests.forEach(function (row) { add(row); });
+      });
+    });
+    Object.keys(world.trade || {}).forEach(function (country) {
+      const bucket = world.trade[country] || {};
+      const requests = Array.isArray(bucket.importRequests) ? bucket.importRequests : [];
+      requests.forEach(function (row) { add(row); });
+      const offers = bucket.offerBook;
+      if (Array.isArray(offers)) offers.forEach(function (row) { add(row); });
+      else if (offers && typeof offers === 'object') Object.entries(offers).forEach(function ([rid, row]) {
+        add(Object.assign({ id: rid }, row && typeof row === 'object' ? row : {}));
+      });
+    });
+    return Array.from(byId.values()).sort(function (a, b) {
+      return String(a.name || a.id).localeCompare(String(b.name || b.id));
+    });
+  }
+  function resourceChoices(country) {
+    const byId = new Map();
+    globalResourceCatalog().concat(resources(country)).forEach(function (row) {
+      if (!row || typeof row !== 'object') return;
+      const id = row.id || row.code || row.resourceId || row.resourceTypeId;
+      if (!id) return;
+      const key = resourceKey(id);
+      const existing = byId.get(key) || {};
+      byId.set(key, Object.assign({}, existing, row, { id: String(existing.id || id), name: row.name || row.label || existing.name || String(id) }));
+    });
+    return Array.from(byId.values()).sort(function (a, b) {
+      return String(a.name || a.id).localeCompare(String(b.name || b.id));
+    });
+  }
+  function unitOptionsHtml(unitId, selectedUnitId) {
+    if (!unitId || !UNIT_DEFINITIONS[unitId]) {
+      return '<option value="" selected disabled>Unit not declared in source data</option>';
+    }
+    const dimension = UNIT_DEFINITIONS[unitId].dimension;
+    return Object.keys(UNIT_DEFINITIONS).filter(function (id) {
+      return UNIT_DEFINITIONS[id].dimension === dimension;
+    }).map(function (id) {
+      return '<option value="' + esc(id) + '"' + (id === selectedUnitId ? ' selected' : '') + '>' +
+        esc(UNIT_DEFINITIONS[id].label) + '</option>';
+    }).join('');
+  }
+  function resourceCountryChoices() {
+    const ids = new Set(countryList().filter(function (id) { return id && id !== 'WORLD'; }));
+    globalDepositRecords().forEach(function (site) {
+      const raw = site && (site.countryCode || site.countryId || site.country || site.countryName || site.sovereignCountryId);
+      if (raw) ids.add(normaliseCountry(raw));
+    });
+    const e = engine();
+    Object.keys(e && e.countryProfiles || {}).forEach(function (id) { if (id) ids.add(normaliseCountry(id)); });
+    return ['WORLD'].concat(Array.from(ids).filter(function (id) { return id && id !== 'WORLD'; }).sort());
+  }
+  function countryDisplayName(id) {
+    if (id === 'WORLD' || id === 'GLOBAL' || id === 'ALL_COUNTRIES') return 'Worldwide · all countries';
+    const key = normaliseCountry(id);
+    const gameRow = g.Game && g.Game.countryLookup && (g.Game.countryLookup[key] || g.Game.countryLookup[id]);
+    const e = engine();
+    const profile = e && e.getCountryResourceProfile ? e.getCountryResourceProfile(key) : null;
+    const identity = profile && profile.identity || {};
+    const profileCountry = identity.countryCode || identity.countryIso3 || identity.iso3 || identity.countryId;
+    const profileMatches = profileCountry && normaliseCountry(profileCountry) === key;
+    const profileName = profileMatches ? (identity.name || identity.officialName) : null;
+    const name = gameRow && (gameRow.name || gameRow.officialName) || profileName;
+    return name && String(name).toUpperCase() !== String(key).toUpperCase() ? String(name) + ' (' + key + ')' : key;
+  }
+  function resourceCountryOptionsHtml(selected) {
+    return resourceCountryChoices().map(function (id) {
+      return '<option value="' + esc(id) + '"' + (id === selected ? ' selected' : '') + '>' +
+        esc(countryDisplayName(id)) + '</option>';
+    }).join('');
+  }
+  function locationOptionsHtml(country, resourceId) {
+    const sites = sitesForResource(country, resourceId);
+    const options = sites.map(function (site, index) {
+      const id = site.siteId || site.id || site.siteKey || site.assetId || site.siteName || ('DEPOSIT_' + index);
+      const name = site.siteName || site.name || site.label || String(id);
+      const region = site.region || site.locality || site.adminRegion;
+      const siteCountry = site.countryName || site.country || site.countryCode || site.countryId || site.sovereignCountryId;
+      const label = [name, region, String(country || '').toUpperCase() === 'WORLD' ? countryDisplayName(normaliseCountry(siteCountry)) : '']
+        .filter(Boolean).join(' · ');
+      return '<option value="' + esc(id) + '">' + esc(label) + '</option>';
+    }).join('');
+    return '<option value="">Select a specific deposit (or choose all matching sites)</option>' +
+      (options || '<option value="" disabled>No matching site records for this resource and scope</option>');
+  }
+  function targetUnitId(sourceUnitId) {
+    const source = UNIT_DEFINITIONS[sourceUnitId];
+    if (!source) return null;
+    const preferred = {
+      g: 'kg', kg: 'metric_tonne', metric_tonne: 'kg', kilotonne: 'metric_tonne',
+      megatonne: 'kilotonne', lb: 'kg', litre: 'cubic_metre', bbl: 'litre',
+      cubic_metre: 'litre', gj: 'mwh', mmbtu: 'gj', kwh: 'gj', mwh: 'gj', gwh: 'mwh'
+    }[sourceUnitId];
+    if (preferred && UNIT_DEFINITIONS[preferred] && UNIT_DEFINITIONS[preferred].dimension === source.dimension) return preferred;
+    return Object.keys(UNIT_DEFINITIONS).find(function (id) {
+      return UNIT_DEFINITIONS[id].dimension === source.dimension && id !== sourceUnitId;
+    }) || sourceUnitId;
+  }
+  function replaceSelectOptions(select, optionsHtml, selectedValue) {
+    if (!select) return;
+    select.innerHTML = optionsHtml;
+    if (selectedValue !== undefined && selectedValue !== null) select.value = String(selectedValue);
+  }
+  function syncTargetUnitOptions(form, sourceUnitId, preferredTarget) {
+    if (!form || typeof form.querySelector !== 'function') return;
+    const target = form.querySelector('[name="toUnit"]');
+    const source = UNIT_DEFINITIONS[sourceUnitId];
+    if (!target) return;
+    if (!source) {
+      replaceSelectOptions(target, '<option value="" selected disabled>Select a resource with a declared unit</option>', '');
+      return;
+    }
+    const candidates = Object.keys(UNIT_DEFINITIONS).filter(function (id) {
+      return UNIT_DEFINITIONS[id].dimension === source.dimension;
+    });
+    const selected = candidates.indexOf(preferredTarget) >= 0 ? preferredTarget :
+      (candidates.find(function (id) { return id !== sourceUnitId; }) || sourceUnitId);
+    replaceSelectOptions(target, candidates.map(function (id) {
+      return '<option value="' + esc(id) + '"' + (id === selected ? ' selected' : '') + '>' + esc(UNIT_DEFINITIONS[id].label) + '</option>';
+    }).join(''), selected);
+  }
+  function syncResourceForm(form, country) {
+    if (!form || typeof form.querySelector !== 'function') return;
+    const resourceSelect = form.querySelector('#omega-rescc-resource-select');
+    const countrySelect = form.querySelector('#omega-rescc-search-country');
+    const sourceSelect = form.querySelector('[name="fromUnit"]');
+    const targetSelect = form.querySelector('[name="toUnit"]');
+    const locationSelect = form.querySelector('#omega-rescc-location-select');
+    const help = form.querySelector('#omega-rescc-unit-help');
+    const matchCount = form.querySelector('#omega-rescc-resource-match-count');
+    const submit = form.querySelector('button[type="submit"]');
+    const resourceId = resourceSelect && resourceSelect.value;
+    const selectedCountry = countrySelect && countrySelect.value || country || countryId || activeCountry();
+    const unitId = resourceUnitId(resourceId, selectedCountry);
+    const matchingSites = sitesForResource(selectedCountry, resourceId);
+    const unitChoices = unitOptionsHtml(unitId, unitId);
+    replaceSelectOptions(sourceSelect, unitChoices, unitId || '');
+    syncTargetUnitOptions(form, unitId, targetUnitId(unitId));
+    if (locationSelect) replaceSelectOptions(locationSelect, locationOptionsHtml(selectedCountry, resourceId), '');
+    if (help) help.textContent = unitId
+      ? 'Unit auto-selected from this resource’s catalog/site records. Conversion choices are restricted to the same physical dimension.'
+      : 'No compatible unit is recorded for this resource. The source data must define one before safe conversion is enabled.';
+    if (matchCount) {
+      const countryCount = new Set(matchingSites.map(function (site) {
+        return normaliseCountry(site.countryCode || site.countryId || site.country || site.countryName || site.sovereignCountryId);
+      }).filter(Boolean)).size;
+      matchCount.textContent = matchingSites.length + ' matching site/deposit records' +
+        (selectedCountry === 'WORLD' ? ' across ' + countryCount + ' countries' : ' in ' + countryDisplayName(selectedCountry)) + '.';
+    }
+    if (submit) submit.disabled = !unitId;
+    const locate = form.querySelector('[data-action="locate-resource"]');
+    if (locate) locate.disabled = !resourceId || matchingSites.length === 0;
+  }
+  function locateResourceOnMap(scopeCountry, resourceId, selectedSiteId) {
+    const rid = String(resourceId || '').trim();
+    if (!rid) return { status: 'BLOCKED', reason: 'RESOURCE_ID_REQUIRED' };
+    const matches = sitesForResource(scopeCountry || 'WORLD', rid);
+    if (!matches.length) return { status: 'UNAVAILABLE', reason: 'NO_MATCHING_RESOURCE_SITES', resourceId: rid, scopeCountry: scopeCountry || 'WORLD' };
+    const chosen = selectedSiteId ? matches.find(function (site) {
+      return String(site.siteId || site.id || site.siteKey || site.assetId || site.siteName || '') === String(selectedSiteId);
+    }) : matches[0];
+    if (!chosen) return { status: 'BLOCKED', reason: 'SELECTED_SITE_NOT_IN_RESOURCE_SCOPE', resourceId: rid, selectedSiteId };
+    const coords = chosen.coordinates || chosen.location && chosen.location.coordinates ||
+      chosen.locationIdentity && chosen.locationIdentity.coordinates ||
+      chosen.siteDataPackage && chosen.siteDataPackage.location && chosen.siteDataPackage.location.coordinates || {};
+    const latRaw = chosen.lat ?? chosen.latitude ?? coords.lat ?? coords.latitude;
+    const lngRaw = chosen.lng ?? chosen.lon ?? chosen.longitude ?? coords.lng ?? coords.lon ?? coords.longitude;
+    const lat = latRaw === undefined || latRaw === null || String(latRaw).trim() === '' ? NaN : Number(latRaw);
+    const lng = lngRaw === undefined || lngRaw === null || String(lngRaw).trim() === '' ? NaN : Number(lngRaw);
+    const valid = Number.isFinite(lat) && Number.isFinite(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+    const mapApi = g.Game && g.Game.Map;
+    if (!mapApi) return { status: 'UNAVAILABLE', reason: 'RESOURCE_MAP_UNAVAILABLE', matchedSiteCount: matches.length };
+    if (typeof mapApi.applyResourceMapFilter === 'function') {
+      mapApi.applyResourceMapFilter([rid]);
+      if (mapApi.resourceState) {
+        mapApi.resourceState.scope = 'WORLD';
+        mapApi.resourceState.enabled = true;
+        if (!(mapApi.resourceState.selectedResources instanceof Set)) mapApi.resourceState.selectedResources = new Set();
+        mapApi.resourceState.selectedResources.add(resourceKey(rid));
+      }
+      if (typeof mapApi.renderResourceDeposits === 'function') mapApi.renderResourceDeposits();
+    } else if (typeof mapApi.activateResourceMode === 'function') {
+      mapApi.activateResourceMode([rid]);
+    } else {
+      return { status: 'UNAVAILABLE', reason: 'RESOURCE_MAP_FILTER_API_UNAVAILABLE', matchedSiteCount: matches.length };
+    }
+    const map = mapApi.map || g.map;
+    if (valid && map && typeof map.setView === 'function') {
+      map.setView([lat, lng], Math.max(7, Number(typeof map.getZoom === 'function' ? map.getZoom() : 4)));
+    } else if (selectedSiteId && !valid) {
+      return { status: 'APPLIED_WITH_WARNINGS', reason: 'SELECTED_SITE_COORDINATES_UNAVAILABLE', resourceId: rid, siteId: selectedSiteId, matchedSiteCount: matches.length, mapFiltered: true };
+    }
+    return { status: 'APPLIED', result: { resourceId: rid, scopeCountry: scopeCountry || 'WORLD', siteId: chosen.siteId || chosen.id || chosen.siteName, matchedSiteCount: matches.length, mapFiltered: true, centeredOnSelectedSite: valid } };
+  }
   function convertUnits(value, fromUnit, toUnit) {
     if (value === null || value === undefined || String(value).trim() === '') return { status: 'BLOCKED', reason: 'QUANTITY_REQUIRED' };
     const amount = Number(value), from = UNIT_DEFINITIONS[String(fromUnit || '')], to = UNIT_DEFINITIONS[String(toUnit || '')];
@@ -217,8 +680,11 @@
     return Array.from(out).filter(Boolean).sort();
   }
   function resourceName(id) {
-    const row = resourceTypes().find(function (x) { return String(x.id) === String(id); });
-    return row ? (row.name || id) : String(id || 'Resource');
+    const wanted = resourceKey(id);
+    const row = resourceTypes().find(function (x) {
+      return resourceKey(x && (x.id || x.code || x.resourceId || x.resourceTypeId)) === wanted;
+    });
+    return row ? (row.name || row.label || id) : String(id || 'Resource');
   }
   function viewTitle(id) {
     return (PANELS.find(function (p) { return p.id === id; }) || PANELS[0]).title;
@@ -299,48 +765,95 @@
     const summary = engineSummary(country);
     const rows = resources(country);
     const metrics = summary.globalMetrics || {};
-    const unitOptions = Object.keys(UNIT_DEFINITIONS).map(function (id) {
-      const unit = UNIT_DEFINITIONS[id];
-      return '<option value="' + esc(id) + '">' + esc(unit.label) + '</option>';
-    }).join('');
-    const metrology = '<form class="omega-rescc-form" data-search-item data-form="metrology"><h3>Canonical unit conversion</h3>' +
-      '<div class="omega-rescc-formgrid">' +
-      '<label>Quantity<input name="value" type="number" step="any" required placeholder="Enter quantity"></label>' +
-      '<label>From unit<select name="fromUnit" required>' + unitOptions + '</select></label>' +
-      '<label>To unit<select name="toUnit" required>' + unitOptions + '</select></label></div>' +
-      '<p class="omega-rescc-note">Only conversions within the same physical dimension are allowed. Volume, mass and energy are never converted across dimensions.</p>' +
-      '<button class="omega-rescc-button" type="submit">Convert quantity</button></form>';
+    const choices = resourceChoices(country);
+    const localRow = rows.find(function (row) { return row && (row.id || row.resourceId || row.resourceTypeId || row.code); });
+    const declaredType = resourceTypes().find(function (row) { return row && (row.id || row.code || row.resourceId || row.resourceTypeId); });
+    const selectedId = String((localRow && (localRow.id || localRow.resourceId || localRow.resourceTypeId || localRow.code)) ||
+      (declaredType && (declaredType.id || declaredType.code || declaredType.resourceId || declaredType.resourceTypeId)) ||
+      (choices[0] && choices[0].id) || '');
+    const declaredUnit = selectedId ? resourceUnitId(selectedId, 'WORLD') : null;
+    const defaultTarget = targetUnitId(declaredUnit);
+    const resourceOptions = choices.length ? choices.map(function (row) {
+      const id = String(row.id);
+      const unit = resourceUnitId(id, 'WORLD');
+      const detail = unit && UNIT_DEFINITIONS[unit] ? ' · ' + UNIT_DEFINITIONS[unit].label : ' · unit not recorded';
+      return '<option value="' + esc(id) + '"' + (id === selectedId ? ' selected' : '') + '>' +
+        esc(row.name || id) + esc(detail) + '</option>';
+    }).join('') : '<option value="" selected disabled>No resource catalog entries loaded</option>';
+    const locationOptions = locationOptionsHtml('WORLD', selectedId);
+    const metrology = '<form class="omega-rescc-form omega-rescc-resource-form" data-search-item data-form="metrology">' +
+      '<h3>Resource quantity &amp; unit workspace</h3>' +
+      '<div class="omega-rescc-formgrid omega-rescc-resource-grid">' +
+      '<label>Resource<select id="omega-rescc-resource-select" name="resourceId" required>' + resourceOptions + '</select></label>' +
+      '<label>Country / scope<select id="omega-rescc-search-country" name="searchCountry" required>' + resourceCountryOptionsHtml('WORLD') + '</select></label>' +
+      '<label>Location / deposit<select id="omega-rescc-location-select" name="siteId">' + locationOptionsHtml('WORLD', selectedId) + '</select></label>' +
+      '<label>Quantity<input name="value" type="number" min="0" step="any" required placeholder="Enter amount"></label>' +
+      '<label>Current unit<select id="omega-rescc-from-unit" name="fromUnit" required>' + unitOptionsHtml(resourceUnitId(selectedId, 'WORLD'), resourceUnitId(selectedId, 'WORLD')) + '</select></label>' +
+      '<label>Convert to<select id="omega-rescc-to-unit" name="toUnit" required>' + unitOptionsHtml(resourceUnitId(selectedId, 'WORLD'), targetUnitId(resourceUnitId(selectedId, 'WORLD'))) + '</select></label></div>' +
+      '<div id="omega-rescc-resource-match-count" class="omega-rescc-unit-note">' + sitesForResource('WORLD', selectedId).length + ' matching site/deposit records worldwide.</div>' +
+      '<div id="omega-rescc-unit-help" class="omega-rescc-unit-note">' +
+      (declaredUnit && UNIT_DEFINITIONS[declaredUnit]
+        ? 'Unit defaults from this resource’s declared catalog/site data. You can choose another unit of the same physical dimension.'
+        : 'This resource has no resolvable declared unit. Conversion stays unavailable until the source data defines one.') +
+      '</div>' +
+      '<div class="omega-rescc-actions">' +
+      '<button class="omega-rescc-button" type="button" data-action="locate-resource"' + (!selectedId || sitesForResource('WORLD', selectedId).length === 0 ? ' disabled' : '') + '>Locate resource / deposit on map</button>' +
+      '<button class="omega-rescc-button" type="submit"' + (!resourceUnitId(selectedId, 'WORLD') ? ' disabled' : '') + '>Convert quantity</button></div></form>';
     const top = metrology + '<div class="omega-rescc-metrics">' +
       '<div><span>Autonomy index</span><strong>' + number(metrics.autonomyIndex, '%') + '</strong></div>' +
       '<div><span>Reserve duration</span><strong>' + number(metrics.strategicReservesTotalDays, ' days') + '</strong></div>' +
       '<div><span>Runtime source</span><strong>' + esc(summary.version || 'Unavailable') + '</strong></div></div>' +
       '<p class="omega-rescc-note">' + esc(summary.briefing || 'Missing values remain unavailable; no synthetic values are shown.') + '</p>';
-    const content = rows.map(function (r) {
-      return card(r.name || r.id, r.id + ' · ' + (r.unit || 'unit not specified'),
-        '<div class="omega-rescc-grid2">' + kv('Production/day', r.dailyProduction) +
-        kv('Demand/day', r.dailyConsumption) + kv('Net balance', r.netBalance) +
-        kv('Inventory', r.inventory) + kv('Reserve', r.reserve) + kv('Stock days', r.stockDays) + '</div>' +
-        '<div class="omega-rescc-muted">Production authority: ' + esc(r.productionAuthority || 'NOT_RECORDED') +
-        ' · Reserve authority: ' + esc(r.reserveAuthority || 'NOT_RECORDED') + '</div>',
-        actionButton('survey', 'Request survey', { 'resource-id': r.id }) +
-        actionButton('expansion', 'Request capacity review', { 'resource-id': r.id }) +
-        actionButton('reserve', 'Request SPR transfer', { 'resource-id': r.id }) +
-        actionButton('focus-map', 'Focus map', { 'resource-id': r.id }));
-    }).join('');
-    return top + (content || empty('No authoritative commodity rows are available for this country.'));
+    const table = rows.length ? '<div class="omega-rescc-table-wrap"><table class="omega-rescc-table" aria-label="Resource balances">' +
+      '<thead><tr><th>Resource</th><th>Unit</th><th>Production/day</th><th>Demand/day</th><th>Net balance</th><th>Inventory</th><th>Reserve</th><th>Stock days</th><th>Actions</th></tr></thead><tbody>' +
+      rows.map(function (row) {
+        const rid = row.id || row.resourceId || row.resourceTypeId || '';
+        const unit = row.unit || (resourceUnitId(rid, country) && UNIT_DEFINITIONS[resourceUnitId(rid, country)].label) || 'Not recorded';
+        const actions = '<details class="omega-rescc-row-actions"><summary>Open</summary><div class="omega-rescc-actions">' +
+          actionButton('survey', 'Request survey', { 'resource-id': rid }) +
+          actionButton('expansion', 'Request capacity review', { 'resource-id': rid }) +
+          actionButton('reserve', 'Request SPR transfer', { 'resource-id': rid }) +
+          actionButton('focus-map', 'Focus map', { 'resource-id': rid }) +
+          '</div></details>';
+        return '<tr><th scope="row">' + esc(row.name || rid || 'Resource') + '</th>' +
+          '<td>' + esc(unit) + '</td><td>' + number(row.dailyProduction) + '</td><td>' + number(row.dailyConsumption) +
+          '</td><td>' + number(row.netBalance) + '</td><td>' + number(row.inventory) + '</td><td>' + number(row.reserve) +
+          '</td><td>' + number(row.stockDays, ' days') + '</td><td>' + actions + '</td></tr>';
+      }).join('') + '</tbody></table></div>' : empty('No authoritative commodity rows are available for this country.');
+    return top + table;
   }
   function panelOntology(country) {
-    const types = resourceTypes();
-    if (!types.length) return empty('Commodity ontology catalog is not loaded.');
-    return '<p class="omega-rescc-note">Canonical resource identifiers, units and process chains exposed by the installed catalog. Unset chemistry or grade fields are not inferred.</p>' +
-      types.map(function (r) {
-        return card(r.name || r.id, r.id + ' · ' + (r.unit || 'unit not specified'),
-          '<div class="omega-rescc-grid2">' + kv('Category', r.category) + kv('Unit', r.unit) +
-          kv('Base price evidence', r.basePrice) + kv('Chemical formula', r.chemicalFormula || r.formula) + '</div>' +
-          '<div class="omega-rescc-kv"><span>Process chain</span><strong>' +
-          esc(Array.isArray(r.processChain) ? r.processChain.join(' → ') : (r.processChain || 'Not recorded')) + '</strong></div>',
-          actionButton('focus-map', 'Locate deposits', { 'resource-id': r.id }));
-      }).join('');
+    const types = globalResourceCatalog();
+    if (!types.length) return empty('Global commodity catalog is not loaded.') +
+      '<p class="omega-rescc-muted">' + esc(sourceDataStatus(country)) + '</p>';
+    const allSites = globalDepositRecords();
+    const uniqueCountries = new Set(allSites.map(function (site) {
+      const raw = site && (site.countryCode || site.countryId || site.country || site.countryName || site.sovereignCountryId);
+      return raw ? normaliseCountry(raw) : '';
+    }).filter(Boolean));
+    const header = '<div class="omega-rescc-metrics">' +
+      '<div><span>Global resource types</span><strong>' + number(types.length) + '</strong></div>' +
+      '<div><span>Registered deposits / sites</span><strong>' + number(allSites.length) + '</strong></div>' +
+      '<div><span>Countries represented in deposit data</span><strong>' + number(uniqueCountries.size) + '</strong></div></div>' +
+      '<p class="omega-rescc-muted">Global catalog combines declared commodity types with resource IDs found in the existing deposit registry and country resource/trade state. It does not invent missing commodities or site records.</p>';
+    const cards = types.map(function (r) {
+      const id = r.id || r.resourceId || r.resourceTypeId;
+      const matches = allSites.filter(function (site) {
+        return resourceKey(site && (site.resourceId || site.resourceTypeId || site.resId || site.resource)) === resourceKey(id);
+      });
+      const countries = new Set(matches.map(function (site) {
+        return normaliseCountry(site && (site.countryCode || site.countryId || site.country || site.countryName || site.sovereignCountryId));
+      }).filter(Boolean));
+      return card(r.name || id, id + ' · ' + (r.unit || 'unit not specified'),
+        '<div class="omega-rescc-grid2">' + kv('Category', r.category) + kv('Unit', r.unit) +
+        kv('Deposits worldwide', matches.length) + kv('Countries with records', countries.size) +
+        kv('Base price evidence', r.basePrice) + kv('Chemical formula', r.chemicalFormula || r.formula) + '</div>' +
+        '<div class="omega-rescc-kv"><span>Process chain</span><strong>' +
+        esc(Array.isArray(r.processChain) ? r.processChain.join(' → ') : (r.processChain || 'Not recorded')) + '</strong></div>',
+        actionButton('focus-map', 'Locate deposits on map', { 'resource-id': id }) +
+        actionButton('open-global-deposits', 'View worldwide deposits', { 'resource-id': id }));
+    }).join('');
+    return header + cards;
   }
   function panelReserves(country) {
     const rows=resources(country),r=resourceBucket(country),endowment=r.endowment||{},reserves=r.reserves||{},inventory=r.inventory||{};
@@ -363,31 +876,87 @@
       (profileRows.length>150?'<p class="omega-rescc-note">Showing 150 of '+profileRows.length+' reserve profiles.</p>':'');
   }
   function panelDeposits(country) {
-    const all=deposits(),selected=activeCountry(country);
-    const rows=selected==='WORLD'?all:all.filter(d=>{
-      const cid=d&&(d.countryCode||d.countryId||d.country||d.countryName||d.sovereignCountryId);
-      return cid&&normaliseCountry(cid)===selected;
+    const all = globalDepositRecords();
+    const selected = activeCountry(country);
+    const rows = (depositScope === 'WORLD' ? all : all.filter(function (d) {
+      const cid = d && (d.countryCode || d.countryId || d.country || d.countryName || d.sovereignCountryId);
+      return cid && normaliseCountry(cid) === selected;
+    })).slice().sort(function (a, b) {
+      const ac = String(a.countryCode || a.countryId || a.country || '');
+      const bc = String(b.countryCode || b.countryId || b.country || '');
+      if (ac !== bc) return ac.localeCompare(bc);
+      const ar = String(a.resourceId || a.resId || a.resourceTypeId || a.resource || '');
+      const br = String(b.resourceId || b.resId || b.resourceTypeId || b.resource || '');
+      if (ar !== br) return ar.localeCompare(br);
+      return String(a.name || a.siteName || a.depositName || a.id || '').localeCompare(String(b.name || b.siteName || b.depositName || b.id || ''));
     });
-    if(!rows.length)return empty('No deposits matched '+selected+' in the loaded JSON registry.')+'<p class="omega-rescc-note">'+esc(sourceDataStatus(country))+'</p>';
-    const visible=rows.slice(0,250);
-    return '<p class="omega-rescc-note">Country-scoped JSON deposit registry: '+rows.length+' records matched '+esc(selected)+'. Showing '+visible.length+'; missing fields stay unavailable.</p>'+
-      visible.map(d=>{
-        const lat=Number(d.lat??d.latitude??(d.coordinates&&d.coordinates.lat)),lng=Number(d.lng??d.lon??d.longitude??(d.coordinates&&(d.coordinates.lng??d.coordinates.lon)));
-        const valid=Number.isFinite(lat)&&Number.isFinite(lng)&&lat>=-90&&lat<=90&&lng>=-180&&lng<=180,rid=d.resourceId||d.resId||d.resourceTypeId||d.resource||'';
-        const body='<div class="omega-rescc-grid2">'+kv('Country',d.country||d.countryCode||d.countryId)+kv('Resource',rid||d.name)+kv('Latitude',valid?lat.toFixed(5):null)+kv('Longitude',valid?lng.toFixed(5):null)+kv('Reserves',d.reserves??d.reserve)+kv('Grade',d.grade??d.purity)+kv('Operator',d.operator||d.owner)+'</div>';
-        return card(d.name||d.depositName||d.siteName||d.siteId||'Unnamed deposit',d.status||'STATUS NOT RECORDED',body,
-          (valid?actionButton('fly-deposit','Fly to coordinates',{lat,lng,'deposit-name':d.name||d.depositName||'Deposit'}):'')+(rid?actionButton('survey','Request resource survey',{'resource-id':rid}):''));
-      }).join('')+(rows.length>visible.length?'<p class="omega-rescc-note">Showing the first '+visible.length+' of '+rows.length+' matched records.</p>':'');
+    const pageCount = Math.max(1, Math.ceil(rows.length / DEPOSIT_PAGE_SIZE));
+    depositPage = Math.max(0, Math.min(depositPage, pageCount - 1));
+    const start = depositPage * DEPOSIT_PAGE_SIZE;
+    const visible = rows.slice(start, start + DEPOSIT_PAGE_SIZE);
+    const commodityIds = new Set(globalResourceCatalog().map(function (row) { return resourceKey(row.id); }).filter(Boolean));
+    const siteResourceIds = new Set(all.map(function (site) {
+      return resourceKey(siteResourceId(site));
+    }).filter(Boolean));
+    const toolbar = '<div class="omega-rescc-deposit-tools">' +
+      '<label>Registry scope<select id="omega-rescc-deposit-scope" aria-label="Deposit registry scope">' +
+      '<option value="COUNTRY"' + (depositScope === 'COUNTRY' ? ' selected' : '') + '>Selected country: ' + esc(selected) + '</option>' +
+      '<option value="WORLD"' + (depositScope === 'WORLD' ? ' selected' : '') + '>Worldwide · all countries</option>' +
+      '</select></label><span>' + (depositScope === 'WORLD' ? 'Worldwide JSON deposit registry' : 'Country-scoped JSON deposit registry') +
+      ' · ' + number(rows.length) + ' sites in scope · ' +
+      number(commodityIds.size) + ' catalog resource types · ' + number(siteResourceIds.size) + ' resource IDs in deposit records</span></div>';
+    if (!rows.length) return toolbar + empty(depositScope === 'WORLD'
+      ? 'No deposit records are loaded from the existing global JSON registry.'
+      : 'No deposits matched ' + selected + ' in the loaded JSON registry.') +
+      '<p class="omega-rescc-muted">' + esc(sourceDataStatus(country)) + '</p>';
+    const body = visible.map(function (d) {
+      const latRaw = d.lat ?? d.latitude ?? (d.coordinates && (d.coordinates.lat ?? d.coordinates.latitude));
+      const lngRaw = d.lng ?? d.lon ?? d.longitude ?? (d.coordinates && (d.coordinates.lng ?? d.coordinates.lon ?? d.coordinates.longitude));
+      const lat = latRaw === undefined || latRaw === null || String(latRaw).trim() === '' ? NaN : Number(latRaw);
+      const lng = lngRaw === undefined || lngRaw === null || String(lngRaw).trim() === '' ? NaN : Number(lngRaw);
+      const valid = Number.isFinite(lat) && Number.isFinite(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+      const rid = d.resourceId || d.resId || d.resourceTypeId || d.resource || '';
+      const siteName = d.name || d.depositName || d.siteName || d.siteId || d.id || 'Unnamed deposit';
+      const countryName = d.country || d.countryName || d.countryCode || d.countryId || d.sovereignCountryId;
+      const reserve = d.reserve ?? d.reserves ?? d.recoverableReserve;
+      const reserveValue = reserve && typeof reserve === 'object'
+        ? (reserve.quantity ?? reserve.value ?? reserve.amount ?? reserve.reserves)
+        : reserve;
+      const reserveUnit = reserve && typeof reserve === 'object' ? (reserve.unit || reserve.quantityUnit) : d.unit;
+      const reserveText = reserveValue === undefined || reserveValue === null || reserveValue === ''
+        ? 'Unavailable'
+        : number(reserveValue, reserveUnit ? ' ' + reserveUnit : '');
+      return '<tr data-search-item><th scope="row">' + esc(siteName) + '</th>' +
+        '<td>' + esc(countryName || 'Not recorded') + '</td>' +
+        '<td>' + esc(resourceName(rid) + (rid ? ' (' + rid + ')' : '')) + '</td>' +
+        '<td>' + (valid ? esc(lat.toFixed(4) + ', ' + lng.toFixed(4)) : 'Coordinates unavailable') + '</td>' +
+        '<td>' + esc(reserveText) + '</td>' +
+        '<td>' + esc(d.grade ?? d.purity ?? 'Unavailable') + '</td>' +
+        '<td><div class="omega-rescc-actions">' +
+        actionButton('fly-deposit', 'Map', { lat: valid ? lat : '', lng: valid ? lng : '', 'deposit-name': siteName }, !valid) +
+        actionButton('survey', 'Survey', { 'resource-id': rid }, !rid) +
+        '</div></td></tr>';
+    }).join('');
+    const pagination = '<div class="omega-rescc-deposit-pagination"><span>Showing ' + number(start + 1) + '–' +
+      number(Math.min(start + visible.length, rows.length)) + ' of ' + number(rows.length) +
+      ' · Page ' + number(depositPage + 1) + ' of ' + number(pageCount) + '</span><div class="omega-rescc-actions">' +
+      actionButton('deposit-page', 'Previous', { direction: 'previous' }, depositPage <= 0) +
+      actionButton('deposit-page', 'Next', { direction: 'next' }, depositPage >= pageCount - 1) + '</div></div>';
+    return toolbar + '<div class="omega-rescc-table-wrap"><table class="omega-rescc-table omega-rescc-deposit-table" aria-label="Resource deposits worldwide">' +
+      '<thead><tr><th>Deposit / site</th><th>Country</th><th>Resource</th><th>Coordinates</th><th>Reserve</th><th>Grade / purity</th><th>Actions</th></tr></thead>' +
+      '<tbody>' + body + '</tbody></table></div>' + pagination +
+      '<p class="omega-rescc-muted">Source: existing resource JSON registry. Unknown fields remain unavailable; the map action only uses recorded coordinates.</p>';
   }
   function siteRows(country) {
-    const selected=activeCountry(country),r=resourceBucket(country),candidates=[];
+    const selected=activeCountry(country),worldScope=['WORLD','GLOBAL','ALL_COUNTRIES'].includes(selected),r=resourceBucket(country),candidates=[];
     const append=(rows,countryHint)=>{
       if(!Array.isArray(rows))return;
       rows.forEach(site=>{
         if(!site||typeof site!=='object')return;
         const source=site.sourceSiteRecord&&typeof site.sourceSiteRecord==='object'?site.sourceSiteRecord:{};
         const identity=site.identity&&typeof site.identity==='object'?site.identity:{};
-        const ownCountry=site.countryId||site.countryCode||site.country||identity.countryIso3||identity.countryId||source.countryId||source.countryCode||countryHint;
+        const pkgIdentity=site.siteDataPackage&&site.siteDataPackage.identity||{};
+        const ownCountry=site.countryId||site.countryCode||site.countryIso3||site.country||site.countryName||site.sovereignCountryId||identity.countryIso3||identity.countryId||pkgIdentity.countryIso3||pkgIdentity.countryId||source.countryId||source.countryCode||source.countryIso3||source.countryName||countryHint;
         if(!ownCountry)return;
         candidates.push(Object.assign({},site,{countryId:normaliseCountry(ownCountry)}));
       });
@@ -419,10 +988,11 @@
       const src=site&&site.sourceSiteRecord&&typeof site.sourceSiteRecord==='object'?site.sourceSiteRecord:{};
       const ident=site&&site.identity&&typeof site.identity==='object'?site.identity:{};
       const cid=site&&(site.countryId||site.countryCode||site.country||ident.countryIso3||ident.countryId||src.countryId||src.countryCode);
-      if(!site||typeof site!=='object'||!cid||normaliseCountry(cid)!==selected)return;
+      if(!site||typeof site!=='object'||!cid||(!worldScope&&normaliseCountry(cid)!==selected))return;
+      const canonicalCountry=normaliseCountry(cid);
       const id=site.siteId||site.canonicalSiteId||site.siteReferenceKey||site.occurrenceKey||site.id||src.siteId||src.id;
       if(!id)return;
-      const key=selected+'|'+String(id),row=Object.assign({},site,{siteId:String(id),countryId:selected});
+      const key=canonicalCountry+'|'+String(id),row=Object.assign({},site,{siteId:String(id),countryId:canonicalCountry,countryCode:site.countryCode||canonicalCountry});
       unique.set(key,unique.has(key)?mergeDataValues(unique.get(key),row):row);
     });
     return [...unique.values()].sort((a,b)=>String(a.siteName||a.name||a.depositName||a.siteId).localeCompare(String(b.siteName||b.name||b.depositName||b.siteId)));
@@ -607,40 +1177,97 @@
   }
   function panelMarket(country) {
     const market = g.OmegaGlobalMarket || g.Omega && g.Omega.GlobalMarket;
-    if (!market || !market.quote) return empty('Global market runtime is unavailable; no price is fabricated.');
+    if (!market || typeof market.quote !== 'function') return empty('Global market runtime is unavailable; no price is fabricated.');
     let books = {};
     try { books = market.rebuild ? market.rebuild() : g.__OmegaMarketBooks || {}; } catch (_) { books = g.__OmegaMarketBooks || {}; }
-    const rows = resources(country).map(function (r) {
-      const q = market.quote(r.id);
-      const book = books[r.id] || {};
-      const matches = Array.isArray(q.matches) ? q.matches : [];
-      const referenceMatched = matches.some(function (m) { return m.referenceLiquidity === true; });
-      const body = '<div class="omega-rescc-grid2">' + kv('Clearing price (USD)', q.clearingPriceUsd) +
-        kv('Reference quote', q.referencePrice) + kv('Best bid (USD)', q.bestBidUsd) +
-        kv('Best ask (USD)', q.bestAskUsd) + kv('Matched quantity', q.matchedQuantity) +
-        kv('Bid / ask depth', (q.bidDepth ?? '—') + ' / ' + (q.askDepth ?? '—')) +
-        kv('Price discovery', q.priceDiscovery) + kv('Turn', q.generatedTurn) + '</div>' +
-        (referenceMatched || q.priceDiscovery === 'REFERENCE_ONLY' ?
-          '<div class="omega-rescc-warning">Reference-only liquidity contributed to this quote. This is not proof of a completed physical transfer.</div>' : '') +
-        '<div class="omega-rescc-muted">Order rows: ' + number((book.orders && book.orders.bids || []).length) +
-        ' bids / ' + number((book.orders && book.orders.asks || []).length) + ' asks · Discovery status: ' + esc(q.status || 'UNAVAILABLE') + '</div>';
-      return card(r.name || r.id, q.status || 'NO MARKET RESULT', body, '');
+    const byId = new Map();
+    globalResourceCatalog().concat(resources(country)).forEach(function (row) {
+      const id = row && (row.id || row.code || row.resourceId || row.resourceTypeId);
+      if (!id) return;
+      const key = resourceKey(id);
+      const prior = byId.get(key) || {};
+      byId.set(key, Object.assign({}, prior, row, { id: String(prior.id || id), name: row.name || row.label || prior.name || String(id) }));
+    });
+    Object.keys(books || {}).forEach(function (id) {
+      const key = resourceKey(id);
+      if (!byId.has(key)) byId.set(key, { id: String(id), name: resourceName(id) });
+    });
+    const items = Array.from(byId.values()).sort(function (a, b) {
+      return String(a.name || a.id).localeCompare(String(b.name || b.id));
+    });
+    const marketRows = items.map(function (r) {
+      const q = market.quote(r.id) || {};
+      const bookKey = Object.keys(books || {}).find(function (id) { return resourceKey(id) === resourceKey(r.id); });
+      const book = bookKey ? books[bookKey] || {} : {};
+      const bids = book.orders && Array.isArray(book.orders.bids) ? book.orders.bids : [];
+      const asks = book.orders && Array.isArray(book.orders.asks) ? book.orders.asks : [];
+      const actualAsks = asks.filter(function (order) { return order && order.referenceOnly !== true; });
+      const referenceMatched = Array.isArray(q.matches) && q.matches.some(function (match) { return match.referenceLiquidity === true; });
+      const status = q.status || (bids.length || actualAsks.length ? 'ORDERS_PRESENT' : 'NO_ORDERS');
+      const price = q.clearingPriceUsd;
+      const refPrice = q.referencePrice;
+      const body = '<div class="omega-rescc-grid2">' +
+        kv('Executed clearing price (USD)', price) +
+        kv('Catalog reference price (USD)', refPrice) +
+        kv('Best executable bid (USD)', q.bestBidUsd) +
+        kv('Best executable ask (USD)', q.bestAskUsd) +
+        kv('Matched quantity', q.matchedQuantity) +
+        kv('Live bid / ask orders', bids.length + ' / ' + actualAsks.length) +
+        kv('Bid / ask depth', (q.bidDepth ?? 0) + ' / ' + (q.askDepth ?? 0)) +
+        kv('Price discovery', q.priceDiscovery || (price !== null && price !== undefined ? 'CLEARED' : status)) +
+        kv('Simulation turn', q.generatedTurn ?? (state().simulation && state().simulation.turn) ?? 'Not recorded') + '</div>' +
+        '<div class="omega-rescc-muted">Resource unit: ' + esc(r.unit || 'not declared') +
+        ' · Discovery status: ' + esc(status) +
+        (bids.length || actualAsks.length ? '' : ' · No executable order exists; no live transaction price is available.') + '</div>' +
+        (referenceMatched || q.priceDiscovery === 'REFERENCE_ONLY' || (refPrice !== null && refPrice !== undefined && price === null)
+          ? '<div class="omega-rescc-warning">Catalog reference prices are informational only. They are not completed trades and do not create physical deliveries.</div>' : '');
+      return card(r.name || r.id, status, body, '');
     }).join('');
-    const diag = market.diagnostics ? market.diagnostics() : null;
-    return '<p class="omega-rescc-note">Price discovery is read from the existing order-book runtime. Quotes that include reference-only resource availability are labeled and are not treated as trades.</p>' +
-      (diag ? diagnosticCard('Global market diagnostics', diag) : '') +
-      actionButton('refresh-market', 'Rebuild current market snapshot', {}) +
-      (rows || empty('No resource IDs are available to quote.'));
+    const diagnostics = market.diagnostics ? market.diagnostics() : {};
+    const orderCount = items.reduce(function (sum, row) {
+      const key = Object.keys(books || {}).find(function (id) { return resourceKey(id) === resourceKey(row.id); });
+      const book = key ? books[key] : {};
+      return sum + (book && book.orders && Array.isArray(book.orders.bids) ? book.orders.bids.length : 0) +
+        (book && book.orders && Array.isArray(book.orders.asks) ? book.orders.asks.filter(function (order) { return order && order.referenceOnly !== true; }).length : 0);
+    }, 0);
+    const clearedCount = items.filter(function (row) {
+      const quote = market.quote(row.id) || {};
+      return quote.status === 'CLEARED' && quote.clearingPriceUsd !== null && quote.clearingPriceUsd !== undefined;
+    }).length;
+    const top = '<div class="omega-rescc-metrics">' +
+      '<div><span>Global resources tracked</span><strong>' + number(items.length) + '</strong></div>' +
+      '<div><span>Resources with executed market price</span><strong>' + number(clearedCount) + '</strong></div>' +
+      '<div><span>Executable bid / ask orders</span><strong>' + number(orderCount) + '</strong></div>' +
+      '<div><span>Markets tracked by runtime</span><strong>' + number(diagnostics.resourceMarkets ?? Object.keys(books || {}).length) + '</strong></div></div>';
+    return top + '<p class="omega-rescc-muted">GLOBAL COMMODITY MARKET · All resources found in the global catalog, deposit registry and market order books. Clearing prices appear only when real in-game bids and asks match. Catalog reference prices are shown separately and never count as sales.</p>' +
+      '<div class="omega-rescc-actions">' +
+      '<button type="button" class="omega-rescc-button" data-action="open-trade">Open trade requests &amp; settlement</button>' +
+      actionButton('refresh-market', 'Rebuild global market snapshot', {}) +
+      actionButton('open-global-deposits', 'Browse worldwide deposits', {}) + '</div>' +
+      (marketRows || empty('No resource IDs were found in the loaded global catalog, site registry or market order books.'));
   }
   function panelTrade(country) {
     const trade = g.OmegaGlobalTrade || g.Omega && g.Omega.GlobalTrade;
-    const requests = Array.isArray(bucket('trade', country).importRequests) ? bucket('trade', country).importRequests : [];
-    const ledger = bucket('trade', country).globalTradeLedger || {};
-    const others = countryList().filter(function (c) { return c !== activeCountry(country); });
-    const countries = others.map(function (c) { return '<option value="' + esc(c) + '">' + esc(c) + '</option>'; }).join('');
-    const resourceOpts = resources(country).map(function (r) {
+    const tradeBucket = bucket('trade', country);
+    const requests = Array.isArray(tradeBucket.importRequests) ? tradeBucket.importRequests : [];
+    const ledger = tradeBucket.globalTradeLedger || {};
+    const settlements = Array.isArray(ledger.settlements) ? ledger.settlements : [];
+    const decisions = Array.isArray(ledger.decisions) ? ledger.decisions : [];
+    const offers = tradeBucket.offerBook;
+    const offerCount = Array.isArray(offers) ? offers.length :
+      (offers && typeof offers === 'object' ? Object.values(offers).reduce(function (count, row) {
+        return count + (Array.isArray(row) ? row.length : (row && typeof row === 'object' ? 1 : 0));
+      }, 0) : 0);
+    const others = resourceCountryChoices().filter(function (c) { return c !== 'WORLD' && c !== activeCountry(country); });
+    const countries = others.map(function (c) { return '<option value="' + esc(c) + '">' + esc(countryDisplayName(c)) + '</option>'; }).join('');
+    const resourceOpts = resourceChoices(country).map(function (r) {
       return '<option value="' + esc(r.id) + '">' + esc(r.name || r.id) + '</option>';
     }).join('');
+    const metrics = '<div class="omega-rescc-metrics">' +
+      '<div><span>Import requests</span><strong>' + number(requests.length) + '</strong></div>' +
+      '<div><span>Recorded decisions</span><strong>' + number(decisions.length) + '</strong></div>' +
+      '<div><span>Completed / failed settlements</span><strong>' + number(settlements.length) + '</strong></div>' +
+      '<div><span>Stored seller offers</span><strong>' + number(offerCount) + '</strong></div></div>';
     const form = '<form class="omega-rescc-form" data-search-item data-form="trade-request">' +
       '<h3>Create bilateral supply request</h3><div class="omega-rescc-formgrid">' +
       '<label>Seller country<select name="targetCountryId" required>' + countries + '</select></label>' +
@@ -650,13 +1277,11 @@
       '<p class="omega-rescc-note">Submitting records a request as SENT/OPEN. Counterparty review, observed relations, sanctions, price evidence, stock and settlement rules determine what happens next.</p>' +
       '<button class="omega-rescc-button" type="submit"' + ((!trade || typeof trade.createRequest !== 'function' || !others.length || !resourceOpts) ? ' disabled' : '') +
       '>Submit supply request</button></form>';
-    return (trade && trade.diagnostics ? diagnosticCard('Global trade diagnostics', trade.diagnostics()) : empty('Global trade engine is not available.')) +
+    return metrics +
+      '<p class="omega-rescc-muted">Market prices and executable order counts are in the Global Commodity Market panel. This panel submits the selected nation’s real import request through the trade runtime; it does not fabricate seller offers or settlement results.</p>' +
+      (trade && trade.createRequest ? '' : empty('Global trade engine is not available.')) +
       form + '<h3 class="omega-rescc-section-title">Import requests and settlement status</h3>' + statusRows(requests) +
-      '<h3 class="omega-rescc-section-title">Global trade ledger</h3>' + diagnosticCard('Ledger counters', {
-        requests: Array.isArray(ledger.requests) ? ledger.requests.length : 0,
-        decisions: Array.isArray(ledger.decisions) ? ledger.decisions.length : 0,
-        settlements: Array.isArray(ledger.settlements) ? ledger.settlements.length : 0
-      }) + statusRows(Array.isArray(ledger.settlements) ? ledger.settlements : []);
+      '<h3 class="omega-rescc-section-title">Recorded settlements</h3>' + statusRows(settlements);
   }
   function panelValue(country) {
     const fin = bucket('finance', country);
@@ -884,6 +1509,11 @@
       '.omega-rescc-json{white-space:pre-wrap;overflow-wrap:anywhere;max-height:300px;overflow:auto;color:#cbd5e1;background:#030b15;border-radius:6px;padding:9px;margin:0;font-size:11px}' +
       '.omega-rescc-section-title{font-size:13px;color:#67e8f9;margin:8px 0 0}.omega-rescc-form{border:1px solid #25475f;border-radius:9px;padding:13px;display:flex;flex-direction:column;gap:10px;background:#081625}' +
       '.omega-rescc-form h3{font-size:13px;margin:0;color:#a5f3fc}.omega-rescc-formgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:9px}' +
+      '.omega-rescc-resource-grid{grid-template-columns:repeat(auto-fit,minmax(145px,1fr));align-items:end}.omega-rescc-unit-note{color:#8fb8c9;font-size:11px;line-height:1.4}' +
+      '.omega-rescc-deposit-tools,.omega-rescc-deposit-pagination{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:8px 10px;border:1px solid #243e53;border-radius:7px;background:#081625;color:#a9c4d8;font-size:11px}' +
+      '.omega-rescc-deposit-tools label{display:flex;align-items:center;gap:8px}.omega-rescc-deposit-tools select{background:#030b15;color:#f1f5f9;border:1px solid #334b60;border-radius:6px;padding:7px;font:inherit;max-width:65vw}' +
+      '.omega-rescc-table-wrap{width:100%;max-width:100%;overflow:auto;border:1px solid #243e53;border-radius:8px;background:#071421;-webkit-overflow-scrolling:touch}' +
+      '.omega-rescc-table{width:100%;min-width:760px;border-collapse:collapse;font-size:11px}.omega-rescc-table th,.omega-rescc-table td{padding:8px 9px;border-bottom:1px solid #1c3042;text-align:left;white-space:nowrap}.omega-rescc-table thead th{position:sticky;top:0;background:#102438;color:#9feafa;font-weight:700}.omega-rescc-table tbody th{color:#e2f6ff;font-weight:600}.omega-rescc-table tbody tr:hover{background:#0c2032}.omega-rescc-row-actions summary{color:#a5f3fc;cursor:pointer;border:1px solid #315267;border-radius:5px;padding:5px 7px}.omega-rescc-row-actions .omega-rescc-actions{min-width:180px;flex-direction:column}' +
       '.omega-rescc-form label,.omega-rescc-question{display:flex;flex-direction:column;gap:5px;color:#cbd5e1;font-size:11px;min-width:0}' +
       '.omega-rescc-question{border:1px solid #1b3245;border-radius:7px;padding:8px}.omega-rescc-question span{line-height:1.4}' +
       '@media(max-width:600px){.omega-rescc-shell{width:100vw;height:100dvh;max-height:none;border-radius:0}.omega-rescc-heading h2{font-size:13px}.omega-rescc-top{padding:9px}.omega-rescc-content{padding:9px}.omega-rescc-headtools{width:100%}.omega-rescc-search{width:100%;flex-basis:100%}}';
@@ -924,6 +1554,22 @@
           countryId = activeCountry(event.target.value);
           lastOutcome = '';
           render();
+          return;
+        }
+        if (event.target && event.target.id === 'omega-rescc-deposit-scope') {
+          depositScope = event.target.value === 'WORLD' ? 'WORLD' : 'COUNTRY';
+          depositPage = 0;
+          render(countryId, 'deposits');
+          return;
+        }
+        if (event.target && (event.target.id === 'omega-rescc-resource-select' || event.target.id === 'omega-rescc-search-country')) {
+          const form = event.target.closest && event.target.closest('form[data-form="metrology"]');
+          if (form) syncResourceForm(form, countryId);
+          return;
+        }
+        if (event.target && event.target.id === 'omega-rescc-from-unit') {
+          const form = event.target.closest && event.target.closest('form[data-form="metrology"]');
+          if (form) syncTargetUnitOptions(form, event.target.value, form.querySelector('[name="toUnit"]') && form.querySelector('[name="toUnit"]').value);
         }
       });
       modal.addEventListener('submit', function (event) {
@@ -983,7 +1629,12 @@
       'OMEGA_SIMULATION_TURN_COMMITTED','OMEGA_RESOURCE_EXTRACTION_COMPLETED','OMEGA_RESOURCE_BATCH_CREATED',
       'OMEGA_RESOURCE_INVENTORY_CHANGED','OMEGA_RESOURCE_PROCESSING_COMPLETED','OMEGA_TRADE_SETTLEMENT_COMPLETED'
     ].forEach(function (name) {
-      try { g.addEventListener(name, function () { resourceDataWarmupAttempted = false; refreshVisiblePanel(); }); } catch (_) {}
+      try { g.addEventListener(name, function () {
+        resourceDataWarmupAttempted = false;
+        globalDepositRecordsCache = null;
+        globalDepositRecordsCacheSources = null;
+        refreshVisiblePanel();
+      }); } catch (_) {}
     });
   }
   function render(country, panel, modalOverride) {
@@ -1001,6 +1652,8 @@
     modal.innerHTML = '<style>' + css() + '</style><div class="omega-rescc-shell" role="dialog" aria-modal="true" aria-label="Resource Command Center">' +
       '<div class="omega-rescc-top"><div class="omega-rescc-heading"><h2>Resource Command Center</h2>' +
       '<div class="omega-rescc-headtools"><select id="omega-rescc-country" aria-label="Country scope">' + options + '</select>' +
+      '<button type="button" class="omega-rescc-button" data-action="open-global-market">Global Commodity Market</button>' +
+      '<button type="button" class="omega-rescc-button" data-action="open-global-deposits">Worldwide Deposits</button>' +
       '<button type="button" class="omega-rescc-button" data-action="refresh-panel">Refresh</button>' +
       '<button type="button" class="omega-rescc-button" data-action="close">Close</button></div></div>' +
       '<div class="omega-rescc-headtools"><input id="omega-rescc-search" class="omega-rescc-input omega-rescc-search" type="search" placeholder="Search this section…" aria-label="Search current section"></div>' +
@@ -1064,6 +1717,44 @@
     try {
       if (action === 'close') { close(); return; }
       if (action === 'refresh-panel') { resourceDataWarmupAttempted = false; render(c, activePanel); ensureResourceDataReady(true); return; }
+      if (action === 'locate-resource') {
+        const form = button.closest && button.closest('form[data-form="metrology"]');
+        if (!form) {
+          setOutcome('Resource locator', { status: 'UNAVAILABLE', reason: 'RESOURCE_LOCATOR_FORM_NOT_FOUND' });
+          return;
+        }
+        const formData = new FormData(form);
+        const scopeCountry = String(formData.get('searchCountry') || 'WORLD');
+        const resourceId = String(formData.get('resourceId') || '');
+        const siteId = String(formData.get('siteId') || '');
+        result = locateResourceOnMap(scopeCountry, resourceId, siteId);
+        setOutcome('Resource locator · ' + resourceName(resourceId), result);
+        return;
+      }
+      if (action === 'deposit-page') {
+        const count = deposits().filter(function (site) {
+          const cid = site && (site.countryCode || site.countryId || site.country || site.countryName || site.sovereignCountryId);
+          return depositScope === 'WORLD' || (cid && normaliseCountry(cid) === c);
+        }).length;
+        const pages = Math.max(1, Math.ceil(count / DEPOSIT_PAGE_SIZE));
+        depositPage = Math.max(0, Math.min(pages - 1, depositPage + (d.direction === 'previous' ? -1 : 1)));
+        render(c, 'deposits');
+        return;
+      }
+      if (action === 'open-global-market') {
+        render(c, 'market');
+        return;
+      }
+      if (action === 'open-trade') {
+        render(c, 'trade');
+        return;
+      }
+      if (action === 'open-global-deposits') {
+        depositScope = 'WORLD';
+        depositPage = 0;
+        render(c, 'deposits');
+        return;
+      }
       if (action === 'start-exploration' || action === 'approve-exploration-investment' || action === 'commission-exploration-site') {
         const policy = g.OmegaResourceStrategicPolicyRuntime || g.Omega && g.Omega.ResourceStrategicPolicyRuntime;
         if (!policy) result = { status: 'UNAVAILABLE', reason: 'STRATEGIC_RESOURCE_POLICY_RUNTIME_UNAVAILABLE' };
@@ -1168,13 +1859,32 @@
     let result;
     try {
       if (kind === 'metrology') {
-        const converted = convertUnits(data.get('value'), data.get('fromUnit'), data.get('toUnit'));
-        if (converted.status !== 'APPLIED') {
-          setOutcome('Metrology conversion', converted);
+        const resourceId = String(data.get('resourceId') || '');
+        const scopeCountry = String(data.get('searchCountry') || c);
+        const declaredUnit = resourceUnitId(resourceId, scopeCountry);
+        const fromUnit = String(data.get('fromUnit') || '');
+        const toUnit = String(data.get('toUnit') || '');
+        if (!declaredUnit || !UNIT_DEFINITIONS[declaredUnit]) {
+          setOutcome('Resource quantity conversion', { status: 'BLOCKED', reason: 'RESOURCE_UNIT_NOT_DECLARED' });
           return;
         }
-        lastOutcome = 'Metrology conversion · ' + Number(converted.value).toLocaleString(undefined, { maximumFractionDigits: 10 }) +
-          ' ' + converted.label + ' · Dimension: ' + converted.dimension + ' · ' + converted.source;
+        if (!UNIT_DEFINITIONS[fromUnit] || UNIT_DEFINITIONS[fromUnit].dimension !== UNIT_DEFINITIONS[declaredUnit].dimension) {
+          setOutcome('Resource quantity conversion', { status: 'BLOCKED', reason: 'SOURCE_UNIT_DOES_NOT_MATCH_RESOURCE_DIMENSION' });
+          return;
+        }
+        const converted = convertUnits(data.get('value'), fromUnit, toUnit);
+        if (converted.status !== 'APPLIED') {
+          setOutcome('Resource quantity conversion', converted);
+          return;
+        }
+        const selectedSiteId = String(data.get('siteId') || '');
+        const selectedSite = selectedSiteId ? sitesForResource(scopeCountry, resourceId).find(function (site) {
+          return String(site.siteId || site.id || site.siteKey || site.assetId || site.siteName || '') === selectedSiteId;
+        }) : null;
+        const context = selectedSite ? ' · Location: ' + String(selectedSite.siteName || selectedSite.name || selectedSite.siteId || selectedSiteId) : '';
+        lastOutcome = resourceName(resourceId) + ' · ' + Number(converted.value).toLocaleString(undefined, { maximumFractionDigits: 10 }) +
+          ' ' + converted.label + ' · Dimension: ' + converted.dimension + context +
+          ' · Conversion only; live reserves, inventory and production are unchanged.';
         render(countryId, activePanel);
         return;
       }
@@ -1464,7 +2174,10 @@
     open: function (country, panel) { render(country, panel); },
     close,
     convertUnits,
-    getState: function () { return { countryId: countryId, panel: activePanel, lastOutcome: lastOutcome }; }
+    getResourceUnit: function (resourceId, country) { return resourceUnitId(resourceId, country || countryId); },
+    getGlobalResourceCatalog: function () { return globalResourceCatalog().map(function (row) { return Object.assign({}, row); }); },
+    locateResource: locateResourceOnMap,
+    getState: function () { return { countryId: countryId, panel: activePanel, lastOutcome: lastOutcome, depositScope: depositScope, depositPage: depositPage }; }
   });
   g.Omega = g.Omega || {};
   g.Omega.ResourceCommandCenterUI = API;

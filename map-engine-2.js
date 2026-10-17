@@ -1348,6 +1348,143 @@ Game.Map.applyResourceFilterAndClose = function() {
     this.renderResourceDeposits();
 };
 
+Game.Map.collectGlobalResourceDeposits = function() {
+    const engine = window.ResourceMinistryEngine || {};
+    const sourceRows = [];
+    const pushRows = (rows, countryHint) => {
+        if (!Array.isArray(rows)) return;
+        rows.forEach(row => {
+            if (!row || typeof row !== 'object') return;
+            if (countryHint) {
+                sourceRows.push(Object.assign({
+                    countryId: row.countryId || row.countryCode || row.countryIso3 || countryHint,
+                    countryCode: row.countryCode || row.countryId || row.countryIso3 || countryHint
+                }, row));
+            } else sourceRows.push(row);
+        });
+    };
+    const canonical = window.OmegaResourceSiteCanonicalCatalogData || window.Omega?.ResourceSiteCanonicalCatalogData;
+    const master = window.OmegaResourceSiteMasterResearchData || window.Omega?.ResourceSiteMasterResearchData;
+    const reserves = window.OmegaResourceSiteReserveSimulationData || window.Omega?.ResourceSiteReserveSimulationData;
+    const lossless = window.OmegaResourceLosslessReferenceData || window.Omega?.ResourceLosslessReferenceData;
+    const scenario = window.OmegaResourceScenarioEngineeringData || window.Omega?.ResourceScenarioEngineeringData;
+    const binding = window.Omega?.IndividualResourceSiteBinding || window.OmegaIndividualResourceSiteBinding;
+    pushRows(engine.deposits);
+    pushRows(canonical?.sites);
+    pushRows(master?.sites);
+    pushRows(reserves?.records);
+    pushRows(Array.isArray(lossless?.sites) ? lossless.sites : lossless?.records);
+    pushRows(Array.isArray(scenario?.sites) ? scenario.sites : scenario?.records);
+    pushRows(binding?.sites);
+
+    // Some legacy mine records are embedded in country profiles instead of the
+    // runtime deposits array. Preserve the profile country ID on every such row.
+    const profiles = engine.countryProfiles || {};
+    Object.entries(profiles).forEach(([profileKey, profile]) => {
+        const identity = profile?.identity || {};
+        const countryHint = identity.countryCode || identity.countryIso3 || identity.iso3 ||
+            identity.countryId || profile?.countryCode || profile?.countryId || profileKey;
+        const context = profile?.resource_infrastructure_context || profile?.infrastructure_context || {};
+        pushRows(context.mineSites, countryHint);
+        pushRows(context.resourceSites, countryHint);
+        pushRows(profile?.mineSites, countryHint);
+    });
+
+    const readResourceId = row => {
+        const src = row?.sourceSiteRecord || {};
+        const identity = row?.identity || row?.siteDataPackage?.identity || {};
+        const real = row?.real || {};
+        const packageData = row?.siteDataPackage || {};
+        const resourceIdentity = row?.resourceIdentity || {};
+        return row?.resId || row?.resourceId || row?.resourceTypeId || row?.resource_id ||
+            row?.commodityId || row?.resource || real.resourceId || real.resourceTypeId ||
+            identity.resourceTypeId || identity.resourceId || resourceIdentity.resourceTypeId ||
+            resourceIdentity.resourceId || src.resId || src.resourceId || src.resourceTypeId ||
+            src.resource_id || packageData.resourceId || packageData.resourceTypeId ||
+            packageData.resId || packageData.identity?.resourceTypeId || packageData.identity?.resourceId ||
+            packageData.resourceTypeDefinition?.id;
+    };
+    const toResourceToken = value => String(value ?? '').trim().toLowerCase().replace(/[\s-]+/g, '_');
+    const siteRows = new Map();
+    sourceRows.forEach(raw => {
+        const source = raw?.sourceSiteRecord && typeof raw.sourceSiteRecord === 'object' ? raw.sourceSiteRecord : {};
+        const packageData = raw?.siteDataPackage && typeof raw.siteDataPackage === 'object' ? raw.siteDataPackage : {};
+        const identity = raw?.identity || packageData.identity || raw?.siteIdentity || {};
+        const sourceIdentity = source?.identity || source?.siteIdentity || {};
+        const location = raw?.location || packageData.location || raw?.locationIdentity || {};
+        const sourceLocation = source?.location || source?.locationIdentity || source?.siteDataPackage?.location || {};
+        const coordinates = [
+            raw?.coordinates, location.coordinates, raw?.locationIdentity?.coordinates,
+            packageData.location?.coordinates, source.coordinates, sourceLocation.coordinates
+        ].find(candidate => candidate && typeof candidate === 'object' &&
+            (candidate.lat !== undefined || candidate.latitude !== undefined ||
+             candidate.lng !== undefined || candidate.lon !== undefined || candidate.longitude !== undefined)) || {};
+        const latRaw = raw?.lat ?? raw?.latitude ?? coordinates.lat ?? coordinates.latitude ??
+            location.lat ?? location.latitude ?? source.lat ?? source.latitude;
+        const lngRaw = raw?.lng ?? raw?.lon ?? raw?.longitude ?? coordinates.lng ?? coordinates.lon ?? coordinates.longitude ??
+            location.lng ?? location.lon ?? location.longitude ?? source.lng ?? source.lon ?? source.longitude;
+        const lat = latRaw === undefined || latRaw === null || String(latRaw).trim() === '' ? NaN : Number(latRaw);
+        const lng = lngRaw === undefined || lngRaw === null || String(lngRaw).trim() === '' ? NaN : Number(lngRaw);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) return;
+
+        const resourceValue = readResourceId(raw);
+        const resId = toResourceToken(resourceValue);
+        if (!resId) return;
+        const countryId = String(raw?.countryId || raw?.countryIso3 || raw?.iso3 ||
+            identity.countryIso3 || identity.countryCode || identity.countryId ||
+            packageData.identity?.countryIso3 || packageData.identity?.countryId ||
+            source.countryId || source.countryIso3 || source.countryCode || sourceIdentity.countryIso3 ||
+            raw?.countryCode || source.country || raw?.country || '').trim().toUpperCase();
+        if (!countryId) return;
+        const siteId = String(raw?.siteId || raw?.canonicalSiteId || raw?.siteReferenceKey ||
+            raw?.occurrenceKey || raw?.id || raw?.assetId || packageData.siteId ||
+            source.siteId || source.canonicalSiteId || source.id ||
+            packageData.identity?.siteId || '').trim();
+        const siteName = raw?.siteName || raw?.name || raw?.depositName || raw?.mineName ||
+            raw?.fieldName || packageData.siteName || source.siteName || source.name ||
+            source.depositName || String(siteId || 'Resource deposit');
+        const countryName = raw?.countryName || location.countryName || packageData.location?.countryName ||
+            identity.countryName || packageData.identity?.countryName || source.countryName ||
+            source.locationIdentity?.countryName || source.country || countryId;
+        const reserveRecord = raw?.reserve ?? raw?.reserves ?? raw?.recoverableReserve ??
+            raw?.quantitative?.reserve ?? raw?.siteDataPackage?.quantitative?.reserve ??
+            source.reserve ?? source.reserves ?? source.quantitativeProfile?.reserve;
+        const reserveQuantity = reserveRecord && typeof reserveRecord === 'object'
+            ? (reserveRecord.quantity ?? reserveRecord.value ?? reserveRecord.amount ?? reserveRecord.reserves)
+            : reserveRecord;
+        const reserveUnit = reserveRecord && typeof reserveRecord === 'object'
+            ? (reserveRecord.unit || reserveRecord.quantityUnit || reserveRecord.unitOfMeasure)
+            : (raw?.unit || source.unit || packageData.resourceTypeDefinition?.unit);
+        const reservesText = reserveQuantity === undefined || reserveQuantity === null || reserveQuantity === ''
+            ? (typeof raw?.reserves === 'string' ? raw.reserves : '')
+            : String(reserveQuantity) + (reserveUnit ? ' ' + String(reserveUnit) : '');
+        const status = raw?.status || raw?.operationalStatus || raw?.currentStatus ||
+            raw?.operation?.operationalStatus || packageData.operation?.operationalStatus ||
+            source.operationalStatus || source.status || '';
+        const normalized = Object.assign({}, raw, {
+            siteId: siteId || [countryId, resId, lat.toFixed(5), lng.toFixed(5)].join('_'),
+            name: siteName,
+            country: countryId,
+            countryCode: countryId,
+            countryName,
+            resId,
+            resourceId: resId,
+            resourceTags: Array.from(new Set([...(Array.isArray(raw?.resourceTags) ? raw.resourceTags : []), resId])),
+            lat,
+            lng,
+            reserves: reservesText,
+            reserve: raw?.reserve ?? reserveRecord ?? reservesText,
+            status
+        });
+        const key = [countryId, resId, normalized.siteId].join('|');
+        if (siteRows.has(key)) {
+            // Later evidence enriches the existing site without replacing its stable ID.
+            siteRows.set(key, Object.assign({}, siteRows.get(key), normalized));
+        } else siteRows.set(key, normalized);
+    });
+    return Array.from(siteRows.values());
+};
+
 Game.Map.renderResourceDeposits = function() {
     this.map = this.map || window.map;
     if (!this.map) return;
@@ -1379,17 +1516,50 @@ Game.Map.renderResourceDeposits = function() {
         this.hubsGroupLayer.clearLayers();
     }
 
-    const engine = window.ResourceMinistryEngine;
-    const deposits = (engine && engine.deposits && engine.deposits.length > 0) ? engine.deposits : [];
+    const deposits = typeof this.collectGlobalResourceDeposits === 'function'
+        ? this.collectGlobalResourceDeposits()
+        : ((window.ResourceMinistryEngine && Array.isArray(window.ResourceMinistryEngine.deposits))
+            ? window.ResourceMinistryEngine.deposits : []);
     
     const normCountry = (c) => {
         if (!c) return '';
-        let s = String(c).replace(/_/g, " ").toUpperCase().trim();
+        const raw = String(c).trim();
+        let s = raw.replace(/_/g, " ").toUpperCase().trim();
+        // Resolve human-readable country names through the canonical identity system
+        // before falling back to local aliases. Map scope must treat "Saudi Arabia"
+        // and "SAU" as the same country, not accidentally hide all of its deposits.
+        try {
+            const resolver = window.OmegaCanonicalIdentityRegistry || window.OmegaCountrySemanticBridge || window.Omega?.CanonicalIdentity;
+            const hit = resolver && typeof resolver.resolveCountry === 'function' ? resolver.resolveCountry(raw) : null;
+            const resolved = hit && (hit.id || hit.iso3 || hit.iso3Code || hit.countryCode ||
+                hit.raw?.iso3 || hit.raw?.countryCode || hit.canonical?.iso3);
+            if (resolved && /^[A-Z]{2,3}$/i.test(String(resolved).trim())) return String(resolved).trim().toUpperCase();
+        } catch (_) {}
+        try {
+            const lookup = Game.countryLookup || window.Game?.countryLookup || {};
+            const match = Object.entries(lookup).find(([key, row]) => {
+                const wanted = s.replace(/\s+/g, ' ');
+                return [key, row?.name, row?.officialName, row?.countryName, row?.adminName]
+                    .filter(Boolean).some(value => String(value).trim().replace(/_/g, ' ').toUpperCase().replace(/\s+/g, ' ') === wanted);
+            });
+            if (match) {
+                const row = match[1] && typeof match[1] === 'object' ? match[1] : {};
+                const code = row.iso3 || row.iso3Code || row.countryCode || row.countryId || row.code || match[0];
+                if (/^[A-Z]{2,3}$/i.test(String(code).trim())) return String(code).trim().toUpperCase();
+            }
+        } catch (_) {}
         const map = {
             'UNITED STATES OF AMERICA': 'USA', 'UNITED STATES': 'USA', 'AMERICA': 'USA',
+            'UNITED KINGDOM': 'GBR', 'GREAT BRITAIN': 'GBR', 'BRITAIN': 'GBR', 'UK': 'GBR',
+            'SAUDI ARABIA': 'SAU', 'AUSTRALIA': 'AUS', 'CANADA': 'CAN', 'SOUTH AFRICA': 'ZAF',
+            'NEW ZEALAND': 'NZL', 'SOUTH KOREA': 'KOR', 'NORTH KOREA': 'PRK',
             'IVORY COAST': "COTE D'IVOIRE", "CÔTE D'IVOIRE": "COTE D'IVOIRE",
-            'DEMOCRATIC REPUBLIC OF THE CONGO': 'DR CONGO', 'CONGO (KINSHASA)': 'DR CONGO', 'CONGO': 'DR CONGO',
-            'BANGLADESH': 'BANGLADESH', 'INDIA': 'INDIA', 'PAKISTAN': 'PAKISTAN', 'CHINA': 'CHINA', 'RUSSIA': 'RUSSIA'
+            'DEMOCRATIC REPUBLIC OF THE CONGO': 'COD', 'CONGO (KINSHASA)': 'COD',
+            'CONGO': 'COG', 'DR CONGO': 'COD', 'BANGLADESH': 'BGD', 'INDIA': 'IND',
+            'PAKISTAN': 'PAK', 'CHINA': 'CHN', 'RUSSIA': 'RUS', 'UNITED ARAB EMIRATES': 'ARE',
+            'IRAN': 'IRN', 'TURKEY': 'TUR', 'TÜRKIYE': 'TUR', 'EGYPT': 'EGY',
+            'JAPAN': 'JPN', 'INDONESIA': 'IDN', 'MONGOLIA': 'MNG', 'BRAZIL': 'BRA',
+            'CHILE': 'CHL', 'PERU': 'PER', 'ZAMBIA': 'ZMB', 'GHANA': 'GHA'
         };
         return map[s] || s;
     };
@@ -1690,6 +1860,25 @@ Game.Map.applyResourceMapFilter = function(resourceType) {
         else layer.setStyle({ fillColor: '#0f172a', fillOpacity: 0.15, color: 'rgba(255,255,255,0.05)', weight: 0.5 });
     });
 };
+
+if (!Game.Map.__omegaCanonicalResourceRefreshBound && typeof window.addEventListener === 'function') {
+    Game.Map.__omegaCanonicalResourceRefreshBound = true;
+    [
+        'OMEGA_RESOURCE_SITE_BINDING_READY',
+        'OMEGA_RESOURCE_CATALOG_READY',
+        'OMEGA_READY',
+        'OMEGA_GAME_SESSION_STARTED',
+        'OMEGA_RESOURCE_EXTRACTION_COMPLETED',
+        'OMEGA_RESOURCE_BATCH_CREATED',
+        'OMEGA_RESOURCE_INVENTORY_CHANGED'
+    ].forEach(eventName => {
+        window.addEventListener(eventName, () => {
+            const mapApi = Game.Map;
+            if (!mapApi?.resourceState?.enabled || typeof mapApi.renderResourceDeposits !== 'function') return;
+            mapApi.renderResourceDeposits();
+        });
+    });
+}
 
 Game.Map.toggleRelationOverlay = function() {
     if (Game.dom.relFilterBox.style.display === 'flex') {

@@ -35,7 +35,7 @@
       if(Array.isArray(rows))rows.forEach(resolveRow);
     }catch(_){}
     const s=state()||{};
-    for(const domain of ['trade','resource','finance','foreign','economy']){
+    for(const domain of ['trade','resource','resources','finance','foreign','economy']){
       const root=s[domain];
       if(root&&typeof root==='object')Object.keys(root).forEach(resolveRow);
     }
@@ -66,9 +66,57 @@
     const ids=new Set;
     const rt=g.ResourceMinistryEngine?.resourceTypes;
     if(Array.isArray(rt))for(const x of rt)if(x?.id)ids.add(String(x.id));
+    // The global market index must include every resource referenced by the
+    // authoritative deposit registry, even before a country has inventory,
+    // production, an offer, or an import request for that commodity.
+    const deposits=g.ResourceMinistryEngine?.deposits;
+    if(Array.isArray(deposits))for(const site of deposits){
+      const rid=site?.resourceId||site?.resId||site?.resourceTypeId||site?.resource_id||site?.resource;
+      if(rid)ids.add(String(rid));
+    }
+    // The individual-site binder resolves canonical mine/field records from country
+    // profiles and registered site JSON sources. Include its commodities even when
+    // the runtime has not yet generated stock, production, offers, or import requests.
+    const siteResourceId=site=>site?.resourceId||site?.resourceTypeId||site?.resId||site?.resource_id||
+      site?.resource||site?.commodity||site?.real?.resourceId||site?.sourceSiteRecord?.resourceId||
+      site?.sourceSiteRecord?.resourceTypeId||site?.sourceSiteRecord?.resId||
+      site?.identity?.resourceTypeId||site?.identity?.resourceId||
+      site?.resourceIdentity?.resourceTypeId||site?.resourceIdentity?.resourceId||
+      site?.siteDataPackage?.resourceId||site?.siteDataPackage?.resourceTypeId||
+      site?.siteDataPackage?.identity?.resourceTypeId;
+    const canonicalCatalog=g.OmegaResourceSiteCanonicalCatalogData||g.Omega?.ResourceSiteCanonicalCatalogData;
+    const masterRegistry=g.OmegaResourceSiteMasterResearchData||g.Omega?.ResourceSiteMasterResearchData;
+    const reserveData=g.OmegaResourceSiteReserveSimulationData||g.Omega?.ResourceSiteReserveSimulationData;
+    const losslessData=g.OmegaResourceLosslessReferenceData||g.Omega?.ResourceLosslessReferenceData;
+    const scenarioData=g.OmegaResourceScenarioEngineeringData||g.Omega?.ResourceScenarioEngineeringData;
+    const siteSources=[
+      g.Omega?.IndividualResourceSiteBinding?.sites,
+      g.OmegaIndividualResourceSiteBinding?.sites,
+      canonicalCatalog?.sites,
+      masterRegistry?.sites,
+      reserveData?.records,
+      losslessData?.sites,
+      losslessData?.records,
+      scenarioData?.sites,
+      scenarioData?.records
+    ];
+    for(const rows of siteSources)if(Array.isArray(rows))for(const site of rows){
+      const rid=siteResourceId(site);if(rid)ids.add(String(rid));
+    }
+    const profiles=g.ResourceMinistryEngine?.countryProfiles||{};
+    for(const profile of Object.values(profiles)){
+      const context=profile?.resource_infrastructure_context||profile?.infrastructure_context||{};
+      for(const rows of [context.mineSites,context.resourceSites,profile?.mineSites])if(Array.isArray(rows)){
+        for(const site of rows){const rid=siteResourceId(site);if(rid)ids.add(String(rid));}
+      }
+    }
     for(const c of countries()){
-      const inv=countryValue(c,'resource.inventory'),prod=countryValue(c,'resource.production'),cons=countryValue(c,'resource.consumption');
-      for(const source of [inv,prod,cons])if(source&&typeof source==='object')for(const k of Object.keys(source))ids.add(k);
+      for(const domain of ['resource','resources']){
+        for(const field of ['inventory','production','consumption','tradeAvailability','endowment','reserves']){
+          const values=countryValue(c,domain+'.'+field);
+          if(values&&typeof values==='object'&&!Array.isArray(values))for(const k of Object.keys(values))ids.add(k);
+        }
+      }
       const req=countryValue(c,'trade.importRequests');if(Array.isArray(req))for(const x of req)if(x?.resourceId)ids.add(x.resourceId);
       const offers=countryValue(c,'trade.offerBook');
       if(offers&&typeof offers==='object'){

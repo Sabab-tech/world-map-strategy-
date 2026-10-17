@@ -433,3 +433,94 @@ test('coordinate confidence is reported without claiming every stored point is e
   assert.doesNotMatch(binding, /exact coordinates/i,
     'estimated or unverified points must not be advertised as exact');
 });
+
+
+test('legacy resource-map marker source includes the canonical global site catalog, not only 43 runtime deposits', () => {
+  const mapEngine = read('map-engine-2.js');
+  const method = 'Game.Map.collectGlobalResourceDeposits = function()';
+  const start = mapEngine.indexOf(method);
+  assert.notEqual(start, -1, 'the map engine must expose the canonical global marker source');
+  const end = mapEngine.indexOf('\n};', start);
+  assert.notEqual(end, -1, 'the canonical global marker source must terminate');
+  assert.match(mapEngine, /const deposits = typeof this\.collectGlobalResourceDeposits === 'function'/,
+    'the visible resource-map layer must consume the full merged site registry');
+
+  const context = {
+    Game: { Map: {} },
+    ResourceMinistryEngine: {
+      deposits: [
+        { siteId: 'SITE_RUNTIME_COAL_1', name: 'Runtime Coal Mine', countryId: 'BGD', countryCode: 'BGD', resId: 'coal', lat: 25.55, lng: 88.96 }
+      ],
+      countryProfiles: {
+        BGD: {
+          identity: { countryCode: 'BGD', name: 'Bangladesh' },
+          resource_infrastructure_context: {
+            mineSites: [
+              { id: 'SITE_PROFILE_IRON_1', siteName: 'Profile Iron Mine', resourceId: 'iron_ore', lat: 24.1, lng: 90.2 }
+            ]
+          }
+        }
+      }
+    },
+    OmegaResourceSiteCanonicalCatalogData: {
+      siteCount: 315,
+      sites: [
+        {
+          siteId: 'SITE_AUS_BAUXITE_1', countryId: 'AUS', siteName: 'Western Australia Bauxite Deposit',
+          identity: { countryIso3: 'AUS', resourceTypeId: 'bauxite' },
+          coordinates: {}, location: { countryName: 'Australia', coordinates: { lat: -23.4, lng: 121.2 } },
+          unit: 'TONNES'
+        },
+        {
+          siteId: 'SITE_COD_COBALT_1', countryId: 'COD', siteName: 'Cobalt Mine',
+          sourceSiteRecord: { resourceTypeId: 'cobalt', lat: -10.7, lng: 26.2 }
+        },
+        { siteId: 'SITE_NO_COORDS_1', countryId: 'USA', siteName: 'Unlocated Record', resourceId: 'gold' }
+      ]
+    },
+    OmegaResourceSiteMasterResearchData: {
+      sites: [
+        {
+          siteId: 'SITE_AUS_BAUXITE_1', countryId: 'AUS', resourceId: 'bauxite',
+          siteName: 'Western Australia Bauxite Deposit', lat: -23.4, lng: 121.2,
+          reserve: { quantity: 500000, unit: 'TONNES' }
+        }
+      ]
+    },
+    OmegaResourceSiteReserveSimulationData: {
+      records: [
+        { siteId: 'SITE_AUS_BAUXITE_1', countryId: 'AUS', resourceId: 'bauxite', reserve: { quantity: 700000, unit: 'TONNES' } }
+      ]
+    },
+    Omega: {
+      IndividualResourceSiteBinding: {
+        sites: [
+          {
+            siteId: 'SITE_GBR_LITHIUM_1', countryId: 'GBR', siteName: 'Cornish Lithium Site',
+            real: { resourceId: 'lithium' }, coordinates: { lat: 50.2, lng: -5.3 },
+            location: { countryName: 'United Kingdom', coordinates: { lat: 50.2, lng: -5.3 } }
+          }
+        ]
+      }
+    }
+  };
+  context.window = context;
+  vm.createContext(context);
+  vm.runInContext(mapEngine.slice(start, end + 3), context, { filename: 'map-engine-2.js', timeout: 1000 });
+
+  const rows = context.Game.Map.collectGlobalResourceDeposits();
+  const ids = new Set(rows.map(row => row.siteId));
+  assert.ok(ids.has('SITE_RUNTIME_COAL_1'), 'live runtime deposits remain visible');
+  assert.ok(ids.has('SITE_PROFILE_IRON_1'), 'legacy country-profile mine records remain visible');
+  assert.ok(ids.has('SITE_AUS_BAUXITE_1'), 'canonical-only sites beyond the 250-row master registry remain visible');
+  assert.ok(ids.has('SITE_COD_COBALT_1'), 'nested source resource identity and coordinates are normalized');
+  assert.ok(ids.has('SITE_GBR_LITHIUM_1'), 'individual site-binding resources remain visible');
+  assert.equal(ids.has('SITE_NO_COORDS_1'), false, 'records without coordinates must not create invented map markers');
+  assert.equal(rows.filter(row => row.siteId === 'SITE_AUS_BAUXITE_1').length, 1,
+    'canonical and master duplicates must merge under the same individual site identity');
+  const bauxite = rows.find(row => row.siteId === 'SITE_AUS_BAUXITE_1');
+  assert.equal(bauxite.resId, 'bauxite');
+  assert.equal(bauxite.lat, -23.4);
+  assert.equal(bauxite.lng, 121.2);
+  assert.ok(rows.length >= 5, 'the map source must combine runtime, profile, canonical and site-binding datasets');
+});
