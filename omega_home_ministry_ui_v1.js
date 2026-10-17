@@ -415,7 +415,7 @@
     g.document.getElementById('home-police-vehicles-back').onclick = () => this.renderUpgradeMenu();
   };
 
-  ui.renderGuardOut = function (preferredVehicleLevel) {
+  ui.renderGuardOut = function (preferredVehicleLevel, filters) {
     injectStyles();
     const body = bodyNode(), e = engine();
     if (!body || !e) return;
@@ -436,11 +436,12 @@
     const guardableAssets = typeof e.getGuardableAssets === 'function' ? e.getGuardableAssets() : [];
     const guardAssetOptions = '<option value="">General mission coverage · no single asset</option>' + guardableAssets.map(asset => '<option value="' + esc(asset.id) + '">' + esc(asset.name) + ' · ' + esc(asset.category) + '</option>').join('');
     const activeDeployments = (state.guardDeployments || []).slice().reverse();
+    const fleetSummary = e.getVehicleFleet();
     const deploymentCards = activeDeployments.length ? activeDeployments.map(unit => {
       const vehicle = e.VEHICLES.find(v => v.level === Number(unit.vehicleLevel)), mission = e.GUARD_MISSIONS.find(m => m.id === unit.missionId);
       if (!vehicle || !mission) return '';
       const score = Number(unit.effectiveness) || 0;
-      const assignedFleet = e.getVehicleFleet().filter(row => (unit.vehicleIds || []).includes(row.id));
+      const assignedFleet = fleetSummary.filter(row => (unit.vehicleIds || []).includes(row.id));
       const condition = assignedFleet.length ? Math.round(assignedFleet.reduce((sum,row) => sum + Number(row.condition || 0),0) / assignedFleet.length) : 100;
       return '<article class="home-police-deployment-card">' +
         vehicleSvg(vehicle, 'guard-' + unit.id) +
@@ -548,7 +549,7 @@
       const result = e.deployGuard(level, quantity, missionId, sectorInput.value, e.getCurrentCountryId(), assetSelect.value || null, environmentSelect.value, roadSelect.value);
       if (!result.ok) { report(result); this.renderGuardOut(level); return; }
       report(result, 'GUARD DEPLOYMENT COMMITTED', result.deployment.quantity + ' × ' + result.vehicle + ' assigned to ' + result.mission + ' at ' + result.deployment.sector + '. ' + result.assignedOfficers + ' officers reserved; current mission rating ' + result.estimatedEffectiveness + ' / 100.');
-      this.renderGuardOut(level);
+      this.renderGuardOut(level, { environment: environmentSelect.value, road: roadSelect.value });
     };
     Array.from(g.document.querySelectorAll('[data-home-standdown]')).forEach(button => {
       button.onclick = () => {
