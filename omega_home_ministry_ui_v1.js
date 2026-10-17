@@ -54,7 +54,7 @@
     const style = g.document.createElement('style');
     style.id = STYLE_ID;
     style.textContent = [
-      '.home-police-shell{box-sizing:border-box;width:min(100% - 18px,1040px);margin:12px auto 42px;padding:clamp(14px,3vw,28px);color:#edf5ff;background:radial-gradient(circle at 50% 0%,rgba(25,67,105,.62),transparent 42%),linear-gradient(150deg,#081525 0%,#050b14 72%);border:1px solid rgba(218,177,75,.5);border-radius:18px;box-shadow:0 16px 45px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.06);font-family:Inter,system-ui,sans-serif;overflow:visible}',
+      '.home-police-shell{box-sizing:border-box;width:min(calc(100% - 18px),1040px);margin:12px auto 42px;padding:clamp(14px,3vw,28px);color:#edf5ff;background:radial-gradient(circle at 50% 0%,rgba(25,67,105,.62),transparent 42%),linear-gradient(150deg,#081525 0%,#050b14 72%);border:1px solid rgba(218,177,75,.5);border-radius:18px;box-shadow:0 16px 45px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.06);font-family:Inter,system-ui,sans-serif;overflow:visible}',
       '.home-police-head{text-align:center;margin:0 auto 18px;max-width:760px}',
       '.home-police-orb{display:flex;align-items:center;justify-content:center;width:94px;height:94px;margin:2px auto 14px;border-radius:50%;background:radial-gradient(circle at 32% 22%,#fef3c7 0,#eabf52 16%,#173d61 47%,#09111f 75%);border:2px solid #dcb75d;box-shadow:0 0 0 5px rgba(220,183,93,.09),0 0 28px rgba(0,212,255,.18);font-size:48px;line-height:1}',
       '.home-police-title{color:#f6d67e;font-size:clamp(18px,3.6vw,28px);font-weight:900;letter-spacing:.08em;margin:0 0 6px;text-transform:uppercase}',
