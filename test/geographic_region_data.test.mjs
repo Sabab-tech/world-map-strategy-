@@ -71,6 +71,10 @@ for (const f of oceans.features) {
   assert.ok(f.geometry && ['Polygon','MultiPolygon'].includes(f.geometry.type), f.properties.name + ': invalid ocean geometry');
 }
 assert.ok(runtime.includes('OMEGAGeographicRegionSystem'), 'Region selector runtime must expose its public API.');
+assert.ok(runtime.includes('function loadOceans()'), 'Ocean geometry must be lazy-loaded on demand.');
+assert.ok(runtime.includes('function scheduleStyleOperations('), 'Region highlight restyling must be batched across frames.');
+assert.ok(runtime.includes('cache:"default"'), 'Versioned geographic assets must be browser-cacheable.');
+assert.ok(!runtime.includes('Promise.all([countriesPromise,oceansPromise])'), 'Base map startup must not wait for heavy ocean geometry.');
 assert.ok(runtime.includes('featureMember'), 'Region selection must update actual polygon layers.');
 assert.ok(runtime.includes('"NORTHERN CYPRUS": ["Asia", "Europe"]'), 'Northern Cyprus must remain included in geographic group highlighting.');
 assert.ok(runtime.includes('"SOMALILAND": ["Africa"]'), 'Somaliland must remain included in Africa group highlighting.');
