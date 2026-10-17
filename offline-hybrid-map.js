@@ -81,7 +81,7 @@
         var hasImagery = imageryAvailable();
         return {
             color: "#dce6df",
-            weight: window.map.getZoom() >= 5 ? 0.55 : 0.8,
+            weight: window.map.getZoom() >= 8 ? 0.82 : (window.map.getZoom() >= 5 ? 0.68 : 0.78),
             opacity: 0.88,
             fillColor: mutedFill(sourceName(feature)),
             fillOpacity: hasImagery ? 0.055 : 0.88,
@@ -403,7 +403,7 @@
         window.OMEGA_OFFLINE_ATLAS_STATUS = {
             active: active,
             remoteImagery: remoteImageryReady,
-            offlineRasterCached: true,
+            offlineRasterCached: textureStored,
             rasterSource: "NASA Blue Marble: Next Generation"
         };
     }
@@ -423,8 +423,8 @@
         if (!atlasSatelliteLayer) {
             atlasSatelliteLayer = L.tileLayer(URL, {
                 attribution: "Esri, Maxar, Earthstar Geographics, and the GIS User Community",
-                maxZoom: 8,
-                opacity: 0.97,
+                maxZoom: 10,
+                opacity: 0.98,
                 zIndex: 230,
                 keepBuffer: 2,
                 updateWhenIdle: true

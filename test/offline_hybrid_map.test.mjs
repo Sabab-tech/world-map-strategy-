@@ -62,6 +62,8 @@ test("Android prefers real imagery and can cache its overview fallback", () => {
   assert.match(css, /omega-offline-hybrid-active/);
   assert.doesNotMatch(css, /animation:\s*resMarkerPulse/);
   assert.match(mapEngine, /permitSatelliteInOfflineShell/);
+  assert.match(mapEngine, /maxZoom: 10/);
+  assert.match(js, /maxZoom: 10/);
 });
 
 

@@ -17,6 +17,12 @@ The NASA raster is cached only after the app successfully downloads it once. If 
 
 Imagery credits: Esri, Maxar, Earthstar Geographics, and the GIS User Community; NASA Blue Marble: Next Generation (NASA/GSFC, Reto Stöckli and collaborators).
 
+## Sharpness and performance
+
+- Raises the world map zoom ceiling to level 10 and requests matching satellite detail for closer country views.
+- Uses zoom-adaptive country outlines to keep global borders light while improving definition at close zoom.
+- Keeps the NASA fallback at 5400 × 2700 to limit memory pressure on lower-end Android devices. It is a world overview, not a substitute for detailed offline satellite tiles.
+
 ## Validation
 
 The focused tests check imagery-layer wiring, cached raster use, canonical GeoJSON reuse, Android layer selection, and failure fallback behavior. A real Android APK build and device screenshot are still required before declaring the visual result verified.

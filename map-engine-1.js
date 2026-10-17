@@ -202,18 +202,6 @@ var Game = window.Game = {
             });
         }
 
-        // 👁️ BOTTOM BAR: VIEW SELECTED COUNTRY BUTTON
-        const btnViewMap = document.getElementById('btn-view-map');
-        if (btnViewMap) {
-            btnViewMap.addEventListener('click', (e) => {
-                if (typeof window.openMainMapView === 'function') {
-                    window.openMainMapView(e);
-                } else if (window.OmegaLayerManager) {
-                    window.OmegaLayerManager.setLayer(0);
-                }
-            });
-        }
-
         // 🎛️ RIGHT QUICK DOCK BINDINGS
         const btnSearch = document.getElementById('btn-quick-search');
         const drawerSearch = document.getElementById('search-drawer');
@@ -869,7 +857,7 @@ window.map = L.map('map', {
     inertiaDeceleration: 3000,
     bounceAtZoomLimits: false,
     minZoom: 2.1,
-    maxZoom: 8,
+    maxZoom: 10,
     zoomControl: false
 }).setView([20, 0], 2.5);
 
@@ -879,6 +867,7 @@ if (!window.OMEGA_ANDROID_OFFLINE) {
         attribution: 'Esri World Imagery Satellite',
         maxZoom: 18,
         opacity: 0.95,
+        errorTileUrl: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256"><rect width="256" height="256" fill="%231a2620"/><text x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%23384e3d" font-family="monospace" font-size="12">SATELLITE TILE</text></svg>'
     }).addTo(window.map);
 
     window.satelliteLayer.on('tileerror', function(e) {

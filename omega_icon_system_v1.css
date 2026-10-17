@@ -1,0 +1,57 @@
+/* OMEGA UI ICON SYSTEM v1.0.0: offline-safe custom SVG icon styling */
+.omega-icon-sprite {
+    position: absolute !important;
+    width: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
+    pointer-events: none !important;
+    user-select: none !important;
+}
+.omega-ui-icon {
+    display: inline-block !important;
+    width: 1em !important;
+    height: 1em !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    max-width: 1.35em !important;
+    max-height: 1.35em !important;
+    vertical-align: -0.16em !important;
+    flex: 0 0 auto !important;
+    overflow: visible !important;
+    color: currentColor !important;
+    fill: none !important;
+    stroke: currentColor !important;
+    stroke-width: 1.8 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+    pointer-events: none !important;
+    shape-rendering: geometricPrecision;
+}
+button > .omega-ui-icon, [role="button"] > .omega-ui-icon, .icon-btn > .omega-ui-icon {
+    width: 1.1em !important;
+    height: 1.1em !important;
+}
+.icon-btn > .omega-ui-icon { width: 21px !important; height: 21px !important; }
+.status-item .omega-ui-icon, .res-icon .omega-ui-icon, .status-item > .icon .omega-ui-icon {
+    width: 1.05em !important;
+    height: 1.05em !important;
+    margin-right: 0.15em;
+}
+.m-emoji-icon { display: inline-flex !important; align-items: center !important; justify-content: center !important; }
+.m-emoji-icon > .omega-ui-icon {
+    width: 1em !important;
+    height: 1em !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    filter: drop-shadow(0 0 5px var(--om-m-accent, currentColor));
+}
+.interior-logo > .omega-ui-icon { width: 0.92em !important; height: 0.92em !important; }
+.omega-ui-icon + .omega-ui-icon { margin-left: 0.16em; }
+@media (prefers-reduced-motion: reduce) {
+    .omega-ui-icon { animation: none !important; transition: none !important; }
+}
+
+/* Semantic traffic-light icons retain their original status meaning. */
+.omega-ui-icon.omega-ui-icon--blue-dot { color: #60a5fa !important; }
+.omega-ui-icon.omega-ui-icon--red-dot { color: #f87171 !important; }
+.omega-ui-icon.omega-ui-icon--green-dot { color: #4ade80 !important; }

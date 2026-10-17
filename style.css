@@ -4152,8 +4152,135 @@ body.modal-open .ui-bottom-navigation {
 }
 
 
+/* Geographic selector integrated into the satellite/layer drawer. */
+.layer-options-caption {
+    color: #8ca5b7;
+    font: 700 10px/1.3 'Share Tech Mono', monospace;
+    letter-spacing: 1.2px;
+    margin: 2px 2px 0;
+}
+.omega-region-drawer-section {
+    margin-top: 8px;
+    padding: 13px 10px 10px;
+    border: 1px solid rgba(0, 229, 255, 0.28);
+    border-radius: 8px;
+    background: linear-gradient(150deg, rgba(4, 25, 36, 0.92), rgba(7, 14, 27, 0.96));
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+}
+.omega-region-section-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    color: #93eaff;
+    font: 800 11px/1.35 'Share Tech Mono', monospace;
+    letter-spacing: 1px;
+}
+.omega-region-section-tag {
+    border: 1px solid rgba(0, 229, 255, 0.38);
+    border-radius: 4px;
+    color: #9cc5d8;
+    padding: 3px 5px;
+    font-size: 9px;
+    letter-spacing: .6px;
+}
+.omega-region-field-label {
+    color: #c7d7e2;
+    font: 600 11px/1.35 Inter, Arial, sans-serif;
+}
+#omega-region-select {
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 39px;
+    padding: 9px 10px;
+    color: #f1f7fa;
+    background: #071b29;
+    border: 1px solid #35596b;
+    border-radius: 5px;
+    font: 12px/1.3 Inter, Arial, sans-serif;
+    outline: none;
+}
+#omega-region-select:focus {
+    border-color: #00e5ff;
+    box-shadow: 0 0 0 2px rgba(0, 229, 255, 0.12);
+}
+#omega-region-select optgroup {
+    color: #82d8eb;
+    background: #071b29;
+}
+#omega-region-select option {
+    color: #f1f7fa;
+    background: #071b29;
+}
+.omega-region-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    color: #b9cfda;
+    font: 600 11px/1.35 Inter, Arial, sans-serif;
+}
+.omega-region-count {
+    color: #8be7f7;
+    font-weight: 800;
+}
+.omega-region-list {
+    max-height: 170px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border-top: 1px solid rgba(148, 190, 207, 0.2);
+    padding-top: 4px;
+}
+.omega-region-item {
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 7px 6px;
+    color: #d8e6ee;
+    text-align: left;
+    background: rgba(10, 31, 44, 0.6);
+    border: 0;
+    border-bottom: 1px solid rgba(160, 194, 211, 0.08);
+    border-radius: 3px;
+    font: 11px/1.35 Inter, Arial, sans-serif;
+    cursor: pointer;
+}
+.omega-region-item:hover,
+.omega-region-item:focus {
+    color: #a8f1ff;
+    background: rgba(0, 179, 220, 0.14);
+    outline: 1px solid rgba(0, 229, 255, 0.35);
+}
+.omega-region-empty {
+    color: #99aebb;
+    padding: 10px 3px;
+    font: 11px/1.5 Inter, Arial, sans-serif;
+}
+.omega-region-note {
+    color: #8298a6;
+    font: 10px/1.45 Inter, Arial, sans-serif;
+}
+@media (max-width: 600px) {
+    .omega-region-drawer-section { padding: 11px 8px 9px; }
+    .omega-region-list { max-height: 135px; }
+    #omega-region-select { min-height: 42px; font-size: 13px; }
+}
 
 
-
-
-
+/* Geographic region selection: keep the real basemap visible and glow the
+   selected country/ocean boundaries. Two compact SVG shadows avoid heavy
+   full-screen effects on lower-end Android devices. */
+.leaflet-overlay-pane path.omega-region-boundary-glow {
+    filter:
+        drop-shadow(0 0 1px rgba(245, 252, 255, 0.98))
+        drop-shadow(0 0 4px var(--omega-region-glow-color, #58a6ff));
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+}
+.leaflet-overlay-pane path.omega-region-ocean-glow {
+    stroke-width: 1.9px;
+}

@@ -228,6 +228,7 @@ test('resource economy v2 completes mine-backed processing, domestic settlement 
   const html=context.CountryIOS.renderChapter5_Resources('BGD');
   assert.match(html,/DEPOSIT/);
   assert.match(html,/TREASURY/);
+  assert.match(html,/NATIONAL DEMAND &amp; CONSUMPTION|NATIONAL DEMAND & CONSUMPTION/);
   assert.match(html,/OPERATING MINE REGISTER/);
 });
 

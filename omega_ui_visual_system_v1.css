@@ -295,3 +295,93 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
  .omega-site-metric>strong{font-size:13px}
  .omega-site-row{grid-template-columns:minmax(84px,.8fr) minmax(0,1.2fr);gap:7px}
 }
+
+
+/* MAP-FIRST NAVIGATION: keep only a compact Ministries action on a map corner. */
+.ui-bottom-navigation {
+    position: fixed !important;
+    top: auto !important;
+    right: auto !important;
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px)) !important;
+    left: 12px !important;
+    transform: none !important;
+    box-sizing: border-box !important;
+    width: 42px !important;
+    min-width: 42px !important;
+    max-width: 42px !important;
+    height: 42px !important;
+    min-height: 42px !important;
+    max-height: 42px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    gap: 0 !important;
+    justify-content: center !important;
+    align-items: center !important;
+    flex-wrap: nowrap !important;
+    background: transparent !important;
+    border: 0 !important;
+    border-radius: 50% !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+#btn-ministry-dock {
+    box-sizing: border-box !important;
+    position: relative !important;
+    width: 42px !important;
+    min-width: 42px !important;
+    max-width: 42px !important;
+    height: 42px !important;
+    min-height: 42px !important;
+    max-height: 42px !important;
+    flex: 0 0 42px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0 !important;
+    border: 1px solid rgba(0, 229, 255, 0.72) !important;
+    border-radius: 50% !important;
+    background: rgba(5, 16, 29, 0.94) !important;
+    color: #c8f5ff !important;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.36) !important;
+    font-size: 18px !important;
+    line-height: 1 !important;
+    transform: none !important;
+    backdrop-filter: none !important;
+}
+#btn-ministry-dock .nav-icon {
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-family: Arial, sans-serif !important;
+    font-size: 20px !important;
+    font-weight: 700 !important;
+    line-height: 1 !important;
+}
+#btn-ministry-dock .nav-text {
+    display: none !important;
+}
+#btn-ministry-dock:hover,
+#btn-ministry-dock:active {
+    transform: scale(1.04) !important;
+    border-color: #8ceeff !important;
+    background: rgba(8, 34, 53, 0.98) !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.42) !important;
+}
+@media (max-width: 480px) {
+    .ui-bottom-navigation {
+        left: 8px !important;
+        bottom: calc(8px + env(safe-area-inset-bottom, 0px)) !important;
+    }
+    #btn-ministry-dock {
+        width: 40px !important;
+        min-width: 40px !important;
+        max-width: 40px !important;
+        height: 40px !important;
+        min-height: 40px !important;
+        max-height: 40px !important;
+        flex-basis: 40px !important;
+    }
+}
