@@ -528,6 +528,91 @@
     refresh();
   };
 
+  ui.renderFleetMaintenance = function (filters) {
+    injectStyles();
+    const body = bodyNode(), e = engine();
+    if (!body || !e) return;
+    const options = Object.assign({ tier: 'all', status: 'all', page: 0 }, filters || {});
+    const fleet = e.getVehicleFleet(), environments = e.getOperatingEnvironments();
+    const filtered = fleet.filter(unit => {
+      const tierMatch = options.tier === 'all' || Number(unit.vehicleLevel) === Number(options.tier);
+      const statusMatch = options.status === 'all' || unit.status === options.status;
+      return tierMatch && statusMatch;
+    });
+    const pageSize = 12, pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
+    const page = Math.min(pageCount - 1, Math.max(0, Math.floor(Number(options.page) || 0)));
+    const visible = filtered.slice(page * pageSize, page * pageSize + pageSize);
+    const counts = {
+      total: fleet.length,
+      deployed: fleet.filter(unit => unit.status === 'DEPLOYED').length,
+      due: fleet.filter(unit => unit.status === 'MAINTENANCE_DUE').length,
+      repair: fleet.filter(unit => unit.status === 'REPAIR_REQUIRED').length,
+      ready: fleet.filter(unit => unit.status === 'AVAILABLE').length,
+    };
+    const statusName = { AVAILABLE: 'READY FOR SERVICE', DEPLOYED: 'ON GUARD DUTY', MAINTENANCE_DUE: 'SERVICE DUE', REPAIR_REQUIRED: 'REPAIR REQUIRED' };
+    const cards = visible.map(unit => {
+      const vehicle = e.VEHICLES.find(row => row.level === Number(unit.vehicleLevel));
+      if (!vehicle) return '';
+      const condition = Math.max(0, Math.min(100, Number(unit.condition) || 0));
+      const deployed = unit.status === 'DEPLOYED';
+      const serviceRequired = unit.status === 'MAINTENANCE_DUE' || unit.status === 'REPAIR_REQUIRED' || condition < 99;
+      const cost = e.estimateVehicleRepairCost(unit);
+      const use = unit.environmentAssessment;
+      return '<article class="home-police-fleet-card">' +
+        vehicleSvg(vehicle, 'fleet-' + unit.id) +
+        '<span class="home-police-tag ' + (deployed ? '' : unit.status === 'AVAILABLE' ? 'home-police-tag-green' : 'home-police-tag-gold') + '">' + esc(statusName[unit.status] || unit.status) + '</span>' +
+        '<h3>' + esc(vehicle.name) + '</h3><p class="home-police-note">' + esc(unit.id) + '</p>' +
+        '<div class="home-police-score-line"><span>Vehicle condition</span><strong>' + condition.toFixed(1) + ' / 100</strong></div>' +
+        '<div class="home-police-condition"><span style="width:' + condition + '%"></span></div>' +
+        '<div class="home-police-fleet-meta">' +
+          '<div>Odometer<strong>' + Math.round(Number(unit.odometerKm) || 0).toLocaleString() + ' km</strong></div>' +
+          '<div>Next service<strong>' + Math.max(0, Math.round((Number(unit.nextServiceAtKm) || 0) - (Number(unit.odometerKm) || 0))).toLocaleString() + ' km remaining</strong></div>' +
+          '<div>Daily upkeep<strong>' + money(e, vehicle.maintenancePerDay) + '</strong></div>' +
+          '<div>Last route<strong>' + esc(unit.lastEnvironment || 'Not deployed') + ' · ' + esc(unit.lastRoadCondition || 'clear') + '</strong></div>' +
+        '</div>' +
+        (deployed ? '<div class="home-police-alert">Assigned to ' + esc(unit.deploymentMission || 'guard duty') + ' · ' + esc(unit.sector || 'General sector') + (use ? '<br>Route fit ' + use.fit + '/100 · estimated damage exposure ×' + use.damageRisk : '') + '. Stand down first if the unit must be serviced.</div>' : '') +
+        '<div class="home-police-cost"><strong>' + money(e, cost) + '</strong><span>Estimated full repair / scheduled service</span></div>' +
+        '<button type="button" class="home-police-btn ' + (serviceRequired ? 'home-police-btn-gold' : 'home-police-btn-plain') + '" data-home-service="' + esc(unit.id) + '" ' + (deployed || !serviceRequired ? 'disabled' : '') + '>' + (deployed ? 'VEHICLE CURRENTLY DEPLOYED' : serviceRequired ? '🧰 REPAIR & RETURN TO FULL CONDITION' : '✓ NO SERVICE REQUIRED') + '</button>' +
+      '</article>';
+    }).join('');
+    const tierOptions = '<option value="all">All vehicle tiers</option>' + e.VEHICLES.map(v => '<option value="' + v.level + '"' + (options.tier !== 'all' && Number(options.tier) === v.level ? ' selected' : '') + '>Tier ' + v.level + ' · ' + esc(v.name) + '</option>').join('');
+    const statusOptions = [['all','All statuses'],['AVAILABLE','Ready'],['DEPLOYED','On guard duty'],['MAINTENANCE_DUE','Service due'],['REPAIR_REQUIRED','Repair required']].map(row => '<option value="' + row[0] + '"' + (options.status === row[0] ? ' selected' : '') + '>' + row[1] + '</option>').join('');
+    body.innerHTML =
+      '<div class="home-police-shell">' +
+        '<header class="home-police-head"><div class="home-police-orb">🧰</div><h1 class="home-police-title">FLEET HEALTH & MAINTENANCE</h1><p class="home-police-subtitle">Every owned vehicle has its own condition, odometer, service interval and deployable status. Poor route choices create real wear, lost uptime and repair cost.</p></header>' +
+        '<div class="home-police-kpis">' +
+          '<div class="home-police-kpi"><strong>' + counts.total + '</strong><span>Total fleet units</span></div>' +
+          '<div class="home-police-kpi"><strong>' + counts.ready + '</strong><span>Ready</span></div>' +
+          '<div class="home-police-kpi"><strong>' + counts.deployed + '</strong><span>On duty</span></div>' +
+          '<div class="home-police-kpi"><strong>' + counts.due + '</strong><span>Service due</span></div>' +
+          '<div class="home-police-kpi"><strong>' + counts.repair + '</strong><span>Needs repair</span></div>' +
+        '</div>' +
+        '<div class="home-police-panel"><div class="home-police-section-title">Fleet filters · low DOM workload</div>' +
+          '<label class="home-police-label" for="home-police-fleet-tier">Vehicle model / tier</label><select id="home-police-fleet-tier" class="home-police-field">' + tierOptions + '</select>' +
+          '<label class="home-police-label" for="home-police-fleet-status">Operational status</label><select id="home-police-fleet-status" class="home-police-field">' + statusOptions + '</select>' +
+          '<p class="home-police-note">Showing ' + (filtered.length ? (page * pageSize + 1) + '–' + Math.min(filtered.length, (page + 1) * pageSize) : 0) + ' of ' + filtered.length + ' matching units. Only 12 vehicle cards are rendered per page for smooth low-end Android performance.</p>' +
+        '</div>' +
+        (cards ? '<div class="home-police-deployment-list">' + cards + '</div>' : '<div class="home-police-alert">No fleet units match these filters. Orders that are still in transit are not counted as owned vehicles.</div>') +
+        '<div class="home-police-actions"><button id="home-police-fleet-prev" class="home-police-btn home-police-btn-plain" ' + (page <= 0 ? 'disabled' : '') + '>← PREVIOUS 12</button><button id="home-police-fleet-next" class="home-police-btn home-police-btn-plain" ' + (page >= pageCount - 1 ? 'disabled' : '') + '>NEXT 12 →</button></div>' +
+        '<p class="home-police-note">Repairs and scheduled servicing restore condition and reset the service interval. Maintenance is blocked while a vehicle remains assigned to a live guard mission. Road damage can automatically stand a vehicle down and release its crew.</p>' +
+        backButton('home-police-fleet-back', '← BACK TO FLEET COMMAND') +
+      '</div>';
+    const rerender = (pageNum) => this.renderFleetMaintenance({ tier: g.document.getElementById('home-police-fleet-tier').value, status: g.document.getElementById('home-police-fleet-status').value, page: pageNum });
+    g.document.getElementById('home-police-fleet-tier').onchange = () => this.renderFleetMaintenance({ tier: g.document.getElementById('home-police-fleet-tier').value, status: g.document.getElementById('home-police-fleet-status').value, page: 0 });
+    g.document.getElementById('home-police-fleet-status').onchange = () => this.renderFleetMaintenance({ tier: g.document.getElementById('home-police-fleet-tier').value, status: g.document.getElementById('home-police-fleet-status').value, page: 0 });
+    g.document.getElementById('home-police-fleet-prev').onclick = () => rerender(page - 1);
+    g.document.getElementById('home-police-fleet-next').onclick = () => rerender(page + 1);
+    Array.from(g.document.querySelectorAll('[data-home-service]')).forEach(button => {
+      button.onclick = () => {
+        const id = button.getAttribute('data-home-service'), result = e.serviceVehicle(id);
+        if (!result.ok) { report(result); return; }
+        report(result, 'VEHICLE SERVICE COMPLETE', result.vehicle.vehicleName || result.vehicle.id + ' is restored to full condition. Service cost: ' + money(e, result.serviceCost) + '.');
+        this.renderFleetMaintenance(options);
+      };
+    });
+    g.document.getElementById('home-police-fleet-back').onclick = () => this.renderUpgradeMenu();
+  };
+
   ui.renderFacilitiesPanel = function (selectedId, showBuildForm) {
     injectStyles();
     const body = bodyNode(), e = engine();
