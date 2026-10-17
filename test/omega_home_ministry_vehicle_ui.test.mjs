@@ -137,6 +137,9 @@ test('all 15 police vehicles have one-to-one art designs and unique paint identi
 test('custom vehicle artwork uses vector police signals and accessible names, not external image URLs', () => {
   assert.match(ui, /function vehicleSvg\(vehicle, slot\)/);
   assert.match(ui, /aria-label="'\s*\+\s*esc\(vehicle\.name\)\s*\+\s*' police vehicle illustration"/);
+  assert.ok(ui.includes("police-gloss-' + key + '"), 'vehicle bodies must have a layered glossy light pass for depth');
+  assert.ok(ui.includes("police-metal-' + key + '"), 'wheel rims must use a metallic lighting gradient');
+  assert.match(ui, /stroke-width="2\.3" stroke-linecap="round" opacity="\.43"/, 'body highlight bevel must be present');
   assert.match(ui, /<text x="160" y="107"[^>]*>POLICE<\/text>/);
   assert.match(ui, /police-body-/);
   assert.ok(ui.includes("replace(/[^A-Za-z0-9_-]/g, '-').slice(0, 80)"), 'SVG IDs must be sanitized before entering markup');
