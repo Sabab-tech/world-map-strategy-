@@ -711,7 +711,7 @@
     g.addEventListener?.('OMEGA_SIMULATION_TURN_COMMITTED',function(event){
       const d=event&&event.detail||{};
       const t=num(d.simulationTurn)??num(d.payload&&d.payload.turn)??num(d.turn)??currentTurn()+1;
-      const dt=num(d.stepDurationMs)??num(d.durationMs)??num(g.Omega&&g.Omega.Simulation&&g.Omega.Simulation.clock&&g.Omega.Simulation.clock.stepDurationMs)??HOUR_MS;
+      const dt=num(d.stepDurationMs)??num(d.durationMs)??num(g.Omega&&g.Omega.Simulation&&g.Omega.Simulation.clock&&g.Omega.Simulation.clock.stepDurationMs)??DAY_MS;
       step(t,dt);
     });
     g.addEventListener?.('OMEGA_FINANCE_RUNTIME_READY',function(){initialize().catch(()=>{});});
