@@ -33,8 +33,9 @@
     var budget = typeof e.getHomeBudgetSnapshot === 'function' ? e.getHomeBudgetSnapshot(cid) : { available: false, reason: 'HOME_BUDGET_API_UNAVAILABLE' };
     var dailyCost = typeof e.getDailyOperatingCost === 'function' ? e.getDailyOperatingCost(cid) : null;
     var fuel = typeof e.getFuelSnapshot === 'function' ? e.getFuelSnapshot(cid) : null;
+    var caseRecords = typeof e.getPoliceCases === 'function' ? e.getPoliceCases(cid) : [];
     var baselineRuntime = g.OmegaHomePoliceBaselineRuntime && typeof g.OmegaHomePoliceBaselineRuntime.diagnostics === 'function' ? g.OmegaHomePoliceBaselineRuntime.diagnostics() : null;
-    return { ready: true, baselineReady: !!(baseline && crime && crime.available), baselineError: baselineRuntime && baselineRuntime.error || null, engine: e, countryId: cid, state: s, baseline: baseline, crime: crime, budget: budget, dailyCost: dailyCost, fuel: fuel };
+    return { ready: true, baselineReady: !!(baseline && crime && crime.available), baselineError: baselineRuntime && baselineRuntime.error || null, engine: e, countryId: cid, state: s, baseline: baseline, crime: crime, budget: budget, dailyCost: dailyCost, fuel: fuel, caseRecords: caseRecords };
   }
   function setStatus(message, type) { statusText = String(message || ''); statusType = type || ''; }
   function statusHtml() {
@@ -98,7 +99,7 @@
     };
   }
   function navHtml() {
-    return [['overview','LIVE OVERVIEW'],['staff','POLICE RECRUITMENT'],['fleet','VEHICLE PROCUREMENT'],['units','POLICE UNITS'],['crime','CRIME & PATROL'],['rules','POLICE RULES'],['rulebook','POLICE RULEBOOK']].map(function (row) {
+    return [['overview','LIVE OVERVIEW'],['staff','POLICE RECRUITMENT'],['fleet','VEHICLE PROCUREMENT'],['units','POLICE UNITS'],['cases','CASE MANAGEMENT'],['crime','CRIME & PATROL'],['rules','POLICE RULES'],['rulebook','POLICE RULEBOOK']].map(function (row) {
       return '<button type="button" class="ohpu-tab ' + (activeTab === row[0] ? 'is-active' : '') + '" data-ohpu-tab="' + row[0] + '">' + row[1] + '</button>';
     }).join('');
   }
@@ -116,6 +117,9 @@
       kpi('Police efficiency',percent(s.policeEfficiency,1),'Improved by training, effective facilities and research.') +
       kpi('Public satisfaction',percent(crime.publicSatisfaction,1),'Affected by service quality, case handling and oversight policies.') +
       kpi('Owned vehicle inventory',formatCount(Object.values(s.vehiclesOwned||{}).reduce(function(sum,x){return sum+number(x);},0)), 'Owned units include vehicles awaiting repair or maintenance.') +
+      kpi('Open police cases',formatCount(crime.policeCases&&crime.policeCases.open),'Persistent country case register; actions and deadlines are simulated.') +
+      kpi('Overdue case responses',formatCount(crime.policeCases&&crime.policeCases.responseOverdue),'Missed response deadlines lower public trust and service satisfaction.') +
+      kpi('Detention release required',formatCount(crime.policeCases&&crime.policeCases.detentionReleaseRequired),'Case workflow blocks charge actions after the detention deadline.') +
       kpi('Roadworthy vehicles',formatCount(crime.currentOperationalVehicleUnits),'Distinct units ready or deployed and within service/condition limits.') +
       kpi('Effective fleet capacity',formatCount(crime.currentOperationalFleetUnits),'Country route fit, terrain and unit condition weight response capacity.') +
       kpi('Police staffing coverage',percent(crime.policeStaffingCoveragePct,1),'Against the population-scaled game staffing target.') +
@@ -250,6 +254,72 @@
       '<div class="ohpu-form-grid">' + fields + '</div><div class="ohpu-note" id="ohpu-patrol-total">Allocated ' + esc(total.toFixed(1)) + '%; unassigned ' + esc(Math.max(0,100-total).toFixed(1)) + '%.</div>' +
       '<button class="ohpu-btn ohpu-btn-main" id="ohpu-save-patrol" type="button">SAVE PATROL ALLOCATION</button></article>' +
       '<div class="ohpu-note">Observed homicide-rate data is kept separate from simulated results. Theft, street robbery, general robbery, assault, drug trafficking, contraband and cybercrime values are modelled baseline rates where country-level observations are not in the local dataset. Financial exposure is a modeled economic-impact estimate, not cash seized, fines collected, criminal revenue, or verified losses.</div></section>';
+  }
+  function policeCaseManagementHtml(d){
+    var e=d.engine,crime=d.crime||{},records=Array.isArray(d.caseRecords)?d.caseRecords:[],types=typeof e.getPoliceCaseTypes==='function'?e.getPoliceCaseTypes():{};
+    var operations=d.budget&&d.budget.categories&&d.budget.categories.operations,funds=number(operations&&operations.spendableUsd);
+    var typeOptions=Object.keys(types).map(function(id){return '<option value="'+esc(id)+'">'+esc(types[id].label||id)+'</option>';}).join('');
+    function deadlineText(due,now){
+      if(due===null||due===undefined)return 'Not scheduled';
+      var difference=Number(due)-now,minutes=Math.ceil(Math.abs(difference)/60000);
+      var amount=minutes>=60?(minutes/60).toFixed(1)+' h':minutes+' min';
+      return difference>=0?'Due in '+amount:'Overdue by '+amount;
+    }
+    function actionButton(row,action,label,decision){
+      return '<button type="button" class="ohpu-btn" data-ohpu-case-id="'+esc(row.id)+'" data-ohpu-case-action="'+esc(action)+'" '+(decision?'data-ohpu-case-decision="'+esc(decision)+'"':'')+'>'+esc(label)+'</button>';
+    }
+    var now=typeof e.getSimulationTimeMs==='function'?number(e.getSimulationTimeMs()):0;
+    var cards=records.filter(function(row){return row&&row.status!=='CLOSED';}).slice(0,40).map(function(row){
+      var buttons=[];
+      if(!row.firstResponseAtMs)buttons.push(actionButton(row,'START_RESPONSE','START RESPONSE'));
+      if(row.firstResponseAtMs&&!row.warrantRequestedAtMs)buttons.push(actionButton(row,'REQUEST_WARRANT','REQUEST WARRANT'));
+      if(row.warrantRequestedAtMs&&!row.warrantDecisionAtMs){
+        buttons.push(actionButton(row,'DECIDE_WARRANT','APPROVE WARRANT','APPROVED'));
+        buttons.push(actionButton(row,'DECIDE_WARRANT','DENY WARRANT','DENIED'));
+      }
+      if(row.firstResponseAtMs&&!row.arrestedAtMs&&!row.releasedAtMs&&!row.chargedAtMs)buttons.push(actionButton(row,'ARREST','RECORD ARREST'));
+      if(row.firstResponseAtMs&&!row.evidenceFiledAtMs)buttons.push(actionButton(row,'FILE_EVIDENCE','FILE EVIDENCE'));
+      if(row.arrestedAtMs&&!row.arrestReviewedAtMs&&!row.releasedAtMs)buttons.push(actionButton(row,'REVIEW_ARREST','REVIEW ARREST'));
+      if(row.arrestedAtMs&&!row.releasedAtMs&&!row.chargedAtMs)buttons.push(actionButton(row,'RELEASE','RELEASE DETAINED PERSON'));
+      if(row.arrestedAtMs&&row.arrestReviewedAtMs&&row.evidenceFiledAtMs&&!row.chargedAtMs&&!row.releasedAtMs&&row.status!=='RELEASE_REQUIRED')buttons.push(actionButton(row,'CHARGE','FILE CHARGE'));
+      if((row.warrantDecision==='APPROVED'||row.priority==='critical')&&!row.searchAtMs)buttons.push(actionButton(row,'SEARCH','RECORD LAWFUL SEARCH'));
+      if(row.firstResponseAtMs&&!row.forceUsedAtMs)buttons.push(actionButton(row,'RECORD_FORCE','RECORD USE OF FORCE'));
+      if(row.forceUsedAtMs&&!row.forceReviewedAtMs)buttons.push(actionButton(row,'REVIEW_FORCE','REVIEW USE OF FORCE'));
+      if((!row.arrestedAtMs||row.releasedAtMs||row.chargedAtMs)&&(!row.forceUsedAtMs||row.forceReviewedAtMs))buttons.push(actionButton(row,'CLOSE_CASE','CLOSE CASE'));
+      var detention=row.arrestedAtMs&&!row.releasedAtMs&&!row.chargedAtMs?deadlineText(row.detentionDeadlineAtMs,now):'No active detention';
+      var overdue=[];
+      if(row.responseDeadlineMissed)overdue.push('Response overdue');
+      if(row.warrantDeadlineMissed)overdue.push('Warrant decision overdue');
+      if(row.evidenceDeadlineMissed)overdue.push('Evidence overdue');
+      if(row.arrestReviewOverdue)overdue.push('Arrest review overdue');
+      if(row.forceReviewOverdue)overdue.push('Force review overdue');
+      if(row.detentionDeadlineMissed)overdue.push('Release required');
+      return '<article class="ohpu-card"><div class="ohpu-effects"><span class="ohpu-tag">'+esc(String(row.priority||'normal').toUpperCase())+'</span><span class="ohpu-tag">'+esc(row.status||'OPEN')+'</span><span class="ohpu-tag">'+esc(row.id)+'</span></div>'+
+        '<h3>'+esc(row.caseLabel||row.caseType||'Police case')+'</h3><p>'+esc(row.description||'No case description.')+'</p>'+
+        '<div class="ohpu-grid">'+kpi('First action deadline',deadlineText(row.firstActionDueAtMs,now),'Current Rulebook target')+kpi('Evidence filing',deadlineText(row.evidenceSubmissionDueAtMs,now),row.evidenceFiledAtMs?'Evidence already filed':'Filing target')+kpi('Detention status',detention,'Pre-charge detention cannot exceed the configured maximum.')+'</div>'+
+        '<div class="ohpu-small">Warrant: '+esc(row.warrantDecision|| (row.warrantRequestedAtMs?'PENDING':'Not requested'))+
+        ' · Arrest review: '+esc(row.arrestReviewedAtMs?'Reviewed':row.arrestReviewDueAtMs?deadlineText(row.arrestReviewDueAtMs,now):'Not applicable')+
+        ' · Force review: '+esc(row.forceReviewedAtMs?'Reviewed':row.forceReviewDueAtMs?deadlineText(row.forceReviewDueAtMs,now):'Not recorded')+'</div>'+
+        (overdue.length?'<div class="ohpu-note is-error">'+esc(overdue.join(' · '))+'</div>':'')+
+        '<div class="ohpu-actions">'+buttons.join('')+'</div></article>';
+    }).join('');
+    var summary=typeof e.getPoliceCaseSummary==='function'?e.getPoliceCaseSummary(d.countryId):(crime.policeCases||{});
+    return '<section class="ohpu-section"><div class="ohpu-grid">'+
+      kpi('Recorded cases',formatCount(summary.total),'Up to 200 case records are retained for the selected country.')+
+      kpi('Open cases',formatCount(summary.open),'Cases are kept in persistent Home Ministry state.')+
+      kpi('Overdue milestones',formatCount(number(summary.responseOverdue)+number(summary.evidenceOverdue)+number(summary.warrantOverdue)+number(summary.awaitingArrestReview)),'Missed deadlines affect trust, misconduct risk and case processing.')+
+      kpi('Release-required detentions',formatCount(summary.detentionReleaseRequired),'Charge is blocked once the maximum pre-charge detention deadline passes.')+
+      '</div><article class="ohpu-card" style="margin:10px 0"><div class="ohpu-section-title">REGISTER A POLICE CASE</div>'+
+      '<p>Filing creates a permanent country-level case with response, warrant, evidence and due-process deadlines drawn from the active Police Rulebook. Filing and later operational actions charge the Operations budget and Treasury. Missed deadlines are recorded when simulation time advances.</p>'+
+      '<div class="ohpu-form-grid"><label class="ohpu-label">Case type<select class="ohpu-field" id="ohpu-case-type">'+typeOptions+'</select></label>'+
+      '<label class="ohpu-label">Priority<select class="ohpu-field" id="ohpu-case-priority"><option value="normal">Normal</option><option value="low">Low</option><option value="high">High</option><option value="critical">Critical / emergency</option></select></label></div>'+
+      '<label class="ohpu-label">Factual report<textarea class="ohpu-field" id="ohpu-case-description" rows="3" maxlength="300" placeholder="Briefly describe the reported incident, last known facts, location or victim concern."></textarea></label>'+
+      '<div class="ohpu-grid" id="ohpu-case-quote">'+kpi('One-time filing cost','Calculating','Uses current priority and response deadline.')+kpi('First-action deadline','Calculating','Based on the active Rulebook.')+'</div>'+
+      '<div class="ohpu-note" id="ohpu-case-create-status">A case is not filed until the Finance-backed action succeeds.</div>'+
+      '<button type="button" class="ohpu-btn ohpu-btn-main" id="ohpu-file-case">FILE CASE · CHARGE FINANCE</button></article>'+
+      '<div class="ohpu-section-title">ACTIVE CASES · LIVE DEADLINES</div>'+
+      (cards?'<div class="ohpu-grid">'+cards+'</div>':'<div class="ohpu-note">No active police cases for this country. File a case above to start the deadline workflow.</div>')+
+      '<div class="ohpu-note">The detention timer is a simulation control, not a substitute for real national law. A charge requires an arrest, recorded arrest review and filed evidence. When detention time expires without a charge or release, the case enters RELEASE_REQUIRED and the charge action is blocked.</div></section>';
   }
   function effectsHtml(rule) {
     var map = {theft:'theft',robbery:'robbery',streetRobbery:'street robbery',drugTrafficking:'drug trafficking',contrabandSmuggling:'smuggling',assault:'assault',homicide:'homicide',cybercrime:'cybercrime'};
