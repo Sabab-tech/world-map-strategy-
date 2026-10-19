@@ -1143,6 +1143,7 @@
     getLoans: getLoanList,
     getOutstandingBalance: getOutstandingBalance,
     getOutstandingPrincipal: getOutstandingPrincipal,
+    getFacilitySnapshot: getFacilitySnapshot,
     accrueInterest: accrueInterest,
     serviceDebt: serviceDebt,
     applyManualRepayment: applyManualRepayment,
