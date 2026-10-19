@@ -62,6 +62,7 @@ const COUNTRY_BRIDGE_SCRIPT = '<script src="/omega_country_semantic_bridge.js"><
 const RESOURCE_BRIDGE_SCRIPT = '<script src="/omega_resource_semantic_bridge.js"></script>';
 const RESOURCE_MINISTRY_ENGINE_SCRIPT = '<script src="/resource_ministry_engine.js"></script>';
 const UNIVERSAL_AI_SCRIPT = '<script src="/omega_universal_ai_runtime.js"></script>';
+const MINISTER_INTELLIGENCE_PIPELINE_SCRIPT = '<script src="/omega_minister_intelligence_pipeline_v1.js"></script>';
 const LANGUAGE_SYSTEM_SCRIPT = '<script src="/omega_language_system.js"></script>';
 const LANGUAGE_BATCH03_SCRIPT = '<script src="/omega_language_batch03_semantic_extension.js"></script>';
 const UNIVERSAL_ENTITY_SCRIPT = '<script src="/omega_universal_entity_identity_engine.js"></script>';
@@ -144,7 +145,7 @@ function renderIndex(res, next) {
       MINISTRY_INTEROPERABILITY_SCRIPT, MINISTRY_RUNTIME_V1_SCRIPT, SIMULATION_RUNTIME_SCRIPT, RESOURCE_SCENARIO_ENGINEERING_SCRIPT, RESOURCE_RESEARCH_SCRIPT, RESOURCE_ENDOWMENT_SCRIPT, RESOURCE_ECONOMY_SCRIPT, RESOURCE_AUTHORITATIVE_ADAPTER_SCRIPT, OPPONENT_DEEP_MEMORY_SCRIPT, OPPONENT_MEMORY_TRACE_SCRIPT, OPPONENT_INTELLIGENCE_SCRIPT, OPPONENT_STRATEGY_SCRIPT, OPPONENT_COUNTRY_RULES_SCRIPT, OPPONENT_AUTONOMY_SCRIPT, RESOURCE_ACTION_EXECUTION_SCRIPT, GLOBAL_MARKET_SCRIPT, OPPONENT_TRADE_SCRIPT, OPPONENT_TREATY_SCRIPT, OPPONENT_CONSEQUENCE_SCRIPT,
       MINISTER_CAPABILITY_SCRIPT, MINISTER_STATE_SCRIPT,
       MINISTER_RECRUITMENT_SCRIPT, MINISTER_BOOTSTRAP_SCRIPT, MINISTER_RUNTIME_SCRIPT, COGNITIVE_SCRIPT,
-      REASONING_SCRIPT, UNIVERSAL_AI_SCRIPT, AI_INTEGRITY_SCRIPT, HEALTH_LOGO_SCRIPT, UI_INTERACTION_GUARD_SCRIPT
+      REASONING_SCRIPT, UNIVERSAL_AI_SCRIPT, MINISTER_INTELLIGENCE_PIPELINE_SCRIPT, AI_INTEGRITY_SCRIPT, HEALTH_LOGO_SCRIPT, UI_INTERACTION_GUARD_SCRIPT
     ];
     for (const script of scripts) { const src = script.match(/src="([^"]+)"/)?.[1]; if (src && !output.includes(src)) output = output.replace('</body>', `    ${script}\n</body>`); }
     res.type('html').send(output);
