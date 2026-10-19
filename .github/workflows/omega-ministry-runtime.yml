@@ -125,11 +125,23 @@ jobs:
           SERVER_PID=$!
           trap 'kill $SERVER_PID >/dev/null 2>&1 || true' EXIT
           READY=0
-          for i in $(seq 1 20); do
-            if curl --connect-timeout 1 --max-time 3 -fsS http://127.0.0.1:31337/api/ai/status >/tmp/omega-ai-status.json 2>/dev/null; then READY=1; break; fi
+          # The production bootstrap performs substantial runtime discovery and
+          # canonical data loading. Allow cold CI runners enough time to finish,
+          # while failing immediately if the server process exits unexpectedly.
+          for i in $(seq 1 120); do
+            if curl --connect-timeout 1 --max-time 3 -fsS http://127.0.0.1:31337/api/ai/status >/tmp/omega-ai-status.json 2>/dev/null; then
+              READY=1
+              break
+            fi
+            if ! kill -0 "$SERVER_PID" >/dev/null 2>&1; then
+              echo "Production server process exited before /api/ai/status became ready."
+              cat /tmp/omega-server.log
+              exit 1
+            fi
             sleep 1
           done
           if [ "$READY" -ne 1 ]; then
+            echo "Production server failed readiness probe within 120 attempts."
             cat /tmp/omega-server.log
             exit 1
           fi
