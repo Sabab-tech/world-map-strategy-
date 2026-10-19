@@ -115,24 +115,35 @@
     return !!t && /SIGNED|RATIFIED|ACTIVE|IMPLEMENTED/.test(String(t.status||t.stage||'').toUpperCase());
   }
   function sanctionsOrWar(r){return r?.war_state===true||r?.sanctions===true;}
+  function applyFinancialProducerCost(country, resource, quote) {
+    const price = num(quote);
+    if (price === null || price < 0) return null;
+    const engine = g.OmegaEconomicTransmissionRuntime || g.Omega && g.Omega.EconomicTransmission;
+    try {
+      const multiplier = num(engine && engine.getProducerCostMultiplier && engine.getProducerCostMultiplier(canonical(country)));
+      if (multiplier !== null && multiplier > 0)
+        return price * clamp(multiplier, 0.5, 3);
+    } catch (_) {}
+    return price;
+  }
   function marketPrice(country,resource){
     const rid=String(resource||'').trim();
     try{
       const market=g.OmegaGlobalMarket||g.Omega?.GlobalMarket;
       const local=market?.localPrice?.(canonical(country),rid);
-      if(num(local)!==null&&local>=0)return local;
+      if(num(local)!==null&&local>=0)return applyFinancialProducerCost(country,rid,local);
     }catch(_){}
     const paths=[
       'trade.marketPrice.'+rid,'trade.marketPrices.'+rid,
       'trade.offerBook.'+rid+'.unitPrice','trade.offerBook.'+rid+'.price',
       'trade.offers.'+rid+'.unitPrice','trade.offers.'+rid+'.price'
     ];
-    for(const p of paths){const x=num(countryValue(country,p));if(x!==null&&x>=0)return x;}
+    for(const p of paths){const x=num(countryValue(country,p));if(x!==null&&x>=0)return applyFinancialProducerCost(country,rid,x);}
     try{
       const x=g.ResourceMinistryEngine?.getIntegratedResourceState?.(canonical(country));
       const m=x?.marketPrices||x?.priceBook||x?.supplierPrices;
       const n=num(m?.[rid]??m?.[String(rid).toLowerCase()]);
-      if(n!==null&&n>=0)return n;
+      if(n!==null&&n>=0)return applyFinancialProducerCost(country,rid,n);
     }catch(_){}
     return null;
   }
