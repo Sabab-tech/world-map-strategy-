@@ -110,6 +110,13 @@ function makeUiHarness(vehicleInventory = null, recordedAssets = null) {
   vm.runInContext(engine, context, { filename: 'omega_home_ministry_engine_v1.js' });
   api = context.OmegaHomeMinistryEngine;
   api.getState('AAA');
+  api.configureBudgetPlan(10000000, {
+    personnel:{mode:'percent',value:40},
+    vehiclePurchase:{mode:'percent',value:25},
+    maintenance:{mode:'percent',value:15},
+    facilities:{mode:'percent',value:10},
+    training:{mode:'percent',value:10}
+  }, 'AAA');
   if (vehicleInventory) context.Game.state.interior.AAA.police.vehiclesOwned = { ...vehicleInventory };
   vm.runInContext(ui, context, { filename: 'omega_home_ministry_ui_v1.js' });
   return { context, state, api, ui: context.OMEGA_UI_ADAPTER, nodes, standDownButtons };
@@ -352,4 +359,51 @@ test('Home Affairs Reports & Metrics no longer displays mine and shipment diagno
   assert.match(ministryEngine, /const rows = isHomeMinistryReport \? \[/);
   assert.match(ministryEngine, /\['Mine \/ site records', activity && activity\.mineRecords\]/);
   assert.match(ministryEngine, /isHomeMinistryReport \? 'HOME MINISTRY SECURITY OPERATIONS REPORT' : 'LIVE SOVEREIGN ENGINE REPORT'/);
+});
+
+
+test('Home Ministry landing screen shows explicit inline vehicle artwork and budget controls', () => {
+  const harness = makeUiHarness({1:1});
+  const host = { id:'home-ministry-host', innerHTML:'', isConnected:true };
+  assert.equal(harness.ui.renderHomeMinistryInto(host),true);
+  assert.match(host.innerHTML,/home-police-overview-gallery/);
+  assert.match(host.innerHTML,/preserveAspectRatio="xMidYMid meet"/);
+  assert.match(host.innerHTML,/width="260" height="150"/);
+  assert.match(host.innerHTML,/home-police-dashboard-budget/);
+  assert.match(ui,/function vehicleSvg\(vehicle, slot\)/);
+});
+
+test('Home Ministry budget screen reads the active envelope and saves percentage or fixed category allocations', () => {
+  const harness = makeUiHarness({1:1});
+  const host = harness.nodes.get('cabinet-body');
+  harness.ui.renderBudgetAllocation();
+  assert.match(host.innerHTML,/HOME MINISTRY BUDGET CONTROL/);
+  assert.match(host.innerHTML,/Finance ministry allocation/);
+  assert.match(host.innerHTML,/home-police-budget-value-personnel/);
+  assert.match(host.innerHTML,/home-police-budget-value-vehiclePurchase/);
+  assert.match(host.innerHTML,/home-police-budget-value-maintenance/);
+  assert.match(host.innerHTML,/Fixed amount/);
+  const salary = harness.nodes.get('home-police-budget-value-personnel');
+  salary.value = '50';
+  harness.nodes.get('home-police-budget-mode-personnel').value = 'percent';
+  harness.nodes.get('home-police-budget-save').onclick();
+  assert.equal(harness.api.getBudgetSummary('AAA').active,true);
+  assert.equal(harness.api.getBudgetSummary('AAA').allocationRules.personnel.value,50);
+  assert.equal(harness.ui.lastAdvice.title,'HOME MINISTRY BUDGET SAVED');
+});
+
+test('budget input rejects caps that exceed authorized money before any debit', () => {
+  const harness = makeUiHarness();
+  harness.api.configureBudgetPlan(10000000,{
+    personnel:{mode:'percent',value:80},
+    vehiclePurchase:{mode:'percent',value:30},
+    maintenance:{mode:'percent',value:0},
+    facilities:{mode:'percent',value:0},
+    training:{mode:'percent',value:0}
+  },'AAA');
+  harness.ui.renderBudgetAllocation();
+  const before = harness.state.economy.AAA.treasury;
+  harness.nodes.get('home-police-budget-save').onclick();
+  assert.equal(harness.state.economy.AAA.treasury,before);
+  assert.notEqual(harness.api.getBudgetSummary('AAA').allocationRules.personnel.value,80);
 });
