@@ -83,6 +83,8 @@ test('country behaviour profile is evidence-backed and differs with country macr
   assert.ok(bangladesh.domainSignals.resources.siteCount > 0, 'Bangladesh gameplay site identities should be counted');
   assert.equal(bangladesh.domainSignals.resources.simulatedReserveQuantitiesUsed, false);
   assert.notDeepEqual(bangladesh.dimensions, unitedStates.dimensions, 'country behaviour dimensions must not be a copied universal preset');
+  assert.ok(bangladesh.actionPreferences.PROCESSING_EXPANSION || bangladesh.actionPreferences.INDUSTRY_BUILD,
+    'registered resource-site data should create a country-specific industrial action preference');
   assert.ok(bangladesh.evidence.registeredMacroMetricCount > 0);
   assert.match(bangladesh.evidence.missingDataPolicy, /NULL/);
   assert.equal(behavior.diagnostics().dimensionCount, 10);
