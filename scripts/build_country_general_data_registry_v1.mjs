@@ -146,16 +146,31 @@ async function getJson(url) {
 }
 
 async function fetchRestCountries() {
-  // Fetch the provider's full current country objects. This avoids field-filter
-  // mismatches silently returning an empty array when the provider changes a field name.
-  const url = 'https://restcountries.com/v3.1/all';
-  const records = await getJson(url);
-  const countries = Array.isArray(records) ? records : [];
-  const byIso3 = new Map(countries
-    .filter((row) => row && row.cca3)
-    .map((row) => [String(row.cca3).toUpperCase(), row]));
-  if (!byIso3.size) throw new Error('REST_COUNTRIES_EMPTY_OR_UNEXPECTED_RESPONSE');
-  return byIso3;
+  const candidates = [
+    {
+      sourceId: 'REST_COUNTRIES_API',
+      url: 'https://restcountries.com/v3.1/all?fields=cca2,cca3,name,capital,currencies,languages,area,landlocked,borders,timezones,idd,independent,unMember,population'
+    },
+    {
+      sourceId: 'REST_COUNTRIES_GITHUB_MIRROR',
+      url: 'https://raw.githubusercontent.com/mledoze/countries/master/countries.json'
+    }
+  ];
+  const errors = [];
+  for (const candidate of candidates) {
+    try {
+      const payload = await getJson(candidate.url);
+      const rows = Array.isArray(payload) ? payload : [];
+      const byIso3 = new Map(rows.filter((row) => row && row.cca3)
+        .map((row) => [String(row.cca3).toUpperCase(), row]));
+      if (!byIso3.size) throw new Error('EMPTY_OR_UNEXPECTED_COUNTRY_RESPONSE');
+      byIso3.sourceId = candidate.sourceId;
+      return byIso3;
+    } catch (error) {
+      errors.push(candidate.sourceId + ': ' + String(error));
+    }
+  }
+  throw new Error(errors.join(' | ') || 'COUNTRY_REFERENCE_SOURCES_UNAVAILABLE');
 }
 
 async function fetchWorldBankMetadata() {
@@ -360,7 +375,7 @@ function deriveLegacyMetrics(profile, police) {
   return { values, meta };
 }
 
-function updateFacts(identity, legacyEconomy, localCity, restCountry, wbCountry, previous) {
+function updateFacts(identity, legacyEconomy, localCity, restCountry, wbCountry, previous, restCountrySource) {
   const last = previous?.generalFacts || {};
   const currencies = restCountry?.currencies && typeof restCountry.currencies === 'object' ? restCountry.currencies : null;
   const languages = restCountry?.languages && typeof restCountry.languages === 'object' ? Object.values(restCountry.languages) : null;
@@ -391,7 +406,7 @@ function updateFacts(identity, legacyEconomy, localCity, restCountry, wbCountry,
     worldBankAdminRegion: wbCountry?.adminregion?.value ?? last.worldBankAdminRegion ?? null,
     worldBankCapitalCity: wbCountry?.capitalCity ?? last.worldBankCapitalCity ?? null,
     factsSourceStatus: {
-      restCountries: restCountry ? 'REST_COUNTRIES_API_RECORD' : (last.factsSourceStatus?.restCountries || 'NOT_IMPORTED'),
+      restCountries: restCountry ? ((restCountrySource || 'REST_COUNTRIES_API') + '_RECORD') : (last.factsSourceStatus?.restCountries || 'NOT_IMPORTED'),
       worldBankMetadata: wbCountry ? 'WORLD_BANK_COUNTRY_METADATA_RECORD' : (last.factsSourceStatus?.worldBankMetadata || 'NOT_IMPORTED')
     }
   };
@@ -498,7 +513,7 @@ function makeRecord(country, sources, previous, refreshData) {
     setDerived('tradeBalanceToGdpPct', val('tradeBalanceUsd') / val('gdpCurrentUsd') * 100, gdpYear, ['tradeBalanceUsd','gdpCurrentUsd'], 'trade balance / GDP × 100');
   }
 
-  const facts = updateFacts(identity, normalizedEconomy, city, refreshData.restCountries.byIso3.get(String(country.iso3 || '').toUpperCase()), refreshData.worldBank.metadataByIso2.get(String(country.iso2 || '').toUpperCase()), prior);
+  const facts = updateFacts(identity, normalizedEconomy, city, refreshData.restCountries.byIso3.get(String(country.iso3 || '').toUpperCase()), refreshData.worldBank.metadataByIso2.get(String(country.iso2 || '').toUpperCase()), prior, refreshData.restCountries.byIso3.sourceId);
   const rawIndicators = rawFinance.rawIndicators || {};
   const rawDerived = rawFinance.derivedIndicators || {};
   const rawEconomy = rawFinance.rawSourceRecords?.economy || normalizedEconomy;
@@ -699,7 +714,7 @@ async function main() {
       { id: 'resource_country_resource_context_index.json', role: 'country resource-context summary', coverage: Object.keys(resourceRows).length, status: 'LOCAL_CONTEXT; empty lists do not prove absence' },
       { id: 'omega_home_ministry_country_police_baseline_v1.json', role: 'police/game baseline, population source labels and homicide observations', coverage: policeRows.length, status: 'modeled values remain labelled; observed-source claims need revalidation' },
       { id: 'World Bank Indicators API v2', role: 'current/latest non-empty macro, demographic, governance and selected social observations', url: 'https://api.worldbank.org/v2/', enabledBy: '--refresh-sources', status: wbData.loaded ? 'FETCHED' : 'NOT_FETCHED' },
-      { id: 'REST Countries API', role: 'general facts such as official name, capital, languages, currency codes, area, borders and timezones', url: 'https://restcountries.com/', enabledBy: '--refresh-sources', status: restCountries.loaded ? 'FETCHED' : 'NOT_FETCHED' }
+      { id: restCountries.byIso3.sourceId || 'REST Countries API', role: 'general facts such as official name, capital, languages, currency codes, area, borders and timezones', url: restCountries.byIso3.sourceId === 'REST_COUNTRIES_GITHUB_MIRROR' ? 'https://github.com/mledoze/countries' : 'https://restcountries.com/', enabledBy: '--refresh-sources', status: restCountries.loaded ? 'FETCHED' : 'NOT_FETCHED' }
     ],
     countries: rows
   };
