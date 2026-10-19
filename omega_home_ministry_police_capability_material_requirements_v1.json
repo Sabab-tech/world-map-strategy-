@@ -1,0 +1,37 @@
+{
+  "schemaVersion": "1.0.0",
+  "policyId": "OMEGA_POLICE_CAPABILITY_MATERIAL_REQUIREMENTS",
+  "authority": "GAME_MODEL_RULE_DATA",
+  "methodology": "These are deterministic gameplay requirements, not observed reserves or claims about real-world police procurement. Available quantities are always read from the selected country's live resource inventory.",
+  "quantityFormula": "requiredQuantity = targetLevel * quantityPerTargetLevel",
+  "requirements": {
+    "training": [
+      {
+        "resourceId": "CONSTRUCTION_AGGREGATE",
+        "quantityPerTargetLevel": 8
+      },
+      {
+        "resourceId": "COPPER",
+        "quantityPerTargetLevel": 2
+      },
+      {
+        "resourceId": "BAUXITE_ALUMINUM",
+        "quantityPerTargetLevel": 1
+      }
+    ],
+    "recruitment": [
+      {
+        "resourceId": "CRUDE_OIL",
+        "quantityPerTargetLevel": 3
+      },
+      {
+        "resourceId": "COPPER",
+        "quantityPerTargetLevel": 1
+      },
+      {
+        "resourceId": "IRON_ORE",
+        "quantityPerTargetLevel": 2
+      }
+    ]
+  }
+}
