@@ -2,7 +2,6 @@ name: OMEGA Country General Data Registry
 
 on:
   workflow_dispatch:
-  pull_request:
   schedule:
     - cron: "23 4 7 * *"
   pull_request:
