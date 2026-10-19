@@ -23,9 +23,17 @@
   }
   function esc(v) { return String(v == null ? '' : v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
   function number(v, d) { var n = Number(v); return Number.isFinite(n) ? n : (d === undefined ? 0 : d); }
-  function money(v) { var n = Number(v); return Number.isFinite(n) ? '$' + Math.round(n).toLocaleString('en-US') : 'Unavailable'; }
+  function money(v) {
+    var formatter=g.OmegaNumberFormat,n=Number(v);
+    if(!Number.isFinite(n))return 'Unavailable';
+    return formatter&&typeof formatter.money==='function'?formatter.money(n,{unavailable:'Unavailable'}):'$'+Math.round(n).toLocaleString('en-US');
+  }
   function percent(v, digits) { return Number.isFinite(Number(v)) ? Number(v).toFixed(digits === undefined ? 1 : digits) + '%' : 'N/A'; }
-  function formatCount(v) { return v === null || v === undefined || v === '' || !Number.isFinite(Number(v)) ? 'Unavailable' : Math.round(Number(v)).toLocaleString('en-US'); }
+  function formatCount(v) {
+    if(v===null||v===undefined||v===''||!Number.isFinite(Number(v)))return 'Unavailable';
+    var formatter=g.OmegaNumberFormat,n=Number(v);
+    return formatter&&typeof formatter.compact==='function'?formatter.compact(n):Math.round(n).toLocaleString('en-US');
+  }
   function getData() {
     var e = engine();
     if (!e || typeof e.getState !== 'function') return { ready: false, reason: 'HOME_MINISTRY_RUNTIME_UNAVAILABLE' };
@@ -175,6 +183,11 @@
     var resources=(quote.resources||[]).map(function(row){
       return '<tr><td>'+esc(row.label)+'</td><td class="ohpu-mono">'+esc(formatCount(row.required))+' '+esc(row.unit)+'</td><td class="ohpu-mono">'+esc(formatCount(row.available))+' '+esc(row.unit)+'</td><td>'+ (row.ok?'<span style="color:#9ce4bf;font-weight:900">AVAILABLE</span>':'<span style="color:#ffc4bd;font-weight:900">MISSING</span>') +'</td></tr>';
     }).join('');
+    var materials=(quote.materials||[]).map(function(row){
+      var required=Number(row.quantity),available=row.availableQuantity===null||row.availableQuantity===undefined?null:Number(row.availableQuantity);
+      var enough=available!==null&&Number.isFinite(available)&&available+1e-9>=required;
+      return '<tr><td>'+esc(row.name||row.resourceId)+'</td><td class="ohpu-mono">'+esc(formatCount(required))+' '+esc(row.unit||'units')+'</td><td class="ohpu-mono">'+esc(available===null||!Number.isFinite(available)?'Unavailable':formatCount(available)+' '+(row.unit||'units'))+'</td><td>'+ (enough?'<span style="color:#9ce4bf;font-weight:900">AVAILABLE</span>':available===null||!Number.isFinite(available)?'<span style="color:#ffc4bd;font-weight:900">DATA UNAVAILABLE</span>':'<span style="color:#ffc4bd;font-weight:900">MISSING</span>') +'</td></tr>';
+    }).join('');
     var blockers=(quote.blockers||[]).map(function(row){return '<div class="ohpu-note is-error"><strong>'+esc(row.code)+'</strong><br>'+esc(row.message)+'</div>';}).join('');
     var estimated=quote.durationDays+' simulation day'+(quote.durationDays===1?'':'s');
     return '<section class="ohpu-section"><div class="ohpu-actions"><button type="button" class="ohpu-btn" id="ohpu-capability-upgrade-cancel">BACK TO LEVELS</button></div>'+
@@ -185,9 +198,12 @@
       kpi('Estimated duration',estimated,'Advances with the game simulation clock.')+
       kpi('Currently spendable',money(quote.spendableUsd),'After existing spend and shared treasury limits.')+
       kpi('After completion','Level '+quote.targetLevel,kind==='training'?'Raises training quality, police efficiency and trust.':'Improves recruitment efficiency and reduces the per-officer recruitment fee.')+
-      '</div><div class="ohpu-section-title">REQUIRED ASSETS · LIVE CHECK</div>'+
-      '<div class="ohpu-table-wrap"><table class="ohpu-table"><thead><tr><th>Required resource / asset</th><th>Required</th><th>Available</th><th>Check</th></tr></thead><tbody>'+resources+'</tbody></table></div>'+
-      (blockers||'<div class="ohpu-note is-ok">Required facilities, staffing teams, Finance allocation and treasury passed the current checks.</div>')+
+      '</div><div class="ohpu-section-title">FACILITY & STAFF PREREQUISITES · LIVE CHECK</div>'+
+      '<div class="ohpu-table-wrap"><table class="ohpu-table"><thead><tr><th>Required facility / asset</th><th>Required</th><th>Available</th><th>Check</th></tr></thead><tbody>'+resources+'</tbody></table></div>'+
+      '<div class="ohpu-section-title">RESOURCE MATERIALS · LIVE COUNTRY INVENTORY</div>'+
+      '<div class="ohpu-table-wrap"><table class="ohpu-table"><thead><tr><th>Material</th><th>Required quantity</th><th>Spendable stock</th><th>Check</th></tr></thead><tbody>'+materials+'</tbody></table></div>'+
+      '<p class="ohpu-small">Stock source: '+esc(quote.inventorySource||'Game.state.resource[country].inventory')+'. Spendable stock excludes quantities reserved for strategic reserves. Values shown here are scenario inventory, not invented production estimates.</p>'+
+      (blockers||'<div class="ohpu-note is-ok">Required facilities, staffing, Finance allocation, treasury and live materials passed the current checks.</div>')+
       '<div class="ohpu-actions"><button type="button" class="ohpu-btn ohpu-btn-main" id="ohpu-capability-upgrade-start" '+(!quote.canStart?'disabled':'')+'>CONFIRM & START UPGRADE · CHARGE FINANCE</button></div>'+
       '<div class="ohpu-small">The quoted price and resource check are recalculated by the Home Ministry engine when you confirm. If the country, assets or budget changed, the command is rejected rather than silently spending against a stale quote.</div></section>';
   }
