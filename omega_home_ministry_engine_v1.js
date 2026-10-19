@@ -241,6 +241,7 @@
     tacticsResearched:{antiRiot:false,smugglerInterdict:false,counterTerror:false,assetProtection:false,intelligenceFusion:false},
     pendingResearch:null, specialAgents:0, sabotageRisk:45, unpaidPayroll:0,
     lastPayrollDay:null, lastIncidentWeek:null, incidentSequence:0, incidentLedger:[], lastUpdatedTurn:0, agentDeployments:{}, intelligenceReports:[], lastIntelWeek:null,
+    policeCases:[],nextPoliceCaseSequence:1,
     guardDeployments:[], nextGuardDeploymentId:1, vehicleFleet:[], nextVehicleUnitId:1, vehicleMaintenanceLog:[], lastFleetSimulationDay:null
   });
 
@@ -521,7 +522,7 @@
       !(state.crimeHistory||[]).length&&!(state.crimeModel&&Number(state.crimeModel.totalIncidents||0))&&
       Math.floor(num(state.trainingQualityLevel)||1)===1&&Math.floor(num(state.specialAgents)||0)===0&&
       Math.floor(num(state.unpaidPayroll)||0)===0&&facilitiesAreDefault&&tacticsAreDefault&&policiesAreDefault&&
-      rulebookIsDefault&&patrolIsDefault&&departmentsAreDefault;
+      rulebookIsDefault&&patrolIsDefault&&departmentsAreDefault&&!(state.policeCases||[]).length&&Math.floor(num(state.nextPoliceCaseSequence)||1)===1;
   }
   function applyBaselineToPoliceState(state,row,raw){
     const pristine=isPristinePoliceState(state,raw),legacyUntouched=isUntouchedLegacyBaselineState(state,raw,row);
@@ -780,7 +781,7 @@
       baselinePolicePersonnel:state.baselinePolicePersonnel,trainingQualityLevel:state.trainingQualityLevel,policeEfficiency:state.policeEfficiency,
       publicSatisfaction:clamp(num(state.publicSatisfaction)===null?num(state.policeTrust)||55:num(state.publicSatisfaction),0,100),
       misconductRiskPct:clamp(num(state.misconductRiskPct)===null?20:num(state.misconductRiskPct),0,100),privacyRiskPct:clamp(num(state.privacyRiskPct)===null?20:num(state.privacyRiskPct),0,100),
-      justiceBacklog:Math.max(0,num(state.justiceBacklog)||0),policeRulebook:normalizePoliceRulebook(state.policeRulebook),policeRulebookScore:policeRulebookQuality(state.policeRulebook),
+      justiceBacklog:Math.max(0,num(state.justiceBacklog)||0),policeCases:getPoliceCaseSummary(state,simulationTimeMs()),policeRulebook:normalizePoliceRulebook(state.policeRulebook),policeRulebookScore:policeRulebookQuality(state.policeRulebook),
       policeRulebookOperationalIndex:policeRulebookOperationalIndex(state.policeRulebook),
       policeRulebookDailyCostUsd:policeRulebookDailyCost(state),
       activePolicyDailyCostUsd:Math.round(activePolicyDailyCost(state)*100)/100,
@@ -978,6 +979,8 @@
     s.policeRules=Object.assign(clone(DEFAULT_POLICE_POLICY_STATE),raw.policeRules||{});
     s.policeRulebook=normalizePoliceRulebook(raw.policeRulebook);
     s.policeDepartments=normalizePoliceDepartmentPlan(raw.policeDepartments);
+    s.policeCases=Array.isArray(raw.policeCases)?raw.policeCases.slice(-200).map(clone):[];
+    s.nextPoliceCaseSequence=Math.max(1,Math.floor(num(raw.nextPoliceCaseSequence)||1));
     s.patrolPlan=normalizePatrolPlan(raw.patrolPlan);
     s.crimeBaseline=raw.crimeBaseline&&typeof raw.crimeBaseline==='object'?clone(raw.crimeBaseline):null;
     s.crimeModel=raw.crimeModel&&typeof raw.crimeModel==='object'?clone(raw.crimeModel):null;
@@ -1000,7 +1003,7 @@
     if(num(s.unlockedVehicleLevel)===null)s.unlockedVehicleLevel=1;return s;
   }
   function storedState(country){const root=rootState(),raw=root&&root.interior&&root.interior[country]&&root.interior[country].police;return raw&&typeof raw==='object'?mergeState(raw):null;}
-  function publicState(s){return{policeCount:s.policeCount,policeEfficiency:s.policeEfficiency,policeTrust:s.policeTrust,unlockedVehicleLevel:s.unlockedVehicleLevel,vehiclesOwned:clone(s.vehiclesOwned),pendingVehicleOrder:clone(s.pendingVehicleOrder),fuelSupplyDays:clamp(num(s.fuelSupplyDays)===null?14:num(s.fuelSupplyDays),0,180),lastFuelSupplyPurchaseTurn:s.lastFuelSupplyPurchaseTurn,homeBudgetPlan:clone(normalizeHomeBudgetPlan(s.homeBudgetPlan)),baselineVersion:s.baselineVersion,baselinePolicePersonnel:s.baselinePolicePersonnel,baselineFleetUnits:s.baselineFleetUnits,baselineFleetReplacementValueUsd:s.baselineFleetReplacementValueUsd,dailySalaryPerOfficerUsd:s.dailySalaryPerOfficerUsd,recruitmentFeePerOfficerUsd:s.recruitmentFeePerOfficerUsd,crimeBaseline:clone(s.crimeBaseline),crimeModel:clone(s.crimeModel),crimeHistory:clone(s.crimeHistory),policeRules:clone(s.policeRules),policeRulebook:clone(normalizePoliceRulebook(s.policeRulebook)),policeDepartments:clone(normalizePoliceDepartmentPlan(s.policeDepartments)),patrolPlan:clone(s.patrolPlan),publicSatisfaction:s.publicSatisfaction,misconductRiskPct:s.misconductRiskPct,justiceBacklog:s.justiceBacklog,privacyRiskPct:s.privacyRiskPct,facilityLevels:clone(s.facilityLevels),trainingQualityLevel:s.trainingQualityLevel,tacticsResearched:clone(s.tacticsResearched),pendingResearch:clone(s.pendingResearch),specialAgents:s.specialAgents,sabotageRisk:s.sabotageRisk,unpaidPayroll:s.unpaidPayroll,agentDeployments:clone(s.agentDeployments),intelligenceReports:clone(s.intelligenceReports),incidentLedger:clone(s.incidentLedger),guardDeployments:clone(s.guardDeployments),nextGuardDeploymentId:s.nextGuardDeploymentId,vehicleFleet:clone(s.vehicleFleet),nextVehicleUnitId:s.nextVehicleUnitId,vehicleMaintenanceLog:clone(s.vehicleMaintenanceLog),lastFleetSimulationDay:s.lastFleetSimulationDay};}
+  function publicState(s){return{policeCount:s.policeCount,policeEfficiency:s.policeEfficiency,policeTrust:s.policeTrust,unlockedVehicleLevel:s.unlockedVehicleLevel,vehiclesOwned:clone(s.vehiclesOwned),pendingVehicleOrder:clone(s.pendingVehicleOrder),fuelSupplyDays:clamp(num(s.fuelSupplyDays)===null?14:num(s.fuelSupplyDays),0,180),lastFuelSupplyPurchaseTurn:s.lastFuelSupplyPurchaseTurn,homeBudgetPlan:clone(normalizeHomeBudgetPlan(s.homeBudgetPlan)),baselineVersion:s.baselineVersion,baselinePolicePersonnel:s.baselinePolicePersonnel,baselineFleetUnits:s.baselineFleetUnits,baselineFleetReplacementValueUsd:s.baselineFleetReplacementValueUsd,dailySalaryPerOfficerUsd:s.dailySalaryPerOfficerUsd,recruitmentFeePerOfficerUsd:s.recruitmentFeePerOfficerUsd,crimeBaseline:clone(s.crimeBaseline),crimeModel:clone(s.crimeModel),crimeHistory:clone(s.crimeHistory),policeRules:clone(s.policeRules),policeRulebook:clone(normalizePoliceRulebook(s.policeRulebook)),policeDepartments:clone(normalizePoliceDepartmentPlan(s.policeDepartments)),policeCases:clone((s.policeCases||[]).slice(-200)),nextPoliceCaseSequence:Math.max(1,Math.floor(num(s.nextPoliceCaseSequence)||1)),patrolPlan:clone(s.patrolPlan),publicSatisfaction:s.publicSatisfaction,misconductRiskPct:s.misconductRiskPct,justiceBacklog:s.justiceBacklog,privacyRiskPct:s.privacyRiskPct,facilityLevels:clone(s.facilityLevels),trainingQualityLevel:s.trainingQualityLevel,tacticsResearched:clone(s.tacticsResearched),pendingResearch:clone(s.pendingResearch),specialAgents:s.specialAgents,sabotageRisk:s.sabotageRisk,unpaidPayroll:s.unpaidPayroll,agentDeployments:clone(s.agentDeployments),intelligenceReports:clone(s.intelligenceReports),incidentLedger:clone(s.incidentLedger),guardDeployments:clone(s.guardDeployments),nextGuardDeploymentId:s.nextGuardDeploymentId,vehicleFleet:clone(s.vehicleFleet),nextVehicleUnitId:s.nextVehicleUnitId,vehicleMaintenanceLog:clone(s.vehicleMaintenanceLog),lastFleetSimulationDay:s.lastFleetSimulationDay};}
   function emit(type,detail){try{if(typeof g.dispatchEvent==='function'&&typeof g.CustomEvent==='function')g.dispatchEvent(new g.CustomEvent(type,{detail:clone(detail||{})}));}catch(_){}}
   function dispatchState(country,next,eventName){
     const mesh=interop();
@@ -1721,7 +1724,9 @@
       s.tacticsResearched[t.id]=true;s.policeEfficiency=clamp(s.policeEfficiency+t.efficiency,0,100);s.sabotageRisk=clamp(s.sabotageRisk-t.riskReduction,5,95);s.policeTrust=clamp(s.policeTrust+2,0,100);s.pendingResearch=null;
       emit('OMEGA_POLICE_RESEARCH_COMPLETED',{countryId:cid,tacticId:t.id,name:t.name,effects:clone(t),turn:turn()});changed=true;
     }}
-    if(processIncident(cid,s,day))changed=true;if(collectIntelligence(cid,s,day))changed=true;s.lastUpdatedTurn=turn();if(changed){const committed=dispatchState(cid,s,'OMEGA_HOME_MINISTRY_SIMULATION_UPDATE');if(!committed.ok&&payrollDebit)refundTreasury(payrollDebit);}
+    if(processIncident(cid,s,day))changed=true;if(collectIntelligence(cid,s,day))changed=true;
+    if(processPoliceCaseDeadlines(s,cid,now))changed=true;
+    s.lastUpdatedTurn=turn();if(changed){const committed=dispatchState(cid,s,'OMEGA_HOME_MINISTRY_SIMULATION_UPDATE');if(!committed.ok&&payrollDebit)refundTreasury(payrollDebit);}
   }
 
   let handlerRegistered=false,economyHandlerRegistered=false,financeHandlerRegistered=false;
@@ -1901,6 +1906,206 @@
     };
     return Object.keys(DEFAULT_POLICE_DEPARTMENT_PLAN).map(function(id){return{id:id,name:labels[id][0],description:labels[id][1],crimeCategories:labels[id][2],defaultPct:DEFAULT_POLICE_DEPARTMENT_PLAN[id]};});
   }
+  const POLICE_CASE_TYPES=Object.freeze({
+    missingPerson:{label:'Missing person',crimeCategory:null,baseCost:180},
+    theft:{label:'Theft report',crimeCategory:'theft',baseCost:90},
+    robbery:{label:'Robbery',crimeCategory:'robbery',baseCost:160},
+    streetRobbery:{label:'Street robbery',crimeCategory:'streetRobbery',baseCost:130},
+    drugTrafficking:{label:'Drug trafficking',crimeCategory:'drugTrafficking',baseCost:220},
+    contrabandSmuggling:{label:'Contraband / smuggling',crimeCategory:'contrabandSmuggling',baseCost:220},
+    assault:{label:'Assault / violence',crimeCategory:'assault',baseCost:160},
+    homicide:{label:'Homicide investigation',crimeCategory:'homicide',baseCost:380},
+    cybercrime:{label:'Cybercrime',crimeCategory:'cybercrime',baseCost:240}
+  });
+  function policeCasePriority(value){
+    const key=String(value||'normal').toLowerCase();
+    return ['low','normal','high','critical'].indexOf(key)>=0?key:null;
+  }
+  function policeCasePriorityFactor(value){
+    return({low:0.75,normal:1,high:1.65,critical:2.6})[policeCasePriority(value)||'normal'];
+  }
+  function policeCaseResponseHours(caseType,priority,rulebook){
+    const book=normalizePoliceRulebook(rulebook);
+    if(caseType==='missingPerson')return book.missingPersonActionHours;
+    if(priority==='critical'||priority==='high')return book.highRiskResponseMinutes/60;
+    return book.arrestResponseHours;
+  }
+  function policeCaseFilingCostEstimate(caseType,priority,country){
+    const cid=normalizeCountry(country||currentCountry()),type=POLICE_CASE_TYPES[String(caseType||'')],level=policeCasePriority(priority);
+    if(!type)return{ok:false,code:'POLICE_CASE_TYPE_INVALID',countryId:cid};
+    if(!level)return{ok:false,code:'POLICE_CASE_PRIORITY_INVALID',countryId:cid};
+    const book=normalizePoliceRulebook(getState(cid).policeRulebook),hours=Math.max(0.25,policeCaseResponseHours(caseType,level,book));
+    const cost=Math.round(type.baseCost*policeCasePriorityFactor(level)*(1+0.75/hours)*100)/100;
+    return{ok:true,countryId:cid,caseType:String(caseType),caseLabel:type.label,priority:level,firstActionDeadlineHours:hours,
+      oneTimeFilingCostUsd:cost,costMultiplier:Math.round((1+0.75/hours)*100)/100,financeCategory:'operations'};
+  }
+  function policeCaseActionCostEstimate(caseRow,action,state){
+    const base={START_RESPONSE:45,REQUEST_WARRANT:75,DECIDE_WARRANT:65,ARREST:130,REVIEW_ARREST:45,
+      FILE_EVIDENCE:70,CHARGE:85,RELEASE:35,RECORD_FORCE:55,REVIEW_FORCE:70,CLOSE_CASE:25,SEARCH:80};
+    if(!base[action])return{ok:false,code:'POLICE_CASE_ACTION_INVALID'};
+    const book=normalizePoliceRulebook(state&&state.policeRulebook),prio=policeCasePriorityFactor(caseRow&&caseRow.priority);
+    let hours=book.arrestResponseHours;
+    if(action==='START_RESPONSE')hours=Math.max(0.25,num(caseRow&&caseRow.firstActionDeadlineHours)||0.25);
+    else if(action==='REQUEST_WARRANT'||action==='DECIDE_WARRANT')hours=book.warrantDecisionHours;
+    else if(action==='REVIEW_ARREST')hours=book.arrestReviewHours;
+    else if(action==='FILE_EVIDENCE')hours=book.evidenceSubmissionHours;
+    else if(action==='REVIEW_FORCE')hours=book.forceReviewHours;
+    hours=Math.max(0.25,num(hours)||0.25);
+    return{ok:true,action:action,baseCostUsd:base[action],deadlineHours:hours,
+      costUsd:Math.round(base[action]*prio*(1+0.35/hours)*100)/100,financeCategory:'operations'};
+  }
+  function getPoliceCaseSummary(state,nowMs){
+    const rows=Array.isArray(state&&state.policeCases)?state.policeCases:[],now=nowMs===undefined?simulationTimeMs():Math.max(0,num(nowMs)||0);
+    return{total:rows.length,open:rows.filter(function(row){return row.status!=='CLOSED';}).length,
+      responseOverdue:rows.filter(function(row){return !!row.responseDeadlineMissed&&row.status!=='CLOSED';}).length,
+      evidenceOverdue:rows.filter(function(row){return !!row.evidenceDeadlineMissed&&row.status!=='CLOSED';}).length,
+      warrantOverdue:rows.filter(function(row){return !!row.warrantDeadlineMissed&&row.status!=='CLOSED';}).length,
+      detentionReleaseRequired:rows.filter(function(row){return row.status==='RELEASE_REQUIRED';}).length,
+      awaitingArrestReview:rows.filter(function(row){return !!row.arrestedAtMs&&!row.arrestReviewedAtMs&&!row.releasedAtMs;}).length,
+      dueNow:rows.filter(function(row){return row.status!=='CLOSED'&&((!row.firstResponseAtMs&&now>=row.firstActionDueAtMs)||(row.warrantRequestedAtMs&&!row.warrantDecisionAtMs&&now>=row.warrantDecisionDueAtMs)||(row.arrestedAtMs&&!row.arrestReviewedAtMs&&now>=row.arrestReviewDueAtMs)||(row.forceUsedAtMs&&!row.forceReviewedAtMs&&now>=row.forceReviewDueAtMs));}).length};
+  }
+  function filePoliceCase(caseType,priority,description,country){
+    const cid=normalizeCountry(country||currentCountry()),type=POLICE_CASE_TYPES[String(caseType||'')],level=policeCasePriority(priority);
+    const estimate=policeCaseFilingCostEstimate(caseType,level,cid);
+    if(!type)return{ok:false,code:'POLICE_CASE_TYPE_INVALID'};
+    if(!level)return{ok:false,code:'POLICE_CASE_PRIORITY_INVALID'};
+    const cleanDescription=String(description||'').replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim().slice(0,300);
+    if(!cleanDescription)return{ok:false,code:'POLICE_CASE_DESCRIPTION_REQUIRED',message:'Add a short factual case description.'};
+    if(!estimate.ok)return estimate;
+    const now=simulationTimeMs(),book=normalizePoliceRulebook(getState(cid).policeRulebook),firstActionHours=policeCaseResponseHours(caseType,level,book);
+    return mutation(cid,estimate.oneTimeFilingCostUsd,'POLICE_CASE_FILED',function(next){
+      const sequence=Math.max(1,Math.floor(num(next.nextPoliceCaseSequence)||1)),id='CASE-'+cid+'-'+turn()+'-'+sequence;
+      const entry={id:id,countryId:cid,sequence:sequence,caseType:String(caseType),caseLabel:type.label,crimeCategory:type.crimeCategory,
+        priority:level,description:cleanDescription,status:'OPEN',reportedAtMs:now,reportedAtTurn:turn(),
+        firstActionDeadlineHours:firstActionHours,firstActionDueAtMs:now+firstActionHours*3600000,firstResponseAtMs:null,
+        warrantRequestedAtMs:null,warrantDecisionDueAtMs:null,warrantDecision:null,warrantDecisionAtMs:null,
+        evidenceSubmissionDueAtMs:now+book.evidenceSubmissionHours*3600000,evidenceFiledAtMs:null,
+        arrestedAtMs:null,arrestReviewDueAtMs:null,arrestReviewedAtMs:null,detentionDeadlineAtMs:null,releasedAtMs:null,chargedAtMs:null,
+        forceUsedAtMs:null,forceReviewDueAtMs:null,forceReviewedAtMs:null,
+        responseDeadlineMissed:false,warrantDeadlineMissed:false,evidenceDeadlineMissed:false,arrestReviewOverdue:false,
+        detentionDeadlineMissed:false,forceReviewOverdue:false,
+        oneTimeFilingCostUsd:estimate.oneTimeFilingCostUsd,actionLog:[{action:'CASE_FILED',atMs:now,turn:turn(),costUsd:estimate.oneTimeFilingCostUsd}]};
+      next.nextPoliceCaseSequence=sequence+1;next.policeCases=Array.isArray(next.policeCases)?next.policeCases:[];
+      next.policeCases.unshift(entry);next.policeCases=next.policeCases.slice(0,200);
+      return{caseRecord:clone(entry),oneTimeFilingCostUsd:estimate.oneTimeFilingCostUsd,
+        firstActionDeadlineHours:firstActionHours,caseSummary:getPoliceCaseSummary(next,now)};
+    });
+  }
+  function recordPoliceCaseAction(caseId,action,country,decision){
+    const cid=normalizeCountry(country||currentCountry()),id=String(caseId||'').trim(),kind=String(action||'').toUpperCase();
+    if(!id)return{ok:false,code:'POLICE_CASE_ID_REQUIRED'};
+    const current=getState(cid),found=(current.policeCases||[]).find(function(row){return row.id===id;});
+    if(!found)return{ok:false,code:'POLICE_CASE_NOT_FOUND',caseId:id};
+    if(found.status==='CLOSED')return{ok:false,code:'POLICE_CASE_ALREADY_CLOSED'};
+    const now=simulationTimeMs(),book=normalizePoliceRulebook(current.policeRulebook);
+    if(kind==='DECIDE_WARRANT'&&['APPROVED','DENIED'].indexOf(String(decision||'').toUpperCase())<0)
+      return{ok:false,code:'POLICE_WARRANT_DECISION_INVALID',message:'Choose APPROVED or DENIED.'};
+    if(kind==='START_RESPONSE'&&found.firstResponseAtMs)return{ok:false,code:'POLICE_CASE_RESPONSE_ALREADY_RECORDED'};
+    if(kind==='REQUEST_WARRANT'&&found.warrantRequestedAtMs)return{ok:false,code:'POLICE_WARRANT_ALREADY_REQUESTED'};
+    if(kind==='DECIDE_WARRANT'&&(!found.warrantRequestedAtMs||found.warrantDecisionAtMs))return{ok:false,code:'POLICE_WARRANT_NOT_PENDING'};
+    if(kind==='ARREST'&&(!found.firstResponseAtMs||found.arrestedAtMs||found.releasedAtMs||found.chargedAtMs))
+      return{ok:false,code:'POLICE_ARREST_STAGE_INVALID',message:'Record first response; case must not already have an arrest, charge or release.'};
+    if(kind==='REVIEW_ARREST'&&(!found.arrestedAtMs||found.arrestReviewedAtMs||found.releasedAtMs))
+      return{ok:false,code:'POLICE_ARREST_REVIEW_STAGE_INVALID'};
+    if(kind==='FILE_EVIDENCE'&&(!found.firstResponseAtMs||found.evidenceFiledAtMs))return{ok:false,code:'POLICE_EVIDENCE_STAGE_INVALID'};
+    if(kind==='CHARGE'&&(!found.arrestedAtMs||!found.arrestReviewedAtMs||!found.evidenceFiledAtMs||found.releasedAtMs))
+      return{ok:false,code:'POLICE_DUE_PROCESS_REQUIREMENTS_UNMET',message:'Charge requires an arrest, completed arrest review and evidence filing. Release a detained person if the detention deadline has passed.'};
+    if(kind==='CHARGE'&&found.detentionDeadlineAtMs&&now>=found.detentionDeadlineAtMs)return{ok:false,code:'POLICE_DETENTION_DEADLINE_EXCEEDED',message:'The pre-charge detention deadline has passed; release is required before any further case action.'};
+    if(kind==='RELEASE'&&(!found.arrestedAtMs||found.releasedAtMs||found.chargedAtMs))return{ok:false,code:'POLICE_RELEASE_STAGE_INVALID'};
+    if(kind==='RECORD_FORCE'&&found.forceUsedAtMs)return{ok:false,code:'POLICE_FORCE_ALREADY_RECORDED'};
+    if(kind==='REVIEW_FORCE'&&(!found.forceUsedAtMs||found.forceReviewedAtMs))return{ok:false,code:'POLICE_FORCE_REVIEW_STAGE_INVALID'};
+    if(kind==='SEARCH'&&book.searchWarrantRequired&&found.warrantDecision!=='APPROVED'&&found.priority!=='critical')
+      return{ok:false,code:'POLICE_SEARCH_WARRANT_REQUIRED',message:'A search warrant must be approved before this search; critical emergencies may use the documented emergency exception.'};
+    if(kind==='SEARCH'&&found.searchAtMs)return{ok:false,code:'POLICE_SEARCH_ALREADY_RECORDED'};
+    if(kind==='CLOSE_CASE'&&(found.arrestedAtMs&&!found.releasedAtMs&&!found.chargedAtMs||found.forceUsedAtMs&&!found.forceReviewedAtMs))
+      return{ok:false,code:'POLICE_CASE_CLOSURE_REQUIREMENTS_UNMET',message:'Resolve active detention and complete use-of-force review before closing.'};
+    const estimate=policeCaseActionCostEstimate(found,kind,current);
+    if(!estimate.ok)return{ok:false,code:estimate.code};
+    return mutation(cid,estimate.costUsd,'POLICE_CASE_'+kind,function(next){
+      const row=(next.policeCases||[]).find(function(item){return item.id===id;});
+      if(!row)return{ok:false,code:'POLICE_CASE_NOT_FOUND'};
+      const previousStatus=row.status,log={action:kind,atMs:now,turn:turn(),costUsd:estimate.costUsd};
+      if(kind==='START_RESPONSE'){
+        row.firstResponseAtMs=now;row.status='UNDER_INVESTIGATION';row.responseOnTime=now<=row.firstActionDueAtMs;
+        if(row.responseOnTime){next.publicSatisfaction=clamp(next.publicSatisfaction+0.12*policeCasePriorityFactor(row.priority),0,100);next.policeTrust=clamp(next.policeTrust+0.08,0,100);}
+      }else if(kind==='REQUEST_WARRANT'){
+        row.warrantRequestedAtMs=now;row.warrantDecisionDueAtMs=now+book.warrantDecisionHours*3600000;row.status='WARRANT_PENDING';
+      }else if(kind==='DECIDE_WARRANT'){
+        row.warrantDecision=String(decision).toUpperCase();row.warrantDecisionAtMs=now;row.status='UNDER_INVESTIGATION';
+        if(now<=row.warrantDecisionDueAtMs){next.policeTrust=clamp(next.policeTrust+0.08,0,100);next.publicSatisfaction=clamp(next.publicSatisfaction+0.06,0,100);}
+      }else if(kind==='ARREST'){
+        row.arrestedAtMs=now;row.arrestReviewDueAtMs=now+book.arrestReviewHours*3600000;row.detentionDeadlineAtMs=now+book.maximumDetentionHours*3600000;row.status='ARRESTED';
+      }else if(kind==='REVIEW_ARREST'){
+        row.arrestReviewedAtMs=now;row.arrestReviewOnTime=now<=row.arrestReviewDueAtMs;row.status='ARREST_REVIEWED';
+        next.policeTrust=clamp(next.policeTrust+(row.arrestReviewOnTime?0.12:-0.08),0,100);
+        if(row.arrestReviewOnTime)next.misconductRiskPct=clamp(next.misconductRiskPct-0.15,0,100);
+      }else if(kind==='FILE_EVIDENCE'){
+        row.evidenceFiledAtMs=now;row.evidenceOnTime=now<=row.evidenceSubmissionDueAtMs;
+        next.policeEfficiency=clamp(next.policeEfficiency+(row.evidenceOnTime?0.05:-0.06),0,100);
+      }else if(kind==='CHARGE'){
+        row.chargedAtMs=now;row.status='CHARGED';
+        next.crimeModel=next.crimeModel||{totalIncidents:0,openedCases:0,clearedCases:0};
+        next.crimeModel.clearedCases=Math.max(0,Math.floor(num(next.crimeModel.clearedCases)||0))+1;
+        next.justiceBacklog=Math.max(0,Math.floor(num(next.justiceBacklog)||0)-1);
+        next.publicSatisfaction=clamp(next.publicSatisfaction+0.15,0,100);
+      }else if(kind==='RELEASE'){
+        row.releasedAtMs=now;row.status='RELEASED';next.policeTrust=clamp(next.policeTrust+0.1,0,100);
+      }else if(kind==='RECORD_FORCE'){
+        row.forceUsedAtMs=now;row.forceReviewDueAtMs=now+book.forceReviewHours*3600000;row.status='FORCE_REVIEW_REQUIRED';
+      }else if(kind==='REVIEW_FORCE'){
+        row.forceReviewedAtMs=now;row.forceReviewOnTime=now<=row.forceReviewDueAtMs;row.status='UNDER_INVESTIGATION';
+        next.misconductRiskPct=clamp(next.misconductRiskPct+(row.forceReviewOnTime?-0.12:0.25),0,100);
+        next.publicSatisfaction=clamp(next.publicSatisfaction+(row.forceReviewOnTime?0.08:-0.2),0,100);
+      }else if(kind==='SEARCH'){
+        row.searchAtMs=now;row.searchAuthority=row.warrantDecision==='APPROVED'?'WARRANT_APPROVED':'CRITICAL_EMERGENCY_EXCEPTION';
+      }else if(kind==='CLOSE_CASE'){
+        row.closedAtMs=now;row.status='CLOSED';
+      }
+      log.statusBefore=previousStatus;log.statusAfter=row.status;row.actionLog=Array.isArray(row.actionLog)?row.actionLog:[];row.actionLog.push(log);row.actionLog=row.actionLog.slice(-40);
+      return{caseRecord:clone(row),caseAction:kind,actionCostUsd:estimate.costUsd,
+        caseSummary:getPoliceCaseSummary(next,now),crime:getCrimeSnapshot(cid,next)};
+    });
+  }
+  function processPoliceCaseDeadlines(state,country,now){
+    const rows=Array.isArray(state&&state.policeCases)?state.policeCases:[];if(!rows.length)return false;
+    const current=normalizePoliceRulebook(state.policeRulebook),at=Math.max(0,num(now)||0);let changed=false;
+    rows.forEach(function(row){
+      if(!row||row.status==='CLOSED')return;
+      if(!row.firstResponseAtMs&&!row.responseDeadlineMissed&&at>Number(row.firstActionDueAtMs||0)){
+        row.responseDeadlineMissed=true;row.responseOverdueAtMs=at;
+        const penalty=policeCasePriorityFactor(row.priority);
+        state.publicSatisfaction=clamp(state.publicSatisfaction-0.12*penalty,0,100);
+        state.policeTrust=clamp(state.policeTrust-0.08*penalty,0,100);changed=true;
+      }
+      if(row.warrantRequestedAtMs&&!row.warrantDecisionAtMs&&!row.warrantDeadlineMissed&&at>Number(row.warrantDecisionDueAtMs||0)){
+        row.warrantDeadlineMissed=true;row.warrantOverdueAtMs=at;
+        state.publicSatisfaction=clamp(state.publicSatisfaction-0.08,0,100);changed=true;
+      }
+      if(row.firstResponseAtMs&&!row.evidenceFiledAtMs&&!row.evidenceDeadlineMissed&&at>Number(row.evidenceSubmissionDueAtMs||0)){
+        row.evidenceDeadlineMissed=true;row.evidenceOverdueAtMs=at;
+        state.policeEfficiency=clamp(state.policeEfficiency-0.05,0,100);
+        state.justiceBacklog=Math.max(0,Math.floor(num(state.justiceBacklog)||0))+1;changed=true;
+      }
+      if(row.arrestedAtMs&&!row.arrestReviewedAtMs&&!row.arrestReviewOverdue&&at>Number(row.arrestReviewDueAtMs||0)){
+        row.arrestReviewOverdue=true;row.arrestReviewOverdueAtMs=at;
+        state.misconductRiskPct=clamp(state.misconductRiskPct+0.15,0,100);
+        state.policeTrust=clamp(state.policeTrust-0.1,0,100);changed=true;
+      }
+      if(row.arrestedAtMs&&!row.chargedAtMs&&!row.releasedAtMs&&row.detentionDeadlineAtMs&&at>=Number(row.detentionDeadlineAtMs)&&!row.detentionDeadlineMissed){
+        row.detentionDeadlineMissed=true;row.status='RELEASE_REQUIRED';row.detentionDeadlineMissedAtMs=at;
+        state.misconductRiskPct=clamp(state.misconductRiskPct+0.2,0,100);
+        state.publicSatisfaction=clamp(state.publicSatisfaction-0.15,0,100);changed=true;
+      }
+      if(row.forceUsedAtMs&&!row.forceReviewedAtMs&&!row.forceReviewOverdue&&at>Number(row.forceReviewDueAtMs||0)){
+        row.forceReviewOverdue=true;row.forceReviewOverdueAtMs=at;
+        state.misconductRiskPct=clamp(state.misconductRiskPct+0.15,0,100);
+        state.publicSatisfaction=clamp(state.publicSatisfaction-0.1,0,100);changed=true;
+      }
+      if(changed&&Array.isArray(row.actionLog)&&row.actionLog.length<40)row.actionLog.push({action:'DEADLINE_REVIEW',atMs:at,turn:turn()});
+    });
+    state.policeCases=rows.slice(-200);
+    return changed;
+  }
   const api=Object.freeze({
     VERSION:VERSION,POLICE_SALARY_PER_DAY:POLICE_SALARY_PER_DAY,POLICE_RECRUITMENT_COST:POLICE_RECRUITMENT_COST,
     AGENT_RECRUITMENT_COST:AGENT_RECRUITMENT_COST,AGENT_SALARY_PER_DAY:AGENT_SALARY_PER_DAY,VEHICLE_UNLOCK_MS:VEHICLE_UNLOCK_MS,
@@ -1923,6 +2128,10 @@
     getPoliceDepartmentPlan:function(country){return normalizePoliceDepartmentPlan(getState(country||currentCountry()).policeDepartments);},
     getPoliceDepartmentCatalog:policeDepartmentCatalog,
     getPoliceDepartmentHeadcounts:function(country){return policeDepartmentHeadcounts(getState(country||currentCountry()));},
+    getPoliceCaseTypes:function(){return clone(POLICE_CASE_TYPES);},
+    getPoliceCases:function(country){return clone((getState(country||currentCountry()).policeCases||[]).slice(0,200));},
+    getPoliceCaseSummary:function(country){return getPoliceCaseSummary(getState(country||currentCountry()),simulationTimeMs());},
+    estimatePoliceCaseFilingCost:policeCaseFilingCostEstimate,filePoliceCase:filePoliceCase,recordPoliceCaseAction:recordPoliceCaseAction,
     validatePoliceDepartmentPlan:function(input,country){return validatePoliceDepartmentPlan(input,getState(country||currentCountry()).policeDepartments);},
     estimatePoliceDepartmentPlanCost:estimatePoliceDepartmentPlanCost,setPoliceDepartmentPlan:setPoliceDepartmentPlan,
     getCountryPoliceBaseline:function(country){return clone(findPoliceBaseline(country));},
