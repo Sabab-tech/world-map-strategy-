@@ -674,6 +674,8 @@
       const prior = existingTransaction(key);
       if (prior && String(prior.status || '').toUpperCase() === 'SETTLED')
         return { ok: true, duplicate: true, transactionId: prior.transactionId, transaction: clone(prior.result || prior) };
+      if (prior && ['CANCELLED','FAILED','COMPENSATED','REVERSED'].includes(String(prior.status || '').toUpperCase()))
+        return { ok: false, code: 'IDEMPOTENCY_KEY_FINALIZED', transactionId: prior.transactionId, status: prior.status };
       const pending = bankingState(true).pendingTransfers[key];
       if (pending && turn() < num(pending.dueTurn))
         return { ok: true, pending: true, code: 'PAYMENT_PENDING', dueTurn: pending.dueTurn, transactionId: key };
@@ -850,6 +852,8 @@
     const bank = bankingState(true);
     const done = existingTransaction(id);
     if (done && done.status === 'SETTLED') return { ok: true, duplicate: true, settlementId: id, transaction: clone(done.result || done) };
+    if (done && ['CANCELLED','FAILED','COMPENSATED','REVERSED'].includes(String(done.status || '').toUpperCase()))
+      return { ok: false, code: 'SETTLEMENT_ID_FINALIZED', settlementId: id, status: done.status };
     let pending = bank.pendingTradeSettlements[id];
     const delay = pending ? num(pending.paymentDelayTurns) || 0
       : num(input.paymentDelayTurns) ?? num(ensurePolicy(buyer).defaultPaymentDelayTurns) ?? 0;
