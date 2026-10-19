@@ -22,6 +22,12 @@ const mapByIso3 = (rows, getter) => new Map(rows.map(row => [String(getter(row) 
 const rawByIso3 = mapByIso3(rawRows, row => row.iso3);
 const profilesByIso3 = mapByIso3(profilesSource, row => row.iso3);
 const finiteOrNull = (value) => value === null || (typeof value === 'number' && Number.isFinite(value));
+let previousRegistrySnapshot = null;
+try {
+  previousRegistrySnapshot = readJson('/tmp/omega-country-general-registry-before.json');
+} catch {
+  // Local one-off tests may not provide a previous build snapshot.
+}
 
 test('registry includes every canonical country/territory identity exactly once', () => {
   assert.equal(registry.metadata.countryAndTerritoryCount, roster.length);
@@ -73,6 +79,43 @@ test('all countries use the same documented ordered schema and metric/provenance
         row.metricMetadata.years[index] === null);
     }
   }
+});
+
+test('a rebuild never drops a previously non-null metric merely because the current source is silent', (t) => {
+  if (!previousRegistrySnapshot?.metadata?.recordSchema || !Array.isArray(previousRegistrySnapshot.countries)) {
+    t.skip('No prior registry snapshot was supplied to this test run.');
+    return;
+  }
+  const oldSchema = previousRegistrySnapshot.metadata.recordSchema;
+  const oldFields = oldSchema.metricFields || (previousRegistrySnapshot.fieldCatalogue || []).map((field) => field.key);
+  const oldMetricIndex = Object.fromEntries(oldFields.map((key, index) => [key, index]));
+  const oldIso3Index = (oldSchema.identityFields || []).indexOf('iso3');
+  assert.ok(oldIso3Index >= 0, 'Prior registry schema must contain ISO3 identity.');
+  const currentByIso3 = new Map(registry.countries.map((row) => [
+    String(row.identity[idIndex.iso3] || '').toUpperCase(), row
+  ]));
+  let priorValueCount = 0;
+  let preservedCount = 0;
+  for (const oldRow of previousRegistrySnapshot.countries) {
+    const iso3 = String(Array.isArray(oldRow.identity) ? oldRow.identity[oldIso3Index] : oldRow.identity?.iso3 || '').toUpperCase();
+    const current = currentByIso3.get(iso3);
+    if (!current) continue;
+    for (const key of oldFields) {
+      const oldValue = Array.isArray(oldRow.metrics)
+        ? oldRow.metrics[oldMetricIndex[key]]
+        : oldRow.metrics?.[key];
+      if (typeof oldValue !== 'number' || !Number.isFinite(oldValue)) continue;
+      priorValueCount += 1;
+      const currentIndex = metricIndex[key];
+      if (currentIndex === undefined) continue;
+      const newValue = current.metrics[currentIndex];
+      assert.ok(typeof newValue === 'number' && Number.isFinite(newValue),
+        'Previously recorded metric was lost for ' + iso3 + '.' + key + '; missing means unknown, not deletion.');
+      preservedCount += 1;
+    }
+  }
+  assert.ok(priorValueCount > 0, 'Prior registry snapshot contained no numeric values to preserve.');
+  assert.equal(preservedCount, priorValueCount);
 });
 
 test('raw financial observations and derived indicators are losslessly preserved in source-key order', () => {
