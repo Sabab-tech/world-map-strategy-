@@ -279,6 +279,14 @@
       state.lastUpdatedTurn=turn();
     }else{
       state.vehiclesOwned=state.vehiclesOwned&&typeof state.vehiclesOwned==='object'?state.vehiclesOwned:{};
+      const savedTraining=raw&&num(raw.trainingQualityLevel),savedRecruitment=raw&&num(raw.recruitmentLevel);
+      const capability=row&&row.capabilityBaseline||{};
+      if(savedTraining===null&&num(capability.trainingLevel)!==null){
+        state.trainingQualityLevel=clamp(Math.floor(num(capability.trainingLevel)),1,MAX_CAPABILITY_LEVEL);
+        state.facilityLevels.academy=Math.max(Math.floor(num(state.facilityLevels.academy)||1),state.trainingQualityLevel);
+      }
+      if(savedRecruitment===null&&num(capability.recruitmentLevel)!==null)
+        state.recruitmentLevel=clamp(Math.floor(num(capability.recruitmentLevel)),1,MAX_CAPABILITY_LEVEL);
     }
     const capabilityBaseline=row&&row.capabilityBaseline&&typeof row.capabilityBaseline==='object'?row.capabilityBaseline:null;
     state.capabilityBaseline=capabilityBaseline?clone(capabilityBaseline):state.capabilityBaseline||null;
@@ -457,7 +465,7 @@
     const before=getCrimeSnapshot(cid,state);if(!before.available)return{ok:false,code:before.reason||'POLICE_BASELINE_NOT_LOADED'};
     const next=Object.assign({},state,{policeCount:state.policeCount+qty,policeEfficiency:clamp(state.policeEfficiency+Math.min(5,qty/100),0,100)});
     const after=getCrimeSnapshot(cid,next);
-    const dailySalary=Math.max(0,num(state.dailySalaryPerOfficerUsd)||POLICE_SALARY_PER_DAY),hiringFee=Math.max(0,num(state.recruitmentFeePerOfficerUsd)||POLICE_RECRUITMENT_COST);
+    const dailySalary=Math.max(0,num(state.dailySalaryPerOfficerUsd)||POLICE_SALARY_PER_DAY),hiringFee=effectiveRecruitmentFeeFrom(state);
     return{ok:true,quantity:qty,upfrontCostUsd:qty*hiringFee,addedDailyPayrollUsd:qty*dailySalary,
       baselineAnnualIncidents:before.baselineAnnualIncidentEstimate,projectedAnnualIncidentsBefore:before.projectedAnnualIncidentEstimate,
       projectedAnnualIncidentsAfter:after.projectedAnnualIncidentEstimate,additionalIncidentsAvoidedPerYear:(before.projectedAnnualIncidentEstimate===null||after.projectedAnnualIncidentEstimate===null)?null:before.projectedAnnualIncidentEstimate-after.projectedAnnualIncidentEstimate,
@@ -1136,7 +1144,7 @@
     const kind=String(type||'').trim().toLowerCase(),cid=normalizeCountry(country||currentCountry());
     if(kind!=='training'&&kind!=='recruitment')return{ok:false,canStart:false,reason:'CAPABILITY_TYPE_INVALID',countryId:cid};
     const state=getState(cid),key=kind==='training'?'trainingQualityLevel':'recruitmentLevel';
-    const currentLevel=clamp(Math.floor(num(state[key])||1),1,MAX_CAPABILITY_LEVEL),targetLevel=currentLevel+1;
+    const currentLevel=clamp(Math.floor(num(state[key])||1),1,MAX_CAPABILITY_LEVEL),targetLevel=currentLevel>=MAX_CAPABILITY_LEVEL?currentLevel:currentLevel+1;
     const baseline=findPoliceBaseline(cid),profile=state.capabilityBaseline||baseline&&baseline.capabilityBaseline||null;
     const blockers=[];const addBlocker=function(code,message){if(!blockers.some(function(x){return x.code===code;}))blockers.push({code:code,message:message});};
     if(!profile)addBlocker('COUNTRY_CAPABILITY_PROFILE_UNAVAILABLE','Country-specific capability data has not loaded.');
