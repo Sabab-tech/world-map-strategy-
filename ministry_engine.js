@@ -2557,8 +2557,794 @@ window.OmegaCabinetUI = {
             }
         }
 
-        const formatNum = (num) => (num !== null && num !== undefined) ? (window.formatPopulationNumber ? window.formatPopulationNumber(num) : num.toLocaleString()) : 'N/A';
-        const formatCash = (num) => (num !== null && num !== undefined) ? (window.formatGameNumber ? window.formatGameNumber(num) : '$' + (num / 1000000).toFixed(1) + 'M') : 'N/A';
+        const formatNum = (num) => {
+            if (num === null || num === undefined || !Number.isFinite(Number(num))) return 'N/A';
+            const formatter = window.OmegaNumberFormat;
+            if (formatter && typeof formatter.compact === 'function') return formatter.compact(Number(num));
+            return window.formatPopulationNumber ? window.formatPopulationNumber(num) : Number(num).toLocaleString();
+        };
+        const formatCash = (num) => {
+            if (num === null || num === undefined || !Number.isFinite(Number(num))) return 'N/A';
+            const formatter = window.OmegaNumberFormat;
+            if (formatter && typeof formatter.money === 'function') return formatter.money(Number(num));
+            return window.formatGameNumber ? window.formatGameNumber(num) : '
+
+        let html = `
+            <!-- AAA HERO HEADER -->
+            <div style="background:linear-gradient(135deg, rgba(20, 14, 4, 0.92), rgba(10, 20, 30, 0.95)); border:1px solid rgba(234, 179, 8, 0.35); border-radius:12px; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; box-shadow:0 8px 24px rgba(0,0,0,0.6);">
+                <div style="display:flex; align-items:center; gap:16px;">
+                    <button onclick="window.OmegaLayerManager.popLayer();" style="background:linear-gradient(135deg,rgba(15,23,42,0.9),rgba(30,41,59,0.9)); border:1.5px solid #eab308; color:#eab308; padding:8px 14px; border-radius:8px; font-weight:bold; cursor:pointer; font-family:'Share Tech Mono',monospace; font-size:12px; display:flex; align-items:center; gap:6px; box-shadow:0 0 10px rgba(234,179,8,0.2);">
+                        <span>⬅️</span> <span>BACK TO CABINET</span>
+                    </button>
+                    <div style="font-size:36px; background:rgba(234,179,8,0.12); padding:8px 14px; border-radius:12px; border:1px solid rgba(234,179,8,0.3); color:#eab308;">⚡</div>
+                    <div>
+                        <h1 style="margin:0; font-family:'Inter',sans-serif; font-weight:700; font-size:20px; color:#f8fafc; letter-spacing:0.2px;">${m.title} (${m.bnTitle || 'জ্বালানি ও প্রাকৃতিক সম্পদ'})</h1>
+                        <div style="font-size:12px; font-weight:500; color:#eab308; margin-top:2px;">${m.role} • ${countryDetails.flag} ${countryDetails.name}</div>
+                        <div style="font-size:11px; color:#94a3b8; margin-top:3px; line-height:1.4;">
+                            Minister: <strong style="color:#f8fafc;">${m.ministerName}</strong> • Status: <strong style="color:#22c55e;">${m.status}</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+                    <div style="background:rgba(0,0,0,0.5); padding:8px 14px; border-radius:8px; border:1px solid rgba(234,179,8,0.25); font-family:'Share Tech Mono',monospace; font-size:11px;">
+                        <span style="color:#94a3b8;">SECTOR EFFICIENCY</span><br/><strong style="color:#22c55e; font-size:14px;">${m.efficiency}%</strong>
+                    </div>
+                    <div style="background:rgba(0,0,0,0.5); padding:8px 14px; border-radius:8px; border:1px solid rgba(234,179,8,0.25); font-family:'Share Tech Mono',monospace; font-size:11px;">
+                        <span style="color:#94a3b8;">ENERGY BUDGET</span><br/><strong style="color:#ffd700; font-size:14px;">${m.budget}</strong>
+                    </div>
+                    <button onclick="if(window.ResourceMinistryEngine && typeof window.ResourceMinistryEngine.openModal === 'function') { window.ResourceMinistryEngine.openModal('${normKey}', 'matrix'); }" style="background:linear-gradient(135deg,rgba(0,229,255,0.25),rgba(6,182,212,0.3)); border:1.5px solid #00e5ff; color:#00e5ff; font-weight:800; font-family:'Share Tech Mono',monospace; font-size:12px; padding:10px 14px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:6px; box-shadow:0 0 15px rgba(0,229,255,0.3);">
+                        💎 GSRSK INTELLIGENCE HUB
+                    </button>
+                    <button onclick="if(window.ResourceMinistryEngine && typeof window.ResourceMinistryEngine.openModal === 'function') { window.ResourceMinistryEngine.openModal('${normKey}', 'cascade'); }" style="background:rgba(239,68,68,0.2); border:1.5px solid #ef4444; color:#ef4444; font-weight:800; font-family:'Share Tech Mono',monospace; font-size:12px; padding:10px 14px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:6px;">
+                        ⚠️ CASCADE SANDBOX
+                    </button>
+                    <button onclick="if(window.OmegaLiveOpsObservability && typeof window.OmegaLiveOpsObservability.open === 'function') { window.OmegaLiveOpsObservability.open(); }" title="Inspect recorded site output, inventories, transport, trade and engine events" aria-label="Open Live Operations" style="background:rgba(56,189,248,0.12); border:1.5px solid #38bdf8; color:#7dd3fc; font-weight:800; font-family:'Share Tech Mono',monospace; font-size:12px; padding:10px 14px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:6px;">
+                        LIVE OPERATIONS
+                    </button>
+                    <button onclick="window.OmegaLayerManager.setLayer(5, { ministryId: '${m.id}' });" style="background:linear-gradient(135deg,#eab308,#f59e0b); border:none; color:#000; font-weight:800; font-family:'Share Tech Mono',monospace; font-size:12px; padding:10px 14px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:6px; box-shadow:0 0 15px rgba(234,179,8,0.3);">
+                        🎙️ INTERROGATE MINISTER
+                    </button>
+                </div>
+            </div>
+
+            <!-- LIVE NATIONAL RESOURCE TELEMETRY STATUS BAR -->
+            <div style="background:rgba(15, 23, 42, 0.95); border:1px solid rgba(234, 179, 8, 0.3); border-radius:10px; padding:12px 16px; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px;">
+                <div style="font-family:'Share Tech Mono',monospace; font-size:12px; font-weight:bold; color:#eab308; display:flex; align-items:center; gap:6px;">
+                    <span>💎</span> <span>NATIONAL STRATEGIC RESOURCE RESERVES:</span>
+                </div>
+                <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:center;">
+                    <div style="display:flex; align-items:center; gap:6px; font-family:'Share Tech Mono',monospace; font-size:12px;">
+                        <span>💵</span> <span style="color:#94a3b8;">Treasury:</span> <strong id="res-min-cash" style="color:#22c55e;">${formatCash(cash)}</strong>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:6px; font-family:'Share Tech Mono',monospace; font-size:12px;">
+                        <span>⚡</span> <span style="color:#94a3b8;">Power Grid:</span> <strong id="res-min-energy" style="color:#00e5ff;">14.8 GW</strong> <span style="font-size:10px; color:#22c55e;">(▲ +1.2 GW)</span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:6px; font-family:'Share Tech Mono',monospace; font-size:12px;">
+                        <span>🛢️</span> <span style="color:#94a3b8;">Oil Stockpile:</span> <strong id="res-min-oil" style="color:#eab308;">${formatNum(oil)} BBL</strong> <span style="font-size:10px; color:#22c55e;">(▲ +500/s)</span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:6px; font-family:'Share Tech Mono',monospace; font-size:12px;">
+                        <span>⚙️</span> <span style="color:#94a3b8;">Steel Reserves:</span> <strong id="res-min-steel" style="color:#cbd5e1;">${formatNum(steel)} T</strong>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:6px; font-family:'Share Tech Mono',monospace; font-size:12px;">
+                        <span>☢️</span> <span style="color:#94a3b8;">Uranium / Rare Earths:</span> <strong id="res-min-uranium" style="color:#a855f7;">${uranium} KG</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- REAL-TIME DYNAMIC GRAPH CONTAINER & METRIC SELECTOR -->
+            <div style="background:rgba(8, 15, 28, 0.95); border:1px solid rgba(234, 179, 8, 0.25); border-radius:12px; padding:16px; display:flex; flex-direction:column; gap:12px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span style="font-size:16px;">📈</span>
+                        <span style="font-family:'Inter',sans-serif; font-size:14px; font-weight:700; color:#f8fafc;">Real-Time Dynamic Resource Graph & Telemetry</span>
+                        <span style="background:rgba(34,197,94,0.15); border:1px solid #22c55e; color:#22c55e; font-size:10px; font-family:'Share Tech Mono',monospace; padding:2px 8px; border-radius:10px;">LIVE REALITY ENGINE ●</span>
+                    </div>
+
+                    <!-- GRAPH METRIC SUBVIEW TAB BUTTONS -->
+                    <div style="display:flex; gap:6px; overflow-x:auto; flex-shrink:0;">
+                        ${[
+                            { id: 'power_grid', label: '⚡ Power Grid (GW)', color: '#00e5ff' },
+                            { id: 'oil_yield', label: '🛢️ Crude Oil (BBL/s)', color: '#eab308' },
+                            { id: 'steel_refinery', label: '⚙️ Steel Production (T/s)', color: '#a855f7' },
+                            { id: 'nuclear_rare', label: '☢️ Uranium & Grid Baseload', color: '#22c55e' }
+                        ].map(tab => `
+                            <button onclick="window.OmegaCabinetUI.setResourceGraphSub('${tab.id}');" style="
+                                background:${this.activeResourceSub === tab.id ? tab.color : 'rgba(255,255,255,0.06)'};
+                                color:${this.activeResourceSub === tab.id ? '#000' : '#cbd5e1'};
+                                border:1px solid ${tab.color};
+                                font-weight:bold;
+                                padding:6px 12px;
+                                border-radius:6px;
+                                font-family:'Share Tech Mono',monospace;
+                                font-size:11px;
+                                cursor:pointer;
+                                white-space:nowrap;
+                            ">${tab.label}</button>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <!-- LIVE CANVAS REAL-TIME DYNAMIC GRAPH -->
+                <div style="position:relative; width:100%; height:220px; background:rgba(2, 8, 16, 0.85); border:1px solid rgba(255,255,255,0.08); border-radius:8px; overflow:hidden; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+                    <canvas id="resource-live-canvas" width="900" height="220" style="width:100%; height:100%; display:block;"></canvas>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-family:'Share Tech Mono',monospace; font-size:10px; color:#64748b; padding:0 4px;">
+                    <span>T-30s Ticks</span>
+                    <span>Real-Time Frequency: 1.0 Hz</span>
+                    <span>Live Status: Operational</span>
+                </div>
+            </div>
+
+            <!-- 16-POINT GSRSK STRATEGIC ARCHITECTURE & DIRECTIVES CONTROL CENTER -->
+            <div style="display:flex; flex-direction:column; gap:14px; margin-top:8px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; border-bottom:1px solid rgba(0,229,255,0.2); padding-bottom:8px;">
+                    <div style="font-family:'Inter',sans-serif; font-size:15px; color:#f8fafc; font-weight:700; display:flex; align-items:center; gap:8px;">
+                        <span>💎</span> <span>GSRSK 16-Point Sovereign Resource Architecture & Command Center</span>
+                    </div>
+                    <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                        <button onclick="window.OmegaCabinetUI.setResource16Filter('ALL');" style="padding:4px 10px; font-size:11px; font-weight:700; border-radius:6px; cursor:pointer; background:${(!this.res16Filter || this.res16Filter==='ALL')?'#00e5ff':'rgba(255,255,255,0.06)'}; color:${(!this.res16Filter || this.res16Filter==='ALL')?'#000':'#94a3b8'}; border:none;">ALL (16)</button>
+                        <button onclick="window.OmegaCabinetUI.setResource16Filter('UPSTREAM');" style="padding:4px 10px; font-size:11px; font-weight:700; border-radius:6px; cursor:pointer; background:${this.res16Filter==='UPSTREAM'?'#00e5ff':'rgba(255,255,255,0.06)'}; color:${this.res16Filter==='UPSTREAM'?'#000':'#94a3b8'}; border:none;">UPSTREAM</button>
+                        <button onclick="window.OmegaCabinetUI.setResource16Filter('MIDSTREAM');" style="padding:4px 10px; font-size:11px; font-weight:700; border-radius:6px; cursor:pointer; background:${this.res16Filter==='MIDSTREAM'?'#00e5ff':'rgba(255,255,255,0.06)'}; color:${this.res16Filter==='MIDSTREAM'?'#000':'#94a3b8'}; border:none;">MIDSTREAM</button>
+                        <button onclick="window.OmegaCabinetUI.setResource16Filter('DOWNSTREAM');" style="padding:4px 10px; font-size:11px; font-weight:700; border-radius:6px; cursor:pointer; background:${this.res16Filter==='DOWNSTREAM'?'#00e5ff':'rgba(255,255,255,0.06)'}; color:${this.res16Filter==='DOWNSTREAM'?'#000':'#94a3b8'}; border:none;">DOWNSTREAM</button>
+                        <button onclick="window.OmegaCabinetUI.setResource16Filter('STRATEGY');" style="padding:4px 10px; font-size:11px; font-weight:700; border-radius:6px; cursor:pointer; background:${this.res16Filter==='STRATEGY'?'#00e5ff':'rgba(255,255,255,0.06)'}; color:${this.res16Filter==='STRATEGY'?'#000':'#94a3b8'}; border:none;">STRATEGY & AI</button>
+                    </div>
+                </div>
+
+                <div class="ministry-dept-grid" style="grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:12px;">
+                    ${this.getResource16CardsHtml()}
+                </div>
+            </div>
+        `;
+
+        container.innerHTML = html;
+
+        setTimeout(() => {
+            this.initLiveResourceGraph(this.activeResourceSub);
+        }, 50);
+    },
+
+    res16Filter: 'ALL',
+
+    setResource16Filter(filterKey) {
+        this.res16Filter = filterKey;
+        const m = this.ministriesDatabase['energy_mining'] || this.ministriesDatabase['resource'];
+        const contentArea = document.getElementById('ministry-dashboard-content');
+        if (m && contentArea) {
+            this.renderResourceMinistryDashboard(m, contentArea);
+        }
+    },
+
+    getResource16CardsHtml() {
+        const countryKey = (this.activeCountry || 'BANGLADESH').toUpperCase();
+        const normKey = countryKey.replace(/[-\s]/g, '_');
+
+        const points = [
+            { num: '01', id: 'p01', tag: 'FOUNDATION', icon: '⚖️', title: 'Unit Standards & Metrology', bn: 'পরিমাপক একক ও জ্ঞানতাত্ত্বিক ভিত্তি', desc: 'Canonical conversion factors for MMBTU, BBL, Metric Tons and Murmur64 checksum validation.', btnText: 'Inspect Metrology Matrix', action: () => `window.ResourceMinistryEngine.openModal('${normKey}', 'matrix')`, border: '#00e5ff' },
+            { num: '02', id: 'p02', tag: 'FOUNDATION', icon: '📖', title: '18 Commodity Ontology Matrix', bn: '১৮ কৌশলগত পদার্থের রাসায়নিক ও ভৌত কাঠামো', desc: 'Physicochemical transformations, substitution elasticities, and CRIRSCO mineral classifications.', btnText: 'View Commodity Ontology', action: () => `window.ResourceMinistryEngine.openModal('${normKey}', 'matrix')`, border: '#38bdf8' },
+            { num: '03', id: 'p03', tag: 'UPSTREAM', icon: '💎', title: 'Sovereign Reserves & In-Situ Ledger', bn: 'সার্বভৌম মজুদ ও খনিজ সম্পদ খতিয়ান', desc: 'Verified proven reserves, daily extraction mutation rates, and sovereign resource balance sheets.', btnText: 'Audit Proven Reserves', action: () => `window.ResourceMinistryEngine.openModal('${normKey}', 'matrix')`, border: '#eab308' },
+            { num: '04', id: 'p04', tag: 'UPSTREAM', icon: '🗺️', title: 'Deposit Registry & Geocoded Mines', bn: 'খনিজ ডিপোজিট ও ভূতাত্ত্বিক ম্যাপিং', desc: '593 geocoded global mining concessions, ore purities, and spatial reserve clusters.', btnText: 'Explore Geocoded Deposits', action: () => `window.ResourceMinistryEngine.openModal('${normKey}', 'deposits')`, border: '#ca8a04' },
+            { num: '05', id: 'p05', tag: 'UPSTREAM', icon: '⛏️', title: 'Geological Extraction & Depletion Rate', bn: 'খনন উত্তোলন ও অবক্ষয় নিয়ন্ত্রণ প্রকল্প', desc: 'Block caving, open-cast stripping, and Reserve Replacement Ratio (RRR) optimization.', btnText: 'Upgrade Extraction & RRR ($800M)', action: () => `window.OmegaCabinetUI.executeResource16Point('p05', 'drill_oil')`, border: '#f59e0b' },
+            { num: '06', id: 'p06', tag: 'MIDSTREAM', icon: '⚙️', title: 'Processing, Smelting & Refining', bn: 'পরিশোধন, ধাতু নিষ্কাশন ও রূপান্তর শিল্প', desc: 'Fluid catalytic cracking, blast furnaces, electro-winning (SX-EW), and uranium centrifuges.', btnText: 'Commission Smelter Complex ($1.2B)', action: () => `window.OmegaCabinetUI.executeResource16Point('p06', 'build_factory')`, border: '#a855f7' },
+            { num: '07', id: 'p07', tag: 'MIDSTREAM', icon: '🛢️', title: 'Strategic Petroleum Reserve (SPR)', bn: 'কৌশলগত তেল ও তরল গ্যাস মজুদাগার', desc: '90-day SPR national buffer, salt cavern storages, cryogenic LNG tanks, and grain silos.', btnText: 'Drawdown / Expand SPR Silos', action: () => `window.ResourceMinistryEngine.openModal('${normKey}', 'inventory')`, border: '#d97706' },
+            { num: '08', id: 'p08', tag: 'MIDSTREAM', icon: '🚢', title: 'Multimodal Transit Corridors', bn: 'পাইপলাইন, সমুদ্রবন্দর ও মাল্টিমোডাল পরিবহন', desc: 'Pipelines, maritime supertanker lanes, deepwater bulk berths, and rail freight networks.', btnText: 'Inspect Logistics Corridors', action: () => `window.ResourceMinistryEngine.openModal('${normKey}', 'logistics')`, border: '#06b6d4' },
+            { num: '09', id: 'p09', tag: 'DOWNSTREAM', icon: '🏭', title: 'Industrial Value Chain (DAG)', bn: 'শিল্প উৎপাদনের ডাইরেক্টেড গ্রাফ (DAG)', desc: 'Multi-stage transformation from raw ore into semiconductors, titanium airframes, and munitions.', btnText: 'Inspect Industrial Value Chains', action: () => `window.ResourceMinistryEngine.openModal('${normKey}', 'industrial')`, border: '#8b5cf6' },
+            { num: '10', id: 'p10', tag: 'DOWNSTREAM', icon: '📈', title: 'Commodity Spot Market & Clearing', bn: 'স্পট মার্কেট ও গ্লোবাল ট্রেডিং ডেস্ক', desc: 'Continuous clearing, order book matching, Brent/WTI arbitrage, and derivative hedging.', btnText: 'Open Commodity Trading Desk', action: () => `window.ResourceMinistryEngine.openModal('${normKey}', 'market')`, border: '#10b981' },
+            { num: '11', id: 'p11', tag: 'DOWNSTREAM', icon: '📜', title: 'Bilateral Supply Contracts & Tariffs', bn: 'দ্বিপাক্ষিক সরবরাহ চুক্তি ও বৈদেশিক শুল্ক', desc: 'Long-term bilateral offtake agreements, Letters of Credit, import/export tariffs, and sanctions.', btnText: 'Negotiate Supply Agreements', action: () => `window.ResourceMinistryEngine.openModal('${normKey}', 'trade')`, border: '#14b8a6' },
+            { num: '12', id: 'p12', tag: 'STRATEGY', icon: '💰', title: 'Economic Rent & Sovereign Wealth (SWF)', bn: 'অর্থনৈতিক রেন্ট ও সার্বভৌম তহবিল (SWF)', desc: 'Resource rent capture, Sovereign Wealth Fund capitalization, and Dutch Disease mitigation.', btnText: 'Capitalize National SWF', action: () => `window.ResourceMinistryEngine.openModal('${normKey}', 'value')`, border: '#fbbf24' },
+            { num: '13', id: 'p13', tag: 'STRATEGY', icon: '⚠️', title: 'Cascade Disruption Sandbox', bn: 'মাল্টি-টিয়ার সাপ্লাই চেইন ক্যাস্কেড সিমুলেটর', desc: 'Non-linear supply shock propagation, chokepoint blockades, and contingency war-gaming.', btnText: 'Launch Cascade Disruption Sandbox', action: () => `window.ResourceMinistryEngine.openModal('${normKey}', 'cascade')`, border: '#ef4444' },
+            { num: '14', id: 'p14', tag: 'STRATEGY', icon: '🧠', title: 'Cognitive Situation & 12-Question Gate', bn: 'কগনিটিভ এআই পরিস্থিতি ও ১২-প্রশ্ন গেট', desc: 'Red-Team counterfactual critics, 10-dimensional health evaluations, and AI briefing generation.', btnText: 'Run AI Cognitive Decision Gate', action: () => `window.ResourceMinistryEngine.openModal('${normKey}', 'profile')`, border: '#ec4899' },
+            { num: '15', id: 'p15', tag: 'MIDSTREAM', icon: '⚡', title: 'Power Grid & 2.4GW Baseload Mix', bn: 'জাতীয় বিদ্যুৎ গ্রিড ও বেসলোড সমন্বয়', desc: '2,400MW nuclear baseload, combined-cycle gas peakers, offshore wind, and black-start capability.', btnText: 'Build 2.4GW Nuclear Baseload ($2.0B)', action: () => `window.OmegaCabinetUI.executeResource16Point('p15', 'build_nuclear')`, border: '#0284c7' },
+            { num: '16', id: 'p16', tag: 'STRATEGY', icon: '🌱', title: 'Carbon Quotas & Circular Remediation', bn: 'কার্বন নির্গমন সীমা ও বৃত্তাকার অর্থনীতি', desc: 'Tailings reprocessing, emissions cap-and-trade, industrial water recycling, and green transition.', btnText: 'Deploy Green Infrastructure ($600M)', action: () => `window.OmegaCabinetUI.executeResource16Point('p16', 'build_solar')`, border: '#22c55e' }
+        ];
+
+        const activeFilter = this.res16Filter || 'ALL';
+        const filtered = points.filter(p => {
+            if (activeFilter === 'ALL') return true;
+            if (activeFilter === 'FOUNDATION' && (p.tag === 'FOUNDATION')) return true;
+            if (activeFilter === 'UPSTREAM' && p.tag === 'UPSTREAM') return true;
+            if (activeFilter === 'MIDSTREAM' && p.tag === 'MIDSTREAM') return true;
+            if (activeFilter === 'DOWNSTREAM' && p.tag === 'DOWNSTREAM') return true;
+            if (activeFilter === 'STRATEGY' && (p.tag === 'STRATEGY' || p.tag === 'FOUNDATION')) return true;
+            return false;
+        });
+
+        let cardsHtml = "";
+        filtered.forEach(pt => {
+            cardsHtml += `
+                <div class="dept-card" style="border-color:${pt.border}; background:rgba(2, 11, 20, 0.85); display:flex; flex-direction:column; justify-content:space-between; padding:12px; border-radius:10px; border-width:1.5px; box-shadow:0 0 12px rgba(0,0,0,0.5);">
+                    <div>
+                        <div class="dept-card-header" style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px;">
+                            <span class="dept-card-title" style="font-size:13px; font-weight:700; color:#f8fafc; display:flex; align-items:center; gap:6px;">
+                                <span style="font-size:16px;">${pt.icon}</span>
+                                <span>${pt.num}. ${pt.title}</span>
+                            </span>
+                            <span style="font-size:9px; font-weight:800; color:${pt.border}; background:rgba(255,255,255,0.06); padding:2px 6px; border-radius:4px; font-family:'Share Tech Mono',monospace;">${pt.tag}</span>
+                        </div>
+                        <div style="font-size:10px; color:#38bdf8; font-weight:600; margin-bottom:4px;">${pt.bn}</div>
+                        <div style="font-size:11px; color:#94a3b8; line-height:1.4; margin-bottom:10px;">
+                            ${pt.desc}
+                        </div>
+                    </div>
+                    <button class="dept-action-btn" onclick="${pt.action()};" style="background:linear-gradient(135deg, ${pt.border} 0%, rgba(15,23,42,0.95) 100%); color:#fff; font-size:11px; font-weight:700; border:1px solid ${pt.border}; padding:7px 10px; border-radius:6px; cursor:pointer; width:100%; text-align:center; transition:all 0.15s;" onmouseover="this.style.opacity='0.9';" onmouseout="this.style.opacity='1';">
+                        ${pt.btnText}
+                    </button>
+                </div>
+            `;
+        });
+        return cardsHtml;
+    },
+
+    executeResource16Point(pointKey, directiveType) {
+        this.executeResourceDirective(directiveType);
+        if (window.OmegaCognitiveOS && typeof window.OmegaCognitiveOS.learnFromExecution === 'function') {
+            window.OmegaCognitiveOS.learnFromExecution({ success: true, impactDelta: 2.5, notes: `Point ${pointKey} executed directly from Resource Command Center.` }, pointKey);
+        }
+    },
+
+    initLiveResourceGraph(subType) {
+        const canvas = document.getElementById('resource-live-canvas');
+        if (!canvas) return;
+
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        const rect = canvas.getBoundingClientRect();
+        canvas.width = rect.width || 800;
+        canvas.height = rect.height || 220;
+
+        if (!window._resourceGraphHistory || window._resourceGraphHistoryType !== subType) {
+            window._resourceGraphHistoryType = subType;
+            window._resourceGraphHistory = [];
+            const baseVal = subType === 'power_grid' ? 14.8 : (subType === 'oil_yield' ? 500 : (subType === 'steel_refinery' ? 320 : 85));
+            for (let i = 0; i < 25; i++) {
+                const noise = (Math.random() - 0.48) * (baseVal * 0.08);
+                window._resourceGraphHistory.push(Number((baseVal + noise).toFixed(2)));
+            }
+        }
+
+        const renderFrame = () => {
+            const width = canvas.width;
+            const height = canvas.height;
+            ctx.clearRect(0, 0, width, height);
+
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
+            ctx.lineWidth = 1;
+            for (let x = 0; x < width; x += 40) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, height);
+                ctx.stroke();
+            }
+            for (let y = 0; y < height; y += 35) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+                ctx.stroke();
+            }
+
+            const data = window._resourceGraphHistory;
+            if (!data || data.length < 2) return;
+
+            const maxVal = Math.max(...data) * 1.15 || 100;
+            const minVal = Math.min(...data) * 0.85 || 0;
+            const range = (maxVal - minVal) || 1;
+
+            const getX = (i) => (i / (data.length - 1)) * (width - 40) + 20;
+            const getY = (val) => height - 30 - ((val - minVal) / range) * (height - 60);
+
+            let strokeColor = '#00e5ff';
+            let fillColor = 'rgba(0, 229, 255, 0.15)';
+            if (subType === 'oil_yield') { strokeColor = '#eab308'; fillColor = 'rgba(234, 179, 8, 0.15)'; }
+            else if (subType === 'steel_refinery') { strokeColor = '#a855f7'; fillColor = 'rgba(168, 85, 247, 0.15)'; }
+            else if (subType === 'nuclear_rare') { strokeColor = '#22c55e'; fillColor = 'rgba(34, 197, 94, 0.15)'; }
+
+            ctx.beginPath();
+            ctx.moveTo(getX(0), height - 20);
+            for (let i = 0; i < data.length; i++) {
+                ctx.lineTo(getX(i), getY(data[i]));
+            }
+            ctx.lineTo(getX(data.length - 1), height - 20);
+            ctx.closePath();
+            ctx.fillStyle = fillColor;
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.strokeStyle = strokeColor;
+            ctx.lineWidth = 3;
+            for (let i = 0; i < data.length; i++) {
+                if (i === 0) ctx.moveTo(getX(i), getY(data[i]));
+                else ctx.lineTo(getX(i), getY(data[i]));
+            }
+            ctx.stroke();
+
+            for (let i = 0; i < data.length; i++) {
+                const x = getX(i);
+                const y = getY(data[i]);
+                ctx.beginPath();
+                ctx.arc(x, y, i === data.length - 1 ? 5 : 3, 0, Math.PI * 2);
+                ctx.fillStyle = i === data.length - 1 ? '#ffffff' : strokeColor;
+                ctx.fill();
+                if (i === data.length - 1) {
+                    ctx.strokeStyle = strokeColor;
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+            }
+
+            const lastVal = data[data.length - 1];
+            ctx.font = 'bold 12px "Share Tech Mono", monospace';
+            ctx.fillStyle = strokeColor;
+            ctx.textAlign = 'right';
+            let unitStr = subType === 'power_grid' ? ' GW' : (subType === 'oil_yield' ? ' BBL/s' : (subType === 'steel_refinery' ? ' T/s' : ' %'));
+            ctx.fillText(`CURRENT: ${lastVal}${unitStr}`, width - 20, 25);
+        };
+
+        renderFrame();
+
+        if (window._resourceChartTimer) clearInterval(window._resourceChartTimer);
+        window._resourceChartTimer = setInterval(() => {
+            if (!document.getElementById('resource-live-canvas')) {
+                clearInterval(window._resourceChartTimer);
+                return;
+            }
+            const data = window._resourceGraphHistory;
+            if (!data) return;
+            const last = data[data.length - 1];
+            const delta = (Math.random() - 0.47) * (last * 0.035);
+            const nextVal = Number(Math.max(1, last + delta).toFixed(2));
+            data.shift();
+            data.push(nextVal);
+            renderFrame();
+        }, 3000);
+    },
+
+    executeResourceDirective(directiveType) {
+        const countryKey = (this.activeCountry || 'BANGLADESH').toUpperCase().replace(/[-\s]/g, '_');
+
+        if (window.ResourceMinistryEngine && typeof window.ResourceMinistryEngine.executeDirective === 'function') {
+            window.ResourceMinistryEngine.executeDirective(directiveType, countryKey);
+        } else {
+            if (directiveType === 'drill_oil') {
+                if (window.showOmegaNotification) window.showOmegaNotification("OFFSHORE OIL RIG DIRECTIVE", "🛢️ Offshore Crude Exploration directive logged in sovereign reserve ledger.", "success");
+            } else if (directiveType === 'build_nuclear') {
+                if (window.showOmegaNotification) window.showOmegaNotification("NUCLEAR REACTOR DIRECTIVE", "⚛️ Baseload Nuclear Capacity expansion directive issued.", "success");
+            } else if (directiveType === 'expand_mining') {
+                if (window.showOmegaNotification) window.showOmegaNotification("MINING EXPANSION DIRECTIVE", "⛏️ Strategic Mineral Concession operationalized.", "success");
+            } else if (directiveType === 'build_solar') {
+                if (window.showOmegaNotification) window.showOmegaNotification("RENEWABLE ENERGY DIRECTIVE", "☀️ Coastal Wind and Solar Infrastructure commissioned.", "success");
+            }
+        }
+
+        if (window._resourceGraphHistory) {
+            const last = window._resourceGraphHistory[window._resourceGraphHistory.length - 1];
+            window._resourceGraphHistory[window._resourceGraphHistory.length - 1] = Number((last * 1.05).toFixed(2));
+        }
+
+        const m = this.ministriesDatabase['energy_mining'] || this.ministriesDatabase['resource'];
+        const contentArea = document.getElementById('ministry-dashboard-content');
+        if (m && contentArea) {
+            this.renderResourceMinistryDashboard(m, contentArea);
+        }
+    },
+
+    openInterrogationModal(ministerId) {
+        const m = this.ministriesDatabase[ministerId];
+        if (!m) return;
+
+        this.currentInterrogatedMinister = m;
+
+        const modal = document.getElementById('minister-interrogation-modal');
+        const title = document.getElementById('interrogation-title');
+        const avatar = document.getElementById('interrogation-avatar');
+        const name = document.getElementById('interrogation-name');
+        const role = document.getElementById('interrogation-role');
+        const trust = document.getElementById('interrogation-trust');
+        const reliability = document.getElementById('interrogation-reliability');
+        const loyalty = document.getElementById('interrogation-loyalty');
+        const stress = document.getElementById('interrogation-stress');
+        const thoughtBox = document.getElementById('interrogation-thought-box');
+        const quickQContainer = document.getElementById('interrogation-quick-questions');
+        const chatHistory = document.getElementById('interrogation-chat-history');
+
+        if (title) title.innerText = `${m.title.toUpperCase()} - MINISTER INTERROGATION HUB`;
+        if (avatar) avatar.innerText = m.avatar;
+        if (name) name.innerText = m.ministerName;
+        if (role) role.innerText = m.role;
+        if (trust) trust.innerText = `${m.trust}/100`;
+        if (reliability) reliability.innerText = `${m.efficiency}%`;
+        if (loyalty) loyalty.innerText = m.loyalty;
+        if (stress) stress.innerText = `LOW (${m.stress}%)`;
+
+        if (thoughtBox) {
+            let cogThought = `💬 "${m.speechQuote}"`;
+            if (window.OmegaMinistry && window.OmegaMinistry._part4 && window.OmegaMinistry._part4.NaturalLanguageGenerationEngine) {
+                try {
+                    const nlg = new window.OmegaMinistry._part4.NaturalLanguageGenerationEngine();
+                    cogThought = nlg.generateSemanticText({ domain: m.id, efficiency: m.efficiency }, "BRIEFING");
+                } catch(e){}
+            }
+            thoughtBox.innerText = cogThought;
+        }
+
+        if (quickQContainer) {
+            let qHtml = "";
+            m.presetQuestions.forEach(q => {
+                qHtml += `
+                    <button onclick="window.OmegaCabinetUI.askPresetQuestion('${m.id}', '${q.id}');" style="padding:6px 10px; background:rgba(0,229,255,0.12); border:1px solid rgba(0,229,255,0.4); color:#00e5ff; font-size:11px; border-radius:4px; cursor:pointer; text-align:left; font-family:var(--font-mono); transition:all 0.15s;" onmouseover="this.style.background='rgba(0,229,255,0.25)';" onmouseout="this.style.background='rgba(0,229,255,0.12)';">
+                        ❓ ${q.text}
+                    </button>
+                `;
+            });
+            quickQContainer.innerHTML = qHtml;
+        }
+
+        if (chatHistory) {
+            if (!this.chatHistories[m.id]) {
+                this.chatHistories[m.id] = [
+                    { sender: 'MINISTER', text: `Greetings Executive Commander. I am ${m.ministerName}. Ask me any strategic question regarding ${m.title}.` }
+                ];
+            }
+            this.renderChatHistory(m.id);
+        }
+
+        const btnSubmit = document.getElementById('btn-submit-interrogation');
+        const inputField = document.getElementById('interrogation-input');
+
+        if (btnSubmit && inputField) {
+            btnSubmit.onclick = () => {
+                const qText = inputField.value.trim();
+                if (qText) {
+                    this.askCustomQuestion(m.id, qText);
+                    inputField.value = "";
+                }
+            };
+            inputField.onkeydown = (e) => {
+                if (e.key === 'Enter') {
+                    const qText = inputField.value.trim();
+                    if (qText) {
+                        this.askCustomQuestion(m.id, qText);
+                        inputField.value = "";
+                    }
+                }
+            };
+        }
+
+        if (modal) modal.style.display = 'flex';
+    },
+
+    renderChatHistory(ministerId) {
+        const history = this.chatHistories[ministerId] || [];
+        const container = document.getElementById('interrogation-chat-history');
+        if (!container) return;
+
+        let html = `<div style="font-size:10px; color:#64748b; font-family:var(--font-mono); text-align:center; margin-bottom:8px;">--- LIVE INTERROGATION LOG (${this.activeCountry}) ---</div>`;
+
+        history.forEach(item => {
+            if (item.sender === 'USER') {
+                html += `
+                    <div style="align-self:flex-end; background:rgba(0,229,255,0.2); border:1px solid #00e5ff; color:#fff; padding:8px 12px; border-radius:8px 8px 0 8px; max-width:80%; font-family:var(--font-mono); font-size:12px; margin-left:auto;">
+                        <div style="font-size:10px; color:#00e5ff; font-weight:bold; margin-bottom:2px;">EXECUTIVE COMMANDER (You):</div>
+                        <div>${item.text}</div>
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div style="align-self:flex-start; background:rgba(15,23,42,0.9); border:1px solid rgba(255,215,0,0.4); color:#f8fafc; padding:8px 12px; border-radius:8px 8px 8px 0; max-width:85%; font-family:var(--font-mono); font-size:12px; margin-right:auto;">
+                        <div style="font-size:10px; color:#ffd700; font-weight:bold; margin-bottom:2px; display:flex; justify-content:space-between;">
+                            <span>${item.senderName || 'MINISTER'}:</span>
+                            <span style="font-size:9px; color:#38bdf8; letter-spacing:0.5px;">${item.aiPowered ? '🧠 GEMINI SOVEREIGN REASONING' : '⚡ COGNITIVE ONTOLOGY AUDIT'}</span>
+                        </div>
+                        <div style="line-height:1.4;">${item.text}</div>
+                        ${item.analysis ? `<div style="margin-top:6px; padding-top:4px; border-top:1px dashed rgba(255,255,255,0.1); font-size:10px; color:#00e5ff;">📊 Impact: ${item.analysis}</div>` : ''}
+                    </div>
+                `;
+            }
+        });
+
+        container.innerHTML = html;
+        container.scrollTop = container.scrollHeight;
+    },
+
+    askPresetQuestion(ministerId, questionId) {
+        const m = this.ministriesDatabase[ministerId];
+        if (!m) return;
+
+        const qObj = m.presetQuestions.find(q => q.id === questionId);
+        if (!qObj) return;
+
+        this.processQuestionAndReply(m, qObj.text);
+    },
+
+    askCustomQuestion(ministerId, questionText) {
+        const m = this.ministriesDatabase[ministerId];
+        if (!m) return;
+
+        this.processQuestionAndReply(m, questionText);
+    },
+
+    processQuestionAndReply(minister, questionText) {
+        if (!this.chatHistories[minister.id]) this.chatHistories[minister.id] = [];
+
+        const countryKey = this.activeCountry || "BANGLADESH";
+        const cDetails = this.getCountryDetails(countryKey);
+
+        // Dynamically resolution for localized minister name and role
+        const mName = (minister && (minister.ministerName || minister.name)) || (cDetails.ministers && cDetails.ministers[minister.id] && cDetails.ministers[minister.id].name) || 'Honorable Minister';
+        const mRole = (minister && minister.role) || (cDetails.ministers && cDetails.ministers[minister.id] && cDetails.ministers[minister.id].role) || 'Cabinet Minister';
+
+        this.chatHistories[minister.id].push({
+            sender: 'USER',
+            text: questionText
+        });
+
+        this.renderChatHistory(minister.id);
+
+        const isBengali = /[\u0980-\u09FF]/.test(questionText);
+
+        // Show thinking indicator
+        const thinkingItem = {
+            sender: 'MINISTER',
+            senderName: mName,
+            text: isBengali ? 'কগনিটিভ এআই বিশ্লেষণ ও নীতি মূল্যায়ন প্রক্রিয়াধীন...' : 'Synthesizing sovereign policy analysis...',
+            analysis: isBengali ? 'এআই আর (AI Resource & Cognitive Link Active)' : 'AIR Sovereign Neural Link Active',
+            isThinking: true
+        };
+        this.chatHistories[minister.id].push(thinkingItem);
+        this.renderChatHistory(minister.id);
+
+        const executeReply = async () => {
+            let replyText = "";
+            let impactAnalysis = "";
+            let isAiPowered = false;
+
+            if (window.OmegaCognitiveOS && typeof window.OmegaCognitiveOS.askMinisterWithAI === 'function') {
+                try {
+                    const cogRes = await window.OmegaCognitiveOS.askMinisterWithAI(questionText, minister, countryKey, cDetails);
+                    if (cogRes && cogRes.text) {
+                        replyText = cogRes.text;
+                        isAiPowered = !!cogRes.aiPowered;
+                        impactAnalysis = cogRes.impact || (isBengali
+                            ? `কগনিটিভ এআই ইন্টেলিজেন্স • কার্যক্ষমতা: ${minister.efficiency}% • সার্বভৌম স্থায়িত্ব: ${cDetails.stability || '৮৯%'}`
+                            : `Cognitive AI Synthesis • Efficiency: ${minister.efficiency}% • Sovereign Stability: ${cDetails.stability || '89%'}`);
+                    }
+                } catch (e) {
+                    console.warn("[OmegaCognitiveOS] Fallback to cognitive generator:", e);
+                }
+            } else if (window.OmegaCognitiveOS && typeof window.OmegaCognitiveOS.thinkMinisterQuestion === 'function') {
+                try {
+                    const cogRes = window.OmegaCognitiveOS.thinkMinisterQuestion(questionText, minister, countryKey, cDetails);
+                    if (cogRes && cogRes.text) {
+                        replyText = cogRes.text;
+                        impactAnalysis = cogRes.impact || `Cognitive Confidence: 94.2% • Efficiency: ${minister.efficiency}% • Sovereign Stability: ${cDetails.stability || '88%'}`;
+                    }
+                } catch (e) {
+                    console.warn("[OmegaCognitiveOS] Fallback error:", e);
+                }
+            }
+
+
+
+            // Remove thinking item and append final reply
+            const history = this.chatHistories[minister.id];
+            const lastIdx = history.findIndex(h => h.isThinking);
+            if (lastIdx !== -1) {
+                history.splice(lastIdx, 1);
+            }
+
+            history.push({
+                sender: 'MINISTER',
+                senderName: mName,
+                text: replyText,
+                analysis: impactAnalysis,
+                aiPowered: isAiPowered
+            });
+
+            this.renderChatHistory(minister.id);
+        };
+
+        executeReply();
+    },
+
+
+    executeDirective(ministerId, directiveType) {
+        const m = this.ministriesDatabase[ministerId];
+        if (!m) return;
+
+        if (directiveType === 'budget') {
+            if (window.resources && window.resources.cash !== undefined) {
+                window.resources.cash += 10000000000;
+            }
+            m.efficiency = Math.min(100, m.efficiency + 3);
+            m.trust = Math.min(100, m.trust + 2);
+            window.showOmegaNotification("TREASURY ALLOCATION", `💵 $10 Billion Allocated to ${m.title}! Department Efficiency increased to ${m.efficiency}%.`, "success");
+            this.renderCabinet(this.activeCountry);
+        } else if (directiveType === 'policy') {
+            m.efficiency = Math.min(100, m.efficiency + 2);
+            window.showOmegaNotification("EXECUTIVE ALIGNMENT", `⚡ Executive Directive Issued to ${m.ministerName} (${m.role})! Operational alignment updated.`, "info");
+            this.renderCabinet(this.activeCountry);
+        }
+    }
+};
+
+/* ============================================================================
+ * UNIFIED COGNITIVE ENGINE, ORIENTATION SYSTEM & LIVING GOVERNMENT ALIAS BRIDGES
+ * ============================================================================ */
+window.Omega = window.Omega || {};
+
+class OrientationManager {
+    constructor() {
+        this.mode = window.innerWidth > window.innerHeight ? "landscape" : "portrait";
+        this.locked = false;
+        this.gestureLockArmed = false;
+        this.listenersAttached = false;
+    }
+
+    isNativeAndroid() {
+        try {
+            return window.OMEGA_ANDROID_APP === true
+                || Boolean(window.OmegaAndroid && typeof window.OmegaAndroid.isAndroidApp === "function"
+                    && window.OmegaAndroid.isAndroidApp());
+        } catch (_) {
+            return window.OMEGA_ANDROID_APP === true;
+        }
+    }
+
+    isStandalone() {
+        try {
+            return Boolean(
+                (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches)
+                || window.navigator.standalone === true
+            );
+        } catch (_) {
+            return false;
+        }
+    }
+
+    isTouchDevice() {
+        return (window.matchMedia && window.matchMedia("(pointer: coarse)").matches)
+            || (window.navigator && window.navigator.maxTouchPoints > 0);
+    }
+
+    async initialize() {
+        this.detect();
+        this.listen();
+
+        // Android's native Activity owns orientation through AndroidManifest.xml.
+        // Avoid browser fullscreen/orientation requests during initial page load.
+        if (this.isNativeAndroid()) {
+            this.hideRotateMessage();
+            return;
+        }
+
+        const locked = await this.tryLockLandscape(false);
+        if (!locked && this.mode === "portrait" && this.isTouchDevice()) {
+            this.armGestureLock();
+        }
+
+        // A failed browser API request must never cover the game with a rotate prompt.
+        this.hideRotateMessage();
+    }
+
+    detect() {
+        this.mode = window.innerWidth > window.innerHeight ? "landscape" : "portrait";
+        this.hideRotateMessage();
+    }
+
+    async tryLockLandscape(fromUserGesture = false) {
+        try {
+            if (this.isNativeAndroid()) {
+                this.hideRotateMessage();
+                return true;
+            }
+
+            if (typeof screen === "undefined"
+                || !screen.orientation
+                || typeof screen.orientation.lock !== "function") {
+                return false;
+            }
+
+            const standalone = this.isStandalone();
+            if (!fromUserGesture && !document.fullscreenElement && !standalone) {
+                return false;
+            }
+
+            if (fromUserGesture && !document.fullscreenElement && !standalone
+                && document.documentElement.requestFullscreen) {
+                await document.documentElement.requestFullscreen();
+            }
+
+            await screen.orientation.lock("landscape");
+            this.locked = true;
+            this.detect();
+            return true;
+        } catch (_) {
+            // Browsers may require a user gesture, fullscreen, or may not support locking.
+            // Keep gameplay available instead of asking the player to rotate manually.
+            this.detect();
+            return false;
+        }
+    }
+
+    armGestureLock() {
+        if (this.gestureLockArmed) return;
+        this.gestureLockArmed = true;
+
+        const attempt = () => {
+            if (!this.gestureLockArmed) return;
+            this.gestureLockArmed = false;
+            window.removeEventListener("pointerdown", attempt, true);
+            window.removeEventListener("touchstart", attempt, true);
+            window.removeEventListener("keydown", attempt, true);
+
+            this.tryLockLandscape(true).finally(() => {
+                this.detect();
+                this.hideRotateMessage();
+            });
+        };
+
+        // Browser orientation locking needs user activation. Use the player's first
+        // interaction to request fullscreen/landscape, without an extra confirmation.
+        window.addEventListener("pointerdown", attempt, { once: true, passive: true, capture: true });
+        window.addEventListener("touchstart", attempt, { once: true, passive: true, capture: true });
+        window.addEventListener("keydown", attempt, { once: true, capture: true });
+    }
+
+    listen() {
+        if (this.listenersAttached) return;
+        this.listenersAttached = true;
+
+        const refresh = () => this.detect();
+        window.addEventListener("resize", refresh);
+        window.addEventListener("orientationchange", () => setTimeout(refresh, 100));
+        document.addEventListener("fullscreenchange", refresh);
+    }
+
+    showRotateMessage() {
+        // Legacy compatibility only: the game must not be blocked by a manual-rotate overlay.
+        this.hideRotateMessage();
+    }
+
+    hideRotateMessage() {
+        const box = document.getElementById("rotate-warning");
+        if (box) box.style.display = "none";
+    }
+}
+window.Omega.OrientationManager = new OrientationManager();
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    window.Omega.OrientationManager.initialize();
+} else {
+    document.addEventListener('DOMContentLoaded', () => {
+        window.Omega.OrientationManager.initialize();
+    });
+}
+
+window.OmegaCognitiveEngine = window.OmegaCognitiveEngine || window.OmegaMinistry;
+window.OmegaCognitiveRuntime = window.OmegaMinistry;
+
+// Auto-load ministers.json on boot to ensure 100% data availability
+(async function initMinisters() {
+    try {
+        if (!window.OmegaMinistersDB) {
+            const fetcher = window.fetchResilient || (async (f) => {
+                const res = await fetch(f + '?v=' + Date.now());
+                return res.ok ? await res.json() : null;
+            });
+            const data = await fetcher('ministers.json');
+            if (data && data.ministers_database) {
+                window.OmegaCabinetUI.syncMinistersDatabase(data.ministers_database);
+            }
+        }
+    } catch (e) {
+        console.warn("[OmegaCabinetUI] Auto-fetch ministers.json:", e);
+    }
+})();
+
+console.log("[OMEGA UNIFIED ENGINE] Cognitive Engine, Orientation System & Ministry Engine 100% Unified in ministry_engine.js!");
+
+
+ + (Number(num) / 1000000).toFixed(1) + 'M';
+        };
 
         let html = `
             <!-- AAA HERO HEADER -->
