@@ -7,6 +7,8 @@ const registry = readJson('country_general_data_registry_v1.json');
 const roster = readJson('countries.json');
 const rawFinancial = readJson('economy_raw_financial_data_v2.json');
 const profilesSource = readJson('economy_global_profiles_v1.json').countries;
+const relationSource = readJson('relation_generation_engine.json').RELATION_GENERATION_ENGINE;
+const resourceSiteSource = readJson('resource_site_reserve_simulation_v1.json');
 const rawRows = rawFinancial.countries || [];
 const schema = registry.metadata.recordSchema;
 const rawFields = registry.metadata.rawFinancialFieldNames;
@@ -124,6 +126,100 @@ test('missing values stay unknown, not zero, and resource sub-schema is consiste
     assert.equal(row.publicSafety[2].length, schema.crimeFields.length);
     assert.equal(row.publicSafety[3].length, schema.crimeFields.length);
     assert.equal(row.publicSafety[4].length, schema.crimeFields.length);
+  }
+});
+
+test('every canonical identity has a source-aware strategic profile inside the existing registry', () => {
+  const profileFields = schema.strategicProfileFields;
+  assert.ok(Array.isArray(profileFields) && profileFields.length >= 10);
+  assert.deepEqual(profileFields, [
+    'profileVersion', 'sovereigntyScope', 'executiveSummary', 'archetype', 'archetypeSource',
+    'diplomacy', 'economy', 'military', 'politics', 'dependencies',
+    'overallStrengths', 'overallWeaknesses', 'playerAdvantages', 'playerChallenges',
+    'recommendedStrategy', 'dataQuality'
+  ]);
+  assert.equal(registry.metadata.localCoverage.strategicProfiles, roster.length);
+  assert.equal(registry.metadata.localCoverage.relationProfileRecords,
+    Object.keys(relationSource.srie_v2_asymmetrical_salience || {}).length);
+  const canonicalIso3 = new Set(roster.map((row) => String(row.iso3).toUpperCase()));
+  const expectedCommercialSiteCount = (resourceSiteSource.records || []).filter((site) =>
+    site.commercialExtraction === true && canonicalIso3.has(String(site.countryId || '').toUpperCase())).length;
+  assert.equal(registry.metadata.localCoverage.commercialGameplayResourceSiteRecords, expectedCommercialSiteCount);
+
+  const statusCounts = {
+    COUNTRY_SPECIFIC_PARAMETERS: 0,
+    GENERIC_DEFAULT_PARAMETERS: 0,
+    LEGACY_CONTEXT_ONLY: 0,
+    NO_LEGACY_RELATION_PROFILE: 0
+  };
+  for (const row of registry.countries) {
+    assert.equal(row.strategicProfile.length, profileFields.length);
+    const profile = Object.fromEntries(profileFields.map((field, index) => [field, row.strategicProfile[index]]));
+    assert.equal(profile.profileVersion, 'OMEGA_COUNTRY_STRATEGIC_PROFILE_V1');
+    assert.ok(typeof profile.executiveSummary === 'string' && profile.executiveSummary.length > 20);
+    assert.ok(typeof profile.archetype === 'string' && profile.archetype.length > 2);
+    assert.ok(Array.isArray(profile.overallStrengths) && profile.overallStrengths.length > 0);
+    assert.ok(Array.isArray(profile.overallWeaknesses) && profile.overallWeaknesses.length > 0);
+    assert.ok(Array.isArray(profile.playerAdvantages) && profile.playerAdvantages.length > 0);
+    assert.ok(Array.isArray(profile.playerChallenges) && profile.playerChallenges.length > 0);
+    assert.ok(typeof profile.recommendedStrategy === 'string' && profile.recommendedStrategy.length > 20);
+    assert.ok(profile.diplomacy && profile.economy && profile.military && profile.politics && profile.dependencies);
+    assert.equal(profile.military.capabilityStatus, 'OPERATIONAL_CAPABILITY_NOT_MEASURED_BY_GENERAL_REGISTRY');
+    assert.equal(profile.politics.politicalSystemClassification, 'NOT_CLASSIFIED_FROM_AVAILABLE_DATA');
+    assert.ok(profile.dataQuality.evidenceMetricYears);
+    assert.ok(profile.dataQuality.evidenceMetrics);
+    assert.ok(Array.isArray(profile.dataQuality.sourceFiles));
+    assert.equal(profile.economy.gameplayResourceAssets.authority, 'SCENARIO_SIMULATION_DATA');
+    assert.equal(profile.economy.gameplayResourceAssets.reserveValuesUsedAsNationalEconomicFacts, false);
+    assert.ok(Object.hasOwn(statusCounts, profile.dataQuality.relationProfileStatus));
+    statusCounts[profile.dataQuality.relationProfileStatus] += 1;
+    if (profile.dataQuality.relationProfileStatus === 'GENERIC_DEFAULT_PARAMETERS') {
+      assert.deepEqual(profile.diplomacy.parameters, {});
+      assert.equal(profile.diplomacy.strategicDriver, null);
+    }
+    const percentileValues = [
+      profile.economy.scores.economicScalePercentile,
+      profile.economy.scores.foreignExchangeReservePercentile,
+      profile.economy.scores.economicInfluencePercentile,
+      profile.politics.governanceQualityPercentile,
+      profile.military.financialBasePercentile,
+      profile.military.expenditureSharePercentile,
+      profile.military.populationScalePercentile
+    ];
+    for (const value of percentileValues) {
+      assert.equal(value === null || (Number.isFinite(value) && value >= 0 && value <= 100), true);
+    }
+    assert.equal(Object.hasOwn(profile.military, 'militaryStrengthScore'), false);
+  }
+  assert.equal(Object.values(statusCounts).reduce((sum, value) => sum + value, 0), roster.length);
+  assert.equal(statusCounts.GENERIC_DEFAULT_PARAMETERS,
+    registry.metadata.localCoverage.genericDefaultRelationProfiles);
+  assert.equal(statusCounts.COUNTRY_SPECIFIC_PARAMETERS,
+    registry.metadata.localCoverage.countrySpecificRelationParameterProfiles);
+});
+
+test('the preferred WGI series and documented fallback identifiers are part of the existing source collector', () => {
+  const expected = {
+    ruleOfLawWgiEstimate: ['GOV_WGI_RL_EST', 'RL.EST'],
+    controlOfCorruptionWgiEstimate: ['GOV_WGI_CC_EST', 'CC.EST'],
+    politicalStabilityWgiEstimate: ['GOV_WGI_PV_EST', 'PV.EST'],
+    governmentEffectivenessWgiEstimate: ['GOV_WGI_GE_EST', 'GE.EST'],
+    regulatoryQualityWgiEstimate: ['GOV_WGI_RQ_EST', 'RQ.EST'],
+    voiceAccountabilityWgiEstimate: ['GOV_WGI_VA_EST', 'VA.EST']
+  };
+  for (const [key, [preferred, fallback]] of Object.entries(expected)) {
+    const field = registry.fieldCatalogue.find((row) => row.key === key);
+    assert.ok(field, 'Missing governance field ' + key);
+    assert.equal(field.wb, preferred);
+    assert.deepEqual(field.wbFallbacks, [fallback]);
+  }
+  if (registry.metadata.externalRefresh.requested) {
+    const diagnostics = registry.metadata.externalRefresh.governanceIndicatorRefresh;
+    assert.ok(diagnostics, 'A refresh must preserve WGI source-series diagnostics.');
+    for (const key of Object.keys(expected)) {
+      assert.ok(diagnostics[key], 'Missing WGI refresh diagnostics for ' + key);
+      assert.ok(['FRESH_OBSERVATIONS_RECEIVED', 'REQUEST_FAILED_OR_PARTIAL', 'NO_NUMERIC_OBSERVATIONS_RECEIVED'].includes(diagnostics[key].status));
+    }
   }
 });
 
