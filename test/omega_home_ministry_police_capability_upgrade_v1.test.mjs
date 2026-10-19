@@ -27,6 +27,14 @@ test('recommendation data covers each baseline country once and keeps levels exp
   }
   assert.ok(recommendationData.methodology.sources.length >= 3);
   assert.match(recommendationData.methodology.caveats.join(' '), /No universal international numeric police-training or recruitment-level scale/);
+  assert.equal(materialRequirementsData.schemaVersion, '1.0.0');
+  assert.equal(materialRequirementsData.authority, 'GAME_MODEL_RULE_DATA');
+  assert.match(materialRequirementsData.methodology, /not observed reserves/i);
+  for (const [category, rows] of Object.entries(materialRequirementsData.requirements)) {
+    assert.ok(rows.length > 0, category);
+    assert.equal(new Set(rows.map(row => row.resourceId)).size, rows.length, category);
+    for (const row of rows) assert.ok(row.resourceId && Number.isFinite(row.quantityPerTargetLevel) && row.quantityPerTargetLevel > 0, category);
+  }
 });
 
 test('engine, interface and recommendation loader parse and expose the capability upgrade contract', () => {
