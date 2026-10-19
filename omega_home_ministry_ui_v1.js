@@ -74,7 +74,7 @@
     const wheels = art.wheels.map(function (x) {
       return '<circle cx="' + x + '" cy="111" r="' + art.wheelR + '" fill="#08111b" stroke="#7e9ab0" stroke-width="2.2"/><path d="M' + (x - art.wheelR * .62) + ' 102 A ' + (art.wheelR * .82) + ' ' + (art.wheelR * .82) + ' 0 0 1 ' + (x + art.wheelR * .62) + ' 102" fill="none" stroke="#dceaf4" stroke-width="1.3" opacity=".55"/><circle cx="' + x + '" cy="111" r="' + Math.round(art.wheelR * .52) + '" fill="url(#police-metal-' + key + ')" stroke="#dce8f1" stroke-width="2"/><circle cx="' + x + '" cy="111" r="3" fill="#243849"/>';
     }).join('');
-    return '<svg class="home-police-vehicle-art ' + (slot === 'hero' ? 'home-police-vehicle-art-hero' : '') + '" viewBox="0 0 260 150" role="img" aria-label="' + esc(vehicle.name) + ' police vehicle illustration" xmlns="http://www.w3.org/2000/svg">' +
+    return '<svg class="home-police-vehicle-art ' + (slot === 'hero' ? 'home-police-vehicle-art-hero' : '') + '" viewBox="0 0 260 150" preserveAspectRatio="xMidYMid meet" role="img" aria-label="' + esc(vehicle.name) + ' police vehicle illustration" xmlns="http://www.w3.org/2000/svg" style="display:block!important;visibility:visible!important;opacity:1!important;min-height:' + (slot === 'hero' ? '140px' : '88px') + ';width:100%;height:' + (slot === 'hero' ? '140px' : '88px') + '">' +
       '<defs><linearGradient id="police-body-' + key + '" x1="0" y1="0" x2="0.15" y2="1"><stop offset="0" stop-color="' + art.colors[0] + '"/><stop offset=".2" stop-color="' + art.colors[0] + '"/><stop offset=".58" stop-color="' + art.colors[1] + '"/><stop offset="1" stop-color="#071321"/></linearGradient><linearGradient id="police-gloss-' + key + '" x1="0" y1="0" x2=".15" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity=".44"/><stop offset=".24" stop-color="#ffffff" stop-opacity=".08"/><stop offset=".62" stop-color="#ffffff" stop-opacity=".015"/><stop offset="1" stop-color="#020812" stop-opacity=".27"/></linearGradient><linearGradient id="police-metal-' + key + '" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f4fbff"/><stop offset=".42" stop-color="#7891a4"/><stop offset="1" stop-color="#263b4d"/></linearGradient><linearGradient id="police-glass-' + key + '" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e8fbff"/><stop offset=".23" stop-color="#7db7cc"/><stop offset=".55" stop-color="#35637c"/><stop offset="1" stop-color="#091827"/></linearGradient></defs>' +
       '<ellipse cx="132" cy="128" rx="112" ry="8" fill="#02060c" opacity=".68"/>' +
       '<path d="' + art.body + '" fill="url(#police-body-' + key + ')" stroke="#e2edf8" stroke-width="2.2" stroke-linejoin="round"/>' +
@@ -141,8 +141,8 @@
       '.home-police-fleet-meta>div{min-width:0;padding:7px;border-radius:6px;background:rgba(0,0,0,.18);font-size:10px;color:#9fb7ca;overflow-wrap:anywhere}',
       '.home-police-fleet-meta strong{display:block;color:#eef6ff;font-size:11px;margin-top:3px}',
       '.home-police-card-emoji{font-size:30px;line-height:1.2;min-height:36px}',
-      '.home-police-vehicle-art{display:block;width:100%;height:76px;max-width:220px;overflow:visible;filter:none;shape-rendering:geometricPrecision}',
-      '.home-police-vehicle-art-hero{height:122px;max-width:340px;margin:0 auto 8px}',
+      '.home-police-vehicle-art{display:block!important;visibility:visible!important;opacity:1!important;flex:0 0 auto;width:100%;height:88px;min-height:88px;max-width:260px;overflow:visible;filter:none;shape-rendering:geometricPrecision;position:relative;z-index:1}',
+      '.home-police-vehicle-art-hero{height:140px;min-height:140px;max-width:360px;margin:0 auto 8px}',
       '.home-police-feature-list{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin:10px 0}',
       '.home-police-feature-chip{display:inline-flex;align-items:center;gap:6px;padding:7px 9px;border-radius:7px;background:rgba(72,197,221,.1);border:1px solid rgba(92,204,232,.24);color:#cbeaf4;font-size:10px;line-height:1.35}',
       '.home-police-vehicle-brief{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0}',
@@ -279,6 +279,7 @@
         '<div class="home-police-actions">' +
           '<button id="home-police-dashboard-command" class="home-police-btn home-police-btn-green">🚔 POLICE COMMAND & PERSONNEL</button>' +
           '<button id="home-police-dashboard-hangar" class="home-police-btn home-police-btn-gold">🚓 VEHICLE HANGAR · 15 TIERS</button>' +
+          '<button id="home-police-dashboard-budget" class="home-police-btn home-police-btn-gold">💰 HOME MINISTRY BUDGET & PAYROLL</button>' +
           '<button id="home-police-dashboard-procurement" class="home-police-btn home-police-btn-gold">🏗️ PROCUREMENT & FACILITIES</button>' +
           '<button id="home-police-dashboard-fleet" class="home-police-btn home-police-btn-purple">🧰 FLEET HEALTH & REPAIR</button>' +
           '<button id="home-police-dashboard-guard" class="home-police-btn home-police-btn-green">🚧 GUARD OUT · PATROL DEPLOYMENT</button>' +
@@ -289,12 +290,78 @@
       '</div>';
     g.document.getElementById('home-police-dashboard-command').onclick = () => this.openPoliceCommand();
     g.document.getElementById('home-police-dashboard-hangar').onclick = () => this.renderVehicleCatalog(s.unlockedVehicleLevel);
+    g.document.getElementById('home-police-dashboard-budget').onclick = () => this.renderHomeMinistryBudget();
     g.document.getElementById('home-police-dashboard-procurement').onclick = () => this.renderUpgradeMenu();
     g.document.getElementById('home-police-dashboard-fleet').onclick = () => this.renderFleetMaintenance();
     g.document.getElementById('home-police-dashboard-guard').onclick = () => this.renderGuardOut(s.unlockedVehicleLevel);
     g.document.getElementById('home-police-dashboard-tactics').onclick = () => this.renderTacticsMenu();
     g.document.getElementById('home-police-dashboard-incidents').onclick = () => this.renderPoliceIncidentLog();
     return true;
+  };
+
+  ui.renderHomeMinistryBudget = function () {
+    injectStyles();
+    const body = bodyNode(), e = engine(), finance = g.OmegaFinanceMinistry || g.Omega && g.Omega.FinanceMinistry;
+    if (!body || !e) return;
+    const country = e.getCurrentCountryId(), snap = e.getHomeBudgetSnapshot(country);
+    const fs = finance && typeof finance.getFinanceState === 'function' ? finance.getFinanceState(country) : null;
+    const parent = fs && fs.allocations && fs.allocations.interior || null;
+    const parentAmount = parent ? Math.max(0, Number(parent.budgetUsd) || 0) : 0;
+    const treasury = e.getTreasury(country);
+    const b = snap.internal || {}, cats = b.categories || {};
+    const values = {salary:Number(cats.salary && cats.salary.sharePct) || 0,vehicles:Number(cats.vehicles && cats.vehicles.sharePct) || 0,maintenance:Number(cats.maintenance && cats.maintenance.sharePct) || 0,operations:Number(cats.operations && cats.operations.sharePct) || 0};
+    const moneyFmt = value => money(e, value);
+    body.innerHTML =
+      '<div class="home-police-shell"><header class="home-police-head"><div class="home-police-orb">💰</div><h1 class="home-police-title">HOME MINISTRY INTERNAL BUDGET</h1><p class="home-police-subtitle">Finance Ministry → Home Ministry allocation → internal spending limits → treasury debit. No category may spend more than its assigned balance.</p></header>' +
+      '<div class="home-police-kpis"><div class="home-police-kpi"><strong>' + moneyFmt(treasury.available ? treasury.balance : null) + '</strong><span>National treasury cash</span></div><div class="home-police-kpi"><strong>' + moneyFmt(parentAmount) + '</strong><span>Finance allocation · Home / Interior</span></div><div class="home-police-kpi"><strong>' + moneyFmt(Number(b.parentAllocationUsd) || 0) + '</strong><span>Internal budget envelope</span></div></div>' +
+      '<div class="home-police-alert">' + (parent ? 'Finance Ministry allocation detected. Current remaining department ceiling: <strong>' + moneyFmt(parent.remainingUsd) + '</strong>.' : 'No Finance Ministry allocation was found for Home / Interior. First allocate a budget in Finance Ministry; direct treasury cash alone does not count as an approved Home Ministry budget.') + '</div>' +
+      '<section class="home-police-panel"><div class="home-police-section-title">1 · Finance Ministry allocation</div><label class="home-police-label" for="home-budget-parent-amount">Home / Interior annual allocation (USD)</label><input id="home-budget-parent-amount" class="home-police-field" type="number" min="1" step="1" value="' + Math.round(parentAmount || Number(b.parentAllocationUsd) || 0) + '" placeholder="e.g. 50000000" ' + (finance ? '' : 'disabled') + '>' +
+      '<p class="home-police-note">This amount is submitted to the Finance Ministry runtime. It does not create money; the Finance runtime validates the available treasury / annual budget plan.</p><button id="home-budget-save-parent" class="home-police-btn home-police-btn-gold" ' + (finance ? '' : 'disabled') + '>SAVE FINANCE ALLOCATION</button></section>' +
+      '<section class="home-police-panel"><div class="home-police-section-title">2 · Distribute the Home Ministry envelope</div><p class="home-police-note">Enter percentages. Total must be at or below 100%. Example: 30% salary, 30% vehicles, 25% repairs and 15% operations. Amounts update from the approved parent allocation.</p>' +
+      '<div class="home-police-form-row"><div class="home-police-field-wrap"><label class="home-police-label" for="home-budget-salary">Salary & recruitment (%)</label><input id="home-budget-salary" class="home-police-field" type="number" min="0" max="100" step="0.1" value="' + values.salary + '"></div><div class="home-police-cost"><strong id="home-budget-salary-amount">' + moneyFmt(Number(cats.salary && cats.salary.amountUsd) || 0) + '</strong><span>Assigned amount</span></div></div>' +
+      '<div class="home-police-form-row"><div class="home-police-field-wrap"><label class="home-police-label" for="home-budget-vehicles">Vehicle procurement (%)</label><input id="home-budget-vehicles" class="home-police-field" type="number" min="0" max="100" step="0.1" value="' + values.vehicles + '"></div><div class="home-police-cost"><strong id="home-budget-vehicles-amount">' + moneyFmt(Number(cats.vehicles && cats.vehicles.amountUsd) || 0) + '</strong><span>Assigned amount</span></div></div>' +
+      '<div class="home-police-form-row"><div class="home-police-field-wrap"><label class="home-police-label" for="home-budget-maintenance">Repair & maintenance (%)</label><input id="home-budget-maintenance" class="home-police-field" type="number" min="0" max="100" step="0.1" value="' + values.maintenance + '"></div><div class="home-police-cost"><strong id="home-budget-maintenance-amount">' + moneyFmt(Number(cats.maintenance && cats.maintenance.amountUsd) || 0) + '</strong><span>Assigned amount</span></div></div>' +
+      '<div class="home-police-form-row"><div class="home-police-field-wrap"><label class="home-police-label" for="home-budget-operations">Facilities, training & operations (%)</label><input id="home-budget-operations" class="home-police-field" type="number" min="0" max="100" step="0.1" value="' + values.operations + '"></div><div class="home-police-cost"><strong id="home-budget-operations-amount">' + moneyFmt(Number(cats.operations && cats.operations.amountUsd) || 0) + '</strong><span>Assigned amount</span></div></div>' +
+      '<div id="home-budget-share-total" class="home-police-alert" aria-live="polite">Share total: 100%</div><button id="home-budget-save-plan" class="home-police-btn home-police-btn-green">SAVE INTERNAL BUDGET PLAN</button></section>' +
+      '<section class="home-police-panel"><div class="home-police-section-title">3 · Live category balances</div><div class="home-police-fleet-meta">' +
+      ['salary','vehicles','maintenance','operations'].map(key => '<div>' + ({salary:'Salary / recruitment',vehicles:'Vehicle purchase',maintenance:'Repair / maintenance',operations:'Other operations'}[key]) + '<strong>' + moneyFmt(Number(cats[key] && cats[key].amountUsd) || 0) + '</strong><span>Spent ' + moneyFmt(Number(cats[key] && cats[key].spentUsd) || 0) + ' · Remaining ' + moneyFmt(Math.max(0,(Number(cats[key] && cats[key].amountUsd)||0)-(Number(cats[key] && cats[key].spentUsd)||0))) + '</span></div>').join('') +
+      '</div><p class="home-police-note">Every successful purchase, recruitment or repair is recorded in the Home Ministry budget ledger. If treasury cash, the Finance allocation or the relevant internal category is insufficient, the action is rejected.</p></section>' +
+      backButton('home-budget-back','← BACK TO HOME MINISTRY') + '</div>';
+    const parentInput = g.document.getElementById('home-budget-parent-amount');
+    const shareInputs = {salary:g.document.getElementById('home-budget-salary'),vehicles:g.document.getElementById('home-budget-vehicles'),maintenance:g.document.getElementById('home-budget-maintenance'),operations:g.document.getElementById('home-budget-operations')};
+    const amountNodes = {salary:g.document.getElementById('home-budget-salary-amount'),vehicles:g.document.getElementById('home-budget-vehicles-amount'),maintenance:g.document.getElementById('home-budget-maintenance-amount'),operations:g.document.getElementById('home-budget-operations-amount')};
+    const totalNode = g.document.getElementById('home-budget-share-total'), savePlan = g.document.getElementById('home-budget-save-plan');
+    const readShares = () => Object.fromEntries(Object.keys(shareInputs).map(key => [key,Math.max(0,Number(shareInputs[key].value)||0)]));
+    const refreshBudgetPreview = () => {
+      const amount = Math.max(0,Number(parentInput.value)||0), shares = readShares(), total = Object.values(shares).reduce((sum,value)=>sum+value,0);
+      Object.keys(amountNodes).forEach(key => { amountNodes[key].textContent = moneyFmt(amount*shares[key]/100); });
+      totalNode.textContent = 'Share total: ' + total.toFixed(1) + '% · Unassigned: ' + Math.max(0,100-total).toFixed(1) + '%';
+      totalNode.style.borderColor = total > 100.0001 ? 'rgba(255,112,112,.6)' : 'rgba(63,210,150,.45)';
+      savePlan.disabled = total > 100.0001 || amount <= 0;
+    };
+    Object.values(shareInputs).forEach(input => input.oninput = refreshBudgetPreview);
+    parentInput.oninput = refreshBudgetPreview;
+    g.document.getElementById('home-budget-save-parent').onclick = async () => {
+      if (!finance || typeof finance.init !== 'function' || typeof finance.applyAction !== 'function') { report({ok:false,reason:'FINANCE_RUNTIME_UNAVAILABLE'}); return; }
+      try {
+        await finance.init();
+        const amount = Math.floor(Number(parentInput.value)||0);
+        const result = finance.applyAction({type:'set-allocation',countryId:country,department:'interior',amountUsd:amount});
+        if (!result || !result.ok) { report({ok:false,reason:result && result.code || 'FINANCE_ALLOCATION_REJECTED',message:result && result.message}); return; }
+        report(result,'FINANCE ALLOCATION SAVED','Home / Interior annual allocation: ' + moneyFmt(amount) + '. This remains subject to Finance Ministry controls.');
+        this.renderHomeMinistryBudget();
+      } catch(error) { report({ok:false,reason:'FINANCE_RUNTIME_UNAVAILABLE',message:String(error && error.message || error)}); }
+    };
+    savePlan.onclick = () => {
+      const shares = readShares(), amount = Math.floor(Number(parentInput.value)||0), total = Object.values(shares).reduce((sum,value)=>sum+value,0);
+      if (total > 100.0001) { report({ok:false,reason:'HOME_BUDGET_SHARES_EXCEED_100'}); return; }
+      const result = e.configureHomeBudget(amount,shares,country);
+      if (!result.ok) { report(result); return; }
+      report(result,'HOME MINISTRY BUDGET SAVED','Internal category allocations now follow the approved Finance Ministry envelope.');
+      this.renderHomeMinistryBudget();
+    };
+    g.document.getElementById('home-budget-back').onclick = () => this.renderHomeMinistryDashboard();
+    refreshBudgetPreview();
   };
 
   ui.openPoliceCommand = function () {
@@ -317,6 +384,7 @@
         '<div class="home-police-section-title">Personnel & capability</div>' +
         '<div class="home-police-actions">' +
           '<button id="btn-recruit-police" class="home-police-btn home-police-btn-green">👮 1.1 · RECRUIT / FIRE PERSONNEL</button>' +
+          '<button id="btn-home-police-budget" class="home-police-btn home-police-btn-gold">💰 INTERNAL BUDGET & PAYROLL</button>' +
           '<button id="btn-upgrade-vehicles" class="home-police-btn home-police-btn-gold">🚔 1.2 · AAA FLEET & FACILITY ASCENSION</button>' +
           '<button id="btn-police-guard-out" class="home-police-btn home-police-btn-green">🚧 GUARD OUT · PATROL DEPLOYMENT</button>' +
           '<button id="btn-tactics-police" class="home-police-btn home-police-btn-purple">🛡️ 1.3 · TACTICS, TRAINING & INTELLIGENCE</button>' +
@@ -326,6 +394,7 @@
         backButton('btn-back-interior', '← BACK TO HOME MINISTRY') +
       '</div>';
     g.document.getElementById('btn-recruit-police').onclick = () => this.renderRecruitScreen();
+    g.document.getElementById('btn-home-police-budget').onclick = () => this.renderHomeMinistryBudget();
     g.document.getElementById('btn-upgrade-vehicles').onclick = () => this.renderUpgradeMenu();
     g.document.getElementById('btn-police-guard-out').onclick = () => this.renderGuardOut();
     g.document.getElementById('btn-tactics-police').onclick = () => this.renderTacticsMenu();
