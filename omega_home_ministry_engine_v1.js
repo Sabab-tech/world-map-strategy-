@@ -230,12 +230,19 @@
   }
   function isPristinePoliceState(state,raw){
     if(!raw)return true;
+    const facilitiesAreDefault=Object.keys(DEFAULT_STATE.facilityLevels).every(function(key){
+      return Math.floor(num(state.facilityLevels&&state.facilityLevels[key])||0)===Math.floor(num(DEFAULT_STATE.facilityLevels[key])||0);
+    });
+    const tacticsAreDefault=Object.keys(DEFAULT_STATE.tacticsResearched).every(function(key){return !state.tacticsResearched||state.tacticsResearched[key]===false;});
+    const policiesAreDefault=Object.keys(DEFAULT_POLICE_POLICY_STATE).every(function(key){return !state.policeRules||state.policeRules[key]===false;});
     return Math.floor(num(state.baselineVersion)||0)===0&&
       Math.floor(num(state.policeCount)||250)===250&&Math.floor(num(state.policeEfficiency)||60)===60&&
-      Math.floor(num(state.policeTrust)||55)===55&&totalFleetCount(state.vehiclesOwned)===0&&
-      Math.floor(num(state.lastUpdatedTurn)||0)===0&&!(state.pendingVehicleOrder)&&
-      !(state.pendingResearch)&&!(state.guardDeployments||[]).length&&!(state.incidentLedger||[]).length&&
-      !(state.vehicleMaintenanceLog||[]).length&&Math.floor(num(state.trainingQualityLevel)||1)===1;
+      Math.floor(num(state.policeTrust)||55)===55&&Math.floor(num(state.publicSatisfaction)||55)===55&&
+      totalFleetCount(state.vehiclesOwned)===0&&Math.floor(num(state.lastUpdatedTurn)||0)===0&&
+      !(state.pendingVehicleOrder)&&!(state.pendingResearch)&&!(state.guardDeployments||[]).length&&
+      !(state.incidentLedger||[]).length&&!(state.vehicleMaintenanceLog||[]).length&&
+      Math.floor(num(state.trainingQualityLevel)||1)===1&&Math.floor(num(state.specialAgents)||0)===0&&
+      Math.floor(num(state.unpaidPayroll)||0)===0&&facilitiesAreDefault&&tacticsAreDefault&&policiesAreDefault;
   }
   function applyBaselineToPoliceState(state,row,raw){
     const pristine=isPristinePoliceState(state,raw),fleet=row&&row.baselineFleet||{},personnel=row&&row.baselinePolice||{};
