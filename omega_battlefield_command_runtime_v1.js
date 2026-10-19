@@ -451,7 +451,7 @@
     return { ok: true, battle: battle, playerState: clone(playerState), targetState: clone(enemyState) };
   }
   function formatMoney(v) { var n = num(v); return n === null ? 'Unavailable' : '$' + Math.round(n).toLocaleString('en-US'); }
-  function diagnostics() {
+  function runtimeDataDiagnostics() {
     return { version: VERSION, ready: ready, countryCount: data.countries.length, cityCountryCount: data.cities.length,
       countriesWithoutCityRecords: Math.max(0, data.countries.length - data.cities.length), catalogAvailable: !!data.catalog,
       countryProfilesHaveAtLeastTwoTheaters: ready ? data.countries.every(function (p) { return buildTheaters(p).length >= 2; }) : false,
@@ -687,7 +687,11 @@
   }
   function diagnostics() {
     var current = currentPlayerCountry();
-    return Object.assign({ playerCountry: countryKey(current), playerCountryName: current.name || countryKey(current), savedCountries: (function () { var r = stateRoot(); return r && obj(r[ROOT_KEY]) ? Object.keys(r[ROOT_KEY]).length : 0; })() }, ready ? { cityTheatersForPlayer: buildTheaters(current).length, forceState: stateDigest(current) } : {});
+    return Object.assign(runtimeDataDiagnostics(), {
+      playerCountry: countryKey(current),
+      playerCountryName: current.name || countryKey(current),
+      savedCountries: (function () { var r = stateRoot(); return r && obj(r[ROOT_KEY]) ? Object.keys(r[ROOT_KEY]).length : 0; })()
+    }, ready ? { cityTheatersForPlayer: buildTheaters(current).length, forceState: stateDigest(current) } : {});
   }
   var api = {
     VERSION: VERSION, init: init, diagnostics: diagnostics, open: open, close: close, getPlayerCountry: currentPlayerCountry,
