@@ -169,6 +169,10 @@ test('index, finance, bank and offline shell use the daily lifecycle assets', ()
   assert.match(index, /id="omega-global-time-hud"/);
   assert.match(index, /src="omega_game_lifecycle_runtime_v1\.js" defer/);
   assert.match(index, /href="omega_game_lifecycle_runtime_v1\.css"/);
+  assert.ok(index.indexOf('src="omega_simulation_runtime.js"') < index.indexOf('src="omega_resource_research_runtime_v1.js"'),
+    'the canonical event bridge must load before any sector registers a turn listener');
+  assert.ok(index.indexOf('src="omega_simulation_runtime.js"') < index.indexOf('src="omega_resource_endowment_runtime.js"'),
+    'resource extraction must join the canonical pipeline rather than race the clock');
   assert.match(lifecycle, /omega\.game\.save\./);
   assert.match(lifecycle, /visibilitychange/);
   assert.match(lifecycle, /pagehide/);
