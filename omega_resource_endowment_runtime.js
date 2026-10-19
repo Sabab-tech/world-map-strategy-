@@ -188,7 +188,9 @@
       }
     }
     try{mineSiteReferenceCache?.clear?.();siteExecutionRowsCache?.clear?.();siteExecutionRowsCacheTurn=-1;}catch(_){}
-    g.__OmegaLastMineCommissionBinding={countryId:country,siteId,status:'APPLIED_TO_RESOURCE_RUNTIME',turn:turn()};
+    let hydration=null;
+    try{hydration=hydrateCountry(country);}catch(error){hydration={status:'FAILED',reason:String(error?.message||error)};}
+    g.__OmegaLastMineCommissionBinding={countryId:country,siteId,status:'APPLIED_TO_RESOURCE_RUNTIME',hydrationStatus:hydration?.status||'NOT_CONFIRMED',turn:turn()};
   }
 
   async function loadCanonicalSiteCatalogData(){
