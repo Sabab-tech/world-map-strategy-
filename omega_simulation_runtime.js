@@ -1074,14 +1074,14 @@
       if(existing)return;
       const id='legacy.turn-listener.'+(++legacySequence);
       const once=!!(options&&typeof options==='object'&&options.once);
-      let called=false;
+      let called=false,unregister=()=>{};
       const invoke=async event=>{
         if(once&&called)return;
-        if(once)called=true;
+        if(once){called=true;unregister();}
         if(typeof listener==='function')return listener.call(global,event);
         if(listener&&typeof listener.handleEvent==='function')return listener.handleEvent.call(listener,event);
       };
-      const unregister=simulation.registerTurnParticipant(id,invoke);
+      unregister=simulation.registerTurnParticipant(id,invoke);
       const wrapped=function(event){
         if(global.__OMEGA_SIMULATION_PIPELINE_ACTIVE__===true||global.__OMEGA_SIMULATION_PIPELINE_DISPATCH__===true)return;
         const value=invoke(event);
