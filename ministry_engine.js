@@ -1642,7 +1642,7 @@ window.OmegaCabinetUI = {
 
         if (activeTab === 'reports') {
             const isHomeMinistryReport = ministryId === 'interior_security';
-            const liveOps = window.OmegaLiveOpsObservability;
+            const liveOps = isHomeMinistryReport ? null : window.OmegaLiveOpsObservability;
             const reportCountry = this.activeCountry || (window.Game && window.Game.state &&
                 (window.Game.state.playerCountryId || window.Game.state.playerCountryCode)) || '';
             const metrics = liveOps && typeof liveOps.getCountryMetrics === 'function'
@@ -1715,6 +1715,30 @@ window.OmegaCabinetUI = {
                     </div>
                 </div>
             `;
+            if (isHomeMinistryReport) {
+                const incidentRows = homeState && Array.isArray(homeState.incidentLedger)
+                    ? homeState.incidentLedger.slice().reverse().slice(0, 20) : [];
+                const escReport = value => String(value == null ? '' : value)
+                    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                const incidentHtml = incidentRows.length ? incidentRows.map(item =>
+                    '<div style="padding:10px;border:1px solid rgba(148,163,184,.22);border-radius:8px;background:rgba(255,255,255,.035);margin:7px 0;">' +
+                    '<strong style="color:#e2e8f0;">' + escReport(String(item.type || 'SECURITY INCIDENT').replace(/_/g, ' ')) +
+                    '</strong> <span style="color:' + (item.detected ? '#4ade80' : '#fbbf24') + ';">' + escReport(item.status || 'STATUS NOT RECORDED') + '</span>' +
+                    '<div style="font-size:11px;color:#94a3b8;margin-top:5px;">Week ' + escReport(item.simulationWeek) +
+                    ' · Turn ' + escReport(item.simulationTurn) + ' · Baseline risk ' + escReport(item.baselineRiskPercent) + '%' +
+                    ' · Agent/tactic mitigation ' + escReport(item.mitigationPercent) + '%' +
+                    ' · Guard mitigation ' + escReport(item.guardMitigationPercent) + '%</div>' +
+                    (item.targetAssetName ? '<div style="font-size:11px;color:#cbd5e1;margin-top:5px;">Recorded target: ' + escReport(item.targetAssetName) +
+                      (item.targetAssetId ? ' · ' + escReport(item.targetAssetId) : '') + '</div>' : '') +
+                    (item.assetImpact && item.assetImpact.condition ? '<div style="font-size:11px;color:#fbbf24;margin-top:5px;">Asset outcome: ' + escReport(item.assetImpact.condition) + '</div>' : '') +
+                    '</div>'
+                ).join('') : '<p style="font-size:12px;color:#94a3b8;line-height:1.6;">No security incidents are recorded in this country\'s Home Ministry ledger yet. No GDP, mine-output, shipment, or synthetic incident history is shown here.</p>';
+                html += '<div style="background:rgba(2,11,20,.86);border:1px solid rgba(0,229,255,.2);border-radius:12px;padding:16px;margin-top:14px;color:#e2e8f0;font-family:\'Share Tech Mono\',monospace;">' +
+                    '<div style="color:#00e5ff;font-size:13px;font-weight:bold;margin-bottom:5px;">RECORDED SECURITY INCIDENT HISTORY</div>' +
+                    '<p style="font-size:11px;color:#94a3b8;line-height:1.5;">Latest entries from this country\'s retained Home Ministry incident ledger. Only events actually recorded by the security runtime are included.</p>' +
+                    incidentHtml + '</div>';
+            }
         }
 
         if (activeTab === 'personnel') {
@@ -1744,7 +1768,7 @@ window.OmegaCabinetUI = {
         }
 
         // Keep recorded history inside Reports & Metrics instead of repeating it on every tab.
-        if (activeTab === 'reports') {
+        if (activeTab === 'reports' && ministryId !== 'interior_security') {
             html += `
                 <div id="recharts-trend-container" style="background:rgba(2,11,20,0.9); border:1px solid rgba(0,229,255,0.3); border-radius:12px; padding:16px; margin-top:16px;">
                     <div style="font-family:'Share Tech Mono',monospace; color:#00e5ff; font-size:13px; font-weight:bold; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between;">
