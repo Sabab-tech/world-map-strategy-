@@ -7,6 +7,7 @@
   const ui = g.OMEGA_UI_ADAPTER;
   if (!ui) return;
   const STYLE_ID = 'omega-home-police-ui-v1';
+  let hostedBodyNode = null;
 
   function engine() {
     const value = g.OmegaHomeMinistryEngine || g.Omega && g.Omega.HomeMinistry;
@@ -184,7 +185,19 @@
     ].join('\n');
     g.document.head.appendChild(style);
   }
-  function bodyNode() { return g.document && g.document.getElementById('cabinet-body'); }
+  function bodyNode() {
+    if (hostedBodyNode && hostedBodyNode.isConnected !== false) return hostedBodyNode;
+    hostedBodyNode = null;
+    return g.document && g.document.getElementById('cabinet-body');
+  }
+  function returnToHomeMinistry(view) {
+    const target = bodyNode();
+    if (hostedBodyNode && target === hostedBodyNode && typeof view.renderHomeMinistryDashboard === 'function') {
+      view.renderHomeMinistryDashboard();
+      return;
+    }
+    if (typeof view.renderInteriorHQ === 'function') view.renderInteriorHQ();
+  }
   function backButton(id, label) {
     return '<button id="' + id + '" class="home-police-btn home-police-btn-plain">' + label + '</button>';
   }
@@ -215,6 +228,74 @@
 
   ui.getHomePoliceEngine = engine;
   ui.formatHomePoliceDuration = formatDuration;
+
+  // Mount the real Home Ministry control system inside the canonical Cabinet dashboard.
+  // The host is explicit so the existing cabinet-body route remains backward compatible.
+  ui.renderHomeMinistryInto = function (container) {
+    if (!container || typeof container !== 'object') return false;
+    hostedBodyNode = container;
+    injectStyles();
+    if (!engine()) {
+      container.innerHTML = '<div class="home-police-shell"><h2 class="home-police-title">HOME MINISTRY RUNTIME UNAVAILABLE</h2><p class="home-police-note">The authoritative Home Ministry engine has not initialized. No local counters or mock controls were substituted.</p></div>';
+      return false;
+    }
+    return this.renderHomeMinistryDashboard();
+  };
+
+  ui.renderHomeMinistryDashboard = function () {
+    injectStyles();
+    const body = bodyNode(), e = engine();
+    if (!body || !e) return false;
+    const countryId = typeof e.getCurrentCountryId === 'function' ? e.getCurrentCountryId() : undefined;
+    const s = e.getState(countryId), treasury = e.getTreasury(countryId);
+    const fleet = typeof e.getVehicleFleet === 'function' ? e.getVehicleFleet(countryId) : [];
+    const rows = Array.isArray(fleet) ? fleet : [];
+    const totalOwned = Object.keys(s.vehiclesOwned || {}).reduce((sum, key) => sum + Math.max(0, Number(s.vehiclesOwned[key]) || 0), 0);
+    const available = rows.filter(unit => unit.status === 'AVAILABLE').length;
+    const deployed = rows.filter(unit => unit.status === 'DEPLOYED').length;
+    const maintenance = rows.filter(unit => unit.status === 'MAINTENANCE_DUE' || unit.status === 'REPAIR_REQUIRED').length;
+    const deployments = Array.isArray(s.guardDeployments) ? s.guardDeployments.length : 0;
+    const incidents = Array.isArray(s.incidentLedger) ? s.incidentLedger.length : 0;
+    const dailyPayroll = typeof e.getDailyPayroll === 'function' ? e.getDailyPayroll(countryId) : null;
+    const dailyOperatingCost = typeof e.getDailyOperatingCost === 'function' ? e.getDailyOperatingCost(countryId) : null;
+    body.innerHTML =
+      '<div class="home-police-shell">' +
+        '<header class="home-police-head"><div class="home-police-orb">🏛️</div><h1 class="home-police-title">MINISTRY OF HOME AFFAIRS</h1><p class="home-police-subtitle">National public safety, police fleet readiness, critical-asset protection and internal security. All controls use the authoritative Home Ministry runtime.</p></header>' +
+        '<div class="home-police-kpis">' +
+          '<div class="home-police-kpi"><strong>' + Number(s.policeCount || 0).toLocaleString() + '</strong><span>Active personnel</span></div>' +
+          '<div class="home-police-kpi"><strong>' + Math.round(Number(s.policeEfficiency) || 0) + '%</strong><span>Operational efficiency</span></div>' +
+          '<div class="home-police-kpi"><strong>' + Math.round(Number(s.policeTrust) || 0) + '%</strong><span>Public trust</span></div>' +
+          '<div class="home-police-kpi"><strong>' + totalOwned.toLocaleString() + '</strong><span>Vehicles owned</span></div>' +
+          '<div class="home-police-kpi"><strong>' + available.toLocaleString() + '</strong><span>Vehicles ready</span></div>' +
+          '<div class="home-police-kpi"><strong>' + deployed.toLocaleString() + '</strong><span>Vehicles deployed</span></div>' +
+          '<div class="home-police-kpi"><strong>' + maintenance.toLocaleString() + '</strong><span>Service / repair due</span></div>' +
+          '<div class="home-police-kpi"><strong>' + deployments.toLocaleString() + '</strong><span>Active guard posts</span></div>' +
+          '<div class="home-police-kpi"><strong>' + incidents.toLocaleString() + '</strong><span>Recorded incidents</span></div>' +
+        '</div>' +
+        '<div class="home-police-alert">' +
+          (treasury && treasury.available ? 'Authoritative treasury balance: <strong>' + esc(money(e, treasury.balance)) + '</strong>. Daily police payroll: <strong>' + esc(money(e, dailyPayroll)) + '</strong>; scheduled security operating cost: <strong>' + esc(money(e, dailyOperatingCost)) + '</strong>.' : 'Treasury balance is not recorded. Procurement, repair and payroll debits remain blocked until the game exposes an authoritative country balance. No funds are invented.') +
+        '</div>' +
+        '<div class="home-police-section-title">Operational control systems</div>' +
+        '<div class="home-police-actions">' +
+          '<button id="home-police-dashboard-command" class="home-police-btn home-police-btn-green">🚔 POLICE COMMAND & PERSONNEL</button>' +
+          '<button id="home-police-dashboard-hangar" class="home-police-btn home-police-btn-gold">🚓 VEHICLE HANGAR · 15 TIERS</button>' +
+          '<button id="home-police-dashboard-procurement" class="home-police-btn home-police-btn-gold">🏗️ PROCUREMENT & FACILITIES</button>' +
+          '<button id="home-police-dashboard-fleet" class="home-police-btn home-police-btn-purple">🧰 FLEET HEALTH & REPAIR</button>' +
+          '<button id="home-police-dashboard-guard" class="home-police-btn home-police-btn-green">🚧 GUARD OUT · PATROL DEPLOYMENT</button>' +
+          '<button id="home-police-dashboard-tactics" class="home-police-btn home-police-btn-purple">🛡️ TACTICS, TRAINING & INTELLIGENCE</button>' +
+          '<button id="home-police-dashboard-incidents" class="home-police-btn">📋 SECURITY INCIDENT LEDGER</button>' +
+        '</div>' +
+        '<p class="home-police-note">Fleet units have unique identities and persistent condition, mileage, availability, maintenance and deployment status. Guard posts reserve both vehicles and officers; standing down releases them. Purchase, repair and staffing actions are committed through the simulation state and country treasury ledger.</p>' +
+      '</div>';
+    g.document.getElementById('home-police-dashboard-command').onclick = () => this.openPoliceCommand();
+    g.document.getElementById('home-police-dashboard-hangar').onclick = () => this.renderVehicleCatalog(s.unlockedVehicleLevel);
+    g.document.getElementById('home-police-dashboard-procurement').onclick = () => this.renderUpgradeMenu();
+    g.document.getElementById('home-police-dashboard-fleet').onclick = () => this.renderFleetMaintenance();
+    g.document.getElementById('home-police-dashboard-guard').onclick = () => this.renderGuardOut(s.unlockedVehicleLevel);
+    g.document.getElementById('home-police-dashboard-tactics').onclick = () => this.renderTacticsMenu();
+    g.document.getElementById('home-police-dashboard-incidents').onclick = () => this.renderPoliceIncidentLog();
+    return true;
+  };
 
   ui.openPoliceCommand = function () {
     injectStyles();
@@ -249,7 +330,7 @@
     g.document.getElementById('btn-police-guard-out').onclick = () => this.renderGuardOut();
     g.document.getElementById('btn-tactics-police').onclick = () => this.renderTacticsMenu();
     g.document.getElementById('btn-police-incident-log').onclick = () => this.renderPoliceIncidentLog();
-    g.document.getElementById('btn-back-interior').onclick = () => this.renderInteriorHQ();
+    g.document.getElementById('btn-back-interior').onclick = () => returnToHomeMinistry(this);
   };
 
   ui.renderRecruitScreen = function () {
