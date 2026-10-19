@@ -67,6 +67,17 @@
   function numberText(value, maximumFractionDigits) {
     const n = finite(value);
     if (n === null) return 'N/A';
+    const abs = Math.abs(n);
+    const scale = abs >= 1e12 ? { value: 1e12, label: 'trillion' }
+      : abs >= 1e9 ? { value: 1e9, label: 'billion' }
+      : abs >= 1e6 ? { value: 1e6, label: 'million' }
+      : abs >= 1e3 ? { value: 1e3, label: 'thousand' } : null;
+    if (scale) {
+      let amount;
+      try { amount = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(abs / scale.value); }
+      catch (_) { amount = (abs / scale.value).toFixed(2).replace(/\.?0+$/, ''); }
+      return (n < 0 ? '-' : '') + amount + ' ' + scale.label;
+    }
     try {
       return new Intl.NumberFormat('en-US', {
         maximumFractionDigits: maximumFractionDigits == null ? 4 : maximumFractionDigits
