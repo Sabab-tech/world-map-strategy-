@@ -574,7 +574,7 @@
       ['OMEGA_COUNTRY_CONTEXT_CHANGED','OMEGA_COUNTRY_CHANGED','OMEGA_COUNTRY_SELECTED','COUNTRY_CHANGED','GAME_COUNTRY_CHANGED'].forEach(function(name){g.addEventListener(name,function(){if(consoleOpen)render();});});
     }
   }
-  var api=Object.freeze({VERSION:VERSION,open:function(tab){consoleOpen=true;if(tab&&['overview','staff','fleet','crime','rules','rulebook'].indexOf(tab)>=0)activeTab=tab;render();},render:render,diagnostics:function(){var d=getData();return{version:VERSION,ready:!!d.ready,baselineReady:!!d.baselineReady,consoleOpen:consoleOpen,activeTab:activeTab,countryId:d.countryId||null,financeAvailable:!!(d.budget&&d.budget.available),crimeAvailable:!!(d.crime&&d.crime.available)};}});
+  var api=Object.freeze({VERSION:VERSION,open:function(tab){consoleOpen=true;if(tab&&['overview','staff','fleet','units','crime','rules','rulebook'].indexOf(tab)>=0)activeTab=tab;render();},render:render,diagnostics:function(){var d=getData();return{version:VERSION,ready:!!d.ready,baselineReady:!!d.baselineReady,consoleOpen:consoleOpen,activeTab:activeTab,countryId:d.countryId||null,financeAvailable:!!(d.budget&&d.budget.available),crimeAvailable:!!(d.crime&&d.crime.available)};}});
   g.OmegaHomePoliceOperationsUI=api;
   if(g.document){
     if(g.document.readyState==='loading')g.document.addEventListener('DOMContentLoaded',install,{once:true});
