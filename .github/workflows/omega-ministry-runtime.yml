@@ -80,15 +80,17 @@ jobs:
           node --check omega_home_ministry_budget_ui_v2.js
           node --check omega_battlefield_command_runtime_v1.js
           node --check omega_home_ministry_world_police_runtime_v1.js
+          node --check omega_home_ministry_training_materials_runtime_v1.js
           node --check omega_home_ministry_police_operations_ui_v1.js
           node --check test/omega_home_ministry_budget_integration.test.mjs
           node --check test/omega_battlefield_command_runtime_v1.test.mjs
           node --check test/omega_home_ministry_world_police_runtime_v1.test.mjs
+          node --check test/omega_home_ministry_training_recruitment_upgrade.test.mjs
 
       - name: Home budget and battlefield interaction tests
         run: |
           set -euo pipefail
-          node --test test/omega_home_ministry_budget_integration.test.mjs test/omega_battlefield_command_runtime_v1.test.mjs test/omega_home_ministry_world_police_runtime_v1.test.mjs
+          node --test test/omega_home_ministry_budget_integration.test.mjs test/omega_battlefield_command_runtime_v1.test.mjs test/omega_home_ministry_world_police_runtime_v1.test.mjs test/omega_home_ministry_training_recruitment_upgrade.test.mjs
 
       - name: Independent 17-ministry runtime proof
         run: |
@@ -165,6 +167,7 @@ jobs:
             'omega_home_ministry_budget_ui_v2.js',
             'omega_battlefield_command_runtime_v1.js',
             'omega_home_ministry_world_police_runtime_v1.js',
+            'omega_home_ministry_training_materials_runtime_v1.js',
             'omega_home_ministry_police_operations_ui_v1.js'
           ]) {
             if (!html.includes(required)) throw new Error('Canonical script missing from production HTML: '+required);
