@@ -118,7 +118,7 @@
     const importValue = imports.value;
     const exportValue = exports.value;
     const rate = fxRate(p);
-    const currentAccountValue = currentAccount.value ?? num(macroIndicators && macroIndicators.currentAccountBalanceUsd);
+    const currentAccountValue = currentAccount.value;
     const wageGrowthValue = wageGrowth.value;
     let importExposurePct = null, importExposureSource = null;
     if (importValue !== null && gdpValue > 0) {
@@ -140,7 +140,7 @@
     try { policy = fx && fx.getPolicy && rate.code ? fx.getPolicy(rate.code) : null; } catch (_) {}
     return {
       raw, rawIndicators: ri, economy: eco, sourceValues: values,
-      gdp: gdpValue, gdpSource: gdp.source || (macroIndicators && 'MACRO_RAW_REGISTRY') || null,
+      gdp: gdpValue, gdpSource: gdp.source || null,
       growthPct: growthValue, growthSource: growth.source || 'PROFILE_OR_MACRO_BASELINE',
       inflationPct: inflationValue, inflationSource: inflation.source || 'PROFILE_OR_MACRO_BASELINE',
       unemploymentPct: unemploymentValue, debtUsd: debtValue, tradeBalanceUsd: tradeValue, reservesUsd: reservesValue,
