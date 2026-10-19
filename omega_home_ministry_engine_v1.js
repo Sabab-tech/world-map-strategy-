@@ -1953,6 +1953,13 @@
     }
     if(failures.length)throw new Error('HOME_MINISTRY_TURN_FAILED:'+failures.join('|'));
   }
+  function processSelectedCountryTurn(event){
+    const detail=event&&event.detail||{},payload=detail.payload||detail;
+    const cid=normalizeCountry(payload.countryId||detail.countryId||playerCountry());
+    if(!cid)return;
+    const now=simulationTimeMs();
+    return processCountryTurn(cid,now,Math.floor(now/DAY_MS));
+  }
 
   let handlerRegistered=false,economyHandlerRegistered=false,financeHandlerRegistered=false;
   function registerHandlers(){
@@ -2386,7 +2393,7 @@
     getPoliceCapabilityUpgradeQuote:estimatePoliceCapabilityUpgrade,
     startPoliceCapabilityUpgrade:startPoliceCapabilityUpgrade,
     getPoliceCapabilityState:function(country){const cid=normalizeCountry(country||currentCountry()),s=getState(cid);return{countryId:cid,trainingLevel:s.trainingQualityLevel,recruitmentLevel:s.policeRecruitmentLevel,academyLevel:num(s.facilityLevels&&s.facilityLevels.academy)||0,departmentLevel:num(s.facilityLevels&&s.facilityLevels.department)||0,policeCount:s.policeCount,recruitmentFeePerOfficerUsd:s.recruitmentFeePerOfficerUsd,pendingProjects:clone((s.pendingCapabilityProjects||[]).filter(function(p){return p&&p.status==='IN_PROGRESS';})),completedProjects:clone(s.completedCapabilityProjects||[])};},
-    processTurn:onTurnCommitted,applyExistingAssetIncident:markExistingAsset
+    processTurn:processSelectedCountryTurn,applyExistingAssetIncident:markExistingAsset
   });
   g.Omega=g.Omega||{};g.Omega.HomeMinistry=api;g.OmegaHomeMinistryEngine=api;
   registerHandlers();if(typeof g.addEventListener==='function'&&!g.__OMEGA_HOME_POLICE_TURN_LISTENER__){g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED',onTurnCommitted);g.__OMEGA_HOME_POLICE_TURN_LISTENER__=true;}
