@@ -11,6 +11,7 @@
   const CACHE_KEY = 'omega.world-bank-lending.reference.v1';
   const WB_BASE = 'https://api.worldbank.org/v2';
   const REFRESH_TTL_MS = DAY_MS;
+  const RETRY_BACKOFF_MS = 60 * 60 * 1000;
   const MAX_HISTORY = 5000;
   const MAX_LOAN_LEDGER = 4000;
   const INDICATORS = Object.freeze([
@@ -705,9 +706,14 @@
     const bank = store(true);
     const previous = bank.reference;
     const lastUpdated = dateValue(previous.refreshedAt);
+    const lastAttempt = dateValue(previous.lastAttemptAt);
     const now = Date.now();
-    if (!force && lastUpdated !== null && now - lastUpdated < REFRESH_TTL_MS) {
+    if (!force && previous.status === 'LIVE' && lastUpdated !== null && now - lastUpdated < REFRESH_TTL_MS) {
       return { ok: true, cached: true, status: previous.status, refreshedAt: previous.refreshedAt };
+    }
+    if (!force && lastAttempt !== null && now - lastAttempt < RETRY_BACKOFF_MS) {
+      return { ok: previous.status === 'LIVE', cached: true, status: previous.status || 'UNAVAILABLE',
+        refreshedAt: previous.refreshedAt || null, lastAttemptAt: previous.lastAttemptAt || null };
     }
     refreshPromise = (async function () {
       const errors = [];
