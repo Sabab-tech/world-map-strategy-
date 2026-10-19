@@ -32,3 +32,10 @@ jobs:
         run: node --check test/omega_forex_monetary_engine_v1.test.mjs
       - name: FX conversion, monetary policy and history tests
         run: node --test test/omega_forex_monetary_engine_v1.test.mjs
+
+      - name: Validate raw financial registry and macro rules
+        run: node -e "const fs=require('node:fs');const assert=require('node:assert/strict');const d=JSON.parse(fs.readFileSync('economy_raw_financial_data_v2.json','utf8'));const r=JSON.parse(fs.readFileSync('finance_macro_stability_rules_v1.json','utf8'));assert.equal(d.countries.length,249);assert.equal(d.metadata.rawFieldCount,Object.keys(d.metadata.fieldCatalogue).length);assert.ok(r.policies.growth&&r.policies.austerity)"
+      - name: Validate macro stability runtime syntax
+        run: node --check omega_macro_stability_runtime_v1.js
+      - name: Macro stability raw-data and runtime tests
+        run: node --test test/omega_macro_stability_runtime_v1.test.mjs

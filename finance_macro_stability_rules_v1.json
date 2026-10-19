@@ -1,0 +1,100 @@
+{
+  "schemaVersion": "1.0.0",
+  "baselineYear": 2015,
+  "annualizationMs": 31536000000,
+  "simulationTurnDurationMs": 3600000,
+  "defaultTargetInflationPct": 3,
+  "defaultTargetDebtToGdpPct": 100,
+  "defaultTargetUnemploymentPct": 6,
+  "minimumGrowthAdjustmentPct": -5,
+  "maximumGrowthAdjustmentPct": 5,
+  "minimumSpendingAdjustmentPct": -10,
+  "maximumSpendingAdjustmentPct": 10,
+  "minimumTargetInflationPct": 0,
+  "maximumTargetInflationPct": 25,
+  "minimumTargetDebtToGdpPct": 20,
+  "maximumTargetDebtToGdpPct": 400,
+  "minimumTargetUnemploymentPct": 0,
+  "maximumTargetUnemploymentPct": 50,
+  "minimumEffectiveGrowthPct": -25,
+  "maximumEffectiveGrowthPct": 25,
+  "stabilityDeficitLimitPct": 20,
+  "model": {
+    "unemploymentGrowthSensitivity": 0.12,
+    "maximumUnemploymentChangePpPerYear": 2,
+    "automaticStabilizersEnabledByDefault": true,
+    "automaticStabilizerSpendingStepPctGdpPerYear": 0.75,
+    "automaticStabilizerGrowthStepPpPerYear": 0.25,
+    "maximumAutomaticSpendingAdjustmentPctGdp": 3,
+    "maximumAutomaticGrowthAdjustmentPct": 2,
+    "automaticUnemploymentGapPp": 2,
+    "recessionGrowthTriggerPct": -1,
+    "inflationHeadroomPp": 2,
+    "recoveryDecayPerYear": 0.25
+  },
+  "stabilityWeights": {
+    "debt": 0.35,
+    "inflationGap": 0.3,
+    "unemployment": 0.2,
+    "budgetDeficit": 0.15
+  },
+  "coverageFields": [
+    "currencyCode",
+    "currencyName",
+    "nominalGdpUsd",
+    "gdpGrowthAnnualPct",
+    "inflationAnnualPct",
+    "unemploymentRatePct",
+    "governmentBudgetBalanceUsd",
+    "publicDebtUsd",
+    "tradeBalanceUsd",
+    "exchangeRateLocalPerUsd",
+    "foreignExchangeReservesUsd",
+    "population2015",
+    "populationGrowthAnnualPct",
+    "birthRatePer1000",
+    "deathRatePer1000",
+    "netMigrationRatePer1000",
+    "urbanizationPct",
+    "malePopulationPct",
+    "femalePopulationPct"
+  ],
+  "policies": {
+    "neutral": {
+      "label": "Neutral / baseline",
+      "growthAdjustmentPct": 0,
+      "spendingAdjustmentPct": 0,
+      "unemploymentChangePpPerYear": 0
+    },
+    "growth": {
+      "label": "Growth stimulus",
+      "growthAdjustmentPct": 1,
+      "spendingAdjustmentPct": 1,
+      "unemploymentChangePpPerYear": -0.1
+    },
+    "anti_inflation": {
+      "label": "Inflation restraint",
+      "growthAdjustmentPct": -0.5,
+      "spendingAdjustmentPct": -0.5,
+      "unemploymentChangePpPerYear": 0.1
+    },
+    "employment": {
+      "label": "Employment first",
+      "growthAdjustmentPct": 0.4,
+      "spendingAdjustmentPct": 0.75,
+      "unemploymentChangePpPerYear": -0.5
+    },
+    "austerity": {
+      "label": "Fiscal consolidation",
+      "growthAdjustmentPct": -0.8,
+      "spendingAdjustmentPct": -2,
+      "unemploymentChangePpPerYear": 0.25
+    },
+    "reserve_defense": {
+      "label": "Fiscal / external-balance defense",
+      "growthAdjustmentPct": -0.3,
+      "spendingAdjustmentPct": -1,
+      "unemploymentChangePpPerYear": 0.15
+    }
+  }
+}
