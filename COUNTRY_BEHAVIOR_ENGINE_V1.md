@@ -26,7 +26,7 @@ The Ministry dashboard exposes the same result through the **Country Overview** 
 
 ## Behaviour dimensions
 
-Every dimension is normalized to a simulation policy value from 0 to 1 and includes an explanation and evidence sources. These are not claims about a government's private intentions.
+The runtime currently exposes eleven dimensions, including an economic-capacity proxy for capital-intensive action ranking. Every dimension is normalized to a simulation policy value from 0 to 1 and includes an explanation and evidence sources. These are not claims about a government's private intentions.
 
 - **riskAppetite** derives from recorded fiscal pressure when available, otherwise a limited growth-capacity proxy.
 - **diplomaticPreference** uses explicitly country-specific OMEGA relation-model signals if available; economic openness is only a lower-confidence fallback. It does not infer alliances or treaties.
@@ -38,6 +38,7 @@ Every dimension is normalized to a simulation policy value from 0 to 1 and inclu
 - **innovationPreference** uses recorded internet/electricity-access fields as an investment-readiness proxy, not a measured national preference.
 - **domesticStabilityPriority** responds to recorded inflation, unemployment, political-stability and growth pressure.
 - **escalationTolerance** is used only when an explicit country-profile doctrine value exists. It is not guessed from defence expenditure.
+- **economicCapacity** uses the existing custom OMEGA economic influence index as a capital-investment capacity proxy for industrial, infrastructure, education, and procurement choices. It does not replace current treasury, cash-flow, input, labour, or executor checks.
 
 ## Action preference adapter
 
@@ -63,7 +64,7 @@ The read-only view contains:
 - Recorded economic baseline and explicit **NOT OBSERVED** states.
 - Gameplay-site count/diversity with simulated-reserve caveat.
 - Separate diplomatic, military and institutional context.
-- Ten behaviour dimensions with source, confidence and explanation.
+- Eleven behaviour dimensions with source, confidence and explanation.
 - Action-preference signals used by adaptive scoring.
 - Profile strengths, weaknesses, player advantages/challenges, profile strategy options, current priority stack and source limitations.
 
