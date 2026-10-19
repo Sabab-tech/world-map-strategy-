@@ -8,6 +8,7 @@ const catalog = JSON.parse(fs.readFileSync(new URL('resource_industrial_catalog_
 const supplement = JSON.parse(fs.readFileSync(new URL('resource_site_country_mineplay_batch_20261020_v1.json', repoRoot), 'utf8'));
 const industrialSource = fs.readFileSync(new URL('omega_resource_industrial_network_v1.js', repoRoot), 'utf8');
 const endowmentSource = fs.readFileSync(new URL('omega_resource_endowment_runtime.js', repoRoot), 'utf8');
+const integritySource = fs.readFileSync(new URL('omega_resource_site_integrity_v1.js', repoRoot), 'utf8');
 const bindingSource = fs.readFileSync(new URL('omega_resource_gameplay_binding_v1.js', repoRoot), 'utf8');
 const uiSource = fs.readFileSync(new URL('omega_resource_mine_management_v1.js', repoRoot), 'utf8');
 const indexSource = fs.readFileSync(new URL('index.html', repoRoot), 'utf8');
@@ -94,6 +95,17 @@ test('supplemental dataset adds valid, distinct sites without pretending simulat
     assert.ok(Array.isArray(row.sources) && row.sources.some(source => /^https?:\/\//.test(source.url)));
     assert.ok(row.operation.realWorldStatus || row.operation.status);
   }
+});
+
+test('supplemental records pass the canonical resource site integrity contract', () => {
+  const ctx = { console, Math, Number, String, Object, Array, Set, Map, WeakMap, JSON, Date, Intl };
+  ctx.globalThis = ctx; vm.createContext(ctx);
+  vm.runInContext(integritySource, ctx, { filename: 'omega_resource_site_integrity_v1.js' });
+  const api = ctx.Omega?.ResourceSiteIntegrity || ctx.OmegaResourceSiteIntegrity;
+  assert.ok(api && typeof api.auditRegistry === 'function', 'site integrity API must be loadable');
+  const report = api.auditRegistry(supplement.records, {});
+  assert.equal(report.status, 'PASS', JSON.stringify(report.errors.slice(0, 10)));
+  assert.equal(report.siteCount, supplement.records.length);
 });
 
 test('niobium and ruby have extraction and processing rules', () => {
