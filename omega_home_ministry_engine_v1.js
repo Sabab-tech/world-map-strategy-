@@ -142,6 +142,111 @@
     const records=treasuryRecords(normalizeCountry(country||currentCountry()));
     return records.length?{available:true,balance:num(records[0].row[records[0].key]),source:records[0].source,reason:null}:{available:false,balance:null,source:null,reason:'TREASURY_DATA_UNAVAILABLE'};
   }
+  function normalizeHomeBudgetPlan(raw){
+    const out={};
+    Object.keys(HOME_BUDGET_CATEGORIES).forEach(function(id){
+      const row=raw&&raw[id]&&typeof raw[id]==='object'?raw[id]:HOME_BUDGET_DEFAULT_PLAN[id];
+      const mode=row&&row.mode==='amount'?'amount':'percent';
+      let value=num(row&&row.value);
+      if(value===null)value=HOME_BUDGET_DEFAULT_PLAN[id].value;
+      value=Math.max(0,Math.min(mode==='percent'?100:1e15,value));
+      out[id]={mode:mode,value:value};
+    });
+    return out;
+  }
+  function financeApi(){return g.OmegaFinanceMinistry||g.Omega&&g.Omega.FinanceMinistry||null;}
+  function homeBudgetCategory(action){
+    const name=String(action||'HOME_MINISTRY_DAILY_OPERATIONS').toUpperCase();
+    for(const [id,row] of Object.entries(HOME_BUDGET_CATEGORIES))if(row.actions.includes(name))return id;
+    if(name.includes('RECRUIT')||name.includes('PAYROLL')||name.includes('SALARY'))return 'personnel';
+    if(name.includes('VEHICLE')&&(name.includes('ORDER')||name.includes('PROCURE')||name.includes('PURCHASE')))return 'vehicles';
+    if(name.includes('REPAIR')||name.includes('SERVICE')||name.includes('MAINTENANCE'))return 'maintenance';
+    if(name.includes('FACILITY')||name.includes('FACILITIES'))return 'facilities';
+    if(name.includes('RESEARCH')||name.includes('TRAIN'))return 'training';
+    return 'operations';
+  }
+  function currentFiscalLedgerSpend(model,category){
+    const ledger=Array.isArray(model&&model.ledger)?model.ledger:[];
+    const fiscal=Math.max(0,Math.floor(num(model&&model.fiscalYearIndex)||0));
+    const marker='OMEGA_HOME_BUDGET:'+category+'|';
+    return ledger.reduce(function(sum,row){
+      if(!row||row.action!=='EXPENSE'||String(row.department||'')!=='interior'||!String(row.description||'').startsWith(marker))return sum;
+      if(num(row.fiscalYearIndex)!==null&&Math.floor(num(row.fiscalYearIndex))!==fiscal)return sum;
+      if(row.reversedBy)return sum;
+      return sum+Math.max(0,num(row.amountUsd)||0);
+    },0);
+  }
+  function getHomeBudgetSnapshot(country,suppliedState){
+    const cid=normalizeCountry(country||currentCountry()),finance=financeApi();
+    if(!cid)return{available:false,reason:'PLAYER_COUNTRY_UNAVAILABLE',countryId:cid};
+    if(!finance||typeof finance.applyAction!=='function'||typeof finance.getFinanceState!=='function'||typeof finance.diagnostics!=='function')
+      return{available:false,reason:'FINANCE_RUNTIME_NOT_READY',countryId:cid};
+    const diagnostic=finance.diagnostics();
+    if(!diagnostic||diagnostic.initialized!==true)return{available:false,reason:'FINANCE_RUNTIME_NOT_READY',countryId:cid};
+    const profile=typeof finance.resolveCountry==='function'?finance.resolveCountry(cid):null;
+    const player=typeof finance.getPlayerCountry==='function'?finance.getPlayerCountry():null;
+    if(profile&&player&&profile.countryCode&&player.countryCode&&profile.countryCode!==player.countryCode)
+      return{available:false,reason:'PLAYER_COUNTRY_SCOPE_VIOLATION',countryId:cid};
+    let model=null;
+    try{model=finance.getFinanceState(cid);}catch(_){model=null;}
+    const parent=model&&model.allocations&&model.allocations.interior;
+    const envelope=num(parent&&parent.budgetUsd);
+    if(!model||!parent||envelope===null||envelope<=0)
+      return{available:false,reason:'HOME_BUDGET_ALLOCATION_UNAVAILABLE',countryId:cid,treasuryBalanceUsd:num(model&&model.treasuryBalanceUsd)};
+    const rawState=suppliedState||getState(cid),plan=normalizeHomeBudgetPlan(rawState&&rawState.homeBudgetPlan);
+    const treasury=getTreasury(cid),cash=num(model.treasuryBalanceUsd)!==null?Math.max(0,num(model.treasuryBalanceUsd)):treasury.available?Math.max(0,treasury.balance):null;
+    const parentRemaining=Math.max(0,num(parent.remainingUsd)===null?envelope:num(parent.remainingUsd));
+    const categories={};let plannedTotal=0,spentTotal=0;
+    Object.keys(HOME_BUDGET_CATEGORIES).forEach(function(id){
+      const spec=HOME_BUDGET_CATEGORIES[id],row=plan[id];
+      const amount=row.mode==='amount'?row.value:envelope*row.value/100;
+      const spent=currentFiscalLedgerSpend(model,id);
+      const remaining=Math.max(0,amount-spent);
+      categories[id]={id:id,label:spec.label,mode:row.mode,value:row.value,budgetUsd:amount,spentUsd:spent,remainingUsd:remaining,
+        spendableUsd:Math.max(0,Math.min(remaining,parentRemaining,cash===null?0:cash))};
+      plannedTotal+=amount;spentTotal+=spent;
+    });
+    const valid=plannedTotal<=envelope+0.01;
+    return{available:true,valid:valid,reason:valid?null:'HOME_BUDGET_PLAN_EXCEEDS_PARENT_ALLOCATION',
+      countryId:cid,financeCountryCode:profile&&profile.countryCode||null,parentBudgetUsd:envelope,parentRemainingUsd:parentRemaining,
+      treasuryBalanceUsd:cash,planTotalUsd:plannedTotal,unplannedBudgetUsd:Math.max(0,envelope-plannedTotal),
+      spentThisYearUsd:spentTotal,categories:categories,revision:num(model.revision)||0,plan:plan};
+  }
+  function setHomeBudgetPlan(input,country){
+    const cid=normalizeCountry(country||currentCountry()),state=getState(cid);
+    const current=getHomeBudgetSnapshot(cid,state);
+    if(!current.available)return{ok:false,code:current.reason||'HOME_BUDGET_UNAVAILABLE',snapshot:current};
+    const nextPlan=normalizeHomeBudgetPlan(input);
+    let total=0;
+    Object.keys(HOME_BUDGET_CATEGORIES).forEach(function(id){
+      const row=nextPlan[id];total+=row.mode==='amount'?row.value:current.parentBudgetUsd*row.value/100;
+    });
+    if(total>current.parentBudgetUsd+0.01)
+      return{ok:false,code:'HOME_BUDGET_PLAN_EXCEEDS_PARENT_ALLOCATION',message:'Home Ministry sub-budgets cannot exceed the Finance Ministry interior allocation.',plannedUsd:total,parentBudgetUsd:current.parentBudgetUsd};
+    for(const id of Object.keys(HOME_BUDGET_CATEGORIES)){
+      const row=nextPlan[id],budget=row.mode==='amount'?row.value:current.parentBudgetUsd*row.value/100;
+      if(budget+0.01<(current.categories[id].spentUsd||0))
+        return{ok:false,code:'HOME_BUDGET_BELOW_SPENT',category:id,spentUsd:current.categories[id].spentUsd,budgetUsd:budget,
+          message:'An allocation cannot be reduced below money already spent this fiscal year.'};
+    }
+    state.homeBudgetPlan=nextPlan;state.lastUpdatedTurn=turn();
+    const committed=dispatchState(cid,state,'OMEGA_HOME_MINISTRY_BUDGET_PLAN_UPDATED');
+    if(!committed.ok)return{ok:false,code:committed.reason||'STATE_COMMAND_FAILED'};
+    return{ok:true,code:'HOME_BUDGET_PLAN_SAVED',snapshot:getHomeBudgetSnapshot(cid,state)};
+  }
+  function validateHomeBudgetExpense(country,amount,action,state,snapshot){
+    const cost=Math.max(0,num(amount)||0);if(!cost)return{ok:true,amount:0};
+    const snap=snapshot||getHomeBudgetSnapshot(country,state);
+    if(!snap.available)return{ok:false,reason:snap.reason||'HOME_BUDGET_UNAVAILABLE',balance:snap.treasuryBalanceUsd,cost:cost};
+    if(!snap.valid)return{ok:false,reason:'HOME_BUDGET_PLAN_EXCEEDS_PARENT_ALLOCATION',balance:snap.treasuryBalanceUsd,cost:cost};
+    const category=homeBudgetCategory(action),row=snap.categories[category];
+    if(!row)return{ok:false,reason:'HOME_BUDGET_CATEGORY_UNAVAILABLE',category:category,cost:cost};
+    if(cost>row.remainingUsd+0.01)return{ok:false,reason:'HOME_BUDGET_CATEGORY_EXCEEDED',category:category,budgetRemaining:row.remainingUsd,balance:snap.treasuryBalanceUsd,cost:cost};
+    if(cost>snap.parentRemainingUsd+0.01)return{ok:false,reason:'HOME_BUDGET_PARENT_EXCEEDED',balance:snap.parentRemainingUsd,cost:cost};
+    if(snap.treasuryBalanceUsd===null)return{ok:false,reason:'TREASURY_DATA_UNAVAILABLE',cost:cost};
+    if(cost>snap.treasuryBalanceUsd+0.01)return{ok:false,reason:'INSUFFICIENT_TREASURY',balance:snap.treasuryBalanceUsd,cost:cost};
+    return{ok:true,category:category,financeType:HOME_BUDGET_CATEGORIES[category].financeType,snapshot:snap,amount:cost};
+  }
   function debitTreasury(country,amount,action,planState){
     const cost=Math.max(0,num(amount)||0);if(!cost)return{ok:true,amount:0,previous:[]};
     const cid=normalizeCountry(country),finance=financeApi();
@@ -174,6 +279,10 @@
     return{ok:true,amount:cost,previous:previous};
   }
   function refundTreasury(debit){
+    if(debit&&Array.isArray(debit.financeTransactions)){
+      for(let i=debit.financeTransactions.length-1;i>=0;i--)refundTreasury(debit.financeTransactions[i]);
+      return;
+    }
     if(debit&&debit.financeTransaction&&debit.transactionId){
       const finance=financeApi();
       if(finance&&typeof finance.applyAction==='function'){
@@ -739,15 +848,35 @@
     const now=simulationTimeMs(),day=Math.floor(now/DAY_MS),s=getState(cid);let changed=false,payrollDebit=null;
     if(s.lastPayrollDay===null||s.lastPayrollDay===undefined){s.lastPayrollDay=day;changed=true;}
     else if(day>s.lastPayrollDay){
-      const days=Math.min(3650,day-s.lastPayrollDay),due=dailyOperatingCost(s)*days,treasury=getTreasury(cid);
-      if(treasury.available){
-        const paid=Math.min(due,Math.max(0,treasury.balance)),debit=debitTreasury(cid,paid);
-        if(debit.ok){
-          payrollDebit=debit;
-          if(paid<due){s.unpaidPayroll+=due-paid;s.policeTrust=clamp(s.policeTrust-Math.min(5,days),0,100);s.policeEfficiency=clamp(s.policeEfficiency-Math.min(5,days),0,100);s.sabotageRisk=clamp(s.sabotageRisk+Math.min(5,days),5,95);}
-          emit('OMEGA_HOME_POLICE_PAYROLL_SETTLED',{countryId:cid,days:days,due:due,paid:paid,unpaid:Math.max(0,due-paid),turn:turn()});
-          s.lastPayrollDay=day;changed=true;
-        }
+      const days=Math.min(3650,day-s.lastPayrollDay),due=dailyOperatingCost(s)*days;
+      const finance=financeApi();let debit=null,paid=0;
+      if(finance&&typeof finance.applyAction==='function'){
+        const payrollDue=dailyPayroll(s)*days,maintenanceDue=Math.max(0,due-payrollDue),snapshot=getHomeBudgetSnapshot(cid,s);
+        const payrollCheck=validateHomeBudgetExpense(cid,payrollDue,'POLICE_PAYROLL',s,snapshot);
+        const maintenanceCheck=validateHomeBudgetExpense(cid,maintenanceDue,'POLICE_FLEET_MAINTENANCE',s,snapshot);
+        if(snapshot.available&&payrollCheck.ok&&maintenanceCheck.ok&&payrollDue+maintenanceDue<=snapshot.parentRemainingUsd+0.01&&payrollDue+maintenanceDue<=snapshot.treasuryBalanceUsd+0.01){
+          const transactions=[];
+          const salaryDebit=payrollDue>0?debitTreasury(cid,payrollDue,'POLICE_PAYROLL',s):{ok:true,amount:0};
+          if(salaryDebit.ok&&salaryDebit.financeTransaction)transactions.push(salaryDebit);
+          const upkeepDebit=maintenanceDue>0?debitTreasury(cid,maintenanceDue,'POLICE_FLEET_MAINTENANCE',s):{ok:true,amount:0};
+          if(upkeepDebit.ok&&upkeepDebit.financeTransaction)transactions.push(upkeepDebit);
+          if(salaryDebit.ok&&upkeepDebit.ok){debit={ok:true,financeTransactions:transactions,amount:due};paid=due;}
+          else {if(salaryDebit.ok&&salaryDebit.financeTransaction)refundTreasury(salaryDebit);debit={ok:false,reason:upkeepDebit.reason||salaryDebit.reason||'FINANCE_TRANSACTION_FAILED'};}
+        }else debit={ok:false,reason:!snapshot.available?snapshot.reason||'HOME_BUDGET_UNAVAILABLE':!payrollCheck.ok?payrollCheck.reason:!maintenanceCheck.ok?maintenanceCheck.reason:'HOME_BUDGET_PARENT_EXCEEDED'};
+      }else{
+        const treasury=getTreasury(cid);
+        if(treasury.available){paid=Math.min(due,Math.max(0,treasury.balance));debit=debitTreasury(cid,paid,'HOME_MINISTRY_DAILY_OPERATIONS',s);}
+        else debit={ok:false,reason:'TREASURY_DATA_UNAVAILABLE'};
+      }
+      if(debit&&debit.ok){
+        payrollDebit=debit;
+        if(paid<due){s.unpaidPayroll+=due-paid;s.policeTrust=clamp(s.policeTrust-Math.min(5,days),0,100);s.policeEfficiency=clamp(s.policeEfficiency-Math.min(5,days),0,100);s.sabotageRisk=clamp(s.sabotageRisk+Math.min(5,days),5,95);}
+        emit('OMEGA_HOME_POLICE_PAYROLL_SETTLED',{countryId:cid,days:days,due:due,paid:paid,unpaid:Math.max(0,due-paid),turn:turn()});
+        s.lastPayrollDay=day;changed=true;
+      }else{
+        s.unpaidPayroll+=due;s.policeTrust=clamp(s.policeTrust-Math.min(5,days),0,100);s.policeEfficiency=clamp(s.policeEfficiency-Math.min(5,days),0,100);s.sabotageRisk=clamp(s.sabotageRisk+Math.min(5,days),5,95);
+        emit('OMEGA_HOME_POLICE_PAYROLL_SETTLED',{countryId:cid,days:days,due:due,paid:0,unpaid:due,reason:debit&&debit.reason||'BUDGET_UNAVAILABLE',turn:turn()});
+        s.lastPayrollDay=day;changed=true;
       }
     }
     const order=s.pendingVehicleOrder;
