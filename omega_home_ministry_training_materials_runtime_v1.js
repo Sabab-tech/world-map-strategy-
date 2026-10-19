@@ -21,7 +21,7 @@
     });
     return out;
   }
-  function token(value) { return String(value == null ? '' : value).trim().toLowerCase().replace(/[\\s-]+/g, '_'); }
+  function token(value) { return String(value == null ? '' : value).trim().toLowerCase().replace(/[\s-]+/g, '_'); }
   function number(value) {
     if (typeof value === 'number' && Number.isFinite(value)) return value;
     if (typeof value === 'string' && value.trim() !== '' && Number.isFinite(Number(value))) return Number(value);
