@@ -32,7 +32,7 @@
   if(scale){
     let amount;
     try{amount=new Intl.NumberFormat('en-US',{maximumFractionDigits:2}).format(abs/scale.value);}
-    catch(_){amount=(abs/scale.value).toFixed(2).replace(/\\.?0+$/,'');}
+    catch(_){amount=(abs/scale.value).toFixed(2).replace(/\.?0+$/,'');}
     return (n<0?'-':'')+'$'+amount+' '+scale.label;
   }
   try{return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(n);}
