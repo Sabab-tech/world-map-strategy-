@@ -2574,7 +2574,7 @@ const _omegaExport = (function (globalScope) {
           const targets = matchedCommodities.length > 0 ? matchedCommodities : [COMMODITY_TAXONOMY.oil, COMMODITY_TAXONOMY.rare_earth];
           
           const auditBlocks = targets.map(c => {
-            let liveVal = gameRes[c.key] !== undefined ? `${Number(gameRes[c.key]).toLocaleString()} ${c.unit}` : `কৌশলগত জাতীয় মজুদ অক্ষত`;
+            let liveVal = gameRes[c.key] !== undefined ? `${(typeof window !== 'undefined' && window.OmegaNumberFormat && typeof window.OmegaNumberFormat.compact === 'function' ? window.OmegaNumberFormat.compact(Number(gameRes[c.key])) : Number(gameRes[c.key]).toLocaleString())} ${c.unit}` : `কৌশলগত জাতীয় মজুদ অক্ষত`;
             return `• ${c.icon} ${c.nameBn} (${c.nameEn}):\n   - নিরীক্ষিত জাতীয় মজুদ: ${liveVal}\n   - জরুরি বাফার স্থায়িত্ব: ~${c.defaultBufferDays} দিন\n   - সংরক্ষণাগার প্রোটোকল: সুরক্ষিত রাষ্ট্রীয় সাইলো ও ডিপোতে সার্বক্ষণিক পাহারায় রক্ষিত`;
           }).join('\n\n');
 
@@ -2684,7 +2684,7 @@ const _omegaExport = (function (globalScope) {
           const targets = matchedCommodities.length > 0 ? matchedCommodities : [COMMODITY_TAXONOMY.oil, COMMODITY_TAXONOMY.rare_earth];
 
           const auditBlocks = targets.map(c => {
-            let liveVal = gameRes[c.key] !== undefined ? `${Number(gameRes[c.key]).toLocaleString()} ${c.unit}` : `Strategic Silo Reserve Intact`;
+            let liveVal = gameRes[c.key] !== undefined ? `${(typeof window !== 'undefined' && window.OmegaNumberFormat && typeof window.OmegaNumberFormat.compact === 'function' ? window.OmegaNumberFormat.compact(Number(gameRes[c.key])) : Number(gameRes[c.key]).toLocaleString())} ${c.unit}` : `Strategic Silo Reserve Intact`;
             return `• ${c.icon} ${c.nameEn} (${c.category}):\n   - Audited Inventory Balance: ${liveVal}\n   - Emergency Consumption Runway: ~${c.defaultBufferDays} days\n   - Physical Storage Security: Fortified underground bunkers and coastal storage depots under 24/7 security`;
           }).join('\n\n');
 
