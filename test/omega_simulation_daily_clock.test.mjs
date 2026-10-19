@@ -189,6 +189,7 @@ test('index, finance, bank and offline shell use the daily lifecycle assets', ()
   assert.match(lifecycle, /priority: Number\.MAX_SAFE_INTEGER/);
   assert.match(lifecycle, /registerTurnFinalizer\('omega\.game-lifecycle\.autosave'/);
   assert.match(lifecycle, /LOCAL_STORAGE_AND_INDEXEDDB_SAVE_FAILED/);
+  assert.match(lifecycle, /GAME ERROR · LAST COMPLETE SAVE PRESERVED/);
   assert.doesNotMatch(lifecycle, /Math\.floor\(turn\) % 3/);
   assert.match(lifecycle, /function saveNow\(options\)/);
   assert.match(lifecycle, /function onPageExit\(\)/);
@@ -340,6 +341,13 @@ test('lifecycle autosaves only after async sector work and catches pagehide with
   saved = JSON.parse(storage.get('omega.game.save.default'));
   assert.equal(saved.worldState.economy.BGD.treasury, 999999,
     'pagehide snapshot must be written even without any Back-button action');
+
+  gameState.economy.BGD.treasury = 123;
+  sim.status = 'ERROR';
+  win.dispatchEvent(new win.CustomEvent('pagehide'));
+  saved = JSON.parse(storage.get('omega.game.save.default'));
+  assert.equal(saved.worldState.economy.BGD.treasury, 999999,
+    'a failed turn must not overwrite the last complete durable checkpoint');
   assert.ok(win.Omega.GameLifecycle.getDiagnostics().savedTurn >= 1);
 });
 
