@@ -177,6 +177,9 @@
     updateControls(sim);
 
     var country = playerCountry(sim);
+    if (country && typeof g.updateGlobalResourceHUD === 'function') {
+      try { g.updateGlobalResourceHUD(country); } catch (_) {}
+    }
     var fm = country ? currentFinance(country) : null;
     var treasury = number(fm && fm.treasuryBalanceUsd);
     var annualRevenue = number(fm && fm.fiscalModel && fm.fiscalModel.annualRevenueUsd);
