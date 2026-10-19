@@ -147,6 +147,18 @@
     }).join('') + '</ul>';
   }
 
+  function evidenceItems(value, prefix) {
+    const lead = prefix ? String(prefix) + ' / ' : '';
+    if (Array.isArray(value)) return value.flatMap(item => isObj(item)
+      ? [Object.fromEntries(Object.entries(item).map(([key, val]) => [key, val]))]
+      : [item]);
+    if (isObj(value)) return Object.entries(value).map(([key, val]) => ({
+      title: lead + key,
+      detail: isObj(val) || Array.isArray(val) ? JSON.stringify(val) : s(val)
+    }));
+    return value === null || value === undefined || value === '' ? [] : [String(value)];
+  }
+
   function panel(title, subtitle, body, extraClass) {
     return '<section class="ocov-panel ' + esc(extraClass || '') + '">' +
       '<header class="ocov-panel-header"><h3>' + esc(title) + '</h3>' +
@@ -273,6 +285,7 @@
     ].map(x => typeof x === 'string' ? x : (isObj(x) ? x.title || x.detail || x.signal || '' : s(x))).filter(Boolean)));
     const playerAdvantages = arr(strategic?.playerAdvantages).length ? arr(strategic.playerAdvantages) : arr(narrative.playerAdvantages);
     const playerChallenges = arr(strategic?.playerChallenges).length ? arr(strategic.playerChallenges) : arr(narrative.playerChallenges);
+    const recommendedStrategyItems = evidenceItems(strategic?.recommendedStrategy || narrative.recommendedStrategy, 'Recommended strategy');
     const registeredOptions = arr(adaptive?.registeredStrategyOptions).length
       ? arr(adaptive.registeredStrategyOptions) : arr(strategic?.strategyOptions);
     const actionPreferences = isObj(adaptive?.actionPreferences) ? adaptive.actionPreferences :
@@ -322,17 +335,26 @@
         '<p class="ocov-source-line">Catalog status: ' + esc(resources.availability || 'UNKNOWN') + '</p>' +
         bulletList(arr(resources.resources).map(x => String(x)), 'No registered gameplay resource-site information for this country.'),
         'ocov-panel-resources') +
+      panel('Economic structure & development', 'Sector and trade details are shown only when registered in the country profile.',
+        bulletList(
+          evidenceItems(strategic?.economy?.tradePosition, 'Trade position')
+            .concat(evidenceItems(strategic?.economy?.sectorProfile, 'Sector profile'))
+            .concat(evidenceItems(strategic?.economy?.developmentSignals, 'Development signal')),
+          'No separate sector or development-profile data is registered.')) +
       panel('Diplomacy & foreign relations', 'Only named game-model signals are treated as country-specific.',
         '<p><strong>Evidence mode:</strong> ' + esc(diplomacy.evidenceMode || 'NOT ESTABLISHED') + '</p>' +
         '<p><strong>Modelled posture:</strong> ' + esc(diplomacy.strategicPosture || 'NOT ESTABLISHED') + '</p>' +
         bulletList(arr(diplomacy.tendencies).concat(arr(diplomacy.highWeightFocus).map(x => 'Priority: ' + x))
-          .concat(arr(diplomacy.cooperationSignals)), 'No country-specific diplomatic behaviour was verified by available model evidence.') +
+          .concat(arr(diplomacy.cooperationSignals), arr(diplomacy.pressurePoints),
+            arr(diplomacy.leverageSignals), arr(diplomacy.modelSignals)),
+          'No country-specific diplomatic behaviour was verified by available model evidence.') +
         (dependencies.status ? '<p><strong>Dependency status:</strong> ' + esc(dependencies.status) + '</p>' : ''),
         'ocov-panel-diplomacy') +
       panel('Military context', 'Budget effort is not combat capability, readiness or equipment quality.',
         '<div class="ocov-single-metric"><strong>' + esc(compactNumber(militaryPct, '%')) + '</strong><span>military expenditure / GDP</span></div>' +
         '<p>' + esc(strategic?.military?.caveat || 'Operational force structure, readiness, equipment, sustainment and logistics require separate verified runtime records.') + '</p>' +
-        bulletList(arr(strategic?.military?.strengthSignals).concat(arr(strategic?.military?.riskSignals)),
+        bulletList(arr(strategic?.military?.strengthSignals).concat(arr(strategic?.military?.riskSignals),
+          arr(strategic?.military?.capabilityGaps), arr(strategic?.military?.gameModelMilitarySignals)),
           'No comparable force-capability estimate is recorded.'),
         'ocov-panel-military') +
       panel('Politics & institutions', 'Governance indicators are kept separate; no unsupported regime label.',
@@ -342,10 +364,14 @@
         metricCard('Rule of law', strategicNumber(strategic, 'politics.ruleOfLawWgiEstimate'), '', 'WGI estimate; scale is not 0–100') +
         metricCard('Control of corruption', strategicNumber(strategic, 'politics.controlOfCorruptionWgiEstimate'), '', 'WGI estimate; scale is not 0–100') +
         '</div><p><strong>Political system:</strong> ' + esc(governance.regimeClassification || strategic?.politics?.politicalSystemClassification || 'NOT CLASSIFIED') + '</p>' +
-        bulletList(arr(strategic?.politics?.risks), 'No separately registered governance-risk points are available.'),
+        bulletList(arr(strategic?.politics?.governanceIndicatorPoints).concat(
+          arr(strategic?.politics?.strengths), arr(strategic?.politics?.risks), arr(strategic?.politics?.limitations)),
+          'No separately registered governance-risk points are available.'),
         'ocov-panel-politics') +
       panel('Dependencies & structural pressure', 'A signal tells the AI what to examine; it does not prove dependence on a named state.',
-        bulletList(arr(dependencies.modelSignals).concat(arr(strategic?.economy?.pressurePoints)),
+        bulletList(arr(dependencies.modelSignals)
+          .concat(arr(strategic?.dependencies?.domains), arr(strategic?.dependencies?.measurementGaps),
+            arr(strategic?.economy?.pressurePoints)),
           'Named supplier, creditor and critical-import dependencies are not established in the available record.'),
         'ocov-panel-dependencies') +
       '</div>' +
@@ -371,6 +397,8 @@
         bulletList(playerChallenges, 'No country-specific player challenge has been established.')) +
       panel('Registered strategic options', 'Profile-builder options retained alongside current runtime priorities.',
         bulletList(registeredOptions, 'No separately registered strategic option is available.')) +
+      panel('Recommended strategy from country profile', 'Recommendations are advice, not executed orders.',
+        bulletList(recommendedStrategyItems, 'No separately registered country strategy recommendation is available.')) +
       '</div>' +
       '<div class="ocov-section-heading"><span>03</span><div><h3>Priority stack</h3><p>Current candidate priorities generated from this country’s available evidence.</p></div></div>' +
       '<section class="ocov-panel"><div class="ocov-panel-body">' + priorityBody + '</div></section>' +
