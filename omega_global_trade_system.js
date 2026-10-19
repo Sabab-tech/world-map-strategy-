@@ -171,6 +171,13 @@
     const bc=currencyOf(buyer),sc=currencyOf(seller);
     if(!bc||!sc)return null;
     if(bc===sc)return 1;
+    const monetary=g.OmegaForexMonetaryEngine||g.Omega&&g.Omega.ForexMonetaryEngine;
+    if(monetary&&typeof monetary.getRate==='function'){
+      const buyerLocalPerUsd=num(monetary.getRate(bc,'SIMULATION'));
+      const sellerLocalPerUsd=num(monetary.getRate(sc,'SIMULATION'));
+      if(buyerLocalPerUsd!==null&&sellerLocalPerUsd!==null&&buyerLocalPerUsd>0&&sellerLocalPerUsd>0)
+        return buyerLocalPerUsd/sellerLocalPerUsd;
+    }
     const paths=[
       'finance.exchangeRates.'+sc,
       'trade.exchangeRates.'+sc,
@@ -510,34 +517,43 @@
     if(inv.stock-reserve<q)return{ok:false,reason:'SELLER_FREE_STOCK_INSUFFICIENT'};
     if(values.fx===null||values.sellerValue===null||values.buyerValue===null)return{ok:false,reason:'SETTLEMENT_FX_OR_PRICE_NOT_OBSERVED'};
     if(buyerFin.liquidity===null)return{ok:false,reason:'BUYER_LIQUIDITY_NOT_OBSERVED'};
-    if(buyerFin.liquidity<values.buyerValue)return{ok:false,reason:'BUYER_LIQUIDITY_INSUFFICIENT'};
+    // Local-currency buyerValue cannot be compared against USD Treasury. Government Banking
+    // verifies the exact USD debit (including tariff) after bilateral review.
+    if(!g.OmegaGovernmentBanking&&buyerFin.liquidity<values.buyerValue)return{ok:false,reason:'BUYER_LIQUIDITY_INSUFFICIENT'};
     if(buyerInv.stock===null)return{ok:false,reason:'BUYER_RESOURCE_INVENTORY_NOT_OBSERVED'};
     return{ok:true,total:values.sellerValue,buyerTotal:values.buyerValue,sellerTotal:values.sellerValue,price:num(req.unitPrice),fx:values.fx,buyerCurrency:values.buyerCurrency,sellerCurrency:values.sellerCurrency};
   }
 
   function financeDebitHandler(cmd,ctx){
-    const p=cmd?.payload||{},amount=num(p.amount);
+    const p=cmd?.payload||{},amount=num(p.amount),sid=String(p.settlementId||'').trim();
     if(amount===null||amount<0)return{accepted:false,reason:'FINANCE_AMOUNT_INVALID'};
+    const hist=ctx.stateTransaction.get('finance.tradeSettlementHistory'),arr=Array.isArray(hist)?hist:[];
+    const prior=sid?arr.find(x=>String(x.settlementId||'')===sid&&String(x.type||'').toUpperCase()==='DEBIT'):null;
+    if(prior){if(Math.abs((num(prior.amount)||0)-amount)>1e-7)return{accepted:false,reason:'FINANCE_IDEMPOTENCY_AMOUNT_MISMATCH'};return{accepted:true,duplicate:true,amount:prior.amount};}
     const available=num(ctx.stateTransaction.get('finance.available')),reserves=num(ctx.stateTransaction.get('finance.reserves'));
     const base=available??reserves;
     if(base===null)return{accepted:false,reason:'FINANCE_LIQUIDITY_NOT_OBSERVED'};
+    const bank=g.OmegaGovernmentBanking||g.Omega&&g.Omega.GovernmentBanking;
+    if(available!==null&&bank&&typeof bank.getReservedTreasuryUsd==='function'){
+      const held=num(bank.getReservedTreasuryUsd(ctx.countryId,sid))||0;
+      if(base-held+1e-8<amount)return{accepted:false,reason:'FINANCE_TREASURY_HELD_FOR_OTHER_PAYMENTS',availableAfterHolds:Math.max(0,base-held),heldUsd:held};
+    }
     if(base<amount)return{accepted:false,reason:'FINANCE_LIQUIDITY_INSUFFICIENT'};
     if(available!==null)ctx.stateTransaction.set('finance.available',available-amount);
     else ctx.stateTransaction.set('finance.reserves',reserves-amount);
-    const hist=ctx.stateTransaction.get('finance.tradeSettlementHistory');
-    const arr=Array.isArray(hist)?hist:[];
-    ctx.stateTransaction.set('finance.tradeSettlementHistory',arr.concat([{settlementId:p.settlementId,type:'DEBIT',amount,turn:turn(),countryId:ctx.countryId}]).slice(-MAX_HISTORY));
+    ctx.stateTransaction.set('finance.tradeSettlementHistory',arr.concat([{settlementId:sid,type:'DEBIT',amount,turn:turn(),countryId:ctx.countryId}]).slice(-MAX_HISTORY));
     return{accepted:true,amount};
   }
   function financeCreditHandler(cmd,ctx){
-    const p=cmd?.payload||{},amount=num(p.amount);
+    const p=cmd?.payload||{},amount=num(p.amount),sid=String(p.settlementId||'').trim();
     if(amount===null||amount<0)return{accepted:false,reason:'FINANCE_AMOUNT_INVALID'};
+    const hist=ctx.stateTransaction.get('finance.tradeSettlementHistory'),arr=Array.isArray(hist)?hist:[];
+    const prior=sid?arr.find(x=>String(x.settlementId||'')===sid&&String(x.type||'').toUpperCase()==='CREDIT'):null;
+    if(prior){if(Math.abs((num(prior.amount)||0)-amount)>1e-7)return{accepted:false,reason:'FINANCE_IDEMPOTENCY_AMOUNT_MISMATCH'};return{accepted:true,duplicate:true,amount:prior.amount};}
     const available=num(ctx.stateTransaction.get('finance.available'));
     if(available===null)return{accepted:false,reason:'FINANCE_LIQUIDITY_NOT_OBSERVED'};
     ctx.stateTransaction.set('finance.available',available+amount);
-    const hist=ctx.stateTransaction.get('finance.tradeSettlementHistory');
-    const arr=Array.isArray(hist)?hist:[];
-    ctx.stateTransaction.set('finance.tradeSettlementHistory',arr.concat([{settlementId:p.settlementId,type:'CREDIT',amount,turn:turn(),countryId:ctx.countryId}]).slice(-MAX_HISTORY));
+    ctx.stateTransaction.set('finance.tradeSettlementHistory',arr.concat([{settlementId:sid,type:'CREDIT',amount,turn:turn(),countryId:ctx.countryId}]).slice(-MAX_HISTORY));
     return{accepted:true,amount};
   }
   function resourceDebitHandler(cmd,ctx){
