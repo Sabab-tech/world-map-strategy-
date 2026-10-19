@@ -1945,7 +1945,11 @@ window.addEventListener('RESOURCE_STATE_UPDATED', () => {
                     pieces.push(displayValue(object.value, object.unit || ''));
                 }
                 if (object && object.year !== null && object.year !== undefined) pieces.push('Year ' + object.year);
-                if (object && object.level !== null && object.level !== undefined) pieces.push('Model level ' + object.level + '/100');
+                if (object && object.level !== null && object.level !== undefined) {
+                    if (object.evidenceType === 'REGISTERED_MACRO_INDICATOR') pieces.push('Indicator value ' + object.level);
+                    else if (object.evidenceType === 'REPOSITORY_DERIVED_GAME_INDEX') pieces.push('Derived index ' + object.level + '/100');
+                    else pieces.push('Model level ' + object.level + '/100');
+                }
                 if (object && object.intensity) pieces.push(String(object.intensity).replace(/_/g, ' '));
                 if (object && object.domain) pieces.push(String(object.domain).replace(/_/g, ' '));
                 if (object && object.evidenceType) pieces.push(String(object.evidenceType).replace(/_/g, ' '));
@@ -2094,6 +2098,11 @@ window.addEventListener('RESOURCE_STATE_UPDATED', () => {
             miniHeading('Source-level evidence records') + list(buildEvidenceRows(quality.evidenceMetrics), 'No supporting metric records are available.') +
             miniHeading('Standard assessment thresholds') +
             list(Object.entries(criteria.thresholds || {}).map(([key, value]) => ({title:key,detail:value})), 'Assessment criteria are not available.') +
+            miniHeading('Profile source files') +
+            list(safeArray(quality.sourceFiles).map(source => ({title:source, detail:'Declared input source for the country profile.'})),
+                'No source-file inventory is available.') +
+            miniHeading('Known data limitations') +
+            list(quality.caveats, 'No explicit data limitation notes are available.') +
             miniHeading('Mandatory interpretation caveats') + list(criteria.mandatoryCaveats, 'No registered caveats.');
 
         return '<div class="sc-profile-shell">' +
