@@ -28,3 +28,6 @@ Finance reads actual receipts from the existing finance and Resource Economy run
 Each of the 15 modeled economic-output categories is mapped to the closest budget-planning sector. The Income & Industry table shows estimated output, projected sector receipts, the linked annual allocation, fiscal-year spending and remaining ceiling side by side. Industry figures are configurable game estimates; budget and spending values are taken from the player's Finance plan and ledger.
 
 Emergency expenses are restricted to the Emergency & Strategic Reserve sector, and debt-service expenses must use the Debt Service & Financial Stability sector. These checks prevent other sectors from using these categories to bypass the configured minimum Treasury reserve.
+
+## Fiscal-year industry receipts
+Each simulation-time tax collection is split across the 15 configurable economic-sector receipt shares and accumulated in `finance.<country>.omegaFinance.currentYearSectorReceiptsUsd`. The Income & Industry row displays this as **Collected this FY**, beside the annual modeled forecast. On the tested default registry, sector receipt shares sum to 100%, so all sector rows reconcile to the modeled current-year tax receipts (within floating-point rounding). These values are in-game fiscal estimates, not real-world sector tax records.
