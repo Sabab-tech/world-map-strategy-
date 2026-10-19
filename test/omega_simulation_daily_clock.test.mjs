@@ -192,12 +192,15 @@ test('index, finance, bank and offline shell use the daily lifecycle assets', ()
   assert.match(core, /installEventLedgerTurnBridge/);
   assert.match(core, /registerTurnFinalizer\(id,handler,options=\{\}\)/);
   assert.match(core, /await this\.runTurnFinalizers\(/);
+  assert.match(core, /'FINALIZE'/);
   assert.match(core, /await this\.runTurnParticipants\(event\)/);
   assert.match(core, /__OMEGA_SIMULATION_PIPELINE_ACTIVE__/);
   assert.match(core, /TURN_PARTICIPANT_FAILED/);
   assert.match(lifecycle, /priority: Number\.MAX_SAFE_INTEGER/);
   assert.match(lifecycle, /registerTurnFinalizer\('omega\.game-lifecycle\.autosave'/);
   assert.match(lifecycle, /LOCAL_STORAGE_AND_INDEXEDDB_SAVE_FAILED/);
+  assert.match(lifecycle, /installMutationEventSaveBridge/);
+  assert.match(lifecycle, /_STATE_UPDATED|_APPLIED|_COMPLETED/);
   assert.match(lifecycle, /GAME ERROR · LAST COMPLETE SAVE PRESERVED/);
   assert.doesNotMatch(lifecycle, /Math\.floor\(turn\) % 3/);
   assert.match(lifecycle, /function saveNow\(options\)/);
