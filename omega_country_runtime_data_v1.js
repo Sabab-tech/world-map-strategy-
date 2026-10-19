@@ -4,7 +4,7 @@
  */
 (function (root) {
   'use strict';
-  const state = { ready:false, settled:false, error:null, promise:null, profiles:[], extras:new Map(), byCode:new Map(), byIso3:new Map(), byNumeric:new Map(), aliases:new Map(), cities:new Map(), legacyEconomy:{}, legacyPopulation:{}, generalDataReady:false, generalDataRegistry:null, generalDataByIso3:new Map(), generalDataByCode:new Map(), generalDataMetricIndexes:new Map(), generalDataIdentityIndexes:null };
+  const state = { ready:false, settled:false, error:null, promise:null, profiles:[], extras:new Map(), byCode:new Map(), byIso3:new Map(), byNumeric:new Map(), aliases:new Map(), cities:new Map(), legacyEconomy:{}, legacyPopulation:{}, generalDataReady:false, generalDataSettled:false, generalDataError:null, generalDataPromise:null, generalDataRegistry:null, generalDataByIso3:new Map(), generalDataByCode:new Map(), generalDataMetricIndexes:new Map(), generalDataIdentityIndexes:null };
   const s = v => String(v == null ? '' : v).trim();
   const norm = v => s(v).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/&/g, ' AND ').replace(/[_’'`-]+/g, ' ').replace(/[^A-Z0-9]+/gi, ' ').trim().toUpperCase().replace(/\s+/g, ' ');
   const fixedAliases = {
@@ -234,7 +234,7 @@
     const rows = Array.from(state.generalDataByIso3.values());
     const populationIndex = state.generalDataMetricIndexes.get('populationTotal');
     const gdpIndex = state.generalDataMetricIndexes.get('gdpCurrentUsd');
-    return {version:'1.1.0',ready:state.ready,settled:state.settled,error:state.error,profileCount:state.profiles.length,countryIdentityCount:state.byCode.size+state.extras.size,flagCount:state.profiles.concat(Array.from(state.extras.values())).filter(p=>!!flagFor(p)).length,capitalCount:state.cities.size,profilesWithEconomy:state.profiles.filter(p=>p.sourceValues&&typeof p.sourceValues==='object').length,profilesWithPopulation:state.profiles.filter(p=>p.populationValues&&typeof p.populationValues==='object').length,legacyEconomyRecords:Object.keys(state.legacyEconomy).length,legacyPopulationRecords:Object.keys(state.legacyPopulation).length,generalDataRegistryReady:state.generalDataReady,generalDataRecordCount:state.generalDataByIso3.size,generalDataMetricCount:state.generalDataMetricIndexes.size,generalDataPopulationCoverage:populationIndex===undefined?0:rows.filter(row=>row.metrics[populationIndex]!==null&&row.metrics[populationIndex]!==undefined).length,generalDataGdpCoverage:gdpIndex===undefined?0:rows.filter(row=>row.metrics[gdpIndex]!==null&&row.metrics[gdpIndex]!==undefined).length};
+    return {version:'1.1.0',ready:state.ready,settled:state.settled,error:state.error,generalDataSettled:state.generalDataSettled,generalDataError:state.generalDataError,profileCount:state.profiles.length,countryIdentityCount:state.byCode.size+state.extras.size,flagCount:state.profiles.concat(Array.from(state.extras.values())).filter(p=>!!flagFor(p)).length,capitalCount:state.cities.size,profilesWithEconomy:state.profiles.filter(p=>p.sourceValues&&typeof p.sourceValues==='object').length,profilesWithPopulation:state.profiles.filter(p=>p.populationValues&&typeof p.populationValues==='object').length,legacyEconomyRecords:Object.keys(state.legacyEconomy).length,legacyPopulationRecords:Object.keys(state.legacyPopulation).length,generalDataRegistryReady:state.generalDataReady,generalDataRecordCount:state.generalDataByIso3.size,generalDataMetricCount:state.generalDataMetricIndexes.size,generalDataPopulationCoverage:populationIndex===undefined?0:rows.filter(row=>row.metrics[populationIndex]!==null&&row.metrics[populationIndex]!==undefined).length,generalDataGdpCoverage:gdpIndex===undefined?0:rows.filter(row=>row.metrics[gdpIndex]!==null&&row.metrics[gdpIndex]!==undefined).length};
   }
   async function load(path,optional) {
     if (typeof root.fetch!=='function') { if(optional)return null; throw new Error('FETCH_UNAVAILABLE:'+path); }
@@ -244,20 +244,36 @@
   }
   function init() {
     if(state.promise)return state.promise;
+    state.generalDataPromise = load('./country_general_data_registry_v1.json',true)
+      .then(data => {
+        const available = buildGeneralDataRegistry(data);
+        state.generalDataSettled = true;
+        try {
+          if (typeof root.dispatchEvent === 'function' && typeof root.CustomEvent === 'function') {
+            root.dispatchEvent(new root.CustomEvent('OMEGA_COUNTRY_GENERAL_DATA_READY', {
+              detail: { ready: available, recordCount: state.generalDataByIso3.size }
+            }));
+          }
+        } catch (_) {}
+        return available;
+      })
+      .catch(error => {
+        state.generalDataSettled = true;
+        state.generalDataError = String(error && error.message || error || 'GENERAL_DATA_LOAD_FAILED');
+        return false;
+      });
     state.promise=Promise.all([
       load('./economy_global_profiles_v1.json',false),
       load('./cities.json',true).catch(()=>null),
       load('./economy.json',true).catch(()=>null),
-      load('./population.json',true).catch(()=>null),
-      load('./country_general_data_registry_v1.json',true).catch(()=>null)
+      load('./population.json',true).catch(()=>null)
     ])
-      .then(([data,cityData,economyData,populationData,generalData])=>{
+      .then(([data,cityData,economyData,populationData])=>{
         if(!data||!Array.isArray(data.countries))throw new Error('COUNTRY_PROFILE_REGISTRY_INVALID');
         buildProfiles(data.countries);
         addSupplementalIdentities();
         state.legacyEconomy=economyData&&typeof economyData==='object'?economyData:{};
         state.legacyPopulation=populationData&&typeof populationData==='object'?populationData:{};
-        buildGeneralDataRegistry(generalData);
         state.cities.clear();
         (Array.isArray(cityData?.countries)?cityData.countries:[]).forEach(row=>{
           const p=row&&resolveCountry(row.name); if(p)state.cities.set(p.countryCode,row);
@@ -266,5 +282,5 @@
       }).catch(error=>{state.ready=false;state.settled=true;state.error=String(error?.message||error);return false;});
     return state.promise;
   }
-  root.OmegaCountryRuntimeData=Object.freeze({version:'1.1.0',init,ready:init(),isReady:()=>state.ready,isSettled:()=>state.settled,resolveCountry,flagFor,getProfile,getRecord,getGeneralData,getGeneralMetric,getCapital,getCities,diagnostics});
+  root.OmegaCountryRuntimeData=Object.freeze({version:'1.1.0',init,ready:init(),isReady:()=>state.ready,isSettled:()=>state.settled,isGeneralDataSettled:()=>state.generalDataSettled,generalDataReadyPromise:()=>state.generalDataPromise,resolveCountry,flagFor,getProfile,getRecord,getGeneralData,getGeneralMetric,getCapital,getCities,diagnostics});
 })(window);
