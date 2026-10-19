@@ -972,10 +972,13 @@
           !Number.isFinite(Number(restoredClock.simulationTimeMs))){
           restoredClock.simulationTimeMs=savedTurn*DAY_MS;
         }
-      }else if(worldTurn>clockTurn&&!Number.isFinite(savedEpoch)){
+      }else if(worldTurn>clockTurn){
         // Early legacy snapshots may have updated Game.state before the clock existed.
-        // Never rewind that world turn to the stale default clock turn.
-        restoredClock.simulationTimeMs=savedTurn*DAY_MS;
+        // Prefer its saved calendar date when present; otherwise never rewind to the
+        // stale default clock turn.
+        restoredClock.simulationTimeMs=Number.isFinite(savedEpoch)&&Number.isFinite(startEpoch)
+          ?Math.max(0,savedEpoch-startEpoch)
+          :savedTurn*DAY_MS;
       }
       restoredClock.stepDurationMs=DAY_MS;
       restoredClock.accumulatorMs=0;
