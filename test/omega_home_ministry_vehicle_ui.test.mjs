@@ -5,6 +5,7 @@ import vm from 'node:vm';
 
 const engine = readFileSync(new URL('../omega_home_ministry_engine_v1.js', import.meta.url), 'utf8');
 const ui = readFileSync(new URL('../omega_home_ministry_ui_v1.js', import.meta.url), 'utf8');
+const operationsUi = readFileSync(new URL('../omega_home_ministry_police_operations_ui_v1.js', import.meta.url), 'utf8');
 const ministryEngine = readFileSync(new URL('../ministry_engine.js', import.meta.url), 'utf8');
 
 
@@ -355,4 +356,18 @@ test('Home Affairs Reports & Metrics no longer displays mine and shipment diagno
   assert.match(ministryEngine, /const rows = isHomeMinistryReport \? \[/);
   assert.match(ministryEngine, /\['Mine \/ site records', activity && activity\.mineRecords\]/);
   assert.match(ministryEngine, /isHomeMinistryReport \? 'HOME MINISTRY SECURITY OPERATIONS REPORT' : 'LIVE SOVEREIGN ENGINE REPORT'/);
+});
+
+
+test('fleet procurement includes the full searchable country registry and live purchase commitments', () => {
+  assert.match(operationsUi, /function worldFleetRegistryHtml\(d\)/);
+  assert.match(operationsUi, /getWorldFleetSnapshot\(\)/);
+  assert.match(operationsUi, /WORLD POLICE FLEET REGISTRY/);
+  assert.match(operationsUi, /ohpu-world-fleet-filter/);
+  assert.match(operationsUi, /data-ohpu-world-fleet-search/);
+  assert.match(operationsUi, /inTransitCountsByTier/);
+  assert.match(operationsUi, /Owned \+ in transit/);
+  assert.match(operationsUi, /MODELED_ESTIMATE_NOT_OBSERVED_ROSTER/);
+  assert.match(operationsUi, /projectedCrimeIndex/);
+  assert.match(operationsUi, /policeEfficiency/);
 });

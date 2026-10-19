@@ -219,6 +219,45 @@
       (history?'<div class="ohpu-section-title">RECENT COMPLETED PROJECTS</div><div class="ohpu-table-wrap"><table class="ohpu-table"><thead><tr><th>Capability</th><th>Upgrade</th><th>Cost</th><th>Status</th></tr></thead><tbody>'+history+'</tbody></table></div>':'')+
       '<div class="ohpu-note">Only existing Home Ministry facility levels, current police personnel and live Finance balances are counted as available assets. The model does not invent physical stockpiles such as training kits or equipment that the game does not track.</div></section>';
   }
+  function worldFleetRegistryHtml(d){
+    var e=d.engine,snapshot=typeof e.getWorldFleetSnapshot==='function'?e.getWorldFleetSnapshot():null;
+    if(!snapshot||!snapshot.available||!Array.isArray(snapshot.countries))
+      return '<article class="ohpu-card"><div class="ohpu-section-title">WORLD POLICE FLEET REGISTRY</div><div class="ohpu-note is-error">The country-by-country fleet dataset is not ready. No default counts were substituted.</div></article>';
+    var vehicles=Array.isArray(e.VEHICLES)?e.VEHICLES:[];
+    var rows=snapshot.countries.map(function(row){
+      var current=String(row.countryCode||'').toUpperCase()===String(d.countryId||'').toUpperCase();
+      var split=vehicles.map(function(v){
+        var key=String(v.level),owned=number(row.ownedCountsByTier&&row.ownedCountsByTier[key]),transit=number(row.inTransitCountsByTier&&row.inTransitCountsByTier[key]);
+        return '<span title="'+esc(v.name)+'">T'+esc(v.level)+': '+esc(formatCount(owned))+(transit?' +'+esc(formatCount(transit))+' in transit':'')+'</span>';
+      }).join(' · ');
+      var search=String(row.countryName||'')+' '+String(row.countryCode||'')+' '+String(row.iso3||'')+' '+String(row.region||'');
+      return '<tr class="ohpu-world-fleet-row'+(current?' ohpu-world-fleet-current':'')+'" data-ohpu-world-fleet-search="'+esc(search.toLowerCase())+'">'+
+        '<td><strong>'+esc(row.countryName)+'</strong><div class="ohpu-small">'+esc(row.countryCode)+' · '+esc(row.iso3||'')+(current?' · CURRENT COUNTRY':'')+'</div><div class="ohpu-small">'+esc(row.region||'Unknown region')+'</div></td>'+
+        '<td class="ohpu-mono">'+esc(formatCount(row.baselineUnits))+'</td>'+
+        '<td class="ohpu-mono">'+esc(formatCount(row.ownedUnits))+'</td>'+
+        '<td class="ohpu-mono">'+esc(formatCount(row.inTransitUnits))+'</td>'+
+        '<td class="ohpu-mono"><strong>'+esc(formatCount(row.committedUnits))+'</strong></td>'+
+        '<td class="ohpu-mono">'+esc(formatCount(row.operationalUnits))+'</td>'+
+        '<td><details><summary>15 tiers</summary><div class="ohpu-small ohpu-world-tier-breakdown">'+split+'</div></details></td>'+
+      '</tr>';
+    }).join('');
+    return '<article class="ohpu-card ohpu-world-fleet-registry" style="margin:14px 0">'+
+      '<div class="ohpu-section-title">WORLD POLICE FLEET REGISTRY · '+esc(formatCount(snapshot.countryCount))+' COUNTRIES</div>'+
+      '<p class="ohpu-muted">All canonical country records are included. Baseline fleet figures are game estimates, not verified official police-vehicle censuses. A purchase raises the in-transit and committed totals immediately; operational capacity, projected crime and the delivered-fleet efficiency bonus update when the simulation delivers the vehicles.</p>'+
+      '<div class="ohpu-grid">'+
+        kpi('Countries in registry',formatCount(snapshot.countryCount),'Country rows with a baseline fleet record.')+
+        kpi('Opening baseline fleet',formatCount(snapshot.totalBaselineUnits),'Modeled starting inventory across all countries.')+
+        kpi('Current owned fleet',formatCount(snapshot.totalOwnedUnits),'Vehicles in country state, including vehicles needing service or repair.')+
+        kpi('In transit',formatCount(snapshot.totalInTransitUnits),'Paid orders awaiting simulation-time delivery.')+
+        kpi('Owned + in transit',formatCount(snapshot.totalCommittedUnits),'Purchase commitment total for the world roster.')+
+        kpi('Operational estimate',formatCount(snapshot.totalOperationalUnits),'Ready vehicles plus opening vehicles not yet expanded to individual unit records.')+
+      '</div>'+
+      '<label class="ohpu-label" for="ohpu-world-fleet-filter">Search any country, ISO code or region<input class="ohpu-field" id="ohpu-world-fleet-filter" type="search" placeholder="e.g. Bangladesh, BD, Africa" autocomplete="off"></label>'+
+      '<div class="ohpu-small" id="ohpu-world-fleet-filter-count">Showing '+esc(formatCount(snapshot.countryCount))+' of '+esc(formatCount(snapshot.countryCount))+' countries.</div>'+
+      '<div class="ohpu-table-wrap"><table class="ohpu-table"><thead><tr><th>Country</th><th>Starting fleet</th><th>Owned now</th><th>In transit</th><th>Committed total</th><th>Operational</th><th>Tier breakdown</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+      '<div class="ohpu-small">Baseline source: '+esc(snapshot.source||'OMEGA_COUNTRY_POLICE_BASELINE_V1')+'. Data classification: '+esc(snapshot.dataQuality||'MODELED_ESTIMATE_NOT_OBSERVED_ROSTER')+'. Explicit zero values remain zero; records without a saved live state use the labelled opening baseline.</div>'+
+      '</article>';
+  }
   function fleetHtml(d) {
     var e=d.engine,s=d.state,b=d.baseline||{},vehicles=Array.isArray(e.VEHICLES)?e.VEHICLES:[],pending=s.pendingVehicleOrder;
     var budget=d.budget && d.budget.categories && d.budget.categories.vehicles,operationsBudget=d.budget && d.budget.categories && d.budget.categories.operations,disabled=!d.budget||!d.budget.available;
@@ -252,7 +291,7 @@
       return '<article class="ohpu-card ohpu-fleet-card"><div class="ohpu-small">TIER ' + v.level + ' · ' + esc(v.className||v.role||'POLICE VEHICLE') + '</div>' +
         '<div class="ohpu-car-wrap">' + (ui && typeof ui.getPoliceVehicleSvg === 'function' ? ui.getPoliceVehicleSvg(v.level,'ops-card-'+v.level) : '') + '</div>' +
         '<h3>' + esc(v.name) + '</h3><div class="ohpu-value">' + esc(money(unitValue)) + '</div><div class="ohpu-small">replacement value per vehicle</div>' +
-        '<div class="ohpu-note">Owned: <strong>' + esc(formatCount(owned)) + '</strong> · Estimated owned value: <strong>' + esc(money(ownedValue)) + '</strong><br>Roadworthy: <strong>' + esc(formatCount(stat.ready)) + '</strong> · Deployed: ' + esc(formatCount(stat.deployed)) + '<br>Maintenance due: ' + esc(formatCount(stat.maintenance)) + ' · Repair required: ' + esc(formatCount(stat.repair)) + '<br>Average condition: ' + esc(averageCondition===null?'N/A':percent(averageCondition,0)) + '<br>Daily upkeep per unit: ' + esc(money(v.maintenancePerDay)) + '<br>Original baseline quantity: ' + esc(formatCount(row||0)) + '</div>' +
+        '<div class="ohpu-note">Owned: <strong>' + esc(formatCount(owned)) + '</strong> · In transit: <strong>' + esc(formatCount(pending&&Number(pending.level)===v.level?pending.quantity:0)) + '</strong> · Estimated owned value: <strong>' + esc(money(ownedValue)) + '</strong><br>Roadworthy: <strong>' + esc(formatCount(stat.ready)) + '</strong> · Deployed: ' + esc(formatCount(stat.deployed)) + '<br>Maintenance due: ' + esc(formatCount(stat.maintenance)) + ' · Repair required: ' + esc(formatCount(stat.repair)) + '<br>Average condition: ' + esc(averageCondition===null?'N/A':percent(averageCondition,0)) + '<br>Daily upkeep per unit: ' + esc(money(v.maintenancePerDay)) + '<br>Original baseline quantity: ' + esc(formatCount(row||0)) + '</div>' +
         '<label class="ohpu-label">Quantity to purchase<input class="ohpu-field" data-ohpu-buy-qty="' + v.level + '" type="number" min="1" max="100" step="1" value="1" inputmode="numeric"></label>' +
         '<div class="ohpu-small" data-ohpu-buy-quote="' + v.level + '">Order total: ' + esc(money(unitValue)) + '</div>' +
         '<div class="ohpu-actions"><button type="button" class="ohpu-btn ' + (locked?'':'ohpu-btn-main') + '" data-ohpu-buy="' + v.level + '" ' + (disabled||locked||!!pending?'disabled':'') + '>' +
@@ -260,7 +299,11 @@
         (locked?'<div class="ohpu-small">Unlocks after the prior procurement tier is delivered.</div>':'') + '</article>';
     }).join('');
     return '<section class="ohpu-section"><div class="ohpu-grid">' +
-      kpi('Fleet units owned',formatCount(Object.values(s.vehiclesOwned||{}).reduce(function(sum,x){return sum+number(x);},0)),'Starting fleets are seeded as already-owned national assets.') +
+      kpi('Fleet units owned',formatCount(Object.values(s.vehiclesOwned||{}).reduce(function(sum,x){return sum+number(x);},0)),'Owned units include working, deployed, maintenance-due and repair-required vehicles.') +
+      kpi('Owned + in transit',formatCount(Object.values(s.vehiclesOwned||{}).reduce(function(sum,x){return sum+number(x);},0)+number(pending&&pending.quantity)),'A successful order is counted immediately as in-transit; operational effects activate on delivery.') +
+      kpi('Vehicles in transit',formatCount(pending&&pending.quantity),'Paid order awaiting simulation-time delivery.') +
+      kpi('Police efficiency',percent(s.policeEfficiency,1),'Vehicle delivery adds a modest efficiency bonus; route-fit and vehicle capability also affect crime projections.') +
+      kpi('Projected crime index',d.crime&&d.crime.projectedCrimeIndex!==undefined?percent(d.crime.projectedCrimeIndex,1):'Unavailable','100 is the baseline reference; operational fleet changes recalculate the live estimate.') +
       kpi('Estimated fleet value',money(s.baselineFleetReplacementValueUsd),'Original opening-inventory replacement estimate, not cash to spend.') +
       kpi('Remaining vehicle budget',budget?money(budget.remainingUsd):'Unavailable','Orders require the vehicle sub-budget plus available treasury.') +
       kpi('Vehicle requirement',formatCount(d.crime&&d.crime.requiredFleetEstimate),'Modeled opening-fleet target, scaled with current population.') +
@@ -271,8 +314,9 @@
       '</div>' + countryMixHtml +
       (recommendationCards?'<div class="ohpu-section-title">RECOMMENDED VEHICLES FOR THIS COUNTRY</div><div class="ohpu-grid">'+recommendationCards+'</div>':'') +
       '<article class="ohpu-card" style="margin:12px 0"><div class="ohpu-section-title">FUEL & PATROL SUPPLY</div><p>Fuel reserve runs down with simulation days. Shortages lower patrol readiness and increase projected crime. Resupply is an actual country-level Finance transaction from the Home Ministry operations allocation.</p><div class="ohpu-grid">'+kpi('Current reserve',fuel?formatCount(fuel.reserveDays)+' days':'Unavailable',fuel?fuel.status:'Status unavailable')+kpi('Estimated daily requirement',fuel?money(fuel.estimatedDailyFuelCostUsd):'Unavailable','Modeled USD/day')+kpi('Operations budget remaining',operationsBudget?money(operationsBudget.remainingUsd):'Unavailable','Fuel orders are charged here')+'</div><div class="ohpu-form-grid"><label class="ohpu-label">Fuel supply to purchase (simulation days)<input class="ohpu-field" id="ohpu-fuel-days" type="number" min="1" max="90" step="1" value="'+esc(fuelDefaultDays)+'"></label><div><span class="ohpu-label">Estimated order cost</span><div class="ohpu-value" id="ohpu-fuel-quote">'+esc(money(fuelDailyUsd*fuelDefaultDays))+'</div><span class="ohpu-small">Reserve capacity: 180 days total.</span><span class="ohpu-small" id="ohpu-fuel-affordability">Spendable operations funds: '+esc(money(fuelSpendableUsd))+'</span></div></div><button type="button" class="ohpu-btn ohpu-btn-main" id="ohpu-buy-fuel" '+(fuelDisabled?'disabled':'')+'>PURCHASE FUEL SUPPLY · CHARGE FINANCE</button></article>' +
-      (pending?'<div class="ohpu-note">Order in transit: Tier ' + esc(pending.level) + ', ' + esc(pending.quantity) + ' vehicles, ' + esc(money(pending.totalCost)) + '. Delivery time remaining: ' + esc(Math.max(0,Math.ceil((pending.completesAtMs-e.getSimulationTimeMs())/86400000))) + ' simulation days.</div>':'') +
+      (pending?'<div class="ohpu-note">Order in transit: Tier ' + esc(pending.level) + ', ' + esc(pending.quantity) + ' vehicles, ' + esc(money(pending.totalCost)) + '. Included in “Owned + in transit” immediately. Delivery is scheduled in ' + esc(Math.max(0,Math.ceil((pending.completesAtMs-e.getSimulationTimeMs())/86400000))) + ' simulation days; operational fleet, crime projection and efficiency update when delivery commits.</div>':'') +
       '<div class="ohpu-grid">' + cards + '</div>' +
+      worldFleetRegistryHtml(d) +
       '<div class="ohpu-note">Each tier has different response, patrol, protection, crowd-control, surveillance, off-road, command and anti-smuggling capability. The purchased price and upkeep are the existing game’s tier prices; opening baseline assets are not charged retroactively.</div></section>';
   }
   function crimeHtml(d) {
@@ -536,6 +580,16 @@
       '<div class="ohpu-actions"><button type="button" class="ohpu-btn" id="ohpu-back-home">BACK TO HOME MINISTRY</button></div>' +
       '<div class="ohpu-small">State updates and spending are executed by the Home Ministry engine. No mock balances or successful actions are shown when a Finance transaction fails.</div></section>';
     bindFinanceButtons(root);
+    var worldFleetFilter=root.querySelector('#ohpu-world-fleet-filter'),worldFleetFilterCount=root.querySelector('#ohpu-world-fleet-filter-count');
+    if(worldFleetFilter)worldFleetFilter.oninput=function(){
+      var query=String(worldFleetFilter.value||'').trim().toLowerCase(),visible=0;
+      Array.prototype.forEach.call(root.querySelectorAll('.ohpu-world-fleet-row'),function(row){
+        var match=!query||String(row.getAttribute('data-ohpu-world-fleet-search')||'').indexOf(query)>=0;
+        row.style.display=match?'':'none';if(match)visible++;
+      });
+      if(worldFleetFilterCount)worldFleetFilterCount.textContent='Showing '+formatCount(visible)+' of '+formatCount(snapshotCountryCount())+' countries.';
+    };
+    function snapshotCountryCount(){var f=typeof d.engine.getWorldFleetSnapshot==='function'?d.engine.getWorldFleetSnapshot():null;return f&&f.countryCount||0;}
     Array.prototype.forEach.call(root.querySelectorAll('[data-ohpu-tab]'),function(btn){btn.onclick=function(){activeTab=btn.getAttribute('data-ohpu-tab');activeUpgradeType=null;setStatus('','');render();};});
     Array.prototype.forEach.call(root.querySelectorAll('[data-ohpu-capability-open]'),function(btn){btn.onclick=function(){activeUpgradeType=btn.getAttribute('data-ohpu-capability-open');setStatus('','');render();};});
     var cancelCapabilityUpgrade=root.querySelector('#ohpu-capability-upgrade-cancel');if(cancelCapabilityUpgrade)cancelCapabilityUpgrade.onclick=function(){activeUpgradeType=null;render();};

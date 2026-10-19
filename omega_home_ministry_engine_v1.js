@@ -324,7 +324,7 @@
     });
     return out;
   }
-  let countryPoliceBaselineByCode=Object.create(null);
+  let countryPoliceBaselineByCode=Object.create(null),countryPoliceBaselineRows=[];
   function baselineAliases(row){
     return [row&&row.code,row&&row.iso2,row&&row.iso3,row&&row.name].filter(Boolean).map(function(value){
       return String(value).trim().toUpperCase().replace(/[-\s]+/g,'_');
@@ -422,6 +422,7 @@
       next[normalizeCountry(row.iso3)]=row;
     });
     countryPoliceBaselineByCode=next;
+    countryPoliceBaselineRows=rows.slice();
     return{ok:true,countryCount:validation.countryCount,
       populationCount:rows.filter(function(row){return num(row.population&&row.population.value)!==null;}).length,
       observedHomicideCount:rows.filter(function(row){return num(row.crime&&row.crime.observedHomicide&&row.crime.observedHomicide.ratePer100k)!==null;}).length};
@@ -446,6 +447,70 @@
   function currentFleetCounts(state){
     const counts={};VEHICLES.forEach(function(vehicle){counts[String(vehicle.level)]=Math.max(0,Math.floor(num(state&&state.vehiclesOwned&&state.vehiclesOwned[vehicle.level])||0));});
     return counts;
+  }
+  function countryFleetSnapshotRow(row,root){
+    const cid=normalizeCountry(row&&row.code),container=root&&root.interior&&root.interior[cid];
+    const raw=container&&container.police&&typeof container.police==='object'?container.police:null;
+    const baseFleet=row&&row.baselineFleet||{},baseCounts=baseFleet.countsByTier||{};
+    const stateReady=!!(raw&&Math.floor(num(raw.baselineVersion)||0)>=1);
+    const pending=stateReady&&raw.pendingVehicleOrder&&typeof raw.pendingVehicleOrder==='object'?raw.pendingVehicleOrder:null;
+    const ownedCounts={},inTransitCounts={},committedCounts={},operationalCounts={};
+    const unitRows=raw&&Array.isArray(raw.vehicleFleet)?raw.vehicleFleet:[];
+    const perTier=Object.create(null);
+    VEHICLES.forEach(function(vehicle){perTier[String(vehicle.level)]={total:0,operational:0,deployed:0,maintenance:0,repair:0};});
+    unitRows.forEach(function(unit){
+      const stats=perTier[String(Math.floor(num(unit&&unit.vehicleLevel)||0))];if(!stats)return;
+      stats.total++;
+      const condition=Math.max(0,Math.min(100,num(unit&&unit.condition)===null?100:num(unit.condition)));
+      const status=String(unit&&unit.status||'AVAILABLE');
+      const odometer=Math.max(0,num(unit&&unit.odometerKm)||0),serviceAt=Math.max(1,num(unit&&unit.nextServiceAtKm)||5000);
+      if(condition>15&&(status==='AVAILABLE'||status==='DEPLOYED')&&odometer<serviceAt)stats.operational++;
+      if(status==='DEPLOYED')stats.deployed++;
+      if(['MAINTENANCE_DUE','SERVICE_DUE','INSPECTION_DUE'].includes(status))stats.maintenance++;
+      if(['REPAIR_REQUIRED','DESTROYED'].includes(status)||condition<=15)stats.repair++;
+    });
+    let deployedUnits=0,maintenanceUnits=0,repairRequiredUnits=0;
+    VEHICLES.forEach(function(vehicle){
+      const tier=String(vehicle.level),recorded=stateReady&&raw.vehiclesOwned?num(raw.vehiclesOwned[tier]):null;
+      const owned=Math.max(0,Math.floor(recorded!==null&&recorded>=0?recorded:(num(baseCounts[tier])||0)));
+      const ordered=pending&&Number(pending.level)===vehicle.level?Math.max(0,Math.floor(num(pending.quantity)||0)):0;
+      const stats=perTier[tier],unmaterialized=Math.max(0,owned-stats.total);
+      ownedCounts[tier]=owned;inTransitCounts[tier]=ordered;committedCounts[tier]=owned+ordered;
+      operationalCounts[tier]=unmaterialized+stats.operational;
+      deployedUnits+=stats.deployed;maintenanceUnits+=stats.maintenance;repairRequiredUnits+=stats.repair;
+    });
+    const sum=function(values){return Object.keys(values||{}).reduce(function(total,key){return total+Math.max(0,num(values[key])||0);},0);};
+    const ownedUnits=sum(ownedCounts),inTransitUnits=sum(inTransitCounts);
+    return {
+      countryCode:String(row&&row.code||cid),iso2:String(row&&row.iso2||row&&row.code||cid),iso3:String(row&&row.iso3||''),
+      countryName:String(row&&row.name||cid),region:String(row&&row.region||'Unknown region'),
+      baselineUnits:Math.max(0,Math.floor(num(baseFleet.totalUnits)||0)),
+      ownedUnits:ownedUnits,inTransitUnits:inTransitUnits,committedUnits:ownedUnits+inTransitUnits,
+      operationalUnits:sum(operationalCounts),deployedUnits:deployedUnits,maintenanceUnits:maintenanceUnits,repairRequiredUnits:repairRequiredUnits,
+      policePersonnel:Math.max(0,Math.floor(num(stateReady?raw.policeCount:row&&row.baselinePolice&&row.baselinePolice.activePersonnel)||0)),
+      policeEfficiency:clamp(num(stateReady?raw.policeEfficiency:60)===null?60:num(stateReady?raw.policeEfficiency:60),0,100),
+      baselineCountsByTier:clone(baseCounts),ownedCountsByTier:ownedCounts,inTransitCountsByTier:inTransitCounts,committedCountsByTier:committedCounts,
+      baselineSource:String(baseFleet.source||'MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY'),
+      dataQuality:String(baseFleet.modelNote||'MODELED_ESTIMATE_NOT_OBSERVED_ROSTER'),
+      liveStateAvailable:stateReady,baselineVersion:stateReady?Math.max(0,Math.floor(num(raw.baselineVersion)||0)):0,
+      pendingOrder:pending?clone(pending):null
+    };
+  }
+  function getCountryFleetSnapshot(country){
+    const cid=normalizeCountry(country||currentCountry()),row=findPoliceBaseline(cid);
+    if(!row)return{available:false,reason:'POLICE_BASELINE_NOT_LOADED',countryId:cid};
+    return Object.assign({available:true},countryFleetSnapshotRow(row,rootState()));
+  }
+  function getWorldFleetSnapshot(){
+    if(!Array.isArray(countryPoliceBaselineRows)||!countryPoliceBaselineRows.length)
+      return{available:false,reason:'POLICE_BASELINE_NOT_LOADED',countryCount:0,countries:[],totalBaselineUnits:0,totalOwnedUnits:0,totalInTransitUnits:0,totalCommittedUnits:0,totalOperationalUnits:0};
+    const root=rootState(),countries=countryPoliceBaselineRows.map(function(row){return countryFleetSnapshotRow(row,root);});
+    const totals=countries.reduce(function(out,row){
+      out.totalBaselineUnits+=row.baselineUnits;out.totalOwnedUnits+=row.ownedUnits;out.totalInTransitUnits+=row.inTransitUnits;
+      out.totalCommittedUnits+=row.committedUnits;out.totalOperationalUnits+=row.operationalUnits;out.liveStateCountries+=row.liveStateAvailable?1:0;
+      return out;
+    },{totalBaselineUnits:0,totalOwnedUnits:0,totalInTransitUnits:0,totalCommittedUnits:0,totalOperationalUnits:0,liveStateCountries:0});
+    return Object.assign({available:true,source:'OMEGA_COUNTRY_POLICE_BASELINE_V1',dataQuality:'MODELED_ESTIMATE_NOT_OBSERVED_ROSTER',countryCount:countries.length,countries:countries},totals);
   }
   function operationalFleetCounts(state,country){
     const owned=currentFleetCounts(state),out=Object.fromEntries(VEHICLES.map(function(vehicle){return[String(vehicle.level),0];}));
@@ -538,6 +603,7 @@
       state.trainingQualityLevel=1;state.lastUpdatedTurn=turn();
     }else{
       state.vehiclesOwned=state.vehiclesOwned&&typeof state.vehiclesOwned==='object'?state.vehiclesOwned:{};
+      VEHICLES.forEach(function(vehicle){const tier=String(vehicle.level),recorded=num(state.vehiclesOwned[tier]);if(recorded===null||recorded<0||Math.floor(recorded)!==recorded)state.vehiclesOwned[tier]=Math.max(0,Math.floor(num(fleet.countsByTier&&fleet.countsByTier[tier])||0));});
     }
     if(pristine||num(state.fuelSupplyDays)===null)state.fuelSupplyDays=14;
     state.fuelSupplyDays=clamp(num(state.fuelSupplyDays)===null?14:num(state.fuelSupplyDays),0,180);
@@ -601,14 +667,14 @@
   function ruleEffectSum(state,key){
     return activePolicePolicyRules(state).reduce(function(sum,rule){return sum+(num(rule[key])||0);},0);
   }
-  function crimeVehicleCapability(state,category){
+  function crimeVehicleCapability(state,category,country){
     const map={
       theft:['patrol','surveillance'],robbery:['response','patrol','protection'],
       streetRobbery:['patrol','response','crowdControl'],drugTrafficking:['counterSmuggling','surveillance','command'],
       contrabandSmuggling:['counterSmuggling','offRoad','surveillance'],assault:['response','crowdControl','protection'],
       homicide:['response','surveillance','command'],cybercrime:['surveillance','command']
     };
-    const keys=map[category]||['patrol','response'],counts=operationalFleetCounts(state),units=totalOperationalFleetCount(counts);
+    const keys=map[category]||['patrol','response'],counts=operationalFleetCounts(state,country),units=totalOperationalFleetCount(counts);
     if(!units)return 0;
     let weighted=0;
     VEHICLES.forEach(function(vehicle){
@@ -657,7 +723,7 @@
     const countryFleet=operationalFleetCounts(state,country);
     const currentCars=totalOperationalFleetCount(countryFleet),refCars=Math.max(1,num(base.referenceFleetUnits)||num(state.baselineFleetUnits)||currentCars||1);
     reduction+=Math.log(Math.max(1,currentCars)/refCars)*0.035;
-    const currentQuality=crimeVehicleCapability(state,category),refVehicles=base.referenceVehicles||{};
+    const currentQuality=crimeVehicleCapability(state,category,cid),refVehicles=base.referenceVehicles||{};
     let refUnits=0,refQuality=0;
     VEHICLES.forEach(function(vehicle){
       const count=Math.max(0,num(refVehicles[vehicle.level])||0),keys=({theft:['patrol','surveillance'],robbery:['response','patrol','protection'],streetRobbery:['patrol','response','crowdControl'],drugTrafficking:['counterSmuggling','surveillance','command'],contrabandSmuggling:['counterSmuggling','offRoad','surveillance'],assault:['response','crowdControl','protection'],homicide:['response','surveillance','command'],cybercrime:['surveillance','command']})[category]||['patrol','response'];
@@ -1832,9 +1898,16 @@
     }
     const order=s.pendingVehicleOrder;
     if(order&&now>=order.completesAtMs){const v=VEHICLES.find(x=>x.level===order.level);if(v){
-      s.vehiclesOwned[v.level]=Math.max(0,num(s.vehiclesOwned[v.level])||0)+order.quantity;s.unlockedVehicleLevel=Math.min(VEHICLES.length,Math.max(s.unlockedVehicleLevel,v.level+1));ensureFleetInventory(s,cid);
+      const efficiencyBefore=clamp(num(s.policeEfficiency)===null?60:num(s.policeEfficiency),0,100);
+      const capabilityKeys=['response','patrol','protection','surveillance','command'];
+      const capabilityAverage=capabilityKeys.reduce(function(total,key){return total+(num(v.capabilities&&v.capabilities[key])||0);},0)/capabilityKeys.length;
+      const calculatedEfficiencyBonus=Math.min(2.5,Math.round(Math.log1p(Math.max(1,Number(order.quantity)||1))*(0.35+capabilityAverage/100*1.4)*100)/100);
+      s.vehiclesOwned[v.level]=Math.max(0,num(s.vehiclesOwned[v.level])||0)+order.quantity;
+      s.policeEfficiency=clamp(efficiencyBefore+calculatedEfficiencyBonus,0,100);
+      const appliedEfficiencyBonus=Math.round((s.policeEfficiency-efficiencyBefore)*100)/100;
+      s.unlockedVehicleLevel=Math.min(VEHICLES.length,Math.max(s.unlockedVehicleLevel,v.level+1));ensureFleetInventory(s,cid);
       const delivered=clone(order);delivered.status='DELIVERED';delivered.deliveredAtMs=now;s.pendingVehicleOrder=null;
-      emit('OMEGA_POLICE_VEHICLE_DELIVERED',{countryId:cid,order:delivered,vehicle:v,unlockedVehicleLevel:s.unlockedVehicleLevel,turn:turn()});changed=true;
+      emit('OMEGA_POLICE_VEHICLE_DELIVERED',{countryId:cid,order:delivered,vehicle:v,unlockedVehicleLevel:s.unlockedVehicleLevel,policeEfficiencyBefore:efficiencyBefore,policeEfficiencyAfter:s.policeEfficiency,policeEfficiencyBonus:appliedEfficiencyBonus,turn:turn()});changed=true;
     }}
     if(advanceFleetSimulation(s,cid,day))changed=true;
     if(advanceCrimeSimulation(s,cid,day))changed=true;
@@ -2261,6 +2334,7 @@
     validatePoliceDepartmentPlan:function(input,country){return validatePoliceDepartmentPlan(input,getState(country||currentCountry()).policeDepartments);},
     estimatePoliceDepartmentPlanCost:estimatePoliceDepartmentPlanCost,setPoliceDepartmentPlan:setPoliceDepartmentPlan,
     getCountryPoliceBaseline:function(country){return clone(findPoliceBaseline(country));},
+    getCountryFleetSnapshot:getCountryFleetSnapshot,getWorldFleetSnapshot:getWorldFleetSnapshot,
     getCrimeSnapshot:getCrimeSnapshot,estimateRecruitmentImpact:estimateRecruitmentImpact,
     getPolicePolicyRules:function(){return clone(POLICE_POLICY_RULES);},
     setPatrolPlan:function(plan,country){

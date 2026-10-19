@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const sourceText = readFileSync(new URL('../omega_home_ministry_engine_v1.js', import.meta.url), 'utf8');
+const baselineData = JSON.parse(readFileSync(new URL('../omega_home_ministry_country_police_baseline_v1.json', import.meta.url), 'utf8'));
 const events = new Map();
 globalThis.window = globalThis;
 globalThis.CustomEvent = class CustomEvent { constructor(type, init = {}) { this.type = type; this.detail = init.detail || null; } };
@@ -407,4 +408,57 @@ test('purchases fail closed when treasury is unavailable and advice is non-mutat
   assert.equal(Game.state.economy.AAA.treasury, balance);
   assert.equal(api.FACILITIES.length, 10);
   assert.equal(api.TACTICS.length, 5);
+});
+
+
+test('world fleet registry includes every baseline country and ties vehicle orders, delivery, efficiency and crime to the same runtime state', () => {
+  const DAY = 86400000;
+  const rows = baselineData.countries;
+  setup(1000000000);
+  globalThis.Game.countryId = 'BD';
+  globalThis.CountryIOS.activeCountry = 'BD';
+  globalThis.Game.state.economy.BD = { treasury: 1000000000 };
+  globalThis.Game.state.population.BD = { population: rows.find(row => row.code === 'BD').population.value };
+  globalThis.Game.state.simulation = { turn: 0, simulationTimeMs: 0 };
+  const boot = api.bootstrapCountryPoliceBaselines(rows);
+  assert.equal(boot.ok, true, JSON.stringify(boot));
+  const registry = api.getWorldFleetSnapshot();
+  assert.equal(registry.available, true);
+  assert.equal(registry.countryCount, 249);
+  assert.equal(registry.countries.length, 249);
+  assert.equal(new Set(registry.countries.map(row => row.countryCode)).size, 249);
+  assert.equal(registry.totalBaselineUnits, rows.reduce((sum, row) => sum + row.baselineFleet.totalUnits, 0));
+  assert.ok(registry.countries.every(row => Object.keys(row.ownedCountsByTier).length === api.VEHICLES.length));
+  const baseline = rows.find(row => row.code === 'BD');
+  const before = api.getCountryFleetSnapshot('BD');
+  assert.equal(before.ownedUnits, baseline.baselineFleet.totalUnits);
+  assert.equal(before.dataQuality.startsWith('MODELED_ESTIMATE_NOT_OBSERVED_ROSTER:'), true);
+  const baselineCrime = api.getCrimeSnapshot('BD');
+  assert.equal(baselineCrime.available, true);
+  const efficiencyBefore = api.getState('BD').policeEfficiency;
+  const ordered = api.orderVehicle(1, 100, 'BD');
+  assert.equal(ordered.ok, true, JSON.stringify(ordered));
+  const transit = api.getCountryFleetSnapshot('BD');
+  assert.equal(transit.ownedUnits, before.ownedUnits, 'vehicles do not become operational before delivery');
+  assert.equal(transit.inTransitUnits, 100, 'a successfully paid order must be visible immediately');
+  assert.equal(transit.committedUnits, before.ownedUnits + 100);
+  const crimeWhileInTransit = api.getCrimeSnapshot('BD');
+  assert.equal(crimeWhileInTransit.projectedCrimeIndex, baselineCrime.projectedCrimeIndex,
+    'in-transit vehicles must not affect the active policing result before delivery');
+  const raw = globalThis.Game.state.interior.BD.police;
+  raw.lastPayrollDay = 180;
+  raw.lastFleetSimulationDay = 180;
+  raw.lastCrimeSimulationDay = 180;
+  globalThis.Game.state.simulation.simulationTimeMs = 180 * DAY;
+  globalThis.Game.state.simulation.turn = 4320;
+  api.processTurn({ detail: { payload: { countryId: 'BD', turn: 4320 } } });
+  const delivered = api.getCountryFleetSnapshot('BD');
+  assert.equal(delivered.ownedUnits, before.ownedUnits + 100);
+  assert.equal(delivered.inTransitUnits, 0);
+  assert.equal(delivered.committedUnits, before.ownedUnits + 100);
+  assert.equal(delivered.operationalUnits, before.operationalUnits + 100);
+  assert.ok(api.getState('BD').policeEfficiency > efficiencyBefore, 'vehicle delivery must improve the police-efficiency stat');
+  const afterCrime = api.getCrimeSnapshot('BD');
+  assert.ok(afterCrime.projectedCrimeIndex < baselineCrime.projectedCrimeIndex,
+    'delivered operational vehicles must lower the modeled projected crime index');
 });
