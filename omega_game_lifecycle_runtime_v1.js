@@ -482,6 +482,19 @@
   }
 
   function scheduleStateSave() {
+    var sim = runtime();
+    // Avoid persisting a half-applied sector turn. The committed-turn finalizer
+    // will save synchronously once the ordered pipeline finishes.
+    if (sim && sim.stepInProgress) {
+      if (stateSaveTimer !== null) {
+        try { g.clearTimeout(stateSaveTimer); } catch (_) {}
+      }
+      stateSaveTimer = g.setTimeout(function () {
+        stateSaveTimer = null;
+        scheduleStateSave();
+      }, 100);
+      return;
+    }
     if (stateSaveTimer !== null) {
       try { g.clearTimeout(stateSaveTimer); } catch (_) {}
     }
@@ -503,7 +516,7 @@
       // IndexedDB is maintained as the secondary durable copy.
       saveNow({ force: true });
       updateHud();
-    }, { priority: 1000000 });
+    }, { priority: Number.MAX_SAFE_INTEGER });
     return true;
   }
 
