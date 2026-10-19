@@ -830,7 +830,6 @@ function attachStrategicProfiles(rows, relationByIso2, siteSummaryByIso3, relati
     const resourceContext = row.naturalResources || {};
     const relationParams = relation?.parameters && typeof relation.parameters === 'object' ? relation.parameters : {};
     const specificModelParameters = relationQuality === 'COUNTRY_SPECIFIC_PARAMETERS';
-    const genericParamKeys = Object.keys(GENERIC_RELATION_PARAMETERS);
     const explicitFocus = Array.isArray(relation?.high_weight_focus) ? relation.high_weight_focus : [];
     const genericFocus = JSON.stringify(explicitFocus) === JSON.stringify(['Economic Resilience', 'Border Sovereignty', 'Regional Trade']);
     const explicitPriorities = specificModelParameters || !genericFocus ? explicitFocus.slice(0, 6) : [];
