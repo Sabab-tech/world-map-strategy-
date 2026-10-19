@@ -16,7 +16,10 @@
   function country() { var e = engine(); try { return e && e.getCurrentCountryId ? e.getCurrentCountryId() : (g.CountryIOS && g.CountryIOS.activeCountry) || 'USA'; } catch (_) { return 'USA'; } }
   function host() {
     if (!g.document) return null;
-    return g.document.getElementById('home-ministry-command-root') || g.document.getElementById('cabinet-body') || g.document.getElementById('ministry-content');
+    // Always render into the same host as the legacy Home Ministry dashboard.
+    // A second nested root leaves the dashboard visible behind the operations console.
+    var ministryRoot = ui && typeof ui.getHomeMinistryRoot === 'function' ? ui.getHomeMinistryRoot() : null;
+    return ministryRoot || g.document.getElementById('home-ministry-command-root') || g.document.getElementById('cabinet-body') || g.document.getElementById('ministry-content');
   }
   function esc(v) { return String(v == null ? '' : v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
   function number(v, d) { var n = Number(v); return Number.isFinite(n) ? n : (d === undefined ? 0 : d); }
@@ -573,7 +576,7 @@
     else body=overviewHtml(d);
     root.innerHTML='<section class="ohpu"><header class="ohpu-head"><div><h2 class="ohpu-title">POLICE COMMAND · PUBLIC SAFETY</h2><div class="ohpu-sub">' +
       esc(d.baseline&&d.baseline.name||d.countryId) + ' · live recruitment, fleet procurement, crime model, patrol allocation and accountable police policy.</div></div>' +
-      '<div class="ohpu-actions"><button type="button" class="ohpu-btn" id="ohpu-rulebook-head">POLICE RULEBOOK</button><span class="ohpu-tag">COUNTRY-BOUND RUNTIME</span></div></header>' +
+      '<div class="ohpu-actions"><span class="ohpu-tag">COUNTRY-BOUND RUNTIME</span></div></header>' +
       '<nav class="ohpu-tabs">' + navHtml() + '</nav>' + statusHtml() + budgetHtml(d) +
       '<div class="ohpu-section-title">' + esc(({overview:'LIVE COUNTRY OVERVIEW',staff:'POLICE RECRUITMENT & STAFFING',fleet:'VEHICLE INVENTORY & PROCUREMENT',units:'SPECIALIST POLICE UNITS & DEPLOYMENT',cases:'POLICE CASES & DUE-PROCESS DEADLINES',crime:'CRIME RATES & PATROL ALLOCATION',rules:'PAID POLICE PROGRAMMES & OVERSIGHT',rulebook:'POLICE RULEBOOK & RESPONSE PROCEDURES',levels:'TRAINING & RECRUITMENT CAPABILITY LEVELS'})[activeTab]||'POLICE CONTROL') + '</div>' +
       body +
@@ -595,7 +598,6 @@
     var cancelCapabilityUpgrade=root.querySelector('#ohpu-capability-upgrade-cancel');if(cancelCapabilityUpgrade)cancelCapabilityUpgrade.onclick=function(){activeUpgradeType=null;render();};
     var retryCapabilityData=root.querySelector('#ohpu-retry-capability-data');if(retryCapabilityData)retryCapabilityData.onclick=function(){var r=g.OmegaHomePoliceCapabilityRuntime;if(r&&typeof r.init==='function')r.init().then(function(){render();});else{setStatus('Capability recommendation runtime is unavailable. No project was started.','error');render();}};
     var startCapabilityUpgrade=root.querySelector('#ohpu-capability-upgrade-start');if(startCapabilityUpgrade)startCapabilityUpgrade.onclick=function(){var kind=activeUpgradeType,result=d.engine&&typeof d.engine.startPoliceCapabilityUpgrade==='function'?d.engine.startPoliceCapabilityUpgrade(kind,d.countryId):null;if(!result||!result.ok){setStatus('Upgrade not started: '+String(result&&(result.message||result.reason||result.code)||'CAPABILITY_UPGRADE_API_UNAVAILABLE')+'. No project was activated.','error');}else{setStatus('Upgrade project started: Level '+result.project.fromLevel+' → Level '+result.project.targetLevel+'. Finance charged '+money(result.cost||result.project.costUsd)+' from '+String(result.project.budgetCategory||'Home Ministry budget')+'. It completes after '+formatCount(result.project.durationDays)+' simulation day(s).','ok');}activeUpgradeType=null;render();};
-    var rulebookHead=root.querySelector('#ohpu-rulebook-head');if(rulebookHead)rulebookHead.onclick=function(){activeTab='rulebook';setStatus('','');render();};
     var back=root.querySelector('#ohpu-back-home');if(back)back.onclick=function(){consoleOpen=false;if(ui&&ui.renderHomeMinistryDashboard)ui.renderHomeMinistryDashboard();};
     var hireInput=root.querySelector('#ohpu-hire-quantity'),hireCost=root.querySelector('#ohpu-hire-cost'),hireImpact=root.querySelector('#ohpu-hire-impact');
     function updateHireQuote(){
@@ -786,11 +788,6 @@
       var button=g.document.createElement('button');button.type='button';button.id='ohpu-open-console';button.className='home-police-btn home-police-btn-gold';button.textContent='CRIME ANALYTICS & POLICE OPERATIONS';
       button.onclick=function(){consoleOpen=true;activeTab='overview';setStatus('','');render();};
       actions.appendChild(button);
-    }
-    if(!root.querySelector('#ohpu-open-rulebook-launch')){
-      var rulebookButton=g.document.createElement('button');rulebookButton.type='button';rulebookButton.id='ohpu-open-rulebook-launch';rulebookButton.className='home-police-btn';rulebookButton.textContent='POLICE RULEBOOK';
-      rulebookButton.onclick=function(){consoleOpen=true;activeTab='rulebook';setStatus('','');render();};
-      actions.appendChild(rulebookButton);
     }
   }
   function install() {
