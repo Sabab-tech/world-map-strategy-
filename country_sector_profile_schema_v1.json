@@ -694,9 +694,9 @@
     "customAttributesField": "extensions.customAttributes",
     "customMetricsField": "extensions.customMetrics",
     "addNewMetricBy": [
-      "add a definition to fieldCatalog",
-      "define unit, type, source policy and missing-value semantics",
-      "include year, source identifier, source URL, method, observation status and notes",
+      "add a definition to extensionMetricDefinitions or the canonical indicator catalogue",
+      "define sector, type, unit, source policy and missing-value semantics",
+      "include observation year, source identifier, source URL, method, status and notes",
       "add a schema/test for the new field",
       "rebuild and verify coverage"
     ],
@@ -743,5 +743,183 @@
       "confidence",
       "notes"
     ]
-  }
+  },
+  "extensionMetricDefinitions": [
+    {
+      "key": "manufacturingValueAddedUsd",
+      "sectorId": "industryAndProduction",
+      "title": "Manufacturing value added",
+      "type": "number",
+      "unit": "USD, current",
+      "sourcePolicy": "World Bank WDI manufacturing value added series or national statistical authority; retain methodology and year.",
+      "nullable": true,
+      "initialStatus": "NOT_IMPORTED",
+      "description": "Manufacturing value added amount. Distinct from broad industry share."
+    },
+    {
+      "key": "manufacturingEmploymentPct",
+      "sectorId": "industryAndProduction",
+      "title": "Manufacturing employment share",
+      "type": "number",
+      "unit": "% of employment",
+      "sourcePolicy": "ILOSTAT or national labour statistics; preserve definition and year.",
+      "nullable": true,
+      "initialStatus": "NOT_IMPORTED",
+      "description": "Labour share employed in manufacturing."
+    },
+    {
+      "key": "exportConcentrationHhi",
+      "sectorId": "tradeAndExternalRelations",
+      "title": "Export concentration",
+      "type": "number",
+      "unit": "Herfindahl-Hirschman Index (definition and scale required)",
+      "sourcePolicy": "Calculate from country-level product/destination export shares with all input years matching; store source rows.",
+      "nullable": true,
+      "initialStatus": "NOT_IMPORTED",
+      "description": "Captures concentration; cannot be calculated from total export value alone."
+    },
+    {
+      "key": "importConcentrationHhi",
+      "sectorId": "tradeAndExternalRelations",
+      "title": "Import concentration",
+      "type": "number",
+      "unit": "Herfindahl-Hirschman Index (definition and scale required)",
+      "sourcePolicy": "Calculate from product/source-country import shares, documenting the product classification and scale.",
+      "nullable": true,
+      "initialStatus": "NOT_IMPORTED",
+      "description": "Captures import supplier/product concentration."
+    },
+    {
+      "key": "topCommodityExportSharePct",
+      "sectorId": "tradeAndExternalRelations",
+      "title": "Top commodity export share",
+      "type": "number",
+      "unit": "% of total exports",
+      "sourcePolicy": "UN Comtrade or national trade statistics; specify commodity classification and year.",
+      "nullable": true,
+      "initialStatus": "NOT_IMPORTED",
+      "description": "Proxy for commodity dependence; needs commodity-level trade data."
+    },
+    {
+      "key": "energyImportDependencyPct",
+      "sectorId": "environmentAndEnergy",
+      "title": "Energy import dependency",
+      "type": "number",
+      "unit": "% of energy use",
+      "sourcePolicy": "International Energy Agency or UN energy balances; preserve product scope and year.",
+      "nullable": true,
+      "initialStatus": "NOT_IMPORTED",
+      "description": "Net energy imports relative to energy use; method definition required."
+    },
+    {
+      "key": "criticalImportsSharePct",
+      "sectorId": "tradeAndExternalRelations",
+      "title": "Critical imports share",
+      "type": "number",
+      "unit": "% of total imports",
+      "sourcePolicy": "UN Comtrade plus a versioned project list of critical goods; list and classification version required.",
+      "nullable": true,
+      "initialStatus": "NOT_IMPORTED",
+      "description": "Share of critical inputs in total imports, with explicit category definitions."
+    },
+    {
+      "key": "activeMilitaryPersonnel",
+      "sectorId": "defenseAndSecurity",
+      "title": "Active military personnel",
+      "type": "number",
+      "unit": "persons",
+      "sourcePolicy": "Official defence ministry/public budget or reputable defence reference; distinguish active, reserve and paramilitary.",
+      "nullable": true,
+      "initialStatus": "NOT_IMPORTED",
+      "description": "Personnel count, not a combat readiness score."
+    },
+    {
+      "key": "reserveMilitaryPersonnel",
+      "sectorId": "defenseAndSecurity",
+      "title": "Reserve military personnel",
+      "type": "number",
+      "unit": "persons",
+      "sourcePolicy": "Official defence ministry/public budget or reputable defence reference; record whether trained, available or nominal reserve.",
+      "nullable": true,
+      "initialStatus": "NOT_IMPORTED",
+      "description": "Reserve force headcount with definition."
+    },
+    {
+      "key": "armsTransferImportsSipriTiv",
+      "sectorId": "defenseAndSecurity",
+      "title": "Arms transfers imported",
+      "type": "number",
+      "unit": "SIPRI trend-indicator value (TIV; not financial value)",
+      "sourcePolicy": "SIPRI Arms Transfers Database; cite the exact reporting window and TIV interpretation.",
+      "nullable": true,
+      "initialStatus": "NOT_IMPORTED",
+      "description": "Arms-transfer volume indicator. Must not be labelled USD or market value."
+    },
+    {
+      "key": "armsTransferExportsSipriTiv",
+      "sectorId": "defenseAndSecurity",
+      "title": "Arms transfers exported",
+      "type": "number",
+      "unit": "SIPRI trend-indicator value (TIV; not financial value)",
+      "sourcePolicy": "SIPRI Arms Transfers Database; cite the exact reporting window and TIV interpretation.",
+      "nullable": true,
+      "initialStatus": "NOT_IMPORTED",
+      "description": "Arms-transfer volume indicator. Must not be labelled USD or market value."
+    },
+    {
+      "key": "diplomaticMissionsAbroadCount",
+      "sectorId": "diplomacyAndForeignAffairs",
+      "title": "Diplomatic missions abroad",
+      "type": "integer",
+      "unit": "missions",
+      "sourcePolicy": "Official foreign ministry directory or maintained diplomatic-list dataset; distinguish embassy, consulate, permanent mission and honorary consulate.",
+      "nullable": true,
+      "initialStatus": "NOT_IMPORTED",
+      "description": "Diplomatic network reach."
+    },
+    {
+      "key": "foreignMissionsInCountryCount",
+      "sectorId": "diplomacyAndForeignAffairs",
+      "title": "Foreign diplomatic missions in country",
+      "type": "integer",
+      "unit": "missions",
+      "sourcePolicy": "Host foreign ministry or diplomatic list; define what counts as a mission.",
+      "nullable": true,
+      "initialStatus": "NOT_IMPORTED",
+      "description": "Inbound diplomatic network presence."
+    },
+    {
+      "key": "allianceTreatyMembershipCount",
+      "sectorId": "diplomacyAndForeignAffairs",
+      "title": "Active treaty/alliance memberships",
+      "type": "integer",
+      "unit": "memberships",
+      "sourcePolicy": "Official treaty texts and organization membership lists; each entry requires start/end/validity dates.",
+      "nullable": true,
+      "initialStatus": "NOT_IMPORTED",
+      "description": "Raw count only; strategic importance varies and must not be assumed equal."
+    },
+    {
+      "key": "publicDebtInterestToRevenuePct",
+      "sectorId": "economy",
+      "title": "Public-debt interest to revenue",
+      "type": "number",
+      "unit": "% of government revenue",
+      "sourcePolicy": "IMF fiscal datasets or official budget/revenue figures; same-year numerator and denominator required.",
+      "nullable": true,
+      "initialStatus": "NOT_IMPORTED",
+      "description": "Debt-service pressure indicator. Use interest expense definition, not total debt principal repayments."
+    },
+    {
+      "key": "unVotingAlignmentScore",
+      "sectorId": "diplomacyAndForeignAffairs",
+      "title": "UN voting alignment",
+      "type": "number",
+      "unit": "model-defined scale",
+      "sourcePolicy": "UN General Assembly voting records with a documented alignment method, voting window, abstention treatment and source rows.",
+      "nullable": true,
+      "initialStatus": "MODEL_NOT_DEFINED",
+      "description": "Model-derived diplomatic alignment; not an official country score."
+    }
+  ]
 }
