@@ -196,6 +196,25 @@
     const p=resolveCountry(value); if (!p) return null;
     return Object.assign({},p,{flag:flagFor(p),capital:getCapital(p.countryCode),cities:getCities(p.countryCode)});
   }
+  function listProfiles() {
+    const seen = new Map();
+    state.profiles.concat(Array.from(state.extras.values())).forEach(p => {
+      if (!p || !p.countryCode) return;
+      const code = String(p.countryCode).trim().toUpperCase();
+      if (!code) return;
+      if (!seen.has(code)) seen.set(code, {
+        countryCode:code,
+        iso3:String(p.iso3 || '').trim().toUpperCase() || null,
+        numericCode:p.numericCode == null ? null : String(p.numericCode),
+        name:s(p.name),
+        officialName:s(p.officialName || p.name),
+        economyKey:s(p.economyKey) || null,
+        populationKey:s(p.populationKey) || null,
+        profileStatus:p.profileStatus || 'IDENTITY_ONLY'
+      });
+    });
+    return Array.from(seen.values()).sort((a,b)=>a.name.localeCompare(b.name));
+  }
   function diagnostics() {
     return {version:'1.1.0',ready:state.ready,settled:state.settled,error:state.error,profileCount:state.profiles.length,countryIdentityCount:state.byCode.size+state.extras.size,flagCount:state.profiles.concat(Array.from(state.extras.values())).filter(p=>!!flagFor(p)).length,capitalCount:state.cities.size,profilesWithEconomy:state.profiles.filter(p=>p.sourceValues&&typeof p.sourceValues==='object').length,profilesWithPopulation:state.profiles.filter(p=>p.populationValues&&typeof p.populationValues==='object').length,legacyEconomyRecords:Object.keys(state.legacyEconomy).length,legacyPopulationRecords:Object.keys(state.legacyPopulation).length,strategicProfiles:state.strategicProfileDiagnostics};
   }
@@ -231,5 +250,5 @@
       }).catch(error=>{state.ready=false;state.settled=true;state.error=String(error?.message||error);return false;});
     return state.promise;
   }
-  root.OmegaCountryRuntimeData=Object.freeze({version:'1.1.0',init,ready:init(),isReady:()=>state.ready,isSettled:()=>state.settled,resolveCountry,flagFor,getProfile,getStrategicProfile,getRecord,getCapital,getCities,diagnostics});
+  root.OmegaCountryRuntimeData=Object.freeze({version:'1.1.0',init,ready:init(),isReady:()=>state.ready,isSettled:()=>state.settled,resolveCountry,flagFor,getProfile,getStrategicProfile,getRecord,getCapital,getCities,diagnostics,listProfiles});
 })(window);
