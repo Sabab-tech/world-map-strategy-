@@ -1946,9 +1946,15 @@ window.addEventListener('RESOURCE_STATE_UPDATED', () => {
                 }
                 if (object && object.year !== null && object.year !== undefined) pieces.push('Year ' + object.year);
                 if (object && object.level !== null && object.level !== undefined) {
-                    if (object.evidenceType === 'REGISTERED_MACRO_INDICATOR') pieces.push('Indicator value ' + object.level);
-                    else if (object.evidenceType === 'REPOSITORY_DERIVED_GAME_INDEX') pieces.push('Derived index ' + object.level + '/100');
-                    else pieces.push('Model level ' + object.level + '/100');
+                    if (typeof object.level === 'string' && !/^-?\\d+(?:\\.\\d+)?$/.test(object.level)) {
+                        pieces.push('Severity ' + object.level);
+                    } else if (object.evidenceType === 'REGISTERED_MACRO_INDICATOR') {
+                        pieces.push('Indicator value ' + object.level);
+                    } else if (object.evidenceType === 'REPOSITORY_DERIVED_GAME_INDEX') {
+                        pieces.push('Derived index ' + object.level + '/100');
+                    } else {
+                        pieces.push('Model level ' + object.level + '/100');
+                    }
                 }
                 if (object && object.intensity) pieces.push(String(object.intensity).replace(/_/g, ' '));
                 if (object && object.domain) pieces.push(String(object.domain).replace(/_/g, ' '));
