@@ -692,7 +692,7 @@
         '<label>Receiving ministry<select name="targetDepartment">'+transferOptions('interior')+'</select></label>'+
         '<label>Amount to transfer (USD)<input name="amountUsd" type="number" min="1" step="0.01" placeholder="e.g. 250000" required></label>'+
         '<label>Purpose / audit note<input name="description" type="text" maxlength="160" placeholder="e.g. Emergency fleet maintenance" required></label>'+
-        '<button type="submit" class="ofm-transfer-button">Transfer ministry allocation</button></form></section>'+
+        '<button type="submit" class="ofm-transfer-button" style="box-sizing:border-box;display:block;width:100%;min-height:46px;padding:12px 16px;border:1px solid rgba(218,177,75,.8);border-radius:9px;background:linear-gradient(135deg,#70541d,#163e54);color:#fff;font-weight:850;letter-spacing:.04em;box-shadow:0 4px 0 #07101b;cursor:pointer">Transfer ministry allocation</button></form></section>'+
         '<section class="ofm-section"><div class="ofm-section-heading"><h3>Execute a funded expense</h3><span>Sector allocation and treasury balance are both checked</span></div>'+
         '<form class="ofm-form ofm-form-wide" data-ofm-action="spend-budget"><label>Sector<select name="department">'+departmentOptions('defense')+'</select></label>'+
         '<label>Expense type<select name="spendType"><option value="salary">Salary / payroll</option><option value="purchase">Procurement</option><option value="maintenance">Repair / maintenance</option><option value="investment">Capital investment</option><option value="general">General operations</option><option value="debt_service">Debt service</option><option value="emergency">Authorized emergency</option></select></label>'+
