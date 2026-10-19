@@ -164,7 +164,12 @@
   function normalizeCountry(value){
     let raw=String(value||'').trim();if(!raw)return '';
     try{const r=g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega&&g.Omega.CanonicalIdentity;const hit=r&&typeof r.resolveCountry==='function'?r.resolveCountry(raw):null;if(hit&&hit.id)raw=String(hit.id);}catch(_){}
-    return raw.toUpperCase().replace(/[-\s]+/g,'_');
+    const normalized=raw.toUpperCase().replace(/[-\s]+/g,'_');
+    try {
+      const baseline=countryPoliceBaselineByCode&&countryPoliceBaselineByCode[normalized];
+      if(baseline&&baseline.code)return String(baseline.code).trim().toUpperCase().replace(/[-\s]+/g,'_');
+    } catch (_) {}
+    return normalized;
   }
   function currentCountry(candidate){
     const sim=g.Omega&&g.Omega.Simulation;
