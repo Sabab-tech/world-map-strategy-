@@ -455,7 +455,6 @@ var Game = window.Game = {
 
         const runtime = window.OmegaCountryRuntimeData;
         const identity = runtime && runtime.resolveCountry(countryName);
-        const profile = runtime && runtime.getProfile(countryName);
         const id = Game.getCountryId ? Game.getCountryId(countryName) : countryName.toUpperCase();
         const keys = [countryName, id, identity && identity.countryCode, identity && identity.iso3,
             identity && identity.name, identity && identity.economyKey, identity && identity.populationKey];
