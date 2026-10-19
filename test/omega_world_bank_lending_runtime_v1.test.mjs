@@ -154,12 +154,14 @@ test('loan requests require active player, respect the assessed cap and are idem
   const api = context.OmegaWorldBankLending;
   await api.init();
   const beforeDebt = state.economy.BANGLADESH.debt;
+  const beforeCapacity = api.getFacilitySnapshot().availableCapacityUsd;
   const first = api.requestLoan({ countryId: 'BGD', amountUsd: 500e6, purpose: 'infrastructure', requestId: 'test-application-1' });
   assert.equal(first.ok, true);
   assert.equal(first.loan.originalPrincipalUsd, 500e6);
   assert.equal(first.loan.status, 'ACTIVE');
   assert.equal(state.economy.BANGLADESH.debt, beforeDebt + 500e6);
   assert.ok(state.finance.BGD.available > 1e9);
+  assert.equal(api.getFacilitySnapshot().availableCapacityUsd, beforeCapacity - 500e6);
   const duplicate = api.requestLoan({ countryId: 'BGD', amountUsd: 500e6, purpose: 'infrastructure', requestId: 'test-application-1' });
   assert.equal(duplicate.ok, true);
   assert.equal(duplicate.duplicate, true);
@@ -193,12 +195,14 @@ test('contract interest accrues once per turn and scheduled debt service reduces
   loan.ageYears = 6;
   loan.graceYears = 0;
   const priorPrincipal = loan.outstandingPrincipalUsd;
+  const priorAvailableCapacity = api.getFacilitySnapshot().availableCapacityUsd;
   api.accrueInterest('BGD', 1, 3);
   const regular = api.serviceDebt('BGD', 1, 10e9, 100e9, 3);
   assert.equal(regular.ok, true);
   assert.ok(regular.paidUsd > 0);
   assert.ok(loan.outstandingPrincipalUsd < priorPrincipal);
   assert.ok(api.getOutstandingBalance('BGD') > 0);
+  assert.equal(api.getFacilitySnapshot().availableCapacityUsd, priorAvailableCapacity + regular.principalPaidUsd);
 });
 
 test('failed live refresh preserves the last valid World Bank observations and exposes offline status', async () => {
