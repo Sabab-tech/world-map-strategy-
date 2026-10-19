@@ -54,6 +54,7 @@ jobs:
         run: |
           node --check map-engine-1.js
           node --check map-engine-2.js
+          node --check omega_ui_system_redesign_v1.js
           node --check offline-hybrid-map.js
       - name: Run UI visual and map-layer regression tests
         run: npm run test:ui-visual
