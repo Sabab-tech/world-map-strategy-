@@ -263,5 +263,5 @@ test('ministry viewport layout confines scrolling and keeps Finance navigation c
   assert.match(layoutRepairCss,/height: 100dvh !important/);
   assert.match(layoutRepairCss,/overflow: hidden !important/);
   assert.match(layoutRepairCss,/min-height: 0 !important/);
-  assert.match(layoutRepairCss,/grid-template-columns: repeat\(8, minmax\(0, 1fr\)\)/);
+  assert.match(layoutRepairCss,/grid-template-columns: repeat\(9, minmax\(0, 1fr\)\)/);
 });
