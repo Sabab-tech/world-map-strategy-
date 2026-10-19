@@ -224,5 +224,14 @@ test('country overview is inside ministry dashboard, uses shared behaviour runti
   assert.match(sw, /resource_site_reserve_simulation_v1\.json/);
   assert.match(read('server_bootstrap.js'), /'omega_country_behavior_engine_v1\.js',\s*'omega_opponent_adaptive_strategy_system\.js'/);
   assert.match(read('style.css'), /#omega-country-overview-tabs/);
+
+  const autonomy = read('omega_opponent_autonomy_system.js');
+  const weightBlock = autonomy.match(/const DECISION_WEIGHTS=Object\.freeze\(\{([\s\S]*?)\}\);/);
+  assert.ok(weightBlock, 'autonomy decision weights should remain inspectable');
+  const weights = Array.from(weightBlock[1].matchAll(/\b[A-Za-z][A-Za-z0-9]*:([0-9.]+)/g), match => Number(match[1]));
+  assert.ok(Math.abs(weights.reduce((sum, value) => sum + value, 0) - 1) < 0.000001,
+    'decision weights must still total 100%');
+  assert.equal(Number(weightBlock[1].match(/\bstrategy:([0-9.]+)/)?.[1]), 0.12,
+    'country adaptive strategy should have a 12% candidate score weight');
   assert.match(read('country-ios.js'), /RUNTIME COUNTRY BEHAVIOUR/);
 });
