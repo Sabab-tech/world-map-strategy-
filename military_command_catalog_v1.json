@@ -161,5 +161,10 @@
     "maximumLossPct": 0.32,
     "readinessFactorFloor": 0.45,
     "equipmentCommitmentDefaultPct": 30
+  },
+  "budgetPlanDefaults": {
+    "personnel": 45,
+    "equipment": 40,
+    "operations": 15
   }
 }
