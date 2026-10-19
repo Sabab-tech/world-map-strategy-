@@ -48,6 +48,7 @@ jobs:
         run: node --test test/country_general_data_registry_v1.test.mjs
 
       - name: Commit registry only if it changed
+        if: github.event_name != 'pull_request'
         shell: bash
         run: |
           if [[ -z "$(git status --porcelain -- country_general_data_registry_v1.json)" ]]; then
@@ -59,3 +60,6 @@ jobs:
           git add country_general_data_registry_v1.json
           git commit -m "Update unified country general data registry"
           git push
+      - name: Explain pull request generated-data behavior
+        if: github.event_name == 'pull_request'
+        run: echo "PR builds validate generated registry data without attempting to push from a detached checkout."
