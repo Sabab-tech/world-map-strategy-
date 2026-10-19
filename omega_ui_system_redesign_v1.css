@@ -804,3 +804,21 @@ body.modal-open #top-status-bar {
     -webkit-backdrop-filter: none !important;
   }
 }
+
+/* Ministry entry hit targets: keep cabinet cards tap-safe on Android WebViews. */
+#cabinet-full-window,
+#cabinet-full-window .parchment-cabinet-container,
+#cabinet-full-window #parchment-slider,
+#cabinet-full-window .parchment-card-btn {
+  pointer-events: auto !important;
+}
+#cabinet-full-window .parchment-card-btn {
+  position: relative !important;
+  touch-action: manipulation !important;
+  -webkit-tap-highlight-color: rgba(127, 197, 226, .22);
+}
+#cabinet-full-window .parchment-card-btn .parchment-icon-box,
+#cabinet-full-window .parchment-card-btn .parchment-card-title {
+  pointer-events: none !important;
+}
+
