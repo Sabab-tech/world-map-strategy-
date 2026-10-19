@@ -17,7 +17,15 @@
   const clamp=(v,a=0,b=1)=>{const n=num(v);return n===null?null:Math.max(a,Math.min(b,n));};
   const state=()=>g.Game?.state||g.gameState||{};
   const registry=()=>g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity||null;
-  const canonical=v=>{try{const r=registry()?.resolveCountry?.(v);if(r?.id)return id(r.id);}catch(_){}return id(v);};
+  const canonical=v=>{
+    try{const r=registry()?.resolveCountry?.(v);if(r?.id)return id(r.id);}catch(_){}
+    try{
+      const identity=g.OmegaCountryRuntimeData?.resolveCountry?.(v);
+      if(identity?.iso3)return id(identity.iso3);
+      if(identity?.countryCode)return id(identity.countryCode);
+    }catch(_){}
+    return id(v);
+  };
   function country(c){const cid=canonical(c),s=state();return{cid,s};}
   function read(c,path){
     const {cid,s}=country(c),parts=String(path||'').split('.'),domain=parts.shift();
