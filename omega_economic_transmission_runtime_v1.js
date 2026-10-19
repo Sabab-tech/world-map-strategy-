@@ -223,11 +223,18 @@
       ? (Math.pow(currentRate / lastRate, 1 / years) - 1) * 100 : 0;
     const domesticInflation = clamp(facts.inflationPct, -95, 1000);
     const worldInflation = num(globalInflationPct) ?? 2;
-    const importInflation = clamp(worldInflation + currencyDepreciationPct, -95, 1000);
     const importExposure = clamp((num(facts.importExposurePct) || 25) / 100,
       Number(rules.minimumImportExposurePct || 3) / 100, Number(rules.maximumImportExposurePct || 90) / 100);
-    const producerInflation = clamp(domesticInflation * (1 - importExposure * Number(rules.importProducerCostWeight || 0.35))
-      + importInflation * importExposure * Number(rules.importProducerCostWeight || 0.35), -95, 1000);
+    const bankState = rootState().governmentBanking || {};
+    const countryTradePolicy = bankState.tradePolicies && bankState.tradePolicies[profileId(profile)] || {};
+    const importTariffPct = clamp(num(countryTradePolicy.importTariffPct) ?? 0, 0, 80);
+    const importInflation = clamp(worldInflation + currencyDepreciationPct + importTariffPct, -95, 1000);
+    const configuredImportWeight = clamp(Number(rules.importProducerCostWeight || 0.35), 0.05, 0.8);
+    const defaultExposure = clamp(Number(rules.defaultImportExposurePct || 25) / 100,
+      Number(rules.minimumImportExposurePct || 3) / 100, Number(rules.maximumImportExposurePct || 90) / 100);
+    const producerImportWeight = clamp(importExposure * configuredImportWeight / defaultExposure, 0.05, 0.8);
+    const producerInflation = clamp(domesticInflation * (1 - producerImportWeight)
+      + importInflation * producerImportWeight, -95, 1000);
     model.cpiIndex = Math.max(0.001, model.cpiIndex * Math.pow(Math.max(0.0001, 1 + domesticInflation / 100), years));
     model.nominalWageIndex = Math.max(0.001, model.nominalWageIndex * Math.pow(Math.max(0.0001, 1 + wageGrowthPct / 100), years));
     model.importCostIndex = Math.max(0.001, model.importCostIndex * Math.pow(Math.max(0.0001, 1 + importInflation / 100), years));
@@ -285,6 +292,7 @@
       cpiIndex: model.cpiIndex, nominalWageIndex: model.nominalWageIndex,
       realWageIndex: realWageIndex, householdPurchasingPowerIndex: householdPowerIndex,
       importCostIndex: model.importCostIndex, producerCostIndex: model.producerCostIndex,
+      producerImportWeightPct: producerImportWeight * 100, importTariffPct: importTariffPct,
       nominalPublicSpendingIndex: model.nominalPublicSpendingIndex, realPublicPurchasingPowerIndex: publicPurchasingPowerIndex,
       realGDPIndex: realGDPIndex, exportCompetitivenessIndex: exportCompetitivenessIndex,
       unemploymentPct: unemployment, unemploymentGapPp: unemploymentGap,
