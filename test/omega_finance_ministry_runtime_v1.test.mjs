@@ -28,7 +28,7 @@ function createRuntime(){
   elements.set('dash-layer-status',{textContent:''});
   const profile=profileData.countries.find(p=>p.iso3==='BGD');
   const economy=JSON.parse(JSON.stringify(profile.sourceValues));
-  const state={economy:{BANGLADESH:economy},finance:{BGD:{available:123,reserves:456}},population:{BGD:{population_2015:profile.indicators.population2015}},simulation:{turn:1,session:{playerCountryId:'BGD'}}};
+  const state={economy:{BANGLADESH:economy},finance:{BGD:{available:4000000000,reserves:456}},population:{BGD:{population_2015:profile.indicators.population2015}},simulation:{turn:1,session:{playerCountryId:'BGD'}}};
   const context={console,document,Intl,Math,Number,String,Object,Array,Map,Set,Promise,Date,JSON,WeakMap,
     CustomEvent:class CustomEvent{constructor(type,options={}){this.type=type;this.detail=options.detail;}},
     addEventListener(type,fn){handlers.set(type,[...(handlers.get(type)||[]),fn]);},
@@ -45,7 +45,7 @@ function createRuntime(){
 }
 test('Finance preserves existing finance data and enforces allocation, treasury and tax rules',async()=>{
   const {context,state}=createRuntime();const boot=await context.OmegaFinanceMinistry.init();
-  assert.equal(boot.initialized,true);assert.equal(boot.profileCount,249);assert.equal(state.finance.BGD.available,123);
+  assert.equal(boot.initialized,true);assert.equal(boot.profileCount,249);assert.equal(state.finance.BGD.available,4000000000);assert.equal(state.finance.BGD.reserves,456);
   assert.ok(context.OmegaFinanceMinistry.getFinanceState('BGD').treasuryBalanceUsd>0);
   let r=context.OmegaFinanceMinistry.applyAction({type:'spend-budget',countryId:'BGD',department:'interior',amountUsd:1000,spendType:'purchase'});
   assert.equal(r.ok,false);assert.equal(r.code,'BUDGET_ALLOCATION_REQUIRED');
@@ -55,7 +55,7 @@ test('Finance preserves existing finance data and enforces allocation, treasury 
   assert.equal(r.ok,false);assert.equal(r.code,'ALLOCATION_LIMIT_EXCEEDED');
   const before=context.OmegaFinanceMinistry.getFinanceState('BGD').treasuryBalanceUsd;
   r=context.OmegaFinanceMinistry.applyAction({type:'spend-budget',countryId:'BGD',department:'interior',amountUsd:5000000,spendType:'maintenance',description:'Repair fleet'});
-  assert.equal(r.ok,true);assert.equal(context.OmegaFinanceMinistry.getFinanceState('BGD').treasuryBalanceUsd,before-5000000);
+  assert.equal(r.ok,true);assert.equal(context.OmegaFinanceMinistry.getFinanceState('BGD').treasuryBalanceUsd,before-5000000);assert.equal(state.finance.BGD.available,before-5000000);
   r=context.OmegaFinanceMinistry.applyAction({type:'set-tax-rate',countryId:'BGD',value:25});
   assert.equal(r.ok,true);assert.equal(context.OmegaFinanceMinistry.getFinanceState('BGD').policy.taxRatePct,25);
 });
@@ -75,6 +75,19 @@ test('Finance commands cannot change a non-player country',async()=>{
   assert.equal(result.ok,false);assert.equal(result.code,'PLAYER_COUNTRY_SCOPE_VIOLATION');
 });
 
+
+test('Finance reconciles treasury changes posted by existing ministries and resource systems',async()=>{
+  const {context,state}=createRuntime();
+  await context.OmegaFinanceMinistry.init();
+  const before=state.finance.BGD.available;
+  const externallyUpdated=before-125000;
+  state.finance.BGD.available=externallyUpdated;
+  const metrics=context.OmegaFinanceMinistry.getIndicators('BGD');
+  assert.equal(metrics.treasuryBalanceUsd,externallyUpdated);
+  assert.equal(context.OmegaFinanceMinistry.getFinanceState('BGD').treasuryBalanceUsd,externallyUpdated);
+  assert.equal(state.finance.BGD.available,externallyUpdated);
+  assert.equal(state.finance.BGD.reserves,456);
+});
 test('Finance route renders its dashboard through the existing Cabinet UI and locks foreign-country controls',async()=>{
   const {context,elements}=createRuntime();
   await context.OmegaFinanceMinistry.init();
