@@ -453,54 +453,108 @@ var Game = window.Game = {
     updateCountryInfoCard(countryName) {
         if (!countryName) return;
 
-        const config = Game.findCountryConfig ? Game.findCountryConfig(countryName) : null;
+        const runtime = window.OmegaCountryRuntimeData;
+        const identity = runtime && runtime.resolveCountry(countryName);
         const id = Game.getCountryId ? Game.getCountryId(countryName) : countryName.toUpperCase();
-        const econ = (Game.state && Game.state.economy && Game.state.economy[id]) || { gdp: 500000000, debt: 100000000 };
-        const pop = (Game.state && Game.state.population && Game.state.population[id]) || { population_2015: 50000000 };
+        const keys = [countryName, id, identity && identity.countryCode, identity && identity.iso3,
+            identity && identity.name, identity && identity.economyKey, identity && identity.populationKey];
+        const normalizeKey = value => String(value == null ? '' : value).trim().toUpperCase()
+            .replace(/[^A-Z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+        const findRecord = records => {
+            if (!records || typeof records !== 'object') return null;
+            for (const key of keys) {
+                const match = Object.keys(records).find(candidate => normalizeKey(candidate) === normalizeKey(key));
+                if (match !== undefined && records[match] && typeof records[match] === 'object') return records[match];
+            }
+            return null;
+        };
+        const economyState = (Game.state && Game.state.economy) ||
+            (window.gameState && window.gameState.economy) || {};
+        const populationState = (Game.state && Game.state.population) ||
+            (window.gameState && window.gameState.population) || {};
+        const econ = (runtime && runtime.getRecord('economy', countryName)) || findRecord(economyState);
+        const pop = (runtime && runtime.getRecord('population', countryName)) || findRecord(populationState);
+        const displayName = identity && identity.name ? identity.name : countryName.replace(/_/g, ' ');
+        const flag = (runtime && runtime.flagFor(countryName)) || '🏳️';
+        const unavailable = 'NOT RECORDED';
+        const numberExists = value => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
+        const countryValue = (domains, paths) => {
+            if (window.CountryIOS && typeof window.CountryIOS.readCountryValue === 'function') {
+                const value = window.CountryIOS.readCountryValue(countryName, domains, paths);
+                return value === null || value === undefined || value === '' ? unavailable : String(value);
+            }
+            return unavailable;
+        };
 
-        // 1. Update floating country selection pill with Eye icon (👁️) button
+        // Update the persistent selected-country bar with the resolved country flag.
         const selBar = document.getElementById('country-selection-bar');
         const elSelName = document.getElementById('sel-country-name');
         const elSelFlag = document.getElementById('sel-country-flag');
-
-        if (elSelName) elSelName.innerText = countryName.replace(/_/g, " ").toUpperCase();
-        if (elSelFlag) elSelFlag.innerText = (config && config.code) ? `🚩 [${config.code}]` : "🌐";
-
+        if (elSelName) elSelName.innerText = displayName.toUpperCase();
+        if (elSelFlag) elSelFlag.innerText = flag;
         if (selBar) {
             selBar.classList.remove('hidden');
             selBar.style.display = 'flex';
         }
 
-        // 2. Pre-fill card elements so when Eye button (👁️) is clicked, details are ready
+        // Populate the information card only with recorded values for this country.
         const elName = document.getElementById('card-country-name');
-        if (elName) elName.innerText = countryName.replace(/_/g, " ").toUpperCase();
-
+        if (elName) elName.innerText = displayName.toUpperCase();
         const elFlag = document.getElementById('card-country-flag');
-        if (elFlag) elFlag.innerText = config && config.code ? `🚩 [${config.code}]` : "🌐";
+        if (elFlag) elFlag.innerText = flag;
 
+        const leader = countryValue(['government', 'politics', 'state'], [
+            'leaderName', 'leader_name', 'headOfState', 'head_of_state', 'president', 'primeMinister'
+        ]);
+        const government = countryValue(['government', 'politics', 'state'], [
+            'governmentType', 'government_type', 'governmentName', 'formOfGovernment', 'regime'
+        ]);
         const elLeader = document.getElementById('card-country-leader');
-        if (elLeader) elLeader.innerText = `Leader: Head of State`;
-
+        if (elLeader) elLeader.innerText = 'Leader: ' + leader;
         const elGov = document.getElementById('card-country-gov');
-        if (elGov) elGov.innerText = `Gov: Sovereign Nation`;
+        if (elGov) elGov.innerText = 'Gov: ' + government;
 
         const elPop = document.getElementById('card-stat-pop');
-        if (elPop) elPop.innerText = this.formatPopulationNumber(pop.population_2015);
-
+        if (elPop) elPop.innerText = numberExists(pop && pop.population_2015)
+            ? this.formatPopulationNumber(Number(pop.population_2015)) : unavailable;
         const elGdp = document.getElementById('card-stat-gdp');
-        if (elGdp) elGdp.innerText = this.formatGameNumber(econ.gdp);
+        if (elGdp) elGdp.innerText = numberExists(econ && econ.gdp)
+            ? this.formatGameNumber(Number(econ.gdp)) : unavailable;
 
         const elStab = document.getElementById('card-stat-stability');
-        if (elStab) elStab.innerText = `92%`;
-
+        if (elStab) elStab.innerText = countryValue(['government', 'politics', 'society'], [
+            'stability', 'stabilityScore', 'stability_score', 'cabinetStability', 'politicalStability'
+        ]);
         const elRel = document.getElementById('card-stat-relations');
-        if (elRel) elRel.innerText = `+45 Allied`;
-
+        if (elRel) elRel.innerText = countryValue(['relations', 'diplomacy'], [
+            'standing', 'relationshipStatus', 'relationshipScore', 'relationship_score'
+        ]);
         const elMil = document.getElementById('card-stat-mil');
-        if (elMil) elMil.innerText = `PWR 82.4`;
+        if (elMil) elMil.innerText = countryValue(['military', 'defense'], [
+            'power', 'militaryPower', 'military_power', 'readinessScore', 'strengthScore'
+        ]);
 
-        // Note: Do NOT automatically add 'active' to country-info-card here!
-        // User must click the Eye icon (👁️) on the selection bar to trigger full modal pop-up!
+        // Retry once if the registry was still loading when the map selection occurred.
+        if (runtime && runtime.ready && typeof runtime.isSettled === 'function' && !runtime.isSettled()) {
+            const requested = countryName;
+            const pendingRefreshes = this._countryRuntimeRefreshPending ||
+                (this._countryRuntimeRefreshPending = new Set());
+            if (!pendingRefreshes.has(requested)) {
+                pendingRefreshes.add(requested);
+                Promise.resolve(runtime.ready).then(() => {
+                    pendingRefreshes.delete(requested);
+                    const active = Game.currentActiveCountry || window.currentActiveCountry || '';
+                    const activeProfile = runtime.resolveCountry(active);
+                    const requestedProfile = runtime.resolveCountry(requested);
+                    if (normalizeKey(active) === normalizeKey(requested) ||
+                        (activeProfile && requestedProfile && activeProfile.countryCode === requestedProfile.countryCode)) {
+                        if (Game.Map && typeof Game.Map.updateCountryInfoCard === 'function') Game.Map.updateCountryInfoCard(requested);
+                    }
+                }).catch(() => { pendingRefreshes.delete(requested); });
+            }
+        }
+
+        // The user opens the full detail panel explicitly via the eye button.
     },
 
     closeCountryInfoCard() {
