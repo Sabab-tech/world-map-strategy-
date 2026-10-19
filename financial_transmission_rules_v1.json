@@ -1,0 +1,102 @@
+{
+  "schemaVersion": "1.0.0",
+  "modelVersion": "FINANCIAL_TRANSMISSION_1",
+  "baselineYear": 2015,
+  "annualizationMs": 31536000000,
+  "simulationTurnDurationMs": 3600000,
+  "historyDays": 30,
+  "historyMaxPoints": 31,
+  "maximumCountriesPerTurn": 300,
+  "defaultWageGrowthShareOfGdpGrowth": 0.65,
+  "minimumModeledWageGrowthPct": -30,
+  "maximumModeledWageGrowthPct": 50,
+  "defaultImportExposurePct": 25,
+  "minimumImportExposurePct": 3,
+  "maximumImportExposurePct": 90,
+  "domesticProducerCostWeight": 0.65,
+  "importProducerCostWeight": 0.35,
+  "householdEmploymentWeight": 0.35,
+  "targetInflationPct": 3,
+  "targetUnemploymentPct": 6,
+  "weights": {
+    "inflationGap": 0.22,
+    "realWageLoss": 0.23,
+    "importCostIncrease": 0.14,
+    "unemploymentGap": 0.16,
+    "debtStress": 0.12,
+    "currencyDepreciation": 0.13
+  },
+  "currencyStress": {
+    "capitalFlowSource": "CURRENT_ACCOUNT_OR_TRADE_BALANCE_PROXY",
+    "confidenceSource": "MODEL_DERIVED_FROM_ECONOMIC_PRESSURE",
+    "pegAttackRule": "DEVIATION_FROM_TARGET_AND_RESERVE_COVER",
+    "missingDataPolicy": "PRESERVE_NULL_OR_MARK_MODEL_ASSUMPTION"
+  },
+  "scenarios": {
+    "inflation-shock": {
+      "label": "Inflation shock",
+      "inflationDeltaPp": 10,
+      "capitalFlowDeltaPctGdp": 0,
+      "confidenceDelta": -8,
+      "reserveLossPct": 0,
+      "pegAttackPressurePct": 0,
+      "tradeSurplusDeltaPctGdp": 0,
+      "policyRateDeltaPp": 0
+    },
+    "capital-flight": {
+      "label": "Capital flight",
+      "inflationDeltaPp": 2,
+      "capitalFlowDeltaPctGdp": -6,
+      "confidenceDelta": -30,
+      "reserveLossPct": 25,
+      "pegAttackPressurePct": 4,
+      "tradeSurplusDeltaPctGdp": 0,
+      "policyRateDeltaPp": 0
+    },
+    "reserve-loss": {
+      "label": "Foreign reserve loss",
+      "inflationDeltaPp": 1,
+      "capitalFlowDeltaPctGdp": -2,
+      "confidenceDelta": -15,
+      "reserveLossPct": 50,
+      "pegAttackPressurePct": 6,
+      "tradeSurplusDeltaPctGdp": 0,
+      "policyRateDeltaPp": 0
+    },
+    "peg-attack": {
+      "label": "Currency peg attack",
+      "inflationDeltaPp": 0,
+      "capitalFlowDeltaPctGdp": -5,
+      "confidenceDelta": -25,
+      "reserveLossPct": 35,
+      "pegAttackPressurePct": 25,
+      "tradeSurplusDeltaPctGdp": 0,
+      "policyRateDeltaPp": 0
+    },
+    "trade-surplus": {
+      "label": "Trade surplus",
+      "inflationDeltaPp": 0,
+      "capitalFlowDeltaPctGdp": 4,
+      "confidenceDelta": 6,
+      "reserveLossPct": -10,
+      "pegAttackPressurePct": 0,
+      "tradeSurplusDeltaPctGdp": 5,
+      "policyRateDeltaPp": 0
+    },
+    "disinflation": {
+      "label": "Disinflation policy",
+      "inflationDeltaPp": -4,
+      "capitalFlowDeltaPctGdp": 0,
+      "confidenceDelta": 3,
+      "reserveLossPct": 0,
+      "pegAttackPressurePct": 0,
+      "tradeSurplusDeltaPctGdp": 0,
+      "policyRateDeltaPp": 3
+    }
+  },
+  "provenance": {
+    "observed": "SOURCE_DATA_OR_CURRENT_GAME_STATE",
+    "derived": "DERIVED_FROM_OBSERVED_AND_SIMULATED_VALUES",
+    "modelAssumption": "CONFIGURED_GAME_RULE_ASSUMPTION"
+  }
+}
