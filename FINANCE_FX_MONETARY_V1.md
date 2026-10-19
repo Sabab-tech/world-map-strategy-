@@ -81,7 +81,7 @@ The change is multiplied by elapsed simulation years and bounded to [-5%, 1000%]
 
 ## UI
 
-The Finance dashboard gains an appended FX / monetary control panel:
+The Finance dashboard contains a dedicated **FX & Banking** icon tab. The FX panel mounts only inside that tab, and is not appended to the Overview, Budget, Income, Treasury or Reports tabs:
 - currency conversion with source and destination selectors;
 - reference/game quote mode;
 - one-month line chart of local units per USD;
