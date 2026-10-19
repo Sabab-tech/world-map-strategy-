@@ -145,6 +145,12 @@ test('Modeled tax receipts accrue to the existing Finance ledger over simulation
   assert.ok(state.finance.BGD.taxRevenue>beforeTax);
   assert.ok(state.finance.BGD.available>beforeCash);
   assert.ok(state.finance.BGD.revenue>=state.finance.BGD.taxRevenue);
+  const revenueSnapshot=context.OmegaFinanceMinistry.getRevenueSnapshot('BGD');
+  const sectorReceipts=revenueSnapshot.industries.reduce((sum,row)=>sum+(Number(row.collectedTaxReceiptsUsd)||0),0);
+  const fiscalState=context.OmegaFinanceMinistry.getFinanceState('BGD');
+  assert.ok(sectorReceipts>0,'each simulated tax collection should be allocated across economic-sector rows');
+  assert.ok(Math.abs(sectorReceipts-fiscalState.currentYearTaxRevenueUsd)<0.01,
+    'sector receipts must reconcile to modeled current-year tax receipts');
 });
 
 test('Debt repayment reduces principal and treasury by the posted amount',async()=>{
@@ -191,6 +197,7 @@ test('Finance tabs place cash and macro details behind separate icons while over
   assert.equal(context.OmegaFinanceMinistry.selectTab('income').ok,true);
   const income=elements.get('ministry-dashboard-content').innerHTML;
   assert.ok(income.includes('Estimated output'));
+  assert.ok(income.includes('Collected this FY'),'industry rows should show the accrued sector receipts for this fiscal year');
   assert.ok(income.includes('NOT AVAILABLE'),'missing live receipts must not be fabricated');
   assert.ok(income.includes('Annual budget'));
   assert.ok(income.includes('Spent'));
