@@ -315,18 +315,20 @@ test('hosted Home Ministry dashboard mounts real controls and returns to its own
 
   assert.equal(harness.ui.renderHomeMinistryInto(host), true);
   assert.match(host.innerHTML, /MINISTRY OF HOME AFFAIRS/);
-  assert.match(host.innerHTML, /VEHICLES OWNED/);
+  assert.match(host.innerHTML, /Vehicles owned/);
   assert.match(host.innerHTML, /home-police-dashboard-hangar/);
   assert.match(host.innerHTML, /home-police-dashboard-fleet/);
   assert.match(host.innerHTML, /home-police-dashboard-guard/);
 
-  harness.nodes.get('home-police-dashboard-hangar').onclick();
-  assert.match(host.innerHTML, /POLICE VEHICLE HANGAR/);
-  assert.match(host.innerHTML, /CONFIRM VEHICLE ORDER|PROCUREMENT LOCK/);
-
+  harness.nodes.get('home-police-dashboard-command').onclick();
+  assert.match(host.innerHTML, /NATIONAL POLICE COMMAND/);
   harness.nodes.get('btn-back-interior').onclick();
   assert.match(host.innerHTML, /MINISTRY OF HOME AFFAIRS/);
   assert.match(host.innerHTML, /home-police-dashboard-incidents/);
+
+  harness.nodes.get('home-police-dashboard-hangar').onclick();
+  assert.match(host.innerHTML, /POLICE VEHICLE HANGAR/);
+  assert.match(host.innerHTML, /CONFIRM VEHICLE ORDER|PROCUREMENT LOCK/);
 });
 
 test('Home Affairs has a separate security operations route and embeds the real Home Ministry runtime', () => {
