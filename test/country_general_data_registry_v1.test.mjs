@@ -176,9 +176,16 @@ test('every canonical identity has a source-aware strategic profile inside the e
       assert.deepEqual(profile.diplomacy.parameters, {});
       assert.equal(profile.diplomacy.strategicDriver, null);
     }
-    for (const key of ['economicScalePercentile', 'governanceQualityPercentile', 'defenseFinancialBasePercentile']) {
-      const value = profile.economy.scores[key] ?? profile.politics.governanceQualityPercentile ??
-        profile.military.financialBasePercentile;
+    const percentileValues = [
+      profile.economy.scores.economicScalePercentile,
+      profile.economy.scores.foreignExchangeReservePercentile,
+      profile.economy.scores.economicInfluencePercentile,
+      profile.politics.governanceQualityPercentile,
+      profile.military.financialBasePercentile,
+      profile.military.expenditureSharePercentile,
+      profile.military.populationScalePercentile
+    ];
+    for (const value of percentileValues) {
       assert.equal(value === null || (Number.isFinite(value) && value >= 0 && value <= 100), true);
     }
   }
