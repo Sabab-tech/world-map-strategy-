@@ -23,6 +23,51 @@ await import('../omega_home_ministry_engine_v1.js');
 const api = globalThis.OmegaHomeMinistryEngine;
 const DAY = 86400000;
 
+
+test('country aliases read and write the same canonical police and treasury buckets',()=>{
+  const state={
+    simulation:{turn:0,simulationTimeMs:0},
+    economy:{BD:{treasury:999999},BGD:{treasury:111}},
+    finance:{BD:{available:900000,reserves:10},BGD:{available:100000,reserves:200}},
+    population:{BD:{population:1000000},BGD:{population:2000000}},
+    interior:{
+      BD:{police:{policeCount:410,policeEfficiency:60,policeTrust:50,vehiclesOwned:{}}},
+      BGD:{police:{policeCount:850,policeEfficiency:70,policeTrust:70,vehiclesOwned:{}}}
+    }
+  };
+  const resolveCountry=value=>{
+    const key=String(value||'').trim().toUpperCase().replace(/[_-]+/g,' ');
+    if(['BD','BGD','BANGLADESH'].includes(key))return{
+      id:'BD',
+      raw:{raw:{code:'BD',iso2:'BD',iso3:'BGD',name:'Bangladesh'}}
+    };
+    return null;
+  };
+  const world={
+    Game:{countryId:'BD',state},
+    CountryIOS:{activeCountry:'BD'},
+    OmegaCanonicalIdentityRegistry:{resolveCountry},
+    CustomEvent:class CustomEvent{constructor(type,init={}){this.type=type;this.detail=init.detail||null;}},
+    addEventListener(){},
+    dispatchEvent(){return true;},
+    updateGlobalResourceHUD(){}
+  };
+  world.window=world;
+  new Function('window',sourceText)(world);
+  const isolated=world.OmegaHomeMinistryEngine;
+  assert.equal(isolated.getCurrentCountryId(),'BD');
+  assert.equal(isolated.getState('Bangladesh').policeCount,850);
+  assert.equal(isolated.getTreasury('Bangladesh').balance,100000);
+  const hired=isolated.recruitPolice(1,'Bangladesh');
+  assert.equal(hired.ok,true,JSON.stringify(hired));
+  assert.equal(isolated.getState('BGD').policeCount,851);
+  assert.equal(state.interior.BGD.police.policeCount,851);
+  assert.equal(state.interior.BD.police.policeCount,410);
+  assert.equal(state.finance.BGD.available,97500);
+  assert.equal(state.finance.BD.available,900000);
+  assert.deepEqual(Object.keys(state.interior).sort(),['BD','BGD']);
+});
+
 test('15 fixed vehicle tiers have unique names, SVG identities and progressive stats', () => {
   assert.equal(api.VEHICLES.length, 15);
   assert.equal(new Set(api.VEHICLES.map(v => v.name)).size, 15);
