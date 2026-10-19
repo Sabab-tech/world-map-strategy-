@@ -475,11 +475,6 @@
         '@media(max-width:690px){.obfc-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.obfc-shell{padding-left:9px;padding-right:9px}.obfc-card{padding:9px}.obfc-title{font-size:13px}}@media(max-width:400px){.obfc-grid{grid-template-columns:1fr}.obfc-form-row{grid-template-columns:1fr}.obfc-launcher{right:8px;bottom:calc(8px + env(safe-area-inset-bottom,0px));}}';
       (g.document.head || g.document.documentElement).appendChild(style);
     }
-    var button = g.document.createElement('button');
-    button.type = 'button'; button.id = 'omega-battlefield-launcher-v1'; button.className = 'obfc-launcher';
-    button.textContent = 'MILITARY / BATTLEFIELD';
-    button.onclick = open;
-    (g.document.body || g.document.documentElement).appendChild(button);
     var modal = g.document.createElement('div');
     modal.id = 'omega-battlefield-modal-v1'; modal.className = 'obfc-overlay'; modal.setAttribute('role', 'dialog'); modal.setAttribute('aria-modal', 'true');
     (g.document.body || g.document.documentElement).appendChild(modal);
