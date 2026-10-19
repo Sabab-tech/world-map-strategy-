@@ -2910,15 +2910,15 @@
         "source": "MODELED_POLICY_BASELINE_NOT_OBSERVED_ROSTER"
       },
       "baselineFleet": {
-        "totalUnits": 3,
+        "totalUnits": 4,
         "countsByTier": {
-          "1": 1,
-          "2": 0,
-          "3": 1,
+          "1": 2,
+          "2": 2,
+          "3": 0,
           "4": 0,
           "5": 0,
           "6": 0,
-          "7": 1,
+          "7": 0,
           "8": 0,
           "9": 0,
           "10": 0,
@@ -2928,10 +2928,11 @@
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 62000,
-        "dailyMaintenanceUsd": 360,
-        "annualMaintenanceUsd": 131400,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 26000,
+        "dailyMaintenanceUsd": 210,
+        "annualMaintenanceUsd": 76650,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY",
+        "modelNote": "MODELED_ESTIMATE_NOT_OBSERVED_ROSTER: compact patrol and rapid-response cars prioritized for a small, densely settled island road network."
       },
       "crime": {
         "ratesPer100k": {
@@ -2989,6 +2990,11 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
+        },
+        "baselineFleetAdjustment": {
+          "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY",
+          "observed": false,
+          "note": "MODELED_ESTIMATE_NOT_OBSERVED_ROSTER: compact patrol and rapid-response cars prioritized for a small, densely settled island road network."
         }
       }
     },
@@ -21686,15 +21692,15 @@
         "source": "MODELED_POLICY_BASELINE_NOT_OBSERVED_ROSTER"
       },
       "baselineFleet": {
-        "totalUnits": 2,
+        "totalUnits": 3,
         "countsByTier": {
           "1": 1,
           "2": 0,
-          "3": 0,
-          "4": 0,
+          "3": 1,
+          "4": 1,
           "5": 0,
           "6": 0,
-          "7": 1,
+          "7": 0,
           "8": 0,
           "9": 0,
           "10": 0,
@@ -21704,10 +21710,11 @@
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 50000,
-        "dailyMaintenanceUsd": 275,
-        "annualMaintenanceUsd": 100375,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 32000,
+        "dailyMaintenanceUsd": 225,
+        "annualMaintenanceUsd": 82125,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY",
+        "modelNote": "MODELED_ESTIMATE_NOT_OBSERVED_ROSTER: compact patrol, multi-role SUV and officer-transport van for mixed town and island support duties."
       },
       "crime": {
         "ratesPer100k": {
@@ -21765,6 +21772,11 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
+        },
+        "baselineFleetAdjustment": {
+          "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY",
+          "observed": false,
+          "note": "MODELED_ESTIMATE_NOT_OBSERVED_ROSTER: compact patrol, multi-role SUV and officer-transport van for mixed town and island support duties."
         }
       }
     },
@@ -27717,12 +27729,12 @@
         "source": "MODELED_POLICY_BASELINE_NOT_OBSERVED_ROSTER"
       },
       "baselineFleet": {
-        "totalUnits": 2,
+        "totalUnits": 4,
         "countsByTier": {
           "1": 1,
           "2": 0,
-          "3": 0,
-          "4": 0,
+          "3": 1,
+          "4": 1,
           "5": 0,
           "6": 0,
           "7": 1,
@@ -27735,10 +27747,11 @@
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 50000,
-        "dailyMaintenanceUsd": 275,
-        "annualMaintenanceUsd": 100375,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 77000,
+        "dailyMaintenanceUsd": 455,
+        "annualMaintenanceUsd": 166075,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY",
+        "modelNote": "MODELED_ESTIMATE_NOT_OBSERVED_ROSTER: compact patrol, multi-role SUV, transport van and all-terrain vehicle for dispersed island communities and rough-access routes."
       },
       "crime": {
         "ratesPer100k": {
@@ -27796,6 +27809,11 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
+        },
+        "baselineFleetAdjustment": {
+          "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY",
+          "observed": false,
+          "note": "MODELED_ESTIMATE_NOT_OBSERVED_ROSTER: compact patrol, multi-role SUV, transport van and all-terrain vehicle for dispersed island communities and rough-access routes."
         }
       }
     },
