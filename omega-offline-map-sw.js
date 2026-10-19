@@ -8,6 +8,7 @@ const INDEX_URL = new URL("index.html", APP_BASE).href;
 const CORE_ASSETS = [
   "./", "./index.html", "./world.json", "./leaflet.js", "./leaflet.css",
   "./style.css", "./map-engine-1.js", "./map-engine-2.js",
+  "./omega_country_runtime_data_v1.js", "./cities.json",
   "./offline-hybrid-map.js", "./offline-hybrid-map.css",
   "./omega_forex_monetary_engine_v1.js", "./omega_forex_monetary_engine_v1.css",
   "./omega_government_banking_runtime_v1.js", "./omega_economic_transmission_runtime_v1.js",
