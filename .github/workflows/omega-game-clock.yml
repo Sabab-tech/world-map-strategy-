@@ -23,6 +23,7 @@ on:
       - 'omega_home_ministry_engine_v1.js'
       - 'omega_battlefield_command_runtime_v1.js'
       - 'omega_resource_industrial_network_v1.js'
+      - 'resource_industrial_catalog_v1.json'
       - 'test/omega_resource_industrial_network_v1.test.mjs'
       - 'test/omega_simulation_runtime.test.js'
       - 'omega-offline-map-sw.js'
