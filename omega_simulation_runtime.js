@@ -506,7 +506,13 @@
 
     async runTurnFinalizers(context,registeredAtTurnStart){
       const rows=(registeredAtTurnStart||[...this.turnFinalizers.values()])
-        .slice().sort((a,b)=>a.priority-b.priority||a.sequence-b.sequence);
+        .slice().sort((a,b)=>{
+          // Durable autosave is a reserved system finalizer and must run after
+          // every present or future optional finalizer, regardless of its priority.
+          if(a.id==='omega.game-lifecycle.autosave')return 1;
+          if(b.id==='omega.game-lifecycle.autosave')return -1;
+          return a.priority-b.priority||a.sequence-b.sequence;
+        });
       const results=[];
       for(const entry of rows){
         if(this.turnFinalizers.get(entry.id)!==entry)continue;
@@ -850,6 +856,24 @@
         phaseResults.COMMIT=clone(await this.phaseHandlers.get('COMMIT')({...context,commandResults,simulationResult:phaseResults.SIMULATE}));
         phaseResults.PUBLISH=clone(await this.phaseHandlers.get('PUBLISH')({...context,commandResults,phaseResults}));
         phaseResults.CHECKPOINT=clone(await this.phaseHandlers.get('CHECKPOINT')({...context,commandResults,phaseResults}));
+
+        // Mark the world/session as committed before the finalizer phase so its
+        // durable snapshot contains the exact date, turn, and completion metadata.
+        const session=this.world.state.simulation?.session||{};
+        session.lastCommittedTurn=turn;
+        session.status=this.status;
+        this.world.setSession(session);
+        this.stepCount+=1;
+        this.lastStepSummary={
+          turn,
+          phases:clone(phaseResults),
+          commandResults:clone(commandResults),
+          stateRevision:this.world.state.simulation.worldStateRevision
+        };
+        this.events.emit('OMEGA_SIMULATION_STEP_COMPLETED',this.lastStepSummary,turn);
+
+        // The save finalizer executes after all state mutations and the completion
+        // event, so the durable snapshot represents the completed turn, not a preview.
         phaseResults.FINALIZE=clone(await this.runTurnFinalizers({
           turn,
           day:turn+1,
@@ -860,20 +884,7 @@
           clock:this.clock,
           simulation:this
         },finalizersAtTurnStart));
-
-        const session=this.world.state.simulation?.session||{};
-        session.lastCommittedTurn=turn;
-        session.status=this.status;
-        this.world.setSession(session);
-
-        this.stepCount+=1;
-        this.lastStepSummary={
-          turn,
-          phases:phaseResults,
-          commandResults:clone(commandResults),
-          stateRevision:this.world.state.simulation.worldStateRevision
-        };
-        this.events.emit('OMEGA_SIMULATION_STEP_COMPLETED',this.lastStepSummary,turn);
+        this.lastStepSummary.phases=clone(phaseResults);
         return clone(this.lastStepSummary);
       }catch(error){
         this.lastError=String(error?.message||error);
