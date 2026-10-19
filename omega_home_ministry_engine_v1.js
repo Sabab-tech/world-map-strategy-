@@ -90,10 +90,27 @@
     training:{label:'Training & research',financeType:'investment',actions:['TRAINING_UPGRADE','POLICE_TACTIC_RESEARCH']},
     operations:{label:'Operations & other costs',financeType:'general',actions:['HOME_MINISTRY_DAILY_OPERATIONS']}
   });
+  const DEFAULT_POLICE_PATROL_PLAN=Object.freeze({urban:32,rural:12,highway:10,border:10,drugs:10,investigations:8,cyber:4,community:14});
+  const POLICE_POLICY_RULES=Object.freeze([
+    {id:'community_policing',name:'Community policing & local liaison',department:'operations',setupCostUsd:125000,dailyCostUsd:250,description:'Builds neighborhood reporting and non-escalation capacity.',crimeEffects:{theft:.04,robbery:.02,streetRobbery:.06,assault:.08,homicide:.01},trustDelta:5,misconductMultiplier:1,clearanceDelta:1,justiceDelta:2,privacyDelta:0,vehicleWearPct:0},
+    {id:'body_camera_audit',name:'Body cameras & independent audit',department:'operations',setupCostUsd:180000,dailyCostUsd:180,description:'Improves evidence quality and lowers abuse-of-power risk.',crimeEffects:{},trustDelta:6,misconductMultiplier:.62,clearanceDelta:3,justiceDelta:2,privacyDelta:-2,vehicleWearPct:0},
+    {id:'data_led_patrols',name:'Data-led patrol scheduling',department:'operations',setupCostUsd:160000,dailyCostUsd:450,description:'Concentrates patrols where recorded incidents cluster; increases privacy risk unless audited.',crimeEffects:{theft:.05,robbery:.05,streetRobbery:.06,drugTrafficking:.03,cybercrime:.02},trustDelta:1,misconductMultiplier:1.05,clearanceDelta:2,justiceDelta:1,privacyDelta:5,vehicleWearPct:2},
+    {id:'drug_task_force',name:'Drug trafficking investigation unit',department:'operations',setupCostUsd:250000,dailyCostUsd:350,description:'Improves evidence-led drug-market investigations and targeted seizure work.',crimeEffects:{drugTrafficking:.14,contrabandSmuggling:.05,robbery:.01},trustDelta:0,misconductMultiplier:1,clearanceDelta:3,justiceDelta:1,privacyDelta:1,vehicleWearPct:2},
+    {id:'border_interdiction',name:'Border & customs coordination',department:'operations',setupCostUsd:200000,dailyCostUsd:300,description:'Coordinates police, customs and port reporting to reduce contraband leakage.',crimeEffects:{contrabandSmuggling:.16,drugTrafficking:.06},trustDelta:0,misconductMultiplier:1,clearanceDelta:2,justiceDelta:1,privacyDelta:0,vehicleWearPct:2},
+    {id:'rapid_case_processing',name:'Rapid case processing & victim support',department:'facilities',setupCostUsd:250000,dailyCostUsd:250,description:'Reduces case queues and repeat-offending pressure; requires functioning investigators and court coordination.',crimeEffects:{theft:.03,robbery:.04,assault:.06,homicide:.08},trustDelta:3,misconductMultiplier:.95,clearanceDelta:8,justiceDelta:12,privacyDelta:-1,vehicleWearPct:0},
+    {id:'independent_oversight',name:'Independent police complaints office',department:'operations',setupCostUsd:125000,dailyCostUsd:180,description:'Creates an accountable route for complaints and disciplinary review.',crimeEffects:{},trustDelta:7,misconductMultiplier:.65,clearanceDelta:1,justiceDelta:3,privacyDelta:-2,vehicleWearPct:0},
+    {id:'professional_training',name:'Professional standards & scenario training',department:'training',setupCostUsd:300000,dailyCostUsd:400,description:'Improves officer skill, lawful de-escalation and case quality over time.',crimeEffects:{theft:.02,robbery:.02,streetRobbery:.02,assault:.04,drugTrafficking:.02,contrabandSmuggling:.02,cybercrime:.03,homicide:.03},trustDelta:2,misconductMultiplier:.82,clearanceDelta:5,justiceDelta:4,privacyDelta:-1,vehicleWearPct:0},
+    {id:'high_visibility_patrols',name:'High-visibility patrol rotations',department:'operations',setupCostUsd:125000,dailyCostUsd:700,description:'Raises visible patrol presence against street robbery and theft, with additional fuel and vehicle wear.',crimeEffects:{theft:.06,robbery:.07,streetRobbery:.08},trustDelta:2,misconductMultiplier:1,clearanceDelta:1,justiceDelta:0,privacyDelta:0,vehicleWearPct:15},
+    {id:'cybercrime_unit',name:'Cybercrime & digital evidence unit',department:'training',setupCostUsd:325000,dailyCostUsd:500,description:'Improves digital-evidence handling, online fraud investigation and cyber case throughput.',crimeEffects:{cybercrime:.18,drugTrafficking:.01},trustDelta:1,misconductMultiplier:.92,clearanceDelta:5,justiceDelta:4,privacyDelta:2,vehicleWearPct:0}
+  ]);
+  const DEFAULT_POLICE_POLICY_STATE=Object.freeze(Object.fromEntries(POLICE_POLICY_RULES.map(function(row){return[row.id,false];})));
   const DEFAULT_STATE = Object.freeze({
     schemaVersion:1, policeCount:250, policeEfficiency:60, policeTrust:55,
     unlockedVehicleLevel:1, vehiclesOwned:{}, pendingVehicleOrder:null,
     homeBudgetPlan:HOME_BUDGET_DEFAULT_PLAN,
+    baselineVersion:0,baselinePolicePersonnel:null,baselineFleetUnits:null,baselineFleetReplacementValueUsd:0,baselineSource:null,
+    dailySalaryPerOfficerUsd:null,recruitmentFeePerOfficerUsd:null,crimeBaseline:null,crimeModel:null,crimeHistory:[],crimeAccumulator:{},lastCrimeSimulationDay:null,
+    policeRules:DEFAULT_POLICE_POLICY_STATE,patrolPlan:DEFAULT_POLICE_PATROL_PLAN,publicSatisfaction:55,misconductRiskPct:20,justiceBacklog:0,privacyRiskPct:20,
     facilityLevels:{station:1,patrol:1,academy:1,department:1,dispatch:0,forensics:0,border:0,cyber:0,emergency:0,communications:0},
     trainingQualityLevel:1,
     tacticsResearched:{antiRiot:false,smugglerInterdict:false,counterTerror:false,assetProtection:false,intelligenceFusion:false},
@@ -307,14 +324,30 @@
   function baseState(){const s=clone(DEFAULT_STATE);s.lastPayrollDay=Math.floor(simulationTimeMs()/DAY_MS);return s;}
   function mergeState(raw){
     const d=clone(DEFAULT_STATE);if(!raw||typeof raw!=='object')return baseState();
-    const s=Object.assign(d,clone(raw));s.homeBudgetPlan=normalizeHomeBudgetPlan(raw.homeBudgetPlan);s.facilityLevels=Object.assign(clone(DEFAULT_STATE.facilityLevels),raw.facilityLevels||{});
+    const s=Object.assign(d,clone(raw));
+    s.homeBudgetPlan=normalizeHomeBudgetPlan(raw.homeBudgetPlan);
+    s.policeRules=Object.assign(clone(DEFAULT_POLICE_POLICY_STATE),raw.policeRules||{});
+    s.patrolPlan=normalizePatrolPlan(raw.patrolPlan);
+    s.crimeBaseline=raw.crimeBaseline&&typeof raw.crimeBaseline==='object'?clone(raw.crimeBaseline):null;
+    s.crimeModel=raw.crimeModel&&typeof raw.crimeModel==='object'?clone(raw.crimeModel):null;
+    s.crimeHistory=Array.isArray(raw.crimeHistory)?raw.crimeHistory.slice(-90).map(clone):[];
+    s.crimeAccumulator=raw.crimeAccumulator&&typeof raw.crimeAccumulator==='object'?Object.assign({},raw.crimeAccumulator):{};
+    s.baselineVersion=Math.max(0,Math.floor(num(raw.baselineVersion)||0));
+    s.dailySalaryPerOfficerUsd=num(raw.dailySalaryPerOfficerUsd);
+    s.recruitmentFeePerOfficerUsd=num(raw.recruitmentFeePerOfficerUsd);
+    s.publicSatisfaction=clamp(num(raw.publicSatisfaction)===null?num(s.policeTrust)||55:num(raw.publicSatisfaction),0,100);
+    s.misconductRiskPct=clamp(num(raw.misconductRiskPct)===null?20:num(raw.misconductRiskPct),0,100);
+    s.justiceBacklog=Math.max(0,num(raw.justiceBacklog)||0);s.privacyRiskPct=clamp(num(raw.privacyRiskPct)===null?20:num(raw.privacyRiskPct),0,100);
+    s.baselinePolicePersonnel=num(raw.baselinePolicePersonnel);s.baselineFleetUnits=num(raw.baselineFleetUnits);s.baselineFleetReplacementValueUsd=Math.max(0,num(raw.baselineFleetReplacementValueUsd)||0);s.baselineSource=raw.baselineSource||null;
+    s.lastCrimeSimulationDay=num(raw.lastCrimeSimulationDay);
+    s.facilityLevels=Object.assign(clone(DEFAULT_STATE.facilityLevels),raw.facilityLevels||{});
     s.tacticsResearched=Object.assign(clone(DEFAULT_STATE.tacticsResearched),raw.tacticsResearched||{});
     s.vehiclesOwned=Object.assign({},raw.vehiclesOwned||{});s.agentDeployments=Object.assign({},raw.agentDeployments||{});s.intelligenceReports=Array.isArray(raw.intelligenceReports)?raw.intelligenceReports.slice(-100).map(clone):[];s.incidentLedger=Array.isArray(raw.incidentLedger)?raw.incidentLedger.slice(-100).map(clone):[];s.guardDeployments=Array.isArray(raw.guardDeployments)?raw.guardDeployments.filter(x=>x&&typeof x==='object'&&x.id&&x.vehicleLevel&&x.missionId).map(clone):[];if(!Number.isFinite(Number(s.nextGuardDeploymentId))||Number(s.nextGuardDeploymentId)<1)s.nextGuardDeploymentId=1;s.vehicleFleet=Array.isArray(raw.vehicleFleet)?raw.vehicleFleet.filter(x=>x&&typeof x==='object'&&x.id&&x.vehicleLevel).map(clone):[];if(!Number.isFinite(Number(s.nextVehicleUnitId))||Number(s.nextVehicleUnitId)<1)s.nextVehicleUnitId=1;s.vehicleMaintenanceLog=Array.isArray(raw.vehicleMaintenanceLog)?raw.vehicleMaintenanceLog.slice(-100).map(clone):[];
     if(num(s.policeCount)===null)s.policeCount=250;if(num(s.policeEfficiency)===null)s.policeEfficiency=60;if(num(s.policeTrust)===null)s.policeTrust=55;
     if(num(s.unlockedVehicleLevel)===null)s.unlockedVehicleLevel=1;return s;
   }
   function storedState(country){const root=rootState(),raw=root&&root.interior&&root.interior[country]&&root.interior[country].police;return raw&&typeof raw==='object'?mergeState(raw):null;}
-  function publicState(s){return{policeCount:s.policeCount,policeEfficiency:s.policeEfficiency,policeTrust:s.policeTrust,unlockedVehicleLevel:s.unlockedVehicleLevel,vehiclesOwned:clone(s.vehiclesOwned),pendingVehicleOrder:clone(s.pendingVehicleOrder),homeBudgetPlan:clone(normalizeHomeBudgetPlan(s.homeBudgetPlan)),facilityLevels:clone(s.facilityLevels),trainingQualityLevel:s.trainingQualityLevel,tacticsResearched:clone(s.tacticsResearched),pendingResearch:clone(s.pendingResearch),specialAgents:s.specialAgents,sabotageRisk:s.sabotageRisk,unpaidPayroll:s.unpaidPayroll,agentDeployments:clone(s.agentDeployments),intelligenceReports:clone(s.intelligenceReports),incidentLedger:clone(s.incidentLedger),guardDeployments:clone(s.guardDeployments),nextGuardDeploymentId:s.nextGuardDeploymentId,vehicleFleet:clone(s.vehicleFleet),nextVehicleUnitId:s.nextVehicleUnitId,vehicleMaintenanceLog:clone(s.vehicleMaintenanceLog),lastFleetSimulationDay:s.lastFleetSimulationDay};}
+  function publicState(s){return{policeCount:s.policeCount,policeEfficiency:s.policeEfficiency,policeTrust:s.policeTrust,unlockedVehicleLevel:s.unlockedVehicleLevel,vehiclesOwned:clone(s.vehiclesOwned),pendingVehicleOrder:clone(s.pendingVehicleOrder),homeBudgetPlan:clone(normalizeHomeBudgetPlan(s.homeBudgetPlan)),baselineVersion:s.baselineVersion,baselinePolicePersonnel:s.baselinePolicePersonnel,baselineFleetUnits:s.baselineFleetUnits,baselineFleetReplacementValueUsd:s.baselineFleetReplacementValueUsd,dailySalaryPerOfficerUsd:s.dailySalaryPerOfficerUsd,recruitmentFeePerOfficerUsd:s.recruitmentFeePerOfficerUsd,crimeBaseline:clone(s.crimeBaseline),crimeModel:clone(s.crimeModel),crimeHistory:clone(s.crimeHistory),policeRules:clone(s.policeRules),patrolPlan:clone(s.patrolPlan),publicSatisfaction:s.publicSatisfaction,misconductRiskPct:s.misconductRiskPct,justiceBacklog:s.justiceBacklog,privacyRiskPct:s.privacyRiskPct,facilityLevels:clone(s.facilityLevels),trainingQualityLevel:s.trainingQualityLevel,tacticsResearched:clone(s.tacticsResearched),pendingResearch:clone(s.pendingResearch),specialAgents:s.specialAgents,sabotageRisk:s.sabotageRisk,unpaidPayroll:s.unpaidPayroll,agentDeployments:clone(s.agentDeployments),intelligenceReports:clone(s.intelligenceReports),incidentLedger:clone(s.incidentLedger),guardDeployments:clone(s.guardDeployments),nextGuardDeploymentId:s.nextGuardDeploymentId,vehicleFleet:clone(s.vehicleFleet),nextVehicleUnitId:s.nextVehicleUnitId,vehicleMaintenanceLog:clone(s.vehicleMaintenanceLog),lastFleetSimulationDay:s.lastFleetSimulationDay};}
   function emit(type,detail){try{if(typeof g.dispatchEvent==='function'&&typeof g.CustomEvent==='function')g.dispatchEvent(new g.CustomEvent(type,{detail:clone(detail||{})}));}catch(_){}}
   function dispatchState(country,next,eventName){
     const mesh=interop();
