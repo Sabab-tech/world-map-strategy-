@@ -580,7 +580,32 @@
       // resource.consumption remains a stable daily rate for existing targetDays logic.
       // Inventory debits use only this turn's fraction of that rate. Factory usage,
       // which is already debited by production, is converted to a daily equivalent.
-      var demanded = Math.max(inputDailyRate, factors.demand);
+      var transmission = g.OmegaEconomicTransmissionRuntime || (g.Omega && g.Omega.EconomicTransmission);
+      var purchasingPowerMultiplier = 1, importCostMultiplier = 1, producerCostMultiplier = 1;
+      try {
+        if (transmission && typeof transmission.getHouseholdPurchasingPowerMultiplier === 'function') {
+          var pp = finite(transmission.getHouseholdPurchasingPowerMultiplier(cid));
+          if (pp !== null && pp > 0) purchasingPowerMultiplier = clamp(pp, 0.2, 1.5);
+        }
+        if (transmission && typeof transmission.getImportCostMultiplier === 'function') {
+          var ic = finite(transmission.getImportCostMultiplier(cid));
+          if (ic !== null && ic > 0) importCostMultiplier = clamp(ic, 0.4, 5);
+        }
+        if (transmission && typeof transmission.getProducerCostMultiplier === 'function') {
+          var pc = finite(transmission.getProducerCostMultiplier(cid));
+          if (pc !== null && pc > 0) producerCostMultiplier = clamp(pc, 0.5, 3);
+        }
+      } catch (_) {}
+      // The native demand engine handles demographics, GDP, industrial use and price elasticity.
+      // Financial transmission applies an additional household purchasing-power ceiling/factor.
+      var demanded = Math.max(inputDailyRate, factors.demand) * purchasingPowerMultiplier;
+      factors.factors.financialTransmission = {
+        householdPurchasingPowerMultiplier: purchasingPowerMultiplier,
+        importCostMultiplier: importCostMultiplier,
+        producerCostMultiplier: producerCostMultiplier,
+        source: transmission ? 'OMEGA_ECONOMIC_TRANSMISSION' : 'BASELINE_NO_TRANSMISSION'
+      };
+      factors.transmittedDemand = demanded;
       var demandThisTurn = demanded * turnDays;
       var consumptionKey = resourceKey(outputConsumption, rid) || rid;
       outputConsumption[consumptionKey] = demanded;
