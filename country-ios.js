@@ -1688,20 +1688,54 @@ window.CountryIOS = {
             ? runtime.resolveCountry(countryKey) : null;
         const profile = runtime && typeof runtime.getStrategicProfile === 'function'
             ? runtime.getStrategicProfile(countryKey) : null;
+        const behaviorEngine = window.OmegaCountryBehaviorEngine || window.Omega?.CountryBehaviorEngine;
+        let behaviorProfile = null;
+        try { behaviorProfile = behaviorEngine && typeof behaviorEngine.getBehaviorProfile === 'function'
+            ? behaviorEngine.getBehaviorProfile(countryKey) : null; } catch (_) {}
         const escapeHtml = value => String(value == null ? '' : value)
             .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
         const name = escapeHtml(identity && identity.name ? identity.name : String(countryKey || '').replace(/_/g, ' '));
         if (!profile || typeof profile !== 'object') {
+            if (behaviorProfile && behaviorProfile.status !== 'ENGINE_ERROR') {
+                const dimensions = behaviorProfile.dimensions && typeof behaviorProfile.dimensions === 'object'
+                    ? Object.entries(behaviorProfile.dimensions) : [];
+                const priorities = Array.isArray(behaviorProfile.priorityStack) ? behaviorProfile.priorityStack : [];
+                const cards = dimensions.map(([key, row]) => {
+                    const value = row && Number.isFinite(Number(row.value)) ? Number(row.value) : null;
+                    const shown = value === null ? 'NOT OBSERVED' : Math.round(Math.max(0, Math.min(1, value)) * 100) + '/100';
+                    return '<article class="sc-profile-card"><h3>' + escapeHtml(key.replace(/([A-Z])/g, ' $1')) +
+                        '</h3><strong>' + shown + '</strong><p>' + escapeHtml(row && row.interpretation || row && row.availability || 'Evidence not recorded.') +
+                        '</p><small>' + escapeHtml(row && row.source || 'NO SOURCE') +
+                        (row && row.confidence !== undefined ? ' · Confidence ' + Math.round(Number(row.confidence) * 100) + '%' : '') +
+                        '</small></article>';
+                }).join('');
+                const priorityRows = priorities.length ? '<ol>' + priorities.slice(0, 6).map(row =>
+                    '<li><strong>' + escapeHtml(row.title || row.domain || 'Strategic priority') +
+                    '</strong><p>' + escapeHtml(row.basis || 'Based on current recorded evidence.') + '</p></li>').join('') + '</ol>'
+                    : '<p>No evidence-backed priority is available.</p>';
+                return '<section class="sc-profile-shell"><header><h2>RUNTIME COUNTRY BEHAVIOUR</h2><p>' + name +
+                    '</p><p>Archetype: ' + escapeHtml(behaviorProfile.archetype || 'NOT CLASSIFIED') +
+                    ' · Status: ' + escapeHtml(behaviorProfile.status || 'UNKNOWN') +
+                    '</p></header><div class="sc-profile-grid">' + cards +
+                    '<article class="sc-profile-card"><h3>AI priority stack</h3>' + priorityRows +
+                    '<p>These are decision preferences and candidate priorities. They do not mean an order has been executed.</p></article>' +
+                    '<article class="sc-profile-card"><h3>Data limitations</h3><p>' +
+                    escapeHtml((behaviorProfile.evidence && behaviorProfile.evidence.baselineStatus) || 'SOURCE STATUS NOT RECORDED') +
+                    '</p><p>' + escapeHtml((behaviorProfile.evidence && Array.isArray(behaviorProfile.evidence.limitations)
+                        ? behaviorProfile.evidence.limitations.join(' ') : 'Missing evidence stays unobserved.')) +
+                    '</p></article></div></section>';
+            }
             return '<section class="sc-profile-shell"><header><h2>STRATEGIC COUNTRY PROFILE</h2><p>' + name +
-                '</p></header><p role="status">Strategic profile data is unavailable. No national facts or recommendations have been invented.</p></section>';
+                '</p></header><p role="status">Country behaviour profile is not ready. No national facts or default scores have been invented.</p></section>';
         }
         const sections = [
             ['Diplomacy', profile.diplomacy], ['Economy', profile.economy],
             ['Military', profile.military], ['Politics and governance', profile.politics],
             ['Dependencies and risks', profile.dependencies || profile.dependencyExposure],
             ['Player planning', profile.playerPlanning || profile.strategy],
-            ['Evidence and limitations', profile.methodology || profile.evidence]
+            ['Evidence and limitations', profile.methodology || profile.evidence],
+            ['Runtime behaviour profile', behaviorProfile]
         ];
         const renderValue = value => {
             if (value === null || value === undefined || value === '') return 'NOT RECORDED';
