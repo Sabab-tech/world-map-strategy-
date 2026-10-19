@@ -31,9 +31,20 @@
   const adaptiveEngine = () => g.OmegaOpponentAdaptiveStrategy || g.Omega?.OpponentAdaptiveStrategy || null;
 
   function defaultCountry() {
+    let simulatedPlayerCountry = null;
+    try { simulatedPlayerCountry = g.Omega?.Simulation?.getPlayerCountryId?.() || null; } catch (_) {}
     const candidates = [
       g.OmegaMinistryViewCountry,
+      g.CountryIOS?.activeCountry,
+      g.OmegaCabinetUI?.activeCountry,
       g.Game?.currentActiveCountry,
+      simulatedPlayerCountry,
+      g.Game?.state?.playerCountryId,
+      g.Game?.state?.playerCountryCode,
+      g.Game?.playerCountryId,
+      g.Game?.playerCountryCode,
+      g.Game?.playerCountry,
+      g.Game?.countryId,
       g.Game?.state?.simulation?.currentCountry,
       g.currentActiveCountry,
       g.playerCountry,
