@@ -675,6 +675,7 @@
   }
   function renderBudgetTab(p,m,fm,editable){
     const totals=budgetTotals(fm);
+    const transferOptions=selected=>(sectorRegistry.budgetSectors||[]).map(s=>'<option value="'+escapeHTML(s.id)+'"'+(s.id===selected?' selected':'')+'>'+escapeHTML((s.icon?s.icon+' · ':'')+s.name)+'</option>').join('');
     let out='<section class="ofm-section"><div class="ofm-section-heading"><h3>Annual distribution plan</h3><span>Share total must stay at or below 100%</span></div>'+
       '<div class="ofm-kpi-grid ofm-kpi-grid-three">'+
       metricCard('Annual spending plan',fmtMoney(totals.envelopeUsd),null,'Modeled government expenditure ceiling')+
@@ -684,7 +685,15 @@
     out+='<p class="ofm-data-note">Change one sector and apply it. Sector shares are validated mathematically; raising one share may require lowering another first. Spending is recorded only after you submit a funded expense.</p>';
     out+=renderBudgetTable(fm,editable)+'</section>';
     if(editable){
-      out+='<section class="ofm-section"><div class="ofm-section-heading"><h3>Execute a funded expense</h3><span>Sector allocation and treasury balance are both checked</span></div>'+
+      out+='<section class="ofm-section ofm-transfer-section"><div class="ofm-section-heading"><h3>Ministry-to-ministry budget transfer</h3><span>Country-scoped · ledger-backed</span></div>'+
+        '<p class="ofm-data-note">Active government: <strong>'+escapeHTML(p.name)+' ('+escapeHTML(p.iso3)+')</strong>. Move an existing unspent budget ceiling between two ministries of this same country. The source loses the amount, the recipient gains it, paired ledger entries are posted, and the national cash balance does not change until the recipient spends it.</p>'+
+        '<form class="ofm-form ofm-form-wide" data-ofm-action="transfer-budget">'+
+        '<label>Source ministry<select name="sourceDepartment">'+transferOptions('defense')+'</select></label>'+
+        '<label>Receiving ministry<select name="targetDepartment">'+transferOptions('interior')+'</select></label>'+
+        '<label>Amount to transfer (USD)<input name="amountUsd" type="number" min="1" step="0.01" placeholder="e.g. 250000" required></label>'+
+        '<label>Purpose / audit note<input name="description" type="text" maxlength="160" placeholder="e.g. Emergency fleet maintenance" required></label>'+
+        '<button type="submit" class="ofm-transfer-button">Transfer ministry allocation</button></form></section>'+
+        '<section class="ofm-section"><div class="ofm-section-heading"><h3>Execute a funded expense</h3><span>Sector allocation and treasury balance are both checked</span></div>'+
         '<form class="ofm-form ofm-form-wide" data-ofm-action="spend-budget"><label>Sector<select name="department">'+departmentOptions('defense')+'</select></label>'+
         '<label>Expense type<select name="spendType"><option value="salary">Salary / payroll</option><option value="purchase">Procurement</option><option value="maintenance">Repair / maintenance</option><option value="investment">Capital investment</option><option value="general">General operations</option><option value="debt_service">Debt service</option><option value="emergency">Authorized emergency</option></select></label>'+
         '<label>Amount (USD)<input name="amountUsd" type="number" min="1" step="1" placeholder="e.g. 3000000" required></label>'+
