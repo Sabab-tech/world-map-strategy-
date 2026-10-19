@@ -1,4 +1,4 @@
-/* OMEGA HOME MINISTRY POLICE OPERATIONS UI v1.1.0
+/* OMEGA HOME MINISTRY POLICE OPERATIONS UI v1.2.0
  * All actions call the country-scoped Home Ministry runtime; no presentation-only counters.
  */
 (function (g) {
@@ -116,7 +116,8 @@
       kpi('Police efficiency',percent(s.policeEfficiency,1),'Improved by training, effective facilities and research.') +
       kpi('Public satisfaction',percent(crime.publicSatisfaction,1),'Affected by service quality, case handling and oversight policies.') +
       kpi('Owned vehicle inventory',formatCount(Object.values(s.vehiclesOwned||{}).reduce(function(sum,x){return sum+number(x);},0)), 'Owned units include vehicles awaiting repair or maintenance.') +
-      kpi('Roadworthy operational vehicles',formatCount(crime.currentOperationalFleetUnits),'Condition, deployment, servicing and country route fit affect effective capacity.') +
+      kpi('Roadworthy vehicles',formatCount(crime.currentOperationalVehicleUnits),'Distinct units ready or deployed and within service/condition limits.') +
+      kpi('Effective fleet capacity',formatCount(crime.currentOperationalFleetUnits),'Country route fit, terrain and unit condition weight response capacity.') +
       kpi('Police staffing coverage',percent(crime.policeStaffingCoveragePct,1),'Against the population-scaled game staffing target.') +
       kpi('Vehicle fleet coverage',percent(crime.vehicleCoveragePct,1),'Against the opening fleet requirement scaled to current population.') +
       kpi('Police facility readiness',percent(crime.facilityReadinessPct,1),'Against modeled minimum station, dispatch, forensic, academy and related capacity levels.') +
