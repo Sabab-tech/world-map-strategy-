@@ -609,10 +609,11 @@
   function budgetRows(fm){
     return budgetTotals(fm).rows;
   }
-  function renderBudgetBarRows(fm,limit){
+  function renderBudgetBarRows(fm,limit,showAmounts){
     const rows=budgetRows(fm).slice().sort((a,b)=>b.sharePct-a.sharePct).slice(0,limit||8);
     const max=Math.max(1,...rows.map(r=>r.sharePct));
-    return '<div class="ofm-sector-bars">'+rows.map(r=>'<div class="ofm-sector-bar-row"><div class="ofm-sector-bar-meta"><span class="ofm-sector-glyph">'+escapeHTML(r.icon)+'</span><span class="ofm-sector-bar-name">'+escapeHTML(r.name)+'</span><strong>'+fmtPct(r.sharePct)+'</strong></div><div class="ofm-bar-track"><span style="width:'+clamp(r.sharePct/max*100,0,100)+'%"></span></div><div class="ofm-sector-bar-money">'+fmtMoney(r.budgetUsd)+'</div></div>').join('')+'</div>';
+    const showMoney=showAmounts!==false;
+    return '<div class="ofm-sector-bars">'+rows.map(r=>'<div class="ofm-sector-bar-row"><div class="ofm-sector-bar-meta"><span class="ofm-sector-glyph">'+escapeHTML(r.icon)+'</span><span class="ofm-sector-bar-name">'+escapeHTML(r.name)+'</span><strong>'+fmtPct(r.sharePct)+'</strong></div><div class="ofm-bar-track"><span style="width:'+clamp(r.sharePct/max*100,0,100)+'%"></span></div><div class="ofm-sector-bar-money">'+(showMoney?fmtMoney(r.budgetUsd):fmtPct(r.sharePct))+'</div></div>').join('')+'</div>';
   }
   function renderBudgetTable(fm,editable){
     const rows=budgetRows(fm);
@@ -661,24 +662,28 @@
       '</tbody></table></div><p class="ofm-data-note">Output and sector-receipt values are configurable game-model estimates, computed from in-game GDP × sector mix. Budget and posted spending are live Finance plan values. The mapping is a planning link, not an observed national industry account.</p>';
   }
   function renderOverviewTab(p,m,fm,rows,editable,root){
-    const totals=budgetTotals(fm),revenues=revenueState(p,fm,m,root),cash=Math.max(0,finite(fm.treasuryBalanceUsd)||0);
-    const actualNet=actualCashflow(fm),debt=Math.max(0,finite(m.publicDebtUsd)||0);
+    const totals=budgetTotals(fm);
+    const planStatus=totals.overAllocatedSharePct>0.01?'OVER-ALLOCATED':
+      (totals.unallocatedSharePct>0.01?'UNDER-ALLOCATED':'FULLY ALLOCATED');
+    const reservePct=Math.max(0,finite(fm.policy?.minimumReservePctOfAnnualSpending)||0);
     let out='<section class="ofm-kpi-grid ofm-kpi-grid-four">'+
-      metricCard('Available Treasury',fmtMoney(cash),null,'Live game cash balance')+
-      metricCard('Annual income forecast',fmtMoney(fm.fiscalModel.annualRevenueUsd),null,'Tax-take model; annualized')+
-      metricCard('Annual budget plan',fmtMoney(totals.envelopeUsd),null,'Authorized spending ceiling')+
-      metricCard('Current-year cashflow',fmtMoney(actualNet),null,'Recorded tax cash + external movements − expenses − interest')+
+      metricCard('Budget plan status',planStatus,null,totals.overAllocatedSharePct>0.01?'Reduce sector shares before increasing another':(totals.unallocatedSharePct>0.01?'Some annual budget share remains unassigned':'All planned shares fit within 100%'))+
+      metricCard('Share distributed',fmtPct(totals.totalSharePct),null,'Percentage of the annual expenditure plan')+
+      metricCard('Fiscal risk index',fmtNumber(m.fiscalRiskIndex,1),null,'Higher means higher modeled fiscal risk')+
+      metricCard('GDP growth',fmtPct(m.gdpGrowthPct),null,'Country economic reference indicator')+
       '</section>';
-    out+='<section class="ofm-section"><div class="ofm-section-heading"><h3>Budget distribution at a glance</h3><span>'+fmtPct(totals.totalSharePct)+' allocated</span></div>'+
-      renderBudgetBarRows(fm,8)+'<div class="ofm-nav-shortcuts"><button type="button" data-ofm-tab="budget">Open budget distribution</button><button type="button" data-ofm-tab="income">Open income & industries</button><button type="button" data-ofm-tab="treasury">Open Treasury & debt</button></div></section>';
-    out+='<section class="ofm-section"><div class="ofm-section-heading"><h3>Revenue reality check</h3><span>Model projections and recorded receipts stay separate</span></div>'+
-      '<div class="ofm-kpi-grid ofm-kpi-grid-three">'+
-      metricCard('Recorded tax receipts',fmtMoney(revenues.recordedTaxRevenueUsd),null,'finance.taxRevenue; unavailable if not recorded')+
-      metricCard('Resource receipts this turn',fmtMoney(revenues.recordedResourceCurrentUsd),null,'Recorded from Resource Economy when published')+
-      metricCard('Public debt',fmtMoney(debt),null,'Debt outstanding in game state')+'</div>'+
-      '<p class="ofm-data-note">The annual income figure is a model forecast. Recorded treasury movements remain a separate ledger so the game does not disguise estimates as actual receipts.</p></section>';
+    out+='<section class="ofm-section"><div class="ofm-section-heading"><h3>Budget distribution at a glance</h3><span>'+fmtPct(totals.totalSharePct)+' of plan distributed</span></div>'+
+      renderBudgetBarRows(fm,8,false)+
+      '<div class="ofm-nav-shortcuts"><button type="button" data-ofm-tab="budget">Open budget distribution</button><button type="button" data-ofm-tab="income">Open income & industries</button><button type="button" data-ofm-tab="treasury">Open Treasury & debt</button><button type="button" data-ofm-tab="reports">Open economic reports</button></div></section>';
+    out+='<section class="ofm-section"><div class="ofm-section-heading"><h3>Fiscal control checks</h3><span>Operational overview, no transaction amounts</span></div>'+
+      '<div class="ofm-indicator-grid">'+
+      '<div class="ofm-indicator"><span>Annual fiscal model</span><strong>'+(finite(fm.fiscalModel?.annualSpendingUsd)!==null&&finite(fm.fiscalModel?.annualRevenueUsd)!==null?'ACTIVE':'UNAVAILABLE')+'</strong></div>'+
+      '<div class="ofm-indicator"><span>Minimum reserve rule</span><strong>'+fmtPct(reservePct)+' of annual spending plan</strong></div>'+
+      '<div class="ofm-indicator"><span>Financial action scope</span><strong>'+(editable?'PLAYER COUNTRY CONTROL':'READ ONLY')+'</strong></div>'+
+      '<div class="ofm-indicator"><span>Recorded receipt coverage</span><strong>'+(finite(financeBucketFor(root,p,false)?.taxRevenue)!==null?'TAX RECEIPTS RECORDED':'WAITING FOR RECORDED RECEIPTS')+'</strong></div>'+
+      '</div><p class="ofm-data-note">Cash, income, expenses, borrowing and sector-specific monetary values are kept inside their dedicated tabs so this overview remains light and readable.</p></section>';
     if(!editable)out+='<div class="ofm-readonly">READ-ONLY country profile. Finance actions can only be executed for the country selected as the active player in the game.</div>';
-    if(p.profileStatus==='UNAVAILABLE')out+='<div class="ofm-warning">GDP baseline unavailable for this country. Fiscal controls remain disabled.</div>';
+    if(p.profileStatus==='UNAVAILABLE')out+='<div class="ofm-warning">GDP baseline unavailable for this country. Financial controls remain disabled.</div>';
     return out;
   }
   function renderIncomeTab(p,m,fm,editable,root){
