@@ -36,13 +36,14 @@ Component scores:
 - Fiscal balance: `clamp(50 + fiscalBalanceToGDPPercent × 2, 0, 100)`
 
 Base weights:
-- Debt-to-GDP: 35%
-- Inflation: 20%
-- GDP growth: 20%
-- FX reserves-to-GDP: 15%
-- Fiscal balance-to-GDP: 10%
+- Debt-to-GDP: 31.5%
+- Inflation: 18%
+- GDP growth: 18%
+- FX reserves-to-GDP: 13.5%
+- Fiscal balance-to-GDP: 9%
+- Prior simulated repayment record: 10% (when contract history exists)
 
-If GDP or public-debt-to-GDP is unavailable, the assessment is `DATA_INSUFFICIENT` and the proposed amount is zero. Confidence below 60% blocks a normal credit recommendation; confidence between 60% and 70% can permit only a conditional game recommendation. Debt-to-GDP at or above 250%, extremely high inflation (30%+), missing core inputs or a low score trigger guardrails. A missing value is not interpreted as zero.
+The history component, when prior contracts exist, uses a baseline of 90/100, reduces the score for arrears as a share of original principal and for contracts in arrears, and adds up to 10 points for contracts fully repaid. A country without any simulated World Bank contract is not penalized; the history component is omitted and its weight is renormalized with the available components. Confidence therefore reflects both missing economic indicators and missing repayment records. If GDP or public-debt-to-GDP is unavailable, the assessment is `DATA_INSUFFICIENT` and the proposed amount is zero. Confidence below 60% blocks a normal credit recommendation; confidence between 60% and 70% can permit only a conditional game recommendation. Debt-to-GDP at or above 250%, extremely high inflation (30%+), missing core inputs or a low score trigger guardrails. A missing value is not interpreted as zero.
 
 Indicative decisions:
 - `ELIGIBLE`: score at least 72 and confidence at least 70%, with core data and guardrails clear.
