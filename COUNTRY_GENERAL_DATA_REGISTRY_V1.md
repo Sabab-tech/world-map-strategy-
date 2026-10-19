@@ -79,3 +79,38 @@ The test suite verifies:
 - missing resource context stays unknown rather than becoming an empty-resource assertion;
 - metric coverage totals reconcile to 249; and
 - no duplicate deletion occurred.
+
+
+## Country sector profiles and future sector expansion (v1)
+
+The additive sector layer is built by `scripts/build_country_sector_profiles_v1.mjs` from `country_general_data_registry_v1.json` and the schema in `country_sector_profile_schema_v1.json`. It writes `country_sector_profiles_v1.json` without changing source datasets or deleting old values.
+
+Current sector groups include general facts, economy/fiscal capacity, trade and external dependence, diplomacy/foreign affairs, industry/production, defence/security, governance, people/human development, natural resources, infrastructure/technology, and environment/energy. The profile preserves indicator value, unit, observation year, source identifier/name, source URL, status, method and notes. It separates reported values from same-year calculations, older baseline values, modelled game context and unsupported analysis slots.
+
+### Extensible fields
+
+- New sector definitions and profile slots are declared in `country_sector_profile_schema_v1.json`; the canonical country/territory roster does not need to change.
+- Each profile has additive `extensions.customAttributes`, `extensions.customMetrics`, `extensions.customTimeSeries`, and `extensions.schemaAdditions` arrays.
+- The schema reserves future definitions for export/import concentration, commodity and critical-import dependency, energy import dependency, manufacturing output/employment, military personnel, arms transfers, diplomatic missions, active treaty memberships, debt-interest pressure and documented UN voting alignment.
+- Reserved fields are schema-only until a suitable source is imported. They are not populated with guessed country facts.
+- A future metric must define type, unit, source policy, nullable/missing-value rules, source URL, observation year, method and status, with tests for coverage and provenance.
+
+### Calculated metrics and country profiles
+
+The profile layer can calculate trade openness, exports/imports relative to GDP, external debt relative to GDP, budget-deficit share, trade-deficit share, and same-year derived military expenditure. A calculation requiring same-year inputs is skipped when source years differ or an input is absent. Its reason is stored with the result.
+
+Project-defined comparative analytics are explicitly labelled as such: economic capacity proxy, economic stress proxy, industrial scale proxy and defence-budget scale. These are not official ratings or claims about real-world readiness. Component coverage, observation years, legacy-input count and caveats accompany each score. Diplomatic influence, full military capability, resource dependency and industrial resilience remain uns cored until the necessary comparable evidence exists.
+
+Relative strength/vulnerability signals use peer-percentiles of recorded metrics and retain the original evidence and year. They should not be shown as definitive causal claims or official rankings.
+
+### Current WGI series and refresh verification
+
+The builder prefers the World Bank WGI series identifiers `GOV_WGI_RL_EST`, `GOV_WGI_CC_EST`, `GOV_WGI_PV_EST`, `GOV_WGI_GE_EST`, `GOV_WGI_RQ_EST` and `GOV_WGI_VA_EST`. The traditional `RL.EST`, `CC.EST`, `PV.EST`, `GE.EST`, `RQ.EST` and `VA.EST` identifiers are used only as per-country fallbacks when the preferred series returned no numeric observation. The selected series identifier and observation year are retained for each value.
+
+A code change alone is not a successful refresh. During a source refresh, the generated registry records, for every WGI dimension, source errors, the number of canonical countries returning values, and the latest returned year. CI fails if any of the six dimensions returns no fresh numeric observations. Countries that have no source observation remain null with an explicit status; no zero is inserted.
+
+### Validation and UI integration
+
+The workflow rebuilds both registries from current inputs and remote sources, then tests roster coverage, identity uniqueness, source preservation, year-consistent calculations, missing-value semantics, sector-extension contracts, and WGI source-response diagnostics. Original finance, population, resource and police source files are not rewritten.
+
+The sector profiles are currently a **data layer only**. They are not yet bound to specific dashboard counters or top-screen points; that mapping can be decided separately without rebuilding the underlying data model.
