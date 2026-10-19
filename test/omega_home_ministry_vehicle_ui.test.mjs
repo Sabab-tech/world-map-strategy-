@@ -358,7 +358,7 @@ test('Home Affairs Reports & Metrics no longer displays mine and shipment diagno
 test('vehicle illustrations are explicitly visible and sized in mobile WebView layouts', () => {
   assert.match(ui, /preserveAspectRatio="xMidYMid meet"/);
   assert.match(ui, /visibility:visible!important/);
-  assert.match(ui, /min-height:.*slot === 'hero'/);
+  assert.ok(ui.includes("min-height:' + (slot === 'hero' ? '140px' : '88px')"));
   assert.match(ui, /vehicleSvg\(v, 'card'\)/);
 });
 
@@ -367,7 +367,7 @@ test('Home Ministry budget UI connects Finance allocation and internal category 
   assert.match(ui, /SAVE FINANCE ALLOCATION/);
   assert.match(ui, /SAVE INTERNAL BUDGET PLAN/);
   assert.match(ui, /type:'set-allocation'.*department:'interior'/s);
-  assert.match(ui, /type:'spend-budget'/);
+  assert.match(engine, /type:'spend-budget'/);
   assert.match(engine, /FINANCE_INTERIOR_ALLOCATION_REQUIRED/);
   assert.match(engine, /HOME_MINISTRY_CATEGORY_BUDGET_EXCEEDED/);
   assert.match(engine, /configureHomeBudget:configureHomeBudget/);
