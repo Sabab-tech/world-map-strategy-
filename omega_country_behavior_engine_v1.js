@@ -333,6 +333,7 @@
 
     const get = (name, fields, domains, liveFields) => readMetric(identity, base, { fields, domains, live: liveFields });
     const gdp = get('gdp', ['gdpCurrentUsd', 'gdp', 'grossDomesticProductUsd'], ['economy'], ['gdpCurrentUsd', 'gdp', 'gdpUsd', 'grossDomesticProduct']);
+    const economicInfluence = get('economicInfluence', ['economicInfluenceIndex', 'economic_influence_index'], ['economy'], ['economicInfluenceIndex']);
     const population = get('population', ['populationTotal', 'population2015', 'population_2015', 'population'], ['population', 'economy'], ['populationTotal', 'population', 'population_2015']);
     const growth = get('growth', ['gdpGrowthPct', 'gdp_growth', 'growthRatePct'], ['economy'], ['gdpGrowthPct', 'gdp_growth', 'growthRatePct']);
     const inflation = get('inflation', ['inflationRatePct', 'inflationPct', 'inflation'], ['economy', 'finance', 'monetary'], ['inflationRatePct', 'inflationPct', 'inflation']);
@@ -378,6 +379,7 @@
 
     const macro = {
       gdpUsd: gdp?.value ?? null,
+      economicInfluenceIndex: economicInfluence?.value ?? null,
       population: population?.value ?? null,
       gdpGrowthPct: growth?.value ?? null,
       inflationPct: inflation?.value ?? null,
@@ -397,7 +399,8 @@
       fiscalRiskIndex: fiscalRisk?.value ?? null
     };
     const evidenceByMetric = {
-      gdpUsd: gdp, population, gdpGrowthPct: growth, inflationPct: inflation,
+      gdpUsd: gdp, economicInfluenceIndex: economicInfluence,
+      population, gdpGrowthPct: growth, inflationPct: inflation,
       unemploymentPct: unemployment, debtToGdpPct: debtRatio, budgetBalanceToGdpPct: budgetRatio,
       tradeBalanceToGdpPct: tradeRatio, exportsUsd: exports, importsUsd: imports, fxReservesUsd: reserves,
       internetUsersPct: internet, electricityAccessPct: electricity, militaryExpenditurePctGdp: militaryPct,
@@ -450,6 +453,11 @@
     setDim('fiscalDiscipline', fiscalStress ? 0.25 + 0.7 * fiscalStress.value : null,
       fiscalStress?.evidence, 'Priority to contain fiscal and price pressure; this is a game policy response, not a judgement of national virtue.',
       fiscalStress ? conf(fiscalParts.length) : 0);
+    setDim('economicCapacity', economicInfluence ? clamp(economicInfluence.value / 100) : null,
+      economicInfluence ? [{ metric: 'economicInfluenceIndex', value: economicInfluence.value, source: economicInfluence.source }] : [],
+      'Capital-investment capacity proxy from the existing custom OMEGA economic influence index. This is not current treasury liquidity, productivity, technological maturity or military strength.',
+      economicInfluence ? 0.62 : 0,
+      'OMEGA_CUSTOM_ECONOMIC_INFLUENCE_INDEX');
     setDim('riskAppetite', fiscalStress ? 0.15 + 0.75 * (1 - fiscalStress.value) : (growthCapacity !== null ? 0.25 + 0.55 * growthCapacity : null),
       fiscalStress ? fiscalStress.evidence : (growth ? [{ metric: 'gdpGrowthPct', value: growth.value, source: growth.source }] : []),
       'Modelled fiscal room for discretionary or riskier commitments; not a claim about real-world leadership psychology.',
