@@ -717,6 +717,12 @@
     }
     refreshPromise = (async function () {
       const errors = [];
+      const previousHasData = Object.values(previous.countries || {}).some(country => {
+        if (!isObject(country)) return false;
+        const dataValues = Object.values(isObject(country.data) ? country.data : {});
+        return dataValues.some(row => finite(row && row.value) !== null)
+          || Object.keys(isObject(country.metadata) ? country.metadata : {}).length > 0;
+      });
       const indicatorJobs = INDICATORS.map(async indicator => {
         try {
           const url = WB_BASE + '/country/all/indicator/' + encodeURIComponent(indicator.code)
@@ -792,7 +798,7 @@
       }
       const complete = successCount === INDICATORS.length + 1;
       const status = successCount === 0
-        ? (Object.keys(countries).length > 0 ? 'OFFLINE_STALE' : 'UNAVAILABLE')
+        ? (previousHasData ? 'OFFLINE_STALE' : 'UNAVAILABLE')
         : complete ? 'LIVE' : 'PARTIAL';
       const reference = {
         provider: 'WORLD_BANK_WDI_V2',
