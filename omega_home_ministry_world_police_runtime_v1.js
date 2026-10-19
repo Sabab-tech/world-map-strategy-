@@ -32,7 +32,7 @@
       }).then(function (capabilityPayload) {
         if (!capabilityPayload || capabilityPayload.schemaVersion !== '1.0.0' || !Array.isArray(capabilityPayload.countries) || capabilityPayload.countries.length < 200)
           throw new Error('CAPABILITY_BASELINE_DATA_INVALID');
-        function alias(value) { return String(value || '').trim().toUpperCase().replace(/[-\\s]+/g, '_'); }
+        function alias(value) { return String(value || '').trim().toUpperCase().replace(/[-\s]+/g, '_'); }
         var lookup = Object.create(null);
         capabilityPayload.countries.forEach(function (row) {
           [row.code, row.iso2, row.iso3, row.name].filter(Boolean).forEach(function (value) { lookup[alias(value)] = row; });
