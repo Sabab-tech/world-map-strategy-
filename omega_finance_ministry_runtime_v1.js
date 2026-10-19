@@ -825,6 +825,7 @@
       {id:'income',glyph:'↗',label:'Income & industry',sub:'Output and receipts'},
       {id:'treasury',glyph:'◇',label:'Treasury & debt',sub:'Cash and borrowing'},
       {id:'reports',glyph:'≡',label:'Reports',sub:'Indicators & ledger'},
+      {id:'worldbank',glyph:'WB',label:'World Bank lending',sub:'Credit scores & loan terms'},
       {id:'fx',glyph:'FX',label:'FX & Banking',sub:'Currency & central bank'},
       {id:'macro',glyph:'MS',label:'Macro Stability',sub:'Growth, inflation & jobs'},
       {id:'analytics',glyph:'∿',label:'Analytics & graphs',sub:'30-day model & raw data'}
@@ -840,6 +841,7 @@
     else if(activeTab==='income')out+=renderIncomeTab(p,m,fm,editable,root);
     else if(activeTab==='treasury')out+=renderTreasuryTab(p,m,fm,editable,root);
     else if(activeTab==='reports')out+=renderReportsTab(p,m,fm,rows,editable,root);
+    else if(activeTab==='worldbank')out+='<section class="ofm-section"><div class="ofm-section-heading"><h3>World Bank lending & country credit</h3><span>Country-specific assessments and repayments</span></div><p class="ofm-data-note">Official World Bank public observations are reference data. Loan issuance, interest and repayment are simulated through the existing Finance Treasury. This is not a connection to the World Bank’s internal lending or payment systems.</p><div data-owb-container></div></section>';
     else if(activeTab==='fx')out+='<section class="ofm-section"><div class="ofm-section-heading"><h3>Foreign Exchange & Government Banking</h3><span>Reference quotes, simulation rates and central-bank actions</span></div><p class="ofm-data-note">Currency conversion is an in-game clearing calculation, not a real bank transfer. Policy and reserve interventions apply only to the active player country. Reference rates may be unavailable offline; cached reference and simulation rates are labelled separately.</p><div data-ofx-container></div></section>';
     else if(activeTab==='macro')out+='<section class="ofm-section"><div class="ofm-section-heading"><h3>Macroeconomic Stability</h3><span>Policy stance, stability indicators and automatic stabilizers</span></div><p class="ofm-data-note">This panel combines the available baseline with modeled policies for growth, spending, inflation, debt and employment. It is a game model, not a credit rating or a real-world forecast. Missing baseline observations remain unavailable.</p><div data-omss-container></div></section>';
     else if(activeTab==='analytics')out+='<section class="ofm-section"><div data-ofa-container></div></section>';
@@ -863,7 +865,7 @@
     if(!content||content.__omegaFinanceBound)return;content.__omegaFinanceBound=true;
     content.addEventListener('click',function(event){
       const tab=event.target?.closest?.('[data-ofm-tab]');
-      if(tab){const id=String(tab.getAttribute('data-ofm-tab')||'overview');if(['overview','budget','income','treasury','reports','fx','macro','analytics'].includes(id)){activeTab=id;renderDashboard('finance');return;}}
+      if(tab){const id=String(tab.getAttribute('data-ofm-tab')||'overview');if(['overview','budget','income','treasury','reports','worldbank','fx','macro','analytics'].includes(id)){activeTab=id;renderDashboard('finance');return;}}
       const summary=event.target?.closest?.('#ofm-world-register > summary');
       if(summary){setTimeout(function(){const details=content.querySelector?.('#ofm-world-register');const holder=content.querySelector?.('#ofm-world-register-content');if(details&&details.open&&holder&&holder.dataset.loaded!=='true'){holder.innerHTML=renderFullWorldTable(worldSnapshot().rows);holder.dataset.loaded='true';}},0);}
     });
@@ -952,7 +954,7 @@
       if(global.OmegaCabinetUI)global.OmegaCabinetUI.activeCountry=p.countryCode;
       renderDashboard('finance');return {ok:true,countryCode:p.countryCode};
     },
-    selectTab:function(v){const tab=String(v||'overview');if(!['overview','budget','income','treasury','reports','fx','macro','analytics'].includes(tab))return {ok:false,code:'FINANCE_TAB_INVALID'};activeTab=tab;renderDashboard('finance');return {ok:true,tab};},
+    selectTab:function(v){const tab=String(v||'overview');if(!['overview','budget','income','treasury','reports','worldbank','fx','macro','analytics'].includes(tab))return {ok:false,code:'FINANCE_TAB_INVALID'};activeTab=tab;renderDashboard('finance');return {ok:true,tab};},
     getBudgetSnapshot:function(v){const p=resolveProfile(v)||playerCountryProfile();if(!p)return null;const fm=ensureFinanceState(p,rootState());return {countryCode:p.countryCode,...budgetTotals(fm)};},
     getRevenueSnapshot:function(v){const p=resolveProfile(v)||playerCountryProfile();if(!p)return null;const fm=ensureFinanceState(p,rootState()),m=worldSnapshot().byCode.get(p.countryCode)||currentMetrics(p);return revenueState(p,fm,m,rootState());},
     applyAction,advanceTurn,renderDashboard,isFinanceMinistryId};
