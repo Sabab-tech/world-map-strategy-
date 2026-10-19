@@ -2,12 +2,13 @@
  * Same-origin app files are cached for offline relaunch; remote map tiles are never cached here.
  */
 "use strict";
-const CACHE_NAME = "omega-offline-atlas-shell-v8";
+const CACHE_NAME = "omega-offline-atlas-shell-v9";
 const APP_BASE = new URL("./", self.location.href);
 const INDEX_URL = new URL("index.html", APP_BASE).href;
 const CORE_ASSETS = [
   "./", "./index.html", "./world.json", "./leaflet.js", "./leaflet.css",
   "./style.css", "./map-engine-1.js", "./map-engine-2.js",
+  "./omega_shared_number_format_v1.js",
   "./omega_ui_system_redesign_v1.css", "./omega_ui_system_redesign_v1.js",
   "./omega_country_runtime_data_v1.js", "./cities.json",
   "./offline-hybrid-map.js", "./offline-hybrid-map.css",
@@ -19,9 +20,10 @@ const CORE_ASSETS = [
   "./finance_sector_registry_v1.json",
   "./omega_macro_stability_runtime_v1.js", "./omega_macro_stability_v1.css",
   "./economy_raw_financial_data_v2.json", "./finance_macro_stability_rules_v1.json",
-  "./omega_home_ministry_engine_v1.js", "./omega_home_ministry_ui_v1.js",
+  "./omega_home_ministry_engine_v1.js", "./omega_home_ministry_training_materials_runtime_v1.js", "./omega_home_ministry_ui_v1.js",
   "./omega_home_ministry_budget_ui_v2.js", "./omega_home_ministry_world_police_runtime_v1.js",
-  "./omega_home_ministry_police_operations_ui_v1.js", "./omega_home_ministry_country_police_baseline_v1.json",
+  "./omega_home_ministry_police_operations_ui_v1.js", "./omega_home_ministry_police_capability_runtime_v1.js",
+  "./omega_home_ministry_police_capability_recommendations_v1.json", "./omega_home_ministry_country_police_baseline_v1.json",
   "./omega_battlefield_command_runtime_v1.js", "./military_command_catalog_v1.json"
 ];
 
