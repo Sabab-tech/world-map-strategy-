@@ -506,13 +506,8 @@
     // Avoid persisting a half-applied sector turn. The committed-turn finalizer
     // will save synchronously once the ordered pipeline finishes.
     if (sim && sim.stepInProgress) {
-      if (stateSaveTimer !== null) {
-        try { g.clearTimeout(stateSaveTimer); } catch (_) {}
-      }
-      stateSaveTimer = g.setTimeout(function () {
-        stateSaveTimer = null;
-        scheduleStateSave();
-      }, 100);
+      // The end-of-turn finalizer persists every mutation from a successful turn.
+      // Do not repeatedly serialize a huge world while async sector work is in flight.
       return;
     }
     if (stateSaveTimer !== null) {
