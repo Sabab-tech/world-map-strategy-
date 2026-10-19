@@ -20,7 +20,6 @@
     const src=item.src;
     if(pendingScripts.has(src)) return pendingScripts.get(src);
     const task=new Promise((resolve,reject)=>{
-      const escaped=src.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
       let node=[...document.scripts].find(s=>s.getAttribute('src')===src||s.src.endsWith(src));
       if(node && node.dataset.omegaMinisterFailed==='true'){
         node.remove();
