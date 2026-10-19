@@ -238,6 +238,29 @@ test('a fully funded country upgrade consumes unreserved materials, waits for si
   assert.equal(after.trainingQualityLevel, before.trainingQualityLevel);
 });
 
+test('a fully funded training upgrade waits for its simulation-time deadline', () => {
+  reset();
+  const before = engine.getState('BD');
+  assert.equal(engine.buildFacility('academy', 1, 'BD').ok, true);
+  const quote = engine.getCapabilityUpgradeQuote('training', 'BD');
+  assert.equal(quote.canStart, true, JSON.stringify(quote.blockers));
+  const started = engine.startCapabilityUpgrade('training', 'BD');
+  assert.equal(started.ok, true, JSON.stringify(started));
+  assert.equal(engine.getState('BD').trainingQualityLevel, before.trainingQualityLevel);
+  Game.state.simulation.simulationTimeMs = started.completesAtMs - 1000;
+  Game.state.simulation.turn = 1;
+  globalThis.dispatchEvent(new CustomEvent('OMEGA_SIMULATION_TURN_COMMITTED', { detail: { countryId: 'BD', payload: { countryId: 'BD' } } }));
+  assert.equal(engine.getState('BD').trainingQualityLevel, before.trainingQualityLevel);
+  Game.state.simulation.simulationTimeMs = started.completesAtMs;
+  Game.state.simulation.turn = 2;
+  globalThis.dispatchEvent(new CustomEvent('OMEGA_SIMULATION_TURN_COMMITTED', { detail: { countryId: 'BD', payload: { countryId: 'BD' } } }));
+  const after = engine.getState('BD');
+  assert.equal(after.trainingQualityLevel, quote.targetLevel);
+  assert.equal(after.pendingCapabilityUpgrade, null);
+  assert.equal(after.capabilityUpgradeHistory.at(-1).status, 'COMPLETED');
+  assert.equal(after.recruitmentLevel, before.recruitmentLevel);
+});
+
 test('missing physical stock rejects the upgrade before any treasury or inventory mutation', () => {
   reset();
   Game.state.resource.BD.inventory.CRUDE_OIL = 1;
