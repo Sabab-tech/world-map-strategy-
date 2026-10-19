@@ -1576,26 +1576,31 @@
       const days=Math.min(3650,day-s.lastPayrollDay),due=dailyOperatingCost(s)*days;
       const finance=financeApi();let debit=null,paid=0,treasuryUnavailable=false;
       if(finance&&typeof finance.applyAction==='function'){
-        const payrollDue=dailyPayroll(s)*days,policyDue=ruleDailyCost(s)*days,maintenanceDue=Math.max(0,due-payrollDue-policyDue),snapshot=getHomeBudgetSnapshot(cid,s);
+        const payrollDue=dailyPayroll(s)*days,rulebookDue=policeRulebookDailyCost(s)*days,policyDue=activePolicyDailyCost(s)*days;
+        const maintenanceDue=Math.max(0,due-payrollDue-rulebookDue-policyDue),snapshot=getHomeBudgetSnapshot(cid,s);
         const payrollCheck=validateHomeBudgetExpense(cid,payrollDue,'POLICE_PAYROLL',s,snapshot);
         const maintenanceCheck=validateHomeBudgetExpense(cid,maintenanceDue,'POLICE_FLEET_MAINTENANCE',s,snapshot);
+        const rulebookCheck=validateHomeBudgetExpense(cid,rulebookDue,'POLICE_RULEBOOK_DAILY_OPERATIONS',s,snapshot);
         const policyCheck=validateHomeBudgetExpense(cid,policyDue,'HOME_MINISTRY_DAILY_OPERATIONS',s,snapshot);
-        if(snapshot.available&&payrollCheck.ok&&maintenanceCheck.ok&&policyCheck.ok&&due<=snapshot.parentRemainingUsd+0.01&&due<=snapshot.treasuryBalanceUsd+0.01){
+        if(snapshot.available&&payrollCheck.ok&&maintenanceCheck.ok&&rulebookCheck.ok&&policyCheck.ok&&due<=snapshot.parentRemainingUsd+0.01&&due<=snapshot.treasuryBalanceUsd+0.01){
           const transactions=[];
           const salaryDebit=payrollDue>0?debitTreasury(cid,payrollDue,'POLICE_PAYROLL',s):{ok:true,amount:0};
           if(salaryDebit.ok&&salaryDebit.financeTransaction)transactions.push(salaryDebit);
           const upkeepDebit=maintenanceDue>0?debitTreasury(cid,maintenanceDue,'POLICE_FLEET_MAINTENANCE',s):{ok:true,amount:0};
           if(upkeepDebit.ok&&upkeepDebit.financeTransaction)transactions.push(upkeepDebit);
+          const rulebookDebit=rulebookDue>0?debitTreasury(cid,rulebookDue,'POLICE_RULEBOOK_DAILY_OPERATIONS',s):{ok:true,amount:0};
+          if(rulebookDebit.ok&&rulebookDebit.financeTransaction)transactions.push(rulebookDebit);
           const policyDebit=policyDue>0?debitTreasury(cid,policyDue,'HOME_MINISTRY_DAILY_OPERATIONS',s):{ok:true,amount:0};
           if(policyDebit.ok&&policyDebit.financeTransaction)transactions.push(policyDebit);
-          if(salaryDebit.ok&&upkeepDebit.ok&&policyDebit.ok){debit={ok:true,financeTransactions:transactions,amount:due};paid=due;}
+          if(salaryDebit.ok&&upkeepDebit.ok&&rulebookDebit.ok&&policyDebit.ok){debit={ok:true,financeTransactions:transactions,amount:due};paid=due;}
           else {
             if(policyDebit.ok&&policyDebit.financeTransaction)refundTreasury(policyDebit);
+            if(rulebookDebit.ok&&rulebookDebit.financeTransaction)refundTreasury(rulebookDebit);
             if(upkeepDebit.ok&&upkeepDebit.financeTransaction)refundTreasury(upkeepDebit);
             if(salaryDebit.ok&&salaryDebit.financeTransaction)refundTreasury(salaryDebit);
-            debit={ok:false,reason:!salaryDebit.ok?salaryDebit.reason:!upkeepDebit.ok?upkeepDebit.reason:policyDebit.reason||'FINANCE_TRANSACTION_FAILED'};
+            debit={ok:false,reason:!salaryDebit.ok?salaryDebit.reason:!upkeepDebit.ok?upkeepDebit.reason:!rulebookDebit.ok?rulebookDebit.reason:policyDebit.reason||'FINANCE_TRANSACTION_FAILED'};
           }
-        }else debit={ok:false,reason:!snapshot.available?snapshot.reason||'HOME_BUDGET_UNAVAILABLE':!payrollCheck.ok?payrollCheck.reason:!maintenanceCheck.ok?maintenanceCheck.reason:!policyCheck.ok?policyCheck.reason:'HOME_BUDGET_PARENT_EXCEEDED'};
+        }else debit={ok:false,reason:!snapshot.available?snapshot.reason||'HOME_BUDGET_UNAVAILABLE':!payrollCheck.ok?payrollCheck.reason:!maintenanceCheck.ok?maintenanceCheck.reason:!rulebookCheck.ok?rulebookCheck.reason:!policyCheck.ok?policyCheck.reason:'HOME_BUDGET_PARENT_EXCEEDED'};
       }else{
         const treasury=getTreasury(cid);
         if(treasury.available){paid=Math.min(due,Math.max(0,treasury.balance));debit=debitTreasury(cid,paid,'HOME_MINISTRY_DAILY_OPERATIONS',s);}
