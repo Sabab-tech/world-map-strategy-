@@ -11,6 +11,10 @@
     if(!registry)throw Error('MINISTER_STATE_REGISTRY_UNAVAILABLE');
     const state=registry.getMinister?.(id);
     if(state?.staticProfile&&state?.runtimeState)return {profile:state.staticProfile,runtime:state.runtimeState,learning:state.learningState||{},memory:state.memoryState||{},effective:state};
+    const legacyRegistry=global.OmegaMinisterState?.registry&&global.OmegaMinisterState.registry!==registry?global.OmegaMinisterState.registry:null;
+    const legacyProfile=legacyRegistry?.getMinister?.(id)||legacyRegistry?.profiles?.get?.(String(id))||null;
+    const legacyRuntime=legacyRegistry?.getRuntime?.(id)||null;
+    if(!state&&legacyProfile&&legacyRuntime)return {profile:legacyProfile,runtime:legacyRuntime,learning:legacyRegistry.getLearning?.(id)||{},memory:{},effective:null};
     const profile=state||registry.profiles?.get?.(String(id))||null;
     const runtime=registry.getRuntime?.(id)||null;
     const learning=registry.getLearning?.(id)||{};
