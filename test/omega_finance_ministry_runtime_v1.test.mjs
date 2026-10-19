@@ -7,6 +7,7 @@ const profileData=JSON.parse(readFileSync('economy_global_profiles_v1.json','utf
 const financeRules=JSON.parse(readFileSync('finance_runtime_rules_v1.json','utf8'));
 const sectorRegistry=JSON.parse(readFileSync('finance_sector_registry_v1.json','utf8'));
 const runtime=readFileSync('omega_finance_ministry_runtime_v1.js','utf8');
+const homeRuntime=readFileSync('omega_home_ministry_engine_v1.js','utf8');
 
 test('all map country and area identities exist, and unknown values are explicit',()=>{
   assert.equal(profileData.countries.length,249);
@@ -67,6 +68,33 @@ test('Finance preserves existing finance data and enforces allocation, treasury 
   r=context.OmegaFinanceMinistry.applyAction({type:'set-tax-rate',countryId:'BGD',value:25});
   assert.equal(r.ok,true);assert.equal(context.OmegaFinanceMinistry.getFinanceState('BGD').policy.taxRatePct,25);
 });
+test('Home Ministry purchases settle through the same country Finance allocation and treasury',async()=>{
+  const {context,state}=createRuntime();
+  context.Game.state=state;
+  context.gameState=state;
+  context.Omega.Simulation.world.state=state;
+  vm.runInNewContext(homeRuntime,context,{filename:'omega_home_ministry_engine_v1.js'});
+  await context.OmegaFinanceMinistry.init();
+  const finance=context.OmegaFinanceMinistry;
+  const home=context.OmegaHomeMinistryEngine;
+  assert.ok(home,'Home Ministry runtime should be registered');
+  const parent=finance.getFinanceState('BGD').allocations.interior;
+  const envelope=Math.min(500000,Number(parent.budgetUsd)||0);
+  assert.ok(envelope>=2500,'test country must have enough approved Home Ministry allocation');
+  const configured=home.configureHomeBudget(envelope,{salary:100,vehicles:0,maintenance:0,operations:0},'BGD');
+  assert.equal(configured.ok,true,configured.message||configured.reason);
+  const before=finance.getFinanceState('BGD');
+  const beforeCash=before.treasuryBalanceUsd,beforeSpent=before.allocations.interior.spentUsd;
+  const hire=home.recruitPolice(1,'BGD');
+  assert.equal(hire.ok,true,hire.message||hire.reason);
+  const after=finance.getFinanceState('BGD');
+  assert.equal(after.treasuryBalanceUsd,beforeCash-2500);
+  assert.equal(after.allocations.interior.spentUsd,beforeSpent+2500);
+  const homeBudget=home.getHomeBudgetSnapshot('BGD');
+  assert.equal(homeBudget.internal.categories.salary.spentUsd,2500);
+  assert.equal(state.finance.BGD.available,beforeCash-2500);
+});
+
 test('Finance advances GDP and debt using simulation duration and ignores duplicate turns',async()=>{
   const {context,state}=createRuntime();await context.OmegaFinanceMinistry.init();
   const e=state.economy.BANGLADESH,gdp=e.gdp,debt=e.debt;
