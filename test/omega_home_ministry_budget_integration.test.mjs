@@ -18,12 +18,25 @@ function mockFinance({ treasury = 12_000_000, interior = 10_000_000 } = {}) {
       defense: { budgetUsd: interior, spentUsd: 0, remainingUsd: interior }
     }
   };
+  const foreignModel = {
+    countryCode: 'BBB', treasuryBalanceUsd: 30_000_000, revision: 0, fiscalYearIndex: 0, ledger: [],
+    allocations: {
+      interior: { budgetUsd: 20_000_000, spentUsd: 0, remainingUsd: 20_000_000 },
+      defense: { budgetUsd: 20_000_000, spentUsd: 0, remainingUsd: 20_000_000 }
+    }
+  };
+  globalThis.__testForeignFinanceModel = foreignModel;
   let tx = 0;
   const api = {
     diagnostics: () => ({ initialized: true }),
-    getPlayerCountry: () => ({ countryCode: 'AAA', name: 'Test Republic' }),
-    resolveCountry: value => /AAA|TEST REPUBLIC/i.test(String(value)) ? ({ countryCode: 'AAA', name: 'Test Republic', iso3: 'AAA' }) : null,
-    getFinanceState: value => /AAA/i.test(String(value)) ? model : null,
+    getPlayerCountry: () => ({ countryCode: 'AAA', name: 'Test Republic', iso3: 'AAA' }),
+    resolveCountry(value) {
+      const raw = String(value || '').toUpperCase();
+      if (/AAA|TEST REPUBLIC/.test(raw)) return { countryCode: 'AAA', name: 'Test Republic', iso3: 'AAA' };
+      if (/BBB|OTHER REPUBLIC/.test(raw)) return { countryCode: 'BBB', name: 'Other Republic', iso3: 'BBB' };
+      return null;
+    },
+    getFinanceState(value) { return /BBB/i.test(String(value)) ? foreignModel : /AAA/i.test(String(value)) ? model : null; },
     applyAction(action) {
       if (action.type === 'rollback-home-ministry-expense') {
         const row = model.ledger.find(item => item.transactionId === action.transactionId);
@@ -61,12 +74,13 @@ function mockFinance({ treasury = 12_000_000, interior = 10_000_000 } = {}) {
 function setup(options = {}) {
   const model = mockFinance(options);
   globalThis.Game = { countryId: 'AAA', currentActiveCountry: 'AAA', state: {
-    economy: { AAA: { treasury: options.treasury ?? 12_000_000 } },
-    finance: { AAA: { available: options.treasury ?? 12_000_000, reserves: 0 } },
+    economy: { AAA: { treasury: options.treasury ?? 12_000_000 }, BBB: { treasury: 30_000_000 } },
+    finance: { AAA: { available: options.treasury ?? 12_000_000, reserves: 0 }, BBB: { available: 30_000_000, reserves: 0 } },
     population: { AAA: { population: 1_000_000 } },
     simulation: { turn: 0, simulationTimeMs: 0 }
   } };
   globalThis.CountryIOS = { activeCountry: 'AAA' };
+  delete globalThis.OmegaMinistryViewCountry;
   return model;
 }
 await import('../omega_home_ministry_engine_v1.js');
@@ -95,6 +109,34 @@ test('Home Ministry sub-budgets save as fixed USD or percentages and cannot exce
   assert.equal(api.getState('AAA').homeBudgetPlan.operations.value, 500_000);
   assert.equal(model.treasuryBalanceUsd, 12_000_000);
   assert.ok(state);
+});
+
+test('selected foreign-country budgets are visible but remain read-only for spending and plan changes', () => {
+  setup();
+  globalThis.OmegaMinistryViewCountry = 'BBB';
+  const snap = api.getHomeBudgetSnapshot('BBB');
+  assert.equal(snap.available, true);
+  assert.equal(snap.countryId, 'BBB');
+  assert.equal(snap.parentBudgetUsd, 20_000_000);
+  assert.equal(snap.canEdit, false);
+  assert.equal(snap.readOnly, true);
+
+  const before = globalThis.__testForeignFinanceModel.treasuryBalanceUsd;
+  const plan = api.setHomeBudgetPlan({
+    personnel: { mode: 'amount', value: 1_000 },
+    vehicles: { mode: 'amount', value: 3_000_000 },
+    maintenance: { mode: 'amount', value: 4_000_000 },
+    facilities: { mode: 'amount', value: 500_000 },
+    training: { mode: 'amount', value: 500_000 },
+    operations: { mode: 'amount', value: 500_000 }
+  }, 'BBB');
+  assert.equal(plan.ok, false);
+  assert.equal(plan.code, 'PLAYER_COUNTRY_SCOPE_VIOLATION');
+  const purchase = api.orderVehicle(1, 1, 'BBB');
+  assert.equal(purchase.ok, false);
+  assert.equal(purchase.reason, 'PLAYER_COUNTRY_SCOPE_VIOLATION');
+  assert.equal(globalThis.__testForeignFinanceModel.treasuryBalanceUsd, before);
+  delete globalThis.OmegaMinistryViewCountry;
 });
 
 test('recruitment cannot overspend its personnel sub-budget, while a vehicle order uses the vehicle sub-budget', () => {
