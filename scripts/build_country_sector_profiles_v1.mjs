@@ -60,7 +60,7 @@ function decodeMetric(row, field) {
     sourceName: sourceNameCode >= 0 ? sourceNames[sourceNameCode] || null : null,
     status: statusCode >= 0 ? sourceStatuses[statusCode] || 'UNRECOGNIZED_STATUS' : 'MISSING',
     method: methodCode >= 0 ? methods[methodCode] || null : null,
-    indicatorCode: field.wb || null,
+    indicatorCode: meta.indicatorCodes?.[index] || null,
     sourceUrl: meta.sourceUrls?.[index] || null,
     note: meta.notes?.[index] || null
   };
