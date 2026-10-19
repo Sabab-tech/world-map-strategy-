@@ -937,20 +937,29 @@
       // Migrate legacy hourly saves into the canonical daily-turn timeline.
       // A simulation turn is one game day; wall-clock speed is controlled separately.
       const restoredClock=clone(snapshot.clock);
-      const savedTurn=Math.max(0,finite(restoredClock.turn,0));
-      if(Number(restoredClock.stepDurationMs)!==DAY_MS){
+      const clockTurn=Math.max(0,finite(restoredClock.turn,0));
+      const worldTurn=Math.max(0,finite(snapshot.worldState.simulation?.turn,0));
+      const savedTurn=Math.max(clockTurn,worldTurn);
+      const savedDate=snapshot.worldState.simulation?.date;
+      const savedEpoch=Date.parse(String(savedDate||''));
+      const startEpoch=Number(restoredClock.startEpochMs);
+      const legacyClock=Number(restoredClock.stepDurationMs)!==DAY_MS;
+      restoredClock.turn=savedTurn;
+      if(legacyClock){
         // The saved calendar date is the migration anchor. Rebase elapsed time to it,
         // then apply one full day to each future turn.
-        const savedDate=snapshot.worldState.simulation?.date;
-        const savedEpoch=Date.parse(String(savedDate||''));
-        const startEpoch=Number(restoredClock.startEpochMs);
         restoredClock.stepDurationMs=DAY_MS;
         if(Number.isFinite(savedEpoch)&&Number.isFinite(startEpoch)){
           restoredClock.simulationTimeMs=Math.max(0,savedEpoch-startEpoch);
-        }else if(restoredClock.simulationTimeMs===null||restoredClock.simulationTimeMs===undefined||
+        }else if(worldTurn>clockTurn||
+          restoredClock.simulationTimeMs===null||restoredClock.simulationTimeMs===undefined||
           !Number.isFinite(Number(restoredClock.simulationTimeMs))){
           restoredClock.simulationTimeMs=savedTurn*DAY_MS;
         }
+      }else if(worldTurn>clockTurn&&!Number.isFinite(savedEpoch)){
+        // Early legacy snapshots may have updated Game.state before the clock existed.
+        // Never rewind that world turn to the stale default clock turn.
+        restoredClock.simulationTimeMs=savedTurn*DAY_MS;
       }
       restoredClock.stepDurationMs=DAY_MS;
       restoredClock.accumulatorMs=0;
