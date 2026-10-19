@@ -626,6 +626,7 @@
           '<select id="home-police-guard-vehicle" class="home-police-field" ' + (availableTiers.length ? '' : 'disabled') + '>' + vehicleOptions + '</select>' +
           (selected ? '<div class="home-police-detail-top">' + vehicleSvg(selected, 'guard-preview') + '<p class="home-police-note">' + esc(selected.specialty) + ' · capacity ' + selected.capacity + ' officers per vehicle</p></div>' : '<div class="home-police-alert">No dispatchable vehicles found. Open Fleet & Facility Ascension to order the unlocked tier and let its 180-day delivery finish.</div>') +
           '<label class="home-police-label" for="home-police-guard-mission">Guard mission</label><select id="home-police-guard-mission" class="home-police-field">' + missionOptions + '</select>' +
+          '<div class="home-police-form-row"><div class="home-police-field-wrap"><label class="home-police-label" for="home-police-guard-area-class">Area classification</label><select id="home-police-guard-area-class" class="home-police-field"><option value="URBAN">Urban / city</option><option value="SUBURBAN">Suburban</option><option value="RURAL">Rural / countryside</option><option value="BORDER">Border district</option><option value="INDUSTRIAL">Industrial zone</option><option value="COASTAL">Coastal / wetland</option><option value="MOUNTAIN">Mountain / remote</option></select></div><div class="home-police-field-wrap"><label class="home-police-label" for="home-police-guard-sector">City / district / rural region</label><input id="home-police-guard-sector" class="home-police-field" type="text" maxlength="80" placeholder="Enter a real city, district or region" value="" ' + (selected ? '' : 'disabled') + '></div></div>' +
           '<div class="home-police-form-row"><div class="home-police-field-wrap"><label class="home-police-label" for="home-police-guard-environment">Operating environment</label><select id="home-police-guard-environment" class="home-police-field">' + environmentOptions + '</select></div><div class="home-police-field-wrap"><label class="home-police-label" for="home-police-guard-road">Road / weather condition</label><select id="home-police-guard-road" class="home-police-field">' + roadOptions + '</select></div></div>' +
           '<div class="home-police-vehicle-brief"><div class="home-police-brief-card"><span class="home-police-tag home-police-tag-gold">ROUTE FIT</span><strong id="home-police-route-fit">-- / 100</strong><span id="home-police-route-status">Select a vehicle and route.</span></div><div class="home-police-brief-card"><span class="home-police-tag home-police-tag-gold">30-DAY WEAR FORECAST</span><strong id="home-police-route-wear">-- condition points</strong><span id="home-police-route-risk">Maintenance exposure unavailable</span></div></div>' +
           '<div id="home-police-route-warnings" class="home-police-alert" aria-live="polite">Choose a route. Each vehicle has individual environment fit; poor matches wear faster and may break down.</div>' +
@@ -649,7 +650,7 @@
       '</div>';
     const vehicleSelect = g.document.getElementById('home-police-guard-vehicle'), missionSelect = g.document.getElementById('home-police-guard-mission');
     const environmentSelect = g.document.getElementById('home-police-guard-environment'), roadSelect = g.document.getElementById('home-police-guard-road');
-    const quantityInput = g.document.getElementById('home-police-guard-quantity'), sectorInput = g.document.getElementById('home-police-guard-sector'), assetSelect = g.document.getElementById('home-police-guard-asset');
+    const quantityInput = g.document.getElementById('home-police-guard-quantity'), sectorInput = g.document.getElementById('home-police-guard-sector'), areaClassSelect = g.document.getElementById('home-police-guard-area-class'), assetSelect = g.document.getElementById('home-police-guard-asset');
     const officerLabel = g.document.getElementById('home-police-guard-officers'), effectLabel = g.document.getElementById('home-police-guard-effectiveness');
     const fitNote = g.document.getElementById('home-police-guard-fit-note'), availabilityLabel = g.document.getElementById('home-police-guard-availability');
     const availabilityNote = g.document.getElementById('home-police-guard-availability-note'), errorBox = g.document.getElementById('home-police-guard-error');
@@ -727,9 +728,24 @@
       refresh();
     };
     g.document.getElementById('home-police-guard-refresh').onclick = () => this.renderGuardOut(Number(vehicleSelect.value) || undefined, { environment: environmentSelect.value, road: roadSelect.value });
+    const applyAreaClass = () => {
+      const area = areaClassSelect.value;
+      const environmentByArea = {URBAN:'city',SUBURBAN:'city',RURAL:'rural',BORDER:'border',INDUSTRIAL:'industrial',COASTAL:'coastal',MOUNTAIN:'mountain'};
+      environmentSelect.value = environmentByArea[area] || 'city';
+      const env = environments.find(row => row.id === environmentSelect.value) || environments[0];
+      const permitted = roads.filter(row => env.roadConditions.includes(row.id));
+      const preferred = area === 'URBAN' || area === 'SUBURBAN' ? 'congested' : env.roadDefault;
+      roadSelect.innerHTML = permitted.map(row => '<option value="' + row.id + '"' + (row.id === preferred ? ' selected' : '') + '>' + esc(row.name) + '</option>').join('');
+      if (!permitted.some(row => row.id === roadSelect.value)) roadSelect.value = permitted[0] ? permitted[0].id : env.roadDefault;
+      refresh();
+    };
+    areaClassSelect.onchange = applyAreaClass;
     deployButton.onclick = () => {
       const level = Math.floor(Number(vehicleSelect.value) || 0), quantity = Math.floor(Number(quantityInput.value) || 0), missionId = missionSelect.value;
-      const result = e.deployGuard(level, quantity, missionId, sectorInput.value, e.getCurrentCountryId(), assetSelect.value || null, environmentSelect.value, roadSelect.value);
+      const locationName = String(sectorInput.value || '').trim();
+      if (!locationName) { errorBox.textContent = 'Enter the city, district or rural region before dispatch. The deployment will be stored under this country and location.'; sectorInput.focus(); return; }
+      const sector = areaClassSelect.value + ' · ' + locationName;
+      const result = e.deployGuard(level, quantity, missionId, sector, e.getCurrentCountryId(), assetSelect.value || null, environmentSelect.value, roadSelect.value);
       if (!result.ok) { report(result); this.renderGuardOut(level); return; }
       report(result, 'GUARD DEPLOYMENT COMMITTED', result.deployment.quantity + ' × ' + result.vehicle + ' assigned to ' + result.mission + ' at ' + result.deployment.sector + '. ' + result.assignedOfficers + ' officers reserved; current mission rating ' + result.estimatedEffectiveness + ' / 100.');
       this.renderGuardOut(level, { environment: environmentSelect.value, road: roadSelect.value });
