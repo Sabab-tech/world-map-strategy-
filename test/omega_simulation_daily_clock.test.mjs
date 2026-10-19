@@ -189,6 +189,7 @@ test('index, finance, bank and offline shell use the daily lifecycle assets', ()
   assert.match(serviceWorker, /omega_game_lifecycle_runtime_v1\.css/);
   assert.match(serviceWorker, /resource_industrial_catalog_v1\.json/);
   assert.match(core, /registerTurnParticipant\(id,handler,options=\{\}\)/);
+  assert.match(core, /installEventLedgerTurnBridge/);
   assert.match(core, /registerTurnFinalizer\(id,handler,options=\{\}\)/);
   assert.match(core, /await this\.runTurnFinalizers\(/);
   assert.match(core, /await this\.runTurnParticipants\(event\)/);
@@ -360,6 +361,24 @@ test('lifecycle autosaves only after async sector work and catches pagehide with
   assert.equal(saved.worldState.economy.BGD.treasury, 999999,
     'a failed turn must not overwrite the last complete durable checkpoint');
   assert.ok(win.Omega.GameLifecycle.getDiagnostics().savedTurn >= 1);
+});
+
+test('internal Simulation.events subscribers are awaited and ordered with legacy window listeners', async () => {
+  const { sim } = createRuntime();
+  const order = [];
+  sim.events.subscribe('OMEGA_SIMULATION_TURN_COMMITTED', async event => {
+    order.push('ledger:start:' + event.simulationTurn);
+    await new Promise(resolve => setTimeout(resolve, 5));
+    order.push('ledger:end:' + event.simulationTurn);
+  });
+  sim.registerSubsystem('test.after-ledger', async context => {
+    order.push('explicit:' + context.turn);
+  }, { priority: 5 });
+
+  sim.startSession({ playerCountryId: 'BGD' });
+  await sim.frame(STEP_MS);
+
+  assert.deepEqual(order, ['ledger:start:1', 'ledger:end:1', 'explicit:1']);
 });
 
 test('daily tick supplies the same turn, duration and date to every subsystem', async () => {
