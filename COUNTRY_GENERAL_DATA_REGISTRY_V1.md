@@ -99,7 +99,7 @@ Current sector groups include general facts, economy/fiscal capacity, trade and 
 
 The profile layer can calculate trade openness, exports/imports relative to GDP, external debt relative to GDP, budget-deficit share, trade-deficit share, and same-year derived military expenditure. A calculation requiring same-year inputs is skipped when source years differ or an input is absent. Its reason is stored with the result.
 
-Project-defined comparative analytics are explicitly labelled as such: economic capacity proxy, economic stress proxy, industrial scale proxy and defence-budget scale. These are not official ratings or claims about real-world readiness. Component coverage, observation years, legacy-input count and caveats accompany each score. Diplomatic influence, full military capability, resource dependency and industrial resilience remain uns cored until the necessary comparable evidence exists.
+Project-defined comparative analytics are explicitly labelled as such: economic capacity proxy, economic stress proxy, industrial scale proxy and defence-budget scale. These are not official ratings or claims about real-world readiness. Component coverage, observation years, legacy-input count and caveats accompany each score. Diplomatic influence, full military capability, resource dependency and industrial resilience remain unscored until the necessary comparable evidence exists.
 
 Relative strength/vulnerability signals use peer-percentiles of recorded metrics and retain the original evidence and year. They should not be shown as definitive causal claims or official rankings.
 
