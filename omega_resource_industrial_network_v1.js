@@ -1436,9 +1436,20 @@ g.Omega=g.Omega||{};g.Omega.ResourceIndustrialNetwork=api();g.OmegaResourceIndus
 function boot(){
   loadCatalog().then(()=>{emit('OMEGA_RESOURCE_INDUSTRIAL_NETWORK_READY','GLOBAL',{version:VERSION,catalogResourceRules:Object.keys(rules()).length,factoryRules:Object.keys(processRules()).length})}).catch(()=>{});
   if(typeof g.addEventListener==='function'){
-    g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED',()=>{
-      const countries=runtimeCountryIds();
-      countries.forEach(c=>{try{processPendingFactoryInputs(c);advanceShipments(c);advanceProjects(c)}catch(_){}});
+    g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED',async()=>{
+      // Catalog readiness and every country update are awaited by the authoritative turn runner.
+      await loadCatalog();
+      const countries=runtimeCountryIds(),failures=[];
+      for(const countryId of countries){
+        try{
+          await processPendingFactoryInputs(countryId);
+          await advanceShipments(countryId);
+          await advanceProjects(countryId);
+        }catch(error){
+          failures.push(countryId+':'+String(error?.message||error));
+        }
+      }
+      if(failures.length)throw new Error('INDUSTRIAL_TURN_FAILED:'+failures.join('|'));
     });
     g.addEventListener('OMEGA_RESOURCE_EXTRACTION_COMPLETED',onExtractionCommitted);
     g.addEventListener('OMEGA_RESOURCE_EXTRACTION_BLOCKED',onExtractionBlocked);
