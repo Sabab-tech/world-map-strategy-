@@ -8,7 +8,7 @@
   const MAX_HISTORY = 31;
   if (g.OmegaEconomicTransmissionRuntime && g.OmegaEconomicTransmissionRuntime.VERSION === VERSION) return;
 
-  let finance = null, fx = null, banking = null, macro = null, profiles = [], byId = new Map(), rules = {};
+  let finance = null, fx = null, banking = null, macro = null, profiles = [], byId = new Map(), rules = {}, rawCache = new Map();
   let store = null, initialized = false, initPromise = null, observer = null, renderQueued = false, eventBound = false;
 
   const own = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -68,6 +68,8 @@
     return bank;
   }
   function sourceRaw(p) {
+    const key = profileId(p);
+    if (rawCache.has(key)) return rawCache.get(key);
     try { return macro && typeof macro.getRawProfile === 'function' ? macro.getRawProfile(p.iso3 || p.countryCode) : null; } catch (_) { return null; }
   }
   function firstValue(objects, keys) {
@@ -106,17 +108,15 @@
     };
     let fiscal = null;
     try { fiscal = finance && finance.getFinanceState && finance.getFinanceState(p.countryCode || p.iso3); } catch (_) {}
-    let macroIndicators = null;
-    try { macroIndicators = macro && macro.getIndicators && macro.getIndicators(p.iso3 || p.countryCode); } catch (_) {}
-    const gdpValue = gdp.value ?? num(macroIndicators && macroIndicators.nominalGdpUsd);
-    const growthValue = growth.value ?? num(macroIndicators && macroIndicators.gdpGrowthAnnualPct) ?? 0;
-    const inflationValue = inflation.value ?? num(macroIndicators && macroIndicators.inflationAnnualPct) ?? 0;
-    const unemploymentValue = unemployment.value ?? num(macroIndicators && macroIndicators.unemploymentRatePct);
-    const debtValue = debt.value ?? num(macroIndicators && macroIndicators.publicDebtUsd);
-    const tradeValue = trade.value ?? num(macroIndicators && macroIndicators.tradeBalanceUsd);
-    const reservesValue = reserves.value ?? num(macroIndicators && macroIndicators.foreignExchangeReservesUsd);
-    const importValue = imports.value ?? num(macroIndicators && macroIndicators.importsUsd);
-    const exportValue = exports.value ?? num(macroIndicators && macroIndicators.exportsUsd);
+    const gdpValue = gdp.value;
+    const growthValue = growth.value ?? 0;
+    const inflationValue = inflation.value ?? 0;
+    const unemploymentValue = unemployment.value;
+    const debtValue = debt.value;
+    const tradeValue = trade.value;
+    const reservesValue = reserves.value;
+    const importValue = imports.value;
+    const exportValue = exports.value;
     const rate = fxRate(p);
     const currentAccountValue = currentAccount.value ?? num(macroIndicators && macroIndicators.currentAccountBalanceUsd);
     const wageGrowthValue = wageGrowth.value;
@@ -138,7 +138,6 @@
     const reserveCoverMonths = reservesValue !== null && importValue !== null && importValue > 0 ? reservesValue / (importValue / 12) : null;
     let policy = null;
     try { policy = fx && fx.getPolicy && rate.code ? fx.getPolicy(rate.code) : null; } catch (_) {}
-    const bankRisk = bankRiskProfile(p);
     return {
       raw, rawIndicators: ri, economy: eco, sourceValues: values,
       gdp: gdpValue, gdpSource: gdp.source || (macroIndicators && 'MACRO_RAW_REGISTRY') || null,
@@ -151,7 +150,7 @@
       tradeBalanceToGdpPct: tradeToGdp, capitalFlowToGdpPct: capitalFlowToGdpPct,
       capitalFlowSource: capitalFlowSource, reserveCoverMonths: reserveCoverMonths,
       importExposurePct: importExposurePct, importExposureSource: importExposureSource,
-      policy: policy || {}, bankRisk: bankRisk,
+      policy: policy || {},
       assumptions: wageGrowthValue === null ? ['WAGE_GROWTH_PROXY_FROM_GDP_GROWTH'] : []
     };
   }
@@ -197,7 +196,7 @@
       initializedTurn: num(base.initializedTurn) ?? currentTurn()
     };
   }
-  function updateOne(profile, turnNumber, dt, globalInflationPct) {
+  function updateOne(profile, turnNumber, dt, globalInflationPct, simDay) {
     if (!profile || !profile.economyKey) return null;
     const root = rootState(), bankStore = rootTransmissionStore(), id = profileId(profile);
     const facts = factRows(profile);
@@ -306,7 +305,7 @@
     bankStore.economicTransmissionByCountry[id] = clone(model);
     if (profile.economyKey && obj(root.economy) && obj(root.economy[profile.economyKey]))
       root.economy[profile.economyKey].financialTransmission = clone(model.latest);
-    appendHistory(model, currentSimulationDay(), turnNumber);
+    appendHistory(model, simDay, turnNumber);
     aggregateCurrencyStress(bankStore);
     return model.latest;
   }
@@ -355,9 +354,9 @@
       const confidence = 100 - (num(latest.economicPressureIndex) || 0);
       const flow = num(latest.capitalFlowToGdpPct);
       const reserveCover = num(latest.reserveCoverMonths);
-      const facts = factRows(p);
-      const policy = facts.policy || {};
-      const currentRate = facts.localPerUsd;
+      let policy = {};
+      try { policy = fx && fx.getPolicy && fx.getPolicy(latest.currencyCode) || {}; } catch (_) {}
+      const currentRate = num(latest.localPerUsd);
       const baseRate = num(model.baseLocalPerUsd);
       let pegAttack = 0;
       if (String(policy.currencyRegime || '').toUpperCase() === 'PEG') {
@@ -398,12 +397,13 @@
     const dt = clamp(num(durationMs) ?? HOUR_MS, 0, 7 * DAY_MS);
     if (dt <= 0) return { ok: true, turn: t, processed: 0 };
     const averageInflation = globalInflationMean();
+    const simDay = currentSimulationDay();
     const failures = [];
     let processed = 0;
     for (const p of profiles) {
       if (!p || !p.economyKey) continue;
       try {
-        const result = updateOne(p, t, dt, averageInflation);
+        const result = updateOne(p, t, dt, averageInflation, simDay);
         if (result) processed++;
       } catch (error) {
         failures.push({ countryCode: profileId(p), error: String(error && error.message || error) });
@@ -679,6 +679,8 @@
       profiles=finance.getProfiles()||[];
       if(!profiles.length)throw new Error('COUNTRY_PROFILE_REGISTRY_EMPTY');
       byId=new Map();profiles.forEach(p=>[p.name,p.iso3,p.countryCode,p.iso2,p.economyKey].filter(Boolean).forEach(k=>byId.set(norm(k),p)));
+      rawCache=new Map();
+      for(const p of profiles){const key=profileId(p);try{rawCache.set(key,macro&&macro.getRawProfile?macro.getRawProfile(p.iso3||p.countryCode):null);}catch(_){rawCache.set(key,null);}}
       await fetchRules();
       store=rootTransmissionStore();
       initialized=true;
