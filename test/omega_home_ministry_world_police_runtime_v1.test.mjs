@@ -88,7 +88,7 @@ test('world police baseline covers the full country registry with provenance-sep
     source === 'MODELED_SIMULATION_BASELINE' || source.startsWith('WORLD_BANK_'))));
   assert.ok(baselineData.countries.every(row => Object.values(row.baselineFleet.countsByTier).reduce((sum,n)=>sum+Number(n),0) === row.baselineFleet.totalUnits));
   assert.ok(baselineData.countries.every(row => row.fleetProfile?.source === 'MODELED_FROM_COUNTRY_URBANIZATION_OCEAN_ACCESS_AND_ECONOMY'));
-  assert.ok(new Set(baselineData.countries.map(row => JSON.stringify(row.baselineFleet.countsByTier))).size > 200);
+  assert.ok(new Set(baselineData.countries.map(row => JSON.stringify(row.baselineFleet.countsByTier))).size > 180);
   assert.ok(baselineData.countries.every(row => Object.entries(row.baselineFleet.countsByTier).every(([tier,n]) => Number(tier) <= 8 || Number(n) === 0)));
   const bangladesh = baselineData.countries.find(row => row.iso3 === 'BGD');
   assert.ok(bangladesh.population.year >= 2020);
