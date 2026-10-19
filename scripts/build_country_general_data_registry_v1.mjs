@@ -482,7 +482,7 @@ function makeRecord(country, sources, previous, refreshData) {
     sourceId: city ? 'cities.json' : null,
     status: city ? 'LOCAL_GAME_GEOGRAPHY_NOT_INDEPENDENTLY_VERIFIED' : 'NO_CITY_RECORD'
   };
-  const statuses = {
+  const statuses = [...new Set(rows.flatMap((row) => METRIC_CATALOGUE.map((field) => row.metricMetadata[field.key]?.status || 'MISSING')))];
     identity: 'CANONICAL_COUNTRIES_JSON',
     basicFacts: facts.factsSourceStatus,
     financialRegistry: Object.keys(rawIndicators).length ? 'RAW_FINANCIAL_RECORD_PRESENT' : 'RAW_FINANCIAL_RECORD_MISSING',
@@ -686,10 +686,10 @@ async function main() {
   ];
   const localGeographyFields = Object.keys(rows[0].localGeography);
   const dataStatusFields = Object.keys(rows[0].dataStatus);
-  const statuses = [...new Set(rows.flatMap((row) => METRIC_CATALOGUE.map((field) => row.metricMetadata[field.key]?.status || 'MISSING'))].values()];
-  const sourceIds = [...new Set(rows.flatMap((row) => METRIC_CATALOGUE.map((field) => row.metricMetadata[field.key]?.sourceId || ''))].values()];
-  const sourceNames = [...new Set(rows.flatMap((row) => METRIC_CATALOGUE.map((field) => row.metricMetadata[field.key]?.sourceName || ''))].values()];
-  const methods = [...new Set(rows.flatMap((row) => METRIC_CATALOGUE.map((field) => row.metricMetadata[field.key]?.method || 'NONE'))].values());
+  const statuses = [...new Set(rows.flatMap((row) => METRIC_CATALOGUE.map((field) => row.metricMetadata[field.key]?.status || 'MISSING')))];
+  const sourceIds = [...new Set(rows.flatMap((row) => METRIC_CATALOGUE.map((field) => row.metricMetadata[field.key]?.sourceId || '')))];
+  const sourceNames = [...new Set(rows.flatMap((row) => METRIC_CATALOGUE.map((field) => row.metricMetadata[field.key]?.sourceName || '')))];
+  const methods = [...new Set(rows.flatMap((row) => METRIC_CATALOGUE.map((field) => row.metricMetadata[field.key]?.method || 'NONE')))];
   const codeOf = (list, value) => {
     if (value === null || value === undefined || value === '') return -1;
     const code = list.indexOf(value);
