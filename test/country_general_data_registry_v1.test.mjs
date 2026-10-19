@@ -105,9 +105,9 @@ test('a rebuild never drops a previously non-null metric merely because the curr
         ? oldRow.metrics[oldMetricIndex[key]]
         : oldRow.metrics?.[key];
       if (typeof oldValue !== 'number' || !Number.isFinite(oldValue)) continue;
-      priorValueCount += 1;
       const currentIndex = metricIndex[key];
-      if (currentIndex === undefined) continue;
+      assert.notEqual(currentIndex, undefined, 'Previously stored metric was removed from the catalogue: ' + key);
+      priorValueCount += 1;
       const newValue = current.metrics[currentIndex];
       assert.ok(typeof newValue === 'number' && Number.isFinite(newValue),
         'Previously recorded metric was lost for ' + iso3 + '.' + key + '; missing means unknown, not deletion.');
