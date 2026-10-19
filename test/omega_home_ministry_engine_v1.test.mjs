@@ -17,6 +17,15 @@ function setup(treasury = 10000000) {
     simulation: { turn: 0, simulationTimeMs: 0 }
   } };
   globalThis.CountryIOS = { activeCountry: 'AAA' };
+  if (Number.isFinite(Number(treasury)) && Number(treasury) > 0 && globalThis.OmegaHomeMinistryEngine) {
+    globalThis.OmegaHomeMinistryEngine.configureBudgetPlan(Number(treasury), {
+      personnel:{mode:'percent',value:40},
+      vehiclePurchase:{mode:'percent',value:25},
+      maintenance:{mode:'percent',value:15},
+      facilities:{mode:'percent',value:10},
+      training:{mode:'percent',value:10}
+    }, 'AAA');
+  }
   return Game.state;
 }
 await import('../omega_home_ministry_engine_v1.js');
@@ -132,17 +141,18 @@ test('finance available ledger is authoritative when economy treasury is also pr
   assert.equal(state.economy.AAA.treasury, economyTreasury);
 });
 
-test('missing treasury does not mark a due payroll day as paid', () => {
+test('missing treasury blocks payroll and records unpaid obligations instead of charging later without authorization', () => {
   const state = setup(null);
   api.getState('AAA');
   state.simulation.simulationTimeMs = DAY;
   state.simulation.turn = 24;
   api.processTurn({ detail: { payload: { countryId: 'AAA', turn: 24 } } });
-  assert.equal(api.getState('AAA').lastPayrollDay, 0);
-  state.economy.AAA.treasury = 1000000;
-  api.processTurn({ detail: { payload: { countryId: 'AAA', turn: 24 } } });
   assert.equal(api.getState('AAA').lastPayrollDay, 1);
-  assert.equal(state.economy.AAA.treasury, 1000000 - 250 * api.POLICE_SALARY_PER_DAY);
+  assert.equal(api.getState('AAA').unpaidPayroll, 250 * api.POLICE_SALARY_PER_DAY);
+  state.economy.AAA.treasury = 1000000;
+  api.processTurn({ detail: { payload: { countryId: 'AAA', turn: 25 } } });
+  assert.equal(state.economy.AAA.treasury, 1000000);
+  assert.equal(api.getState('AAA').unpaidPayroll, 250 * api.POLICE_SALARY_PER_DAY);
 });
 
 test('finance spending uses the finance-owned transaction when OMEGA interop is available', () => {
@@ -197,6 +207,14 @@ test('finance spending uses the finance-owned transaction when OMEGA interop is 
   };
   world.window = world;
   new Function('window', sourceText)(world);
+  const config = world.OmegaHomeMinistryEngine.configureBudgetPlan(100000, {
+    personnel:{mode:'percent',value:40},
+    vehiclePurchase:{mode:'percent',value:25},
+    maintenance:{mode:'percent',value:15},
+    facilities:{mode:'percent',value:10},
+    training:{mode:'percent',value:10}
+  }, 'AAA');
+  assert.equal(config.ok, true);
   const result = world.OmegaHomeMinistryEngine.recruitPolice(1, 'AAA');
   assert.equal(result.ok, true);
   assert.equal(state.finance.AAA.available, 97500);
@@ -407,4 +425,79 @@ test('purchases fail closed when treasury is unavailable and advice is non-mutat
   assert.equal(Game.state.economy.AAA.treasury, balance);
   assert.equal(api.FACILITIES.length, 10);
   assert.equal(api.TACTICS.length, 5);
+});
+
+
+test('budget allocation is country-scoped and rejects purchases above category caps', () => {
+  const state = setup(10000);
+  const rules = {
+    personnel:{mode:'percent',value:0},
+    vehiclePurchase:{mode:'percent',value:100},
+    maintenance:{mode:'percent',value:0},
+    facilities:{mode:'percent',value:0},
+    training:{mode:'percent',value:0}
+  };
+  const saved = api.configureBudgetPlan(10000,rules,'AAA');
+  assert.equal(saved.ok,true);
+  const beforeCash = state.economy.AAA.treasury;
+  const beforePersonnel = api.getState('AAA').policeCount;
+  const blocked = api.recruitPolice(1,'AAA');
+  assert.equal(blocked.ok,false);
+  assert.equal(blocked.reason,'INSUFFICIENT_MINISTRY_BUDGET');
+  assert.equal(state.economy.AAA.treasury,beforeCash);
+  assert.equal(api.getState('AAA').policeCount,beforePersonnel);
+});
+
+test('Finance Ministry Home Affairs allocation caps the authorized Home Ministry envelope', () => {
+  const state = setup(1000000);
+  state.finance = {AAA:{available:1000000,ministryAllocations:{interior_security:50000}}};
+  assert.equal(api.getBudgetSummary('AAA').totalAuthorized,50000,
+    'a new Finance ceiling must also constrain an older saved Home Ministry plan');
+  const plan = {
+    personnel:{mode:'percent',value:50},
+    vehiclePurchase:{mode:'percent',value:30},
+    maintenance:{mode:'percent',value:20},
+    facilities:{mode:'percent',value:0},
+    training:{mode:'percent',value:0}
+  };
+  const valid = api.configureBudgetPlan(50000,plan,'AAA');
+  assert.equal(valid.ok,true);
+  const blocked = api.configureBudgetPlan(100000,plan,'AAA');
+  assert.equal(blocked.ok,false);
+  assert.equal(blocked.reason,'MINISTRY_BUDGET_EXCEEDS_FINANCE_ALLOCATION');
+  assert.equal(state.finance.AAA.available,1000000);
+});
+
+test('category percentages and fixed amounts cannot exceed the authorized envelope', () => {
+  setup(1000000);
+  const badPercent = api.configureBudgetPlan(100000,{
+    personnel:{mode:'percent',value:70},
+    vehiclePurchase:{mode:'percent',value:40},
+    maintenance:{mode:'percent',value:0},
+    facilities:{mode:'percent',value:0},
+    training:{mode:'percent',value:0}
+  },'AAA');
+  assert.equal(badPercent.ok,false);
+  assert.equal(badPercent.reason,'BUDGET_PERCENT_TOTAL_OVER_100');
+  const badFixed = api.configureBudgetPlan(100000,{
+    personnel:{mode:'fixed',value:60000},
+    vehiclePurchase:{mode:'fixed',value:50000},
+    maintenance:{mode:'fixed',value:0},
+    facilities:{mode:'fixed',value:0},
+    training:{mode:'fixed',value:0}
+  },'AAA');
+  assert.equal(badFixed.ok,false);
+  assert.equal(badFixed.reason,'BUDGET_ALLOCATION_EXCEEDS_TOTAL');
+});
+
+
+test('a recorded zero Home Affairs Finance allocation blocks purchases despite an older local plan', () => {
+  const state = setup(10000000);
+  state.finance = { AAA:{ available:10000000, ministryAllocations:{ interior_security:0 } } };
+  assert.equal(api.getBudgetSummary('AAA').totalAuthorized,0);
+  const before = state.economy.AAA.treasury;
+  const result = api.orderVehicle(1,1,'AAA');
+  assert.equal(result.ok,false);
+  assert.equal(result.reason,'INSUFFICIENT_MINISTRY_BUDGET');
+  assert.equal(state.economy.AAA.treasury,before);
 });

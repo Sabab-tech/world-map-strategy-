@@ -1354,6 +1354,92 @@ window.OmegaCabinetUI = {
         }
     },
 
+    saveFinanceMinistryAllocations() {
+        const rawCountry = this.activeCountry || (window.Game && (window.Game.currentActiveCountry || window.Game.countryId)) || '';
+        const root = window.Game && window.Game.state || window.gameState || {};
+        const observer = window.OmegaLiveOpsObservability;
+        let country = observer && typeof observer.resolveCountryId === 'function' ? observer.resolveCountryId(rawCountry) : null;
+        if (!country && window.Game && typeof window.Game.getCountryId === 'function') country = window.Game.getCountryId(rawCountry);
+        country = String(country || rawCountry || '').toUpperCase().replace(/[-\\s]+/g,'_');
+        if (!country) { window.showOmegaNotification && window.showOmegaNotification('ALLOCATION REJECTED','Choose a country before allocating a national budget.','error'); return {ok:false,reason:'COUNTRY_REQUIRED'}; }
+        const targets = ['interior_security','defense','military','intelligence_cyber','foreign_affairs','health_welfare','energy_mining','infrastructure','education','agriculture_food','mega_projects'];
+        const allocations = {};
+        let total = 0;
+        for (const key of targets) {
+            const input = document.getElementById('finance-ministry-alloc-' + key);
+            const amount = input ? Number(input.value) : NaN;
+            if (!Number.isFinite(amount) || amount < 0) {
+                window.showOmegaNotification && window.showOmegaNotification('ALLOCATION REJECTED','Every ministry amount must be a non-negative number. No allocation was changed.','error');
+                return {ok:false,reason:'ALLOCATION_AMOUNT_INVALID',category:key};
+            }
+            allocations[key] = amount;
+            total += amount;
+        }
+        const findKey = section => {
+            const rows = root[section] || {};
+            return Object.keys(rows).find(key => {
+                if (String(key).toUpperCase().replace(/[-\\s]+/g,'_') === country) return true;
+                const id = observer && typeof observer.resolveCountryId === 'function' ? observer.resolveCountryId(key) : null;
+                return id && String(id).toUpperCase() === country;
+            }) || null;
+        };
+        const financeKey = findKey('finance'), economyKey = findKey('economy');
+        const finance = financeKey && root.finance && root.finance[financeKey] || {};
+        const economy = economyKey && root.economy && root.economy[economyKey] || {};
+        const balance = typeof finance.available === 'number' && Number.isFinite(finance.available)
+            ? finance.available : typeof economy.treasury === 'number' && Number.isFinite(economy.treasury) ? economy.treasury : null;
+        if (balance === null) {
+            window.showOmegaNotification && window.showOmegaNotification('ALLOCATION REJECTED','Available national treasury is NOT RECORDED. No budget was created.','error');
+            return {ok:false,reason:'TREASURY_DATA_UNAVAILABLE'};
+        }
+        if (total > balance + 0.01) {
+            window.showOmegaNotification && window.showOmegaNotification('ALLOCATION REJECTED','Total proposed allocations ' + total.toLocaleString() + ' exceed available cash ' + balance.toLocaleString() + '. No value was saved.','error');
+            return {ok:false,reason:'INSUFFICIENT_TREASURY',balance,cost:total};
+        }
+        const command = 'OMEGA_FINANCE_MINISTRY_ALLOCATIONS_SET_V1';
+        const mesh = window.Omega && window.Omega.MinistryInteroperability || window.OmegaMinistryInteroperability || null;
+        if (financeKey && typeof finance.available === 'number' && mesh && typeof mesh.registerCommandHandler === 'function' && typeof mesh.dispatchCommand === 'function') {
+            if (!window.__OMEGA_FINANCE_MINISTRY_ALLOCATIONS_HANDLER__) {
+                try {
+                    mesh.registerCommandHandler(command,'finance',function(packet,ctx) {
+                        const payload = packet && packet.payload || {}, incoming = payload.allocations;
+                        const amount = Object.values(incoming || {}).reduce((sum,value) => sum + Number(value),0);
+                        const available = Number(ctx && ctx.stateTransaction && ctx.stateTransaction.get('finance.available'));
+                        if (!incoming || typeof incoming !== 'object' || !Number.isFinite(amount) || Object.values(incoming).some(value => !Number.isFinite(Number(value)) || Number(value) < 0)) return {accepted:false,reason:'ALLOCATION_AMOUNT_INVALID'};
+                        if (!Number.isFinite(available)) return {accepted:false,reason:'TREASURY_DATA_UNAVAILABLE'};
+                        if (amount > available + 0.01) return {accepted:false,reason:'INSUFFICIENT_TREASURY',balance:available,cost:amount};
+                        if (!ctx || !ctx.stateTransaction) return {accepted:false,reason:'STATE_TRANSACTION_UNAVAILABLE'};
+                        ctx.stateTransaction.set('finance.ministryAllocations',incoming);
+                        return {accepted:true,total:amount,remaining:available-amount};
+                    });
+                    window.__OMEGA_FINANCE_MINISTRY_ALLOCATIONS_HANDLER__ = true;
+                } catch (error) {
+                    if (!String(error && error.message || error).includes('DUPLICATE')) {
+                        window.showOmegaNotification && window.showOmegaNotification('ALLOCATION FAILED',String(error && error.message || error),'error');
+                        return {ok:false,reason:'FINANCE_ALLOCATION_HANDLER_FAILED'};
+                    }
+                    window.__OMEGA_FINANCE_MINISTRY_ALLOCATIONS_HANDLER__ = true;
+                }
+            }
+            const applied = mesh.dispatchCommand('finance',command,country,{allocations},{turn:window.Game && window.Game.state && window.Game.state.simulation && window.Game.state.simulation.turn || 0,commandType:command,correlationId:'FINANCE-MINISTRY-ALLOC-'+country+'-'+Date.now()});
+            if (!applied || applied.status !== 'APPLIED') {
+                const reason = applied && applied.result && (applied.result.reason || applied.result.error) || 'FINANCE_TRANSACTION_FAILED';
+                window.showOmegaNotification && window.showOmegaNotification('ALLOCATION FAILED',reason.replace(/_/g,' ')+'. No allocation was saved.','error');
+                return {ok:false,reason};
+            }
+        } else {
+            const key = financeKey || country;
+            if (!root.finance) root.finance = {};
+            if (!root.finance[key] || typeof root.finance[key] !== 'object') root.finance[key] = {};
+            root.finance[key].ministryAllocations = allocations;
+        }
+        try { window.dispatchEvent && window.CustomEvent && window.dispatchEvent(new window.CustomEvent('OMEGA_FINANCE_MINISTRY_ALLOCATIONS_UPDATED',{detail:{countryId:country,allocations,total,turn:root.simulation && root.simulation.turn || 0}})); } catch (_) {}
+        if (typeof window.updateGlobalResourceHUD === 'function') window.updateGlobalResourceHUD(country);
+        window.showOmegaNotification && window.showOmegaNotification('MINISTRY APPROPRIATIONS SAVED','Authorized ministry allocations total ' + total.toLocaleString() + '. No cash was transferred; each ministry must pass its own treasury and spending controls.','success');
+        this.renderMinistryDashboard('treasury_finance');
+        return {ok:true,countryId:country,allocations,total,balance};
+    },
+
     activeMoFASubview: 'reputation',
 
     setMoFASubview(subview) {
@@ -1509,7 +1595,9 @@ window.OmegaCabinetUI = {
 
         const allowedTabs = ministryId === 'interior_security'
             ? ['interrogate', 'directives', 'reports', 'personnel', 'security_operations']
-            : ['interrogate', 'directives', 'reports', 'personnel'];
+            : ministryId === 'treasury_finance'
+                ? ['interrogate', 'directives', 'reports', 'personnel', 'finance_allocations']
+                : ['interrogate', 'directives', 'reports', 'personnel'];
         const requestedTab = this.activeDashboardTab || 'interrogate';
         const activeTab = allowedTabs.includes(requestedTab) ? requestedTab : 'interrogate';
 
@@ -1558,6 +1646,7 @@ window.OmegaCabinetUI = {
                     📁 Personnel & Audits
                 </button>
                 ${ministryId === 'interior_security' ? `<button onclick="window.OmegaCabinetUI.setDashboardTab('security_operations');" style="background:${activeTab==='security_operations'?'linear-gradient(135deg,#00e5ff,#0066ff)':'rgba(255,255,255,0.06)'}; color:${activeTab==='security_operations'?'#000':'#cbd5e1'}; font-weight:bold; padding:8px 16px; border-radius:8px; border:none; cursor:pointer; font-family:'Share Tech Mono',monospace; font-size:12px; display:flex; align-items:center; gap:6px; white-space:nowrap;">🚓 Police Command & Fleet</button>` : ''}
+                ${ministryId === 'treasury_finance' ? `<button onclick="window.OmegaCabinetUI.setDashboardTab('finance_allocations');" style="background:${activeTab==='finance_allocations'?'linear-gradient(135deg,#00e5ff,#0066ff)':'rgba(255,255,255,0.06)'}; color:${activeTab==='finance_allocations'?'#000':'#cbd5e1'}; font-weight:bold; padding:8px 16px; border-radius:8px; border:none; cursor:pointer; font-family:'Share Tech Mono',monospace; font-size:12px; display:flex; align-items:center; gap:6px; white-space:nowrap;">💰 Ministry Appropriations</button>` : ''}
             </div>
         `;
 
@@ -1637,6 +1726,72 @@ window.OmegaCabinetUI = {
                         </div>
                     </div>
                 </div>
+            `;
+        }
+
+        if (activeTab === 'finance_allocations' && ministryId === 'treasury_finance') {
+            const rawCountry = this.activeCountry || (window.Game && (window.Game.currentActiveCountry || window.Game.countryId)) || '';
+            const identity = window.OmegaLiveOpsObservability;
+            const canonical = value => {
+                try { if (identity && typeof identity.resolveCountryId === 'function') { const hit = identity.resolveCountryId(value); if (hit) return String(hit).toUpperCase(); } } catch (_) {}
+                try { if (window.Game && typeof window.Game.getCountryId === 'function') { const hit = window.Game.getCountryId(value); if (hit) return String(hit).toUpperCase(); } } catch (_) {}
+                return String(value || '').trim().toUpperCase().replace(/[-\\s]+/g, '_');
+            };
+            const findKey = (section, value) => {
+                const rows = window.Game && window.Game.state && window.Game.state[section] || window.gameState && window.gameState[section] || {};
+                const wanted = canonical(value);
+                return Object.keys(rows).find(key => canonical(key) === wanted) || null;
+            };
+            const root = window.Game && window.Game.state || window.gameState || {};
+            const finKey = findKey('finance', rawCountry), ecoKey = findKey('economy', rawCountry);
+            const finance = finKey && root.finance && root.finance[finKey] || {};
+            const economy = ecoKey && root.economy && root.economy[ecoKey] || {};
+            const cash = typeof finance.available === 'number' && Number.isFinite(finance.available)
+                ? finance.available : typeof economy.treasury === 'number' && Number.isFinite(economy.treasury) ? economy.treasury : null;
+            const money = value => typeof value === 'number' && Number.isFinite(value)
+                ? '$' + Math.round(value).toLocaleString('en-US') : 'NOT RECORDED';
+            const current = finance.ministryAllocations && typeof finance.ministryAllocations === 'object'
+                ? finance.ministryAllocations : {};
+            const targets = [
+                ['interior_security','Home Affairs / Police'],
+                ['defense','Defense'],
+                ['military','Military'],
+                ['intelligence_cyber','Intelligence & Cyber'],
+                ['foreign_affairs','Foreign Affairs'],
+                ['health_welfare','Health & Welfare'],
+                ['energy_mining','Energy & Mining'],
+                ['infrastructure','Transport & Infrastructure'],
+                ['education','Education'],
+                ['agriculture_food','Agriculture & Food'],
+                ['mega_projects','National Projects']
+            ];
+            const getAmount = value => {
+                if (typeof value === 'number' && Number.isFinite(value)) return Math.max(0,value);
+                if (value && typeof value === 'object') {
+                    for (const key of ['allocated','approved','allocation','budget','amount','total','ceiling','available','value']) {
+                        const n = Number(value[key]);
+                        if (Number.isFinite(n) && n >= 0) return n;
+                    }
+                }
+                return 0;
+            };
+            const existingSum = targets.reduce((sum, [key]) => sum + getAmount(current[key]),0);
+            html += `
+                <section style="background:rgba(2,11,20,.92);border:1px solid rgba(216,199,155,.38);border-radius:12px;padding:16px;margin-top:10px;color:#e2e8f0;font-family:'Share Tech Mono',monospace;">
+                    <div style="font-size:15px;color:#f5d98b;font-weight:bold;">FINANCE MINISTRY · NATIONAL APPROPRIATIONS</div>
+                    <p style="font-size:11px;color:#9fb0c3;line-height:1.6;">Allocate an explicit spending ceiling to each ministry. These values are authorization limits, not cash transfers. Ministry purchases still debit the same national treasury and must pass their own category limits. Home Affairs reads the <code>interior_security</code> allocation directly.</p>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin:12px 0;">
+                        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:10px;"><span style="color:#94a3b8;font-size:10px;">AVAILABLE NATIONAL CASH</span><strong style="display:block;font-size:18px;color:#f5d98b;margin-top:5px;">${money(cash)}</strong></div>
+                        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:10px;"><span style="color:#94a3b8;font-size:10px;">CURRENT APPROPRIATIONS</span><strong id="finance-ministry-current-sum" style="display:block;font-size:18px;color:#7dd3fc;margin-top:5px;">${money(existingSum)}</strong></div>
+                        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:10px;"><span style="color:#94a3b8;font-size:10px;">UNALLOCATED CASH AT CURRENT VALUES</span><strong style="display:block;font-size:18px;color:#4ade80;margin-top:5px;">${cash === null ? 'NOT RECORDED' : money(Math.max(0,cash-existingSum))}</strong></div>
+                    </div>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:9px;">
+                        ${targets.map(([key,label]) => `<label style="display:block;background:rgba(255,255,255,.035);border:1px solid rgba(148,163,184,.18);border-radius:8px;padding:10px;font-size:11px;color:#cbd5e1;">${label}<input id="finance-ministry-alloc-${key}" type="number" min="0" step="any" inputmode="decimal" value="${getAmount(current[key])}" style="box-sizing:border-box;width:100%;min-height:42px;margin-top:7px;background:#07111e;color:#f8fafc;border:1px solid rgba(125,170,200,.42);border-radius:7px;padding:9px;font-size:14px;"></label>`).join('')}
+                    </div>
+                    <p id="finance-ministry-alloc-preview" style="padding:10px;border-radius:8px;background:rgba(14,116,144,.10);border:1px solid rgba(56,189,248,.24);font-size:11px;line-height:1.5;color:#cbd5e1;">Current appropriations total ${money(existingSum)}. Enter new values and save to validate them against actual treasury cash.</p>
+                    <button id="finance-ministry-alloc-save" class="om-command-btn" style="margin-top:10px;border-color:#f5d98b;width:100%;">SAVE NATIONAL MINISTRY ALLOCATIONS</button>
+                    <p style="font-size:10px;color:#94a3b8;line-height:1.5;margin-top:9px;">No value is estimated when treasury data is missing. Allocations whose combined total exceeds recorded available cash are rejected before being saved.</p>
+                </section>
             `;
         }
 
@@ -1781,6 +1936,28 @@ window.OmegaCabinetUI = {
         }
 
         contentArea.innerHTML = html;
+        if (ministryId === 'treasury_finance' && activeTab === 'finance_allocations') {
+            const saveAppropriations = document.getElementById('finance-ministry-alloc-save');
+            if (saveAppropriations) saveAppropriations.onclick = () => this.saveFinanceMinistryAllocations();
+            const previewAppropriations = () => {
+                const note = document.getElementById('finance-ministry-alloc-preview');
+                const inputs = ['interior_security','defense','military','intelligence_cyber','foreign_affairs','health_welfare','energy_mining','infrastructure','education','agriculture_food','mega_projects'];
+                let total = 0, invalid = false;
+                inputs.forEach(key => { const n = Number(document.getElementById('finance-ministry-alloc-' + key)?.value); if (!Number.isFinite(n) || n < 0) invalid = true; else total += n; });
+                const identity = window.OmegaLiveOpsObservability;
+                const cid = identity && identity.resolveCountryId ? identity.resolveCountryId(this.activeCountry) : this.activeCountry;
+                const root = window.Game && window.Game.state || window.gameState || {};
+                const normalize = value => String(value || '').toUpperCase().replace(/[-\\s]+/g,'_');
+                const find = section => { const rows = root[section] || {}; return Object.keys(rows).find(key => normalize(key) === normalize(cid) || identity && identity.resolveCountryId && identity.resolveCountryId(key) === cid); };
+                const fk = find('finance'), ek = find('economy'), finance = fk && root.finance[fk] || {}, economy = ek && root.economy[ek] || {};
+                const balance = typeof finance.available === 'number' && Number.isFinite(finance.available) ? finance.available : typeof economy.treasury === 'number' && Number.isFinite(economy.treasury) ? economy.treasury : null;
+                if (note) note.textContent = invalid ? 'BLOCKED: every ministry allocation must be a non-negative number.' : balance === null ? 'BLOCKED: the country treasury balance is NOT RECORDED.' : total > balance + 0.01 ? 'BLOCKED: ' + total.toLocaleString() + ' in proposed allocations exceeds available cash ' + balance.toLocaleString() + '.' : 'Valid preview: proposed ministry allocations total ' + total.toLocaleString() + '; available cash ' + balance.toLocaleString() + '. This is a ceiling, not a transfer.';
+            };
+            ['interior_security','defense','military','intelligence_cyber','foreign_affairs','health_welfare','energy_mining','infrastructure','education','agriculture_food','mega_projects'].forEach(key => {
+                const input = document.getElementById('finance-ministry-alloc-' + key);
+                if (input) input.oninput = previewAppropriations;
+            });
+        }
         if (ministryId === 'interior_security' && activeTab === 'security_operations') {
             const target = document.getElementById('home-ministry-command-root');
             const homeUI = window.OMEGA_UI_ADAPTER;
@@ -2068,14 +2245,15 @@ window.OmegaCabinetUI = {
                 </div>
             </div>
 
-            <!-- MoD 5 SUBVIEW NAVIGATION TABS -->
+            <!-- MoD 6 SUBVIEW NAVIGATION TABS -->
             <div style="display:flex; gap:8px; border-bottom:1px solid rgba(239,68,68,0.3); padding:8px 0; margin-top:10px; overflow-x:auto; scrollbar-width:thin; flex-shrink:0; min-height:44px; position:relative; background:rgba(3,8,16,0.95); z-index:10; border-radius:8px;">
                 ${[
                     { id: 'ors_breakdown', label: '🛡️ ORS 10-Parameter Matrix', color: '#22c55e' },
                     { id: 'master_ops', label: '⚔️ 12 Master Command Operations', color: '#ef4444' },
                     { id: 'procurement', label: '📦 8-Step Procurement Pipeline', color: '#ffd700' },
                     { id: 'garrison', label: '🪖 Troop Garrison & Bases', color: '#38bdf8' },
-                    { id: 'arsenal_threat', label: '📡 Arsenal & Strategic Threat Radar', color: '#a855f7' }
+                    { id: 'arsenal_threat', label: '📡 Arsenal & Strategic Threat Radar', color: '#a855f7' },
+                    { id: 'battle_ops', label: '⚔️ Battle & City Operations', color: '#f97316' }
                 ].map(tab => `
                     <button onclick="window.OmegaCabinetUI.setMoDSubview('${tab.id}');" style="
                         background: ${activeSub === tab.id ? `linear-gradient(135deg, ${tab.color}, #000)` : 'rgba(15,23,42,0.85)'};
@@ -2232,25 +2410,26 @@ window.OmegaCabinetUI = {
         }
 
         if (activeSub === 'garrison') {
-            html += `
-                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:12px;">
-                    <div style="background:rgba(15,23,42,0.9); border:1px solid rgba(56,189,248,0.3); border-radius:10px; padding:14px;">
-                        <div style="font-size:12px; font-weight:bold; color:#38bdf8; font-family:'Share Tech Mono',monospace;">CENTRAL HIGH COMMAND GARRISON</div>
-                        <div style="font-size:24px; font-weight:bold; color:#f8fafc; margin-top:4px;">180,000 Active Troops</div>
-                        <div style="font-size:11px; color:#cbd5e1; margin-top:4px;">Status: <strong style="color:#22c55e;">PEAK OPERATIONAL STANCE</strong></div>
-                    </div>
-                    <div style="background:rgba(15,23,42,0.9); border:1px solid rgba(239,68,68,0.3); border-radius:10px; padding:14px;">
-                        <div style="font-size:12px; font-weight:bold; color:#ef4444; font-family:'Share Tech Mono',monospace;">BORDER RIVERS & COASTAL GARRISON</div>
-                        <div style="font-size:24px; font-weight:bold; color:#f8fafc; margin-top:4px;">95,000 Border Guards</div>
-                        <div style="font-size:11px; color:#cbd5e1; margin-top:4px;">Status: <strong style="color:#ffd700;">HIGH WATCH ALERT</strong></div>
-                    </div>
-                    <div style="background:rgba(15,23,42,0.9); border:1px solid rgba(168,85,247,0.3); border-radius:10px; padding:14px;">
-                        <div style="font-size:12px; font-weight:bold; color:#a855f7; font-family:'Share Tech Mono',monospace;">CAPITAL STRATEGIC AIRBASE</div>
-                        <div style="font-size:24px; font-weight:bold; color:#f8fafc; margin-top:4px;">4 Wing Squadrons</div>
-                        <div style="font-size:11px; color:#cbd5e1; margin-top:4px;">Status: <strong style="color:#00e5ff;">5-MIN SCRAMBLE READY</strong></div>
-                    </div>
-                </div>
-            `;
+            const battlefield = window.OmegaBattlefieldRuntime || window.Omega && window.Omega.Battlefield;
+            const snapshot = battlefield && typeof battlefield.getMilitarySnapshot === 'function'
+                ? battlefield.getMilitarySnapshot(countryKey) : null;
+            const force = snapshot && snapshot.personnel;
+            const inventory = snapshot && snapshot.inventory || {};
+            const formations = battlefield && Array.isArray(battlefield.FORMATIONS) ? battlefield.FORMATIONS : [];
+            const formationCards = formations.map(item => {
+                const count = Math.max(0, Number(inventory[item.id]) || 0);
+                return '<div style="background:rgba(15,23,42,.9);border:1px solid rgba(56,189,248,.25);border-radius:9px;padding:12px;">' +
+                    '<strong style="color:#f8fafc;">' + item.name + '</strong>' +
+                    '<div style="font-size:20px;color:#fbd38d;margin-top:6px;">' + count.toLocaleString() + ' formation(s)</div>' +
+                    '<div style="font-size:11px;color:#94a3b8;margin-top:5px;">' + item.personnel.toLocaleString() + ' personnel per formation · recorded inventory only</div></div>';
+            }).join('');
+            html += '<div style="display:flex;flex-direction:column;gap:12px;">' +
+                '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;">' +
+                  '<div style="background:rgba(15,23,42,.9);border:1px solid rgba(56,189,248,.3);border-radius:10px;padding:14px;"><div style="font-size:10px;color:#38bdf8;font-weight:bold;">PERSONNEL</div><strong style="display:block;font-size:22px;color:#f8fafc;margin-top:5px;">' + (force && force.known ? Number(force.available || 0).toLocaleString() : 'NOT RECORDED') + '</strong><div style="font-size:11px;color:#94a3b8;">' + (snapshot && snapshot.recorded ? 'Current country force record' : 'No military force record exists for this country') + '</div></div>' +
+                  '<div style="background:rgba(15,23,42,.9);border:1px solid rgba(168,85,247,.3);border-radius:10px;padding:14px;"><div style="font-size:10px;color:#c084fc;font-weight:bold;">READINESS</div><strong style="display:block;font-size:22px;color:#f8fafc;margin-top:5px;">' + (snapshot && snapshot.readiness !== null ? Math.round(snapshot.readiness) + '/100' : 'NOT RECORDED') + '</strong><div style="font-size:11px;color:#94a3b8;">No readiness figure is estimated in this panel.</div></div>' +
+                  '<div style="background:rgba(15,23,42,.9);border:1px solid rgba(234,179,8,.3);border-radius:10px;padding:14px;"><div style="font-size:10px;color:#fbbf24;font-weight:bold;">FORMATIONS</div><strong style="display:block;font-size:22px;color:#f8fafc;margin-top:5px;">' + (snapshot ? snapshot.formationCount : 'NOT RECORDED') + '</strong><div style="font-size:11px;color:#94a3b8;">Actual formation inventory</div></div>' +
+                '</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;">' + formationCards + '</div>' +
+                '<button class="om-command-btn" onclick="window.OmegaCabinetUI.setMoDSubview(\'battle_ops\');" style="border-color:#f97316;">OPEN BATTLE & CITY OPERATIONS</button></div>';
         }
 
         if (activeSub === 'arsenal_threat') {
@@ -2298,7 +2477,18 @@ window.OmegaCabinetUI = {
             `;
         }
 
+        if (activeSub === 'battle_ops') html += '<div id="omega-battlefield-dashboard-root"></div>';
+
         contentArea.innerHTML = html;
+        if (activeSub === 'battle_ops') {
+            const battlefieldRoot = document.getElementById('omega-battlefield-dashboard-root');
+            const battlefield = window.OmegaBattlefieldRuntime || window.Omega && window.Omega.Battlefield;
+            if (battlefieldRoot && battlefield && typeof battlefield.renderDashboard === 'function') {
+                battlefield.renderDashboard(battlefieldRoot, countryKey);
+            } else if (battlefieldRoot) {
+                battlefieldRoot.innerHTML = '<div style="margin-top:12px;padding:14px;border:1px solid rgba(248,113,113,.4);border-radius:10px;color:#fecaca;background:rgba(69,10,10,.2);">Battlefield runtime unavailable. Confirm omega_battlefield_runtime_v1.js was loaded.</div>';
+            }
+        }
     },
 
     renderMoFADashboard(m, contentArea) {
