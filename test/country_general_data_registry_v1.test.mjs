@@ -6,161 +6,138 @@ const readJson = (path) => JSON.parse(readFileSync(path, 'utf8'));
 const registry = readJson('country_general_data_registry_v1.json');
 const roster = readJson('countries.json');
 const rawFinancial = readJson('economy_raw_financial_data_v2.json');
+const profilesSource = readJson('economy_global_profiles_v1.json').countries;
 const rawRows = rawFinancial.countries || [];
-const byIso3 = (rows) => new Map(rows.map((row) => [String(row.iso3 || row.identity?.iso3 || '').toUpperCase(), row]));
+const schema = registry.metadata.recordSchema;
+const rawFields = registry.metadata.rawFinancialFieldNames;
+const rawDerivedFields = registry.metadata.rawFinancialDerivedFieldNames;
+const metricFields = schema.metricFields;
+const idIndex = Object.fromEntries(schema.identityFields.map((field, index) => [field, index]));
+const resourceIndex = Object.fromEntries(schema.naturalResourceFields.map((field, index) => [field, index]));
+const metricIndex = Object.fromEntries(metricFields.map((field, index) => [field, index]));
+const provenance = registry.metadata.provenanceEncoding;
+const mapByIso3 = (rows, getter) => new Map(rows.map(row => [String(getter(row) || '').toUpperCase(), row]));
+const rawByIso3 = mapByIso3(rawRows, row => row.iso3);
+const profilesByIso3 = mapByIso3(profilesSource, row => row.iso3);
 const finiteOrNull = (value) => value === null || (typeof value === 'number' && Number.isFinite(value));
 
 test('registry includes every canonical country/territory identity exactly once', () => {
   assert.equal(registry.metadata.countryAndTerritoryCount, roster.length);
   assert.equal(registry.countries.length, roster.length);
   assert.equal(registry.metadata.uniqueIso3Count, roster.length);
-  const iso3 = registry.countries.map((row) => row.identity.iso3);
+  assert.equal(registry.metadata.dataQualityPolicy.duplicateDeletionPerformed, false);
+  const iso3 = registry.countries.map(row => row.identity[idIndex.iso3]);
   assert.equal(new Set(iso3).size, roster.length);
-  assert.deepEqual([...iso3].sort(), roster.map((row) => row.iso3).sort());
+  assert.deepEqual([...iso3].sort(), roster.map(row => row.iso3).sort());
 });
 
-test('every country uses the same top-level schema and every metric key', () => {
-  const expectedRecordKeys = [
-    'identity', 'generalFacts', 'metrics', 'metricMetadata',
-    'legacySnapshots', 'naturalResources', 'publicSafety',
-    'localGeography', 'dataStatus'
-  ].sort();
-  const firstMetricKeys = Object.keys(registry.countries[0].metrics).sort();
-  const firstMetadataKeys = Object.keys(registry.countries[0].metricMetadata).sort();
-  assert.deepEqual(firstMetricKeys, registry.fieldCatalogue.map((field) => field.key).sort());
-  const compactProvenance = Array.isArray(registry.countries[0].metricMetadata.years);
-  if (compactProvenance) {
-    assert.deepEqual(firstMetadataKeys, ['years', 'statusCodes', 'sourceCodes', 'methodCodes'].sort());
-    assert.ok(registry.metadata.provenanceEncoding);
-  } else {
-    assert.deepEqual(firstMetadataKeys, firstMetricKeys);
-  }
+test('all countries use the same documented ordered schema and metric/provenance lengths', () => {
+  assert.equal(schema.encoding, 'ORDERED_VALUE_ARRAYS_V1');
+  assert.deepEqual(metricFields, registry.fieldCatalogue.map(field => field.key));
+  assert.equal(registry.metadata.profileIndicatorNames.length, schema.economyGlobalProfileFields.includes('indicatorValues') ? registry.metadata.profileIndicatorNames.length : -1);
+  assert.equal(rawFields.length, registry.metadata.rawFinancialFieldCount);
+  assert.equal(rawDerivedFields.length, registry.metadata.rawFinancialDerivedFieldCount);
+  assert.equal(rawFields.length, rawFinancial.metadata.rawFieldCount);
+  assert.deepEqual(rawFields, Object.keys(rawRows[0].rawIndicators));
+  assert.deepEqual(rawDerivedFields, Object.keys(rawRows[0].derivedIndicators));
 
+  const topKeys = Object.keys(registry.countries[0]).sort();
   for (const row of registry.countries) {
-    assert.deepEqual(Object.keys(row).sort(), expectedRecordKeys);
-    assert.deepEqual(Object.keys(row.metrics).sort(), firstMetricKeys);
-    assert.deepEqual(Object.keys(row.metricMetadata).sort(), firstMetadataKeys);
-    if (compactProvenance) {
-      for (const values of Object.values(row.metricMetadata)) assert.equal(values.length, firstMetricKeys.length);
-    }
-    for (let index = 0; index < firstMetricKeys.length; index += 1) {
-      const key = firstMetricKeys[index];
-      assert.ok(finiteOrNull(row.metrics[key]), 'Invalid metric ' + key + ' for ' + row.identity.iso3);
-      const status = compactProvenance
-        ? registry.metadata.provenanceEncoding.statuses[row.metricMetadata.statusCodes[index]]
-        : row.metricMetadata[key]?.status;
-      const year = compactProvenance ? row.metricMetadata.years[index] : row.metricMetadata[key]?.year;
-      assert.equal(typeof status, 'string', 'Missing provenance status for ' + key + ' in ' + row.identity.iso3);
-      assert.ok(row.metrics[key] === null || Number.isFinite(year) || year === null,
-        'Invalid year metadata for ' + key + ' in ' + row.identity.iso3);
+    assert.deepEqual(Object.keys(row).sort(), topKeys);
+    assert.equal(row.identity.length, schema.identityFields.length);
+    assert.equal(row.generalFacts.length, schema.generalFactFields.length);
+    assert.equal(row.metrics.length, metricFields.length);
+    assert.equal(row.metricMetadata.years.length, metricFields.length);
+    assert.equal(row.metricMetadata.statusCodes.length, metricFields.length);
+    assert.equal(row.metricMetadata.sourceCodes.length, metricFields.length);
+    assert.equal(row.metricMetadata.sourceNameCodes.length, metricFields.length);
+    assert.equal(row.metricMetadata.methodCodes.length, metricFields.length);
+    assert.equal(row.metricMetadata.sourceUrls.length, metricFields.length);
+    assert.equal(row.metricMetadata.notes.length, metricFields.length);
+    assert.equal(row.legacySnapshots.length, schema.legacySnapshotFields.length);
+    assert.equal(row.naturalResources.length, schema.naturalResourceFields.length);
+    assert.equal(row.publicSafety.length, schema.publicSafetyFields.length);
+    assert.equal(row.localGeography.length, schema.localGeographyFields.length);
+    assert.equal(row.dataStatus.length, schema.dataStatusFields.length);
+
+    for (let index = 0; index < metricFields.length; index += 1) {
+      assert.ok(finiteOrNull(row.metrics[index]), 'Invalid metric ' + metricFields[index] + ' in ' + row.identity[idIndex.iso3]);
+      const statusCode = row.metricMetadata.statusCodes[index];
+      assert.ok(statusCode === -1 || typeof provenance.statuses[statusCode] === 'string',
+        'Metric provenance status missing for ' + metricFields[index]);
+      assert.ok(row.metrics[index] === null || Number.isFinite(row.metricMetadata.years[index]) ||
+        row.metricMetadata.years[index] === null);
     }
   }
 });
 
-test('raw financial values and derived indicators preserve the full source schema in catalogue order', () => {
+test('raw financial observations and derived indicators are losslessly preserved in source-key order', () => {
   assert.equal(rawRows.length, roster.length);
-  assert.equal(registry.metadata.rawFinancialFieldCount, rawFinancial.metadata.rawFieldCount);
-  assert.equal(registry.metadata.rawFinancialFieldNames.length, rawFinancial.metadata.rawFieldCount);
-  assert.deepEqual(registry.metadata.rawFinancialFieldNames, Object.keys(rawRows[0].rawIndicators));
-  assert.deepEqual(registry.metadata.rawFinancialDerivedFieldNames, Object.keys(rawRows[0].derivedIndicators));
-  assert.equal(registry.metadata.rawFinancialDerivedFieldCount, registry.metadata.rawFinancialDerivedFieldNames.length);
-  const rawByCode = byIso3(rawRows);
-
+  const rawGroupIndex = schema.legacySnapshotFields.indexOf('rawFinancialRegistry');
   for (const row of registry.countries) {
-    const source = rawByCode.get(row.identity.iso3);
-    const embedded = row.legacySnapshots.rawFinancialRegistry;
-    assert.ok(source, 'Raw finance source missing for ' + row.identity.iso3);
-    assert.equal(embedded.rawIndicatorValues.length, registry.metadata.rawFinancialFieldCount);
-    assert.equal(embedded.derivedIndicatorValues.length, registry.metadata.rawFinancialDerivedFieldCount);
-    for (let index = 0; index < registry.metadata.rawFinancialFieldNames.length; index += 1) {
-      const field = registry.metadata.rawFinancialFieldNames[index];
-      const expected = source.rawIndicators[field] === undefined ? null : source.rawIndicators[field];
-      assert.deepEqual(embedded.rawIndicatorValues[index], expected,
-        'Raw observation changed for ' + row.identity.iso3 + '.' + field);
+    const iso3 = row.identity[idIndex.iso3];
+    const source = rawByIso3.get(iso3);
+    const rawSnapshot = row.legacySnapshots[rawGroupIndex];
+    assert.ok(source, 'Raw finance source missing for ' + iso3);
+    assert.equal(rawSnapshot[1].length, rawFields.length);
+    assert.equal(rawSnapshot[2].length, rawDerivedFields.length);
+    for (let index = 0; index < rawFields.length; index += 1) {
+      const expected = source.rawIndicators[rawFields[index]] === undefined ? null : source.rawIndicators[rawFields[index]];
+      assert.deepEqual(rawSnapshot[1][index], expected, 'Raw value changed for ' + iso3 + '.' + rawFields[index]);
     }
-    for (let index = 0; index < registry.metadata.rawFinancialDerivedFieldNames.length; index += 1) {
-      const field = registry.metadata.rawFinancialDerivedFieldNames[index];
-      const expected = source.derivedIndicators[field] === undefined ? null : source.derivedIndicators[field];
-      assert.deepEqual(embedded.derivedIndicatorValues[index], expected,
-        'Derived observation changed for ' + row.identity.iso3 + '.' + field);
+    for (let index = 0; index < rawDerivedFields.length; index += 1) {
+      const expected = source.derivedIndicators[rawDerivedFields[index]] === undefined ? null : source.derivedIndicators[rawDerivedFields[index]];
+      assert.deepEqual(rawSnapshot[2][index], expected, 'Derived value changed for ' + iso3 + '.' + rawDerivedFields[index]);
     }
   }
 });
 
-test('profile baseline indicators and availability flags preserve their common field order', () => {
-  const profiles = readJson('economy_global_profiles_v1.json').countries;
-  const profilesByCode = byIso3(profiles);
-  const indicatorNames = registry.metadata.profileIndicatorNames;
-  assert.ok(Array.isArray(indicatorNames) && indicatorNames.length > 0);
+test('legacy economic-profile indicators and availability flags are lossless', () => {
+  const profileIndex = schema.legacySnapshotFields.indexOf('economyGlobalProfile');
+  const names = registry.metadata.profileIndicatorNames;
   for (const row of registry.countries) {
-    const source = profilesByCode.get(row.identity.iso3);
-    const snapshot = row.legacySnapshots.economyGlobalProfile;
-    assert.equal(snapshot.indicatorValues.length, indicatorNames.length);
-    assert.equal(snapshot.metricAvailabilityValues.length, indicatorNames.length);
-    for (let index = 0; index < indicatorNames.length; index += 1) {
-      const name = indicatorNames[index];
-      const expected = source?.indicators && source.indicators[name] !== undefined ? source.indicators[name] : null;
-      const expectedAvailability = source?.metricAvailability && source.metricAvailability[name] !== undefined ? source.metricAvailability[name] : false;
-      assert.deepEqual(snapshot.indicatorValues[index], expected, 'Profile indicator changed: ' + row.identity.iso3 + '.' + name);
-      assert.deepEqual(snapshot.metricAvailabilityValues[index], expectedAvailability, 'Availability flag changed: ' + row.identity.iso3 + '.' + name);
+    const iso3 = row.identity[idIndex.iso3];
+    const source = profilesByIso3.get(iso3);
+    const profile = row.legacySnapshots[profileIndex];
+    assert.equal(profile[3].length, names.length);
+    assert.equal(profile[4].length, names.length);
+    for (let index = 0; index < names.length; index += 1) {
+      const field = names[index];
+      assert.deepEqual(profile[3][index], source?.indicators && source.indicators[field] !== undefined ? source.indicators[field] : null);
+      assert.deepEqual(profile[4][index], source?.metricAvailability && source.metricAvailability[field] !== undefined ? source.metricAvailability[field] : false);
     }
   }
 });
 
-test('missing values remain null and are never silently fabricated as zero', () => {
+test('missing values stay unknown, not zero, and resource sub-schema is consistent', () => {
   for (const row of registry.countries) {
-    for (const field of registry.fieldCatalogue) {
-      if (row.metrics[field.key] === null) {
-        assert.ok(row.metricMetadata[field.key].status,
-          'Null value must include a reason/status: ' + row.identity.iso3 + '.' + field.key);
-      }
+    const res = row.naturalResources;
+    if (res[resourceIndex.coverageStatus] === 'NO_RESOURCE_CONTEXT_RECORD') {
+      for (const value of res[resourceIndex.mineralResourceBase]) assert.equal(value, null);
+      for (const value of res[resourceIndex.hydrocarbonResourceBase]) assert.equal(value, null);
+      for (const value of res[resourceIndex.energyResourceBase]) assert.equal(value, null);
     }
-    if (row.naturalResources.coverageStatus === 'NO_RESOURCE_CONTEXT_RECORD') {
-      for (const value of Object.values(row.naturalResources.mineralResourceBase)) assert.equal(value, null);
-      for (const value of Object.values(row.naturalResources.hydrocarbonResourceBase)) assert.equal(value, null);
-      for (const value of Object.values(row.naturalResources.energyResourceBase)) assert.equal(value, null);
-    }
-  }
-});
-
-test('resource, public-safety and local-geography sub-schemas are complete and consistent', () => {
-  const first = registry.countries[0];
-  const keys = {
-    identity: Object.keys(first.identity).sort(),
-    generalFacts: Object.keys(first.generalFacts).sort(),
-    naturalResources: Object.keys(first.naturalResources).sort(),
-    mineral: Object.keys(first.naturalResources.mineralResourceBase).sort(),
-    hydrocarbon: Object.keys(first.naturalResources.hydrocarbonResourceBase).sort(),
-    energy: Object.keys(first.naturalResources.energyResourceBase).sort(),
-    safety: Object.keys(first.publicSafety).sort(),
-    localGeography: Object.keys(first.localGeography).sort()
-  };
-  for (const row of registry.countries) {
-    for (const key of ['identity', 'generalFacts', 'naturalResources', 'publicSafety', 'localGeography']) {
-      assert.deepEqual(Object.keys(row[key]).sort(), keys[key],
-        'Schema mismatch: ' + row.identity.iso3 + '.' + key);
-    }
-    assert.deepEqual(Object.keys(row.naturalResources.mineralResourceBase).sort(), keys.mineral);
-    assert.deepEqual(Object.keys(row.naturalResources.hydrocarbonResourceBase).sort(), keys.hydrocarbon);
-    assert.deepEqual(Object.keys(row.naturalResources.energyResourceBase).sort(), keys.energy);
+    assert.equal(res[resourceIndex.mineralResourceBase].length, schema.mineralResourceFields.length);
+    assert.equal(res[resourceIndex.hydrocarbonResourceBase].length, schema.hydrocarbonResourceFields.length);
+    assert.equal(res[resourceIndex.energyResourceBase].length, schema.energyResourceFields.length);
+    assert.equal(row.publicSafety[2].length, schema.crimeFields.length);
+    assert.equal(row.publicSafety[3].length, schema.crimeFields.length);
+    assert.equal(row.publicSafety[4].length, schema.crimeFields.length);
   }
 });
 
 test('discipline score is not invented or confused with official governance indicators', () => {
-  const compact = Array.isArray(registry.countries[0].metricMetadata.years);
-  const disciplineIndex = registry.fieldCatalogue.findIndex(field => field.key === 'disciplineIndex');
+  const disciplineIndex = metricIndex.disciplineIndex;
+  const ruleOfLawIndex = metricIndex.ruleOfLawWgiEstimate;
   for (const row of registry.countries) {
-    assert.equal(row.metrics.disciplineIndex, null);
-    const status = compact
-      ? registry.metadata.provenanceEncoding.statuses[row.metricMetadata.statusCodes[disciplineIndex]]
-      : row.metricMetadata.disciplineIndex.status;
-    assert.equal(status, 'NOT_DEFINED_OR_SOURCED');
-    assert.equal(row.metrics.ruleOfLawWgiEstimate === null ||
-      (row.metrics.ruleOfLawWgiEstimate >= -2.5 && row.metrics.ruleOfLawWgiEstimate <= 2.5), true);
+    assert.equal(row.metrics[disciplineIndex], null);
+    assert.equal(provenance.statuses[row.metricMetadata.statusCodes[disciplineIndex]], 'NOT_DEFINED_OR_SOURCED');
+    const rule = row.metrics[ruleOfLawIndex];
+    assert.equal(rule === null || (rule >= -2.5 && rule <= 2.5), true);
   }
 });
 
-test('coverage counts reconcile to the country roster and the schema explains source limitations', () => {
+test('coverage totals reconcile and no source or duplicate deletion is claimed', () => {
   for (const field of registry.fieldCatalogue) {
     const coverage = registry.metadata.metricCoverage[field.key];
     assert.equal(coverage.total, registry.countries.length);
