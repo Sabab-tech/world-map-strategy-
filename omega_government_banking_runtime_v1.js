@@ -117,6 +117,7 @@
       if (!obj(bank.tradePolicies)) bank.tradePolicies = {};
       if (!obj(bank.pendingTransfers)) bank.pendingTransfers = {};
       if (!obj(bank.pendingTradeSettlements)) bank.pendingTradeSettlements = {};
+      if (!obj(bank.inFlightSettlements)) bank.inFlightSettlements = {};
       if (!obj(bank.idempotency)) bank.idempotency = {};
       if (!obj(bank.riskRegister)) bank.riskRegister = {};
       if (!obj(bank.diagnostics)) bank.diagnostics = { reconciliationErrors: [], rejections: {} };
@@ -517,6 +518,10 @@
     return { ok: true, affected };
   }
   function reconcileCountry(profile, options) {
+    const activeBank = bankingState(false), activeId = profileId(profile);
+    if (!(options && options.force) && activeBank && obj(activeBank.inFlightSettlements)
+      && Object.values(activeBank.inFlightSettlements).some(row => row && (row.buyerCountryCode === activeId || row.sellerCountryCode === activeId)))
+      return { ok: true, changed: false, deferred: true, code: 'TRADE_SETTLEMENT_IN_FLIGHT' };
     const book = ensureCountry(profile);
     if (!book) return { ok: false, code: 'BANK_ACCOUNT_BOOK_UNAVAILABLE' };
     const cash = readTreasuryUsd(profile);
@@ -913,6 +918,11 @@
     });
     requestRow.status = 'READY';
     bank.pendingTradeSettlements[id] = requestRow;
+    bank.inFlightSettlements[id] = {
+      settlementId: id, buyerCountryCode: profileId(buyer), sellerCountryCode: profileId(seller),
+      startedTurn: turn(), buyerTreasuryBeforeUsd: buyerCash,
+      sellerTreasuryBeforeUsd: readTreasuryUsd(seller), status: 'PREPARED'
+    };
     return { ok: true, settlementId: id, buyerCurrency: buyerCode, sellerCurrency: sellerCode,
       buyerTotalLocal: buyerLocal, buyerGrossLocal, sellerTotalLocal: sellerLocal,
       buyerDebitUsd, sellerCreditUsd: sellerUsd, tariffPct, tariffLocal, tariffUsd,
@@ -1012,6 +1022,7 @@
     if (Number(quote.paymentDelayTurns) > 0)
       bank.pendingEscrowUsd = Math.max(0, (num(bank.pendingEscrowUsd) || 0) - (num(quote.buyerDebitUsd) || 0));
     delete bank.pendingTradeSettlements[id];
+    delete bank.inFlightSettlements[id];
     emitLedgerEvent('OMEGA_GOVERNMENT_BANKING_TRADE_SETTLED', {
       transactionId: id, buyerCountryCode: profileId(buyer), sellerCountryCode: profileId(seller),
       resourceId: quote.resourceId, sellerTotalLocal: sellerLocal, buyerDebitUsd: buyerGrossUsd,
@@ -1022,9 +1033,12 @@
   function cancelTradeSettlement(settlementId, reason) {
     const bank = bankingState(true), id = String(settlementId || '');
     const row = bank.pendingTradeSettlements[id];
-    if (!row) return { ok: true, missing: true };
+    if (!row) { delete bank.inFlightSettlements[id]; return { ok: true, missing: true }; }
     if (row.status === 'SETTLED') return { ok: false, code: 'TRADE_ALREADY_SETTLED' };
+    if (Number(row.paymentDelayTurns) > 0)
+      bank.pendingEscrowUsd = Math.max(0, (num(bank.pendingEscrowUsd) || 0) - (num(row.buyerDebitUsd) || 0));
     delete bank.pendingTradeSettlements[id];
+    delete bank.inFlightSettlements[id];
     if (row.buyerCountryCode) {
       const book = bank.accountsByCountry[normalizeCountryCode(row.buyerCountryCode)];
       if (book) book.reservedUsd = heldUsd(row.buyerCountryCode);
