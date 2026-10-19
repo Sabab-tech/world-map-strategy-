@@ -343,9 +343,14 @@
     if (!normalized) return null;
     if (normalized === 'USD') return 1;
     if (mode === 'REFERENCE') return rateValue(state.referenceRates, normalized);
-    const item = state.simulationRates[normalized] || state.simulationRates[effectiveRateCode(normalized)];
-    const value = finite(isObject(item) ? item.localPerUsd : item);
-    return value !== null && value > 0 ? value : null;
+    const direct = state.simulationRates[normalized];
+    const directValue = finite(isObject(direct) ? direct.localPerUsd : direct);
+    if (directValue !== null && directValue > 0) return directValue;
+    const alias = effectiveRateCode(normalized);
+    if (!alias || alias === normalized) return null;
+    const aliased = state.simulationRates[alias];
+    const aliasedValue = finite(isObject(aliased) ? aliased.localPerUsd : aliased);
+    return aliasedValue !== null && aliasedValue > 0 ? aliasedValue : null;
   }
   function allRateValues(mode) {
     const out = { USD: 1 };
