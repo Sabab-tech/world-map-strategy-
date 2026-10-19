@@ -489,16 +489,18 @@
       const sourceBudget=Math.max(0,finite(source.budgetUsd)||0);
       const sourceSpent=Math.max(0,finite(source.spentUsd)||0);
       const sourceRemaining=Math.max(0,finite(source.remainingUsd)??(sourceBudget-sourceSpent));
-      if(amount>sourceRemaining+0.01)
+      const moved=Math.round(amount*100)/100;
+      if(!Number.isFinite(moved)||moved<=0)
+        return {ok:false,code:'BUDGET_TRANSFER_AMOUNT_INVALID',message:'Transfer must be at least one cent.'};
+      if(moved>sourceRemaining+0.0001)
         return {ok:false,code:'BUDGET_TRANSFER_EXCEEDS_REMAINING',message:'Transfer exceeds the source ministry’s unspent allocation. No funds were moved.'};
       const targetBudget=Math.max(0,finite(target.budgetUsd)||0);
       const targetSpent=Math.max(0,finite(target.spentUsd)||0);
       const envelope=Math.max(0,finite(fm.fiscalModel.annualSpendingUsd)||0);
       if(envelope<=0)
         return {ok:false,code:'BUDGET_ENVELOPE_UNAVAILABLE',message:'The national annual budget envelope is unavailable.'};
-      const moved=Math.round(amount*100)/100;
       const sourceNext=sourceBudget-moved,targetNext=targetBudget+moved;
-      if(sourceNext+0.01<sourceSpent)
+      if(sourceNext+0.0001<sourceSpent)
         return {ok:false,code:'BUDGET_TRANSFER_BELOW_ALREADY_SPENT',message:'The source allocation cannot be reduced below its recorded spending.'};
       source.budgetUsd=sourceNext;source.remainingUsd=Math.max(0,sourceNext-sourceSpent);
       source.sharePct=sourceNext/envelope*100;source.updatedTurn=currentTurn();source.source='INTER_MINISTRY_TRANSFER';
