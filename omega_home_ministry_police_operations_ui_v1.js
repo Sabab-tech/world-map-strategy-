@@ -3,8 +3,8 @@
  */
 (function (g) {
   'use strict';
-  if (g.OmegaHomePoliceOperationsUI && g.OmegaHomePoliceOperationsUI.VERSION === '1.2.0') return;
-  var VERSION = '1.2.0', activeTab = 'overview', statusText = '', statusType = '', consoleOpen = false;
+  if (g.OmegaHomePoliceOperationsUI && g.OmegaHomePoliceOperationsUI.VERSION === '1.3.0') return;
+  var VERSION = '1.3.0', activeTab = 'overview', activeUpgradeType = null, statusText = '', statusType = '', consoleOpen = false;
   var ui = g.OMEGA_UI_ADAPTER;
   var CATEGORIES = [
     ['theft','Theft'],['robbery','Robbery'],['streetRobbery','Street robbery'],
@@ -99,7 +99,7 @@
     };
   }
   function navHtml() {
-    return [['overview','LIVE OVERVIEW'],['staff','POLICE RECRUITMENT'],['fleet','VEHICLE PROCUREMENT'],['units','POLICE UNITS'],['cases','CASE MANAGEMENT'],['crime','CRIME & PATROL'],['rules','POLICE RULES'],['rulebook','POLICE RULEBOOK']].map(function (row) {
+    return [['overview','LIVE OVERVIEW'],['staff','POLICE RECRUITMENT'],['levels','TRAINING & RECRUITMENT LEVELS'],['fleet','VEHICLE PROCUREMENT'],['units','POLICE UNITS'],['cases','CASE MANAGEMENT'],['crime','CRIME & PATROL'],['rules','POLICE RULES'],['rulebook','POLICE RULEBOOK']].map(function (row) {
       return '<button type="button" class="ohpu-tab ' + (activeTab === row[0] ? 'is-active' : '') + '" data-ohpu-tab="' + row[0] + '">' + row[1] + '</button>';
     }).join('');
   }
@@ -164,6 +164,60 @@
       '<div id="ohpu-hire-impact" class="ohpu-note">' + (impact && impact.ok ? 'Adding 100 officers changes the projected annual incident estimate by ' + esc(formatCount(impact.additionalIncidentsAvoidedPerYear)) + ' incidents / year at the current skill and vehicle mix. This is a modeled estimate, not a guarantee.' : 'Incident impact estimate is unavailable until country baselines load.') + '</div>' +
       '<button type="button" class="ohpu-btn ohpu-btn-main" id="ohpu-hire-button" ' + (disabled?'disabled':'') + '>CONFIRM HIRING · CHARGE FINANCE</button></article>' +
       '<div class="ohpu-note">Staffing only reduces crime according to the active model, and the marginal effect of each extra officer diminishes as force size grows. Training, working vehicles, patrol allocation, investigations, public satisfaction and case clearance also matter.</div></section>';
+  }
+  function capabilityUpgradeDetailsHtml(d,kind){
+    var e=d.engine,quote=e&&typeof e.getPoliceCapabilityUpgradeQuote==='function'?e.getPoliceCapabilityUpgradeQuote(kind,d.countryId):null;
+    if(!quote||!quote.ok)return '<section class="ohpu-section"><div class="ohpu-note is-error">The capability quote is unavailable. No upgrade was started.</div><button type="button" class="ohpu-btn" id="ohpu-capability-upgrade-cancel">BACK TO LEVELS</button></section>';
+    var label=kind==='training'?'Police training':'Police recruitment';
+    var resources=(quote.resources||[]).map(function(row){
+      return '<tr><td>'+esc(row.label)+'</td><td class="ohpu-mono">'+esc(formatCount(row.required))+' '+esc(row.unit)+'</td><td class="ohpu-mono">'+esc(formatCount(row.available))+' '+esc(row.unit)+'</td><td>'+ (row.ok?'<span style="color:#9ce4bf;font-weight:900">AVAILABLE</span>':'<span style="color:#ffc4bd;font-weight:900">MISSING</span>') +'</td></tr>';
+    }).join('');
+    var blockers=(quote.blockers||[]).map(function(row){return '<div class="ohpu-note is-error"><strong>'+esc(row.code)+'</strong><br>'+esc(row.message)+'</div>';}).join('');
+    var estimated=quote.durationDays+' simulation day'+(quote.durationDays===1?'':'s');
+    return '<section class="ohpu-section"><div class="ohpu-actions"><button type="button" class="ohpu-btn" id="ohpu-capability-upgrade-cancel">BACK TO LEVELS</button></div>'+
+      '<div class="ohpu-card"><span class="ohpu-label">UPGRADE PROJECT</span><h3 style="font-size:18px;margin:8px 0;color:#ffe5a1">'+esc(label.toUpperCase())+' · LEVEL '+esc(quote.currentLevel)+' TO LEVEL '+esc(quote.targetLevel)+'</h3>'+
+      '<p>Starting this project charges the cost below through the Finance Ministry. The capability level stays unchanged until the simulation clock reaches the completion time.</p></div>'+
+      '<div class="ohpu-grid" style="margin-top:10px">'+
+      kpi('One-time project cost',money(quote.costUsd),'Charged now from '+(kind==='training'?'Training':'Personnel')+' budget.')+
+      kpi('Estimated duration',estimated,'Advances with the game simulation clock.')+
+      kpi('Currently spendable',money(quote.spendableUsd),'After existing spend and shared treasury limits.')+
+      kpi('After completion','Level '+quote.targetLevel,kind==='training'?'Raises training quality, police efficiency and trust.':'Improves recruitment efficiency and reduces the per-officer recruitment fee.')+
+      '</div><div class="ohpu-section-title">REQUIRED ASSETS · LIVE CHECK</div>'+
+      '<div class="ohpu-table-wrap"><table class="ohpu-table"><thead><tr><th>Required resource / asset</th><th>Required</th><th>Available</th><th>Check</th></tr></thead><tbody>'+resources+'</tbody></table></div>'+
+      (blockers||'<div class="ohpu-note is-ok">Required facilities, staffing teams, Finance allocation and treasury passed the current checks.</div>')+
+      '<div class="ohpu-actions"><button type="button" class="ohpu-btn ohpu-btn-main" id="ohpu-capability-upgrade-start" '+(!quote.canStart?'disabled':'')+'>CONFIRM & START UPGRADE · CHARGE FINANCE</button></div>'+
+      '<div class="ohpu-small">The quoted price and resource check are recalculated by the Home Ministry engine when you confirm. If the country, assets or budget changed, the command is rejected rather than silently spending against a stale quote.</div></section>';
+  }
+  function capabilityLevelsHtml(d){
+    var runtime=g.OmegaHomePoliceCapabilityRuntime,report=runtime&&typeof runtime.diagnostics==='function'?runtime.diagnostics():{ready:false,error:'CAPABILITY_RUNTIME_UNAVAILABLE'};
+    if(!report.ready){
+      return '<section class="ohpu-section"><div class="ohpu-note">'+esc(report.error?'Country recommendation data failed to load: '+report.error:'Loading country-by-country capability recommendations...')+'</div><div class="ohpu-actions"><button type="button" class="ohpu-btn ohpu-btn-main" id="ohpu-retry-capability-data">RETRY LEVEL DATA</button></div></section>';
+    }
+    if(activeUpgradeType)return capabilityUpgradeDetailsHtml(d,activeUpgradeType);
+    var engine=d.engine,cap=engine&&typeof engine.getPoliceCapabilityState==='function'?engine.getPoliceCapabilityState(d.countryId):null;
+    var recommendation=runtime.getRecommendation(d.countryId),currentTraining=number(cap&&cap.trainingLevel,number(d.state.trainingQualityLevel,1)),currentRecruitment=number(cap&&cap.recruitmentLevel,1);
+    if(!recommendation){
+      return '<section class="ohpu-section"><div class="ohpu-note is-error">No country recommendation row matched '+esc(d.countryId)+'. The runtime will not substitute another country’s level.</div></section>';
+    }
+    var pending=Array.isArray(cap&&cap.pendingProjects)?cap.pendingProjects:[];
+    var completed=Array.isArray(cap&&cap.completedProjects)?cap.completedProjects.slice(-5):[];
+    var projects=pending.map(function(p){var remaining=Math.max(0,(number(p.completesAtMs)-number(engine.getSimulationTimeMs?engine.getSimulationTimeMs():0))/86400000);return '<tr><td>'+esc(p.type==='training'?'Training':'Recruitment')+'</td><td>Level '+esc(p.fromLevel)+' → '+esc(p.targetLevel)+'</td><td>'+esc(money(p.costUsd))+'</td><td>In progress · '+esc(remaining.toFixed(1))+' simulation day(s) left</td></tr>';}).join('');
+    var history=completed.reverse().map(function(p){return '<tr><td>'+esc(p.type==='training'?'Training':'Recruitment')+'</td><td>Level '+esc(p.fromLevel)+' → '+esc(p.targetLevel)+'</td><td>'+esc(money(p.costUsd))+'</td><td>'+esc(p.status||'COMPLETED')+'</td></tr>';}).join('');
+    var currentFee=cap&&cap.recruitmentFeePerOfficerUsd!==null?money(cap.recruitmentFeePerOfficerUsd):'Unavailable';
+    return '<section class="ohpu-section">'+
+      '<div class="ohpu-note">Country recommendation model · '+esc(recommendation.name)+' · confidence label: '+esc(recommendation.confidence||'MODELLED')+'. Suggested levels are strategy-game estimates based on available country context, not official police training or recruitment standards.</div>'+
+      '<div class="ohpu-grid">'+
+      '<article class="ohpu-card"><span class="ohpu-label">TRAINING LEVEL</span><div class="ohpu-value">Level '+esc(currentTraining)+' / 10</div><p>Recommended target: Level '+esc(recommendation.recommendedTrainingLevel)+'</p><p>Academy facility: Level '+esc(cap&&cap.academyLevel||0)+'</p><div class="ohpu-actions"><button type="button" class="ohpu-btn ohpu-btn-main" data-ohpu-capability-open="training" '+(currentTraining>=10?'disabled':'')+'>UPDATE TRAINING LEVEL</button></div></article>'+
+      '<article class="ohpu-card"><span class="ohpu-label">RECRUITMENT LEVEL</span><div class="ohpu-value">Level '+esc(currentRecruitment)+' / 10</div><p>Recommended target: Level '+esc(recommendation.recommendedRecruitmentLevel)+'</p><p>Department facility: Level '+esc(cap&&cap.departmentLevel||0)+'</p><p>Current recruitment fee: '+esc(currentFee)+' / officer</p><div class="ohpu-actions"><button type="button" class="ohpu-btn ohpu-btn-main" data-ohpu-capability-open="recruitment" '+(currentRecruitment>=10?'disabled':'')+'>UPDATE RECRUITMENT LEVEL</button></div></article>'+
+      '</div><div class="ohpu-section-title">COUNTRY MODEL INPUTS</div><div class="ohpu-grid">'+
+      kpi('Economy capacity index',recommendation.modelInputs&&recommendation.modelInputs.economyCapacityIndex===null?'Unavailable':String(recommendation.modelInputs.economyCapacityIndex),'Project baseline context index, not an official police capability score.')+
+      kpi('Urban complexity index',recommendation.modelInputs&&recommendation.modelInputs.urbanComplexityIndex===null?'Unavailable':String(recommendation.modelInputs.urbanComplexityIndex),'Model proxy from the current game baseline.')+
+      kpi('Remote coverage index',recommendation.modelInputs&&recommendation.modelInputs.remoteCoverageIndex===null?'Unavailable':String(recommendation.modelInputs.remoteCoverageIndex),'Model proxy; not a measured national survey.')+
+      kpi('Modeled staffing gap',recommendation.modelInputs&&recommendation.modelInputs.modeledStaffingGapPct!==null?String(recommendation.modelInputs.modeledStaffingGapPct)+'%':'Unavailable','Compared with this game’s staffing target, not a verified actual roster.')+
+      '</div><div class="ohpu-note">'+esc(recommendation.rationale||'Level suggestion is a game-model estimate.')+'<br>Training targets still assume human-rights, ethics and accountability training at every level. Recommendations can be revised in the versioned country recommendation data.</div>'+
+      '<div class="ohpu-section-title">ACTIVE UPGRADE PROJECTS</div><div class="ohpu-table-wrap"><table class="ohpu-table"><thead><tr><th>Capability</th><th>Upgrade</th><th>Cost</th><th>Status</th></tr></thead><tbody>'+(projects||'<tr><td colspan="4">No active upgrade projects.</td></tr>')+'</tbody></table></div>'+
+      (history?'<div class="ohpu-section-title">RECENT COMPLETED PROJECTS</div><div class="ohpu-table-wrap"><table class="ohpu-table"><thead><tr><th>Capability</th><th>Upgrade</th><th>Cost</th><th>Status</th></tr></thead><tbody>'+history+'</tbody></table></div>':'')+
+      '<div class="ohpu-note">Only existing Home Ministry facility levels, current police personnel and live Finance balances are counted as available assets. The model does not invent physical stockpiles such as training kits or equipment that the game does not track.</div></section>';
   }
   function fleetHtml(d) {
     var e=d.engine,s=d.state,b=d.baseline||{},vehicles=Array.isArray(e.VEHICLES)?e.VEHICLES:[],pending=s.pendingVehicleOrder;
@@ -465,6 +519,7 @@
     }
     var body;
     if(activeTab==='staff')body=recruitmentHtml(d);
+    else if(activeTab==='levels')body=capabilityLevelsHtml(d);
     else if(activeTab==='fleet')body=fleetHtml(d);
     else if(activeTab==='units')body=policeUnitsHtml(d);
     else if(activeTab==='cases')body=policeCaseManagementHtml(d);
@@ -476,12 +531,16 @@
       esc(d.baseline&&d.baseline.name||d.countryId) + ' · live recruitment, fleet procurement, crime model, patrol allocation and accountable police policy.</div></div>' +
       '<div class="ohpu-actions"><button type="button" class="ohpu-btn" id="ohpu-rulebook-head">POLICE RULEBOOK</button><span class="ohpu-tag">COUNTRY-BOUND RUNTIME</span></div></header>' +
       '<nav class="ohpu-tabs">' + navHtml() + '</nav>' + statusHtml() + budgetHtml(d) +
-      '<div class="ohpu-section-title">' + esc(({overview:'LIVE COUNTRY OVERVIEW',staff:'POLICE RECRUITMENT & STAFFING',fleet:'VEHICLE INVENTORY & PROCUREMENT',units:'SPECIALIST POLICE UNITS & DEPLOYMENT',cases:'POLICE CASES & DUE-PROCESS DEADLINES',crime:'CRIME RATES & PATROL ALLOCATION',rules:'PAID POLICE PROGRAMMES & OVERSIGHT',rulebook:'POLICE RULEBOOK & RESPONSE PROCEDURES'})[activeTab]||'POLICE CONTROL') + '</div>' +
+      '<div class="ohpu-section-title">' + esc(({overview:'LIVE COUNTRY OVERVIEW',staff:'POLICE RECRUITMENT & STAFFING',fleet:'VEHICLE INVENTORY & PROCUREMENT',units:'SPECIALIST POLICE UNITS & DEPLOYMENT',cases:'POLICE CASES & DUE-PROCESS DEADLINES',crime:'CRIME RATES & PATROL ALLOCATION',rules:'PAID POLICE PROGRAMMES & OVERSIGHT',rulebook:'POLICE RULEBOOK & RESPONSE PROCEDURES',levels:'TRAINING & RECRUITMENT CAPABILITY LEVELS'})[activeTab]||'POLICE CONTROL') + '</div>' +
       body +
       '<div class="ohpu-actions"><button type="button" class="ohpu-btn" id="ohpu-back-home">BACK TO HOME MINISTRY</button></div>' +
       '<div class="ohpu-small">State updates and spending are executed by the Home Ministry engine. No mock balances or successful actions are shown when a Finance transaction fails.</div></section>';
     bindFinanceButtons(root);
-    Array.prototype.forEach.call(root.querySelectorAll('[data-ohpu-tab]'),function(btn){btn.onclick=function(){activeTab=btn.getAttribute('data-ohpu-tab');setStatus('','');render();};});
+    Array.prototype.forEach.call(root.querySelectorAll('[data-ohpu-tab]'),function(btn){btn.onclick=function(){activeTab=btn.getAttribute('data-ohpu-tab');activeUpgradeType=null;setStatus('','');render();};});
+    Array.prototype.forEach.call(root.querySelectorAll('[data-ohpu-capability-open]'),function(btn){btn.onclick=function(){activeUpgradeType=btn.getAttribute('data-ohpu-capability-open');setStatus('','');render();};});
+    var cancelCapabilityUpgrade=root.querySelector('#ohpu-capability-upgrade-cancel');if(cancelCapabilityUpgrade)cancelCapabilityUpgrade.onclick=function(){activeUpgradeType=null;render();};
+    var retryCapabilityData=root.querySelector('#ohpu-retry-capability-data');if(retryCapabilityData)retryCapabilityData.onclick=function(){var r=g.OmegaHomePoliceCapabilityRuntime;if(r&&typeof r.init==='function')r.init().then(function(){render();});else{setStatus('Capability recommendation runtime is unavailable. No project was started.','error');render();}};
+    var startCapabilityUpgrade=root.querySelector('#ohpu-capability-upgrade-start');if(startCapabilityUpgrade)startCapabilityUpgrade.onclick=function(){var kind=activeUpgradeType,result=d.engine&&typeof d.engine.startPoliceCapabilityUpgrade==='function'?d.engine.startPoliceCapabilityUpgrade(kind,d.countryId):null;if(!result||!result.ok){setStatus('Upgrade not started: '+String(result&&(result.message||result.reason||result.code)||'CAPABILITY_UPGRADE_API_UNAVAILABLE')+'. No project was activated.','error');}else{setStatus('Upgrade project started: Level '+result.project.fromLevel+' → Level '+result.project.targetLevel+'. Finance charged '+money(result.cost||result.project.costUsd)+' from '+String(result.project.budgetCategory||'Home Ministry budget')+'. It completes after '+formatCount(result.project.durationDays)+' simulation day(s).','ok');}activeUpgradeType=null;render();};
     var rulebookHead=root.querySelector('#ohpu-rulebook-head');if(rulebookHead)rulebookHead.onclick=function(){activeTab='rulebook';setStatus('','');render();};
     var back=root.querySelector('#ohpu-back-home');if(back)back.onclick=function(){consoleOpen=false;if(ui&&ui.renderHomeMinistryDashboard)ui.renderHomeMinistryDashboard();};
     var hireInput=root.querySelector('#ohpu-hire-quantity'),hireCost=root.querySelector('#ohpu-hire-cost'),hireImpact=root.querySelector('#ohpu-hire-impact');
@@ -696,6 +755,8 @@
       g.__OMEGA_HOME_POLICE_OPERATIONS_REFRESH_LISTENER__=true;
       var refreshIfOpen=function(){addLaunchButton();if(consoleOpen)render();};
       g.addEventListener('OMEGA_HOME_POLICE_BASELINE_READY',refreshIfOpen);
+      g.addEventListener('OMEGA_HOME_POLICE_CAPABILITY_RECOMMENDATIONS_READY',refreshIfOpen);
+      g.addEventListener('OMEGA_HOME_POLICE_CAPABILITY_RECOMMENDATIONS_FAILED',refreshIfOpen);
       g.addEventListener('OMEGA_HOME_POLICE_WORLD_BASELINE_READY',refreshIfOpen);
       g.addEventListener('OMEGA_HOME_POLICE_BASELINE_FAILED',refreshIfOpen);
       g.addEventListener('OMEGA_FINANCE_RUNTIME_READY',refreshIfOpen);
@@ -704,7 +765,7 @@
       ['OMEGA_COUNTRY_CONTEXT_CHANGED','OMEGA_COUNTRY_CHANGED','OMEGA_COUNTRY_SELECTED','COUNTRY_CHANGED','GAME_COUNTRY_CHANGED'].forEach(function(name){g.addEventListener(name,function(){if(consoleOpen)render();});});
     }
   }
-  var api=Object.freeze({VERSION:VERSION,open:function(tab){consoleOpen=true;if(tab&&['overview','staff','fleet','units','cases','crime','rules','rulebook'].indexOf(tab)>=0)activeTab=tab;render();},render:render,diagnostics:function(){var d=getData();return{version:VERSION,ready:!!d.ready,baselineReady:!!d.baselineReady,consoleOpen:consoleOpen,activeTab:activeTab,countryId:d.countryId||null,financeAvailable:!!(d.budget&&d.budget.available),crimeAvailable:!!(d.crime&&d.crime.available)};}});
+  var api=Object.freeze({VERSION:VERSION,open:function(tab){consoleOpen=true;if(tab&&['overview','staff','levels','fleet','units','cases','crime','rules','rulebook'].indexOf(tab)>=0)activeTab=tab;render();},render:render,diagnostics:function(){var d=getData();return{version:VERSION,ready:!!d.ready,baselineReady:!!d.baselineReady,consoleOpen:consoleOpen,activeTab:activeTab,countryId:d.countryId||null,financeAvailable:!!(d.budget&&d.budget.available),crimeAvailable:!!(d.crime&&d.crime.available)};}});
   g.OmegaHomePoliceOperationsUI=api;
   if(g.document){
     if(g.document.readyState==='loading')g.document.addEventListener('DOMContentLoaded',install,{once:true});
