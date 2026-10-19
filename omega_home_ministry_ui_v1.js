@@ -38,6 +38,7 @@
       INSUFFICIENT_MINISTRY_BUDGET: 'This Home Ministry budget category has insufficient unspent funds. Category balance: ' + money(engine(), result && result.available) + '; requested: ' + money(engine(), result && result.cost) + '. Reallocate budget or reduce the order.',
       BUDGET_PERCENT_TOTAL_OVER_100: 'Percentage allocations cannot exceed 100% in total.',
       BUDGET_ALLOCATION_EXCEEDS_TOTAL: 'The category allocations exceed the authorized Home Ministry budget.',
+      BUDGET_BELOW_PRIOR_CATEGORY_SPENDING: 'This change would reduce a category below funds already spent. Increase that category cap or keep the existing allocation.',
       MINISTRY_BUDGET_EXCEEDS_FINANCE_ALLOCATION: 'The requested Home Ministry budget is greater than the amount explicitly allocated by the Finance Ministry.',
       BUDGET_BELOW_PRIOR_SPENDING: 'The new budget cannot be lower than money already spent by the Home Ministry.',
       VEHICLE_TIER_LOCKED: 'This vehicle tier is locked. Complete the current tier order for 180 simulation days before advancing.',
