@@ -169,6 +169,10 @@ test('index, finance, bank and offline shell use the daily lifecycle assets', ()
   assert.match(index, /id="omega-global-time-hud"/);
   assert.match(index, /src="omega_game_lifecycle_runtime_v1\.js" defer/);
   assert.match(index, /href="omega_game_lifecycle_runtime_v1\.css"/);
+  assert.ok(index.indexOf('src="omega_simulation_runtime.js"') < index.indexOf('src="map-engine-1.js"'),
+    'the canonical clock bridge must load before map and ministry runtime initialization');
+  assert.ok(index.indexOf('src="omega_simulation_runtime.js"') < index.indexOf('src="omega_ministry_registry.js"'),
+    'the canonical clock bridge must load before ministry registries and their listeners');
   assert.ok(index.indexOf('src="omega_simulation_runtime.js"') < index.indexOf('src="omega_resource_research_runtime_v1.js"'),
     'the canonical event bridge must load before any sector registers a turn listener');
   assert.ok(index.indexOf('src="omega_simulation_runtime.js"') < index.indexOf('src="omega_resource_endowment_runtime.js"'),
