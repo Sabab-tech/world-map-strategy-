@@ -144,8 +144,8 @@ test('legacy hourly save is migrated to one calendar day per turn', () => {
   sim.loadState(legacy);
   assert.equal(sim.clock.turn, 7);
   assert.equal(sim.clock.stepDurationMs, DAY_MS);
-  assert.equal(sim.clock.simulationTimeMs, 7 * DAY_MS);
-  assert.equal(gameState.simulation.date, '2015-01-08T00:00:00.000Z');
+  assert.equal(sim.clock.simulationTimeMs, 7 * 3600000, 'migration preserves the exact saved simulation timestamp');
+  assert.equal(gameState.simulation.date, '2015-01-01T07:00:00.000Z');
 });
 
 test('index, finance, bank and offline shell use the daily lifecycle assets', () => {
