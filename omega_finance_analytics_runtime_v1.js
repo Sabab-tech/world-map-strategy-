@@ -85,12 +85,15 @@ function handleTurn(d){
 function seriesFor(p,id){const s=liveData.get(iso(p))?.[id];if(live&&s?.length)return s.slice();return(preview.get(iso(p))?.series[id]||[]).slice();}
 function fmt(v,m){
  const z=n(v);if(z===null)return'N/A';
+ const format=g.OmegaNumberFormat;
  if(m.format==='money'){
+  if(format&&typeof format.money==='function')return format.money(z,{unavailable:'N/A'});
   const a=Math.abs(z),scale=a>=1e12?{value:1e12,label:'trillion'}:a>=1e9?{value:1e9,label:'billion'}:a>=1e6?{value:1e6,label:'million'}:a>=1e3?{value:1e3,label:'thousand'}:null;
-  if(scale){let amount;try{amount=new Intl.NumberFormat('en-US',{maximumFractionDigits:2}).format(a/scale.value);}catch(_){amount=(a/scale.value).toFixed(2).replace(/\.?0+$/,'');}return(z<0?'-':'')+'$'+amount+' '+scale.label;}
+  if(scale){let amount;try{amount=new Intl.NumberFormat('en-US',{maximumFractionDigits:2}).format(a/scale.value);}catch(_){amount=(a/scale.value).toFixed(2).replace(/\\.?0+$/,'');}return(z<0?'-':'')+'$'+amount+' '+scale.label;}
   try{return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(z);}catch(_){return(z<0?'-':'')+'$'+Math.round(a).toLocaleString('en-US');}
  }
- return z.toLocaleString('en-US',{maximumFractionDigits:2})+(m.format==='pct'?'%':'');
+ if(m.format==='pct')return z.toLocaleString('en-US',{maximumFractionDigits:2})+'%';
+ return format&&typeof format.compact==='function'?format.compact(z):z.toLocaleString('en-US',{maximumFractionDigits:2});
 }
 function compactRawNumber(value){
  const z=n(value);if(z===null)return value==null?'N/A':String(value);
