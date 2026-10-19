@@ -1,9 +1,9 @@
-/* OMEGA HOME MINISTRY POLICE OPERATIONS UI v1.0.0
+/* OMEGA HOME MINISTRY POLICE OPERATIONS UI v1.1.0
  * All actions call the country-scoped Home Ministry runtime; no presentation-only counters.
  */
 (function (g) {
   'use strict';
-  if (g.OmegaHomePoliceOperationsUI && g.OmegaHomePoliceOperationsUI.VERSION === '1.0.0') return;
+  if (g.OmegaHomePoliceOperationsUI && g.OmegaHomePoliceOperationsUI.VERSION === '1.1.0') return;
   var VERSION = '1.1.0', activeTab = 'overview', statusText = '', statusType = '', consoleOpen = false;
   var ui = g.OMEGA_UI_ADAPTER;
   var CATEGORIES = [
