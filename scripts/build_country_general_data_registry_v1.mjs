@@ -750,7 +750,9 @@ function attachStrategicProfiles(rows, relationByIso2, siteSummaryByIso3, relati
     const available = GOVERNANCE_METRIC_KEYS
       .map((key) => governancePercentiles[key].get(iso3)?.percentile)
       .filter((value) => value !== undefined && value !== null);
-    return available.length >= 2
+    // Do not compare countries with different governance-indicator coverage.
+    // The aggregate remains a project-derived summary, never an official score.
+    return available.length === GOVERNANCE_METRIC_KEYS.length
       ? Number((available.reduce((sum, value) => sum + value, 0) / available.length).toFixed(1))
       : null;
   };
