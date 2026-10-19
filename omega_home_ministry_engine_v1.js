@@ -723,7 +723,7 @@
     const countryFleet=operationalFleetCounts(state,country);
     const currentCars=totalOperationalFleetCount(countryFleet),refCars=Math.max(1,num(base.referenceFleetUnits)||num(state.baselineFleetUnits)||currentCars||1);
     reduction+=Math.log(Math.max(1,currentCars)/refCars)*0.035;
-    const currentQuality=crimeVehicleCapability(state,category,cid),refVehicles=base.referenceVehicles||{};
+    const currentQuality=crimeVehicleCapability(state,category,country),refVehicles=base.referenceVehicles||{};
     let refUnits=0,refQuality=0;
     VEHICLES.forEach(function(vehicle){
       const count=Math.max(0,num(refVehicles[vehicle.level])||0),keys=({theft:['patrol','surveillance'],robbery:['response','patrol','protection'],streetRobbery:['patrol','response','crowdControl'],drugTrafficking:['counterSmuggling','surveillance','command'],contrabandSmuggling:['counterSmuggling','offRoad','surveillance'],assault:['response','crowdControl','protection'],homicide:['response','surveillance','command'],cybercrime:['surveillance','command']})[category]||['patrol','response'];
@@ -1399,7 +1399,7 @@
     const environment=environmentSpec(environmentId),road=roadSpec(roadCondition);
     const preview=guardPreview(level,mission.id,qty,cid,environment.id,road.id);
     if(!preview.ok)return{ok:false,reason:preview.reason,availableVehicles:preview.availableVehicles,availableOfficers:preview.availableOfficers,requiredOfficers:preview.requiredOfficers,environmentAssessment:preview.environment};
-    if(preview.environment.fit<20)return{ok:false,reason:'VEHICLE_ROUTE_MISMATCH',message:'This vehicle is too poorly matched to the selected environment. Choose a better platform or accept a different route.',environmentAssessment:preview.environment};
+    if(preview.environment.fit<15)return{ok:false,reason:'VEHICLE_ROUTE_MISMATCH',message:'This vehicle is too poorly matched to the selected environment. Choose a better platform or accept a different route.',environmentAssessment:preview.environment};
     const location=String(sector||asset&&asset.name||'General Sector').trim().slice(0,80)||'General Sector';
     return mutation(cid,0,'POLICE_GUARD_DEPLOYMENT',function(next){
       const fleetCandidates=availableFleetUnits(next,level).slice().sort(function(a,b){return(Number(b.condition)||0)-(Number(a.condition)||0);});
