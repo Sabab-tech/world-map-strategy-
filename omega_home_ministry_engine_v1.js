@@ -414,13 +414,24 @@
     });
     return weighted/units;
   }
+  function countryStaffingTarget(country,baseline,currentPopulation,referencePersonnel){
+    const row=findPoliceBaseline(country)||{},baselinePopulation=Math.max(0,num(baseline&&baseline.population)||0);
+    const localRate=Math.max(0,num(row.baselinePolice&&row.baselinePolice.staffingRatePer100k)||0);
+    const targetRatePer100k=Math.max(150,localRate*1.1);
+    const targetAtBaseline=baselinePopulation>0?Math.max(referencePersonnel,baselinePopulation*targetRatePer100k/100000):referencePersonnel;
+    const populationScale=currentPopulation!==null&&currentPopulation>0&&baselinePopulation>0?
+      clamp(currentPopulation/baselinePopulation,0.1,20):1;
+    return{targetRatePer100k:targetRatePer100k,populationScale:populationScale,
+      targetPersonnel:Math.max(1,Math.ceil(targetAtBaseline*populationScale))};
+  }
   function crimeReductionForCategory(state,category,crimeBaseline,country){
     const base=crimeBaseline||state.crimeBaseline||{},refPersonnel=Math.max(1,num(base.referencePersonnel)||num(state.baselinePolicePersonnel)||250);
     const refEfficiency=num(base.referenceEfficiency)===null?60:num(base.referenceEfficiency);
-    const refTraining=num(base.referenceTrainingQualityLevel)===null?1:num(base.referenceTrainingQualityLevel);
+    const currentPopulation=num(population(country))===null?num(base.population):num(population(country));
+    const staffingTarget=countryStaffingTarget(country,base,currentPopulation,refPersonnel);
+    const populationScale=staffingTarget.populationScale;
     let reduction=Math.log(Math.max(1,num(state.policeCount)||1)/refPersonnel)*0.08;
     reduction+=(Math.max(0,num(state.policeEfficiency)||0)-refEfficiency)*0.0015;
-    reduction+=(Math.max(0,num(state.trainingQualityLevel)||1)-refTraining)*0.015;
     const facilityMap={
       theft:[['station',0.008],['patrol',0.014],['dispatch',0.012]],
       robbery:[['station',0.006],['patrol',0.012],['dispatch',0.012],['forensics',0.01]],
@@ -431,11 +442,13 @@
       homicide:[['forensics',0.02],['dispatch',0.008],['academy',0.005]],
       cybercrime:[['cyber',0.025],['communications',0.012],['forensics',0.01]]
     };
-    const refFacilities=base.referenceFacilityLevels||DEFAULT_STATE.facilityLevels;
+    const minimumFacilityLevels={station:2,patrol:2,dispatch:2,forensics:2,border:1,communications:2,academy:3,cyber:1,emergency:2,department:2};
+    const facilityDemandScale=Math.max(1,Math.min(2.5,Math.sqrt(populationScale)));
     (facilityMap[category]||[]).forEach(function(pair){
       const current=Math.max(0,num(state.facilityLevels&&state.facilityLevels[pair[0]])||0);
-      const reference=Math.max(0,num(refFacilities[pair[0]])||0);
-      reduction+=(current-reference)*pair[1];
+      const reference=Math.max(0,num((base.referenceFacilityLevels||DEFAULT_STATE.facilityLevels)[pair[0]])||0);
+      const target=Math.ceil(Math.max(minimumFacilityLevels[pair[0]]||1,reference)*facilityDemandScale);
+      reduction+=(current-target)*pair[1];
     });
     const currentCars=totalFleetCount(currentFleetCounts(state)),refCars=Math.max(1,num(base.referenceFleetUnits)||num(state.baselineFleetUnits)||currentCars||1);
     reduction+=Math.log(Math.max(1,currentCars)/refCars)*0.035;
@@ -473,17 +486,14 @@
     if(tactics.intelligenceFusion)reduction+=0.012;
     reduction+=(Math.max(0,num(state.publicSatisfaction)||0)-(num(base.referenceSatisfaction)===null?55:num(base.referenceSatisfaction)))*0.0007;
     reduction+=(20-clamp(num(state.misconductRiskPct)===null?20:num(state.misconductRiskPct),0,100))*0.00055;
-    const currentPopulation=num(population(country))===null?num(base.population):num(population(country));
-    const referencePopulation=Math.max(0,num(base.population)||0);
-    const populationScale=currentPopulation!==null&&referencePopulation>0?clamp(currentPopulation/referencePopulation,0.1,20):1;
-    const requiredPersonnel=Math.max(1,refPersonnel*populationScale);
-    const staffingCoverage=clamp((Math.max(0,num(state.policeCount)||0))/requiredPersonnel,0,1.6);
-    reduction+=(staffingCoverage-1)*0.22;
-    const requiredVehicles=Math.max(1,(num(base.referenceFleetUnits)||num(state.baselineFleetUnits)||1)*populationScale);
-    const vehicleCoverage=clamp(totalFleetCount(currentFleetCounts(state))/requiredVehicles,0,1.6);
-    reduction+=(vehicleCoverage-1)*0.10;
-    const trainingTarget=1+Math.max(0,Math.log2(Math.max(0.1,populationScale)))*0.25;
-    reduction+=(clamp((Math.max(1,num(state.trainingQualityLevel)||1)/trainingTarget),0,1.5)-1)*0.05;
+    const requiredPersonnel=staffingTarget.targetPersonnel;
+    const staffingCoverage=clamp((Math.max(0,num(state.policeCount)||0))/requiredPersonnel,0,2);
+    reduction+=Math.log(clamp(staffingCoverage,0.1,2))*0.18;
+    const requiredVehicles=Math.max(1,Math.ceil(requiredPersonnel/18));
+    const vehicleCoverage=clamp(totalFleetCount(currentFleetCounts(state))/requiredVehicles,0,2);
+    reduction+=Math.log(clamp(vehicleCoverage,0.1,2))*0.12;
+    const trainingTarget=3+Math.max(0,Math.log2(Math.max(0.1,populationScale)))*0.25;
+    reduction+=(clamp((Math.max(1,num(state.trainingQualityLevel)||1)/trainingTarget),0,1.5)-1)*0.045;
     const referenceRulebookScore=num(base.referenceRulebookScore)===null?policeRulebookQuality(DEFAULT_POLICE_RULEBOOK):num(base.referenceRulebookScore);
     reduction+=(policeRulebookQuality(state.policeRulebook)-referenceRulebookScore)*0.001;
     const fuelReserveDays=clamp(num(state.fuelSupplyDays)===null?14:num(state.fuelSupplyDays),0,180);
@@ -523,10 +533,14 @@
     const model=state.crimeModel||{};
     const active=activePolicePolicyRules(state);
     const policeBaseline=findPoliceBaseline(cid)||{},referencePersonnel=Math.max(1,num(baseline.referencePersonnel)||num(state.baselinePolicePersonnel)||250);
-    const referenceFleet=Math.max(1,num(baseline.referenceFleetUnits)||num(state.baselineFleetUnits)||1);
-    const populationScale=pop!==null&&num(baseline.population)>0?clamp(pop/num(baseline.population),0.1,20):1;
-    const targetPolice=Math.ceil(referencePersonnel*populationScale),targetFleet=Math.ceil(referenceFleet*populationScale);
+    const staffingTarget=countryStaffingTarget(cid,baseline,pop,referencePersonnel);
+    const targetPolice=staffingTarget.targetPersonnel,targetFleet=Math.max(1,Math.ceil(targetPolice/18));
     const fleetCounts=currentFleetCounts(state),fleetUnits=totalFleetCount(fleetCounts);
+    const facilityTargets={station:2,patrol:2,dispatch:2,forensics:2,border:1,communications:2,academy:3,cyber:1,emergency:2,department:2};
+    const facilityTargetUnits=Object.values(facilityTargets).reduce(function(sum,n){return sum+n;},0);
+    const facilityCurrentUnits=Object.keys(facilityTargets).reduce(function(sum,key){return sum+Math.min(facilityTargets[key],Math.max(0,num(state.facilityLevels&&state.facilityLevels[key])||0));},0);
+    const facilityReadinessPct=Math.round(clamp(facilityCurrentUnits/Math.max(1,facilityTargetUnits)*100,0,100)*10)/10;
+    const trainingCoveragePct=Math.round(clamp(Math.max(1,num(state.trainingQualityLevel)||1)/Math.max(1,3+Math.max(0,Math.log2(Math.max(0.1,staffingTarget.populationScale)))*0.25)*100,0,100)*10)/10;
     const estimatedAnnualFinancialImpactUsd=Object.values(rows).reduce(function(sum,row){return sum+(num(row.projectedEstimatedFinancialImpactUsd)||0);},0);
     const baselineAnnualFinancialImpactUsd=Object.values(rows).reduce(function(sum,row){return sum+(num(row.baselineEstimatedFinancialImpactUsd)||0);},0);
     const estimatedFinancialImpactAvoidedUsd=Object.values(rows).reduce(function(sum,row){return sum+(num(row.estimatedFinancialImpactAvoidedUsd)||0);},0);
@@ -534,8 +548,11 @@
       region:policeBaseline.region||'Unknown region',operatingProfile:getCountryOperatingProfile(cid),
       population:pop,populationYear:baseline.populationYear,populationSource:baseline.populationSource,
       fuel: getFuelSnapshot(cid,state),
+      staffingTargetRatePer100k:staffingTarget.targetRatePer100k,
       requiredPoliceEstimate:targetPolice,policeStaffingCoveragePct:targetPolice?Math.round(state.policeCount/targetPolice*1000)/10:null,
       currentFleetUnits:fleetUnits,requiredFleetEstimate:targetFleet,vehicleCoveragePct:targetFleet?Math.round(fleetUnits/targetFleet*1000)/10:null,
+      facilityReadinessPct:facilityReadinessPct,trainingCoveragePct:trainingCoveragePct,
+      simulationTargetSource:'GAMEPLAY_POLICY_TARGET_NOT_OFFICIAL_COUNTRY_STANDARD',
       estimatedAnnualFinancialImpactUsd:estimatedAnnualFinancialImpactUsd,baselineAnnualFinancialImpactUsd:baselineAnnualFinancialImpactUsd,
       estimatedFinancialImpactAvoidedUsd:estimatedFinancialImpactAvoidedUsd,financialImpactSource:'MODELED_ECONOMIC_EXPOSURE_NOT_POLICE_REVENUE',
       activePolice:Math.max(0,Math.floor(num(state.policeCount)||0)),policePer100k:pop?Math.round(state.policeCount/pop*100000*10)/10:null,
