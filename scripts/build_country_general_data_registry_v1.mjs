@@ -1300,6 +1300,7 @@ function attachStrategicProfiles(rows, relationByIso2, siteSummaryByIso3, relati
         rubricVersion: 'OMEGA_COUNTRY_PROFILE_RUBRIC_V2',
         peerComparison: {
           rule: 'Percentiles require the same metric and exact observation year, with at least five country/territory observations in that year cohort.',
+          governanceCompositeRule: 'The project-derived governance summary is emitted only when all six governance dimensions have available comparable peer percentiles; it is not an official governance rating.',
           interpretation: 'No percentile means no comparable cohort was available; it does not mean low strength.'
         },
         thresholds: {
