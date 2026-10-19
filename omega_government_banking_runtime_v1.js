@@ -497,7 +497,7 @@
       num(policyB.correspondentLimitUsd) ?? Number(rules.defaultCorrespondentLimitUsd)
     );
     if (usdAmount > maxSingle) return { ok: false, code: 'CORRESPONDENT_LIMIT_EXCEEDED', maxSingleUsd: maxSingle };
-    const root = rootState(), dayTurns = 24;
+    const root = rootState(), dayTurns = 1;
     const used = (bankingState(false).ledger || []).filter(row =>
       row.type === 'CROSS_BORDER_TRANSFER' &&
       norm(row.sourceCountryCode) === profileId(from) &&
