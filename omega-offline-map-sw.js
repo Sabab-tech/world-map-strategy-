@@ -8,7 +8,8 @@ const INDEX_URL = new URL("index.html", APP_BASE).href;
 const CORE_ASSETS = [
   "./", "./index.html", "./world.json", "./leaflet.js", "./leaflet.css",
   "./style.css", "./map-engine-1.js", "./map-engine-2.js",
-  "./offline-hybrid-map.js", "./offline-hybrid-map.css"
+  "./offline-hybrid-map.js", "./offline-hybrid-map.css",
+  "./omega_forex_monetary_engine_v1.js", "./omega_forex_monetary_engine_v1.css"
 ];
 
 function isLocalAppUrl(value) {
