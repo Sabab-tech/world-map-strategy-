@@ -52,6 +52,8 @@ Indicative decisions:
 
 ## Loan amount and terms
 
+The model also enforces a single global revolving principal capacity. The saved setting `state.governmentBanking.worldBankLending.facilityCapacityUsd` defaults to **US$1 trillion of simulated outstanding principal capacity** and can be tuned by game rules. New contracts reserve capacity; principal repayments free it again. This figure is a gameplay configuration, not a reported World Bank capital or lending commitment.
+
 For a country with valid GDP and debt values:
 
 ```text
