@@ -1114,7 +1114,7 @@
     if(typeof document!=='undefined'&&(document.readyState==='interactive'||document.readyState==='complete'))ui();
     else if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',ui,{once:true});
     if(typeof g.addEventListener==='function'){
-      g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED',function(){var t=turn();if(g.__OmegaResourceEconomyV2Turn===t)return;g.__OmegaResourceEconomyV2Turn=t;runTurn();});
+      g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED',function(){var t=turn();if(g.__OmegaResourceEconomyV2Turn===t)return;g.__OmegaResourceEconomyV2Turn=t;return runTurn();});
       g.addEventListener('OMEGA_READY',function(){installHandlers();installEvents();ui();refreshUI();});
       g.addEventListener('OMEGA_GAME_SESSION_STARTED',function(){installHandlers();installEvents();ui();refreshUI();});
       g.addEventListener('RESOURCE_STATE_UPDATED',function(){ui();refreshUI();});
