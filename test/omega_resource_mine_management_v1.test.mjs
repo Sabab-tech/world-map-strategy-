@@ -241,6 +241,9 @@ test('mine project rejects cross-country identity and player-only actions requir
   assert.match(uiSource, /My Mines/);
   assert.match(uiSource, /data-omega-mine-entry="my-mines"/);
   assert.match(uiSource, /data-omega-mine-entry="mines"/);
+  assert.match(uiSource, /function stationDirectory/);
+  assert.match(uiSource, /action==='run-factory'/);
+  assert.match(uiSource, /executeFactoryCycle/);
   assert.match(uiSource, /<svg/);
   assert.match(indexSource, /omega_resource_mine_management_v1\.js/);
   assert.match(endowmentSource, /OMEGA_RESOURCE_MINE_COMMISSIONED/);
