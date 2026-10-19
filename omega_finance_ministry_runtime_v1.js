@@ -509,12 +509,15 @@
     }else if(type==='rollback-home-ministry-expense'){
       const transactionId=String(action.transactionId||'').trim();
       const original=fm.ledger.find(row=>row&&String(row.transactionId||'')===transactionId);
-      if(!original||original.action!=='EXPENSE'||String(original.department||'')!=='interior'||!String(original.description||'').startsWith('OMEGA_HOME_BUDGET:'))
-        return{ok:false,code:'HOME_EXPENSE_ROLLBACK_REFERENCE_INVALID',message:'Only an identifiable Home Ministry expense can be reversed.'};
+      const originalDepartment=String(original&&original.department||''),originalDescription=String(original&&original.description||'');
+      const homeExpense=originalDepartment==='interior'&&originalDescription.startsWith('OMEGA_HOME_BUDGET:');
+      const militaryExpense=originalDepartment==='defense'&&originalDescription.startsWith('OMEGA_MILITARY_BUDGET:');
+      if(!original||original.action!=='EXPENSE'||(!homeExpense&&!militaryExpense))
+        return{ok:false,code:'MINISTRY_EXPENSE_ROLLBACK_REFERENCE_INVALID',message:'Only an identifiable Home or Defense Ministry expense can be reversed.'};
       if(original.reversedBy)return{ok:false,code:'HOME_EXPENSE_ALREADY_REVERSED',message:'This expense has already been reversed.'};
       if(Math.floor(finite(original.fiscalYearIndex)||0)!==Math.floor(finite(fm.fiscalYearIndex)||0))
         return{ok:false,code:'HOME_EXPENSE_ROLLBACK_FISCAL_YEAR_MISMATCH',message:'A prior fiscal-year expense cannot be reversed by this rollback.'};
-      const allocation=fm.allocations?.interior,refund=finite(original.amountUsd);
+      const allocation=fm.allocations?.[originalDepartment],refund=finite(original.amountUsd);
       if(!isObject(allocation)||refund===null||refund<=0||Math.max(0,finite(allocation.spentUsd)||0)+0.01<refund)
         return{ok:false,code:'HOME_EXPENSE_ROLLBACK_LEDGER_MISMATCH',message:'Finance ledger and ministry allocation do not permit a safe rollback.'};
       original.reversedBy='ROLLBACK-'+String((finite(fm.revision)||0)+1)+'-'+currentTurn();
