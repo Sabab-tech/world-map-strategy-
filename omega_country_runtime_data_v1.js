@@ -148,6 +148,7 @@
       return row && typeof row === 'object' ? row[key] : null;
     };
     let invalidRows = 0;
+    let validProfileCount = 0;
     for (const row of registry.countries) {
       const identityRow = row && row.identity;
       const iso2 = String(fieldValue(identityFields, identityRow, 'iso2') || fieldValue(identityFields, identityRow, 'code') || '').trim().toUpperCase();
@@ -164,6 +165,7 @@
         continue;
       }
       profiles.set(iso2, profile);
+      validProfileCount += 1;
       if (iso3) profiles.set(iso3, profile);
       const name = fieldValue(identityFields, identityRow, 'name');
       if (name) profiles.set(norm(name), profile);
@@ -172,7 +174,7 @@
       profiles,
       diagnostics: {
         available:profiles.size > 0,
-        profileCount:Math.max(0, profiles.size - Math.floor(profiles.size / 2)),
+        profileCount:validProfileCount,
         indexEntryCount:profiles.size,
         invalidRows,
         sourceId:'country_general_data_registry_v1.json',
