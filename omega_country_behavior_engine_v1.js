@@ -443,6 +443,61 @@
       basis: 'LIMITED_OR_NON-COMPARABLE_EVIDENCE', evidence: []
     });
 
+    // Preserve the profile builder's distinct, ranked strategic options, then
+    // translate their domains into action preferences consumed by adaptive AI.
+    const registeredStrategyOptions = (Array.isArray(strategic?.strategyOptions) ? strategic.strategyOptions : [])
+      .filter(row => obj(row) && (row.title || row.domain))
+      .map((row, index) => ({
+        domain: String(row.domain || 'PLANNING').toUpperCase(),
+        priority: num(row.priority) ?? index + 1,
+        title: String(row.title || row.domain || 'Strategic option'),
+        detail: String(row.detail || ''),
+        basis: String(row.basis || 'COUNTRY_STRATEGIC_PROFILE_V2'),
+        source: 'COUNTRY_STRATEGIC_PROFILE_V2',
+        evidence: []
+      }));
+    const ACTIONS_BY_STRATEGIC_DOMAIN = Object.freeze({
+      ECONOMY: ['EFFICIENCY', 'RESERVE_RELEASE', 'SUBSTITUTION'],
+      DEPENDENCY: ['SUPPLIER_CHANGE', 'SUBSTITUTION', 'RESERVE_RELEASE'],
+      INDUSTRY_AND_RESOURCES: ['INDUSTRY_BUILD', 'PROCESSING_EXPANSION', 'DOMESTIC_EXPANSION', 'INFRASTRUCTURE_EXPANSION'],
+      RESOURCES_AND_INDUSTRY: ['INDUSTRY_BUILD', 'PROCESSING_EXPANSION', 'DOMESTIC_EXPANSION', 'INFRASTRUCTURE_EXPANSION'],
+      SUPPLY_SECURITY: ['SUPPLIER_CHANGE', 'SUBSTITUTION', 'RESERVE_RELEASE'],
+      DEVELOPMENT: ['INFRASTRUCTURE_EXPANSION', 'PROJECT_INVESTMENT', 'EDUCATION_INVESTMENT'],
+      TECHNOLOGY: ['R_AND_D', 'EDUCATION_INVESTMENT', 'MODERNIZATION'],
+      DEFENSE: ['MILITARY_TRAIN', 'MILITARY_EQUIP', 'SECURITY_PREPARATION', 'MILITARY_FACILITY_BUILD'],
+      DOMESTIC_STABILITY: ['HOUSING_BUILD', 'PROJECT_INVESTMENT'],
+      TRADE: ['EXPORT', 'IMPORT', 'SUPPLIER_CHANGE'],
+      DIPLOMACY: ['TREATY_NEGOTIATION', 'DIPLOMATIC_ADJUSTMENT']
+    });
+    const actionPreferences = {};
+    const preferenceRows = [
+      ...priorities.map(row => ({ ...row, preferenceSource: 'CURRENT_EVIDENCE_AND_RUNTIME_STATE' })),
+      ...registeredStrategyOptions.map(row => ({ ...row, preferenceSource: 'COUNTRY_STRATEGIC_PROFILE_V2' }))
+    ];
+    for (const row of preferenceRows) {
+      const domain = String(row.domain || '').toUpperCase();
+      const actions = ACTIONS_BY_STRATEGIC_DOMAIN[domain] || [];
+      if (!actions.length) continue;
+      const rank = Math.max(1, num(row.priority) ?? 1);
+      const preferenceValue = clamp(0.78 - Math.max(0, rank - 1) * 0.055, 0.5, 0.82);
+      const confidence = row.preferenceSource === 'COUNTRY_STRATEGIC_PROFILE_V2' ? 0.58 :
+        (Array.isArray(row.evidence) && row.evidence.length ? Math.min(0.9, 0.52 + 0.1 * row.evidence.length) : 0.46);
+      for (const action of actions) {
+        const current = actionPreferences[action];
+        if (current && current.value >= preferenceValue) continue;
+        actionPreferences[action] = {
+          value: Number(preferenceValue.toFixed(3)),
+          confidence,
+          domain,
+          priority: rank,
+          title: String(row.title || domain),
+          basis: String(row.basis || 'COUNTRY_EVIDENCE'),
+          source: row.preferenceSource,
+          evidence: clone(Array.isArray(row.evidence) ? row.evidence : [])
+        };
+      }
+    }
+
     const dynamicArchetype = strategic?.archetype || (
       (evidenceCount < 2 && (!sites.siteCount || sites.siteCount === 0)) ? 'INSUFFICIENT EVIDENCE' :
       sites.availability === 'AVAILABLE' && sites.resourceDiversity >= 3 && sites.siteCount >= 4 ? 'RESOURCE-DIVERSE GAMEPLAY ECONOMY' :
@@ -485,7 +540,16 @@
       metricSources: Object.fromEntries(Object.entries(evidenceByMetric).filter(([, v]) => v).map(([k, v]) => [k, { value: v.value, source: v.source, status: v.status || 'RECORDED' }])),
       dimensions: clone(dimensions),
       domainSignals: {
-        economy: { fiscalStress: fiscalStress?.value ?? null, domesticStress: domesticStress?.value ?? null, tradeOpennessProxy: openness, tradeDeficitPressure: tradePressure },
+        economy: {
+          fiscalStress: fiscalStress?.value ?? null, domesticStress: domesticStress?.value ?? null,
+          tradeOpennessProxy: openness, tradeDeficitPressure: tradePressure,
+          registeredStrengths: clone(strategic?.economy?.strengths || []),
+          registeredVulnerabilities: clone(strategic?.economy?.vulnerabilities || []),
+          registeredPressurePoints: clone(strategic?.economy?.pressurePoints || []),
+          registeredDevelopmentSignals: clone(strategic?.economy?.developmentSignals || []),
+          recordedResourceContext: clone(strategic?.economy?.recordedResourceContext || null),
+          sectorProfile: clone(strategic?.economy?.sectorProfile || null)
+        },
         resources: clone(sites),
         diplomacy: {
           evidenceMode: diplomacy.evidenceMode || 'NO_REGISTERED_COUNTRY_SPECIFIC_DIPLOMACY_PROFILE',
@@ -507,6 +571,16 @@
             ? 'GAME_MODEL_SIGNALS_AVAILABLE_NOT_VERIFIED_DEPENDENCE' : 'NAMED_DEPENDENCY_DATA_NOT_REGISTERED'
         }
       },
+      profileNarrative: {
+        overallStrengths: clone(strategic?.overallStrengths || []),
+        overallWeaknesses: clone(strategic?.overallWeaknesses || []),
+        playerAdvantages: clone(strategic?.playerAdvantages || []),
+        playerChallenges: clone(strategic?.playerChallenges || []),
+        recommendedStrategy: clone(strategic?.recommendedStrategy || []),
+        strategicProfileVersion: strategic?.profileVersion || null
+      },
+      registeredStrategyOptions: registeredStrategyOptions.map(item => clone(item)),
+      actionPreferences: clone(actionPreferences),
       priorityStack: priorities.sort((a, b) => a.priority - b.priority).map(item => ({ ...item, evidence: clone(item.evidence) }))
     };
   }
