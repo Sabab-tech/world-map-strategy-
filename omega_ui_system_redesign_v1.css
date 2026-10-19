@@ -1,0 +1,806 @@
+/* OMEGA UI SYSTEM REDESIGN v1
+ * Additive command-center layout layer. Existing controls, ids and engine hooks remain intact.
+ * Focus: predictable viewport sizing, responsive navigation, internal scrolling and accessible states.
+ */
+:root {
+  --omega-ui-bg: #0a1220;
+  --omega-ui-surface: #111d2d;
+  --omega-ui-surface-raised: #17263a;
+  --omega-ui-surface-hover: #20334b;
+  --omega-ui-border: #344960;
+  --omega-ui-border-strong: #526b83;
+  --omega-ui-text: #e8eef5;
+  --omega-ui-muted: #a3b3c4;
+  --omega-ui-accent: #7fc5e2;
+  --omega-ui-accent-wash: rgba(127, 197, 226, .14);
+  --omega-ui-danger: #dc8585;
+  --omega-ui-radius: 10px;
+  --omega-app-height: 100dvh;
+  --omega-app-width: 100vw;
+  --omega-safe-top: env(safe-area-inset-top, 0px);
+  --omega-safe-right: env(safe-area-inset-right, 0px);
+  --omega-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --omega-safe-left: env(safe-area-inset-left, 0px);
+}
+
+/* A single, bounded app viewport prevents panels from stretching the whole page. */
+html,
+body,
+#app {
+  box-sizing: border-box !important;
+  width: 100% !important;
+  max-width: 100vw !important;
+  height: var(--omega-app-height) !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  overscroll-behavior: none;
+}
+body {
+  background: var(--omega-ui-bg) !important;
+  color: var(--omega-ui-text);
+  -webkit-text-size-adjust: 100%;
+}
+#app {
+  position: relative !important;
+  isolation: isolate;
+}
+#render-engine-root,
+#map,
+.leaflet-container {
+  max-width: 100vw;
+  max-height: var(--omega-app-height);
+}
+#ui-engine-root {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 1000 !important;
+  box-sizing: border-box !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  overflow: visible;
+  padding-top: var(--omega-safe-top);
+  padding-right: var(--omega-safe-right);
+  padding-bottom: var(--omega-safe-bottom);
+  padding-left: var(--omega-safe-left);
+  isolation: isolate;
+}
+#ui-engine-root > *,
+.omega-modal,
+.omega-drawer,
+#ministry-dashboard-view,
+#cabinet-full-window,
+#command-hub-modal,
+#minister-interrogation-modal,
+#resource-filter-box,
+#map-metric-dropdown,
+#country-info-card,
+#city-detail-bar {
+  box-sizing: border-box !important;
+  min-width: 0;
+  max-width: var(--omega-app-width);
+}
+
+/* Compact and consistent header; all important status values remain present. */
+#top-status-bar {
+  position: fixed !important;
+  top: var(--omega-safe-top) !important;
+  left: max(10px, var(--omega-safe-left)) !important;
+  right: max(10px, var(--omega-safe-right)) !important;
+  width: auto !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  min-height: 44px;
+  height: auto !important;
+  padding: 7px 10px !important;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 7px 12px !important;
+  border: 1px solid var(--omega-ui-border) !important;
+  border-top: 0 !important;
+  border-radius: 0 0 var(--omega-ui-radius) var(--omega-ui-radius) !important;
+  background: rgba(10, 18, 32, .97) !important;
+  color: var(--omega-ui-text) !important;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, .28) !important;
+  z-index: 1100 !important;
+}
+#top-status-bar .status-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px !important;
+  min-width: 0;
+}
+#top-status-bar .status-left {
+  flex: 0 1 auto;
+  min-width: 0 !important;
+}
+#top-status-bar .status-resources {
+  flex: 1 1 420px;
+  min-width: 0 !important;
+  justify-content: center;
+  padding: 3px 5px !important;
+  border: 1px solid var(--omega-ui-border) !important;
+  border-radius: 8px !important;
+  background: var(--omega-ui-surface) !important;
+}
+#top-status-bar .status-right {
+  flex: 0 1 auto;
+  min-width: 0;
+  justify-content: flex-end;
+  font-size: 10px;
+}
+#top-status-bar .status-item,
+#top-status-bar .res-node {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  color: var(--omega-ui-text);
+}
+#top-status-bar .res-val {
+  display: inline-block;
+  max-width: 16ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
+}
+#top-status-bar .speed-controls {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  gap: 4px;
+}
+#top-status-bar .speed-btn {
+  min-width: 36px;
+  min-height: 32px;
+  padding: 5px 8px;
+  border: 1px solid var(--omega-ui-border) !important;
+  border-radius: 7px !important;
+  background: var(--omega-ui-surface-raised) !important;
+  color: var(--omega-ui-text) !important;
+}
+#top-status-bar .speed-btn.active {
+  background: var(--omega-ui-accent-wash) !important;
+  border-color: var(--omega-ui-accent) !important;
+  color: #d9f2fc !important;
+}
+
+/* Keep map tools compact and in a predictable right-side rail. */
+.ui-right-controls {
+  position: fixed !important;
+  right: max(10px, var(--omega-safe-right)) !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  z-index: 1150 !important;
+  max-height: min(52dvh, 520px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 7px !important;
+  gap: 7px !important;
+  border: 1px solid var(--omega-ui-border) !important;
+  border-radius: 12px !important;
+  background: rgba(10, 18, 32, .97) !important;
+}
+.icon-btn {
+  box-sizing: border-box !important;
+  flex: 0 0 auto;
+  width: 42px !important;
+  height: 42px !important;
+  min-width: 42px;
+  min-height: 42px;
+  border-radius: 9px !important;
+  border: 1px solid var(--omega-ui-border) !important;
+  background: var(--omega-ui-surface-raised) !important;
+  color: var(--omega-ui-text) !important;
+  box-shadow: none !important;
+}
+.icon-btn.active,
+.icon-btn[aria-pressed="true"] {
+  background: var(--omega-ui-accent-wash) !important;
+  border-color: var(--omega-ui-accent) !important;
+  color: #d9f2fc !important;
+}
+
+/* Main navigation is a stable dock, not a wrapping strip that grows vertically. */
+.ui-bottom-navigation {
+  position: fixed !important;
+  left: 50% !important;
+  right: auto !important;
+  bottom: calc(10px + var(--omega-safe-bottom)) !important;
+  transform: translateX(-50%) !important;
+  width: max-content !important;
+  max-width: calc(100vw - 20px - var(--omega-safe-left) - var(--omega-safe-right)) !important;
+  box-sizing: border-box !important;
+  display: flex;
+  flex-wrap: nowrap !important;
+  align-items: stretch;
+  justify-content: flex-start !important;
+  gap: 6px !important;
+  padding: 6px !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  border: 1px solid var(--omega-ui-border) !important;
+  border-radius: 12px !important;
+  background: rgba(10, 18, 32, .98) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .34) !important;
+  z-index: 1200 !important;
+}
+.ui-bottom-navigation::-webkit-scrollbar { display: none; }
+.ui-bottom-navigation .nav-btn {
+  box-sizing: border-box !important;
+  flex: 0 0 auto;
+  min-width: 94px;
+  min-height: 44px;
+  padding: 8px 12px !important;
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 3px;
+  border: 1px solid transparent !important;
+  border-radius: 8px !important;
+  color: var(--omega-ui-muted) !important;
+  background: transparent !important;
+  font-size: 11px !important;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.ui-bottom-navigation .nav-btn.active,
+.ui-bottom-navigation .nav-btn[aria-current="page"] {
+  color: var(--omega-ui-accent) !important;
+  border-color: var(--omega-ui-border-strong) !important;
+  background: var(--omega-ui-accent-wash) !important;
+}
+
+/* Every panel has a bounded viewport and scrolls internally. */
+.omega-modal,
+#command-hub-modal,
+#minister-interrogation-modal,
+#cabinet-full-window,
+#ministry-dashboard-view,
+#city-detail-bar {
+  max-height: var(--omega-app-height) !important;
+  overscroll-behavior: contain;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, .34) !important;
+}
+.omega-drawer {
+  max-height: calc(var(--omega-app-height) - 24px - var(--omega-safe-top) - var(--omega-safe-bottom)) !important;
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--omega-ui-border) !important;
+  border-radius: 12px !important;
+  background: rgba(10, 18, 32, .99) !important;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, .38) !important;
+  z-index: 4000 !important;
+}
+.omega-drawer .drawer-header {
+  flex: 0 0 auto;
+  min-width: 0;
+  gap: 8px;
+  border-bottom: 1px solid var(--omega-ui-border) !important;
+  background: var(--omega-ui-surface) !important;
+}
+.omega-drawer .drawer-body {
+  flex: 1 1 auto;
+  min-height: 0 !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+#resource-filter-box,
+#map-metric-dropdown,
+.map-metric-dropdown {
+  max-height: calc(var(--omega-app-height) - 76px - var(--omega-safe-top) - var(--omega-safe-bottom)) !important;
+  min-height: 0;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--omega-ui-border-strong) !important;
+  border-radius: 12px !important;
+  background: rgba(10, 18, 32, .99) !important;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, .36) !important;
+}
+#resource-filter-box.hidden,
+#map-metric-dropdown.hidden { display: none !important; }
+
+/* Ministry workspace: keep the title and back action fixed while the work area scrolls. */
+#ministry-dashboard-view {
+  width: 100vw !important;
+  height: var(--omega-app-height) !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: var(--omega-ui-bg) !important;
+}
+#ministry-dashboard-view .sticky-layer-header {
+  flex: 0 0 auto !important;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  min-width: 0;
+  padding: 10px 14px 10px 112px !important;
+  border-bottom: 1px solid var(--omega-ui-border) !important;
+  background: var(--omega-ui-surface) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, .18);
+}
+#ministry-dashboard-view .breadcrumb-trail {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 3px 7px;
+  min-width: 0;
+  line-height: 1.35;
+}
+#ministry-dashboard-view #ministry-dashboard-content,
+#ministry-dashboard-view .ministry-content-area {
+  box-sizing: border-box !important;
+  flex: 1 1 0 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: none !important;
+  padding: 12px 14px calc(18px + var(--omega-safe-bottom)) !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y pinch-zoom !important;
+}
+#ministry-dashboard-content > *,
+#ministry-dashboard-content .ofm-dashboard,
+#ministry-dashboard-content .ofm-tab-content {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+}
+#ministry-dashboard-content .ofm-dashboard {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+}
+#cabinet-full-window {
+  inset: 0 !important;
+  width: 100vw !important;
+  height: var(--omega-app-height) !important;
+  max-height: var(--omega-app-height) !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  transform: none !important;
+  border-radius: 0 !important;
+  overflow: hidden !important;
+  background: var(--omega-ui-bg) !important;
+}
+#cabinet-full-window .cabinet-top-header {
+  box-sizing: border-box;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  min-width: 0;
+  max-width: 100%;
+  padding: 10px 14px !important;
+  border-bottom: 1px solid var(--omega-ui-border) !important;
+  background: var(--omega-ui-surface) !important;
+}
+#cabinet-full-window .cabinet-top-header > div {
+  min-width: 0;
+  flex-wrap: wrap;
+}
+#cabinet-full-window .cabinet-body,
+#cabinet-full-window #cabinet-body {
+  box-sizing: border-box !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: calc(var(--omega-app-height) - 72px) !important;
+  padding: 12px 12px calc(20px + var(--omega-safe-bottom)) !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y pinch-zoom !important;
+}
+
+/* Country and city cards should never cover the entire viewport on small screens. */
+.country-info-card {
+  box-sizing: border-box !important;
+  width: min(960px, calc(100vw - 24px)) !important;
+  max-width: calc(100vw - 24px) !important;
+  max-height: min(34dvh, 260px);
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+  border: 1px solid var(--omega-ui-border) !important;
+  border-radius: 12px !important;
+  background: rgba(10, 18, 32, .98) !important;
+}
+.country-info-card .card-action-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.country-info-card .card-action-bar button {
+  min-height: 36px;
+  flex: 0 1 auto;
+}
+#city-detail-bar {
+  width: min(760px, calc(100vw - 24px)) !important;
+  max-width: calc(100vw - 24px) !important;
+  max-height: calc(var(--omega-app-height) - 24px - var(--omega-safe-top) - var(--omega-safe-bottom)) !important;
+  overflow: hidden !important;
+  border: 1px solid var(--omega-ui-border-strong) !important;
+  border-radius: 14px !important;
+  background: rgba(10, 18, 32, .99) !important;
+}
+#city-detail-bar .city-modal-body {
+  max-height: calc(var(--omega-app-height) - 100px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* Shared button contract: clear affordance, consistent size, visible keyboard focus. */
+button,
+[role="button"],
+input,
+select,
+textarea {
+  font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+button:not(:disabled):not([aria-disabled="true"]),
+[role="button"]:not([aria-disabled="true"]),
+a[href] { cursor: pointer; }
+button:disabled,
+button[aria-disabled="true"],
+[role="button"][aria-disabled="true"] {
+  cursor: not-allowed !important;
+  opacity: .52 !important;
+}
+button:focus-visible,
+[role="button"]:focus-visible,
+a[href]:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--omega-ui-accent) !important;
+  outline-offset: 2px !important;
+}
+button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+#global-back-btn.global-back-btn {
+  z-index: 5000 !important;
+  min-width: 74px;
+  min-height: 40px;
+  padding: 8px 11px !important;
+  border-radius: 9px !important;
+  border: 1px solid var(--omega-ui-border-strong) !important;
+  background: var(--omega-ui-surface) !important;
+  color: var(--omega-ui-text) !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, .28) !important;
+}
+
+/* Chapter navigation and advisor panels on the country command screen. */
+#command-hub-modal {
+  width: min(1440px, calc(100vw - 16px)) !important;
+  max-width: calc(100vw - 16px) !important;
+  max-height: calc(var(--omega-app-height) - 12px) !important;
+  overflow: hidden !important;
+  border: 1px solid var(--omega-ui-border) !important;
+  border-radius: 12px !important;
+  background: var(--omega-ui-bg) !important;
+}
+#command-hub-modal .ios-wrapper {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  max-height: var(--omega-app-height);
+}
+#command-hub-modal .ios-header {
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  min-width: 0;
+  padding: 10px 12px !important;
+  background: var(--omega-ui-surface) !important;
+  border-bottom: 1px solid var(--omega-ui-border) !important;
+}
+#command-hub-modal .ios-chapter-bar {
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  min-width: 0;
+  gap: 6px;
+  padding: 7px 8px;
+  border-bottom: 1px solid var(--omega-ui-border);
+  background: var(--omega-ui-bg);
+}
+#command-hub-modal .ios-chapter-track {
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+}
+#command-hub-modal .chapter-tab {
+  flex: 0 0 auto;
+  min-height: 38px;
+  white-space: nowrap;
+}
+#command-hub-modal .ios-content-viewport {
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  height: auto !important;
+  overflow: hidden !important;
+}
+#command-hub-modal .ios-chapter-stage {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Phone-first adjustments. Portrait mode is supported; it is no longer blocked. */
+#rotate-warning { display: none !important; }
+@media (max-width: 760px) {
+  #top-status-bar {
+    left: max(6px, var(--omega-safe-left)) !important;
+    right: max(6px, var(--omega-safe-right)) !important;
+    max-height: 36dvh;
+    padding: 6px 7px !important;
+    gap: 5px !important;
+    overflow-x: hidden;
+    overflow-y: auto;
+    align-content: start;
+  }
+  #top-status-bar .status-left {
+    flex: 1 1 100%;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    gap: 6px;
+  }
+  #top-status-bar .status-left .status-item {
+    min-width: 0;
+    flex: 1 1 auto;
+    font-size: 10px;
+    line-height: 1.25;
+  }
+  #top-status-bar .status-resources {
+    flex: 1 1 100%;
+    width: 100%;
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 5px !important;
+    justify-content: stretch;
+  }
+  #top-status-bar .status-resources .res-node {
+    min-width: 0;
+    gap: 3px;
+    justify-content: flex-start;
+    font-size: 10px;
+    line-height: 1.2;
+    overflow: hidden;
+  }
+  #top-status-bar #metric-selector-pill,
+  #top-status-bar #top-bar-dropdown-trigger {
+    grid-column: span 2;
+    margin-left: 0 !important;
+    min-width: 0;
+    padding: 5px 6px !important;
+    font-size: 10px !important;
+  }
+  #top-status-bar .res-val {
+    max-width: 100%;
+    min-width: 0;
+    font-size: 10px;
+  }
+  #top-status-bar .status-right {
+    flex: 1 1 100%;
+    width: 100%;
+    justify-content: flex-start;
+    gap: 5px 10px !important;
+    font-size: 9px;
+  }
+  #top-status-bar .status-right .debug-fps { display: none; }
+  .ui-right-controls {
+    right: max(5px, var(--omega-safe-right)) !important;
+    top: 57% !important;
+    max-height: 40dvh;
+    padding: 5px !important;
+    gap: 5px !important;
+  }
+  .icon-btn {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px;
+    min-height: 36px;
+    font-size: 15px !important;
+  }
+  .ui-bottom-navigation {
+    left: max(7px, var(--omega-safe-left)) !important;
+    right: max(7px, var(--omega-safe-right)) !important;
+    bottom: calc(6px + var(--omega-safe-bottom)) !important;
+    width: auto !important;
+    max-width: none !important;
+    transform: none !important;
+    justify-content: flex-start !important;
+    border-radius: 10px !important;
+  }
+  .ui-bottom-navigation .nav-btn {
+    min-width: 86px;
+    min-height: 42px;
+    padding: 6px 9px !important;
+    font-size: 10px !important;
+  }
+  #ministry-dashboard-view .sticky-layer-header {
+    padding: 8px 8px 8px 66px !important;
+    gap: 6px;
+  }
+  #ministry-dashboard-view #ministry-dashboard-content,
+  #ministry-dashboard-view .ministry-content-area {
+    padding: 8px 8px calc(14px + var(--omega-safe-bottom)) !important;
+  }
+  #cabinet-full-window .cabinet-top-header {
+    padding: 8px !important;
+  }
+  #cabinet-full-window .cabinet-top-header > div {
+    gap: 6px !important;
+  }
+  #cabinet-full-window .cabinet-body,
+  #cabinet-full-window #cabinet-body {
+    max-height: calc(var(--omega-app-height) - 94px) !important;
+    padding: 8px 8px calc(16px + var(--omega-safe-bottom)) !important;
+  }
+  .country-info-card {
+    width: calc(100vw - 16px) !important;
+    max-width: calc(100vw - 16px) !important;
+    max-height: 32dvh;
+  }
+  .country-info-card .card-stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .country-info-card .card-action-bar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 5px;
+  }
+  .country-info-card .card-action-bar button {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .omega-drawer {
+    top: calc(8px + var(--omega-safe-top)) !important;
+    right: 8px !important;
+    left: 8px !important;
+    width: auto !important;
+    max-width: none !important;
+    max-height: calc(var(--omega-app-height) - 16px - var(--omega-safe-top) - var(--omega-safe-bottom)) !important;
+    border-radius: 10px !important;
+  }
+  #resource-filter-box,
+  #map-metric-dropdown,
+  .map-metric-dropdown {
+    top: calc(8px + var(--omega-safe-top)) !important;
+    right: 8px !important;
+    left: 8px !important;
+    width: auto !important;
+    max-width: none !important;
+    max-height: calc(var(--omega-app-height) - 16px - var(--omega-safe-top) - var(--omega-safe-bottom)) !important;
+    transform: none !important;
+  }
+  #command-hub-modal {
+    inset: calc(6px + var(--omega-safe-top)) 6px calc(6px + var(--omega-safe-bottom)) !important;
+    width: auto !important;
+    max-width: none !important;
+    max-height: calc(var(--omega-app-height) - 12px - var(--omega-safe-top) - var(--omega-safe-bottom)) !important;
+  }
+  #command-hub-modal .ios-header {
+    padding: 8px !important;
+  }
+  #command-hub-modal .ios-header-actions {
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+  #command-hub-modal .ios-content-viewport {
+    flex-direction: column;
+  }
+  #command-hub-modal .ios-advisor-dock {
+    max-height: 42%;
+    overflow-y: auto;
+  }
+  #minister-interrogation-modal {
+    inset: calc(6px + var(--omega-safe-top)) 6px calc(6px + var(--omega-safe-bottom)) !important;
+    width: auto !important;
+    height: auto !important;
+    max-width: none !important;
+    max-height: calc(var(--omega-app-height) - 12px - var(--omega-safe-top) - var(--omega-safe-bottom)) !important;
+    overflow-y: auto !important;
+    border-radius: 10px !important;
+  }
+  #minister-interrogation-modal > div > div[style*="grid-template-columns"] {
+    grid-template-columns: minmax(0, 1fr) !important;
+    overflow-y: auto !important;
+  }
+  #minister-interrogation-modal > div > div[style*="grid-template-columns"] > div {
+    min-width: 0;
+    overflow: visible !important;
+  }
+  #city-detail-bar {
+    width: calc(100vw - 16px) !important;
+    max-width: calc(100vw - 16px) !important;
+    max-height: calc(var(--omega-app-height) - 16px - var(--omega-safe-top) - var(--omega-safe-bottom)) !important;
+  }
+}
+
+/* Very narrow devices: preserve labels, and let horizontal navigation scroll. */
+@media (max-width: 390px) {
+  #top-status-bar .status-resources {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  #top-status-bar #metric-selector-pill,
+  #top-status-bar #top-bar-dropdown-trigger {
+    grid-column: span 3;
+  }
+  #top-status-bar .status-right .status-item {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+  .ui-bottom-navigation .nav-btn { min-width: 80px; }
+}
+
+/* Keep layer semantics: map chrome stays hidden when an app layer owns the screen. */
+body[data-active-layer="1"] .ui-bottom-navigation,
+body[data-active-layer="1"] .ui-right-controls,
+body[data-active-layer="1"] #top-status-bar,
+body[data-active-layer="2"] .ui-bottom-navigation,
+body[data-active-layer="2"] .ui-right-controls,
+body[data-active-layer="2"] #top-status-bar,
+body[data-active-layer="3"] .ui-bottom-navigation,
+body[data-active-layer="3"] .ui-right-controls,
+body[data-active-layer="3"] #top-status-bar,
+body[data-active-layer="5"] .ui-bottom-navigation,
+body[data-active-layer="5"] .ui-right-controls,
+body[data-active-layer="5"] #top-status-bar,
+body.ios-active .ui-bottom-navigation,
+body.ios-active .ui-right-controls,
+body.ios-active #top-status-bar,
+body.modal-open #top-status-bar {
+  display: none !important;
+  pointer-events: none !important;
+}
+
+/* Respect reduced-motion and older mobile GPU budgets. */
+@media (prefers-reduced-motion: reduce), (pointer: coarse) {
+  #ui-engine-root *,
+  #ui-engine-root *::before,
+  #ui-engine-root *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .12s !important;
+  }
+  .omega-modal,
+  .omega-drawer,
+  #cabinet-full-window,
+  #command-hub-modal {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+}

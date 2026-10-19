@@ -126,14 +126,14 @@ jobs:
           trap 'kill $SERVER_PID >/dev/null 2>&1 || true' EXIT
           READY=0
           for i in $(seq 1 20); do
-            if curl -fsS http://127.0.0.1:31337/api/ai/status >/tmp/omega-ai-status.json 2>/dev/null; then READY=1; break; fi
+            if curl --connect-timeout 1 --max-time 3 -fsS http://127.0.0.1:31337/api/ai/status >/tmp/omega-ai-status.json 2>/dev/null; then READY=1; break; fi
             sleep 1
           done
           if [ "$READY" -ne 1 ]; then
             cat /tmp/omega-server.log
             exit 1
           fi
-          curl -fsS http://127.0.0.1:31337/ >/tmp/omega-index.html
+          curl --connect-timeout 1 --max-time 5 -fsS http://127.0.0.1:31337/ >/tmp/omega-index.html
           node --input-type=module <<'NODE'
           import fs from 'node:fs/promises';
           const html = await fs.readFile('/tmp/omega-index.html','utf8');

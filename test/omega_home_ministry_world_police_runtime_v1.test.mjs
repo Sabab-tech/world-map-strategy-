@@ -1,4 +1,4 @@
-import test from 'node:test';
+import test, { beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -77,6 +77,30 @@ globalThis.Omega.FinanceMinistry = financeApi;
 await import('../omega_home_ministry_engine_v1.js');
 const engine = globalThis.OmegaHomeMinistryEngine;
 
+beforeEach(() => {
+  // Keep country and Finance mutations from one test from starving the next test.
+  financeModel.treasuryBalanceUsd = 12_000_000;
+  financeModel.revision = 0;
+  financeModel.fiscalYearIndex = 0;
+  financeModel.ledger.length = 0;
+  financeModel.allocations = {
+    interior: { budgetUsd: 10_000_000, spentUsd: 0, remainingUsd: 10_000_000 },
+    defense: { budgetUsd: 10_000_000, spentUsd: 0, remainingUsd: 10_000_000 }
+  };
+  transactionSequence = 0;
+  globalThis.Game.countryId = 'BD';
+  globalThis.Game.currentActiveCountry = 'BD';
+  globalThis.CountryIOS.activeCountry = 'BD';
+  globalThis.Game.state.interior = {};
+  globalThis.Game.state.economy = { BD: { treasury: 12_000_000, gdp: 250_000_000_000 } };
+  globalThis.Game.state.finance = { BD: { available: 12_000_000, reserves: 0 } };
+  globalThis.Game.state.population = {
+    BD: { population: baselineData.countries.find(row => row.iso3 === 'BGD').population.value }
+  };
+  globalThis.Game.state.simulation = { turn: 0, simulationTimeMs: 0 };
+});
+
+
 test('world police baseline covers the full country registry with provenance-separated population and homicide rows', () => {
   assert.equal(baselineData.schemaVersion, '1.0.0');
   assert.equal(baselineData.countries.length, 249);
@@ -87,7 +111,8 @@ test('world police baseline covers the full country registry with provenance-sep
   assert.ok(baselineData.countries.every(row => Object.values(row.crime.rateSources).every(source =>
     source === 'MODELED_SIMULATION_BASELINE' || source.startsWith('WORLD_BANK_'))));
   assert.ok(baselineData.countries.every(row => Object.values(row.baselineFleet.countsByTier).reduce((sum,n)=>sum+Number(n),0) === row.baselineFleet.totalUnits));
-  assert.ok(baselineData.countries.every(row => row.fleetProfile?.source === 'MODELED_FROM_COUNTRY_URBANIZATION_OCEAN_ACCESS_AND_ECONOMY'));
+  assert.ok(baselineData.countries.every(row => String(row.baselineFleet?.modelNote || '').startsWith('MODELED_ESTIMATE_NOT_OBSERVED_ROSTER:')), 'every country fleet must disclose that its starting roster is modeled, not observed');
+  assert.ok(baselineData.countries.every(row => row.fleetProfile?.source === 'MODELED_FROM_COUNTRY_URBANIZATION_GEOGRAPHY_CITY_NETWORK_AND_ECONOMY'));
   assert.ok(new Set(baselineData.countries.map(row => JSON.stringify(row.baselineFleet.countsByTier))).size > 180);
   assert.ok(baselineData.countries.every(row => row.fleetProfile?.premiumTierPolicy === 'PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15'));
   assert.ok(baselineData.countries.some(row => Object.entries(row.baselineFleet.countsByTier).some(([tier,n]) => Number(tier) > 8 && Number(n) > 0)));
