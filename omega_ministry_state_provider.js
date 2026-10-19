@@ -41,6 +41,25 @@
 
   function normalizeId(value){return String(value??'').trim().toUpperCase();}
 
+  function canonicalCountryId(value){
+    const raw=String(value??'').trim();
+    if(!raw)return '';
+    const registry=global.OmegaCanonicalIdentityRegistry||global.OmegaCountrySemanticBridge||global.Omega?.CanonicalIdentity;
+    if(registry&&typeof registry.resolveCountry==='function'){
+      for(const candidate of [raw,raw.replace(/[_-]+/g,' ')]){
+        try{const hit=registry.resolveCountry(candidate);if(hit&&hit.id)return normalizeId(hit.id);}catch(_){}
+      }
+    }
+    return normalizeId(raw);
+  }
+
+  function countryBucketKey(section,countryId){
+    if(!section||typeof section!=='object')return null;
+    if(Object.prototype.hasOwnProperty.call(section,countryId))return countryId;
+    for(const key of Object.keys(section))if(canonicalCountryId(key)===countryId)return key;
+    return null;
+  }
+
   function stable(value){
     if(value===null||typeof value!=='object')return JSON.stringify(value);
     if(Array.isArray(value))return '['+value.map(stable).join(',')+']';
@@ -103,7 +122,7 @@
     }
 
     countryRecord(countryId){
-      const id=normalizeId(countryId);
+      const id=canonicalCountryId(countryId);
       if(!id)return null;
       const registry=this.countryRegistry||global.OmegaCanonicalIdentityRegistry||global.OmegaCountrySemanticBridge;
       try{
@@ -127,11 +146,9 @@
 
       if(COUNTRY_SCOPED_DOMAINS.has(domain)){
         if(!section||typeof section!=='object'||!countryId)return undefined;
-        let countryBucket=section[countryId];
-        if(countryBucket===undefined){
-          const key=Object.keys(section).find(k=>String(k).toUpperCase()===String(countryId).toUpperCase());
-          if(key!==undefined)countryBucket=section[key];
-        }
+        const key=countryBucketKey(section,countryId);
+        if(key===null)return undefined;
+        const countryBucket=section[key];
         if(countryBucket===undefined||countryBucket===null)return undefined;
         let cur=countryBucket;
         for(const part of parts){
@@ -154,8 +171,8 @@
         const state=this.root();
         const section=state?.resources||state?.resourceSummary;
         if(!section||typeof section!=='object'||!countryId)return undefined;
-        const key=Object.keys(section).find(k=>String(k).toUpperCase()===String(countryId).toUpperCase());
-        return key===undefined?undefined:clone(section[key]);
+        const key=countryBucketKey(section,countryId);
+        return key===null?undefined:clone(section[key]);
       }
       if(path==='resourceInventory'||path==='resourceDeposits'||path==='resourceEngineState'){
         const engine=global.ResourceMinistryEngine;
@@ -179,7 +196,7 @@
     }
 
     get(countryId,path){
-      const id=normalizeId(countryId);
+      const id=canonicalCountryId(countryId);
       const special=this._specialPath(id,String(path??''));
       if(special!==undefined)return clone(special);
       const value=this._directPath(id,path);
@@ -187,7 +204,7 @@
     }
 
     getSnapshot(countryId,domain){
-      const id=normalizeId(countryId);
+      const id=canonicalCountryId(countryId);
       const d=String(domain??'').trim();
       if(d==='country'||d==='identity')return this.countryRecord(id);
       const value=this.get(id,d);
@@ -196,7 +213,7 @@
     }
 
     getRevision(countryId,domain){
-      const id=normalizeId(countryId);
+      const id=canonicalCountryId(countryId);
       const d=String(domain??'').trim();
       const state=this.root();
       const override=readPath(this.revisionOverrides,[id,d].join('.')) ??
@@ -210,7 +227,7 @@
     }
 
     getAvailability(countryId,path,options={}){
-      const id=normalizeId(countryId);
+      const id=canonicalCountryId(countryId);
       const p=String(path??'');
       if(!id||!p)return {status:AVAILABILITY.NOT_APPLICABLE,reason:'INVALID_ID_OR_PATH'};
       const state=this.root();
@@ -250,7 +267,7 @@
     }
 
     getProvenance(countryId,path,options={}){
-      const id=normalizeId(countryId);
+      const id=canonicalCountryId(countryId);
       const p=String(path??'');
       const availability=this.getAvailability(id,p,options);
       const repositoryIdentity=(p==='country.identity'||p==='countryRecord') && !!this.countryRecord(id);
@@ -269,7 +286,7 @@
     }
 
     describe(countryId,path,options={}){
-      const id=normalizeId(countryId);
+      const id=canonicalCountryId(countryId);
       const availability=this.getAvailability(id,path,options);
       const value=availability.value!==undefined?availability.value:this.get(id,path);
       return {
@@ -283,7 +300,7 @@
     }
 
     hydrate(countryId,paths=[]){
-      const id=normalizeId(countryId);
+      const id=canonicalCountryId(countryId);
       const values={};
       for(const path of paths){
         const d=this.describe(id,path);
