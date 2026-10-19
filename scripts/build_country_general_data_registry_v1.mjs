@@ -103,12 +103,12 @@ const METRIC_CATALOGUE = [
   { key: 'co2TonnesPerCapita', name: 'CO2 emissions per capita', unit: 'metric tonnes per person', wb: 'EN.ATM.CO2E.PC', description: 'Territorial CO2 emissions per capita.' },
   { key: 'militaryExpenditurePctGdp', name: 'Military expenditure', unit: '% of GDP', wb: 'MS.MIL.XPND.GD.ZS', description: 'Military expenditure share of GDP; source coverage varies.' },
   { key: 'homicideRatePer100k', name: 'Intentional homicide rate', unit: 'per 100,000 people', wb: 'VC.IHR.PSRC.P5', description: 'Observed-source record when available; repository legacy observations need revalidation.' },
-  { key: 'ruleOfLawWgiEstimate', name: 'Rule of law, WGI estimate', unit: 'WGI estimate, approximately -2.5 to +2.5', wb: 'RL.EST', description: 'World Governance Indicators estimate, not a 0-100 discipline score.' },
-  { key: 'controlOfCorruptionWgiEstimate', name: 'Control of corruption, WGI estimate', unit: 'WGI estimate, approximately -2.5 to +2.5', wb: 'CC.EST', description: 'World Governance Indicators estimate.' },
-  { key: 'politicalStabilityWgiEstimate', name: 'Political stability, WGI estimate', unit: 'WGI estimate, approximately -2.5 to +2.5', wb: 'PV.EST', description: 'World Governance Indicators estimate.' },
-  { key: 'governmentEffectivenessWgiEstimate', name: 'Government effectiveness, WGI estimate', unit: 'WGI estimate, approximately -2.5 to +2.5', wb: 'GE.EST', description: 'World Governance Indicators estimate.' },
-  { key: 'regulatoryQualityWgiEstimate', name: 'Regulatory quality, WGI estimate', unit: 'WGI estimate, approximately -2.5 to +2.5', wb: 'RQ.EST', description: 'World Governance Indicators estimate.' },
-  { key: 'voiceAccountabilityWgiEstimate', name: 'Voice and accountability, WGI estimate', unit: 'WGI estimate, approximately -2.5 to +2.5', wb: 'VA.EST', description: 'World Governance Indicators estimate.' },
+  { key: 'ruleOfLawWgiEstimate', name: 'Rule of law, WGI estimate', unit: 'WGI estimate, approximately -2.5 to +2.5', wb: 'GOV_WGI_RL_EST', wbFallbacks: ['RL.EST'], description: 'World Governance Indicators estimate, not a 0-100 discipline score.' },
+  { key: 'controlOfCorruptionWgiEstimate', name: 'Control of corruption, WGI estimate', unit: 'WGI estimate, approximately -2.5 to +2.5', wb: 'GOV_WGI_CC_EST', wbFallbacks: ['CC.EST'], description: 'World Governance Indicators estimate.' },
+  { key: 'politicalStabilityWgiEstimate', name: 'Political stability, WGI estimate', unit: 'WGI estimate, approximately -2.5 to +2.5', wb: 'GOV_WGI_PV_EST', wbFallbacks: ['PV.EST'], description: 'World Governance Indicators estimate.' },
+  { key: 'governmentEffectivenessWgiEstimate', name: 'Government effectiveness, WGI estimate', unit: 'WGI estimate, approximately -2.5 to +2.5', wb: 'GOV_WGI_GE_EST', wbFallbacks: ['GE.EST'], description: 'World Governance Indicators estimate.' },
+  { key: 'regulatoryQualityWgiEstimate', name: 'Regulatory quality, WGI estimate', unit: 'WGI estimate, approximately -2.5 to +2.5', wb: 'GOV_WGI_RQ_EST', wbFallbacks: ['RQ.EST'], description: 'World Governance Indicators estimate.' },
+  { key: 'voiceAccountabilityWgiEstimate', name: 'Voice and accountability, WGI estimate', unit: 'WGI estimate, approximately -2.5 to +2.5', wb: 'GOV_WGI_VA_EST', wbFallbacks: ['VA.EST'], description: 'World Governance Indicators estimate.' },
   { key: 'rAndDSpendPctGdp', name: 'Research and development expenditure', unit: '% of GDP', wb: 'GB.XPD.RSDV.GD.ZS', description: 'Research and development spending.' },
   { key: 'healthSpendPctGdp', name: 'Current health expenditure', unit: '% of GDP', wb: 'SH.XPD.CHEX.GD.ZS', description: 'Current health expenditure.' },
   { key: 'educationSpendPctGdp', name: 'Government education expenditure', unit: '% of GDP', wb: 'SE.XPD.TOTL.GD.ZS', description: 'Government education spending where available.' },
@@ -180,7 +180,7 @@ async function fetchWorldBankMetadata() {
 }
 
 async function fetchWorldBankIndicators() {
-  const codes = Array.from(new Set(METRIC_CATALOGUE.map((field) => field.wb).filter(Boolean)));
+  const codes = Array.from(new Set(METRIC_CATALOGUE.flatMap((field) => [field.wb, ...(field.wbFallbacks || [])]).filter(Boolean)));
   const byCountry = new Map();
   const errors = [];
   // The World Bank indicator endpoint accepts one indicator code per request.
@@ -460,16 +460,37 @@ function makeRecord(country, sources, previous, refreshData) {
       metricMetadata[field.key] = safeCopy(existingMeta, metricMetadata[field.key]);
     }
     if (field.wb) {
-      const observation = currentByIso3[field.wb];
+      // Prefer the current WGI series identifier. Fall back to the legacy WDI identifier
+      // only for a country where the preferred series returned no numeric observation.
+      const candidateCodes = [field.wb, ...(field.wbFallbacks || [])].filter(Boolean);
+      const selected = candidateCodes
+        .map((code) => ({ code, observation: currentByIso3[code] }))
+        .find((item) => item.observation && item.observation.value !== null);
+      const observation = selected?.observation || null;
+      const selectedCode = selected?.code || field.wb;
       const priorYear = finite(metricMetadata[field.key]?.year);
-      if (observation && observation.value !== null &&
+      if (observation &&
           (!oldOfficial || observation.year === null || priorYear === null || observation.year >= priorYear)) {
         metrics[field.key] = observation.value;
         metricMetadata[field.key] = {
           year: observation.year, sourceId: 'WORLD_BANK_WDI', sourceName: 'World Bank Indicators API v2',
-          status: 'WORLD_BANK_API_OBSERVATION', method: 'SOURCE_OBSERVATION', indicatorCode: field.wb,
+          status: 'WORLD_BANK_API_OBSERVATION', method: 'SOURCE_OBSERVATION', indicatorCode: selectedCode,
+          sourceUrl: 'https://api.worldbank.org/v2/country/' + String(country.iso3 || '').toLowerCase() + '/indicator/' + selectedCode + '?format=json',
+          note: selectedCode === field.wb
+            ? 'Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.'
+            : 'Preferred series had no numeric observation for this country; the documented legacy indicator fallback was used.'
+        };
+      } else if (REFRESH && metrics[field.key] === null) {
+        const failedCodes = candidateCodes.filter((code) => refreshData.worldBank.errors.some((error) => error.indicator === code));
+        metricMetadata[field.key] = {
+          year: null, sourceId: failedCodes.length ? 'WORLD_BANK_WDI' : null,
+          sourceName: failedCodes.length ? 'World Bank Indicators API v2' : null,
+          status: failedCodes.length ? 'SOURCE_REFRESH_FAILED' : 'NO_SOURCE_OBSERVATION',
+          method: 'API_REFRESH_DIAGNOSTIC', indicatorCode: field.wb,
           sourceUrl: 'https://api.worldbank.org/v2/country/' + String(country.iso3 || '').toLowerCase() + '/indicator/' + field.wb + '?format=json',
-          note: 'Most recent non-empty observation returned by the API; compare the year before combining metrics.'
+          note: failedCodes.length
+            ? 'No source value was stored because the indicator request failed: ' + failedCodes.join(', ') + '. Inspect metadata.externalRefresh.worldBankIndicatorErrors.'
+            : 'The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.'
         };
       }
     }
@@ -650,8 +671,38 @@ async function main() {
       missing: values.filter((value) => finite(value) === null).length
     }];
   }));
+  const canonicalIso3 = new Set(countries.map((country) => String(country.iso3 || '').toUpperCase()).filter(Boolean));
+  const governanceRefresh = Object.fromEntries(METRIC_CATALOGUE
+    .filter((field) => field.key.endsWith('WgiEstimate'))
+    .map((field) => {
+      const candidateCodes = [field.wb, ...(field.wbFallbacks || [])].filter(Boolean);
+      const series = {};
+      for (const code of candidateCodes) {
+        const matched = [];
+        for (const [iso3, indicators] of wbData.byCountry.entries()) {
+          if (canonicalIso3.has(iso3) && indicators[code]) matched.push(indicators[code]);
+        }
+        series[code] = {
+          countriesWithNumericObservation: matched.length,
+          latestObservationYear: matched.reduce((latest, row) => row.year === null ? latest : Math.max(latest ?? row.year, row.year), null),
+          requestError: wbData.errors.find((error) => error.indicator === code)?.error || null
+        };
+      }
+      const countriesWithFreshObservation = rows.filter((row) => candidateCodes.some((code) => {
+        const iso3 = String(row.identity.iso3 || '').toUpperCase();
+        return wbData.byCountry.get(iso3)?.[code]?.value !== null && wbData.byCountry.get(iso3)?.[code] !== undefined;
+      })).length;
+      return [field.key, {
+        preferredSeries: field.wb,
+        fallbackSeries: field.wbFallbacks || [],
+        series,
+        countriesWithFreshObservation,
+        status: countriesWithFreshObservation > 0 ? 'FRESH_OBSERVATIONS_RECEIVED' :
+          (candidateCodes.some((code) => wbData.errors.some((error) => error.indicator === code)) ? 'REQUEST_FAILED_OR_PARTIAL' : 'NO_NUMERIC_OBSERVATIONS_RECEIVED')
+      }];
+    }));
   const metadata = {
-    schemaVersion: '1.0.0',
+    schemaVersion: '1.1.0',
     datasetId: 'OMEGA_COUNTRY_GENERAL_DATA_REGISTRY_V1',
     title: 'OMEGA Unified Country General Data Registry',
     description: 'Canonical common-schema registry aggregating identity, basic facts, economy, demographics, general indexes, resource context and public-safety summary for every identity in countries.json.',
@@ -684,6 +735,7 @@ async function main() {
       worldBankMetadataLoaded: wbMetadata.metadataLoaded,
       worldBankIndicatorErrors: wbData.errors,
       worldBankMetadataError: wbMetadata.metadataError,
+      governanceIndicatorRefresh: governanceRefresh,
       restCountriesLoaded: restCountries.loaded,
       restCountriesError: restCountries.error,
       policy: 'A refreshed observation replaces a legacy value only when the World Bank API returns a numeric observation. When a refresh is unavailable, previously stored World Bank observations are preserved.'
