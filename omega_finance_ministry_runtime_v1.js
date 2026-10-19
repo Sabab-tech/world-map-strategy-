@@ -25,7 +25,19 @@
   function clone(v){if(v===undefined)return undefined;try{return JSON.parse(JSON.stringify(v));}catch(_){return v;}}
   function norm(v){return String(v==null?'':v).toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/&/g,' AND ').replace(/[^A-Z0-9]+/g,'_').replace(/^_|_$/g,'');}
   function escapeHTML(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
-  function fmtMoney(v){const n=finite(v);if(n===null)return 'N/A';try{return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(n);}catch(_){return '$'+Math.round(n).toLocaleString('en-US');}}
+  function fmtMoney(v){
+  const n=finite(v);if(n===null)return 'N/A';
+  const abs=Math.abs(n);
+  const scale=abs>=1e12?{value:1e12,label:'trillion'}:abs>=1e9?{value:1e9,label:'billion'}:abs>=1e6?{value:1e6,label:'million'}:abs>=1e3?{value:1e3,label:'thousand'}:null;
+  if(scale){
+    let amount;
+    try{amount=new Intl.NumberFormat('en-US',{maximumFractionDigits:2}).format(abs/scale.value);}
+    catch(_){amount=(abs/scale.value).toFixed(2).replace(/\\.?0+$/,'');}
+    return (n<0?'-':'')+'$'+amount+' '+scale.label;
+  }
+  try{return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(n);}
+  catch(_){return (n<0?'-':'')+'$'+Math.abs(n).toLocaleString('en-US',{maximumFractionDigits:0});}
+}
   function fmtNumber(v,digits){const n=finite(v);return n===null?'N/A':n.toLocaleString('en-US',{maximumFractionDigits:digits===undefined?2:digits});}
   function fmtPct(v){const n=finite(v);return n===null?'N/A':n.toFixed(2)+'%';}
   function ensureObject(parent,key){if(!isObject(parent[key]))parent[key]={};return parent[key];}
