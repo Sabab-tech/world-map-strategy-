@@ -65,6 +65,11 @@ window.CountryIOS = {
         if (window.OmegaCabinetUI) window.OmegaCabinetUI.activeCountry = this.activeCountry;
         try {
             window.dispatchEvent(new CustomEvent('OMEGA_COUNTRY_CONTEXT_CHANGED', {
+                detail: { countryId: this.activeCountry, source: 'country-ios' }
+            }));
+        } catch (_) {}
+        try {
+            window.dispatchEvent(new CustomEvent('OMEGA_COUNTRY_CONTEXT_CHANGED', {
                 detail: { countryId: this.activeCountry, source: 'CountryIOS.open' }
             }));
         } catch (_) {}
