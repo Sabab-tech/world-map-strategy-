@@ -400,8 +400,12 @@
   function getPlayerCode(){return playerCountryProfile()?.countryCode||null;}
   function postLedger(model,profile,entry){
     model.ledger=Array.isArray(model.ledger)?model.ledger:[];
-    model.ledger.push(Object.assign({turn:currentTurn(),countryCode:profile.countryCode,balanceAfterUsd:finite(model.treasuryBalanceUsd)||0},entry));
+    const row=Object.assign({turn:currentTurn(),countryCode:profile.countryCode,
+      balanceAfterUsd:finite(model.treasuryBalanceUsd)||0,fiscalYearIndex:Math.max(0,Math.floor(finite(model.fiscalYearIndex)||0))},entry);
+    if(!row.transactionId)row.transactionId='FIN-'+profile.countryCode+'-'+currentTurn()+'-'+String((finite(model.revision)||0)+1)+'-'+String(model.ledger.length+1);
+    model.ledger.push(row);
     model.ledger=model.ledger.slice(-Number(rules.maximumLedgerEntries||500));
+    return clone(row);
   }
   function applyAction(action){
     action=isObject(action)?action:{};
@@ -500,8 +504,34 @@
       fb.spending=(finite(fb.spending)||0)+amount;
       fb.operatingExpenditure=(finite(fb.operatingExpenditure)||0)+amount;
       if(category==='purchase'||category==='investment')fb.capitalExpenditure=(finite(fb.capitalExpenditure)||0)+amount;
-      postLedger(fm,p,{department:dep,action:'EXPENSE',category,amountUsd:amount,description:String(action.description||'').slice(0,160)});
-      fm.revision+=1;result={ok:true,code:'EXPENSE_POSTED',message:'Expense posted, charged to the sector ceiling and deducted from available treasury.'};
+      const expenseEntry=postLedger(fm,p,{department:dep,action:'EXPENSE',category,amountUsd:amount,description:String(action.description||'').slice(0,160)});
+      fm.revision+=1;result={ok:true,code:'EXPENSE_POSTED',transactionId:expenseEntry.transactionId,message:'Expense posted, charged to the sector ceiling and deducted from available treasury.'};
+    }else if(type==='rollback-home-ministry-expense'){
+      const transactionId=String(action.transactionId||'').trim();
+      const original=fm.ledger.find(row=>row&&String(row.transactionId||'')===transactionId);
+      if(!original||original.action!=='EXPENSE'||String(original.department||'')!=='interior'||!String(original.description||'').startsWith('OMEGA_HOME_BUDGET:'))
+        return{ok:false,code:'HOME_EXPENSE_ROLLBACK_REFERENCE_INVALID',message:'Only an identifiable Home Ministry expense can be reversed.'};
+      if(original.reversedBy)return{ok:false,code:'HOME_EXPENSE_ALREADY_REVERSED',message:'This expense has already been reversed.'};
+      if(Math.floor(finite(original.fiscalYearIndex)||0)!==Math.floor(finite(fm.fiscalYearIndex)||0))
+        return{ok:false,code:'HOME_EXPENSE_ROLLBACK_FISCAL_YEAR_MISMATCH',message:'A prior fiscal-year expense cannot be reversed by this rollback.'};
+      const allocation=fm.allocations?.interior,refund=finite(original.amountUsd);
+      if(!isObject(allocation)||refund===null||refund<=0||Math.max(0,finite(allocation.spentUsd)||0)+0.01<refund)
+        return{ok:false,code:'HOME_EXPENSE_ROLLBACK_LEDGER_MISMATCH',message:'Finance ledger and ministry allocation do not permit a safe rollback.'};
+      original.reversedBy='ROLLBACK-'+String((finite(fm.revision)||0)+1)+'-'+currentTurn();
+      allocation.spentUsd=Math.max(0,(finite(allocation.spentUsd)||0)-refund);
+      allocation.remainingUsd=Math.max(0,(finite(allocation.budgetUsd)||0)-allocation.spentUsd);
+      fm.treasuryBalanceUsd=Math.max(0,(finite(fm.treasuryBalanceUsd)||0)+refund);
+      fm.currentYearSpendingUsd=Math.max(0,(finite(fm.currentYearSpendingUsd)||0)-refund);
+      fm.cumulativeSpendingUsd=Math.max(0,(finite(fm.cumulativeSpendingUsd)||0)-refund);
+      const fb=financeBucketFor(root,p,true);
+      fb.spending=Math.max(0,(finite(fb.spending)||0)-refund);
+      fb.operatingExpenditure=Math.max(0,(finite(fb.operatingExpenditure)||0)-refund);
+      if(['purchase','investment'].includes(String(original.category||'')))fb.capitalExpenditure=Math.max(0,(finite(fb.capitalExpenditure)||0)-refund);
+      const reversal=postLedger(fm,p,{department:'interior',action:'EXPENSE_ROLLBACK',category:original.category,
+        amountUsd:-refund,description:'OMEGA_HOME_BUDGET_ROLLBACK:'+transactionId,referenceTransactionId:transactionId});
+      fm.revision+=1;
+      result={ok:true,code:'HOME_EXPENSE_ROLLED_BACK',transactionId:reversal.transactionId,reversedTransactionId:transactionId,
+        message:'The Home Ministry expense and its Finance allocation were rolled back.'};
     }else if(type==='borrow'||type==='take-loan'){
       if(amount===null||amount<=0)return {ok:false,code:'LOAN_AMOUNT_INVALID',message:'Loan principal must be greater than zero.'};
       const gdp=finite(e.gdp)||0,debt=Math.max(0,finite(e.debt)||0);
