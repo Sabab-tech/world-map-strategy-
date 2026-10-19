@@ -371,7 +371,7 @@ window.CountryIOS = {
                         <h2 class="banner-country-title">${nameClean.toUpperCase()} · ${capital.toUpperCase()}</h2>
                         <div class="banner-metrics-row">
                             <span class="metric-item">🪙 <strong style="color:#fcd34d;">${cashVal}</strong></span>
-                            <span class="metric-item">💖 <strong style="color:#f43f5e;">${influenceVal}</strong></span>
+                            <span class="metric-item" title="Repository-derived economic influence index"><strong style="color:#f43f5e;">📊 ${influenceVal}</strong></span>
                             <span class="metric-item">👥 <strong style="color:#38bdf8;">${popVal}</strong></span>
                             <span class="metric-item">😊 <strong style="color:#4ade80;">${relationVal}</strong></span>
                         </div>
