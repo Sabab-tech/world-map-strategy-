@@ -407,7 +407,7 @@
     // Do not restore into a temporary boot state before Game.state is linked.
     // The fallback timer may fire before window.load on slow Android devices.
     var authoritativeState = (g.Game && g.Game.state) || g.gameState;
-    if (!authoritativeState || sim.world.state !== authoritativeState) return;
+    if (!g.Omega || !g.Omega.App || !authoritativeState || sim.world.state !== authoritativeState) return;
     restoreFinished = true;
 
     var local = parseLocalSave();
