@@ -456,6 +456,15 @@
         }catch(error){
           const failure={id:entry.id,turn,status:'FAILED',error:String(error?.message||error)};
           results.push(failure);
+          // Stop the world immediately rather than silently let one sector miss a day.
+          this.status='ERROR';
+          this.clock.pause();
+          this.lastError='TURN_PARTICIPANT_FAILED:'+entry.id+':'+failure.error;
+          const session=this.world.state.simulation.session||{};
+          session.status='ERROR';
+          session.lastError=this.lastError;
+          session.failedParticipant=entry.id;
+          this.world.setSession(session);
           try{console.error('[OMEGA TURN PARTICIPANT]',failure);}catch(_){}
         }
       }
@@ -716,10 +725,13 @@
         this.world.hydrateCompatibility();
         const combinedDelta=delta+this.pendingRealDeltaMs;
         this.pendingRealDeltaMs=0;
-        const steps=this.clock.consumeRealDelta(combinedDelta);
-        let last=null;
-        for(let i=0;i<steps;i++)last=await this.step();
-        return {steps,turn:this.clock.turn,last};
+        const scheduledSteps=this.clock.consumeRealDelta(combinedDelta);
+        let completedSteps=0,last=null;
+        for(let i=0;i<scheduledSteps&&this.status==='RUNNING';i++){
+          last=await this.step();
+          completedSteps+=1;
+        }
+        return {steps:completedSteps,scheduledSteps,turn:this.clock.turn,last,status:this.status};
       }finally{
         this.frameInProgress=false;
       }
