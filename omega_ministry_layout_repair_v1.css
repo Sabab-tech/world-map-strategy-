@@ -1,0 +1,108 @@
+/* OMEGA ministry viewport and navigation repair v1.0.0 */
+#ministry-dashboard-view,
+#ministry-dashboard-view:not([style*="display: none"]):not([style*="display:none"]) {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-start !important;
+  align-items: stretch !important;
+}
+#ministry-dashboard-view[style*="display: none"],
+#ministry-dashboard-view[style*="display:none"] {
+  display: none !important;
+}
+#ministry-dashboard-view .sticky-layer-header {
+  flex: 0 0 auto !important;
+  min-width: 0 !important;
+  padding-left: 96px !important;
+}
+#ministry-dashboard-view #ministry-dashboard-content,
+#ministry-dashboard-view .ministry-content-area {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  overscroll-behavior: contain !important;
+  -webkit-overflow-scrolling: touch !important;
+  touch-action: pan-y !important;
+  padding: 10px 12px calc(16px + env(safe-area-inset-bottom)) !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+}
+#ministry-dashboard-content .ofm-dashboard {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+#ministry-dashboard-content .ofm-tab-content {
+  min-width: 0;
+}
+#ministry-dashboard-view.theme-finance .ofm-icon-nav {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 1px 1px 6px;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  touch-action: pan-x pan-y;
+  scrollbar-width: thin;
+}
+#ministry-dashboard-view.theme-finance .ofm-icon-tab {
+  flex: 0 0 124px;
+  min-height: 70px;
+  padding: 8px 9px;
+  scroll-snap-align: start;
+  box-sizing: border-box;
+}
+#ministry-dashboard-view.theme-finance .ofm-icon-tab strong {
+  overflow-wrap: anywhere;
+}
+@media (min-width: 1100px) {
+  #ministry-dashboard-view.theme-finance .ofm-icon-nav {
+    display: grid;
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+    overflow: visible;
+  }
+  #ministry-dashboard-view.theme-finance .ofm-icon-tab {
+    min-height: 70px;
+    padding: 8px;
+  }
+}
+@media (max-width: 700px) {
+  #ministry-dashboard-view .sticky-layer-header {
+    padding: 8px 8px 8px 60px !important;
+  }
+  #ministry-dashboard-view #ministry-dashboard-content,
+  #ministry-dashboard-view .ministry-content-area {
+    padding: 8px 8px calc(14px + env(safe-area-inset-bottom)) !important;
+  }
+  #ministry-dashboard-view.theme-finance .ofm-icon-tab {
+    flex-basis: min(38vw, 124px);
+    min-height: 66px;
+    padding: 7px;
+  }
+  #ministry-dashboard-view.theme-finance .ofm-icon-tab strong {
+    font-size: 10px;
+  }
+  #ministry-dashboard-view.theme-finance .ofm-icon-tab small {
+    font-size: 8px;
+  }
+}

@@ -768,33 +768,12 @@ window.OmegaCabinetEngine = {
     // 3. ⚡ DIRECTIVES & DECREES SYSTEM
     renderDirectivesSubsystem() {
         return `
-            <div style="display:flex; flex-direction:column; gap:14px;">
-                <div style="background:rgba(8,15,28,0.92); border:1px solid rgba(255,215,0,0.35); border-radius:12px; padding:14px;">
-                    <h4 style="color:#ffd700; font-family:'Orbitron',sans-serif; font-size:14px; margin-bottom:10px; display:flex; align-items:center; gap:8px;">
-                        <span>⚡</span> SOVEREIGN EXECUTIVE DECREES
-                    </h4>
-                    <p style="color:#94a3b8; font-size:11px; margin-bottom:12px;">
-                        Issue binding presidential or sovereign decrees to override standard bureau procedures immediately without parliamentary delay.
-                    </p>
-
-                    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:10px;">
-                        <div style="background:rgba(15,23,42,0.8); border:1px solid rgba(239,68,68,0.4); border-radius:8px; padding:12px;">
-                            <strong style="color:#ef4444; font-size:12px;">🚨 Emergency War Mobilization Decree</strong>
-                            <p style="color:#cbd5e1; font-size:11px; margin:6px 0;">Converts 40% civilian factory output into defense munitions for 90 days.</p>
-                            <button onclick="window.showOmegaNotification('🚨 WAR MOBILIZATION DECREE', 'Emergency War Mobilization Enacted! Civilian output reallocated.', 'danger')" style="width:100%; background:rgba(239,68,68,0.2); border:1px solid #ef4444; color:#ef4444; font-weight:bold; padding:6px; border-radius:6px; cursor:pointer; margin-top:6px; font-size:11px;">SIGN DECREE</button>
-                        </div>
-                        <div style="background:rgba(15,23,42,0.8); border:1px solid rgba(0,229,255,0.4); border-radius:8px; padding:12px;">
-                            <strong style="color:#00e5ff; font-size:12px;">🛡️ National Sovereign Sukuk & Financial Shield</strong>
-                            <p style="color:#cbd5e1; font-size:11px; margin:6px 0;">Mandates zero-interest Sukuk bonds to fund strategic food and energy reserves.</p>
-                            <button onclick="window.showOmegaNotification('🛡️ SUKUK SHIELD DECREE', 'Sovereign Sukuk Shield Enacted! Reserve liquidity secured.', 'success')" style="width:100%; background:rgba(0,229,255,0.2); border:1px solid #00e5ff; color:#00e5ff; font-weight:bold; padding:6px; border-radius:6px; cursor:pointer; margin-top:6px; font-size:11px;">SIGN DECREE</button>
-                        </div>
-                        <div style="background:rgba(15,23,42,0.8); border:1px solid rgba(34,197,94,0.4); border-radius:8px; padding:12px;">
-                            <strong style="color:#22c55e; font-size:12px;">🌾 Strategic Grain Reserve Mandate</strong>
-                            <p style="color:#cbd5e1; font-size:11px; margin:6px 0;">Mandates 100% strategic food storage, eliminating famine risk during blockades.</p>
-                            <button onclick="window.showOmegaNotification('🌾 GRAIN MANDATE DECREE', 'Strategic Grain Reserve Mandate Enforced! Food security locked at 100%.', 'success')" style="width:100%; background:rgba(34,197,94,0.2); border:1px solid #22c55e; color:#22c55e; font-weight:bold; padding:6px; border-radius:6px; cursor:pointer; margin-top:6px; font-size:11px;">SIGN DECREE</button>
-                        </div>
-                    </div>
-                </div>
+            <div style="display:flex;flex-direction:column;gap:14px;">
+                <section style="background:rgba(8,15,28,.92);border:1px solid rgba(255,215,0,.35);border-radius:12px;padding:16px;">
+                    <h4 style="color:#ffd700;font-family:'Orbitron',sans-serif;font-size:14px;margin:0 0 10px;">⚡ SOVEREIGN POLICY PROPOSALS</h4>
+                    <p style="color:#cbd5e1;font-size:12px;line-height:1.6;margin:0;">This area currently has no authoritative decree execution handlers. Signing controls are unavailable rather than claiming a policy was enacted without changing game state.</p>
+                    <div style="margin-top:12px;padding:10px;border:1px solid rgba(148,163,184,.25);border-radius:8px;color:#94a3b8;font-size:11px;">STATUS · INFORMATION ONLY · NO GAME-STATE CHANGE</div>
+                </section>
             </div>
         `;
     },

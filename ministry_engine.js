@@ -1460,6 +1460,9 @@ window.OmegaCabinetUI = {
         const m = this.ministriesDatabase[ministryId];
         if (!m) return;
 
+        if (this.currentDashboardMinistryId !== ministryId) {
+            this.activeDashboardTab = ministryId === 'interior_security' ? 'security_operations' : 'interrogate';
+        }
         this.currentDashboardMinistryId = ministryId;
         const countryDetails = this.getCountryDetails(this.activeCountry);
 
@@ -1522,11 +1525,13 @@ window.OmegaCabinetUI = {
             }
         }
 
-        const allowedTabs = ministryId === 'interior_security'
-            ? ['interrogate', 'directives', 'reports', 'personnel', 'security_operations']
-            : ['interrogate', 'directives', 'reports', 'personnel'];
-        const requestedTab = this.activeDashboardTab || 'interrogate';
-        const activeTab = allowedTabs.includes(requestedTab) ? requestedTab : 'interrogate';
+        const isHomeMinistry = ministryId === 'interior_security';
+        const allowedTabs = isHomeMinistry
+            ? ['interrogate', 'reports', 'security_operations']
+            : ['interrogate', 'reports', 'personnel'];
+        const requestedTab = this.activeDashboardTab || (isHomeMinistry ? 'security_operations' : 'interrogate');
+        const fallbackTab = isHomeMinistry ? 'security_operations' : 'interrogate';
+        const activeTab = allowedTabs.includes(requestedTab) ? requestedTab : fallbackTab;
 
         let html = `
             <!-- 3-TIER TYPOGRAPHY & ELEGANT AAA HERO HEADER -->
@@ -1563,15 +1568,13 @@ window.OmegaCabinetUI = {
                 <button onclick="window.OmegaCabinetUI.setDashboardTab('interrogate');" style="background:${activeTab==='interrogate'?'linear-gradient(135deg,#00e5ff,#0066ff)':'rgba(255,255,255,0.06)'}; color:${activeTab==='interrogate'?'#000':'#cbd5e1'}; font-weight:bold; padding:8px 16px; border-radius:8px; border:none; cursor:pointer; font-family:'Share Tech Mono',monospace; font-size:12px; display:flex; align-items:center; gap:6px;">
                     🎙️ Interrogate Minister
                 </button>
-                <button onclick="window.OmegaCabinetUI.setDashboardTab('directives');" style="background:${activeTab==='directives'?'linear-gradient(135deg,#00e5ff,#0066ff)':'rgba(255,255,255,0.06)'}; color:${activeTab==='directives'?'#000':'#cbd5e1'}; font-weight:bold; padding:8px 16px; border-radius:8px; border:none; cursor:pointer; font-family:'Share Tech Mono',monospace; font-size:12px; display:flex; align-items:center; gap:6px;">
-                    ⚙️ Directives & Decrees
-                </button>
+
                 <button onclick="window.OmegaCabinetUI.setDashboardTab('reports');" style="background:${activeTab==='reports'?'linear-gradient(135deg,#00e5ff,#0066ff)':'rgba(255,255,255,0.06)'}; color:${activeTab==='reports'?'#000':'#cbd5e1'}; font-weight:bold; padding:8px 16px; border-radius:8px; border:none; cursor:pointer; font-family:'Share Tech Mono',monospace; font-size:12px; display:flex; align-items:center; gap:6px;">
                     📊 Reports & Metrics
                 </button>
-                <button onclick="window.OmegaCabinetUI.setDashboardTab('personnel');" style="background:${activeTab==='personnel'?'linear-gradient(135deg,#00e5ff,#0066ff)':'rgba(255,255,255,0.06)'}; color:${activeTab==='personnel'?'#000':'#cbd5e1'}; font-weight:bold; padding:8px 16px; border-radius:8px; border:none; cursor:pointer; font-family:'Share Tech Mono',monospace; font-size:12px; display:flex; align-items:center; gap:6px;">
+                ${ministryId !== 'interior_security' ? `<button onclick="window.OmegaCabinetUI.setDashboardTab('personnel');" style="background:${activeTab==='personnel'?'linear-gradient(135deg,#00e5ff,#0066ff)':'rgba(255,255,255,0.06)'}; color:${activeTab==='personnel'?'#000':'#cbd5e1'}; font-weight:bold; padding:8px 16px; border-radius:8px; border:none; cursor:pointer; font-family:'Share Tech Mono',monospace; font-size:12px; display:flex; align-items:center; gap:6px;">
                     📁 Personnel & Audits
-                </button>
+                </button>` : ''}
                 ${ministryId === 'interior_security' ? `<button onclick="window.OmegaCabinetUI.setDashboardTab('security_operations');" style="background:${activeTab==='security_operations'?'linear-gradient(135deg,#00e5ff,#0066ff)':'rgba(255,255,255,0.06)'}; color:${activeTab==='security_operations'?'#000':'#cbd5e1'}; font-weight:bold; padding:8px 16px; border-radius:8px; border:none; cursor:pointer; font-family:'Share Tech Mono',monospace; font-size:12px; display:flex; align-items:center; gap:6px; white-space:nowrap;">🚓 Police Command & Fleet</button>` : ''}
             </div>
         `;
@@ -1587,70 +1590,6 @@ window.OmegaCabinetUI = {
                     <button onclick="window.OmegaLayerManager.setLayer(5, { ministryId: '${m.id}' });" style="background:linear-gradient(135deg,#00e5ff,#0066ff); border:none; color:#000; font-weight:800; font-family:'Share Tech Mono',monospace; font-size:12px; padding:10px 18px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:8px; box-shadow:0 0 15px rgba(0,229,255,0.4); white-space:nowrap;">
                         🎙️ OPEN INTERROGATION DIALOGUE
                     </button>
-                </div>
-            `;
-        }
-
-        if (activeTab === 'directives' || activeTab === 'interrogate') {
-            html += `
-                <!-- STRATEGIC DEPARTMENT DIRECTIVES GRID -->
-                <div>
-                    <div style="font-family:'Inter',sans-serif; font-size:14px; color:#f8fafc; font-weight:700; margin-bottom:12px; display:flex; align-items:center; gap:8px;">
-                        <span>⚡</span><span>Strategic Department Directives & Policy Controls</span>
-                    </div>
-                    <div class="ministry-dept-grid">
-                        <div class="dept-card">
-                            <div class="dept-card-header">
-                                <span class="dept-card-title">Department 01: Infrastructure Upgrade</span>
-                                <span style="font-size:10px; color:#22c55e; font-family:'Share Tech Mono',monospace;">OPTIMAL ●</span>
-                            </div>
-                            <div style="font-size:12px; color:#cbd5e1; flex:1; line-height:1.4;">
-                                Expand physical facilities, automate administrative operations, and increase sector throughput.
-                            </div>
-                            <button class="dept-action-btn" onclick="window.OmegaCabinetUI.executeDeptAction('${m.id}', 'upgrade_capacity');">
-                                🔨 Expand Sector Capacity ($1.2B)
-                            </button>
-                        </div>
-
-                        <div class="dept-card">
-                            <div class="dept-card-header">
-                                <span class="dept-card-title">Department 02: Sovereign Executive Decrees</span>
-                                <span style="font-size:10px; color:#00e5ff; font-family:'Share Tech Mono',monospace;">ACTIVE ●</span>
-                            </div>
-                            <div style="font-size:12px; color:#cbd5e1; flex:1; line-height:1.4;">
-                                Issue sovereign executive decree to increase efficiency and sector output by +12%.
-                            </div>
-                            <button class="dept-action-btn" onclick="window.OmegaCabinetUI.executeDeptAction('${m.id}', 'issue_decree');">
-                                📜 Issue Sovereign Decree
-                            </button>
-                        </div>
-
-                        <div class="dept-card">
-                            <div class="dept-card-header">
-                                <span class="dept-card-title">Department 03: Emergency Budget Allocation</span>
-                                <span style="font-size:10px; color:#ffd700; font-family:'Share Tech Mono',monospace;">BALANCED ●</span>
-                            </div>
-                            <div style="font-size:12px; color:#cbd5e1; flex:1; line-height:1.4;">
-                                Reallocate national treasury reserves into emergency sector subsidies.
-                            </div>
-                            <button class="dept-action-btn" onclick="window.OmegaCabinetUI.executeDeptAction('${m.id}', 'allocate_budget');">
-                                💰 Reallocate Subsidies
-                            </button>
-                        </div>
-
-                        <div class="dept-card">
-                            <div class="dept-card-header">
-                                <span class="dept-card-title">Department 04: Intelligence & Loyalty Audit</span>
-                                <span style="font-size:10px; color:#a855f7; font-family:'Share Tech Mono',monospace;">SECURE ●</span>
-                            </div>
-                            <div style="font-size:12px; color:#cbd5e1; flex:1; line-height:1.4;">
-                                Conduct intelligence audit across ministry staff to prevent corruption and leaks.
-                            </div>
-                            <button class="dept-action-btn" onclick="window.OmegaCabinetUI.executeDeptAction('${m.id}', 'audit_loyalty');">
-                                🔍 Conduct Audit
-                            </button>
-                        </div>
-                    </div>
                 </div>
             `;
         }

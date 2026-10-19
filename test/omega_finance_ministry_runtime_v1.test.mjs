@@ -7,6 +7,8 @@ const profileData=JSON.parse(readFileSync('economy_global_profiles_v1.json','utf
 const financeRules=JSON.parse(readFileSync('finance_runtime_rules_v1.json','utf8'));
 const sectorRegistry=JSON.parse(readFileSync('finance_sector_registry_v1.json','utf8'));
 const runtime=readFileSync('omega_finance_ministry_runtime_v1.js','utf8');
+const indexHtml=readFileSync('index.html','utf8');
+const layoutRepairCss=readFileSync('omega_ministry_layout_repair_v1.css','utf8');
 
 test('all map country and area identities exist, and unknown values are explicit',()=>{
   assert.equal(profileData.countries.length,249);
@@ -238,4 +240,28 @@ test('Finance tabs place cash and macro details behind separate icons while over
   assert.ok(macro.includes('data-omss-container'),'macro engine must have a dedicated mount target');
   assert.ok(macro.includes('Macroeconomic Stability'));
   assert.ok(!macro.includes('data-ofx-container'),'only the active integration panel should be mounted');
+});
+
+
+test('all eight Finance section buttons respond to click delegation',async()=>{
+  const {context,elements}=createRuntime();
+  await context.OmegaFinanceMinistry.init();
+  assert.equal(context.OmegaCabinetUI.renderMinistryDashboard('finance'),true);
+  const content=elements.get('ministry-dashboard-content');
+  const click=content.listeners.click;
+  assert.equal(typeof click,'function');
+  const markers={fx:'data-ofx-container',macro:'data-omss-container',analytics:'data-ofa-container'};
+  for(const [tab,marker] of Object.entries(markers)){
+    const button={getAttribute(name){return name==='data-ofm-tab'?tab:null;}};
+    click({target:{closest(selector){return selector==='[data-ofm-tab]'?button:null;}}});
+    assert.ok(content.innerHTML.includes(marker),tab+' should mount its own content');
+  }
+});
+
+test('ministry viewport layout confines scrolling and keeps Finance navigation compact',()=>{
+  assert.match(indexHtml,/omega_ministry_layout_repair_v1\.css/);
+  assert.match(layoutRepairCss,/height: 100dvh !important/);
+  assert.match(layoutRepairCss,/overflow: hidden !important/);
+  assert.match(layoutRepairCss,/min-height: 0 !important/);
+  assert.match(layoutRepairCss,/grid-template-columns: repeat\(8, minmax\(0, 1fr\)\)/);
 });

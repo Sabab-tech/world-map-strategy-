@@ -733,7 +733,7 @@
       '</section>';
     out+='<section class="ofm-section"><div class="ofm-section-heading"><h3>Budget distribution at a glance</h3><span>'+fmtPct(totals.totalSharePct)+' of plan distributed</span></div>'+
       renderBudgetBarRows(fm,8,false)+
-      '<div class="ofm-nav-shortcuts"><button type="button" data-ofm-tab="budget">Open budget distribution</button><button type="button" data-ofm-tab="income">Open income & industries</button><button type="button" data-ofm-tab="treasury">Open Treasury & debt</button><button type="button" data-ofm-tab="reports">Open economic reports</button><button type="button" data-ofm-tab="analytics">Open analytics &amp; graphs</button></div></section>';
+      '</section>';
     out+='<section class="ofm-section"><div class="ofm-section-heading"><h3>Fiscal control checks</h3><span>Operational overview, no transaction amounts</span></div>'+
       '<div class="ofm-indicator-grid">'+
       '<div class="ofm-indicator"><span>Annual fiscal model</span><strong>'+(finite(fm.fiscalModel?.annualSpendingUsd)!==null&&finite(fm.fiscalModel?.annualRevenueUsd)!==null?'ACTIVE':'UNAVAILABLE')+'</strong></div>'+
@@ -846,7 +846,7 @@
     if(!content||content.__omegaFinanceBound)return;content.__omegaFinanceBound=true;
     content.addEventListener('click',function(event){
       const tab=event.target?.closest?.('[data-ofm-tab]');
-      if(tab){const id=String(tab.getAttribute('data-ofm-tab')||'overview');if(['overview','budget','income','treasury','reports'].includes(id)){activeTab=id;renderDashboard('finance');return;}}
+      if(tab){const id=String(tab.getAttribute('data-ofm-tab')||'overview');if(['overview','budget','income','treasury','reports','fx','macro','analytics'].includes(id)){activeTab=id;renderDashboard('finance');return;}}
       const summary=event.target?.closest?.('#ofm-world-register > summary');
       if(summary){setTimeout(function(){const details=content.querySelector?.('#ofm-world-register');const holder=content.querySelector?.('#ofm-world-register-content');if(details&&details.open&&holder&&holder.dataset.loaded!=='true'){holder.innerHTML=renderFullWorldTable(worldSnapshot().rows);holder.dataset.loaded='true';}},0);}
     });

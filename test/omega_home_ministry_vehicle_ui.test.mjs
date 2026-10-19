@@ -7,6 +7,7 @@ const engine = readFileSync(new URL('../omega_home_ministry_engine_v1.js', impor
 const ui = readFileSync(new URL('../omega_home_ministry_ui_v1.js', import.meta.url), 'utf8');
 const operationsUi = readFileSync(new URL('../omega_home_ministry_police_operations_ui_v1.js', import.meta.url), 'utf8');
 const ministryEngine = readFileSync(new URL('../ministry_engine.js', import.meta.url), 'utf8');
+const cabinetEngine = readFileSync(new URL('../cabinet_engine.js', import.meta.url), 'utf8');
 
 
 function makeUiHarness(vehicleInventory = null, recordedAssets = null) {
@@ -370,4 +371,12 @@ test('fleet procurement includes the full searchable country registry and live p
   assert.match(operationsUi, /MODELED_ESTIMATE_NOT_OBSERVED_ROSTER/);
   assert.match(operationsUi, /projectedCrimeIndex/);
   assert.match(operationsUi, /policeEfficiency/);
+});
+
+
+test('Home Affairs opens on real police controls and hides generic no-op actions',()=>{
+  assert.match(ministryEngine,/this\.activeDashboardTab = ministryId === 'interior_security' \? 'security_operations' : 'interrogate'/);
+  assert.doesNotMatch(ministryEngine,/executeDeptAction\('\$\{m\.id\}', '(?:upgrade_capacity|issue_decree|allocate_budget|audit_loyalty)'/);
+  assert.doesNotMatch(cabinetEngine,/SIGN DECREE/);
+  assert.match(cabinetEngine,/NO GAME-STATE CHANGE/);
 });
