@@ -84,6 +84,27 @@ test('Finance commands cannot change a non-player country',async()=>{
 });
 
 
+test('Finance Ministry follows the selected country context and computes each country budget independently',async()=>{
+  const {context,elements}=createRuntime();
+  await context.OmegaFinanceMinistry.init();
+  const bangladesh=context.OmegaFinanceMinistry.getBudgetSnapshot('BGD').rows.find(row=>row.id==='interior').budgetUsd;
+  const nigeria=context.OmegaFinanceMinistry.getBudgetSnapshot('NGA').rows.find(row=>row.id==='interior').budgetUsd;
+  assert.notEqual(nigeria,bangladesh,'country-level interior ceilings must use each profile’s own fiscal model');
+
+  context.OmegaMinistryViewCountry='NGA';
+  assert.equal(context.OmegaFinanceMinistry.renderDashboard('finance'),true);
+  const html=elements.get('ministry-dashboard-content').innerHTML;
+  assert.ok(html.includes('country state: NG / NGA'),'Finance should render the explicitly selected Nigerian profile');
+  assert.ok(html.includes('READ-ONLY PROFILE'),'foreign profiles remain view-only');
+  assert.ok(!html.includes('data-ofm-action="spend-budget"'),'country selection must not grant foreign spending permission');
+  assert.equal(context.Omega.Simulation.getPlayerCountryId(),'BGD','viewing another country must not alter the player identity');
+
+  const selected=context.OmegaFinanceMinistry.selectCountry('MO');
+  assert.equal(selected.ok,true);
+  assert.equal(context.OmegaMinistryViewCountry,'MO','Finance dropdown must publish the selected country to other ministry views');
+  assert.equal(context.Omega.Simulation.getPlayerCountryId(),'BGD');
+});
+
 test('Finance reconciles treasury changes posted by existing ministries and resource systems',async()=>{
   const {context,state}=createRuntime();
   await context.OmegaFinanceMinistry.init();
