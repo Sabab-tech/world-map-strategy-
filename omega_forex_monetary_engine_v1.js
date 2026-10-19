@@ -1178,7 +1178,8 @@
       'player-currency': code,
       'player-rate': fmtRate(activeRate),
       'usd-per-local': activeRate ? fmtRate(1 / activeRate) : 'N/A',
-      'currency-count': String(currencies.size)
+      'currency-count': String(currencies.size),
+      'country-rate-coverage': countryRateCoverage(mode)
     };
     panel.querySelectorAll('[data-ofx-live]').forEach(function (node) {
       const key = node.getAttribute('data-ofx-live');
