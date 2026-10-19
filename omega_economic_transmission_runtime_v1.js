@@ -22,7 +22,12 @@
   const clone = v => { try { return JSON.parse(JSON.stringify(v)); } catch (_) { return v; } };
   function norm(v) { return String(v == null ? '' : v).normalize('NFKC').trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Z0-9]/g, ''); }
   function esc(v) { return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
-  function fmt(v, d) { const n = num(v); if (n === null) return 'N/A'; try { return new Intl.NumberFormat('en-US', { maximumFractionDigits: d == null ? 2 : d }).format(n); } catch (_) { return String(n); } }
+  function fmt(v, d) {
+    const n=num(v);if(n===null)return 'N/A';
+    const format=g.OmegaNumberFormat;
+    if(format&&typeof format.compact==='function')return format.compact(n,{maximumFractionDigits:d==null?2:d});
+    try{return new Intl.NumberFormat('en-US',{maximumFractionDigits:d==null?2:d}).format(n);}catch(_){return String(n);}
+  }
   function pct(v) { const n = num(v); return n === null ? 'N/A' : (n > 0 ? '+' : '') + n.toFixed(2) + '%'; }
   function indexText(v) { return num(v) === null ? 'N/A' : fmt(v, 1); }
   function dispatch(type, detail) {
