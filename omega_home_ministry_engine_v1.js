@@ -1229,7 +1229,7 @@
     if(result.ok)emit('OMEGA_POLICE_RESEARCH_STARTED',{countryId:cid,tacticId:t.id,name:t.name,durationDays:t.durationDays,completesAtMs:result.completesAtMs,turn:turn()});return result;
   }
 
-  function materialToken(value){return String(value||'').trim().toLowerCase().replace(/[\\s-]+/g,'_');}
+  function materialToken(value){return String(value||'').trim().toLowerCase().replace(/[\s-]+/g,'_');}
   function capabilityMaterialRequirements(type,target){
     const level=Math.max(1,Math.floor(num(target)||1));
     if(type==='training')return[
