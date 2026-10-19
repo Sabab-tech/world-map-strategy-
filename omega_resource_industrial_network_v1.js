@@ -27,7 +27,14 @@ const id=v=>String(v??'').trim().toUpperCase();
 const tok=v=>String(v??'').trim().toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');
 const state=()=>g.Game?.state||g.gameState||{};
 const turn=()=>num(state()?.simulation?.turn??state()?.turn??state()?.simulationTurn)??0;
-const daysPerTurn=()=>Math.max(1,num(state()?.simulation?.daysPerTurn??state()?.simulation?.turnDays)??30);
+const daysPerTurn=()=>{
+  const clock=g.Omega?.Simulation?.clock;
+  let milliseconds=num(clock?.stepDurationMs);
+  if(milliseconds===null)milliseconds=num(state()?.simulation?.stepDurationMs);
+  // The authoritative game clock wins over legacy month-length turn hints.
+  if(milliseconds!==null&&milliseconds>0)return Math.max(1/86400000,milliseconds/86400000);
+  return Math.max(1/86400000,num(state()?.simulation?.daysPerTurn??state()?.simulation?.turnDays)??1);
+};
 const year=()=>{const d=state()?.simulation?.date;if(d){const y=num(String(d).slice(0,4));if(y!==null)return y;}return num(state()?.simulation?.startYear)??2015};
 const canonicalCountry=v=>{
   const raw=String(v??'').trim();if(!raw)return null;
