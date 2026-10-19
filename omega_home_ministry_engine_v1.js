@@ -1128,9 +1128,9 @@
     if(!detected){s.policeTrust=clamp(s.policeTrust-2,0,100);s.policeEfficiency=clamp(s.policeEfficiency-1,0,100);s.sabotageRisk=clamp(s.sabotageRisk+1,5,95);}else{s.policeTrust=clamp(s.policeTrust+0.5,0,100);}
     emit('OMEGA_HOME_MINISTRY_SECURITY_INCIDENT',incident);return true;
   }
-  function dailyPayroll(s){return s.policeCount*Math.max(0,num(s.dailySalaryPerOfficerUsd)||POLICE_SALARY_PER_DAY)+s.specialAgents*AGENT_SALARY_PER_DAY+ruleDailyCost(s);}
+  function dailyPayroll(s){return Math.max(0,num(s.policeCount)||0)*Math.max(0,num(s.dailySalaryPerOfficerUsd)||POLICE_SALARY_PER_DAY)+Math.max(0,num(s.specialAgents)||0)*AGENT_SALARY_PER_DAY;}
   function dailyOperatingCost(s){
-    let total=dailyPayroll(s);
+    let total=dailyPayroll(s)+ruleDailyCost(s);
     if(Array.isArray(s.vehicleFleet)&&s.vehicleFleet.length){
       s.vehicleFleet.forEach(function(unit){
         const vehicle=VEHICLES.find(function(v){return v.level===Number(unit.vehicleLevel);});if(!vehicle)return;
@@ -1142,6 +1142,66 @@
       });
     }else VEHICLES.forEach(function(v){total+=(Math.max(0,num(s.vehiclesOwned[v.level])||0)*v.maintenancePerDay);});
     return Math.round(total*100)/100;
+  }
+  function advanceCrimeSimulation(state,country,toDay){
+    const last=num(state.lastCrimeSimulationDay);
+    if(last===null||last<0){state.lastCrimeSimulationDay=toDay;return false;}
+    if(toDay<=last)return false;
+    const fromDay=Math.max(0,Math.floor(last)),elapsed=Math.min(365,Math.floor(toDay)-fromDay);
+    if(elapsed<=0)return false;
+    const snap=getCrimeSnapshot(country,state);
+    if(!snap.available){state.lastCrimeSimulationDay=Math.floor(toDay);return true;}
+    const model=state.crimeModel&&typeof state.crimeModel==='object'?state.crimeModel:{};
+    const acc=state.crimeAccumulator&&typeof state.crimeAccumulator==='object'?state.crimeAccumulator:{};
+    let totalIncidents=Math.max(0,num(model.totalIncidents)||0),openedTotal=Math.max(0,num(model.openedCases)||0),clearedTotal=Math.max(0,num(model.clearedCases)||0);
+    let backlog=Math.max(0,num(state.justiceBacklog)||0);
+    const history=Array.isArray(state.crimeHistory)?state.crimeHistory:[];
+    const activeRuleClearance=ruleEffectSum(state,'clearanceDelta'),activeRuleSpeed=ruleEffectSum(state,'justiceDelta');
+    const clearance=clamp(0.25+(Math.max(0,num(state.policeEfficiency)||0)*0.002)+Math.max(0,num(state.trainingQualityLevel)||1)*0.008+
+      activeRuleClearance*0.006+(Math.max(0,num(state.facilityLevels&&state.facilityLevels.forensics)||0)*0.012)-
+      (Math.max(0,num(state.misconductRiskPct)||0)*0.0012),0.12,0.85);
+    const dailyCapacity=Math.max(1,Math.floor((Math.max(0,num(state.policeCount)||0)*0.006+
+      Math.max(0,num(state.facilityLevels&&state.facilityLevels.forensics)||0)*30+
+      Math.max(0,num(state.facilityLevels&&state.facilityLevels.dispatch)||0)*20)*
+      clamp(0.55+(Math.max(0,num(state.policeEfficiency)||0)/100)*0.8,0.55,1.35)+activeRuleSpeed*2));
+    let changed=false;
+    for(let step=1;step<=elapsed;step++){
+      const day=fromDay+step;let incidents=0,byCategory={};
+      Object.keys(snap.categories).forEach(function(category){
+        const row=snap.categories[category];if(row.projectedAnnualIncidents===null)return;
+        const expected=row.projectedAnnualIncidents/365;
+        const accumulated=(num(acc[category])||0)+expected;
+        const count=Math.max(0,Math.floor(accumulated));
+        acc[category]=accumulated-count;
+        if(count){byCategory[category]=count;incidents+=count;}
+      });
+      const caseOpen=Math.max(0,Math.round(incidents*0.36));
+      const capacity=Math.min(backlog+caseOpen,dailyCapacity);
+      const cleared=Math.max(0,Math.floor(capacity*clearance));
+      backlog=Math.max(0,backlog+caseOpen-cleared);
+      totalIncidents+=incidents;openedTotal+=caseOpen;clearedTotal+=cleared;
+      state.publicSatisfaction=clamp((num(state.publicSatisfaction)||55)+
+        (clearance>0.52?0.025:clearance<0.32?-0.035:0)+
+        (Math.max(0,num(state.misconductRiskPct)||0)>45?-0.06:0)+
+        (cleared>0&&backlog===0?0.015:0),0,100);
+      state.policeTrust=clamp((num(state.policeTrust)||55)+(state.publicSatisfaction-(num(state.policeTrust)||55))*0.025,0,100);
+      history.push({day:day,turn:turn(),incidents:incidents,openedCases:caseOpen,clearedCases:cleared,
+        caseClearancePct:caseOpen?Math.round(Math.min(1,cleared/Math.max(1,caseOpen))*10000)/100:null,
+        justiceBacklog:Math.round(backlog),publicSatisfaction:Math.round(state.publicSatisfaction*100)/100,
+        misconductRiskPct:Math.round((num(state.misconductRiskPct)||0)*100)/100,crimeIndex:snap.projectedCrimeIndex,byCategory:byCategory});
+      changed=true;
+    }
+    state.justiceBacklog=Math.round(backlog);
+    state.crimeAccumulator=acc;
+    state.crimeModel={totalIncidents:totalIncidents,openedCases:openedTotal,clearedCases:clearedTotal,lastUpdatedDay:Math.floor(toDay),
+      latestDailyIncidents:history.length?history[history.length-1].incidents:0,latestDailyClearedCases:history.length?history[history.length-1].clearedCases:0,
+      activeCaseClearancePct:Math.round(clearance*10000)/100,dailyCaseCapacity:dailyCapacity};
+    state.crimeHistory=history.slice(-90);
+    state.lastCrimeSimulationDay=Math.floor(toDay);
+    emit('OMEGA_POLICE_CRIME_DAY_RECORDED',{countryId:country,fromDay:fromDay+1,toDay:Math.floor(toDay),elapsedDays:elapsed,
+      dailyIncidents:state.crimeModel.latestDailyIncidents,justiceBacklog:state.justiceBacklog,publicSatisfaction:state.publicSatisfaction,
+      crimeIndex:snap.projectedCrimeIndex,turn:turn()});
+    return changed;
   }
   function collectIntelligence(country,s,day){
     const week=Math.floor(day/7);if(day<7||s.lastIntelWeek===week)return false;
@@ -1159,22 +1219,26 @@
       const days=Math.min(3650,day-s.lastPayrollDay),due=dailyOperatingCost(s)*days;
       const finance=financeApi();let debit=null,paid=0,treasuryUnavailable=false;
       if(finance&&typeof finance.applyAction==='function'){
-        const payrollDue=dailyPayroll(s)*days,maintenanceDue=Math.max(0,due-payrollDue),snapshot=getHomeBudgetSnapshot(cid,s);
+        const payrollDue=dailyPayroll(s)*days,policyDue=ruleDailyCost(s)*days,maintenanceDue=Math.max(0,due-payrollDue-policyDue),snapshot=getHomeBudgetSnapshot(cid,s);
         const payrollCheck=validateHomeBudgetExpense(cid,payrollDue,'POLICE_PAYROLL',s,snapshot);
         const maintenanceCheck=validateHomeBudgetExpense(cid,maintenanceDue,'POLICE_FLEET_MAINTENANCE',s,snapshot);
-        if(snapshot.available&&payrollCheck.ok&&maintenanceCheck.ok&&payrollDue+maintenanceDue<=snapshot.parentRemainingUsd+0.01&&payrollDue+maintenanceDue<=snapshot.treasuryBalanceUsd+0.01){
+        const policyCheck=validateHomeBudgetExpense(cid,policyDue,'HOME_MINISTRY_DAILY_OPERATIONS',s,snapshot);
+        if(snapshot.available&&payrollCheck.ok&&maintenanceCheck.ok&&policyCheck.ok&&due<=snapshot.parentRemainingUsd+0.01&&due<=snapshot.treasuryBalanceUsd+0.01){
           const transactions=[];
           const salaryDebit=payrollDue>0?debitTreasury(cid,payrollDue,'POLICE_PAYROLL',s):{ok:true,amount:0};
           if(salaryDebit.ok&&salaryDebit.financeTransaction)transactions.push(salaryDebit);
           const upkeepDebit=maintenanceDue>0?debitTreasury(cid,maintenanceDue,'POLICE_FLEET_MAINTENANCE',s):{ok:true,amount:0};
           if(upkeepDebit.ok&&upkeepDebit.financeTransaction)transactions.push(upkeepDebit);
-          if(salaryDebit.ok&&upkeepDebit.ok){debit={ok:true,financeTransactions:transactions,amount:due};paid=due;}
+          const policyDebit=policyDue>0?debitTreasury(cid,policyDue,'HOME_MINISTRY_DAILY_OPERATIONS',s):{ok:true,amount:0};
+          if(policyDebit.ok&&policyDebit.financeTransaction)transactions.push(policyDebit);
+          if(salaryDebit.ok&&upkeepDebit.ok&&policyDebit.ok){debit={ok:true,financeTransactions:transactions,amount:due};paid=due;}
           else {
+            if(policyDebit.ok&&policyDebit.financeTransaction)refundTreasury(policyDebit);
             if(upkeepDebit.ok&&upkeepDebit.financeTransaction)refundTreasury(upkeepDebit);
             if(salaryDebit.ok&&salaryDebit.financeTransaction)refundTreasury(salaryDebit);
-            debit={ok:false,reason:upkeepDebit.reason||salaryDebit.reason||'FINANCE_TRANSACTION_FAILED'};
+            debit={ok:false,reason:!salaryDebit.ok?salaryDebit.reason:!upkeepDebit.ok?upkeepDebit.reason:policyDebit.reason||'FINANCE_TRANSACTION_FAILED'};
           }
-        }else debit={ok:false,reason:!snapshot.available?snapshot.reason||'HOME_BUDGET_UNAVAILABLE':!payrollCheck.ok?payrollCheck.reason:!maintenanceCheck.ok?maintenanceCheck.reason:'HOME_BUDGET_PARENT_EXCEEDED'};
+        }else debit={ok:false,reason:!snapshot.available?snapshot.reason||'HOME_BUDGET_UNAVAILABLE':!payrollCheck.ok?payrollCheck.reason:!maintenanceCheck.ok?maintenanceCheck.reason:!policyCheck.ok?policyCheck.reason:'HOME_BUDGET_PARENT_EXCEEDED'};
       }else{
         const treasury=getTreasury(cid);
         if(treasury.available){paid=Math.min(due,Math.max(0,treasury.balance));debit=debitTreasury(cid,paid,'HOME_MINISTRY_DAILY_OPERATIONS',s);}
@@ -1200,6 +1264,7 @@
       emit('OMEGA_POLICE_VEHICLE_DELIVERED',{countryId:cid,order:delivered,vehicle:v,unlockedVehicleLevel:s.unlockedVehicleLevel,turn:turn()});changed=true;
     }}
     if(advanceFleetSimulation(s,cid,day))changed=true;
+    if(advanceCrimeSimulation(s,cid,day))changed=true;
     const research=s.pendingResearch;
     if(research&&now>=research.completesAtMs){const t=TACTICS.find(x=>x.id===research.id);if(t&&!s.tacticsResearched[t.id]){
       s.tacticsResearched[t.id]=true;s.policeEfficiency=clamp(s.policeEfficiency+t.efficiency,0,100);s.sabotageRisk=clamp(s.sabotageRisk-t.riskReduction,5,95);s.policeTrust=clamp(s.policeTrust+2,0,100);s.pendingResearch=null;
