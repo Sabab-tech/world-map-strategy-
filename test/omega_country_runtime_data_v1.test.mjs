@@ -85,6 +85,13 @@ test('unified registry exposes country metrics with decoded per-field provenance
   assert.ok(typeof population.status === 'string' && population.status.length > 0);
   assert.equal(api.getGeneralMetric('BD', 'disciplineIndex')?.value, null,
     'unknown discipline metrics must remain null rather than becoming fake scores');
+  const aland = api.getGeneralData('Åland Islands');
+  assert.equal(aland?.identity?.iso2, 'AX',
+    'canonical general-data identity remains available even when legacy economic profiles are absent');
+  assert.equal(api.getRecord('economy', 'AX'), null,
+    'general-data support must not fabricate or silently rewrite the legacy gameplay record');
+  assert.equal(api.getGeneralMetric('AX', 'gdpCurrentUsd')?.value, null,
+    'unavailable GDP must remain null until a source provides it');
   assert.equal(api.getGeneralData('Kosovo'), null,
     'a runtime-only Kosovo alias must not be presented as a canonical general-registry record');
   assert.ok(api.getRecord('economy', 'Bangladesh')?.gdp != null,
