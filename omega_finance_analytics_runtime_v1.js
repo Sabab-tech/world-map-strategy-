@@ -51,6 +51,7 @@ function createPreview(p){
  const series={};
  for(const m of metrics)series[m.id]=Array.from({length:DAYS+1},(_,day)=>{
   const b=values[m.id];if(b===null)return{x:day,label:day?'Day '+day:'Baseline',value:null,kind:'MODEL_PREVIEW'};
+  if(day===0)return{x:0,label:'Baseline',value:b,kind:'MODEL_PREVIEW'};
   const wave=Math.sin(day/4.8+phase)*.003+Math.sin(day/10+phase*.6)*.0015;let v=b;
   if(m.id==='gdp')v=Math.max(0,b*Math.pow(Math.max(.0001,1+growth/100),day/365)*(1+wave));
   else if(m.id==='growth')v=b+Math.sin(day/5.5+phase)*.08;
@@ -128,7 +129,7 @@ function bind(){
  g.document.addEventListener('input',e=>{const t=e.target;if(!t?.matches?.('[data-ofa-search]'))return;query=t.value;page=0;render();const next=g.document.querySelector('[data-ofa-search]');if(next){next.focus();try{next.setSelectionRange(query.length,query.length);}catch(_){}}});
  g.document.addEventListener('click',e=>{const t=e.target?.closest?.('[data-ofa-page],[data-ofa-open],[data-ofa-export]');if(!t)return;if(t.hasAttribute('data-ofa-page')){page=Math.max(0,page+(Number(t.getAttribute('data-ofa-page'))||0));render();}else if(t.hasAttribute('data-ofa-open')){const p=profiles.find(p=>(p.countryCode||p.iso3)===t.getAttribute('data-ofa-open'))||profiles.find(p=>iso(p)===String(t.getAttribute('data-ofa-open')).toUpperCase());if(p){chosen=iso(p);render();const s=g.document.querySelector('[data-ofa-country]');if(s)s.value=p.countryCode||p.iso3;}}else if(t.hasAttribute('data-ofa-export'))exportCsv();});
 }
-function observe(){if(observer||!g.document||!g.MutationObserver)return;const target=g.document.body||g.document.documentElement;if(target){observer=new g.MutationObserver(()=>{if(g.document.querySelector('[data-ofa-container]'))render();});observer.observe(target,{childList:true,subtree:true});}}
+function observe(){if(observer||!g.document||!g.MutationObserver)return;const target=g.document.body||g.document.documentElement;if(target){observer=new g.MutationObserver(()=>{const host=g.document.querySelector('[data-ofa-container]');if(host&&!host.querySelector('.ofa-analytics'))render();});observer.observe(target,{childList:true,subtree:true});}}
 async function init(){
  if(ready)return diagnostics();if(boot)return boot;
  boot=(async()=>{const f=finance();if(!f?.getProfiles)throw new Error('FINANCE_PROFILES_UNAVAILABLE');if(f.init)await f.init();const a=macro();if(a?.init)await a.init();
