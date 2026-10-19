@@ -179,6 +179,8 @@ test('Finance tabs place cash and macro details behind separate icons while over
   const overview=elements.get('ministry-dashboard-content').innerHTML;
   assert.ok(overview.includes('data-ofm-tab="budget"'));
   assert.ok(overview.includes('data-ofm-tab="treasury"'));
+  assert.ok(overview.includes('data-ofm-tab="fx"'));
+  assert.ok(!overview.includes('data-ofx-container'),'FX panel should not mount in the default overview tab');
   assert.ok(overview.includes('Budget plan status'));
   assert.ok(!overview.includes('Available Treasury'),'cash values should live in the Treasury tab');
   assert.ok(!overview.includes('Current-year cashflow'),'cashflow amount should live in the Treasury tab');
@@ -203,4 +205,9 @@ test('Finance tabs place cash and macro details behind separate icons while over
   assert.ok(income.includes('Spent'));
   assert.ok(income.includes('Remaining'));
   assert.ok(income.includes('Budget sector'));
+  assert.equal(context.OmegaFinanceMinistry.selectTab('fx').ok,true);
+  const fx=elements.get('ministry-dashboard-content').innerHTML;
+  assert.ok(fx.includes('data-ofx-container'),'FX engine must have a dedicated mount target');
+  assert.ok(fx.includes('FX & Government Banking'));
+  assert.ok(!fx.includes('data-ofx-panel'),'FX runtime owns rendering into the tab host');
 });
