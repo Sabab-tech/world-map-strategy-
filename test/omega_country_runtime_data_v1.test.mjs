@@ -8,11 +8,14 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = name => fs.readFileSync(path.join(root, name), 'utf8');
 
-async function createRuntime() {
+async function createRuntime(options = {}) {
   const context = {
     console,
     fetch: async input => {
       const relative = String(input).replace(/^\.\//, '');
+      if (options.omitGeneralData && relative === 'country_general_data_registry_v1.json') {
+        return { ok: false, json: async () => null };
+      }
       const body = read(relative);
       return { ok: true, json: async () => JSON.parse(body) };
     }
@@ -62,6 +65,39 @@ test('country aliases resolve to the same canonical profile and source records',
   assert.equal(api.getCapital('Bangladesh'), 'Dhaka');
 });
 
+test('unified registry exposes country metrics with decoded per-field provenance', async () => {
+  const { api } = await createRuntime();
+  const diagnostics = api.diagnostics();
+  assert.equal(diagnostics.generalDataRegistryReady, true);
+  assert.equal(diagnostics.generalDataRecordCount, 249);
+  assert.ok(diagnostics.generalDataMetricCount >= 20);
+  assert.ok(diagnostics.generalDataPopulationCoverage > 0);
+  assert.ok(diagnostics.generalDataGdpCoverage > 0);
+
+  const bangladesh = api.getGeneralData('Bangladesh');
+  assert.equal(bangladesh?.identity?.iso2, 'BD');
+  assert.equal(bangladesh?.identity?.iso3, 'BGD');
+  const population = api.getGeneralMetric('BGD', 'populationTotal');
+  assert.ok(population);
+  assert.ok(Number.isFinite(population.value) && population.value > 0);
+  assert.ok(Number.isFinite(population.year) && population.year >= 2015);
+  assert.ok(typeof population.status === 'string' && population.status.length > 0);
+  assert.equal(api.getGeneralMetric('BD', 'disciplineIndex')?.value, null,
+    'unknown discipline metrics must remain null rather than becoming fake scores');
+  assert.equal(api.getGeneralData('Kosovo'), null,
+    'a runtime-only Kosovo alias must not be presented as a canonical general-registry record');
+  assert.ok(api.getRecord('economy', 'Bangladesh')?.gdp != null,
+    'the pre-existing legacy gameplay record must remain available');
+});
+
+test('missing optional unified registry does not block the existing country runtime', async () => {
+  const { api } = await createRuntime({ omitGeneralData: true });
+  assert.equal(api.diagnostics().ready, true);
+  assert.equal(api.diagnostics().generalDataRegistryReady, false);
+  assert.equal(api.getGeneralData('Bangladesh'), null);
+  assert.ok(api.getRecord('economy', 'Bangladesh')?.gdp != null);
+});
+
 test('live runtime records override baseline values without losing unrelated source fields', async () => {
   const { api, context } = await createRuntime();
   const baseline = api.getRecord('economy', 'Bangladesh');
@@ -106,4 +142,5 @@ test('offline app shell caches the country runtime bridge and city records', () 
   assert.match(sw, /\.\/cities\.json/);
   assert.match(sw, /\.\/economy\.json/);
   assert.match(sw, /\.\/population\.json/);
+  assert.match(sw, /\.\/country_general_data_registry_v1\.json/);
 });
