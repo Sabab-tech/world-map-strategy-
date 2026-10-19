@@ -85,7 +85,8 @@
     tacticsResearched:{antiRiot:false,smugglerInterdict:false,counterTerror:false,assetProtection:false,intelligenceFusion:false},
     pendingResearch:null, specialAgents:0, sabotageRisk:45, unpaidPayroll:0,
     lastPayrollDay:null, lastIncidentWeek:null, incidentSequence:0, incidentLedger:[], lastUpdatedTurn:0, agentDeployments:{}, intelligenceReports:[], lastIntelWeek:null,
-    guardDeployments:[], nextGuardDeploymentId:1, vehicleFleet:[], nextVehicleUnitId:1, vehicleMaintenanceLog:[], lastFleetSimulationDay:null
+    guardDeployments:[], nextGuardDeploymentId:1, vehicleFleet:[], nextVehicleUnitId:1, vehicleMaintenanceLog:[], lastFleetSimulationDay:null,
+    homeBudget:{parentAllocationUsd:0,categories:{salary:{sharePct:30,amountUsd:0,spentUsd:0},vehicles:{sharePct:30,amountUsd:0,spentUsd:0},maintenance:{sharePct:25,amountUsd:0,spentUsd:0},operations:{sharePct:15,amountUsd:0,spentUsd:0}},updatedTurn:0,ledger:[]}
   });
 
   function clone(v){if(v===null||typeof v!=='object')return v;if(Array.isArray(v))return v.map(clone);const o={};Object.keys(v).forEach(k=>{if(k!=='__proto__'&&k!=='constructor'&&typeof v[k]!=='function')o[k]=clone(v[k]);});return o;}
@@ -161,12 +162,12 @@
     const d=clone(DEFAULT_STATE);if(!raw||typeof raw!=='object')return baseState();
     const s=Object.assign(d,clone(raw));s.facilityLevels=Object.assign(clone(DEFAULT_STATE.facilityLevels),raw.facilityLevels||{});
     s.tacticsResearched=Object.assign(clone(DEFAULT_STATE.tacticsResearched),raw.tacticsResearched||{});
-    s.vehiclesOwned=Object.assign({},raw.vehiclesOwned||{});s.agentDeployments=Object.assign({},raw.agentDeployments||{});s.intelligenceReports=Array.isArray(raw.intelligenceReports)?raw.intelligenceReports.slice(-100).map(clone):[];s.incidentLedger=Array.isArray(raw.incidentLedger)?raw.incidentLedger.slice(-100).map(clone):[];s.guardDeployments=Array.isArray(raw.guardDeployments)?raw.guardDeployments.filter(x=>x&&typeof x==='object'&&x.id&&x.vehicleLevel&&x.missionId).map(clone):[];if(!Number.isFinite(Number(s.nextGuardDeploymentId))||Number(s.nextGuardDeploymentId)<1)s.nextGuardDeploymentId=1;s.vehicleFleet=Array.isArray(raw.vehicleFleet)?raw.vehicleFleet.filter(x=>x&&typeof x==='object'&&x.id&&x.vehicleLevel).map(clone):[];if(!Number.isFinite(Number(s.nextVehicleUnitId))||Number(s.nextVehicleUnitId)<1)s.nextVehicleUnitId=1;s.vehicleMaintenanceLog=Array.isArray(raw.vehicleMaintenanceLog)?raw.vehicleMaintenanceLog.slice(-100).map(clone):[];
+    s.vehiclesOwned=Object.assign({},raw.vehiclesOwned||{});s.agentDeployments=Object.assign({},raw.agentDeployments||{});s.homeBudget=raw.homeBudget&&typeof raw.homeBudget==='object'?clone(raw.homeBudget):clone(DEFAULT_STATE.homeBudget);s.homeBudget.categories=Object.assign(clone(DEFAULT_STATE.homeBudget.categories),s.homeBudget.categories||{});s.homeBudget.ledger=Array.isArray(s.homeBudget.ledger)?s.homeBudget.ledger.slice(-100):[];s.intelligenceReports=Array.isArray(raw.intelligenceReports)?raw.intelligenceReports.slice(-100).map(clone):[];s.incidentLedger=Array.isArray(raw.incidentLedger)?raw.incidentLedger.slice(-100).map(clone):[];s.guardDeployments=Array.isArray(raw.guardDeployments)?raw.guardDeployments.filter(x=>x&&typeof x==='object'&&x.id&&x.vehicleLevel&&x.missionId).map(clone):[];if(!Number.isFinite(Number(s.nextGuardDeploymentId))||Number(s.nextGuardDeploymentId)<1)s.nextGuardDeploymentId=1;s.vehicleFleet=Array.isArray(raw.vehicleFleet)?raw.vehicleFleet.filter(x=>x&&typeof x==='object'&&x.id&&x.vehicleLevel).map(clone):[];if(!Number.isFinite(Number(s.nextVehicleUnitId))||Number(s.nextVehicleUnitId)<1)s.nextVehicleUnitId=1;s.vehicleMaintenanceLog=Array.isArray(raw.vehicleMaintenanceLog)?raw.vehicleMaintenanceLog.slice(-100).map(clone):[];
     if(num(s.policeCount)===null)s.policeCount=250;if(num(s.policeEfficiency)===null)s.policeEfficiency=60;if(num(s.policeTrust)===null)s.policeTrust=55;
     if(num(s.unlockedVehicleLevel)===null)s.unlockedVehicleLevel=1;return s;
   }
   function storedState(country){const root=rootState(),raw=root&&root.interior&&root.interior[country]&&root.interior[country].police;return raw&&typeof raw==='object'?mergeState(raw):null;}
-  function publicState(s){return{policeCount:s.policeCount,policeEfficiency:s.policeEfficiency,policeTrust:s.policeTrust,unlockedVehicleLevel:s.unlockedVehicleLevel,vehiclesOwned:clone(s.vehiclesOwned),pendingVehicleOrder:clone(s.pendingVehicleOrder),facilityLevels:clone(s.facilityLevels),trainingQualityLevel:s.trainingQualityLevel,tacticsResearched:clone(s.tacticsResearched),pendingResearch:clone(s.pendingResearch),specialAgents:s.specialAgents,sabotageRisk:s.sabotageRisk,unpaidPayroll:s.unpaidPayroll,agentDeployments:clone(s.agentDeployments),intelligenceReports:clone(s.intelligenceReports),incidentLedger:clone(s.incidentLedger),guardDeployments:clone(s.guardDeployments),nextGuardDeploymentId:s.nextGuardDeploymentId,vehicleFleet:clone(s.vehicleFleet),nextVehicleUnitId:s.nextVehicleUnitId,vehicleMaintenanceLog:clone(s.vehicleMaintenanceLog),lastFleetSimulationDay:s.lastFleetSimulationDay};}
+  function publicState(s){return{homeBudget:clone(s.homeBudget),policeCount:s.policeCount,policeEfficiency:s.policeEfficiency,policeTrust:s.policeTrust,unlockedVehicleLevel:s.unlockedVehicleLevel,vehiclesOwned:clone(s.vehiclesOwned),pendingVehicleOrder:clone(s.pendingVehicleOrder),facilityLevels:clone(s.facilityLevels),trainingQualityLevel:s.trainingQualityLevel,tacticsResearched:clone(s.tacticsResearched),pendingResearch:clone(s.pendingResearch),specialAgents:s.specialAgents,sabotageRisk:s.sabotageRisk,unpaidPayroll:s.unpaidPayroll,agentDeployments:clone(s.agentDeployments),intelligenceReports:clone(s.intelligenceReports),incidentLedger:clone(s.incidentLedger),guardDeployments:clone(s.guardDeployments),nextGuardDeploymentId:s.nextGuardDeploymentId,vehicleFleet:clone(s.vehicleFleet),nextVehicleUnitId:s.nextVehicleUnitId,vehicleMaintenanceLog:clone(s.vehicleMaintenanceLog),lastFleetSimulationDay:s.lastFleetSimulationDay};}
   function emit(type,detail){try{if(typeof g.dispatchEvent==='function'&&typeof g.CustomEvent==='function')g.dispatchEvent(new g.CustomEvent(type,{detail:clone(detail||{})}));}catch(_){}}
   function dispatchState(country,next,eventName){
     const mesh=interop();
@@ -190,13 +191,82 @@
     dispatchState(cid,initial,'OMEGA_HOME_MINISTRY_INITIALIZED');return initial;
   }
   function money(value){const n=num(value);return n===null?'Unavailable':'$'+Math.round(n).toLocaleString('en-US');}
+  function financeApi(){return g.OmegaFinanceMinistry||g.Omega&&g.Omega.FinanceMinistry||null;}
+  function financeInteriorAllocation(country){
+    const fm=financeApi();if(!fm||typeof fm.getFinanceState!=='function')return null;
+    try{const state=fm.getFinanceState(country);return state&&state.allocations&&state.allocations.interior||null;}catch(_){return null;}
+  }
+  function budgetCategoryForAction(action){
+    const a=String(action||'').toUpperCase();
+    if(/RECRUIT|DISMISS|AGENT|PAYROLL/.test(a))return 'salary';
+    if(/VEHICLE_ORDER|PROCUREMENT/.test(a))return 'vehicles';
+    if(/REPAIR|SERVICE|MAINTENANCE/.test(a))return 'maintenance';
+    return 'operations';
+  }
+  function budgetRemaining(state,category){
+    const row=state&&state.homeBudget&&state.homeBudget.categories&&state.homeBudget.categories[category];
+    return row?Math.max(0,(num(row.amountUsd)||0)-(num(row.spentUsd)||0)):0;
+  }
+  function configureHomeBudget(parentAmount,shares,country){
+    const cid=normalizeCountry(country||currentCountry()),amount=num(parentAmount);
+    if(!cid)return{ok:false,reason:'PLAYER_COUNTRY_UNAVAILABLE'};
+    if(amount===null||amount<=0)return{ok:false,reason:'HOME_BUDGET_AMOUNT_INVALID'};
+    const parent=financeInteriorAllocation(cid);
+    if(!parent||Math.max(0,num(parent.budgetUsd)||0)+0.01<amount)
+      return{ok:false,reason:'FINANCE_INTERIOR_ALLOCATION_REQUIRED',message:'Allocate this amount to Home / Interior in the Finance Ministry first.'};
+    shares=shares&&typeof shares==='object'?shares:{};
+    const defaults={salary:30,vehicles:30,maintenance:25,operations:15};
+    const nextShares={};let total=0;
+    Object.keys(defaults).forEach(key=>{const v=num(shares[key]??defaults[key]);if(v===null||v<0||v>100)throw new Error('HOME_BUDGET_SHARE_INVALID');nextShares[key]=v;total+=v;});
+    if(total>100.00001)return{ok:false,reason:'HOME_BUDGET_SHARES_EXCEED_100',message:'Home Ministry category shares cannot exceed 100%.'};
+    const state=getState(cid),next=clone(state),old=next.homeBudget||clone(DEFAULT_STATE.homeBudget);
+    for(const key of Object.keys(defaults)){
+      const prior=old.categories[key]||{},spent=Math.max(0,num(prior.spentUsd)||0),budget=amount*nextShares[key]/100;
+      if(budget+0.01<spent)return{ok:false,reason:'HOME_BUDGET_BELOW_SPENT',message:'A category budget cannot be reduced below already-recorded spending.'};
+      old.categories[key]={sharePct:nextShares[key],amountUsd:budget,spentUsd:spent};
+    }
+    old.parentAllocationUsd=amount;old.updatedTurn=turn();old.ledger=Array.isArray(old.ledger)?old.ledger:[];
+    old.ledger.push({turn:turn(),action:'INTERNAL_BUDGET_CONFIGURED',parentAllocationUsd:amount,shares:clone(nextShares)});
+    old.ledger=old.ledger.slice(-100);next.homeBudget=old;next.lastUpdatedTurn=turn();
+    const commit=dispatchState(cid,next,'OMEGA_HOME_BUDGET_UPDATED');
+    if(!commit.ok)return{ok:false,reason:commit.reason||'STATE_COMMAND_FAILED'};
+    emit('OMEGA_HOME_BUDGET_UPDATED',{countryId:cid,budget:clone(old),turn:turn()});
+    return{ok:true,countryId:cid,budget:clone(old)};
+  }
+  function getHomeBudgetSnapshot(country){
+    const cid=normalizeCountry(country||currentCountry()),state=getState(cid),parent=financeInteriorAllocation(cid),budget=state.homeBudget||clone(DEFAULT_STATE.homeBudget);
+    const parentAmount=parent?Math.max(0,num(parent.budgetUsd)||0):0,parentRemaining=parent?Math.max(0,num(parent.remainingUsd)||0):0;
+    return{countryId:cid,financeAvailable:!!parent,parentAllocationUsd:parentAmount,parentRemainingUsd:parentRemaining,
+      internal:clone(budget),categories:Object.keys(budget.categories||{}).map(key=>Object.assign({id:key},clone(budget.categories[key]),{remainingUsd:budgetRemaining(state,key)}))};
+  }
   function mutation(country,cost,action,mutator){
     const cid=normalizeCountry(country||currentCountry());if(!cid)return{ok:false,reason:'PLAYER_COUNTRY_UNAVAILABLE'};
     const amount=Math.max(0,num(cost)||0),state=getState(cid),next=clone(state),result=mutator(next);
     if(result&&result.ok===false)return Object.assign({ok:false},result);
-    const debit=debitTreasury(cid,amount);if(!debit.ok)return{ok:false,reason:debit.reason,balance:debit.balance,cost:amount};
+    const finance=financeApi(),parent=financeInteriorAllocation(cid),category=budgetCategoryForAction(action);
+    let debit=null,financeSpent=false;
+    if(amount>0&&finance&&typeof finance.applyAction==='function'&&parent){
+      const homeBudget=next.homeBudget||clone(DEFAULT_STATE.homeBudget),remaining=budgetRemaining(state,category);
+      if(Math.max(0,num(homeBudget.parentAllocationUsd)||0)<=0)return{ok:false,reason:'HOME_MINISTRY_BUDGET_NOT_CONFIGURED',cost:amount};
+      if(amount>remaining+0.01)return{ok:false,reason:'HOME_MINISTRY_CATEGORY_BUDGET_EXCEEDED',category,balance:remaining,cost:amount};
+      const resultFinance=finance.applyAction({type:'spend-budget',countryId:cid,department:'interior',amountUsd:amount,
+        spendType:category==='salary'?'salary':category==='vehicles'?'purchase':category==='maintenance'?'maintenance':'general',
+        description:'Home Ministry · '+String(action||'expense')});
+      if(!resultFinance||!resultFinance.ok)return{ok:false,reason:resultFinance&&resultFinance.code||'HOME_MINISTRY_FINANCE_BUDGET_REJECTED',message:resultFinance&&resultFinance.message,balance:remaining,cost:amount};
+      financeSpent=true;
+      const row=homeBudget.categories[category];row.spentUsd=Math.max(0,num(row.spentUsd)||0)+amount;
+      homeBudget.ledger=Array.isArray(homeBudget.ledger)?homeBudget.ledger:[];
+      homeBudget.ledger.push({turn:turn(),action:String(action||'expense'),category,amountUsd:amount,description:'Home Ministry expense'});
+      homeBudget.ledger=homeBudget.ledger.slice(-100);next.homeBudget=homeBudget;
+    }else{
+      debit=debitTreasury(cid,amount);if(!debit.ok)return{ok:false,reason:debit.reason,balance:debit.balance,cost:amount};
+    }
     next.lastUpdatedTurn=turn();const commit=dispatchState(cid,next,'OMEGA_HOME_MINISTRY_TRANSACTION');
-    if(!commit.ok){refundTreasury(debit);return{ok:false,reason:commit.reason||'STATE_COMMIT_FAILED'};}
+    if(!commit.ok){
+      if(debit)refundTreasury(debit);
+      if(financeSpent){const root=rootState(),row=root&&root.finance&&root.finance[cid];if(row&&num(row.available)!==null)row.available=Math.max(0,row.available+amount);}
+      return{ok:false,reason:commit.reason||'STATE_COMMAND_FAILED'};
+    }
     try{if(typeof g.updateGlobalResourceHUD==='function')g.updateGlobalResourceHUD(cid);}catch(_){}
     emit('OMEGA_HOME_POLICE_ACTION_COMPLETED',{countryId:cid,action:action,cost:amount,treasury:getTreasury(cid),state:publicState(next),turn:turn()});
     return Object.assign({ok:true,countryId:cid,cost:amount,state:next,treasury:getTreasury(cid)},result&&typeof result==='object'?result:{});
@@ -777,7 +847,7 @@
     VERSION:VERSION,POLICE_SALARY_PER_DAY:POLICE_SALARY_PER_DAY,POLICE_RECRUITMENT_COST:POLICE_RECRUITMENT_COST,
     AGENT_RECRUITMENT_COST:AGENT_RECRUITMENT_COST,AGENT_SALARY_PER_DAY:AGENT_SALARY_PER_DAY,VEHICLE_UNLOCK_MS:VEHICLE_UNLOCK_MS,
     VEHICLES:VEHICLES,GUARD_MISSIONS:GUARD_MISSIONS,FACILITIES:FACILITIES,TACTICS:TACTICS,init:init,getCurrentCountryId:currentCountry,
-    getState:function(country){return clone(getState(country));},getTreasury:function(country){return clone(getTreasury(country||currentCountry()));},getSimulationTimeMs:simulationTimeMs,
+    getState:function(country){return clone(getState(country));},getTreasury:function(country){return clone(getTreasury(country||currentCountry()));},getHomeBudgetSnapshot:getHomeBudgetSnapshot,configureHomeBudget:configureHomeBudget,getSimulationTimeMs:simulationTimeMs,
     getDailyPayroll:function(country){return dailyPayroll(getState(country||currentCountry()));},getDailyOperatingCost:function(country){return dailyOperatingCost(getState(country||currentCountry()));},getAvailableCountries:availableCountries,
     getResearchProgress:function(country){const s=getState(country||currentCountry()),p=s.pendingResearch;if(!p)return null;const remain=Math.max(0,p.completesAtMs-simulationTimeMs());return{id:p.id,name:p.name,startedAtMs:p.startedAtMs,completesAtMs:p.completesAtMs,remainingMs:remain,progress:clamp(100*(1-remain/Math.max(1,p.durationDays*DAY_MS)),0,100)};},
     formatMoney:money,estimateRecruitCost:function(amount){return Math.max(0,Math.floor(num(amount)||0))*POLICE_RECRUITMENT_COST;},
