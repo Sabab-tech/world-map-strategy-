@@ -61,7 +61,7 @@ const STRATEGIC_PROFILE_FIELDS = [
   'profileVersion', 'sovereigntyScope', 'executiveSummary', 'archetype', 'archetypeSource',
   'diplomacy', 'economy', 'military', 'politics', 'dependencies',
   'overallStrengths', 'overallWeaknesses', 'playerAdvantages', 'playerChallenges',
-  'recommendedStrategy', 'dataQuality'
+  'recommendedStrategy', 'assessmentCriteria', 'dataQuality'
 ];
 const STRATEGIC_CORE_METRICS = [
   'gdpCurrentUsd', 'populationTotal', 'gdpPerCapitaUsd', 'gdpGrowthPct', 'inflationPct',
@@ -638,24 +638,30 @@ function makeRecord(country, sources, previous, refreshData) {
 }
 
 function metricPercentileMap(rows, key) {
-  const valid = rows.map((row) => ({
-    iso3: String(row.identity?.iso3 || '').toUpperCase(),
-    value: finite(row.metrics?.[key])
-  })).filter((row) => row.iso3 && row.value !== null).sort((a, b) => a.value - b.value);
+  // Compare a metric only against country/territory records for the exact same
+  // observation year. Mixed-year values remain evidence, not a fake world ranking.
+  const cohorts = new Map();
   const out = new Map();
-  if (!valid.length) return out;
-  if (valid.length === 1) {
-    out.set(valid[0].iso3, 50);
-    return out;
+  for (const row of rows) {
+    const iso3 = String(row.identity?.iso3 || '').toUpperCase();
+    const value = finite(row.metrics?.[key]);
+    const year = finite(row.metricMetadata?.[key]?.year);
+    if (!iso3 || value === null || year === null) continue;
+    if (!cohorts.has(year)) cohorts.set(year, []);
+    cohorts.get(year).push({ iso3, value });
   }
-  let start = 0;
-  while (start < valid.length) {
-    let end = start + 1;
-    while (end < valid.length && valid[end].value === valid[start].value) end += 1;
-    const midRank = (start + end - 1) / 2;
-    const percentile = Number((midRank / (valid.length - 1) * 100).toFixed(1));
-    for (let index = start; index < end; index += 1) out.set(valid[index].iso3, percentile);
-    start = end;
+  for (const [year, cohort] of cohorts) {
+    if (cohort.length < 5) continue;
+    cohort.sort((a, b) => a.value - b.value);
+    let start = 0;
+    while (start < cohort.length) {
+      let end = start + 1;
+      while (end < cohort.length && cohort[end].value === cohort[start].value) end += 1;
+      const midRank = (start + end - 1) / 2;
+      const value = Number((midRank / (cohort.length - 1) * 100).toFixed(1));
+      for (let index = start; index < end; index += 1) out.set(cohort[index].iso3, { percentile:value, peerYear:year, peerCount:cohort.length });
+      start = end;
+    }
   }
   return out;
 }
@@ -736,12 +742,13 @@ function attachStrategicProfiles(rows, relationByIso2, siteSummaryByIso3, relati
     'publicDebtToGdpPct', 'militaryExpenditurePctGdp', 'populationTotal', 'tradeBalanceUsd'
   ];
   const percentileMaps = Object.fromEntries(percentileKeys.map((key) => [key, metricPercentileMap(rows, key)]));
-  const percentile = (row, key) => percentileMaps[key]?.get(String(row.identity?.iso3 || '').toUpperCase()) ?? null;
+  const percentileDetail = (row, key) => percentileMaps[key]?.get(String(row.identity?.iso3 || '').toUpperCase()) ?? null;
+  const percentile = (row, key) => percentileDetail(row, key)?.percentile ?? null;
   const governancePercentiles = Object.fromEntries(GOVERNANCE_METRIC_KEYS.map((key) => [key, metricPercentileMap(rows, key)]));
   const governanceScore = (row) => {
     const iso3 = String(row.identity?.iso3 || '').toUpperCase();
     const available = GOVERNANCE_METRIC_KEYS
-      .map((key) => governancePercentiles[key].get(iso3))
+      .map((key) => governancePercentiles[key].get(iso3)?.percentile)
       .filter((value) => value !== undefined && value !== null);
     return available.length >= 2
       ? Number((available.reduce((sum, value) => sum + value, 0) / available.length).toFixed(1))
@@ -943,15 +950,29 @@ function attachStrategicProfiles(rows, relationByIso2, siteSummaryByIso3, relati
     };
     const scores = {
       economicScalePercentile: gdpPercentile,
+      economicScalePeerYear: percentileDetail(row, 'gdpCurrentUsd')?.peerYear ?? null,
+      economicScalePeerCount: percentileDetail(row, 'gdpCurrentUsd')?.peerCount ?? 0,
       economicInfluenceIndex: n('economicInfluenceIndex'),
       economicInfluencePercentile: economicInfluencePercentile,
+      economicInfluencePeerYear: percentileDetail(row, 'economicInfluenceIndex')?.peerYear ?? null,
+      economicInfluencePeerCount: percentileDetail(row, 'economicInfluenceIndex')?.peerCount ?? 0,
       foreignExchangeReservePercentile: percentile(row, 'fxReservesUsd'),
+      foreignExchangeReservePeerYear: percentileDetail(row, 'fxReservesUsd')?.peerYear ?? null,
+      foreignExchangeReservePeerCount: percentileDetail(row, 'fxReservesUsd')?.peerCount ?? 0,
       fiscalRiskIndex: fiscalRisk,
       fiscalHealthIndex: fiscalHealth,
       governanceQualityPercentile: governanceQualityPercentile,
+      governancePeerCountsByMetric: Object.fromEntries(GOVERNANCE_METRIC_KEYS.map((key) => [key, {
+        peerYear: governancePercentiles[key].get(iso3)?.peerYear ?? null,
+        peerCount: governancePercentiles[key].get(iso3)?.peerCount ?? 0
+      }])),
       defenseFinancialBasePercentile: gdpPercentile,
       defenseExpenditureSharePercentile: defenseEffortPercentile,
+      defenseExpenditurePeerYear: percentileDetail(row, 'militaryExpenditurePctGdp')?.peerYear ?? null,
+      defenseExpenditurePeerCount: percentileDetail(row, 'militaryExpenditurePctGdp')?.peerCount ?? 0,
       populationScalePercentile: populationPercentile,
+      populationPeerYear: percentileDetail(row, 'populationTotal')?.peerYear ?? null,
+      populationPeerCount: percentileDetail(row, 'populationTotal')?.peerCount ?? 0,
       politicalStabilityWgiEstimate: n('politicalStabilityWgiEstimate')
     };
     const resourceContextSignals = uniqueStrings([
@@ -959,60 +980,226 @@ function attachStrategicProfiles(rows, relationByIso2, siteSummaryByIso3, relati
       ...Object.values(resourceContext.hydrocarbonResourceBase || {}).flatMap((value) => Array.isArray(value) ? value : []),
       ...Object.values(resourceContext.energyResourceBase || {}).flatMap((value) => Array.isArray(value) ? value : [])
     ]).sort();
+    const economicPressurePoints = [];
+    if (fiscalRisk !== null && fiscalRisk >= 65) economicPressurePoints.push({
+      key:'fiscalRiskIndex', title:'Fiscal risk pressure', value:fiscalRisk, unit:'game index /100', level:'HIGH',
+      evidenceType:'REPOSITORY_DERIVED_INDEX',
+      detail:'Review the registered debt, inflation, unemployment and deficit inputs with their observation years before expensive commitments.'
+    });
+    if (n('publicDebtToGdpPct') !== null && n('publicDebtToGdpPct') >= 80) economicPressurePoints.push({
+      key:'publicDebtToGdpPct', title:'Public debt burden', value:n('publicDebtToGdpPct'), unit:'% of GDP', level:'HIGH',
+      evidenceType:'REGISTERED_INDICATOR',
+      detail:'The recorded debt ratio may constrain fiscal space; check its observation year and definition.'
+    });
+    if (n('inflationPct') !== null && n('inflationPct') >= 10) economicPressurePoints.push({
+      key:'inflationPct', title:'Price-stability pressure', value:n('inflationPct'), unit:'%', level:'HIGH',
+      evidenceType:'REGISTERED_INDICATOR',
+      detail:'High recorded inflation can weaken purchasing power and make procurement costs less predictable.'
+    });
+    if (n('unemploymentRatePct') !== null && n('unemploymentRatePct') >= 10) economicPressurePoints.push({
+      key:'unemploymentRatePct', title:'Labour-market pressure', value:n('unemploymentRatePct'), unit:'%', level:'HIGH',
+      evidenceType:'REGISTERED_INDICATOR',
+      detail:'Recorded unemployment suggests labour-market pressure; definitions and observation years vary.'
+    });
+    if (n('tradeBalanceToGdpPct') !== null && n('tradeBalanceToGdpPct') <= -5) economicPressurePoints.push({
+      key:'tradeBalanceToGdpPct', title:'External-trade pressure', value:n('tradeBalanceToGdpPct'), unit:'% of GDP', level:'ELEVATED',
+      evidenceType:'REGISTERED_OR_DERIVED_INDICATOR',
+      detail:'A negative trade balance alone does not prove a named supplier dependency or inability to finance imports.'
+    });
+    const economicProgressSignals = [];
+    if (n('gdpGrowthPct') !== null) economicProgressSignals.push({
+      key:'gdpGrowthPct', title:'Recorded GDP growth', value:n('gdpGrowthPct'), unit:'%',
+      direction:n('gdpGrowthPct') > 0 ? 'POSITIVE_CURRENT_SIGNAL' : (n('gdpGrowthPct') < 0 ? 'NEGATIVE_CURRENT_SIGNAL' : 'NO_GROWTH_SIGNAL'),
+      year:finite(metricMeta.gdpGrowthPct?.year),
+      detail:'A single recorded growth observation is not proof of a multi-year improvement or decline.'
+    });
+    if (n('agricultureValueAddedPctGdp') !== null || n('industryValueAddedPctGdp') !== null || n('servicesValueAddedPctGdp') !== null) {
+      economicProgressSignals.push({
+        key:'sectorMix', title:'Production structure known',
+        direction:sectorData.dominantSector ? 'SHARED_YEAR_DOMINANT_SECTOR_AVAILABLE' : 'SECTOR_YEARS_NOT_COMPARABLE',
+        value:sectorData.dominantSector || null, unit:null, year:sectorData.comparisonYear,
+        detail:'Sector composition is compared only when available values share one observation year.'
+      });
+    }
     const economicProfile = {
       scores,
-      tradePosition: n('tradeBalanceToGdpPct') === null ? 'UNKNOWN' :
+      tradePosition:n('tradeBalanceToGdpPct') === null ? 'UNKNOWN' :
         (n('tradeBalanceToGdpPct') > 0 ? 'RECORDED_SURPLUS' : (n('tradeBalanceToGdpPct') < 0 ? 'RECORDED_DEFICIT' : 'RECORDED_BALANCE')),
-      sectorProfile: sectorDataForProfile,
-      recordedResourceContext: {
-        categories: resourceContextSignals,
-        sourceStatus: row.naturalResources?.coverageStatus || 'NO_RESOURCE_CONTEXT_RECORD',
-        interpretation: 'These are categories recorded in the current game context; empty or repeated lists do not prove real-world absence or country-specific abundance.'
+      sectorProfile:sectorDataForProfile,
+      recordedResourceContext:{
+        categories:resourceContextSignals,
+        sourceStatus:row.naturalResources?.coverageStatus || 'NO_RESOURCE_CONTEXT_RECORD',
+        interpretation:'Categories present in game context; empty or repeated lists do not prove real-world absence or abundance.'
       },
-      gameplayResourceAssets: resourceSites,
-      strengths: economicStrengths,
-      vulnerabilities: economicVulnerabilities
+      gameplayResourceAssets:resourceSites,
+      strengths:economicStrengths,
+      vulnerabilities:economicVulnerabilities,
+      pressurePoints:economicPressurePoints,
+      developmentSignals:economicProgressSignals,
+      trendStatus:'MULTI_YEAR_ECONOMIC_TREND_NOT_COMPUTED_FROM_SINGLE_LATEST_VALUES',
+      limitations:[
+        'Fiscal risk, fiscal health and economic influence indexes are not official sovereign ratings.',
+        'Macroeconomic indicators may have different source years; the evidence panel exposes each year.',
+        'A trade deficit alone does not establish dependence on a specific foreign country or commodity.'
+      ]
     };
+    const governanceIndicatorPoints = GOVERNANCE_METRIC_KEYS.map((key) => ({
+      key,value:n(key),year:finite(metricMeta[key]?.year),
+      interpretation:n(key) === null ? 'NO_OBSERVATION' :
+        (n(key) >= 0.5 ? 'POSITIVE_RECORDED_SIGNAL' : (n(key) <= -0.5 ? 'NEGATIVE_RECORDED_SIGNAL' : 'NEAR_MIDDLE_OF_WGI_SCALE')),
+      scale:'WGI_ESTIMATE_APPROX_MINUS_2_5_TO_PLUS_2_5',
+      sourceStatus:metricMeta[key]?.status || 'MISSING'
+    }));
     const politicalProfile = {
       politicalSystemClassification,
-      democracyIndex: n('democracyIndex'),
-      politicalStabilityWgiEstimate: n('politicalStabilityWgiEstimate'),
-      governmentEffectivenessWgiEstimate: n('governmentEffectivenessWgiEstimate'),
-      ruleOfLawWgiEstimate: n('ruleOfLawWgiEstimate'),
-      controlOfCorruptionWgiEstimate: n('controlOfCorruptionWgiEstimate'),
-      voiceAccountabilityWgiEstimate: n('voiceAccountabilityWgiEstimate'),
-      governanceQualityPercentile: governanceQualityPercentile,
-      availableGovernanceIndicatorCount: governanceIndicatorCount,
-      strengths: politicalStrengths,
-      risks: politicalRisks,
-      caveat: 'No regime type or political ideology is assigned unless the general registry contains a named, dated source for it.'
+      classificationStatus:'NOT_CLASSIFIED_FROM_AVAILABLE_DATA',
+      democracyIndex:n('democracyIndex'),
+      politicalStabilityWgiEstimate:n('politicalStabilityWgiEstimate'),
+      governmentEffectivenessWgiEstimate:n('governmentEffectivenessWgiEstimate'),
+      ruleOfLawWgiEstimate:n('ruleOfLawWgiEstimate'),
+      controlOfCorruptionWgiEstimate:n('controlOfCorruptionWgiEstimate'),
+      voiceAccountabilityWgiEstimate:n('voiceAccountabilityWgiEstimate'),
+      governanceQualityPercentile,
+      availableGovernanceIndicatorCount:governanceIndicatorCount,
+      governanceIndicatorPoints,
+      strengths:politicalStrengths,
+      risks:politicalRisks,
+      institutionalPressurePoints:politicalRisks.map((detail)=>({title:'Governance pressure signal',detail,evidenceType:'REGISTERED_GOVERNANCE_INDICATOR'})),
+      progressStatus:'POLITICAL_CHANGE_NOT_ESTABLISHED_WITH_SINGLE_LATEST_OBSERVATIONS',
+      limitations:[
+        'A single latest observation is a level, not proof of improvement or deterioration.',
+        'WGI, Democracy Index and press-freedom indicators have different scales and are not merged into one invented score.',
+        'No regime type or political ideology is assigned without a named, dated source.'
+      ]
     };
+    const forceStructureUnavailable = [
+      {field:'activePersonnel',status:'NOT_IN_COMPARABLE_GENERAL_REGISTRY'},
+      {field:'equipmentInventoryAndQuality',status:'NOT_IN_COMPARABLE_GENERAL_REGISTRY'},
+      {field:'combatReadiness',status:'NOT_IN_COMPARABLE_GENERAL_REGISTRY'},
+      {field:'ammunitionAndSustainment',status:'NOT_IN_COMPARABLE_GENERAL_REGISTRY'},
+      {field:'airAndNavalOperationalAvailability',status:'NOT_IN_COMPARABLE_GENERAL_REGISTRY'},
+      {field:'deploymentAndLogisticsReach',status:'NOT_IN_COMPARABLE_GENERAL_REGISTRY'}
+    ];
+    const gameMilitarySignals = specificModelParameters
+      ? Object.entries(relationParams).filter(([key, value]) =>
+          /MIL_|DEFEN[CS]E|ARMY|NAVY|AIR_FORCE|MOBILIZATION|FORCE_PROJECTION|EQUIPMENT/i.test(key) && finite(value) !== null)
+          .map(([key, value]) => ({signal:key,value:finite(value),meaning:'Country-specific OMEGA model signal; not observed order-of-battle data.'}))
+      : [];
     const militaryProfile = {
-      capabilityStatus: 'OPERATIONAL_CAPABILITY_NOT_MEASURED_BY_GENERAL_REGISTRY',
-      militaryExpenditurePctGdp: n('militaryExpenditurePctGdp'),
-      expenditureObservationYear: finite(metricMeta.militaryExpenditurePctGdp?.year),
-      expenditureSharePercentile: defenseEffortPercentile,
-      financialBasePercentile: gdpPercentile,
-      populationScalePercentile: populationPercentile,
-      gameModelMilitarySignals: specificModelParameters
-        ? Object.fromEntries(Object.entries(relationParams).filter(([key]) => /MIL_|DEFEN[CS]E|ARMY|NAVY|AIR_FORCE|MOBILIZATION/i.test(key)))
-        : {},
-      strengthSignals: defenseSignals,
-      riskSignals: defenseRisks,
-      caveat: 'Military spending share, national economic scale and population are separate indicators; none is a substitute for force structure, readiness, equipment and logistics data.'
+      capabilityStatus:'OPERATIONAL_CAPABILITY_NOT_MEASURED_BY_GENERAL_REGISTRY',
+      militaryExpenditurePctGdp:n('militaryExpenditurePctGdp'),
+      expenditureObservationYear:finite(metricMeta.militaryExpenditurePctGdp?.year),
+      expenditureSharePercentile:defenseEffortPercentile,
+      expenditureSharePeerYear:percentileDetail(row,'militaryExpenditurePctGdp')?.peerYear ?? null,
+      expenditureSharePeerCount:percentileDetail(row,'militaryExpenditurePctGdp')?.peerCount ?? 0,
+      financialBasePercentile:gdpPercentile,
+      financialBasePeerYear:percentileDetail(row,'gdpCurrentUsd')?.peerYear ?? null,
+      populationScalePercentile:populationPercentile,
+      populationPeerYear:percentileDetail(row,'populationTotal')?.peerYear ?? null,
+      gameModelMilitarySignals:Object.fromEntries(gameMilitarySignals.map((item)=>[item.signal,item.value])),
+      gameModelMilitarySignalDetails:gameMilitarySignals,
+      strengthSignals:defenseSignals,
+      riskSignals:defenseRisks,
+      capabilityGaps:forceStructureUnavailable,
+      assessmentStatus:n('militaryExpenditurePctGdp') !== null ? 'BUDGET_EFFORT_ONLY' : 'NO_COMPARABLE_MILITARY_INDICATOR',
+      trendStatus:'MILITARY_CAPABILITY_TREND_NOT_MEASURED',
+      caveat:'Military spending, economic scale and population are contextual indicators only, not evidence of operational force strength without verified force structure, readiness, equipment, sustainment and logistics data.'
     };
+    const relationSignalPoints = Object.entries(relationParams)
+      .map(([key, value]) => ({ signal:key, value:finite(value) }))
+      .filter((item) => specificModelParameters && item.value !== null)
+      .sort((a, b) => b.value - a.value)
+      .map((item) => ({ ...item,
+        intensity:item.value >= 80 ? 'HIGH' : (item.value >= 60 ? 'ELEVATED' : 'MODERATE_OR_LOW'),
+        meaning:'Existing OMEGA game-model signal; not an independently verified real-world measurement.'
+      }));
+    const cooperationSignals = relationSignalPoints.filter((item) =>
+      item.value >= 60 && /ALLIANCE|NATO|AUKUS|EU_|CARICOM|INTEGRATION|ALIGNMENT|BLOC|NEUTRALITY|NON_ALIGNMENT|DIPLOMACY/i.test(item.signal));
+    const diplomaticPressureSignals = relationSignalPoints.filter((item) =>
+      item.value >= 60 && /THREAT|BORDER|SANCTION|SECURITY|DEFENSE|DEFENCE|DEPENDENCY|VULNERABILITY|RISK|PRESSURE|EXPOSURE/i.test(item.signal));
+    const bargainingSignals = [];
+    if (gdpPercentile !== null && gdpPercentile >= 75) bargainingSignals.push({
+      title:'Relative economic scale',
+      detail:'GDP is in the upper quartile of the exact same-year comparison cohort. It may support bargaining capacity but does not prove diplomatic influence.',
+      evidenceType:'SAME_YEAR_PEER_COMPARISON', evidenceMetric:'gdpCurrentUsd'
+    });
+    if (resourceSites.commercialSiteCount > 0) bargainingSignals.push({
+      title:'Listed gameplay resource assets',
+      detail:resourceSites.commercialSiteCount + ' commercial gameplay sites are registered; leverage depends on production, processing, logistics and market access.',
+      evidenceType:'GAMEPLAY_SCENARIO_REGISTRY', evidenceMetric:'resourceSiteCount'
+    });
+    if (!specificModelParameters) bargainingSignals.push({
+      title:'Diplomatic leverage not directly quantified',
+      detail:'No country-specific relation-parameter set is available, so no influence or partner-reliability score is inferred.',
+      evidenceType:'DATA_GAP', evidenceMetric:null
+    });
     const diplomaticProfile = {
-      evidenceMode: specificModelParameters ? 'COUNTRY_SPECIFIC_LEGACY_GAME_PARAMETERS' :
+      evidenceMode:specificModelParameters ? 'COUNTRY_SPECIFIC_LEGACY_GAME_PARAMETERS' :
         (relationQuality === 'NO_LEGACY_RELATION_PROFILE' ? 'DATA_DERIVED_WITH_NO_LEGACY_RELATION_ROW' : 'INFERENCE_OR_CATEGORY_ONLY'),
-      legacyCategory: relation?.category || null,
-      strategicDriver: strategicDriver,
-      highWeightFocus: explicitPriorities,
-      lowWeightIgnore: explicitLowPriority,
-      tendencies: uniqueStrings(diplomaticTendencies),
-      parameters: specificModelParameters ? relationParams : {},
-      relationProfileStatus: relationQuality,
-      caveat: 'The legacy relation registry is a game model, not a verified measurement of current diplomatic behaviour, friendship or alliance reliability.'
+      legacyCategory:relation?.category || null,
+      strategicDriver:strategicDriver,
+      strategicPosture:specificModelParameters ? (strategicDriver || relation?.category || 'COUNTRY_SPECIFIC_MODEL_WITHOUT_NAMED_DRIVER') : 'NOT_ESTABLISHED_FROM_COUNTRY_SPECIFIC_PARAMETERS',
+      highWeightFocus:explicitPriorities,
+      lowWeightIgnore:explicitLowPriority,
+      tendencies:uniqueStrings(diplomaticTendencies),
+      cooperationSignals,
+      pressurePoints:diplomaticPressureSignals,
+      leverageSignals:bargainingSignals,
+      modelSignals:relationSignalPoints,
+      parameters:specificModelParameters ? relationParams : {},
+      relationProfileStatus:relationQuality,
+      assessment:specificModelParameters ? 'COUNTRY_SPECIFIC_GAME_MODEL_SIGNAL' :
+        (relationQuality === 'NO_LEGACY_RELATION_PROFILE' ? 'INSUFFICIENT_RELATION_MODEL_EVIDENCE' : 'LIMITED_OR_GENERIC_RELATION_EVIDENCE'),
+      limitations:[
+        'The relation registry is a game model, not a verified measure of current diplomatic behaviour, friendship or alliance reliability.',
+        specificModelParameters ? 'Model priorities do not establish treaty status or guaranteed partners.' : 'Generic relation defaults are not shown as country-specific behaviour.',
+        'Diplomatic reach, embassies, treaties, UN voting alignment and partner reliability require separate source data before they can be rated.'
+      ]
     };
+
+    const dependencyDomain = (signal) => {
+      if (/AID|ASSISTANCE|FOREIGN_AID/i.test(signal)) return 'FOREIGN_ASSISTANCE';
+      if (/DEFENSE|DEFENCE|MIL_|SECURITY|ARMY|NAVY|MOBILIZATION|EQUIPMENT/i.test(signal)) return 'DEFENCE_AND_SECURITY';
+      if (/ENERGY|OIL|GAS|HYDROCARBON|FUEL|ELECTRIC|WATER/i.test(signal)) return 'ENERGY_AND_CRITICAL_SUPPLIES';
+      if (/SANCTION|DEBT|IMF|FISCAL|RESERVE|CURRENCY|FINANCE|CREDIT/i.test(signal)) return 'FINANCE_AND_SANCTIONS';
+      if (/TRADE|EXPORT|IMPORT|COMMODITY|MARKET|REMITTANCE/i.test(signal)) return 'TRADE_AND_EXTERNAL_MARKETS';
+      if (/BORDER|THREAT|CLIMATE|DISASTER|REFUGEE|MIGRATION|GEOGRAPHY/i.test(signal)) return 'GEOGRAPHY_AND_EXTERNAL_PRESSURE';
+      if (/GOVERNANCE|CORRUPTION|STABILITY|POLITICAL|INSTITUTION/i.test(signal)) return 'DOMESTIC_INSTITUTIONS';
+      return 'OTHER_MODEL_SIGNAL';
+    };
+    const structuredDependencySignals = dependencySignals.map((item)=>({
+      ...item,domain:dependencyDomain(item.signal),
+      intensity:typeof item.level==='number'&&item.level>=80?'HIGH':(typeof item.level==='number'&&item.level>=60?'ELEVATED':'UNRATED_OR_INDICATOR_SPECIFIC'),
+      confidence:item.evidenceType==='REGISTERED_MACRO_INDICATOR'?'INDICATOR_BACKED':
+        (item.evidenceType==='COUNTRY_SPECIFIC_LEGACY_GAME_PARAMETER'?'GAME_MODEL_SIGNAL':'DERIVED_GAME_INDEX'),
+      clarification:'A dependency signal identifies pressure to investigate; it does not prove reliance on a named supplier, ally or creditor.'
+    }));
+    const strategyOptions = [];
+    if (economicPressurePoints.length) strategyOptions.push({
+      domain:'ECONOMY',priority:1,title:'Reduce the most evidenced fiscal and price pressure',
+      detail:economicPressurePoints.slice(0,3).map((item)=>item.title).join(', '),
+      basis:'REGISTERED_ECONOMIC_INDICATORS'
+    });
+    if (structuredDependencySignals.length) strategyOptions.push({
+      domain:'DEPENDENCY',priority:2,title:'Map and reduce the highest dependency signals',
+      detail:structuredDependencySignals.slice(0,3).map((item)=>item.signal.replace(/_/g,' ')).join(', '),
+      basis:'EXISTING_COUNTRY_SPECIFIC_GAME_PARAMETERS_OR_REGISTERED_MACRO_PRESSURE'
+    });
+    if (resourceSites.commercialSiteCount>0) strategyOptions.push({
+      domain:'INDUSTRY_AND_RESOURCES',priority:3,title:'Build value-added processing and logistics around listed gameplay sites',
+      detail:resourceSites.commercialSiteCount+' commercial extraction sites are registered; throughput depends on the live gameplay chain.',
+      basis:'GAMEPLAY_SCENARIO_REGISTRY'
+    });
+    if (n('gdpGrowthPct')!==null&&n('gdpGrowthPct')>0) strategyOptions.push({
+      domain:'DEVELOPMENT',priority:4,title:'Protect the currently positive growth signal',
+      detail:'Recorded GDP growth is positive for observation year '+(finite(metricMeta.gdpGrowthPct?.year)??'unknown')+'; a multi-year trend is not established.',
+      basis:'SINGLE_RECORDED_GDP_GROWTH_OBSERVATION'
+    });
+    if (!strategyOptions.length) strategyOptions.push({
+      domain:'PLANNING',priority:1,title:'Improve evidence coverage before expensive commitments',
+      detail:'Current evidence is insufficient to establish a more specific low-risk strategy with confidence.',
+      basis:'EVIDENCE_GAP'
+    });
 
     const overallStrengths = uniqueStrings([
       ...economicStrengths.filter((value) => !value.startsWith('No standout')),
@@ -1079,7 +1266,7 @@ function attachStrategicProfiles(rows, relationByIso2, siteSummaryByIso3, relati
     ].filter(Boolean);
 
     row.strategicProfile = {
-      profileVersion: 'OMEGA_COUNTRY_STRATEGIC_PROFILE_V1',
+      profileVersion: 'OMEGA_COUNTRY_STRATEGIC_PROFILE_V2',
       sovereigntyScope,
       executiveSummary: summaryParts.join(' '),
       archetype,
@@ -1091,15 +1278,57 @@ function attachStrategicProfiles(rows, relationByIso2, siteSummaryByIso3, relati
       military: militaryProfile,
       politics: politicalProfile,
       dependencies: {
-        modelSignals: dependencySignals,
-        interpretationPolicy: 'Only country-specific legacy parameters are presented as modelled dependencies; general macro signals are labelled as pressure signals, not proof of dependence on a named state.'
+        modelSignals: structuredDependencySignals,
+        domains: [...new Set(structuredDependencySignals.map((item) => item.domain))],
+        interpretationPolicy: 'Only country-specific legacy parameters are presented as modelled dependencies; general macro signals are labelled as pressure signals, not proof of dependence on a named state.',
+        measurementGaps: [
+          'Named import-supplier shares and critical-import concentration are not registered for every country.',
+          'External debt creditor composition, energy import share and foreign-aid shares need source-backed records before they can be rated as measured dependence.',
+          'A model signal can prioritise an in-game investigation but is not a verified real-world dependence statistic.'
+        ]
       },
       overallStrengths,
       overallWeaknesses,
       playerAdvantages,
       playerChallenges,
       recommendedStrategy,
+      strategyOptions,
+      assessmentCriteria: {
+        rubricVersion: 'OMEGA_COUNTRY_PROFILE_RUBRIC_V2',
+        peerComparison: {
+          rule: 'Percentiles require the same metric and exact observation year, with at least five country/territory observations in that year cohort.',
+          interpretation: 'No percentile means no comparable cohort was available; it does not mean low strength.'
+        },
+        thresholds: {
+          wgiPositiveSignal: 'value >= +0.5 on the named WGI estimate scale',
+          wgiPressureSignal: 'value <= -0.5 on the named WGI estimate scale',
+          highInflationPressure: 'inflation >= 10% in the recorded observation',
+          highUnemploymentPressure: 'unemployment >= 10% in the recorded observation',
+          highPublicDebtPressure: 'public debt >= 80% GDP in the recorded observation',
+          materialTradeDeficitPressure: 'trade balance <= -5% GDP in the recorded/derived observation',
+          highFiscalRiskSignal: 'repository-derived fiscal risk index >= 65/100',
+          highRelativeEconomicScale: '>= 75th percentile inside an exact same-year cohort with at least five values',
+          highRelativeMilitarySpendingEffort: '>= 75th percentile inside an exact same-year cohort; budget effort is not force strength',
+          countrySpecificRelationParameters: 'Only relation rows that differ from the known generic parameter template are treated as country-specific game-model signals'
+        },
+        evidenceClasses: {
+          REGISTERED_INDICATOR: 'Registered source-backed or legacy value; inspect its year and source status.',
+          REPOSITORY_DERIVED_INDEX: 'Project-defined index, not an official rating.',
+          SAME_YEAR_PEER_COMPARISON: 'Relative comparison among values with exactly the same metric and observation year.',
+          COUNTRY_SPECIFIC_LEGACY_GAME_PARAMETER: 'Country-specific OMEGA game parameter, not an observed national statistic.',
+          GAMEPLAY_SCENARIO_REGISTRY: 'Simulated gameplay asset context, not an official real-world resource statistic.',
+          DATA_GAP: 'Required evidence is unavailable; no low/zero value is implied.'
+        },
+        mandatoryCaveats: [
+          'A single latest observation is a level, not proof of improvement or deterioration over time.',
+          'Missing is unknown, never zero and never automatically a strength or weakness.',
+          'Operational military capability is not rated without force, equipment, readiness and logistics evidence.',
+          'A trade deficit alone does not prove named-country dependency.',
+          'Relative percentiles are descriptive comparisons, not official rankings.'
+        ]
+      },
       dataQuality: {
+        rubricVersion: 'OMEGA_COUNTRY_PROFILE_RUBRIC_V2',
         profileCoverageLevel,
         availableCoreMetricCount,
         coreMetricCount: STRATEGIC_CORE_METRICS.length,
@@ -1120,8 +1349,10 @@ function attachStrategicProfiles(rows, relationByIso2, siteSummaryByIso3, relati
           'Economic influence, fiscal risk and fiscal health are repository-derived game indexes, not official rankings or ratings.',
           'Resource-site counts and reserve values belong to the gameplay scenario registry; reserve amounts are not treated as real-world national reserves.',
           'The diplomacy source includes generic default parameters for many countries; these are not described as country-specific behaviour.',
-          'The general registry does not quantify operational military capability, force readiness or equipment quality.',
-          'Relative percentiles compare all entries in countries.json, including territories and non-sovereign entities; they are not official international rankings.'
+          'Operational military capability is not quantified by spending, GDP or population alone.',
+          'Relative percentiles require the same metric and exact observation year; missing peer cohorts are left unranked.',
+          'A single observation is not a longitudinal progress trend.',
+          'Relative percentiles compare roster entities, including territories and non-sovereign entities; they are not official international rankings.'
         ]
       }
     };
@@ -1246,7 +1477,7 @@ async function main() {
     }));
 
   const metadata = {
-    schemaVersion: '1.2.0',
+    schemaVersion: '1.3.0',
     datasetId: 'OMEGA_COUNTRY_GENERAL_DATA_REGISTRY_V1',
     title: 'OMEGA Unified Country General Data Registry',
     description: 'Canonical common-schema registry aggregating identity, basic facts, economy, demographics, general indexes, resource context, public-safety summary and a source-aware strategic country profile for every identity in countries.json.',
