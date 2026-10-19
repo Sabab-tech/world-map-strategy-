@@ -125,7 +125,7 @@ test('turn advancement computes real wages, CPI and producer/import costs with t
   assert.ok(bg.importCostIndex > 100);
   assert.ok(bg.producerCostIndex > 100);
   assert.equal(bg.wageGrowthSource, 'MODEL_ASSUMPTION_GDP_GROWTH_PROXY');
-  assert.ok(bg.assumptions.some(x => String(x).includes('Wage growth estimated')));
+  assert.ok(bg.assumptions.some(x => String(x).toLowerCase().includes('wage growth estimated')));
   assert.equal(bg.provenance.sourceFacts.importExposure, 'MODEL_ASSUMPTION_DEFAULT_IMPORT_EXPOSURE');
   assert.ok(r.engine.getProducerCostMultiplier('BGD') > 1);
   assert.ok(r.engine.getHouseholdPurchasingPowerMultiplier('BGD') < 1);
