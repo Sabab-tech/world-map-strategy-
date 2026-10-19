@@ -24,11 +24,13 @@
   "gameRules": {
     "policePayPerDayUsd": 65,
     "recruitmentFeePerOfficerUsd": 2500,
-    "fleetSizing": "ceil(activePersonnel / 18), minimum 2 vehicles when population is available; the mix is a labeled game estimate adjusted by urbanization, ocean access, road-role demand and local economy capacity, and the tier counts round to the exact fleet total.",
+    "fleetSizing": "Opening vehicle inventories preserve each country's modeled baseline total; the starting vehicle-type mix is adjusted to country context. For planning, target 1 vehicle per 18 target officers; both opening fleet counts and planning target are game estimates, not observed official rosters.",
     "baselinePersonnelFormula": "population × estimated police staffing rate per 100000; rate is a game-policy baseline, not observed staffing",
     "nonHomicideCrimePolicy": "Modeled rates are starting gameplay intensity assumptions, not published country crime rates",
     "inheritedAssets": "Initial fleets are seeded as already-owned starting assets; no purchase debit is applied for opening inventory. All subsequent purchases and hiring are charged to Finance.",
-    "countryOperatingProfile": "City, highway, rural, border, industrial and coastal shares are modeled game weights derived from country urbanization, ocean access and economy inputs; they are not surveyed road-network measurements."
+    "countryOperatingProfile": "City, highway, rural, border, industrial and coastal shares are modeled game weights derived from country urbanization, ocean access and economy inputs; they are not surveyed road-network measurements.",
+    "policeStaffingPlanningTarget": "At least 150 officers per 100,000 residents or 110% of a country's modeled opening staffing rate, whichever is higher; gameplay-balancing target only, not a claim about actual police staffing or a universal international standard.",
+    "facilityAndTrainingTargets": "Gameplay targets: station 2, patrol 2, dispatch 2, forensics 2, border 1, communications 2, academy 3, cyber 1, emergency 2, department 2; training target Level 3. These are strategy-game capacity goals, not official real-world standards."
   },
   "vehicles": [
     {
