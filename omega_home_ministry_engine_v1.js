@@ -1819,7 +1819,8 @@
         fitPct:fitPct,planningScore:planningScore,environmentFit:Math.round((Number(vehicle.environmentFit&&vehicle.environmentFit[topEnvironment])||0)*10)/10,
         dominantEnvironment:topEnvironment,maintenancePerDay:vehicle.maintenancePerDay,cost:vehicle.cost,owned:owned,operationalUnits:ready,
         canDeploy:ready>0,procurementUnlocked:vehicle.level<=state.unlockedVehicleLevel,affordabilityPenalty:Math.round(purchaseCostPenalty*10)/10,
-        roadPenalty:Math.round(roadPenalty*10)/10,source:'MODELED_COUNTRY_CONTEXT_AND_VEHICLE_CAPABILITIES'};
+        roadPenalty:Math.round(roadPenalty*10)/10,source:'MODELED_COUNTRY_ENVIRONMENT_SUITABILITY',
+        contextSource:'COUNTRY_GEOGRAPHY_CITY_NETWORK_AND_VEHICLE_CAPABILITIES'};
     });
     options.sort(function(a,b){return b.planningScore-a.planningScore||b.fitPct-a.fitPct||a.level-b.level;});
     return options.slice(0,Math.max(1,Math.min(15,Math.floor(num(limit)||5))));
