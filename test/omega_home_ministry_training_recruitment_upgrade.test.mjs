@@ -8,11 +8,11 @@ const capabilityData = JSON.parse(readFileSync(fileURLToPath(new URL('../omega_h
 const capabilityByAlias = new Map();
 for (const row of capabilityData.countries) {
   for (const alias of [row.code, row.iso2, row.iso3, row.name].filter(Boolean)) {
-    capabilityByAlias.set(String(alias).trim().toUpperCase().replace(/[\\s_-]+/g, ''), row);
+    capabilityByAlias.set(String(alias).trim().toUpperCase().replace(/[\s_-]+/g, ''), row);
   }
 }
 const countries = policeData.countries.map(row => {
-  const capability = capabilityByAlias.get(String(row.iso3 || row.code).trim().toUpperCase().replace(/[\\s_-]+/g, ''));
+  const capability = capabilityByAlias.get(String(row.iso3 || row.code).trim().toUpperCase().replace(/[\s_-]+/g, ''));
   return Object.assign({}, row, { capabilityBaseline: capability ? {
     modelVersion: capabilityData.model.version,
     trainingLevel: capability.trainingLevel,
@@ -124,9 +124,9 @@ const financeApi = {
   diagnostics: () => ({ initialized: true }),
   getPlayerCountry: () => ({ countryCode: 'BD', name: 'Bangladesh', iso3: 'BGD' }),
   resolveCountry(value) {
-    const raw = String(value || '').toUpperCase().replace(/[\\s_-]+/g, '');
+    const raw = String(value || '').toUpperCase().replace(/[\s_-]+/g, '');
     const row = policeData.countries.find(item =>
-      [item.code, item.iso2, item.iso3, item.name].some(alias => String(alias || '').toUpperCase().replace(/[\\s_-]+/g, '') === raw));
+      [item.code, item.iso2, item.iso3, item.name].some(alias => String(alias || '').toUpperCase().replace(/[\s_-]+/g, '') === raw));
     return row ? { countryCode: row.iso2 || row.code, countryName: row.name, name: row.name, iso3: row.iso3 } : null;
   },
   getFinanceState(value) { return String(value || '').toUpperCase() === 'BD' ? financeModel : null; },
