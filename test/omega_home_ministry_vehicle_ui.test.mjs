@@ -353,3 +353,29 @@ test('Home Affairs Reports & Metrics no longer displays mine and shipment diagno
   assert.match(ministryEngine, /\['Mine \/ site records', activity && activity\.mineRecords\]/);
   assert.match(ministryEngine, /isHomeMinistryReport \? 'HOME MINISTRY SECURITY OPERATIONS REPORT' : 'LIVE SOVEREIGN ENGINE REPORT'/);
 });
+
+
+test('vehicle illustrations are explicitly visible and sized in mobile WebView layouts', () => {
+  assert.match(ui, /preserveAspectRatio="xMidYMid meet"/);
+  assert.match(ui, /visibility:visible!important/);
+  assert.match(ui, /min-height:.*slot === 'hero'/);
+  assert.match(ui, /vehicleSvg\(v, 'card'\)/);
+});
+
+test('Home Ministry budget UI connects Finance allocation and internal category plan', () => {
+  assert.match(ui, /ui\.renderHomeMinistryBudget = function/);
+  assert.match(ui, /SAVE FINANCE ALLOCATION/);
+  assert.match(ui, /SAVE INTERNAL BUDGET PLAN/);
+  assert.match(ui, /type:'set-allocation'.*department:'interior'/s);
+  assert.match(ui, /type:'spend-budget'/);
+  assert.match(engine, /FINANCE_INTERIOR_ALLOCATION_REQUIRED/);
+  assert.match(engine, /HOME_MINISTRY_CATEGORY_BUDGET_EXCEEDED/);
+  assert.match(engine, /configureHomeBudget:configureHomeBudget/);
+});
+
+test('police deployment captures explicit country-scoped city or rural region and area class', () => {
+  assert.match(ui, /home-police-guard-area-class/);
+  assert.match(ui, /City \/ district \/ rural region/);
+  assert.match(ui, /Enter the city, district or rural region before dispatch/);
+  assert.match(ui, /URBAN:'city',SUBURBAN:'city',RURAL:'rural',BORDER:'border'/);
+});
