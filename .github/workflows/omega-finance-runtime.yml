@@ -26,3 +26,9 @@ jobs:
         run: node --check test/omega_finance_ministry_runtime_v1.test.mjs
       - name: Finance country registry and runtime transaction tests
         run: node --test test/omega_finance_ministry_runtime_v1.test.mjs
+      - name: Validate FX monetary runtime syntax
+        run: node --check omega_forex_monetary_engine_v1.js
+      - name: Validate FX regression test syntax
+        run: node --check test/omega_forex_monetary_engine_v1.test.mjs
+      - name: FX conversion, monetary policy and history tests
+        run: node --test test/omega_forex_monetary_engine_v1.test.mjs
