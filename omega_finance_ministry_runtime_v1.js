@@ -118,6 +118,7 @@
   }
   function ensureFinanceState(p,root){
     if(!p)return null;root=root||rootState();const bucket=financeBucketFor(root,p,true);if(!bucket)return null;
+    const id=p.iso3||p.countryCode;
     const model=ensureObject(bucket,'omegaFinance');
     const e=getEconomyRecord(p)||{},gdp=finite(e.gdp)??finite(p.indicators?.gdpCurrentUsd),existingCash=observedFinanceCash(p,root);
     if(model.version!==VERSION){
