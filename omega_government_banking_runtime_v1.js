@@ -670,8 +670,20 @@
   function settleTransfer(input, internal) {
     input = obj(input) ? input : {};
     const key = String(input.idempotencyKey || input.transactionId || '').trim();
-    if (key) {
-      const prior = existingTransaction(key);
+    const prior = key ? existingTransaction(key) : null;
+    const from = resolveProfile(input.sourceCountryId || input.fromCountryId || input.countryId);
+    const to = resolveProfile(input.destinationCountryId || input.toCountryId);
+    if (!from || !to) return { ok: false, code: 'COUNTRY_NOT_FOUND' };
+    if (prior) {
+      const saved = prior.result || prior;
+      const samePayload = String(saved.type || '') === 'CROSS_BORDER_TRANSFER'
+        && norm(saved.sourceCountryCode) === profileId(from)
+        && norm(saved.destinationCountryCode) === profileId(to)
+        && (!input.fromCurrencyCode && !input.fromCode || String(saved.fromCurrencyCode || '').toUpperCase() === String(input.fromCurrencyCode || input.fromCode).toUpperCase())
+        && (!input.toCurrencyCode && !input.toCode || String(saved.toCurrencyCode || '').toUpperCase() === String(input.toCurrencyCode || input.toCode).toUpperCase())
+        && (num(input.amount) === null || Math.abs((num(saved.amount) || 0) - num(input.amount)) < 1e-8);
+      if (['SETTLED','PENDING'].includes(String(prior.status || '').toUpperCase()) && !samePayload)
+        return { ok: false, code: 'IDEMPOTENCY_KEY_PAYLOAD_MISMATCH', transactionId: prior.transactionId };
       if (prior && String(prior.status || '').toUpperCase() === 'SETTLED')
         return { ok: true, duplicate: true, transactionId: prior.transactionId, transaction: clone(prior.result || prior) };
       if (prior && ['CANCELLED','FAILED','COMPENSATED','REVERSED'].includes(String(prior.status || '').toUpperCase()))
@@ -680,9 +692,6 @@
       if (pending && turn() < num(pending.dueTurn))
         return { ok: true, pending: true, code: 'PAYMENT_PENDING', dueTurn: pending.dueTurn, transactionId: key };
     }
-    const from = resolveProfile(input.sourceCountryId || input.fromCountryId || input.countryId);
-    const to = resolveProfile(input.destinationCountryId || input.toCountryId);
-    if (!from || !to) return { ok: false, code: 'COUNTRY_NOT_FOUND' };
     const player = playerProfile();
     if (!internal && (!player || profileId(from) !== profileId(player)))
       return { ok: false, code: 'PLAYER_COUNTRY_SCOPE_VIOLATION', message: 'Transfers can be funded only by the active player country.' };
@@ -851,7 +860,19 @@
     if (!id || !requestId) return { ok: false, code: 'TRADE_ID_REQUIRED' };
     const bank = bankingState(true);
     const done = existingTransaction(id);
-    if (done && done.status === 'SETTLED') return { ok: true, duplicate: true, settlementId: id, transaction: clone(done.result || done) };
+    if (done && done.status === 'SETTLED') {
+      const priorRow = done.result || done;
+      const samePayload = String(priorRow.type || '') === 'TRADE_SETTLEMENT'
+        && norm(priorRow.buyerCountryCode) === profileId(buyer)
+        && norm(priorRow.sellerCountryCode) === profileId(seller)
+        && (!input.requestId || !priorRow.requestId || String(priorRow.requestId) === String(requestId))
+        && (!input.resourceId || String(priorRow.resourceId || '') === String(input.resourceId))
+        && (!input.buyerCurrency || String(priorRow.buyerCurrencyCode || '').toUpperCase() === String(input.buyerCurrency).toUpperCase())
+        && (!input.sellerCurrency || String(priorRow.sellerCurrencyCode || '').toUpperCase() === String(input.sellerCurrency).toUpperCase())
+        && (num(input.sellerTotal) === null || Math.abs((num(priorRow.sellerTotalLocal) || 0) - num(input.sellerTotal)) < 1e-8);
+      if (!samePayload) return { ok: false, code: 'SETTLEMENT_ID_PAYLOAD_MISMATCH', settlementId: id };
+      return { ok: true, duplicate: true, settlementId: id, transaction: clone(done.result || done) };
+    }
     if (done && ['CANCELLED','FAILED','COMPENSATED','REVERSED'].includes(String(done.status || '').toUpperCase()))
       return { ok: false, code: 'SETTLEMENT_ID_FINALIZED', settlementId: id, status: done.status };
     let pending = bank.pendingTradeSettlements[id];
