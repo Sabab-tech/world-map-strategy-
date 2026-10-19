@@ -147,7 +147,7 @@ function renderIndex(res, next) {
       MINISTER_RECRUITMENT_SCRIPT, MINISTER_BOOTSTRAP_SCRIPT, MINISTER_RUNTIME_SCRIPT, COGNITIVE_SCRIPT,
       REASONING_SCRIPT, UNIVERSAL_AI_SCRIPT, MINISTER_INTELLIGENCE_PIPELINE_SCRIPT, AI_INTEGRITY_SCRIPT, HEALTH_LOGO_SCRIPT, UI_INTERACTION_GUARD_SCRIPT
     ];
-    for (const script of scripts) { const src = script.match(/src="([^"]+)"/)?.[1]; if (src && !output.includes(src)) output = output.replace('</body>', `    ${script}\n</body>`); }
+    for (const script of scripts) { const src = script.match(/src="([^"]+)"/)?.[1]; const pathOnly = src ? src.replace(/^\\/+/, '') : ''; const alreadyLoaded = src && (output.includes('src="' + src + '"') || output.includes('src="' + pathOnly + '"') || output.includes('src="/' + pathOnly + '"')); if (src && !alreadyLoaded) output = output.replace('</body>', `    ${script}\n</body>`); }
     res.type('html').send(output);
   });
 }
