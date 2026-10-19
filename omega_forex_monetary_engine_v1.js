@@ -1115,30 +1115,33 @@
     panel.className = 'ofx-panel';
     panel.setAttribute('data-ofx-panel', 'true');
     panel.innerHTML =
-      '<section class="ofx-section ofx-hero"><div><div class="ofx-eyebrow">OMEGA / GLOBAL FOREIGN EXCHANGE</div>'
-      + '<h3>Currency Market &amp; Monetary Authority</h3>'
-      + '<p>USD is the settlement numeraire. Every conversion uses source currency → USD → destination currency.</p></div>'
+      '<section class="ofx-section ofx-hero"><div><div class="ofx-eyebrow">OMEGA / FINANCE</div>'
+      + '<h3>Foreign Exchange &amp; Banking</h3>'
+      + '<p>Check a country’s USD rate, calculate a conversion, then explicitly record it to the game’s bank accounts.</p></div>'
       + '<div class="ofx-status" data-ofx-live="status">' + escapeHTML(state.referenceStatus) + '</div></section>'
       + '<div class="ofx-kpis">'
-      + '<article><span>Active country currency</span><strong data-ofx-live="player-currency">' + escapeHTML(playerCode) + '</strong><small>' + escapeHTML(getCountryCurrencyName(player, playerCode)) + '</small></article>'
-      + '<article><span>Local units per USD</span><strong data-ofx-live="player-rate">' + escapeHTML(fmtRate(rate)) + '</strong><small>' + escapeHTML(sourceLine) + '</small></article>'
-      + '<article><span>USD per local unit</span><strong data-ofx-live="usd-per-local">' + escapeHTML(rate ? fmtRate(1 / rate) : 'N/A') + '</strong><small>Reciprocal FX quote</small></article>'
-      + '<article><span>Known currency codes</span><strong data-ofx-live="currency-count">' + escapeHTML(String(currencies.size)) + '</strong><small>Shared currency zones use one rate</small></article>'
-      + '<article><span>Country FX coverage</span><strong data-ofx-live="country-rate-coverage">' + escapeHTML(countryRateCoverage(mode)) + '</strong><small>Countries with a valid quote / countries using a currency</small></article>'
+      + '<article><span>Player currency</span><strong data-ofx-live="player-currency">' + escapeHTML(playerCode) + '</strong><small>' + escapeHTML(getCountryCurrencyName(player, playerCode)) + '</small></article>'
+      + '<article><span>Local units for 1 USD</span><strong data-ofx-live="player-rate">' + escapeHTML(fmtRate(rate)) + '</strong><small>' + escapeHTML(sourceLine) + '</small></article>'
+      + '<article><span>USD for 1 local unit</span><strong data-ofx-live="usd-per-local">' + escapeHTML(rate ? fmtRate(1 / rate) : 'N/A') + '</strong><small>Reciprocal rate</small></article>'
+      + '<article><span>Country rate coverage</span><strong data-ofx-live="country-rate-coverage">' + escapeHTML(countryRateCoverage(mode)) + '</strong><small>Available quotes / countries with a currency</small></article>'
       + '</div>'
-      + '<section class="ofx-section"><div class="ofx-heading"><div><h4>Cross-Currency Clearing</h4><p>Convert currencies directly, including BDT ↔ NGN. Settlements are recorded in Government Banking.</p></div>'
-      + '<button type="button" class="ofx-secondary" data-ofx-refresh>Refresh reference rates</button></div>'
-      + '<form class="ofx-form" data-ofx-action="ofx-convert">'
+      + '<section class="ofx-section ofx-country-quick-lookup"><div class="ofx-heading"><div><h4>Find a country’s currency</h4><p>Search a country, ISO code or currency code to see both USD quote directions.</p></div></div>'
+      + '<label class="ofx-search">Country or currency<input type="search" data-ofx-country-lookup value="' + escapeHTML(player && player.name || '') + '" placeholder="Bangladesh, BGD, BDT..." autocomplete="off"></label>'
+      + '<div data-ofx-country-lookup-result>' + renderCountryLookup(player && player.name || '', mode) + '</div></section>'
+      + '<section class="ofx-section ofx-converter-section"><div class="ofx-heading"><div><h4>Currency converter</h4><p>Quote first. Recording a conversion changes the player country’s currency accounts and posts to Government Banking.</p></div>'
+      + '<button type="button" class="ofx-secondary ofx-icon-button" data-ofx-refresh aria-label="Refresh reference rates" title="Refresh reference rates"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5M5.7 9a7 7 0 0 1 11.6-2L20 12M4 12l2.7 5a7 7 0 0 0 11.6-2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Refresh rates</span></button></div>'
+      + '<form class="ofx-form ofx-converter-form" data-ofx-action="ofx-convert">'
       + '<label>Amount<input name="amount" type="number" min="0.000001" step="any" value="1000" required></label>'
-      + '<label>Sell currency<select name="fromCode">' + currencyOptions(playerCode) + '</select></label>'
-      + '<label>Buy currency<select name="toCode">' + currencyOptions(defaultTo) + '</select></label>'
-      + '<label>Rate source<select name="mode">' + rateModeOptions(mode) + '</select></label>'
-      + '<button type="button" class="ofx-secondary" data-ofx-quote>Calculate quote</button>'
-      + '<button type="submit">Record simulated exchange</button>'
-      + '</form><div class="ofx-result" data-ofx-conversion-result role="status">Choose two supported currencies and submit to calculate the cross-rate.</div>'
-      + '<p class="ofx-note">Model settlement fee: ' + escapeHTML((FX_FEE_BPS / 100).toFixed(2)) + '% of USD notional. Quote calculation is read-only; only “Record simulated exchange” writes a clearing-ledger entry. Treasury balances are not silently altered.</p>'
+      + '<label>From currency<select name="fromCode">' + currencyOptions(defaultFrom) + '</select></label>'
+      + '<button type="button" class="ofx-secondary ofx-swap-button" data-ofx-swap aria-label="Swap source and destination currencies" title="Swap currencies"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h15l-3-3M20 17H5l3 3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Swap</span></button>'
+      + '<label>To currency<select name="toCode">' + currencyOptions(defaultTo) + '</select></label>'
+      + '<label>Rate source<select id="ofx-convert-mode" name="mode">' + rateModeOptions(mode) + '</select></label>'
+      + '<div class="ofx-form-actions"><button type="button" class="ofx-secondary" data-ofx-quote><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM8 9h8M8 13h3M15 13h1M8 16h8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Calculate quote</span></button>'
+      + '<button type="submit" data-ofx-record><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h12l2 2v14H5zM8 4v6h8V4M8 20v-6h8v6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg><span>Record exchange</span></button></div>'
+      + '</form><div class="ofx-result" data-ofx-conversion-result role="status" aria-live="polite">Select two different currencies to calculate a quote. Quotes never change account balances.</div>'
+      + '<p class="ofx-note">Reference rates are for comparison only. Only OMEGA Game Simulation rates can be used to record an in-game conversion. A successful record updates currency accounts, Treasury fees and the Government Banking ledger.</p>'
       + '</section>'
-      + '<section class="ofx-section"><div class="ofx-heading"><div><h4>Central Bank &amp; Monetary Policy</h4><p>Policy changes affect subsequent game turns, inflation and currency pressure.</p></div></div>'
+      + '<details class="ofx-section ofx-advanced-section" data-ofx-policy-details><summary><span class="ofx-summary-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M5 8h14M7 8l-3 6h6L7 8zm10 0-3 6h6l-3-6zM6 21h12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></span><span><strong>Central bank &amp; monetary policy</strong><small>Inflation target, interest rates, exchange regime and reserve interventions</small></span></summary><section class="ofx-detail-body">
       + '<form class="ofx-form" data-ofx-action="ofx-policy">'
       + '<label>Inflation target (%)<input name="inflationTargetPct" type="number" min="0" max="50" step="0.1" value="' + escapeHTML(String(policy.inflationTargetPct)) + '" required></label>'
       + '<label>Money-supply growth (%)<input name="moneySupplyGrowthPct" type="number" min="-50" max="100" step="0.1" value="' + escapeHTML(String(policy.moneySupplyGrowthPct)) + '" required></label>'
@@ -1153,26 +1156,26 @@
       + '<label>Intervention (USD)<input name="amountUsd" type="number" min="1" step="any" placeholder="e.g. 50000000" required></label>'
       + '<label>Operation<select name="direction"><option value="SUPPORT_CURRENCY">Spend FX reserves to support currency</option><option value="WEAKEN_CURRENCY">Sell local currency to buy USD reserves</option></select></label>'
       + '<button type="submit">Execute central-bank intervention</button></form>'
-      + '<div class="ofx-result" data-ofx-policy-result role="status">Policy controls apply to the active player country only.</div></section>'
-      + '<section class="ofx-section"><div class="ofx-heading"><div><h4>One-Month Currency Trend</h4><p>Daily reference observations or the last 30 in-game day closes. Missing observations are not fabricated.</p></div>'
+      + '<div class="ofx-result" data-ofx-policy-result role="status">Policy controls apply to the active player country only.</div></section></details>'
+      + '<details class="ofx-section ofx-advanced-section" data-ofx-chart-details><summary><span class="ofx-summary-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5M4 19h17M7 15l4-5 3 3 5-7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span><strong>Exchange-rate trends</strong><small>One-month line chart, daily movement and appreciation/depreciation days</small></span></summary><section class="ofx-detail-body"><div class="ofx-heading"><div><h4>One-month currency trend</h4><p>Daily reference observations or the last 30 in-game day closes. Missing observations are not fabricated.</p></div>
       + '<label class="ofx-inline-label">Currency<select id="ofx-chart-currency">' + currencyOptions(playerCode) + '</select></label>'
       + '<label class="ofx-inline-label">Series<select id="ofx-chart-mode">' + rateModeOptions(mode) + '</select></label></div>'
       + '<div class="ofx-chart-grid"><article class="ofx-chart"><h5>USD exchange rate line</h5><p>Local units for 1 USD</p><canvas id="ofx-line-chart" aria-label="One-month exchange rate line chart"></canvas></article>'
       + '<article class="ofx-chart"><h5>Daily rate movement</h5><p>Positive = local currency weakened; negative = strengthened</p><canvas id="ofx-bar-chart" aria-label="Daily local currency depreciation and appreciation bar chart"></canvas></article>'
       + '<article class="ofx-chart"><h5>Appreciation / depreciation days</h5><p>How often the local currency weakened, strengthened or stayed flat</p><canvas id="ofx-pie-chart" aria-label="Currency depreciation and appreciation day share pie chart"></canvas>'
       + '<div class="ofx-chart-legend" data-ofx-pie-legend></div></article></div>'
-      + '<div class="ofx-note" data-ofx-history-status>Loading one-month observations...</div></section>'
-      + '<details class="ofx-section"><summary>Global Currency Catalogue · ' + escapeHTML(String(currencies.size)) + ' ISO-style currency codes</summary>'
+      + '<div class="ofx-note" data-ofx-history-status>Loading one-month observations...</div></section></details>'
+      + '<details class="ofx-section ofx-advanced-section" data-ofx-catalogue-details><summary><span class="ofx-summary-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM8 9h8M8 13h8M8 16h4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span><strong>Global currency catalogue</strong><small>' + escapeHTML(String(currencies.size)) + ' currency codes · simulation and reference quotes</small></span></summary>
       + '<div class="ofx-table-scroll"><table class="ofx-table"><thead><tr><th>Code</th><th>Currency</th><th>Areas using it</th><th>Game units / USD</th><th>Reference units / USD</th><th>Game USD / Unit</th><th>Reference USD / Unit</th><th>Game rate source</th></tr></thead>'
       + '<tbody data-ofx-currency-table>' + renderCurrencyMarketTable(mode) + '</tbody></table></div></details>'
-      + '<details class="ofx-section ofx-country-registry" data-ofx-banking-details open><summary>Government Banking Registry · ' + escapeHTML(String(profiles.length)) + ' countries / areas</summary>'
+      + '<details class="ofx-section ofx-advanced-section ofx-country-registry" data-ofx-banking-details><summary><span class="ofx-summary-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 7v10l8 4 8-4V7zM4 7l8 4 8-4M12 11v10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></span><span><strong>All-country FX registry</strong><small>' + escapeHTML(String(profiles.length)) + ' countries / areas · searchable USD rates and data provenance</small></span></summary>
       + '<label class="ofx-search">Filter country, ISO code or currency<input type="search" data-ofx-bank-filter placeholder="Bangladesh, NGA, BDT..."></label>'
       + '<div class="ofx-table-scroll ofx-country-rate-scroll"><table class="ofx-table"><thead><tr><th>Country / area</th><th>ISO</th><th>Currency</th><th>Local units / USD</th><th>USD / local currency unit</th><th>Inflation</th><th>Treasury (USD)</th><th>FX reserves (USD)</th><th>Rate source</th><th>Data state</th></tr></thead>'
       + '<tbody data-ofx-banking-table></tbody></table></div></details>'
-      + '<section class="ofx-section"><div class="ofx-heading"><div><h4>Recent FX Settlements</h4><p>Ledger shared with the Government Banking state.</p></div></div>'
+      + '<details class="ofx-section ofx-advanced-section" data-ofx-ledger-details><summary><span class="ofx-summary-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l4 4v14H6zM15 3v5h4M9 12h7M9 16h7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg></span><span><strong>Recent FX settlements</strong><small>Auditable clearing entries linked to Government Banking transactions</small></span></summary><section class="ofx-detail-body"><div class="ofx-heading"><div><h4>Settlement ledger</h4><p>Recent FX-side references to actual account conversions and central-bank interventions.</p></div></div>
       + '<div class="ofx-table-scroll"><table class="ofx-table"><thead><tr><th>Turn / date</th><th>Transaction</th><th>Pair</th><th>USD notional</th><th>Fee</th><th>Settlement route</th></tr></thead>'
-      + '<tbody data-ofx-ledger-table></tbody></table></div></section>'
-      + '<p class="ofx-footnote">Reference rates are daily central-bank/official-source observations, not live tick-by-tick quotes. Game rates begin from the repository baseline where available and then follow OMEGA policy and macroeconomic rules. Shared currency codes share a single FX rate.</p>';
+      + '<tbody data-ofx-ledger-table></tbody></table></div></section></details>'
+      + '<p class="ofx-footnote">Reference rates are official-provider daily observations when available, not live tick-by-tick prices. Game rates follow OMEGA policy and simulation rules. Missing rates are not invented; shared currency codes share one quote.</p>';
     host.appendChild(panel);
     const converterForm = panel.querySelector('[data-ofx-action="ofx-convert"]');
     if (converterForm) previewConversion(converterForm, panel);
@@ -1749,9 +1752,7 @@
     if (!dashboard || !host || dashboard.querySelector('[data-ofx-panel]')) return false;
     const player = getPlayerProfile();
     const playerCode = getCountryCurrency(player) || 'USD';
-    const defaultFrom = 'USD';
-    const defaultTo = playerCode !== 'USD' ? playerCode
-      : (currencies.has('BDT') ? 'BDT' : (Array.from(currencies.keys()).find(function (code) { return code !== 'USD'; }) || 'USD'));
+    const defaultTo = currencies.has('NGN') && playerCode !== 'NGN' ? 'NGN' : 'USD';
     const mode = state.viewMode === 'REFERENCE' ? 'REFERENCE' : 'SIMULATION';
     const rate = rateFor(playerCode, mode);
     const policy = currencyPolicy(playerCode);
