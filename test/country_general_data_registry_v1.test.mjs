@@ -45,31 +45,52 @@ test('every country uses the same top-level schema and every metric key', () => 
   }
 });
 
-test('raw financial observations and derived indicators preserve the full source schema', () => {
+test('raw financial values and derived indicators preserve the full source schema in catalogue order', () => {
   assert.equal(rawRows.length, roster.length);
   assert.equal(registry.metadata.rawFinancialFieldCount, rawFinancial.metadata.rawFieldCount);
   assert.equal(registry.metadata.rawFinancialFieldNames.length, rawFinancial.metadata.rawFieldCount);
-  assert.equal(registry.metadata.rawFinancialDerivedFieldCount,
-    registry.metadata.rawFinancialDerivedFieldNames.length);
+  assert.deepEqual(registry.metadata.rawFinancialFieldNames, Object.keys(rawRows[0].rawIndicators));
+  assert.deepEqual(registry.metadata.rawFinancialDerivedFieldNames, Object.keys(rawRows[0].derivedIndicators));
+  assert.equal(registry.metadata.rawFinancialDerivedFieldCount, registry.metadata.rawFinancialDerivedFieldNames.length);
   const rawByCode = byIso3(rawRows);
 
   for (const row of registry.countries) {
     const source = rawByCode.get(row.identity.iso3);
     const embedded = row.legacySnapshots.rawFinancialRegistry;
     assert.ok(source, 'Raw finance source missing for ' + row.identity.iso3);
-    assert.deepEqual(Object.keys(embedded.rawIndicators).sort(),
-      [...registry.metadata.rawFinancialFieldNames].sort());
-    assert.deepEqual(Object.keys(embedded.derivedIndicators).sort(),
-      [...registry.metadata.rawFinancialDerivedFieldNames].sort());
-    for (const field of registry.metadata.rawFinancialFieldNames) {
+    assert.equal(embedded.rawIndicatorValues.length, registry.metadata.rawFinancialFieldCount);
+    assert.equal(embedded.derivedIndicatorValues.length, registry.metadata.rawFinancialDerivedFieldCount);
+    for (let index = 0; index < registry.metadata.rawFinancialFieldNames.length; index += 1) {
+      const field = registry.metadata.rawFinancialFieldNames[index];
       const expected = source.rawIndicators[field] === undefined ? null : source.rawIndicators[field];
-      assert.deepEqual(embedded.rawIndicators[field], expected,
+      assert.deepEqual(embedded.rawIndicatorValues[index], expected,
         'Raw observation changed for ' + row.identity.iso3 + '.' + field);
     }
-    for (const field of registry.metadata.rawFinancialDerivedFieldNames) {
+    for (let index = 0; index < registry.metadata.rawFinancialDerivedFieldNames.length; index += 1) {
+      const field = registry.metadata.rawFinancialDerivedFieldNames[index];
       const expected = source.derivedIndicators[field] === undefined ? null : source.derivedIndicators[field];
-      assert.deepEqual(embedded.derivedIndicators[field], expected,
+      assert.deepEqual(embedded.derivedIndicatorValues[index], expected,
         'Derived observation changed for ' + row.identity.iso3 + '.' + field);
+    }
+  }
+});
+
+test('profile baseline indicators and availability flags preserve their common field order', () => {
+  const profiles = readJson('economy_global_profiles_v1.json').countries;
+  const profilesByCode = byIso3(profiles);
+  const indicatorNames = registry.metadata.profileIndicatorNames;
+  assert.ok(Array.isArray(indicatorNames) && indicatorNames.length > 0);
+  for (const row of registry.countries) {
+    const source = profilesByCode.get(row.identity.iso3);
+    const snapshot = row.legacySnapshots.economyGlobalProfile;
+    assert.equal(snapshot.indicatorValues.length, indicatorNames.length);
+    assert.equal(snapshot.metricAvailabilityValues.length, indicatorNames.length);
+    for (let index = 0; index < indicatorNames.length; index += 1) {
+      const name = indicatorNames[index];
+      const expected = source?.indicators && source.indicators[name] !== undefined ? source.indicators[name] : null;
+      const expectedAvailability = source?.metricAvailability && source.metricAvailability[name] !== undefined ? source.metricAvailability[name] : false;
+      assert.deepEqual(snapshot.indicatorValues[index], expected, 'Profile indicator changed: ' + row.identity.iso3 + '.' + name);
+      assert.deepEqual(snapshot.metricAvailabilityValues[index], expectedAvailability, 'Availability flag changed: ' + row.identity.iso3 + '.' + name);
     }
   }
 });
