@@ -153,7 +153,7 @@ test('Finance route renders its dashboard through the existing Cabinet UI and lo
   assert.ok(budgetHTML.includes('data-ofm-action="transfer-budget"'));
   assert.ok(budgetHTML.includes('name="sourceDepartment"'));
   assert.ok(budgetHTML.includes('name="targetDepartment"'));
-  assert.ok(budgetHTML.includes('Budget allocation transferred within'));
+  assert.ok(budgetHTML.includes('Ministry-to-ministry budget transfer'));
   const selected=context.OmegaFinanceMinistry.selectCountry('USA');
   assert.equal(selected.ok,true);
   const readOnlyHTML=elements.get('ministry-dashboard-content').innerHTML;
