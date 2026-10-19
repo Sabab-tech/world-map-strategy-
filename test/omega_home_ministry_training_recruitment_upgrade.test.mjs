@@ -254,6 +254,17 @@ test('missing physical stock rejects the upgrade before any treasury or inventor
   assert.equal(engine.getState('BD').pendingCapabilityUpgrade, null);
 });
 
+test('protected strategic reserve is never counted as spendable upgrade stock', () => {
+  reset();
+  Game.state.resource.BD.inventory.COPPER = 5;
+  Game.state.resource.BD.tradeAvailability.COPPER = 5;
+  Game.state.resource.BD.strategicReserve.availableByResource.COPPER = 4;
+  const quote = engine.getCapabilityUpgradeQuote('recruitment', 'BD');
+  assert.equal(quote.canStart, false);
+  assert.ok(quote.blockers.some(row => row.code === 'INSUFFICIENT_RESOURCE_STOCK'));
+  assert.equal(quote.materials.find(row => row.resourceId === 'COPPER').availableQuantity, 1);
+});
+
 test('if Finance rejects after material reservation, the exact material quantities are refunded and project is not recorded', () => {
   reset();
   const cashBefore = financeModel.treasuryBalanceUsd;
