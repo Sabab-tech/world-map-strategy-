@@ -1063,6 +1063,45 @@
   // participant. New subsystems should use registerTurnParticipant/registerSubsystem.
   // The final browser event is still emitted for external tools, but wrapped listeners are
   // suppressed during that dispatch to prevent a second execution of the same turn.
+  (function installEventLedgerTurnBridge(){
+    const ledger=simulation.events;
+    if(ledger.__OMEGA_TURN_LEDGER_BRIDGE_V1__)return;
+    const nativeSubscribe=ledger.subscribe.bind(ledger);
+    const registries=new Map();
+    let sequence=0;
+    ledger.subscribe=function(type,listener){
+      const key=String(type||'*');
+      if((key!=='OMEGA_SIMULATION_TURN_COMMITTED'&&key!=='*')||typeof listener!=='function')
+        return nativeSubscribe(type,listener);
+      let registry=registries.get(key);
+      if(!registry){registry=new WeakMap();registries.set(key,registry);}
+      const previous=registry.get(listener);
+      if(previous)return previous.remove;
+      const id='legacy.event-ledger.'+(++sequence)+':'+key;
+      let unregisterTurn=()=>{},unsubscribeNative=()=>{};
+      if(key==='OMEGA_SIMULATION_TURN_COMMITTED'){
+        unregisterTurn=simulation.registerTurnParticipant(id,event=>listener.call(global,clone(event.detail)));
+      }else{
+        // Preserve wildcard semantics for other ledger event types, but route their
+        // turn-commit observation through the awaited participant list exactly once.
+        const filtered=event=>{
+          if(event&&event.eventType==='OMEGA_SIMULATION_TURN_COMMITTED')return;
+          return listener.call(global,event);
+        };
+        unsubscribeNative=nativeSubscribe('*',filtered);
+        unregisterTurn=simulation.registerTurnParticipant(id,event=>listener.call(global,clone(event.detail)));
+      }
+      const remove=()=>{
+        unsubscribeNative();
+        unregisterTurn();
+        registry.delete(listener);
+      };
+      registry.set(listener,{remove});
+      return remove;
+    };
+    ledger.__OMEGA_TURN_LEDGER_BRIDGE_V1__=true;
+  })();
+
   (function installTurnEventBridge(){
     if(global.__OMEGA_TURN_EVENT_BRIDGE_V1__)return;
     const nativeAdd=global.addEventListener;
