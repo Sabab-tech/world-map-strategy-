@@ -482,7 +482,7 @@ function makeRecord(country, sources, previous, refreshData) {
     sourceId: city ? 'cities.json' : null,
     status: city ? 'LOCAL_GAME_GEOGRAPHY_NOT_INDEPENDENTLY_VERIFIED' : 'NO_CITY_RECORD'
   };
-  const statuses = [...new Set(rows.flatMap((row) => METRIC_CATALOGUE.map((field) => row.metricMetadata[field.key]?.status || 'MISSING')))];
+  const statuses = {
     identity: 'CANONICAL_COUNTRIES_JSON',
     basicFacts: facts.factsSourceStatus,
     financialRegistry: Object.keys(rawIndicators).length ? 'RAW_FINANCIAL_RECORD_PRESENT' : 'RAW_FINANCIAL_RECORD_MISSING',
