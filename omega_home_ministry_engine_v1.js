@@ -205,7 +205,8 @@
   }
   function budgetSummaryForState(state,country){
     const plan=normalizedBudgetPlan(state&&state.budgetPlan),external=getFinanceHomeAllocation(country);
-    const local=plan.authorizedAmount,total=local>0?local:(external.available?external.amount:0);
+    const local=plan.authorizedAmount;
+    const total=external.available?Math.min(local>0?local:external.amount,external.amount):local;
     const spentByCategory=clone(plan.spentByCategory),spent=Object.values(spentByCategory).reduce((sum,value)=>sum+value,0);
     const categories={};let reserved=0,percentTotal=0;
     Object.keys(BUDGET_CATEGORIES).forEach(key=>{
@@ -240,7 +241,7 @@
     const external=getFinanceHomeAllocation(cid),summary=budgetSummaryForState(state,cid);
     const maxAuthorizable=(summary.treasury.available?summary.treasury.balance:0)+summary.totalSpent;
     if(amount>maxAuthorizable+0.01)return{ok:false,reason:'INSUFFICIENT_TREASURY',balance:summary.treasury.balance,cost:amount};
-    if(external.available&&external.amount>0&&amount>external.amount+0.01)
+    if(external.available&&amount>external.amount+0.01)
       return{ok:false,reason:'MINISTRY_BUDGET_EXCEEDS_FINANCE_ALLOCATION',financeAllocation:external.amount,cost:amount};
     const total=amount;
     const validation=validateBudgetRules(rules||plan.allocationRules,total);
