@@ -22,6 +22,7 @@ test('all map country and area identities exist, and unknown values are explicit
   assert.equal(sectorRegistry.economicSectors.reduce((sum,s)=>sum+s.outputSharePct,0),100);
   assert.equal(sectorRegistry.economicSectors.reduce((sum,s)=>sum+s.taxReceiptSharePct,0),100);
   assert.ok(sectorRegistry.economicSectors.every(s=>s.budgetSectorId&&sectorRegistry.budgetSectors.some(b=>b.id===s.budgetSectorId)));
+  assert.ok(sectorRegistry.economicSectors.every(s=>s.budgetSectorId&&sectorRegistry.budgetSectors.some(b=>b.id===s.budgetSectorId)));
 });
 function createRuntime(){
   const handlers=new Map();
@@ -172,7 +173,10 @@ test('Finance tabs place cash and macro details behind separate icons while over
   const overview=elements.get('ministry-dashboard-content').innerHTML;
   assert.ok(overview.includes('data-ofm-tab="budget"'));
   assert.ok(overview.includes('data-ofm-tab="treasury"'));
-  assert.ok(overview.includes('Available Treasury'));
+  assert.ok(overview.includes('Budget plan status'));
+  assert.ok(!overview.includes('Available Treasury'),'cash values should live in the Treasury tab');
+  assert.ok(!overview.includes('Current-year cashflow'),'cashflow amount should live in the Treasury tab');
+  assert.ok(!overview.includes('$'),'the overview should not scatter currency amounts across the page');
   assert.ok(!overview.includes('GDP (current baseline)'));
   assert.equal(context.OmegaFinanceMinistry.selectTab('budget').ok,true);
   const budget=elements.get('ministry-dashboard-content').innerHTML;
@@ -181,6 +185,7 @@ test('Finance tabs place cash and macro details behind separate icons while over
   assert.ok(budget.includes('data-ofm-action="spend-budget"'));
   assert.equal(context.OmegaFinanceMinistry.selectTab('treasury').ok,true);
   const treasury=elements.get('ministry-dashboard-content').innerHTML;
+  assert.ok(treasury.includes('Treasury cash'));
   assert.ok(treasury.includes('data-ofm-action="borrow"'));
   assert.ok(treasury.includes('data-ofm-action="repay-debt"'));
   assert.equal(context.OmegaFinanceMinistry.selectTab('income').ok,true);
