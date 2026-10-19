@@ -501,3 +501,73 @@ test('a recorded zero Home Affairs Finance allocation blocks purchases despite a
   assert.equal(result.reason,'INSUFFICIENT_MINISTRY_BUDGET');
   assert.equal(state.economy.AAA.treasury,before);
 });
+
+
+test('Home Ministry spends through the canonical Finance runtime allocation without double-charging treasury', () => {
+  const state = setup(10000000);
+  const originalFinance = globalThis.OmegaFinanceMinistry;
+  const fm = {
+    version:'1.0.0',
+    treasuryBalanceUsd:10000000,
+    allocations:{ interior:{ department:'interior', budgetUsd:5000000, spentUsd:0, remainingUsd:5000000 } },
+    ledger:[]
+  };
+  state.finance = { AAA:{ omegaFinance:fm } };
+  globalThis.OmegaFinanceMinistry = {
+    VERSION:'1.0.0',
+    diagnostics(){ return {initialized:true}; },
+    resolveCountry(value){ return String(value).toUpperCase()==='AAA' ? {countryCode:'AAA',economyKey:'AAA'} : null; },
+    getFinanceState(){ return fm; },
+    getProfiles(){ return [{countryCode:'AAA',economyKey:'AAA'}]; },
+    applyAction(action){
+      if (action.type !== 'spend-budget' || action.department !== 'interior') return {ok:false,code:'UNKNOWN_ACTION'};
+      const allocation=fm.allocations.interior;
+      if (action.amountUsd > allocation.remainingUsd) return {ok:false,code:'ALLOCATION_LIMIT_EXCEEDED',message:'Insufficient Finance allocation.'};
+      if (action.amountUsd > fm.treasuryBalanceUsd) return {ok:false,code:'INSUFFICIENT_TREASURY'};
+      allocation.spentUsd += action.amountUsd;
+      allocation.remainingUsd -= action.amountUsd;
+      fm.treasuryBalanceUsd -= action.amountUsd;
+      state.economy.AAA.treasury = fm.treasuryBalanceUsd;
+      fm.ledger.push({department:action.department,amountUsd:action.amountUsd,category:action.spendType});
+      return {ok:true,code:'EXPENSE_POSTED',treasuryBalanceUsd:fm.treasuryBalanceUsd};
+    }
+  };
+  try {
+    const before=fm.treasuryBalanceUsd;
+    const order=api.orderVehicle(1,1,'AAA');
+    assert.equal(order.ok,true);
+    assert.equal(fm.treasuryBalanceUsd,before-order.cost);
+    assert.equal(state.economy.AAA.treasury,before-order.cost);
+    assert.equal(fm.allocations.interior.spentUsd,order.cost);
+    assert.equal(fm.allocations.interior.remainingUsd,5000000-order.cost);
+    assert.equal(api.getBudgetSummary('AAA').financeAllocationSource,'OMEGA_FINANCE_RUNTIME');
+    assert.equal(state.finance.AAA.available,undefined);
+  } finally {
+    if (originalFinance === undefined) delete globalThis.OmegaFinanceMinistry;
+    else globalThis.OmegaFinanceMinistry=originalFinance;
+  }
+});
+
+test('Home Ministry refuses purchases when Finance allocation is zero, even when treasury cash exists', () => {
+  const state=setup(10000000);
+  const originalFinance=globalThis.OmegaFinanceMinistry;
+  const fm={version:'1.0.0',treasuryBalanceUsd:10000000,allocations:{},ledger:[]};
+  state.finance={AAA:{omegaFinance:fm}};
+  globalThis.OmegaFinanceMinistry={
+    VERSION:'1.0.0',
+    diagnostics(){return{initialized:true};},
+    resolveCountry(value){return String(value).toUpperCase()==='AAA'?{countryCode:'AAA',economyKey:'AAA'}:null;},
+    getFinanceState(){return fm;},
+    getProfiles(){return[{countryCode:'AAA',economyKey:'AAA'}];},
+    applyAction(){assert.fail('Finance spending must not be called when no Home Affairs allocation exists');}
+  };
+  try{
+    const result=api.orderVehicle(1,1,'AAA');
+    assert.equal(result.ok,false);
+    assert.equal(result.reason,'INSUFFICIENT_MINISTRY_BUDGET');
+    assert.equal(fm.treasuryBalanceUsd,10000000);
+  }finally{
+    if(originalFinance===undefined)delete globalThis.OmegaFinanceMinistry;
+    else globalThis.OmegaFinanceMinistry=originalFinance;
+  }
+});
