@@ -214,6 +214,7 @@
     hostedBodyNode = null;
     return g.document && g.document.getElementById('cabinet-body');
   }
+  ui.getHomeMinistryRoot = function () { return bodyNode(); };
   function returnToHomeMinistry(view) {
     const target = bodyNode();
     if (hostedBodyNode && target === hostedBodyNode && typeof view.renderHomeMinistryDashboard === 'function') {
