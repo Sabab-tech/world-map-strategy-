@@ -141,6 +141,33 @@ test('currency metadata uses existing country data and explicit exceptional-area
   assert.equal(engine.math.effectiveRateCode('SHP'), 'GBP');
 });
 
+test('all canonical country profiles receive a currency and simulation USD quote where a currency applies', async () => {
+  const profiles = JSON.parse(readFileSync('economy_global_profiles_v1.json', 'utf8')).countries;
+  const context = vm.createContext({ console });
+  context.OmegaFinanceMinistry = {
+    VERSION: 'TEST_FINANCE_ALL_COUNTRIES',
+    init: async () => ({ initialized: true }),
+    getProfiles: () => profiles,
+    getPlayerCountry: () => profiles.find(row => row.countryCode === 'BD') || profiles[0] || null,
+    getFinanceState: () => null,
+    applyAction: () => ({ ok: true })
+  };
+  vm.runInContext(source, context, { filename: 'omega_forex_monetary_engine_v1.js' });
+  const engine = context.OmegaForexMonetaryEngine;
+  const diagnostics = await engine.init();
+  const quotes = engine.getCountryQuotes('SIMULATION');
+  const noCurrency = quotes.filter(row => !row.currencyCode);
+  const missingRates = quotes.filter(row => row.currencyCode && !(Number(row.localPerUsd) > 0));
+  assert.equal(profiles.length, 249);
+  assert.equal(diagnostics.countryAreaCount, 249);
+  assert.equal(diagnostics.countriesWithCurrency, 248);
+  assert.equal(diagnostics.countriesWithSimulationRate, 248);
+  assert.equal(noCurrency.length, 1);
+  assert.equal(noCurrency[0].iso3, 'ATA');
+  assert.equal(missingRates.length, 0, 'every currency-using country must resolve to a positive simulated USD rate');
+  assert.equal(engine.math.getCountryCurrency(profiles.find(row => row.iso3 === 'BVT')), 'NOK');
+});
+
 test('runtime syncs country finance into Government Banking and settles FX with turn idempotency', async () => {
   const profiles = [
     {
