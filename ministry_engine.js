@@ -2068,14 +2068,15 @@ window.OmegaCabinetUI = {
                 </div>
             </div>
 
-            <!-- MoD 5 SUBVIEW NAVIGATION TABS -->
+            <!-- MoD 6 SUBVIEW NAVIGATION TABS -->
             <div style="display:flex; gap:8px; border-bottom:1px solid rgba(239,68,68,0.3); padding:8px 0; margin-top:10px; overflow-x:auto; scrollbar-width:thin; flex-shrink:0; min-height:44px; position:relative; background:rgba(3,8,16,0.95); z-index:10; border-radius:8px;">
                 ${[
                     { id: 'ors_breakdown', label: '🛡️ ORS 10-Parameter Matrix', color: '#22c55e' },
                     { id: 'master_ops', label: '⚔️ 12 Master Command Operations', color: '#ef4444' },
                     { id: 'procurement', label: '📦 8-Step Procurement Pipeline', color: '#ffd700' },
                     { id: 'garrison', label: '🪖 Troop Garrison & Bases', color: '#38bdf8' },
-                    { id: 'arsenal_threat', label: '📡 Arsenal & Strategic Threat Radar', color: '#a855f7' }
+                    { id: 'arsenal_threat', label: '📡 Arsenal & Strategic Threat Radar', color: '#a855f7' },
+                    { id: 'battle_ops', label: '⚔️ Battle & City Operations', color: '#f97316' }
                 ].map(tab => `
                     <button onclick="window.OmegaCabinetUI.setMoDSubview('${tab.id}');" style="
                         background: ${activeSub === tab.id ? `linear-gradient(135deg, ${tab.color}, #000)` : 'rgba(15,23,42,0.85)'};
@@ -2232,25 +2233,26 @@ window.OmegaCabinetUI = {
         }
 
         if (activeSub === 'garrison') {
-            html += `
-                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:12px;">
-                    <div style="background:rgba(15,23,42,0.9); border:1px solid rgba(56,189,248,0.3); border-radius:10px; padding:14px;">
-                        <div style="font-size:12px; font-weight:bold; color:#38bdf8; font-family:'Share Tech Mono',monospace;">CENTRAL HIGH COMMAND GARRISON</div>
-                        <div style="font-size:24px; font-weight:bold; color:#f8fafc; margin-top:4px;">180,000 Active Troops</div>
-                        <div style="font-size:11px; color:#cbd5e1; margin-top:4px;">Status: <strong style="color:#22c55e;">PEAK OPERATIONAL STANCE</strong></div>
-                    </div>
-                    <div style="background:rgba(15,23,42,0.9); border:1px solid rgba(239,68,68,0.3); border-radius:10px; padding:14px;">
-                        <div style="font-size:12px; font-weight:bold; color:#ef4444; font-family:'Share Tech Mono',monospace;">BORDER RIVERS & COASTAL GARRISON</div>
-                        <div style="font-size:24px; font-weight:bold; color:#f8fafc; margin-top:4px;">95,000 Border Guards</div>
-                        <div style="font-size:11px; color:#cbd5e1; margin-top:4px;">Status: <strong style="color:#ffd700;">HIGH WATCH ALERT</strong></div>
-                    </div>
-                    <div style="background:rgba(15,23,42,0.9); border:1px solid rgba(168,85,247,0.3); border-radius:10px; padding:14px;">
-                        <div style="font-size:12px; font-weight:bold; color:#a855f7; font-family:'Share Tech Mono',monospace;">CAPITAL STRATEGIC AIRBASE</div>
-                        <div style="font-size:24px; font-weight:bold; color:#f8fafc; margin-top:4px;">4 Wing Squadrons</div>
-                        <div style="font-size:11px; color:#cbd5e1; margin-top:4px;">Status: <strong style="color:#00e5ff;">5-MIN SCRAMBLE READY</strong></div>
-                    </div>
-                </div>
-            `;
+            const battlefield = window.OmegaBattlefieldRuntime || window.Omega && window.Omega.Battlefield;
+            const snapshot = battlefield && typeof battlefield.getMilitarySnapshot === 'function'
+                ? battlefield.getMilitarySnapshot(countryKey) : null;
+            const force = snapshot && snapshot.personnel;
+            const inventory = snapshot && snapshot.inventory || {};
+            const formations = battlefield && Array.isArray(battlefield.FORMATIONS) ? battlefield.FORMATIONS : [];
+            const formationCards = formations.map(item => {
+                const count = Math.max(0, Number(inventory[item.id]) || 0);
+                return '<div style="background:rgba(15,23,42,.9);border:1px solid rgba(56,189,248,.25);border-radius:9px;padding:12px;">' +
+                    '<strong style="color:#f8fafc;">' + item.name + '</strong>' +
+                    '<div style="font-size:20px;color:#fbd38d;margin-top:6px;">' + count.toLocaleString() + ' formation(s)</div>' +
+                    '<div style="font-size:11px;color:#94a3b8;margin-top:5px;">' + item.personnel.toLocaleString() + ' personnel per formation · recorded inventory only</div></div>';
+            }).join('');
+            html += '<div style="display:flex;flex-direction:column;gap:12px;">' +
+                '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;">' +
+                  '<div style="background:rgba(15,23,42,.9);border:1px solid rgba(56,189,248,.3);border-radius:10px;padding:14px;"><div style="font-size:10px;color:#38bdf8;font-weight:bold;">PERSONNEL</div><strong style="display:block;font-size:22px;color:#f8fafc;margin-top:5px;">' + (force && force.known ? Number(force.available || 0).toLocaleString() : 'NOT RECORDED') + '</strong><div style="font-size:11px;color:#94a3b8;">' + (snapshot && snapshot.recorded ? 'Current country force record' : 'No military force record exists for this country') + '</div></div>' +
+                  '<div style="background:rgba(15,23,42,.9);border:1px solid rgba(168,85,247,.3);border-radius:10px;padding:14px;"><div style="font-size:10px;color:#c084fc;font-weight:bold;">READINESS</div><strong style="display:block;font-size:22px;color:#f8fafc;margin-top:5px;">' + (snapshot && snapshot.readiness !== null ? Math.round(snapshot.readiness) + '/100' : 'NOT RECORDED') + '</strong><div style="font-size:11px;color:#94a3b8;">No readiness figure is estimated in this panel.</div></div>' +
+                  '<div style="background:rgba(15,23,42,.9);border:1px solid rgba(234,179,8,.3);border-radius:10px;padding:14px;"><div style="font-size:10px;color:#fbbf24;font-weight:bold;">FORMATIONS</div><strong style="display:block;font-size:22px;color:#f8fafc;margin-top:5px;">' + (snapshot ? snapshot.formationCount : 'NOT RECORDED') + '</strong><div style="font-size:11px;color:#94a3b8;">Actual formation inventory</div></div>' +
+                '</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;">' + formationCards + '</div>' +
+                '<button class="om-command-btn" onclick="window.OmegaCabinetUI.setMoDSubview(\'battle_ops\');" style="border-color:#f97316;">OPEN BATTLE & CITY OPERATIONS</button></div>';
         }
 
         if (activeSub === 'arsenal_threat') {
@@ -2298,7 +2300,18 @@ window.OmegaCabinetUI = {
             `;
         }
 
+        if (activeSub === 'battle_ops') html += '<div id="omega-battlefield-dashboard-root"></div>';
+
         contentArea.innerHTML = html;
+        if (activeSub === 'battle_ops') {
+            const battlefieldRoot = document.getElementById('omega-battlefield-dashboard-root');
+            const battlefield = window.OmegaBattlefieldRuntime || window.Omega && window.Omega.Battlefield;
+            if (battlefieldRoot && battlefield && typeof battlefield.renderDashboard === 'function') {
+                battlefield.renderDashboard(battlefieldRoot, countryKey);
+            } else if (battlefieldRoot) {
+                battlefieldRoot.innerHTML = '<div style="margin-top:12px;padding:14px;border:1px solid rgba(248,113,113,.4);border-radius:10px;color:#fecaca;background:rgba(69,10,10,.2);">Battlefield runtime unavailable. Confirm omega_battlefield_runtime_v1.js was loaded.</div>';
+            }
+        }
     },
 
     renderMoFADashboard(m, contentArea) {
