@@ -81,6 +81,43 @@ test('Finance commands cannot change a non-player country',async()=>{
   const {context}=createRuntime();await context.OmegaFinanceMinistry.init();
   const result=context.OmegaFinanceMinistry.applyAction({type:'set-tax-rate',countryId:'USA',value:40});
   assert.equal(result.ok,false);assert.equal(result.code,'PLAYER_COUNTRY_SCOPE_VIOLATION');
+  const foreignTransfer=context.OmegaFinanceMinistry.applyAction({type:'transfer-budget',countryId:'USA',
+    sourceDepartment:'defense',targetDepartment:'interior',amountUsd:1000,description:'Must remain country-bound'});
+  assert.equal(foreignTransfer.ok,false);assert.equal(foreignTransfer.code,'PLAYER_COUNTRY_SCOPE_VIOLATION');
+});
+
+test('Ministry budget transfers conserve the national budget, post paired entries, and do not create cash',async()=>{
+  const {context,state}=createRuntime();await context.OmegaFinanceMinistry.init();
+  const before=context.OmegaFinanceMinistry.getFinanceState('BGD');
+  const sourceBefore=before.allocations.defense,targetBefore=before.allocations.interior;
+  const envelopeBefore=Object.values(before.allocations).reduce((sum,row)=>sum+(Number(row.budgetUsd)||0),0);
+  const cashBefore=before.treasuryBalanceUsd;
+  const amount=10000;
+  const result=context.OmegaFinanceMinistry.applyAction({type:'transfer-budget',countryId:'BGD',
+    sourceDepartment:'defense',targetDepartment:'interior',amountUsd:amount,description:'Regression transfer'});
+  assert.equal(result.ok,true,result.message);
+  assert.equal(result.code,'BUDGET_TRANSFER_POSTED');
+  assert.equal(result.treasuryCashMoved,false);
+  assert.equal(result.amountUsd,amount);
+  const after=context.OmegaFinanceMinistry.getFinanceState('BGD');
+  assert.ok(Math.abs(after.allocations.defense.budgetUsd-(sourceBefore.budgetUsd-amount))<0.01);
+  assert.ok(Math.abs(after.allocations.interior.budgetUsd-(targetBefore.budgetUsd+amount))<0.01);
+  assert.ok(Math.abs(after.allocations.defense.remainingUsd-(sourceBefore.remainingUsd-amount))<0.01);
+  const envelopeAfter=Object.values(after.allocations).reduce((sum,row)=>sum+(Number(row.budgetUsd)||0),0);
+  assert.ok(Math.abs(envelopeAfter-envelopeBefore)<0.01,'budget transfer must conserve the national envelope');
+  assert.equal(after.treasuryBalanceUsd,cashBefore,'allocation transfer is not a cash expense');
+  assert.equal(state.finance.BGD.available,cashBefore,'the shared country treasury must not be debited during reallocation');
+  const entries=after.ledger.filter(row=>row.transferId===result.transferId);
+  assert.equal(entries.length,2,'one debit and one credit entry must share the transfer ID');
+  assert.deepEqual(entries.map(row=>row.action).sort(),['BUDGET_TRANSFER_IN','BUDGET_TRANSFER_OUT']);
+  assert.equal(entries.find(row=>row.action==='BUDGET_TRANSFER_OUT').counterpartyDepartment,'interior');
+  assert.equal(entries.find(row=>row.action==='BUDGET_TRANSFER_IN').counterpartyDepartment,'defense');
+  const tooMuch=context.OmegaFinanceMinistry.applyAction({type:'transfer-budget',countryId:'BGD',
+    sourceDepartment:'defense',targetDepartment:'interior',amountUsd:after.allocations.defense.remainingUsd+1});
+  assert.equal(tooMuch.ok,false);assert.equal(tooMuch.code,'BUDGET_TRANSFER_EXCEEDS_REMAINING');
+  const same=context.OmegaFinanceMinistry.applyAction({type:'transfer-budget',countryId:'BGD',
+    sourceDepartment:'interior',targetDepartment:'interior',amountUsd:1});
+  assert.equal(same.ok,false);assert.equal(same.code,'BUDGET_TRANSFER_SAME_MINISTRY');
 });
 
 
@@ -113,6 +150,10 @@ test('Finance route renders its dashboard through the existing Cabinet UI and lo
   assert.ok(budgetHTML.includes('data-ofm-action="set-allocation"'));
   assert.ok(budgetHTML.includes('data-ofm-action="set-sector-share"'));
   assert.ok(budgetHTML.includes('data-ofm-action="spend-budget"'));
+  assert.ok(budgetHTML.includes('data-ofm-action="transfer-budget"'));
+  assert.ok(budgetHTML.includes('name="sourceDepartment"'));
+  assert.ok(budgetHTML.includes('name="targetDepartment"'));
+  assert.ok(budgetHTML.includes('Budget allocation transferred within'));
   const selected=context.OmegaFinanceMinistry.selectCountry('USA');
   assert.equal(selected.ok,true);
   const readOnlyHTML=elements.get('ministry-dashboard-content').innerHTML;
