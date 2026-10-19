@@ -362,9 +362,21 @@
     });
     refQuality=refUnits?refQuality/refUnits:currentQuality;
     reduction+=(currentQuality-refQuality)*0.0018;
-    const patrolKey=({theft:'urban',robbery:'urban',streetRobbery:'urban',drugTrafficking:'drugs',contrabandSmuggling:'border',assault:'community',homicide:'investigations',cybercrime:'cyber'})[category]||'urban';
     const currentPatrol=normalizePatrolPlan(state.patrolPlan),refPatrol=normalizePatrolPlan(base.referencePatrolPlan);
-    reduction+=(currentPatrol[patrolKey]-refPatrol[patrolKey])*0.0015;
+    const patrolInfluence={
+      theft:{urban:0.0014,rural:0.0005,community:0.0003},
+      robbery:{urban:0.0012,highway:0.0007,community:0.0003},
+      streetRobbery:{urban:0.0012,community:0.0006,highway:0.0003},
+      drugTrafficking:{drugs:0.0010,border:0.0006,rural:0.0004,investigations:0.0003},
+      contrabandSmuggling:{border:0.0010,rural:0.0007,highway:0.0004,drugs:0.0002},
+      assault:{community:0.0010,urban:0.0005,investigations:0.0003},
+      homicide:{investigations:0.0010,community:0.0004,urban:0.0003},
+      cybercrime:{cyber:0.0013,investigations:0.0004}
+    };
+    Object.entries(patrolInfluence[category]||{urban:0.0015}).forEach(function(entry){
+      const key=entry[0],weight=entry[1];
+      reduction+=(currentPatrol[key]-refPatrol[key])*weight;
+    });
     const effects=({theft:'theft',robbery:'robbery',streetRobbery:'streetRobbery',drugTrafficking:'drugTrafficking',contrabandSmuggling:'contrabandSmuggling',assault:'assault',homicide:'homicide',cybercrime:'cybercrime'})[category]||category;
     activePolicePolicyRules(state).forEach(function(rule){reduction+=Math.max(0,num(rule.crimeEffects&&rule.crimeEffects[effects])||0);});
     const tactics=state.tacticsResearched||{};
