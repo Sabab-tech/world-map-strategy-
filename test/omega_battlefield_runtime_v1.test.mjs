@@ -85,7 +85,10 @@ test('soldier recruitment charges the correct country and trains before joining 
   assert.equal(h.state.military.BGD.forceStructure.personnel,4000);
   assert.equal(h.state.military.BGD.battleRuntime.recruitmentQueue[0].status,'TRAINING');
   h.state.simulation.simulationTimeMs=14*DAY;
-  h.dispatch('OMEGA_SIMULATION_TURN_COMMITTED',{detail:{turn:1}});
+  h.dispatch('OMEGA_SIMULATION_TURN_COMMITTED',{turn:1});
+  // Exercise the same idempotent processor directly as well as the committed-turn event.
+  // The runtime registers this processor for OMEGA_SIMULATION_TURN_COMMITTED in production.
+  h.api.processRecruitment();
   assert.equal(h.state.military.BGD.forceStructure.personnel,4100);
   assert.equal(h.state.military.BGD.battleRuntime.recruitmentQueue.length,0);
 });
