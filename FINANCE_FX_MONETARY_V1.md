@@ -116,3 +116,35 @@ Follow-on work should be delivered in distinct reviewed slices:
 
 ## Limits
 This is an in-game simulation integrated into the browser project. It does not connect to a sovereign central bank or transfer real money. Daily online reference quotes depend on network access and provider coverage; offline gameplay uses cached reference data or the separately labelled simulation series. The underlying 2015 source baselines need a separate data-quality project before being treated as current official statistics.
+
+## Extended implementation: Government Banking and financial transmission (2026-10-19)
+
+### 1. Multi-currency sovereign account book
+omega_government_banking_runtime_v1.js owns currency account sub-ledgers and the clearing journal. A country account portfolio is seeded from the existing Finance Treasury only; an unconfirmed domestic-currency opening balance starts at zero rather than being invented.
+
+- Transfers validate country identities, active-player funding authority, currency-account balance, FX availability, sanctions/war state, correspondent limits, daily limits, counterparty risk and optional payment delay.
+- Cross-border quotes use the USD numeraire and record both quote rates, USD notional, fee, rate provenance, turn and transaction key.
+- Delayed transfers retain a hold until the due turn. The matching transfer may consume its own reserved amount, but not money held for other payments. A keyed ledger row transitions from PENDING to SETTLED/CANCELLED rather than leaving conflicting rows.
+- Finance Treasury changes from wages, taxes and ministries are reconciled into the bank sub-ledger. Reconciliation is deferred for countries involved in an in-flight settlement so a partial debit/credit is not misclassified as an outside transaction.
+
+### 2. Trade settlement and rollback
+The existing Global Trade System remains the trade orchestration layer. It asks Government Banking for a USD-denominated quote, checks buyer funding and policy limits, posts the buyer's gross payment and the modeled import-tariff receipt through Finance, debits the seller's physical resources, credits seller proceeds and delivers the resource batch to the buyer. Banking commits only after the monetary and resource commands succeed. Failure paths issue compensation commands with distinct idempotency keys; retrying a previously settled transaction should recover its recorded result instead of charging money or stock twice.
+
+Trade price reads apply the financial transmission producer-cost multiplier. National resource demand reads the household purchasing-power multiplier and the import-cost multiplier before the existing price-elasticity formula, while the resource-demand runtime remains the sole authority for inventory debit, protected stock, factory usage, coverage and shortages.
+
+### 3. Financial transmission and real-economy signals
+omega_economic_transmission_runtime_v1.js runs on OMEGA_SIMULATION_TURN_COMMITTED and ignores duplicate turns. It stores up to 31 daily samples per country and produces CPI, nominal/real wage indexes, household purchasing power, import-cost/producer-cost indexes, real public purchasing power, a real-GDP proxy, export competitiveness and a modeled stability index. Index values start at 100 for this model's opening baseline; they are not official CPI or wage observations.
+
+Import exposure is derived from imports/GDP only if the source data exists. Otherwise the configured default is tagged as a model assumption. Nominal wage growth similarly uses a clearly tagged GDP-growth proxy only when wage data is unavailable. The producer-cost model combines domestic price pressure with exposure-weighted imported input pressure, including currency depreciation and the configured import tariff. Missing GDP remains unavailable rather than being fabricated.
+
+### 4. Central-bank stress mechanics
+The FX engine accepts optional capital-flow, confidence, reserve-cover and peg-attack inputs in its currency-drift equation. The transmission runtime aggregates modeled stress across countries sharing a currency and offers counterfactual scenarios for an inflation shock, capital flight, reserve loss, peg attack, trade surplus and disinflation. Counterfactual scenarios return before/after values without changing live treasury, bank accounts, inventory or exchange rates. Their coefficients are explicit gameplay rules, not a calibrated forecast of any real central bank.
+
+### 5. Data provenance and protection
+- Existing country economic baselines remain labelled as 2015. Official/reference FX observations are held separately from OMEGA simulation exchange rates and include provider status/date.
+- Missing or non-positive FX quotes reject transactions rather than making up a price. The local-storage cache is an offline convenience, not authoritative settlement storage.
+- Player-originated transfers and monetary-policy changes are checked against the active player identity. Banking and trade commands are internal game functions only; no real bank rail or real money movement is enabled.
+- For multiplayer or production deployment, settlement/idempotency authority must move to a trusted server with signed quote snapshots, source timestamps, rate freshness limits, replay protection and tamper-evident audit retention.
+
+### Validation gates
+The Finance GitHub Actions workflow runs existing Finance tests plus FX conversions/policy/history, Government Banking account/transfer/tariff/delay/idempotency tests, economic transmission/wage/import-cost/stress tests, the Global Trade and National Demand suites, and offline-cache checks for the new banking/transmission assets. Green CI means the tested contracts pass on that commit; it does not certify every country source-data field or guarantee real-world FX forecasts.
