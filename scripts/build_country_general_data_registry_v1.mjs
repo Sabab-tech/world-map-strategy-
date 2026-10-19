@@ -281,6 +281,41 @@ async function fetchTransparencyInternationalCpi2025() {
   return { byIso3, loaded: true, error: null, sourceId, sourceUrl, publisherUrl, rowCount: byIso3.size, observationYear: 2025 };
 }
 
+function loadCpiSnapshot(snapshot) {
+  const source = snapshot?.metadata || {};
+  const rows = Array.isArray(snapshot?.countries) ? snapshot.countries : [];
+  const byIso3 = new Map();
+  for (const row of rows) {
+    const iso3 = String(row?.iso3 || '').trim().toUpperCase();
+    const score = finite(row?.score);
+    const rank = finite(row?.rank);
+    if (!/^[A-Z]{3}$/.test(iso3) ||
+        ((score === null || score < 0 || score > 100) && (rank === null || rank < 1))) continue;
+    byIso3.set(iso3, {
+      score: score !== null && score >= 0 && score <= 100 ? score : null,
+      rank: rank !== null && rank >= 1 ? rank : null,
+      year: finite(row.year) ?? finite(source.observationYear) ?? 2025,
+      sourceId: 'TI_CPI_2025_CHECKED_IN_SNAPSHOT',
+      sourceUrl: source.sourceUrl || 'https://raw.githubusercontent.com/loupeat/ti-cpi/main/docs/ti/CPI2025_GlobalResultsTrends.csv',
+      publisherUrl: source.publisherUrl || 'https://www.transparency.org/en/cpi/2025',
+      snapshotFallback: true
+    });
+  }
+  return {
+    byIso3,
+    loaded: byIso3.size >= 150,
+    error: byIso3.size >= 150 ? null : 'CPI_2025_CHECKED_IN_SNAPSHOT_TOO_SMALL: ' + byIso3.size,
+    sourceId: 'TI_CPI_2025_CHECKED_IN_SNAPSHOT',
+    sourceUrl: source.sourceUrl || 'https://raw.githubusercontent.com/loupeat/ti-cpi/main/docs/ti/CPI2025_GlobalResultsTrends.csv',
+    publisherUrl: source.publisherUrl || 'https://www.transparency.org/en/cpi/2025',
+    rowCount: byIso3.size,
+    observationYear: finite(source.observationYear) ?? 2025,
+    snapshotFallback: true,
+    sourceLoadStatus: byIso3.size >= 150 ? 'SNAPSHOT_NOT_REQUESTED' : 'SNAPSHOT_INVALID',
+    liveRefreshError: null
+  };
+}
+
 async function fetchRestCountries() {
   const candidates = [
     {
@@ -726,7 +761,8 @@ function makeRecord(country, sources, previous, refreshData) {
             method: 'SOURCE_OBSERVATION',
             indicatorCode: item.code,
             sourceUrl: refreshData.transparencyInternationalCpi2025.sourceUrl,
-            note: item.note
+            note: item.note + (cpi.snapshotFallback ? ' Value came from the checked-in offline snapshot; mirror and publisher URLs are preserved.' : '') +
+              (refreshData.transparencyInternationalCpi2025.liveRefreshError ? ' Live refresh error: ' + refreshData.transparencyInternationalCpi2025.liveRefreshError : '')
           };
         }
       } else if (REFRESH && metrics[item.key] === null) {
@@ -1372,6 +1408,8 @@ async function main() {
   const policeBaseline = readJson('omega_home_ministry_country_police_baseline_v1.json');
   const resourceIndex = readJson('resource_country_resource_context_index.json');
   const cityData = readJson('cities.json');
+  const indexSnapshotPath = resolve(ROOT, 'country_official_index_observations_v1.json');
+  const indexSnapshot = existsSync(indexSnapshotPath) ? readJson('country_official_index_observations_v1.json') : null;
   const relationDatabase = readJson('relation_generation_engine.json');
   const resourceReserveSimulation = readJson('resource_site_reserve_simulation_v1.json');
   const previousData = existsSync(OUTPUT) ? JSON.parse(readFileSync(OUTPUT, 'utf8')) : null;
@@ -1411,13 +1449,7 @@ async function main() {
     sourceUrl: 'https://hdr.undp.org/sites/default/files/2025_HDR/HDR25_Composite_indices_complete_time_series.csv',
     rowCount: 0, observationYear: 2023
   };
-  let transparencyInternationalCpi2025 = {
-    byIso3: new Map(), loaded: false, error: null,
-    sourceId: 'TI_CPI_2025_MIRRORED_FULL_RESULTS',
-    sourceUrl: 'https://raw.githubusercontent.com/loupeat/ti-cpi/main/docs/ti/CPI2025_GlobalResultsTrends.csv',
-    publisherUrl: 'https://www.transparency.org/en/cpi/2025',
-    rowCount: 0, observationYear: 2025
-  };
+  let transparencyInternationalCpi2025 = loadCpiSnapshot(indexSnapshot);
   if (REFRESH) {
     try { restCountries.byIso3 = await fetchRestCountries(); restCountries.loaded = true; }
     catch (error) { restCountries.error = String(error); console.error('REST Countries refresh failed:', String(error)); }
@@ -1430,8 +1462,29 @@ async function main() {
     catch (error) { wbData.errors = [{ error: String(error) }]; console.error('World Bank indicators refresh failed:', String(error)); }
     try { undpHdi = await fetchUndpHdi(); }
     catch (error) { undpHdi.error = String(error); console.error('UNDP HDI refresh failed:', String(error)); }
-    try { transparencyInternationalCpi2025 = await fetchTransparencyInternationalCpi2025(); }
-    catch (error) { transparencyInternationalCpi2025.error = String(error); console.error('Transparency International CPI 2025 refresh failed:', String(error)); }
+    try {
+      transparencyInternationalCpi2025 = {
+        ...await fetchTransparencyInternationalCpi2025(),
+        snapshotFallback: false,
+        sourceLoadStatus: 'LIVE_REFRESH_OK',
+        liveRefreshError: null
+      };
+    } catch (error) {
+      const refreshError = String(error);
+      if (transparencyInternationalCpi2025.loaded) {
+        transparencyInternationalCpi2025 = {
+          ...transparencyInternationalCpi2025,
+          snapshotFallback: true,
+          sourceLoadStatus: 'SNAPSHOT_FALLBACK_AFTER_LIVE_REFRESH_FAILURE',
+          liveRefreshError: refreshError
+        };
+      } else {
+        transparencyInternationalCpi2025.error = refreshError;
+        transparencyInternationalCpi2025.sourceLoadStatus = 'FAILED';
+        transparencyInternationalCpi2025.liveRefreshError = refreshError;
+      }
+      console.error('Transparency International CPI 2025 live refresh failed; source status:', transparencyInternationalCpi2025.sourceLoadStatus, refreshError);
+    }
   }
   const refreshData = {
     restCountries,
@@ -1545,6 +1598,10 @@ async function main() {
       transparencyInternationalCpi2025: {
         loaded: transparencyInternationalCpi2025.loaded,
         error: transparencyInternationalCpi2025.error,
+        refreshRequested: REFRESH,
+        snapshotFallback: transparencyInternationalCpi2025.snapshotFallback,
+        sourceLoadStatus: transparencyInternationalCpi2025.sourceLoadStatus,
+        liveRefreshError: transparencyInternationalCpi2025.liveRefreshError || null,
         sourceId: transparencyInternationalCpi2025.sourceId,
         sourceUrl: transparencyInternationalCpi2025.sourceUrl,
         publisherUrl: transparencyInternationalCpi2025.publisherUrl,
@@ -1589,7 +1646,7 @@ async function main() {
       { id: 'resource_site_reserve_simulation_v1.json', role: 'existing gameplay extraction-site identities and resource types; simulated reserve amounts are not used as real-world facts', coverage: resourceReserveRows.length, status: 'SCENARIO_SIMULATION_DATA' },
       { id: 'World Bank Indicators API v2', role: 'current/latest non-empty macro, demographic, governance and selected social observations', url: 'https://api.worldbank.org/v2/', enabledBy: '--refresh-sources', status: wbData.loaded ? 'FETCHED' : 'NOT_FETCHED' },
       { id: 'UNDP Human Development Report 2025 composite-index time series', role: 'official human development index; observation year 2023', url: undpHdi.sourceUrl, enabledBy: '--refresh-sources', status: undpHdi.loaded ? 'FETCHED' : (undpHdi.error ? 'FAILED' : 'NOT_FETCHED'), observationYear: undpHdi.observationYear, matchedRows: undpHdi.rowCount },
-      { id: 'Transparency International CPI 2025 full results (maintained CSV mirror)', role: 'CPI score and rank from the publisher 2025 release; provenance states both mirror and original publisher URL', url: transparencyInternationalCpi2025.sourceUrl, publisherUrl: transparencyInternationalCpi2025.publisherUrl, enabledBy: '--refresh-sources', status: transparencyInternationalCpi2025.loaded ? 'FETCHED_FROM_MIRROR' : (transparencyInternationalCpi2025.error ? 'FAILED' : 'NOT_FETCHED'), observationYear: transparencyInternationalCpi2025.observationYear, matchedRows: transparencyInternationalCpi2025.rowCount },
+      { id: 'Transparency International CPI 2025 results (maintained CSV mirror plus checked-in snapshot)', role: 'CPI score and rank from the publisher 2025 release; provenance states mirror and original publisher URL, as well as fallback mode', url: transparencyInternationalCpi2025.sourceUrl, publisherUrl: transparencyInternationalCpi2025.publisherUrl, enabledBy: '--refresh-sources', status: transparencyInternationalCpi2025.sourceLoadStatus || (transparencyInternationalCpi2025.loaded ? 'SNAPSHOT_OR_MIRROR_AVAILABLE' : (transparencyInternationalCpi2025.error ? 'FAILED' : 'NOT_FETCHED')), observationYear: transparencyInternationalCpi2025.observationYear, matchedRows: transparencyInternationalCpi2025.rowCount },
       { id: restCountries.byIso3.sourceId || 'REST Countries API', role: 'general facts such as official name, capital, languages, currency codes, area, borders and timezones', url: restCountries.byIso3.sourceId === 'REST_COUNTRIES_GITHUB_MIRROR' ? 'https://github.com/mledoze/countries' : 'https://restcountries.com/', enabledBy: '--refresh-sources', status: restCountries.loaded ? 'FETCHED' : 'NOT_FETCHED' }
     ],
     countries: rows
