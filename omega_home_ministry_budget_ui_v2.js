@@ -30,7 +30,7 @@
     var n = Number(v);
     return Number.isFinite(n) ? '$' + Math.round(n).toLocaleString('en-US') : 'Unavailable';
   }
-  function host() { return g.document && (g.document.getElementById('cabinet-body') || g.document.getElementById('ministry-content')); }
+  function host() { return g.document && (g.document.getElementById('home-ministry-command-root') || g.document.getElementById('cabinet-body') || g.document.getElementById('ministry-content')); }
   function style() {
     if (!g.document || g.document.getElementById('omega-home-ministry-budget-style-v2')) return;
     var node = g.document.createElement('style');
@@ -59,6 +59,10 @@
     if (!e || typeof e.getHomeBudgetSnapshot !== 'function') return { available: false, reason: 'HOME_BUDGET_API_UNAVAILABLE' };
     try { return e.getHomeBudgetSnapshot(country()); } catch (err) { return { available: false, reason: String(err && err.message || err) }; }
   }
+  function statusMessage(message, type) {
+    var node = g.document && g.document.getElementById('ohmb-form-status');
+    if (node) { node.className = 'ohmb-status' + (type === 'error' ? ' is-error' : type === 'ok' ? ' is-ok' : ''); node.textContent = String(message || ''); }
+  }
   function insertAccessPanel() {
     var root = host(), e = engine();
     if (!root || !e || !g.document) return;
@@ -72,8 +76,8 @@
     var cash = snap.available ? money(snap.treasuryBalanceUsd) : 'Unavailable';
     var html = '<section class="ohmb-access" id="omega-home-budget-access-v2">' +
       '<div class="ohmb-access-head"><div><h2>HOME MINISTRY · BUDGET & EXPENDITURE</h2><div class="ohmb-muted">Finance ceiling is linked to Interior. This panel splits it into salaries, vehicles, repairs, facilities, training and operations.</div></div>' +
-      '<div class="ohmb-actions"><button type="button" class="ohmb-button ohmb-button-main" id="ohmb-open-budget">OPEN BUDGET CONTROL</button>' +
-      '<button type="button" class="ohmb-button" id="ohmb-open-battlefield">OPEN MILITARY / BATTLEFIELD</button></div></div>' +
+      '<div class="ohmb-actions"><button type="button" class="ohmb-button ohmb-button-main" id="ohmb-open-budget">MINISTRY BUDGET CONTROL</button>' +
+      '<button type="button" class="ohmb-button" id="ohmb-open-finance">OPEN FINANCE BUDGET</button></div></div>' +
       '<div class="ohmb-kpis"><div class="ohmb-kpi"><strong>' + esc(title) + '</strong><span>Annual Finance allocation</span></div>' +
       '<div class="ohmb-kpi"><strong>' + esc(remaining) + '</strong><span>Interior allocation remaining</span></div>' +
       '<div class="ohmb-kpi"><strong>' + esc(cash) + '</strong><span>Available treasury</span></div></div>' +
@@ -84,12 +88,14 @@
     target.insertAdjacentHTML('beforeend', html);
     var open = g.document.getElementById('ohmb-open-budget');
     if (open) open.onclick = function () { renderBudgetScreen(); };
-    var battle = g.document.getElementById('ohmb-open-battlefield');
-    if (battle) battle.onclick = function () {
-      var command = g.OmegaBattlefieldCommand;
-      if (command && typeof command.open === 'function') command.open();
-      else if (g.document && g.document.getElementById('omega-battlefield-launcher-v1')) g.document.getElementById('omega-battlefield-launcher-v1').click();
-      else if (typeof g.alert === 'function') g.alert('Military and battlefield data are still loading. Try after the page finishes loading.');
+    var financeButton = g.document.getElementById('ohmb-open-finance');
+    if (financeButton) financeButton.onclick = function () {
+      var f = finance();
+      if (!f) { statusMessage('Finance Ministry runtime is unavailable. No funds were allocated.', 'error'); return; }
+      try {
+        if (typeof f.selectTab === 'function') f.selectTab('budget');
+        else if (typeof f.renderDashboard === 'function') f.renderDashboard('finance');
+      } catch (error) { statusMessage('Finance budget could not be opened: ' + String(error && error.message || error), 'error'); }
     };
   }
   function renderBudgetScreen(statusText, statusType) {
@@ -177,21 +183,22 @@
   function wrapUi() {
     if (!ui || ui.__omegaHomeBudgetUiWrapped) return;
     ui.__omegaHomeBudgetUiWrapped = true;
-    ['renderHomeMinistryDashboard', 'renderHomeMinistryInto'].forEach(function (method) {
-      if (typeof ui[method] !== 'function') return;
-      var original = ui[method];
-      ui[method] = function () {
+    if (typeof ui.renderHomeMinistryDashboard === 'function') {
+      var original = ui.renderHomeMinistryDashboard;
+      ui.renderHomeMinistryDashboard = function () {
         var result = original.apply(this, arguments);
         insertAccessPanel();
         return result;
       };
-    });
+    }
   }
   function ready() {
     wrapUi();
     if (g.addEventListener) {
-      g.addEventListener('OMEGA_FINANCE_STATE_UPDATED', function () {
-        if (g.document && g.document.getElementById('omega-home-budget-access-v2')) insertAccessPanel();
+      ['OMEGA_FINANCE_RUNTIME_READY','OMEGA_FINANCE_STATE_UPDATED','OMEGA_HOME_POLICE_BASELINE_READY','OMEGA_HOME_POLICE_WORLD_BASELINE_READY','OMEGA_HOME_POLICE_ACTION_COMPLETED','OMEGA_HOME_MINISTRY_TRANSACTION'].forEach(function (type) {
+        g.addEventListener(type, function () {
+          if (g.document && (g.document.getElementById('omega-home-budget-access-v2') || g.document.getElementById('home-ministry-command-root'))) insertAccessPanel();
+        });
       });
     }
   }
