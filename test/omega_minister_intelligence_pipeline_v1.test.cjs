@@ -77,7 +77,9 @@ const cognitive = {
   async askMinisterWithAI(question, profile, countryId, countryDetails) {
     assert.equal(profile.ministerId, minister.ministerId);
     assert.equal(countryId, 'BGD');
+    assert.equal(countryDetails.countryCode, 'BGD', 'Resolved country identity must reach the cognitive engine.');
     assert.equal(profile.ministryId, 'finance');
+    assert.equal(profile.efficiency, 84, 'Canonical capability should reach the legacy cognitive contract.');
     assert.ok(profile.parsedIntent);
     assert.ok(countryDetails);
     return { text: 'বাজেটের ঝুঁকি বিশ্লেষণ করছি এবং প্রমাণ যাচাই করে সুপারিশ দেব।' };
