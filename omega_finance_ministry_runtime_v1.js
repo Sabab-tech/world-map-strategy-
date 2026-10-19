@@ -2,8 +2,8 @@
 (function(global){
   'use strict';
   if(global.OmegaFinanceMinistry&&global.OmegaFinanceMinistry.VERSION==='1.1.0')return;
-  const VERSION='1.1.0', YEAR_MS=31536000000, HOUR_MS=3600000;
-  const BASE_RULES={annualizationMs:YEAR_MS,simulationTurnDurationMs:HOUR_MS,startingTreasuryPercentOfGDP:2,
+  const VERSION='1.1.0', YEAR_MS=31536000000, DAY_MS=86400000;
+  const BASE_RULES={annualizationMs:YEAR_MS,simulationTurnDurationMs:DAY_MS,startingTreasuryPercentOfGDP:2,
     defaultTaxRatePct:18,defaultPolicyInterestRatePct:3,defaultDeficitPercentOfGDPWhenUnobserved:3,
     minimumTaxRatePct:0,maximumTaxRatePct:60,minimumPolicyInterestRatePct:0,maximumPolicyInterestRatePct:40,
     maximumBorrowTransactionPercentOfGDP:5,maximumDebtToGDPForNewBorrowingPct:300,maximumLedgerEntries:500,
@@ -255,7 +255,7 @@
       -(finite(model?.currentYearInterestUsd)||0);
   }
   function fiscalYearIndexFor(turn,stepMs){
-    const n=Math.max(0,finite(turn)||0),dt=Math.max(0,finite(stepMs)||Number(rules.simulationTurnDurationMs||HOUR_MS));
+    const n=Math.max(0,finite(turn)||0),dt=Math.max(0,finite(stepMs)||Number(rules.simulationTurnDurationMs||DAY_MS));
     return Math.floor(n*dt/Number(rules.annualizationMs||YEAR_MS));
   }
   function ensureFinanceState(p,root){
@@ -287,7 +287,7 @@
       for(const k of ['cumulativeRevenueUsd','cumulativeSpendingUsd','cumulativeInterestUsd','cumulativeBorrowingUsd',
         'cumulativeExternalInflowUsd','cumulativeExternalOutflowUsd','currentYearTaxRevenueUsd','currentYearSpendingUsd',
         'currentYearInterestUsd','currentYearExternalInflowUsd','currentYearExternalOutflowUsd'])if(finite(model[k])===null)model[k]=0;
-      model.fiscalYearIndex=finite(model.fiscalYearIndex)??fiscalYearIndexFor(currentTurn(),Number(rules.simulationTurnDurationMs||HOUR_MS));
+      model.fiscalYearIndex=finite(model.fiscalYearIndex)??fiscalYearIndexFor(currentTurn(),Number(rules.simulationTurnDurationMs||DAY_MS));
       model.priceIndex=finite(model.priceIndex)??100;model.allocations=isObject(model.allocations)?model.allocations:{};
       if(!Array.isArray(model.ledger))model.ledger=[];model.revision=finite(model.revision)??0;
     }else{
@@ -299,7 +299,7 @@
     if(finite(model.lastSyncedTreasuryBalanceUsd)===null)model.lastSyncedTreasuryBalanceUsd=finite(model.treasuryBalanceUsd)??0;
     for(const k of ['cumulativeExternalInflowUsd','cumulativeExternalOutflowUsd','currentYearTaxRevenueUsd','currentYearSpendingUsd',
       'currentYearInterestUsd','currentYearExternalInflowUsd','currentYearExternalOutflowUsd'])if(finite(model[k])===null)model[k]=0;
-    if(finite(model.fiscalYearIndex)===null)model.fiscalYearIndex=fiscalYearIndexFor(currentTurn(),Number(rules.simulationTurnDurationMs||HOUR_MS));
+    if(finite(model.fiscalYearIndex)===null)model.fiscalYearIndex=fiscalYearIndexFor(currentTurn(),Number(rules.simulationTurnDurationMs||DAY_MS));
     if(!isObject(model.currentYearSectorReceiptsUsd))model.currentYearSectorReceiptsUsd={};
     for(const s of sectorRegistry.economicSectors||[])if(finite(model.currentYearSectorReceiptsUsd[s.id])===null)model.currentYearSectorReceiptsUsd[s.id]=0;
     initializeSectorAllocations(model);
@@ -587,7 +587,7 @@
   function advanceTurn(turn,stepDurationMs){
     if(!initialized)return {ok:false,reason:'NOT_INITIALIZED',processed:0};
     const turnNumber=finite(turn)??currentTurn()+1;
-    const dt=Math.max(0,finite(stepDurationMs)??Number(rules.simulationTurnDurationMs||HOUR_MS));
+    const dt=Math.max(0,finite(stepDurationMs)??Number(rules.simulationTurnDurationMs||DAY_MS));
     const years=dt/Number(rules.annualizationMs||YEAR_MS);if(years<=0)return {ok:true,turn:turnNumber,processed:0};
     const root=rootState();let processed=0;
     const newYearIndex=fiscalYearIndexFor(turnNumber,dt);
@@ -881,7 +881,7 @@
     if(uiHooksAttached)return;uiHooksAttached=true;
     global.addEventListener?.('OMEGA_SIMULATION_TURN_COMMITTED',function(event){
       const d=event?.detail||{},turn=finite(d.simulationTurn)??finite(d.payload?.turn)??finite(d.turn);
-      const duration=finite(global.Omega?.Simulation?.clock?.stepDurationMs)??Number(rules.simulationTurnDurationMs||HOUR_MS);
+      const duration=finite(global.Omega?.Simulation?.clock?.stepDurationMs)??Number(rules.simulationTurnDurationMs||DAY_MS);
       advanceTurn(turn,duration);
     });
     global.addEventListener?.('OMEGA_READY',function(){if(!initialized)init().catch(error=>console.error('[OMEGA FINANCE INIT]',error));});
