@@ -146,6 +146,36 @@ test('live metrics are resolved from secondary supported runtime state roots', a
   assert.match(profile.metricSources.gdpUsd.source, /LIVE_GAME_STATE\.economy\.gdp/);
 });
 
+test('authoritative resource inventory and production gaps alter supply behaviour and priorities', async () => {
+  const { context, behavior } = await loadCountryEngines();
+  context.OmegaResourceAuthoritativeAdapter = {
+    getSummary() {
+      return {
+        countryId: 'ALA',
+        live: { countryName: 'Test Territory' },
+        resourcesList: [
+          { id: 'OIL', name: 'Oil', source: 'Game.state.resource', availability: 'AVAILABLE',
+            inventory: 0, dailyProduction: 0, dailyConsumption: 10, reserve: null, stockDays: 0, selfSufficiencyRatio: 0 },
+          { id: 'GAS', name: 'Gas', source: 'Game.state.resource', availability: 'AVAILABLE',
+            inventory: 4, dailyProduction: 4, dailyConsumption: 8, reserve: null, stockDays: 0.5, selfSufficiencyRatio: 50 }
+        ]
+      };
+    }
+  };
+
+  const profile = behavior.getBehaviorProfile('AX');
+  const signals = profile.domainSignals.resources.runtimeState;
+  assert.equal(signals.availability, 'AVAILABLE');
+  assert.equal(signals.inventoryObservedCount, 2);
+  assert.equal(signals.productionObservedCount, 2);
+  assert.equal(signals.consumptionObservedCount, 2);
+  assert.equal(signals.productionDeficitCount, 2);
+  assert.equal(signals.productionDeficitResources.length, 2);
+  assert.ok(signals.supplyPressure > 0.7 && signals.supplyPressure < 0.9);
+  assert.ok(profile.priorityStack.some(row => row.domain === 'RESOURCE_STOCK_OR_PRODUCTION_DEFICIT'));
+  assert.ok(profile.actionPreferences.IMPORT || profile.actionPreferences.SUBSTITUTION || profile.actionPreferences.SUPPLIER_CHANGE);
+});
+
 test('adaptive decision scoring consumes country behaviour but respects explicit country doctrine', async () => {
   const { context, adaptive } = await loadCountryEngines();
   const baseline = adaptive.scoreAction('BGD', 'MILITARY_EQUIP');
@@ -180,6 +210,8 @@ test('country overview is inside ministry dashboard, uses shared behaviour runti
   const ui = read('omega_country_overview_ministry_ui_v1.js');
   assert.match(ui, /getBehaviorProfile/);
   assert.match(ui, /getStrategicProfile/);
+  assert.match(ui, /resourceRuntime\.availability/);
+  assert.match(ui, /observed inventories/);
   assert.match(ui, /setActiveTab/);
   assert.match(ui, /OMEGA_COUNTRY_CONTEXT_CHANGED/);
   assert.match(ui, /Simulation state remains unchanged/);
