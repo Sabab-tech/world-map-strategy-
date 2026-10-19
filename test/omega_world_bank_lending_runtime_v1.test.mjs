@@ -164,6 +164,9 @@ test('loan requests require active player, respect the assessed cap and are idem
   assert.equal(duplicate.ok, true);
   assert.equal(duplicate.duplicate, true);
   assert.equal(state.economy.BANGLADESH.debt, beforeDebt + 500e6);
+  const mismatch = api.requestLoan({ countryId: 'BGD', amountUsd: 400e6, purpose: 'infrastructure', requestId: 'test-application-1' });
+  assert.equal(mismatch.ok, false);
+  assert.equal(mismatch.code, 'IDEMPOTENCY_KEY_PAYLOAD_MISMATCH');
   const tooLarge = api.requestLoan({ countryId: 'BGD', amountUsd: 9e9, purpose: 'infrastructure', requestId: 'test-application-large' });
   assert.equal(tooLarge.ok, false);
   assert.equal(tooLarge.code, 'WORLD_BANK_AMOUNT_OUT_OF_RANGE');
