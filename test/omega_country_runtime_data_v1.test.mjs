@@ -78,8 +78,8 @@ test('unavailable observations stay unavailable instead of receiving generic fak
 
 test('country selection UI uses the shared bridge and removes hardcoded cross-country fallback stats', () => {
   const html = read('index.html');
-  const bridge = html.indexOf('omega_country_runtime_data_v1.js');
-  const map = html.indexOf('map-engine-1.js');
+  const bridge = html.indexOf('<script src="omega_country_runtime_data_v1.js"');
+  const map = html.indexOf('<script src="map-engine-1.js"');
   assert.ok(bridge >= 0 && map > bridge, 'bridge must load before the country selection controller');
 
   const mapEngine = read('map-engine-1.js');
