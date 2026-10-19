@@ -1604,7 +1604,9 @@ window.OmegaCabinetUI = {
             const activity = liveOps && typeof liveOps.getCountryOperationalSummary === 'function'
                 ? liveOps.getCountryOperationalSummary(reportCountry) : null;
             const recorded = value => typeof value === 'number' && Number.isFinite(value)
-                ? value.toLocaleString(undefined, { maximumFractionDigits: 2 }) : 'NOT RECORDED';
+                ? (window.OmegaNumberFormat && typeof window.OmegaNumberFormat.compact === 'function'
+                    ? window.OmegaNumberFormat.compact(value)
+                    : value.toLocaleString(undefined, { maximumFractionDigits: 2 })) : 'NOT RECORDED';
             const homeEngine = isHomeMinistryReport
                 ? (window.OmegaHomeMinistryEngine || window.Omega && window.Omega.HomeMinistry || null)
                 : null;
@@ -1768,7 +1770,8 @@ window.OmegaCabinetUI = {
         const escape = value => String(value == null ? '' : value)
             .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-        const fmt = value => Number(value).toLocaleString(undefined, { maximumFractionDigits: 2 });
+        const fmt = value => window.OmegaNumberFormat && typeof window.OmegaNumberFormat.compact === 'function'
+            ? window.OmegaNumberFormat.compact(Number(value)) : Number(value).toLocaleString(undefined, { maximumFractionDigits: 2 });
         if (!series.length) {
             container.innerHTML = '<div style="padding:16px;border:1px dashed rgba(148,163,184,.45);border-radius:8px;color:#cbd5e1;background:rgba(2,11,20,.85);">' +
                 '<strong style="color:#7dd3fc;">NO RECORDED MULTI-TURN HISTORY</strong>' +
