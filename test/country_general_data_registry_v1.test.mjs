@@ -196,6 +196,35 @@ test('every canonical identity has a source-aware strategic profile inside the e
     registry.metadata.localCoverage.countrySpecificRelationParameterProfiles);
 });
 
+test('Human Development Index retains official UNDP source, observation year and missing-value diagnostics', () => {
+  const hdiIndex = metricIndex.humanDevelopmentIndex;
+  let observed = 0;
+  for (const row of registry.countries) {
+    const value = row.metrics[hdiIndex];
+    const status = provenance.statuses[row.metricMetadata.statusCodes[hdiIndex]];
+    const year = row.metricMetadata.years[hdiIndex];
+    if (status === 'UNDP_HDR_OBSERVATION') {
+      observed += 1;
+      assert.ok(Number.isFinite(value) && value >= 0 && value <= 1);
+      assert.equal(year, 2023);
+      assert.equal(row.metricMetadata.indicatorCodes?.[hdiIndex], 'hdi_2023');
+      assert.equal(row.metricMetadata.sourceUrls?.[hdiIndex],
+        'https://hdr.undp.org/sites/default/files/2025_HDR/HDR25_Composite_indices_complete_time_series.csv');
+    } else if (value === null) {
+      assert.ok(['MISSING', 'SOURCE_REFRESH_FAILED', 'NO_SOURCE_OBSERVATION', 'NOT_DEFINED_OR_SOURCED'].includes(status));
+    }
+  }
+  const refresh = registry.metadata.externalRefresh;
+  assert.ok(refresh.undpHdi, 'Refresh metadata must describe the official UNDP HDI feed.');
+  assert.equal(refresh.undpHdi.observationYear, 2023);
+  if (refresh.requested) {
+    assert.equal(refresh.undpHdi.loaded, true, 'Official UNDP HDI source did not load: ' + String(refresh.undpHdi.error));
+    assert.ok(refresh.undpHdi.canonicalCountriesWithHdi >= 150,
+      'Unexpectedly low canonical country coverage: ' + refresh.undpHdi.canonicalCountriesWithHdi);
+    assert.ok(observed >= 150, 'Expected HDI values were not recorded with UNDP provenance.');
+  }
+});
+
 test('discipline score is not invented or confused with official governance indicators', () => {
   const disciplineIndex = metricIndex.disciplineIndex;
   const ruleOfLawIndex = metricIndex.ruleOfLawWgiEstimate;
