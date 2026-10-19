@@ -365,7 +365,7 @@
     if(!loaded.ok)return loaded;
     const root=rootState();if(!root)return{ok:false,code:'AUTHORITATIVE_GAME_STATE_UNAVAILABLE',countryCount:loaded.countryCount};
     if(!root.interior||typeof root.interior!=='object')root.interior={};
-    let seeded=0,existing=0,playerCountryId=playerCountry();
+    let seeded=0,existing=0,migrated=0,playerCountryId=playerCountry();
     rows.forEach(function(row){
       if(!row||!row.code)return;
       const cid=normalizeCountry(row.code),countryState=root.interior[cid]&&root.interior[cid].police;
@@ -373,7 +373,7 @@
       const state=mergeState(raw||baseState()),result=applyBaselineToPoliceState(state,row,raw);
       if(!root.interior[cid]||typeof root.interior[cid]!=='object')root.interior[cid]={};
       root.interior[cid].police=clone(result.state);
-      if(result.pristine)seeded++;else existing++;
+      if(result.pristine)seeded++;else if(result.refreshedLegacyFleet){seeded++;migrated++;}else existing++;
     });
     root.omegaHomePoliceBaselineVersion=1;
     root.omegaHomePoliceBaselineCountryCount=loaded.countryCount;
@@ -384,7 +384,7 @@
       getState(cid);
     }
     const diagnostics=Object.assign({},loaded,{ok:true,seededCountries:seeded,existingCountryStatesPreserved:existing,
-      baselineVersion:1,activeCountry:playerCountryId});
+      migratedLegacyFleetCountries:migrated,baselineVersion:1,activeCountry:playerCountryId});
     emit('OMEGA_HOME_POLICE_WORLD_BASELINE_READY',diagnostics);
     return diagnostics;
   }
