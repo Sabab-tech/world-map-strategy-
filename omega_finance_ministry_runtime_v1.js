@@ -627,7 +627,7 @@
       let debtAfter=debtBefore+interest;
       recalculateFiscal(p,fm,e);
       const income=(finite(fm.fiscalModel.annualRevenueUsd)||0)*years;
-      const cashAfterIncomeAndInterest=Math.max(0,(finite(fm.treasuryBalanceUsd)||0)+income-interest);
+      const cashAfterIncomeAndInterest=Math.max(0,(finite(fm.treasuryBalanceUsd)||0)+income-policyInterest);
       const debtService=wbLending&&typeof wbLending.serviceDebt==='function'
         ?wbLending.serviceDebt(p.countryCode,years,cashAfterIncomeAndInterest,gdpAfter,turnNumber):null;
       const debtServicePaid=Math.min(cashAfterIncomeAndInterest,Math.max(0,finite(debtService&&debtService.paidUsd)||0));
