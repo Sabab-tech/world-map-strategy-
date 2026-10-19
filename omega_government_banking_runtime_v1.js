@@ -354,6 +354,13 @@
       if (norm(row.buyerCountryCode) !== norm(profileIdValue)) continue;
       total += Math.max(0, num(row.buyerDebitUsd) || 0);
     }
+    const active = bank.inFlightSettlements || {};
+    for (const [key, row] of Object.entries(active)) {
+      if (key === exceptKey || !row || ['SETTLED','CANCELLED','COMPENSATED'].includes(String(row.status || '').toUpperCase())) continue;
+      if (norm(row.buyerCountryCode) !== norm(profileIdValue)) continue;
+      const prepared = bank.pendingTradeSettlements && bank.pendingTradeSettlements[key];
+      total += Math.max(0, num(prepared && prepared.buyerDebitUsd) || 0);
+    }
     return total;
   }
   function countryBookValueUsd(profile) {
