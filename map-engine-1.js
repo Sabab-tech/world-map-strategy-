@@ -546,7 +546,7 @@ var Game = window.Game = {
                 const requestedProfile = runtime.resolveCountry(requested);
                 if (normalizeKey(active) === normalizeKey(requested) ||
                     (activeProfile && requestedProfile && activeProfile.countryCode === requestedProfile.countryCode)) {
-                    Game.updateCountryInfoCard(requested);
+                    if (Game.Map && typeof Game.Map.updateCountryInfoCard === 'function') Game.Map.updateCountryInfoCard(requested);
                 }
             }).catch(() => { this._countryRuntimeRefreshPending = false; });
         }
