@@ -540,7 +540,7 @@
     if (!ministerId) return;
     const state = getCanonicalState(ministerId);
     const runtime = state && state.runtimeState || {};
-    if (state && runtime.countryId && runtime.ministryId) {
+    if (state && canonicalActive(state) && runtime.countryId && runtime.ministryId) {
       guarded(syncKey(runtime.countryId, runtime.ministryId), () => syncCanonicalToLegacyCore(state));
       return;
     }
