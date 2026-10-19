@@ -319,14 +319,25 @@ test('lifecycle autosaves only after async sector work and catches pagehide with
   assert.ok(win.Omega.GameLifecycle.getDiagnostics().savedTurn >= 1);
 });
 
-test('daily tick emits one shared duration and date for every participant', async () => {
-  const { win, sim, gameState } = createRuntime();
+test('daily tick supplies the same turn, duration and date to every subsystem', async () => {
+  const { win, sim, dispatched } = createRuntime();
   const seen = [];
-  win.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED', async (_event, context) => {
-    seen.push({ turn: context.turn, duration: context.stepDurationMs, date: context.simulationDate });
+  sim.registerSubsystem('test.shared-clock.a', async (_event, context) => {
+    seen.push({ subsystem: 'a', turn: context.turn, duration: context.stepDurationMs, date: context.simulationDate });
+  });
+  sim.registerSubsystem('test.shared-clock.b', async (_event, context) => {
+    seen.push({ subsystem: 'b', turn: context.turn, duration: context.stepDurationMs, date: context.simulationDate });
   });
   sim.startSession({ playerCountryId: 'BGD' });
   await sim.frame(STEP_MS * 5);
 
-  assert.equal(seen.length, 1, 'a 5x delta may schedule five days; this test is intentionally corrected below');
+  assert.equal(seen.length, 10);
+  for (let turn = 1; turn <= 5; turn++) {
+    const pair = seen.filter(row => row.turn === turn);
+    assert.equal(pair.length, 2);
+    assert.deepEqual(pair.map(row => row.subsystem), ['a', 'b']);
+    assert.ok(pair.every(row => row.duration === DAY_MS));
+    assert.ok(pair.every(row => row.date === new Date(Date.UTC(2015, 0, 1 + turn)).toISOString()));
+  }
+  assert.equal(dispatched.filter(event => event.type === 'OMEGA_SIMULATION_TURN_COMMITTED').length, 5);
 });
