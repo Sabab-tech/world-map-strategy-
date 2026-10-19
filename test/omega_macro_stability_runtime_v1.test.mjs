@@ -76,3 +76,10 @@ test('player macro controls affect a later simulation turn, reject foreign contr
  assert.equal(context.OmegaMacroStabilityRuntime.applyAction({type:'set-policy',countryId:'USA',policy:'austerity'}).code,'PLAYER_COUNTRY_SCOPE_VIOLATION');
  assert.equal(context.OmegaMacroStabilityRuntime.applyAction({type:'set-controls',countryId:'BGD',growthAdjustmentPct:50}).code,'MACRO_CONTROL_OUT_OF_RANGE');
 });
+
+test('Macro Stability panel mounts only inside the dedicated Finance tab host',()=>{
+ assert.match(macroRuntime,/querySelector\('\[data-omss-container\]'\)/);
+ assert.match(macroRuntime,/mount\.appendChild\(el\.firstElementChild\)/);
+ assert.match(macroRuntime,/mount\.querySelector\('#omss-panel'\)/);
+ assert.doesNotMatch(macroRuntime,/if\(el\.firstElementChild\)host\.appendChild/);
+});
