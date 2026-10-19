@@ -511,6 +511,35 @@ function updateFacts(identity, legacyEconomy, localCity, restCountry, wbCountry,
   return fact;
 }
 
+function decodePreviousRegistryRecord(row, previousRegistry) {
+  const recordSchema = previousRegistry?.metadata?.recordSchema;
+  if (!row || !recordSchema || !Array.isArray(row.identity)) return row;
+  const asObject = (keys, values) => Object.fromEntries(keys.map((key, index) => [
+    key, Array.isArray(values) && values[index] !== undefined ? values[index] : null
+  ]));
+  const identity = asObject(recordSchema.identityFields || [], row.identity);
+  const facts = asObject(recordSchema.generalFactFields || [], row.generalFacts);
+  if (Array.isArray(facts.factsSourceStatus)) {
+    facts.factsSourceStatus = asObject(recordSchema.factSourceStatusFields || ['restCountries', 'worldBankMetadata'], facts.factsSourceStatus);
+  }
+  const fields = recordSchema.metricFields || (previousRegistry.fieldCatalogue || []).map((field) => field.key);
+  const metrics = asObject(fields, row.metrics);
+  const sourceMap = previousRegistry.metadata.provenanceEncoding || {};
+  const decode = (items, code) => Number.isInteger(code) && code >= 0 ? (items?.[code] ?? null) : null;
+  const compactMeta = row.metricMetadata || {};
+  const metricMetadata = Object.fromEntries(fields.map((key, index) => [key, {
+    year: finite(compactMeta.years?.[index]),
+    status: decode(sourceMap.statuses, compactMeta.statusCodes?.[index]) || 'MISSING',
+    sourceId: decode(sourceMap.sourceIds, compactMeta.sourceCodes?.[index]) || null,
+    sourceName: decode(sourceMap.sourceNames, compactMeta.sourceNameCodes?.[index]) || null,
+    method: decode(sourceMap.methods, compactMeta.methodCodes?.[index]) || null,
+    indicatorCode: compactMeta.indicatorCodes?.[index] || previousRegistry.fieldCatalogue?.[index]?.wb || null,
+    sourceUrl: compactMeta.sourceUrls?.[index] || null,
+    note: compactMeta.notes?.[index] || null
+  }]));
+  return { ...row, identity, generalFacts: facts, metrics, metricMetadata };
+}
+
 function makeRecord(country, sources, previous, refreshData) {
   const identity = {
     code: country.code ?? country.iso2 ?? null,
@@ -1278,7 +1307,12 @@ async function main() {
   const resourceSiteSummaryByIso3 = summarizeResourceSites(resourceReserveRows);
   const economyByKey = new Map(Object.entries(economy).map(([key, row]) => [norm(key), row]));
   const populationByKey = new Map(Object.entries(population).map(([key, row]) => [norm(key), row]));
-  const priorCountryByIso3 = new Map((previousData?.countries || []).map((row) => [String(row.identity?.iso3 || '').toUpperCase(), row]));
+  // Decode fixed-schema arrays before lookup; otherwise prior ISO3 values and
+  // official observations are silently missed during subsequent refreshes.
+  const previousRows = (previousData?.countries || []).map((row) => decodePreviousRegistryRecord(row, previousData));
+  const priorCountryByIso3 = new Map(previousRows
+    .map((row) => [String(row.identity?.iso3 || '').toUpperCase(), row])
+    .filter(([iso3]) => iso3));
   const sources = { profileByIso3, rawFinanceByIso3, policeByIso3, resourceByCountryId, resourceByCountryName, cityByName, economyByKey, populationByKey, rawFinancialIndicatorKeys, rawFinancialDerivedKeys, profileIndicatorKeys: PROFILE_INDICATOR_KEYS };
   let restCountries = { byIso3: new Map(), loaded: false, error: null };
   let wbMetadata = { metadataByIso2: new Map(), metadataByIso3: new Map(), metadataLoaded: false, metadataError: null };
