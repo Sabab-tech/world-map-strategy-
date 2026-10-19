@@ -4,7 +4,7 @@
 (function (g) {
   'use strict';
   if (g.OmegaHomePoliceOperationsUI && g.OmegaHomePoliceOperationsUI.VERSION === '1.0.0') return;
-  var VERSION = '1.0.0', activeTab = 'overview', statusText = '', statusType = '';
+  var VERSION = '1.1.0', activeTab = 'overview', statusText = '', statusType = '', consoleOpen = false;
   var ui = g.OMEGA_UI_ADAPTER;
   var CATEGORIES = [
     ['theft','Theft'],['robbery','Robbery'],['streetRobbery','Street robbery'],
@@ -32,7 +32,8 @@
     var crime = typeof e.getCrimeSnapshot === 'function' ? e.getCrimeSnapshot(cid) : { available: false, reason: 'CRIME_RUNTIME_UNAVAILABLE' };
     var budget = typeof e.getHomeBudgetSnapshot === 'function' ? e.getHomeBudgetSnapshot(cid) : { available: false, reason: 'HOME_BUDGET_API_UNAVAILABLE' };
     var dailyCost = typeof e.getDailyOperatingCost === 'function' ? e.getDailyOperatingCost(cid) : null;
-    return { ready: true, engine: e, countryId: cid, state: s, baseline: baseline, crime: crime, budget: budget, dailyCost: dailyCost };
+    var baselineRuntime = g.OmegaHomePoliceBaselineRuntime && typeof g.OmegaHomePoliceBaselineRuntime.diagnostics === 'function' ? g.OmegaHomePoliceBaselineRuntime.diagnostics() : null;
+    return { ready: true, baselineReady: !!(baseline && crime && crime.available), baselineError: baselineRuntime && baselineRuntime.error || null, engine: e, countryId: cid, state: s, baseline: baseline, crime: crime, budget: budget, dailyCost: dailyCost };
   }
   function setStatus(message, type) { statusText = String(message || ''); statusType = type || ''; }
   function statusHtml() {
@@ -96,7 +97,7 @@
     };
   }
   function navHtml() {
-    return [['overview','LIVE OVERVIEW'],['staff','POLICE RECRUITMENT'],['fleet','VEHICLE PROCUREMENT'],['crime','CRIME & PATROL'],['rules','POLICE RULES']].map(function (row) {
+    return [['overview','LIVE OVERVIEW'],['staff','POLICE RECRUITMENT'],['fleet','VEHICLE PROCUREMENT'],['crime','CRIME & PATROL'],['rules','POLICE RULES'],['rulebook','POLICE RULEBOOK']].map(function (row) {
       return '<button type="button" class="ohpu-tab ' + (activeTab === row[0] ? 'is-active' : '') + '" data-ohpu-tab="' + row[0] + '">' + row[1] + '</button>';
     }).join('');
   }
@@ -114,7 +115,10 @@
       kpi('Police efficiency',percent(s.policeEfficiency,1),'Improved by training, effective facilities and research.') +
       kpi('Public satisfaction',percent(crime.publicSatisfaction,1),'Affected by service quality, case handling and oversight policies.') +
       kpi('Operational fleet',formatCount(Object.values(s.vehiclesOwned||{}).reduce(function(sum,x){return sum+number(x);},0)), 'Opening scenario inventory is not a new purchase.') +
-      kpi('Projected crime index',crime.projectedCrimeIndex===undefined?'Unavailable':percent(crime.projectedCrimeIndex,1),'The opening baseline is 100; lower is better, higher means worsening risk.') +
+      kpi('Police staffing coverage',percent(crime.policeStaffingCoveragePct,1),'Against the population-scaled game staffing target.') +
+      kpi('Vehicle fleet coverage',percent(crime.vehicleCoveragePct,1),'Against the opening fleet requirement scaled to current population.') +
+      kpi('Projected crime index',crime.projectedCrimeIndex===undefined?'Unavailable':percent(crime.projectedCrimeIndex,1),'100 is the opening crime-rate reference; values change with capacity and rules.') +
+      kpi('Modeled annual financial exposure',money(crime.estimatedAnnualFinancialImpactUsd),'Estimated economic impact of incidents, not police revenue or seized money.') +
       kpi('Justice backlog',formatCount(s.justiceBacklog),'Daily case processing runs with the simulation clock.') +
       '</div></section>' +
       '<section class="ohpu-section"><div class="ohpu-section-title">COUNTRY DATA & BASELINE PROVENANCE</div><div class="ohpu-grid">' +
@@ -140,6 +144,8 @@
       kpi('Current personnel',formatCount(s.policeCount),formatCount(crime.policePer100k)+' police per 100k') +
       kpi('One-off recruitment fee',money(unitFee),'Per new officer in this country’s game economy.') +
       kpi('Daily salary',money(daily),'Per officer per simulation day.') +
+      kpi('Population-scaled target',formatCount(crime.requiredPoliceEstimate),'Modeled planning target, not a verified national roster.') +
+      kpi('Current staffing coverage',percent(crime.policeStaffingCoveragePct,1),'Below 100% means the model projects a relative staffing gap.') +
       '</div><article class="ohpu-card" style="margin-top:10px"><div class="ohpu-section-title">HIRE POLICE OFFICERS</div>' +
       '<p>Choose an exact number. Hiring checks the personnel sub-budget, total Finance Interior allocation and treasury. Successful hiring adds staff to persistent country state and raises daily payroll.</p>' +
       '<div class="ohpu-form-grid"><label class="ohpu-label">Officer count<input class="ohpu-field" id="ohpu-hire-quantity" type="number" min="1" max="100000" step="1" inputmode="numeric" value="100"></label>' +
@@ -151,6 +157,11 @@
   function fleetHtml(d) {
     var e=d.engine,s=d.state,b=d.baseline||{},vehicles=Array.isArray(e.VEHICLES)?e.VEHICLES:[],pending=s.pendingVehicleOrder;
     var budget=d.budget && d.budget.categories && d.budget.categories.vehicles,disabled=!d.budget||!d.budget.available;
+    var operatingProfile=typeof e.getCountryOperatingProfile==='function'?e.getCountryOperatingProfile(d.countryId):null;
+    var recommendations=typeof e.getCountryVehicleRecommendations==='function'?e.getCountryVehicleRecommendations(d.countryId,4):[];
+    var recommendationCards=recommendations.map(function(row){return '<article class="ohpu-card"><div class="ohpu-label">COUNTRY FIT · TIER '+esc(row.level)+'</div><h3>'+esc(row.name)+'</h3><div class="ohpu-value">'+esc(percent(row.fitPct,1))+'</div><div class="ohpu-small">Match to modeled '+esc(row.dominantEnvironment)+' / road mix<br>Owned: '+esc(formatCount(row.owned))+' · Upkeep: '+esc(money(row.maintenancePerDay))+'/day</div></article>';}).join('');
+    var mix=operatingProfile&&operatingProfile.environmentMixPct||{};
+    var countryMixHtml=operatingProfile?'<article class="ohpu-card" style="grid-column:1/-1"><div class="ohpu-section-title">COUNTRY-SPECIFIC OPERATING CONTEXT</div><div class="ohpu-grid">'+kpi('Region',operatingProfile.region,'Country profile identity')+kpi('Urbanisation',percent(operatingProfile.urbanizationPct,1),'Source: modeled country profile input')+kpi('Coastal access',operatingProfile.hasOceanAccess?'Available':'Landlocked / no mapped access','Used as one fleet-mix factor')+'</div><div class="ohpu-small">Modeled operating mix: '+Object.keys(mix).map(function(key){return esc(key)+' '+esc(percent(mix[key],1));}).join(' · ')+'. This is a strategy-game estimate, not an official road survey.</div></article>':'';
     var cards=vehicles.map(function(v){
       var owned=number(s.vehiclesOwned&&s.vehiclesOwned[v.level]),freeLevel=number(s.unlockedVehicleLevel,1)>=v.level;
       var unitValue=number(v.cost),ownedValue=owned*unitValue;
@@ -170,7 +181,10 @@
       kpi('Fleet units owned',formatCount(Object.values(s.vehiclesOwned||{}).reduce(function(sum,x){return sum+number(x);},0)),'Starting fleets are seeded as already-owned national assets.') +
       kpi('Estimated fleet value',money(s.baselineFleetReplacementValueUsd),'Original opening-inventory replacement estimate, not cash to spend.') +
       kpi('Remaining vehicle budget',budget?money(budget.remainingUsd):'Unavailable','Orders require the vehicle sub-budget plus available treasury.') +
-      '</div>' +
+      kpi('Vehicle requirement',formatCount(d.crime&&d.crime.requiredFleetEstimate),'Modeled opening-fleet target, scaled with current population.') +
+      kpi('Fleet coverage',percent(d.crime&&d.crime.vehicleCoveragePct,1),'Shortfalls reduce modeled response capacity.') +
+      '</div>' + countryMixHtml +
+      (recommendationCards?'<div class="ohpu-section-title">RECOMMENDED VEHICLES FOR THIS COUNTRY</div><div class="ohpu-grid">'+recommendationCards+'</div>':'') +
       (pending?'<div class="ohpu-note">Order in transit: Tier ' + esc(pending.level) + ', ' + esc(pending.quantity) + ' vehicles, ' + esc(money(pending.totalCost)) + '. Delivery time remaining: ' + esc(Math.max(0,Math.ceil((pending.completesAtMs-e.getSimulationTimeMs())/86400000))) + ' simulation days.</div>':'') +
       '<div class="ohpu-grid">' + cards + '</div>' +
       '<div class="ohpu-note">Each tier has different response, patrol, protection, crowd-control, surveillance, off-road, command and anti-smuggling capability. The purchased price and upkeep are the existing game’s tier prices; opening baseline assets are not charged retroactively.</div></section>';
@@ -184,6 +198,8 @@
         '<div class="ohpu-bar"><span style="width:' + Math.max(0,Math.min(100,number(row.reductionPct,0))) + '%"></span></div>' +
         '<div class="ohpu-effects"><span class="ohpu-effect">' + esc(row.reductionPct>=0?'↓ ':'↑ ') + esc(percent(Math.abs(row.reductionPct),2)) + '</span><span class="ohpu-effect ' + (isObserved?'':'ohpu-risk') + '">' + esc(isObserved?'OBSERVED BASELINE':'MODELED ESTIMATE') + '</span></div>' +
         '<div class="ohpu-small">Baseline: ' + esc(number(row.baselineRatePer100k).toFixed(2)) + '/100k · Annual estimate: ' + esc(formatCount(row.projectedAnnualIncidents)) +
+        '<br>Modeled financial exposure: ' + esc(money(row.projectedEstimatedFinancialImpactUsd)) + '/year' +
+        '<br>Estimated exposure avoided: ' + esc(money(row.estimatedFinancialImpactAvoidedUsd)) +
         '<br>Incidents avoided vs baseline: ' + esc(formatCount(row.estimatedAnnualIncidentsAvoided)) +
         (row.observationYear?' · Observation year '+esc(row.observationYear):'') + '</div></article>';
     }).join('');
@@ -194,6 +210,8 @@
       kpi('Baseline annual incidents',formatCount(crime.baselineAnnualIncidentEstimate),'Calculated from population × baseline category rate when population is available.') +
       kpi('Projected annual incidents',formatCount(crime.projectedAnnualIncidentEstimate),'Changes as staffing, skill, facilities, fleet readiness and rules change.') +
       kpi('Annual incidents avoided',formatCount(crime.annualIncidentsAvoided),'Negative means the modeled situation is worse than the starting baseline.') +
+      kpi('Modeled financial exposure',money(crime.estimatedAnnualFinancialImpactUsd),'Economic impact estimate, not recovered money.') +
+      kpi('Staffing / fleet coverage',percent(crime.policeStaffingCoveragePct,1)+' / '+percent(crime.vehicleCoveragePct,1),'Population-scaled game targets.') +
       kpi('Case clearance',percent(s.crimeModel&&s.crimeModel.activeCaseClearancePct,1),'Police efficiency, investigators, forensics and case rules.') +
       kpi('Cases awaiting justice',formatCount(s.justiceBacklog),'Backlog changes each simulated day; speeding up processing has a cost.') +
       kpi('Privacy risk',percent(s.privacyRiskPct,1),'Data-led patrol tools can improve coverage but need privacy safeguards.') +
@@ -202,7 +220,7 @@
       '<p>Distribute the police operations plan among urban, rural, highway, border, drug, investigations, cyber and community patrol. The allocation is a share of existing operational capacity, not extra staff or money. The total must stay at or below 100%.</p>' +
       '<div class="ohpu-form-grid">' + fields + '</div><div class="ohpu-note" id="ohpu-patrol-total">Allocated ' + esc(total.toFixed(1)) + '%; unassigned ' + esc(Math.max(0,100-total).toFixed(1)) + '%.</div>' +
       '<button class="ohpu-btn ohpu-btn-main" id="ohpu-save-patrol" type="button">SAVE PATROL ALLOCATION</button></article>' +
-      '<div class="ohpu-note">Observed homicide-rate data is kept separate from simulated results. Theft, street robbery, general robbery, assault, drug trafficking, contraband and cybercrime values are modelled baseline rates where country-level observations are not in the local dataset.</div></section>';
+      '<div class="ohpu-note">Observed homicide-rate data is kept separate from simulated results. Theft, street robbery, general robbery, assault, drug trafficking, contraband and cybercrime values are modelled baseline rates where country-level observations are not in the local dataset. Financial exposure is a modeled economic-impact estimate, not cash seized, fines collected, criminal revenue, or verified losses.</div></section>';
   }
   function effectsHtml(rule) {
     var map = {theft:'theft',robbery:'robbery',streetRobbery:'street robbery',drugTrafficking:'drug trafficking',contrabandSmuggling:'smuggling',assault:'assault',homicide:'homicide',cybercrime:'cybercrime'};
@@ -218,6 +236,43 @@
     if(number(rule.vehicleWearPct)>0)result+='<span class="ohpu-effect ohpu-risk">Vehicle wear +' + esc(rule.vehicleWearPct) + '%</span>';
     if(number(rule.misconductMultiplier)<1)result+='<span class="ohpu-effect">Misconduct risk ×' + esc(number(rule.misconductMultiplier).toFixed(2)) + '</span>';
     return result;
+  }
+  function rulebookHtml(d) {
+    var e=d.engine,s=d.state,crime=d.crime||{};
+    var book=typeof e.getPoliceRulebook==='function'?e.getPoliceRulebook(d.countryId):(s.policeRulebook||{});
+    var score=typeof e.getPoliceRulebookQuality==='function'?e.getPoliceRulebookQuality(d.countryId):crime.policeRulebookScore;
+    var fields=[
+      ['missingPersonActionHours','High-risk missing-person initial action (hours)',0,24,1,'0 means act immediately'],
+      ['highRiskResponseMinutes','High-risk emergency response target (minutes)',0,240,5,'Lower is faster'],
+      ['arrestReviewHours','Arrest necessity / rights review (hours)',1,48,1,'Review deadline in game time'],
+      ['maximumDetentionHours','Maximum pre-charge detention (hours)',1,168,1,'Escalate or release at deadline'],
+      ['warrantDecisionHours','Judicial warrant decision target (hours)',1,72,1,'A simulation workflow target'],
+      ['evidenceSubmissionHours','Evidence filing target (hours)',1,72,1,'From evidence intake to case file'],
+      ['forceReviewHours','Use-of-force independent review (hours)',1,168,1,'Shorter review improves accountability'],
+      ['trainingDaysBeforeDeployment','Initial training before field deployment (days)',0,180,1,'Longer training increases readiness'],
+      ['minimumPatrolCoveragePct','Minimum planned patrol capacity (%)',0,100,1,'Higher coverage uses more operational capacity']
+    ];
+    var controls=fields.map(function(row){
+      return '<label class="ohpu-label">'+esc(row[1])+'<input class="ohpu-field" type="number" min="'+row[2]+'" max="'+row[3]+'" step="'+row[4]+'" data-ohpu-rulebook="'+esc(row[0])+'" value="'+esc(book[row[0]]===undefined?'':book[row[0]])+'"><span class="ohpu-small">'+esc(row[5])+'</span></label>';
+    }).join('');
+    var checks=[
+      ['bodyCameraMandatory','Require body cameras for routine enforcement'],
+      ['searchWarrantRequired','Require a warrant for non-emergency searches']
+    ];
+    var checkboxHtml=checks.map(function(row){
+      return '<label class="ohpu-small" style="display:flex;gap:8px;align-items:center;padding:8px 0"><input type="checkbox" data-ohpu-rulebook="'+esc(row[0])+'" '+(book[row[0]]?'checked':'')+'> '+esc(row[1])+'</label>';
+    }).join('');
+    var editable=!(d.budget&&d.budget.canEdit===false);
+    return '<section class="ohpu-section"><div class="ohpu-grid">'+
+      kpi('Rulebook quality',percent(score,1),'Weighted game score for response speed, due process and oversight.')+
+      kpi('Current maximum detention',formatCount(book.maximumDetentionHours)+' hours','Current country-specific simulation rule.')+
+      kpi('Missing-person first action',book.missingPersonActionHours===0?'Immediate':formatCount(book.missingPersonActionHours)+' hours','Priority can be raised for high-risk reports.')+
+      kpi('Projected crime index',percent(crime.projectedCrimeIndex,1),'Rulebook quality influences modeled outcomes slightly.')+
+      '</div><article class="ohpu-card" style="margin-top:10px"><div class="ohpu-section-title">POLICE RULEBOOK · COUNTRY-SPECIFIC SETTINGS</div>'+
+      '<p>These settings control the game simulation only. They are not a statement of the actual legal deadlines in the selected country. Real detention, warrants and missing-person procedures vary by jurisdiction and must not be inferred from these game defaults.</p>'+
+      '<div class="ohpu-form-grid">'+controls+'</div><div style="margin:8px 0 12px">'+checkboxHtml+'</div>'+
+      '<button type="button" class="ohpu-btn ohpu-btn-main" id="ohpu-save-rulebook" '+(editable?'':'disabled')+'>SAVE POLICE RULEBOOK FOR THIS COUNTRY</button>'+
+      '<div class="ohpu-note">Changes persist in the selected country’s police state. Faster response improves the modeled service score; procedural safeguards improve trust and reduce misconduct risk. This action does not charge money; paid policy programmes remain in the Police Rules tab and still require Finance approval.</div></article></section>';
   }
   function rulesHtml(d) {
     var e=d.engine,s=d.state,rules=typeof e.getPolicePolicyRules==='function'?e.getPolicePolicyRules():[],budget=d.budget&&d.budget.categories;
@@ -242,9 +297,17 @@
     var root=host(),d=getData();
     if(!root)return;
     ensureStyle();
+    consoleOpen = true;
     if(!d.ready){
       root.innerHTML='<section class="ohpu"><h2 class="ohpu-title">POLICE OPERATIONS CONSOLE</h2><div class="ohpu-note is-error">' + esc(d.reason||'Home Ministry is not ready') + '</div><button type="button" class="ohpu-btn" id="ohpu-close-failed">BACK TO HOME MINISTRY</button></section>';
-      var closeFailure=root.querySelector('#ohpu-close-failed'); if(closeFailure)closeFailure.onclick=function(){if(ui&&ui.renderHomeMinistryDashboard)ui.renderHomeMinistryDashboard();};
+      var closeFailure=root.querySelector('#ohpu-close-failed'); if(closeFailure)closeFailure.onclick=function(){consoleOpen=false;if(ui&&ui.renderHomeMinistryDashboard)ui.renderHomeMinistryDashboard();};
+      return;
+    }
+    if(!d.baselineReady){
+      var retryReport=d.baselineError?'<div class="ohpu-note is-error">Baseline load failed: '+esc(d.baselineError)+'. No default country figures will be presented as loaded data.</div>':'<div class="ohpu-note">Country police baselines are loading. Recruitment, fleet and crime controls remain unavailable until the baseline is confirmed.</div>';
+      root.innerHTML='<section class="ohpu"><h2 class="ohpu-title">POLICE OPERATIONS CONSOLE</h2>'+retryReport+'<div class="ohpu-actions"><button type="button" class="ohpu-btn ohpu-btn-main" id="ohpu-retry-baseline">RETRY COUNTRY DATA</button><button type="button" class="ohpu-btn" id="ohpu-close-failed">BACK TO HOME MINISTRY</button></div></section>';
+      var retry=root.querySelector('#ohpu-retry-baseline');if(retry)retry.onclick=function(){var runtime=g.OmegaHomePoliceBaselineRuntime;if(runtime&&typeof runtime.init==='function'){setStatus('','');runtime.init().then(function(){render();});}else{setStatus('Police baseline runtime is unavailable. No action was taken.','error');render();}};
+      var closeNotReady=root.querySelector('#ohpu-close-failed');if(closeNotReady)closeNotReady.onclick=function(){consoleOpen=false;if(ui&&ui.renderHomeMinistryDashboard)ui.renderHomeMinistryDashboard();};
       return;
     }
     var body;
@@ -252,18 +315,20 @@
     else if(activeTab==='fleet')body=fleetHtml(d);
     else if(activeTab==='crime')body=crimeHtml(d);
     else if(activeTab==='rules')body=rulesHtml(d);
+    else if(activeTab==='rulebook')body=rulebookHtml(d);
     else body=overviewHtml(d);
     root.innerHTML='<section class="ohpu"><header class="ohpu-head"><div><h2 class="ohpu-title">POLICE COMMAND · PUBLIC SAFETY</h2><div class="ohpu-sub">' +
       esc(d.baseline&&d.baseline.name||d.countryId) + ' · live recruitment, fleet procurement, crime model, patrol allocation and accountable police policy.</div></div>' +
-      '<span class="ohpu-tag">COUNTRY-BOUND RUNTIME</span></header>' +
+      '<div class="ohpu-actions"><button type="button" class="ohpu-btn" id="ohpu-rulebook-head">POLICE RULEBOOK</button><span class="ohpu-tag">COUNTRY-BOUND RUNTIME</span></div></header>' +
       '<nav class="ohpu-tabs">' + navHtml() + '</nav>' + statusHtml() + budgetHtml(d) +
-      '<div class="ohpu-section-title">' + esc(({overview:'LIVE COUNTRY OVERVIEW',staff:'POLICE RECRUITMENT & STAFFING',fleet:'VEHICLE INVENTORY & PROCUREMENT',crime:'CRIME RATES & PATROL ALLOCATION',rules:'POLICE RULES & OVERSIGHT'})[activeTab]||'POLICE CONTROL') + '</div>' +
+      '<div class="ohpu-section-title">' + esc(({overview:'LIVE COUNTRY OVERVIEW',staff:'POLICE RECRUITMENT & STAFFING',fleet:'VEHICLE INVENTORY & PROCUREMENT',crime:'CRIME RATES & PATROL ALLOCATION',rules:'PAID POLICE PROGRAMMES & OVERSIGHT',rulebook:'POLICE RULEBOOK & RESPONSE PROCEDURES'})[activeTab]||'POLICE CONTROL') + '</div>' +
       body +
       '<div class="ohpu-actions"><button type="button" class="ohpu-btn" id="ohpu-back-home">BACK TO HOME MINISTRY</button></div>' +
       '<div class="ohpu-small">State updates and spending are executed by the Home Ministry engine. No mock balances or successful actions are shown when a Finance transaction fails.</div></section>';
     bindFinanceButtons(root);
     Array.prototype.forEach.call(root.querySelectorAll('[data-ohpu-tab]'),function(btn){btn.onclick=function(){activeTab=btn.getAttribute('data-ohpu-tab');setStatus('','');render();};});
-    var back=root.querySelector('#ohpu-back-home');if(back)back.onclick=function(){if(ui&&ui.renderHomeMinistryDashboard)ui.renderHomeMinistryDashboard();};
+    var rulebookHead=root.querySelector('#ohpu-rulebook-head');if(rulebookHead)rulebookHead.onclick=function(){activeTab='rulebook';setStatus('','');render();};
+    var back=root.querySelector('#ohpu-back-home');if(back)back.onclick=function(){consoleOpen=false;if(ui&&ui.renderHomeMinistryDashboard)ui.renderHomeMinistryDashboard();};
     var hireInput=root.querySelector('#ohpu-hire-quantity'),hireCost=root.querySelector('#ohpu-hire-cost'),hireImpact=root.querySelector('#ohpu-hire-impact');
     function updateHireQuote(){
       if(!hireInput)return;
@@ -313,6 +378,18 @@
       if(savePatrol)savePatrol.disabled=total>100.0001;
     }
     Array.prototype.forEach.call(root.querySelectorAll('[data-ohpu-patrol]'),function(input){input.oninput=recalcPatrolTotal;});recalcPatrolTotal();
+    var saveRulebook=root.querySelector('#ohpu-save-rulebook');
+    if(saveRulebook)saveRulebook.onclick=function(){
+      var book={};
+      Array.prototype.forEach.call(root.querySelectorAll('[data-ohpu-rulebook]'),function(input){
+        var key=input.getAttribute('data-ohpu-rulebook');
+        book[key]=input.type==='checkbox'?!!input.checked:number(input.value);
+      });
+      var result=typeof d.engine.updatePoliceRulebook==='function'?d.engine.updatePoliceRulebook(book,d.countryId):{ok:false,reason:'RULEBOOK_RUNTIME_UNAVAILABLE'};
+      if(!result||!result.ok)setStatus('Rulebook save rejected: '+String(result&&(result.message||result.reason||result.code)||'UNKNOWN_ERROR')+'. Existing settings were kept.','error');
+      else setStatus('Police Rulebook saved for '+String(d.baseline.name||d.countryId)+'. Score: '+percent(result.qualityScore,1)+'. State and crime projections have been recalculated.','ok');
+      activeTab='rulebook';render();
+    };
     Array.prototype.forEach.call(root.querySelectorAll('[data-ohpu-rule]'),function(btn){
       btn.onclick=function(){
         var id=btn.getAttribute('data-ohpu-rule'),enabled=btn.getAttribute('data-ohpu-enabled')==='true';
@@ -326,10 +403,17 @@
   function addLaunchButton() {
     var root=host();if(!root||!g.document)return;
     var shell=root.querySelector('.home-police-shell'),actions=shell&&shell.querySelector('.home-police-actions');
-    if(!actions||root.querySelector('#ohpu-open-console'))return;
-    var button=g.document.createElement('button');button.type='button';button.id='ohpu-open-console';button.className='home-police-btn home-police-btn-gold';button.textContent='📊 CRIME ANALYTICS & POLICE RULES';
-    button.onclick=function(){activeTab='overview';setStatus('','');render();};
-    actions.appendChild(button);
+    if(!actions)return;
+    if(!root.querySelector('#ohpu-open-console')){
+      var button=g.document.createElement('button');button.type='button';button.id='ohpu-open-console';button.className='home-police-btn home-police-btn-gold';button.textContent='CRIME ANALYTICS & POLICE OPERATIONS';
+      button.onclick=function(){consoleOpen=true;activeTab='overview';setStatus('','');render();};
+      actions.appendChild(button);
+    }
+    if(!root.querySelector('#ohpu-open-rulebook-launch')){
+      var rulebookButton=g.document.createElement('button');rulebookButton.type='button';rulebookButton.id='ohpu-open-rulebook-launch';rulebookButton.className='home-police-btn';rulebookButton.textContent='POLICE RULEBOOK';
+      rulebookButton.onclick=function(){consoleOpen=true;activeTab='rulebook';setStatus('','');render();};
+      actions.appendChild(rulebookButton);
+    }
   }
   function install() {
     ensureStyle();
@@ -339,17 +423,23 @@
       ui.renderHomeMinistryDashboard=function(){
         var result=original.apply(this,arguments);
         addLaunchButton();
+        if(consoleOpen)render();
         return result;
       };
     }
     if(g.addEventListener&&!g.__OMEGA_HOME_POLICE_OPERATIONS_REFRESH_LISTENER__){
       g.__OMEGA_HOME_POLICE_OPERATIONS_REFRESH_LISTENER__=true;
-      g.addEventListener('OMEGA_HOME_POLICE_BASELINE_READY',function(){addLaunchButton();});
-      g.addEventListener('OMEGA_HOME_POLICE_WORLD_BASELINE_READY',function(){addLaunchButton();});
-      g.addEventListener('OMEGA_FINANCE_RUNTIME_READY',function(){});
+      var refreshIfOpen=function(){addLaunchButton();if(consoleOpen)render();};
+      g.addEventListener('OMEGA_HOME_POLICE_BASELINE_READY',refreshIfOpen);
+      g.addEventListener('OMEGA_HOME_POLICE_WORLD_BASELINE_READY',refreshIfOpen);
+      g.addEventListener('OMEGA_HOME_POLICE_BASELINE_FAILED',refreshIfOpen);
+      g.addEventListener('OMEGA_FINANCE_RUNTIME_READY',refreshIfOpen);
+      g.addEventListener('OMEGA_HOME_POLICE_STATE_CHANGED',function(event){if(consoleOpen&&(!event||!event.detail||!event.detail.countryId||String(event.detail.countryId).toUpperCase()===String(country()).toUpperCase()))render();});
+      g.addEventListener('OMEGA_HOME_POLICE_ACTION_COMPLETED',function(event){if(consoleOpen&&(!event||!event.detail||!event.detail.countryId||String(event.detail.countryId).toUpperCase()===String(country()).toUpperCase()))render();});
+      ['OMEGA_COUNTRY_CONTEXT_CHANGED','OMEGA_COUNTRY_CHANGED','OMEGA_COUNTRY_SELECTED','COUNTRY_CHANGED','GAME_COUNTRY_CHANGED'].forEach(function(name){g.addEventListener(name,function(){if(consoleOpen)render();});});
     }
   }
-  var api=Object.freeze({VERSION:VERSION,open:render,render:render,diagnostics:function(){var d=getData();return{version:VERSION,ready:!!d.ready,activeTab:activeTab,countryId:d.countryId||null,financeAvailable:!!(d.budget&&d.budget.available),crimeAvailable:!!(d.crime&&d.crime.available)};}});
+  var api=Object.freeze({VERSION:VERSION,open:function(tab){consoleOpen=true;if(tab&&['overview','staff','fleet','crime','rules','rulebook'].indexOf(tab)>=0)activeTab=tab;render();},render:render,diagnostics:function(){var d=getData();return{version:VERSION,ready:!!d.ready,baselineReady:!!d.baselineReady,consoleOpen:consoleOpen,activeTab:activeTab,countryId:d.countryId||null,financeAvailable:!!(d.budget&&d.budget.available),crimeAvailable:!!(d.crime&&d.crime.available)};}});
   g.OmegaHomePoliceOperationsUI=api;
   if(g.document){
     if(g.document.readyState==='loading')g.document.addEventListener('DOMContentLoaded',install,{once:true});
