@@ -264,14 +264,13 @@
   function budgetSpendCheck(state,country,category,cost){
     const cid=normalizeCountry(country||currentCountry()),amount=Math.max(0,num(cost)||0);
     if(amount===0)return{ok:true,category:category||null,available:Infinity};
-    const summary=budgetSummaryForState(state,cid);
+    const summary=budgetSummaryForState(state,cid),treasury=summary.treasury;
+    if(!treasury.available)return{ok:false,reason:'TREASURY_DATA_UNAVAILABLE',cost:amount};
+    if(treasury.balance+0.000001<amount)return{ok:false,reason:'INSUFFICIENT_TREASURY',balance:treasury.balance,cost:amount};
     if(!summary.active)return{ok:false,reason:'HOME_MINISTRY_BUDGET_NOT_CONFIGURED',cost:amount,available:0};
     if(!Object.prototype.hasOwnProperty.call(BUDGET_CATEGORIES,category))return{ok:false,reason:'BUDGET_CATEGORY_REQUIRED',cost:amount};
     const categoryAvailable=summary.categories[category].available;
     if(amount>categoryAvailable+0.000001)return{ok:false,reason:'INSUFFICIENT_MINISTRY_BUDGET',category,available:categoryAvailable,cost:amount,limit:summary.categories[category].limit,spent:summary.categories[category].spent};
-    const treasury=summary.treasury;
-    if(!treasury.available)return{ok:false,reason:'TREASURY_DATA_UNAVAILABLE',cost:amount};
-    if(treasury.balance+0.000001<amount)return{ok:false,reason:'INSUFFICIENT_TREASURY',balance:treasury.balance,cost:amount};
     return{ok:true,category,available:categoryAvailable,treasury:treasury.balance};
   }
   function recordBudgetSpend(state,country,category,cost,action){
