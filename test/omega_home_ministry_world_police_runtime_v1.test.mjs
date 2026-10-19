@@ -154,18 +154,18 @@ test('patrol plan and active police rules change crime outputs, satisfaction and
 
 test('selected country police data follows the shared view context without permitting foreign mutations', () => {
   engine.bootstrapCountryPoliceBaselines(baselineData.countries);
-  globalThis.OmegaMinistryViewCountry = 'NGA';
+  globalThis.OmegaMinistryViewCountry = 'NG';
   const expected = baselineData.countries.find(row => row.iso3 === 'NGA');
-  assert.equal(engine.getCurrentCountryId(), 'NGA');
+  assert.equal(engine.getCurrentCountryId(), 'NG');
   const state = engine.getState();
   assert.equal(state.baselinePolicePersonnel, expected.baselinePolice.activePersonnel);
-  assert.equal(engine.getCrimeSnapshot().countryId, 'NGA');
+  assert.equal(engine.getCrimeSnapshot().countryId, 'NG');
 
-  const before = engine.getState('NGA').policeCount;
+  const before = engine.getState('NG').policeCount;
   const result = engine.recruitPolice(1);
   assert.equal(result.ok, false);
   assert.equal(result.reason, 'PLAYER_COUNTRY_SCOPE_VIOLATION');
-  assert.equal(engine.getState('NGA').policeCount, before);
+  assert.equal(engine.getState('NG').policeCount, before);
   delete globalThis.OmegaMinistryViewCountry;
 });
 
