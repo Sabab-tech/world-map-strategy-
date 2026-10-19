@@ -35,12 +35,31 @@
 
   function validId(value){return String(value??'').trim().length>0;}
 
+  function canonicalCountryId(value){
+    const raw=String(value??'').trim();
+    if(!raw)return '';
+    const registry=global.OmegaCanonicalIdentityRegistry||global.OmegaCountrySemanticBridge||global.Omega?.CanonicalIdentity;
+    if(registry&&typeof registry.resolveCountry==='function'){
+      for(const candidate of [raw,raw.replace(/[_-]+/g,' ')]){
+        try{const hit=registry.resolveCountry(candidate);if(hit&&hit.id)return String(hit.id).trim().toUpperCase();}catch(_){}
+      }
+    }
+    return raw.toUpperCase();
+  }
+
+  function countryBucketKey(section,countryId){
+    if(!section||typeof section!=='object')return null;
+    if(Object.prototype.hasOwnProperty.call(section,countryId))return countryId;
+    for(const key of Object.keys(section))if(canonicalCountryId(key)===countryId)return key;
+    return null;
+  }
+
   class StateTransaction{
     constructor(stateSource,ownerMinistry,countryId,turn,commandId){
       this.version=VERSION;
       this.state=stateSource||global.Game?.state||global.gameState||null;
       this.ownerMinistry=String(ownerMinistry||'');
-      this.countryId=String(countryId||'').trim().toUpperCase();
+      this.countryId=canonicalCountryId(countryId);
       this.turn=Number.isFinite(Number(turn))?Number(turn):0;
       this.commandId=String(commandId||'');
       this.transactionId='OMI-TX-'+this.turn+'-'+this.ownerMinistry+'-'+this.commandId;
@@ -70,10 +89,14 @@
       return p;
     }
 
-    _ownedScopeSnapshot(){
-      const root=this.state?.[this.ownerMinistry];
-      if(!root||typeof root!=='object')return null;
-      return root[this.countryId]===undefined?null:root[this.countryId];
+    _scopeSnapshot(){
+      const out={};
+      const domains=new Set([this.ownerMinistry,...this.operations.map(operation=>String(operation.path||'').split('.')[0]).filter(Boolean)]);
+      for(const domain of domains){
+        const section=this.state?.[domain],key=countryBucketKey(section,this.countryId);
+        out[domain]=key===null?null:clone(section[key]);
+      }
+      return out;
     }
 
     _countryContainer(path,create){
@@ -83,11 +106,17 @@
         if(!create)return null;
         this.state[domain]={};
       }
-      if(!this.state[domain][this.countryId]||typeof this.state[domain][this.countryId]!=='object'){
+      let key=countryBucketKey(this.state[domain],this.countryId);
+      if(key===null){
         if(!create)return null;
-        this.state[domain][this.countryId]={};
+        key=this.countryId;
+        this.state[domain][key]={};
       }
-      return {domain,container:this.state[domain][this.countryId],parts};
+      if(!this.state[domain][key]||typeof this.state[domain][key]!=='object'){
+        if(!create)return null;
+        this.state[domain][key]={};
+      }
+      return {domain,countryKey:key,container:this.state[domain][key],parts};
     }
 
     set(path,value){
@@ -130,7 +159,7 @@
       const beforeDigest=hash({
         ownerMinistry:this.ownerMinistry,
         countryId:this.countryId,
-        scope:this._ownedScopeSnapshot()
+        scope:this._scopeSnapshot()
       });
       const applied=[];
       for(const operation of this.operations){
@@ -154,7 +183,7 @@
       const afterDigest=hash({
         ownerMinistry:this.ownerMinistry,
         countryId:this.countryId,
-        scope:this._ownedScopeSnapshot()
+        scope:this._scopeSnapshot()
       });
       this.closed=true;
       return Object.freeze({
