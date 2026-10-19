@@ -117,7 +117,7 @@ test('turn advancement computes real wages, CPI and producer/import costs with t
   await r.engine.init();
   r.setDay(1);
   const first = r.engine.advanceTurn(1, 31536000000);
-  assert.equal(first.ok, true);
+  assert.equal(first.ok, true, JSON.stringify(first));
   assert.equal(first.processed, 3);
   const bg = r.engine.getLatest('BGD');
   assert.ok(bg.cpiIndex > 100);
