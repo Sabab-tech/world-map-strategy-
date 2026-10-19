@@ -28,18 +28,30 @@ test('every country uses the same top-level schema and every metric key', () => 
   const firstMetricKeys = Object.keys(registry.countries[0].metrics).sort();
   const firstMetadataKeys = Object.keys(registry.countries[0].metricMetadata).sort();
   assert.deepEqual(firstMetricKeys, registry.fieldCatalogue.map((field) => field.key).sort());
-  assert.deepEqual(firstMetadataKeys, firstMetricKeys);
+  const compactProvenance = Array.isArray(registry.countries[0].metricMetadata.years);
+  if (compactProvenance) {
+    assert.deepEqual(firstMetadataKeys, ['years', 'statusCodes', 'sourceCodes', 'methodCodes'].sort());
+    assert.ok(registry.metadata.provenanceEncoding);
+  } else {
+    assert.deepEqual(firstMetadataKeys, firstMetricKeys);
+  }
 
   for (const row of registry.countries) {
     assert.deepEqual(Object.keys(row).sort(), expectedRecordKeys);
     assert.deepEqual(Object.keys(row.metrics).sort(), firstMetricKeys);
     assert.deepEqual(Object.keys(row.metricMetadata).sort(), firstMetadataKeys);
-    for (const key of firstMetricKeys) {
+    if (compactProvenance) {
+      for (const values of Object.values(row.metricMetadata)) assert.equal(values.length, firstMetricKeys.length);
+    }
+    for (let index = 0; index < firstMetricKeys.length; index += 1) {
+      const key = firstMetricKeys[index];
       assert.ok(finiteOrNull(row.metrics[key]), 'Invalid metric ' + key + ' for ' + row.identity.iso3);
-      assert.ok(row.metricMetadata[key] && typeof row.metricMetadata[key].status === 'string',
-        'Missing provenance status for ' + key + ' in ' + row.identity.iso3);
-      assert.ok(row.metrics[key] === null || Number.isFinite(row.metricMetadata[key].year) ||
-        row.metricMetadata[key].year === null,
+      const status = compactProvenance
+        ? registry.metadata.provenanceEncoding.statuses[row.metricMetadata.statusCodes[index]]
+        : row.metricMetadata[key]?.status;
+      const year = compactProvenance ? row.metricMetadata.years[index] : row.metricMetadata[key]?.year;
+      assert.equal(typeof status, 'string', 'Missing provenance status for ' + key + ' in ' + row.identity.iso3);
+      assert.ok(row.metrics[key] === null || Number.isFinite(year) || year === null,
         'Invalid year metadata for ' + key + ' in ' + row.identity.iso3);
     }
   }
@@ -135,9 +147,14 @@ test('resource, public-safety and local-geography sub-schemas are complete and c
 });
 
 test('discipline score is not invented or confused with official governance indicators', () => {
+  const compact = Array.isArray(registry.countries[0].metricMetadata.years);
+  const disciplineIndex = registry.fieldCatalogue.findIndex(field => field.key === 'disciplineIndex');
   for (const row of registry.countries) {
     assert.equal(row.metrics.disciplineIndex, null);
-    assert.equal(row.metricMetadata.disciplineIndex.status, 'NOT_DEFINED_OR_SOURCED');
+    const status = compact
+      ? registry.metadata.provenanceEncoding.statuses[row.metricMetadata.statusCodes[disciplineIndex]]
+      : row.metricMetadata.disciplineIndex.status;
+    assert.equal(status, 'NOT_DEFINED_OR_SOURCED');
     assert.equal(row.metrics.ruleOfLawWgiEstimate === null ||
       (row.metrics.ruleOfLawWgiEstimate >= -2.5 && row.metrics.ruleOfLawWgiEstimate <= 2.5), true);
   }
