@@ -13,7 +13,7 @@
     return o;
   };
   const id=v=>String(v??'').trim().toUpperCase();
-  const num=v=>{const n=Number(v);return Number.isFinite(n)?n:null;};
+  const num=v=>{if(v===null||v===undefined||(typeof v==='string'&&v.trim()===''))return null;const n=Number(v);return Number.isFinite(n)?n:null;};
   const clamp=(v,a=0,b=1)=>{const n=num(v);return n===null?null:Math.max(a,Math.min(b,n));};
   const state=()=>g.Game?.state||g.gameState||{};
   const registry=()=>g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity||null;
@@ -46,7 +46,7 @@
   }
   function profile(c){
     const cid=canonical(c),out={countryId:cid,availability:'UNOBSERVED',source:null,dimensions:{}};
-    for(const dim of DIMENSIONS)out.dimensions[dim]={value:null,availability:'UNOBSERVED',source:null};
+    for(const dim of DIMENSIONS)out.dimensions[dim]={value:null,availability:'UNOBSERVED',source:null,confidence:0,evidence:[]};
     let canonicalRaw=null;
     try{
       const hit=registry()?.resolveCountry?.(cid);
@@ -62,9 +62,37 @@
         if(out.dimensions[dim].value!==null)continue;
         const raw=base?.[dim]??base?.[dim.replace(/[A-Z]/g,m=>'_'+m.toLowerCase())];
         const v=normalize(raw);
-        if(v!==null){out.dimensions[dim]={value:v,availability:'AVAILABLE',source:src};observedDimensions+=1;}
+        if(v!==null){out.dimensions[dim]={value:v,availability:'EXPLICIT_COUNTRY_DOCTRINE',source:src,confidence:1,evidence:[],interpretation:'Explicitly registered doctrine or policy dimension; takes precedence over derived simulation policy.'};observedDimensions+=1;}
       }
     }
+    // Fill only missing dimensions from the evidence-backed country behaviour engine.
+    // Explicit doctrine/state policy above always wins over a derived heuristic.
+    let derivedDimensionCount = 0;
+    try {
+      const behaviour = g.OmegaCountryBehaviorEngine?.getBehaviorProfile?.(cid) || null;
+      if (behaviour) {
+        out.behaviorSource = 'OMEGA_COUNTRY_BEHAVIOR_ENGINE_V1';
+        out.behaviorStatus = behaviour.status || 'UNKNOWN';
+        for (const dim of DIMENSIONS) {
+          if (out.dimensions[dim].value !== null) continue;
+          const row = behaviour.dimensions?.[dim];
+          if (!row || row.value === null || row.value === undefined) continue;
+          const v = normalize(row.value);
+          if (v === null) continue;
+          out.dimensions[dim] = {
+            value:v,
+            availability:row.availability || 'DERIVED_SIMULATION_POLICY',
+            source:row.source || 'OMEGA_COUNTRY_BEHAVIOR_ENGINE_V1',
+            confidence:clamp(row.confidence ?? 0.4),
+            evidence:clone(row.evidence || []),
+            interpretation:row.interpretation || null
+          };
+          observedDimensions += 1;
+          derivedDimensionCount += 1;
+        }
+      }
+    } catch (_) {}
+    out.derivedDimensionCount = derivedDimensionCount;
     if(observedDimensions>0)out.availability='AVAILABLE';
     return out;
   }
