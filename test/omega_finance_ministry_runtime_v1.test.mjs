@@ -94,7 +94,7 @@ test('Finance Ministry follows the selected country context and computes each co
   context.OmegaMinistryViewCountry='NGA';
   assert.equal(context.OmegaFinanceMinistry.renderDashboard('finance'),true);
   const html=elements.get('ministry-dashboard-content').innerHTML;
-  assert.ok(html.includes('country state: NG / NGA'),'Finance should render the explicitly selected Nigerian profile');
+  assert.ok(html.includes('Nigeria (NGA)'),'Finance should render the explicitly selected Nigerian profile');
   assert.ok(html.includes('READ-ONLY PROFILE'),'foreign profiles remain view-only');
   assert.ok(!html.includes('data-ofm-action="spend-budget"'),'country selection must not grant foreign spending permission');
   assert.equal(context.Omega.Simulation.getPlayerCountryId(),'BGD','viewing another country must not alter the player identity');
