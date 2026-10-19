@@ -251,10 +251,11 @@ test('economic transmission reduces resource demand when household purchasing po
   assert.equal(report.status, 'ACTIVE');
   assert.ok(Math.abs(row.demandPerDay - 5) < 1e-8,
     'household purchasing power should scale the realized daily consumption target');
-  assert.equal(row.financialTransmission.householdPurchasingPowerMultiplier, 0.5);
-  assert.equal(row.financialTransmission.importCostMultiplier, 1.8);
-  assert.equal(row.financialTransmission.producerCostMultiplier, 1.4);
-  assert.equal(row.financialTransmission.source, 'OMEGA_ECONOMIC_TRANSMISSION');
-  assert.ok(worldState.resource.BGD.inventory.iron_ore > 100 - 10 / 24,
-    'lower household purchasing power reduces the actual inventory debit');
+  assert.equal(row.formula.factors.financialTransmission.householdPurchasingPowerMultiplier, 0.5);
+  assert.equal(row.formula.factors.financialTransmission.importCostMultiplier, 1.8);
+  assert.equal(row.formula.factors.financialTransmission.producerCostMultiplier, 1.4);
+  assert.equal(row.formula.factors.financialTransmission.source, 'OMEGA_ECONOMIC_TRANSMISSION');
+  assert.ok(row.demandThisTurn < 10, 'lower household purchasing power reduces demand over the current turn');
+  assert.ok(row.nationalConsumption <= row.demandThisTurn,
+    'actual stock debit must remain bounded by transmitted demand');
 });
