@@ -170,6 +170,7 @@ test('index, finance, bank and offline shell use the daily lifecycle assets', ()
   assert.match(serviceWorker, /omega-offline-atlas-shell-v9/);
   assert.match(serviceWorker, /omega_game_lifecycle_runtime_v1\.js/);
   assert.match(serviceWorker, /omega_game_lifecycle_runtime_v1\.css/);
+  assert.match(serviceWorker, /resource_industrial_catalog_v1\.json/);
 });
 
 
