@@ -21,6 +21,7 @@ test('all map country and area identities exist, and unknown values are explicit
   assert.equal(sectorRegistry.budgetSectors.reduce((sum,s)=>sum+s.defaultSharePct,0),100);
   assert.equal(sectorRegistry.economicSectors.reduce((sum,s)=>sum+s.outputSharePct,0),100);
   assert.equal(sectorRegistry.economicSectors.reduce((sum,s)=>sum+s.taxReceiptSharePct,0),100);
+  assert.ok(sectorRegistry.economicSectors.every(s=>s.budgetSectorId&&sectorRegistry.budgetSectors.some(b=>b.id===s.budgetSectorId)));
 });
 function createRuntime(){
   const handlers=new Map();
@@ -157,6 +158,14 @@ test('Debt repayment reduces principal and treasury by the posted amount',async(
   assert.equal(state.finance.BGD.available,cashBefore-amount);
 });
 
+test('Emergency and debt-service categories are restricted to matching budget sectors',async()=>{
+  const {context}=createRuntime();await context.OmegaFinanceMinistry.init();
+  let r=context.OmegaFinanceMinistry.applyAction({type:'spend-budget',countryId:'BGD',department:'defense',amountUsd:10,spendType:'emergency'});
+  assert.equal(r.ok,false);assert.equal(r.code,'EMERGENCY_SECTOR_REQUIRED');
+  r=context.OmegaFinanceMinistry.applyAction({type:'spend-budget',countryId:'BGD',department:'defense',amountUsd:10,spendType:'debt_service'});
+  assert.equal(r.ok,false);assert.equal(r.code,'DEBT_SERVICE_SECTOR_REQUIRED');
+});
+
 test('Finance tabs place cash and macro details behind separate icons while overview stays compact',async()=>{
   const {context,elements}=createRuntime();await context.OmegaFinanceMinistry.init();
   assert.equal(context.OmegaCabinetUI.renderMinistryDashboard('finance'),true);
@@ -177,5 +186,9 @@ test('Finance tabs place cash and macro details behind separate icons while over
   assert.equal(context.OmegaFinanceMinistry.selectTab('income').ok,true);
   const income=elements.get('ministry-dashboard-content').innerHTML;
   assert.ok(income.includes('Estimated output'));
-  assert.ok(income.includes('RECORDED'));
+  assert.ok(income.includes('NOT AVAILABLE'),'missing live receipts must not be fabricated');
+  assert.ok(income.includes('Annual budget'));
+  assert.ok(income.includes('Spent'));
+  assert.ok(income.includes('Remaining'));
+  assert.ok(income.includes('Budget sector'));
 });
