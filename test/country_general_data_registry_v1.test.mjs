@@ -136,7 +136,7 @@ test('every canonical identity has a source-aware strategic profile inside the e
     'profileVersion', 'sovereigntyScope', 'executiveSummary', 'archetype', 'archetypeSource',
     'diplomacy', 'economy', 'military', 'politics', 'dependencies',
     'overallStrengths', 'overallWeaknesses', 'playerAdvantages', 'playerChallenges',
-    'recommendedStrategy', 'dataQuality'
+    'recommendedStrategy', 'strategyOptions', 'assessmentCriteria', 'dataQuality'
   ]);
   assert.equal(registry.metadata.localCoverage.strategicProfiles, roster.length);
   assert.equal(registry.metadata.localCoverage.relationProfileRecords,
@@ -155,7 +155,7 @@ test('every canonical identity has a source-aware strategic profile inside the e
   for (const row of registry.countries) {
     assert.equal(row.strategicProfile.length, profileFields.length);
     const profile = Object.fromEntries(profileFields.map((field, index) => [field, row.strategicProfile[index]]));
-    assert.equal(profile.profileVersion, 'OMEGA_COUNTRY_STRATEGIC_PROFILE_V1');
+    assert.equal(profile.profileVersion, 'OMEGA_COUNTRY_STRATEGIC_PROFILE_V2');
     assert.ok(typeof profile.executiveSummary === 'string' && profile.executiveSummary.length > 20);
     assert.ok(typeof profile.archetype === 'string' && profile.archetype.length > 2);
     assert.ok(Array.isArray(profile.overallStrengths) && profile.overallStrengths.length > 0);
@@ -163,6 +163,20 @@ test('every canonical identity has a source-aware strategic profile inside the e
     assert.ok(Array.isArray(profile.playerAdvantages) && profile.playerAdvantages.length > 0);
     assert.ok(Array.isArray(profile.playerChallenges) && profile.playerChallenges.length > 0);
     assert.ok(typeof profile.recommendedStrategy === 'string' && profile.recommendedStrategy.length > 20);
+    assert.ok(Array.isArray(profile.strategyOptions) && profile.strategyOptions.length > 0);
+    assert.equal(profile.assessmentCriteria.rubricVersion, 'OMEGA_COUNTRY_PROFILE_RUBRIC_V2');
+    assert.ok(profile.assessmentCriteria.thresholds.highPublicDebtPressure);
+    assert.ok(profile.assessmentCriteria.peerComparison.rule.includes('exact observation year'));
+    assert.ok(Array.isArray(profile.economy.pressurePoints));
+    assert.ok(Array.isArray(profile.economy.developmentSignals));
+    assert.equal(profile.economy.trendStatus, 'MULTI_YEAR_ECONOMIC_TREND_NOT_COMPUTED_FROM_SINGLE_LATEST_VALUES');
+    assert.ok(Array.isArray(profile.diplomacy.modelSignals));
+    assert.ok(Array.isArray(profile.diplomacy.cooperationSignals));
+    assert.ok(Array.isArray(profile.diplomacy.pressurePoints));
+    assert.ok(Array.isArray(profile.military.capabilityGaps));
+    assert.equal(profile.military.trendStatus, 'MILITARY_CAPABILITY_TREND_NOT_MEASURED');
+    assert.ok(Array.isArray(profile.politics.governanceIndicatorPoints));
+    assert.ok(Array.isArray(profile.dependencies.measurementGaps));
     assert.ok(profile.diplomacy && profile.economy && profile.military && profile.politics && profile.dependencies);
     assert.equal(profile.military.capabilityStatus, 'OPERATIONAL_CAPABILITY_NOT_MEASURED_BY_GENERAL_REGISTRY');
     assert.equal(profile.politics.politicalSystemClassification, 'NOT_CLASSIFIED_FROM_AVAILABLE_DATA');
@@ -188,6 +202,17 @@ test('every canonical identity has a source-aware strategic profile inside the e
     ];
     for (const value of percentileValues) {
       assert.equal(value === null || (Number.isFinite(value) && value >= 0 && value <= 100), true);
+    }
+    for (const [scoreKey, yearKey, countKey] of [
+      ['economicScalePercentile','economicScalePeerYear','economicScalePeerCount'],
+      ['economicInfluencePercentile','economicInfluencePeerYear','economicInfluencePeerCount'],
+      ['foreignExchangeReservePercentile','foreignExchangeReservePeerYear','foreignExchangeReservePeerCount']
+    ]) {
+      const score = profile.economy.scores[scoreKey];
+      if (score !== null) {
+        assert.ok(Number.isFinite(profile.economy.scores[yearKey]), scoreKey + ' must disclose its cohort year');
+        assert.ok(profile.economy.scores[countKey] >= 5, scoreKey + ' must have at least five same-year observations');
+      }
     }
     assert.equal(Object.hasOwn(profile.military, 'militaryStrengthScore'), false);
   }
