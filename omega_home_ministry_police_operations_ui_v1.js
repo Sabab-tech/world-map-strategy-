@@ -171,16 +171,30 @@
     var recommendations=typeof e.getCountryVehicleRecommendations==='function'?e.getCountryVehicleRecommendations(d.countryId,4):[];
     var recommendationCards=recommendations.map(function(row){return '<article class="ohpu-card"><div class="ohpu-label">COUNTRY FIT · TIER '+esc(row.level)+'</div><h3>'+esc(row.name)+'</h3><div class="ohpu-value">'+esc(percent(row.fitPct,1))+'</div><div class="ohpu-small">Match to modeled '+esc(row.dominantEnvironment)+' / road mix<br>Owned: '+esc(formatCount(row.owned))+' · Upkeep: '+esc(money(row.maintenancePerDay))+'/day</div></article>';}).join('');
     var mix=operatingProfile&&operatingProfile.environmentMixPct||{};
-    var countryMixHtml=operatingProfile?'<article class="ohpu-card" style="grid-column:1/-1"><div class="ohpu-section-title">COUNTRY-SPECIFIC OPERATING CONTEXT</div><div class="ohpu-grid">'+kpi('Region',operatingProfile.region,'Country profile identity')+kpi('Urbanisation',percent(operatingProfile.urbanizationPct,1),'Source: modeled country profile input')+kpi('Coastal access',operatingProfile.hasOceanAccess?'Available':'Landlocked / no mapped access','Used as one fleet-mix factor')+'</div><div class="ohpu-small">Modeled operating mix: '+Object.keys(mix).map(function(key){return esc(key)+' '+esc(percent(mix[key],1));}).join(' · ')+'. This is a strategy-game estimate, not an official road survey.</div></article>':'';
+    var countryMixHtml=operatingProfile?'<article class="ohpu-card" style="grid-column:1/-1"><div class="ohpu-section-title">COUNTRY-SPECIFIC OPERATING CONTEXT</div><div class="ohpu-grid">'+kpi('Region',operatingProfile.region,'Country profile identity')+kpi('Urbanisation',percent(operatingProfile.urbanizationPct,1),'Source: modeled country profile input')+kpi('Terrain',operatingProfile.terrainClass,'Country context proxy, not a road survey')+kpi('Road quality index',percent(operatingProfile.roadQualityIndex,1),'Modeled country context index')+kpi('Coastal access',operatingProfile.hasOceanAccess?'Available':'Landlocked / no mapped access','Used as one fleet-mix factor')+'</div><div class="ohpu-small">Modeled operating mix: '+Object.keys(mix).map(function(key){return esc(key)+' '+esc(percent(mix[key],1));}).join(' · ')+'. This is a strategy-game estimate, not an official road survey.</div></article>':'';
+    var unitRows=Array.isArray(s.vehicleFleet)?s.vehicleFleet:[];
+    var vehicleStats={};
+    vehicles.forEach(function(v){vehicleStats[String(v.level)]={owned:number(s.vehiclesOwned&&s.vehiclesOwned[v.level]),ready:0,deployed:0,maintenance:0,repair:0,conditionTotal:0,conditionCount:0};});
+    unitRows.forEach(function(unit){
+      var key=String(Math.floor(number(unit.vehicleLevel))),stat=vehicleStats[key];
+      if(!stat)return;
+      var condition=Math.max(0,Math.min(100,number(unit.condition,100))),status=String(unit.status||'AVAILABLE');
+      stat.conditionTotal+=condition;stat.conditionCount++;
+      if(status==='DEPLOYED')stat.deployed++;
+      if(status==='MAINTENANCE_DUE'||status==='SERVICE_DUE'||status==='INSPECTION_DUE')stat.maintenance++;
+      if(status==='REPAIR_REQUIRED'||status==='DESTROYED'||condition<=15)stat.repair++;
+      if((status==='AVAILABLE'||status==='DEPLOYED')&&condition>15&&number(unit.odometerKm)<number(unit.nextServiceAtKm,5000))stat.ready++;
+    });
+    vehicles.forEach(function(v){var stat=vehicleStats[String(v.level)];if(stat&&!unitRows.length&&stat.owned>0){stat.ready=stat.owned;stat.conditionTotal=stat.owned*100;stat.conditionCount=stat.owned;}});
     var cards=vehicles.map(function(v){
-      var owned=number(s.vehiclesOwned&&s.vehiclesOwned[v.level]),freeLevel=number(s.unlockedVehicleLevel,1)>=v.level;
+      var owned=number(s.vehiclesOwned&&s.vehiclesOwned[v.level]),stat=vehicleStats[String(v.level)]||{ready:0,deployed:0,maintenance:0,repair:0,conditionTotal:0,conditionCount:0},averageCondition=stat.conditionCount?stat.conditionTotal/stat.conditionCount:null,freeLevel=number(s.unlockedVehicleLevel,1)>=v.level;
       var unitValue=number(v.cost),ownedValue=owned*unitValue;
       var row = b.baselineFleet && b.baselineFleet.countsByTier && b.baselineFleet.countsByTier[String(v.level)];
       var locked=!freeLevel;
       return '<article class="ohpu-card ohpu-fleet-card"><div class="ohpu-small">TIER ' + v.level + ' · ' + esc(v.className||v.role||'POLICE VEHICLE') + '</div>' +
         '<div class="ohpu-car-wrap">' + (ui && typeof ui.getPoliceVehicleSvg === 'function' ? ui.getPoliceVehicleSvg(v.level,'ops-card-'+v.level) : '') + '</div>' +
         '<h3>' + esc(v.name) + '</h3><div class="ohpu-value">' + esc(money(unitValue)) + '</div><div class="ohpu-small">replacement value per vehicle</div>' +
-        '<div class="ohpu-note">Owned: <strong>' + esc(formatCount(owned)) + '</strong> · Estimated owned value: <strong>' + esc(money(ownedValue)) + '</strong><br>Daily upkeep per unit: ' + esc(money(v.maintenancePerDay)) + '<br>Original baseline quantity: ' + esc(formatCount(row||0)) + '</div>' +
+        '<div class="ohpu-note">Owned: <strong>' + esc(formatCount(owned)) + '</strong> · Estimated owned value: <strong>' + esc(money(ownedValue)) + '</strong><br>Roadworthy: <strong>' + esc(formatCount(stat.ready)) + '</strong> · Deployed: ' + esc(formatCount(stat.deployed)) + '<br>Maintenance due: ' + esc(formatCount(stat.maintenance)) + ' · Repair required: ' + esc(formatCount(stat.repair)) + '<br>Average condition: ' + esc(averageCondition===null?'N/A':percent(averageCondition,0)) + '<br>Daily upkeep per unit: ' + esc(money(v.maintenancePerDay)) + '<br>Original baseline quantity: ' + esc(formatCount(row||0)) + '</div>' +
         '<label class="ohpu-label">Quantity to purchase<input class="ohpu-field" data-ohpu-buy-qty="' + v.level + '" type="number" min="1" max="100" step="1" value="1" inputmode="numeric"></label>' +
         '<div class="ohpu-small" data-ohpu-buy-quote="' + v.level + '">Order total: ' + esc(money(unitValue)) + '</div>' +
         '<div class="ohpu-actions"><button type="button" class="ohpu-btn ' + (locked?'':'ohpu-btn-main') + '" data-ohpu-buy="' + v.level + '" ' + (disabled||locked||!!pending?'disabled':'') + '>' +
@@ -192,7 +206,8 @@
       kpi('Estimated fleet value',money(s.baselineFleetReplacementValueUsd),'Original opening-inventory replacement estimate, not cash to spend.') +
       kpi('Remaining vehicle budget',budget?money(budget.remainingUsd):'Unavailable','Orders require the vehicle sub-budget plus available treasury.') +
       kpi('Vehicle requirement',formatCount(d.crime&&d.crime.requiredFleetEstimate),'Modeled opening-fleet target, scaled with current population.') +
-      kpi('Fleet coverage',percent(d.crime&&d.crime.vehicleCoveragePct,1),'Shortfalls reduce modeled response capacity.') +
+      kpi('Fleet coverage',percent(d.crime&&d.crime.vehicleCoveragePct,1),'Operational vehicle capacity divided by target requirement.') +
+      kpi('Roadworthy units',formatCount(d.crime&&d.crime.currentOperationalVehicleUnits),'Distinct vehicles ready or actively deployed.') +
       kpi('Fuel reserve',fuel?formatCount(fuel.reserveDays)+' days':'Unavailable',fuel?fuel.status+' readiness':'Fuel model unavailable') +
       kpi('Daily fuel demand',fuel?money(fuel.estimatedDailyFuelCostUsd):'Unavailable','A modeled supply estimate based on the country’s owned vehicle mix.') +
       '</div>' + countryMixHtml +
