@@ -32,8 +32,9 @@
     var crime = typeof e.getCrimeSnapshot === 'function' ? e.getCrimeSnapshot(cid) : { available: false, reason: 'CRIME_RUNTIME_UNAVAILABLE' };
     var budget = typeof e.getHomeBudgetSnapshot === 'function' ? e.getHomeBudgetSnapshot(cid) : { available: false, reason: 'HOME_BUDGET_API_UNAVAILABLE' };
     var dailyCost = typeof e.getDailyOperatingCost === 'function' ? e.getDailyOperatingCost(cid) : null;
+    var fuel = typeof e.getFuelSnapshot === 'function' ? e.getFuelSnapshot(cid) : null;
     var baselineRuntime = g.OmegaHomePoliceBaselineRuntime && typeof g.OmegaHomePoliceBaselineRuntime.diagnostics === 'function' ? g.OmegaHomePoliceBaselineRuntime.diagnostics() : null;
-    return { ready: true, baselineReady: !!(baseline && crime && crime.available), baselineError: baselineRuntime && baselineRuntime.error || null, engine: e, countryId: cid, state: s, baseline: baseline, crime: crime, budget: budget, dailyCost: dailyCost };
+    return { ready: true, baselineReady: !!(baseline && crime && crime.available), baselineError: baselineRuntime && baselineRuntime.error || null, engine: e, countryId: cid, state: s, baseline: baseline, crime: crime, budget: budget, dailyCost: dailyCost, fuel: fuel };
   }
   function setStatus(message, type) { statusText = String(message || ''); statusType = type || ''; }
   function statusHtml() {
@@ -119,6 +120,7 @@
       kpi('Vehicle fleet coverage',percent(crime.vehicleCoveragePct,1),'Against the opening fleet requirement scaled to current population.') +
       kpi('Projected crime index',crime.projectedCrimeIndex===undefined?'Unavailable':percent(crime.projectedCrimeIndex,1),'100 is the opening crime-rate reference; values change with capacity and rules.') +
       kpi('Modeled annual financial exposure',money(crime.estimatedAnnualFinancialImpactUsd),'Estimated economic impact of incidents, not police revenue or seized money.') +
+      kpi('Fuel reserve',d.fuel?formatCount(d.fuel.reserveDays)+' days':'Unavailable',d.fuel?d.fuel.status+' · '+money(d.fuel.estimatedDailyFuelCostUsd)+'/day modeled demand':'Fuel model unavailable') +
       kpi('Justice backlog',formatCount(s.justiceBacklog),'Daily case processing runs with the simulation clock.') +
       '</div></section>' +
       '<section class="ohpu-section"><div class="ohpu-section-title">COUNTRY DATA & BASELINE PROVENANCE</div><div class="ohpu-grid">' +
@@ -156,7 +158,8 @@
   }
   function fleetHtml(d) {
     var e=d.engine,s=d.state,b=d.baseline||{},vehicles=Array.isArray(e.VEHICLES)?e.VEHICLES:[],pending=s.pendingVehicleOrder;
-    var budget=d.budget && d.budget.categories && d.budget.categories.vehicles,disabled=!d.budget||!d.budget.available;
+    var budget=d.budget && d.budget.categories && d.budget.categories.vehicles,operationsBudget=d.budget && d.budget.categories && d.budget.categories.operations,disabled=!d.budget||!d.budget.available;
+    var fuel=d.fuel||null,fuelDisabled=!d.budget||!d.budget.available||!operationsBudget;
     var operatingProfile=typeof e.getCountryOperatingProfile==='function'?e.getCountryOperatingProfile(d.countryId):null;
     var recommendations=typeof e.getCountryVehicleRecommendations==='function'?e.getCountryVehicleRecommendations(d.countryId,4):[];
     var recommendationCards=recommendations.map(function(row){return '<article class="ohpu-card"><div class="ohpu-label">COUNTRY FIT · TIER '+esc(row.level)+'</div><h3>'+esc(row.name)+'</h3><div class="ohpu-value">'+esc(percent(row.fitPct,1))+'</div><div class="ohpu-small">Match to modeled '+esc(row.dominantEnvironment)+' / road mix<br>Owned: '+esc(formatCount(row.owned))+' · Upkeep: '+esc(money(row.maintenancePerDay))+'/day</div></article>';}).join('');
@@ -183,8 +186,11 @@
       kpi('Remaining vehicle budget',budget?money(budget.remainingUsd):'Unavailable','Orders require the vehicle sub-budget plus available treasury.') +
       kpi('Vehicle requirement',formatCount(d.crime&&d.crime.requiredFleetEstimate),'Modeled opening-fleet target, scaled with current population.') +
       kpi('Fleet coverage',percent(d.crime&&d.crime.vehicleCoveragePct,1),'Shortfalls reduce modeled response capacity.') +
+      kpi('Fuel reserve',fuel?formatCount(fuel.reserveDays)+' days':'Unavailable',fuel?fuel.status+' readiness':'Fuel model unavailable') +
+      kpi('Daily fuel demand',fuel?money(fuel.estimatedDailyFuelCostUsd):'Unavailable','A modeled supply estimate based on the country’s owned vehicle mix.') +
       '</div>' + countryMixHtml +
       (recommendationCards?'<div class="ohpu-section-title">RECOMMENDED VEHICLES FOR THIS COUNTRY</div><div class="ohpu-grid">'+recommendationCards+'</div>':'') +
+      '<article class="ohpu-card" style="margin:12px 0"><div class="ohpu-section-title">FUEL & PATROL SUPPLY</div><p>Fuel reserve runs down with simulation days. Shortages lower patrol readiness and increase projected crime. Resupply is an actual country-level Finance transaction from the Home Ministry operations allocation.</p><div class="ohpu-grid">'+kpi('Current reserve',fuel?formatCount(fuel.reserveDays)+' days':'Unavailable',fuel?fuel.status:'Status unavailable')+kpi('Estimated daily requirement',fuel?money(fuel.estimatedDailyFuelCostUsd):'Unavailable','Modeled USD/day')+kpi('Operations budget remaining',operationsBudget?money(operationsBudget.remainingUsd):'Unavailable','Fuel orders are charged here')+'</div><div class="ohpu-form-grid"><label class="ohpu-label">Fuel supply to purchase (simulation days)<input class="ohpu-field" id="ohpu-fuel-days" type="number" min="1" max="90" step="1" value="14"></label><div><span class="ohpu-label">Estimated order cost</span><div class="ohpu-value" id="ohpu-fuel-quote">'+esc(money(number(fuel&&fuel.estimatedDailyFuelCostUsd)*14))+'</div><span class="ohpu-small">Reserve capacity: 180 days total.</span></div></div><button type="button" class="ohpu-btn ohpu-btn-main" id="ohpu-buy-fuel" '+(fuelDisabled?'disabled':'')+'>PURCHASE FUEL SUPPLY · CHARGE FINANCE</button></article>' +
       (pending?'<div class="ohpu-note">Order in transit: Tier ' + esc(pending.level) + ', ' + esc(pending.quantity) + ' vehicles, ' + esc(money(pending.totalCost)) + '. Delivery time remaining: ' + esc(Math.max(0,Math.ceil((pending.completesAtMs-e.getSimulationTimeMs())/86400000))) + ' simulation days.</div>':'') +
       '<div class="ohpu-grid">' + cards + '</div>' +
       '<div class="ohpu-note">Each tier has different response, patrol, protection, crowd-control, surveillance, off-road, command and anti-smuggling capability. The purchased price and upkeep are the existing game’s tier prices; opening baseline assets are not charged retroactively.</div></section>';
@@ -211,6 +217,7 @@
       kpi('Projected annual incidents',formatCount(crime.projectedAnnualIncidentEstimate),'Changes as staffing, skill, facilities, fleet readiness and rules change.') +
       kpi('Annual incidents avoided',formatCount(crime.annualIncidentsAvoided),'Negative means the modeled situation is worse than the starting baseline.') +
       kpi('Modeled financial exposure',money(crime.estimatedAnnualFinancialImpactUsd),'Economic impact estimate, not recovered money.') +
+      kpi('Fuel supply readiness',d.fuel?percent(d.fuel.coveragePct,1):'Unavailable',d.fuel?formatCount(d.fuel.reserveDays)+' days in reserve':'Fuel model unavailable') +
       kpi('Staffing / fleet coverage',percent(crime.policeStaffingCoveragePct,1)+' / '+percent(crime.vehicleCoveragePct,1),'Population-scaled game targets.') +
       kpi('Case clearance',percent(s.crimeModel&&s.crimeModel.activeCaseClearancePct,1),'Police efficiency, investigators, forensics and case rules.') +
       kpi('Cases awaiting justice',formatCount(s.justiceBacklog),'Backlog changes each simulated day; speeding up processing has a cost.') +
@@ -364,6 +371,23 @@
         activeTab='fleet';render();
       };
     });
+    var fuelDaysInput=root.querySelector('#ohpu-fuel-days'),fuelQuote=root.querySelector('#ohpu-fuel-quote'),fuelBtn=root.querySelector('#ohpu-buy-fuel');
+    function updateFuelQuote(){
+      if(!fuelDaysInput||!fuelQuote||!d.engine.getDailyFuelCost)return;
+      var days=Math.max(1,Math.min(90,Math.floor(number(fuelDaysInput.value,14))));
+      fuelQuote.textContent=money(d.engine.getDailyFuelCost(d.countryId)*days);
+      if(fuelBtn&&fuel&&fuel.reserveDays+days>180)fuelBtn.disabled=true;
+      else if(fuelBtn)fuelBtn.disabled=!!fuelDisabled;
+    }
+    if(fuelDaysInput){fuelDaysInput.onchange=updateFuelQuote;fuelDaysInput.oninput=updateFuelQuote;}
+    if(fuelBtn)fuelBtn.onclick=function(){
+      var days=Math.floor(number(fuelDaysInput&&fuelDaysInput.value));
+      var result=d.engine.purchaseFuelSupply(days,d.countryId);
+      if(!result||!result.ok)setStatus('Fuel order rejected: '+String(result&&(result.message||result.reason||result.code)||'UNKNOWN_ERROR')+'. No fuel purchase was recorded.','error');
+      else setStatus('Fuel supply purchased: '+formatCount(result.daysPurchased)+' simulation days. Cost '+money(result.cost)+'. Reserve is now '+formatCount(result.fuel&&result.fuel.reserveDays)+' days.','ok');
+      activeTab='fleet';render();
+    };
+    updateFuelQuote();
     var savePatrol=root.querySelector('#ohpu-save-patrol');
     if(savePatrol)savePatrol.onclick=function(){
       var plan={};Array.prototype.forEach.call(root.querySelectorAll('[data-ohpu-patrol]'),function(input){plan[input.getAttribute('data-ohpu-patrol')]=number(input.value);});
