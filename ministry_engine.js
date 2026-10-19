@@ -1507,7 +1507,11 @@ window.OmegaCabinetUI = {
             }
         }
 
-        const activeTab = this.activeDashboardTab || 'interrogate';
+        const allowedTabs = ministryId === 'interior_security'
+            ? ['interrogate', 'directives', 'reports', 'personnel', 'security_operations']
+            : ['interrogate', 'directives', 'reports', 'personnel'];
+        const requestedTab = this.activeDashboardTab || 'interrogate';
+        const activeTab = allowedTabs.includes(requestedTab) ? requestedTab : 'interrogate';
 
         let html = `
             <!-- 3-TIER TYPOGRAPHY & ELEGANT AAA HERO HEADER -->
@@ -1553,6 +1557,7 @@ window.OmegaCabinetUI = {
                 <button onclick="window.OmegaCabinetUI.setDashboardTab('personnel');" style="background:${activeTab==='personnel'?'linear-gradient(135deg,#00e5ff,#0066ff)':'rgba(255,255,255,0.06)'}; color:${activeTab==='personnel'?'#000':'#cbd5e1'}; font-weight:bold; padding:8px 16px; border-radius:8px; border:none; cursor:pointer; font-family:'Share Tech Mono',monospace; font-size:12px; display:flex; align-items:center; gap:6px;">
                     📁 Personnel & Audits
                 </button>
+                ${ministryId === 'interior_security' ? `<button onclick="window.OmegaCabinetUI.setDashboardTab('security_operations');" style="background:${activeTab==='security_operations'?'linear-gradient(135deg,#00e5ff,#0066ff)':'rgba(255,255,255,0.06)'}; color:${activeTab==='security_operations'?'#000':'#cbd5e1'}; font-weight:bold; padding:8px 16px; border-radius:8px; border:none; cursor:pointer; font-family:'Share Tech Mono',monospace; font-size:12px; display:flex; align-items:center; gap:6px; white-space:nowrap;">🚓 Police Command & Fleet</button>` : ''}
             </div>
         `;
 
@@ -1636,7 +1641,8 @@ window.OmegaCabinetUI = {
         }
 
         if (activeTab === 'reports') {
-            const liveOps = window.OmegaLiveOpsObservability;
+            const isHomeMinistryReport = ministryId === 'interior_security';
+            const liveOps = isHomeMinistryReport ? null : window.OmegaLiveOpsObservability;
             const reportCountry = this.activeCountry || (window.Game && window.Game.state &&
                 (window.Game.state.playerCountryId || window.Game.state.playerCountryCode)) || '';
             const metrics = liveOps && typeof liveOps.getCountryMetrics === 'function'
@@ -1645,7 +1651,43 @@ window.OmegaCabinetUI = {
                 ? liveOps.getCountryOperationalSummary(reportCountry) : null;
             const recorded = value => typeof value === 'number' && Number.isFinite(value)
                 ? value.toLocaleString(undefined, { maximumFractionDigits: 2 }) : 'NOT RECORDED';
-            const rows = [
+            const homeEngine = isHomeMinistryReport
+                ? (window.OmegaHomeMinistryEngine || window.Omega && window.Omega.HomeMinistry || null)
+                : null;
+            let homeState = null, homeFleet = null, homeTreasury = null;
+            if (homeEngine) {
+                try {
+                    homeState = typeof homeEngine.getState === 'function' ? homeEngine.getState(reportCountry) : null;
+                    homeFleet = typeof homeEngine.getVehicleFleet === 'function' ? homeEngine.getVehicleFleet(reportCountry) : null;
+                    homeTreasury = typeof homeEngine.getTreasury === 'function' ? homeEngine.getTreasury(reportCountry) : null;
+                } catch (error) {
+                    console.warn('[Home Ministry report] Runtime read failed:', error);
+                }
+            }
+            const fleetRows = Array.isArray(homeFleet) ? homeFleet : null;
+            const ownedVehicles = homeState && homeState.vehiclesOwned
+                ? Object.keys(homeState.vehiclesOwned).reduce((total, key) => total + Math.max(0, Number(homeState.vehiclesOwned[key]) || 0), 0)
+                : null;
+            const vehiclesAvailable = fleetRows ? fleetRows.filter(unit => unit.status === 'AVAILABLE').length : null;
+            const vehiclesDeployed = fleetRows ? fleetRows.filter(unit => unit.status === 'DEPLOYED').length : null;
+            const vehiclesNeedingService = fleetRows
+                ? fleetRows.filter(unit => unit.status === 'MAINTENANCE_DUE' || unit.status === 'REPAIR_REQUIRED').length
+                : null;
+            const rows = isHomeMinistryReport ? [
+                ['Active police personnel', homeState && homeState.policeCount],
+                ['Operational efficiency / 100', homeState && homeState.policeEfficiency],
+                ['Public trust / 100', homeState && homeState.policeTrust],
+                ['Intelligence agents', homeState && homeState.specialAgents],
+                ['Owned police vehicles', ownedVehicles],
+                ['Vehicles ready for assignment', vehiclesAvailable],
+                ['Vehicles deployed', vehiclesDeployed],
+                ['Vehicles needing service / repair', vehiclesNeedingService],
+                ['Active guard deployments', homeState && Array.isArray(homeState.guardDeployments) ? homeState.guardDeployments.length : null],
+                ['Recorded security incidents', homeState && Array.isArray(homeState.incidentLedger) ? homeState.incidentLedger.length : null],
+                ['Daily police payroll', homeEngine && typeof homeEngine.getDailyPayroll === 'function' ? homeEngine.getDailyPayroll(reportCountry) : null, 'money'],
+                ['Scheduled daily security operating cost', homeEngine && typeof homeEngine.getDailyOperatingCost === 'function' ? homeEngine.getDailyOperatingCost(reportCountry) : null, 'money'],
+                ['Available treasury balance', homeTreasury && homeTreasury.available ? homeTreasury.balance : null, 'money']
+            ] : [
                 ['Recorded GDP value', metrics && metrics.gdp],
                 ['Available treasury value', metrics && metrics.treasury],
                 ['Population', metrics && metrics.population],
@@ -1655,19 +1697,48 @@ window.OmegaCabinetUI = {
                 ['Shipments in transit', activity && activity.inTransit],
                 ['Settled trade requests', activity && activity.settledRequests]
             ];
-            const rowsHtml = rows.map(([label,value]) =>
-                '<div style="background:rgba(255,255,255,0.04);padding:10px;border-radius:8px;">' +
-                '<span style="color:#94a3b8;">' + label + ':</span> <strong style="color:#7dd3fc;">' +
-                recorded(value) + '</strong></div>').join('');
+            const rowsHtml = rows.map(([label,value,kind]) => {
+                const displayValue = kind === 'money'
+                    ? (typeof value === 'number' && Number.isFinite(value) && homeEngine && typeof homeEngine.formatMoney === 'function'
+                        ? homeEngine.formatMoney(value) : 'NOT RECORDED')
+                    : recorded(value);
+                return '<div style="background:rgba(255,255,255,0.04);padding:10px;border-radius:8px;">' +
+                    '<span style="color:#94a3b8;">' + label + ':</span> <strong style="color:#7dd3fc;">' +
+                    displayValue + '</strong></div>';
+            }).join('');
             html += `
                 <div style="background:rgba(2,11,20,0.8);border:1px solid rgba(0,229,255,0.2);border-radius:12px;padding:16px;font-family:'Share Tech Mono',monospace;color:#e2e8f0;">
-                    <div style="color:#00e5ff;font-size:14px;font-weight:bold;margin-bottom:6px;">LIVE SOVEREIGN ENGINE REPORT</div>
-                    <p style="font-size:11px;color:#94a3b8;margin:0 0 12px;">Country: ${String(reportCountry || 'NOT SELECTED')} · Read-only values from simulation state and retained ledgers. Missing fields are not estimated.</p>
+                    <div style="color:#00e5ff;font-size:14px;font-weight:bold;margin-bottom:6px;">${isHomeMinistryReport ? 'HOME MINISTRY SECURITY OPERATIONS REPORT' : 'LIVE SOVEREIGN ENGINE REPORT'}</div>
+                    <p style="font-size:11px;color:#94a3b8;margin:0 0 12px;">Country: ${String(reportCountry || 'NOT SELECTED')} · ${isHomeMinistryReport ? 'Values are read from Home Ministry runtime state, fleet records and the recorded finance ledger.' : 'Read-only values from simulation state and retained ledgers. Missing fields are not estimated.'}</p>
                     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;font-size:12px;">
                         ${rowsHtml}
                     </div>
                 </div>
             `;
+            if (isHomeMinistryReport) {
+                const incidentRows = homeState && Array.isArray(homeState.incidentLedger)
+                    ? homeState.incidentLedger.slice().reverse().slice(0, 20) : [];
+                const escReport = value => String(value == null ? '' : value)
+                    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                const incidentHtml = incidentRows.length ? incidentRows.map(item =>
+                    '<div style="padding:10px;border:1px solid rgba(148,163,184,.22);border-radius:8px;background:rgba(255,255,255,.035);margin:7px 0;">' +
+                    '<strong style="color:#e2e8f0;">' + escReport(String(item.type || 'SECURITY INCIDENT').replace(/_/g, ' ')) +
+                    '</strong> <span style="color:' + (item.detected ? '#4ade80' : '#fbbf24') + ';">' + escReport(item.status || 'STATUS NOT RECORDED') + '</span>' +
+                    '<div style="font-size:11px;color:#94a3b8;margin-top:5px;">Week ' + escReport(item.simulationWeek) +
+                    ' · Turn ' + escReport(item.simulationTurn) + ' · Baseline risk ' + escReport(item.baselineRiskPercent) + '%' +
+                    ' · Agent/tactic mitigation ' + escReport(item.mitigationPercent) + '%' +
+                    ' · Guard mitigation ' + escReport(item.guardMitigationPercent) + '%</div>' +
+                    (item.targetAssetName ? '<div style="font-size:11px;color:#cbd5e1;margin-top:5px;">Recorded target: ' + escReport(item.targetAssetName) +
+                      (item.targetAssetId ? ' · ' + escReport(item.targetAssetId) : '') + '</div>' : '') +
+                    (item.assetImpact && item.assetImpact.condition ? '<div style="font-size:11px;color:#fbbf24;margin-top:5px;">Asset outcome: ' + escReport(item.assetImpact.condition) + '</div>' : '') +
+                    '</div>'
+                ).join('') : '<p style="font-size:12px;color:#94a3b8;line-height:1.6;">No security incidents are recorded in this country\'s Home Ministry ledger yet. No GDP, mine-output, shipment, or synthetic incident history is shown here.</p>';
+                html += '<div style="background:rgba(2,11,20,.86);border:1px solid rgba(0,229,255,.2);border-radius:12px;padding:16px;margin-top:14px;color:#e2e8f0;font-family:\'Share Tech Mono\',monospace;">' +
+                    '<div style="color:#00e5ff;font-size:13px;font-weight:bold;margin-bottom:5px;">RECORDED SECURITY INCIDENT HISTORY</div>' +
+                    '<p style="font-size:11px;color:#94a3b8;line-height:1.5;">Latest entries from this country\'s retained Home Ministry incident ledger. Only events actually recorded by the security runtime are included.</p>' +
+                    incidentHtml + '</div>';
+            }
         }
 
         if (activeTab === 'personnel') {
@@ -1692,21 +1763,39 @@ window.OmegaCabinetUI = {
             `;
         }
 
-        // Historical Multi-Line Trend Chart (Recharts) in Ministry Dashboard View
-        html += `
-            <div id="recharts-trend-container" style="background:rgba(2,11,20,0.9); border:1px solid rgba(0,229,255,0.3); border-radius:12px; padding:16px; margin-top:16px;">
-                <div style="font-family:'Share Tech Mono',monospace; color:#00e5ff; font-size:13px; font-weight:bold; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between;">
-                    <span>📈 OBSERVED SIMULATION HISTORY</span>
-                    <span style="font-size:10px; color:#ffd700; background:rgba(255,215,0,0.15); border:1px solid rgba(255,215,0,0.4); padding:2px 8px; border-radius:10px;">RECORDED TURNS ONLY</span>
+        if (ministryId === 'interior_security' && activeTab === 'security_operations') {
+            html += '<div id="home-ministry-command-root"></div>';
+        }
+
+        // Keep recorded history inside Reports & Metrics instead of repeating it on every tab.
+        if (activeTab === 'reports' && ministryId !== 'interior_security') {
+            html += `
+                <div id="recharts-trend-container" style="background:rgba(2,11,20,0.9); border:1px solid rgba(0,229,255,0.3); border-radius:12px; padding:16px; margin-top:16px;">
+                    <div style="font-family:'Share Tech Mono',monospace; color:#00e5ff; font-size:13px; font-weight:bold; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between;">
+                        <span>${ministryId === 'interior_security' ? '📈 OBSERVED SECURITY OPERATIONS HISTORY' : '📈 OBSERVED SIMULATION HISTORY'}</span>
+                        <span style="font-size:10px; color:#ffd700; background:rgba(255,215,0,0.15); border:1px solid rgba(255,215,0,0.4); padding:2px 8px; border-radius:10px;">RECORDED TURNS ONLY</span>
+                    </div>
+                    <div id="recharts-gdp-mil-chart" style="width:100%; height:260px;"></div>
                 </div>
-                <div id="recharts-gdp-mil-chart" style="width:100%; height:260px;"></div>
-            </div>
-        `;
+            `;
+        }
 
         contentArea.innerHTML = html;
-        setTimeout(() => {
-            this.renderRechartsChart('recharts-gdp-mil-chart', this.activeCountry, ministryId);
-        }, 30);
+        if (ministryId === 'interior_security' && activeTab === 'security_operations') {
+            const target = document.getElementById('home-ministry-command-root');
+            const homeUI = window.OMEGA_UI_ADAPTER;
+            if (target && homeUI && typeof homeUI.renderHomeMinistryInto === 'function') {
+                homeUI.renderHomeMinistryInto(target);
+            } else if (target) {
+                target.innerHTML = '<div style="margin:12px;padding:16px;border:1px solid rgba(248,113,113,.45);border-radius:10px;color:#fecaca;background:rgba(69,10,10,.25);"><strong>HOME MINISTRY CONTROL UNAVAILABLE</strong><p>The Home Ministry UI adapter did not initialize. No simulated vehicle controls were substituted.</p></div>';
+            }
+            return;
+        }
+        if (activeTab === 'reports') {
+            setTimeout(() => {
+                this.renderRechartsChart('recharts-gdp-mil-chart', this.activeCountry, ministryId);
+            }, 30);
+        }
     },
 
     renderRechartsChart(containerId, activeCountry, ministryId = 'economy') {

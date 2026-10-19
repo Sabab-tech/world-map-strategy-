@@ -5,6 +5,7 @@ import vm from 'node:vm';
 
 const engine = readFileSync(new URL('../omega_home_ministry_engine_v1.js', import.meta.url), 'utf8');
 const ui = readFileSync(new URL('../omega_home_ministry_ui_v1.js', import.meta.url), 'utf8');
+const ministryEngine = readFileSync(new URL('../ministry_engine.js', import.meta.url), 'utf8');
 
 
 function makeUiHarness(vehicleInventory = null, recordedAssets = null) {
@@ -301,4 +302,54 @@ test('responsive UI keeps the guard and vehicle forms usable on narrow screens',
   assert.match(ui, /home-police-deployment-list\{grid-template-columns:1fr\}/);
   assert.match(ui, /touch-action:manipulation/);
   assert.match(ui, /overflow:visible/);
+});
+
+
+test('hosted Home Ministry dashboard mounts real controls and returns to its own dashboard', () => {
+  const harness = makeUiHarness({ 1: 2 });
+  const host = harness.nodes.get('home-ministry-host') || (() => {
+    const value = { id: 'home-ministry-host', innerHTML: '', isConnected: true };
+    harness.nodes.set('home-ministry-host', value);
+    return value;
+  })();
+
+  assert.equal(harness.ui.renderHomeMinistryInto(host), true);
+  assert.match(host.innerHTML, /MINISTRY OF HOME AFFAIRS/);
+  assert.match(host.innerHTML, /Vehicles owned/);
+  assert.match(host.innerHTML, /home-police-dashboard-hangar/);
+  assert.match(host.innerHTML, /home-police-dashboard-fleet/);
+  assert.match(host.innerHTML, /home-police-dashboard-guard/);
+
+  harness.nodes.get('home-police-dashboard-command').onclick();
+  assert.match(host.innerHTML, /NATIONAL POLICE COMMAND/);
+  harness.nodes.get('btn-back-interior').onclick();
+  assert.match(host.innerHTML, /MINISTRY OF HOME AFFAIRS/);
+  assert.match(host.innerHTML, /home-police-dashboard-incidents/);
+
+  harness.nodes.get('home-police-dashboard-hangar').onclick();
+  assert.match(host.innerHTML, /POLICE VEHICLE HANGAR/);
+  assert.match(host.innerHTML, /CONFIRM VEHICLE ORDER|PROCUREMENT LOCK/);
+});
+
+test('ministry dashboard source parses after the Home Affairs report changes', () => {
+  assert.doesNotThrow(() => new vm.Script(ministryEngine, { filename: 'ministry_engine.js' }));
+});
+
+test('Home Affairs has a separate security operations route and embeds the real Home Ministry runtime', () => {
+  assert.match(ministryEngine, /security_operations/);
+  assert.match(ministryEngine, /home-ministry-command-root/);
+  assert.match(ministryEngine, /renderHomeMinistryInto\(target\)/);
+  assert.match(ministryEngine, /Police Command & Fleet/);
+});
+
+test('Home Affairs Reports & Metrics no longer displays mine and shipment diagnostics as its domain report', () => {
+  assert.match(ministryEngine, /HOME MINISTRY SECURITY OPERATIONS REPORT/);
+  assert.match(ministryEngine, /Owned police vehicles/);
+  assert.match(ministryEngine, /Vehicles needing service \/ repair/);
+  assert.match(ministryEngine, /Active guard deployments/);
+  assert.match(ministryEngine, /RECORDED SECURITY INCIDENT HISTORY/);
+  assert.match(ministryEngine, /ministryId !== 'interior_security'/);
+  assert.match(ministryEngine, /const rows = isHomeMinistryReport \? \[/);
+  assert.match(ministryEngine, /\['Mine \/ site records', activity && activity\.mineRecords\]/);
+  assert.match(ministryEngine, /isHomeMinistryReport \? 'HOME MINISTRY SECURITY OPERATIONS REPORT' : 'LIVE SOVEREIGN ENGINE REPORT'/);
 });
