@@ -372,3 +372,60 @@ test('a real simulation day posts recurring Police Rulebook operating expenses t
   globalThis.Game.state.interior.BD.police = saved;
   globalThis.Game.state.simulation.simulationTimeMs = savedTime;
 });
+
+
+test('police case actions persist, charge Finance, enforce due process and close a cleared case', () => {
+  engine.bootstrapCountryPoliceBaselines(baselineData.countries);
+  const beforeCash = financeModel.treasuryBalanceUsd;
+  const quote = engine.estimatePoliceCaseFilingCost('missingPerson', 'high', 'BD');
+  assert.equal(quote.ok, true, JSON.stringify(quote));
+  assert.ok(quote.oneTimeFilingCostUsd > 0);
+  assert.ok(quote.firstActionDeadlineHours <= 0.5, 'high-risk missing-person responses use the tighter emergency deadline');
+  const filed = engine.filePoliceCase('missingPerson', 'high', 'Person reported missing; contact family and verify last-known location.', 'BD');
+  assert.equal(filed.ok, true, JSON.stringify(filed));
+  assert.ok(financeModel.treasuryBalanceUsd < beforeCash);
+  const id = filed.caseRecord.id;
+  assert.ok(engine.getPoliceCases('BD').some(row => row.id === id));
+
+  for (const [action, decision] of [
+    ['START_RESPONSE', undefined],
+    ['REQUEST_WARRANT', undefined],
+    ['DECIDE_WARRANT', 'APPROVED'],
+    ['ARREST', undefined],
+    ['REVIEW_ARREST', undefined],
+    ['FILE_EVIDENCE', undefined],
+    ['CHARGE', undefined],
+    ['CLOSE_CASE', undefined]
+  ]) {
+    const result = engine.recordPoliceCaseAction(id, action, 'BD', decision);
+    assert.equal(result.ok, true, action + ': ' + JSON.stringify(result));
+  }
+  const completed = engine.getPoliceCases('BD').find(row => row.id === id);
+  assert.equal(completed.status, 'CLOSED');
+  assert.ok(completed.firstResponseAtMs !== null);
+  assert.ok(completed.warrantDecisionAtMs !== null);
+  assert.ok(completed.arrestReviewedAtMs !== null);
+  assert.ok(completed.evidenceFiledAtMs !== null);
+  assert.ok(completed.chargedAtMs !== null);
+  assert.ok(financeModel.ledger.some(row => row.description === 'OMEGA_HOME_BUDGET:operations|POLICE_CASE_START_RESPONSE'));
+});
+
+test('missed case response deadlines persist an overdue flag and lower satisfaction, worsening crime projections', () => {
+  engine.bootstrapCountryPoliceBaselines(baselineData.countries);
+  const raw = globalThis.Game.state.interior.BD.police;
+  const saved = JSON.parse(JSON.stringify(raw));
+  const savedTime = globalThis.Game.state.simulation.simulationTimeMs;
+  const filed = engine.filePoliceCase('theft', 'critical', 'Critical-priority test report for deadline processing.', 'BD');
+  assert.equal(filed.ok, true, JSON.stringify(filed));
+  const caseId = filed.caseRecord.id;
+  const before = engine.getCrimeSnapshot('BD');
+  globalThis.Game.state.simulation.simulationTimeMs = filed.caseRecord.reportedAtMs + 3_600_000;
+  engine.processTurn({ detail: { countryId: 'BD' } });
+  const late = engine.getPoliceCases('BD').find(row => row.id === caseId);
+  assert.equal(late.responseDeadlineMissed, true);
+  const after = engine.getCrimeSnapshot('BD');
+  assert.ok(after.publicSatisfaction < before.publicSatisfaction);
+  assert.ok(after.projectedCrimeIndex > before.projectedCrimeIndex);
+  globalThis.Game.state.interior.BD.police = saved;
+  globalThis.Game.state.simulation.simulationTimeMs = savedTime;
+});
