@@ -228,3 +228,21 @@ test('delayed bank transfer reserves money until its due turn and releases the e
   assert.equal(r.bank.getReservedTreasuryUsd('BGD'), 0);
   assert.equal(r.bank.getState().ledger.find(x => x.transactionId === 'DELAYED-PAYMENT-1').status, 'SETTLED');
 });
+
+test('a cancelled trade settlement ID cannot be reused for fresh debits', async () => {
+  const r = makeRuntime();
+  await r.bank.init();
+  const input = {
+    authorization: 'OMEGA_GLOBAL_TRADE', settlementId: 'FINALIZED-TRADE-1',
+    requestId: 'REQ-FINALIZED-1', buyerCountryId: 'BGD', sellerCountryId: 'NGA',
+    resourceId: 'iron_ore', buyerCurrency: 'BDT', sellerCurrency: 'NGN',
+    buyerTotal: 10000, sellerTotal: 100000, paymentDelayTurns: 0, importTariffPct: 2.5
+  };
+  const quote = r.bank.prepareTradeSettlement(input);
+  assert.equal(quote.ok, true);
+  assert.equal(r.bank.cancelTradeSettlement('FINALIZED-TRADE-1', 'TEST_ROLLBACK').ok, true);
+  const retry = r.bank.prepareTradeSettlement(input);
+  assert.equal(retry.ok, false);
+  assert.equal(retry.code, 'SETTLEMENT_ID_FINALIZED');
+  assert.equal(r.bank.getState().ledger.filter(x => x.transactionId === 'FINALIZED-TRADE-1' && x.status === 'SETTLED').length, 0);
+});
