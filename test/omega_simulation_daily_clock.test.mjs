@@ -181,10 +181,14 @@ test('index, finance, bank and offline shell use the daily lifecycle assets', ()
   assert.match(serviceWorker, /omega_game_lifecycle_runtime_v1\.css/);
   assert.match(serviceWorker, /resource_industrial_catalog_v1\.json/);
   assert.match(core, /registerTurnParticipant\(id,handler,options=\{\}\)/);
+  assert.match(core, /registerTurnFinalizer\(id,handler,options=\{\}\)/);
+  assert.match(core, /await this\.runTurnFinalizers\(/);
   assert.match(core, /await this\.runTurnParticipants\(event\)/);
   assert.match(core, /__OMEGA_SIMULATION_PIPELINE_ACTIVE__/);
   assert.match(core, /TURN_PARTICIPANT_FAILED/);
   assert.match(lifecycle, /priority: Number\.MAX_SAFE_INTEGER/);
+  assert.match(lifecycle, /registerTurnFinalizer\('omega\.game-lifecycle\.autosave'/);
+  assert.match(lifecycle, /LOCAL_STORAGE_AND_INDEXEDDB_SAVE_FAILED/);
   assert.doesNotMatch(lifecycle, /Math\.floor\(turn\) % 3/);
   assert.match(lifecycle, /function saveNow\(options\)/);
   assert.match(lifecycle, /function onPageExit\(\)/);
@@ -213,7 +217,7 @@ test('finance, FX, macro and ministry time fallbacks treat one turn as one day',
   assert.match(fx, /Math\.floor\(turnNumber\) % 3 === 0/);
   assert.match(macro, /simulationTurnDurationMs\|\|86400000/);
   assert.doesNotMatch(macro, /315864000000/);
-  assert.match(home, /const step=num\(sim&&sim\.clock&&sim\.stepDurationMs\)\|\|DAY_MS/);
+  assert.match(home, /DAY_MS = 86400000/);
   assert.match(military, /simTurn\(\) \* 86400000/);
   assert.match(industrial, /clock\?\.stepDurationMs/);
   assert.match(industrial, /milliseconds\/86400000/);
