@@ -230,3 +230,19 @@ test('interactive rulebook settings persist to the selected country and affect m
   assert.equal(restored.ok, true, JSON.stringify(restored));
   assert.equal(engine.getPoliceRulebook('BD').bodyCameraMandatory, true);
 });
+
+
+test('fuel reserve is a country resource and shortages worsen projected crime without inventing a purchase', () => {
+  engine.bootstrapCountryPoliceBaselines(baselineData.countries);
+  const raw = globalThis.Game.state.interior.BD.police;
+  const originalReserve = raw.fuelSupplyDays;
+  const before = engine.getCrimeSnapshot('BD');
+  assert.ok(before.fuel.estimatedDailyFuelCostUsd > 0);
+  assert.equal(before.fuel.status, 'READY');
+  raw.fuelSupplyDays = 0;
+  const shortage = engine.getCrimeSnapshot('BD');
+  assert.equal(shortage.fuel.status, 'CRITICAL');
+  assert.equal(shortage.fuel.reserveDays, 0);
+  assert.ok(shortage.projectedCrimeIndex > before.projectedCrimeIndex);
+  raw.fuelSupplyDays = originalReserve;
+});
