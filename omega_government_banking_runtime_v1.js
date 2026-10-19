@@ -1149,7 +1149,7 @@
       '<option value="' + esc(profileId(p)) + '"' + (profileId(p) === profileId(selected || {}) ? ' selected' : '') + '>' + esc(p.name + ' (' + profileId(p) + ')') + '</option>'
     ).join('');
     return '<section class="ofx-section" data-gbank-panel>' +
-      '<div class="ofx-heading"><div><h4>Government Banking · Account &amp; Payment Rail</h4><p>Each country's balance is a USD-valued portfolio of currency accounts. Treasury remains denominated in USD; cross-border payments settle through USD and use explicit rates, limits and audit entries.</p></div></div>' +
+      '<div class="ofx-heading"><div><h4>Government Banking · Account &amp; Payment Rail</h4><p>Each country balance is a USD-valued portfolio of currency accounts. Treasury remains denominated in USD; cross-border payments settle through USD and use explicit rates, limits and audit entries.</p></div></div>' +
       '<div class="ofx-kpis">' +
       '<article><span>Player Treasury</span><strong>' + esc(money(accounts.treasuryBalanceUsd)) + '</strong><small>' + esc(accounts.integrity) + ' · holds ' + esc(money(accounts.heldTreasuryUsd)) + '</small></article>' +
       '<article><span>Portfolio valuation</span><strong>' + esc(money(accounts.accountPortfolioUsd)) + '</strong><small>Valued using OMEGA simulation FX rates</small></article>' +
@@ -1166,7 +1166,7 @@
       '<label>Purpose<input name="reference" type="text" maxlength="160" placeholder="Government import / transfer" required></label>' +
       '<button type="submit">Submit bank transfer</button></form>' +
       '<div class="ofx-result" data-gbank-transfer-result role="status">Currency accounts are not automatically filled with invented local-currency cash. Convert from the funded USD account first.</div></section>' +
-      '<section class="ofx-section"><h4>Player country's banking &amp; trade controls</h4>' +
+      '<section class="ofx-section"><h4>Player country banking &amp; trade controls</h4>' +
       '<form class="ofx-form" data-gbank-action="policy">' +
       '<label>Import tariff (%)<input name="importTariffPct" type="number" min="0" max="' + Number(rules.maximumImportTariffPct || 80) + '" step="0.1" value="' + esc(String(policy.importTariffPct)) + '" required></label>' +
       '<label>Default payment delay (turns)<input name="defaultPaymentDelayTurns" type="number" min="0" max="' + Number(rules.maximumTransferDelayTurns || 365) + '" step="1" value="' + esc(String(policy.defaultPaymentDelayTurns)) + '" required></label>' +
