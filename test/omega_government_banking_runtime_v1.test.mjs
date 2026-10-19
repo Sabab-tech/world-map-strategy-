@@ -220,5 +220,11 @@ test('delayed bank transfer reserves money until its due turn and releases the e
   assert.equal(payment.ok, true);
   assert.equal(payment.pending, true);
   assert.equal(r.bank.getReservedTreasuryUsd('BGD'), 1);
-  assert.equal(r.bank.getCountryAccount('BGD').availableTreasuryUsd, 999);
+  assert.ok(Math.abs(r.bank.getCountryAccount('BGD').availableTreasuryUsd - 998.85) < 1e-7);
+  r.state.simulation.turn = payment.dueTurn;
+  const settled = r.bank.processPendingTransfers();
+  assert.equal(settled.length, 1);
+  assert.equal(settled[0].ok, true);
+  assert.equal(r.bank.getReservedTreasuryUsd('BGD'), 0);
+  assert.equal(r.bank.getState().ledger.find(x => x.transactionId === 'DELAYED-PAYMENT-1').status, 'SETTLED');
 });
