@@ -324,16 +324,22 @@
     }
     saveNow.lastLocalSaved = localSaved;
     var backupPromise = persistBackup(snapshot).then(function () {
-      if (!localSaved) setSaveStatus('DEVICE BACKUP SAVED · DAY ' + (turn + 1));
+      if (!localSaved) {
+        lastSavedSerialized = serialized;
+        setSaveStatus('DEVICE BACKUP SAVED · DAY ' + (turn + 1));
+      }
       return true;
     }).catch(function () {
-      if (!localSaved) setSaveStatus('SAVE FAILED');
+      if (!localSaved) {
+        lastSavedSerialized = '';
+        setSaveStatus('SAVE FAILED');
+      }
       return false;
     });
 
     lastSavedTurn = turn;
     lastSavedAt = Date.now();
-    if (localSaved || g.indexedDB) lastSavedSerialized = serialized;
+    if (localSaved) lastSavedSerialized = serialized;
     if (localSaved) setSaveStatus('AUTO-SAVED · DAY ' + (turn + 1));
     else setSaveStatus('SAVING DEVICE BACKUP…');
     // Exposed promise lets diagnostics and tests observe IndexedDB completion when available.
