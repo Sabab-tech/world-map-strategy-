@@ -39,3 +39,6 @@ jobs:
         run: node --check omega_macro_stability_runtime_v1.js
       - name: Macro stability raw-data and runtime tests
         run: node --test test/omega_macro_stability_runtime_v1.test.mjs
+
+      - name: Offline Finance and Macro cache regression
+        run: node --check test/offline_hybrid_map.test.mjs && node --test test/offline_hybrid_map.test.mjs
