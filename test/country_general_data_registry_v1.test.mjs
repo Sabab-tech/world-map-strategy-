@@ -7,6 +7,8 @@ const registry = readJson('country_general_data_registry_v1.json');
 const roster = readJson('countries.json');
 const rawFinancial = readJson('economy_raw_financial_data_v2.json');
 const profilesSource = readJson('economy_global_profiles_v1.json').countries;
+const relationSource = readJson('relation_generation_engine.json').RELATION_GENERATION_ENGINE;
+const resourceSiteSource = readJson('resource_site_reserve_simulation_v1.json');
 const rawRows = rawFinancial.countries || [];
 const schema = registry.metadata.recordSchema;
 const rawFields = registry.metadata.rawFinancialFieldNames;
@@ -126,6 +128,65 @@ test('missing values stay unknown, not zero, and resource sub-schema is consiste
     assert.equal(row.publicSafety[3].length, schema.crimeFields.length);
     assert.equal(row.publicSafety[4].length, schema.crimeFields.length);
   }
+});
+
+test('every canonical identity has a source-aware strategic profile inside the existing registry', () => {
+  const profileFields = schema.strategicProfileFields;
+  assert.ok(Array.isArray(profileFields) && profileFields.length >= 10);
+  assert.deepEqual(profileFields, [
+    'profileVersion', 'sovereigntyScope', 'executiveSummary', 'archetype', 'archetypeSource',
+    'diplomacy', 'economy', 'military', 'politics', 'dependencies',
+    'overallStrengths', 'overallWeaknesses', 'playerAdvantages', 'playerChallenges',
+    'recommendedStrategy', 'dataQuality'
+  ]);
+  assert.equal(registry.metadata.localCoverage.strategicProfiles, roster.length);
+  assert.equal(registry.metadata.localCoverage.relationProfileRecords,
+    Object.keys(relationSource.srie_v2_asymmetrical_salience || {}).length);
+  assert.equal(registry.metadata.localCoverage.commercialGameplayResourceSiteRecords,
+    (resourceSiteSource.records || []).filter((site) => site.commercialExtraction === true).length);
+
+  const statusCounts = {
+    COUNTRY_SPECIFIC_PARAMETERS: 0,
+    GENERIC_DEFAULT_PARAMETERS: 0,
+    LEGACY_CONTEXT_ONLY: 0,
+    NO_LEGACY_RELATION_PROFILE: 0
+  };
+  for (const row of registry.countries) {
+    assert.equal(row.strategicProfile.length, profileFields.length);
+    const profile = Object.fromEntries(profileFields.map((field, index) => [field, row.strategicProfile[index]]));
+    assert.equal(profile.profileVersion, 'OMEGA_COUNTRY_STRATEGIC_PROFILE_V1');
+    assert.ok(typeof profile.executiveSummary === 'string' && profile.executiveSummary.length > 20);
+    assert.ok(typeof profile.archetype === 'string' && profile.archetype.length > 2);
+    assert.ok(Array.isArray(profile.overallStrengths) && profile.overallStrengths.length > 0);
+    assert.ok(Array.isArray(profile.overallWeaknesses) && profile.overallWeaknesses.length > 0);
+    assert.ok(Array.isArray(profile.playerAdvantages) && profile.playerAdvantages.length > 0);
+    assert.ok(Array.isArray(profile.playerChallenges) && profile.playerChallenges.length > 0);
+    assert.ok(typeof profile.recommendedStrategy === 'string' && profile.recommendedStrategy.length > 20);
+    assert.ok(profile.diplomacy && profile.economy && profile.military && profile.politics && profile.dependencies);
+    assert.equal(profile.military.capabilityStatus, 'OPERATIONAL_CAPABILITY_NOT_MEASURED_BY_GENERAL_REGISTRY');
+    assert.equal(profile.politics.politicalSystemClassification, 'NOT_CLASSIFIED_FROM_AVAILABLE_DATA');
+    assert.ok(profile.dataQuality.evidenceMetricYears);
+    assert.ok(profile.dataQuality.evidenceMetrics);
+    assert.ok(Array.isArray(profile.dataQuality.sourceFiles));
+    assert.equal(profile.economy.gameplayResourceAssets.authority, 'SCENARIO_SIMULATION_DATA');
+    assert.equal(profile.economy.gameplayResourceAssets.reserveValuesUsedAsNationalEconomicFacts, false);
+    assert.ok(Object.hasOwn(statusCounts, profile.dataQuality.relationProfileStatus));
+    statusCounts[profile.dataQuality.relationProfileStatus] += 1;
+    if (profile.dataQuality.relationProfileStatus === 'GENERIC_DEFAULT_PARAMETERS') {
+      assert.deepEqual(profile.diplomacy.parameters, {});
+      assert.equal(profile.diplomacy.strategicDriver, null);
+    }
+    for (const key of ['economicScalePercentile', 'governanceQualityPercentile', 'defenseFinancialBasePercentile']) {
+      const value = profile.economy.scores[key] ?? profile.politics.governanceQualityPercentile ??
+        profile.military.financialBasePercentile;
+      assert.equal(value === null || (Number.isFinite(value) && value >= 0 && value <= 100), true);
+    }
+  }
+  assert.equal(Object.values(statusCounts).reduce((sum, value) => sum + value, 0), roster.length);
+  assert.equal(statusCounts.GENERIC_DEFAULT_PARAMETERS,
+    registry.metadata.localCoverage.genericDefaultRelationProfiles);
+  assert.equal(statusCounts.COUNTRY_SPECIFIC_PARAMETERS,
+    registry.metadata.localCoverage.countrySpecificRelationParameterProfiles);
 });
 
 test('discipline score is not invented or confused with official governance indicators', () => {
