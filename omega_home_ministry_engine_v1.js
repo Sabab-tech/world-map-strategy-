@@ -409,41 +409,13 @@
     const cid=normalizeCountry(country||currentCountry()),state=getState(cid),qty=Math.floor(num(quantity)||0);
     if(qty<1||qty>100000)return{ok:false,code:'RECRUITMENT_QUANTITY_INVALID'};
     const before=getCrimeSnapshot(cid,state);if(!before.available)return{ok:false,code:before.reason||'POLICE_BASELINE_NOT_LOADED'};
-    const next=clone(state);next.policeCount+=qty;next.policeEfficiency=clamp(next.policeEfficiency+Math.min(5,qty/100),0,100);
+    const next=Object.assign({},state,{policeCount:state.policeCount+qty,policeEfficiency:clamp(state.policeEfficiency+Math.min(5,qty/100),0,100)});
     const after=getCrimeSnapshot(cid,next);
     const dailySalary=Math.max(0,num(state.dailySalaryPerOfficerUsd)||POLICE_SALARY_PER_DAY),hiringFee=Math.max(0,num(state.recruitmentFeePerOfficerUsd)||POLICE_RECRUITMENT_COST);
     return{ok:true,quantity:qty,upfrontCostUsd:qty*hiringFee,addedDailyPayrollUsd:qty*dailySalary,
       baselineAnnualIncidents:before.baselineAnnualIncidentEstimate,projectedAnnualIncidentsBefore:before.projectedAnnualIncidentEstimate,
       projectedAnnualIncidentsAfter:after.projectedAnnualIncidentEstimate,additionalIncidentsAvoidedPerYear:(before.projectedAnnualIncidentEstimate===null||after.projectedAnnualIncidentEstimate===null)?null:before.projectedAnnualIncidentEstimate-after.projectedAnnualIncidentEstimate,
       before:before,after:after};
-  }
-  function bootstrapCountryPoliceBaselines(rows){
-    const loaded=loadCountryPoliceBaselines(rows);
-    if(!loaded.ok)return loaded;
-    const root=rootState();if(!root)return{ok:false,code:'AUTHORITATIVE_GAME_STATE_UNAVAILABLE',countryCount:loaded.countryCount};
-    if(!root.interior||typeof root.interior!=='object')root.interior={};
-    let seeded=0,existing=0,playerCountry=currentCountry();
-    rows.forEach(function(row){
-      if(!row||!row.code)return;
-      const cid=normalizeCountry(row.code),countryState=root.interior[cid]&&root.interior[cid].police;
-      const raw=countryState&&typeof countryState==='object'?countryState:null;
-      const state=mergeState(raw||baseState()),result=applyBaselineToPoliceState(state,row,raw);
-      if(!root.interior[cid]||typeof root.interior[cid]!=='object')root.interior[cid]={};
-      root.interior[cid].police=clone(result.state);
-      if(result.pristine)seeded++;else existing++;
-    });
-    root.omegaHomePoliceBaselineVersion=1;
-    root.omegaHomePoliceBaselineCountryCount=loaded.countryCount;
-    root.omegaHomePoliceBaselineUpdatedAt=new Date().toISOString();
-    const playerBaseline=findPoliceBaseline(playerCountry);
-    if(playerBaseline){
-      const cid=normalizeCountry(playerBaseline.code);
-      getState(cid);
-    }
-    const diagnostics=Object.assign({},loaded,{ok:true,seededCountries:seeded,existingCountryStatesPreserved:existing,
-      baselineVersion:1,activeCountry:playerCountry});
-    emit('OMEGA_HOME_POLICE_WORLD_BASELINE_READY',diagnostics);
-    return diagnostics;
   }
   function financeApi(){return g.OmegaFinanceMinistry||g.Omega&&g.Omega.FinanceMinistry||null;}
   function homeBudgetCategory(action){
