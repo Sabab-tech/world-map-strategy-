@@ -343,6 +343,8 @@
       : 0;
     if (decision !== 'ELIGIBLE' && decision !== 'CONDITIONAL') maxLoanUsd = 0;
     if (program === 'NONE' || criticalDataMissing || confidence < 60) maxLoanUsd = 0;
+    const facility = getFacilitySnapshot();
+    maxLoanUsd = Math.min(maxLoanUsd, facility.availableCapacityUsd);
     maxLoanUsd = round(Math.max(0, maxLoanUsd), 2);
     const riskBand = score === null ? 'UNRATED' : score >= 80 ? 'A / LOW RISK'
       : score >= 70 ? 'B / MODERATE-LOW' : score >= 55 ? 'C / MODERATE' : score >= 35 ? 'D / HIGH' : 'E / VERY HIGH';
@@ -351,6 +353,8 @@
       score: score, confidencePct: confidence, components: components,
       decision: decision, riskBand: riskBand, program: program,
       maxLoanUsd: maxLoanUsd, debtCapacityUsd: round(Math.max(0, debtCapUsd), 2),
+      facilityCapacityUsd: facility.capacityUsd, facilityExposureUsd: facility.outstandingPrincipalUsd,
+      facilityAvailableUsd: facility.availableCapacityUsd,
       debtToGdpPct: round(facts.debtToGdpPct, 2), gdpUsd: round(facts.gdpUsd, 2),
       debtUsd: round(facts.debtUsd, 2), gdpGrowthPct: round(facts.gdpGrowthPct, 2),
       inflationPct: round(facts.inflationPct, 2), reservesUsd: round(facts.reservesUsd, 2),
@@ -465,6 +469,27 @@
   function getOutstandingPrincipal(value) {
     return round(getLoanList(value).filter(loan => loan.status !== 'REPAID')
       .reduce((sum, loan) => sum + Math.max(0, finite(loan.outstandingPrincipalUsd) || 0), 0), 2) || 0;
+  }
+  function getFacilitySnapshot() {
+    const bank = store(true);
+    let exposure = 0, activeContracts = 0;
+    Object.keys(bank.loansByCountry || {}).forEach(code => {
+      const loans = bank.loansByCountry[code];
+      if (!Array.isArray(loans)) return;
+      loans.forEach(loan => {
+        if (!loan || loan.status === 'REPAID') return;
+        exposure += Math.max(0, finite(loan.outstandingPrincipalUsd) || 0);
+        activeContracts += 1;
+      });
+    });
+    const capacity = Math.max(0, finite(bank.facilityCapacityUsd) ?? DEFAULT_FACILITY_CAPACITY_USD);
+    return {
+      capacityUsd: round(capacity, 2) || 0,
+      outstandingPrincipalUsd: round(exposure, 2) || 0,
+      availableCapacityUsd: round(Math.max(0, capacity - exposure), 2) || 0,
+      activeContracts: activeContracts,
+      model: 'CONFIGURABLE_SIMULATED_REVOLVING_CAPACITY'
+    };
   }
   function requestLoan(input) {
     input = isObject(input) ? input : {};
