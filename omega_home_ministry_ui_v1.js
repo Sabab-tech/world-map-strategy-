@@ -18,7 +18,14 @@
     return String(value == null ? '' : value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
   function money(e, value) {
+    var formatter=g.OmegaNumberFormat;
+    if(formatter&&typeof formatter.money==='function')return formatter.money(value,{unavailable:'Unavailable'});
     return e && typeof e.formatMoney === 'function' ? e.formatMoney(value) : 'Unavailable';
+  }
+  function countLabel(value) {
+    var n=Number(value),formatter=g.OmegaNumberFormat;
+    if(!Number.isFinite(n))return '0';
+    return formatter&&typeof formatter.compact==='function'?formatter.compact(n):Math.round(n).toLocaleString('en-US');
   }
   function formatDuration(ms) {
     const total = Math.max(0, Math.ceil((Number(ms) || 0) / 1000));
@@ -287,15 +294,15 @@
       '<div class="home-police-shell">' +
         '<header class="home-police-head"><div class="home-police-orb">🏛️</div><h1 class="home-police-title">MINISTRY OF HOME AFFAIRS</h1><p class="home-police-subtitle">National public safety, police fleet readiness, critical-asset protection and internal security. All controls use the authoritative Home Ministry runtime.</p></header>' +
         '<div class="home-police-kpis">' +
-          '<div class="home-police-kpi"><strong>' + Number(s.policeCount || 0).toLocaleString() + '</strong><span>Active personnel</span></div>' +
+          '<div class="home-police-kpi"><strong>' + countLabel(s.policeCount || 0) + '</strong><span>Active personnel</span></div>' +
           '<div class="home-police-kpi"><strong>' + Math.round(Number(s.policeEfficiency) || 0) + '%</strong><span>Operational efficiency</span></div>' +
           '<div class="home-police-kpi"><strong>' + Math.round(Number(s.policeTrust) || 0) + '%</strong><span>Public trust</span></div>' +
-          '<div class="home-police-kpi"><strong>' + totalOwned.toLocaleString() + '</strong><span>Vehicles owned</span></div>' +
-          '<div class="home-police-kpi"><strong>' + available.toLocaleString() + '</strong><span>Vehicles ready</span></div>' +
-          '<div class="home-police-kpi"><strong>' + deployed.toLocaleString() + '</strong><span>Vehicles deployed</span></div>' +
-          '<div class="home-police-kpi"><strong>' + maintenance.toLocaleString() + '</strong><span>Service / repair due</span></div>' +
-          '<div class="home-police-kpi"><strong>' + deployments.toLocaleString() + '</strong><span>Active guard posts</span></div>' +
-          '<div class="home-police-kpi"><strong>' + incidents.toLocaleString() + '</strong><span>Recorded incidents</span></div>' +
+          '<div class="home-police-kpi"><strong>' + countLabel(totalOwned) + '</strong><span>Vehicles owned</span></div>' +
+          '<div class="home-police-kpi"><strong>' + countLabel(available) + '</strong><span>Vehicles ready</span></div>' +
+          '<div class="home-police-kpi"><strong>' + countLabel(deployed) + '</strong><span>Vehicles deployed</span></div>' +
+          '<div class="home-police-kpi"><strong>' + countLabel(maintenance) + '</strong><span>Service / repair due</span></div>' +
+          '<div class="home-police-kpi"><strong>' + countLabel(deployments) + '</strong><span>Active guard posts</span></div>' +
+          '<div class="home-police-kpi"><strong>' + countLabel(incidents) + '</strong><span>Recorded incidents</span></div>' +
         '</div>' +
         '<div class="home-police-alert">' +
           (treasury && treasury.available ? 'Authoritative treasury balance: <strong>' + esc(money(e, treasury.balance)) + '</strong>. Daily police payroll: <strong>' + esc(money(e, dailyPayroll)) + '</strong>; scheduled security operating cost: <strong>' + esc(money(e, dailyOperatingCost)) + '</strong>.' : 'Treasury balance is not recorded. Procurement, repair and payroll debits remain blocked until the game exposes an authoritative country balance. No funds are invented.') +
@@ -331,11 +338,11 @@
       '<div class="home-police-shell">' +
         '<header class="home-police-head"><div class="home-police-orb">🚔</div><h1 class="home-police-title">NATIONAL POLICE COMMAND</h1><p class="home-police-subtitle">Home Ministry · Public Safety, Crime Prevention & Critical-Asset Protection</p></header>' +
         '<div class="home-police-kpis">' +
-          '<div class="home-police-kpi"><strong>' + Number(s.policeCount).toLocaleString() + '</strong><span>Active personnel</span></div>' +
+          '<div class="home-police-kpi"><strong>' + countLabel(s.policeCount) + '</strong><span>Active personnel</span></div>' +
           '<div class="home-police-kpi"><strong>' + Math.round(s.policeEfficiency) + '%</strong><span>Operational efficiency</span></div>' +
           '<div class="home-police-kpi"><strong>' + Math.round(s.policeTrust) + '%</strong><span>Public trust</span></div>' +
           '<div class="home-police-kpi"><strong>' + money(e, e.getDailyOperatingCost()) + '</strong><span>Daily security operating cost</span></div>' +
-          '<div class="home-police-kpi"><strong>' + Number(s.specialAgents).toLocaleString() + '</strong><span>Intelligence agents</span></div>' +
+          '<div class="home-police-kpi"><strong>' + countLabel(s.specialAgents) + '</strong><span>Intelligence agents</span></div>' +
           '<div class="home-police-kpi"><strong>' + Math.round(s.sabotageRisk) + '%</strong><span>Threat exposure</span></div>' +
         '</div>' +
         '<div class="home-police-alert">' + (t.available ? 'Verified ' + (t.source === 'FINANCE_AVAILABLE' ? 'Finance ledger' : 'economy treasury field') + ' balance: <strong>' + money(e, t.balance) + '</strong>. Staffing, procurement and operating costs use the active country balance.' : 'Treasury / finance cash balance is unavailable. Costly orders remain blocked until the game provides an authoritative country balance.') + '</div>' +
@@ -366,7 +373,7 @@
     body.innerHTML =
       '<div class="home-police-shell">' +
         '<header class="home-police-head"><div class="home-police-orb">👮</div><h1 class="home-police-title">PERSONNEL CONTROL</h1><p class="home-police-subtitle">Recruitment is an upfront expense plus continuing daily payroll. Dismissal stops future payroll for the released staff.</p></header>' +
-        '<div class="home-police-kpis"><div class="home-police-kpi"><strong>' + Number(s.policeCount).toLocaleString() + '</strong><span>Current officers</span></div><div class="home-police-kpi"><strong>' + money(e, e.getDailyPayroll()) + '</strong><span>Current daily payroll</span></div><div class="home-police-kpi"><strong>' + money(e, e.POLICE_RECRUITMENT_COST) + '</strong><span>Upfront cost / recruit</span></div></div>' +
+        '<div class="home-police-kpis"><div class="home-police-kpi"><strong>' + countLabel(s.policeCount) + '</strong><span>Current officers</span></div><div class="home-police-kpi"><strong>' + money(e, e.getDailyPayroll()) + '</strong><span>Current daily payroll</span></div><div class="home-police-kpi"><strong>' + money(e, e.POLICE_RECRUITMENT_COST) + '</strong><span>Upfront cost / recruit</span></div></div>' +
         '<div class="home-police-actions"><button id="home-police-mode-recruit" class="home-police-btn home-police-btn-green">👮 RECRUIT POLICE</button><button id="home-police-mode-fire" class="home-police-btn home-police-btn-red">📉 FIRE / RELEASE POLICE</button></div>' +
         '<div id="home-police-amount-panel" class="home-police-panel" style="display:none">' +
           '<div class="home-police-section-title">Personnel quantity</div>' +
@@ -405,7 +412,7 @@
       const n = Math.floor(Number(amount.value) || 0);
       const result = mode === 'recruit' ? e.recruitPolice(n) : e.firePolice(n);
       if (result.ok) {
-        report(result, mode === 'recruit' ? 'RECRUITMENT COMMITTED' : 'PERSONNEL RELEASED', mode === 'recruit' ? n.toLocaleString() + ' officers added. Added daily payroll: ' + money(e, n * e.POLICE_SALARY_PER_DAY) + '.' : n.toLocaleString() + ' officers released. Daily payroll saving: ' + money(e, n * e.POLICE_SALARY_PER_DAY) + '.');
+        report(result, mode === 'recruit' ? 'RECRUITMENT COMMITTED' : 'PERSONNEL RELEASED', mode === 'recruit' ? countLabel(n) + ' officers added. Added daily payroll: ' + money(e, n * e.POLICE_SALARY_PER_DAY) + '.' : countLabel(n) + ' officers released. Daily payroll saving: ' + money(e, n * e.POLICE_SALARY_PER_DAY) + '.');
         this.renderRecruitScreen();
       } else report(result);
     };
@@ -427,7 +434,7 @@
     body.innerHTML =
       '<div class="home-police-shell">' +
         '<header class="home-police-head"><div class="home-police-orb">🚔</div><h1 class="home-police-title">POLICE FLEET & FACILITY COMMAND</h1><p class="home-police-subtitle">A sequential procurement ladder and scalable public-safety infrastructure grid.</p></header>' +
-        '<div class="home-police-kpis"><div class="home-police-kpi"><strong>Tier ' + s.unlockedVehicleLevel + ' / 15</strong><span>Highest unlocked vehicle</span></div><div class="home-police-kpi"><strong>' + Object.keys(s.vehiclesOwned).reduce((n, k) => n + (Number(s.vehiclesOwned[k]) || 0), 0).toLocaleString() + '</strong><span>Vehicles delivered</span></div><div class="home-police-kpi"><strong>' + Object.values(s.facilityLevels).reduce((n, v) => n + (Number(v) || 0), 0).toLocaleString() + '</strong><span>Facility levels</span></div></div>' +
+        '<div class="home-police-kpis"><div class="home-police-kpi"><strong>Tier ' + s.unlockedVehicleLevel + ' / 15</strong><span>Highest unlocked vehicle</span></div><div class="home-police-kpi"><strong>' + countLabel(Object.keys(s.vehiclesOwned).reduce((n, k) => n + (Number(s.vehiclesOwned[k]) || 0), 0)) + '</strong><span>Vehicles delivered</span></div><div class="home-police-kpi"><strong>' + countLabel(Object.values(s.facilityLevels).reduce((n, v) => n + (Number(v) || 0), 0)) + '</strong><span>Facility levels</span></div></div>' +
         (order ? '<div class="home-police-panel"><strong>🚚 PROCUREMENT IN TRANSIT · TIER ' + order.level + '</strong><p class="home-police-note">' + esc(e.VEHICLES[order.level - 1].name) + ' · Quantity ' + order.quantity + ' · Cost ' + money(e, order.totalCost) + '</p><div class="home-police-progress"><div class="home-police-progress-fill" style="width:' + progress + '%"></div></div><div id="home-police-vehicle-countdown" class="home-police-note">Estimated simulation-time delivery: ' + formatDuration(order.completesAtMs - e.getSimulationTimeMs()) + '</div></div>' : '') +
         '<div class="home-police-actions"><button id="home-police-open-vehicles" class="home-police-btn home-police-btn-gold">🚓 VEHICLE HANGAR · 15 TIERS</button><button id="home-police-open-facilities" class="home-police-btn home-police-btn-green">🏗️ FACILITY COMMAND GRID</button><button id="home-police-open-fleet-maintenance" class="home-police-btn home-police-btn-purple">🧰 FLEET HEALTH & REPAIR</button></div>' +
         '<div class="home-police-alert">Progression rule: only the next uncompleted tier unlocks after the previous tier is delivered. Each tier requires 180 simulation days; skipping directly to Tier XV is blocked.</div>' +
@@ -484,7 +491,7 @@
     body.innerHTML =
       '<div class="home-police-shell">' +
         '<header class="home-police-head"><div class="home-police-orb">🚔</div><h1 class="home-police-title">POLICE VEHICLE HANGAR</h1><p class="home-police-subtitle">15 individually styled SVG vehicles · eight capability ratings · strengths, trade-offs and mission fit.</p></header>' +
-        '<div class="home-police-kpis"><div class="home-police-kpi"><strong>TIER ' + s.unlockedVehicleLevel + ' / 15</strong><span>Unlock frontier</span></div><div class="home-police-kpi"><strong>' + Object.keys(s.vehiclesOwned).reduce((n,k)=>n+(Number(s.vehiclesOwned[k])||0),0).toLocaleString() + '</strong><span>Total vehicles owned</span></div><div class="home-police-kpi"><strong>' + available.toLocaleString() + '</strong><span>Selected tier · guard-ready</span></div></div>' +
+        '<div class="home-police-kpis"><div class="home-police-kpi"><strong>TIER ' + s.unlockedVehicleLevel + ' / 15</strong><span>Unlock frontier</span></div><div class="home-police-kpi"><strong>' + countLabel(Object.keys(s.vehiclesOwned).reduce((n,k)=>n+(Number(s.vehiclesOwned[k])||0),0)) + '</strong><span>Total vehicles owned</span></div><div class="home-police-kpi"><strong>' + countLabel(available) + '</strong><span>Selected tier · guard-ready</span></div></div>' +
         (order ? '<div class="home-police-panel"><strong>🚚 ORDER IN TRANSIT · TIER ' + order.level + '</strong><p class="home-police-note">' + esc(e.VEHICLES[order.level - 1].name) + ' · Quantity ' + order.quantity + ' · Total ' + money(e, order.totalCost) + '</p><div class="home-police-progress"><div class="home-police-progress-fill" style="width:' + progress + '%"></div></div><div id="home-police-vehicle-countdown" class="home-police-note">Delivery estimate: ' + formatDuration(order.completesAtMs - e.getSimulationTimeMs()) + '</div></div>' : '') +
         '<div class="home-police-section-title">Select vehicle · inspect every tier</div><div class="home-police-grid">' + cards + '</div>' +
         '<section class="home-police-detail"><div class="home-police-detail-top">' + vehicleSvg(selected, 'hero') + '<span class="home-police-tag home-police-tag-gold">' + esc(selected.className) + '</span><h3>TIER ' + selected.level + ' · ' + esc(selected.name) + '</h3><p class="home-police-note">' + esc(selected.specialty) + ' · Best terrain: ' + esc(selected.terrain) + '</p></div>' +
@@ -560,7 +567,7 @@
         '<p class="home-police-note">' + esc(mission.name) + ' · ' + esc(unit.sector || 'General Sector') + '</p>' +
         '<span class="home-police-tag">' + esc(environments.find(env => env.id === unit.environmentId)?.name || unit.environmentId || 'Dense City') + ' · ' + esc(roads.find(road => road.id === unit.roadCondition)?.name || unit.roadCondition || 'congested') + '</span>' +
         '<div class="home-police-score-line"><span>Average vehicle condition</span><strong>' + condition + ' / 100</strong></div><div class="home-police-condition"><span style="width:' + condition + '%"></span></div>' +
-        '<div class="home-police-score-line"><span>Assigned officers</span><strong>' + Number(unit.officers).toLocaleString() + '</strong></div>' +
+        '<div class="home-police-score-line"><span>Assigned officers</span><strong>' + countLabel(unit.officers) + '</strong></div>' +
         '<div class="home-police-score-line"><span>Mission effectiveness</span><strong>' + score + ' / 100</strong></div>' +
         '<div class="home-police-progress"><div class="home-police-progress-fill" style="width:' + score + '%"></div></div>' +
         (unit.assetId ? '<span class="home-police-tag home-police-tag-gold">TARGETED ASSET · ' + esc(unit.assetName || unit.assetId) + '</span>' : '<span class="home-police-tag">GENERAL AREA COVERAGE</span>') +
@@ -572,7 +579,7 @@
       '<div class="home-police-shell">' +
         '<header class="home-police-head"><div class="home-police-orb">🚧</div><h1 class="home-police-title">GUARD OUT · DEPLOYMENT CONTROL</h1><p class="home-police-subtitle">Dispatch owned police vehicles to specific guard missions. Fleet and staff are reserved while on duty and returned to the pool when stood down.</p></header>' +
         '<div class="home-police-kpis">' +
-          '<div class="home-police-kpi"><strong>' + Number(capacity.availableOfficers).toLocaleString() + '</strong><span>Unassigned officers</span></div>' +
+          '<div class="home-police-kpi"><strong>' + countLabel(capacity.availableOfficers) + '</strong><span>Unassigned officers</span></div>' +
           '<div class="home-police-kpi"><strong>' + activeDeployments.length + '</strong><span>Active guard assignments</span></div>' +
           '<div class="home-police-kpi"><strong>' + (Number(capacity.availableVehicles[selected ? selected.level : 0]) || 0) + '</strong><span>Available selected-tier vehicles</span></div>' +
         '</div>' +
@@ -739,8 +746,8 @@
         '<div class="home-police-score-line"><span>Vehicle condition</span><strong>' + condition.toFixed(1) + ' / 100</strong></div>' +
         '<div class="home-police-condition"><span style="width:' + condition + '%"></span></div>' +
         '<div class="home-police-fleet-meta">' +
-          '<div>Odometer<strong>' + Math.round(Number(unit.odometerKm) || 0).toLocaleString() + ' km</strong></div>' +
-          '<div>Next service<strong>' + Math.max(0, Math.round((Number(unit.nextServiceAtKm) || 0) - (Number(unit.odometerKm) || 0))).toLocaleString() + ' km remaining</strong></div>' +
+          '<div>Odometer<strong>' + countLabel(Math.round(Number(unit.odometerKm) || 0)) + ' km</strong></div>' +
+          '<div>Next service<strong>' + countLabel(Math.max(0, Math.round((Number(unit.nextServiceAtKm) || 0) - (Number(unit.odometerKm) || 0)))) + ' km remaining</strong></div>' +
           '<div>Daily upkeep<strong>' + money(e, vehicle.maintenancePerDay) + '</strong></div>' +
           '<div>Last route<strong>' + esc(unit.lastEnvironment || 'Not deployed') + ' · ' + esc(unit.lastRoadCondition || 'clear') + '</strong></div>' +
         '</div>' +
@@ -931,7 +938,7 @@
     const s = e.getState(), recent = s.incidentLedger.slice(-5).reverse(), targets = e.getAvailableCountries(), targetOptions = targets.map(id => '<option value="' + esc(id) + '">' + esc(id) + '</option>').join(''), deployments = Object.keys(s.agentDeployments || {}).filter(id => id !== 'UNASSIGNED' && Number(s.agentDeployments[id]) > 0).map(id => '<span class="home-police-tag home-police-tag-green">' + esc(id) + ' · ' + Number(s.agentDeployments[id]) + ' AGENT(S)</span>').join(' '), intel = s.intelligenceReports.slice(-5).reverse();
     body.innerHTML =
       '<div class="home-police-shell"><header class="home-police-head"><div class="home-police-orb">🕵️</div><h1 class="home-police-title">SPECIAL FORCES & INTELLIGENCE</h1><p class="home-police-subtitle">Cross-border intelligence collection, threat detection and early warning for riots, smuggling and industrial sabotage.</p></header>' +
-      '<div class="home-police-kpis"><div class="home-police-kpi"><strong>' + Number(s.specialAgents).toLocaleString() + '</strong><span>Active agents</span></div><div class="home-police-kpi"><strong>' + Math.round(s.sabotageRisk) + '%</strong><span>Recorded threat exposure</span></div><div class="home-police-kpi"><strong>' + money(e, s.specialAgents * e.AGENT_SALARY_PER_DAY) + '</strong><span>Daily agent payroll</span></div></div>' +
+      '<div class="home-police-kpis"><div class="home-police-kpi"><strong>' + countLabel(s.specialAgents) + '</strong><span>Active agents</span></div><div class="home-police-kpi"><strong>' + Math.round(s.sabotageRisk) + '%</strong><span>Recorded threat exposure</span></div><div class="home-police-kpi"><strong>' + money(e, s.specialAgents * e.AGENT_SALARY_PER_DAY) + '</strong><span>Daily agent payroll</span></div></div>' +
       '<div class="home-police-panel"><p class="home-police-note">Agents collect fictional game-world intelligence on rival networks and hostile events. They lower modeled exposure and raise event-detection probability; intelligence does not make every threat disappear.</p><label class="home-police-label" for="home-police-agent-target">Foreign intelligence target country</label><select id="home-police-agent-target" class="home-police-field" ' + (targets.length ? '' : 'disabled') + '>' + (targets.length ? targetOptions : '<option value="">No rival country records loaded</option>') + '</select><p class="home-police-note">Agents are assigned to the selected recorded rival country. The engine only reports fields that exist in the game state.</p><label class="home-police-label" for="home-police-agent-amount">Number of special agents to recruit</label><div class="home-police-form-row"><div class="home-police-field-wrap"><input id="home-police-agent-amount" class="home-police-field" type="number" min="1" max="100" step="1" value="1" inputmode="numeric"></div><div class="home-police-cost"><strong id="home-police-agent-cost">' + money(e, e.AGENT_RECRUITMENT_COST) + '</strong><span>Recruitment cost</span></div></div>' +
       '<p id="home-police-agent-daily-cost" class="home-police-note">Added daily operating cost: ' + money(e, e.AGENT_SALARY_PER_DAY) + ' per agent.</p><div class="home-police-actions"><button id="home-police-recruit-agent" class="home-police-btn home-police-btn-purple" ' + (targets.length ? '' : 'disabled') + '>🕵️ RECRUIT AGENTS</button><button id="home-police-agent-advice" class="home-police-btn home-police-btn-gold">🏛️ MINISTER ADVICE</button></div></div>' +
       '<div class="home-police-section-title">Cross-border deployments</div>' + (deployments ? '<div class="home-police-panel">' + deployments + '</div>' : '<div class="home-police-alert">No foreign deployments have been assigned yet.</div>') + '<div class="home-police-section-title">Latest intelligence reports</div>' + (intel.length ? '<div class="home-police-incidents">' + intel.map(x => '<div class="home-police-incident"><strong>' + esc(x.targetCountryId) + '</strong> · ' + esc(x.assessment) + '<br>Confidence ' + x.confidencePercent + '% · observed fields ' + x.observations.length + '<br>Turn ' + x.simulationTurn + '</div>').join('') + '</div>' : '<div class="home-police-alert">Reports are collected on simulation-week boundaries when agents are assigned to an existing foreign country.</div>') + '<div class="home-police-section-title">Latest security incidents</div>' +
