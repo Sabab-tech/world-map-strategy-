@@ -371,6 +371,11 @@ test('Home Ministry budget UI connects Finance allocation and internal category 
   assert.match(engine, /FINANCE_INTERIOR_ALLOCATION_REQUIRED/);
   assert.match(engine, /HOME_MINISTRY_CATEGORY_BUDGET_EXCEEDED/);
   assert.match(engine, /configureHomeBudget:configureHomeBudget/);
+  assert.match(ui, /ACTIVE COUNTRY · '\+esc\(country\)/);
+  assert.match(ui, /home-police-budget-row\{display:grid/);
+  assert.match(ui, /for="home-budget-salary-fixed">Fixed USD amount/);
+  assert.match(ui, /4 · Recent budget transactions/);
+  assert.match(ui, /b\.ledger\.slice\(-8\)\.reverse\(\)/);
 });
 
 test('police deployment captures explicit country-scoped city or rural region and area class', () => {
