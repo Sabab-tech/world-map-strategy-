@@ -253,7 +253,7 @@ async function fetchTransparencyInternationalCpi2025() {
   const sourceId = 'TI_CPI_2025_MIRRORED_FULL_RESULTS';
   const rows = parseDelimited(await getText(sourceUrl), ';');
   const headerIndex = rows.findIndex((row) => {
-    const normalized = row.map((value) => String(value).replace(/^\\uFEFF/, '').trim().toLowerCase());
+    const normalized = row.map((value) => String(value).replace(String.fromCharCode(0xFEFF), '').trim().toLowerCase());
     return normalized.includes('iso3') && normalized.includes('cpi score 2025') && normalized.includes('rank 2025');
   });
   if (headerIndex < 0) throw new Error('TI_CPI_2025_EXPECTED_HEADER_NOT_FOUND');
@@ -621,12 +621,13 @@ function makeRecord(country, sources, previous, refreshData) {
     const existingMeta = priorMeta[field.key];
     const oldOfficial = existingMeta?.status === 'WORLD_BANK_API_OBSERVATION';
     const oldSourcedHdi = existingMeta?.status === 'UNDP_HDR_OBSERVATION';
+    const oldSourcedCpi = existingMeta?.status === 'TRANSPARENCY_INTERNATIONAL_CPI_2025';
     const priorValue = finite(priorMetrics[field.key]);
     // Keep the previously stored value whenever the current local sources are
     // silent. Also keep sourced observations first, so an API outage cannot erase
     // them; a newer verified source observation may replace them below.
     if (priorValue !== null &&
-        (oldOfficial || oldSourcedHdi || finite(metrics[field.key]) === null)) {
+        (oldOfficial || oldSourcedHdi || oldSourcedCpi || finite(metrics[field.key]) === null)) {
       metrics[field.key] = priorValue;
       metricMetadata[field.key] = safeCopy(existingMeta, metricMetadata[field.key]);
     }
@@ -701,7 +702,51 @@ function makeRecord(country, sources, previous, refreshData) {
     }
   }
 
-  const setDerived = (key, value, year, sourceKeys, formula) => {
+    // CPI score and rank come from Transparency International's published 2025
+  // results. The source is a maintained machine-readable mirror, so both the
+  // mirror URL and publisher's official release page are stored.
+  if (refreshData.transparencyInternationalCpi2025) {
+    const cpi = refreshData.transparencyInternationalCpi2025.byIso3.get(String(country.iso3 || '').toUpperCase());
+    const mappings = [
+      { key: 'corruptionPerceptionIndex', value: cpi?.score, code: 'CPI score 2025',
+        note: 'CPI score 0–100 from Transparency International CPI 2025. Source values are read from a maintained mirror; original publisher release: ' + refreshData.transparencyInternationalCpi2025.publisherUrl },
+      { key: 'corruptionPerceptionRank', value: cpi?.rank, code: 'Rank 2025',
+        note: 'CPI rank from Transparency International CPI 2025. Rank is not a score, and rank 1 is the highest position. Source values are read from a maintained mirror; original publisher release: ' + refreshData.transparencyInternationalCpi2025.publisherUrl }
+    ];
+    for (const item of mappings) {
+      if (cpi && finite(item.value) !== null) {
+        const priorYear = finite(metricMetadata[item.key]?.year);
+        if (metrics[item.key] === null || priorYear === null || 2025 >= priorYear) {
+          metrics[item.key] = finite(item.value);
+          metricMetadata[item.key] = {
+            year: 2025,
+            sourceId: refreshData.transparencyInternationalCpi2025.sourceId,
+            sourceName: 'Transparency International, Corruption Perceptions Index 2025',
+            status: 'TRANSPARENCY_INTERNATIONAL_CPI_2025',
+            method: 'SOURCE_OBSERVATION',
+            indicatorCode: item.code,
+            sourceUrl: refreshData.transparencyInternationalCpi2025.sourceUrl,
+            note: item.note
+          };
+        }
+      } else if (REFRESH && metrics[item.key] === null) {
+        metricMetadata[item.key] = {
+          year: null,
+          sourceId: refreshData.transparencyInternationalCpi2025.error ? refreshData.transparencyInternationalCpi2025.sourceId : null,
+          sourceName: refreshData.transparencyInternationalCpi2025.error ? 'Transparency International, Corruption Perceptions Index 2025' : null,
+          status: refreshData.transparencyInternationalCpi2025.error ? 'SOURCE_REFRESH_FAILED' : 'NO_SOURCE_OBSERVATION',
+          method: 'API_REFRESH_DIAGNOSTIC',
+          indicatorCode: item.code,
+          sourceUrl: refreshData.transparencyInternationalCpi2025.sourceUrl,
+          note: refreshData.transparencyInternationalCpi2025.error
+            ? 'CPI 2025 source refresh failed: ' + refreshData.transparencyInternationalCpi2025.error
+            : 'No CPI 2025 observation was found for this canonical ISO3. Unknown is not zero.'
+        };
+      }
+    }
+  }
+
+const setDerived = (key, value, year, sourceKeys, formula) => {
     if (finite(value) === null || finite(year) === null) return;
     const previousMeta = metricMetadata[key];
     if (previousMeta?.status === 'WORLD_BANK_API_OBSERVATION' && finite(previousMeta.year) !== null && previousMeta.year >= Number(year)) return;
@@ -1366,6 +1411,13 @@ async function main() {
     sourceUrl: 'https://hdr.undp.org/sites/default/files/2025_HDR/HDR25_Composite_indices_complete_time_series.csv',
     rowCount: 0, observationYear: 2023
   };
+  let transparencyInternationalCpi2025 = {
+    byIso3: new Map(), loaded: false, error: null,
+    sourceId: 'TI_CPI_2025_MIRRORED_FULL_RESULTS',
+    sourceUrl: 'https://raw.githubusercontent.com/loupeat/ti-cpi/main/docs/ti/CPI2025_GlobalResultsTrends.csv',
+    publisherUrl: 'https://www.transparency.org/en/cpi/2025',
+    rowCount: 0, observationYear: 2025
+  };
   if (REFRESH) {
     try { restCountries.byIso3 = await fetchRestCountries(); restCountries.loaded = true; }
     catch (error) { restCountries.error = String(error); console.error('REST Countries refresh failed:', String(error)); }
@@ -1378,10 +1430,13 @@ async function main() {
     catch (error) { wbData.errors = [{ error: String(error) }]; console.error('World Bank indicators refresh failed:', String(error)); }
     try { undpHdi = await fetchUndpHdi(); }
     catch (error) { undpHdi.error = String(error); console.error('UNDP HDI refresh failed:', String(error)); }
+    try { transparencyInternationalCpi2025 = await fetchTransparencyInternationalCpi2025(); }
+    catch (error) { transparencyInternationalCpi2025.error = String(error); console.error('Transparency International CPI 2025 refresh failed:', String(error)); }
   }
   const refreshData = {
     restCountries,
     undpHdi,
+    transparencyInternationalCpi2025,
     worldBank: {
       byCountry: wbData.byCountry, errors: wbData.errors, loaded: wbData.loaded,
       metadataByIso2: wbMetadata.metadataByIso2, metadataByIso3: wbMetadata.metadataByIso3,
@@ -1487,6 +1542,16 @@ async function main() {
         sourceRowsWithNumericHdi: undpHdi.rowCount,
         canonicalCountriesWithHdi: rows.filter((row) => undpHdi.byIso3.has(String(row.identity.iso3 || '').toUpperCase())).length
       },
+      transparencyInternationalCpi2025: {
+        loaded: transparencyInternationalCpi2025.loaded,
+        error: transparencyInternationalCpi2025.error,
+        sourceId: transparencyInternationalCpi2025.sourceId,
+        sourceUrl: transparencyInternationalCpi2025.sourceUrl,
+        publisherUrl: transparencyInternationalCpi2025.publisherUrl,
+        observationYear: transparencyInternationalCpi2025.observationYear,
+        sourceRowsWithCpi: transparencyInternationalCpi2025.rowCount,
+        canonicalCountriesWithCpi: rows.filter((row) => transparencyInternationalCpi2025.byIso3.has(String(row.identity.iso3 || '').toUpperCase())).length
+      },
       governanceIndicatorRefresh: governanceRefresh,
       restCountriesLoaded: restCountries.loaded,
       restCountriesError: restCountries.error,
@@ -1524,6 +1589,7 @@ async function main() {
       { id: 'resource_site_reserve_simulation_v1.json', role: 'existing gameplay extraction-site identities and resource types; simulated reserve amounts are not used as real-world facts', coverage: resourceReserveRows.length, status: 'SCENARIO_SIMULATION_DATA' },
       { id: 'World Bank Indicators API v2', role: 'current/latest non-empty macro, demographic, governance and selected social observations', url: 'https://api.worldbank.org/v2/', enabledBy: '--refresh-sources', status: wbData.loaded ? 'FETCHED' : 'NOT_FETCHED' },
       { id: 'UNDP Human Development Report 2025 composite-index time series', role: 'official human development index; observation year 2023', url: undpHdi.sourceUrl, enabledBy: '--refresh-sources', status: undpHdi.loaded ? 'FETCHED' : (undpHdi.error ? 'FAILED' : 'NOT_FETCHED'), observationYear: undpHdi.observationYear, matchedRows: undpHdi.rowCount },
+      { id: 'Transparency International CPI 2025 full results (maintained CSV mirror)', role: 'CPI score and rank from the publisher 2025 release; provenance states both mirror and original publisher URL', url: transparencyInternationalCpi2025.sourceUrl, publisherUrl: transparencyInternationalCpi2025.publisherUrl, enabledBy: '--refresh-sources', status: transparencyInternationalCpi2025.loaded ? 'FETCHED_FROM_MIRROR' : (transparencyInternationalCpi2025.error ? 'FAILED' : 'NOT_FETCHED'), observationYear: transparencyInternationalCpi2025.observationYear, matchedRows: transparencyInternationalCpi2025.rowCount },
       { id: restCountries.byIso3.sourceId || 'REST Countries API', role: 'general facts such as official name, capital, languages, currency codes, area, borders and timezones', url: restCountries.byIso3.sourceId === 'REST_COUNTRIES_GITHUB_MIRROR' ? 'https://github.com/mledoze/countries' : 'https://restcountries.com/', enabledBy: '--refresh-sources', status: restCountries.loaded ? 'FETCHED' : 'NOT_FETCHED' }
     ],
     countries: rows
