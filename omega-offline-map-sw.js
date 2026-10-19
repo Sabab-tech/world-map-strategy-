@@ -2,7 +2,7 @@
  * Same-origin app files are cached for offline relaunch; remote map tiles are never cached here.
  */
 "use strict";
-const CACHE_NAME = "omega-offline-atlas-shell-v4";
+const CACHE_NAME = "omega-offline-atlas-shell-v5";
 const APP_BASE = new URL("./", self.location.href);
 const INDEX_URL = new URL("index.html", APP_BASE).href;
 const CORE_ASSETS = [
@@ -16,7 +16,11 @@ const CORE_ASSETS = [
   "./economy_global_profiles_v1.json", "./finance_runtime_rules_v1.json",
   "./finance_sector_registry_v1.json",
   "./omega_macro_stability_runtime_v1.js", "./omega_macro_stability_v1.css",
-  "./economy_raw_financial_data_v2.json", "./finance_macro_stability_rules_v1.json"
+  "./economy_raw_financial_data_v2.json", "./finance_macro_stability_rules_v1.json",
+  "./omega_home_ministry_engine_v1.js", "./omega_home_ministry_ui_v1.js",
+  "./omega_home_ministry_budget_ui_v2.js", "./omega_home_ministry_world_police_runtime_v1.js",
+  "./omega_home_ministry_police_operations_ui_v1.js", "./omega_home_ministry_country_police_baseline_v1.json",
+  "./omega_battlefield_command_runtime_v1.js", "./military_command_catalog_v1.json"
 ];
 
 function isLocalAppUrl(value) {
