@@ -111,6 +111,7 @@ test('world police baseline covers the full country registry with provenance-sep
   assert.ok(baselineData.countries.every(row => Object.values(row.crime.rateSources).every(source =>
     source === 'MODELED_SIMULATION_BASELINE' || source.startsWith('WORLD_BANK_'))));
   assert.ok(baselineData.countries.every(row => Object.values(row.baselineFleet.countsByTier).reduce((sum,n)=>sum+Number(n),0) === row.baselineFleet.totalUnits));
+  assert.ok(baselineData.countries.every(row => String(row.baselineFleet?.modelNote || '').startsWith('MODELED_ESTIMATE_NOT_OBSERVED_ROSTER:')), 'every country fleet must disclose that its starting roster is modeled, not observed');
   assert.ok(baselineData.countries.every(row => row.fleetProfile?.source === 'MODELED_FROM_COUNTRY_URBANIZATION_GEOGRAPHY_CITY_NETWORK_AND_ECONOMY'));
   assert.ok(new Set(baselineData.countries.map(row => JSON.stringify(row.baselineFleet.countsByTier))).size > 180);
   assert.ok(baselineData.countries.every(row => row.fleetProfile?.premiumTierPolicy === 'PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15'));
