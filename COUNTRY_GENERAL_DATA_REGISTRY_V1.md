@@ -1,0 +1,81 @@
+# OMEGA Unified Country General Data Registry v1
+
+## Purpose
+
+This additive registry brings general facts and country indicators into one canonical record per identity in countries.json. It uses a uniform schema for all 249 country and territory identities. A metric can be unknown for one country, but its field still exists for every record and its status explains why the value is missing.
+
+## Files added
+
+- country_general_data_registry_v1.json: generated consolidated records, common field catalogue, per-field provenance and coverage audit.
+- scripts/build_country_general_data_registry_v1.mjs: deterministic builder. Run with node scripts/build_country_general_data_registry_v1.mjs to rebuild from local source files, or add --refresh-sources to request external reference updates before building.
+- test/country_general_data_registry_v1.test.mjs: checks identity coverage, consistent schemas, source preservation, missing-value handling and provenance.
+- .github/workflows/omega-country-general-data-registry.yml: manual, monthly and source-change refresh/build/test workflow.
+
+## Contents
+
+Every country record has the same top-level sections:
+
+1. identity: ISO identifiers, name, region/subregion and existing map coordinates.
+2. generalFacts: official name, capital, language(s), currency code(s), area, landlocked status, borders, time zones, call codes, independence/UN membership, World Bank region/income/lending metadata, and the source status for these facts.
+3. metrics and metricMetadata: the same metric keys for all countries. This includes population and demographics, nominal GDP, GDP per capita/growth, inflation, unemployment, public debt and debt/GDP, external debt stocks and external-debt/GNI, trade, imports/exports, current account, foreign-exchange reserves, exchange rate, tax/revenue/expenditure, industrial/agricultural/services output, health/education/R&D spending, technology/access indicators, electricity, emissions, military spending, homicide, WGI governance dimensions, plus separately named research indexes.
+4. legacySnapshots: the old financial registry observations, derived indicators, original raw source values and the old economic-profile fields. The original source files are not rewritten.
+5. naturalResources: consistent mineral, hydrocarbon, energy and administrative resource-region structures.
+6. publicSafety: country police simulation baseline, source labels, homicide observations, crime-model rates and fleet/context summaries.
+7. localGeography: capital candidate and locally catalogued economic centers, with a clear note that these are game/reference entries rather than independently verified facts.
+8. dataStatus: record-level availability, missing-source and external-refresh status.
+
+## Baseline coverage observed during repository audit
+
+The current local datasets have uneven coverage, even though their consolidated schemas include common fields:
+
+| Source | Coverage at audit |
+|---|---:|
+| Canonical country and territory identities | 249 / 249 |
+| Local economy profiles mapped | 230 / 249 |
+| Local population baseline mapped | 195 / 249 |
+| Population entries in police baseline | 224 / 249 |
+| Of the above, labelled “World Bank latest available” | 215 |
+| Local population 2015 fallback | 9 |
+| Resource-context index records | 197 / 249 |
+| Police/game baseline records | 249 / 249 |
+| Homicide observations labelled as source-observed | 194 / 249 |
+
+These counts are an inventory, not a claim that all values are correct. In particular, economy.json, population.json, and their mapped profiles use a 2015 baseline which has not been independently revalidated. Source labels inside legacy files are preserved as claims from those files and are not treated as proof of verification.
+
+## Updating source observations
+
+The --refresh-sources option requests:
+
+- World Bank Indicators API v2 for the latest non-empty available observation for supported indicators, including population, GDP, debt-related indicators, unemployment, inflation, governance and selected social indicators.
+- World Bank country metadata for income level, lending type, region and capital.
+- REST Countries for general facts such as official name, capital city, languages, currencies, area, borders and time zones.
+
+The monthly GitHub Actions workflow performs refresh and validation, then commits the generated registry only if its contents changed. If a provider fails or has no value for a field, the registry keeps the last stored World Bank observation when one exists, otherwise leaves the value null. Each value records its observation year, source identifier, status and method. Different indicators often have different latest years, so a year check is required before calculating or comparing them.
+
+External APIs can be temporarily unavailable, source coverage can be partial, and country/territory identities do not perfectly match every provider's country universe. The refresh is therefore deliberately non-destructive: it never removes countries or source observations simply because a provider did not return them.
+
+## Important interpretation rules
+
+- null means unknown, unavailable, not imported, or not comparable. It never means zero.
+- A same-year derived amount is only calculated when the input observations are present and the years match. Its metadata says it was derived, not directly observed.
+- Local 2015 legacy values, modelled police/crime/fleet values, local resource summaries and game-only indices are explicitly labelled and are not presented as official current statistics.
+- Public debt and external debt are different concepts and remain separate fields.
+- The repository's fiscal risk, fiscal health and economic influence figures are custom game indicators, not official rankings or sovereign credit ratings.
+- There is no single universal, internationally comparable country-level “discipline index” in the loaded sources. The field remains null with status NOT_DEFINED_OR_SOURCED. Rule of law, government effectiveness, control of corruption and political stability are recorded as distinct WGI measures with their own scales, not repackaged as discipline.
+- HDI, Corruption Perceptions Index, Global Peace Index, Democracy Index, press-freedom and Fragile States values are included as separate fields but are not invented when no dated observation has been imported.
+
+## Deletion and deduplication status
+
+No deletion or deduplication is performed. The canonical roster is checked for 249 unique ISO3 identities and all source files remain untouched. The output is an additive consolidated view. A duplicate candidate should only be considered for a later cleanup after identity-level comparison, field-level provenance review, and passing completeness/consistency tests; it is not safe to deduplicate by matching display names alone.
+
+## Validation
+
+The test suite verifies:
+
+- all 249 country/territory identities are present exactly once;
+- identical top-level, metric, provenance and nested resource/public-safety structures;
+- every metric contains a numeric value or explicit null and provenance status;
+- raw 2015 finance-source fields match their original source records and are not silently replaced;
+- missing resource context stays unknown rather than becoming an empty-resource assertion;
+- metric coverage totals reconcile to 249; and
+- no duplicate deletion occurred.
