@@ -897,7 +897,7 @@
       const c=canonicalCountryId(countryId);
       const id=String(ministryId||'');
       const inbox=this.inboxes.get(id)||[];
-      return clone(inbox.filter(m=>String(m.countryId||'').toUpperCase()===c));
+      return clone(inbox.filter(m=>canonicalCountryId(m.countryId)===c));
     }
 
     _compilePublicSnapshot(ministryId,packet={}){
