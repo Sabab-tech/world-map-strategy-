@@ -2,20 +2,21 @@
  * Same-origin app files are cached for offline relaunch; remote map tiles are never cached here.
  */
 "use strict";
-const CACHE_NAME = "omega-offline-atlas-shell-v9";
+const CACHE_NAME = "omega-offline-atlas-shell-v10";
 const APP_BASE = new URL("./", self.location.href);
 const INDEX_URL = new URL("index.html", APP_BASE).href;
 const CORE_ASSETS = [
   "./", "./index.html", "./world.json", "./leaflet.js", "./leaflet.css",
   "./style.css", "./map-engine-1.js", "./map-engine-2.js",
   "./omega_ui_system_redesign_v1.css", "./omega_ui_system_redesign_v1.js",
-  "./omega_country_runtime_data_v1.js", "./cities.json",
+  "./omega_country_runtime_data_v1.js", "./omega_country_behavior_engine_v1.js", "./omega_country_overview_ministry_ui_v1.js", "./cities.json",
   "./offline-hybrid-map.js", "./offline-hybrid-map.css",
   "./omega_forex_monetary_engine_v1.js", "./omega_forex_monetary_engine_v1.css",
   "./omega_government_banking_runtime_v1.js", "./omega_economic_transmission_runtime_v1.js",
   "./government_banking_rules_v1.json", "./financial_transmission_rules_v1.json",
   "./omega_finance_ministry_runtime_v1.js", "./omega_finance_ministry_v1.css",
-  "./economy_global_profiles_v1.json", "./country_general_data_registry_v1.json", "./economy.json", "./population.json", "./finance_runtime_rules_v1.json",
+  "./economy_global_profiles_v1.json", "./country_general_data_registry_v1.json", "./economy.json", "./population.json",
+  "./resource_site_reserve_simulation_v1.json", "./finance_runtime_rules_v1.json",
   "./finance_sector_registry_v1.json",
   "./omega_macro_stability_runtime_v1.js", "./omega_macro_stability_v1.css",
   "./economy_raw_financial_data_v2.json", "./finance_macro_stability_rules_v1.json",
