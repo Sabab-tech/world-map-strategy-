@@ -171,6 +171,280 @@
     });
     return out;
   }
+  function normalizePatrolPlan(raw){
+    const out={};
+    Object.keys(DEFAULT_POLICE_PATROL_PLAN).forEach(function(key){
+      const value=num(raw&&raw[key]);
+      out[key]=Math.round(clamp(value===null?DEFAULT_POLICE_PATROL_PLAN[key]:value,0,100)*10)/10;
+    });
+    return out;
+  }
+  let countryPoliceBaselineByCode=Object.create(null);
+  function baselineAliases(row){
+    return [row&&row.code,row&&row.iso2,row&&row.iso3,row&&row.name].filter(Boolean).map(function(value){
+      return String(value).trim().toUpperCase().replace(/[-\s]+/g,'_');
+    });
+  }
+  function findPoliceBaseline(country){
+    const raw=String(country||'').trim().toUpperCase().replace(/[-\s]+/g,'_');
+    const canonical=normalizeCountry(country);
+    return countryPoliceBaselineByCode[raw]||countryPoliceBaselineByCode[canonical]||null;
+  }
+  function loadCountryPoliceBaselines(rows){
+    if(!Array.isArray(rows))return{ok:false,code:'POLICE_BASELINE_ROWS_INVALID',countryCount:0};
+    const next=Object.create(null);
+    rows.forEach(function(row){
+      if(!row||typeof row!=='object'||!row.code||!row.name)return;
+      baselineAliases(row).forEach(function(alias){next[alias]=row;});
+      next[normalizeCountry(row.code)]=row;
+      next[normalizeCountry(row.iso3)]=row;
+    });
+    countryPoliceBaselineByCode=next;
+    return{ok:true,countryCount:new Set(rows.filter(Boolean).map(function(row){return String(row.iso3||row.code).toUpperCase();})).size,
+      populationCount:rows.filter(function(row){return num(row.population&&row.population.value)!==null;}).length,
+      observedHomicideCount:rows.filter(function(row){return num(row.crime&&row.crime.observedHomicide&&row.crime.observedHomicide.ratePer100k)!==null;}).length};
+  }
+  function initialCrimeBaseline(row){
+    const rates=clone(row&&row.crime&&row.crime.ratesPer100k||{});
+    return{
+      version:1,population:num(row&&row.population&&row.population.value),populationYear:num(row&&row.population&&row.population.year),
+      populationSource:row&&row.population&&row.population.source||'POPULATION_UNAVAILABLE',
+      ratesPer100k:rates,rateSources:clone(row&&row.crime&&row.crime.rateSources||{}),
+      observedHomicide:clone(row&&row.crime&&row.crime.observedHomicide||{ratePer100k:null,year:null,source:null}),
+      referencePersonnel:Math.max(1,num(row&&row.baselinePolice&&row.baselinePolice.activePersonnel)||250),
+      referenceEfficiency:60,referenceTrust:55,referenceSatisfaction:55,referenceTrainingQualityLevel:1,
+      referenceFacilityLevels:clone(DEFAULT_STATE.facilityLevels),referenceTactics:clone(DEFAULT_STATE.tacticsResearched),
+      referenceVehicles:clone(row&&row.baselineFleet&&row.baselineFleet.countsByTier||{}),
+      referenceFleetUnits:Math.max(0,num(row&&row.baselineFleet&&row.baselineFleet.totalUnits)||0),
+      referencePatrolPlan:clone(DEFAULT_POLICE_PATROL_PLAN),referenceRules:clone(DEFAULT_POLICE_POLICY_STATE),
+      baselineAnnualIncidents:clone(row&&row.crime&&row.estimatedAnnualIncidents||{}),
+      source:'OMEGA_COUNTRY_POLICE_BASELINE_V1'
+    };
+  }
+  function currentFleetCounts(state){
+    const counts={};VEHICLES.forEach(function(vehicle){counts[String(vehicle.level)]=Math.max(0,Math.floor(num(state&&state.vehiclesOwned&&state.vehiclesOwned[vehicle.level])||0));});
+    return counts;
+  }
+  function totalFleetCount(counts){
+    return Object.keys(counts||{}).reduce(function(sum,key){return sum+Math.max(0,Math.floor(num(counts[key])||0));},0);
+  }
+  function isPristinePoliceState(state,raw){
+    if(!raw)return true;
+    return Math.floor(num(state.baselineVersion)||0)===0&&
+      Math.floor(num(state.policeCount)||250)===250&&Math.floor(num(state.policeEfficiency)||60)===60&&
+      Math.floor(num(state.policeTrust)||55)===55&&totalFleetCount(state.vehiclesOwned)===0&&
+      Math.floor(num(state.lastUpdatedTurn)||0)===0&&!(state.pendingVehicleOrder)&&
+      !(state.pendingResearch)&&!(state.guardDeployments||[]).length&&!(state.incidentLedger||[]).length&&
+      !(state.vehicleMaintenanceLog||[]).length&&Math.floor(num(state.trainingQualityLevel)||1)===1;
+  }
+  function applyBaselineToPoliceState(state,row,raw){
+    const pristine=isPristinePoliceState(state,raw),fleet=row&&row.baselineFleet||{},personnel=row&&row.baselinePolice||{};
+    if(pristine){
+      state.policeCount=Math.max(1,Math.floor(num(personnel.activePersonnel)||250));
+      state.vehiclesOwned=Object.assign({},fleet.countsByTier||{});
+      state.unlockedVehicleLevel=Math.max(1,Math.min(1,Math.floor(num(state.unlockedVehicleLevel)||1)));
+      state.policeEfficiency=60;state.policeTrust=55;state.publicSatisfaction=55;
+      state.misconductRiskPct=20;state.justiceBacklog=0;state.privacyRiskPct=20;
+      state.trainingQualityLevel=1;state.lastUpdatedTurn=turn();
+    }else{
+      state.vehiclesOwned=state.vehiclesOwned&&typeof state.vehiclesOwned==='object'?state.vehiclesOwned:{};
+    }
+    state.baselineVersion=1;
+    state.baselinePolicePersonnel=Math.max(1,Math.floor(num(personnel.activePersonnel)||250));
+    state.baselineFleetUnits=Math.max(0,Math.floor(num(fleet.totalUnits)||0));
+    state.baselineFleetReplacementValueUsd=Math.max(0,num(fleet.replacementValueUsd)||0);
+    state.baselineSource='OMEGA_COUNTRY_POLICE_BASELINE_V1';
+    const payroll=row&&row.payrollRules||{};
+    if(pristine||num(state.dailySalaryPerOfficerUsd)===null)state.dailySalaryPerOfficerUsd=Math.max(0.75,num(payroll.dailySalaryPerOfficerUsd)||POLICE_SALARY_PER_DAY);
+    if(pristine||num(state.recruitmentFeePerOfficerUsd)===null)state.recruitmentFeePerOfficerUsd=Math.max(75,num(payroll.recruitmentFeePerOfficerUsd)||POLICE_RECRUITMENT_COST);
+    if(!state.crimeBaseline||Number(state.crimeBaseline.version)!==1)state.crimeBaseline=initialCrimeBaseline(row);
+    state.patrolPlan=normalizePatrolPlan(state.patrolPlan);
+    state.policeRules=Object.assign(clone(DEFAULT_POLICE_POLICY_STATE),state.policeRules||{});
+    if(!state.crimeModel||typeof state.crimeModel!=='object')state.crimeModel={totalIncidents:0,openedCases:0,clearedCases:0,lastUpdatedDay:null};
+    if(!Array.isArray(state.crimeHistory))state.crimeHistory=[];
+    if(!state.crimeAccumulator||typeof state.crimeAccumulator!=='object')state.crimeAccumulator={};
+    if(state.lastCrimeSimulationDay===null||state.lastCrimeSimulationDay===undefined)state.lastCrimeSimulationDay=Math.floor(simulationTimeMs()/DAY_MS);
+    if(state.lastPayrollDay===null||state.lastPayrollDay===undefined)state.lastPayrollDay=Math.floor(simulationTimeMs()/DAY_MS);
+    return{state:state,pristine:pristine};
+  }
+  function bootstrapCountryPoliceBaselines(rows){
+    const loaded=loadCountryPoliceBaselines(rows);
+    if(!loaded.ok)return loaded;
+    const root=rootState();if(!root)return{ok:false,code:'AUTHORITATIVE_GAME_STATE_UNAVAILABLE',countryCount:loaded.countryCount};
+    if(!root.interior||typeof root.interior!=='object')root.interior={};
+    let seeded=0,existing=0,playerCountry=currentCountry();
+    rows.forEach(function(row){
+      if(!row||!row.code)return;
+      const cid=normalizeCountry(row.code),countryState=root.interior[cid]&&root.interior[cid].police;
+      const raw=countryState&&typeof countryState==='object'?countryState:null;
+      const state=mergeState(raw||baseState()),result=applyBaselineToPoliceState(state,row,raw);
+      if(!root.interior[cid]||typeof root.interior[cid]!=='object')root.interior[cid]={};
+      root.interior[cid].police=clone(result.state);
+      if(result.pristine)seeded++;else existing++;
+    });
+    root.omegaHomePoliceBaselineVersion=1;
+    root.omegaHomePoliceBaselineCountryCount=loaded.countryCount;
+    root.omegaHomePoliceBaselineUpdatedAt=new Date().toISOString();
+    const playerBaseline=findPoliceBaseline(playerCountry);
+    if(playerBaseline){
+      const cid=normalizeCountry(playerBaseline.code);
+      getState(cid);
+    }
+    const diagnostics=Object.assign({},loaded,{ok:true,seededCountries:seeded,existingCountryStatesPreserved:existing,
+      baselineVersion:1,activeCountry:playerCountry});
+    emit('OMEGA_HOME_POLICE_WORLD_BASELINE_READY',diagnostics);
+    return diagnostics;
+  }
+  function activePolicePolicyRules(state){
+    return POLICE_POLICY_RULES.filter(function(rule){return !!(state&&state.policeRules&&state.policeRules[rule.id]);});
+  }
+  function ruleDailyCost(state){
+    return activePolicePolicyRules(state).reduce(function(sum,rule){return sum+Math.max(0,num(rule.dailyCostUsd)||0);},0);
+  }
+  function ruleEffectSum(state,key){
+    return activePolicePolicyRules(state).reduce(function(sum,rule){return sum+(num(rule[key])||0);},0);
+  }
+  function crimeVehicleCapability(state,category){
+    const map={
+      theft:['patrol','surveillance'],robbery:['response','patrol','protection'],
+      streetRobbery:['patrol','response','crowdControl'],drugTrafficking:['counterSmuggling','surveillance','command'],
+      contrabandSmuggling:['counterSmuggling','offRoad','surveillance'],assault:['response','crowdControl','protection'],
+      homicide:['response','surveillance','command'],cybercrime:['surveillance','command']
+    };
+    const keys=map[category]||['patrol','response'],counts=currentFleetCounts(state),units=totalFleetCount(counts);
+    if(!units)return 0;
+    let weighted=0;
+    VEHICLES.forEach(function(vehicle){
+      const count=counts[String(vehicle.level)]||0;
+      const score=(map[category]||[]).reduce(function(sum,key){return sum+(num(vehicle.capabilities[key])||0);},0)/Math.max(1,(map[category]||[]).length);
+      weighted+=count*score;
+    });
+    return weighted/units;
+  }
+  function crimeReductionForCategory(state,category,crimeBaseline){
+    const base=crimeBaseline||state.crimeBaseline||{},refPersonnel=Math.max(1,num(base.referencePersonnel)||num(state.baselinePolicePersonnel)||250);
+    const refEfficiency=num(base.referenceEfficiency)===null?60:num(base.referenceEfficiency);
+    const refTraining=num(base.referenceTrainingQualityLevel)===null?1:num(base.referenceTrainingQualityLevel);
+    let reduction=Math.log(Math.max(1,num(state.policeCount)||1)/refPersonnel)*0.08;
+    reduction+=(Math.max(0,num(state.policeEfficiency)||0)-refEfficiency)*0.0015;
+    reduction+=(Math.max(0,num(state.trainingQualityLevel)||1)-refTraining)*0.015;
+    const facilityMap={
+      theft:[['station',0.008],['patrol',0.014],['dispatch',0.012]],
+      robbery:[['station',0.006],['patrol',0.012],['dispatch',0.012],['forensics',0.01]],
+      streetRobbery:[['station',0.006],['patrol',0.015],['dispatch',0.012]],
+      drugTrafficking:[['border',0.014],['forensics',0.015],['cyber',0.006],['communications',0.008]],
+      contrabandSmuggling:[['border',0.018],['communications',0.008],['dispatch',0.006]],
+      assault:[['station',0.006],['patrol',0.01],['emergency',0.012],['academy',0.005]],
+      homicide:[['forensics',0.02],['dispatch',0.008],['academy',0.005]],
+      cybercrime:[['cyber',0.025],['communications',0.012],['forensics',0.01]]
+    };
+    const refFacilities=base.referenceFacilityLevels||DEFAULT_STATE.facilityLevels;
+    (facilityMap[category]||[]).forEach(function(pair){
+      const current=Math.max(0,num(state.facilityLevels&&state.facilityLevels[pair[0]])||0);
+      const reference=Math.max(0,num(refFacilities[pair[0]])||0);
+      reduction+=(current-reference)*pair[1];
+    });
+    const currentCars=totalFleetCount(currentFleetCounts(state)),refCars=Math.max(1,num(base.referenceFleetUnits)||num(state.baselineFleetUnits)||currentCars||1);
+    reduction+=Math.log(Math.max(1,currentCars)/refCars)*0.035;
+    const currentQuality=crimeVehicleCapability(state,category),refVehicles=base.referenceVehicles||{};
+    let refUnits=0,refQuality=0;
+    VEHICLES.forEach(function(vehicle){
+      const count=Math.max(0,num(refVehicles[vehicle.level])||0),keys=({theft:['patrol','surveillance'],robbery:['response','patrol','protection'],streetRobbery:['patrol','response','crowdControl'],drugTrafficking:['counterSmuggling','surveillance','command'],contrabandSmuggling:['counterSmuggling','offRoad','surveillance'],assault:['response','crowdControl','protection'],homicide:['response','surveillance','command'],cybercrime:['surveillance','command']})[category]||['patrol','response'];
+      const quality=keys.reduce(function(sum,key){return sum+(num(vehicle.capabilities[key])||0);},0)/keys.length;
+      refUnits+=count;refQuality+=count*quality;
+    });
+    refQuality=refUnits?refQuality/refUnits:currentQuality;
+    reduction+=(currentQuality-refQuality)*0.0018;
+    const patrolKey=({theft:'urban',robbery:'urban',streetRobbery:'urban',drugTrafficking:'drugs',contrabandSmuggling:'border',assault:'community',homicide:'investigations',cybercrime:'cyber'})[category]||'urban';
+    const currentPatrol=normalizePatrolPlan(state.patrolPlan),refPatrol=normalizePatrolPlan(base.referencePatrolPlan);
+    reduction+=(currentPatrol[patrolKey]-refPatrol[patrolKey])*0.0015;
+    const effects=({theft:'theft',robbery:'robbery',streetRobbery:'streetRobbery',drugTrafficking:'drugTrafficking',contrabandSmuggling:'contrabandSmuggling',assault:'assault',homicide:'homicide',cybercrime:'cybercrime'})[category]||category;
+    activePolicePolicyRules(state).forEach(function(rule){reduction+=Math.max(0,num(rule.crimeEffects&&rule.crimeEffects[effects])||0);});
+    const tactics=state.tacticsResearched||{};
+    if(category==='assault'&&tactics.antiRiot)reduction+=0.025;
+    if((category==='drugTrafficking'||category==='contrabandSmuggling')&&tactics.smugglerInterdict)reduction+=0.03;
+    if((category==='homicide'||category==='robbery')&&tactics.counterTerror)reduction+=0.02;
+    if((category==='robbery'||category==='assault')&&tactics.assetProtection)reduction+=0.018;
+    if(tactics.intelligenceFusion)reduction+=0.012;
+    reduction+=(Math.max(0,num(state.publicSatisfaction)||0)-(num(base.referenceSatisfaction)===null?55:num(base.referenceSatisfaction)))*0.0007;
+    reduction+=(20-clamp(num(state.misconductRiskPct)===null?20:num(state.misconductRiskPct),0,100))*0.00055;
+    return clamp(reduction,-0.65,0.75);
+  }
+  function getCrimeSnapshot(country,suppliedState){
+    const cid=normalizeCountry(country||currentCountry()),state=suppliedState||getState(cid),baseline=state&&state.crimeBaseline;
+    if(!state||!baseline||!baseline.ratesPer100k)return{available:false,reason:'POLICE_BASELINE_NOT_LOADED',countryId:cid};
+    const categories=Object.keys(baseline.ratesPer100k),rows={};let baselineIndex=0,currentIndex=0,totalBaseline=0,totalProjected=0;
+    categories.forEach(function(category){
+      const rate=num(baseline.ratesPer100k[category]);if(rate===null||rate<0)return;
+      const reduction=crimeReductionForCategory(state,category,baseline),projected=Math.max(0,rate*(1-reduction));
+      const populationValue=num(baseline.population);
+      const annualBaseline=populationValue===null?null:Math.round(populationValue*rate/100000);
+      const annualProjected=populationValue===null?null:Math.round(populationValue*projected/100000);
+      const source=baseline.rateSources&&baseline.rateSources[category]||'MODELED_SIMULATION_BASELINE';
+      const isObserved=String(source).indexOf('WORLD_BANK_OBSERVED')===0;
+      rows[category]={category:category,label:({theft:'Theft',robbery:'Robbery',streetRobbery:'Street robbery',drugTrafficking:'Drug trafficking',contrabandSmuggling:'Contraband / smuggling',assault:'Assault',homicide:'Homicide',cybercrime:'Cybercrime'})[category]||category,
+        baselineRatePer100k:rate,projectedRatePer100k:Math.round(projected*1000)/1000,reductionPct:Math.round(reduction*10000)/100,
+        baselineAnnualIncidents:annualBaseline,projectedAnnualIncidents:annualProjected,estimatedAnnualIncidentsAvoided:annualBaseline===null?null:annualBaseline-annualProjected,
+        source:source,observed:isObserved,observationYear:category==='homicide'&&baseline.observedHomicide?baseline.observedHomicide.year:null};
+      baselineIndex+=rate;currentIndex+=projected;totalBaseline+=annualBaseline===null?0:annualBaseline;totalProjected+=annualProjected===null?0:annualProjected;
+    });
+    const pop=num(baseline.population);
+    const model=state.crimeModel||{};
+    const active=activePolicePolicyRules(state);
+    return{available:true,countryId:cid,countryName:(findPoliceBaseline(cid)||{}).name||cid,
+      population:pop,populationYear:baseline.populationYear,populationSource:baseline.populationSource,
+      activePolice:Math.max(0,Math.floor(num(state.policeCount)||0)),policePer100k:pop?Math.round(state.policeCount/pop*100000*10)/10:null,
+      baselinePolicePersonnel:state.baselinePolicePersonnel,trainingQualityLevel:state.trainingQualityLevel,policeEfficiency:state.policeEfficiency,
+      publicSatisfaction:clamp(num(state.publicSatisfaction)===null?num(state.policeTrust)||55:num(state.publicSatisfaction),0,100),
+      misconductRiskPct:clamp(num(state.misconductRiskPct)===null?20:num(state.misconductRiskPct),0,100),privacyRiskPct:clamp(num(state.privacyRiskPct)===null?20:num(state.privacyRiskPct),0,100),
+      justiceBacklog:Math.max(0,num(state.justiceBacklog)||0),caseClearanceBonusPct:ruleEffectSum(state,'clearanceDelta'),
+      justiceSpeedBonusPct:ruleEffectSum(state,'justiceDelta'),activePolicyRules:active.map(function(rule){return rule.id;}),
+      activePolicyDailyCostUsd:Math.round(ruleDailyCost(state)*100)/100,baselineAnnualIncidentEstimate:baseline.population===null?null:totalBaseline,
+      projectedAnnualIncidentEstimate:baseline.population===null?null:totalProjected,annualIncidentsAvoided:baseline.population===null?null:totalBaseline-totalProjected,
+      baselineCrimeIndex:baselineIndex?100:0,projectedCrimeIndex:baselineIndex?Math.round(currentIndex/baselineIndex*10000)/100:0,
+      recordedDailyModel:clone(model),categories:rows,
+      disclaimer:'Rates labelled WORLD_BANK_OBSERVED are official-data observations; other crime categories and all projected outcomes are game estimates, not official crime statistics.'};
+  }
+  function estimateRecruitmentImpact(quantity,country){
+    const cid=normalizeCountry(country||currentCountry()),state=getState(cid),qty=Math.floor(num(quantity)||0);
+    if(qty<1||qty>100000)return{ok:false,code:'RECRUITMENT_QUANTITY_INVALID'};
+    const before=getCrimeSnapshot(cid,state);if(!before.available)return{ok:false,code:before.reason||'POLICE_BASELINE_NOT_LOADED'};
+    const next=clone(state);next.policeCount+=qty;next.policeEfficiency=clamp(next.policeEfficiency+Math.min(5,qty/100),0,100);
+    const after=getCrimeSnapshot(cid,next);
+    const dailySalary=Math.max(0,num(state.dailySalaryPerOfficerUsd)||POLICE_SALARY_PER_DAY),hiringFee=Math.max(0,num(state.recruitmentFeePerOfficerUsd)||POLICE_RECRUITMENT_COST);
+    return{ok:true,quantity:qty,upfrontCostUsd:qty*hiringFee,addedDailyPayrollUsd:qty*dailySalary,
+      baselineAnnualIncidents:before.baselineAnnualIncidentEstimate,projectedAnnualIncidentsBefore:before.projectedAnnualIncidentEstimate,
+      projectedAnnualIncidentsAfter:after.projectedAnnualIncidentEstimate,additionalIncidentsAvoidedPerYear:(before.projectedAnnualIncidentEstimate===null||after.projectedAnnualIncidentEstimate===null)?null:before.projectedAnnualIncidentEstimate-after.projectedAnnualIncidentEstimate,
+      before:before,after:after};
+  }
+  function bootstrapCountryPoliceBaselines(rows){
+    const loaded=loadCountryPoliceBaselines(rows);
+    if(!loaded.ok)return loaded;
+    const root=rootState();if(!root)return{ok:false,code:'AUTHORITATIVE_GAME_STATE_UNAVAILABLE',countryCount:loaded.countryCount};
+    if(!root.interior||typeof root.interior!=='object')root.interior={};
+    let seeded=0,existing=0,playerCountry=currentCountry();
+    rows.forEach(function(row){
+      if(!row||!row.code)return;
+      const cid=normalizeCountry(row.code),countryState=root.interior[cid]&&root.interior[cid].police;
+      const raw=countryState&&typeof countryState==='object'?countryState:null;
+      const state=mergeState(raw||baseState()),result=applyBaselineToPoliceState(state,row,raw);
+      if(!root.interior[cid]||typeof root.interior[cid]!=='object')root.interior[cid]={};
+      root.interior[cid].police=clone(result.state);
+      if(result.pristine)seeded++;else existing++;
+    });
+    root.omegaHomePoliceBaselineVersion=1;
+    root.omegaHomePoliceBaselineCountryCount=loaded.countryCount;
+    root.omegaHomePoliceBaselineUpdatedAt=new Date().toISOString();
+    const playerBaseline=findPoliceBaseline(playerCountry);
+    if(playerBaseline){
+      const cid=normalizeCountry(playerBaseline.code);
+      getState(cid);
+    }
+    const diagnostics=Object.assign({},loaded,{ok:true,seededCountries:seeded,existingCountryStatesPreserved:existing,
+      baselineVersion:1,activeCountry:playerCountry});
+    emit('OMEGA_HOME_POLICE_WORLD_BASELINE_READY',diagnostics);
+    return diagnostics;
+  }
   function financeApi(){return g.OmegaFinanceMinistry||g.Omega&&g.Omega.FinanceMinistry||null;}
   function homeBudgetCategory(action){
     const name=String(action||'HOME_MINISTRY_DAILY_OPERATIONS').toUpperCase();
@@ -751,7 +1025,8 @@
   }
   function recruitPolice(amount,country){
     const qty=Math.floor(num(amount)||0),cid=normalizeCountry(country||currentCountry());if(qty<1||qty>100000)return{ok:false,reason:'RECRUITMENT_QUANTITY_INVALID',message:'Recruitment must be between 1 and 100000 officers.'};
-    return mutation(cid,qty*POLICE_RECRUITMENT_COST,'POLICE_RECRUITMENT',function(s){s.policeCount+=qty;s.policeEfficiency=clamp(s.policeEfficiency+Math.min(5,qty/100),0,100);return{amount:qty,addedDailyPayroll:qty*POLICE_SALARY_PER_DAY,newPoliceCount:s.policeCount};});
+    const s=getState(cid),unitFee=Math.max(0,num(s.recruitmentFeePerOfficerUsd)||POLICE_RECRUITMENT_COST),dailySalary=Math.max(0,num(s.dailySalaryPerOfficerUsd)||POLICE_SALARY_PER_DAY);
+    return mutation(cid,qty*unitFee,'POLICE_RECRUITMENT',function(next){next.policeCount+=qty;next.policeEfficiency=clamp(next.policeEfficiency+Math.min(5,qty/100),0,100);return{amount:qty,unitRecruitmentFeeUsd:unitFee,addedDailyPayroll:qty*dailySalary,newPoliceCount:next.policeCount,estimatedCrimeImpact:estimateRecruitmentImpact(qty,cid)};});
   }
   function firePolice(amount,country){
     const qty=Math.floor(num(amount)||0),cid=normalizeCountry(country||currentCountry()),s=getState(cid);if(qty<1)return{ok:false,reason:'DISMISSAL_QUANTITY_INVALID'};if(qty>=s.policeCount)return{ok:false,reason:'MINIMUM_FORCE_REQUIRED',message:'At least one officer must remain in service.'};
@@ -853,7 +1128,7 @@
     if(!detected){s.policeTrust=clamp(s.policeTrust-2,0,100);s.policeEfficiency=clamp(s.policeEfficiency-1,0,100);s.sabotageRisk=clamp(s.sabotageRisk+1,5,95);}else{s.policeTrust=clamp(s.policeTrust+0.5,0,100);}
     emit('OMEGA_HOME_MINISTRY_SECURITY_INCIDENT',incident);return true;
   }
-  function dailyPayroll(s){return s.policeCount*POLICE_SALARY_PER_DAY+s.specialAgents*AGENT_SALARY_PER_DAY;}
+  function dailyPayroll(s){return s.policeCount*Math.max(0,num(s.dailySalaryPerOfficerUsd)||POLICE_SALARY_PER_DAY)+s.specialAgents*AGENT_SALARY_PER_DAY+ruleDailyCost(s);}
   function dailyOperatingCost(s){
     let total=dailyPayroll(s);
     if(Array.isArray(s.vehicleFleet)&&s.vehicleFleet.length){
@@ -988,7 +1263,15 @@
     getDailyPayroll:function(country){return dailyPayroll(getState(country||currentCountry()));},getDailyOperatingCost:function(country){return dailyOperatingCost(getState(country||currentCountry()));},getAvailableCountries:availableCountries,
     getResearchProgress:function(country){const s=getState(country||currentCountry()),p=s.pendingResearch;if(!p)return null;const remain=Math.max(0,p.completesAtMs-simulationTimeMs());return{id:p.id,name:p.name,startedAtMs:p.startedAtMs,completesAtMs:p.completesAtMs,remainingMs:remain,progress:clamp(100*(1-remain/Math.max(1,p.durationDays*DAY_MS)),0,100)};},
     formatMoney:money,getHomeBudgetSnapshot:getHomeBudgetSnapshot,setHomeBudgetPlan:setHomeBudgetPlan,
-    estimateRecruitCost:function(amount){return Math.max(0,Math.floor(num(amount)||0))*POLICE_RECRUITMENT_COST;},
+    estimateRecruitCost:function(amount,country){const s=getState(country||currentCountry());return Math.max(0,Math.floor(num(amount)||0))*Math.max(0,num(s.recruitmentFeePerOfficerUsd)||POLICE_RECRUITMENT_COST);},
+    getPoliceSalaryPerDay:function(country){return Math.max(0,num(getState(country||currentCountry()).dailySalaryPerOfficerUsd)||POLICE_SALARY_PER_DAY);},
+    getRecruitmentFeePerOfficer:function(country){return Math.max(0,num(getState(country||currentCountry()).recruitmentFeePerOfficerUsd)||POLICE_RECRUITMENT_COST);},
+    loadCountryPoliceBaselines:loadCountryPoliceBaselines,bootstrapCountryPoliceBaselines:bootstrapCountryPoliceBaselines,
+    getCountryPoliceBaseline:function(country){return clone(findPoliceBaseline(country));},
+    getCrimeSnapshot:getCrimeSnapshot,estimateRecruitmentImpact:estimateRecruitmentImpact,
+    getPolicePolicyRules:function(){return clone(POLICE_POLICY_RULES);},
+    setPatrolPlan:function(plan,country){const cid=normalizeCountry(country||currentCountry()),nextPlan=normalizePatrolPlan(plan),total=Object.values(nextPlan).reduce(function(sum,value){return sum+value;},0);if(total>100.0001)return{ok:false,code:'PATROL_PLAN_OVERALLOCATED',message:'Patrol allocations cannot exceed 100%.',totalPct:total};return mutation(cid,0,'POLICE_PATROL_PLAN_UPDATED',function(s){s.patrolPlan=nextPlan;return{patrolPlan:clone(nextPlan),totalPct:total,crime:getCrimeSnapshot(cid,Object.assign(clone(s),{patrolPlan:nextPlan}))};});},
+    setPolicePolicyRule:function(ruleId,enabled,country){const cid=normalizeCountry(country||currentCountry()),rule=POLICE_POLICY_RULES.find(function(row){return row.id===String(ruleId);});if(!rule)return{ok:false,code:'POLICE_POLICY_RULE_INVALID'};const activate=!!enabled,state=getState(cid);if(!!state.policeRules[rule.id]===activate)return{ok:true,code:'POLICE_POLICY_UNCHANGED',rule:clone(rule),state:publicState(state),crime:getCrimeSnapshot(cid,state)};const action='POLICE_'+(rule.department==='training'?'TRAINING_':rule.department==='facilities'?'FACILITY_':'POLICY_')+rule.id.toUpperCase();return mutation(cid,activate?rule.setupCostUsd:0,action,function(next){next.policeRules[rule.id]=activate;const direction=activate?1:-1;next.publicSatisfaction=clamp(next.publicSatisfaction+rule.trustDelta*direction,0,100);next.policeTrust=clamp(next.policeTrust+rule.trustDelta*direction,0,100);if(rule.misconductMultiplier&&rule.misconductMultiplier!==1){next.misconductRiskPct=clamp(activate?next.misconductRiskPct*rule.misconductMultiplier:next.misconductRiskPct/rule.misconductMultiplier,0,100);}next.privacyRiskPct=clamp(next.privacyRiskPct+rule.privacyDelta*direction,0,100);return{rule:clone(rule),enabled:activate,setupCostUsd:activate?rule.setupCostUsd:0,dailyOperatingCostUsd:ruleDailyCost(next),crime:getCrimeSnapshot(cid,next)};});},
     estimateVehicleCost:function(level,amount){const v=VEHICLES.find(x=>x.level===Math.floor(num(level)||0));return v?v.cost*Math.max(0,Math.floor(num(amount)||0)):null;},
     estimateFacilityCost:function(id,amount,country){return estimateFacilityCostFrom(getState(country||currentCountry()),id,amount);},
     estimateTrainingCost:function(target,country){return estimateTrainingCostFrom(getState(country||currentCountry()),Math.floor(num(target)||0));},
