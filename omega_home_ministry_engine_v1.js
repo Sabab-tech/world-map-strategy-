@@ -91,44 +91,130 @@
     operations:{label:'Operations & other costs',financeType:'general',actions:['HOME_MINISTRY_DAILY_OPERATIONS']}
   });
   const DEFAULT_POLICE_PATROL_PLAN=Object.freeze({urban:32,rural:12,highway:10,border:10,drugs:10,investigations:8,cyber:4,community:14});
+  const DEFAULT_POLICE_DEPARTMENT_PLAN=Object.freeze({
+    generalPatrol:28,traffic:10,investigations:14,homicide:5,cybercrime:5,
+    narcotics:8,border:8,community:10,forensics:4,rapidResponse:8
+  });
   const DEFAULT_POLICE_RULEBOOK=Object.freeze({
-    missingPersonActionHours:0,highRiskResponseMinutes:15,arrestReviewHours:6,
-    maximumDetentionHours:24,warrantDecisionHours:12,evidenceSubmissionHours:6,
-    forceReviewHours:24,bodyCameraMandatory:true,searchWarrantRequired:true,
-    trainingDaysBeforeDeployment:30,minimumPatrolCoveragePct:45
+    missingPersonActionHours:6,highRiskResponseMinutes:30,arrestResponseHours:6,
+    arrestReviewHours:6,maximumDetentionHours:48,warrantDecisionHours:24,
+    evidenceSubmissionHours:12,forceReviewHours:48,bodyCameraMandatory:true,
+    searchWarrantRequired:true,trainingDaysBeforeDeployment:30,minimumPatrolCoveragePct:40
+  });
+  const POLICE_RULEBOOK_RANGES=Object.freeze({
+    missingPersonActionHours:[0,24],highRiskResponseMinutes:[0,240],arrestResponseHours:[0.5,72],
+    arrestReviewHours:[1,48],maximumDetentionHours:[1,168],warrantDecisionHours:[1,72],
+    evidenceSubmissionHours:[1,72],forceReviewHours:[1,168],
+    trainingDaysBeforeDeployment:[0,180],minimumPatrolCoveragePct:[0,100]
   });
   function normalizePoliceRulebook(raw){
-    const defaults=DEFAULT_POLICE_RULEBOOK,src=raw&&typeof raw==='object'?raw:{},out={};
-    const ranges={
-      missingPersonActionHours:[0,24],highRiskResponseMinutes:[0,240],arrestReviewHours:[1,48],
-      maximumDetentionHours:[1,168],warrantDecisionHours:[1,72],evidenceSubmissionHours:[1,72],
-      forceReviewHours:[1,168],trainingDaysBeforeDeployment:[0,180],minimumPatrolCoveragePct:[0,100]
-    };
-    Object.keys(ranges).forEach(function(key){
-      const value=num(src[key]),range=ranges[key];
+    const defaults=DEFAULT_POLICE_RULEBOOK,src=raw&&typeof raw==='object'&&!Array.isArray(raw)?raw:{},out={};
+    Object.keys(POLICE_RULEBOOK_RANGES).forEach(function(key){
+      const value=num(src[key]),range=POLICE_RULEBOOK_RANGES[key];
       out[key]=Math.round(clamp(value===null?defaults[key]:value,range[0],range[1])*10)/10;
     });
     out.bodyCameraMandatory=src.bodyCameraMandatory===undefined?defaults.bodyCameraMandatory:src.bodyCameraMandatory!==false;
     out.searchWarrantRequired=src.searchWarrantRequired===undefined?defaults.searchWarrantRequired:src.searchWarrantRequired!==false;
     return out;
   }
+  function validatePoliceRulebook(input,base){
+    if(!input||typeof input!=='object'||Array.isArray(input))return{ok:false,code:'POLICE_RULEBOOK_INPUT_INVALID',errors:['Submit a rulebook object.']};
+    const keys=Object.keys(POLICE_RULEBOOK_RANGES).concat(['bodyCameraMandatory','searchWarrantRequired']);
+    const unknown=Object.keys(input).filter(function(key){return keys.indexOf(key)<0;});
+    if(unknown.length)return{ok:false,code:'POLICE_RULEBOOK_UNKNOWN_FIELDS',errors:unknown.map(function(key){return'Unknown rulebook field: '+key;})};
+    const source=Object.assign({},DEFAULT_POLICE_RULEBOOK,base||{},input),out={},errors=[];
+    Object.keys(POLICE_RULEBOOK_RANGES).forEach(function(key){
+      const raw=source[key],value=num(raw),range=POLICE_RULEBOOK_RANGES[key];
+      if(raw===''||value===null||value<range[0]||value>range[1]){
+        errors.push(key+' must be a number between '+range[0]+' and '+range[1]+'.');
+      }else out[key]=Math.round(value*10)/10;
+    });
+    ['bodyCameraMandatory','searchWarrantRequired'].forEach(function(key){
+      if(typeof source[key]!=='boolean')errors.push(key+' must be true or false.');
+      else out[key]=source[key];
+    });
+    return errors.length?{ok:false,code:'POLICE_RULEBOOK_VALIDATION_FAILED',errors:errors}:{ok:true,rulebook:out};
+  }
   function policeRulebookQuality(raw){
-    const r=normalizePoliceRulebook(raw);
-    const inverse=function(value,max){return clamp(100-(value/max)*100,0,100);};
-    const patrolFit=clamp(100-Math.abs(r.minimumPatrolCoveragePct-45)*1.35,0,100);
+    const r=normalizePoliceRulebook(raw),inverse=function(value,max){return clamp(100-(value/max)*100,0,100);};
+    const patrolFit=clamp(100-Math.abs(r.minimumPatrolCoveragePct-40)*1.5,0,100);
     return Math.round((
-      inverse(r.missingPersonActionHours,24)*0.14+
+      inverse(r.missingPersonActionHours,24)*0.08+
       inverse(r.highRiskResponseMinutes,240)*0.10+
-      inverse(r.arrestReviewHours,48)*0.10+
-      inverse(r.maximumDetentionHours,168)*0.12+
-      inverse(r.warrantDecisionHours,72)*0.08+
-      inverse(r.evidenceSubmissionHours,72)*0.10+
-      inverse(r.forceReviewHours,168)*0.08+
-      (r.bodyCameraMandatory?100:35)*0.10+
+      inverse(r.arrestResponseHours,72)*0.10+
+      inverse(r.arrestReviewHours,48)*0.08+
+      inverse(r.maximumDetentionHours,168)*0.10+
+      inverse(r.warrantDecisionHours,72)*0.07+
+      inverse(r.evidenceSubmissionHours,72)*0.08+
+      inverse(r.forceReviewHours,168)*0.07+
+      (r.bodyCameraMandatory?100:35)*0.08+
       (r.searchWarrantRequired?100:45)*0.06+
-      clamp(r.trainingDaysBeforeDeployment/90*100,0,100)*0.06+
-      patrolFit*0.06
+      clamp(r.trainingDaysBeforeDeployment/90*100,0,100)*0.10+
+      patrolFit*0.08
     )*10)/10;
+  }
+  function policeRulebookOperationalIndex(raw){
+    const r=normalizePoliceRulebook(raw),d=DEFAULT_POLICE_RULEBOOK;
+    const ratio=function(reference,current,min){return clamp(reference/Math.max(min,current),0.25,4);};
+    const training=clamp(Math.max(0,r.trainingDaysBeforeDeployment)/Math.max(1,d.trainingDaysBeforeDeployment),0.25,4);
+    const patrol=clamp(Math.max(0,r.minimumPatrolCoveragePct)/Math.max(1,d.minimumPatrolCoveragePct),0.25,4);
+    return Math.round(clamp(
+      ratio(d.missingPersonActionHours,r.missingPersonActionHours,0.5)*0.08+
+      ratio(d.highRiskResponseMinutes,r.highRiskResponseMinutes,5)*0.10+
+      ratio(d.arrestResponseHours,r.arrestResponseHours,0.5)*0.15+
+      ratio(d.arrestReviewHours,r.arrestReviewHours,1)*0.09+
+      ratio(d.maximumDetentionHours,r.maximumDetentionHours,1)*0.08+
+      ratio(d.warrantDecisionHours,r.warrantDecisionHours,1)*0.08+
+      ratio(d.evidenceSubmissionHours,r.evidenceSubmissionHours,1)*0.07+
+      ratio(d.forceReviewHours,r.forceReviewHours,1)*0.08+
+      (r.bodyCameraMandatory?1:0.65)*0.07+
+      (r.searchWarrantRequired?1:0.75)*0.05+
+      training*0.07+patrol*0.08,0.2,4)*100)/100;
+  }
+  function normalizePoliceDepartmentPlan(raw){
+    const src=raw&&typeof raw==='object'&&!Array.isArray(raw)?raw:{},out={};
+    Object.keys(DEFAULT_POLICE_DEPARTMENT_PLAN).forEach(function(key){
+      const value=num(src[key]);
+      out[key]=Math.round(clamp(value===null?DEFAULT_POLICE_DEPARTMENT_PLAN[key]:value,0,100)*10)/10;
+    });
+    return out;
+  }
+  function validatePoliceDepartmentPlan(input,base){
+    if(!input||typeof input!=='object'||Array.isArray(input))return{ok:false,code:'POLICE_DEPARTMENT_PLAN_INVALID',errors:['Submit a department allocation object.']};
+    const keys=Object.keys(DEFAULT_POLICE_DEPARTMENT_PLAN),unknown=Object.keys(input).filter(function(key){return keys.indexOf(key)<0;});
+    if(unknown.length)return{ok:false,code:'POLICE_DEPARTMENT_UNKNOWN_FIELDS',errors:unknown.map(function(key){return'Unknown police unit: '+key;})};
+    const src=Object.assign({},DEFAULT_POLICE_DEPARTMENT_PLAN,base||{},input),out={},errors=[];
+    keys.forEach(function(key){
+      const raw=src[key],value=num(raw);
+      if(raw===''||value===null||value<0||value>100)errors.push(key+' must be between 0 and 100%.');
+      else out[key]=Math.round(value*10)/10;
+    });
+    const total=Object.values(out).reduce(function(sum,value){return sum+value;},0);
+    if(errors.length===0&&Math.abs(total-100)>0.11)errors.push('Police department shares must total exactly 100%; current total is '+total.toFixed(1)+'%.');
+    return errors.length?{ok:false,code:'POLICE_DEPARTMENT_PLAN_VALIDATION_FAILED',errors:errors,totalPct:total}:{ok:true,plan:out,totalPct:total};
+  }
+  function policeDepartmentHeadcounts(state){
+    const plan=normalizePoliceDepartmentPlan(state&&state.policeDepartments),total=Math.max(0,Math.floor(num(state&&state.policeCount)||0)),keys=Object.keys(DEFAULT_POLICE_DEPARTMENT_PLAN),rows=[];
+    let allocated=0;
+    keys.forEach(function(key){const exact=total*plan[key]/100,whole=Math.floor(exact);rows.push({key:key,headcount:whole,fraction:exact-whole,pct:plan[key]});allocated+=whole;});
+    rows.slice().sort(function(a,b){return b.fraction-a.fraction||a.key.localeCompare(b.key);}).slice(0,total-allocated).forEach(function(extra){
+      const target=rows.find(function(row){return row.key===extra.key;});if(target)target.headcount++;
+    });
+    const out={};rows.forEach(function(row){out[row.key]={pct:row.pct,headcount:row.headcount};});return out;
+  }
+  function activePolicePolicyRules(state){
+    return POLICE_POLICY_RULES.filter(function(rule){return !!(state&&state.policeRules&&state.policeRules[rule.id]);});
+  }
+  function activePolicyDailyCost(state){
+    return activePolicePolicyRules(state).reduce(function(sum,rule){return sum+Math.max(0,num(rule.dailyCostUsd)||0);},0);
+  }
+  function policeRulebookDailyCost(state){
+    const current=state||{},payroll=dailyPayroll(current),headcount=Math.max(0,num(current.policeCount)||0);
+    const fixed=125*Math.sqrt(Math.max(1,headcount/1000));
+    return Math.round((payroll*0.006*policeRulebookOperationalIndex(current.policeRulebook)+fixed)*100)/100;
+  }
+  function ruleDailyCost(state){
+    return activePolicyDailyCost(state)+policeRulebookDailyCost(state);
   }
   const POLICE_POLICY_RULES=Object.freeze([
     {id:'community_policing',name:'Community policing & local liaison',department:'operations',setupCostUsd:125000,dailyCostUsd:250,description:'Builds neighborhood reporting and non-escalation capacity.',crimeEffects:{theft:.04,robbery:.02,streetRobbery:.06,assault:.08,homicide:.01},trustDelta:5,misconductMultiplier:1,clearanceDelta:1,justiceDelta:2,privacyDelta:0,vehicleWearPct:0},
@@ -149,7 +235,7 @@
     homeBudgetPlan:HOME_BUDGET_DEFAULT_PLAN,
     baselineVersion:0,baselinePolicePersonnel:null,baselineFleetUnits:null,baselineFleetReplacementValueUsd:0,baselineSource:null,
     dailySalaryPerOfficerUsd:null,recruitmentFeePerOfficerUsd:null,crimeBaseline:null,crimeModel:null,crimeHistory:[],crimeAccumulator:{},lastCrimeSimulationDay:null,
-    policeRules:DEFAULT_POLICE_POLICY_STATE,policeRulebook:DEFAULT_POLICE_RULEBOOK,patrolPlan:DEFAULT_POLICE_PATROL_PLAN,publicSatisfaction:55,misconductRiskPct:20,justiceBacklog:0,privacyRiskPct:20,
+    policeRules:DEFAULT_POLICE_POLICY_STATE,policeRulebook:DEFAULT_POLICE_RULEBOOK,policeDepartments:DEFAULT_POLICE_DEPARTMENT_PLAN,patrolPlan:DEFAULT_POLICE_PATROL_PLAN,publicSatisfaction:55,misconductRiskPct:20,justiceBacklog:0,privacyRiskPct:20,
     facilityLevels:{station:1,patrol:1,academy:1,department:1,dispatch:0,forensics:0,border:0,cyber:0,emergency:0,communications:0},
     trainingQualityLevel:1,
     tacticsResearched:{antiRiot:false,smugglerInterdict:false,counterTerror:false,assetProtection:false,intelligenceFusion:false},
@@ -310,6 +396,7 @@
     const policiesAreDefault=Object.keys(DEFAULT_POLICE_POLICY_STATE).every(function(key){return !state.policeRules||state.policeRules[key]===false;});
     const rulebookIsDefault=JSON.stringify(normalizePoliceRulebook(state.policeRulebook))===JSON.stringify(normalizePoliceRulebook(DEFAULT_POLICE_RULEBOOK));
     const patrolIsDefault=JSON.stringify(normalizePatrolPlan(state.patrolPlan))===JSON.stringify(normalizePatrolPlan(DEFAULT_POLICE_PATROL_PLAN));
+    const departmentsAreDefault=JSON.stringify(normalizePoliceDepartmentPlan(state.policeDepartments))===JSON.stringify(normalizePoliceDepartmentPlan(DEFAULT_POLICE_DEPARTMENT_PLAN));
     const vehiclesArePristine=(state.vehicleFleet||[]).every(function(unit){
       return Number(unit.condition||100)>=99.9&&Number(unit.odometerKm||0)===0&&Number(unit.incidents||0)===0&&Number(unit.repairsCount||0)===0;
     });
@@ -322,7 +409,7 @@
       !(state.crimeHistory||[]).length&&!(state.crimeModel&&Number(state.crimeModel.totalIncidents||0))&&
       Math.floor(num(state.trainingQualityLevel)||1)===1&&Math.floor(num(state.specialAgents)||0)===0&&
       Math.floor(num(state.unpaidPayroll)||0)===0&&facilitiesAreDefault&&tacticsAreDefault&&policiesAreDefault&&
-      rulebookIsDefault&&patrolIsDefault;
+      rulebookIsDefault&&patrolIsDefault&&departmentsAreDefault;
   }
   function applyBaselineToPoliceState(state,row,raw){
     const pristine=isPristinePoliceState(state,raw),legacyUntouched=isUntouchedLegacyBaselineState(state,raw,row);
@@ -353,6 +440,7 @@
     state.patrolPlan=normalizePatrolPlan(state.patrolPlan);
     state.policeRules=Object.assign(clone(DEFAULT_POLICE_POLICY_STATE),state.policeRules||{});
     state.policeRulebook=normalizePoliceRulebook(state.policeRulebook);
+    state.policeDepartments=normalizePoliceDepartmentPlan(state.policeDepartments);
     if(!state.crimeModel||typeof state.crimeModel!=='object')state.crimeModel={totalIncidents:0,openedCases:0,clearedCases:0,lastUpdatedDay:null};
     if(!Array.isArray(state.crimeHistory))state.crimeHistory=[];
     if(!state.crimeAccumulator||typeof state.crimeAccumulator!=='object')state.crimeAccumulator={};
@@ -751,6 +839,7 @@
     s.homeBudgetPlan=normalizeHomeBudgetPlan(raw.homeBudgetPlan);
     s.policeRules=Object.assign(clone(DEFAULT_POLICE_POLICY_STATE),raw.policeRules||{});
     s.policeRulebook=normalizePoliceRulebook(raw.policeRulebook);
+    s.policeDepartments=normalizePoliceDepartmentPlan(raw.policeDepartments);
     s.patrolPlan=normalizePatrolPlan(raw.patrolPlan);
     s.crimeBaseline=raw.crimeBaseline&&typeof raw.crimeBaseline==='object'?clone(raw.crimeBaseline):null;
     s.crimeModel=raw.crimeModel&&typeof raw.crimeModel==='object'?clone(raw.crimeModel):null;
@@ -773,7 +862,7 @@
     if(num(s.unlockedVehicleLevel)===null)s.unlockedVehicleLevel=1;return s;
   }
   function storedState(country){const root=rootState(),raw=root&&root.interior&&root.interior[country]&&root.interior[country].police;return raw&&typeof raw==='object'?mergeState(raw):null;}
-  function publicState(s){return{policeCount:s.policeCount,policeEfficiency:s.policeEfficiency,policeTrust:s.policeTrust,unlockedVehicleLevel:s.unlockedVehicleLevel,vehiclesOwned:clone(s.vehiclesOwned),pendingVehicleOrder:clone(s.pendingVehicleOrder),fuelSupplyDays:clamp(num(s.fuelSupplyDays)===null?14:num(s.fuelSupplyDays),0,180),lastFuelSupplyPurchaseTurn:s.lastFuelSupplyPurchaseTurn,homeBudgetPlan:clone(normalizeHomeBudgetPlan(s.homeBudgetPlan)),baselineVersion:s.baselineVersion,baselinePolicePersonnel:s.baselinePolicePersonnel,baselineFleetUnits:s.baselineFleetUnits,baselineFleetReplacementValueUsd:s.baselineFleetReplacementValueUsd,dailySalaryPerOfficerUsd:s.dailySalaryPerOfficerUsd,recruitmentFeePerOfficerUsd:s.recruitmentFeePerOfficerUsd,crimeBaseline:clone(s.crimeBaseline),crimeModel:clone(s.crimeModel),crimeHistory:clone(s.crimeHistory),policeRules:clone(s.policeRules),policeRulebook:clone(normalizePoliceRulebook(s.policeRulebook)),patrolPlan:clone(s.patrolPlan),publicSatisfaction:s.publicSatisfaction,misconductRiskPct:s.misconductRiskPct,justiceBacklog:s.justiceBacklog,privacyRiskPct:s.privacyRiskPct,facilityLevels:clone(s.facilityLevels),trainingQualityLevel:s.trainingQualityLevel,tacticsResearched:clone(s.tacticsResearched),pendingResearch:clone(s.pendingResearch),specialAgents:s.specialAgents,sabotageRisk:s.sabotageRisk,unpaidPayroll:s.unpaidPayroll,agentDeployments:clone(s.agentDeployments),intelligenceReports:clone(s.intelligenceReports),incidentLedger:clone(s.incidentLedger),guardDeployments:clone(s.guardDeployments),nextGuardDeploymentId:s.nextGuardDeploymentId,vehicleFleet:clone(s.vehicleFleet),nextVehicleUnitId:s.nextVehicleUnitId,vehicleMaintenanceLog:clone(s.vehicleMaintenanceLog),lastFleetSimulationDay:s.lastFleetSimulationDay};}
+  function publicState(s){return{policeCount:s.policeCount,policeEfficiency:s.policeEfficiency,policeTrust:s.policeTrust,unlockedVehicleLevel:s.unlockedVehicleLevel,vehiclesOwned:clone(s.vehiclesOwned),pendingVehicleOrder:clone(s.pendingVehicleOrder),fuelSupplyDays:clamp(num(s.fuelSupplyDays)===null?14:num(s.fuelSupplyDays),0,180),lastFuelSupplyPurchaseTurn:s.lastFuelSupplyPurchaseTurn,homeBudgetPlan:clone(normalizeHomeBudgetPlan(s.homeBudgetPlan)),baselineVersion:s.baselineVersion,baselinePolicePersonnel:s.baselinePolicePersonnel,baselineFleetUnits:s.baselineFleetUnits,baselineFleetReplacementValueUsd:s.baselineFleetReplacementValueUsd,dailySalaryPerOfficerUsd:s.dailySalaryPerOfficerUsd,recruitmentFeePerOfficerUsd:s.recruitmentFeePerOfficerUsd,crimeBaseline:clone(s.crimeBaseline),crimeModel:clone(s.crimeModel),crimeHistory:clone(s.crimeHistory),policeRules:clone(s.policeRules),policeRulebook:clone(normalizePoliceRulebook(s.policeRulebook)),policeDepartments:clone(normalizePoliceDepartmentPlan(s.policeDepartments)),patrolPlan:clone(s.patrolPlan),publicSatisfaction:s.publicSatisfaction,misconductRiskPct:s.misconductRiskPct,justiceBacklog:s.justiceBacklog,privacyRiskPct:s.privacyRiskPct,facilityLevels:clone(s.facilityLevels),trainingQualityLevel:s.trainingQualityLevel,tacticsResearched:clone(s.tacticsResearched),pendingResearch:clone(s.pendingResearch),specialAgents:s.specialAgents,sabotageRisk:s.sabotageRisk,unpaidPayroll:s.unpaidPayroll,agentDeployments:clone(s.agentDeployments),intelligenceReports:clone(s.intelligenceReports),incidentLedger:clone(s.incidentLedger),guardDeployments:clone(s.guardDeployments),nextGuardDeploymentId:s.nextGuardDeploymentId,vehicleFleet:clone(s.vehicleFleet),nextVehicleUnitId:s.nextVehicleUnitId,vehicleMaintenanceLog:clone(s.vehicleMaintenanceLog),lastFleetSimulationDay:s.lastFleetSimulationDay};}
   function emit(type,detail){try{if(typeof g.dispatchEvent==='function'&&typeof g.CustomEvent==='function')g.dispatchEvent(new g.CustomEvent(type,{detail:clone(detail||{})}));}catch(_){}}
   function dispatchState(country,next,eventName){
     const mesh=interop();
