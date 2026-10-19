@@ -468,6 +468,11 @@
       updateHud();
       return true;
     }
+    if (String(sim.status || '').toUpperCase() === 'ERROR') {
+      setSaveStatus('GAME ERROR · LAST COMPLETE SAVE PRESERVED');
+      updateHud();
+      return false;
+    }
     lastKnownSpeed = speed;
     try { sim.clock.setSpeed(speed); } catch (_) { return false; }
     var country = playerCountry(sim);
@@ -527,6 +532,12 @@
       lifecycleFinalizerUnregister = null;
     }
     lifecycleFinalizerUnregister = sim.registerTurnFinalizer('omega.game-lifecycle.autosave', async function (context) {
+      // A failed sector turn is not a coherent checkpoint. Preserve the last known-good
+      // save instead of writing a partially applied day over it.
+      if (context && context.simulation && String(context.simulation.status || '').toUpperCase() === 'ERROR') {
+        setSaveStatus('TURN FAILED · LAST COMPLETE SAVE PRESERVED');
+        throw new Error('FAILED_TURN_NOT_SAVED');
+      }
       // Runs after all sector participants, the publish hook, and the checkpoint phase.
       // Never report success unless localStorage or the IndexedDB transaction completed.
       var started = saveNow({ force: true, committedTurn: true });
