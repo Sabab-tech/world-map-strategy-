@@ -123,7 +123,7 @@ assert.equal(pipeline.shouldHandleQuestion({ countryId: 'BGD', ministryId: 'fina
   });
 
   assert.equal(answer.ok, true, JSON.stringify({ status: answer.status, error: answer.error }));
-  assert.equal(answer.source, 'OMEGA_MINISTER_INTELLIGENCE_PIPELINE');
+  assert.equal(answer.source, 'OMEGA_MINISTER_INTELLIGENCE_PIPELINE_V1');
   assert.equal(answer.language, 'bn');
   assert.match(answer.text, /বাজেটের ঝুঁকি বিশ্লেষণ করছি/);
   assert.equal(answer.route[0], 'OMEGA_LANGUAGE_SYSTEM');
