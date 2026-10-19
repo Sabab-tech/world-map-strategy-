@@ -171,3 +171,25 @@ test('index, finance, bank and offline shell use the daily lifecycle assets', ()
   assert.match(serviceWorker, /omega_game_lifecycle_runtime_v1\.js/);
   assert.match(serviceWorker, /omega_game_lifecycle_runtime_v1\.css/);
 });
+
+
+test('finance, FX, macro and ministry time fallbacks treat one turn as one day', () => {
+  const transmissionRules = JSON.parse(fs.readFileSync(path.join(root, 'financial_transmission_rules_v1.json'), 'utf8'));
+  const macroRules = JSON.parse(fs.readFileSync(path.join(root, 'finance_macro_stability_rules_v1.json'), 'utf8'));
+  const transmission = fs.readFileSync(path.join(root, 'omega_economic_transmission_runtime_v1.js'), 'utf8');
+  const fx = fs.readFileSync(path.join(root, 'omega_forex_monetary_engine_v1.js'), 'utf8');
+  const macro = fs.readFileSync(path.join(root, 'omega_macro_stability_runtime_v1.js'), 'utf8');
+  const home = fs.readFileSync(path.join(root, 'omega_home_ministry_engine_v1.js'), 'utf8');
+  const military = fs.readFileSync(path.join(root, 'omega_battlefield_command_runtime_v1.js'), 'utf8');
+
+  assert.equal(transmissionRules.simulationTurnDurationMs, DAY_MS);
+  assert.equal(macroRules.simulationTurnDurationMs, DAY_MS);
+  assert.match(transmission, /\\?\\?DAY_MS/);
+  assert.doesNotMatch(transmission, /Math\\.floor\\(currentTurn\\(\\)\\s*\\/\\s*24\\)/);
+  assert.match(fx, /finite\\(durationMs\\) \\?\\? DAY_MS/);
+  assert.match(fx, /Math\\.floor\\(turnNumber\\) % 3 === 0/);
+  assert.match(macro, /simulationTurnDurationMs\\|\\|86400000/);
+  assert.doesNotMatch(macro, /315864000000/);
+  assert.match(home, /const step=num\\(sim&&sim\\.clock&&sim\\.stepDurationMs\\)\\|\\|DAY_MS/);
+  assert.match(military, /simTurn\\(\\) \\* 86400000/);
+});
