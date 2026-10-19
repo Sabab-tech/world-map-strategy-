@@ -1757,17 +1757,10 @@
   }
   function materialToken(value){return String(value||'').trim().toLowerCase().replace(/[\s-]+/g,'_');}
   function capabilityMaterialRequirements(type,target){
-    const level=Math.max(1,Math.floor(num(target)||1));
-    if(type==='training')return[
-      {resourceId:'CONSTRUCTION_AGGREGATE',quantity:level*8},
-      {resourceId:'COPPER',quantity:level*2},
-      {resourceId:'BAUXITE_ALUMINUM',quantity:level}
-    ];
-    return[
-      {resourceId:'CRUDE_OIL',quantity:level*3},
-      {resourceId:'COPPER',quantity:level},
-      {resourceId:'IRON_ORE',quantity:level*2}
-    ];
+    const runtime=g.OmegaHomePoliceTrainingMaterialsRuntime;
+    if(!runtime||typeof runtime.getRequirements!=='function')return null;
+    const requirements=runtime.getRequirements(type,target);
+    return Array.isArray(requirements)?requirements:null;
   }
   function capabilityResourceBucket(country){
     const root=rootState();
@@ -1800,8 +1793,7 @@
     const available=trade.quantity===null?outsideReserve:Math.min(outsideReserve,Math.max(0,trade.quantity));
     const resourceTypes=Array.isArray(g.ResourceMinistryEngine&&g.ResourceMinistryEngine.resourceTypes)?g.ResourceMinistryEngine.resourceTypes:[];
     const type=resourceTypes.find(function(item){return materialToken(item&&item.id)===materialToken(resourceId);});
-    const labels={CONSTRUCTION_AGGREGATE:'Construction aggregate',COPPER:'Copper',BAUXITE_ALUMINUM:'Bauxite / aluminum',CRUDE_OIL:'Crude oil',IRON_ORE:'Iron ore'};
-    return{resourceId:resourceId,name:type&&type.name||labels[resourceId]||String(resourceId).replace(/_/g,' '),
+    return{resourceId:resourceId,name:type&&type.name||String(resourceId).replace(/_/g,' '),
       unit:type&&type.unit||type&&type.units||null,inventoryQuantity:inventory.quantity,availableQuantity:available,
       reservedQuantity:reserved,authority:'LIVE_GAME_RESOURCE_INVENTORY',source:'Game.state.resource[country].inventory',resourceCountryId:found.countryId};
   }
@@ -1832,7 +1824,9 @@
     const budget=getHomeBudgetSnapshot(cid,state),budgetRow=budget&&budget.categories&&budget.categories[category];
     const spendableUsd=budgetRow&&num(budgetRow.spendableUsd)!==null?Math.max(0,num(budgetRow.spendableUsd)):0;
     const resources=targetLevel<=maxLevel?policeCapabilityResources(kind,targetLevel,state):[];
-    const materials=(targetLevel<=maxLevel?capabilityMaterialRequirements(kind,targetLevel):[])
+    const materialRules=targetLevel<=maxLevel?capabilityMaterialRequirements(kind,targetLevel):[];
+    const materialRulesReady=Array.isArray(materialRules);
+    const materials=(materialRulesReady?materialRules:[])
       .map(function(row){return Object.assign({},row,capabilityMaterialStock(cid,row.resourceId));});
     const existingProject=(state.pendingCapabilityProjects||[]).find(function(p){return p&&p.type===kind&&p.status==='IN_PROGRESS';});
     const materialRuntime=g.OmegaHomePoliceTrainingMaterialsRuntime&&typeof g.OmegaHomePoliceTrainingMaterialsRuntime.diagnostics==='function'
@@ -1850,7 +1844,9 @@
     resources.filter(function(row){return !row.ok;}).forEach(function(row){
       blockers.push({code:'CAPABILITY_RESOURCE_REQUIREMENT_MISSING',resourceId:row.id,message:row.label+': need '+row.required+' '+row.unit+', available '+row.available+'.'});
     });
-    if(!materialRuntime||materialRuntime.ready!==true)
+    if(!materialRulesReady)
+      blockers.push({code:'RESOURCE_MATERIAL_RULES_UNAVAILABLE',message:'The authoritative police material requirements JSON is not loaded or is invalid.'});
+    if(!materialRuntime||materialRuntime.registered!==true)
       blockers.push({code:'RESOURCE_MATERIAL_RUNTIME_UNAVAILABLE',message:'The authoritative resource inventory transaction handler is not ready.'});
     materials.forEach(function(row){
       if(row.availableQuantity===null||row.availableQuantity===undefined){
