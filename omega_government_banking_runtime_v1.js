@@ -846,6 +846,7 @@
       sourceCountryId: country.iso3 || country.countryCode,
       destinationCountryId: country.iso3 || country.countryCode,
       amount: input.amount, fromCurrencyCode: from, toCurrencyCode: to,
+      feeBps: num(input.feeBps) ?? Number(rules.fxFeeBps || 15),
       paymentDelayTurns: 0, idempotencyKey: input.idempotencyKey || nextId('GB-CNV'),
       reference: input.reference || 'FX conversion',
       category: 'CURRENCY_CONVERSION'
