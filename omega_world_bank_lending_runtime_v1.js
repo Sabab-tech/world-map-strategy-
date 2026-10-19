@@ -467,6 +467,22 @@
     if (!player || codeOf(player) !== codeOf(profile)) {
       return { ok: false, code: 'PLAYER_COUNTRY_SCOPE_VIOLATION', message: 'Only the active player country can issue the Finance Treasury borrowing action.' };
     }
+    const bank = store(true);
+    const requestId = String(input.requestId || ('WB-' + codeOf(profile) + '-' + currentTurn() + '-' + bank.nextSequence)).slice(0, 120);
+    const allowedPurposes = ['infrastructure', 'health', 'education', 'climate', 'emergency', 'budget-support'];
+    const purpose = allowedPurposes.includes(String(input.purpose || '').toLowerCase())
+      ? String(input.purpose).toLowerCase() : 'infrastructure';
+    if (bank.idempotency[requestId]) {
+      const previousLoanId = bank.idempotency[requestId];
+      const existing = getLoanList(profile).find(loan => loan.loanId === previousLoanId);
+      if (!existing) return { ok: false, code: 'IDEMPOTENCY_REFERENCE_MISSING', loanId: previousLoanId };
+      const requestedAmount = finite(input.amountUsd);
+      if ((requestedAmount !== null && Math.abs(requestedAmount - existing.originalPrincipalUsd) > 0.01)
+          || purpose !== existing.purpose) {
+        return { ok: false, code: 'IDEMPOTENCY_KEY_PAYLOAD_MISMATCH', message: 'This request ID was already used for a different loan amount or purpose.' };
+      }
+      return { ok: true, duplicate: true, loan: clone(existing), loanId: previousLoanId };
+    }
     const assessment = scoreCountry(profile);
     if (!assessment || (assessment.decision !== 'ELIGIBLE' && assessment.decision !== 'CONDITIONAL') || assessment.maxLoanUsd <= 0) {
       return { ok: false, code: 'WORLD_BANK_CREDIT_REJECTED', assessment: assessment, message: 'The current country assessment does not support a new facility.' };
@@ -475,16 +491,7 @@
     if (amount <= 0 || amount > assessment.maxLoanUsd + 0.01) {
       return { ok: false, code: 'WORLD_BANK_AMOUNT_OUT_OF_RANGE', maxLoanUsd: assessment.maxLoanUsd, message: 'Requested principal must be positive and not exceed the current approved game-model ceiling.' };
     }
-    const bank = store(true);
-    const requestId = String(input.requestId || ('WB-' + codeOf(profile) + '-' + currentTurn() + '-' + bank.nextSequence)).slice(0, 120);
-    if (bank.idempotency[requestId]) {
-      const previousLoanId = bank.idempotency[requestId];
-      const existing = getLoanList(profile).find(loan => loan.loanId === previousLoanId);
-      return { ok: true, duplicate: true, loan: clone(existing || null), loanId: previousLoanId };
-    }
     if (!finance || typeof finance.applyAction !== 'function') return { ok: false, code: 'FINANCE_RUNTIME_UNAVAILABLE' };
-    const purpose = ['infrastructure', 'health', 'education', 'climate', 'emergency', 'budget-support'].includes(String(input.purpose || '').toLowerCase())
-      ? String(input.purpose).toLowerCase() : 'infrastructure';
     const terms = termsFor(assessment, purpose);
     const financeResult = finance.applyAction({
       type: 'borrow', countryId: codeOf(profile), amountUsd: amount,
@@ -903,7 +910,7 @@
     let form = '';
     if (canAct && assessment && assessment.maxLoanUsd > 0
         && (assessment.decision === 'ELIGIBLE' || assessment.decision === 'CONDITIONAL')) {
-      form = '<form class="owb-section" data-owb-form="request-loan"><div class="owb-section-head"><h4>Request simulated facility</h4><span class="owb-state ' + decisionClass(assessment.decision) + '">' + esc(decisionLabel(assessment.decision)) + '</span></div>' +
+      form = '<form class="owb-section" data-owb-form="request-loan" data-owb-request-id="WB-UI-' + esc(codeOf(profile)) + '-' + esc(currentTurn()) + '-' + esc(bank.nextSequence) + '"><div class="owb-section-head"><h4>Request simulated facility</h4><span class="owb-state ' + decisionClass(assessment.decision) + '">' + esc(decisionLabel(assessment.decision)) + '</span></div>' +
         '<div class="owb-form-grid"><label class="owb-field">Purpose<select name="purpose"><option value="infrastructure">Infrastructure</option><option value="health">Health</option><option value="education">Education</option><option value="climate">Climate resilience</option><option value="emergency">Emergency stabilization</option><option value="budget-support">Budget support</option></select></label>' +
         '<label class="owb-field">Loan principal (USD)<input name="amountUsd" type="number" min="1" max="' + esc(String(Math.floor(assessment.maxLoanUsd))) + '" step="1" value="' + esc(String(Math.floor(assessment.maxLoanUsd))) + '" required></label>' +
         '<div class="owb-flex"><button class="owb-btn" type="submit">Issue loan</button><span class="owb-sub">Limit ' + esc(money(assessment.maxLoanUsd)) + '</span></div></div>' +
@@ -1006,6 +1013,7 @@
       const profile = currentCountryProfile();
       const result = requestLoan({
         countryId: codeOf(profile),
+        requestId: String(form.getAttribute('data-owb-request-id') || ''),
         amountUsd: finite(data.get('amountUsd')),
         purpose: String(data.get('purpose') || 'infrastructure')
       });
