@@ -290,7 +290,165 @@
           "largest",
           "smallest",
           "stronger",
-          "weaker"
+          "weaker",
+          "contrast",
+          "rank",
+          "weigh against",
+          "show differences"
+        ],
+        "analyze": [
+          "analyze",
+          "analyse",
+          "assess",
+          "evaluate evidence",
+          "inspect",
+          "diagnose",
+          "audit"
+        ],
+        "recommend": [
+          "recommend",
+          "advise",
+          "propose",
+          "suggest an option",
+          "give advice",
+          "suggest a policy"
+        ],
+        "forecast": [
+          "forecast",
+          "project",
+          "predict",
+          "estimate a scenario",
+          "model a future scenario"
+        ],
+        "explain": [
+          "explain",
+          "clarify",
+          "justify",
+          "give the reasons",
+          "show the cause",
+          "walk me through"
+        ],
+        "investigate": [
+          "investigate",
+          "inquire",
+          "examine",
+          "trace",
+          "look into",
+          "find the root cause"
+        ],
+        "recruit": [
+          "recruit",
+          "hire",
+          "appoint a minister",
+          "select a minister",
+          "fill the position"
+        ],
+        "assign": [
+          "assign",
+          "allocate a responsibility",
+          "give a task",
+          "delegate responsibility"
+        ],
+        "dismiss": [
+          "dismiss",
+          "fire the minister",
+          "remove from office",
+          "terminate the assignment"
+        ],
+        "replace": [
+          "replace",
+          "appoint a replacement",
+          "change the minister",
+          "swap the minister"
+        ],
+        "delegate": [
+          "delegate",
+          "delegate a task",
+          "redistribute work",
+          "assign to another minister"
+        ],
+        "consult": [
+          "consult",
+          "ask the minister",
+          "seek advice",
+          "ask for a briefing",
+          "request a ministerial view"
+        ],
+        "report": [
+          "report",
+          "brief me",
+          "give a report",
+          "summarize the findings",
+          "deliver a briefing"
+        ],
+        "summarize": [
+          "summarize",
+          "summarise",
+          "give a summary",
+          "recap",
+          "outline the key points"
+        ],
+        "plan": [
+          "plan",
+          "prepare a plan",
+          "develop a strategy",
+          "design a policy",
+          "create a contingency plan"
+        ],
+        "communicate": [
+          "communicate",
+          "send a message",
+          "consult another ministry",
+          "coordinate with",
+          "notify the cabinet"
+        ],
+        "remember": [
+          "remember",
+          "recall",
+          "retrieve a previous discussion",
+          "review the history",
+          "what did we discuss"
+        ],
+        "learn": [
+          "learn from",
+          "learn a lesson",
+          "record a lesson",
+          "update experience"
+        ],
+        "review": [
+          "review",
+          "reassess",
+          "evaluate again",
+          "post-action review",
+          "after-action review"
+        ],
+        "decide": [
+          "decide",
+          "make a decision",
+          "choose an option",
+          "select an action",
+          "make a recommendation"
+        ],
+        "approve": [
+          "approve",
+          "authorize",
+          "endorse",
+          "accept the proposal",
+          "clear the decision"
+        ],
+        "reject": [
+          "reject",
+          "decline",
+          "veto",
+          "refuse the proposal",
+          "deny approval"
+        ],
+        "coordinate": [
+          "coordinate",
+          "align ministries",
+          "synchronize work",
+          "coordinate the cabinet",
+          "integrate operations"
         ]
       },
       "assets": {
@@ -339,6 +497,92 @@
           "smelters",
           "processing plant",
           "industrial facility"
+        ],
+        "MINISTER": [
+          "minister",
+          "cabinet minister",
+          "minister candidate",
+          "active minister",
+          "former minister"
+        ],
+        "CABINET": [
+          "cabinet",
+          "cabinet team",
+          "ministerial cabinet",
+          "cabinet member"
+        ],
+        "MINISTRY": [
+          "ministry",
+          "government department",
+          "ministerial department"
+        ],
+        "INTELLIGENCE_REPORT": [
+          "intelligence report",
+          "strategic assessment",
+          "risk assessment report",
+          "security briefing"
+        ],
+        "DECISION": [
+          "decision",
+          "ministerial decision",
+          "cabinet decision",
+          "decision record"
+        ],
+        "POLICY": [
+          "policy",
+          "government policy",
+          "policy proposal",
+          "policy package"
+        ],
+        "TASK": [
+          "task",
+          "assignment",
+          "ministerial task",
+          "pending task"
+        ],
+        "PLAN": [
+          "plan",
+          "strategic plan",
+          "contingency plan",
+          "action plan"
+        ],
+        "RISK": [
+          "risk",
+          "risk scenario",
+          "threat assessment"
+        ],
+        "FORECAST": [
+          "forecast",
+          "projection",
+          "scenario forecast"
+        ],
+        "MESSAGE": [
+          "message",
+          "ministerial message",
+          "cabinet message"
+        ],
+        "CONVERSATION": [
+          "conversation",
+          "minister dialogue",
+          "minister interview",
+          "consultation"
+        ],
+        "CANDIDATE": [
+          "candidate",
+          "minister candidate",
+          "recruitment candidate"
+        ],
+        "DOSSIER": [
+          "dossier",
+          "minister dossier",
+          "candidate profile",
+          "minister profile"
+        ],
+        "LEARNING_RECORD": [
+          "learning record",
+          "lessons log",
+          "experience record",
+          "after-action review"
         ]
       },
       "attributes": {
@@ -431,6 +675,214 @@
           "ability",
           "abilities",
           "expertise"
+        ],
+        "decision_quality": [
+          "decision quality",
+          "quality of decisions",
+          "decision accuracy",
+          "decision performance",
+          "decision record"
+        ],
+        "intelligence": [
+          "intelligence",
+          "intelligence assessment",
+          "intelligence report",
+          "strategic intelligence",
+          "ministerial intelligence",
+          "situational awareness"
+        ],
+        "forecast": [
+          "forecast",
+          "projection",
+          "outlook",
+          "prediction",
+          "scenario projection"
+        ],
+        "risk": [
+          "risk",
+          "risk level",
+          "exposure",
+          "downside",
+          "threat level",
+          "risk appetite"
+        ],
+        "recommendation": [
+          "recommendation",
+          "advice",
+          "ministerial advice",
+          "recommended option",
+          "proposed action"
+        ],
+        "task": [
+          "task",
+          "assignment",
+          "work item",
+          "ministerial task",
+          "pending task",
+          "active task"
+        ],
+        "memory": [
+          "memory",
+          "conversation memory",
+          "institutional memory",
+          "learned lesson",
+          "previous discussion"
+        ],
+        "communication": [
+          "communication",
+          "message",
+          "minister-to-minister message",
+          "cabinet communication",
+          "consultation"
+        ],
+        "trust": [
+          "trust",
+          "confidence in minister",
+          "reliability",
+          "public trust",
+          "institutional trust"
+        ],
+        "capability": [
+          "capability",
+          "effective capability",
+          "competence",
+          "operational capacity",
+          "decision capacity"
+        ],
+        "strategy": [
+          "strategy",
+          "strategic posture",
+          "strategic plan",
+          "course of action",
+          "contingency plan"
+        ],
+        "confidence": [
+          "confidence",
+          "confidence score",
+          "certainty",
+          "confidence level",
+          "certainty estimate"
+        ],
+        "history": [
+          "history",
+          "service history",
+          "decision history",
+          "conversation history",
+          "past performance"
+        ],
+        "policy": [
+          "policy",
+          "policy proposal",
+          "policy outcome",
+          "policy mandate",
+          "policy constraint"
+        ],
+        "objectives": [
+          "objective",
+          "objectives",
+          "goal",
+          "strategic goal",
+          "priority",
+          "mission objective"
+        ],
+        "morale": [
+          "morale",
+          "minister morale",
+          "team morale",
+          "motivation",
+          "staff morale"
+        ],
+        "readiness": [
+          "readiness",
+          "operational readiness",
+          "crisis readiness",
+          "deployment readiness"
+        ],
+        "negotiation": [
+          "negotiation",
+          "bargaining",
+          "negotiation position",
+          "diplomatic negotiation"
+        ],
+        "pressure": [
+          "pressure",
+          "political pressure",
+          "economic pressure",
+          "crisis pressure",
+          "time pressure"
+        ],
+        "personality": [
+          "personality",
+          "personality profile",
+          "temperament",
+          "leadership style"
+        ],
+        "efficiency": [
+          "efficiency",
+          "minister efficiency",
+          "operational efficiency",
+          "execution efficiency"
+        ],
+        "corruption": [
+          "corruption",
+          "corruption risk",
+          "integrity risk",
+          "conflict of interest"
+        ],
+        "loyalty": [
+          "loyalty",
+          "institutional loyalty",
+          "cabinet loyalty",
+          "allegiance"
+        ],
+        "domain_experience": [
+          "domain experience",
+          "sector experience",
+          "subject expertise",
+          "specialist experience"
+        ],
+        "decision_experience": [
+          "decision experience",
+          "decision-making experience",
+          "decision track record"
+        ],
+        "performance": [
+          "performance",
+          "ministerial performance",
+          "performance record",
+          "task performance"
+        ],
+        "training": [
+          "training",
+          "minister training",
+          "skills development",
+          "professional development"
+        ],
+        "lesson": [
+          "lesson",
+          "lesson learned",
+          "lessons learned",
+          "after-action lesson"
+        ],
+        "institutional_memory": [
+          "institutional memory",
+          "department memory",
+          "cabinet memory",
+          "policy memory"
+        ],
+        "mandate": [
+          "mandate",
+          "authority",
+          "ministerial mandate",
+          "legal authority",
+          "decision authority"
+        ],
+        "state": [
+          "state",
+          "current state",
+          "runtime state",
+          "minister state",
+          "operational state"
         ]
       },
       "pronouns": {
@@ -702,7 +1154,182 @@
           "ভালো",
           "খারাপ",
           "শক্তিশালী",
-          "দুর্বল"
+          "দুর্বল",
+          "তুলনা কর",
+          "তুলনা করুন",
+          "পার্থক্য দেখাও",
+          "র‌্যাঙ্ক কর",
+          "অগ্রাধিকার অনুযায়ী সাজাও",
+          "অগ্রাধিকার অনুযায়ী সাজাও"
+        ],
+        "analyze": [
+          "বিশ্লেষণ কর",
+          "বিশ্লেষণ করুন",
+          "মূল্যায়ন কর",
+          "মূল্যায়ন কর",
+          "প্রমাণ যাচাই কর",
+          "পরিদর্শন কর",
+          "নিরীক্ষা কর"
+        ],
+        "recommend": [
+          "সুপারিশ কর",
+          "সুপারিশ করুন",
+          "পরামর্শ দাও",
+          "পরামর্শ দিন",
+          "প্রস্তাব দাও",
+          "বিকল্প সুপারিশ কর",
+          "নীতি প্রস্তাব কর"
+        ],
+        "forecast": [
+          "পূর্বাভাস দাও",
+          "পূর্বাভাস দিন",
+          "ভবিষ্যৎ অনুমান কর",
+          "সম্ভাব্য ফল অনুমান কর",
+          "ভবিষ্যৎ পরিস্থিতি মডেল কর"
+        ],
+        "explain": [
+          "ব্যাখ্যা কর",
+          "ব্যাখ্যা করুন",
+          "স্পষ্ট কর",
+          "কারণ ব্যাখ্যা কর",
+          "যুক্তি দেখাও",
+          "ধাপে ধাপে বুঝিয়ে দাও",
+          "ধাপে ধাপে বুঝিয়ে দাও"
+        ],
+        "investigate": [
+          "তদন্ত কর",
+          "অনুসন্ধান কর",
+          "খতিয়ে দেখ",
+          "খতিয়ে দেখ",
+          "মূল কারণ খুঁজে বের কর",
+          "ঘটনা অনুসরণ কর"
+        ],
+        "recruit": [
+          "নিয়োগ কর",
+          "নিয়োগ কর",
+          "মন্ত্রী নিয়োগ কর",
+          "মন্ত্রী নিয়োগ কর",
+          "মন্ত্রী নিয়োগ দিন",
+          "পদে নিয়োগ দাও",
+          "পদে নিয়োগ দাও"
+        ],
+        "assign": [
+          "দায়িত্ব দাও",
+          "দায়িত্ব দাও",
+          "কাজ বরাদ্দ কর",
+          "কাজ দাও",
+          "দায়িত্ব বণ্টন কর",
+          "দায়িত্ব বণ্টন কর"
+        ],
+        "dismiss": [
+          "বরখাস্ত কর",
+          "মন্ত্রীকে বরখাস্ত কর",
+          "পদ থেকে অপসারণ কর",
+          "দায়িত্ব থেকে সরাও",
+          "দায়িত্ব থেকে সরাও"
+        ],
+        "replace": [
+          "পরিবর্তন কর",
+          "মন্ত্রী পরিবর্তন কর",
+          "বিকল্প মন্ত্রী নিয়োগ কর",
+          "বিকল্প মন্ত্রী নিয়োগ কর",
+          "নতুন মন্ত্রী নিয়োগ কর",
+          "নতুন মন্ত্রী নিয়োগ কর"
+        ],
+        "delegate": [
+          "কাজ অর্পণ কর",
+          "দায়িত্ব অর্পণ কর",
+          "দায়িত্ব অর্পণ কর",
+          "অন্য মন্ত্রীকে কাজ দাও",
+          "কাজ ভাগ করে দাও"
+        ],
+        "consult": [
+          "পরামর্শ নাও",
+          "মন্ত্রীর সঙ্গে কথা বল",
+          "মন্ত্রীর সাথে কথা বল",
+          "মন্ত্রীকে জিজ্ঞাসা কর",
+          "মন্ত্রীর মতামত নাও",
+          "ব্রিফিং চাও"
+        ],
+        "report": [
+          "প্রতিবেদন দাও",
+          "রিপোর্ট দাও",
+          "আমাকে জানাও",
+          "সংক্ষিপ্ত ব্রিফিং দাও",
+          "তথ্য উপস্থাপন কর"
+        ],
+        "summarize": [
+          "সারসংক্ষেপ দাও",
+          "সংক্ষেপে বল",
+          "মূল বিষয়গুলো বল",
+          "মূল বিষয়গুলো বল",
+          "আলোচনার সারমর্ম বল",
+          "সারাংশ তৈরি কর"
+        ],
+        "plan": [
+          "পরিকল্পনা কর",
+          "পরিকল্পনা তৈরি কর",
+          "কৌশল তৈরি কর",
+          "নীতি পরিকল্পনা কর",
+          "বিকল্প পরিকল্পনা তৈরি কর"
+        ],
+        "communicate": [
+          "যোগাযোগ কর",
+          "বার্তা পাঠাও",
+          "অন্য মন্ত্রণালয়ের সঙ্গে যোগাযোগ কর",
+          "অন্য মন্ত্রণালয়ের সঙ্গে যোগাযোগ কর",
+          "সমন্বয় কর",
+          "সমন্বয় কর",
+          "মন্ত্রিসভাকে জানাও"
+        ],
+        "remember": [
+          "মনে করিয়ে দাও",
+          "মনে করিয়ে দাও",
+          "আগের আলোচনা মনে কর",
+          "আগের তথ্য বের কর",
+          "আলোচনার ইতিহাস দেখাও",
+          "আগের কথা কী ছিল"
+        ],
+        "learn": [
+          "শেখো",
+          "শিখে নাও",
+          "অভিজ্ঞতা থেকে শিক্ষা নাও",
+          "শিক্ষা নথিভুক্ত কর",
+          "অভিজ্ঞতা হালনাগাদ কর"
+        ],
+        "review": [
+          "পর্যালোচনা কর",
+          "পুনর্মূল্যায়ন কর",
+          "পুনর্মূল্যায়ন কর",
+          "আবার যাচাই কর",
+          "কাজ শেষে পর্যালোচনা কর"
+        ],
+        "decide": [
+          "সিদ্ধান্ত নাও",
+          "সিদ্ধান্ত গ্রহণ কর",
+          "বিকল্প বেছে নাও",
+          "করণীয় নির্ধারণ কর",
+          "করণীয় নির্ধারণ কর"
+        ],
+        "approve": [
+          "অনুমোদন কর",
+          "অনুমোদন দাও",
+          "প্রস্তাব অনুমোদন কর",
+          "সিদ্ধান্তে সম্মতি দাও"
+        ],
+        "reject": [
+          "প্রত্যাখ্যান কর",
+          "প্রস্তাব বাতিল কর",
+          "অনুমোদন দিও না",
+          "না বলে দাও"
+        ],
+        "coordinate": [
+          "সমন্বয় কর",
+          "সমন্বয় কর",
+          "মন্ত্রণালয়গুলোর সমন্বয় কর",
+          "মন্ত্রণালয়গুলোর সমন্বয় কর",
+          "মন্ত্রিসভার কাজ এক কর",
+          "কার্যক্রম সামঞ্জস্য কর"
         ]
       },
       "assets": {
@@ -744,6 +1371,101 @@
           "শোধনাগার",
           "প্রক্রিয়াজাতকরণ কারখানা",
           "শিল্প স্থাপনা"
+        ],
+        "MINISTER": [
+          "মন্ত্রী",
+          "মন্ত্রীপরিষদের সদস্য",
+          "মন্ত্রী পদপ্রার্থী",
+          "সক্রিয় মন্ত্রী",
+          "সক্রিয় মন্ত্রী",
+          "সাবেক মন্ত্রী"
+        ],
+        "CABINET": [
+          "মন্ত্রিসভা",
+          "মন্ত্রীপরিষদ",
+          "মন্ত্রিসভার সদস্য",
+          "মন্ত্রীদের দল"
+        ],
+        "MINISTRY": [
+          "মন্ত্রণালয়",
+          "মন্ত্রণালয়",
+          "সরকারি বিভাগ",
+          "মন্ত্রীপরিষদীয় বিভাগ"
+        ],
+        "INTELLIGENCE_REPORT": [
+          "গোয়েন্দা প্রতিবেদন",
+          "গোয়েন্দা প্রতিবেদন",
+          "কৌশলগত মূল্যায়ন",
+          "কৌশলগত মূল্যায়ন",
+          "ঝুঁকি মূল্যায়ন প্রতিবেদন",
+          "ঝুঁকি মূল্যায়ন প্রতিবেদন",
+          "নিরাপত্তা ব্রিফিং"
+        ],
+        "DECISION": [
+          "সিদ্ধান্ত",
+          "মন্ত্রীর সিদ্ধান্ত",
+          "মন্ত্রিসভার সিদ্ধান্ত",
+          "সিদ্ধান্তের নথি"
+        ],
+        "POLICY": [
+          "নীতি",
+          "সরকারি নীতি",
+          "নীতির প্রস্তাব",
+          "নীতির প্যাকেজ"
+        ],
+        "TASK": [
+          "কাজ",
+          "দায়িত্ব",
+          "দায়িত্ব",
+          "মন্ত্রীর কাজ",
+          "অমীমাংসিত কাজ"
+        ],
+        "PLAN": [
+          "পরিকল্পনা",
+          "কৌশলগত পরিকল্পনা",
+          "বিকল্প পরিকল্পনা",
+          "কর্মপরিকল্পনা"
+        ],
+        "RISK": [
+          "ঝুঁকি",
+          "ঝুঁকির পরিস্থিতি",
+          "হুমকি মূল্যায়ন",
+          "হুমকি মূল্যায়ন"
+        ],
+        "FORECAST": [
+          "পূর্বাভাস",
+          "প্রক্ষেপণ",
+          "পরিস্থিতির পূর্বাভাস"
+        ],
+        "MESSAGE": [
+          "বার্তা",
+          "মন্ত্রীর বার্তা",
+          "মন্ত্রিসভার বার্তা"
+        ],
+        "CONVERSATION": [
+          "কথোপকথন",
+          "মন্ত্রীর সঙ্গে সংলাপ",
+          "মন্ত্রীর সাক্ষাৎকার",
+          "পরামর্শ সভা"
+        ],
+        "CANDIDATE": [
+          "প্রার্থী",
+          "মন্ত্রী পদপ্রার্থী",
+          "নিয়োগের প্রার্থী",
+          "নিয়োগের প্রার্থী"
+        ],
+        "DOSSIER": [
+          "ডসিয়ার",
+          "ডসিয়ার",
+          "মন্ত্রীর পূর্ণাঙ্গ তথ্য",
+          "প্রার্থীর প্রোফাইল",
+          "মন্ত্রীর প্রোফাইল"
+        ],
+        "LEARNING_RECORD": [
+          "শেখার রেকর্ড",
+          "শিক্ষা নথি",
+          "অভিজ্ঞতার নথি",
+          "কাজ-পরবর্তী পর্যালোচনা"
         ]
       },
       "attributes": {
@@ -837,6 +1559,231 @@
           "যোগ্যতা",
           "ক্ষমতা",
           "বিশেষজ্ঞতা"
+        ],
+        "decision_quality": [
+          "সিদ্ধান্তের গুণমান",
+          "সিদ্ধান্তের মান",
+          "সিদ্ধান্তের নির্ভুলতা",
+          "সিদ্ধান্তের কার্যকারিতা",
+          "সিদ্ধান্তের রেকর্ড"
+        ],
+        "intelligence": [
+          "গোয়েন্দা তথ্য",
+          "গোয়েন্দা তথ্য",
+          "গোয়েন্দা মূল্যায়ন",
+          "গোয়েন্দা মূল্যায়ন",
+          "ইন্টেলিজেন্স রিপোর্ট",
+          "কৌশলগত গোয়েন্দা তথ্য",
+          "পরিস্থিতিগত সচেতনতা"
+        ],
+        "forecast": [
+          "পূর্বাভাস",
+          "ভবিষ্যৎ পূর্বানুমান",
+          "সম্ভাব্য চিত্র",
+          "ভবিষ্যৎ চিত্র",
+          "প্রক্ষেপণ"
+        ],
+        "risk": [
+          "ঝুঁকি",
+          "ঝুঁকির মাত্রা",
+          "ঝুঁকির সংস্পর্শ",
+          "ক্ষতির সম্ভাবনা",
+          "হুমকির মাত্রা",
+          "ঝুঁকি গ্রহণের সীমা"
+        ],
+        "recommendation": [
+          "সুপারিশ",
+          "পরামর্শ",
+          "মন্ত্রীর পরামর্শ",
+          "প্রস্তাবিত বিকল্প",
+          "প্রস্তাবিত পদক্ষেপ"
+        ],
+        "task": [
+          "কাজ",
+          "দায়িত্ব",
+          "দায়িত্ব",
+          "কর্মাদেশ",
+          "মন্ত্রীর কাজ",
+          "অমীমাংসিত কাজ",
+          "চলমান কাজ"
+        ],
+        "memory": [
+          "স্মৃতি",
+          "কথোপকথনের স্মৃতি",
+          "প্রাতিষ্ঠানিক স্মৃতি",
+          "শেখা শিক্ষা",
+          "আগের আলোচনার তথ্য"
+        ],
+        "communication": [
+          "যোগাযোগ",
+          "বার্তা",
+          "মন্ত্রীদের পারস্পরিক বার্তা",
+          "মন্ত্রিসভার যোগাযোগ",
+          "পরামর্শ বিনিময়",
+          "পরামর্শ বিনিময়"
+        ],
+        "trust": [
+          "আস্থা",
+          "বিশ্বাস",
+          "মন্ত্রীর ওপর আস্থা",
+          "নির্ভরযোগ্যতা",
+          "জনআস্থা",
+          "প্রাতিষ্ঠানিক আস্থা"
+        ],
+        "capability": [
+          "সক্ষমতা",
+          "কার্যকর সক্ষমতা",
+          "দক্ষতা",
+          "কর্মক্ষমতা",
+          "সিদ্ধান্ত নেওয়ার সক্ষমতা",
+          "সিদ্ধান্ত নেওয়ার সক্ষমতা"
+        ],
+        "strategy": [
+          "কৌশল",
+          "কৌশলগত অবস্থান",
+          "কৌশলগত পরিকল্পনা",
+          "করণীয় বিকল্প",
+          "করণীয় বিকল্প",
+          "জরুরি বিকল্প পরিকল্পনা"
+        ],
+        "confidence": [
+          "আত্মবিশ্বাস",
+          "নিশ্চয়তা",
+          "নিশ্চয়তা",
+          "আস্থার মাত্রা",
+          "নিশ্চয়তার মাত্রা",
+          "নিশ্চয়তার মাত্রা"
+        ],
+        "history": [
+          "ইতিহাস",
+          "কর্মজীবনের ইতিহাস",
+          "সিদ্ধান্তের ইতিহাস",
+          "কথোপকথনের ইতিহাস",
+          "অতীত কর্মদক্ষতা"
+        ],
+        "policy": [
+          "নীতি",
+          "নীতির প্রস্তাব",
+          "নীতির ফলাফল",
+          "নীতিগত নির্দেশনা",
+          "নীতিগত সীমাবদ্ধতা"
+        ],
+        "objectives": [
+          "উদ্দেশ্য",
+          "লক্ষ্য",
+          "কৌশলগত লক্ষ্য",
+          "অগ্রাধিকার",
+          "মিশনের লক্ষ্য"
+        ],
+        "morale": [
+          "মনোবল",
+          "মন্ত্রীর মনোবল",
+          "দলের মনোবল",
+          "প্রেরণা",
+          "কর্মীদের মনোবল"
+        ],
+        "readiness": [
+          "প্রস্তুতি",
+          "কার্যকর প্রস্তুতি",
+          "সংকট মোকাবিলার প্রস্তুতি",
+          "মোতায়েনের প্রস্তুতি",
+          "মোতায়েনের প্রস্তুতি"
+        ],
+        "negotiation": [
+          "আলোচনা",
+          "দরকষাকষি",
+          "আলোচনার অবস্থান",
+          "কূটনৈতিক আলোচনা"
+        ],
+        "pressure": [
+          "চাপ",
+          "রাজনৈতিক চাপ",
+          "অর্থনৈতিক চাপ",
+          "সংকটের চাপ",
+          "সময়চাপ",
+          "সময়চাপ"
+        ],
+        "personality": [
+          "ব্যক্তিত্ব",
+          "ব্যক্তিত্বের ধরন",
+          "মেজাজ",
+          "নেতৃত্বের ধরন"
+        ],
+        "efficiency": [
+          "দক্ষতা",
+          "মন্ত্রীর দক্ষতা",
+          "কার্যসম্পাদনের দক্ষতা",
+          "বাস্তবায়ন দক্ষতা",
+          "বাস্তবায়ন দক্ষতা"
+        ],
+        "corruption": [
+          "দুর্নীতি",
+          "দুর্নীতির ঝুঁকি",
+          "সততার ঝুঁকি",
+          "স্বার্থের সংঘাত"
+        ],
+        "loyalty": [
+          "আনুগত্য",
+          "প্রাতিষ্ঠানিক আনুগত্য",
+          "মন্ত্রিসভার প্রতি আনুগত্য",
+          "বিশ্বস্ততা"
+        ],
+        "domain_experience": [
+          "খাতভিত্তিক অভিজ্ঞতা",
+          "বিষয়ভিত্তিক অভিজ্ঞতা",
+          "বিষয়ভিত্তিক অভিজ্ঞতা",
+          "বিশেষজ্ঞ অভিজ্ঞতা"
+        ],
+        "decision_experience": [
+          "সিদ্ধান্ত গ্রহণের অভিজ্ঞতা",
+          "সিদ্ধান্ত নেওয়ার অভিজ্ঞতা",
+          "সিদ্ধান্ত নেওয়ার অভিজ্ঞতা",
+          "সিদ্ধান্তের অভিজ্ঞতা"
+        ],
+        "performance": [
+          "কর্মদক্ষতা",
+          "মন্ত্রীর কর্মদক্ষতা",
+          "কাজের রেকর্ড",
+          "দায়িত্ব পালনের ফলাফল",
+          "দায়িত্ব পালনের ফলাফল"
+        ],
+        "training": [
+          "প্রশিক্ষণ",
+          "মন্ত্রীর প্রশিক্ষণ",
+          "দক্ষতা উন্নয়ন",
+          "দক্ষতা উন্নয়ন",
+          "পেশাগত উন্নয়ন",
+          "পেশাগত উন্নয়ন"
+        ],
+        "lesson": [
+          "শিক্ষা",
+          "শেখা শিক্ষা",
+          "অভিজ্ঞতা থেকে শিক্ষা",
+          "কাজের পর্যালোচনা থেকে শিক্ষা"
+        ],
+        "institutional_memory": [
+          "প্রাতিষ্ঠানিক স্মৃতি",
+          "বিভাগীয় স্মৃতি",
+          "বিভাগীয় স্মৃতি",
+          "মন্ত্রিসভার স্মৃতি",
+          "নীতিগত স্মৃতি"
+        ],
+        "mandate": [
+          "দায়িত্ব",
+          "দায়িত্ব",
+          "অধিদায়িত্ব",
+          "অধিদায়িত্ব",
+          "কর্তৃত্ব",
+          "মন্ত্রীর ম্যান্ডেট",
+          "আইনগত ক্ষমতা",
+          "সিদ্ধান্তের ক্ষমতা"
+        ],
+        "state": [
+          "অবস্থা",
+          "বর্তমান অবস্থা",
+          "রানটাইম অবস্থা",
+          "মন্ত্রীর অবস্থা",
+          "কার্যকর অবস্থা"
         ]
       },
       "pronouns": {
@@ -1035,6 +1982,160 @@
               "আমি শুনছি। কী নিয়ে কথা বলতে চান বলুন।"
             ]
           }
+        },
+        "MINISTER_CONSULT": {
+          "priority": 99,
+          "phrases": {
+            "en": [
+              "ask the minister",
+              "consult the minister",
+              "ask my minister",
+              "let me ask the minister",
+              "seek the minister's advice",
+              "request the minister's view",
+              "talk to the minister",
+              "speak with the minister",
+              "minister, explain this"
+            ],
+            "bn": [
+              "মন্ত্রীকে জিজ্ঞাসা কর",
+              "মন্ত্রীর সঙ্গে কথা বল",
+              "মন্ত্রীর সাথে কথা বল",
+              "মন্ত্রীর পরামর্শ নাও",
+              "মন্ত্রীর মতামত নাও",
+              "মন্ত্রীকে প্রশ্ন কর",
+              "মন্ত্রী, বিষয়টি ব্যাখ্যা কর",
+              "মন্ত্রী বিষয়টি বুঝিয়ে বল",
+              "মন্ত্রী বিষয়টি বুঝিয়ে বল"
+            ]
+          }
+        },
+        "MINISTER_RECOMMENDATION": {
+          "priority": 97,
+          "phrases": {
+            "en": [
+              "give me a recommendation",
+              "recommend a policy",
+              "what do you recommend",
+              "give your recommendation",
+              "suggest the best option",
+              "recommend an action"
+            ],
+            "bn": [
+              "একটি সুপারিশ দাও",
+              "নীতি সুপারিশ কর",
+              "তোমার সুপারিশ কী",
+              "সেরা বিকল্প সুপারিশ কর",
+              "করণীয় পদক্ষেপ সুপারিশ কর",
+              "করণীয় পদক্ষেপ সুপারিশ কর"
+            ]
+          }
+        },
+        "MINISTER_INTELLIGENCE": {
+          "priority": 96,
+          "phrases": {
+            "en": [
+              "give me an intelligence briefing",
+              "prepare an intelligence report",
+              "assess the threat",
+              "analyze the strategic situation",
+              "review the intelligence",
+              "give a risk assessment"
+            ],
+            "bn": [
+              "গোয়েন্দা ব্রিফিং দাও",
+              "গোয়েন্দা ব্রিফিং দাও",
+              "গোয়েন্দা প্রতিবেদন তৈরি কর",
+              "গোয়েন্দা প্রতিবেদন তৈরি কর",
+              "হুমকি মূল্যায়ন কর",
+              "হুমকি মূল্যায়ন কর",
+              "কৌশলগত পরিস্থিতি বিশ্লেষণ কর",
+              "গোয়েন্দা তথ্য পর্যালোচনা কর",
+              "গোয়েন্দা তথ্য পর্যালোচনা কর",
+              "ঝুঁকি মূল্যায়ন কর",
+              "ঝুঁকি মূল্যায়ন কর"
+            ]
+          }
+        },
+        "MINISTER_STATUS": {
+          "priority": 94,
+          "phrases": {
+            "en": [
+              "report your current status",
+              "what is your current workload",
+              "report your readiness",
+              "give me your performance status",
+              "report your current objectives"
+            ],
+            "bn": [
+              "তোমার বর্তমান অবস্থা জানাও",
+              "বর্তমান কাজের চাপ জানাও",
+              "তোমার প্রস্তুতি জানাও",
+              "কর্মদক্ষতার অবস্থা জানাও",
+              "বর্তমান লক্ষ্যগুলো জানাও",
+              "বর্তমান লক্ষ্যগুলি জানাও"
+            ]
+          }
+        },
+        "MINISTER_EXPLANATION": {
+          "priority": 93,
+          "phrases": {
+            "en": [
+              "explain your decision",
+              "justify your recommendation",
+              "explain the reasoning",
+              "show your assumptions",
+              "explain the risks"
+            ],
+            "bn": [
+              "তোমার সিদ্ধান্ত ব্যাখ্যা কর",
+              "তোমার সুপারিশের যুক্তি দাও",
+              "যুক্তি ব্যাখ্যা কর",
+              "তোমার অনুমানগুলো দেখাও",
+              "ঝুঁকিগুলো ব্যাখ্যা কর"
+            ]
+          }
+        },
+        "MINISTER_STRATEGY": {
+          "priority": 92,
+          "phrases": {
+            "en": [
+              "prepare a strategy",
+              "create a contingency plan",
+              "develop a response plan",
+              "outline the next steps",
+              "coordinate across ministries"
+            ],
+            "bn": [
+              "কৌশল তৈরি কর",
+              "বিকল্প পরিকল্পনা তৈরি কর",
+              "প্রতিক্রিয়া পরিকল্পনা তৈরি কর",
+              "পরবর্তী পদক্ষেপগুলো বল",
+              "পরবর্তী পদক্ষেপগুলি বল",
+              "মন্ত্রণালয়গুলোর সমন্বয় কর",
+              "মন্ত্রণালয়গুলোর সমন্বয় কর"
+            ]
+          }
+        },
+        "MINISTER_MEMORY": {
+          "priority": 91,
+          "phrases": {
+            "en": [
+              "recall our last discussion",
+              "what did we discuss before",
+              "summarize previous decisions",
+              "review your lessons learned",
+              "remember the last briefing"
+            ],
+            "bn": [
+              "আগের আলোচনা মনে কর",
+              "আগে কী আলোচনা হয়েছিল",
+              "আগে কী আলোচনা হয়েছিল",
+              "আগের সিদ্ধান্তগুলোর সারসংক্ষেপ দাও",
+              "শেখা শিক্ষাগুলো পর্যালোচনা কর",
+              "শেষ ব্রিফিংটি মনে কর"
+            ]
+          }
         }
       },
       "morphology": {
@@ -1049,13 +2150,76 @@
           "গুলো",
           "গুলি",
           "গণ",
-          "সমূহ"
+          "সমূহ",
+          "দের",
+          "গুলোর",
+          "গুলিতে",
+          "গুলোরও",
+          "সমূহের",
+          "সমূহকে",
+          "টিকে",
+          "টিতে",
+          "গুলোতে",
+          "গুলোকে",
+          "দেরকে",
+          "জনের",
+          "জনকে",
+          "ভিত্তিক",
+          "সংক্রান্ত",
+          "সম্পর্কিত",
+          "কেন্দ্রিক",
+          "বিষয়ক",
+          "বিষয়ক"
         ],
         "en_suffixes": [
           "s",
           "es",
           "ed",
-          "ing"
+          "ing",
+          "ies",
+          "er",
+          "ers",
+          "tion",
+          "sion",
+          "ment",
+          "ments",
+          "ness",
+          "able",
+          "ably",
+          "less",
+          "ful",
+          "ly"
+        ],
+        "bn_compound_verbs": [
+          "দিয়ে দাও",
+          "দিয়ে দাও",
+          "করে দাও",
+          "করে দিন",
+          "নিয়ে আসো",
+          "নিয়ে আসো",
+          "দেখে নাও",
+          "জেনে নাও",
+          "বের করে দাও",
+          "খুঁজে বের কর",
+          "চালু করে দাও",
+          "বন্ধ করে দাও",
+          "হালনাগাদ কর",
+          "হালনাগাদ করে দাও",
+          "সমন্বয় করে দাও",
+          "সমন্বয় করে দাও"
+        ],
+        "en_compound_verbs": [
+          "follow up",
+          "carry out",
+          "look into",
+          "roll out",
+          "hand over",
+          "bring together",
+          "work through",
+          "cross-check",
+          "report back",
+          "sync up",
+          "hand off"
         ]
       },
       "questionDetection": {
@@ -1083,7 +2247,17 @@
           "do",
           "did",
           "has",
-          "have"
+          "have",
+          "which minister",
+          "which ministry",
+          "what decision",
+          "what risk",
+          "what recommendation",
+          "how capable",
+          "how experienced",
+          "what evidence",
+          "what changed",
+          "what remains"
         ],
         "bengaliStarters": [
           "কি",
@@ -1101,7 +2275,19 @@
           "করা উচিত",
           "সম্ভব কি",
           "হবে কি",
-          "আছে কি"
+          "আছে কি",
+          "কোন মন্ত্রী",
+          "কোন মন্ত্রণালয়",
+          "কোন মন্ত্রণালয়",
+          "কোন সিদ্ধান্ত",
+          "কী ঝুঁকি",
+          "কোন সুপারিশ",
+          "কতটা দক্ষ",
+          "কতটা অভিজ্ঞ",
+          "কী প্রমাণ",
+          "কী পরিবর্তন হয়েছে",
+          "কী পরিবর্তন হয়েছে",
+          "কী বাকি আছে"
         ],
         "exclamationMarkers": [
           "!"
@@ -1130,7 +2316,12 @@
         "ambiguous_entity_action": "ASK_OR_REPORT_AMBIGUITY",
         "pronoun_resolution": "AUTHORITATIVE_RUNTIME_CONTEXT_FIRST",
         "binary_question_handling": "SEMANTIC_LABEL_UNTIL_DATA_EXECUTOR_SUPPORTS_BOOLEAN_FACTS",
-        "conversation_handling": "DATA_DRIVEN_INTENT_AND_MELODY"
+        "conversation_handling": "DATA_DRIVEN_INTENT_AND_MELODY",
+        "minister_intelligence_context_must_resolve_active_minister": true,
+        "minister_dialogue_memory_uses_canonical_state_registry": true,
+        "unknown_minister_must_not_be_fabricated": true,
+        "minister_responses_must_preserve_evidence_boundary": true,
+        "language_does_not_grant_execution_capability": true
       }
     }
   },
