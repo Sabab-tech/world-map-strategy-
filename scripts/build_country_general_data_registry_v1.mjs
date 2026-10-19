@@ -325,7 +325,7 @@ function deriveLegacyMetrics(profile, police) {
   const values = Object.fromEntries(METRIC_CATALOGUE.map((field) => [field.key, null]));
   const meta = Object.fromEntries(METRIC_CATALOGUE.map((field) => [field.key, {
     year: null, sourceId: null, sourceName: null, status: field.key === 'disciplineIndex' ? 'NOT_DEFINED_OR_SOURCED' : 'MISSING',
-    method: 'NONE', indicatorCode: field.wb || null, sourceUrl: field.wb ? 'https://api.worldbank.org/v2/indicator/' + field.wb : null,
+    method: 'NONE', indicatorCode: null, sourceUrl: null,
     note: field.key === 'disciplineIndex' ? 'No universal comparable country-level discipline index exists in the currently loaded source set.' : null
   }]));
   const set = (key, value, year, sourceId, sourceName, status, method = 'LEGACY_VALUE') => {
@@ -333,7 +333,7 @@ function deriveLegacyMetrics(profile, police) {
     values[key] = finite(value);
     meta[key] = {
       year: finite(year), sourceId: sourceId || null, sourceName: sourceName || null,
-      status, method, indicatorCode: METRIC_CATALOGUE.find((field) => field.key === key)?.wb || null,
+      status, method, indicatorCode: status === 'WORLD_BANK_API_OBSERVATION' ? (METRIC_CATALOGUE.find((field) => field.key === key)?.wb || null) : null,
       sourceUrl: null, note: status.includes('LEGACY') || status.includes('NEEDS_EXTERNAL') ? 'Not independently revalidated against the named external series in this build.' : null
     };
   };
@@ -486,7 +486,7 @@ function makeRecord(country, sources, previous, refreshData) {
           year: null, sourceId: failedCodes.length ? 'WORLD_BANK_WDI' : null,
           sourceName: failedCodes.length ? 'World Bank Indicators API v2' : null,
           status: failedCodes.length ? 'SOURCE_REFRESH_FAILED' : 'NO_SOURCE_OBSERVATION',
-          method: 'API_REFRESH_DIAGNOSTIC', indicatorCode: field.wb,
+          method: 'API_REFRESH_DIAGNOSTIC', indicatorCode: null,
           sourceUrl: 'https://api.worldbank.org/v2/country/' + String(country.iso3 || '').toLowerCase() + '/indicator/' + field.wb + '?format=json',
           note: failedCodes.length
             ? 'No source value was stored because the indicator request failed: ' + failedCodes.join(', ') + '. Inspect metadata.externalRefresh.worldBankIndicatorErrors.'
@@ -802,7 +802,7 @@ async function main() {
     generalFactFields: factFields,
     factSourceStatusFields: ['restCountries', 'worldBankMetadata'],
     metricFields: METRIC_CATALOGUE.map((field) => field.key),
-    metricProvenanceFields: ['years', 'statusCodes', 'sourceCodes', 'sourceNameCodes', 'methodCodes', 'sourceUrls', 'notes'],
+    metricProvenanceFields: ['years', 'statusCodes', 'sourceCodes', 'sourceNameCodes', 'methodCodes', 'indicatorCodes', 'sourceUrls', 'notes'],
     legacySnapshotFields: ['baselineYear', 'rawFinancialRegistry', 'economyGlobalProfile'],
     rawFinancialRegistryFields: ['baselineYear', 'rawIndicatorValues', 'derivedIndicatorValues'],
     economyGlobalProfileFields: ['profileStatus', 'economyKey', 'populationKey', 'indicatorValues', 'metricAvailabilityValues', 'provenance'],
@@ -848,6 +848,7 @@ async function main() {
       sourceCodes: METRIC_CATALOGUE.map((field) => codeOf(sourceIds, row.metricMetadata[field.key]?.sourceId || '')),
       sourceNameCodes: METRIC_CATALOGUE.map((field) => codeOf(sourceNames, row.metricMetadata[field.key]?.sourceName || '')),
       methodCodes: METRIC_CATALOGUE.map((field) => codeOf(methods, row.metricMetadata[field.key]?.method || 'NONE')),
+      indicatorCodes: METRIC_CATALOGUE.map((field) => row.metricMetadata[field.key]?.indicatorCode || null),
       sourceUrls: METRIC_CATALOGUE.map((field) => row.metricMetadata[field.key]?.sourceUrl || null),
       notes: METRIC_CATALOGUE.map((field) => row.metricMetadata[field.key]?.note || null)
     },
