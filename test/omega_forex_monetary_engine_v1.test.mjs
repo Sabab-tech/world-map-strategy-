@@ -102,7 +102,7 @@ test('one-month history stays sorted, replaces duplicate dates and respects its 
   let rows = [];
   for (let day = 0; day < 35; day += 1) {
     rows = engine.math.appendHistoryPoint(rows, {
-      date: '2026-01-' + String(day + 1).padStart(2, '0'),
+      date: new Date(Date.UTC(2026, 0, 1 + day)).toISOString().slice(0, 10),
       rate: 100 + day
     }, 30);
   }
