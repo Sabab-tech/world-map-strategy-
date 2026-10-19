@@ -191,3 +191,15 @@ The Finance GitHub Actions workflow runs existing Finance tests plus FX conversi
 - **Calculate quote** runs the common USD-numeraire formula without changing the clearing ledger. **Record simulated exchange** is the explicit action that records a simulated settlement. Amount and currency/source changes update the quote preview.
 - The getCountryQuotes(mode) API and country-level diagnostics expose coverage for simulation and reference quotes. Reference rates remain contingent on provider availability; missing rates are reported rather than fabricated.
 - Validation added to test/omega_forex_monetary_engine_v1.test.mjs covers country quote direction, fallback currency mapping and the new FX control affordances. Run npm run test:finance-fx and npm run test:finance before merging.
+
+
+## FX interaction hierarchy and Banking settlement integration (2026-10-19)
+
+- The FX landing view now prioritizes player currency, both USD quote directions, country lookup and the converter. Central-bank policy, trend charts, the full currency catalogue, all-country register and settlement journal are grouped in expandable details so new players are not presented with every control at once.
+- Inline SVG controls are used for refresh, currency swap, quote/record, policy, chart, catalogue, registry, audit and Government Banking disclosure headings. They remain same-origin and do not create a remote asset dependency.
+- Changing the chart series no longer changes the FX market mode globally. The converter's rate-source control remains the source for the displayed quote and the country register. Reference quotes are read-only and cannot be submitted as a game settlement.
+- The FX converter's Record exchange action calls `OmegaGovernmentBanking.convert(...)`. Only after the bank API confirms settlement does the FX side append its reference record and update its own volume/fee summary. Banking owns the currency sub-account balance movements, Finance Treasury cash authority, transaction idempotency, fee accounting and the canonical banking ledger.
+- Converter fee basis points are forwarded through the Government Banking conversion API so the displayed simulation quote uses the same fee rule as the transaction. The UI no longer fabricates a successful FX ledger record when Banking is unavailable or rejects settlement.
+- Country lookup shows both `local units per USD` and `USD per local unit`, with rate availability/provenance. An absent rate stays unavailable rather than falling back to a fabricated amount.
+- Government Banking account controls are preserved and moved into a collapsed, labelled details region inside the FX tab. Account transfer, country policy, per-currency accounts and ledger remain available.
+- Validate with `npm run test:finance-fx`, `npm run test:finance`, and the full Finance/Government Banking CI workflow before merge.
