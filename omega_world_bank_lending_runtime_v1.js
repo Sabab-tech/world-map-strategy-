@@ -12,6 +12,7 @@
   const WB_BASE = 'https://api.worldbank.org/v2';
   const REFRESH_TTL_MS = DAY_MS;
   const RETRY_BACKOFF_MS = 60 * 60 * 1000;
+  const DEFAULT_FACILITY_CAPACITY_USD = 1_000_000_000_000;
   const MAX_HISTORY = 5000;
   const MAX_LOAN_LEDGER = 4000;
   const INDICATORS = Object.freeze([
@@ -127,6 +128,7 @@
       if (!finite(bank.nextSequence) || bank.nextSequence < 1) bank.nextSequence = 1;
       if (!isObject(bank.reference)) bank.reference = {};
       if (!isObject(bank.reference.countries)) bank.reference.countries = {};
+      if (finite(bank.facilityCapacityUsd) === null || finite(bank.facilityCapacityUsd) < 0) bank.facilityCapacityUsd = DEFAULT_FACILITY_CAPACITY_USD;
       if (!isObject(bank.reference.indicatorStatus)) bank.reference.indicatorStatus = {};
       if (!bank.reference.provider) bank.reference.provider = 'WORLD_BANK_WDI_V2';
       if (!bank.reference.status) bank.reference.status = 'UNAVAILABLE';
