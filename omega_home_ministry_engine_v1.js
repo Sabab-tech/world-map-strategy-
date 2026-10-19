@@ -333,17 +333,94 @@
     const canonical=normalizeCountry(country);
     return countryPoliceBaselineByCode[raw]||countryPoliceBaselineByCode[canonical]||null;
   }
+  function validateCountryPoliceBaselineRows(rows){
+    const errors=[],codes=new Set(),aliases=new Map(),tiers=new Set(VEHICLES.map(function(v){return String(v.level);}));
+    if(!Array.isArray(rows)||rows.length===0)return{ok:false,code:'POLICE_BASELINE_ROWS_INVALID',errors:['Country baseline must be a non-empty array.'],countryCount:0};
+    rows.forEach(function(row,index){
+      const label='row['+index+']'+(row&&row.name?' '+row.name:'');
+      if(!row||typeof row!=='object'||Array.isArray(row)){errors.push(label+': record must be an object.');return;}
+      if(typeof row.code!=='string'||!row.code.trim())errors.push(label+': missing country code.');
+      if(typeof row.name!=='string'||!row.name.trim())errors.push(label+': missing country name.');
+      const code=String(row.code||'').trim().toUpperCase();
+      if(code){
+        if(codes.has(code))errors.push(label+': duplicate country code '+code+'.');
+        codes.add(code);
+      }
+      baselineAliases(row).forEach(function(alias){
+        const previous=aliases.get(alias);
+        if(previous&&previous!==code)errors.push(label+': alias '+alias+' is already assigned to '+previous+'.');
+        else aliases.set(alias,code);
+      });
+      const police=num(row.baselinePolice&&row.baselinePolice.activePersonnel);
+      if(police===null||police<1||Math.floor(police)!==police)errors.push(label+': active police baseline must be a positive integer.');
+      const staffing=num(row.baselinePolice&&row.baselinePolice.staffingRatePer100k);
+      if(staffing===null||staffing<0||staffing>100000)errors.push(label+': staffingRatePer100k must be a finite non-negative rate.');
+      const fleet=row.baselineFleet,total=num(fleet&&fleet.totalUnits),tierCounts=fleet&&fleet.countsByTier;
+      if(!fleet||total===null||total<0||Math.floor(total)!==total)errors.push(label+': fleet total must be a finite non-negative integer.');
+      if(!tierCounts||typeof tierCounts!=='object'||Array.isArray(tierCounts)){errors.push(label+': countsByTier must be an object.');}
+      else{
+        let sum=0;
+        Object.keys(tierCounts).forEach(function(tier){
+          const n=num(tierCounts[tier]);
+          if(!tiers.has(String(tier)))errors.push(label+': unknown vehicle tier '+tier+'.');
+          if(n===null||n<0||Math.floor(n)!==n)errors.push(label+': vehicle tier '+tier+' must be a non-negative integer.');
+          else sum+=n;
+        });
+        tiers.forEach(function(tier){if(!Object.prototype.hasOwnProperty.call(tierCounts,tier))errors.push(label+': missing vehicle tier '+tier+'.');});
+        if(total!==null&&sum!==total)errors.push(label+': vehicle tier sum '+sum+' does not equal fleet total '+total+'.');
+      }
+      const pop=row.population&&row.population.value;
+      if(pop!==null&&pop!==undefined&&pop!==''){
+        const n=num(pop);if(n===null||n<=0)errors.push(label+': present population value must be finite and greater than zero.');
+      }
+      const crime=row.crime,rates=crime&&crime.ratesPer100k;
+      if(!rates||typeof rates!=='object'||Array.isArray(rates))errors.push(label+': crime ratesPer100k must be an object.');
+      else{
+        ['theft','robbery','streetRobbery','drugTrafficking','contrabandSmuggling','assault','homicide','cybercrime'].forEach(function(category){
+          const n=num(rates[category]);
+          if(n===null||n<0)errors.push(label+': crime rate '+category+' must be a finite non-negative number.');
+        });
+      }
+      const profile=row.fleetProfile,weights=profile&&profile.environmentMixPct;
+      if(!profile||typeof profile!=='object'||!weights||typeof weights!=='object'||Array.isArray(weights)){
+        errors.push(label+': country vehicle operating profile is missing.');
+      }else{
+        const envKeys=['city','highway','rural','border','industrial','coastal','mountain'];
+        let mixTotal=0;
+        envKeys.forEach(function(key){
+          const value=num(weights[key]);
+          if(value===null||value<0||value>100)errors.push(label+': environment weight '+key+' must be between 0 and 100.');
+          else mixTotal+=value;
+        });
+        if(Math.abs(mixTotal-100)>0.11)errors.push(label+': environment weights must total 100%; got '+mixTotal.toFixed(1)+'%.');
+        ['roadQualityIndex','mountainTerrainIndex','coastalLogisticsIndex','industrialComplexityIndex','remoteCoverageIndex','urbanComplexityIndex'].forEach(function(key){
+          const n=num(profile[key]);if(n===null||n<0||n>100)errors.push(label+': '+key+' must be between 0 and 100.');
+        });
+      }
+      const homicide=crime&&crime.observedHomicide&&crime.observedHomicide.ratePer100k;
+      if(homicide!==null&&homicide!==undefined&&homicide!==''){
+        const n=num(homicide);if(n===null||n<0)errors.push(label+': observed homicide rate must be non-negative when provided.');
+      }
+    });
+    return errors.length?{ok:false,code:'POLICE_BASELINE_VALIDATION_FAILED',errors:errors.slice(0,80),errorCount:errors.length,countryCount:codes.size}:
+      {ok:true,countryCount:codes.size,errors:[]};
+  }
   function loadCountryPoliceBaselines(rows){
-    if(!Array.isArray(rows))return{ok:false,code:'POLICE_BASELINE_ROWS_INVALID',countryCount:0};
-    const next=Object.create(null);
+    const validation=validateCountryPoliceBaselineRows(rows);
+    if(!validation.ok)return validation;
+    const next=Object.create(null),nextAliasOwners=new Map();
     rows.forEach(function(row){
-      if(!row||typeof row!=='object'||!row.code||!row.name)return;
-      baselineAliases(row).forEach(function(alias){next[alias]=row;});
+      baselineAliases(row).forEach(function(alias){
+        const previous=nextAliasOwners.get(alias);
+        if(previous&&previous!==row.code)throw new Error('POLICE_BASELINE_ALIAS_CONFLICT:'+alias);
+        nextAliasOwners.set(alias,row.code);
+        next[alias]=row;
+      });
       next[normalizeCountry(row.code)]=row;
       next[normalizeCountry(row.iso3)]=row;
     });
     countryPoliceBaselineByCode=next;
-    return{ok:true,countryCount:new Set(rows.filter(Boolean).map(function(row){return String(row.iso3||row.code).toUpperCase();})).size,
+    return{ok:true,countryCount:validation.countryCount,
       populationCount:rows.filter(function(row){return num(row.population&&row.population.value)!==null;}).length,
       observedHomicideCount:rows.filter(function(row){return num(row.crime&&row.crime.observedHomicide&&row.crime.observedHomicide.ratePer100k)!==null;}).length};
   }
@@ -1824,7 +1901,7 @@
     estimateRecruitCost:function(amount,country){const s=getState(country||currentCountry());return Math.max(0,Math.floor(num(amount)||0))*Math.max(0,num(s.recruitmentFeePerOfficerUsd)||POLICE_RECRUITMENT_COST);},
     getPoliceSalaryPerDay:function(country){return Math.max(0,num(getState(country||currentCountry()).dailySalaryPerOfficerUsd)||POLICE_SALARY_PER_DAY);},
     getRecruitmentFeePerOfficer:function(country){return Math.max(0,num(getState(country||currentCountry()).recruitmentFeePerOfficerUsd)||POLICE_RECRUITMENT_COST);},
-    loadCountryPoliceBaselines:loadCountryPoliceBaselines,bootstrapCountryPoliceBaselines:bootstrapCountryPoliceBaselines,
+    validateCountryPoliceBaselineRows:validateCountryPoliceBaselineRows,loadCountryPoliceBaselines:loadCountryPoliceBaselines,bootstrapCountryPoliceBaselines:bootstrapCountryPoliceBaselines,
     getCountryOperatingProfile:getCountryOperatingProfile,getCountryVehicleRecommendations:getCountryVehicleRecommendations,
     getPoliceRulebook:function(country){return normalizePoliceRulebook(getState(country||currentCountry()).policeRulebook);},
     getPoliceRulebookQuality:function(country){return policeRulebookQuality(getState(country||currentCountry()).policeRulebook);},
