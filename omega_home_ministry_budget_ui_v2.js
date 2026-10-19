@@ -72,7 +72,8 @@
     var cash = snap.available ? money(snap.treasuryBalanceUsd) : 'Unavailable';
     var html = '<section class="ohmb-access" id="omega-home-budget-access-v2">' +
       '<div class="ohmb-access-head"><div><h2>HOME MINISTRY · BUDGET & EXPENDITURE</h2><div class="ohmb-muted">Finance ceiling is linked to Interior. This panel splits it into salaries, vehicles, repairs, facilities, training and operations.</div></div>' +
-      '<button type="button" class="ohmb-button ohmb-button-main" id="ohmb-open-budget">OPEN BUDGET CONTROL</button></div>' +
+      '<div class="ohmb-actions"><button type="button" class="ohmb-button ohmb-button-main" id="ohmb-open-budget">OPEN BUDGET CONTROL</button>' +
+      '<button type="button" class="ohmb-button" id="ohmb-open-battlefield">OPEN MILITARY / BATTLEFIELD</button></div></div>' +
       '<div class="ohmb-kpis"><div class="ohmb-kpi"><strong>' + esc(title) + '</strong><span>Annual Finance allocation</span></div>' +
       '<div class="ohmb-kpi"><strong>' + esc(remaining) + '</strong><span>Interior allocation remaining</span></div>' +
       '<div class="ohmb-kpi"><strong>' + esc(cash) + '</strong><span>Available treasury</span></div></div>' +
@@ -83,6 +84,13 @@
     target.insertAdjacentHTML('beforeend', html);
     var open = g.document.getElementById('ohmb-open-budget');
     if (open) open.onclick = function () { renderBudgetScreen(); };
+    var battle = g.document.getElementById('ohmb-open-battlefield');
+    if (battle) battle.onclick = function () {
+      var command = g.OmegaBattlefieldCommand;
+      if (command && typeof command.open === 'function') command.open();
+      else if (g.document && g.document.getElementById('omega-battlefield-launcher-v1')) g.document.getElementById('omega-battlefield-launcher-v1').click();
+      else if (typeof g.alert === 'function') g.alert('Military and battlefield data are still loading. Try after the page finishes loading.');
+    };
   }
   function renderBudgetScreen(statusText, statusType) {
     var root = host(), e = engine(), f = finance();
