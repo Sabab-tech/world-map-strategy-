@@ -4,7 +4,7 @@
  */
 (function (g) {
   'use strict';
-  const VERSION = '1.0.0', YEAR_MS = 31536000000, HOUR_MS = 3600000, DAY_MS = 86400000;
+  const VERSION = '1.0.0', YEAR_MS = 31536000000, DAY_MS = 86400000;
   const MAX_HISTORY = 31;
   if (g.OmegaEconomicTransmissionRuntime && g.OmegaEconomicTransmissionRuntime.VERSION === VERSION) return;
 
@@ -338,7 +338,7 @@
       const d = num(s && s.simulationDay);
       if (d !== null) return d;
     } catch (_) {}
-    return Math.floor(currentTurn() / 24);
+    return Math.floor(currentTurn());
   }
   function globalInflationMean() {
     const vals = [];
@@ -401,7 +401,7 @@
     const t = num(turnNumber) ?? currentTurn() + 1;
     if (store && num(store.lastProcessedTurn) !== null && t <= store.lastProcessedTurn)
       return { ok: true, duplicate: true, turn: t, processed: 0 };
-    const dt = clamp(num(durationMs) ?? HOUR_MS, 0, 7 * DAY_MS);
+    const dt = clamp(num(durationMs) ?? DAY_MS, 0, 7 * DAY_MS);
     if (dt <= 0) return { ok: true, turn: t, processed: 0 };
     const averageInflation = globalInflationMean();
     const simDay = currentSimulationDay();
