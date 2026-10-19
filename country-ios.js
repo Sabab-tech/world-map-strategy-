@@ -80,6 +80,22 @@ window.CountryIOS = {
 
         this.updateHeader();
         this.switchChapter(this.activeChapter);
+
+        // Refresh the active view after the shared registry becomes ready.
+        const countryRuntime = window.OmegaCountryRuntimeData;
+        const requestedCountry = this.activeCountry;
+        if (countryRuntime && countryRuntime.ready && typeof countryRuntime.isSettled === 'function' &&
+            !countryRuntime.isSettled() && !this._countryRuntimeRefreshPending) {
+            this._countryRuntimeRefreshPending = true;
+            Promise.resolve(countryRuntime.ready).then(() => {
+                this._countryRuntimeRefreshPending = false;
+                if (this.activeCountry === requestedCountry) {
+                    this.updateHeader();
+                    this.switchChapter(this.activeChapter);
+                }
+            }).catch(() => { this._countryRuntimeRefreshPending = false; });
+        }
+
         if (window.updateGlobalBackButtonVisibility) {
             window.updateGlobalBackButtonVisibility();
         }
@@ -149,30 +165,60 @@ window.CountryIOS = {
     },
 
     readCountryValue(countryKey, domains, paths) {
-        const state = window.Game && window.Game.state || window.gameState || {};
         const requested = String(countryKey || '').trim();
         const observer = window.OmegaLiveOpsObservability;
         const resolved = observer && typeof observer.resolveCountryId === 'function'
             ? observer.resolveCountryId(requested) : null;
-        const normalise = value => String(value == null ? '' : value).trim().toUpperCase().replace(/[\s-]+/g, '_');
-        const candidates = new Set([requested, requested.replace(/[\s-]+/g, '_'), requested.toUpperCase(),
-            normalise(requested), resolved, resolved && normalise(resolved)].filter(Boolean).map(normalise));
+        const runtime = window.OmegaCountryRuntimeData;
+        const identity = runtime && typeof runtime.resolveCountry === 'function'
+            ? runtime.resolveCountry(requested) : null;
+        const normalise = value => String(value == null ? '' : value).trim().toUpperCase()
+            .replace(/[^A-Z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+        const candidates = new Set([
+            requested, resolved, identity && identity.countryCode, identity && identity.iso3,
+            identity && identity.numericCode, identity && identity.name, identity && identity.economyKey,
+            identity && identity.populationKey
+        ].filter(Boolean).map(normalise));
+        const roots = [
+            window.Game && window.Game.state,
+            window.gameState,
+            window.Omega && window.Omega.Simulation && window.Omega.Simulation.state,
+            window.Omega && window.Omega.World && window.Omega.World.state
+        ].filter((item, index, all) => item && typeof item === 'object' && all.indexOf(item) === index);
+        const domainList = Array.isArray(domains) ? domains : [domains];
         const pathList = Array.isArray(paths) ? paths : [paths];
-        for (const domain of (Array.isArray(domains) ? domains : [domains])) {
-            const records = state && state[domain];
-            if (!records || typeof records !== 'object') continue;
-            let row = null;
-            for (const [key, value] of Object.entries(records)) {
-                if (candidates.has(normalise(key)) || candidates.has(normalise(value && (value.countryId || value.countryCode || value.code || value.id)))) {
-                    row = value; break;
-                }
-            }
-            if (!row || typeof row !== 'object') continue;
+        const scalarAtPath = record => {
+            if (!record || typeof record !== 'object') return null;
             for (const path of pathList) {
-                let value = row;
+                let value = record;
                 for (const part of String(path || '').split('.')) value = value == null ? undefined : value[part];
                 if (value === null || value === undefined || value === '' || typeof value === 'object') continue;
-                if ((typeof value === 'number' && Number.isFinite(value)) || typeof value === 'string' || typeof value === 'boolean') return value;
+                if ((typeof value === 'number' && Number.isFinite(value)) ||
+                    typeof value === 'string' || typeof value === 'boolean') return value;
+            }
+            return null;
+        };
+
+        for (const domain of domainList) {
+            for (const state of roots) {
+                const records = state && state[domain];
+                if (!records || typeof records !== 'object') continue;
+                let row = null;
+                for (const [key, value] of Object.entries(records)) {
+                    const embedded = value && (value.countryId || value.countryCode || value.iso2 ||
+                        value.iso3 || value.countryName || value.country_name || value.name);
+                    if (candidates.has(normalise(key)) || candidates.has(normalise(embedded))) {
+                        row = value;
+                        break;
+                    }
+                }
+                const value = scalarAtPath(row);
+                if (value !== null) return value;
+            }
+
+            if (runtime && typeof runtime.getRecord === 'function') {
+                const value = scalarAtPath(runtime.getRecord(domain, requested));
+                if (value !== null) return value;
             }
         }
         return null;
@@ -223,9 +269,29 @@ window.CountryIOS = {
 
         const countryKey = this.activeCountry;
         const normKey = (countryKey || '').toUpperCase().replace(/[-\s]/g, '_');
-        const econ = (window.Game && window.Game.state && window.Game.state.economy && (window.Game.state.economy[normKey] || window.Game.state.economy[countryKey])) || (window.gameState && window.gameState.economy && (window.gameState.economy[normKey] || window.gameState.economy[countryKey])) || null;
-        const pop = (window.Game && window.Game.state && window.Game.state.population && (window.Game.state.population[normKey] || window.Game.state.population[countryKey])) || (window.gameState && window.gameState.population && (window.gameState.population[normKey] || window.gameState.population[countryKey])) || null;
-        const rel = (window.Game && window.Game.state && window.Game.state.relations && (window.Game.state.relations[normKey] || window.Game.state.relations[countryKey])) || {};
+        const countryRuntime = window.OmegaCountryRuntimeData;
+        const liveEconomy = (window.Game && window.Game.state && window.Game.state.economy) ||
+            (window.gameState && window.gameState.economy) || {};
+        const livePopulation = (window.Game && window.Game.state && window.Game.state.population) ||
+            (window.gameState && window.gameState.population) || {};
+        const lookupByKey = (records, candidates) => {
+            for (const candidate of candidates) {
+                const hit = Object.keys(records).find(key => key.toUpperCase().replace(/[-\s]/g, '_') ===
+                    String(candidate || '').toUpperCase().replace(/[-\s]/g, '_'));
+                if (hit !== undefined) return records[hit];
+            }
+            return null;
+        };
+        const identity = countryRuntime && countryRuntime.resolveCountry(countryKey);
+        const keys = [countryKey, normKey, identity && identity.countryCode, identity && identity.iso3,
+            identity && identity.name, identity && identity.economyKey, identity && identity.populationKey];
+        const econ = (countryRuntime && countryRuntime.getRecord('economy', countryKey)) ||
+            lookupByKey(liveEconomy, keys) || null;
+        const pop = (countryRuntime && countryRuntime.getRecord('population', countryKey)) ||
+            lookupByKey(livePopulation, keys) || null;
+        const relationState = (window.Game && window.Game.state && window.Game.state.relations) ||
+            (window.gameState && window.gameState.relations) || {};
+        const rel = lookupByKey(relationState, keys) || {};
 
         switch(chNum) {
             case 1:
@@ -277,31 +343,24 @@ window.CountryIOS = {
     // CHAPTER 01: OVERVIEW & STRATEGIC DIPLOMACY PANEL (MATCHING USER SCREENSHOT)
     // -------------------------------------------------------------------------
     renderChapter1_Overview(countryKey, econ, pop, rel) {
-        const nameClean = countryKey.replace(/_/g, " ");
-
-        const capitalMap = {
-            "USA": "Washington D.C.", "BANGLADESH": "Dhaka", "INDIA": "New Delhi",
-            "CHINA": "Beijing", "RUSSIA": "Moscow", "UNITED KINGDOM": "London",
-            "UK": "London", "GERMANY": "Berlin", "JAPAN": "Tokyo", "FRANCE": "Paris",
-            "SAUDI ARABIA": "Riyadh", "PAKISTAN": "Islamabad", "TURKEY": "Ankara",
-            "IRAN": "Tehran", "EGYPT": "Cairo", "BRAZIL": "Brasilia", "CANADA": "Ottawa",
-            "PALESTINE": "Jerusalem / Ramallah", "BAHRAIN": "Manama", "MALDIVES": "Male"
-        };
-        const capital = capitalMap[countryKey.toUpperCase()] || "Capital HQ";
-
-        const cashVal = (econ && econ.gdp) ? (econ.gdp / 1e8).toFixed(1) + "k" : "—";
-        const influenceVal = (pop && pop.population_2015) ? (pop.population_2015 / 6e5).toFixed(1) + "k" : "—";
-        const popVal = (pop && pop.population_2015) ? (pop.population_2015 / 1e6).toFixed(1) + "M" : "—";
-        const relationVal = (rel && rel.standing) ? rel.standing : "NEUTRAL";
-
-        // Country flag icon mapping
-        const flagMap = {
-            "UNITED KINGDOM": "🇬🇧", "UK": "🇬🇧", "USA": "🇺🇸", "BANGLADESH": "🇧🇩",
-            "INDIA": "🇮🇳", "CHINA": "🇨🇳", "RUSSIA": "🇷🇺", "GERMANY": "🇩🇪",
-            "JAPAN": "🇯🇵", "FRANCE": "🇫🇷", "SAUDI ARABIA": "🇸🇦", "PALESTINE": "🇵🇸",
-            "BAHRAIN": "🇧🇭", "MALDIVES": "🇲🇻", "PAKISTAN": "🇵🇰", "TURKEY": "🇹🇷"
-        };
-        const flag = flagMap[countryKey.toUpperCase()] || "🌐";
+        const countryRuntime = window.OmegaCountryRuntimeData;
+        const identity = countryRuntime && countryRuntime.resolveCountry(countryKey);
+        const profile = countryRuntime && countryRuntime.getProfile(countryKey);
+        const nameClean = (identity && identity.name ? identity.name : countryKey).replace(/_/g, " ");
+        const capital = (countryRuntime && countryRuntime.getCapital(countryKey)) || "NOT RECORDED";
+        const gdp = econ && econ.gdp;
+        const population = pop && pop.population_2015;
+        const influence = profile && profile.indicators && profile.indicators.economicInfluenceIndex;
+        const cashVal = gdp !== null && gdp !== undefined && gdp !== '' && Number.isFinite(Number(gdp))
+            ? (Math.abs(Number(gdp)) >= 1e9 ? '$' + (Number(gdp) / 1e9).toFixed(2) + 'B' : '$' + (Number(gdp) / 1e6).toFixed(2) + 'M')
+            : "NOT RECORDED";
+        const influenceVal = typeof influence === 'number' && Number.isFinite(influence)
+            ? influence.toFixed(1) + '/100' : "NOT RECORDED";
+        const popVal = population !== null && population !== undefined && population !== '' && Number.isFinite(Number(population))
+            ? (Number(population) / 1e6).toFixed(1) + "M" : "NOT RECORDED";
+        const relationVal = (rel && rel.standing !== undefined && rel.standing !== null && rel.standing !== '')
+            ? rel.standing : "NOT RECORDED";
+        const flag = (countryRuntime && countryRuntime.flagFor(countryKey)) || "🏳️";
 
         return `
             <div class="command-tactical-container">
@@ -1369,20 +1428,43 @@ window.CountryIOS = {
     // CHAPTER 12: WORLD ECOSYSTEM & CAUSAL DEPENDENCY ENGINE
     // -------------------------------------------------------------------------
     renderChapter12_WorldEcosystem(countryKey) {
-        const profile = window.WorldEcosystemEngine ? window.WorldEcosystemEngine.getCountryProfile(countryKey) : {
-            geography: { isLandlocked: false, borderLengthKm: 4500 },
-            resources: { crude_oil: { importNeed: 120000 }, semiconductors: { importNeed: 2000000 } },
-            population: { total: 330000000, happinessScore: 72 },
-            government: { cabinetStability: 80, corruptionIndex: 25 },
-            aiPersonality: { aggressiveExpansion: 35, riskTolerance: 40, pragmaticRealism: 75, strategicVision: 80 },
-            media: { pressFreedomIndex: 75 },
-            tech: { semiconductorFabDominance: 60, cyberAttackPower: 85 },
-            blocs: ["NATO", "AUKUS"],
-            influenceSphere: "Western / Transatlantic"
+        const countryRuntime = window.OmegaCountryRuntimeData;
+        const identity = countryRuntime && countryRuntime.resolveCountry(countryKey);
+        const populationRecord = countryRuntime && countryRuntime.getRecord('population', countryKey);
+        const economyRecord = countryRuntime && countryRuntime.getRecord('economy', countryKey);
+        let ecosystem = null;
+        try {
+            ecosystem = window.WorldEcosystemEngine && typeof window.WorldEcosystemEngine.getCountryProfile === 'function'
+                ? window.WorldEcosystemEngine.getCountryProfile(countryKey) : null;
+        } catch (_) {}
+        const profile = {
+            geography: Object.assign({ isLandlocked: null, borderLengthKm: null }, ecosystem && ecosystem.geography || {}),
+            resources: Object.assign({}, ecosystem && ecosystem.resources || {}),
+            population: Object.assign({}, ecosystem && ecosystem.population || {}, {
+                total: ecosystem && ecosystem.population && ecosystem.population.total != null
+                    ? ecosystem.population.total : (populationRecord && populationRecord.population_2015 != null ? populationRecord.population_2015 : null),
+                urbanizationRate: ecosystem && ecosystem.population && ecosystem.population.urbanizationRate != null
+                    ? ecosystem.population.urbanizationRate : (populationRecord && populationRecord.urbanization_rate != null ? populationRecord.urbanization_rate : null),
+                happinessScore: ecosystem && ecosystem.population && ecosystem.population.happinessScore != null
+                    ? ecosystem.population.happinessScore : null
+            }),
+            economy: Object.assign({}, ecosystem && ecosystem.economy || {}, {
+                gdp: ecosystem && ecosystem.economy && ecosystem.economy.gdp != null
+                    ? ecosystem.economy.gdp : (economyRecord && economyRecord.gdp != null ? economyRecord.gdp : null)
+            }),
+            government: Object.assign({ cabinetStability: null, corruptionIndex: null }, ecosystem && ecosystem.government || {}),
+            aiPersonality: Object.assign({
+                aggressiveExpansion: null, riskTolerance: null, pragmaticRealism: null, strategicVision: null
+            }, ecosystem && ecosystem.aiPersonality || {}),
+            media: Object.assign({ pressFreedomIndex: null }, ecosystem && ecosystem.media || {}),
+            tech: Object.assign({ semiconductorFabDominance: null, cyberAttackPower: null }, ecosystem && ecosystem.tech || {}),
+            blocs: ecosystem && Array.isArray(ecosystem.blocs) ? ecosystem.blocs : [],
+            influenceSphere: ecosystem && ecosystem.influenceSphere != null ? ecosystem.influenceSphere : null
         };
 
-        const logs = window.WorldEcosystemEngine ? window.WorldEcosystemEngine.getCausalEventLog() : [];
-        const countryName = countryKey.replace(/_/g, " ");
+        const logs = window.WorldEcosystemEngine && typeof window.WorldEcosystemEngine.getCausalEventLog === 'function'
+            ? window.WorldEcosystemEngine.getCausalEventLog() : [];
+        const countryName = (identity && identity.name ? identity.name : countryKey).replace(/_/g, " ");
 
         return `
             <div class="command-tactical-container" style="display:flex; flex-direction:column; gap:16px;">
@@ -1459,19 +1541,19 @@ window.CountryIOS = {
                         <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-family:var(--font-mono); font-size:11px;">
                             <div style="background:rgba(0,0,0,0.4); padding:8px; border-radius:6px; border:1px solid rgba(255,255,255,0.08);">
                                 <span style="color:#94a3b8;">Aggressive Expansion:</span>
-                                <div style="color:#f87171; font-weight:bold; font-size:13px;">${profile.aiPersonality.aggressiveExpansion}/100</div>
+                                <div style="color:#f87171; font-weight:bold; font-size:13px;">${profile.aiPersonality.aggressiveExpansion == null ? "NOT RECORDED" : profile.aiPersonality.aggressiveExpansion + "/100"}</div>
                             </div>
                             <div style="background:rgba(0,0,0,0.4); padding:8px; border-radius:6px; border:1px solid rgba(255,255,255,0.08);">
                                 <span style="color:#94a3b8;">Risk Tolerance:</span>
-                                <div style="color:#fbbf24; font-weight:bold; font-size:13px;">${profile.aiPersonality.riskTolerance}/100</div>
+                                <div style="color:#fbbf24; font-weight:bold; font-size:13px;">${profile.aiPersonality.riskTolerance == null ? "NOT RECORDED" : profile.aiPersonality.riskTolerance + "/100"}</div>
                             </div>
                             <div style="background:rgba(0,0,0,0.4); padding:8px; border-radius:6px; border:1px solid rgba(255,255,255,0.08);">
                                 <span style="color:#94a3b8;">Pragmatic Realism:</span>
-                                <div style="color:#34d399; font-weight:bold; font-size:13px;">${profile.aiPersonality.pragmaticRealism}/100</div>
+                                <div style="color:#34d399; font-weight:bold; font-size:13px;">${profile.aiPersonality.pragmaticRealism == null ? "NOT RECORDED" : profile.aiPersonality.pragmaticRealism + "/100"}</div>
                             </div>
                             <div style="background:rgba(0,0,0,0.4); padding:8px; border-radius:6px; border:1px solid rgba(255,255,255,0.08);">
                                 <span style="color:#94a3b8;">Strategic Vision:</span>
-                                <div style="color:#38bdf8; font-weight:bold; font-size:13px;">${profile.aiPersonality.strategicVision}/100</div>
+                                <div style="color:#38bdf8; font-weight:bold; font-size:13px;">${profile.aiPersonality.strategicVision == null ? "NOT RECORDED" : profile.aiPersonality.strategicVision + "/100"}</div>
                             </div>
                         </div>
                     </div>
@@ -1485,13 +1567,13 @@ window.CountryIOS = {
                             <div style="background:rgba(0,0,0,0.4); padding:8px; border-radius:6px; border:1px solid rgba(255,255,255,0.08);">
                                 <span style="color:#94a3b8;">Active Alliance Blocs:</span>
                                 <div style="color:#00e5ff; font-weight:bold; font-size:12px; margin-top:2px;">
-                                    ${(profile.blocs || []).join(", ") || "Non-Aligned / Independent"}
+                                    ${(profile.blocs || []).join(", ") || "NOT RECORDED"}
                                 </div>
                             </div>
                             <div style="background:rgba(0,0,0,0.4); padding:8px; border-radius:6px; border:1px solid rgba(255,255,255,0.08);">
                                 <span style="color:#94a3b8;">Influence Sphere:</span>
                                 <div style="color:#a7f3d0; font-weight:bold; font-size:12px; margin-top:2px;">
-                                    ${profile.influenceSphere || "Western / Transatlantic"}
+                                    ${profile.influenceSphere || "NOT RECORDED"}
                                 </div>
                             </div>
                         </div>
