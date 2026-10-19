@@ -408,3 +408,25 @@ test('purchases fail closed when treasury is unavailable and advice is non-mutat
   assert.equal(api.FACILITIES.length, 10);
   assert.equal(api.TACTICS.length, 5);
 });
+
+
+test('Home Ministry internal budget is bounded by Finance allocation and category shares total at most 100%', () => {
+  setup();
+  globalThis.OmegaFinanceMinistry = {
+    getFinanceState: () => ({ allocations: { interior: { budgetUsd: 5000000, remainingUsd: 5000000 } } })
+  };
+  try {
+    const configured = api.configureHomeBudget(5000000, { salary: 30, vehicles: 30, maintenance: 25, operations: 15 }, 'AAA');
+    assert.equal(configured.ok, true);
+    const snapshot = api.getHomeBudgetSnapshot('AAA');
+    assert.equal(snapshot.parentAllocationUsd, 5000000);
+    assert.equal(snapshot.internal.categories.salary.amountUsd, 1500000);
+    assert.equal(snapshot.internal.categories.vehicles.amountUsd, 1500000);
+    assert.equal(snapshot.internal.categories.maintenance.amountUsd, 1250000);
+    assert.equal(snapshot.internal.categories.operations.amountUsd, 750000);
+    assert.equal(api.configureHomeBudget(6000000, { salary: 30, vehicles: 30, maintenance: 25, operations: 15 }, 'AAA').reason, 'FINANCE_INTERIOR_ALLOCATION_REQUIRED');
+    assert.equal(api.configureHomeBudget(5000000, { salary: 50, vehicles: 30, maintenance: 25, operations: 15 }, 'AAA').reason, 'HOME_BUDGET_SHARES_EXCEED_100');
+  } finally {
+    delete globalThis.OmegaFinanceMinistry;
+  }
+});
