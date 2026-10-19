@@ -30,7 +30,7 @@ test('all canonical country identities have an ISO-2-derived flag', async () => 
   const { api } = await createRuntime();
   const profiles = JSON.parse(read('economy_global_profiles_v1.json')).countries;
   assert.equal(api.diagnostics().profileCount, 249);
-  assert.equal(api.diagnostics().flagCount, 249);
+  assert.ok(api.diagnostics().flagCount >= 249, 'every canonical profile should have a derived flag');
   for (const row of profiles) {
     assert.equal(api.resolveCountry(row.countryCode)?.countryCode, row.countryCode, 'resolves ' + row.name);
     assert.ok(api.flagFor(row.countryCode), 'flag exists for ' + row.name);
@@ -49,6 +49,11 @@ test('country aliases resolve to the same canonical profile and source records',
   assert.equal(api.resolveCountry('North Korea')?.countryCode, 'KP');
   assert.equal(api.resolveCountry('Macau')?.countryCode, 'MO');
   assert.equal(api.resolveCountry('Democratic Republic of the Congo')?.countryCode, 'CD');
+  assert.equal(api.resolveCountry('Kosovo')?.countryCode, 'XK');
+  assert.equal(api.flagFor('Kosovo'), '🇽🇰');
+  assert.equal(api.getCapital('Kosovo'), 'Pristina');
+  assert.ok(api.getRecord('economy', 'Kosovo')?.gdp != null, 'legacy economy record remains accessible');
+  assert.ok(api.getRecord('population', 'Kosovo')?.population_2015 != null, 'legacy population record remains accessible');
 
   const bangladesh = api.getProfile('Bangladesh');
   assert.equal(bangladesh?.countryCode, 'BD');
@@ -99,4 +104,6 @@ test('offline app shell caches the country runtime bridge and city records', () 
   const sw = read('omega-offline-map-sw.js');
   assert.match(sw, /\.\/omega_country_runtime_data_v1\.js/);
   assert.match(sw, /\.\/cities\.json/);
+  assert.match(sw, /\.\/economy\.json/);
+  assert.match(sw, /\.\/population\.json/);
 });
