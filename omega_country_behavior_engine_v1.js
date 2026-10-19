@@ -43,7 +43,12 @@
   };
   const runtime = () => g.OmegaCountryRuntimeData || null;
   const identityBridge = () => g.OmegaCanonicalIdentityRegistry || g.OmegaCountrySemanticBridge || g.Omega?.CanonicalIdentity || null;
-  const gameState = () => g.Game?.state || g.gameState || g.Omega?.Simulation?.state || {};
+  const gameStateRoots = () => [
+    g.Game?.state,
+    g.gameState,
+    g.Omega?.Simulation?.state,
+    g.Omega?.World?.state
+  ].filter((row, index, rows) => obj(row) && rows.indexOf(row) === index);
 
   function resolveIdentity(value) {
     let identity = null;
@@ -74,15 +79,17 @@
   }
 
   function liveBucket(domain, identity) {
-    const root = gameState();
-    const bucketRoot = root && root[domain];
-    if (!obj(bucketRoot)) return null;
     const keys = aliasKeys(identity);
-    for (const key of keys) {
-      if (own(bucketRoot, key) && obj(bucketRoot[key])) return bucketRoot[key];
+    for (const root of gameStateRoots()) {
+      const bucketRoot = root && root[domain];
+      if (!obj(bucketRoot)) continue;
+      for (const key of keys) {
+        if (own(bucketRoot, key) && obj(bucketRoot[key])) return bucketRoot[key];
+      }
+      const found = Object.keys(bucketRoot).find(k => keys.includes(id(k)));
+      if (found) return bucketRoot[found];
     }
-    const found = Object.keys(bucketRoot).find(k => keys.includes(id(k)));
-    return found ? bucketRoot[found] : null;
+    return null;
   }
 
   function liveMetric(identity, domains, fields) {
