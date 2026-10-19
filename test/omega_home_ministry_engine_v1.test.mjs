@@ -62,14 +62,19 @@ test('vehicle tiers cannot be skipped and delivery takes 180 simulation days', (
   assert.equal(api.orderVehicle(2, 1, 'AAA').ok, true);
 });
 
-test('academy upgrades unlock training quality and costs scale with level', () => {
+test('academy prerequisites are reported and country-profile data is required for a timed training project', () => {
   setup();
-  assert.equal(api.upgradeTraining(2, 'AAA').reason, 'ACADEMY_LEVEL_TOO_LOW');
+  let quote = api.getCapabilityUpgradeQuote('training', 'AAA');
+  assert.equal(quote.canStart, false);
+  assert.ok(quote.blockers.some(blocker => blocker.code === 'ACADEMY_LEVEL_REQUIRED'));
   assert.equal(api.estimateFacilityCost('academy', 1, 'AAA'), 30000);
   assert.equal(api.buildFacility('academy', 1, 'AAA').ok, true);
   assert.equal(api.getState('AAA').facilityLevels.academy, 2);
-  assert.equal(api.upgradeTraining(2, 'AAA').ok, true);
-  assert.equal(api.getState('AAA').trainingQualityLevel, 2);
+  quote = api.getCapabilityUpgradeQuote('training', 'AAA');
+  assert.equal(quote.canStart, false);
+  assert.ok(quote.blockers.some(blocker => blocker.code === 'COUNTRY_CAPABILITY_PROFILE_UNAVAILABLE'));
+  assert.equal(api.upgradeTraining(2, 'AAA').ok, false);
+  assert.equal(api.getState('AAA').trainingQualityLevel, 1);
 });
 
 test('research completes only after its simulation-time duration', () => {
