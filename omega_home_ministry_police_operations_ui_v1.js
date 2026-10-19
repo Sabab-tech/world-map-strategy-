@@ -612,6 +612,49 @@
       else setStatus('Specialist police allocation saved. Treasury paid '+money(result.oneTimeCostUsd||result.cost||0)+'; '+formatCount(result.reassignedOfficers||0)+' officers reassigned. Crime projections and headcounts recalculated.','ok');
       activeTab='units';render();
     };
+    var fileCaseButton=root.querySelector('#ohpu-file-case'),caseTypeInput=root.querySelector('#ohpu-case-type');
+    var casePriorityInput=root.querySelector('#ohpu-case-priority'),caseDescriptionInput=root.querySelector('#ohpu-case-description');
+    var caseQuote=root.querySelector('#ohpu-case-quote'),caseCreateStatus=root.querySelector('#ohpu-case-create-status');
+    function updateCaseFilingQuote(){
+      if(!fileCaseButton||!caseQuote||typeof d.engine.estimatePoliceCaseFilingCost!=='function')return;
+      var caseType=caseTypeInput&&caseTypeInput.value,priority=casePriorityInput&&casePriorityInput.value;
+      var estimate=d.engine.estimatePoliceCaseFilingCost(caseType,priority,d.countryId);
+      var operations=d.budget&&d.budget.categories&&d.budget.categories.operations,funds=number(operations&&operations.spendableUsd);
+      var editable=!!(d.budget&&d.budget.available&&d.budget.canEdit!==false),description=String(caseDescriptionInput&&caseDescriptionInput.value||'').trim();
+      if(!estimate||!estimate.ok){
+        caseQuote.innerHTML=kpi('One-time filing cost','Unavailable','Choose a valid case type and priority.')+kpi('First-action deadline','Unavailable','Rules could not be evaluated.');
+        if(caseCreateStatus)caseCreateStatus.textContent='Case quote is unavailable. The case will not be created.';
+        fileCaseButton.disabled=true;return;
+      }
+      var affordable=number(estimate.oneTimeFilingCostUsd)<=funds+0.01;
+      caseQuote.innerHTML=kpi('One-time filing cost',money(estimate.oneTimeFilingCostUsd),'Paid from the selected country’s Operations budget.')+
+        kpi('First-action deadline',number(estimate.firstActionDeadlineHours)===0?'Immediate':number(estimate.firstActionDeadlineHours).toFixed(2)+' hours','Shorter response targets increase case processing cost.');
+      if(caseCreateStatus)caseCreateStatus.textContent=!editable?'Finance is unavailable or this country is read-only.':
+        !description?'Enter a short factual description before filing.':
+        affordable?'Within available Operations funds.':'Filing cost exceeds spendable Operations funds ('+money(funds)+').';
+      fileCaseButton.disabled=!editable||!description||!affordable;
+    }
+    [caseTypeInput,casePriorityInput,caseDescriptionInput].forEach(function(input){
+      if(input){input.onchange=updateCaseFilingQuote;input.oninput=updateCaseFilingQuote;}
+    });
+    updateCaseFilingQuote();
+    if(fileCaseButton)fileCaseButton.onclick=function(){
+      var result=d.engine.filePoliceCase(caseTypeInput&&caseTypeInput.value,casePriorityInput&&casePriorityInput.value,
+        caseDescriptionInput&&caseDescriptionInput.value,d.countryId);
+      if(!result||!result.ok)setStatus('Case filing rejected: '+String(result&&(result.message||result.reason||result.code)||'UNKNOWN_ERROR')+'. No case or expense was recorded.','error');
+      else setStatus('Police case '+String(result.caseRecord&&result.caseRecord.id||'')+' was filed. Treasury paid '+money(result.oneTimeFilingCostUsd||result.cost||0)+'. First action deadline: '+number(result.firstActionDeadlineHours).toFixed(2)+' simulation hours.','ok');
+      activeTab='cases';render();
+    };
+    Array.prototype.forEach.call(root.querySelectorAll('[data-ohpu-case-action]'),function(btn){
+      btn.onclick=function(){
+        var id=btn.getAttribute('data-ohpu-case-id'),action=btn.getAttribute('data-ohpu-case-action');
+        var decision=btn.getAttribute('data-ohpu-case-decision')||undefined;
+        var result=d.engine.recordPoliceCaseAction(id,action,d.countryId,decision);
+        if(!result||!result.ok)setStatus('Police case action rejected: '+String(result&&(result.message||result.reason||result.code)||'UNKNOWN_ERROR')+'. No action was committed and no expense was retained.','error');
+        else setStatus('Case '+String(id)+' action '+String(action)+' completed. Finance charged '+money(result.actionCostUsd||result.cost||0)+'. New case status: '+String(result.caseRecord&&result.caseRecord.status||'UPDATED')+'.','ok');
+        activeTab='cases';render();
+      };
+    });
     Array.prototype.forEach.call(root.querySelectorAll('[data-ohpu-rule]'),function(btn){
       btn.onclick=function(){
         var id=btn.getAttribute('data-ohpu-rule'),enabled=btn.getAttribute('data-ohpu-enabled')==='true';
