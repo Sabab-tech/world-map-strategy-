@@ -203,7 +203,7 @@
   }
   function budgetSummaryForState(state,country){
     const plan=normalizedBudgetPlan(state&&state.budgetPlan),external=getFinanceHomeAllocation(country);
-    const local=plan.authorizedAmount,total=local+(external.available?external.amount:0);
+    const local=plan.authorizedAmount,total=local>0?local:(external.available?external.amount:0);
     const spentByCategory=clone(plan.spentByCategory),spent=Object.values(spentByCategory).reduce((sum,value)=>sum+value,0);
     const categories={};let reserved=0,percentTotal=0;
     Object.keys(BUDGET_CATEGORIES).forEach(key=>{
@@ -233,12 +233,14 @@
   }
   function configureBudgetPlan(authorizedAmount,rules,country){
     const cid=normalizeCountry(country||currentCountry());if(!cid)return{ok:false,reason:'PLAYER_COUNTRY_UNAVAILABLE'};
-    const amount=num(authorizedAmount);if(amount===null||amount<0)return{ok:false,reason:'BUDGET_AUTHORIZATION_INVALID'};
+    const amount=num(authorizedAmount);if(amount===null||amount<=0)return{ok:false,reason:'BUDGET_AUTHORIZATION_INVALID',message:'Enter a positive, authorized budget amount.'};
     const state=getState(cid),next=clone(state),plan=normalizedBudgetPlan(next.budgetPlan);
     const external=getFinanceHomeAllocation(cid),summary=budgetSummaryForState(state,cid);
     const maxAuthorizable=(summary.treasury.available?summary.treasury.balance:0)+summary.totalSpent;
     if(amount>maxAuthorizable+0.01)return{ok:false,reason:'INSUFFICIENT_TREASURY',balance:summary.treasury.balance,cost:amount};
-    const total=amount+(external.available?external.amount:0);
+    if(external.available&&external.amount>0&&amount>external.amount+0.01)
+      return{ok:false,reason:'MINISTRY_BUDGET_EXCEEDS_FINANCE_ALLOCATION',financeAllocation:external.amount,cost:amount};
+    const total=amount;
     const validation=validateBudgetRules(rules||plan.allocationRules,total);
     if(!validation.ok)return validation;
     if(amount<summary.totalSpent-0.01)return{ok:false,reason:'BUDGET_BELOW_PRIOR_SPENDING',spent:summary.totalSpent,requested:amount};
