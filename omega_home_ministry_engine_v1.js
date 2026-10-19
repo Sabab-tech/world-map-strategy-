@@ -9,6 +9,7 @@
   const POLICE_SALARY_PER_DAY = 65, POLICE_RECRUITMENT_COST = 2500;
   const AGENT_RECRUITMENT_COST = 50000, AGENT_SALARY_PER_DAY = 500;
   const STATE_COMMAND = 'HOME_POLICE_STATE_PATCH';
+  const CAPABILITY_MATERIALS_COMMAND = 'OMEGA_HOME_POLICE_CAPABILITY_MATERIALS';
   const FINANCE_CASH_COMMAND = 'HOME_POLICE_FINANCE_CASH_ADJUST';
   const ECONOMY_INCIDENT_COMMAND = 'HOME_POLICE_APPLY_SECURITY_INCIDENT';
 
@@ -1103,7 +1104,7 @@
     const initial=baseState();ensureFleetInventory(initial,cid);
     dispatchState(cid,initial,'OMEGA_HOME_MINISTRY_INITIALIZED');return initial;
   }
-  function money(value){const n=num(value);return n===null?'Unavailable':'$'+Math.round(n).toLocaleString('en-US');}
+  function money(value){const format=g.OmegaNumberFormat;return format&&typeof format.money==='function'?format.money(value,{unavailable:'Unavailable'}):(num(value)===null?'Unavailable':'$'+Math.round(num(value)).toLocaleString('en-US'));}
   function mutation(country,cost,action,mutator){
     const cid=normalizeCountry(country||currentCountry());if(!cid)return{ok:false,reason:'PLAYER_COUNTRY_UNAVAILABLE'};
     if(!isPlayerCountry(cid))return{ok:false,reason:'PLAYER_COUNTRY_SCOPE_VIOLATION',countryId:cid};
@@ -1754,6 +1755,68 @@
       {id:'recruitmentTeams',label:'Recruitment teams available from current personnel',unit:'team(s)',required:Math.max(1,Math.ceil(target/2)),available:Math.max(1,Math.floor(policeCount/1000)),ok:Math.max(1,Math.floor(policeCount/1000))>=Math.max(1,Math.ceil(target/2))}
     ];
   }
+  function materialToken(value){return String(value||'').trim().toLowerCase().replace(/[\\s-]+/g,'_');}
+  function capabilityMaterialRequirements(type,target){
+    const level=Math.max(1,Math.floor(num(target)||1));
+    if(type==='training')return[
+      {resourceId:'CONSTRUCTION_AGGREGATE',quantity:level*8},
+      {resourceId:'COPPER',quantity:level*2},
+      {resourceId:'BAUXITE_ALUMINUM',quantity:level}
+    ];
+    return[
+      {resourceId:'CRUDE_OIL',quantity:level*3},
+      {resourceId:'COPPER',quantity:level},
+      {resourceId:'IRON_ORE',quantity:level*2}
+    ];
+  }
+  function capabilityResourceBucket(country){
+    const root=rootState();
+    if(!root||!root.resource||typeof root.resource!=='object')return{bucket:null,countryId:normalizeCountry(country)};
+    const baseline=findPoliceBaseline(country);
+    const aliases=[country,baseline&&baseline.code,baseline&&baseline.iso2,baseline&&baseline.iso3,baseline&&baseline.name].filter(Boolean).map(materialToken);
+    const keys=Object.keys(root.resource);
+    const key=keys.find(function(item){return aliases.includes(materialToken(item))||aliases.some(function(alias){return normalizeCountry(item)===normalizeCountry(alias);});});
+    const row=key?root.resource[key]:null;
+    return{bucket:row&&typeof row==='object'?row:null,countryId:key||normalizeCountry(country)};
+  }
+  function materialMapEntry(map,resourceId){
+    if(!map||typeof map!=='object'||Array.isArray(map))return{key:null,raw:null,quantity:null};
+    const wanted=materialToken(resourceId),key=Object.keys(map).find(function(item){return materialToken(item)===wanted;});
+    if(key===undefined)return{key:null,raw:null,quantity:null};
+    const raw=map[key];let value=raw;
+    if(raw&&typeof raw==='object'&&!Array.isArray(raw))value=raw.availableQuantity??raw.available??raw.quantity??raw.amount??raw.value??raw.stock??raw.total;
+    return{key:key,raw:raw,quantity:num(value)};
+  }
+  function capabilityMaterialStock(country,resourceId){
+    const found=capabilityResourceBucket(country),bucket=found.bucket;
+    if(!bucket||!bucket.inventory||typeof bucket.inventory!=='object'||Array.isArray(bucket.inventory))
+      return{resourceId:resourceId,name:String(resourceId).replace(/_/g,' '),inventoryQuantity:null,availableQuantity:null,reservedQuantity:null,unit:null,source:'RESOURCE_RUNTIME_UNAVAILABLE',resourceCountryId:found.countryId};
+    const inventory=materialMapEntry(bucket.inventory,resourceId);
+    if(inventory.quantity===null)
+      return{resourceId:resourceId,name:String(resourceId).replace(/_/g,' '),inventoryQuantity:null,availableQuantity:null,reservedQuantity:null,unit:null,source:'RESOURCE_INVENTORY_UNAVAILABLE',resourceCountryId:found.countryId};
+    const trade=materialMapEntry(bucket.tradeAvailability,resourceId);
+    const reserve=materialMapEntry(bucket.strategicReserve&&bucket.strategicReserve.availableByResource,resourceId);
+    const reserved=Math.max(0,reserve.quantity===null?0:reserve.quantity),outsideReserve=Math.max(0,inventory.quantity-reserved);
+    const available=trade.quantity===null?outsideReserve:Math.min(outsideReserve,Math.max(0,trade.quantity));
+    const resourceTypes=Array.isArray(g.ResourceMinistryEngine&&g.ResourceMinistryEngine.resourceTypes)?g.ResourceMinistryEngine.resourceTypes:[];
+    const type=resourceTypes.find(function(item){return materialToken(item&&item.id)===materialToken(resourceId);});
+    const labels={CONSTRUCTION_AGGREGATE:'Construction aggregate',COPPER:'Copper',BAUXITE_ALUMINUM:'Bauxite / aluminum',CRUDE_OIL:'Crude oil',IRON_ORE:'Iron ore'};
+    return{resourceId:resourceId,name:type&&type.name||labels[resourceId]||String(resourceId).replace(/_/g,' '),
+      unit:type&&type.unit||type&&type.units||null,inventoryQuantity:inventory.quantity,availableQuantity:available,
+      reservedQuantity:reserved,authority:'LIVE_GAME_RESOURCE_INVENTORY',source:'Game.state.resource[country].inventory',resourceCountryId:found.countryId};
+  }
+  function resourceMaterialsTransaction(country,mode,projectId,materials){
+    const mesh=interop();
+    if(!mesh||typeof mesh.dispatchCommand!=='function')return{ok:false,reason:'MINISTRY_INTEROPERABILITY_UNAVAILABLE'};
+    const bucket=capabilityResourceBucket(country);
+    const payload={mode:mode,projectId:projectId,materials:Array.isArray(materials)?materials.map(function(row){return{resourceId:row.resourceId,quantity:row.quantity};}):[]};
+    try{
+      const response=mesh.dispatchCommand('interior',CAPABILITY_MATERIALS_COMMAND,bucket.countryId,payload,
+        {turn:turn(),commandType:CAPABILITY_MATERIALS_COMMAND,correlationId:projectId,ownerMinistry:'resource'});
+      if(response&&response.status==='APPLIED')return{ok:true,result:response.result||null,countryId:bucket.countryId};
+      return{ok:false,reason:response&&response.result&&(response.result.reason||response.result.code)||response&&response.reason||response&&response.status||'RESOURCE_MATERIAL_TRANSACTION_REJECTED'};
+    }catch(error){return{ok:false,reason:String(error&&error.message||error)};}
+  }
   function estimatePoliceCapabilityUpgrade(type,country){
     const kind=String(type||'').trim().toLowerCase(),cid=normalizeCountry(country||currentCountry());
     if(!cid||!['training','recruitment'].includes(kind))return{ok:false,canStart:false,code:'CAPABILITY_TYPE_OR_COUNTRY_INVALID',countryId:cid||null};
@@ -1769,7 +1832,11 @@
     const budget=getHomeBudgetSnapshot(cid,state),budgetRow=budget&&budget.categories&&budget.categories[category];
     const spendableUsd=budgetRow&&num(budgetRow.spendableUsd)!==null?Math.max(0,num(budgetRow.spendableUsd)):0;
     const resources=targetLevel<=maxLevel?policeCapabilityResources(kind,targetLevel,state):[];
+    const materials=(targetLevel<=maxLevel?capabilityMaterialRequirements(kind,targetLevel):[])
+      .map(function(row){return Object.assign({},row,capabilityMaterialStock(cid,row.resourceId));});
     const existingProject=(state.pendingCapabilityProjects||[]).find(function(p){return p&&p.type===kind&&p.status==='IN_PROGRESS';});
+    const materialRuntime=g.OmegaHomePoliceTrainingMaterialsRuntime&&typeof g.OmegaHomePoliceTrainingMaterialsRuntime.diagnostics==='function'
+      ?g.OmegaHomePoliceTrainingMaterialsRuntime.diagnostics():null;
     const blockers=[];
     if(currentLevel>=maxLevel)blockers.push({code:'CAPABILITY_LEVEL_MAXIMUM',message:'This capability is already at the maximum level '+maxLevel+'.'});
     if(!isPlayerCountry(cid))blockers.push({code:'PLAYER_COUNTRY_SCOPE_VIOLATION',message:'Capability upgrades can only be started for the active player country.'});
@@ -1783,25 +1850,44 @@
     resources.filter(function(row){return !row.ok;}).forEach(function(row){
       blockers.push({code:'CAPABILITY_RESOURCE_REQUIREMENT_MISSING',resourceId:row.id,message:row.label+': need '+row.required+' '+row.unit+', available '+row.available+'.'});
     });
+    if(!materialRuntime||materialRuntime.ready!==true)
+      blockers.push({code:'RESOURCE_MATERIAL_RUNTIME_UNAVAILABLE',message:'The authoritative resource inventory transaction handler is not ready.'});
+    materials.forEach(function(row){
+      if(row.availableQuantity===null||row.availableQuantity===undefined){
+        blockers.push({code:'RESOURCE_INVENTORY_UNAVAILABLE',resourceId:row.resourceId,message:'Live stock for '+row.name+' is unavailable. Expected source: Game.state.resource[country].inventory.'});
+      }else if(row.availableQuantity+1e-9<row.quantity){
+        blockers.push({code:'INSUFFICIENT_RESOURCE_STOCK',resourceId:row.resourceId,required:row.quantity,available:row.availableQuantity,
+          message:'Need '+row.quantity+' '+(row.unit||'units')+' of '+row.name+'; only '+row.availableQuantity+' is available outside protected reserves.'});
+      }
+    });
     return{
       ok:true,canStart:blockers.length===0,code:blockers.length?'CAPABILITY_UPGRADE_BLOCKED':'CAPABILITY_UPGRADE_READY',
       countryId:cid,type:kind,currentLevel:currentLevel,targetLevel:targetLevel,maxLevel:maxLevel,
       costUsd:costUsd,currency:'USD',durationDays:durationDays,
       startedAtMs:now,estimatedCompletionAtMs:now+durationDays*DAY_MS,
       action:action,budgetCategory:category,spendableUsd:spendableUsd,
-      budgetAvailable:!!(budget&&budget.available),resources:resources,blockers:blockers,
+      budgetAvailable:!!(budget&&budget.available),resources:resources,materials:materials,
+      inventorySource:'Game.state.resource[country].inventory',blockers:blockers,
       pendingProject:existingProject?clone(existingProject):null
     };
   }
   function startPoliceCapabilityUpgrade(type,country){
     const quote=estimatePoliceCapabilityUpgrade(type,country);
     if(!quote.ok||!quote.canStart)return{ok:false,reason:quote.blockers&&quote.blockers[0]&&quote.blockers[0].code||quote.code||'CAPABILITY_UPGRADE_BLOCKED',message:quote.blockers&&quote.blockers[0]&&quote.blockers[0].message||'Capability upgrade prerequisites are not satisfied.',quote:quote};
-    const cid=quote.countryId,kind=quote.type,now=simulationTimeMs(),project={
-      id:'POLICE-CAPABILITY-'+kind.toUpperCase()+'-'+cid+'-'+turn()+'-'+Math.floor(now),
-      type:kind,countryId:cid,fromLevel:quote.currentLevel,targetLevel:quote.targetLevel,
+    const cid=quote.countryId,kind=quote.type,now=simulationTimeMs(),projectId='POLICE-CAPABILITY-'+kind.toUpperCase()+'-'+cid+'-'+turn()+'-'+Math.floor(now);
+    // Consume required materials through the Resource Ministry transaction ledger.
+    // If Finance/state commit fails, restore the exact captured stock receipt.
+    const spent=resourceMaterialsTransaction(cid,'CONSUME',projectId,quote.materials||[]);
+    if(!spent.ok)return{ok:false,reason:spent.reason||'RESOURCE_MATERIAL_CONSUMPTION_FAILED',message:'The resource ledger rejected this upgrade. No project was started.',quote:quote};
+    const project={
+      id:projectId,countryId:cid,type:kind,fromLevel:quote.currentLevel,targetLevel:quote.targetLevel,
       costUsd:quote.costUsd,budgetCategory:quote.budgetCategory,durationDays:quote.durationDays,
       startedAtMs:now,completesAtMs:now+quote.durationDays*DAY_MS,
-      resources:clone(quote.resources),status:'IN_PROGRESS',startedAtTurn:turn(),completedAtMs:null
+      resources:clone(quote.resources),materials:(quote.materials||[]).map(function(row){return{
+        resourceId:row.resourceId,name:row.name||row.resourceId,quantity:row.quantity,unit:row.unit||null,
+        inventorySource:row.source||quote.inventorySource||'Game.state.resource[country].inventory'
+      };}),
+      resourceReceipt:clone(spent.result),status:'IN_PROGRESS',startedAtTurn:turn(),completedAtMs:null
     };
     const result=mutation(cid,quote.costUsd,quote.action,function(next){
       const actualLevel=Math.max(1,Math.floor(num(kind==='training'?next.trainingQualityLevel:next.policeRecruitmentLevel)||1));
@@ -1809,10 +1895,16 @@
       if((next.pendingCapabilityProjects||[]).some(function(p){return p&&p.type===kind&&p.status==='IN_PROGRESS';}))
         return{ok:false,reason:'CAPABILITY_PROJECT_ALREADY_RUNNING',message:'A project of this type is already running.'};
       next.pendingCapabilityProjects=(Array.isArray(next.pendingCapabilityProjects)?next.pendingCapabilityProjects:[]).concat([clone(project)]).slice(-50);
-      return{project:clone(project),currentLevel:quote.currentLevel,targetLevel:quote.targetLevel,durationDays:quote.durationDays,estimatedCompletionAtMs:project.completesAtMs,budgetCategory:quote.budgetCategory};
+      return{project:clone(project),currentLevel:quote.currentLevel,targetLevel:quote.targetLevel,durationDays:quote.durationDays,
+        estimatedCompletionAtMs:project.completesAtMs,budgetCategory:quote.budgetCategory,materialsConsumed:clone(project.materials)};
     });
-    if(result.ok)emit('OMEGA_POLICE_CAPABILITY_UPGRADE_STARTED',{countryId:cid,project:clone(project),turn:turn()});
-    return Object.assign({},result,{quote:quote});
+    if(!result||result.ok!==true){
+      const refund=resourceMaterialsTransaction(cid,'REFUND',projectId,[]);
+      if(!refund.ok)emit('OMEGA_HOME_POLICE_CAPABILITY_MATERIAL_REFUND_FAILED',{countryId:cid,projectId:projectId,reason:refund.reason||'REFUND_FAILED',turn:turn()});
+      return Object.assign({},result||{ok:false,reason:'CAPABILITY_UPGRADE_START_FAILED'},{materialRefunded:!!refund.ok,materialsConsumed:clone(project.materials)});
+    }
+    emit('OMEGA_POLICE_CAPABILITY_UPGRADE_STARTED',{countryId:cid,project:clone(project),turn:turn()});
+    return Object.assign({},result,{quote:quote,projectId:projectId,materialsConsumed:clone(project.materials)});
   }
   function processCapabilityProjects(state,country,now){
     const pending=Array.isArray(state&&state.pendingCapabilityProjects)?state.pendingCapabilityProjects:[];
