@@ -285,6 +285,10 @@
     if (!sim || typeof sim.saveState !== 'function') return false;
     if (restoreFailed && !options.force) return false;
     if (!playerCountry(sim)) return false;
+    if (String(sim.status || '').toUpperCase() === 'ERROR' && !options.allowErrorCheckpoint) {
+      setSaveStatus('GAME ERROR · LAST COMPLETE SAVE PRESERVED');
+      return false;
+    }
     // Do not overwrite the last coherent checkpoint with a half-applied day if
     // the OS backgrounds or terminates the app midway through an awaited turn.
     // The pipeline's final autosave uses committedTurn=true after all sectors finish.
