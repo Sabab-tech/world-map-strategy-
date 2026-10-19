@@ -635,7 +635,7 @@
           '<p class="home-police-note">Only assets already recorded in this country are listed. An empty selection keeps the unit on general mission coverage; targeted guards affect the matching asset event only.</p>' +
           '<div class="home-police-form-row"><div class="home-police-field-wrap"><label class="home-police-label" for="home-police-guard-quantity">Vehicles to deploy</label><input id="home-police-guard-quantity" class="home-police-field" type="number" min="1" max="' + (selected ? Number(capacity.availableVehicles[selected.level]) || 1 : 1) + '" step="1" value="1" inputmode="numeric" ' + (selected ? '' : 'disabled') + '></div>' +
           '<div class="home-police-cost"><strong id="home-police-guard-officers">' + (selected ? selected.capacity : 0) + '</strong><span>Officers assigned</span></div></div>' +
-          '<label class="home-police-label" for="home-police-guard-sector">Area / sector assignment</label><input id="home-police-guard-sector" class="home-police-field" type="text" maxlength="80" placeholder="e.g. Aluminium Plant North Gate or Sector 4" value="General Sector" ' + (selected ? '' : 'disabled') + '>' +
+
           '<div class="home-police-vehicle-brief">' +
             '<div class="home-police-brief-card"><span class="home-police-tag home-police-tag-green">MISSION FIT</span><strong id="home-police-guard-effectiveness">0 / 100</strong><span id="home-police-guard-fit-note">Select a vehicle and mission.</span></div>' +
             '<div class="home-police-brief-card"><span class="home-police-tag home-police-tag-gold">AVAILABILITY CHECK</span><strong id="home-police-guard-availability">Checking…</strong><span id="home-police-guard-availability-note">Vehicles and officers are reserved at dispatch.</span></div>' +
