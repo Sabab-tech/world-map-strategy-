@@ -3,8 +3,8 @@
  */
 (function (g) {
   'use strict';
-  if (g.OmegaHomePoliceOperationsUI && g.OmegaHomePoliceOperationsUI.VERSION === '1.1.0') return;
-  var VERSION = '1.1.0', activeTab = 'overview', statusText = '', statusType = '', consoleOpen = false;
+  if (g.OmegaHomePoliceOperationsUI && g.OmegaHomePoliceOperationsUI.VERSION === '1.2.0') return;
+  var VERSION = '1.2.0', activeTab = 'overview', statusText = '', statusType = '', consoleOpen = false;
   var ui = g.OMEGA_UI_ADAPTER;
   var CATEGORIES = [
     ['theft','Theft'],['robbery','Robbery'],['streetRobbery','Street robbery'],
@@ -98,7 +98,7 @@
     };
   }
   function navHtml() {
-    return [['overview','LIVE OVERVIEW'],['staff','POLICE RECRUITMENT'],['fleet','VEHICLE PROCUREMENT'],['crime','CRIME & PATROL'],['rules','POLICE RULES'],['rulebook','POLICE RULEBOOK']].map(function (row) {
+    return [['overview','LIVE OVERVIEW'],['staff','POLICE RECRUITMENT'],['fleet','VEHICLE PROCUREMENT'],['units','POLICE UNITS'],['crime','CRIME & PATROL'],['rules','POLICE RULES'],['rulebook','POLICE RULEBOOK']].map(function (row) {
       return '<button type="button" class="ohpu-tab ' + (activeTab === row[0] ? 'is-active' : '') + '" data-ohpu-tab="' + row[0] + '">' + row[1] + '</button>';
     }).join('');
   }
@@ -115,7 +115,8 @@
       kpi('Active police',formatCount(s.policeCount),crime.policePer100k===null?'Police per 100k unavailable':percent(crime.policePer100k,1)+' officers per 100k residents') +
       kpi('Police efficiency',percent(s.policeEfficiency,1),'Improved by training, effective facilities and research.') +
       kpi('Public satisfaction',percent(crime.publicSatisfaction,1),'Affected by service quality, case handling and oversight policies.') +
-      kpi('Operational fleet',formatCount(Object.values(s.vehiclesOwned||{}).reduce(function(sum,x){return sum+number(x);},0)), 'Opening scenario inventory is not a new purchase.') +
+      kpi('Owned vehicle inventory',formatCount(Object.values(s.vehiclesOwned||{}).reduce(function(sum,x){return sum+number(x);},0)), 'Owned units include vehicles awaiting repair or maintenance.') +
+      kpi('Roadworthy operational vehicles',formatCount(crime.currentOperationalFleetUnits),'Condition, deployment, servicing and country route fit affect effective capacity.') +
       kpi('Police staffing coverage',percent(crime.policeStaffingCoveragePct,1),'Against the population-scaled game staffing target.') +
       kpi('Vehicle fleet coverage',percent(crime.vehicleCoveragePct,1),'Against the opening fleet requirement scaled to current population.') +
       kpi('Police facility readiness',percent(crime.facilityReadinessPct,1),'Against modeled minimum station, dispatch, forensic, academy and related capacity levels.') +
@@ -123,6 +124,7 @@
       kpi('Projected crime index',crime.projectedCrimeIndex===undefined?'Unavailable':percent(crime.projectedCrimeIndex,1),'100 is the opening crime-rate reference; values change with capacity and rules.') +
       kpi('Modeled annual financial exposure',money(crime.estimatedAnnualFinancialImpactUsd),'Estimated economic impact of incidents, not police revenue or seized money.') +
       kpi('Fuel reserve',d.fuel?formatCount(d.fuel.reserveDays)+' days':'Unavailable',d.fuel?d.fuel.status+' · '+money(d.fuel.estimatedDailyFuelCostUsd)+'/day modeled demand':'Fuel model unavailable') +
+      kpi('Rulebook daily cost',money(crime.policeRulebookDailyCostUsd),'Recurring due-process and response standard operating cost, paid through Finance.') +
       kpi('Justice backlog',formatCount(s.justiceBacklog),'Daily case processing runs with the simulation clock.') +
       '</div></section>' +
       '<section class="ohpu-section"><div class="ohpu-section-title">COUNTRY DATA & BASELINE PROVENANCE</div><div class="ohpu-grid">' +
@@ -248,20 +250,62 @@
     if(number(rule.misconductMultiplier)<1)result+='<span class="ohpu-effect">Misconduct risk ×' + esc(number(rule.misconductMultiplier).toFixed(2)) + '</span>';
     return result;
   }
+  function readRulebookControls(root){
+    var book={};
+    Array.prototype.forEach.call(root.querySelectorAll('[data-ohpu-rulebook]'),function(input){
+      var key=input.getAttribute('data-ohpu-rulebook');
+      book[key]=input.type==='checkbox'?!!input.checked:(String(input.value).trim()===''?'':Number(input.value));
+    });
+    return book;
+  }
+  function policeUnitsHtml(d){
+    var e=d.engine,crime=d.crime||{};
+    var plan=typeof e.getPoliceDepartmentPlan==='function'?e.getPoliceDepartmentPlan(d.countryId):(d.state.policeDepartments||{});
+    var catalog=typeof e.getPoliceDepartmentCatalog==='function'?e.getPoliceDepartmentCatalog():[];
+    var headcounts=typeof e.getPoliceDepartmentHeadcounts==='function'?e.getPoliceDepartmentHeadcounts(d.countryId):{};
+    var validation=typeof e.validatePoliceDepartmentPlan==='function'?e.validatePoliceDepartmentPlan(plan,d.countryId):{ok:false,errors:['Police unit validation API unavailable.']};
+    var cost=typeof e.estimatePoliceDepartmentPlanCost==='function'?e.estimatePoliceDepartmentPlanCost(d.countryId,plan):null;
+    var operations=d.budget&&d.budget.categories&&d.budget.categories.operations;
+    var funds=number(operations&&operations.spendableUsd);
+    var fields=catalog.map(function(unit){
+      var item=headcounts[unit.id]||{pct:plan[unit.id]||0,headcount:0};
+      return '<article class="ohpu-card"><div class="ohpu-section-title">'+esc(unit.name)+'</div><p>'+esc(unit.description)+'</p>'+
+        '<div class="ohpu-grid">'+kpi('Assigned officers',formatCount(item.headcount),'Calculated from current force size and allocation share.')+kpi('Current share',percent(item.pct,1),'Must be between 0 and 100%.')+'</div>'+
+        '<label class="ohpu-label">Officer allocation (%)<input class="ohpu-field" type="number" min="0" max="100" step="0.1" data-ohpu-unit="'+esc(unit.id)+'" value="'+esc(plan[unit.id]===undefined?'':plan[unit.id])+'"></label>'+
+        '<div class="ohpu-small">Operational remit: '+esc((unit.crimeCategories||[]).join(', '))+'.</div></article>';
+    }).join('');
+    var total=Object.keys(plan).reduce(function(sum,key){return sum+number(plan[key]);},0);
+    var validationMessage=validation&&validation.ok?'Allocation totals '+percent(total,1)+'.':'Allocation validation: '+esc((validation&&validation.errors||['Allocation must total 100%.']).join(' '));
+    var estimate=cost&&cost.ok?money(cost.oneTimeCostUsd):'Unavailable';
+    var enabled=!!(d.budget&&d.budget.available&&d.budget.canEdit!==false&&cost&&cost.ok&&!cost.unchanged&&cost.oneTimeCostUsd<=funds+0.01&&validation&&validation.ok);
+    return '<section class="ohpu-section"><div class="ohpu-grid">'+
+      kpi('Active police',formatCount(d.state.policeCount),'Current country workforce.')+
+      kpi('Specialist allocation',percent(total,1),'All unit percentages must total exactly 100%.')+
+      kpi('Units represented',formatCount(catalog.length),'Each unit influences the crime categories in its remit.')+
+      kpi('Police Rulebook operating cost',money(crime.policeRulebookDailyCostUsd),'Recurring charge is handled separately in Finance.')+
+      '</div><article class="ohpu-card" style="margin:10px 0"><div class="ohpu-section-title">COUNTRY POLICE ORGANISATION</div>'+
+      '<p>Assign the actual existing police force to specialist units. Allocations do not create extra officers: moving personnel between units costs money once, changes derived unit headcounts, and changes the crime model for each unit’s responsibilities.</p>'+
+      '<div class="ohpu-grid">'+fields+'</div>'+
+      '<div class="ohpu-note" id="ohpu-unit-total">'+validationMessage+'</div>'+
+      '<div class="ohpu-grid">'+kpi('One-time reallocation cost',estimate,'Finance Operations allocation and Treasury are charged when saved.')+kpi('Spendable Operations funds',money(funds),'Budget ceiling and treasury already applied.')+'</div>'+
+      '<button type="button" class="ohpu-btn ohpu-btn-main" id="ohpu-save-units" '+(enabled?'':'disabled')+'>SAVE POLICE UNIT ALLOCATION · CHARGE FINANCE</button>'+
+      '<div class="ohpu-note">For a valid change, set all unit shares to exactly 100%. If Finance, treasury or the Operations envelope cannot cover the reallocation, the change is rejected and the prior allocation remains in force.</div></article></section>';
+  }
   function rulebookHtml(d) {
-    var e=d.engine,s=d.state,crime=d.crime||{};
+    var e=d.engine,s=d.state,crime=d.crime||{},operations=d.budget&&d.budget.categories&&d.budget.categories.operations;
     var book=typeof e.getPoliceRulebook==='function'?e.getPoliceRulebook(d.countryId):(s.policeRulebook||{});
     var score=typeof e.getPoliceRulebookQuality==='function'?e.getPoliceRulebookQuality(d.countryId):crime.policeRulebookScore;
     var fields=[
-      ['missingPersonActionHours','High-risk missing-person initial action (hours)',0,24,1,'0 means act immediately'],
-      ['highRiskResponseMinutes','High-risk emergency response target (minutes)',0,240,5,'Lower is faster'],
-      ['arrestReviewHours','Arrest necessity / rights review (hours)',1,48,1,'Review deadline in game time'],
-      ['maximumDetentionHours','Maximum pre-charge detention (hours)',1,168,1,'Escalate or release at deadline'],
-      ['warrantDecisionHours','Judicial warrant decision target (hours)',1,72,1,'A simulation workflow target'],
-      ['evidenceSubmissionHours','Evidence filing target (hours)',1,72,1,'From evidence intake to case file'],
-      ['forceReviewHours','Use-of-force independent review (hours)',1,168,1,'Shorter review improves accountability'],
-      ['trainingDaysBeforeDeployment','Initial training before field deployment (days)',0,180,1,'Longer training increases readiness'],
-      ['minimumPatrolCoveragePct','Minimum planned patrol capacity (%)',0,100,1,'Higher coverage uses more operational capacity']
+      ['missingPersonActionHours','High-risk missing-person first action (hours)',0,24,1,'0 means immediate action; delays lower response quality.'],
+      ['highRiskResponseMinutes','High-risk emergency response target (minutes)',0,240,5,'Shorter response consumes more operational capacity.'],
+      ['arrestResponseHours','Arrest response deadline (hours)',0.5,72,0.5,'Shorter deadlines improve modelled crime response and raise cost.'],
+      ['arrestReviewHours','Arrest necessity / rights review (hours)',1,48,1,'Time target for procedural review.'],
+      ['maximumDetentionHours','Maximum pre-charge detention (hours)',1,168,1,'Escalation/release workflow threshold in the simulation.'],
+      ['warrantDecisionHours','Judicial warrant decision target (hours)',1,72,1,'A shorter service target costs more per day.'],
+      ['evidenceSubmissionHours','Evidence filing target (hours)',1,72,1,'From evidence intake to case file.'],
+      ['forceReviewHours','Use-of-force independent review (hours)',1,168,1,'Oversight deadline.'],
+      ['trainingDaysBeforeDeployment','Initial training before field deployment (days)',0,180,1,'Longer preparation raises readiness and incurs training/administration costs.'],
+      ['minimumPatrolCoveragePct','Minimum planned patrol capacity (%)',0,100,1,'Higher minimum coverage limits discretionary unit allocation.']
     ];
     var controls=fields.map(function(row){
       return '<label class="ohpu-label">'+esc(row[1])+'<input class="ohpu-field" type="number" min="'+row[2]+'" max="'+row[3]+'" step="'+row[4]+'" data-ohpu-rulebook="'+esc(row[0])+'" value="'+esc(book[row[0]]===undefined?'':book[row[0]])+'"><span class="ohpu-small">'+esc(row[5])+'</span></label>';
@@ -273,17 +317,29 @@
     var checkboxHtml=checks.map(function(row){
       return '<label class="ohpu-small" style="display:flex;gap:8px;align-items:center;padding:8px 0"><input type="checkbox" data-ohpu-rulebook="'+esc(row[0])+'" '+(book[row[0]]?'checked':'')+'> '+esc(row[1])+'</label>';
     }).join('');
-    var editable=!(d.budget&&d.budget.canEdit===false);
+    var estimate=typeof e.getPoliceRulebookCosts==='function'?e.getPoliceRulebookCosts(d.countryId,book):null;
+    var estimateValid=!!(estimate&&estimate.ok),upfront=estimateValid?estimate.oneTimeCostUsd:null,daily=estimateValid?estimate.newDailyCostUsd:null;
+    var funds=number(operations&&operations.spendableUsd),editable=!!(d.budget&&d.budget.available&&d.budget.canEdit!==false);
+    var affordable=estimateValid&&number(upfront)<=funds+0.01;
+    var quoteMessage=!estimateValid?(estimate&&estimate.errors?estimate.errors.join(' '):'Rulebook costing/validation service unavailable.'):
+      estimate.unchanged?'No changes to save. Current recurring rulebook cost is shown below.':
+      affordable?'Within current Treasury and Operations budget.':'The one-time expense exceeds available Operations funds.';
     return '<section class="ohpu-section"><div class="ohpu-grid">'+
-      kpi('Rulebook quality',percent(score,1),'Weighted game score for response speed, due process and oversight.')+
-      kpi('Current maximum detention',formatCount(book.maximumDetentionHours)+' hours','Current country-specific simulation rule.')+
-      kpi('Missing-person first action',book.missingPersonActionHours===0?'Immediate':formatCount(book.missingPersonActionHours)+' hours','Priority can be raised for high-risk reports.')+
-      kpi('Projected crime index',percent(crime.projectedCrimeIndex,1),'Rulebook quality influences modeled outcomes slightly.')+
-      '</div><article class="ohpu-card" style="margin-top:10px"><div class="ohpu-section-title">POLICE RULEBOOK · COUNTRY-SPECIFIC SETTINGS</div>'+
-      '<p>These settings control the game simulation only. They are not a statement of the actual legal deadlines in the selected country. Real detention, warrants and missing-person procedures vary by jurisdiction and must not be inferred from these game defaults.</p>'+
+      kpi('Rulebook quality',percent(score,1),'Quality score for response deadlines, due process and oversight.')+
+      kpi('Current maximum detention',formatCount(book.maximumDetentionHours)+' hours','Selected country simulation rule.')+
+      kpi('Missing-person first action',book.missingPersonActionHours===0?'Immediate':formatCount(book.missingPersonActionHours)+' hours','High-risk reports use the configured deadline.')+
+      kpi('Projected crime index',percent(crime.projectedCrimeIndex,1),'Response deadlines now contribute to live crime projections.')+
+      '</div><article class="ohpu-card" style="margin-top:10px"><div class="ohpu-section-title">POLICE RULEBOOK · LIVE COST AND PERFORMANCE MODEL</div>'+
+      '<p>Every saved revision has a calculated one-time implementation cost and a recurring daily operating cost. Faster arrest/emergency deadlines cost more but improve the live response/crime model. Looser deadlines are cheaper but increase modeled crime exposure and may reduce satisfaction. Saving is rejected unless Treasury and the Home Ministry Operations budget can pay.</p>'+
       '<div class="ohpu-form-grid">'+controls+'</div><div style="margin:8px 0 12px">'+checkboxHtml+'</div>'+
-      '<button type="button" class="ohpu-btn ohpu-btn-main" id="ohpu-save-rulebook" '+(editable?'':'disabled')+'>SAVE POLICE RULEBOOK FOR THIS COUNTRY</button>'+
-      '<div class="ohpu-note">Changes persist in the selected country’s police state. Faster response improves the modeled service score; procedural safeguards improve trust and reduce misconduct risk. This action does not charge money; paid policy programmes remain in the Police Rules tab and still require Finance approval.</div></article></section>';
+      '<div class="ohpu-grid" id="ohpu-rulebook-cost-grid">'+
+      kpi('One-time implementation cost',upfront===null?'Invalid rulebook':money(upfront),'Charged to Treasury at save time.')+
+      kpi('New daily operating cost',daily===null?'Invalid rulebook':money(daily),'Recurring expense posted as a separate Finance ledger line.')+
+      kpi('Daily cost change',estimateValid?((number(estimate.dailyCostDeltaUsd)>0?'+':'')+money(estimate.dailyCostDeltaUsd)):'Unavailable','Compared with the currently saved Rulebook.')+
+      kpi('Annual cost change',estimateValid?((number(estimate.estimatedAnnualCostDeltaUsd)>0?'+':'')+money(estimate.estimatedAnnualCostDeltaUsd)):'Unavailable','Modelled daily difference × 365 days.')+
+      '</div><div class="ohpu-note" id="ohpu-rulebook-cost-status">'+esc(quoteMessage)+'</div>'+
+      '<button type="button" class="ohpu-btn ohpu-btn-main" id="ohpu-save-rulebook" '+(editable&&estimateValid&&affordable&&!estimate.unchanged?'':'disabled')+'>SAVE RULEBOOK · PAY IMPLEMENTATION COST</button>'+
+      '<div class="ohpu-note">These are game rules, not claims about the selected country’s actual criminal procedure law. The recurring rulebook cost is automatically included in daily Finance transactions as the simulation advances.</div></article></section>';
   }
   function rulesHtml(d) {
     var e=d.engine,s=d.state,rules=typeof e.getPolicePolicyRules==='function'?e.getPolicePolicyRules():[],budget=d.budget&&d.budget.categories;
