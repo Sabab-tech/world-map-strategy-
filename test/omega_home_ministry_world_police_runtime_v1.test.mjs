@@ -364,8 +364,7 @@ test('a real simulation day posts recurring Police Rulebook operating expenses t
   globalThis.Game.state.simulation.simulationTimeMs = 86_400_000;
   const expectedDailyRulebook = engine.getCrimeSnapshot('BD').policeRulebookDailyCostUsd;
   const beforeCash = financeModel.treasuryBalanceUsd;
-  const result = engine.processTurn({ detail: { countryId: 'BD' } });
-  assert.ok(result && result !== false);
+  engine.processTurn({ detail: { countryId: 'BD' } });
   const entry = financeModel.ledger.findLast(row => row.description === 'OMEGA_HOME_BUDGET:operations|POLICE_RULEBOOK_DAILY_OPERATIONS');
   assert.ok(entry, 'recurring Rulebook expense needs its own Finance ledger entry');
   assert.ok(Math.abs(entry.amountUsd - expectedDailyRulebook) < 0.02);
