@@ -253,4 +253,11 @@ test('fuel reserve is a country resource and shortages worsen projected crime wi
   assert.equal(shortage.fuel.reserveDays, 0);
   assert.ok(shortage.projectedCrimeIndex > before.projectedCrimeIndex);
   raw.fuelSupplyDays = originalReserve;
+  const cashBefore = financeModel.treasuryBalanceUsd;
+  const reserveBeforePurchase = engine.getFuelSnapshot('BD').reserveDays;
+  const purchase = engine.purchaseFuelSupply(1, 'BD');
+  assert.equal(purchase.ok, true, JSON.stringify(purchase));
+  assert.equal(engine.getFuelSnapshot('BD').reserveDays, reserveBeforePurchase + 1);
+  assert.ok(financeModel.treasuryBalanceUsd < cashBefore);
+  assert.match(financeModel.ledger.at(-1).description, /^OMEGA_HOME_BUDGET:operations\\|POLICE_FUEL_SUPPLY_PURCHASE$/);
 });
