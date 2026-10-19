@@ -102,6 +102,20 @@ test('world police baseline covers the full country registry with provenance-sep
   assert.ok(Object.values(bangladesh.baselineFleet.countsByTier).reduce((sum,n)=>sum+Number(n),0) > 0);
 });
 
+test('country-aware modeled fleet baseline has diverse country mixes and transparent provenance', () => {
+  const mixes = new Set(baselineData.countries.map(row => JSON.stringify(row.baselineFleet.countsByTier)));
+  assert.ok(mixes.size > 200, 'country fleet mixes must not collapse to a small shared default');
+  for (const code of ['BM', 'MF', 'VG', 'CX', 'CC', 'CK', 'GI', 'MT', 'NR', 'PW', 'TV']) {
+    const row = baselineData.countries.find(country => country.code === code);
+    assert.ok(row, code + ': modeled country record must exist');
+    assert.match(row.baselineFleet.modelNote || '', /^MODELED_ESTIMATE_NOT_OBSERVED_ROSTER:/,
+      code + ': modeled inventory must not be presented as an observed police roster');
+    assert.equal(Object.values(row.baselineFleet.countsByTier).reduce((sum, count) => sum + Number(count), 0),
+      row.baselineFleet.totalUnits, code + ': tier counts must reconcile to total fleet units');
+    assert.equal(row.fleetProfile.baselineFleetAdjustment.observed, false);
+  }
+});
+
 test('baseline bootstrap seeds every country once, preserves a country opening fleet and produces a baseline crime index of 100', () => {
   const result = engine.bootstrapCountryPoliceBaselines(baselineData.countries);
   assert.equal(result.ok, true);
