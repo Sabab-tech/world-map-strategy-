@@ -106,6 +106,12 @@
       '</svg>';
   }
 
+  ui.getPoliceVehicleSvg = function (level, slot) {
+    const e = engine();
+    const vehicle = e && Array.isArray(e.VEHICLES) ? e.VEHICLES.find(function (row) { return Number(row.level) === Number(level); }) : null;
+    return vehicle ? vehicleSvg(vehicle, slot || 'card') : '';
+  };
+
   function injectStyles() {
     if (!g.document || g.document.getElementById(STYLE_ID)) return;
     const style = g.document.createElement('style');
@@ -331,7 +337,7 @@
         '<div class="home-police-section-title">Personnel & capability</div>' +
         '<div class="home-police-actions">' +
           '<button id="btn-recruit-police" class="home-police-btn home-police-btn-green">👮 1.1 · RECRUIT / FIRE PERSONNEL</button>' +
-          '<button id="btn-upgrade-vehicles" class="home-police-btn home-police-btn-gold">🚔 1.2 · AAA FLEET & FACILITY ASCENSION</button>' +
+          '<button id="btn-upgrade-vehicles" class="home-police-btn home-police-btn-gold">🚔 1.2 · POLICE FLEET & FACILITY COMMAND</button>' +
           '<button id="btn-police-guard-out" class="home-police-btn home-police-btn-green">🚧 GUARD OUT · PATROL DEPLOYMENT</button>' +
           '<button id="btn-tactics-police" class="home-police-btn home-police-btn-purple">🛡️ 1.3 · TACTICS, TRAINING & INTELLIGENCE</button>' +
           '<button id="btn-police-incident-log" class="home-police-btn">📋 SECURITY INCIDENT LEDGER</button>' +
