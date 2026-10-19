@@ -1068,7 +1068,9 @@
     if (!dashboard || !host || dashboard.querySelector('[data-ofx-panel]')) return false;
     const player = getPlayerProfile();
     const playerCode = getCountryCurrency(player) || 'USD';
-    const defaultTo = currencies.has('NGN') && playerCode !== 'NGN' ? 'NGN' : 'USD';
+    const defaultFrom = 'USD';
+    const defaultTo = playerCode !== 'USD' ? playerCode
+      : (currencies.has('BDT') ? 'BDT' : (Array.from(currencies.keys()).find(function (code) { return code !== 'USD'; }) || 'USD'));
     const mode = state.viewMode === 'REFERENCE' ? 'REFERENCE' : 'SIMULATION';
     const rate = rateFor(playerCode, mode);
     const policy = currencyPolicy(playerCode);
