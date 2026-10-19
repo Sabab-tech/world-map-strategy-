@@ -1,0 +1,56 @@
+name: Resource Ministry Mine Management
+on:
+  push:
+    branches:
+      - main
+      - feat/resource-ministry-mine-management-20261020
+    paths:
+      - 'omega_resource_industrial_network_v1.js'
+      - 'omega_resource_endowment_runtime.js'
+      - 'omega_resource_gameplay_binding_v1.js'
+      - 'omega_resource_mine_management_v1.js'
+      - 'resource_industrial_catalog_v1.json'
+      - 'resource_site_country_mineplay_batch_20261020_v1.json'
+      - 'test/omega_resource_mine_management_v1.test.mjs'
+      - 'test/omega_resource_industrial_network_v1.test.mjs'
+      - 'test/omega_resource_recipe_coverage.test.mjs'
+      - 'test/omega_resource_gameplay_binding.test.mjs'
+      - 'package.json'
+      - 'index.html'
+      - '.github/workflows/omega-resource-mine-management.yml'
+  pull_request:
+    paths:
+      - 'omega_resource_industrial_network_v1.js'
+      - 'omega_resource_endowment_runtime.js'
+      - 'omega_resource_gameplay_binding_v1.js'
+      - 'omega_resource_mine_management_v1.js'
+      - 'resource_industrial_catalog_v1.json'
+      - 'resource_site_country_mineplay_batch_20261020_v1.json'
+      - 'test/omega_resource_mine_management_v1.test.mjs'
+      - 'test/omega_resource_industrial_network_v1.test.mjs'
+      - 'test/omega_resource_recipe_coverage.test.mjs'
+      - 'test/omega_resource_gameplay_binding.test.mjs'
+      - 'package.json'
+      - 'index.html'
+      - '.github/workflows/omega-resource-mine-management.yml'
+jobs:
+  resource-mine-management:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Validate syntax and mine construction runtime
+        run: npm run test:resource-mine-management
+      - name: Preserve existing industrial pipeline behavior
+        run: npm run test:resource-industrial-network
+      - name: Validate every extraction and processing recipe
+        run: npm run test:resource-recipe-coverage
+      - name: Validate supplemental site binding
+        run: npm run test:resource-gameplay-binding
+      - name: Validate endowment and extraction runtime
+        run: npm run test:resource-endowment
