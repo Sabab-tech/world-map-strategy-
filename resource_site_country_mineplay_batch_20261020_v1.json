@@ -140,8 +140,9 @@
           "minimum": null,
           "maximum": null,
           "unit": "TONNES_PER_YEAR",
-          "status": "OPERATOR_REPORTED",
-          "basis": "Reported nameplate soda-ash capacity, not actual annual output"
+          "status": "REPORTED",
+          "basis": "Reported nameplate soda-ash capacity, not actual annual output",
+          "dataStatus": "OPERATOR_REPORTED"
         },
         "quantitativeProvenance": {
           "authority": "REAL_SITE_IDENTITY_WITH_GAPS_PRESERVED",
@@ -625,8 +626,9 @@
           "minimum": null,
           "maximum": null,
           "unit": "CARATS_PER_YEAR",
-          "status": "OPERATOR_REPORTED",
-          "basis": "Reported tailings plant capacity, not actual annual output"
+          "status": "REPORTED",
+          "basis": "Reported tailings plant capacity, not actual annual output",
+          "dataStatus": "OPERATOR_REPORTED"
         },
         "quantitativeProvenance": {
           "authority": "REAL_SITE_IDENTITY_WITH_GAPS_PRESERVED",
