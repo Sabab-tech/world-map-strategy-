@@ -39,6 +39,11 @@ test('every profile contains the same extensible sector and calculation contract
     assert.ok(row.analytics.economicStressIndex);
     assert.ok(row.analytics.diplomaticInfluenceIndex);
     assert.ok(row.analytics.militaryCapabilityIndex);
+    if (registry.metadata.recordSchema.strategicProfileFields) {
+      assert.ok(row.strategicProfile, 'Existing strategic profile was not carried into the sector registry.');
+      assert.equal(row.strategicProfile.profileVersion, 'OMEGA_COUNTRY_STRATEGIC_PROFILE_V1');
+      assert.deepEqual(Object.keys(row.strategicProfile), registry.metadata.recordSchema.strategicProfileFields);
+    }
   }
 });
 
