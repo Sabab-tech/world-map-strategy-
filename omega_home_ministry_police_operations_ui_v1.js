@@ -380,6 +380,7 @@
     var body;
     if(activeTab==='staff')body=recruitmentHtml(d);
     else if(activeTab==='fleet')body=fleetHtml(d);
+    else if(activeTab==='units')body=policeUnitsHtml(d);
     else if(activeTab==='crime')body=crimeHtml(d);
     else if(activeTab==='rules')body=rulesHtml(d);
     else if(activeTab==='rulebook')body=rulebookHtml(d);
@@ -388,7 +389,7 @@
       esc(d.baseline&&d.baseline.name||d.countryId) + ' · live recruitment, fleet procurement, crime model, patrol allocation and accountable police policy.</div></div>' +
       '<div class="ohpu-actions"><button type="button" class="ohpu-btn" id="ohpu-rulebook-head">POLICE RULEBOOK</button><span class="ohpu-tag">COUNTRY-BOUND RUNTIME</span></div></header>' +
       '<nav class="ohpu-tabs">' + navHtml() + '</nav>' + statusHtml() + budgetHtml(d) +
-      '<div class="ohpu-section-title">' + esc(({overview:'LIVE COUNTRY OVERVIEW',staff:'POLICE RECRUITMENT & STAFFING',fleet:'VEHICLE INVENTORY & PROCUREMENT',crime:'CRIME RATES & PATROL ALLOCATION',rules:'PAID POLICE PROGRAMMES & OVERSIGHT',rulebook:'POLICE RULEBOOK & RESPONSE PROCEDURES'})[activeTab]||'POLICE CONTROL') + '</div>' +
+      '<div class="ohpu-section-title">' + esc(({overview:'LIVE COUNTRY OVERVIEW',staff:'POLICE RECRUITMENT & STAFFING',fleet:'VEHICLE INVENTORY & PROCUREMENT',units:'SPECIALIST POLICE UNITS & DEPLOYMENT',crime:'CRIME RATES & PATROL ALLOCATION',rules:'PAID POLICE PROGRAMMES & OVERSIGHT',rulebook:'POLICE RULEBOOK & RESPONSE PROCEDURES'})[activeTab]||'POLICE CONTROL') + '</div>' +
       body +
       '<div class="ohpu-actions"><button type="button" class="ohpu-btn" id="ohpu-back-home">BACK TO HOME MINISTRY</button></div>' +
       '<div class="ohpu-small">State updates and spending are executed by the Home Ministry engine. No mock balances or successful actions are shown when a Finance transaction fails.</div></section>';
@@ -466,17 +467,63 @@
       if(savePatrol)savePatrol.disabled=total>100.0001;
     }
     Array.prototype.forEach.call(root.querySelectorAll('[data-ohpu-patrol]'),function(input){input.oninput=recalcPatrolTotal;});recalcPatrolTotal();
-    var saveRulebook=root.querySelector('#ohpu-save-rulebook');
+    var saveRulebook=root.querySelector('#ohpu-save-rulebook'),rulebookCostGrid=root.querySelector('#ohpu-rulebook-cost-grid'),rulebookCostStatus=root.querySelector('#ohpu-rulebook-cost-status');
+    function updateRulebookCostQuote(){
+      if(!saveRulebook||!rulebookCostGrid||typeof d.engine.getPoliceRulebookCosts!=='function')return;
+      var book=readRulebookControls(root),estimate=d.engine.getPoliceRulebookCosts(d.countryId,book);
+      var operations=d.budget&&d.budget.categories&&d.budget.categories.operations;
+      var funds=number(operations&&operations.spendableUsd),editable=!!(d.budget&&d.budget.available&&d.budget.canEdit!==false);
+      if(!estimate||!estimate.ok){
+        rulebookCostGrid.innerHTML=kpi('One-time implementation cost','Invalid','Correct the values before saving.')+
+          kpi('New daily operating cost','Unavailable','Rulebook values failed validation.')+
+          kpi('Daily cost change','Unavailable','No settings were changed.')+
+          kpi('Annual cost change','Unavailable','No settings were changed.');
+        if(rulebookCostStatus)rulebookCostStatus.textContent=(estimate&&estimate.errors||['Rulebook validation service unavailable.']).join(' ');
+        saveRulebook.disabled=true;return;
+      }
+      var affordable=number(estimate.oneTimeCostUsd)<=funds+0.01;
+      rulebookCostGrid.innerHTML=kpi('One-time implementation cost',money(estimate.oneTimeCostUsd),'Charged to Treasury at save time.')+
+        kpi('New daily operating cost',money(estimate.newDailyCostUsd),'Recurring Finance ledger expense.')+
+        kpi('Daily cost change',(number(estimate.dailyCostDeltaUsd)>0?'+':'')+money(estimate.dailyCostDeltaUsd),'Compared with current settings.')+
+        kpi('Annual cost change',(number(estimate.estimatedAnnualCostDeltaUsd)>0?'+':'')+money(estimate.estimatedAnnualCostDeltaUsd),'Daily difference × 365.');
+      if(rulebookCostStatus)rulebookCostStatus.textContent=!editable?'Finance is unavailable or this country is read-only.':
+        estimate.unchanged?'No pending changes. Current settings remain active.':
+        affordable?'Within current Treasury and Operations budget.':'One-time cost exceeds spendable Operations funds ('+money(funds)+').';
+      saveRulebook.disabled=!editable||!affordable||!!estimate.unchanged;
+    }
+    Array.prototype.forEach.call(root.querySelectorAll('[data-ohpu-rulebook]'),function(input){
+      input.oninput=updateRulebookCostQuote;input.onchange=updateRulebookCostQuote;
+    });
+    updateRulebookCostQuote();
     if(saveRulebook)saveRulebook.onclick=function(){
-      var book={};
-      Array.prototype.forEach.call(root.querySelectorAll('[data-ohpu-rulebook]'),function(input){
-        var key=input.getAttribute('data-ohpu-rulebook');
-        book[key]=input.type==='checkbox'?!!input.checked:number(input.value);
-      });
+      var book=readRulebookControls(root);
       var result=typeof d.engine.updatePoliceRulebook==='function'?d.engine.updatePoliceRulebook(book,d.countryId):{ok:false,reason:'RULEBOOK_RUNTIME_UNAVAILABLE'};
-      if(!result||!result.ok)setStatus('Rulebook save rejected: '+String(result&&(result.message||result.reason||result.code)||'UNKNOWN_ERROR')+'. Existing settings were kept.','error');
-      else setStatus('Police Rulebook saved for '+String(d.baseline.name||d.countryId)+'. Score: '+percent(result.qualityScore,1)+'. State and crime projections have been recalculated.','ok');
+      if(!result||!result.ok)setStatus('Rulebook save rejected: '+String(result&&(result.message||result.reason||result.code)||'UNKNOWN_ERROR')+'. Existing settings were kept; no change was committed.','error');
+      else setStatus('Police Rulebook saved for '+String(d.baseline.name||d.countryId)+'. Treasury paid '+money(result.oneTimeCostUsd||result.cost||0)+' upfront; daily cost is '+money(result.newDailyCostUsd)+'. Daily delta: '+money(result.dailyCostDeltaUsd)+'. Crime and governance outputs recalculated.','ok');
       activeTab='rulebook';render();
+    };
+    var saveUnits=root.querySelector('#ohpu-save-units'),unitTotal=root.querySelector('#ohpu-unit-total'),unitCostGrid=root.querySelector('#ohpu-unit-cost-grid');
+    function readUnitPlan(){var plan={};Array.prototype.forEach.call(root.querySelectorAll('[data-ohpu-unit]'),function(input){plan[input.getAttribute('data-ohpu-unit')]=String(input.value).trim()===''?'':Number(input.value);});return plan;}
+    function updateUnitPlanQuote(){
+      if(!saveUnits||!unitCostGrid||typeof d.engine.estimatePoliceDepartmentPlanCost!=='function')return;
+      var plan=readUnitPlan(),validation=d.engine.validatePoliceDepartmentPlan(plan,d.countryId),estimate=d.engine.estimatePoliceDepartmentPlanCost(d.countryId,plan);
+      var total=Object.keys(plan).reduce(function(sum,key){return sum+(plan[key]===''?0:number(plan[key]));},0);
+      if(unitTotal)unitTotal.textContent=validation&&validation.ok?'Allocation total: '+total.toFixed(1)+'%. Headcounts rebalance from the current national force.':
+        'Allocation invalid: '+((validation&&validation.errors)||[]).join(' ');
+      var operations=d.budget&&d.budget.categories&&d.budget.categories.operations,funds=number(operations&&operations.spendableUsd);
+      var editable=!!(d.budget&&d.budget.available&&d.budget.canEdit!==false),valid=!!(validation&&validation.ok&&estimate&&estimate.ok),affordable=valid&&number(estimate.oneTimeCostUsd)<=funds+0.01;
+      unitCostGrid.innerHTML=kpi('One-time reallocation cost',estimate&&estimate.ok?money(estimate.oneTimeCostUsd):'Invalid',estimate&&estimate.ok?'Charged to Operations and Treasury at save time.':((estimate&&estimate.errors)||[]).join(' '))+
+        kpi('Spendable Operations funds',money(funds),'Budget ceiling and Treasury already applied.');
+      saveUnits.disabled=!editable||!valid||!affordable||!!estimate.unchanged;
+      if(validation&&validation.ok&&!affordable&&unitTotal)unitTotal.textContent='Valid allocation, but cost exceeds spendable Operations funds ('+money(funds)+').';
+    }
+    Array.prototype.forEach.call(root.querySelectorAll('[data-ohpu-unit]'),function(input){input.oninput=updateUnitPlanQuote;input.onchange=updateUnitPlanQuote;});
+    updateUnitPlanQuote();
+    if(saveUnits)saveUnits.onclick=function(){
+      var plan=readUnitPlan(),result=d.engine.setPoliceDepartmentPlan(plan,d.countryId);
+      if(!result||!result.ok)setStatus('Police unit allocation rejected: '+String(result&&(result.message||result.reason||result.code)||'UNKNOWN_ERROR')+'. Previous assignments and Treasury were preserved.','error');
+      else setStatus('Specialist police allocation saved. Treasury paid '+money(result.oneTimeCostUsd||result.cost||0)+'; '+formatCount(result.reassignedOfficers||0)+' officers reassigned. Crime projections and headcounts recalculated.','ok');
+      activeTab='units';render();
     };
     Array.prototype.forEach.call(root.querySelectorAll('[data-ohpu-rule]'),function(btn){
       btn.onclick=function(){
