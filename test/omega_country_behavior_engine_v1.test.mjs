@@ -71,7 +71,7 @@ test('runtime exposes a complete canonical country selection list without duplic
 });
 
 test('country behaviour profile is evidence-backed and differs with country macro data and game assets', async () => {
-  const { behavior } = await loadCountryEngines();
+  const { behavior, adaptive } = await loadCountryEngines();
   const bangladesh = behavior.getBehaviorProfile('BGD');
   const unitedStates = behavior.getBehaviorProfile('USA');
   assert.equal(bangladesh.schemaVersion, 'OMEGA_COUNTRY_BEHAVIOR_PROFILE_V1');
@@ -79,15 +79,25 @@ test('country behaviour profile is evidence-backed and differs with country macr
   assert.notEqual(unitedStates.status, 'ENGINE_ERROR');
   assert.ok(bangladesh.metrics.gdpUsd > 0, 'GDP should come from the existing country source');
   assert.ok(unitedStates.metrics.gdpUsd > bangladesh.metrics.gdpUsd, 'recorded GDP should differ by country');
+  assert.ok(bangladesh.metrics.economicInfluenceIndex !== null, 'existing custom economic influence index should be consumed');
+  assert.ok(bangladesh.dimensions.economicCapacity.value !== null, 'economic capacity should be available where the index exists');
+  assert.notEqual(bangladesh.dimensions.economicCapacity.value, unitedStates.dimensions.economicCapacity.value,
+    'economic capacity should reflect country-specific economic inputs');
   assert.equal(bangladesh.domainSignals.resources.availability, 'AVAILABLE');
   assert.ok(bangladesh.domainSignals.resources.siteCount > 0, 'Bangladesh gameplay site identities should be counted');
   assert.equal(bangladesh.domainSignals.resources.simulatedReserveQuantitiesUsed, false);
   assert.notDeepEqual(bangladesh.dimensions, unitedStates.dimensions, 'country behaviour dimensions must not be a copied universal preset');
   assert.ok(bangladesh.actionPreferences.PROCESSING_EXPANSION || bangladesh.actionPreferences.INDUSTRY_BUILD,
     'registered resource-site data should create a country-specific industrial action preference');
+  const investmentAction = bangladesh.actionPreferences.PROCESSING_EXPANSION ? 'PROCESSING_EXPANSION' : 'INDUSTRY_BUILD';
+  const investmentScore = adaptive.scoreAction('BGD', investmentAction);
+  assert.ok(investmentScore.actionPreference, 'country-specific action preferences should be read by the adaptive scorer');
+  const dimensionMean = investmentScore.dimensions.reduce((sum, row) => sum + row.utility, 0) / investmentScore.dimensions.length;
+  assert.ok(Math.abs(investmentScore.score - (0.7 * dimensionMean + 0.3 * investmentScore.actionPreference.value)) < 0.000001,
+    'candidate strategy score should combine country dimensions with the registered action preference');
   assert.ok(bangladesh.evidence.registeredMacroMetricCount > 0);
   assert.match(bangladesh.evidence.missingDataPolicy, /NULL/);
-  assert.equal(behavior.diagnostics().dimensionCount, 10);
+  assert.equal(behavior.diagnostics().dimensionCount, 11);
 });
 
 test('all canonical country and territory identities build a non-error behaviour profile with explicit evidence state', async () => {
@@ -102,8 +112,8 @@ test('all canonical country and territory identities build a non-error behaviour
       failures.push({ country: row.name, code: row.iso3 || row.countryCode, error: profile?.evidence?.error || 'NO_PROFILE' });
       continue;
     }
-    assert.equal(profile.dimensions && Object.keys(profile.dimensions).length, 10,
-      'ten runtime behaviour dimensions are returned for ' + row.name);
+    assert.equal(profile.dimensions && Object.keys(profile.dimensions).length, 11,
+      'eleven runtime behaviour dimensions are returned for ' + row.name);
     for (const dimension of Object.values(profile.dimensions)) {
       if (dimension.value !== null) {
         assert.ok(Number.isFinite(dimension.value) && dimension.value >= 0 && dimension.value <= 1,
