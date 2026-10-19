@@ -285,6 +285,13 @@
     if (!sim || typeof sim.saveState !== 'function') return false;
     if (restoreFailed && !options.force) return false;
     if (!playerCountry(sim)) return false;
+    // Do not overwrite the last coherent checkpoint with a half-applied day if
+    // the OS backgrounds or terminates the app midway through an awaited turn.
+    // The pipeline's final autosave uses committedTurn=true after all sectors finish.
+    if (sim.stepInProgress && !options.committedTurn) {
+      setSaveStatus(lastSavedSerialized ? 'LAST COMPLETE TURN PRESERVED' : 'SAVE DEFERRED · TURN IN PROGRESS');
+      return false;
+    }
     var turn = Math.max(0, Math.floor(number(sim.clock && sim.clock.turn) || 0));
     // Reconcile the displayed treasury/resources before taking the durable snapshot.
     // Rendering is best-effort and must never be allowed to block a save on exit.
@@ -525,7 +532,7 @@
     lifecycleTickUnregister = sim.registerTurnParticipant('omega.game-lifecycle.autosave', function () {
       // Runs last, after the complete awaited sector pipeline. localStorage is synchronous;
       // IndexedDB is maintained as the secondary durable copy.
-      saveNow({ force: true });
+      saveNow({ force: true, committedTurn: true });
       updateHud();
     }, { priority: Number.MAX_SAFE_INTEGER });
     return true;
