@@ -554,7 +554,7 @@
       Object.keys(rules.scenarios || {}).map(k => '<option value="' + esc(k) + '">' + esc(rules.scenarios[k].label || k) + '</option>').join('') +
       '</select></label><label>Projection (years)<input name="years" type="number" min="0.08" max="5" step="0.25" value="1" required></label><button type="submit">Run stress test</button></form>' +
       '<div class="ofx-result" data-oetx-scenario-result role="status">Scenario results will appear here. They are model outputs, not forecasts.</div></article></div>' +
-      '<p class="ofx-note" data-oetx-data-note>' + esc('Source year: ' + Number(rules.baselineYear || 2015) + '. ' + (row.wageGrowthSource || 'Wage growth proxy is not yet available.') + '. ' + (row.importExposureSource || 'Import exposure source not available.') + '. Missing source fields stay N/A or use an explicitly tagged game-rule proxy.')) + '</p>' +
+      '<p class="ofx-note" data-oetx-data-note>' + esc('Source year: ' + Number(rules.baselineYear || 2015) + '. ' + (row.wageGrowthSource || 'Wage growth proxy is not yet available.') + '. ' + (row.importExposureSource || 'Import exposure source not available.') + '. Missing source fields stay N/A or use an explicitly tagged game-rule proxy.') + '</p>' +
       '<p class="ofx-note">Transmission outputs feed future global trade pricing and domestic demand appetite. Actual Finance Treasury, bank accounts, physical resources and policy rates remain owned by their authoritative runtimes.</p></section>';
   }
   function injectPanel() {
