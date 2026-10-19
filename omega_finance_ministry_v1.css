@@ -1,0 +1,55 @@
+/* OMEGA Finance Ministry dashboard. Local-only CSS; no external dependencies. */
+#ministry-dashboard-view.theme-finance{display:flex;flex-direction:column;overflow:hidden;border-color:rgba(55,190,160,.5);background:rgba(5,13,20,.97)}
+#ministry-dashboard-view.theme-finance .sticky-layer-header{flex:0 0 auto}
+#ministry-dashboard-view.theme-finance .ministry-content-area{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;padding:12px;background:linear-gradient(180deg,rgba(9,22,31,.98),rgba(3,10,16,.98));color:#e7f0f4}
+.ofm-dashboard{display:flex;flex-direction:column;gap:12px;max-width:1400px;margin:0 auto;font-family:Inter,Arial,sans-serif;color:#e7f0f4}
+.ofm-hero{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:18px;border:1px solid rgba(83,205,175,.3);border-radius:12px;background:linear-gradient(120deg,rgba(12,37,43,.97),rgba(9,19,30,.98))}
+.ofm-eyebrow{font:600 10px 'Share Tech Mono',monospace;letter-spacing:1.6px;color:#66d9b9}
+.ofm-hero h2{font-size:22px;line-height:1.2;margin:7px 0;color:#f6fbff}
+.ofm-hero p{font-size:12px;line-height:1.5;color:#a7bdc7;margin:0;max-width:620px}
+.ofm-status{font:700 10px 'Share Tech Mono',monospace;letter-spacing:.6px;color:#9be7c7;border:1px solid rgba(105,226,173,.35);background:rgba(17,88,63,.2);padding:8px 10px;border-radius:6px;text-align:center;white-space:nowrap}
+.ofm-toolbar{display:grid;grid-template-columns:auto minmax(190px,1fr) auto;gap:10px;align-items:center;padding:11px 13px;background:rgba(15,29,40,.9);border:1px solid rgba(125,155,170,.25);border-radius:9px}
+.ofm-toolbar label,.ofm-form label{font-size:11px;font-weight:700;color:#a9c0cc;display:flex;flex-direction:column;gap:6px}
+.ofm-toolbar select,.ofm-form input,.ofm-form select{width:100%;box-sizing:border-box;min-width:0;background:#09151e;color:#e8f4f8;border:1px solid #345160;border-radius:6px;padding:10px;font-size:12px;outline:none}
+.ofm-toolbar select:focus,.ofm-form input:focus,.ofm-form select:focus{border-color:#66d9b9;box-shadow:0 0 0 2px rgba(102,217,185,.1)}
+.ofm-baseline{font:10px 'Share Tech Mono',monospace;color:#9aaeb9;text-align:right}
+.ofm-kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+.ofm-kpi{min-width:0;padding:13px;border-radius:9px;border:1px solid rgba(112,146,161,.22);background:linear-gradient(160deg,rgba(17,34,46,.95),rgba(8,18,28,.96))}
+.ofm-kpi-label{font-size:10px;color:#9fb6c2;line-height:1.4;text-transform:uppercase;letter-spacing:.5px}
+.ofm-kpi-value{font:700 19px 'Share Tech Mono',monospace;margin:8px 0 5px;color:#edf8fb;overflow-wrap:anywhere}
+.ofm-kpi-sub{font-size:10px;line-height:1.45;color:#839ba7}
+.ofm-section{display:flex;flex-direction:column;gap:12px;padding:15px;border:1px solid rgba(112,146,161,.22);border-radius:10px;background:rgba(10,22,32,.94)}
+.ofm-section-heading{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.ofm-section-heading h3,.ofm-section h3{font-size:14px;margin:0;color:#eaf5f8}
+.ofm-section-heading span{font-size:10px;color:#8eabb8}
+.ofm-indicator-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.ofm-indicator{display:flex;flex-direction:column;gap:7px;min-width:0;padding:10px;border:1px solid rgba(122,156,171,.17);border-radius:7px;background:rgba(17,34,44,.7)}
+.ofm-indicator span{font-size:10px;color:#9ab1bc;line-height:1.35}
+.ofm-indicator strong{font-size:12px;color:#e9f4f7;overflow-wrap:anywhere}
+.ofm-data-note{font-size:10px;line-height:1.55;color:#8fa6b0;margin:0}
+.ofm-warning,.ofm-readonly{padding:11px 13px;border:1px solid rgba(231,179,77,.3);border-radius:8px;background:rgba(99,65,19,.12);color:#eacb91;font-size:11px;line-height:1.5}
+.ofm-readonly{border-color:rgba(104,170,224,.3);background:rgba(27,66,99,.17);color:#b9d6ef}
+.ofm-action-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.ofm-form{display:flex;flex-direction:column;gap:10px;min-width:0;padding:13px;border:1px solid rgba(112,146,161,.24);border-radius:8px;background:rgba(13,29,40,.86)}
+.ofm-form h4{font-size:12px;margin:0;color:#e9f5f8}
+.ofm-form p{font-size:10px;line-height:1.5;color:#8fa8b4;margin:0}
+.ofm-form-wide{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:end;gap:10px}
+.ofm-form button{border:1px solid rgba(103,222,188,.5);border-radius:6px;background:linear-gradient(135deg,#145d53,#123b46);color:#ecfffb;font-size:11px;font-weight:800;padding:11px 12px;cursor:pointer;min-height:38px}
+.ofm-form button:hover:not(:disabled){filter:brightness(1.15)}
+.ofm-form button:disabled,.ofm-form input:disabled,.ofm-form select:disabled{opacity:.45;cursor:not-allowed}
+.ofm-form-wide button{grid-column:1/-1}
+.ofm-table-scroll{max-width:100%;overflow:auto;overscroll-behavior-x:contain;border:1px solid rgba(112,146,161,.18);border-radius:7px}
+.ofm-table{width:100%;border-collapse:collapse;font-size:10px;min-width:540px}
+.ofm-table th{position:sticky;top:0;background:#122b35;color:#9fe3d2;text-align:left;font-size:9px;letter-spacing:.4px;text-transform:uppercase;white-space:nowrap}
+.ofm-table td,.ofm-table th{padding:9px 10px;border-bottom:1px solid rgba(123,156,170,.15);white-space:nowrap}
+.ofm-table td{color:#d2e1e7}
+.ofm-table tr:last-child td{border-bottom:0}
+.ofm-table tbody tr:nth-child(even){background:rgba(55,83,97,.10)}
+.ofm-empty{color:#8da6b2!important;text-align:center;padding:15px!important}
+.ofm-notice{font-size:11px;line-height:1.5;padding:10px 12px;border-radius:7px}
+.ofm-notice.is-ok{color:#a9f0cf;background:rgba(26,104,76,.17);border:1px solid rgba(89,210,153,.35)}
+.ofm-notice.is-error{color:#ffd0c6;background:rgba(125,42,34,.18);border:1px solid rgba(236,115,93,.35)}
+.ofm-world-register summary{font-size:12px;font-weight:800;color:#c7f4e6;cursor:pointer;list-style-position:inside}
+.ofm-world-register[open] summary{margin-bottom:2px}
+@media(max-width:900px){.ofm-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.ofm-indicator-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.ofm-toolbar{grid-template-columns:1fr}.ofm-baseline{text-align:left}.ofm-status{white-space:normal}.ofm-hero{align-items:flex-start;flex-direction:column}}
+@media(max-width:520px){#ministry-dashboard-view.theme-finance .ministry-content-area{padding:8px}.ofm-dashboard{gap:8px}.ofm-hero,.ofm-section{padding:11px}.ofm-hero h2{font-size:19px}.ofm-kpi{padding:10px}.ofm-kpi-value{font-size:15px}.ofm-indicator-grid{grid-template-columns:1fr}.ofm-action-grid{grid-template-columns:1fr}.ofm-form-wide{grid-template-columns:1fr}.ofm-toolbar{padding:9px}.ofm-table td,.ofm-table th{padding:8px}.ofm-status{font-size:9px}}

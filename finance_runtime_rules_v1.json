@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "1.0.0",
+  "baselineYear": 2015,
+  "currency": "USD",
+  "annualizationMs": 31536000000,
+  "simulationTurnDurationMs": 3600000,
+  "startingTreasuryPercentOfGDP": 2,
+  "defaultTaxRatePct": 18,
+  "defaultPolicyInterestRatePct": 3,
+  "defaultDeficitPercentOfGDPWhenUnobserved": 3,
+  "minimumTaxRatePct": 0,
+  "maximumTaxRatePct": 60,
+  "minimumPolicyInterestRatePct": 0,
+  "maximumPolicyInterestRatePct": 40,
+  "maximumBorrowTransactionPercentOfGDP": 5,
+  "maximumDebtToGDPForNewBorrowingPct": 300,
+  "maximumLedgerEntries": 500,
+  "influenceWeights": {
+    "gdp": 0.55,
+    "population": 0.2,
+    "foreignExchangeReserves": 0.15,
+    "tradeBalanceToGDP": 0.1
+  },
+  "fiscalRiskBounds": {
+    "debtToGDPPercent": 300,
+    "inflationPercent": 25,
+    "unemploymentPercent": 35,
+    "deficitToGDPPercent": 20
+  },
+  "budgetModel": {
+    "taxRevenueFormula": "GDP multiplied by the active game-model tax rate.",
+    "spendingFormula": "For a country with a baseline budget balance, modeled spending equals modeled revenue minus that baseline balance. If balance is missing, use the configured game-rule deficit ratio.",
+    "transparency": "Modeled fiscal flows are gameplay assumptions, not observed national budget data."
+  }
+}
