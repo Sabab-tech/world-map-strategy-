@@ -491,7 +491,7 @@
       policeEfficiency:clamp(num(stateReady?raw.policeEfficiency:60)===null?60:num(stateReady?raw.policeEfficiency:60),0,100),
       baselineCountsByTier:clone(baseCounts),ownedCountsByTier:ownedCounts,inTransitCountsByTier:inTransitCounts,committedCountsByTier:committedCounts,
       baselineSource:String(baseFleet.source||'MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY'),
-      dataQuality:String(baseFleet.modelNote||'MODELED_ESTIMATE_NOT_OBSERVED_ROSTER'),
+      dataQuality:'MODELED_ESTIMATE_NOT_OBSERVED_ROSTER: '+String(baseFleet.modelNote||baseFleet.source||'COUNTRY_CONTEXT_DERIVED_STARTING_INVENTORY'),
       liveStateAvailable:stateReady,baselineVersion:stateReady?Math.max(0,Math.floor(num(raw.baselineVersion)||0)):0,
       pendingOrder:pending?clone(pending):null
     };
