@@ -243,8 +243,11 @@
     const cid=normalizeCountry(country||currentCountry());if(!cid)return{ok:false,reason:'PLAYER_COUNTRY_UNAVAILABLE'};
     const amount=Math.max(0,num(cost)||0),state=getState(cid),next=clone(state),result=mutator(next);
     if(result&&result.ok===false)return Object.assign({ok:false},result);
-    const finance=financeApi(),parent=financeInteriorAllocation(cid),category=budgetCategoryForAction(action);
+    const finance=financeApi();let financeState=null;
+    try{if(finance&&typeof finance.getFinanceState==='function')financeState=finance.getFinanceState(cid);}catch(_){}
+    const parent=financeState&&financeState.allocations&&financeState.allocations.interior||null,category=budgetCategoryForAction(action);
     let debit=null,financeSpent=false;
+    if(amount>0&&financeState&&!parent)return{ok:false,reason:'FINANCE_INTERIOR_ALLOCATION_REQUIRED',message:'Finance Ministry must allocate a budget to Home / Interior before this expense can be executed.',cost:amount};
     if(amount>0&&finance&&typeof finance.applyAction==='function'&&parent){
       const homeBudget=next.homeBudget||clone(DEFAULT_STATE.homeBudget),remaining=budgetRemaining(state,category);
       if(Math.max(0,num(homeBudget.parentAllocationUsd)||0)<=0)return{ok:false,reason:'HOME_MINISTRY_BUDGET_NOT_CONFIGURED',cost:amount};
@@ -772,8 +775,31 @@
     else if(day>s.lastPayrollDay){
       const days=Math.min(3650,day-s.lastPayrollDay),due=dailyOperatingCost(s)*days,treasury=getTreasury(cid);
       if(treasury.available){
-        const paid=Math.min(due,Math.max(0,treasury.balance)),debit=debitTreasury(cid,paid);
-        if(debit.ok){
+        const finance=financeApi(),parent=financeInteriorAllocation(cid);
+        let paid=Math.min(due,Math.max(0,treasury.balance)),debit=null,financePaid=false;
+        if(finance&&parent){
+          const salaryDue=dailyPayroll(s)*days,maintenanceDue=Math.max(0,due-salaryDue);
+          const salaryAllowed=Math.min(salaryDue,budgetRemaining(s,'salary'));
+          const maintenanceAllowed=Math.min(maintenanceDue,budgetRemaining(s,'maintenance'));
+          const permitted=Math.min(paid,salaryAllowed+maintenanceAllowed);
+          const financeResult=permitted>0&&typeof finance.applyAction==='function'
+            ?finance.applyAction({type:'spend-budget',countryId:cid,department:'interior',amountUsd:permitted,spendType:'general',description:'Home Ministry daily payroll and fleet operating cost'})
+            :{ok:false,code:'HOME_MINISTRY_OPERATING_BUDGET_EXHAUSTED',message:'Salary and maintenance category budgets are not available.'};
+          if(financeResult&&financeResult.ok){
+            paid=permitted;financePaid=true;
+            const budget=s.homeBudget;
+            const salaryPaid=Math.min(salaryAllowed,paid),maintenancePaid=Math.min(maintenanceAllowed,Math.max(0,paid-salaryPaid));
+            budget.categories.salary.spentUsd=(num(budget.categories.salary.spentUsd)||0)+salaryPaid;
+            budget.categories.maintenance.spentUsd=(num(budget.categories.maintenance.spentUsd)||0)+maintenancePaid;
+            budget.ledger=Array.isArray(budget.ledger)?budget.ledger:[];
+            budget.ledger.push({turn:turn(),action:'DAILY_OPERATING_COST',category:'salary+maintenance',amountUsd:paid,days:days});
+            budget.ledger=budget.ledger.slice(-100);
+          }else paid=0;
+        }else{
+          debit=debitTreasury(cid,paid);
+          if(!debit.ok)paid=0;
+        }
+        if((debit&&debit.ok)||financePaid){
           payrollDebit=debit;
           if(paid<due){s.unpaidPayroll+=due-paid;s.policeTrust=clamp(s.policeTrust-Math.min(5,days),0,100);s.policeEfficiency=clamp(s.policeEfficiency-Math.min(5,days),0,100);s.sabotageRisk=clamp(s.sabotageRisk+Math.min(5,days),5,95);}
           emit('OMEGA_HOME_POLICE_PAYROLL_SETTLED',{countryId:cid,days:days,due:due,paid:paid,unpaid:Math.max(0,due-paid),turn:turn()});
