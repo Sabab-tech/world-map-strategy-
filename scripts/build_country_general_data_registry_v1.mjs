@@ -583,8 +583,13 @@ function makeRecord(country, sources, previous, refreshData) {
     const existingMeta = priorMeta[field.key];
     const oldOfficial = existingMeta?.status === 'WORLD_BANK_API_OBSERVATION';
     const oldSourcedHdi = existingMeta?.status === 'UNDP_HDR_OBSERVATION';
-    if ((oldOfficial || oldSourcedHdi) && finite(priorMetrics[field.key]) !== null) {
-      metrics[field.key] = finite(priorMetrics[field.key]);
+    const priorValue = finite(priorMetrics[field.key]);
+    // Keep the previously stored value whenever the current local sources are
+    // silent. Also keep sourced observations first, so an API outage cannot erase
+    // them; a newer verified source observation may replace them below.
+    if (priorValue !== null &&
+        (oldOfficial || oldSourcedHdi || finite(metrics[field.key]) === null)) {
+      metrics[field.key] = priorValue;
       metricMetadata[field.key] = safeCopy(existingMeta, metricMetadata[field.key]);
     }
     if (field.wb) {
