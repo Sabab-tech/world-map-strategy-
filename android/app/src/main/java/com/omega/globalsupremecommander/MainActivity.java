@@ -125,11 +125,18 @@ public final class MainActivity extends Activity {
         final String host = uri.getHost();
         if (host == null) return false;
         final String h = host.toLowerCase(Locale.ROOT);
-        // We do not intercept map imagery: Esri tiles can load when connected.
-        // The cached NASA overview is only the lower-resolution offline fallback.
+        // The offline atlas is rendered from local data. Block external basemap imagery
+        // as a second line of defence so APK map layers cannot leak tile requests to the network.
         return h.equals("unpkg.com")
                 || h.equals("fonts.googleapis.com")
-                || h.equals("fonts.gstatic.com");
+                || h.equals("fonts.gstatic.com")
+                || h.equals("server.arcgisonline.com")
+                || h.equals("assets.science.nasa.gov")
+                || h.equals("tile.opentopomap.org")
+                || h.equals("tile.openstreetmap.org")
+                || h.endsWith(".tile.openstreetmap.org")
+                || h.equals("basemaps.cartocdn.com")
+                || h.endsWith(".basemaps.cartocdn.com");
     }
 
     private WebResourceResponse offlineResponse(Uri uri) {
