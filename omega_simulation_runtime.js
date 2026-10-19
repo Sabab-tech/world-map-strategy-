@@ -524,7 +524,7 @@
           results.push(failure);
           this.status='ERROR';
           this.clock.pause();
-          this.lastError='TURN_FINALIZER_FAILED:'+entry.id+':'+failure.error;
+          this.lastError=this.lastError||('TURN_FINALIZER_FAILED:'+entry.id+':'+failure.error);
           const session=this.world.state.simulation.session||{};
           session.status='ERROR';
           session.lastError=this.lastError;
@@ -860,7 +860,12 @@
         // Mark the world/session as committed before the finalizer phase so its
         // durable snapshot contains the exact date, turn, and completion metadata.
         const session=this.world.state.simulation?.session||{};
-        session.lastCommittedTurn=turn;
+        if(this.status==='ERROR'){
+          session.failedTurn=turn;
+          session.failedTurnDate=this.clock.simulationDate();
+        }else{
+          session.lastCommittedTurn=turn;
+        }
         session.status=this.status;
         this.world.setSession(session);
         this.stepCount+=1;
