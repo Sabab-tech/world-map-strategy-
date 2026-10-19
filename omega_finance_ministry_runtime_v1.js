@@ -226,7 +226,8 @@
       const tax=finite(model?.fiscalModel?.annualRevenueUsd)===null?null:model.fiscalModel.annualRevenueUsd*(Number(s.taxReceiptSharePct)||0)/100;
       return {id:s.id,name:s.name,icon:s.icon,budgetSectorId:s.budgetSectorId||null,
         outputSharePct:Number(s.outputSharePct)||0,taxReceiptSharePct:Number(s.taxReceiptSharePct)||0,
-        estimatedOutputUsd:output,projectedTaxReceiptUsd:tax,type:'MODELED_ESTIMATE'};
+        estimatedOutputUsd:output,projectedTaxReceiptUsd:tax,
+        collectedTaxReceiptsUsd:Math.max(0,finite(model?.currentYearSectorReceiptsUsd?.[s.id])||0),type:'MODELED_ESTIMATE'};
     });
     return {rows,industries,recordedRevenueUsd:recordedRevenue,recordedTaxRevenueUsd:recordedTax,
       recordedResourceCurrentUsd:recordedResourceCurrent,recordedResourceCumulativeUsd:resourceCumulativeSafe,
@@ -283,6 +284,8 @@
     for(const k of ['cumulativeExternalInflowUsd','cumulativeExternalOutflowUsd','currentYearTaxRevenueUsd','currentYearSpendingUsd',
       'currentYearInterestUsd','currentYearExternalInflowUsd','currentYearExternalOutflowUsd'])if(finite(model[k])===null)model[k]=0;
     if(finite(model.fiscalYearIndex)===null)model.fiscalYearIndex=fiscalYearIndexFor(currentTurn(),Number(rules.simulationTurnDurationMs||HOUR_MS));
+    if(!isObject(model.currentYearSectorReceiptsUsd))model.currentYearSectorReceiptsUsd={};
+    for(const s of sectorRegistry.economicSectors||[])if(finite(model.currentYearSectorReceiptsUsd[s.id])===null)model.currentYearSectorReceiptsUsd[s.id]=0;
     initializeSectorAllocations(model);
     return model;
   }
@@ -549,6 +552,8 @@
         fm.fiscalYearIndex=newYearIndex;
         fm.currentYearTaxRevenueUsd=0;fm.currentYearSpendingUsd=0;fm.currentYearInterestUsd=0;
         fm.currentYearExternalInflowUsd=0;fm.currentYearExternalOutflowUsd=0;
+        fm.currentYearSectorReceiptsUsd={};
+        for(const sector of sectorRegistry.economicSectors||[])fm.currentYearSectorReceiptsUsd[sector.id]=0;
         for(const s of sectorRegistry.budgetSectors||[]){
           const a=fm.allocations?.[s.id];if(!isObject(a))continue;
           a.spentUsd=0;a.remainingUsd=Math.max(0,finite(a.budgetUsd)||0);a.updatedTurn=turnNumber;
@@ -569,6 +574,11 @@
       fm.cumulativeInterestUsd=(finite(fm.cumulativeInterestUsd)||0)+interest;
       fm.currentYearTaxRevenueUsd=(finite(fm.currentYearTaxRevenueUsd)||0)+income;
       fm.currentYearInterestUsd=(finite(fm.currentYearInterestUsd)||0)+interest;
+      if(!isObject(fm.currentYearSectorReceiptsUsd))fm.currentYearSectorReceiptsUsd={};
+      for(const sector of sectorRegistry.economicSectors||[]){
+        const receipt=income*(Number(sector.taxReceiptSharePct)||0)/100;
+        fm.currentYearSectorReceiptsUsd[sector.id]=(finite(fm.currentYearSectorReceiptsUsd[sector.id])||0)+receipt;
+      }
       const fb=financeBucketFor(root,p,true);
       fb.taxRevenue=(finite(fb.taxRevenue)||0)+income;
       fb.revenue=(finite(fb.revenue)||0)+income;
@@ -651,15 +661,15 @@
   }
   function renderEconomicSectorTable(p,m,fm,root){
     const data=revenueState(p,fm,m,root),rows=data.industries;
-    return '<div class="ofm-table-scroll"><table class="ofm-table ofm-budget-table ofm-industry-ledger"><thead><tr><th>Industry / sector</th><th>GDP mix</th><th>Estimated output</th><th>Receipt mix</th><th>Projected public receipts</th><th>Budget sector</th><th>Annual budget</th><th>Spent</th><th>Remaining</th></tr></thead><tbody>'+
+    return '<div class="ofm-table-scroll"><table class="ofm-table ofm-budget-table ofm-industry-ledger"><thead><tr><th>Industry / sector</th><th>GDP mix</th><th>Estimated output</th><th>Receipt mix</th><th>Projected public receipts / year</th><th>Collected this FY</th><th>Budget sector</th><th>Annual budget</th><th>Spent</th><th>Remaining</th></tr></thead><tbody>'+
       rows.map(r=>{
         const plan=r.budgetSectorId?fm?.allocations?.[r.budgetSectorId]:null;
         const sector=r.budgetSectorId?budgetSectorById(r.budgetSectorId):null;
-        return '<tr><td><span class="ofm-sector-cell"><span class="ofm-sector-glyph">'+escapeHTML(r.icon)+'</span><span><strong>'+escapeHTML(r.name)+'</strong><small>Model estimate</small></span></span></td>'+
-          '<td>'+fmtPct(r.outputSharePct)+'</td><td>'+fmtMoney(r.estimatedOutputUsd)+'</td><td>'+fmtPct(r.taxReceiptSharePct)+'</td><td>'+fmtMoney(r.projectedTaxReceiptUsd)+'</td>'+
+        return '<tr><td><span class="ofm-sector-cell"><span class="ofm-sector-glyph">'+escapeHTML(r.icon)+'</span><span><strong>'+escapeHTML(r.name)+'</strong><small>Game-model output; simulated receipt accrual</small></span></span></td>'+
+          '<td>'+fmtPct(r.outputSharePct)+'</td><td>'+fmtMoney(r.estimatedOutputUsd)+'</td><td>'+fmtPct(r.taxReceiptSharePct)+'</td><td>'+fmtMoney(r.projectedTaxReceiptUsd)+'</td><td>'+fmtMoney(r.collectedTaxReceiptsUsd)+'</td>'+
           '<td>'+escapeHTML(sector?.name||'No linked budget sector')+'</td><td>'+fmtMoney(plan?plan.budgetUsd:null)+'</td><td>'+fmtMoney(plan?plan.spentUsd:null)+'</td><td>'+fmtMoney(plan?plan.remainingUsd:null)+'</td></tr>';
       }).join('')+
-      '</tbody></table></div><p class="ofm-data-note">Output and sector-receipt values are configurable game-model estimates, computed from in-game GDP × sector mix. Budget and posted spending are live Finance plan values. The mapping is a planning link, not an observed national industry account.</p>';
+      '</tbody></table></div><p class="ofm-data-note">Output and annual public-receipt forecasts are game-model estimates. “Collected this FY” is modeled tax revenue accrued by simulation time, split by the configured receipt mix. Budget and spending columns are live Finance plan values; none of these are portrayed as observed national industrial accounts.</p>';
   }
   function renderOverviewTab(p,m,fm,rows,editable,root){
     const totals=budgetTotals(fm);
