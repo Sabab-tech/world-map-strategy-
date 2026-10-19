@@ -262,6 +262,7 @@
     const root=rootState();
     for(const p of profiles)syncEconomyRecord(p,ensureFinanceState(p,root),root);
   }
+  function getPlayerCode(){return playerCountryProfile()?.countryCode||null;}
   function applyAction(action){
     action=isObject(action)?action:{};const type=String(action.type||'').toLowerCase().replace(/_/g,'-');
     const p=resolveProfile(action.countryId||action.countryCode||selectedCountryCode)||playerCountryProfile();
