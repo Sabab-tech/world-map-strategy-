@@ -11,7 +11,13 @@ on:
     paths:
       - ".github/workflows/omega-country-general-data-registry.yml"
       - "scripts/build_country_general_data_registry_v1.mjs"
+      - "country-ios.js"
+      - "index.html"
+      - "style.css"
+      - "omega_country_runtime_data_v1.js"
+      - "omega-offline-map-sw.js"
       - "test/country_general_data_registry_v1.test.mjs"
+      - "test/omega_country_runtime_data_v1.test.mjs"
       - "countries.json"
       - "cities.json"
       - "population.json"
@@ -52,7 +58,7 @@ jobs:
           fi
 
       - name: Validate shared schema, source preservation and coverage accounting
-        run: node --test test/country_general_data_registry_v1.test.mjs
+        run: node --test test/country_general_data_registry_v1.test.mjs test/omega_country_runtime_data_v1.test.mjs
 
       - name: Commit registry only if it changed
         if: github.event_name != 'pull_request'
