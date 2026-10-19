@@ -4,7 +4,7 @@
     "datasetId": "OMEGA_COUNTRY_GENERAL_DATA_REGISTRY_V1",
     "title": "OMEGA Unified Country General Data Registry",
     "description": "Canonical common-schema registry aggregating identity, basic facts, economy, demographics, general indexes, resource context and public-safety summary for every identity in countries.json.",
-    "generatedAt": "2026-10-19T17:00:34.634Z",
+    "generatedAt": "2026-10-19T17:02:17.763Z",
     "countryAndTerritoryCount": 249,
     "uniqueIso3Count": 249,
     "baselineYear": 2015,
@@ -139,8 +139,8 @@
       "worldBankMetadataLoaded": true,
       "worldBankIndicatorErrors": [],
       "worldBankMetadataError": null,
-      "restCountriesLoaded": true,
-      "restCountriesError": null,
+      "restCountriesLoaded": false,
+      "restCountriesError": "Error: REST_COUNTRIES_EMPTY_OR_UNEXPECTED_RESPONSE",
       "policy": "A refreshed observation replaces a legacy value only when the World Bank API returns a numeric observation. When a refresh is unavailable, previously stored World Bank observations are preserved."
     },
     "dataQualityPolicy": {
@@ -302,9 +302,9 @@
       "publicDebtToGdpPct": {
         "total": 249,
         "nonNull": 230,
-        "worldBankObserved": 55,
+        "worldBankObserved": 109,
         "derivedFromSource": 0,
-        "legacyOrLocal": 175,
+        "legacyOrLocal": 121,
         "missing": 19
       },
       "externalDebtUsd": {
@@ -1525,7 +1525,7 @@
       "role": "general facts such as official name, capital, languages, currency codes, area, borders and timezones",
       "url": "https://restcountries.com/",
       "enabledBy": "--refresh-sources",
-      "status": "FETCHED"
+      "status": "NOT_FETCHED"
     }
   ],
   "countries": [
@@ -2483,7 +2483,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -3380,7 +3380,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -4334,7 +4334,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -5292,7 +5292,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -6193,7 +6193,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -7145,7 +7145,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -8098,7 +8098,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -8999,7 +8999,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -9896,7 +9896,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -10845,7 +10845,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -11802,7 +11802,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -12754,7 +12754,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -13655,7 +13655,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -14609,7 +14609,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -15561,7 +15561,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -15637,7 +15637,7 @@
         5.62208788068338,
         5.457,
         10000000000,
-        18.867925,
+        6.38557579182856,
         12199421517.2,
         17.0427856612147,
         -2000000000,
@@ -15707,7 +15707,7 @@
           2025,
           2025,
           2015,
-          2015,
+          2010,
           2024,
           2024,
           2015,
@@ -15776,7 +15776,7 @@
           0,
           0,
           1,
-          2,
+          0,
           0,
           0,
           1,
@@ -15845,7 +15845,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -15914,7 +15914,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -15983,7 +15983,7 @@
           0,
           0,
           1,
-          1,
+          0,
           0,
           0,
           1,
@@ -16052,7 +16052,7 @@
           "https://api.worldbank.org/v2/country/aze/indicator/FP.CPI.TOTL.ZG?format=json",
           "https://api.worldbank.org/v2/country/aze/indicator/SL.UEM.TOTL.ZS?format=json",
           null,
-          null,
+          "https://api.worldbank.org/v2/country/aze/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/country/aze/indicator/DT.DOD.DECT.CD?format=json",
           "https://api.worldbank.org/v2/country/aze/indicator/DT.DOD.DECT.GN.ZS?format=json",
           null,
@@ -16121,7 +16121,7 @@
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
@@ -16513,7 +16513,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -17462,7 +17462,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -18420,7 +18420,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -18497,7 +18497,7 @@
         8.7687628116114,
         3.778,
         80000000000,
-        41.025641,
+        31.2044521104432,
         104486886261.1,
         22.2547977203389,
         -8000000000,
@@ -18567,7 +18567,7 @@
           2025,
           2025,
           2015,
-          2015,
+          2003,
           2024,
           2024,
           2015,
@@ -18636,7 +18636,7 @@
           0,
           0,
           1,
-          2,
+          0,
           0,
           0,
           1,
@@ -18705,7 +18705,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -18774,7 +18774,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -18843,7 +18843,7 @@
           0,
           0,
           1,
-          1,
+          0,
           0,
           0,
           1,
@@ -18912,7 +18912,7 @@
           "https://api.worldbank.org/v2/country/bgd/indicator/FP.CPI.TOTL.ZG?format=json",
           "https://api.worldbank.org/v2/country/bgd/indicator/SL.UEM.TOTL.ZS?format=json",
           null,
-          null,
+          "https://api.worldbank.org/v2/country/bgd/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/country/bgd/indicator/DT.DOD.DECT.CD?format=json",
           "https://api.worldbank.org/v2/country/bgd/indicator/DT.DOD.DECT.GN.ZS?format=json",
           null,
@@ -18981,7 +18981,7 @@
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
@@ -19381,7 +19381,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -19458,7 +19458,7 @@
         0.846576563196289,
         6.524,
         4500000000,
-        97.826087,
+        125.033538406814,
         null,
         null,
         -200000000,
@@ -19528,7 +19528,7 @@
           2025,
           2025,
           2015,
-          2015,
+          2016,
           null,
           null,
           2015,
@@ -19597,7 +19597,7 @@
           0,
           0,
           1,
-          2,
+          0,
           4,
           4,
           1,
@@ -19666,7 +19666,7 @@
           0,
           0,
           2,
-          3,
+          0,
           -1,
           -1,
           2,
@@ -19735,7 +19735,7 @@
           0,
           0,
           2,
-          3,
+          0,
           -1,
           -1,
           2,
@@ -19804,7 +19804,7 @@
           0,
           0,
           1,
-          1,
+          0,
           4,
           4,
           1,
@@ -19873,7 +19873,7 @@
           "https://api.worldbank.org/v2/country/brb/indicator/FP.CPI.TOTL.ZG?format=json",
           "https://api.worldbank.org/v2/country/brb/indicator/SL.UEM.TOTL.ZS?format=json",
           null,
-          null,
+          "https://api.worldbank.org/v2/country/brb/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/indicator/DT.DOD.DECT.CD",
           "https://api.worldbank.org/v2/indicator/DT.DOD.DECT.GN.ZS",
           null,
@@ -19942,7 +19942,7 @@
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           null,
           null,
           "Not independently revalidated against the named external series in this build.",
@@ -20330,7 +20330,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -20405,7 +20405,7 @@
         6.59877945951182,
         3.38,
         30000000000,
-        53.571429,
+        33.2442039424903,
         34217084774.6,
         46.1452886653758,
         -500000000,
@@ -20475,7 +20475,7 @@
           2025,
           2025,
           2015,
-          2015,
+          2019,
           2024,
           2024,
           2015,
@@ -20544,7 +20544,7 @@
           0,
           0,
           1,
-          2,
+          0,
           0,
           0,
           1,
@@ -20613,7 +20613,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -20682,7 +20682,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -20751,7 +20751,7 @@
           0,
           0,
           1,
-          1,
+          0,
           0,
           0,
           1,
@@ -20820,7 +20820,7 @@
           "https://api.worldbank.org/v2/country/blr/indicator/FP.CPI.TOTL.ZG?format=json",
           "https://api.worldbank.org/v2/country/blr/indicator/SL.UEM.TOTL.ZS?format=json",
           null,
-          null,
+          "https://api.worldbank.org/v2/country/blr/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/country/blr/indicator/DT.DOD.DECT.CD?format=json",
           "https://api.worldbank.org/v2/country/blr/indicator/DT.DOD.DECT.GN.ZS?format=json",
           null,
@@ -20889,7 +20889,7 @@
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
@@ -21282,7 +21282,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -22236,7 +22236,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -22313,7 +22313,7 @@
         1.06281547952896,
         8.856,
         1400000000,
-        82.352941,
+        61.0308317738748,
         1558943630.7,
         46.0428964719523,
         -80000000,
@@ -22383,7 +22383,7 @@
           2025,
           2025,
           2015,
-          2015,
+          2014,
           2024,
           2024,
           2015,
@@ -22452,7 +22452,7 @@
           0,
           0,
           1,
-          2,
+          0,
           0,
           0,
           1,
@@ -22521,7 +22521,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -22590,7 +22590,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -22659,7 +22659,7 @@
           0,
           0,
           1,
-          1,
+          0,
           0,
           0,
           1,
@@ -22728,7 +22728,7 @@
           "https://api.worldbank.org/v2/country/blz/indicator/FP.CPI.TOTL.ZG?format=json",
           "https://api.worldbank.org/v2/country/blz/indicator/SL.UEM.TOTL.ZS?format=json",
           null,
-          null,
+          "https://api.worldbank.org/v2/country/blz/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/country/blz/indicator/DT.DOD.DECT.CD?format=json",
           "https://api.worldbank.org/v2/country/blz/indicator/DT.DOD.DECT.GN.ZS?format=json",
           null,
@@ -22797,7 +22797,7 @@
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
@@ -23189,7 +23189,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -24142,7 +24142,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -25043,7 +25043,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -25998,7 +25998,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -26073,7 +26073,7 @@
         19.5171208047329,
         2.967,
         12000000000,
-        36.363636,
+        68.3398527645303,
         15717587538.6,
         32.5376974869568,
         -2000000000,
@@ -26143,7 +26143,7 @@
           2025,
           2025,
           2015,
-          2015,
+          2001,
           2024,
           2024,
           2015,
@@ -26212,7 +26212,7 @@
           0,
           0,
           1,
-          2,
+          0,
           0,
           0,
           1,
@@ -26281,7 +26281,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -26350,7 +26350,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -26419,7 +26419,7 @@
           0,
           0,
           1,
-          1,
+          0,
           0,
           0,
           1,
@@ -26488,7 +26488,7 @@
           "https://api.worldbank.org/v2/country/bol/indicator/FP.CPI.TOTL.ZG?format=json",
           "https://api.worldbank.org/v2/country/bol/indicator/SL.UEM.TOTL.ZS?format=json",
           null,
-          null,
+          "https://api.worldbank.org/v2/country/bol/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/country/bol/indicator/DT.DOD.DECT.CD?format=json",
           "https://api.worldbank.org/v2/country/bol/indicator/DT.DOD.DECT.GN.ZS?format=json",
           null,
@@ -26557,7 +26557,7 @@
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
@@ -26944,7 +26944,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -27841,7 +27841,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -28795,7 +28795,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -29746,7 +29746,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -30643,7 +30643,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -31600,7 +31600,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -32497,7 +32497,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -33445,7 +33445,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -34399,7 +34399,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -35350,7 +35350,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -36301,7 +36301,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -37249,7 +37249,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -38202,7 +38202,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -38279,7 +38279,7 @@
         3.40373458279055,
         3.602,
         10000000000,
-        31.25,
+        79.4576584012943,
         15770789430.1,
         31.2876251648885,
         -1500000000,
@@ -38349,7 +38349,7 @@
           2025,
           2025,
           2015,
-          2015,
+          1999,
           2024,
           2024,
           2015,
@@ -38418,7 +38418,7 @@
           0,
           0,
           1,
-          2,
+          0,
           0,
           0,
           1,
@@ -38487,7 +38487,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -38556,7 +38556,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -38625,7 +38625,7 @@
           0,
           0,
           1,
-          1,
+          0,
           0,
           0,
           1,
@@ -38694,7 +38694,7 @@
           "https://api.worldbank.org/v2/country/cmr/indicator/FP.CPI.TOTL.ZG?format=json",
           "https://api.worldbank.org/v2/country/cmr/indicator/SL.UEM.TOTL.ZS?format=json",
           null,
-          null,
+          "https://api.worldbank.org/v2/country/cmr/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/country/cmr/indicator/DT.DOD.DECT.CD?format=json",
           "https://api.worldbank.org/v2/country/cmr/indicator/DT.DOD.DECT.GN.ZS?format=json",
           null,
@@ -38763,7 +38763,7 @@
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
@@ -39155,7 +39155,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -40114,7 +40114,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -41015,7 +41015,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -41966,7 +41966,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -42917,7 +42917,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -42994,7 +42994,7 @@
         4.21294031801535,
         8.974,
         42000000000,
-        17.213115,
+        13.1456400046218,
         null,
         null,
         -4000000000,
@@ -43064,7 +43064,7 @@
           2025,
           2025,
           2015,
-          2015,
+          2000,
           null,
           null,
           2015,
@@ -43133,7 +43133,7 @@
           0,
           0,
           1,
-          2,
+          0,
           4,
           4,
           1,
@@ -43202,7 +43202,7 @@
           0,
           0,
           2,
-          3,
+          0,
           -1,
           -1,
           2,
@@ -43271,7 +43271,7 @@
           0,
           0,
           2,
-          3,
+          0,
           -1,
           -1,
           2,
@@ -43340,7 +43340,7 @@
           0,
           0,
           1,
-          1,
+          0,
           4,
           4,
           1,
@@ -43409,7 +43409,7 @@
           "https://api.worldbank.org/v2/country/chl/indicator/FP.CPI.TOTL.ZG?format=json",
           "https://api.worldbank.org/v2/country/chl/indicator/SL.UEM.TOTL.ZS?format=json",
           null,
-          null,
+          "https://api.worldbank.org/v2/country/chl/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/indicator/DT.DOD.DECT.CD",
           "https://api.worldbank.org/v2/indicator/DT.DOD.DECT.GN.ZS",
           null,
@@ -43478,7 +43478,7 @@
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           null,
           null,
           "Not independently revalidated against the named external series in this build.",
@@ -43870,7 +43870,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -44831,7 +44831,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -45732,7 +45732,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -46633,7 +46633,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -47591,7 +47591,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -48544,7 +48544,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -48621,7 +48621,7 @@
         2.40069559361747,
         19.876,
         6000000000,
-        70.588235,
+        25.4826844740907,
         6728317971.4,
         44.8962409480798,
         -500000000,
@@ -48691,7 +48691,7 @@
           2025,
           2025,
           2015,
-          2015,
+          2010,
           2024,
           2024,
           2015,
@@ -48760,7 +48760,7 @@
           0,
           0,
           1,
-          2,
+          0,
           0,
           0,
           1,
@@ -48829,7 +48829,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -48898,7 +48898,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -48967,7 +48967,7 @@
           0,
           0,
           1,
-          1,
+          0,
           0,
           0,
           1,
@@ -49036,7 +49036,7 @@
           "https://api.worldbank.org/v2/country/cog/indicator/FP.CPI.TOTL.ZG?format=json",
           "https://api.worldbank.org/v2/country/cog/indicator/SL.UEM.TOTL.ZS?format=json",
           null,
-          null,
+          "https://api.worldbank.org/v2/country/cog/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/country/cog/indicator/DT.DOD.DECT.CD?format=json",
           "https://api.worldbank.org/v2/country/cog/indicator/DT.DOD.DECT.GN.ZS?format=json",
           null,
@@ -49105,7 +49105,7 @@
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
@@ -49492,7 +49492,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -50440,7 +50440,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -51341,7 +51341,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -51419,7 +51419,7 @@
         -0.073671440596217,
         6.843,
         24000000000,
-        43.636364,
+        39.3351115689137,
         null,
         null,
         -3000000000,
@@ -51489,7 +51489,7 @@
           2025,
           2025,
           2015,
-          2015,
+          2001,
           null,
           null,
           2015,
@@ -51558,7 +51558,7 @@
           0,
           0,
           1,
-          2,
+          0,
           4,
           4,
           1,
@@ -51627,7 +51627,7 @@
           0,
           0,
           2,
-          3,
+          0,
           -1,
           -1,
           2,
@@ -51696,7 +51696,7 @@
           0,
           0,
           2,
-          3,
+          0,
           -1,
           -1,
           2,
@@ -51765,7 +51765,7 @@
           0,
           0,
           1,
-          1,
+          0,
           4,
           4,
           1,
@@ -51834,7 +51834,7 @@
           "https://api.worldbank.org/v2/country/cri/indicator/FP.CPI.TOTL.ZG?format=json",
           "https://api.worldbank.org/v2/country/cri/indicator/SL.UEM.TOTL.ZS?format=json",
           null,
-          null,
+          "https://api.worldbank.org/v2/country/cri/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/indicator/DT.DOD.DECT.CD",
           "https://api.worldbank.org/v2/indicator/DT.DOD.DECT.GN.ZS",
           null,
@@ -51903,7 +51903,7 @@
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           null,
           null,
           "Not independently revalidated against the named external series in this build.",
@@ -52295,7 +52295,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -52372,7 +52372,7 @@
         0.125038772593103,
         2.323,
         15000000000,
-        45.454545,
+        171.065442627283,
         40560965965.1,
         48.8304044647452,
         -1000000000,
@@ -52442,7 +52442,7 @@
           2025,
           2025,
           2015,
-          2015,
+          1995,
           2024,
           2024,
           2015,
@@ -52511,7 +52511,7 @@
           0,
           0,
           1,
-          2,
+          0,
           0,
           0,
           1,
@@ -52580,7 +52580,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -52649,7 +52649,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -52718,7 +52718,7 @@
           0,
           0,
           1,
-          1,
+          0,
           0,
           0,
           1,
@@ -52787,7 +52787,7 @@
           "https://api.worldbank.org/v2/country/civ/indicator/FP.CPI.TOTL.ZG?format=json",
           "https://api.worldbank.org/v2/country/civ/indicator/SL.UEM.TOTL.ZS?format=json",
           null,
-          null,
+          "https://api.worldbank.org/v2/country/civ/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/country/civ/indicator/DT.DOD.DECT.CD?format=json",
           "https://api.worldbank.org/v2/country/civ/indicator/DT.DOD.DECT.GN.ZS?format=json",
           null,
@@ -52856,7 +52856,7 @@
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
@@ -53248,7 +53248,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -54202,7 +54202,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -55177,7 +55177,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -56078,7 +56078,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -56156,7 +56156,7 @@
         0.126528851920188,
         4.924,
         22000000000,
-        110,
+        53.6510804601294,
         null,
         null,
         -200000000,
@@ -56226,7 +56226,7 @@
           2025,
           2025,
           2015,
-          2015,
+          1994,
           null,
           null,
           2015,
@@ -56295,7 +56295,7 @@
           0,
           0,
           1,
-          2,
+          0,
           4,
           4,
           1,
@@ -56364,7 +56364,7 @@
           0,
           0,
           2,
-          3,
+          0,
           -1,
           -1,
           2,
@@ -56433,7 +56433,7 @@
           0,
           0,
           2,
-          3,
+          0,
           -1,
           -1,
           2,
@@ -56502,7 +56502,7 @@
           0,
           0,
           1,
-          1,
+          0,
           4,
           4,
           1,
@@ -56571,7 +56571,7 @@
           "https://api.worldbank.org/v2/country/cyp/indicator/FP.CPI.TOTL.ZG?format=json",
           "https://api.worldbank.org/v2/country/cyp/indicator/SL.UEM.TOTL.ZS?format=json",
           null,
-          null,
+          "https://api.worldbank.org/v2/country/cyp/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/indicator/DT.DOD.DECT.CD",
           "https://api.worldbank.org/v2/indicator/DT.DOD.DECT.GN.ZS",
           null,
@@ -56640,7 +56640,7 @@
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           null,
           null,
           "Not independently revalidated against the named external series in this build.",
@@ -57033,7 +57033,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -57108,7 +57108,7 @@
         2.45996367838864,
         2.825,
         75000000000,
-        40.322581,
+        13.9974227725367,
         null,
         null,
         -1500000000,
@@ -57178,7 +57178,7 @@
           2025,
           2025,
           2015,
-          2015,
+          1994,
           null,
           null,
           2015,
@@ -57247,7 +57247,7 @@
           0,
           0,
           1,
-          2,
+          0,
           4,
           4,
           1,
@@ -57316,7 +57316,7 @@
           0,
           0,
           2,
-          3,
+          0,
           -1,
           -1,
           2,
@@ -57385,7 +57385,7 @@
           0,
           0,
           2,
-          3,
+          0,
           -1,
           -1,
           2,
@@ -57454,7 +57454,7 @@
           0,
           0,
           1,
-          1,
+          0,
           4,
           4,
           1,
@@ -57523,7 +57523,7 @@
           "https://api.worldbank.org/v2/country/cze/indicator/FP.CPI.TOTL.ZG?format=json",
           "https://api.worldbank.org/v2/country/cze/indicator/SL.UEM.TOTL.ZS?format=json",
           null,
-          null,
+          "https://api.worldbank.org/v2/country/cze/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/indicator/DT.DOD.DECT.CD",
           "https://api.worldbank.org/v2/indicator/DT.DOD.DECT.GN.ZS",
           null,
@@ -57592,7 +57592,7 @@
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           null,
           null,
           "Not independently revalidated against the named external series in this build.",
@@ -57985,7 +57985,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -58063,7 +58063,7 @@
         1.8900606245861,
         5.529,
         120000000000,
-        39.86711,
+        75.3312600417617,
         null,
         null,
         -4000000000,
@@ -58133,7 +58133,7 @@
           2025,
           2025,
           2015,
-          2015,
+          1994,
           null,
           null,
           2015,
@@ -58202,7 +58202,7 @@
           0,
           0,
           1,
-          2,
+          0,
           4,
           4,
           1,
@@ -58271,7 +58271,7 @@
           0,
           0,
           2,
-          3,
+          0,
           -1,
           -1,
           2,
@@ -58340,7 +58340,7 @@
           0,
           0,
           2,
-          3,
+          0,
           -1,
           -1,
           2,
@@ -58409,7 +58409,7 @@
           0,
           0,
           1,
-          1,
+          0,
           4,
           4,
           1,
@@ -58478,7 +58478,7 @@
           "https://api.worldbank.org/v2/country/dnk/indicator/FP.CPI.TOTL.ZG?format=json",
           "https://api.worldbank.org/v2/country/dnk/indicator/SL.UEM.TOTL.ZS?format=json",
           null,
-          null,
+          "https://api.worldbank.org/v2/country/dnk/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/indicator/DT.DOD.DECT.CD",
           "https://api.worldbank.org/v2/indicator/DT.DOD.DECT.GN.ZS",
           null,
@@ -58547,7 +58547,7 @@
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           null,
           null,
           "Not independently revalidated against the named external series in this build.",
@@ -58940,7 +58940,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -59893,7 +59893,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -60842,7 +60842,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -60919,7 +60919,7 @@
         3.87311768048129,
         5.092,
         25000000000,
-        35.211268,
+        16.4168038368014,
         53293949023.3,
         45.3336943010045,
         -1500000000,
@@ -60989,7 +60989,7 @@
           2025,
           2025,
           2015,
-          2015,
+          1999,
           2024,
           2024,
           2015,
@@ -61058,7 +61058,7 @@
           0,
           0,
           1,
-          2,
+          0,
           0,
           0,
           1,
@@ -61127,7 +61127,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -61196,7 +61196,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -61265,7 +61265,7 @@
           0,
           0,
           1,
-          1,
+          0,
           0,
           0,
           1,
@@ -61334,7 +61334,7 @@
           "https://api.worldbank.org/v2/country/dom/indicator/FP.CPI.TOTL.ZG?format=json",
           "https://api.worldbank.org/v2/country/dom/indicator/SL.UEM.TOTL.ZS?format=json",
           null,
-          null,
+          "https://api.worldbank.org/v2/country/dom/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/country/dom/indicator/DT.DOD.DECT.CD?format=json",
           "https://api.worldbank.org/v2/country/dom/indicator/DT.DOD.DECT.GN.ZS?format=json",
           null,
@@ -61403,7 +61403,7 @@
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
@@ -61791,7 +61791,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -62744,7 +62744,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -62823,7 +62823,7 @@
         14.0735136645933,
         6.781,
         280000000000,
-        84.337349,
+        85.7885338345865,
         155972716013.2,
         41.9820138564051,
         -35000000000,
@@ -62893,7 +62893,7 @@
           2025,
           2025,
           2015,
-          2015,
+          2007,
           2024,
           2024,
           2015,
@@ -62962,7 +62962,7 @@
           0,
           0,
           1,
-          2,
+          0,
           0,
           0,
           1,
@@ -63031,7 +63031,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -63100,7 +63100,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -63169,7 +63169,7 @@
           0,
           0,
           1,
-          1,
+          0,
           0,
           0,
           1,
@@ -63238,7 +63238,7 @@
           "https://api.worldbank.org/v2/country/egy/indicator/FP.CPI.TOTL.ZG?format=json",
           "https://api.worldbank.org/v2/country/egy/indicator/SL.UEM.TOTL.ZS?format=json",
           null,
-          null,
+          "https://api.worldbank.org/v2/country/egy/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/country/egy/indicator/DT.DOD.DECT.CD?format=json",
           "https://api.worldbank.org/v2/country/egy/indicator/DT.DOD.DECT.GN.ZS?format=json",
           null,
@@ -63307,7 +63307,7 @@
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
@@ -63708,7 +63708,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -64662,7 +64662,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -65615,7 +65615,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -66568,7 +66568,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -67522,7 +67522,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -68468,7 +68468,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -68543,7 +68543,7 @@
         13.2296432836808,
         3.323,
         30000000000,
-        46.875,
+        31.4488445666124,
         36548259483.3,
         24.2638688064282,
         -2000000000,
@@ -68613,7 +68613,7 @@
           2025,
           2025,
           2015,
-          2015,
+          2019,
           2024,
           2022,
           2015,
@@ -68682,7 +68682,7 @@
           0,
           0,
           1,
-          2,
+          0,
           0,
           0,
           1,
@@ -68751,7 +68751,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -68820,7 +68820,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -68889,7 +68889,7 @@
           0,
           0,
           1,
-          1,
+          0,
           0,
           0,
           1,
@@ -68958,7 +68958,7 @@
           "https://api.worldbank.org/v2/country/eth/indicator/FP.CPI.TOTL.ZG?format=json",
           "https://api.worldbank.org/v2/country/eth/indicator/SL.UEM.TOTL.ZS?format=json",
           null,
-          null,
+          "https://api.worldbank.org/v2/country/eth/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/country/eth/indicator/DT.DOD.DECT.CD?format=json",
           "https://api.worldbank.org/v2/country/eth/indicator/DT.DOD.DECT.GN.ZS?format=json",
           null,
@@ -69027,7 +69027,7 @@
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
@@ -69419,7 +69419,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -70320,7 +70320,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -71221,7 +71221,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -71298,7 +71298,7 @@
         -1.38326833934223,
         5.347,
         2500000000,
-        58.139535,
+        36.6282593243799,
         3868919895.3,
         71.3867600808353,
         -150000000,
@@ -71368,7 +71368,7 @@
           2025,
           2025,
           2015,
-          2015,
+          1994,
           2024,
           2024,
           2015,
@@ -71437,7 +71437,7 @@
           0,
           0,
           1,
-          2,
+          0,
           0,
           0,
           1,
@@ -71506,7 +71506,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -71575,7 +71575,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -71644,7 +71644,7 @@
           0,
           0,
           1,
-          1,
+          0,
           0,
           0,
           1,
@@ -71713,7 +71713,7 @@
           "https://api.worldbank.org/v2/country/fji/indicator/FP.CPI.TOTL.ZG?format=json",
           "https://api.worldbank.org/v2/country/fji/indicator/SL.UEM.TOTL.ZS?format=json",
           null,
-          null,
+          "https://api.worldbank.org/v2/country/fji/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/country/fji/indicator/DT.DOD.DECT.CD?format=json",
           "https://api.worldbank.org/v2/country/fji/indicator/DT.DOD.DECT.GN.ZS?format=json",
           null,
@@ -71782,7 +71782,7 @@
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
@@ -72179,7 +72179,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -72256,7 +72256,7 @@
         0.332787049734142,
         9.461,
         140000000000,
-        60.344828,
+        58.3135962623348,
         null,
         null,
         -6000000000,
@@ -72326,7 +72326,7 @@
           2025,
           2025,
           2015,
-          2015,
+          1994,
           null,
           null,
           2015,
@@ -72395,7 +72395,7 @@
           0,
           0,
           1,
-          2,
+          0,
           4,
           4,
           1,
@@ -72464,7 +72464,7 @@
           0,
           0,
           2,
-          3,
+          0,
           -1,
           -1,
           2,
@@ -72533,7 +72533,7 @@
           0,
           0,
           2,
-          3,
+          0,
           -1,
           -1,
           2,
@@ -72602,7 +72602,7 @@
           0,
           0,
           1,
-          1,
+          0,
           4,
           4,
           1,
@@ -72671,7 +72671,7 @@
           "https://api.worldbank.org/v2/country/fin/indicator/FP.CPI.TOTL.ZG?format=json",
           "https://api.worldbank.org/v2/country/fin/indicator/SL.UEM.TOTL.ZS?format=json",
           null,
-          null,
+          "https://api.worldbank.org/v2/country/fin/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/indicator/DT.DOD.DECT.CD",
           "https://api.worldbank.org/v2/indicator/DT.DOD.DECT.GN.ZS",
           null,
@@ -72740,7 +72740,7 @@
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           null,
           null,
           "Not independently revalidated against the named external series in this build.",
@@ -73133,7 +73133,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -74091,7 +74091,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -74992,7 +74992,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -75893,7 +75893,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -76791,7 +76791,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -77744,7 +77744,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -78697,7 +78697,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -79651,7 +79651,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -79728,7 +79728,7 @@
         2.17178770949721,
         3.711,
         2150000000000,
-        63.609467,
+        20.8541847518408,
         null,
         null,
         12000000000,
@@ -79798,7 +79798,7 @@
           2025,
           2025,
           2015,
-          2015,
+          1990,
           null,
           null,
           2015,
@@ -79867,7 +79867,7 @@
           0,
           0,
           1,
-          2,
+          0,
           4,
           4,
           1,
@@ -79936,7 +79936,7 @@
           0,
           0,
           2,
-          3,
+          0,
           -1,
           -1,
           2,
@@ -80005,7 +80005,7 @@
           0,
           0,
           2,
-          3,
+          0,
           -1,
           -1,
           2,
@@ -80074,7 +80074,7 @@
           0,
           0,
           1,
-          1,
+          0,
           4,
           4,
           1,
@@ -80143,7 +80143,7 @@
           "https://api.worldbank.org/v2/country/deu/indicator/FP.CPI.TOTL.ZG?format=json",
           "https://api.worldbank.org/v2/country/deu/indicator/SL.UEM.TOTL.ZS?format=json",
           null,
-          null,
+          "https://api.worldbank.org/v2/country/deu/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/indicator/DT.DOD.DECT.CD",
           "https://api.worldbank.org/v2/indicator/DT.DOD.DECT.GN.ZS",
           null,
@@ -80212,7 +80212,7 @@
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           null,
           null,
           "Not independently revalidated against the named external series in this build.",
@@ -80613,7 +80613,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -81566,7 +81566,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -82467,7 +82467,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -83421,7 +83421,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -84323,7 +84323,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -85272,7 +85272,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -86173,7 +86173,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -87074,7 +87074,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -87152,7 +87152,7 @@
         1.48841591086168,
         2.604,
         15000000000,
-        23.809524,
+        25.2099619740494,
         27058876458.5,
         24.2444913245727,
         -1200000000,
@@ -87222,7 +87222,7 @@
           2025,
           2025,
           2015,
-          2015,
+          2013,
           2024,
           2024,
           2015,
@@ -87291,7 +87291,7 @@
           0,
           0,
           1,
-          2,
+          0,
           0,
           0,
           1,
@@ -87360,7 +87360,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -87429,7 +87429,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -87498,7 +87498,7 @@
           0,
           0,
           1,
-          1,
+          0,
           0,
           0,
           1,
@@ -87567,7 +87567,7 @@
           "https://api.worldbank.org/v2/country/gtm/indicator/FP.CPI.TOTL.ZG?format=json",
           "https://api.worldbank.org/v2/country/gtm/indicator/SL.UEM.TOTL.ZS?format=json",
           null,
-          null,
+          "https://api.worldbank.org/v2/country/gtm/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/country/gtm/indicator/DT.DOD.DECT.CD?format=json",
           "https://api.worldbank.org/v2/country/gtm/indicator/DT.DOD.DECT.GN.ZS?format=json",
           null,
@@ -87636,7 +87636,7 @@
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
@@ -88028,7 +88028,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -88925,7 +88925,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -89878,7 +89878,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -90831,7 +90831,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -91784,7 +91784,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -92733,7 +92733,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -93630,7 +93630,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -94582,7 +94582,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -95536,7 +95536,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -96437,7 +96437,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -97389,7 +97389,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -98344,7 +98344,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -98421,7 +98421,7 @@
         2.39884954182294,
         4.219,
         1700000000000,
-        80.952381,
+        46.5224986659322,
         716456023890.4,
         18.5795533694083,
         -90000000000,
@@ -98491,7 +98491,7 @@
           2025,
           2025,
           2015,
-          2015,
+          2018,
           2024,
           2024,
           2015,
@@ -98560,7 +98560,7 @@
           0,
           0,
           1,
-          2,
+          0,
           0,
           0,
           1,
@@ -98629,7 +98629,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -98698,7 +98698,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -98767,7 +98767,7 @@
           0,
           0,
           1,
-          1,
+          0,
           0,
           0,
           1,
@@ -98836,7 +98836,7 @@
           "https://api.worldbank.org/v2/country/ind/indicator/FP.CPI.TOTL.ZG?format=json",
           "https://api.worldbank.org/v2/country/ind/indicator/SL.UEM.TOTL.ZS?format=json",
           null,
-          null,
+          "https://api.worldbank.org/v2/country/ind/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/country/ind/indicator/DT.DOD.DECT.CD?format=json",
           "https://api.worldbank.org/v2/country/ind/indicator/DT.DOD.DECT.GN.ZS?format=json",
           null,
@@ -98905,7 +98905,7 @@
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
@@ -99313,7 +99313,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -99392,7 +99392,7 @@
         1.91333443295079,
         3.237,
         232000000000,
-        26.976744,
+        29.997306381567,
         421059208493.8,
         30.9729980083421,
         -22000000000,
@@ -99462,7 +99462,7 @@
           2025,
           2025,
           2015,
-          2015,
+          2009,
           2024,
           2024,
           2015,
@@ -99531,7 +99531,7 @@
           0,
           0,
           1,
-          2,
+          0,
           0,
           0,
           1,
@@ -99600,7 +99600,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -99669,7 +99669,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -99738,7 +99738,7 @@
           0,
           0,
           1,
-          1,
+          0,
           0,
           0,
           1,
@@ -99807,7 +99807,7 @@
           "https://api.worldbank.org/v2/country/idn/indicator/FP.CPI.TOTL.ZG?format=json",
           "https://api.worldbank.org/v2/country/idn/indicator/SL.UEM.TOTL.ZS?format=json",
           null,
-          null,
+          "https://api.worldbank.org/v2/country/idn/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/country/idn/indicator/DT.DOD.DECT.CD?format=json",
           "https://api.worldbank.org/v2/country/idn/indicator/DT.DOD.DECT.GN.ZS?format=json",
           null,
@@ -99876,7 +99876,7 @@
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
@@ -100276,7 +100276,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -101238,7 +101238,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -101315,7 +101315,7 @@
         0.303454715219381,
         15.485,
         110000000000,
-        61.111111,
+        27.438248367378,
         17517006333,
         6.22639916968424,
         -15000000000,
@@ -101385,7 +101385,7 @@
           2025,
           2025,
           2015,
-          2015,
+          2018,
           2024,
           2024,
           2015,
@@ -101454,7 +101454,7 @@
           0,
           0,
           1,
-          2,
+          0,
           0,
           0,
           1,
@@ -101523,7 +101523,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -101592,7 +101592,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -101661,7 +101661,7 @@
           0,
           0,
           1,
-          1,
+          0,
           0,
           0,
           1,
@@ -101730,7 +101730,7 @@
           "https://api.worldbank.org/v2/country/irq/indicator/FP.CPI.TOTL.ZG?format=json",
           "https://api.worldbank.org/v2/country/irq/indicator/SL.UEM.TOTL.ZS?format=json",
           null,
-          null,
+          "https://api.worldbank.org/v2/country/irq/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/country/irq/indicator/DT.DOD.DECT.CD?format=json",
           "https://api.worldbank.org/v2/country/irq/indicator/DT.DOD.DECT.GN.ZS?format=json",
           null,
@@ -101799,7 +101799,7 @@
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
@@ -102196,7 +102196,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -103150,7 +103150,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -104047,7 +104047,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -104124,7 +104124,7 @@
         3.04141321556539,
         3.489,
         180000000000,
-        60,
+        88.3064793540794,
         null,
         null,
         -6000000000,
@@ -104194,7 +104194,7 @@
           2025,
           2025,
           2015,
-          2015,
+          1999,
           null,
           null,
           2015,
@@ -104263,7 +104263,7 @@
           0,
           0,
           1,
-          2,
+          0,
           4,
           4,
           1,
@@ -104332,7 +104332,7 @@
           0,
           0,
           2,
-          3,
+          0,
           -1,
           -1,
           2,
@@ -104401,7 +104401,7 @@
           0,
           0,
           2,
-          3,
+          0,
           -1,
           -1,
           2,
@@ -104470,7 +104470,7 @@
           0,
           0,
           1,
-          1,
+          0,
           4,
           4,
           1,
@@ -104539,7 +104539,7 @@
           "https://api.worldbank.org/v2/country/isr/indicator/FP.CPI.TOTL.ZG?format=json",
           "https://api.worldbank.org/v2/country/isr/indicator/SL.UEM.TOTL.ZS?format=json",
           null,
-          null,
+          "https://api.worldbank.org/v2/country/isr/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/indicator/DT.DOD.DECT.CD",
           "https://api.worldbank.org/v2/indicator/DT.DOD.DECT.GN.ZS",
           null,
@@ -104608,7 +104608,7 @@
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           null,
           null,
           "Not independently revalidated against the named external series in this build.",
@@ -105009,7 +105009,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -105086,7 +105086,7 @@
         1.5316735709312,
         6.391,
         2350000000000,
-        128.415301,
+        77.2855315218802,
         null,
         null,
         -50000000000,
@@ -105156,7 +105156,7 @@
           2025,
           2025,
           2015,
-          2015,
+          1992,
           null,
           null,
           2015,
@@ -105225,7 +105225,7 @@
           0,
           0,
           1,
-          2,
+          0,
           4,
           4,
           1,
@@ -105294,7 +105294,7 @@
           0,
           0,
           2,
-          3,
+          0,
           -1,
           -1,
           2,
@@ -105363,7 +105363,7 @@
           0,
           0,
           2,
-          3,
+          0,
           -1,
           -1,
           2,
@@ -105432,7 +105432,7 @@
           0,
           0,
           1,
-          1,
+          0,
           4,
           4,
           1,
@@ -105501,7 +105501,7 @@
           "https://api.worldbank.org/v2/country/ita/indicator/FP.CPI.TOTL.ZG?format=json",
           "https://api.worldbank.org/v2/country/ita/indicator/SL.UEM.TOTL.ZS?format=json",
           null,
-          null,
+          "https://api.worldbank.org/v2/country/ita/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/indicator/DT.DOD.DECT.CD",
           "https://api.worldbank.org/v2/indicator/DT.DOD.DECT.GN.ZS",
           null,
@@ -105570,7 +105570,7 @@
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           null,
           null,
           "Not independently revalidated against the named external series in this build.",
@@ -105967,7 +105967,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -106916,7 +106916,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -107873,7 +107873,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -108770,7 +108770,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -109728,7 +109728,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -110680,7 +110680,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -111633,7 +111633,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -112582,7 +112582,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -113530,7 +113530,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -114487,7 +114487,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -115445,7 +115445,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -116396,7 +116396,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -117342,7 +117342,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -117419,7 +117419,7 @@
         3.74577316751945,
         6.568,
         10000000000,
-        37.037037,
+        7.44569772362789,
         null,
         null,
         -300000000,
@@ -117489,7 +117489,7 @@
           2025,
           2025,
           2015,
-          2015,
+          1994,
           null,
           null,
           2015,
@@ -117558,7 +117558,7 @@
           0,
           0,
           1,
-          2,
+          0,
           4,
           4,
           1,
@@ -117627,7 +117627,7 @@
           0,
           0,
           2,
-          3,
+          0,
           -1,
           -1,
           2,
@@ -117696,7 +117696,7 @@
           0,
           0,
           2,
-          3,
+          0,
           -1,
           -1,
           2,
@@ -117765,7 +117765,7 @@
           0,
           0,
           1,
-          1,
+          0,
           4,
           4,
           1,
@@ -117834,7 +117834,7 @@
           "https://api.worldbank.org/v2/country/lva/indicator/FP.CPI.TOTL.ZG?format=json",
           "https://api.worldbank.org/v2/country/lva/indicator/SL.UEM.TOTL.ZS?format=json",
           null,
-          null,
+          "https://api.worldbank.org/v2/country/lva/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/indicator/DT.DOD.DECT.CD",
           "https://api.worldbank.org/v2/indicator/DT.DOD.DECT.GN.ZS",
           null,
@@ -117903,7 +117903,7 @@
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           null,
           null,
           "Not independently revalidated against the named external series in this build.",
@@ -118296,7 +118296,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -118373,7 +118373,7 @@
         14.597595869611,
         10.985,
         70000000000,
-        140,
+        128.641269114899,
         67389006707.2,
         331.649550570327,
         307953712.1238,
@@ -118443,7 +118443,7 @@
           2025,
           2023,
           2015,
-          2015,
+          1999,
           2024,
           2023,
           2024,
@@ -118512,7 +118512,7 @@
           0,
           0,
           1,
-          2,
+          0,
           0,
           0,
           3,
@@ -118581,7 +118581,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           4,
@@ -118650,7 +118650,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           4,
@@ -118719,7 +118719,7 @@
           0,
           0,
           1,
-          1,
+          0,
           0,
           0,
           7,
@@ -118788,7 +118788,7 @@
           "https://api.worldbank.org/v2/country/lbn/indicator/FP.CPI.TOTL.ZG?format=json",
           "https://api.worldbank.org/v2/country/lbn/indicator/SL.UEM.TOTL.ZS?format=json",
           null,
-          null,
+          "https://api.worldbank.org/v2/country/lbn/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/country/lbn/indicator/DT.DOD.DECT.CD?format=json",
           "https://api.worldbank.org/v2/country/lbn/indicator/DT.DOD.DECT.GN.ZS?format=json",
           null,
@@ -118857,7 +118857,7 @@
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Derived only when all source years match; source fields remain independently available.",
@@ -119254,7 +119254,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -120205,7 +120205,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -121158,7 +121158,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -122116,7 +122116,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -123068,7 +123068,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -124022,7 +124022,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -124097,7 +124097,7 @@
         2.25723817871725,
         6.343,
         12000000000,
-        20.689655,
+        2.90134514586522,
         null,
         null,
         1000000000,
@@ -124167,7 +124167,7 @@
           2025,
           2025,
           2015,
-          2015,
+          1993,
           null,
           null,
           2015,
@@ -124236,7 +124236,7 @@
           0,
           0,
           1,
-          2,
+          0,
           4,
           4,
           1,
@@ -124305,7 +124305,7 @@
           0,
           0,
           2,
-          3,
+          0,
           -1,
           -1,
           2,
@@ -124374,7 +124374,7 @@
           0,
           0,
           2,
-          3,
+          0,
           -1,
           -1,
           2,
@@ -124443,7 +124443,7 @@
           0,
           0,
           1,
-          1,
+          0,
           4,
           4,
           1,
@@ -124512,7 +124512,7 @@
           "https://api.worldbank.org/v2/country/lux/indicator/FP.CPI.TOTL.ZG?format=json",
           "https://api.worldbank.org/v2/country/lux/indicator/SL.UEM.TOTL.ZS?format=json",
           null,
-          null,
+          "https://api.worldbank.org/v2/country/lux/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/indicator/DT.DOD.DECT.CD",
           "https://api.worldbank.org/v2/indicator/DT.DOD.DECT.GN.ZS",
           null,
@@ -124581,7 +124581,7 @@
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           null,
           null,
           "Not independently revalidated against the named external series in this build.",
@@ -124974,7 +124974,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -125875,7 +125875,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -126828,7 +126828,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -127779,7 +127779,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -128737,7 +128737,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -128814,7 +128814,7 @@
         4.00578494118751,
         4.514,
         3000000000,
-        75,
+        57.2981206101706,
         4692462747.8,
         75.5586486708217,
         -400000000,
@@ -128884,7 +128884,7 @@
           2025,
           2025,
           2015,
-          2015,
+          2011,
           2024,
           2024,
           2015,
@@ -128953,7 +128953,7 @@
           0,
           0,
           1,
-          2,
+          0,
           0,
           0,
           1,
@@ -129022,7 +129022,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -129091,7 +129091,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -129160,7 +129160,7 @@
           0,
           0,
           1,
-          1,
+          0,
           0,
           0,
           1,
@@ -129229,7 +129229,7 @@
           "https://api.worldbank.org/v2/country/mdv/indicator/FP.CPI.TOTL.ZG?format=json",
           "https://api.worldbank.org/v2/country/mdv/indicator/SL.UEM.TOTL.ZS?format=json",
           null,
-          null,
+          "https://api.worldbank.org/v2/country/mdv/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/country/mdv/indicator/DT.DOD.DECT.CD?format=json",
           "https://api.worldbank.org/v2/country/mdv/indicator/DT.DOD.DECT.GN.ZS?format=json",
           null,
@@ -129298,7 +129298,7 @@
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
@@ -129690,7 +129690,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -130641,7 +130641,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -130718,7 +130718,7 @@
         2.36351752252186,
         2.896,
         6000000000,
-        57.142857,
+        29.9674017229371,
         null,
         null,
         100000000,
@@ -130788,7 +130788,7 @@
           2025,
           2025,
           2015,
-          2015,
+          1994,
           null,
           null,
           2015,
@@ -130857,7 +130857,7 @@
           0,
           0,
           1,
-          2,
+          0,
           4,
           4,
           1,
@@ -130926,7 +130926,7 @@
           0,
           0,
           2,
-          3,
+          0,
           -1,
           -1,
           2,
@@ -130995,7 +130995,7 @@
           0,
           0,
           2,
-          3,
+          0,
           -1,
           -1,
           2,
@@ -131064,7 +131064,7 @@
           0,
           0,
           1,
-          1,
+          0,
           4,
           4,
           1,
@@ -131133,7 +131133,7 @@
           "https://api.worldbank.org/v2/country/mlt/indicator/FP.CPI.TOTL.ZG?format=json",
           "https://api.worldbank.org/v2/country/mlt/indicator/SL.UEM.TOTL.ZS?format=json",
           null,
-          null,
+          "https://api.worldbank.org/v2/country/mlt/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/indicator/DT.DOD.DECT.CD",
           "https://api.worldbank.org/v2/indicator/DT.DOD.DECT.GN.ZS",
           null,
@@ -131202,7 +131202,7 @@
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           null,
           null,
           "Not independently revalidated against the named external series in this build.",
@@ -131595,7 +131595,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -131672,7 +131672,7 @@
         1.5,
         10,
         80000000,
-        44.444444,
+        41.5637492486046,
         null,
         null,
         -5000000,
@@ -131742,7 +131742,7 @@
           2015,
           2015,
           2015,
-          2015,
+          2019,
           null,
           null,
           2015,
@@ -131811,7 +131811,7 @@
           1,
           1,
           1,
-          2,
+          0,
           4,
           4,
           1,
@@ -131880,7 +131880,7 @@
           2,
           2,
           2,
-          3,
+          0,
           -1,
           -1,
           2,
@@ -131949,7 +131949,7 @@
           2,
           2,
           2,
-          3,
+          0,
           -1,
           -1,
           2,
@@ -132018,7 +132018,7 @@
           1,
           1,
           1,
-          1,
+          0,
           4,
           4,
           1,
@@ -132087,7 +132087,7 @@
           null,
           null,
           null,
-          null,
+          "https://api.worldbank.org/v2/country/mhl/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/indicator/DT.DOD.DECT.CD",
           "https://api.worldbank.org/v2/indicator/DT.DOD.DECT.GN.ZS",
           null,
@@ -132156,7 +132156,7 @@
           "Not independently revalidated against the named external series in this build.",
           "Not independently revalidated against the named external series in this build.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           null,
           null,
           "Not independently revalidated against the named external series in this build.",
@@ -132544,7 +132544,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -133445,7 +133445,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -134403,7 +134403,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -134480,7 +134480,7 @@
         3.67359279962943,
         5.635,
         7000000000,
-        60.344828,
+        57.1349404640455,
         20364236675.8,
         123.165055468656,
         -200000000,
@@ -134550,7 +134550,7 @@
           2025,
           2025,
           2015,
-          2015,
+          2019,
           2024,
           2024,
           2015,
@@ -134619,7 +134619,7 @@
           0,
           0,
           1,
-          2,
+          0,
           0,
           0,
           1,
@@ -134688,7 +134688,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -134757,7 +134757,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -134826,7 +134826,7 @@
           0,
           0,
           1,
-          1,
+          0,
           0,
           0,
           1,
@@ -134895,7 +134895,7 @@
           "https://api.worldbank.org/v2/country/mus/indicator/FP.CPI.TOTL.ZG?format=json",
           "https://api.worldbank.org/v2/country/mus/indicator/SL.UEM.TOTL.ZS?format=json",
           null,
-          null,
+          "https://api.worldbank.org/v2/country/mus/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/country/mus/indicator/DT.DOD.DECT.CD?format=json",
           "https://api.worldbank.org/v2/country/mus/indicator/DT.DOD.DECT.GN.ZS?format=json",
           null,
@@ -134964,7 +134964,7 @@
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
@@ -135356,7 +135356,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -136253,7 +136253,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -137211,7 +137211,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -138155,7 +138155,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -139102,7 +139102,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -140056,7 +140056,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -141007,7 +141007,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -141961,7 +141961,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -142862,7 +142862,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -142939,7 +142939,7 @@
         0.701902154839544,
         9,
         65000000000,
-        64.356436,
+        51.2263215704569,
         67993946129.4,
         44.7188367863758,
         -4000000000,
@@ -143009,7 +143009,7 @@
           2025,
           2025,
           2015,
-          2015,
+          2011,
           2024,
           2024,
           2015,
@@ -143078,7 +143078,7 @@
           0,
           0,
           1,
-          2,
+          0,
           0,
           0,
           1,
@@ -143147,7 +143147,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -143216,7 +143216,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -143285,7 +143285,7 @@
           0,
           0,
           1,
-          1,
+          0,
           0,
           0,
           1,
@@ -143354,7 +143354,7 @@
           "https://api.worldbank.org/v2/country/mar/indicator/FP.CPI.TOTL.ZG?format=json",
           "https://api.worldbank.org/v2/country/mar/indicator/SL.UEM.TOTL.ZS?format=json",
           null,
-          null,
+          "https://api.worldbank.org/v2/country/mar/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/country/mar/indicator/DT.DOD.DECT.CD?format=json",
           "https://api.worldbank.org/v2/country/mar/indicator/DT.DOD.DECT.GN.ZS?format=json",
           null,
@@ -143423,7 +143423,7 @@
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
@@ -143824,7 +143824,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -144777,7 +144777,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -145734,7 +145734,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -145811,7 +145811,7 @@
         3.51074539609587,
         19.291,
         4000000000,
-        34.782609,
+        4.6675823557404,
         null,
         null,
         -600000000,
@@ -145950,7 +145950,7 @@
           0,
           0,
           1,
-          2,
+          0,
           4,
           4,
           1,
@@ -146019,7 +146019,7 @@
           0,
           0,
           2,
-          3,
+          0,
           -1,
           -1,
           2,
@@ -146088,7 +146088,7 @@
           0,
           0,
           2,
-          3,
+          0,
           -1,
           -1,
           2,
@@ -146157,7 +146157,7 @@
           0,
           0,
           1,
-          1,
+          0,
           4,
           4,
           1,
@@ -146226,7 +146226,7 @@
           "https://api.worldbank.org/v2/country/nam/indicator/FP.CPI.TOTL.ZG?format=json",
           "https://api.worldbank.org/v2/country/nam/indicator/SL.UEM.TOTL.ZS?format=json",
           null,
-          null,
+          "https://api.worldbank.org/v2/country/nam/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/indicator/DT.DOD.DECT.CD",
           "https://api.worldbank.org/v2/indicator/DT.DOD.DECT.GN.ZS",
           null,
@@ -146295,7 +146295,7 @@
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           null,
           null,
           "Not independently revalidated against the named external series in this build.",
@@ -146687,7 +146687,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -147636,7 +147636,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -148591,7 +148591,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -148668,7 +148668,7 @@
         3.20363967869003,
         3.874,
         460000000000,
-        60.130719,
+        54.214654102661,
         null,
         null,
         -15000000000,
@@ -148738,7 +148738,7 @@
           2025,
           2025,
           2015,
-          2015,
+          1994,
           null,
           null,
           2015,
@@ -148807,7 +148807,7 @@
           0,
           0,
           1,
-          2,
+          0,
           4,
           4,
           1,
@@ -148876,7 +148876,7 @@
           0,
           0,
           2,
-          3,
+          0,
           -1,
           -1,
           2,
@@ -148945,7 +148945,7 @@
           0,
           0,
           2,
-          3,
+          0,
           -1,
           -1,
           2,
@@ -149014,7 +149014,7 @@
           0,
           0,
           1,
-          1,
+          0,
           4,
           4,
           1,
@@ -149083,7 +149083,7 @@
           "https://api.worldbank.org/v2/country/nld/indicator/FP.CPI.TOTL.ZG?format=json",
           "https://api.worldbank.org/v2/country/nld/indicator/SL.UEM.TOTL.ZS?format=json",
           null,
-          null,
+          "https://api.worldbank.org/v2/country/nld/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/indicator/DT.DOD.DECT.CD",
           "https://api.worldbank.org/v2/indicator/DT.DOD.DECT.GN.ZS",
           null,
@@ -149152,7 +149152,7 @@
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           null,
           null,
           "Not independently revalidated against the named external series in this build.",
@@ -149545,7 +149545,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -150446,7 +150446,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -151395,7 +151395,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -152349,7 +152349,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -153300,7 +153300,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -154257,7 +154257,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -155158,7 +155158,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -156059,7 +156059,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -157011,7 +157011,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -157912,7 +157912,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -157990,7 +157990,7 @@
         3.03967027305512,
         4.637,
         135000000000,
-        34.793814,
+        30.9484525212916,
         null,
         null,
         15000000000,
@@ -158060,7 +158060,7 @@
           2025,
           2025,
           2015,
-          2015,
+          1994,
           null,
           null,
           2015,
@@ -158129,7 +158129,7 @@
           0,
           0,
           1,
-          2,
+          0,
           4,
           4,
           1,
@@ -158198,7 +158198,7 @@
           0,
           0,
           2,
-          3,
+          0,
           -1,
           -1,
           2,
@@ -158267,7 +158267,7 @@
           0,
           0,
           2,
-          3,
+          0,
           -1,
           -1,
           2,
@@ -158336,7 +158336,7 @@
           0,
           0,
           1,
-          1,
+          0,
           4,
           4,
           1,
@@ -158405,7 +158405,7 @@
           "https://api.worldbank.org/v2/country/nor/indicator/FP.CPI.TOTL.ZG?format=json",
           "https://api.worldbank.org/v2/country/nor/indicator/SL.UEM.TOTL.ZS?format=json",
           null,
-          null,
+          "https://api.worldbank.org/v2/country/nor/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/indicator/DT.DOD.DECT.CD",
           "https://api.worldbank.org/v2/indicator/DT.DOD.DECT.GN.ZS",
           null,
@@ -158474,7 +158474,7 @@
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           null,
           null,
           "Not independently revalidated against the named external series in this build.",
@@ -158867,7 +158867,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -159825,7 +159825,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -159902,7 +159902,7 @@
         3.54555214890892,
         5.42,
         70000000000,
-        25.925926,
+        55.0324216144747,
         129717513746.7,
         35.6282760521045,
         -10000000000,
@@ -159972,7 +159972,7 @@
           2025,
           2025,
           2015,
-          2015,
+          2000,
           2024,
           2024,
           2015,
@@ -160041,7 +160041,7 @@
           0,
           0,
           1,
-          2,
+          0,
           0,
           0,
           1,
@@ -160110,7 +160110,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -160179,7 +160179,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -160248,7 +160248,7 @@
           0,
           0,
           1,
-          1,
+          0,
           0,
           0,
           1,
@@ -160317,7 +160317,7 @@
           "https://api.worldbank.org/v2/country/pak/indicator/FP.CPI.TOTL.ZG?format=json",
           "https://api.worldbank.org/v2/country/pak/indicator/SL.UEM.TOTL.ZS?format=json",
           null,
-          null,
+          "https://api.worldbank.org/v2/country/pak/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/country/pak/indicator/DT.DOD.DECT.CD?format=json",
           "https://api.worldbank.org/v2/country/pak/indicator/DT.DOD.DECT.GN.ZS?format=json",
           null,
@@ -160386,7 +160386,7 @@
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
@@ -160786,7 +160786,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -160863,7 +160863,7 @@
         -0.418410041841039,
         4,
         30000000,
-        10.344828,
+        85.1988175376125,
         null,
         null,
         5000000,
@@ -160933,7 +160933,7 @@
           2025,
           2015,
           2015,
-          2015,
+          2019,
           null,
           null,
           2015,
@@ -161002,7 +161002,7 @@
           0,
           1,
           1,
-          2,
+          0,
           4,
           4,
           1,
@@ -161071,7 +161071,7 @@
           0,
           2,
           2,
-          3,
+          0,
           -1,
           -1,
           2,
@@ -161140,7 +161140,7 @@
           0,
           2,
           2,
-          3,
+          0,
           -1,
           -1,
           2,
@@ -161209,7 +161209,7 @@
           0,
           1,
           1,
-          1,
+          0,
           4,
           4,
           1,
@@ -161278,7 +161278,7 @@
           "https://api.worldbank.org/v2/country/plw/indicator/FP.CPI.TOTL.ZG?format=json",
           null,
           null,
-          null,
+          "https://api.worldbank.org/v2/country/plw/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/indicator/DT.DOD.DECT.CD",
           "https://api.worldbank.org/v2/indicator/DT.DOD.DECT.GN.ZS",
           null,
@@ -161347,7 +161347,7 @@
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           null,
           null,
           "Not independently revalidated against the named external series in this build.",
@@ -161735,7 +161735,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -162697,7 +162697,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -163651,7 +163651,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -164609,7 +164609,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -165560,7 +165560,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -166513,7 +166513,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -166590,7 +166590,7 @@
         1.6587364525509,
         2.235,
         110000000000,
-        37.671233,
+        43.426338941462,
         137018240525.2,
         26.2604550502335,
         -3000000000,
@@ -166660,7 +166660,7 @@
           2025,
           2025,
           2015,
-          2015,
+          2014,
           2024,
           2024,
           2015,
@@ -166729,7 +166729,7 @@
           0,
           0,
           1,
-          2,
+          0,
           0,
           0,
           1,
@@ -166798,7 +166798,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -166867,7 +166867,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -166936,7 +166936,7 @@
           0,
           0,
           1,
-          1,
+          0,
           0,
           0,
           1,
@@ -167005,7 +167005,7 @@
           "https://api.worldbank.org/v2/country/phl/indicator/FP.CPI.TOTL.ZG?format=json",
           "https://api.worldbank.org/v2/country/phl/indicator/SL.UEM.TOTL.ZS?format=json",
           null,
-          null,
+          "https://api.worldbank.org/v2/country/phl/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/country/phl/indicator/DT.DOD.DECT.CD?format=json",
           "https://api.worldbank.org/v2/country/phl/indicator/DT.DOD.DECT.GN.ZS?format=json",
           null,
@@ -167074,7 +167074,7 @@
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
@@ -167470,7 +167470,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -168371,7 +168371,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -168448,7 +168448,7 @@
         3.81419531520146,
         2.976,
         240000000000,
-        50.314465,
+        60.4543984704576,
         null,
         null,
         -12000000000,
@@ -168518,7 +168518,7 @@
           2025,
           2025,
           2015,
-          2015,
+          1994,
           null,
           null,
           2015,
@@ -168587,7 +168587,7 @@
           0,
           0,
           1,
-          2,
+          0,
           4,
           4,
           1,
@@ -168656,7 +168656,7 @@
           0,
           0,
           2,
-          3,
+          0,
           -1,
           -1,
           2,
@@ -168725,7 +168725,7 @@
           0,
           0,
           2,
-          3,
+          0,
           -1,
           -1,
           2,
@@ -168794,7 +168794,7 @@
           0,
           0,
           1,
-          1,
+          0,
           4,
           4,
           1,
@@ -168863,7 +168863,7 @@
           "https://api.worldbank.org/v2/country/pol/indicator/FP.CPI.TOTL.ZG?format=json",
           "https://api.worldbank.org/v2/country/pol/indicator/SL.UEM.TOTL.ZS?format=json",
           null,
-          null,
+          "https://api.worldbank.org/v2/country/pol/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/indicator/DT.DOD.DECT.CD",
           "https://api.worldbank.org/v2/indicator/DT.DOD.DECT.GN.ZS",
           null,
@@ -168932,7 +168932,7 @@
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           null,
           null,
           "Not independently revalidated against the named external series in this build.",
@@ -169325,7 +169325,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -169402,7 +169402,7 @@
         2.33601620316701,
         6.164,
         250000000000,
-        125.628141,
+        5.6574045702943,
         null,
         null,
         -6000000000,
@@ -169472,7 +169472,7 @@
           2025,
           2025,
           2015,
-          2015,
+          1994,
           null,
           null,
           2015,
@@ -169541,7 +169541,7 @@
           0,
           0,
           1,
-          2,
+          0,
           4,
           4,
           1,
@@ -169610,7 +169610,7 @@
           0,
           0,
           2,
-          3,
+          0,
           -1,
           -1,
           2,
@@ -169679,7 +169679,7 @@
           0,
           0,
           2,
-          3,
+          0,
           -1,
           -1,
           2,
@@ -169748,7 +169748,7 @@
           0,
           0,
           1,
-          1,
+          0,
           4,
           4,
           1,
@@ -169817,7 +169817,7 @@
           "https://api.worldbank.org/v2/country/prt/indicator/FP.CPI.TOTL.ZG?format=json",
           "https://api.worldbank.org/v2/country/prt/indicator/SL.UEM.TOTL.ZS?format=json",
           null,
-          null,
+          "https://api.worldbank.org/v2/country/prt/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/indicator/DT.DOD.DECT.CD",
           "https://api.worldbank.org/v2/indicator/DT.DOD.DECT.GN.ZS",
           null,
@@ -169886,7 +169886,7 @@
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           null,
           null,
           "Not independently revalidated against the named external series in this build.",
@@ -170279,7 +170279,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -171180,7 +171180,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -172138,7 +172138,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -173035,7 +173035,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -173989,7 +173989,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -174950,7 +174950,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -175025,7 +175025,7 @@
         5.91300016882599,
         11.363,
         3000000000,
-        36.144578,
+        48.4289742567034,
         13050400791.1,
         93.8824280218587,
         -300000000,
@@ -175095,7 +175095,7 @@
           2025,
           2025,
           2015,
-          2015,
+          1992,
           2024,
           2024,
           2015,
@@ -175164,7 +175164,7 @@
           0,
           0,
           1,
-          2,
+          0,
           0,
           0,
           1,
@@ -175233,7 +175233,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -175302,7 +175302,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -175371,7 +175371,7 @@
           0,
           0,
           1,
-          1,
+          0,
           0,
           0,
           1,
@@ -175440,7 +175440,7 @@
           "https://api.worldbank.org/v2/country/rwa/indicator/FP.CPI.TOTL.ZG?format=json",
           "https://api.worldbank.org/v2/country/rwa/indicator/SL.UEM.TOTL.ZS?format=json",
           null,
-          null,
+          "https://api.worldbank.org/v2/country/rwa/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/country/rwa/indicator/DT.DOD.DECT.CD?format=json",
           "https://api.worldbank.org/v2/country/rwa/indicator/DT.DOD.DECT.GN.ZS?format=json",
           null,
@@ -175509,7 +175509,7 @@
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
@@ -175901,7 +175901,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -176798,7 +176798,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -177695,7 +177695,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -177772,7 +177772,7 @@
         3.55711230848243,
         5,
         600000000,
-        63.157895,
+        57.666394367293,
         null,
         null,
         30000000,
@@ -177842,7 +177842,7 @@
           2023,
           2015,
           2015,
-          2015,
+          2014,
           null,
           null,
           2015,
@@ -177911,7 +177911,7 @@
           0,
           1,
           1,
-          2,
+          0,
           4,
           4,
           1,
@@ -177980,7 +177980,7 @@
           0,
           2,
           2,
-          3,
+          0,
           -1,
           -1,
           2,
@@ -178049,7 +178049,7 @@
           0,
           2,
           2,
-          3,
+          0,
           -1,
           -1,
           2,
@@ -178118,7 +178118,7 @@
           0,
           1,
           1,
-          1,
+          0,
           4,
           4,
           1,
@@ -178187,7 +178187,7 @@
           "https://api.worldbank.org/v2/country/kna/indicator/FP.CPI.TOTL.ZG?format=json",
           null,
           null,
-          null,
+          "https://api.worldbank.org/v2/country/kna/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/indicator/DT.DOD.DECT.CD",
           "https://api.worldbank.org/v2/indicator/DT.DOD.DECT.GN.ZS",
           null,
@@ -178256,7 +178256,7 @@
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           null,
           null,
           "Not independently revalidated against the named external series in this build.",
@@ -178644,7 +178644,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -178721,7 +178721,7 @@
         2.02709512086273,
         9.452,
         1200000000,
-        70.588235,
+        45.8570272133998,
         1193706001.5,
         51.3109697332727,
         -50000000,
@@ -178791,7 +178791,7 @@
           2025,
           2025,
           2015,
-          2015,
+          2010,
           2024,
           2024,
           2015,
@@ -178860,7 +178860,7 @@
           0,
           0,
           1,
-          2,
+          0,
           0,
           0,
           1,
@@ -178929,7 +178929,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -178998,7 +178998,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -179067,7 +179067,7 @@
           0,
           0,
           1,
-          1,
+          0,
           0,
           0,
           1,
@@ -179136,7 +179136,7 @@
           "https://api.worldbank.org/v2/country/lca/indicator/FP.CPI.TOTL.ZG?format=json",
           "https://api.worldbank.org/v2/country/lca/indicator/SL.UEM.TOTL.ZS?format=json",
           null,
-          null,
+          "https://api.worldbank.org/v2/country/lca/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/country/lca/indicator/DT.DOD.DECT.CD?format=json",
           "https://api.worldbank.org/v2/country/lca/indicator/DT.DOD.DECT.GN.ZS?format=json",
           null,
@@ -179205,7 +179205,7 @@
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
@@ -179593,7 +179593,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -180490,7 +180490,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -181387,7 +181387,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -181464,7 +181464,7 @@
         0.815322893749171,
         18.003,
         600000000,
-        80,
+        53.6982398780635,
         806447451.4,
         70.3081457169149,
         -3000000,
@@ -181534,7 +181534,7 @@
           2025,
           2025,
           2015,
-          2015,
+          2009,
           2024,
           2024,
           2015,
@@ -181603,7 +181603,7 @@
           0,
           0,
           1,
-          2,
+          0,
           0,
           0,
           1,
@@ -181672,7 +181672,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -181741,7 +181741,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -181810,7 +181810,7 @@
           0,
           0,
           1,
-          1,
+          0,
           0,
           0,
           1,
@@ -181879,7 +181879,7 @@
           "https://api.worldbank.org/v2/country/vct/indicator/FP.CPI.TOTL.ZG?format=json",
           "https://api.worldbank.org/v2/country/vct/indicator/SL.UEM.TOTL.ZS?format=json",
           null,
-          null,
+          "https://api.worldbank.org/v2/country/vct/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/country/vct/indicator/DT.DOD.DECT.CD?format=json",
           "https://api.worldbank.org/v2/country/vct/indicator/DT.DOD.DECT.GN.ZS?format=json",
           null,
@@ -181948,7 +181948,7 @@
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
@@ -182336,7 +182336,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -183285,7 +183285,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -184237,7 +184237,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -185190,7 +185190,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -186148,7 +186148,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -187101,7 +187101,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -188053,7 +188053,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -188130,7 +188130,7 @@
         0.297589655467555,
         4.1,
         1000000000,
-        71.428571,
+        174.684386535722,
         null,
         null,
         50000000,
@@ -188200,7 +188200,7 @@
           2025,
           2015,
           2015,
-          2015,
+          2008,
           null,
           null,
           2015,
@@ -188269,7 +188269,7 @@
           0,
           1,
           1,
-          2,
+          0,
           4,
           4,
           1,
@@ -188338,7 +188338,7 @@
           0,
           2,
           2,
-          3,
+          0,
           -1,
           -1,
           2,
@@ -188407,7 +188407,7 @@
           0,
           2,
           2,
-          3,
+          0,
           -1,
           -1,
           2,
@@ -188476,7 +188476,7 @@
           0,
           1,
           1,
-          1,
+          0,
           4,
           4,
           1,
@@ -188545,7 +188545,7 @@
           "https://api.worldbank.org/v2/country/syc/indicator/FP.CPI.TOTL.ZG?format=json",
           null,
           null,
-          null,
+          "https://api.worldbank.org/v2/country/syc/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/indicator/DT.DOD.DECT.CD",
           "https://api.worldbank.org/v2/indicator/DT.DOD.DECT.GN.ZS",
           null,
@@ -188614,7 +188614,7 @@
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           null,
           null,
           "Not independently revalidated against the named external series in this build.",
@@ -189006,7 +189006,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -189959,7 +189959,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -190913,7 +190913,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -191814,7 +191814,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -192766,7 +192766,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -192843,7 +192843,7 @@
         2.37420873927207,
         3.175,
         35000000000,
-        81.395349,
+        16.2364911410258,
         null,
         null,
         -1200000000,
@@ -192913,7 +192913,7 @@
           2025,
           2025,
           2015,
-          2015,
+          1994,
           null,
           null,
           2015,
@@ -192982,7 +192982,7 @@
           0,
           0,
           1,
-          2,
+          0,
           4,
           4,
           1,
@@ -193051,7 +193051,7 @@
           0,
           0,
           2,
-          3,
+          0,
           -1,
           -1,
           2,
@@ -193120,7 +193120,7 @@
           0,
           0,
           2,
-          3,
+          0,
           -1,
           -1,
           2,
@@ -193189,7 +193189,7 @@
           0,
           0,
           1,
-          1,
+          0,
           4,
           4,
           1,
@@ -193258,7 +193258,7 @@
           "https://api.worldbank.org/v2/country/svn/indicator/FP.CPI.TOTL.ZG?format=json",
           "https://api.worldbank.org/v2/country/svn/indicator/SL.UEM.TOTL.ZS?format=json",
           null,
-          null,
+          "https://api.worldbank.org/v2/country/svn/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/indicator/DT.DOD.DECT.CD",
           "https://api.worldbank.org/v2/indicator/DT.DOD.DECT.GN.ZS",
           null,
@@ -193327,7 +193327,7 @@
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           null,
           null,
           "Not independently revalidated against the named external series in this build.",
@@ -193720,7 +193720,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -194678,7 +194678,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -195635,7 +195635,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -196593,7 +196593,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -197490,7 +197490,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -198441,7 +198441,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -199395,7 +199395,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -199472,7 +199472,7 @@
         -4.76386036960982,
         4.005,
         60000000000,
-        70.588235,
+        73.5126591623625,
         56827528393.8,
         58.8897020425324,
         -5000000000,
@@ -199611,7 +199611,7 @@
           0,
           0,
           1,
-          2,
+          0,
           0,
           0,
           1,
@@ -199680,7 +199680,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -199749,7 +199749,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -199818,7 +199818,7 @@
           0,
           0,
           1,
-          1,
+          0,
           0,
           0,
           1,
@@ -199887,7 +199887,7 @@
           "https://api.worldbank.org/v2/country/lka/indicator/FP.CPI.TOTL.ZG?format=json",
           "https://api.worldbank.org/v2/country/lka/indicator/SL.UEM.TOTL.ZS?format=json",
           null,
-          null,
+          "https://api.worldbank.org/v2/country/lka/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/country/lka/indicator/DT.DOD.DECT.CD?format=json",
           "https://api.worldbank.org/v2/country/lka/indicator/DT.DOD.DECT.GN.ZS?format=json",
           null,
@@ -199956,7 +199956,7 @@
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
@@ -200352,7 +200352,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -200429,7 +200429,7 @@
         138.80846024176,
         7.53,
         65000000000,
-        67.010309,
+        865.873242919908,
         22020660462.5,
         45.3986291468877,
         -2000000000,
@@ -200499,7 +200499,7 @@
           2022,
           2022,
           2015,
-          2015,
+          1999,
           2024,
           2024,
           2015,
@@ -200568,7 +200568,7 @@
           0,
           0,
           1,
-          2,
+          0,
           0,
           0,
           1,
@@ -200637,7 +200637,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -200706,7 +200706,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -200775,7 +200775,7 @@
           0,
           0,
           1,
-          1,
+          0,
           0,
           0,
           1,
@@ -200844,7 +200844,7 @@
           "https://api.worldbank.org/v2/country/sdn/indicator/FP.CPI.TOTL.ZG?format=json",
           "https://api.worldbank.org/v2/country/sdn/indicator/SL.UEM.TOTL.ZS?format=json",
           null,
-          null,
+          "https://api.worldbank.org/v2/country/sdn/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/country/sdn/indicator/DT.DOD.DECT.CD?format=json",
           "https://api.worldbank.org/v2/country/sdn/indicator/DT.DOD.DECT.GN.ZS?format=json",
           null,
@@ -200913,7 +200913,7 @@
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
@@ -201310,7 +201310,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -202263,7 +202263,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -203161,7 +203161,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -204115,7 +204115,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -205071,7 +205071,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -206033,7 +206033,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -206981,7 +206981,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -207056,7 +207056,7 @@
         3.38875846243549,
         6.931,
         2800000000,
-        35.897436,
+        79.804079881426,
         6977429758.2,
         37.3947720942707,
         -200000000,
@@ -207126,7 +207126,7 @@
           2025,
           2025,
           2015,
-          2015,
+          2001,
           2024,
           2024,
           2015,
@@ -207195,7 +207195,7 @@
           0,
           0,
           1,
-          2,
+          0,
           0,
           0,
           1,
@@ -207264,7 +207264,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -207333,7 +207333,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -207402,7 +207402,7 @@
           0,
           0,
           1,
-          1,
+          0,
           0,
           0,
           1,
@@ -207471,7 +207471,7 @@
           "https://api.worldbank.org/v2/country/tjk/indicator/FP.CPI.TOTL.ZG?format=json",
           "https://api.worldbank.org/v2/country/tjk/indicator/SL.UEM.TOTL.ZS?format=json",
           null,
-          null,
+          "https://api.worldbank.org/v2/country/tjk/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/country/tjk/indicator/DT.DOD.DECT.CD?format=json",
           "https://api.worldbank.org/v2/country/tjk/indicator/DT.DOD.DECT.GN.ZS?format=json",
           null,
@@ -207540,7 +207540,7 @@
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
@@ -207932,7 +207932,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -208885,7 +208885,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -209843,7 +209843,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -210797,7 +210797,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -211750,7 +211750,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -212651,7 +212651,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -213600,7 +213600,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -213677,7 +213677,7 @@
         0.994489987904821,
         3.329,
         12000000000,
-        50,
+        15.928004235045,
         null,
         null,
         -1000000000,
@@ -213747,7 +213747,7 @@
           2025,
           2025,
           2015,
-          2015,
+          2007,
           null,
           null,
           2015,
@@ -213816,7 +213816,7 @@
           0,
           0,
           1,
-          2,
+          0,
           4,
           4,
           1,
@@ -213885,7 +213885,7 @@
           0,
           0,
           2,
-          3,
+          0,
           -1,
           -1,
           2,
@@ -213954,7 +213954,7 @@
           0,
           0,
           2,
-          3,
+          0,
           -1,
           -1,
           2,
@@ -214023,7 +214023,7 @@
           0,
           0,
           1,
-          1,
+          0,
           4,
           4,
           1,
@@ -214092,7 +214092,7 @@
           "https://api.worldbank.org/v2/country/tto/indicator/FP.CPI.TOTL.ZG?format=json",
           "https://api.worldbank.org/v2/country/tto/indicator/SL.UEM.TOTL.ZS?format=json",
           null,
-          null,
+          "https://api.worldbank.org/v2/country/tto/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/indicator/DT.DOD.DECT.CD",
           "https://api.worldbank.org/v2/indicator/DT.DOD.DECT.GN.ZS",
           null,
@@ -214161,7 +214161,7 @@
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           null,
           null,
           "Not independently revalidated against the named external series in this build.",
@@ -214549,7 +214549,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -214626,7 +214626,7 @@
         5.15100197572676,
         15.108,
         24000000000,
-        55.813953,
+        42.5197543010178,
         40459855368.3,
         77.6996062630389,
         -2000000000,
@@ -214696,7 +214696,7 @@
           2025,
           2025,
           2015,
-          2015,
+          2012,
           2024,
           2024,
           2015,
@@ -214765,7 +214765,7 @@
           0,
           0,
           1,
-          2,
+          0,
           0,
           0,
           1,
@@ -214834,7 +214834,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -214903,7 +214903,7 @@
           0,
           0,
           2,
-          3,
+          0,
           0,
           0,
           2,
@@ -214972,7 +214972,7 @@
           0,
           0,
           1,
-          1,
+          0,
           0,
           0,
           1,
@@ -215041,7 +215041,7 @@
           "https://api.worldbank.org/v2/country/tun/indicator/FP.CPI.TOTL.ZG?format=json",
           "https://api.worldbank.org/v2/country/tun/indicator/SL.UEM.TOTL.ZS?format=json",
           null,
-          null,
+          "https://api.worldbank.org/v2/country/tun/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/country/tun/indicator/DT.DOD.DECT.CD?format=json",
           "https://api.worldbank.org/v2/country/tun/indicator/DT.DOD.DECT.GN.ZS?format=json",
           null,
@@ -215110,7 +215110,7 @@
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
@@ -215507,7 +215507,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -216470,7 +216470,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -217421,7 +217421,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -218322,7 +218322,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -219271,7 +219271,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -220222,7 +220222,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -221176,7 +221176,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -221253,7 +221253,7 @@
         1.250865245598,
         2.174,
         64000000000,
-        17.877095,
+        1.80326819075483,
         null,
         null,
         2143991528.247786,
@@ -221323,7 +221323,7 @@
           2025,
           2025,
           2015,
-          2015,
+          2013,
           null,
           null,
           2024,
@@ -221392,7 +221392,7 @@
           0,
           0,
           1,
-          2,
+          0,
           4,
           4,
           3,
@@ -221461,7 +221461,7 @@
           0,
           0,
           2,
-          3,
+          0,
           -1,
           -1,
           4,
@@ -221530,7 +221530,7 @@
           0,
           0,
           2,
-          3,
+          0,
           -1,
           -1,
           4,
@@ -221599,7 +221599,7 @@
           0,
           0,
           1,
-          1,
+          0,
           4,
           4,
           7,
@@ -221668,7 +221668,7 @@
           "https://api.worldbank.org/v2/country/are/indicator/FP.CPI.TOTL.ZG?format=json",
           "https://api.worldbank.org/v2/country/are/indicator/SL.UEM.TOTL.ZS?format=json",
           null,
-          null,
+          "https://api.worldbank.org/v2/country/are/indicator/GC.DOD.TOTL.GD.ZS?format=json",
           "https://api.worldbank.org/v2/indicator/DT.DOD.DECT.CD",
           "https://api.worldbank.org/v2/indicator/DT.DOD.DECT.GN.ZS",
           null,
@@ -221737,7 +221737,7 @@
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           "Not independently revalidated against the named external series in this build.",
-          "Not independently revalidated against the named external series in this build.",
+          "Most recent non-empty observation returned by the API; compare the year before combining metrics.",
           null,
           null,
           "Derived only when all source years match; source fields remain independently available.",
@@ -222138,7 +222138,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -223096,7 +223096,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -224046,7 +224046,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -224943,7 +224943,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -225896,7 +225896,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -226847,7 +226847,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -227796,7 +227796,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -228749,7 +228749,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -229706,7 +229706,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -230607,7 +230607,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -231508,7 +231508,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -232409,7 +232409,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -233367,7 +233367,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -234325,7 +234325,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -235276,7 +235276,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
@@ -236227,7 +236227,7 @@
         [
           true,
           "LOADED",
-          "LOADED",
+          "FAILED",
           "LOADED"
         ]
       ]
