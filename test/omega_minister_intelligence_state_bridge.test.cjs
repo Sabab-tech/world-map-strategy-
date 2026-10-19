@@ -167,7 +167,7 @@ legacyFirst.sandbox.dispatchEvent(new TestCustomEvent('MINISTER_RECRUITED', { de
 const canonicalFromLegacy = legacyFirst.canonicalRegistry.getActiveMinister('BGD', 'finance');
 assert.equal(canonicalFromLegacy?.ministerId, legacyCandidate.id, 'Legacy recruitment must reach the canonical registry.');
 assert.equal(canonicalFromLegacy?.runtimeState?.status, 'ACTIVE');
-assert.deepEqual(legacyFirst.sandbox.OmegaMinisterIntelligencePipeline.diagnostics().bridgeErrors, []);
+assert.equal(legacyFirst.sandbox.OmegaMinisterIntelligencePipeline.diagnostics().bridgeErrors.length, 0);
 
 const canonicalFirst = makeSandbox({
   id: 'canonical-minister-01', name: 'Canonical Finance Minister', ministryId: 'finance',
@@ -177,7 +177,7 @@ const legacyFromCanonical = canonicalFirst.legacySystem.getActive('BGD', 'financ
 assert.equal(legacyFromCanonical?.ministerId, 'canonical-minister-01', 'Canonical recruitment must be visible in the legacy runtime.');
 assert.equal(legacyFromCanonical?.runtime?.status, 'ACTIVE');
 assert.equal(legacyFromCanonical?.runtime?.confidence, 0.5, 'Canonical percentage-scale confidence must convert for the legacy runtime.');
-assert.deepEqual(canonicalFirst.sandbox.OmegaMinisterIntelligencePipeline.diagnostics().bridgeErrors, []);
+assert.equal(canonicalFirst.sandbox.OmegaMinisterIntelligencePipeline.diagnostics().bridgeErrors.length, 0);
 
 console.log('OMEGA MINISTER STATE BRIDGE V1: PASS');
 console.log('Legacy recruitment -> canonical registry: PASS');
