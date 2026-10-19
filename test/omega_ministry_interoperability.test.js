@@ -79,6 +79,23 @@ function createSandbox(options={}){
   sandbox.window=sandbox;
   sandbox.globalThis=sandbox;
   sandbox.Omega={};
+  const identityNorm=value=>String(value??'').normalize('NFKC').trim().toUpperCase().replace(/[_-]+/g,' ').replace(/\s+/g,' ');
+  const canonicalRows=rows.map(row=>({...row,id:String(row.iso2||row.code||row.id||'').trim().toUpperCase()}));
+  sandbox.OmegaCanonicalIdentityRegistry={
+    resolveCountry(value){
+      const query=identityNorm(value);
+      if(!query)return null;
+      const hits=canonicalRows.filter(row=>{
+        const aliases=[row.id,row.code,row.iso2,row.iso3,row.countryCode,row.country_code,row.name,row.officialName,
+          ...(Array.isArray(row.aliases)?row.aliases:[]),...(Array.isArray(row.altNames)?row.altNames:[])];
+        return aliases.some(alias=>alias!=null&&identityNorm(alias)===query);
+      });
+      const ids=[...new Set(hits.map(row=>row.id).filter(Boolean))];
+      if(ids.length!==1)return ids.length?{id:null,type:'COUNTRY',source:'AMBIGUOUS_TEST_IDENTITY'}:null;
+      return{id:ids[0],type:'COUNTRY',raw:hits.find(row=>row.id===ids[0])};
+    },
+    exportData(){return{countries:canonicalRows};}
+  };
 
   loadBrowserScript('omega_ministry_registry.js',sandbox);
   loadBrowserScript('omega_ministry_state_provider.js',sandbox);
@@ -464,6 +481,51 @@ test('N2: relationship is not substituted for treaty status',()=>{
 });
 
 
+
+test('W: aliases route commands into the same canonical country bucket and provider root',()=>{
+  const state={
+    simulationTurn:2,
+    economy:{BANGLADESH:{gdp:195,source:'legacy-name-key'}},
+    finance:{BGD:{available:900,reserves:10}}
+  };
+  const s=createSandbox({countryA:'BD',countryB:'NG',state});
+  const unrelatedGameState={economy:{BD:{gdp:999}},finance:{BD:{available:999}}};
+  s.sandbox.Game.state=unrelatedGameState;
+
+  s.mesh.registerCommandHandler('TEST_ROUTE_ECONOMY_UPDATE','economy',(command,{countryId,stateTransaction})=>{
+    const before=stateTransaction.get('economy.gdp');
+    stateTransaction.set('economy.gdp',before+5);
+    return{accepted:true,before,after:before+5};
+  });
+  const command=s.mesh.dispatchCommand('finance','TEST_ROUTE_ECONOMY_UPDATE','Bangladesh',{delta:5},{
+    turn:3,commandType:'TEST_ROUTE_ECONOMY_UPDATE'
+  });
+
+  assert.equal(command.countryId,'BD');
+  assert.equal(command.transaction.countryId,'BD');
+  assert.equal(command.status,'APPLIED');
+  assert.equal(command.stateChanged,true);
+  assert.equal(command.stateWriteCount,1);
+  assert.equal(state.economy.BANGLADESH.gdp,200,'the existing canonical country bucket must be updated in place');
+  assert.equal(state.economy.BD,undefined,'a second alias bucket must not be created');
+  assert.equal(unrelatedGameState.economy.BD.gdp,999,'writes must target the same root used by the provider');
+  assert.equal(s.sandbox.OmegaMinistryStateProvider.instance.get('BGD','economy.gdp'),200);
+  assert.equal(s.sandbox.OmegaMinistryStateProvider.instance.get('Bangladesh','economy.gdp'),200);
+});
+
+test('X: command acknowledgement without an authoritative write is not reported as applied',()=>{
+  const s=createSandbox();
+  s.mesh.registerCommandHandler('TEST_ACK_ONLY','economy',()=>({accepted:true}));
+  const result=s.mesh.dispatchCommand('finance','TEST_ACK_ONLY',s.countryA,{},{
+    turn:4,commandType:'TEST_ACK_ONLY'
+  });
+  assert.equal(result.status,'ACCEPTED_NO_STATE_WRITE');
+  assert.equal(result.stateChanged,false);
+  assert.equal(result.stateWriteCount,0);
+  assert.equal(result.result.accepted,false);
+  assert.equal(result.result.code,'NO_AUTHORITATIVE_STATE_WRITE');
+  assert.equal(s.mesh.instance.metrics.noStateWrites,1);
+});
 
 test('V: country-scoped provider cannot fall back to global domain state',()=>{
   const state={
