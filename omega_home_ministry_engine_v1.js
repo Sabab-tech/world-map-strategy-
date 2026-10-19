@@ -1972,7 +1972,7 @@
     const cleanDescription=String(description||'').replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim().slice(0,300);
     if(!cleanDescription)return{ok:false,code:'POLICE_CASE_DESCRIPTION_REQUIRED',message:'Add a short factual case description.'};
     if(!estimate.ok)return estimate;
-    const now=simulationTimeMs(),book=normalizePoliceRulebook(getState(cid).policeRulebook),firstActionHours=policeCaseResponseHours(caseType,level,book);
+    const now=Math.max(1,simulationTimeMs()),book=normalizePoliceRulebook(getState(cid).policeRulebook),firstActionHours=policeCaseResponseHours(caseType,level,book);
     return mutation(cid,estimate.oneTimeFilingCostUsd,'POLICE_CASE_FILED',function(next){
       const sequence=Math.max(1,Math.floor(num(next.nextPoliceCaseSequence)||1)),id='CASE-'+cid+'-'+turn()+'-'+sequence;
       const entry={id:id,countryId:cid,sequence:sequence,caseType:String(caseType),caseLabel:type.label,crimeCategory:type.crimeCategory,
@@ -1997,7 +1997,7 @@
     const current=getState(cid),found=(current.policeCases||[]).find(function(row){return row.id===id;});
     if(!found)return{ok:false,code:'POLICE_CASE_NOT_FOUND',caseId:id};
     if(found.status==='CLOSED')return{ok:false,code:'POLICE_CASE_ALREADY_CLOSED'};
-    const now=simulationTimeMs(),book=normalizePoliceRulebook(current.policeRulebook);
+    const now=Math.max(1,simulationTimeMs()),book=normalizePoliceRulebook(current.policeRulebook);
     if(kind==='DECIDE_WARRANT'&&['APPROVED','DENIED'].indexOf(String(decision||'').toUpperCase())<0)
       return{ok:false,code:'POLICE_WARRANT_DECISION_INVALID',message:'Choose APPROVED or DENIED.'};
     if(kind==='START_RESPONSE'&&found.firstResponseAtMs)return{ok:false,code:'POLICE_CASE_RESPONSE_ALREADY_RECORDED'};
