@@ -31,3 +31,6 @@ Emergency expenses are restricted to the Emergency & Strategic Reserve sector, a
 
 ## Fiscal-year industry receipts
 Each simulation-time tax collection is split across the 15 configurable economic-sector receipt shares and accumulated in `finance.<country>.omegaFinance.currentYearSectorReceiptsUsd`. The Income & Industry row displays this as **Collected this FY**, beside the annual modeled forecast. On the tested default registry, sector receipt shares sum to 100%, so all sector rows reconcile to the modeled current-year tax receipts (within floating-point rounding). These values are in-game fiscal estimates, not real-world sector tax records.
+
+## FX & Government Banking tab
+The Finance dashboard includes a sixth icon tab, **FX & Banking**. The existing FX runtime is mounted inside a dedicated `data-ofx-container` slot only when this tab is selected. This keeps the currency conversion, monetary-policy, intervention, rate charts, Government Banking registry and FX clearing ledger out of the other Finance tabs. The FX runtime remains a separate engine and still delegates policy interest-rate actions to Finance's player-country guard.
