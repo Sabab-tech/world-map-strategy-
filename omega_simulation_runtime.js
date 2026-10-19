@@ -404,6 +404,9 @@
       this.turnParticipants=new Map();
       this.turnParticipantSequence=0;
       this.lastTurnParticipantResults=[];
+      this.turnFinalizers=new Map();
+      this.turnFinalizerSequence=0;
+      this.lastTurnFinalizerResults=[];
       this.installDefaultHandlers();
     }
 
@@ -480,6 +483,59 @@
       this.lastTurnParticipantResults=results.slice(-256);
       this.world.state.simulation.lastTurnParticipantResults=clone(this.lastTurnParticipantResults);
       return results;
+    }
+
+    registerTurnFinalizer(id,handler,options={}){
+      const key=String(id||'').trim();
+      if(!key)throw new Error('SIMULATION_FINALIZER_ID_REQUIRED');
+      if(typeof handler!=='function')throw new Error('SIMULATION_FINALIZER_HANDLER_REQUIRED');
+      const previous=this.turnFinalizers.get(key);
+      const entry={
+        id:key,
+        handler,
+        priority:finite(options.priority)??0,
+        sequence:previous?.sequence??(++this.turnFinalizerSequence),
+        token:{}
+      };
+      this.turnFinalizers.set(key,entry);
+      return ()=>{
+        const current=this.turnFinalizers.get(key);
+        if(current&&current.token===entry.token)this.turnFinalizers.delete(key);
+      };
+    }
+
+    async runTurnFinalizers(context,registeredAtTurnStart){
+      const rows=(registeredAtTurnStart||[...this.turnFinalizers.values()])
+        .slice().sort((a,b)=>a.priority-b.priority||a.sequence-b.sequence);
+      const results=[];
+      for(const entry of rows){
+        if(this.turnFinalizers.get(entry.id)!==entry)continue;
+        try{
+          const value=await entry.handler.call(global,context);
+          results.push({id:entry.id,turn:context.turn,status:'COMPLETED',result:value===undefined?null:clone(value)});
+        }catch(error){
+          const failure={id:entry.id,turn:context.turn,status:'FAILED',error:String(error?.message||error)};
+          results.push(failure);
+          this.status='ERROR';
+          this.clock.pause();
+          this.lastError='TURN_FINALIZER_FAILED:'+entry.id+':'+failure.error;
+          const session=this.world.state.simulation.session||{};
+          session.status='ERROR';
+          session.lastError=this.lastError;
+          session.failedFinalizer=entry.id;
+          this.world.setSession(session);
+          try{console.error('[OMEGA TURN FINALIZER]',failure);}catch(_){}
+        }
+        this.lastTurnFinalizerResults=results.slice(-64);
+        this.world.state.simulation.lastTurnFinalizerResults=clone(this.lastTurnFinalizerResults);
+      }
+      return results;
+    }
+
+    finalizerDiagnostics(){
+      return [...this.turnFinalizers.values()]
+        .sort((a,b)=>a.priority-b.priority||a.sequence-b.sequence)
+        .map(entry=>({id:entry.id,priority:entry.priority,sequence:entry.sequence}));
     }
 
     participantDiagnostics(){
@@ -765,6 +821,7 @@
       if(this.status==='ERROR')throw new Error('SIMULATION_IN_ERROR:'+String(this.lastError||'UNKNOWN'));
       this.stepInProgress=true;
       this.lastError=null;
+      const finalizersAtTurnStart=[...this.turnFinalizers.values()];
       const commandResults=[];
       try{
         this.world.hydrateCompatibility();
@@ -793,6 +850,16 @@
         phaseResults.COMMIT=clone(await this.phaseHandlers.get('COMMIT')({...context,commandResults,simulationResult:phaseResults.SIMULATE}));
         phaseResults.PUBLISH=clone(await this.phaseHandlers.get('PUBLISH')({...context,commandResults,phaseResults}));
         phaseResults.CHECKPOINT=clone(await this.phaseHandlers.get('CHECKPOINT')({...context,commandResults,phaseResults}));
+        phaseResults.FINALIZE=clone(await this.runTurnFinalizers({
+          turn,
+          day:turn+1,
+          stepDurationMs:this.clock.stepDurationMs,
+          simulationDate:this.clock.simulationDate(),
+          countryId:this.getPlayerCountryId(),
+          state:this.world.state,
+          clock:this.clock,
+          simulation:this
+        },finalizersAtTurnStart));
 
         const session=this.world.state.simulation?.session||{};
         session.lastCommittedTurn=turn;
@@ -942,7 +1009,10 @@
         lastLoadIntegrity:this.lastLoadIntegrity,
         turnParticipantCount:this.turnParticipants.size,
         turnParticipants:this.participantDiagnostics(),
-        lastTurnParticipantResults:clone(this.lastTurnParticipantResults)
+        lastTurnParticipantResults:clone(this.lastTurnParticipantResults),
+        turnFinalizerCount:this.turnFinalizers.size,
+        turnFinalizers:this.finalizerDiagnostics(),
+        lastTurnFinalizerResults:clone(this.lastTurnFinalizerResults)
       };
     }
   }
