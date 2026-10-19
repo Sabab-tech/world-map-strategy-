@@ -1009,7 +1009,8 @@
   }
   function firePolice(amount,country){
     const qty=Math.floor(num(amount)||0),cid=normalizeCountry(country||currentCountry()),s=getState(cid);if(qty<1)return{ok:false,reason:'DISMISSAL_QUANTITY_INVALID'};if(qty>=s.policeCount)return{ok:false,reason:'MINIMUM_FORCE_REQUIRED',message:'At least one officer must remain in service.'};
-    return mutation(cid,0,'POLICE_DISMISSAL',function(next){next.policeCount-=qty;next.policeEfficiency=clamp(next.policeEfficiency-Math.min(5,qty/200),0,100);return{amount:qty,dailyPayrollSavings:qty*POLICE_SALARY_PER_DAY,newPoliceCount:next.policeCount};});
+    const dailySalary=Math.max(0,num(s.dailySalaryPerOfficerUsd)||POLICE_SALARY_PER_DAY);
+    return mutation(cid,0,'POLICE_DISMISSAL',function(next){next.policeCount-=qty;next.policeEfficiency=clamp(next.policeEfficiency-Math.min(5,qty/200),0,100);return{amount:qty,dailyPayrollSavings:qty*dailySalary,newPoliceCount:next.policeCount};});
   }
   function buildFacility(id,amount,country){
     const f=FACILITIES.find(x=>x.id===String(id)),qty=Math.floor(num(amount)||0),cid=normalizeCountry(country||currentCountry());if(!f)return{ok:false,reason:'FACILITY_ID_INVALID'};if(qty<1||qty>100)return{ok:false,reason:'FACILITY_QUANTITY_INVALID'};
@@ -1110,6 +1111,7 @@
   function dailyPayroll(s){return Math.max(0,num(s.policeCount)||0)*Math.max(0,num(s.dailySalaryPerOfficerUsd)||POLICE_SALARY_PER_DAY)+Math.max(0,num(s.specialAgents)||0)*AGENT_SALARY_PER_DAY;}
   function dailyOperatingCost(s){
     let total=dailyPayroll(s)+ruleDailyCost(s);
+    const policyWearMultiplier=1+clamp(ruleEffectSum(s,'vehicleWearPct'),0,100)/100;
     if(Array.isArray(s.vehicleFleet)&&s.vehicleFleet.length){
       s.vehicleFleet.forEach(function(unit){
         const vehicle=VEHICLES.find(function(v){return v.level===Number(unit.vehicleLevel);});if(!vehicle)return;
@@ -1117,9 +1119,9 @@
         const deployment=(s.guardDeployments||[]).find(function(row){return Array.isArray(row.vehicleIds)&&row.vehicleIds.includes(unit.id);});
         let routeSurcharge=0;
         if(deployment){const use=vehicleUseAssessment(unit.vehicleLevel,deployment.environmentId,deployment.roadCondition,s.countryId);routeSurcharge=Math.max(0,70-use.fit)/100*0.45+use.road.wearPerDay*0.25;}
-        total+=vehicle.maintenancePerDay*(1+healthSurcharge+routeSurcharge);
+        total+=vehicle.maintenancePerDay*(1+healthSurcharge+routeSurcharge)*policyWearMultiplier;
       });
-    }else VEHICLES.forEach(function(v){total+=(Math.max(0,num(s.vehiclesOwned[v.level])||0)*v.maintenancePerDay);});
+    }else VEHICLES.forEach(function(v){total+=(Math.max(0,num(s.vehiclesOwned[v.level])||0)*v.maintenancePerDay*policyWearMultiplier);});
     return Math.round(total*100)/100;
   }
   function advanceCrimeSimulation(state,country,toDay){
