@@ -693,6 +693,7 @@
       held.row.dueTurn = turn() + delay;
       held.row.status = 'PENDING';
       bankingState(true).pendingTransfers[key] = held.row;
+      bankingState(true).pendingEscrowUsd = (num(bankingState(true).pendingEscrowUsd) || 0) + quote.usdNotional;
       addGlobalLedger({
         transactionId: key, idempotencyKey: key, type: 'CROSS_BORDER_TRANSFER',
         status: 'PENDING', sourceCountryCode: profileId(from), destinationCountryCode: profileId(to),
@@ -715,8 +716,9 @@
     const fromOriginal = num(sourceAcct.balance) || 0, toOriginal = num(destAcct.balance) || 0;
     const sourceCash = readTreasuryUsd(from), destCash = readTreasuryUsd(to);
     if (sourceCash === null || destCash === null) return { ok: false, code: 'TREASURY_UNAVAILABLE' };
-    const nextSourceCash = sourceCash - quote.usdNotional;
-    const nextDestCash = destCash + quote.usdNotional - quote.feeUsd;
+    const sameCountry = profileId(from) === profileId(to);
+    const nextSourceCash = sameCountry ? sourceCash - quote.feeUsd : sourceCash - quote.usdNotional;
+    const nextDestCash = sameCountry ? nextSourceCash : destCash + quote.usdNotional - quote.feeUsd;
     if (nextSourceCash < -1e-8) return { ok: false, code: 'INSUFFICIENT_TREASURY' };
     if (key && existingTransaction(key)?.status === 'SETTLED')
       return { ok: true, duplicate: true, transactionId: key };
@@ -727,12 +729,15 @@
     destAcct.revision = (num(destAcct.revision) || 0) + 1;
     const sourceW = writeTreasuryUsd(from, nextSourceCash, 'GOVERNMENT_BANKING_TRANSFER');
     if (!sourceW.ok) { sourceAcct.balance = fromOriginal; destAcct.balance = toOriginal; return sourceW; }
-    const destW = writeTreasuryUsd(to, nextDestCash, 'GOVERNMENT_BANKING_TRANSFER');
-    if (!destW.ok) {
-      sourceAcct.balance = fromOriginal; destAcct.balance = toOriginal;
-      writeTreasuryUsd(from, sourceCash, 'GOVERNMENT_BANKING_ROLLBACK'); return destW;
+    if (!sameCountry) {
+      const destW = writeTreasuryUsd(to, nextDestCash, 'GOVERNMENT_BANKING_TRANSFER');
+      if (!destW.ok) {
+        sourceAcct.balance = fromOriginal; destAcct.balance = toOriginal;
+        writeTreasuryUsd(from, sourceCash, 'GOVERNMENT_BANKING_ROLLBACK'); return destW;
+      }
     }
     const id = key || nextId('GB-XFER');
+    const wasPending = !!bank.pendingTransfers[id];
     const row = addGlobalLedger({
       transactionId: id, idempotencyKey: key || null, type: 'CROSS_BORDER_TRANSFER',
       status: 'SETTLED', sourceCountryCode: profileId(from), sourceCountryName: from.name,
@@ -755,8 +760,11 @@
       amountUsd: quote.usdNotional - quote.feeUsd, counterpartyCountryCode: profileId(from),
       reference: row.reference, category: row.type
     });
-    if (bank.pendingTransfers[id]) delete bank.pendingTransfers[id];
-    bank.pendingEscrowUsd = Math.max(0, (num(bank.pendingEscrowUsd) || 0) - (num(quote.usdNotional) || 0));
+    if (wasPending) {
+      const pendingRow = bank.pendingTransfers[id];
+      bank.pendingEscrowUsd = Math.max(0, (num(bank.pendingEscrowUsd) || 0) - (num(pendingRow && pendingRow.amountUsd) || quote.usdNotional));
+      delete bank.pendingTransfers[id];
+    }
     bank.settledVolumeUsd = (num(bank.settledVolumeUsd) || 0) + quote.usdNotional;
     bank.feeRevenueUsd = (num(bank.feeRevenueUsd) || 0) + quote.feeUsd;
     bank.fxClearingHouse.settledVolumeUsd = bank.settledVolumeUsd;
@@ -790,7 +798,20 @@
       reference: input.reference || 'FX conversion',
       category: 'CURRENCY_CONVERSION'
     }, true);
-    if (result.ok) result.mode = 'SIMULATION';
+    if (result.ok) {
+      result.mode = 'SIMULATION';
+      const q = result.quote || {};
+      result.fromCode = q.fromCode || from;
+      result.toCode = q.toCode || to;
+      result.amount = num(input.amount);
+      result.amountTarget = q.amountTarget;
+      result.grossTarget = q.amountGrossTarget;
+      result.crossRate = q.crossRate;
+      result.feeUsd = q.feeUsd;
+      result.feeTarget = q.feeTarget;
+      result.usdNotional = q.usdNotional;
+      result.route = q.route;
+    }
     return result;
   }
   function tradeExposure(country) {
@@ -840,6 +861,12 @@
     if (buyerDebitUsd > freeUsd + 1e-8) return { ok: false, code: 'INSUFFICIENT_TREASURY', availableUsd: Math.max(0, freeUsd), requiredUsd: buyerDebitUsd };
     const buyerPolicy = ensurePolicy(buyer);
     const sellerPolicy = ensurePolicy(seller);
+    // Capture any Treasury activity posted by Finance (tax receipts, payroll or other ministries).
+    // The account ledger is reconciled before trade snapshots are frozen.
+    const buyerReconciliation = reconcileCountry(buyer);
+    const sellerReconciliation = reconcileCountry(seller);
+    if (!buyerReconciliation.ok) return { ok: false, code: 'BUYER_BANK_RECONCILIATION_FAILED', detail: buyerReconciliation };
+    if (!sellerReconciliation.ok) return { ok: false, code: 'SELLER_BANK_RECONCILIATION_FAILED', detail: sellerReconciliation };
     const limits = checkTransferLimits(buyer, seller, sellerUsd);
     if (!limits.ok) {
       // Trade exposure uses the larger of the explicitly configured correspondent limit and the
@@ -848,6 +875,7 @@
     }
     const maxTradeUsd = (num(currentMacro(buyer).gdpUsd) || 0) * (num(buyerPolicy.maximumTransferPctOfGDP) ?? Number(rules.maximumSingleTransferPctOfGDP || 2)) / 100;
     if (maxTradeUsd > 0 && sellerUsd > maxTradeUsd) return { ok: false, code: 'TRADE_SINGLE_TRANSACTION_LIMIT', maxTradeUsd, sellerUsd };
+    const priorEscrowUsd = pending && pending.status === 'PENDING' ? (num(pending.buyerDebitUsd) || 0) : 0;
     const requestRow = pending || {
       settlementId: id, requestId, buyerCountryCode: profileId(buyer), sellerCountryCode: profileId(seller),
       buyerCurrencyCode: buyerCode, sellerCurrencyCode: sellerCode, resourceId: input.resourceId || null,
@@ -855,12 +883,18 @@
       buyerDebitLocal: buyerGrossLocal, sellerCreditLocal: sellerLocal,
       buyerDebitUsd: buyerDebitUsd, sellerCreditUsd: sellerUsd, tariffLocal, tariffUsd,
       importTariffPct: tariffPct, counterpartyRisk: risk, amountUsd: sellerUsd,
+      buyerTreasuryBeforeUsd: buyerCash, sellerTreasuryBeforeUsd: readTreasuryUsd(seller),
+      buyerRateLocalPerUsd: rb, sellerRateLocalPerUsd: rs,
       paymentDelayTurns: delay, dueTurn: turn() + delay,
       createdTurn: turn(), status: delay > 0 ? 'PENDING' : 'READY',
       quoteSource: 'OMEGA_SIMULATION', referenceRateDate: bankingState(true).fxMarket && bankingState(true).fxMarket.referenceRateDate || null,
       quoteTurn: turn()
     };
     bank.pendingTradeSettlements[id] = requestRow;
+    if (!pending && delay > 0) {
+      bank.pendingEscrowUsd = (num(bank.pendingEscrowUsd) || 0) + buyerDebitUsd;
+      buyerBook.reservedUsd = heldUsd(profileId(buyer));
+    }
     if (delay > 0 && turn() < num(requestRow.dueTurn)) {
       emitLedgerEvent('OMEGA_GOVERNMENT_BANKING_TRADE_PAYMENT_DELAYED', {
         settlementId: id, requestId, buyerCountryCode: profileId(buyer),
@@ -868,12 +902,23 @@
       });
       return { ok: false, waiting: true, code: 'PAYMENT_DELAYED', dueTurn: requestRow.dueTurn, settlementId: id };
     }
+    if (priorEscrowUsd > 0) bank.pendingEscrowUsd = Math.max(0, (num(bank.pendingEscrowUsd) || 0) - priorEscrowUsd + buyerDebitUsd);
+    Object.assign(requestRow, {
+      sellerTotalLocal: sellerLocal, buyerTotalLocal: buyerLocal, buyerDebitLocal: buyerGrossLocal,
+      sellerCreditLocal: sellerLocal, buyerDebitUsd: buyerDebitUsd, sellerCreditUsd: sellerUsd,
+      tariffLocal: tariffLocal, tariffUsd: tariffUsd, importTariffPct: tariffPct,
+      counterpartyRisk: risk, buyerTreasuryBeforeUsd: buyerCash,
+      sellerTreasuryBeforeUsd: readTreasuryUsd(seller), buyerRateLocalPerUsd: rb,
+      sellerRateLocalPerUsd: rs, quoteTurn: turn()
+    });
     requestRow.status = 'READY';
+    bank.pendingTradeSettlements[id] = requestRow;
     return { ok: true, settlementId: id, buyerCurrency: buyerCode, sellerCurrency: sellerCode,
       buyerTotalLocal: buyerLocal, buyerGrossLocal, sellerTotalLocal: sellerLocal,
       buyerDebitUsd, sellerCreditUsd: sellerUsd, tariffPct, tariffLocal, tariffUsd,
       buyerRateLocalPerUsd: rb, sellerRateLocalPerUsd: rs, counterpartyRisk: risk, paymentDelayTurns: delay,
-      quoteSource: requestRow.quoteSource };
+      quoteSource: requestRow.quoteSource, buyerTreasuryBeforeUsd: requestRow.buyerTreasuryBeforeUsd,
+      sellerTreasuryBeforeUsd: requestRow.sellerTreasuryBeforeUsd };
   }
   function commitTradeSettlement(input) {
     input = obj(input) ? input : {};
@@ -899,26 +944,41 @@
     const sLocalBefore = num(sAcct.balance) || 0;
     const buyerSourceCash = readTreasuryUsd(buyer), sellerSourceCash = readTreasuryUsd(seller);
     if (buyerSourceCash === null || sellerSourceCash === null) return { ok: false, code: 'TRADE_TREASURY_UNAVAILABLE' };
-    if (bUsdBefore + 1e-8 < buyerGrossUsd)
-      return { ok: false, code: 'BUYER_USD_CLEARING_LIQUIDITY_INSUFFICIENT', availableUsd: bUsdBefore, requiredUsd: buyerGrossUsd };
-    const buyerNextUsd = buyerSourceCash - sellerUsd;
-    const sellerNextUsd = sellerSourceCash + sellerUsd;
+    const buyerBeforeUsd = num(quote.buyerTreasuryBeforeUsd), sellerBeforeUsd = num(quote.sellerTreasuryBeforeUsd);
+    if (buyerBeforeUsd === null || sellerBeforeUsd === null) return { ok: false, code: 'TRADE_TREASURY_SNAPSHOT_MISSING' };
+    const buyerNextUsd = buyerBeforeUsd - sellerUsd;
+    const sellerNextUsd = sellerBeforeUsd + sellerUsd;
     if (buyerNextUsd < -1e-8) return { ok: false, code: 'BUYER_TREASURY_NEGATIVE' };
-    // Validate the complete balance sheet delta before applying any account movement.
+    if (Math.abs(buyerSourceCash - buyerNextUsd) > 0.05 || Math.abs(sellerSourceCash - sellerNextUsd) > 0.05)
+      return { ok: false, code: 'TRADE_TREASURY_DELTA_MISMATCH',
+        buyerExpectedUsd: buyerNextUsd, buyerActualUsd: buyerSourceCash,
+        sellerExpectedUsd: sellerNextUsd, sellerActualUsd: sellerSourceCash };
     const buyerNextLocal = bLocalBefore + tariffLocal;
     const sellerNextLocal = sLocalBefore + sellerLocal;
     const buyerRate = rate(buyerCurrency, 'SIMULATION'), sellerRate = rate(sellerCurrency, 'SIMULATION');
     if (buyerRate === null || sellerRate === null) return { ok: false, code: 'TRADE_FX_RATE_UNAVAILABLE' };
-    const buyerAccountsAfterUsd = countryBookValueUsd(buyer) - buyerGrossUsd + tariffUsd;
-    const sellerAccountsAfterUsd = countryBookValueUsd(seller) + sellerUsd;
+    const buyerPortfolioBeforeUsd = countryBookValueUsd(buyer), sellerPortfolioBeforeUsd = countryBookValueUsd(seller);
+    if (buyerPortfolioBeforeUsd === null || sellerPortfolioBeforeUsd === null) return { ok: false, code: 'TRADE_PORTFOLIO_VALUATION_UNAVAILABLE' };
+    const buyerAccountsAfterUsd = buyerPortfolioBeforeUsd - buyerGrossUsd + tariffUsd;
+    const sellerAccountsAfterUsd = sellerPortfolioBeforeUsd + sellerUsd;
     if (Math.abs(buyerAccountsAfterUsd - buyerNextUsd) > 0.05 || Math.abs(sellerAccountsAfterUsd - sellerNextUsd) > 0.05)
       return { ok: false, code: 'TRADE_CLEARING_BALANCE_MISMATCH',
-        buyerBeforeUsd: countryBookValueUsd(buyer), buyerAfterUsd: buyerAccountsAfterUsd, buyerTreasuryAfterUsd: buyerNextUsd,
-        sellerBeforeUsd: countryBookValueUsd(seller), sellerAfterUsd: sellerAccountsAfterUsd, sellerTreasuryAfterUsd: sellerNextUsd };
-    bAcct.balance = Math.max(0, bUsdBefore - buyerGrossUsd);
-    bAcct.revision = (num(bAcct.revision) || 0) + 1; bAcct.lastUpdatedTurn = turn();
-    bLocal.balance = buyerNextLocal;
-    bLocal.revision = (num(bLocal.revision) || 0) + 1; bLocal.lastUpdatedTurn = turn();
+        buyerBeforeUsd: buyerPortfolioBeforeUsd, buyerAfterUsd: buyerAccountsAfterUsd, buyerTreasuryAfterUsd: buyerNextUsd,
+        sellerBeforeUsd: sellerPortfolioBeforeUsd, sellerAfterUsd: sellerAccountsAfterUsd, sellerTreasuryAfterUsd: sellerNextUsd };
+    const buyerLocalHasCash = bLocalBefore + 1e-8 >= buyerGrossLocal;
+    let buyerPaymentCurrency = USD, buyerPaymentAmount = buyerGrossUsd;
+    if (buyerLocalHasCash) {
+      buyerPaymentCurrency = buyerCurrency; buyerPaymentAmount = buyerGrossLocal;
+      bLocal.balance = Math.max(0, bLocalBefore - buyerGrossLocal + tariffLocal);
+      bLocal.revision = (num(bLocal.revision) || 0) + 1; bLocal.lastUpdatedTurn = turn();
+    } else {
+      if (bUsdBefore + 1e-8 < buyerGrossUsd)
+        return { ok: false, code: 'BUYER_USD_CLEARING_LIQUIDITY_INSUFFICIENT', availableUsd: bUsdBefore, requiredUsd: buyerGrossUsd };
+      bAcct.balance = Math.max(0, bUsdBefore - buyerGrossUsd);
+      bAcct.revision = (num(bAcct.revision) || 0) + 1; bAcct.lastUpdatedTurn = turn();
+      bLocal.balance = bLocalBefore + tariffLocal;
+      bLocal.revision = (num(bLocal.revision) || 0) + 1; bLocal.lastUpdatedTurn = turn();
+    }
     sAcct.balance = sellerNextLocal;
     sAcct.revision = (num(sAcct.revision) || 0) + 1; sAcct.lastUpdatedTurn = turn();
     // Finance's debit/credit handlers own the authoritative USD Treasury cash movement.
@@ -926,7 +986,7 @@
     buyerBook.lastTreasuryUsd = buyerNextUsd; sellerBook.lastTreasuryUsd = sellerNextUsd;
     buyerBook.lastReconciliationTurn = sellerBook.lastReconciliationTurn = turn();
     appendAccountMovements(buyer, [
-      { type: 'TRADE_PAYMENT', direction: 'DEBIT', currencyCode: USD, amount: buyerGrossUsd, amountUsd: buyerGrossUsd, counterpartyCountryCode: profileId(seller), category: 'IMPORT_PAYMENT' },
+      { type: 'TRADE_PAYMENT', direction: 'DEBIT', currencyCode: buyerPaymentCurrency, amount: buyerPaymentAmount, amountUsd: buyerGrossUsd, counterpartyCountryCode: profileId(seller), category: 'IMPORT_PAYMENT' },
       { type: 'IMPORT_TARIFF_REVENUE', direction: 'CREDIT', currencyCode: buyerCurrency, amount: tariffLocal, amountUsd: tariffUsd, counterpartyCountryCode: profileId(seller), category: 'CUSTOMS_DUTY' }
     ], { transactionId: id, authority: 'OMEGA_GLOBAL_TRADE' });
     appendAccountMovements(seller, [
@@ -949,6 +1009,8 @@
     bank.fxClearingHouse.transactionCount = (num(bank.fxClearingHouse.transactionCount) || 0) + 1;
     bank.fxClearingHouse.lastSettlement = clone(row);
     quote.status = 'SETTLED'; quote.settledTurn = turn();
+    if (Number(quote.paymentDelayTurns) > 0)
+      bank.pendingEscrowUsd = Math.max(0, (num(bank.pendingEscrowUsd) || 0) - (num(quote.buyerDebitUsd) || 0));
     delete bank.pendingTradeSettlements[id];
     emitLedgerEvent('OMEGA_GOVERNMENT_BANKING_TRADE_SETTLED', {
       transactionId: id, buyerCountryCode: profileId(buyer), sellerCountryCode: profileId(seller),
@@ -1025,7 +1087,6 @@
         amount: row.amount, idempotencyKey: row.transactionId, paymentDelayTurns: 0,
         reference: row.reference, category: row.category
       };
-      delete bank.pendingTransfers[row.transactionId];
       const result = settleTransfer(input, true);
       if (!result.ok) {
         bank.pendingTransfers[row.transactionId] = row;
