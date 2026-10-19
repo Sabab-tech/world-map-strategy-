@@ -54,9 +54,24 @@
     return raw.toUpperCase();
   }
 
+  function countryAliasKeys(countryId){
+    const registry=global.OmegaCanonicalIdentityRegistry||global.OmegaCountrySemanticBridge||global.Omega?.CanonicalIdentity;
+    if(!registry||typeof registry.resolveCountry!=='function')return [];
+    for(const candidate of [countryId,String(countryId??'').replace(/[_-]+/g,' ')]){
+      try{
+        const hit=registry.resolveCountry(candidate);
+        if(!hit||!hit.id)continue;
+        const row=hit.raw?.raw||hit.raw||{};
+        return [...new Set([row.iso3,row.iso3Code,row.ISO_A3,row.iso_a3,row.iso2,row.code,hit.id,row.name,row.officialName,...(Array.isArray(row.aliases)?row.aliases:[])].filter(Boolean).map(x=>String(x).trim().toUpperCase()))];
+      }catch(_){}
+    }
+    return [];
+  }
+
   function countryBucketKey(section,countryId){
     if(!section||typeof section!=='object')return null;
     if(Object.prototype.hasOwnProperty.call(section,countryId))return countryId;
+    for(const alias of countryAliasKeys(countryId))if(Object.prototype.hasOwnProperty.call(section,alias))return alias;
     for(const key of Object.keys(section))if(canonicalCountryId(key)===countryId)return key;
     return null;
   }
