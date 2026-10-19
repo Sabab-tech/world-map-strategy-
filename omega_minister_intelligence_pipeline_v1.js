@@ -281,6 +281,13 @@
     const history = Array.isArray(extra.history) ? extra.history.slice(-12) : readHistory(ministerId);
     let countryDetails = gameState;
     try { if (ui.getCountryDetails && resolvedCountry) countryDetails = ui.getCountryDetails(resolvedCountry) || gameState; } catch (_) {}
+    const resolvedDetails = clone(extra.countryDetails || countryDetails || gameState || {});
+    if (resolvedDetails && typeof resolvedDetails === 'object' && !Array.isArray(resolvedDetails)) {
+      if (!resolvedDetails.countryCode) resolvedDetails.countryCode = resolvedCountry;
+      if (!resolvedDetails.countryId) resolvedDetails.countryId = resolvedCountry;
+      if (!resolvedDetails.name) resolvedDetails.name = countryName || resolvedCountry;
+      if (!resolvedDetails.countryName) resolvedDetails.countryName = countryName || resolvedCountry;
+    }
     return {
       countryId: resolvedCountry,
       countryCode: resolvedCountry,
@@ -297,7 +304,7 @@
       isActiveMinister: !!active && (canonicalActive(active) || legacyActive(active)),
       activeMinister: active,
       gameState: clone(extra.gameState || gameState || {}),
-      countryDetails: clone(extra.countryDetails || countryDetails || gameState || {}),
+      countryDetails: resolvedDetails,
       history: history,
       language: text(extra.language || '')
     };
@@ -331,16 +338,33 @@
 
   function ministerPayload(context, analysis) {
     const profile = context.ministerProfile || {};
+    const stats = clone(profile.stats || profile.baseStats || {});
+    const efficiencyProfile = clone(profile.efficiencyProfile || (profile.efficiency && typeof profile.efficiency === 'object' ? profile.efficiency : {}));
+    const efficiencyValues = Object.values(efficiencyProfile || {}).map(Number).filter(value => Number.isFinite(value));
+    const explicitEfficiency = typeof profile.efficiency === 'number' ? profile.efficiency :
+      Number.isFinite(Number(profile.efficiencyScore)) ? Number(profile.efficiencyScore) :
+      Number.isFinite(Number(context.effectiveCapability)) ? Number(context.effectiveCapability) : null;
+    const efficiency = explicitEfficiency !== null ? explicitEfficiency :
+      (efficiencyValues.length ? efficiencyValues.reduce((sum, value) => sum + value, 0) / efficiencyValues.length : 75);
+    const name = context.ministerName || profile.name || profile.baseName || context.ministerId;
+    const role = context.ministerRole || profile.role || context.ministryId;
     return {
       ...clone(profile),
       id: context.ministerId,
       ministerId: context.ministerId,
-      name: context.ministerName || profile.name || profile.baseName || context.ministerId,
-      ministerName: context.ministerName || profile.name || profile.baseName || context.ministerId,
+      name: name,
+      ministerName: name,
+      title: role,
       ministryId: context.ministryId,
-      role: context.ministerRole || profile.role || context.ministryId,
+      role: role,
       countryId: context.countryId,
       countryCode: context.countryCode,
+      stats: stats,
+      baseStats: clone(profile.baseStats || stats),
+      efficiency: efficiency,
+      efficiencyProfile: efficiencyProfile,
+      personality: clone(profile.personality || profile.personalityProfile || {}),
+      ideology: clone(profile.ideology || {}),
       runtime: clone(context.ministerRuntime || {}),
       learning: clone(context.ministerLearning || {}),
       memory: clone(context.ministerMemory || {}),
