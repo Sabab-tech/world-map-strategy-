@@ -1,0 +1,747 @@
+{
+  "schemaVersion": "1.0.0",
+  "datasetId": "OMEGA_COUNTRY_SECTOR_PROFILE_SCHEMA_V1",
+  "title": "OMEGA extensible country sector profile schema",
+  "purpose": "Defines extensible country sectors, evidence-backed indicators, same-year calculations, transparent peer-relative analytical models, and future custom attributes without changing the canonical country roster.",
+  "recordIdentity": {
+    "primaryKey": "iso3",
+    "source": "countries.json",
+    "countryScope": "All canonical country and territory identities in the country general data registry."
+  },
+  "dataPolicy": {
+    "missingValue": "null means unknown, unavailable, not imported, or not comparable; never zero.",
+    "neverDelete": true,
+    "profileScope": "Source-backed country data is kept separate from modelled game context and project-derived analytics.",
+    "derivedValues": "Direct observations keep provider, source identifier, observation year, unit, and source URL. Derived numerical indicators are created only when required inputs are numeric and all required observation years match.",
+    "analyticalScores": "Peer-relative project analytics, not official rankings, credit ratings, combat readiness ratings, or country classifications. Each result includes coverage and input-year diagnostics.",
+    "qualitativeClaims": "Qualitative strengths, weaknesses, strategic dependencies, and diplomatic reach must be supported by sourced indicators or explicitly tagged as analyst/game-authored. They are never inferred as facts from a missing field."
+  },
+  "sectors": [
+    {
+      "id": "generalFacts",
+      "title": "General country facts",
+      "sourceGroup": "generalFacts",
+      "description": "Official/common name, capital, languages, currency, area, borders, time zones, country memberships, and World Bank metadata."
+    },
+    {
+      "id": "economy",
+      "title": "Economy and fiscal capacity",
+      "metricKeys": [
+        "gdpCurrentUsd",
+        "gdpPerCapitaUsd",
+        "gdpGrowthPct",
+        "inflationPct",
+        "unemploymentRatePct",
+        "publicDebtUsd",
+        "publicDebtToGdpPct",
+        "externalDebtUsd",
+        "externalDebtToGniPct",
+        "governmentBudgetBalanceUsd",
+        "budgetBalancePctGdp",
+        "governmentRevenueUsd",
+        "governmentRevenuePctGdp",
+        "governmentExpenditureUsd",
+        "governmentExpenditurePctGdp",
+        "taxRevenueUsd",
+        "taxRevenuePctGdp",
+        "fxReservesUsd",
+        "fxReservesToGdpPct",
+        "exchangeRateLocalPerUsd",
+        "fiscalRiskIndex",
+        "fiscalHealthIndex"
+      ],
+      "derivedMetricKeys": [
+        "externalDebtToGdpPct",
+        "budgetDeficitPctGdp"
+      ],
+      "extensionSlots": [
+        {
+          "key": "economicDependencies",
+          "type": "sourced-list",
+          "description": "Imports, exports, commodity concentration or creditor dependencies; each entry must cite a source and year.",
+          "emptyStatus": "NOT_SOURCED"
+        },
+        {
+          "key": "economicStrengths",
+          "type": "evidence-list",
+          "description": "Evidence-backed comparative signals; never plain unsourced text.",
+          "emptyStatus": "NOT_ASSESSED"
+        },
+        {
+          "key": "economicWeaknesses",
+          "type": "evidence-list",
+          "description": "Evidence-backed exposure and vulnerability signals.",
+          "emptyStatus": "NOT_ASSESSED"
+        }
+      ]
+    },
+    {
+      "id": "tradeAndExternalRelations",
+      "title": "Trade and external financial position",
+      "metricKeys": [
+        "exportsUsd",
+        "importsUsd",
+        "tradeBalanceUsd",
+        "tradeBalanceToGdpPct",
+        "currentAccountBalanceUsd",
+        "foreignDirectInvestmentUsd"
+      ],
+      "derivedMetricKeys": [
+        "tradeOpennessPctGdp",
+        "exportToGdpPct",
+        "importToGdpPct",
+        "tradeDeficitPctGdp"
+      ],
+      "extensionSlots": [
+        {
+          "key": "tradePartners",
+          "type": "sourced-list",
+          "description": "Partner countries and trade shares, including observation year and source.",
+          "emptyStatus": "NOT_IMPORTED"
+        },
+        {
+          "key": "supplyChainDependencies",
+          "type": "sourced-list",
+          "description": "Sector/commodity dependencies with country share and source metadata.",
+          "emptyStatus": "NOT_IMPORTED"
+        }
+      ]
+    },
+    {
+      "id": "diplomacyAndForeignAffairs",
+      "title": "Diplomacy and foreign affairs",
+      "factKeys": [
+        "independent",
+        "unMember",
+        "worldBankRegion",
+        "worldBankIncomeLevel"
+      ],
+      "extensionSlots": [
+        {
+          "key": "diplomaticStrength",
+          "type": "metric-or-evidence",
+          "description": "Comparable sourced diplomatic capacity or a clearly documented project model.",
+          "emptyStatus": "NOT_SOURCED"
+        },
+        {
+          "key": "diplomaticWeaknesses",
+          "type": "evidence-list",
+          "description": "Evidence-backed diplomatic constraints.",
+          "emptyStatus": "NOT_ASSESSED"
+        },
+        {
+          "key": "diplomaticPoints",
+          "type": "numeric-score-with-method",
+          "description": "Future game score: define range, formula, source inputs, version, and uncertainty before use.",
+          "emptyStatus": "MODEL_NOT_DEFINED"
+        },
+        {
+          "key": "alliancesAndTreaties",
+          "type": "sourced-list",
+          "description": "Membership, role, treaty type, validity interval, and authoritative source.",
+          "emptyStatus": "NOT_IMPORTED"
+        },
+        {
+          "key": "internationalVoting",
+          "type": "time-series",
+          "description": "Documented voting records or alignment measures with institution, year, and method.",
+          "emptyStatus": "NOT_IMPORTED"
+        }
+      ]
+    },
+    {
+      "id": "industryAndProduction",
+      "title": "Industry and production",
+      "metricKeys": [
+        "agricultureValueAddedPctGdp",
+        "industryValueAddedPctGdp",
+        "servicesValueAddedPctGdp",
+        "rAndDSpendPctGdp"
+      ],
+      "derivedMetricKeys": [
+        "industrialScaleProxyIndex"
+      ],
+      "extensionSlots": [
+        {
+          "key": "industrialStrengths",
+          "type": "evidence-list",
+          "description": "Evidence-backed sectors, output or capacity indicators.",
+          "emptyStatus": "NOT_ASSESSED"
+        },
+        {
+          "key": "industrialWeaknesses",
+          "type": "evidence-list",
+          "description": "Evidence-backed capacity, skills, import or infrastructure constraints.",
+          "emptyStatus": "NOT_ASSESSED"
+        },
+        {
+          "key": "manufacturingOutput",
+          "type": "time-series",
+          "description": "Manufacturing value added/output with currency, unit, and observation year.",
+          "emptyStatus": "NOT_IMPORTED"
+        },
+        {
+          "key": "industrialInputDependencies",
+          "type": "sourced-list",
+          "description": "Fuel, machinery, materials, components, and technology dependencies.",
+          "emptyStatus": "NOT_IMPORTED"
+        }
+      ]
+    },
+    {
+      "id": "defenseAndSecurity",
+      "title": "Military and security",
+      "metricKeys": [
+        "militaryExpenditurePctGdp",
+        "homicideRatePer100k"
+      ],
+      "derivedMetricKeys": [
+        "militaryExpenditureUsd",
+        "defenseBudgetScaleIndex"
+      ],
+      "sourceGroup": "publicSafety",
+      "extensionSlots": [
+        {
+          "key": "militaryStrengths",
+          "type": "evidence-list",
+          "description": "Separately sourced personnel, equipment, readiness, training, logistics and defence-industry evidence.",
+          "emptyStatus": "NOT_ASSESSED"
+        },
+        {
+          "key": "militaryWeaknesses",
+          "type": "evidence-list",
+          "description": "Evidence-backed readiness, logistics, maintenance or capability gaps.",
+          "emptyStatus": "NOT_ASSESSED"
+        },
+        {
+          "key": "activePersonnel",
+          "type": "time-series",
+          "description": "Sourced active-duty personnel count and definition.",
+          "emptyStatus": "NOT_IMPORTED"
+        },
+        {
+          "key": "equipmentInventory",
+          "type": "sourced-list",
+          "description": "Equipment inventory with category, variant, service status, year and source.",
+          "emptyStatus": "NOT_IMPORTED"
+        },
+        {
+          "key": "defenseIndustry",
+          "type": "sourced-list",
+          "description": "Domestic arms production and support capacity with source evidence.",
+          "emptyStatus": "NOT_IMPORTED"
+        }
+      ]
+    },
+    {
+      "id": "governanceAndInstitutions",
+      "title": "Governance and institutions",
+      "metricKeys": [
+        "ruleOfLawWgiEstimate",
+        "controlOfCorruptionWgiEstimate",
+        "politicalStabilityWgiEstimate",
+        "governmentEffectivenessWgiEstimate",
+        "regulatoryQualityWgiEstimate",
+        "voiceAccountabilityWgiEstimate",
+        "corruptionPerceptionIndex",
+        "democracyIndex",
+        "pressFreedomIndex",
+        "fragileStatesIndex",
+        "disciplineIndex"
+      ]
+    },
+    {
+      "id": "populationAndHumanDevelopment",
+      "title": "Population and human development",
+      "metricKeys": [
+        "populationTotal",
+        "population2015",
+        "populationGrowthPct",
+        "birthRate",
+        "deathRate",
+        "urbanizationPct",
+        "malePopulationPct",
+        "femalePopulationPct",
+        "lifeExpectancyYears",
+        "fertilityRate",
+        "literacyRatePct",
+        "povertyRatePct",
+        "humanDevelopmentIndex"
+      ]
+    },
+    {
+      "id": "naturalResources",
+      "title": "Natural resources and energy",
+      "sourceGroup": "naturalResources",
+      "extensionSlots": [
+        {
+          "key": "resourceProduction",
+          "type": "time-series",
+          "description": "Production flow by resource, unit, source and year; must be separate from reserves.",
+          "emptyStatus": "NOT_IMPORTED"
+        },
+        {
+          "key": "resourceImports",
+          "type": "time-series",
+          "description": "Resource import dependency with amount, unit, year and source.",
+          "emptyStatus": "NOT_IMPORTED"
+        },
+        {
+          "key": "resourceExports",
+          "type": "time-series",
+          "description": "Resource export amount/share with year and source.",
+          "emptyStatus": "NOT_IMPORTED"
+        }
+      ]
+    },
+    {
+      "id": "infrastructureAndTechnology",
+      "title": "Infrastructure and technology",
+      "metricKeys": [
+        "internetUsersPct",
+        "electricityAccessPct",
+        "rAndDSpendPctGdp"
+      ],
+      "extensionSlots": [
+        {
+          "key": "portsRailRoadPower",
+          "type": "time-series-or-sourced-list",
+          "description": "Capacity, network length, reliability, throughput, units and source.",
+          "emptyStatus": "NOT_IMPORTED"
+        },
+        {
+          "key": "technologyCapabilities",
+          "type": "evidence-list",
+          "description": "Sourced digital, manufacturing, R&D and technological capacity.",
+          "emptyStatus": "NOT_ASSESSED"
+        }
+      ]
+    },
+    {
+      "id": "environmentAndEnergy",
+      "title": "Environment and energy",
+      "metricKeys": [
+        "co2TonnesPerCapita",
+        "electricityAccessPct"
+      ],
+      "sourceGroup": "naturalResources"
+    }
+  ],
+  "derivedMetrics": [
+    {
+      "key": "tradeOpennessPctGdp",
+      "title": "Trade openness",
+      "unit": "% of GDP",
+      "operation": "sum_ratio_percent",
+      "numerators": [
+        "exportsUsd",
+        "importsUsd"
+      ],
+      "denominator": "gdpCurrentUsd",
+      "requireSameYear": true,
+      "formula": "(exports + imports) / GDP × 100",
+      "statusOnMissing": "MISSING_INPUTS_OR_YEAR_MISMATCH"
+    },
+    {
+      "key": "exportToGdpPct",
+      "title": "Exports to GDP",
+      "unit": "% of GDP",
+      "operation": "ratio_percent",
+      "numerator": "exportsUsd",
+      "denominator": "gdpCurrentUsd",
+      "requireSameYear": true,
+      "formula": "exports / GDP × 100"
+    },
+    {
+      "key": "importToGdpPct",
+      "title": "Imports to GDP",
+      "unit": "% of GDP",
+      "operation": "ratio_percent",
+      "numerator": "importsUsd",
+      "denominator": "gdpCurrentUsd",
+      "requireSameYear": true,
+      "formula": "imports / GDP × 100"
+    },
+    {
+      "key": "externalDebtToGdpPct",
+      "title": "External debt to GDP",
+      "unit": "% of GDP",
+      "operation": "ratio_percent",
+      "numerator": "externalDebtUsd",
+      "denominator": "gdpCurrentUsd",
+      "requireSameYear": true,
+      "formula": "external debt stock / GDP × 100"
+    },
+    {
+      "key": "budgetDeficitPctGdp",
+      "title": "Budget deficit share",
+      "unit": "% of GDP",
+      "operation": "negative_floor_zero",
+      "input": "budgetBalancePctGdp",
+      "formula": "max(0, -government net lending/borrowing % GDP)"
+    },
+    {
+      "key": "tradeDeficitPctGdp",
+      "title": "Trade deficit share",
+      "unit": "% of GDP",
+      "operation": "negative_floor_zero",
+      "input": "tradeBalanceToGdpPct",
+      "formula": "max(0, -trade balance % GDP)"
+    },
+    {
+      "key": "militaryExpenditureUsd",
+      "title": "Military expenditure (derived)",
+      "unit": "USD",
+      "operation": "multiply_percent",
+      "base": "gdpCurrentUsd",
+      "percent": "militaryExpenditurePctGdp",
+      "requireSameYear": true,
+      "formula": "GDP × military expenditure share / 100"
+    },
+    {
+      "key": "industrialScaleProxyIndex",
+      "title": "Industrial scale proxy",
+      "unit": "peer-relative index 0–100",
+      "operation": "model",
+      "modelId": "industrialScaleProxyIndex",
+      "formula": "Transparent peer-percentile composite; not a direct capacity or readiness measure."
+    },
+    {
+      "key": "defenseBudgetScaleIndex",
+      "title": "Defence budget scale",
+      "unit": "peer-relative percentile 0–100",
+      "operation": "model",
+      "modelId": "defenseBudgetScaleIndex",
+      "formula": "Percentile of same-year derived military expenditure; not military strength."
+    }
+  ],
+  "calculationModels": [
+    {
+      "id": "economicCapacityIndex",
+      "title": "Economic capacity proxy",
+      "unit": "peer-relative index 0–100",
+      "kind": "weightedPercentile",
+      "minAvailableInputs": 3,
+      "inputs": [
+        {
+          "key": "gdpCurrentUsd",
+          "weight": 0.35,
+          "direction": "higher_is_stronger"
+        },
+        {
+          "key": "gdpPerCapitaUsd",
+          "weight": 0.25,
+          "direction": "higher_is_stronger"
+        },
+        {
+          "key": "industryValueAddedPctGdp",
+          "weight": 0.2,
+          "direction": "higher_is_stronger"
+        },
+        {
+          "key": "fxReservesToGdpPct",
+          "weight": 0.2,
+          "direction": "higher_is_stronger"
+        }
+      ],
+      "note": "A project-defined comparative proxy, not an official economic ranking. Input years and component coverage must remain visible."
+    },
+    {
+      "id": "economicStressIndex",
+      "title": "Economic stress proxy",
+      "unit": "peer-relative index 0–100",
+      "kind": "weightedPercentile",
+      "minAvailableInputs": 3,
+      "inputs": [
+        {
+          "key": "publicDebtToGdpPct",
+          "weight": 0.25,
+          "direction": "higher_is_weaker"
+        },
+        {
+          "key": "externalDebtToGniPct",
+          "weight": 0.2,
+          "direction": "higher_is_weaker"
+        },
+        {
+          "key": "unemploymentRatePct",
+          "weight": 0.2,
+          "direction": "higher_is_weaker"
+        },
+        {
+          "key": "inflationPct",
+          "weight": 0.15,
+          "direction": "higher_is_weaker"
+        },
+        {
+          "key": "budgetDeficitPctGdp",
+          "weight": 0.2,
+          "direction": "higher_is_weaker"
+        }
+      ],
+      "note": "Higher values mean greater relative stress among countries with valid comparable-source inputs; not a credit rating."
+    },
+    {
+      "id": "industrialScaleProxyIndex",
+      "title": "Industrial scale proxy",
+      "unit": "peer-relative index 0–100",
+      "kind": "weightedPercentile",
+      "minAvailableInputs": 2,
+      "inputs": [
+        {
+          "key": "gdpCurrentUsd",
+          "weight": 0.45,
+          "direction": "higher_is_stronger"
+        },
+        {
+          "key": "industryValueAddedPctGdp",
+          "weight": 0.55,
+          "direction": "higher_is_stronger"
+        }
+      ],
+      "note": "Uses economy scale and industry share only; it does not measure productivity, manufacturing complexity, domestic content, or resilience."
+    },
+    {
+      "id": "defenseBudgetScaleIndex",
+      "title": "Defence budget scale",
+      "unit": "peer-relative percentile 0–100",
+      "kind": "weightedPercentile",
+      "minAvailableInputs": 1,
+      "inputs": [
+        {
+          "key": "militaryExpenditureUsd",
+          "weight": 1,
+          "direction": "higher_is_stronger"
+        }
+      ],
+      "note": "Requires GDP and military spending share from the same year. Measures budget scale only, not military capability or readiness."
+    }
+  ],
+  "signalMetrics": [
+    {
+      "metricKey": "gdpCurrentUsd",
+      "sectorId": "economy",
+      "title": "Nominal GDP",
+      "preference": "higher_is_stronger"
+    },
+    {
+      "metricKey": "gdpPerCapitaUsd",
+      "sectorId": "economy",
+      "title": "GDP per capita",
+      "preference": "higher_is_stronger"
+    },
+    {
+      "metricKey": "gdpGrowthPct",
+      "sectorId": "economy",
+      "title": "Real GDP growth",
+      "preference": "higher_is_stronger"
+    },
+    {
+      "metricKey": "publicDebtToGdpPct",
+      "sectorId": "economy",
+      "title": "Public debt/GDP",
+      "preference": "higher_is_weaker"
+    },
+    {
+      "metricKey": "externalDebtToGniPct",
+      "sectorId": "economy",
+      "title": "External debt/GNI",
+      "preference": "higher_is_weaker"
+    },
+    {
+      "metricKey": "unemploymentRatePct",
+      "sectorId": "economy",
+      "title": "Unemployment",
+      "preference": "higher_is_weaker"
+    },
+    {
+      "metricKey": "inflationPct",
+      "sectorId": "economy",
+      "title": "Inflation",
+      "preference": "higher_is_weaker"
+    },
+    {
+      "metricKey": "budgetDeficitPctGdp",
+      "sectorId": "economy",
+      "title": "Budget deficit/GDP",
+      "preference": "higher_is_weaker"
+    },
+    {
+      "metricKey": "tradeBalanceToGdpPct",
+      "sectorId": "tradeAndExternalRelations",
+      "title": "Trade balance/GDP",
+      "preference": "higher_is_stronger"
+    },
+    {
+      "metricKey": "fxReservesToGdpPct",
+      "sectorId": "economy",
+      "title": "FX reserves/GDP",
+      "preference": "higher_is_stronger"
+    },
+    {
+      "metricKey": "industryValueAddedPctGdp",
+      "sectorId": "industryAndProduction",
+      "title": "Industry value added/GDP",
+      "preference": "higher_is_stronger"
+    },
+    {
+      "metricKey": "lifeExpectancyYears",
+      "sectorId": "populationAndHumanDevelopment",
+      "title": "Life expectancy",
+      "preference": "higher_is_stronger"
+    },
+    {
+      "metricKey": "humanDevelopmentIndex",
+      "sectorId": "populationAndHumanDevelopment",
+      "title": "Human Development Index",
+      "preference": "higher_is_stronger"
+    },
+    {
+      "metricKey": "povertyRatePct",
+      "sectorId": "populationAndHumanDevelopment",
+      "title": "Poverty rate",
+      "preference": "higher_is_weaker"
+    },
+    {
+      "metricKey": "internetUsersPct",
+      "sectorId": "infrastructureAndTechnology",
+      "title": "Internet use",
+      "preference": "higher_is_stronger"
+    },
+    {
+      "metricKey": "electricityAccessPct",
+      "sectorId": "infrastructureAndTechnology",
+      "title": "Access to electricity",
+      "preference": "higher_is_stronger"
+    },
+    {
+      "metricKey": "ruleOfLawWgiEstimate",
+      "sectorId": "governanceAndInstitutions",
+      "title": "Rule of law (WGI estimate)",
+      "preference": "higher_is_stronger"
+    },
+    {
+      "metricKey": "controlOfCorruptionWgiEstimate",
+      "sectorId": "governanceAndInstitutions",
+      "title": "Control of corruption (WGI estimate)",
+      "preference": "higher_is_stronger"
+    },
+    {
+      "metricKey": "politicalStabilityWgiEstimate",
+      "sectorId": "governanceAndInstitutions",
+      "title": "Political stability (WGI estimate)",
+      "preference": "higher_is_stronger"
+    }
+  ],
+  "unavailableModelSlots": [
+    {
+      "id": "diplomaticInfluenceIndex",
+      "sectorId": "diplomacyAndForeignAffairs",
+      "title": "Diplomatic influence",
+      "status": "NOT_SCORED_REQUIRED_DATA_MISSING",
+      "missingInputs": [
+        "alliance and treaty participation",
+        "international voting/alignment history",
+        "diplomatic network/representation coverage"
+      ],
+      "note": "No score is generated until comparable sourced inputs and a versioned formula are defined."
+    },
+    {
+      "id": "militaryCapabilityIndex",
+      "sectorId": "defenseAndSecurity",
+      "title": "Military capability",
+      "status": "NOT_SCORED_REQUIRED_DATA_MISSING",
+      "missingInputs": [
+        "personnel strength",
+        "equipment readiness and inventory",
+        "logistics and sustainment",
+        "training/readiness",
+        "domestic defence production"
+      ],
+      "note": "Military expenditure is not a substitute for military capability; no capability score is fabricated."
+    },
+    {
+      "id": "resourceDependencyIndex",
+      "sectorId": "naturalResources",
+      "title": "Resource dependency",
+      "status": "NOT_SCORED_REQUIRED_DATA_MISSING",
+      "missingInputs": [
+        "resource-level imports",
+        "resource-level domestic production",
+        "resource-level exports",
+        "consumption or demand"
+      ],
+      "note": "A missing resource-context record is not evidence that a country has no resources."
+    },
+    {
+      "id": "industrialResilienceIndex",
+      "sectorId": "industryAndProduction",
+      "title": "Industrial resilience",
+      "status": "NOT_SCORED_REQUIRED_DATA_MISSING",
+      "missingInputs": [
+        "capacity utilization",
+        "supplier concentration",
+        "skills/labour pipeline",
+        "logistics reliability",
+        "critical input import shares"
+      ],
+      "note": "The industrial scale proxy must not be presented as industrial resilience."
+    }
+  ],
+  "extensionContract": {
+    "additiveOnly": true,
+    "addSectorWithoutChangingCountryRoster": true,
+    "customAttributesField": "extensions.customAttributes",
+    "customMetricsField": "extensions.customMetrics",
+    "addNewMetricBy": [
+      "add a definition to fieldCatalog",
+      "define unit, type, source policy and missing-value semantics",
+      "include year, source identifier, source URL, method, observation status and notes",
+      "add a schema/test for the new field",
+      "rebuild and verify coverage"
+    ],
+    "metricDefinitionRequiredFields": [
+      "key",
+      "sectorId",
+      "title",
+      "type",
+      "unit",
+      "sourcePolicy",
+      "nullable",
+      "description"
+    ],
+    "allowedStatusExamples": [
+      "OBSERVED_SOURCE_VALUE",
+      "WORLD_BANK_API_OBSERVATION",
+      "DERIVED_SAME_YEAR_OBSERVATIONS",
+      "MODELLED_GAME_VALUE",
+      "NOT_IMPORTED",
+      "NO_SOURCE_OBSERVATION",
+      "SOURCE_REFRESH_FAILED",
+      "IDENTITY_MISMATCH",
+      "NOT_COMPARABLE",
+      "NOT_ASSESSED"
+    ],
+    "formulaOperators": [
+      "ratio_percent",
+      "sum_ratio_percent",
+      "multiply_percent",
+      "negative_floor_zero",
+      "weightedPercentile"
+    ],
+    "futureSeriesContract": [
+      "countryIso3",
+      "fieldKey",
+      "value",
+      "unit",
+      "observationYear",
+      "sourceId",
+      "sourceName",
+      "sourceUrl",
+      "method",
+      "status",
+      "confidence",
+      "notes"
+    ]
+  }
+}
