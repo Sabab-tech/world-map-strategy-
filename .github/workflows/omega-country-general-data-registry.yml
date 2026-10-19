@@ -65,12 +65,14 @@ jobs:
         if: github.event_name != 'pull_request'
         shell: bash
         run: |
-          if [[ -z "$(git status --porcelain -- country_general_data_registry_v1.json country_sector_profiles_v1.json)" ]]; then
+          # Force-add generated output: the sector profile registry may be ignored
+          # by a broad JSON ignore rule even though it is a deliberate source artifact.
+          git add -f country_general_data_registry_v1.json country_sector_profiles_v1.json
+          if git diff --cached --quiet; then
             echo "Generated registries unchanged; no data commit required."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add country_general_data_registry_v1.json country_sector_profiles_v1.json
           git commit -m "Refresh country observations and sector profiles"
           git push
