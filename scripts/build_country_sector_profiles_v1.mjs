@@ -194,6 +194,8 @@ const profiles = registry.countries.map((row) => {
     publicSafety: decodeSafety(row),
     localGeography: localGeo,
     sourceDataStatus: statuses,
+    strategicProfile: Array.isArray(recordSchema.strategicProfileFields)
+      ? objectFrom(recordSchema.strategicProfileFields, row.strategicProfile || []) : null,
     analytics: {},
     relativeSignals: { strengths: [], vulnerabilities: [], policy: 'Signals are relative peer-percentiles from currently recorded values, not official rankings. Every signal retains value, observation year, source and data-quality status.' },
     sectors: {},
