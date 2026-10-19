@@ -1010,6 +1010,10 @@
       buyerDebitUsd: buyerGrossUsd, sellerCreditUsd: sellerUsd, tariffPct: quote.importTariffPct,
       tariffLocal: tariffLocal, tariffUsd: tariffUsd, paymentDelayTurns: quote.paymentDelayTurns,
       dueTurn: quote.dueTurn, settledTurn: turn(), counterpartyRisk: clone(quote.counterpartyRisk),
+      requestId: quote.requestId || input.requestId || null,
+      batchTransfers: Array.isArray(input.batchTransfers) ? clone(input.batchTransfers) : [],
+      createdBatchIds: Array.isArray(input.createdBatchIds) ? clone(input.createdBatchIds) : [],
+      sourceBatchIds: Array.isArray(input.sourceBatchIds) ? clone(input.sourceBatchIds) : [],
       quoteSource: quote.quoteSource, referenceRateDate: quote.referenceRateDate, source: 'GOVERNMENT_BANKING'
     });
     bank.settledVolumeUsd = (num(bank.settledVolumeUsd) || 0) + sellerUsd;
@@ -1358,6 +1362,7 @@
   }
   const api = {
     VERSION, init, diagnostics, accountSummary, resolveCountry: resolveProfile,
+    getTransaction: transactionId => existingTransaction(transactionId),
     quoteTransfer, transfer: (input) => settleTransfer(input, false), convert,
     updateTradePolicy, setRiskProfile, riskScore,
     prepareTradeSettlement, commitTradeSettlement, cancelTradeSettlement,
