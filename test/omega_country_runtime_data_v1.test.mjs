@@ -67,6 +67,7 @@ test('country aliases resolve to the same canonical profile and source records',
 
 test('unified registry exposes country metrics with decoded per-field provenance', async () => {
   const { api } = await createRuntime();
+  assert.equal(await api.generalDataReadyPromise(), true);
   const diagnostics = api.diagnostics();
   assert.equal(diagnostics.generalDataRegistryReady, true);
   assert.equal(diagnostics.generalDataRecordCount, 249);
@@ -92,6 +93,7 @@ test('unified registry exposes country metrics with decoded per-field provenance
 
 test('missing optional unified registry does not block the existing country runtime', async () => {
   const { api } = await createRuntime({ omitGeneralData: true });
+  assert.equal(await api.generalDataReadyPromise(), false);
   assert.equal(api.diagnostics().ready, true);
   assert.equal(api.diagnostics().generalDataRegistryReady, false);
   assert.equal(api.getGeneralData('Bangladesh'), null);
@@ -125,6 +127,9 @@ test('country selection UI uses the shared bridge and removes hardcoded cross-co
 
   const mapEngine = read('map-engine-1.js');
   assert.match(mapEngine, /OmegaCountryRuntimeData/);
+  assert.match(mapEngine, /getGeneralMetric\(countryName, 'populationTotal'\)/);
+  assert.match(mapEngine, /getGeneralMetric\(countryName, 'gdpCurrentUsd'\)/);
+  assert.match(mapEngine, /Promise\.all\(readyTasks\)/);
   assert.doesNotMatch(mapEngine, /\{\s*gdp:\s*500000000,\s*debt:\s*100000000\s*\}/);
   assert.doesNotMatch(mapEngine, /\{\s*population_2015:\s*50000000\s*\}/);
   assert.doesNotMatch(mapEngine, /innerText\s*=\s*`92%`/);
