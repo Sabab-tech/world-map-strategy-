@@ -7,6 +7,7 @@ const recommendationData = JSON.parse(readFileSync(new URL('../omega_home_minist
 const engineSource = readFileSync(new URL('../omega_home_ministry_engine_v1.js', import.meta.url), 'utf8');
 const uiSource = readFileSync(new URL('../omega_home_ministry_police_operations_ui_v1.js', import.meta.url), 'utf8');
 const runtimeSource = readFileSync(new URL('../omega_home_ministry_police_capability_runtime_v1.js', import.meta.url), 'utf8');
+const materialRuntimeSource = readFileSync(new URL('../omega_home_ministry_training_materials_runtime_v1.js', import.meta.url), 'utf8');
 
 test('recommendation data covers each baseline country once and keeps levels explicitly modelled', () => {
   const baseline = JSON.parse(readFileSync(new URL('../omega_home_ministry_country_police_baseline_v1.json', import.meta.url), 'utf8'));
@@ -28,12 +29,15 @@ test('engine, interface and recommendation loader parse and expose the capabilit
   assert.doesNotThrow(() => new vm.Script(engineSource));
   assert.doesNotThrow(() => new vm.Script(uiSource));
   assert.doesNotThrow(() => new vm.Script(runtimeSource));
+  assert.doesNotThrow(() => new vm.Script(materialRuntimeSource));
   for (const token of ['getPoliceCapabilityUpgradeQuote', 'startPoliceCapabilityUpgrade', 'processCapabilityProjects', 'OMEGA_POLICE_CAPABILITY_UPGRADE_COMPLETED']) {
     assert.ok(engineSource.includes(token), token);
   }
   assert.ok(uiSource.includes("['levels','TRAINING & RECRUITMENT LEVELS']"));
   assert.ok(uiSource.includes('ohpu-capability-upgrade-start'));
   assert.ok(uiSource.includes('data-ohpu-capability-open'));
+  assert.ok(uiSource.includes('RESOURCE MATERIALS · LIVE COUNTRY INVENTORY'));
+  assert.ok(engineSource.includes('INSUFFICIENT_RESOURCE_STOCK'));
   assert.ok(runtimeSource.includes('omega_home_ministry_police_capability_recommendations_v1.json'));
 });
 
@@ -49,8 +53,62 @@ test('capability projects require facilities, charge Finance on start, and compl
     economy: { AAA: { treasury: 12000000, gdp: 1000000000 } },
     finance: { AAA: { available: 12000000, reserves: 0 } },
     population: { AAA: { population: 1000000 } },
+    resource: { AAA: {
+      inventory: { CONSTRUCTION_AGGREGATE: 1000, COPPER: 1000, BAUXITE_ALUMINUM: 1000, CRUDE_OIL: 1000, IRON_ORE: 1000 },
+      tradeAvailability: {}, strategicReserve: { availableByResource: { CONSTRUCTION_AGGREGATE: 995 } }
+    } },
     simulation: { turn: 0, simulationTimeMs: 0 }
   } };
+
+  // Minimal authoritative state-transaction adapter for this runtime integration test.
+  // State writes are staged and committed only when the registered command accepts.
+  const ministryHandlers = new Map();
+  const cloneStateValue = value => value === undefined ? undefined : JSON.parse(JSON.stringify(value));
+  const ministryMesh = {
+    registerCommandHandler(commandType, ownerMinistry, handler) {
+      if (ministryHandlers.has(commandType)) throw new Error('DUPLICATE_COMMAND_HANDLER');
+      ministryHandlers.set(commandType, { ownerMinistry, handler });
+      return true;
+    },
+    dispatchCommand(sourceMinistry, actionId, countryId, payload = {}, options = {}) {
+      const commandType = options.commandType || actionId;
+      const entry = ministryHandlers.get(commandType);
+      if (!entry) return { status: 'REJECTED', result: { reason: 'COMMAND_HANDLER_NOT_FOUND', commandType } };
+      const writes = [];
+      const stateTransaction = {
+        get(path) {
+          const bits = String(path || '').split('.');
+          if (bits.shift() !== entry.ownerMinistry) return undefined;
+          let value = Game.state[entry.ownerMinistry] && Game.state[entry.ownerMinistry][countryId];
+          for (const part of bits) value = value == null ? undefined : value[part];
+          return cloneStateValue(value);
+        },
+        set(path, value) {
+          const bits = String(path || '').split('.');
+          if (bits.shift() !== entry.ownerMinistry || !bits.length) throw new Error('STATE_TRANSACTION_PATH_INVALID');
+          writes.push({ owner: entry.ownerMinistry, countryId, bits, value: cloneStateValue(value) });
+        }
+      };
+      const result = entry.handler({ commandType, actionId, countryId, payload: cloneStateValue(payload) }, {
+        countryId, stateTransaction, turn: Number(Game.state.simulation.turn) || 0
+      });
+      if (!result || result.accepted !== true) return { status: 'REJECTED', result: result || { reason: 'COMMAND_REJECTED' } };
+      for (const write of writes) {
+        if (!Game.state[write.owner] || typeof Game.state[write.owner] !== 'object') Game.state[write.owner] = {};
+        if (!Game.state[write.owner][write.countryId] || typeof Game.state[write.owner][write.countryId] !== 'object') Game.state[write.owner][write.countryId] = {};
+        let parent = Game.state[write.owner][write.countryId];
+        for (const part of write.bits.slice(0, -1)) {
+          if (!parent[part] || typeof parent[part] !== 'object') parent[part] = {};
+          parent = parent[part];
+        }
+        parent[write.bits[write.bits.length - 1]] = cloneStateValue(write.value);
+      }
+      return { status: 'APPLIED', result };
+    }
+  };
+  globalThis.Omega.MinistryInteroperability = ministryMesh;
+  globalThis.OmegaMinistryInteroperability = ministryMesh;
+
   globalThis.CountryIOS = { activeCountry: 'AAA' };
   const financeModel = {
     countryCode: 'AAA', treasuryBalanceUsd: 12000000, revision: 0, fiscalYearIndex: 0, ledger: [],
@@ -60,6 +118,7 @@ test('capability projects require facilities, charge Finance on start, and compl
     }
   };
   let tx = 0;
+  let rejectNextExpense = false;
   const finance = {
     diagnostics: () => ({ initialized: true }),
     getPlayerCountry: () => ({ countryCode: 'AAA', name: 'Test Country', iso3: 'AAA' }),
@@ -72,6 +131,7 @@ test('capability projects require facilities, charge Finance on start, and compl
     getFinanceState(value) { return String(value || '').trim().toUpperCase() === 'AAA' ? financeModel : null; },
     applyAction(action) {
       if (action.type !== 'spend-budget') return { ok: false, code: 'UNSUPPORTED_ACTION' };
+      if (rejectNextExpense) { rejectNextExpense = false; return { ok: false, code: 'TEST_FINANCE_REJECTION' }; }
       const amount = Number(action.amountUsd), allocation = financeModel.allocations[action.department];
       if (!allocation || !(amount > 0)) return { ok: false, code: 'INVALID_EXPENSE' };
       if (amount > allocation.remainingUsd + 0.01) return { ok: false, code: 'ALLOCATION_LIMIT_EXCEEDED', treasuryBalanceUsd: financeModel.treasuryBalanceUsd };
@@ -93,6 +153,7 @@ test('capability projects require facilities, charge Finance on start, and compl
   globalThis.Omega.FinanceMinistry = finance;
 
   await import('../omega_home_ministry_engine_v1.js');
+  await import('../omega_home_ministry_training_materials_runtime_v1.js');
   const engine = globalThis.OmegaHomeMinistryEngine;
   engine.getState('AAA');
   const plan = {
@@ -108,10 +169,13 @@ test('capability projects require facilities, charge Finance on start, and compl
   const blockedTraining = engine.getPoliceCapabilityUpgradeQuote('training', 'AAA');
   assert.equal(blockedTraining.canStart, false);
   assert.ok(blockedTraining.blockers.some(row => row.code === 'CAPABILITY_RESOURCE_REQUIREMENT_MISSING'));
+  assert.ok(blockedTraining.blockers.some(row => row.code === 'INSUFFICIENT_RESOURCE_STOCK'));
+  assert.equal(blockedTraining.materials.find(row => row.resourceId === 'CONSTRUCTION_AGGREGATE').availableQuantity, 5);
 
   const facility = engine.buildFacility('academy', 1, 'AAA');
   assert.equal(facility.ok, true);
   assert.equal(engine.getPoliceCapabilityState('AAA').academyLevel, 2);
+  Game.state.resource.AAA.strategicReserve.availableByResource.CONSTRUCTION_AGGREGATE = 0;
   const quote = engine.getPoliceCapabilityUpgradeQuote('training', 'AAA');
   assert.equal(quote.canStart, true);
   assert.equal(quote.currentLevel, 1);
@@ -125,6 +189,11 @@ test('capability projects require facilities, charge Finance on start, and compl
   assert.equal(financeModel.treasuryBalanceUsd, treasuryBefore - quote.costUsd);
   assert.equal(engine.getPoliceCapabilityState('AAA').trainingLevel, 1);
   assert.equal(engine.getPoliceCapabilityState('AAA').pendingProjects.length, 1);
+  assert.equal(Game.state.resource.AAA.inventory.CONSTRUCTION_AGGREGATE, 984);
+  assert.equal(Game.state.resource.AAA.inventory.COPPER, 996);
+  assert.equal(Game.state.resource.AAA.inventory.BAUXITE_ALUMINUM, 998);
+  assert.equal(start.project.materials.length, 3);
+  assert.equal(start.project.materials[0].inventorySource, 'Game.state.resource[country].inventory');
   assert.equal(engine.upgradeTraining(2, 'AAA').reason, 'TRAINING_UPGRADE_ALREADY_IN_PROGRESS');
 
   Game.state.simulation.simulationTimeMs = start.project.completesAtMs - 1;
@@ -142,8 +211,22 @@ test('capability projects require facilities, charge Finance on start, and compl
   const recruitmentQuote = engine.getPoliceCapabilityUpgradeQuote('recruitment', 'AAA');
   assert.equal(recruitmentQuote.canStart, true);
   const feeBefore = Number(engine.getPoliceCapabilityState('AAA').recruitmentFeePerOfficerUsd) || 2500;
+  const inventoryBeforeRejectedRecruitment = cloneStateValue(Game.state.resource.AAA.inventory);
+  const treasuryBeforeRejectedRecruitment = financeModel.treasuryBalanceUsd;
+  rejectNextExpense = true;
+  const rejectedRecruitment = engine.startPoliceCapabilityUpgrade('recruitment', 'AAA');
+  assert.equal(rejectedRecruitment.ok, false);
+  assert.equal(rejectedRecruitment.materialRefunded, true);
+  assert.deepEqual(Game.state.resource.AAA.inventory, inventoryBeforeRejectedRecruitment);
+  assert.equal(financeModel.treasuryBalanceUsd, treasuryBeforeRejectedRecruitment);
+
+  Game.state.simulation.turn += 1;
+  const inventoryBeforeRecruitment = cloneStateValue(Game.state.resource.AAA.inventory);
   const recruitmentStart = engine.startPoliceCapabilityUpgrade('recruitment', 'AAA');
   assert.equal(recruitmentStart.ok, true);
+  assert.equal(Game.state.resource.AAA.inventory.CRUDE_OIL, inventoryBeforeRecruitment.CRUDE_OIL - 6);
+  assert.equal(Game.state.resource.AAA.inventory.COPPER, inventoryBeforeRecruitment.COPPER - 2);
+  assert.equal(Game.state.resource.AAA.inventory.IRON_ORE, inventoryBeforeRecruitment.IRON_ORE - 4);
   assert.equal(engine.getPoliceCapabilityState('AAA').recruitmentLevel, 1);
   Game.state.simulation.simulationTimeMs = recruitmentStart.project.completesAtMs;
   Game.state.simulation.turn += 1;
