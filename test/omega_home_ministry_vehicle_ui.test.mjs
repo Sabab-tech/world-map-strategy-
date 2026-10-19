@@ -415,7 +415,7 @@ test('budget input rejects caps that exceed authorized money before any debit', 
   const before = harness.state.economy.AAA.treasury;
   harness.nodes.get('home-police-budget-save').onclick();
   assert.equal(harness.state.economy.AAA.treasury,before);
-  assert.equal(harness.ui.lastAdvice.title,'ORDER NOT EXECUTED');
+  assert.equal(harness.ui.lastAdvice.title,'BUDGET NOT SAVED');
   assert.notEqual(harness.api.getBudgetSummary('AAA').allocationRules.personnel.value,80);
 });
 
