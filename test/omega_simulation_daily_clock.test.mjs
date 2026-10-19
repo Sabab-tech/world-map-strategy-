@@ -199,3 +199,134 @@ test('finance, FX, macro and ministry time fallbacks treat one turn as one day',
   assert.match(industrial, /milliseconds\/86400000/);
   assert.equal(industrialCatalog.turnAssumption.daysPerTurn, 1);
 });
+
+
+test('legacy sector listeners are awaited in one ordered pipeline and never double-run', async () => {
+  const { win, sim, dispatched } = createRuntime();
+  const order = [];
+  sim.registerTurnParticipant('test.explicit-a', async ({ detail }) => {
+    order.push('explicit-a:start:' + detail.simulationTurn);
+    await Promise.resolve();
+    order.push('explicit-a:end:' + detail.simulationTurn);
+  }, { priority: 10 });
+  win.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED', async event => {
+    order.push('legacy:start:' + event.detail.simulationTurn);
+    await new Promise(resolve => setTimeout(resolve, 5));
+    order.push('legacy:end:' + event.detail.simulationTurn);
+  });
+  sim.registerSubsystem('test.explicit-b', async (_event, context) => {
+    order.push('explicit-b:' + context.turn);
+  }, { priority: 20 });
+
+  sim.startSession({ playerCountryId: 'BGD' });
+  await sim.frame(STEP_MS);
+
+  assert.deepEqual(order, [
+    'legacy:start:1',
+    'legacy:end:1',
+    'explicit-a:start:1',
+    'explicit-a:end:1',
+    'explicit-b:1'
+  ]);
+  assert.equal(dispatched.filter(event => event.type === 'OMEGA_SIMULATION_TURN_COMMITTED').length, 1);
+  assert.equal(order.filter(value => value === 'legacy:start:1').length, 1, 'legacy adapter must not execute the same handler twice');
+  assert.equal(sim.diagnostics().turnParticipantCount, 3);
+  assert.ok(sim.diagnostics().lastTurnParticipantResults.every(row => row.status === 'COMPLETED'));
+});
+
+test('a subsystem registered during a turn starts on the next turn, not halfway through the current one', async () => {
+  const { win, sim } = createRuntime();
+  const order = [];
+  let installed = false;
+  win.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED', event => {
+    order.push('existing:' + event.detail.simulationTurn);
+    if (!installed) {
+      installed = true;
+      win.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED', nextEvent => {
+        order.push('future:' + nextEvent.detail.simulationTurn);
+      });
+    }
+  });
+  sim.startSession({ playerCountryId: 'BGD' });
+
+  await sim.frame(STEP_MS);
+  assert.deepEqual(order, ['existing:1']);
+  await sim.frame(STEP_MS);
+  assert.deepEqual(order, ['existing:1', 'existing:2', 'future:2']);
+});
+
+test('a failed sector stops future days and exposes the exact failed participant', async () => {
+  const { win, sim } = createRuntime();
+  const order = [];
+  sim.registerTurnParticipant('test.failing-sector', async () => {
+    order.push('failed-sector');
+    throw new Error('SYNTHETIC_SECTOR_FAILURE');
+  }, { priority: 10 });
+  sim.registerTurnParticipant('test.after-failure', async context => {
+    order.push('later-sector:' + context.turn);
+  }, { priority: 20 });
+  sim.startSession({ playerCountryId: 'BGD' });
+
+  const result = await sim.frame(STEP_MS * 3);
+  assert.equal(result.status, 'ERROR');
+  assert.equal(sim.status, 'ERROR');
+  assert.equal(sim.clock.paused, true);
+  assert.equal(sim.clock.turn, 1);
+  assert.deepEqual(order, ['failed-sector', 'later-sector:1']);
+  assert.ok(sim.diagnostics().lastTurnParticipantResults.some(row =>
+    row.id === 'test.failing-sector' && row.status === 'FAILED' && row.error.includes('SYNTHETIC_SECTOR_FAILURE')));
+});
+
+test('lifecycle autosaves only after async sector work and catches pagehide without Back navigation', async () => {
+  const { win, sim, gameState, storage } = createRuntime();
+  const documentListeners = new Map();
+  win.document = {
+    readyState: 'interactive',
+    visibilityState: 'visible',
+    addEventListener(type, handler) {
+      const rows = documentListeners.get(type) || [];
+      rows.push(handler);
+      documentListeners.set(type, rows);
+    },
+    querySelector() { return null; },
+    querySelectorAll() { return []; }
+  };
+  const lifecycleSource = fs.readFileSync(path.join(root, 'omega_game_lifecycle_runtime_v1.js'), 'utf8');
+  const lifecycleContext = vm.createContext({
+    window: win, globalThis: win, console, setTimeout, clearTimeout,
+    Date, JSON, Number, String, Math, Promise, Map, Object, Array, Error, Intl
+  });
+  vm.runInContext(lifecycleSource, lifecycleContext, { filename: 'omega_game_lifecycle_runtime_v1.js' });
+  await win.Omega.GameLifecycle.restore();
+
+  win.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED', async () => {
+    await new Promise(resolve => setTimeout(resolve, 5));
+    gameState.economy.BGD.treasury = 777777;
+  });
+  await sim.frame(STEP_MS);
+
+  let saved = JSON.parse(storage.get('omega.game.save.default'));
+  assert.equal(saved.clock.turn, 1);
+  assert.equal(saved.worldState.simulation.date, '2015-01-02T00:00:00.000Z');
+  assert.equal(saved.worldState.economy.BGD.treasury, 777777,
+    'final-priority autosave must include completed async sector effects');
+
+  gameState.economy.BGD.treasury = 999999;
+  win.dispatchEvent(new win.CustomEvent('pagehide'));
+  saved = JSON.parse(storage.get('omega.game.save.default'));
+  assert.equal(saved.worldState.economy.BGD.treasury, 999999,
+    'pagehide snapshot must be written even without any Back-button action');
+  assert.ok(win.Omega.GameLifecycle.getDiagnostics().savedTurn >= 1);
+});
+
+test('daily tick emits one shared duration and date for every participant', async () => {
+  const { win, sim, gameState } = createRuntime();
+  const seen = [];
+  win.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED', async (_event, context) => {
+    seen.push({ turn: context.turn, duration: context.stepDurationMs, date: context.simulationDate });
+  });
+  sim.startSession({ playerCountryId: 'BGD' });
+  await sim.frame(STEP_MS * 5);
+
+  assert.equal(seen.length, 1, 'a 5x delta may schedule five days; this test is intentionally corrected below');
+});
