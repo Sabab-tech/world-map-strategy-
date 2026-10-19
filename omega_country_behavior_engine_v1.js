@@ -13,7 +13,7 @@
   const DIMENSIONS = Object.freeze([
     'riskAppetite', 'diplomaticPreference', 'fiscalDiscipline', 'mobilizationTolerance',
     'strategicTimeHorizon', 'tradeDependence', 'selfSufficiencyPriority', 'innovationPreference',
-    'domesticStabilityPriority', 'escalationTolerance'
+    'domesticStabilityPriority', 'escalationTolerance', 'economicCapacity'
   ]);
   const state = { siteRows: null, siteStatus: 'NOT_LOADED', sitePromise: null, siteError: null };
   const num = v => {
