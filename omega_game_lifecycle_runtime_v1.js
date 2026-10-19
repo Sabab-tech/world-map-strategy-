@@ -285,6 +285,9 @@
     if (restoreFailed && !options.force) return false;
     if (!playerCountry(sim)) return false;
     var turn = Math.max(0, Math.floor(number(sim.clock && sim.clock.turn) || 0));
+    // Reconcile the displayed treasury/resources before taking the durable snapshot.
+    // Rendering is best-effort and must never be allowed to block a save on exit.
+    try { updateHud(); } catch (_) {}
     var snapshot;
     try { snapshot = sim.saveState(); }
     catch (error) {
@@ -320,7 +323,6 @@
     if (localSaved || g.indexedDB) lastSavedSerialized = serialized;
     if (localSaved) setSaveStatus('AUTO-SAVED · DAY ' + (turn + 1));
     else setSaveStatus('SAVING DEVICE BACKUP…');
-    updateHud();
     // Exposed promise lets diagnostics and tests observe IndexedDB completion when available.
     saveNow.lastBackupPromise = backupPromise;
     return localSaved || !!g.indexedDB;
