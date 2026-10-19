@@ -23,8 +23,12 @@
 /* The ministry layer is a separate high-z stacking surface; leave room so its title row stays usable. */
 #map-metric-dropdown { z-index: 1000002 !important; }
 body[data-active-layer]:not([data-active-layer="0"]) #ministry-dashboard-view,
+body[data-active-layer]:not([data-active-layer="0"]) #cabinet-full-window {
+  top: 115px !important;
+  height: calc(100vh - 115px) !important;
+  max-height: calc(100vh - 115px) !important;
+}
 body.ios-active #ministry-dashboard-view,
-body[data-active-layer]:not([data-active-layer="0"]) #cabinet-full-window,
 body.ios-active #cabinet-full-window {
   top: 70px !important;
   height: calc(100vh - 70px) !important;
