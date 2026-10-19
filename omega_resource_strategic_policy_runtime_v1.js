@@ -737,7 +737,7 @@ install();
 if(typeof g.addEventListener==='function'){
  g.addEventListener('OMEGA_READY',()=>{loadRules().then(()=>install()).catch(()=>{});});
  g.addEventListener('OMEGA_GAME_SESSION_STARTED',()=>{loadRules().then(()=>install()).catch(()=>{});});
- g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED',()=>{try{processAll();for(const c of countryIds())processPowerCountry(c);}catch(_){}});
+ g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED',async()=>{processAll();for(const c of countryIds())await processPowerCountry(c);});
  const processingImpactListener=e=>{
   const d=e?.detail||{},p=d.payload||d,cc=country(p.countryId||d.countryId);
   const tx=String(p.transactionId||p.processId||'');if(!cc||!tx)return;
