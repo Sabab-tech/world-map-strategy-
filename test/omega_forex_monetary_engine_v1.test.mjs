@@ -128,3 +128,123 @@ test('currency metadata uses existing country data and explicit exceptional-area
   }), null);
   assert.equal(engine.math.effectiveRateCode('SHP'), 'GBP');
 });
+
+test('runtime syncs country finance into Government Banking and settles FX with turn idempotency', async () => {
+  const profiles = [
+    {
+      name: 'Bangladesh', countryCode: 'BD', iso2: 'BD', iso3: 'BGD',
+      economyKey: 'BANGLADESH', profileStatus: 'AVAILABLE',
+      sourceValues: {
+        currency_code: 'BDT', currency_name: 'Bangladeshi Taka',
+        exchange_rate_usd: 120, gdp: 195000000000, gdp_growth: 6.5,
+        inflation: 6.2, debt: 80000000000, trade_balance: -9000000000,
+        reserves: 27000000000
+      },
+      indicators: {
+        exchangeRateLocalPerUsd: 120, gdpCurrentUsd: 195000000000,
+        gdpGrowthPct: 6.5, inflationRatePct: 6.2, publicDebtUsd: 80000000000,
+        tradeBalanceUsd: -9000000000, foreignExchangeReservesUsd: 27000000000
+      }
+    },
+    {
+      name: 'Nigeria', countryCode: 'NG', iso2: 'NG', iso3: 'NGA',
+      economyKey: 'NIGERIA', profileStatus: 'AVAILABLE',
+      sourceValues: {
+        currency_code: 'NGN', currency_name: 'Nigerian naira',
+        exchange_rate_usd: 1500, gdp: 450000000000, gdp_growth: 3,
+        inflation: 20, debt: 100000000000, trade_balance: 5000000000,
+        reserves: 35000000000
+      },
+      indicators: {
+        exchangeRateLocalPerUsd: 1500, gdpCurrentUsd: 450000000000,
+        gdpGrowthPct: 3, inflationRatePct: 20, publicDebtUsd: 100000000000,
+        tradeBalanceUsd: 5000000000, foreignExchangeReservesUsd: 35000000000
+      }
+    },
+    {
+      name: 'United States', countryCode: 'US', iso2: 'US', iso3: 'USA',
+      economyKey: 'UNITED_STATES', profileStatus: 'AVAILABLE',
+      sourceValues: {
+        currency_code: 'USD', currency_name: 'United States dollar',
+        exchange_rate_usd: 1, gdp: 21000000000000, gdp_growth: 2,
+        inflation: 2, debt: 18000000000000, trade_balance: -500000000000,
+        reserves: 500000000000
+      },
+      indicators: {
+        exchangeRateLocalPerUsd: 1, gdpCurrentUsd: 21000000000000,
+        gdpGrowthPct: 2, inflationRatePct: 2, publicDebtUsd: 18000000000000,
+        tradeBalanceUsd: -500000000000, foreignExchangeReservesUsd: 500000000000
+      }
+    }
+  ];
+  const financeStates = {
+    BD: { treasuryBalanceUsd: 1000000000, policy: { interestRateAnnualPct: 5 }, fiscalModel: {} },
+    NG: { treasuryBalanceUsd: 2000000000, policy: { interestRateAnnualPct: 12 }, fiscalModel: {} },
+    US: { treasuryBalanceUsd: 100000000000, policy: { interestRateAnnualPct: 3 }, fiscalModel: {} }
+  };
+  const actions = [];
+  context.gameState = {
+    simulation: { turn: 0, playerCountryId: 'BD' },
+    economy: {
+      BANGLADESH: { gdp: 195000000000, gdp_growth: 6.5, inflation: 6.2, debt: 80000000000, trade_balance: -9000000000, reserves: 27000000000 },
+      NIGERIA: { gdp: 450000000000, gdp_growth: 3, inflation: 20, debt: 100000000000, trade_balance: 5000000000, reserves: 35000000000 },
+      UNITED_STATES: { gdp: 21000000000000, gdp_growth: 2, inflation: 2, debt: 18000000000000, trade_balance: -500000000000, reserves: 500000000000 }
+    },
+    finance: {
+      BGD: { omegaFinance: { treasuryBalanceUsd: 1000000000 } },
+      NGA: { omegaFinance: { treasuryBalanceUsd: 2000000000 } },
+      USA: { omegaFinance: { treasuryBalanceUsd: 100000000000 } }
+    }
+  };
+  context.OmegaFinanceMinistry = {
+    VERSION: '1.1.0',
+    init: async () => ({ initialized: true }),
+    getProfiles: () => profiles,
+    getPlayerCountry: () => profiles[0],
+    getFinanceState: id => {
+      const p = profiles.find(row => row.countryCode === id || row.iso3 === id);
+      return p ? financeStates[p.countryCode] : null;
+    },
+    applyAction: action => {
+      actions.push(action);
+      const p = profiles.find(row => row.countryCode === action.countryId || row.iso3 === action.countryId);
+      if (!p || p.countryCode !== 'BD') return { ok: false, code: 'PLAYER_COUNTRY_SCOPE_VIOLATION' };
+      if (action.type === 'set-interest-rate') financeStates.BD.policy.interestRateAnnualPct = Number(action.value);
+      return { ok: true, code: 'POLICY_UPDATED' };
+    }
+  };
+
+  const diagnostics = await engine.init();
+  assert.equal(diagnostics.countryAreaCount, 3);
+  assert.ok(diagnostics.currencyCount >= 3);
+  assert.equal(engine.getRate('BDT', 'SIMULATION'), 120);
+  assert.equal(context.gameState.governmentBanking.countries.BD.currencyCode, 'BDT');
+  assert.equal(context.gameState.governmentBanking.countries.NG.currencyCode, 'NGN');
+  assert.equal(context.gameState.finance.BGD.governmentBanking.currencyCode, 'BDT');
+
+  const conversion = engine.convert({
+    amount: 12000, fromCode: 'BDT', toCode: 'NGN', mode: 'SIMULATION'
+  });
+  assert.equal(conversion.ok, true);
+  assert.equal(conversion.route, 'SOURCE_TO_USD_TO_TARGET');
+  assert.equal(conversion.amountTarget, 149775);
+  assert.equal(context.gameState.governmentBanking.fxClearingHouse.transactionCount, 1);
+
+  const tick = engine.simulationTick(1, 24 * 60 * 60 * 1000);
+  assert.equal(tick.ok, true);
+  assert.equal(tick.simulationDay, 1);
+  assert.equal(engine.simulationTick(1, 24 * 60 * 60 * 1000).duplicate, true);
+
+  const policy = engine.applyMonetaryPolicy({
+    inflationTargetPct: 3, moneySupplyGrowthPct: 8,
+    policyInterestRatePct: 6, currencyRegime: 'MANAGED_FLOAT'
+  });
+  assert.equal(policy.ok, true);
+  assert.equal(actions.at(-1).type, 'set-interest-rate');
+  assert.equal(financeStates.BD.policy.interestRateAnnualPct, 6);
+
+  const intervention = engine.intervene({ amountUsd: 50000000, direction: 'SUPPORT_CURRENCY' });
+  assert.equal(intervention.ok, true);
+  assert.ok(intervention.transaction.newLocalPerUsd < intervention.transaction.oldLocalPerUsd);
+  assert.equal(context.gameState.governmentBanking.forex.ledger.length, 2);
+});
