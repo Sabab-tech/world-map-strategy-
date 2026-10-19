@@ -451,6 +451,8 @@ test('budget allocation is country-scoped and rejects purchases above category c
 test('Finance Ministry Home Affairs allocation caps the authorized Home Ministry envelope', () => {
   const state = setup(1000000);
   state.finance = {AAA:{available:1000000,ministryAllocations:{interior_security:50000}}};
+  assert.equal(api.getBudgetSummary('AAA').totalAuthorized,50000,
+    'a new Finance ceiling must also constrain an older saved Home Ministry plan');
   const plan = {
     personnel:{mode:'percent',value:50},
     vehiclePurchase:{mode:'percent',value:30},
@@ -486,4 +488,16 @@ test('category percentages and fixed amounts cannot exceed the authorized envelo
   },'AAA');
   assert.equal(badFixed.ok,false);
   assert.equal(badFixed.reason,'BUDGET_ALLOCATION_EXCEEDS_TOTAL');
+});
+
+
+test('a recorded zero Home Affairs Finance allocation blocks purchases despite an older local plan', () => {
+  const state = setup(10000000);
+  state.finance = { AAA:{ available:10000000, ministryAllocations:{ interior_security:0 } } };
+  assert.equal(api.getBudgetSummary('AAA').totalAuthorized,0);
+  const before = state.economy.AAA.treasury;
+  const result = api.orderVehicle(1,1,'AAA');
+  assert.equal(result.ok,false);
+  assert.equal(result.reason,'INSUFFICIENT_MINISTRY_BUDGET');
+  assert.equal(state.economy.AAA.treasury,before);
 });
