@@ -53,7 +53,8 @@ test('Finance preserves existing finance data and enforces allocation, treasury 
   assert.equal(boot.initialized,true);assert.equal(boot.profileCount,249);assert.equal(state.finance.BGD.available,4000000000);assert.equal(state.finance.BGD.reserves,456);
   assert.ok(context.OmegaFinanceMinistry.getFinanceState('BGD').treasuryBalanceUsd>0);
   let r=context.OmegaFinanceMinistry.applyAction({type:'spend-budget',countryId:'BGD',department:'interior',amountUsd:1000,spendType:'purchase'});
-  assert.equal(r.ok,false);assert.equal(r.code,'BUDGET_ALLOCATION_REQUIRED');
+  assert.equal(r.ok,true,'the country starts with a configured budget sector');
+  assert.equal(state.finance.BGD.available,4000000000-1000);
   r=context.OmegaFinanceMinistry.applyAction({type:'set-allocation',countryId:'BGD',department:'interior',amountUsd:100000000});
   assert.equal(r.ok,true);
   r=context.OmegaFinanceMinistry.applyAction({type:'spend-budget',countryId:'BGD',department:'interior',amountUsd:200000000,spendType:'purchase'});

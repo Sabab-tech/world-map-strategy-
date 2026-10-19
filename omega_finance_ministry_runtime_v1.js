@@ -661,8 +661,8 @@
       renderBudgetBarRows(fm,8)+'<div class="ofm-nav-shortcuts"><button type="button" data-ofm-tab="budget">Open budget distribution</button><button type="button" data-ofm-tab="income">Open income & industries</button><button type="button" data-ofm-tab="treasury">Open Treasury & debt</button></div></section>';
     out+='<section class="ofm-section"><div class="ofm-section-heading"><h3>Revenue reality check</h3><span>Model projections and recorded receipts stay separate</span></div>'+
       '<div class="ofm-kpi-grid ofm-kpi-grid-three">'+
-      metricCard('Recorded tax receipts',fmtMoney(revenues.snapshot.recordedTaxRevenueUsd),null,'finance.taxRevenue; unavailable if not recorded')+
-      metricCard('Resource receipts this turn',fmtMoney(revenues.snapshot.recordedResourceCurrentUsd),null,'Recorded from Resource Economy when published')+
+      metricCard('Recorded tax receipts',fmtMoney(revenues.recordedTaxRevenueUsd),null,'finance.taxRevenue; unavailable if not recorded')+
+      metricCard('Resource receipts this turn',fmtMoney(revenues.recordedResourceCurrentUsd),null,'Recorded from Resource Economy when published')+
       metricCard('Public debt',fmtMoney(debt),null,'Debt outstanding in game state')+'</div>'+
       '<p class="ofm-data-note">The annual income figure is a model forecast. Recorded treasury movements remain a separate ledger so the game does not disguise estimates as actual receipts.</p></section>';
     if(!editable)out+='<div class="ofm-readonly">READ-ONLY country profile. Finance actions can only be executed for the country selected as the active player in the game.</div>';
