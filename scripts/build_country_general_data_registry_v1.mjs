@@ -149,7 +149,8 @@ const METRIC_CATALOGUE = [
   { key: 'fiscalHealthIndex', name: 'Repository-derived fiscal health index', unit: 'index 0-100', description: '100 minus the repository-derived fiscal risk index.' },
   { key: 'gdpWorldRank', name: 'GDP world rank in local profile', unit: 'rank', description: 'Legacy local-profile rank; methodology and year require verification.' },
   { key: 'humanDevelopmentIndex', name: 'Human Development Index', unit: 'index 0-1', description: 'UNDP Human Development Report 2025; official value is for observation year 2023.' },
-  { key: 'corruptionPerceptionIndex', name: 'Corruption Perceptions Index', unit: 'rank or score per source release', description: 'Reserved for a dated Transparency International release.' },
+  { key: 'corruptionPerceptionIndex', name: 'Corruption Perceptions Index score', unit: 'score 0-100', description: 'Transparency International CPI 2025 score. Higher scores indicate lower perceived public-sector corruption.' },
+  { key: 'corruptionPerceptionRank', name: 'Corruption Perceptions Index rank', unit: 'rank', description: 'Transparency International CPI 2025 rank; smaller numerical rank denotes a higher position.' },
   { key: 'globalPeaceIndexRank', name: 'Global Peace Index rank', unit: 'rank', description: 'Reserved for a dated Institute for Economics & Peace release.' },
   { key: 'democracyIndex', name: 'Democracy Index', unit: 'score 0-10', description: 'Reserved for a dated Economist Intelligence Unit release.' },
   { key: 'pressFreedomIndex', name: 'Press freedom index', unit: 'rank or score per source release', description: 'Reserved for a dated Reporters Without Borders release.' },
@@ -182,7 +183,7 @@ async function getText(url) {
 }
 
 // Minimal RFC-4180-compatible parser; the registry refresh has no extra runtime dependency.
-function parseCsv(text) {
+function parseDelimited(text, delimiter = ',') {
   const rows = [];
   let row = [];
   let field = '';
@@ -200,7 +201,7 @@ function parseCsv(text) {
       }
     } else if (ch === '"' && field.length === 0) {
       quoted = true;
-    } else if (ch === ',') {
+    } else if (ch === delimiter) {
       row.push(field);
       field = '';
     } else if (ch === '\n' || ch === '\r') {
@@ -224,7 +225,7 @@ function parseCsv(text) {
 async function fetchUndpHdi() {
   const sourceUrl = 'https://hdr.undp.org/sites/default/files/2025_HDR/HDR25_Composite_indices_complete_time_series.csv';
   const sourceId = 'UNDP_HDR_2025_COMPOSITE_INDICES';
-  const records = parseCsv(await getText(sourceUrl));
+  const records = parseDelimited(await getText(sourceUrl), ',');
   if (records.length < 10) throw new Error('UNDP_HDI_CSV_TOO_FEW_ROWS');
   const headers = records[0].map((value) => String(value).replace(/^\uFEFF/, '').trim().toLowerCase());
   const isoIndex = headers.indexOf('iso3');
@@ -241,6 +242,46 @@ async function fetchUndpHdi() {
   }
   if (byIso3.size < 100) throw new Error('UNDP_HDI_CSV_TOO_FEW_VALID_COUNTRY_VALUES: ' + byIso3.size);
   return { byIso3, loaded: true, error: null, sourceId, sourceUrl, rowCount: byIso3.size, observationYear: 2023 };
+}
+
+  return { byIso3, loaded: true, error: null, sourceId, sourceUrl, rowCount: byIso3.size, observationYear: 2023 };
+}
+
+async function fetchTransparencyInternationalCpi2025() {
+  // Maintained machine-readable mirror of the Transparency International CPI
+  // 2025 full results table. The record stores the publisher and publication
+  // page as well as the actual mirror URL so its provenance is transparent.
+  const sourceUrl = 'https://raw.githubusercontent.com/loupeat/ti-cpi/main/docs/ti/CPI2025_GlobalResultsTrends.csv';
+  const publisherUrl = 'https://www.transparency.org/en/cpi/2025';
+  const sourceId = 'TI_CPI_2025_MIRRORED_FULL_RESULTS';
+  const rows = parseDelimited(await getText(sourceUrl), ';');
+  const headerIndex = rows.findIndex((row) => {
+    const normalized = row.map((value) => String(value).replace(/^\\uFEFF/, '').trim().toLowerCase());
+    return normalized.includes('iso3') && normalized.includes('cpi score 2025') && normalized.includes('rank 2025');
+  });
+  if (headerIndex < 0) throw new Error('TI_CPI_2025_EXPECTED_HEADER_NOT_FOUND');
+  const headers = rows[headerIndex].map((value) => String(value).replace(/^\\uFEFF/, '').trim().toLowerCase());
+  const isoIndex = headers.indexOf('iso3');
+  const scoreIndex = headers.indexOf('cpi score 2025');
+  const rankIndex = headers.indexOf('rank 2025');
+  const byIso3 = new Map();
+  for (const row of rows.slice(headerIndex + 1)) {
+    const iso3 = String(row[isoIndex] || '').trim().toUpperCase();
+    const score = finite(row[scoreIndex]);
+    const rank = finite(row[rankIndex]);
+    if (!/^[A-Z]{3}$/.test(iso3)) continue;
+    if ((score === null || score < 0 || score > 100) && (rank === null || rank < 1)) continue;
+    byIso3.set(iso3, {
+      score: score !== null && score >= 0 && score <= 100 ? score : null,
+      rank: rank !== null && rank >= 1 ? rank : null,
+      year: 2025,
+      sourceId,
+      sourceUrl,
+      publisherUrl
+    });
+  }
+  if (byIso3.size < 150) throw new Error('TI_CPI_2025_TOO_FEW_VALID_COUNTRY_VALUES: ' + byIso3.size);
+  return { byIso3, loaded: true, error: null, sourceId, sourceUrl, publisherUrl, rowCount: byIso3.size, observationYear: 2025 };
 }
 
 async function fetchRestCountries() {
