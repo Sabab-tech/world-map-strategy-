@@ -573,13 +573,21 @@ var Game = window.Game = {
         ]);
 
         // Retry once if the registry was still loading when the map selection occurred.
-        if (runtime && runtime.ready && typeof runtime.isSettled === 'function' && !runtime.isSettled()) {
+        const countryDataPending = runtime && (
+            (typeof runtime.isSettled === 'function' && !runtime.isSettled()) ||
+            (typeof runtime.isGeneralDataSettled === 'function' && !runtime.isGeneralDataSettled())
+        );
+        if (runtime && runtime.ready && countryDataPending) {
             const requested = countryName;
             const pendingRefreshes = this._countryRuntimeRefreshPending ||
                 (this._countryRuntimeRefreshPending = new Set());
             if (!pendingRefreshes.has(requested)) {
                 pendingRefreshes.add(requested);
-                Promise.resolve(runtime.ready).then(() => {
+                const readyTasks = [Promise.resolve(runtime.ready)];
+                if (typeof runtime.generalDataReadyPromise === 'function') {
+                    readyTasks.push(Promise.resolve(runtime.generalDataReadyPromise()));
+                }
+                Promise.all(readyTasks).then(() => {
                     pendingRefreshes.delete(requested);
                     const active = Game.currentActiveCountry || window.currentActiveCountry || '';
                     const activeProfile = runtime.resolveCountry(active);
