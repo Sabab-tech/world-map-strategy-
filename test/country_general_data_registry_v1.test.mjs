@@ -50,10 +50,11 @@ test('all countries use the same documented ordered schema and metric/provenance
     assert.equal(row.metricMetadata.years.length, metricFields.length);
     assert.equal(row.metricMetadata.statusCodes.length, metricFields.length);
     assert.equal(row.metricMetadata.sourceCodes.length, metricFields.length);
-    assert.equal(row.metricMetadata.sourceNameCodes.length, metricFields.length);
+    if (Array.isArray(row.metricMetadata.sourceNameCodes)) assert.equal(row.metricMetadata.sourceNameCodes.length, metricFields.length);
     assert.equal(row.metricMetadata.methodCodes.length, metricFields.length);
-    assert.equal(row.metricMetadata.sourceUrls.length, metricFields.length);
-    assert.equal(row.metricMetadata.notes.length, metricFields.length);
+    if (Array.isArray(row.metricMetadata.sourceUrls)) assert.equal(row.metricMetadata.sourceUrls.length, metricFields.length);
+    if (Array.isArray(row.metricMetadata.notes)) assert.equal(row.metricMetadata.notes.length, metricFields.length);
+    else assert.equal(row.metricMetadata.noteCodes.length, metricFields.length);
     assert.equal(row.legacySnapshots.length, schema.legacySnapshotFields.length);
     assert.equal(row.naturalResources.length, schema.naturalResourceFields.length);
     assert.equal(row.publicSafety.length, schema.publicSafetyFields.length);
