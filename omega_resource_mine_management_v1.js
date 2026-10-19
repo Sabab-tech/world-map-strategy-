@@ -184,12 +184,50 @@ function siteCard(site,country,view){
  }
  return html+'</article>';
 }
+function stationRows(country){
+ const rs=playerState(country),econ=state()?.economy?.[country]||{};
+ const candidates=[
+  ...(Array.isArray(econ.productionAssets)?econ.productionAssets:[]),
+  ...(Array.isArray(rs.productionAssets)?rs.productionAssets:[]),
+  ...(Array.isArray(rs.industrialNetwork?.productionAssets)?rs.industrialNetwork.productionAssets:[]),
+  ...(Array.isArray(rs.industrialNetwork?.factoryAssets)?rs.industrialNetwork.factoryAssets:[])
+ ];
+ const byId=new Map();
+ for(const asset of candidates){
+  const id=String(asset?.id||asset?.assetId||asset?.factoryId||asset?.projectId||'').trim();
+  if(!id)continue;
+  const inputs=asset.inputCoefficients||asset.recipe?.inputs||asset.inputProfile||{};
+  const outputs=asset.outputProfile||asset.recipe?.outputs||asset.outputCoefficients||{};
+  const factoryType=String(asset.factoryType||asset.facilityType||asset.stage||'').toUpperCase();
+  const stage=String(asset.stage||'').toUpperCase();
+  if(!Object.keys(inputs).length&&!/PROCESS|MILL|REFIN|SMELT|CONCENTR|SORT/.test(factoryType+' '+stage))continue;
+  if(!byId.has(id))byId.set(id,{...asset,id,inputCoefficients:inputs,outputProfile:outputs});
+ }
+ return [...byId.values()];
+}
+function stationDirectory(country){
+ const assets=stationRows(country),canBuild=country===playerCountry();
+ let out='<div class="omm-section"><h3>Mine & processing stations</h3><p class="omm-sub">Existing processing facilities, their inputs/outputs and cycle capacity. Processing consumes inventory and produces tracked batches; it does not directly mint treasury cash.</p></div>';
+ if(!assets.length)return out+'<div class="omm-empty">No processing station is commissioned in this country. Commission a compatible factory through the existing Industrial Network before processing ore.</div>';
+ return out+'<div class="omm-site-grid">'+assets.map(asset=>{
+  const id=String(asset.id),name=asset.name||asset.factoryName||asset.factoryType||id,inputs=asset.inputCoefficients||{},outputs=asset.outputProfile||{},resource=Object.keys(inputs)[0]||'';
+  const status=String(asset.status||'UNOBSERVED').toUpperCase(),capacity=num(asset.capacity);
+  const disabled=!canBuild||status!=='OPERATIONAL'||!resource;
+  return '<article class="omm-card"><div class="omm-card-head"><div><h3>'+esc(name)+'</h3><div class="omm-sub">'+esc(label(asset.factoryType||asset.facilityType||asset.stage))+' · '+esc(id)+'</div></div><span class="omm-pill">'+esc(label(status))+'</span></div>'+
+   '<div class="omm-lines"><div class="omm-line"><span class="omm-muted">Input capacity / cycle</span><br><strong>'+formatNum(capacity,2)+' '+esc(asset.capacityUnit||'units')+'</strong></div><div class="omm-line"><span class="omm-muted">Cycle duration</span><br><strong>'+formatNum(asset.cycleDays)+' days</strong></div>'+
+   '<div class="omm-line"><span class="omm-muted">Inputs</span><br>'+Object.entries(inputs).map(([k,v])=>esc(label(k))+': '+formatNum(v,3)).join('<br>')+'</div>'+
+   '<div class="omm-line"><span class="omm-muted">Outputs</span><br>'+Object.entries(outputs).map(([k,v])=>esc(label(k))+': '+formatNum(v,3)).join('<br>')+'</div></div>'+
+   (resource?'<div class="omm-actions"><label for="omm-factory-qty-'+esc(id)+'">Input quantity</label><input class="omm-input" id="omm-factory-qty-'+esc(id)+'" data-omm-factory-quantity="'+esc(id)+'" type="number" min="1" step="1" value="'+Math.max(1,Math.min(1000,capacity||1000))+'" aria-label="Processing input quantity for '+esc(name)+'">'+
+   '<button data-omm-action="run-factory" data-factory-id="'+esc(id)+'" data-resource-id="'+esc(resource)+'" '+(disabled?'disabled':'')+'>Run processing cycle</button></div>':'')+
+   '<div class="omm-sub">The existing factory runtime enforces input stock, once-per-turn capacity, route/logistics gates and material-batch lineage.</div></article>';
+ }).join('')+'</div>';
+}
 function mineDirectory(country){
  const rows=sitesFor(country);
  if(!rows.length)return '<div class="omm-empty">No valid mine-site references loaded for '+esc(country)+'. Check the canonical site loader and supplemental dataset diagnostic.</div>';
  const built=new Set(assetRows(country).filter(a=>String(a.status).toUpperCase()==='OPERATIONAL').map(a=>String(a.siteId)));
  return '<div class="omm-section"><h3>National mine-site portfolio</h3><p class="omm-sub">Known deposits and projects, not necessarily government-owned or player-operated. Commissioning changes only game state, never the source-reported real-world status.</p></div>'+
- '<div class="omm-site-grid">'+rows.map(site=>siteCard(site,country,'mines')).join('')+'</div>';
+ '<div class="omm-site-grid">'+rows.map(site=>siteCard(site,country,'mines')).join('')+'</div>'+stationDirectory(country);
 }
 function myMines(country){
  const rs=playerState(country),assets=assetRows(country),projects=playerProjects(country).filter(p=>p.projectType==='MINE_CONSTRUCTION');
@@ -259,6 +297,18 @@ async function onClick(event){
  if(action==='tab-my-mines'){currentView='my-mines';currentCountry=playerCountry();lastOutcome='';render();return;}
  if(action==='tab-mines'){currentView='mines';lastOutcome='';render();return;}
  const siteId=String(button.getAttribute('data-site-id')||''),rid=String(button.getAttribute('data-resource-id')||'').toLowerCase();
+ if(action==='run-factory'){
+  if(country!==playerCountry()){lastOutcome='Rejected: processing is restricted to the active player country.';render();return;}
+  if(!api?.executeFactoryCycle){lastOutcome='Factory processing runtime unavailable.';render();return;}
+  const factoryId=String(button.getAttribute('data-factory-id')||'').trim();
+  const qtyInput=Array.from(g.document.querySelectorAll('[data-omm-factory-quantity]')).find(el=>el.getAttribute('data-omm-factory-quantity')===factoryId);
+  const quantity=num(qtyInput?.value);
+  if(!factoryId||quantity===null||quantity<=0){lastOutcome='Factory and positive input quantity are required.';render();return;}
+  button.disabled=true;
+  try{const result=api.executeFactoryCycle({countryId:country,factoryId,resourceId:rid,quantity});lastOutcome=message('Factory processing cycle',result);}
+  catch(error){lastOutcome='Factory processing failed: '+String(error?.message||error);}
+  render();return;
+ }
  if(action==='focus-site'){focusSite(siteId,country);return;}
  if(action==='build-mine'){
    if(country!==playerCountry()){lastOutcome='Rejected: mine construction is restricted to the active player country.';render();return;}
