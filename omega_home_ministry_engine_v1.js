@@ -1926,7 +1926,7 @@
   }
   function policeCaseResponseHours(caseType,priority,rulebook){
     const book=normalizePoliceRulebook(rulebook);
-    if(caseType==='missingPerson')return book.missingPersonActionHours;
+    if(caseType==='missingPerson')return priority==='critical'||priority==='high'?Math.min(book.missingPersonActionHours,book.highRiskResponseMinutes/60):book.missingPersonActionHours;
     if(priority==='critical'||priority==='high')return book.highRiskResponseMinutes/60;
     return book.arrestResponseHours;
   }
@@ -2068,43 +2068,48 @@
   }
   function processPoliceCaseDeadlines(state,country,now){
     const rows=Array.isArray(state&&state.policeCases)?state.policeCases:[];if(!rows.length)return false;
-    const current=normalizePoliceRulebook(state.policeRulebook),at=Math.max(0,num(now)||0);let changed=false;
+    const at=Math.max(0,num(now)||0);let anyChanged=false;
     rows.forEach(function(row){
       if(!row||row.status==='CLOSED')return;
+      let caseChanged=false;
       if(!row.firstResponseAtMs&&!row.responseDeadlineMissed&&at>Number(row.firstActionDueAtMs||0)){
         row.responseDeadlineMissed=true;row.responseOverdueAtMs=at;
         const penalty=policeCasePriorityFactor(row.priority);
         state.publicSatisfaction=clamp(state.publicSatisfaction-0.12*penalty,0,100);
-        state.policeTrust=clamp(state.policeTrust-0.08*penalty,0,100);changed=true;
+        state.policeTrust=clamp(state.policeTrust-0.08*penalty,0,100);caseChanged=true;
       }
       if(row.warrantRequestedAtMs&&!row.warrantDecisionAtMs&&!row.warrantDeadlineMissed&&at>Number(row.warrantDecisionDueAtMs||0)){
         row.warrantDeadlineMissed=true;row.warrantOverdueAtMs=at;
-        state.publicSatisfaction=clamp(state.publicSatisfaction-0.08,0,100);changed=true;
+        state.publicSatisfaction=clamp(state.publicSatisfaction-0.08,0,100);caseChanged=true;
       }
       if(row.firstResponseAtMs&&!row.evidenceFiledAtMs&&!row.evidenceDeadlineMissed&&at>Number(row.evidenceSubmissionDueAtMs||0)){
         row.evidenceDeadlineMissed=true;row.evidenceOverdueAtMs=at;
         state.policeEfficiency=clamp(state.policeEfficiency-0.05,0,100);
-        state.justiceBacklog=Math.max(0,Math.floor(num(state.justiceBacklog)||0))+1;changed=true;
+        state.justiceBacklog=Math.max(0,Math.floor(num(state.justiceBacklog)||0))+1;caseChanged=true;
       }
       if(row.arrestedAtMs&&!row.arrestReviewedAtMs&&!row.arrestReviewOverdue&&at>Number(row.arrestReviewDueAtMs||0)){
         row.arrestReviewOverdue=true;row.arrestReviewOverdueAtMs=at;
         state.misconductRiskPct=clamp(state.misconductRiskPct+0.15,0,100);
-        state.policeTrust=clamp(state.policeTrust-0.1,0,100);changed=true;
+        state.policeTrust=clamp(state.policeTrust-0.1,0,100);caseChanged=true;
       }
       if(row.arrestedAtMs&&!row.chargedAtMs&&!row.releasedAtMs&&row.detentionDeadlineAtMs&&at>=Number(row.detentionDeadlineAtMs)&&!row.detentionDeadlineMissed){
         row.detentionDeadlineMissed=true;row.status='RELEASE_REQUIRED';row.detentionDeadlineMissedAtMs=at;
         state.misconductRiskPct=clamp(state.misconductRiskPct+0.2,0,100);
-        state.publicSatisfaction=clamp(state.publicSatisfaction-0.15,0,100);changed=true;
+        state.publicSatisfaction=clamp(state.publicSatisfaction-0.15,0,100);caseChanged=true;
       }
       if(row.forceUsedAtMs&&!row.forceReviewedAtMs&&!row.forceReviewOverdue&&at>Number(row.forceReviewDueAtMs||0)){
         row.forceReviewOverdue=true;row.forceReviewOverdueAtMs=at;
         state.misconductRiskPct=clamp(state.misconductRiskPct+0.15,0,100);
-        state.publicSatisfaction=clamp(state.publicSatisfaction-0.1,0,100);changed=true;
+        state.publicSatisfaction=clamp(state.publicSatisfaction-0.1,0,100);caseChanged=true;
       }
-      if(changed&&Array.isArray(row.actionLog)&&row.actionLog.length<40)row.actionLog.push({action:'DEADLINE_REVIEW',atMs:at,turn:turn()});
+      if(caseChanged){
+        if(!Array.isArray(row.actionLog))row.actionLog=[];
+        if(row.actionLog.length<40)row.actionLog.push({action:'DEADLINE_REVIEW',atMs:at,turn:turn()});
+        anyChanged=true;
+      }
     });
-    state.policeCases=rows.slice(-200);
-    return changed;
+    state.policeCases=rows.slice(0,200);
+    return anyChanged;
   }
   const api=Object.freeze({
     VERSION:VERSION,POLICE_SALARY_PER_DAY:POLICE_SALARY_PER_DAY,POLICE_RECRUITMENT_COST:POLICE_RECRUITMENT_COST,
