@@ -1227,7 +1227,7 @@
     if (!panel) return;
     const player = getPlayerProfile();
     const code = getCountryCurrency(player) || 'USD';
-    const modeEl = panel.querySelector('#ofx-chart-mode');
+    const modeEl = panel.querySelector('#ofx-convert-mode');
     const mode = modeEl && modeEl.value === 'REFERENCE' ? 'REFERENCE' : state.viewMode;
     const activeRate = rateFor(code, mode);
     const values = {
@@ -1250,6 +1250,10 @@
       const filter = panel.querySelector('[data-ofx-bank-filter]');
       bankTbody.innerHTML = renderBankingCountryTable(filter && filter.value, mode);
     }
+    const lookup = panel.querySelector('[data-ofx-country-lookup-result]');
+    const lookupInput = panel.querySelector('[data-ofx-country-lookup]');
+    if (lookup) lookup.innerHTML = renderCountryLookup(lookupInput && lookupInput.value, mode);
+    updateRecordButtonState(panel, mode);
     const ledger = panel.querySelector('[data-ofx-ledger-table]');
     if (ledger) ledger.innerHTML = renderLedger();
   }
@@ -1397,7 +1401,7 @@
     const output = panel && panel.querySelector('[data-ofx-conversion-result]');
     if (!output) return;
     if (!result || result.ok !== true) {
-      output.textContent = 'Conversion unavailable: ' + String(result && result.code || 'unknown rate or amount');
+      output.textContent = 'Conversion unavailable: ' + String(result && (result.message || result.code) || 'unknown rate or amount');
       output.classList.add('is-error'); output.classList.remove('is-ok');
       return;
     }
@@ -1423,13 +1427,27 @@
     });
     return out;
   }
+  function updateRecordButtonState(panel, mode) {
+    const button = panel && panel.querySelector('[data-ofx-record]');
+    if (!button) return;
+    const readOnly = String(mode || 'SIMULATION').toUpperCase() === 'REFERENCE';
+    button.disabled = readOnly;
+    button.title = readOnly ? 'Reference rates are comparison-only. Switch to OMEGA Game Simulation to record.' : 'Record this conversion in Government Banking';
+    button.setAttribute('aria-disabled', readOnly ? 'true' : 'false');
+  }
   function previewConversion(form, panel) {
     if (!form || !panel) return { ok: false, code: 'CONVERTER_NOT_READY' };
     const data = readForm(form);
     const mode = data.mode === 'REFERENCE' ? 'REFERENCE' : 'SIMULATION';
-    const result = calculateConversion(
-      finite(data.amount), data.fromCode, data.toCode, allRateValues(mode), FX_FEE_BPS
-    );
+    updateRecordButtonState(panel, mode);
+    let result;
+    if (normalizeCode(data.fromCode) === normalizeCode(data.toCode)) {
+      result = { ok: false, code: 'SAME_CURRENCY_CONVERSION', message: 'Choose two different currencies.' };
+    } else {
+      result = calculateConversion(
+        finite(data.amount), data.fromCode, data.toCode, allRateValues(mode), FX_FEE_BPS
+      );
+    }
     showConversionResult(panel, result, false);
     return result;
   }
@@ -1450,7 +1468,8 @@
         const result = executeConversion({
           amount: finite(data.amount), fromCode: data.fromCode, toCode: data.toCode, mode: mode
         });
-        showConversionResult(panel, result, true);
+        showConversionResult(panel, result, !!(result && result.ok === true));
+        updateRecordButtonState(panel, mode);
         refreshPanelMetrics();
       } else if (action === 'ofx-policy') {
         const result = applyMonetaryPolicy({
@@ -1480,10 +1499,7 @@
       const target = event.target;
       if (!target) return;
       if (target.id === 'ofx-chart-mode') {
-        state.viewMode = target.value === 'REFERENCE' ? 'REFERENCE' : 'SIMULATION';
-        syncAllCountries();
         renderCurrentCharts(false);
-        refreshPanelMetrics();
       } else if (target.id === 'ofx-chart-currency') {
         renderCurrentCharts(false);
       } else if (target.matches && target.matches('[data-ofx-bank-filter]')) {
@@ -1491,13 +1507,20 @@
         const panel = content && content.querySelector('[data-ofx-panel]');
         const body = panel && panel.querySelector('[data-ofx-banking-table]');
         if (body) body.innerHTML = renderBankingCountryTable(target.value, state.viewMode);
-      } else if (target.matches && target.matches('[data-ofx-action="ofx-convert"] select[name="mode"]')) {
-        state.viewMode = target.value === 'REFERENCE' ? 'REFERENCE' : 'SIMULATION';
       }
       const converterForm = target.closest && target.closest('[data-ofx-action="ofx-convert"]');
       if (converterForm && ['fromCode', 'toCode', 'mode'].includes(target.name)) {
         const content = global.document.getElementById('ministry-dashboard-content');
-        previewConversion(converterForm, content && content.querySelector('[data-ofx-panel]'));
+        const panel = content && content.querySelector('[data-ofx-panel]');
+        if (target.name === 'mode') state.viewMode = target.value === 'REFERENCE' ? 'REFERENCE' : 'SIMULATION';
+        previewConversion(converterForm, panel);
+        refreshPanelMetrics();
+      }
+      if (target.matches && target.matches('[data-ofx-country-lookup]')) {
+        const panel = target.closest('[data-ofx-panel]');
+        const output = panel && panel.querySelector('[data-ofx-country-lookup-result]');
+        const mode = panel && panel.querySelector('#ofx-convert-mode');
+        if (output) output.innerHTML = renderCountryLookup(target.value, mode && mode.value || state.viewMode);
       }
     });
     global.document.addEventListener('input', function (event) {
@@ -1509,6 +1532,12 @@
           body.innerHTML = renderBankingCountryTable(target.value, state.viewMode);
         }
       }
+      if (target && target.matches && target.matches('[data-ofx-country-lookup]')) {
+        const panel = target.closest('[data-ofx-panel]');
+        const output = panel && panel.querySelector('[data-ofx-country-lookup-result]');
+        const mode = panel && panel.querySelector('#ofx-convert-mode');
+        if (output) output.innerHTML = renderCountryLookup(target.value, mode && mode.value || state.viewMode);
+      }
       const converterForm = target && target.closest && target.closest('[data-ofx-action="ofx-convert"]');
       if (converterForm && target.name === 'amount') {
         const content = global.document.getElementById('ministry-dashboard-content');
@@ -1516,6 +1545,21 @@
       }
     });
     global.document.addEventListener('click', function (event) {
+      const swapButton = event.target && event.target.closest && event.target.closest('[data-ofx-swap]');
+      if (swapButton) {
+        event.preventDefault();
+        const form = swapButton.closest('[data-ofx-action="ofx-convert"]');
+        const from = form && form.querySelector('[name="fromCode"]');
+        const to = form && form.querySelector('[name="toCode"]');
+        if (from && to) {
+          const value = from.value; from.value = to.value; to.value = value;
+          const content = global.document.getElementById('ministry-dashboard-content');
+          const panel = content && content.querySelector('[data-ofx-panel]');
+          previewConversion(form, panel);
+          refreshPanelMetrics();
+        }
+        return;
+      }
       const quoteButton = event.target && event.target.closest && event.target.closest('[data-ofx-quote]');
       if (quoteButton) {
         event.preventDefault();
@@ -1542,8 +1586,13 @@
     });
     global.document.addEventListener('toggle', function (event) {
       const target = event.target;
-      if (!target || !target.matches || !target.matches('[data-ofx-banking-details]') || !target.open) return;
+      if (!target || !target.matches || !target.open) return;
       const panel = target.closest('[data-ofx-panel]');
+      if (target.matches('[data-ofx-chart-details]')) {
+        renderCurrentCharts(false);
+        return;
+      }
+      if (!target.matches('[data-ofx-banking-details]')) return;
       const filter = panel && panel.querySelector('[data-ofx-bank-filter]');
       const body = panel && panel.querySelector('[data-ofx-banking-table]');
       if (body) body.innerHTML = renderBankingCountryTable(filter && filter.value, state.viewMode);
