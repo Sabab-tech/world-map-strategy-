@@ -118,6 +118,8 @@
       kpi('Operational fleet',formatCount(Object.values(s.vehiclesOwned||{}).reduce(function(sum,x){return sum+number(x);},0)), 'Opening scenario inventory is not a new purchase.') +
       kpi('Police staffing coverage',percent(crime.policeStaffingCoveragePct,1),'Against the population-scaled game staffing target.') +
       kpi('Vehicle fleet coverage',percent(crime.vehicleCoveragePct,1),'Against the opening fleet requirement scaled to current population.') +
+      kpi('Police facility readiness',percent(crime.facilityReadinessPct,1),'Against modeled minimum station, dispatch, forensic, academy and related capacity levels.') +
+      kpi('Training coverage',percent(crime.trainingCoveragePct,1),'Against the gameplay training target, not an official national standard.') +
       kpi('Projected crime index',crime.projectedCrimeIndex===undefined?'Unavailable':percent(crime.projectedCrimeIndex,1),'100 is the opening crime-rate reference; values change with capacity and rules.') +
       kpi('Modeled annual financial exposure',money(crime.estimatedAnnualFinancialImpactUsd),'Estimated economic impact of incidents, not police revenue or seized money.') +
       kpi('Fuel reserve',d.fuel?formatCount(d.fuel.reserveDays)+' days':'Unavailable',d.fuel?d.fuel.status+' · '+money(d.fuel.estimatedDailyFuelCostUsd)+'/day modeled demand':'Fuel model unavailable') +
@@ -135,7 +137,7 @@
       esc(official ? (official.observed ? 'observed World Bank indicator, year '+(official.observationYear||'not specified') : official.source) : 'baseline unavailable') +
       '. Theft, robbery, street robbery, drugs, smuggling, assault and cybercrime rates are labelled game estimates unless an observed source is explicitly supplied.</div>' +
       '<div class="ohpu-section-title">RECENT SIMULATED INCIDENTS · LAST ' + history.length + ' RECORDED DAYS</div>' + chart +
-      '<div class="ohpu-muted">This is a day-by-day game simulation. It estimates incidents from population and crime-rate baselines, then applies staffing, skill, facilities, vehicle readiness, patrol allocation and activated policy effects.</div></section>';
+      '<div class="ohpu-muted">This is a day-by-day game simulation. Estimates change with population, staffing, fleet coverage, fuel, training, facility deficits, patrol allocation and enacted rules. Gameplay targets (at least 150 officers per 100,000 people or 110% of the country’s modeled opening staffing rate, one vehicle per 18 target officers, and modeled minimum facility/training levels) are balancing rules only, not official international standards.</div></section>';
   }
   function recruitmentHtml(d) {
     var e=d.engine,s=d.state,b=d.baseline||{},crime=d.crime||{},unitFee=e.getRecruitmentFeePerOfficer?e.getRecruitmentFeePerOfficer(d.countryId):e.estimateRecruitCost(1,d.countryId);
