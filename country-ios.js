@@ -2096,6 +2096,11 @@ window.addEventListener('RESOURCE_STATE_UPDATED', () => {
             '<div><span>Relation model classification</span><strong>' + escapeHtml(relationLabel) + '</strong></div>' +
             '<div><span>Profile coverage</span><strong>' + escapeHtml(coverageLabel) + '</strong></div></div>' +
             miniHeading('Source-level evidence records') + list(buildEvidenceRows(quality.evidenceMetrics), 'No supporting metric records are available.') +
+            miniHeading('Peer-comparison rules') +
+            list([
+                {title:'Relative percentiles',detail:criteria.peerComparison && criteria.peerComparison.rule},
+                {title:'Governance composite',detail:criteria.peerComparison && criteria.peerComparison.governanceCompositeRule}
+            ].filter(item => item.detail), 'Peer-comparison criteria are not available.') +
             miniHeading('Standard assessment thresholds') +
             list(Object.entries(criteria.thresholds || {}).map(([key, value]) => ({title:key,detail:value})), 'Assessment criteria are not available.') +
             miniHeading('Profile source files') +
