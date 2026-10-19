@@ -388,7 +388,7 @@ function updateFacts(identity, legacyEconomy, localCity, restCountry, wbCountry,
   const fact = {
     officialName: restCountry?.name?.official ?? last.officialName ?? null,
     capitalCity: (Array.isArray(restCountry?.capital) && restCountry.capital[0]) || wbCountry?.capitalCity || last.capitalCity || localCapital || null,
-    capitalCitySource: restCountry?.capital?.length ? 'REST_COUNTRIES_API' : (wbCountry?.capitalCity ? 'WORLD_BANK_COUNTRY_METADATA' : (last.capitalCity ? last.capitalCitySource : (localCapital ? 'LOCAL_CITIES_JSON_NOT_OFFICIALLY_VERIFIED' : null))),
+    capitalCitySource: restCountry?.capital?.length ? (restCountrySource || 'REST_COUNTRIES_API') : (wbCountry?.capitalCity ? 'WORLD_BANK_COUNTRY_METADATA' : (last.capitalCity ? last.capitalCitySource : (localCapital ? 'LOCAL_CITIES_JSON_NOT_OFFICIALLY_VERIFIED' : null))),
     officialLanguages: languages ?? safeCopy(last.officialLanguages, null),
     currencyCodes: currencyCodes ?? safeCopy(last.currencyCodes, null) ?? (legacyEconomy?.currency_code ? [legacyEconomy.currency_code] : null),
     currencyNames: currencyNames ?? safeCopy(last.currencyNames, null) ?? (legacyEconomy?.currency_name ? [legacyEconomy.currency_name] : null),
