@@ -342,8 +342,8 @@
     const efficiencyProfile = clone(profile.efficiencyProfile || (profile.efficiency && typeof profile.efficiency === 'object' ? profile.efficiency : {}));
     const efficiencyValues = Object.values(efficiencyProfile || {}).map(Number).filter(value => Number.isFinite(value));
     const explicitEfficiency = typeof profile.efficiency === 'number' ? profile.efficiency :
-      Number.isFinite(Number(profile.efficiencyScore)) ? Number(profile.efficiencyScore) :
-      Number.isFinite(Number(context.effectiveCapability)) ? Number(context.effectiveCapability) : null;
+      (profile.efficiencyScore != null && Number.isFinite(Number(profile.efficiencyScore))) ? Number(profile.efficiencyScore) :
+      (context.effectiveCapability != null && Number.isFinite(Number(context.effectiveCapability))) ? Number(context.effectiveCapability) : null;
     const efficiency = explicitEfficiency !== null ? explicitEfficiency :
       (efficiencyValues.length ? efficiencyValues.reduce((sum, value) => sum + value, 0) / efficiencyValues.length : 75);
     const name = context.ministerName || profile.name || profile.baseName || context.ministerId;
