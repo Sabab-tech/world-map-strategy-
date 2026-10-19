@@ -161,6 +161,10 @@ test('index, finance, bank and offline shell use the daily lifecycle assets', ()
   const financeRules = JSON.parse(fs.readFileSync(path.join(root, 'finance_runtime_rules_v1.json'), 'utf8'));
   const finance = fs.readFileSync(path.join(root, 'omega_finance_ministry_runtime_v1.js'), 'utf8');
   const banking = fs.readFileSync(path.join(root, 'omega_government_banking_runtime_v1.js'), 'utf8');
+  const core = fs.readFileSync(path.join(root, 'omega_simulation_runtime.js'), 'utf8');
+  const endowment = fs.readFileSync(path.join(root, 'omega_resource_endowment_runtime.js'), 'utf8');
+  const resourceEconomy = fs.readFileSync(path.join(root, 'omega_resource_economy_runtime_v2.js'), 'utf8');
+  const macro = fs.readFileSync(path.join(root, 'omega_macro_stability_runtime_v1.js'), 'utf8');
 
   assert.match(index, /id="omega-global-time-hud"/);
   assert.match(index, /src="omega_game_lifecycle_runtime_v1\.js" defer/);
@@ -176,6 +180,17 @@ test('index, finance, bank and offline shell use the daily lifecycle assets', ()
   assert.match(serviceWorker, /omega_game_lifecycle_runtime_v1\.js/);
   assert.match(serviceWorker, /omega_game_lifecycle_runtime_v1\.css/);
   assert.match(serviceWorker, /resource_industrial_catalog_v1\.json/);
+  assert.match(core, /registerTurnParticipant\(id,handler,options=\{\}\)/);
+  assert.match(core, /await this\.runTurnParticipants\(event\)/);
+  assert.match(core, /__OMEGA_SIMULATION_PIPELINE_ACTIVE__/);
+  assert.match(core, /TURN_PARTICIPANT_FAILED/);
+  assert.match(lifecycle, /priority: Number\.MAX_SAFE_INTEGER/);
+  assert.doesNotMatch(lifecycle, /Math\.floor\(turn\) % 3/);
+  assert.match(lifecycle, /function saveNow\(options\)/);
+  assert.match(lifecycle, /function onPageExit\(\)/);
+  assert.match(endowment, /function onTurn\(\)\{return extractAll\(\);\}/);
+  assert.match(resourceEconomy, /return runTurn\(\);/);
+  assert.match(macro, /return init\(\)\.then\(\(\)=>advanceTurn\(turn,duration\)\)/);
 });
 
 
