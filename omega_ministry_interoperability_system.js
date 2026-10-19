@@ -490,7 +490,7 @@
       const fromObserved=readPath(observed,path);
       if(fromObserved!==undefined){
         return {
-          countryId:String(countryId).toUpperCase(),path:String(path),
+          countryId:canonicalCountryId(countryId),path:String(path),
           value:clone(fromObserved),availability:AVAILABILITY.AVAILABLE,
           availabilityReason:'RUNTIME_EXECUTION_OBSERVATION',
           provenance:{
@@ -506,7 +506,7 @@
       }
       const fromContext=readPath(context,path);
       return {
-        countryId:String(countryId).toUpperCase(),path:String(path),
+        countryId:canonicalCountryId(countryId),path:String(path),
         value:fromContext===undefined?null:clone(fromContext),
         availability:fromContext===undefined?AVAILABILITY.UNAVAILABLE:AVAILABILITY.AVAILABLE,
         availabilityReason:fromContext===undefined?'STATE_PROVIDER_UNAVAILABLE':'RUNTIME_CONTEXT_FALLBACK',
@@ -897,7 +897,7 @@
       const c=canonicalCountryId(countryId);
       const id=String(ministryId||'');
       const inbox=this.inboxes.get(id)||[];
-      return clone(inbox.filter(m=>String(m.countryId||'').toUpperCase()===c));
+      return clone(inbox.filter(m=>canonicalCountryId(m.countryId)===c));
     }
 
     _compilePublicSnapshot(ministryId,packet={}){
@@ -1287,7 +1287,7 @@
       const value=deepFreeze({
         revision:this._knowledgeRevision,
         requesterMinistryId:String(requesterId),
-        countryId:String(countryId).trim().toUpperCase(),
+        countryId:canonicalCountryId(countryId),
         currentTurn:currentTurn??this.lastTurn,
         ownState:peerStates[String(requesterId)],
         peerStates,
@@ -1318,7 +1318,7 @@
         else domains.push({ministryId:id,available:false,turn:null,revision:null});
       }
       return {
-        countryId:String(countryId).trim().toUpperCase(),
+        countryId:canonicalCountryId(countryId),
         countryName:record?.name||record?.officialName||record?.names?.[0]||null,
         simulationTurn:currentTurn??this.lastTurn,
         ministryDomains:domains
@@ -1369,7 +1369,7 @@
     getMinistryBriefing(ministryId,countryId,options={}){
       const readModel=this._getKnowledgeReadModel(
         String(ministryId),
-        String(countryId).trim().toUpperCase(),
+        canonicalCountryId(countryId),
         Number.isFinite(Number(options.currentTurn))?Number(options.currentTurn):this.lastTurn
       );
       return clone({
@@ -1812,7 +1812,7 @@
       const structure=this.verifyStructure();
       let available=0,missing=0,stale=0,invalid=0,unobserved=0,estimated=0;
       for(const snapshot of this.snapshots.values()){
-        if(countryId&&snapshot.countryId!==String(countryId).trim().toUpperCase())continue;
+        if(countryId&&snapshot.countryId!==canonicalCountryId(countryId))continue;
         const counts=snapshot.dataAvailability||{};
         available+=Number(counts.AVAILABLE||0);
         missing+=Number(counts.UNAVAILABLE||0);
@@ -1824,12 +1824,12 @@
       const activeRoutes=[...this.connections.values()].filter(r=>r.messagesSent>0&&r.state==='ACTIVE').length;
       let publishedSnapshots=0,staleSnapshots=0;
       for(const snap of this.snapshots.values()){
-        if(countryId&&snap.countryId!==String(countryId).trim().toUpperCase())continue;
+        if(countryId&&snap.countryId!==canonicalCountryId(countryId))continue;
         publishedSnapshots+=1;
         if(Number.isFinite(Number(currentTurn))&&Number.isFinite(Number(snap.simulationTurn))&&Number(currentTurn)-Number(snap.simulationTurn)>this.maxSnapshotAgeTurns)staleSnapshots+=1;
       }
       const budgetRequestCount=countryId
-        ? this.getMinistryBriefing?.('finance',String(countryId).trim().toUpperCase(),{currentTurn})?.governmentLedger?.budgetRequests?.length||0
+        ? this.getMinistryBriefing?.('finance',canonicalCountryId(countryId),{currentTurn})?.governmentLedger?.budgetRequests?.length||0
         : 0;
       const behaviorPass=this.metrics.sent>0&&this.metrics.delivered===this.metrics.sent&&this.metrics.dropped===0;
       return {
@@ -1864,9 +1864,9 @@
         },
         governanceSignals:{
           budgetRequests:budgetRequestCount,
-          projects:countryId?this._getProjectsForCountry(String(countryId).trim().toUpperCase()).length:0,
-          constraints:countryId?[...this.requestLedger.values()].filter(r=>r?.countryId===String(countryId).trim().toUpperCase()&&r?.kind===undefined&&Array.isArray(r)).length:0,
-          alerts:countryId?[...this.requestLedger.values()].filter(r=>r?.countryId===String(countryId).trim().toUpperCase()&&String(r?.kind||'')==='ALERT').length:0
+          projects:countryId?this._getProjectsForCountry(canonicalCountryId(countryId)).length:0,
+          constraints:countryId?[...this.requestLedger.values()].filter(r=>r?.countryId===canonicalCountryId(countryId)&&r?.kind===undefined&&Array.isArray(r)).length:0,
+          alerts:countryId?[...this.requestLedger.values()].filter(r=>r?.countryId===canonicalCountryId(countryId)&&String(r?.kind||'')==='ALERT').length:0
         },
         requests:{
           pending:countryId?this.getPendingRequests(countryId).length:0,
@@ -1881,7 +1881,7 @@
         events:{
           total:this.events.size
         },
-        countryId:countryId?String(countryId).trim().toUpperCase():null,
+        countryId:countryId?canonicalCountryId(countryId):null,
         simulationTurn:currentTurn,
         notes:[
           'Architecture readiness and data completeness are intentionally reported separately.',
