@@ -162,28 +162,55 @@ async function fetchWorldBankIndicators() {
   const codes = Array.from(new Set(METRIC_CATALOGUE.map((field) => field.wb).filter(Boolean)));
   const byCountry = new Map();
   const errors = [];
-  for (let offset = 0; offset < codes.length; offset += 15) {
-    const group = codes.slice(offset, offset + 15);
-    const url = 'https://api.worldbank.org/v2/country/all/indicator/' + group.join(';') + '?format=json&mrnev=1&per_page=20000';
-    try {
-      const first = await getJson(url);
-      const pages = Math.max(1, Number(first?.[0]?.pages) || 1);
-      const pagesToRead = [first];
-      for (let page = 2; page <= pages; page += 1) pagesToRead.push(await getJson(url + '&page=' + page));
-      for (const payload of pagesToRead) {
-        const rows = Array.isArray(payload?.[1]) ? payload[1] : [];
-        for (const row of rows) {
-          const iso3 = String(row?.countryiso3code || '').toUpperCase();
-          const code = String(row?.indicator?.id || '');
-          if (!iso3 || !code || row.value === null || row.value === undefined) continue;
-          if (!byCountry.has(iso3)) byCountry.set(iso3, {});
-          const old = byCountry.get(iso3)[code];
-          const fresh = { value: finite(row.value), year: finite(Number(row.date)), code, countryIso3: iso3 };
-          if (!old || (fresh.year !== null && (old.year === null || fresh.year >= old.year))) byCountry.get(iso3)[code] = fresh;
+  // The World Bank indicator endpoint accepts one indicator code per request.
+  // Request in small parallel batches to avoid the unsupported semicolon-joined path.
+  for (let offset = 0; offset < codes.length; offset += 4) {
+    const group = codes.slice(offset, offset + 4);
+    const results = await Promise.all(group.map(async (indicatorCode) => {
+      const url = 'https://api.worldbank.org/v2/country/all/indicator/' +
+        encodeURIComponent(indicatorCode) + '?format=json&mrnev=1&per_page=20000';
+      try {
+        const first = await getJson(url);
+        const pages = Math.max(1, Number(first?.[0]?.pages) || 1);
+        const payloads = [first];
+        for (let page = 2; page <= pages; page += 1) payloads.push(await getJson(url + '&page=' + page));
+        const observations = [];
+        for (const payload of payloads) {
+          const rows = Array.isArray(payload?.[1]) ? payload[1] : [];
+          for (const row of rows) {
+            const iso3 = String(row?.countryiso3code || '').toUpperCase();
+            if (!iso3 || row.value === null || row.value === undefined) continue;
+            observations.push({
+              iso3,
+              indicatorCode,
+              value: finite(row.value),
+              year: finite(Number(row.date))
+            });
+          }
+        }
+        return { indicatorCode, observations, error: null };
+      } catch (error) {
+        return { indicatorCode, observations: [], error: String(error) };
+      }
+    }));
+    // Merge only after each batch resolves so output ordering is deterministic.
+    for (const result of results) {
+      if (result.error) {
+        errors.push({ indicator: result.indicatorCode, error: result.error });
+        continue;
+      }
+      for (const observation of result.observations) {
+        if (!byCountry.has(observation.iso3)) byCountry.set(observation.iso3, {});
+        const old = byCountry.get(observation.iso3)[observation.indicatorCode];
+        if (!old || (observation.year !== null && (old.year === null || observation.year >= old.year))) {
+          byCountry.get(observation.iso3)[observation.indicatorCode] = {
+            value: observation.value,
+            year: observation.year,
+            code: observation.indicatorCode,
+            countryIso3: observation.iso3
+          };
         }
       }
-    } catch (error) {
-      errors.push({ indicators: group, error: String(error) });
     }
   }
   return { byCountry, errors };
