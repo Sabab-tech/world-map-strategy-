@@ -332,7 +332,11 @@ for (const profile of profiles) {
     const hasSourceGroupData = sourceGroup && Object.values(sourceGroup).some((value) => value !== null && value !== undefined);
     const hasFacts = Object.values(facts).some((value) => value !== null && value !== undefined);
     let status = 'NO_DATA';
-    if (nonNullMetricCount > 0 || hasSourceGroupData || hasFacts) {
+    if (sector.sourceGroup === 'generalFacts') {
+      const coreFacts = Object.entries(facts).filter(([key]) => key !== 'factsSourceStatus');
+      const presentFacts = coreFacts.filter(([, value]) => value !== null && value !== undefined).length;
+      status = presentFacts === 0 ? 'NO_DATA' : (presentFacts === coreFacts.length ? 'AVAILABLE' : 'PARTIAL');
+    } else if (nonNullMetricCount > 0 || hasSourceGroupData || hasFacts) {
       status = nonNullMetricCount === expectedMetricCount && expectedMetricCount > 0 ? 'AVAILABLE' : 'PARTIAL';
     }
     profile.sectors[sector.id] = {
@@ -397,6 +401,7 @@ const metadata = {
     inputs: model.inputs, note: model.note
   })),
   unavailableModelSlots: schema.unavailableModelSlots,
+  extensionMetricDefinitions: schema.extensionMetricDefinitions || [],
   extensionContract: schema.extensionContract,
   sectorCoverage,
   metricCoverage,
