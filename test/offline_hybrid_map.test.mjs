@@ -100,6 +100,7 @@ test("browser shell resources are cached locally for offline relaunch", () => {
   assert.match(serviceWorker, /economy_raw_financial_data_v2\.json/);
   assert.match(serviceWorker, /finance_macro_stability_rules_v1\.json/);
   assert.match(serviceWorker, /omega-offline-atlas-shell-v7/);
+  assert.match(serviceWorker, /\.\/country_general_data_registry_v1\.json/);
   assert.match(serviceWorker, /omega_ui_system_redesign_v1[.]css/);
   assert.match(serviceWorker, /omega_ui_system_redesign_v1[.]js/);
   assert.match(serviceWorker, /omega_home_ministry_country_police_baseline_v1[.]json/);
