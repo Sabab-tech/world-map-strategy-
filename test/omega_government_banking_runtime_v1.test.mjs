@@ -111,7 +111,7 @@ test('domestic FX conversion conserves portfolio value apart from its explicit f
   const before = r.bank.getCountryAccount('BGD');
   const result = r.bank.convert({ countryId: 'BGD', amount: 100, fromCode: 'USD', toCode: 'BDT', idempotencyKey: 'BD-CONVERT-1' });
   assert.equal(result.ok, true);
-  assert.equal(result.route, 'SOURCE_TO_USD_TO_TARGET');
+  assert.equal(result.route, 'DIRECT_USD');
   assert.equal(result.amountTarget, 9_985);
   const after = r.bank.getCountryAccount('BGD');
   assert.equal(after.accounts.find(x => x.currencyCode === 'USD').balance, 900);
