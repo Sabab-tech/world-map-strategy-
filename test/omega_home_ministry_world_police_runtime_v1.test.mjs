@@ -91,6 +91,9 @@ test('world police baseline covers the full country registry with provenance-sep
   assert.ok(new Set(baselineData.countries.map(row => JSON.stringify(row.baselineFleet.countsByTier))).size > 180);
   assert.ok(baselineData.countries.every(row => Object.entries(row.baselineFleet.countsByTier).every(([tier,n]) => Number(tier) <= 8 || Number(n) === 0)));
   const bangladesh = baselineData.countries.find(row => row.iso3 === 'BGD');
+  assert.ok(baselineData.gameRules.fleetSizing.includes('modeled baseline total'));
+  assert.ok(baselineData.gameRules.policeStaffingPlanningTarget.includes('not a claim'));
+  assert.ok(baselineData.gameRules.facilityAndTrainingTargets.includes('strategy-game'));
   assert.ok(bangladesh.population.year >= 2020);
   assert.equal(bangladesh.population.source, 'WORLD_BANK_LATEST_AVAILABLE');
   assert.equal(bangladesh.crime.observedHomicide.source, 'WORLD_BANK_VC.IHR.PSRC.P5');
