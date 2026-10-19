@@ -243,14 +243,14 @@ test('Finance tabs place cash and macro details behind separate icons while over
 });
 
 
-test('all eight Finance section buttons respond to click delegation',async()=>{
+test('all nine Finance section buttons respond to click delegation',async()=>{
   const {context,elements}=createRuntime();
   await context.OmegaFinanceMinistry.init();
   assert.equal(context.OmegaCabinetUI.renderMinistryDashboard('finance'),true);
   const content=elements.get('ministry-dashboard-content');
   const click=content.listeners.click;
   assert.equal(typeof click,'function');
-  const markers={fx:'data-ofx-container',macro:'data-omss-container',analytics:'data-ofa-container'};
+  const markers={fx:'data-ofx-container',macro:'data-omss-container',analytics:'data-ofa-container',worldbank:'data-owb-container'};
   for(const [tab,marker] of Object.entries(markers)){
     const button={getAttribute(name){return name==='data-ofm-tab'?tab:null;}};
     click({target:{closest(selector){return selector==='[data-ofm-tab]'?button:null;}}});
