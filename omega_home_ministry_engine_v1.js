@@ -368,6 +368,30 @@
     const counts={};VEHICLES.forEach(function(vehicle){counts[String(vehicle.level)]=Math.max(0,Math.floor(num(state&&state.vehiclesOwned&&state.vehiclesOwned[vehicle.level])||0));});
     return counts;
   }
+  function operationalFleetCounts(state,country){
+    const owned=currentFleetCounts(state),out=Object.fromEntries(VEHICLES.map(function(vehicle){return[String(vehicle.level),0];}));
+    const rows=Array.isArray(state&&state.vehicleFleet)?state.vehicleFleet:[];
+    if(!rows.length)return owned;
+    const cid=normalizeCountry(country||currentCountry()),profile=getCountryOperatingProfile(cid),mix=profile.environmentMixPct||{};
+    const env=Object.keys(mix).sort(function(a,b){return Number(mix[b])-Number(mix[a]);})[0]||'city';
+    const defaultRoad=Number(profile.roadQualityIndex)<40?'rough':'smooth';
+    rows.forEach(function(unit){
+      const level=Math.floor(num(unit&&unit.vehicleLevel)||0),vehicle=VEHICLES.find(function(v){return v.level===level;});
+      if(!vehicle||!Object.prototype.hasOwnProperty.call(out,String(level)))return;
+      const condition=clamp(num(unit.condition)===null?100:num(unit.condition),0,100);
+      if(condition<=15||unit.status==='REPAIR_REQUIRED'||unit.status==='DESTROYED')return;
+      const statusFactor=unit.status==='DEPLOYED'?0.68:unit.status==='MAINTENANCE_DUE'?0.62:unit.status==='SERVICE_DUE'||unit.status==='INSPECTION_DUE'?0.72:unit.status==='AVAILABLE'?1:0.4;
+      const serviceTarget=Math.max(1,num(unit.nextServiceAtKm)||5000),serviceRatio=clamp((num(unit.odometerKm)||0)/serviceTarget,0,2);
+      const serviceFactor=serviceRatio>=1?0.35:serviceRatio>=0.9?0.72:1;
+      const assessment=vehicleUseAssessment(level,unit.lastEnvironment||env,unit.lastRoadCondition||defaultRoad,cid);
+      const routeFactor=assessment&&assessment.ok?0.72+0.28*(assessment.fit/100):0.6;
+      out[String(level)]+=condition/100*statusFactor*serviceFactor*routeFactor;
+    });
+    return out;
+  }
+  function totalOperationalFleetCount(counts){
+    return Object.keys(counts||{}).reduce(function(sum,key){return sum+Math.max(0,num(counts[key])||0);},0);
+  }
   function totalFleetCount(counts){
     return Object.keys(counts||{}).reduce(function(sum,key){return sum+Math.max(0,Math.floor(num(counts[key])||0));},0);
   }
@@ -492,7 +516,7 @@
       contrabandSmuggling:['counterSmuggling','offRoad','surveillance'],assault:['response','crowdControl','protection'],
       homicide:['response','surveillance','command'],cybercrime:['surveillance','command']
     };
-    const keys=map[category]||['patrol','response'],counts=currentFleetCounts(state),units=totalFleetCount(counts);
+    const keys=map[category]||['patrol','response'],counts=operationalFleetCounts(state),units=totalOperationalFleetCount(counts);
     if(!units)return 0;
     let weighted=0;
     VEHICLES.forEach(function(vehicle){
@@ -538,7 +562,8 @@
       const target=Math.ceil(Math.max(minimumFacilityLevels[pair[0]]||1,reference)*facilityDemandScale);
       reduction+=(current-target)*pair[1];
     });
-    const currentCars=totalFleetCount(currentFleetCounts(state)),refCars=Math.max(1,num(base.referenceFleetUnits)||num(state.baselineFleetUnits)||currentCars||1);
+    const countryFleet=operationalFleetCounts(state,country);
+    const currentCars=totalOperationalFleetCount(countryFleet),refCars=Math.max(1,num(base.referenceFleetUnits)||num(state.baselineFleetUnits)||currentCars||1);
     reduction+=Math.log(Math.max(1,currentCars)/refCars)*0.035;
     const currentQuality=crimeVehicleCapability(state,category),refVehicles=base.referenceVehicles||{};
     let refUnits=0,refQuality=0;
@@ -549,6 +574,21 @@
     });
     refQuality=refUnits?refQuality/refUnits:currentQuality;
     reduction+=(currentQuality-refQuality)*0.0018;
+    const currentDepartments=normalizePoliceDepartmentPlan(state.policeDepartments),refDepartments=normalizePoliceDepartmentPlan(base.referencePoliceDepartments||DEFAULT_POLICE_DEPARTMENT_PLAN);
+    const departmentInfluence={
+      theft:{generalPatrol:0.0011,community:0.0007,investigations:0.0003},
+      robbery:{generalPatrol:0.0008,rapidResponse:0.0010,investigations:0.0007},
+      streetRobbery:{generalPatrol:0.0011,traffic:0.0004,community:0.0008},
+      drugTrafficking:{narcotics:0.0014,border:0.0008,investigations:0.0006},
+      contrabandSmuggling:{border:0.0015,traffic:0.0006,narcotics:0.0006},
+      assault:{community:0.0012,rapidResponse:0.0007,investigations:0.0004},
+      homicide:{homicide:0.0018,forensics:0.0010,investigations:0.0010},
+      cybercrime:{cybercrime:0.0020,forensics:0.0008,investigations:0.0005}
+    };
+    Object.entries(departmentInfluence[category]||{generalPatrol:0.001}).forEach(function(entry){
+      const key=entry[0],weight=entry[1];
+      reduction+=(currentDepartments[key]-refDepartments[key])*weight;
+    });
     const currentPatrol=normalizePatrolPlan(state.patrolPlan),refPatrol=normalizePatrolPlan(base.referencePatrolPlan);
     const patrolInfluence={
       theft:{urban:0.0014,rural:0.0005,community:0.0003},
@@ -583,7 +623,11 @@
     const trainingTarget=3+Math.max(0,Math.log2(Math.max(0.1,populationScale)))*0.25;
     reduction+=(clamp((Math.max(1,num(state.trainingQualityLevel)||1)/trainingTarget),0,1.5)-1)*0.045;
     const referenceRulebookScore=num(base.referenceRulebookScore)===null?policeRulebookQuality(DEFAULT_POLICE_RULEBOOK):num(base.referenceRulebookScore);
-    reduction+=(policeRulebookQuality(state.policeRulebook)-referenceRulebookScore)*0.001;
+    reduction+=(policeRulebookQuality(state.policeRulebook)-referenceRulebookScore)*0.002;
+    const currentBook=normalizePoliceRulebook(state.policeRulebook),referenceBook=normalizePoliceRulebook(DEFAULT_POLICE_RULEBOOK);
+    const responsePressure=clamp((referenceBook.arrestResponseHours-currentBook.arrestResponseHours)/referenceBook.arrestResponseHours,-2,0.9);
+    const fastResponseCategories={theft:0.025,robbery:0.035,streetRobbery:0.04,drugTrafficking:0.012,contrabandSmuggling:0.015,assault:0.03,homicide:0.025,cybercrime:0.02};
+    reduction+=responsePressure*(fastResponseCategories[category]||0.01);
     const fuelReserveDays=clamp(num(state.fuelSupplyDays)===null?14:num(state.fuelSupplyDays),0,180);
     const fuelReadiness=clamp(fuelReserveDays/14,0,1);
     reduction+=(fuelReadiness-1)*0.08;
@@ -623,7 +667,7 @@
     const policeBaseline=findPoliceBaseline(cid)||{},referencePersonnel=Math.max(1,num(baseline.referencePersonnel)||num(state.baselinePolicePersonnel)||250);
     const staffingTarget=countryStaffingTarget(cid,baseline,pop,referencePersonnel);
     const targetPolice=staffingTarget.targetPersonnel,targetFleet=Math.max(1,Math.ceil(targetPolice/18));
-    const fleetCounts=currentFleetCounts(state),fleetUnits=totalFleetCount(fleetCounts);
+    const ownedFleetCounts=currentFleetCounts(state),fleetCounts=operationalFleetCounts(state,cid),ownedFleetUnits=totalFleetCount(ownedFleetCounts),fleetUnits=totalOperationalFleetCount(fleetCounts);
     const facilityTargets={station:2,patrol:2,dispatch:2,forensics:2,border:1,communications:2,academy:3,cyber:1,emergency:2,department:2};
     const facilityTargetUnits=Object.values(facilityTargets).reduce(function(sum,n){return sum+n;},0);
     const facilityCurrentUnits=Object.keys(facilityTargets).reduce(function(sum,key){return sum+Math.min(facilityTargets[key],Math.max(0,num(state.facilityLevels&&state.facilityLevels[key])||0));},0);
@@ -638,7 +682,7 @@
       fuel: getFuelSnapshot(cid,state),
       staffingTargetRatePer100k:staffingTarget.targetRatePer100k,
       requiredPoliceEstimate:targetPolice,policeStaffingCoveragePct:targetPolice?Math.round(state.policeCount/targetPolice*1000)/10:null,
-      currentFleetUnits:fleetUnits,requiredFleetEstimate:targetFleet,vehicleCoveragePct:targetFleet?Math.round(fleetUnits/targetFleet*1000)/10:null,
+      currentFleetUnits:ownedFleetUnits,currentOperationalFleetUnits:Math.round(fleetUnits*10)/10,requiredFleetEstimate:targetFleet,vehicleCoveragePct:targetFleet?Math.round(fleetUnits/targetFleet*1000)/10:null,
       facilityReadinessPct:facilityReadinessPct,trainingCoveragePct:trainingCoveragePct,
       simulationTargetSource:'GAMEPLAY_POLICY_TARGET_NOT_OFFICIAL_COUNTRY_STANDARD',
       estimatedAnnualFinancialImpactUsd:estimatedAnnualFinancialImpactUsd,baselineAnnualFinancialImpactUsd:baselineAnnualFinancialImpactUsd,
@@ -647,9 +691,14 @@
       baselinePolicePersonnel:state.baselinePolicePersonnel,trainingQualityLevel:state.trainingQualityLevel,policeEfficiency:state.policeEfficiency,
       publicSatisfaction:clamp(num(state.publicSatisfaction)===null?num(state.policeTrust)||55:num(state.publicSatisfaction),0,100),
       misconductRiskPct:clamp(num(state.misconductRiskPct)===null?20:num(state.misconductRiskPct),0,100),privacyRiskPct:clamp(num(state.privacyRiskPct)===null?20:num(state.privacyRiskPct),0,100),
-      justiceBacklog:Math.max(0,num(state.justiceBacklog)||0),policeRulebook:normalizePoliceRulebook(state.policeRulebook),policeRulebookScore:policeRulebookQuality(state.policeRulebook),caseClearanceBonusPct:ruleEffectSum(state,'clearanceDelta'),
+      justiceBacklog:Math.max(0,num(state.justiceBacklog)||0),policeRulebook:normalizePoliceRulebook(state.policeRulebook),policeRulebookScore:policeRulebookQuality(state.policeRulebook),
+      policeRulebookOperationalIndex:policeRulebookOperationalIndex(state.policeRulebook),
+      policeRulebookDailyCostUsd:policeRulebookDailyCost(state),
+      activePolicyDailyCostUsd:Math.round(activePolicyDailyCost(state)*100)/100,
+      policeDepartments:clone(normalizePoliceDepartmentPlan(state.policeDepartments)),policeDepartmentHeadcounts:policeDepartmentHeadcounts(state),
+      caseClearanceBonusPct:ruleEffectSum(state,'clearanceDelta'),
       justiceSpeedBonusPct:ruleEffectSum(state,'justiceDelta'),activePolicyRules:active.map(function(rule){return rule.id;}),
-      activePolicyDailyCostUsd:Math.round(ruleDailyCost(state)*100)/100,baselineAnnualIncidentEstimate:baseline.population===null?null:totalBaseline,
+      baselineAnnualIncidentEstimate:baseline.population===null?null:totalBaseline,
       projectedAnnualIncidentEstimate:baseline.population===null?null:totalProjected,annualIncidentsAvoided:baseline.population===null?null:totalBaseline-totalProjected,
       baselineCrimeIndex:baselineIndex?100:0,projectedCrimeIndex:baselineIndex?Math.round(currentIndex/baselineIndex*10000)/100:0,
       recordedDailyModel:clone(model),categories:rows,
@@ -1010,8 +1059,28 @@
     const cid=normalizeCountry(country||currentCountry()),vehicle=VEHICLES.find(function(row){return row.level===Math.floor(num(vehicleLevel)||0);});
     const environment=environmentSpec(environmentId),road=roadSpec(roadCondition);
     if(!vehicle)return{ok:false,reason:'VEHICLE_TIER_INVALID',environment:clone(environment),road:clone(road),fit:0,baseFit:0,wearPerDay:0,damageRisk:0,penalties:[]};
-    const baseFit=Number(vehicle.environmentFit[environment.id])||0,penalties=[];
+    const baseFit=Number(vehicle.environmentFit[environment.id])||0,penalties=[],countryProfile=getCountryOperatingProfile(cid);
     let fit=baseFit*road.fitMultiplier;
+    const roadQuality=clamp(Number(countryProfile.roadQualityIndex)||50,10,92);
+    const mountainIndex=clamp(Number(countryProfile.mountainTerrainIndex)||0,0,100);
+    const coastalIndex=clamp(Number(countryProfile.coastalLogisticsIndex)||0,0,100);
+    const urbanComplexity=clamp(Number(countryProfile.urbanComplexityIndex)||Number(countryProfile.urbanizationPct)||40,0,100);
+    if((road.id==='rough'||road.id==='muddy')&&roadQuality<42){
+      const roadPenalty=(42-roadQuality)*0.18*(Number(vehicle.capabilities.offRoad)<45?1.3:0.35);
+      fit-=roadPenalty;penalties.push('Country road-quality profile adds '+roadPenalty.toFixed(1)+' fit points of exposure.');
+    }
+    if(environment.id==='city'&&urbanComplexity>60&&vehicle.capacity>=10){
+      const trafficPenalty=(urbanComplexity-60)*0.12;fit-=trafficPenalty;penalties.push('Dense city network penalises large transport vehicles by '+trafficPenalty.toFixed(1)+' fit points.');
+    }
+    if(environment.id==='mountain'&&mountainIndex>=45&&Number(vehicle.capabilities.offRoad)>=65){
+      fit+=Math.min(5,(mountainIndex-45)*0.09);penalties.push('Country terrain context rewards higher off-road capability.');
+    }
+    if(environment.id==='border'&&Number(countryProfile.remoteCoverageIndex)>=60&&Number(vehicle.capabilities.offRoad)<55){
+      fit-=Math.min(7,(Number(countryProfile.remoteCoverageIndex)-60)*0.18);penalties.push('Remote coverage context increases the penalty for weak all-terrain capability.');
+    }
+    if(environment.id==='coastal'&&road.id==='wet'&&coastalIndex>=60&&Number(vehicle.durability)<75){
+      const corrosionPenalty=Math.min(7,(coastalIndex-50)*0.08);fit-=corrosionPenalty;penalties.push('Country coastal exposure increases corrosion and electrical-service risk.');
+    }
     if(environment.id==='city'&&road.id==='congested'&&vehicle.capacity>=12){fit-=12;penalties.push('Vehicle is too large for dense urban turns and curb access.');}
     if(environment.id==='city'&&road.id==='congested'&&vehicle.speed>=165){fit-=10;penalties.push('High-speed performance is wasted in traffic; low-speed manoeuvring risk rises.');}
     if(environment.id==='mountain'&&vehicle.speed>=165){fit-=8;penalties.push('High power and speed require extra brake and tyre control on steep bends.');}
@@ -1020,7 +1089,8 @@
     fit=Math.round(clamp(fit,0,100));
     const roadWear={smooth:0,congested:0.07,wet:0.05,rough:0.13,muddy:0.20}[road.id]||0;
     const missionOverhead=0.025,fragility=Math.max(0,70-vehicle.durability)*0.001;
-    const wearPerDay=Number((0.035+Math.max(0,70-fit)*0.004+roadWear+missionOverhead+fragility).toFixed(4));
+    const terrainWearMultiplier=1+Math.max(0,50-roadQuality)*0.002+mountainIndex*0.0008+coastalIndex*0.00035+Number(countryProfile.remoteCoverageIndex||0)*0.00025;
+    const wearPerDay=Number(((0.035+Math.max(0,70-fit)*0.004+roadWear+missionOverhead+fragility)*terrainWearMultiplier).toFixed(4));
     const distanceMultiplier={smooth:1,congested:0.58,wet:0.78,rough:0.52,muddy:0.34}[road.id]||1;
     const dailyDistance=Math.round((environment.id==='highway'?180:environment.id==='border'?135:environment.id==='mountain'?70:environment.id==='rural'?105:environment.id==='coastal'?85:90)*distanceMultiplier);
     const damageRisk=Number((road.damageRisk*(1+Math.max(0,60-fit)/70+Math.max(0,80-vehicle.durability)/160)).toFixed(2));
@@ -1437,6 +1507,7 @@
     let backlog=Math.max(0,num(state.justiceBacklog)||0);
     const history=Array.isArray(state.crimeHistory)?state.crimeHistory:[];
     const activeRuleClearance=ruleEffectSum(state,'clearanceDelta'),activeRuleSpeed=ruleEffectSum(state,'justiceDelta');
+    const rulebook=normalizePoliceRulebook(state.policeRulebook),ruleScore=policeRulebookQuality(rulebook);
     const clearance=clamp(0.25+(Math.max(0,num(state.policeEfficiency)||0)*0.002)+Math.max(0,num(state.trainingQualityLevel)||1)*0.008+
       activeRuleClearance*0.006+(Math.max(0,num(state.facilityLevels&&state.facilityLevels.forensics)||0)*0.012)-
       (Math.max(0,num(state.misconductRiskPct)||0)*0.0012),0.12,0.85);
@@ -1466,6 +1537,8 @@
         (clearance>0.52?0.025:clearance<0.32?-0.035:0)+
         (Math.max(0,num(state.misconductRiskPct)||0)>45?-0.06:0)+
         (cleared>0&&backlog===0?0.015:0),0,100);
+      state.publicSatisfaction=clamp(state.publicSatisfaction+clamp((ruleScore-68)*0.0009,-0.025,0.03)+(rulebook.bodyCameraMandatory?0.006:-0.014)+(rulebook.searchWarrantRequired?0.003:-0.008),0,100);
+      state.misconductRiskPct=clamp((num(state.misconductRiskPct)||0)+clamp((68-ruleScore)*0.0004,-0.012,0.02)+(rulebook.bodyCameraMandatory?-0.006:0.012)+(rulebook.searchWarrantRequired?-0.003:0.006),0,100);
       state.policeTrust=clamp((num(state.policeTrust)||55)+(state.publicSatisfaction-(num(state.policeTrust)||55))*0.025,0,100);
       history.push({day:day,turn:turn(),incidents:incidents,openedCases:caseOpen,clearedCases:cleared,
         caseClearancePct:caseOpen?Math.round(Math.min(1,cleared/Math.max(1,caseOpen))*10000)/100:null,
