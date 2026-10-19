@@ -17,7 +17,7 @@
   function norm(v) { return String(v || '').trim().toUpperCase().replace(/&/g, 'AND').replace(/[^A-Z0-9]+/g, '_').replace(/^_+|_+$/g, ''); }
   function stateRoot() { return g.Game && obj(g.Game.state) ? g.Game.state : obj(g.gameState) ? g.gameState : null; }
   function simTurn() { var s = g.Omega && g.Omega.Simulation, r = stateRoot(); return Math.max(0, Math.floor(num(s && s.clock && s.clock.turn) ?? num(r && r.simulation && r.simulation.turn) ?? num(r && r.turn) ?? 0)); }
-  function simTimeMs() { var s = g.Omega && g.Omega.Simulation, r = stateRoot(); return Math.max(0, num(s && s.clock && s.clock.simulationTimeMs) ?? num(r && r.simulation && r.simulation.simulationTimeMs) ?? num(r && r.simulationTimeMs) ?? simTurn() * 3600000); }
+  function simTimeMs() { var s = g.Omega && g.Omega.Simulation, r = stateRoot(); return Math.max(0, num(s && s.clock && s.clock.simulationTimeMs) ?? num(r && r.simulation && r.simulation.simulationTimeMs) ?? num(r && r.simulationTimeMs) ?? simTurn() * 86400000); }
   function identityId(v) {
     try {
       var registry = g.OmegaCanonicalIdentityRegistry || g.OmegaCountrySemanticBridge || (g.Omega && g.Omega.CanonicalIdentity);
