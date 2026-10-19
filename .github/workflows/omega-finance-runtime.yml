@@ -1,0 +1,28 @@
+name: OMEGA Finance Runtime
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  finance-runtime:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Validate Finance runtime syntax
+        run: node --check omega_finance_ministry_runtime_v1.js
+      - name: Validate Finance test syntax
+        run: node --check test/omega_finance_ministry_runtime_v1.test.mjs
+      - name: Finance country registry and runtime transaction tests
+        run: node --test test/omega_finance_ministry_runtime_v1.test.mjs
