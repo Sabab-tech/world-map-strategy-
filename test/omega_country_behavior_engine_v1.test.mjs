@@ -90,15 +90,60 @@ test('country behaviour profile is evidence-backed and differs with country macr
   assert.equal(behavior.diagnostics().dimensionCount, 10);
 });
 
+test('all canonical country and territory identities build a non-error behaviour profile with explicit evidence state', async () => {
+  const { runtime, behavior } = await loadCountryEngines();
+  const countries = runtime.listProfiles();
+  assert.ok(countries.length >= 249, 'existing canonical roster should remain available');
+  const signatures = new Set();
+  const failures = [];
+  for (const row of countries) {
+    const profile = behavior.getBehaviorProfile(row.iso3 || row.countryCode);
+    if (!profile || profile.status === 'ENGINE_ERROR') {
+      failures.push({ country: row.name, code: row.iso3 || row.countryCode, error: profile?.evidence?.error || 'NO_PROFILE' });
+      continue;
+    }
+    assert.equal(profile.dimensions && Object.keys(profile.dimensions).length, 10,
+      'ten runtime behaviour dimensions are returned for ' + row.name);
+    for (const dimension of Object.values(profile.dimensions)) {
+      if (dimension.value !== null) {
+        assert.ok(Number.isFinite(dimension.value) && dimension.value >= 0 && dimension.value <= 1,
+          'derived behaviour values are normalised for ' + row.name);
+        assert.ok(dimension.availability && dimension.source,
+          'every scored dimension declares availability and source for ' + row.name);
+      }
+    }
+    signatures.add(JSON.stringify({
+      status: profile.status,
+      dimensions: Object.fromEntries(Object.entries(profile.dimensions).map(([key, item]) => [key, item.value])),
+      sites: profile.domainSignals.resources.siteCount,
+      options: Object.keys(profile.actionPreferences || {}).sort()
+    }));
+  }
+  assert.deepEqual(failures, [], 'no country-specific runtime profile should throw');
+  assert.ok(signatures.size > 20, 'country records should produce differentiated runtime signatures, not a common preset');
+});
+
 test('missing economic evidence stays null instead of creating a fictitious GDP or risk appetite', async () => {
   const { behavior } = await loadCountryEngines();
-  const profile = behavior.getBehaviorProfile('Åland Islands');
+  const profile = behavior.getBehaviorProfile('AX');
   assert.notEqual(profile.status, 'ENGINE_ERROR');
   assert.equal(profile.metrics.gdpUsd, null);
   assert.equal(profile.dimensions.riskAppetite.value, null);
   assert.equal(profile.dimensions.tradeDependence.value, null);
   assert.equal(profile.domainSignals.military.expenditurePctGdp, null);
   assert.match(profile.evidence.limitations.join(' '), /Missing|Military|baseline/i);
+});
+
+test('live metrics are resolved from secondary supported runtime state roots', async () => {
+  const { context, behavior } = await loadCountryEngines();
+  context.Game = { state: {} };
+  context.Omega.Simulation = {
+    state: { economy: { BGD: { gdp: 987654321, gdpGrowthPct: 7.25 } } }
+  };
+  const profile = behavior.getBehaviorProfile('BGD');
+  assert.equal(profile.metrics.gdpUsd, 987654321);
+  assert.equal(profile.metrics.gdpGrowthPct, 7.25);
+  assert.match(profile.metricSources.gdpUsd.source, /LIVE_GAME_STATE\.economy\.gdp/);
 });
 
 test('adaptive decision scoring consumes country behaviour but respects explicit country doctrine', async () => {
