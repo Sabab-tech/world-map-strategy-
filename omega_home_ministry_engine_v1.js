@@ -244,6 +244,12 @@
     const validation=validateBudgetRules(rules||plan.allocationRules,total);
     if(!validation.ok)return validation;
     if(amount<summary.totalSpent-0.01)return{ok:false,reason:'BUDGET_BELOW_PRIOR_SPENDING',spent:summary.totalSpent,requested:amount};
+    const historical=normalizedBudgetPlan(state.budgetPlan);
+    for(const key of Object.keys(BUDGET_CATEGORIES)){
+      const rule=validation.rules[key],cap=rule.mode==='percent'?total*rule.value/100:rule.value;
+      const spent=Math.max(0,num(historical.spentByCategory[key])||0);
+      if(cap+0.01<spent)return{ok:false,reason:'BUDGET_BELOW_PRIOR_CATEGORY_SPENDING',category:key,spent,requestedCap:cap};
+    }
     plan.modeActive=true;plan.authorizedAmount=amount;plan.allocationRules=validation.rules;
     plan.ledger.push({type:'BUDGET_PLAN_SAVED',countryId:cid,turn:turn(),authorizedAmount:amount,financeAllocation:external.available?external.amount:0,totalAuthorized:total,percentTotal:validation.percentTotal,fixedTotal:validation.fixedTotal});
     plan.ledger=plan.ledger.slice(-100);next.budgetPlan=plan;next.lastUpdatedTurn=turn();
