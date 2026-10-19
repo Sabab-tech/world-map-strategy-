@@ -1203,7 +1203,7 @@
     const countryOptions = (selected) => profiles.slice().sort((a, b) => a.name.localeCompare(b.name)).map(p =>
       '<option value="' + esc(profileId(p)) + '"' + (profileId(p) === profileId(selected || {}) ? ' selected' : '') + '>' + esc(p.name + ' (' + profileId(p) + ')') + '</option>'
     ).join('');
-    return '<section class="ofx-section" data-gbank-panel>' +
+    return '<details class="ofx-section ofx-advanced-section ofx-banking-advanced" data-gbank-panel><summary><span class="ofx-summary-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9h18M5 9V6l7-3 7 3v3M5 9v9M9 9v9M15 9v9M19 9v9M3 18h18M2 21h20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span><strong>Government Banking · Accounts &amp; payment rail</strong><small>Country accounts, transfers, limits, reconciliation and audit ledger</small></span></summary><div class="ofx-detail-body">' +
       '<div class="ofx-heading"><div><h4>Government Banking · Account &amp; Payment Rail</h4><p>Each country balance is a USD-valued portfolio of currency accounts. Treasury remains denominated in USD; cross-border payments settle through USD and use explicit rates, limits and audit entries.</p></div></div>' +
       '<div class="ofx-kpis">' +
       '<article><span>Player Treasury</span><strong>' + esc(money(accounts.treasuryBalanceUsd)) + '</strong><small>' + esc(accounts.integrity) + ' · holds ' + esc(money(accounts.heldTreasuryUsd)) + '</small></article>' +
@@ -1235,7 +1235,7 @@
       '</tbody></table></div></section>' +
       '<section class="ofx-section"><h4>Recent Government Banking ledger</h4><div class="ofx-table-scroll"><table class="ofx-table"><thead><tr><th>Turn</th><th>Transaction</th><th>From → To</th><th>Amount</th><th>USD notional</th><th>Fee / tariff</th><th>Status</th></tr></thead><tbody data-gbank-ledger-rows>' +
       renderLedgerRows(12) + '</tbody></table></div></section>' +
-      '<p class="ofx-note">Source accounts are funded from the existing Finance Treasury USD mirror, not from guessed national income. FX conversions move value among sub-accounts and charge the configured clearing fee. Delayed payments hold funds and settle on a future simulation turn. This is game banking, not real-money transfer.</p></section>';
+      '<p class="ofx-note">Source accounts are funded from the existing Finance Treasury USD mirror, not from guessed national income. FX conversions move value among sub-accounts and charge the configured clearing fee. Delayed payments hold funds and settle on a future simulation turn. This is game banking, not real-money transfer.</p></div></details>';
   }
   function renderLedgerRows(maximum) {
     const bank = bankingState(true);
