@@ -428,9 +428,14 @@
     const type=String(action.type||'').toLowerCase().replace(/_/g,'-');
     const p=resolveProfile(action.countryId||action.countryCode||selectedCountryCode)||playerCountryProfile();
     if(!p)return {ok:false,code:'COUNTRY_NOT_FOUND',message:'Country profile is not available.'};
+    const actionDepartment=String(action.department||'').toLowerCase().replace(/[\s-]+/g,'_');
+    const actionDescription=String(action.description||'');
+    const approvedSimulationExpense=(actionDepartment==='interior'&&actionDescription.startsWith('OMEGA_HOME_BUDGET:'))||
+      (actionDepartment==='defense'&&actionDescription.startsWith('OMEGA_MILITARY_BUDGET:'));
     const simulationAuthorized=action.__omegaSimulationPipelineAuthority===true&&
       global.__OMEGA_SIMULATION_PIPELINE_ACTIVE__===true&&
-      !!(global.Omega&&global.Omega.Simulation&&global.Omega.Simulation.stepInProgress);
+      !!(global.Omega&&global.Omega.Simulation&&global.Omega.Simulation.stepInProgress)&&
+      type==='spend-budget'&&approvedSimulationExpense;
     if(simulationAuthorized&&type!=='spend-budget')return{ok:false,code:'SIMULATION_ACTION_NOT_ALLOWED'};
     if(p.countryCode!==getPlayerCode()&&!simulationAuthorized)return {ok:false,code:'PLAYER_COUNTRY_SCOPE_VIOLATION',message:'Finance commands are restricted to the active player country.'};
     if(!isPlayable(p))return {ok:false,code:'ECONOMIC_BASELINE_UNAVAILABLE',message:'No GDP baseline exists. Fiscal actions are disabled rather than fabricated.'};
@@ -932,7 +937,7 @@
     transactionTypes:['set-tax-rate','set-interest-rate','set-allocation','spend-budget','borrow']};}
   function applySimulationAction(action){
     const type=String(action&&action.type||'').toLowerCase().replace(/_/g,'-');
-    const department=String(action&&action.department||'').toLowerCase().replace(/[\\s-]+/g,'_');
+    const department=String(action&&action.department||'').toLowerCase().replace(/[\s-]+/g,'_');
     const description=String(action&&action.description||'');
     const inTurn=global.__OMEGA_SIMULATION_PIPELINE_ACTIVE__===true&&
       !!(global.Omega&&global.Omega.Simulation&&global.Omega.Simulation.stepInProgress);
