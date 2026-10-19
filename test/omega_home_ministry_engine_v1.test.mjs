@@ -56,7 +56,7 @@ test('country aliases read and write the same canonical police and treasury buck
   new Function('window',sourceText)(world);
   const isolated=world.OmegaHomeMinistryEngine;
 
-  assert.equal(isolated.getCurrentCountryId(),'BGD');
+  assert.equal(isolated.getCurrentCountryId(),'BD');
   assert.equal(isolated.getState('Bangladesh').policeCount,850);
   assert.equal(isolated.getTreasury('Bangladesh').balance,100000);
   const hired=isolated.recruitPolice(1,'Bangladesh');
