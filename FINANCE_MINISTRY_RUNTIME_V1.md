@@ -23,3 +23,8 @@ Finance reads actual receipts from the existing finance and Resource Economy run
 
 ## Automated validation
 `test:finance` validates full roster coverage, sector-share math, budget ceilings, recorded income, live treasury sync, actual spending, debt repayment, player-country boundaries, UI tab navigation and lazy reports rendering.
+
+## Combined economic and fiscal rows
+Each of the 15 modeled economic-output categories is mapped to the closest budget-planning sector. The Income & Industry table shows estimated output, projected sector receipts, the linked annual allocation, fiscal-year spending and remaining ceiling side by side. Industry figures are configurable game estimates; budget and spending values are taken from the player's Finance plan and ledger.
+
+Emergency expenses are restricted to the Emergency & Strategic Reserve sector, and debt-service expenses must use the Debt Service & Financial Stability sector. These checks prevent other sectors from using these categories to bypass the configured minimum Treasury reserve.
