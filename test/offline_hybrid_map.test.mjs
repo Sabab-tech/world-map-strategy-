@@ -3,13 +3,14 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { runInNewContext } from "node:vm";
 
-const [html, js, css, world, mapEngine, mainActivity] = await Promise.all([
+const [html, js, css, world, mapEngine, mainActivity, serviceWorker] = await Promise.all([
   readFile(new URL("../index.html", import.meta.url), "utf8"),
   readFile(new URL("../offline-hybrid-map.js", import.meta.url), "utf8"),
   readFile(new URL("../offline-hybrid-map.css", import.meta.url), "utf8"),
   readFile(new URL("../world.json", import.meta.url), "utf8"),
   readFile(new URL("../map-engine-1.js", import.meta.url), "utf8"),
-  readFile(new URL("../android/app/src/main/java/com/omega/globalsupremecommander/MainActivity.java", import.meta.url), "utf8")
+  readFile(new URL("../android/app/src/main/java/com/omega/globalsupremecommander/MainActivity.java", import.meta.url), "utf8"),
+  readFile(new URL("../omega-offline-map-sw.js", import.meta.url), "utf8")
 ]);
 
 test("offline map has a Bengali label and stays in the existing satellite control", () => {
@@ -29,19 +30,18 @@ test("hybrid atlas uses existing map-layer controls and stylesheet", () => {
   assert.match(html, /data-layer="political"/);
 });
 
-test("detailed real imagery is the primary layer, with NASA raster fallback", () => {
-  assert.match(js, /ArcGIS\/rest\/services\/World_Imagery\/MapServer\/tile/);
-  assert.match(js, /assets\.science\.nasa\.gov/);
-  assert.match(js, /NASA Blue Marble: Next Generation/);
-  assert.match(js, /indexedDB/);
-  assert.match(js, /CACHE_KEY/);
+test("offline atlas renders locally and has no remote imagery dependency", () => {
+  assert.doesNotMatch(js, /https?:\/\//i);
+  assert.doesNotMatch(js, /\bfetch\s*\(/i);
+  assert.doesNotMatch(js, /indexedDB|CACHE_KEY|NASA Blue Marble|ArcGIS|L\.tileLayer/i);
+  assert.match(js, /function createOfflineOceanLayer/);
   assert.match(js, /L\.GridLayer\.extend/);
-  assert.match(js, /sourceYForMercatorPixel/);
-  assert.match(js, /zIndex:\s*180/);
-  assert.match(js, /zIndex:\s*230/);
-  assert.match(js, /fillOpacity:\s*hasImagery\s*\?\s*0\.055/);
+  assert.match(js, /externalMapRequests:0/);
+  assert.match(js, /boundarySource:"Existing OMEGA world\.json"/);
+  assert.match(mapEngine, /window\.satelliteLayer = null/);
+  assert.match(mapEngine, /const offlineShell = Boolean\(window\.OMEGA_ANDROID_OFFLINE\)/);
+  assert.doesNotMatch(mapEngine, /permitSatelliteInOfflineShell/);
 });
-
 test("country geometry remains the canonical interactive GeoJSON layer", () => {
   assert.match(js, /Game\.geojsonLayer/);
   assert.match(js, /countries\.eachLayer/);
@@ -64,41 +64,38 @@ test("latitude and longitude graticule stays subtle and accurate", () => {
   assert.match(css, /omega-offline-coordinate-label/);
 });
 
-test("Android prefers real imagery and can cache its overview fallback", () => {
-  assert.match(js, /if \(window\.OMEGA_ANDROID_OFFLINE\) activate\(\)/);
-  assert.match(js, /if \(active && !blueMarbleImage\)/);
-  assert.match(js, /first online connection is needed to fetch/);
-  assert.match(css, /omega-offline-hybrid-active/);
-  assert.doesNotMatch(css, /animation:\s*resMarkerPulse/);
-  assert.match(mapEngine, /permitSatelliteInOfflineShell/);
-  assert.match(mapEngine, /maxZoom: 10/);
-  assert.match(js, /maxZoom: 10/);
+test("offline atlas starts without a first-online-load requirement", () => {
+  assert.match(js, /function startOfflineAtlas\(\)\{syncButton\(\);activate\(\);\}/);
+  assert.match(js, /document\.addEventListener\("DOMContentLoaded",startOfflineAtlas,\{once:true\}\)/);
+  assert.doesNotMatch(js, /first online connection|NASA Blue Marble|cache unavailable/i);
+  assert.match(js, /offlineBasemap:true/);
+  assert.match(js, /externalMapRequests:0/);
+  assert.match(css, /omega-offline-atlas-badge/);
 });
-
-
-test("Android WebView allows real map imagery requests through to the network", () => {
-  assert.doesNotMatch(mainActivity, /h\.equals\("server\.arcgisonline\.com"\)/);
-  assert.doesNotMatch(mainActivity, /basemaps\.cartocdn\.com/);
+test("Android WebView blocks remote basemap imagery as a safety net", () => {
+  assert.match(mainActivity, /h\.equals\("server\.arcgisonline\.com"\)/);
+  assert.match(mainActivity, /h\.equals\("assets\.science\.nasa\.gov"\)/);
+  assert.match(mainActivity, /h\.equals\("tile\.opentopomap\.org"\)/);
+  assert.match(mainActivity, /h\.endsWith\("\.basemaps\.cartocdn\.com"\)/);
+  assert.match(mainActivity, /block external basemap imagery/i);
   assert.match(mainActivity, /h\.equals\("unpkg\.com"\)/);
-  assert.match(mainActivity, /intercept map imagery/i);
 });
-
-test("imagery failures do not substitute fake map tiles", () => {
-  assert.doesNotMatch(js, /SATELLITE TILE/);
-  assert.doesNotMatch(js, /data:image\/svg\+xml/);
+test("the offline atlas never substitutes a fake remote imagery tile", () => {
+  assert.doesNotMatch(js, /https?:\/\//i);
+  assert.doesNotMatch(js, /SATELLITE TILE|data:image\/svg\+xml/i);
   assert.doesNotMatch(mapEngine, /errorTileUrl:\s*['"]data:image\/svg\+xml/i);
-  assert.doesNotMatch(mapEngine, /<text[^>]*>SATELLITE TILE<\/text>/i);
-  assert.match(mapEngine, /tileerror/);
-  assert.match(js, /cached global raster will be used/);
+  assert.match(mapEngine, /window\.OmegaOfflineHybridAtlas\.activate/);
+  assert.match(mainActivity, /h\.equals\("tile\.opentopomap\.org"\)/);
 });
-
-test("a late failed raster request cannot overwrite status after leaving atlas mode", () => {
-  assert.match(js, /if \(!active\) return;[\s\S]*?offlineRasterCached:\s*textureStored/);
-  assert.match(js, /if \(active\) attachBlueMarbleFallback\(\)/);
-  assert.match(js, /if \(!button \|\| button\.disabled\) return/);
+test("browser shell resources are cached locally for offline relaunch", () => {
+  assert.match(html, /navigator\.serviceWorker\.register\('\.\/omega-offline-map-sw\.js'/);
+  assert.match(serviceWorker, /CORE_ASSETS/);
+  assert.match(serviceWorker, /self\.addEventListener\("install"/);
+  assert.match(serviceWorker, /self\.addEventListener\("fetch"/);
+  assert.match(serviceWorker, /request\.mode === "navigate"/);
+  assert.match(serviceWorker, /url\.origin !== self\.location\.origin/);
+  assert.doesNotMatch(serviceWorker, /server\.arcgisonline\.com|assets\.science\.nasa\.gov/);
 });
-
-
 test("Chrome mobile layer drawer fits the visible viewport and supports vertical touch scrolling", () => {
   assert.match(css, /#layers-drawer\s*\{[\s\S]*?z-index:\s*100100\s*!important/);
   assert.match(css, /height:\s*calc\(var\(--omega-visible-height,\s*100dvh\)/);
@@ -106,12 +103,12 @@ test("Chrome mobile layer drawer fits the visible viewport and supports vertical
   assert.match(css, /overscroll-behavior-y:\s*contain\s*!important/);
   assert.match(css, /-webkit-overflow-scrolling:\s*touch\s*!important/);
   assert.match(js, /function updateVisibleViewportSize/);
-  assert.match(js, /window\.visualViewport\.addEventListener\("resize", updateVisibleViewportSize/);
+  assert.match(js, /window\.visualViewport\.addEventListener\("resize",\s*updateVisibleViewportSize/);
 });
 
 test("map layer buttons have a reliable capture-phase click route", () => {
   assert.match(js, /function handleLayerOptionClick/);
-  assert.match(js, /document\.addEventListener\("click", handleLayerOptionClick, true\)/);
+  assert.match(js, /document\.addEventListener\("click",\s*handleLayerOptionClick,\s*true\)/);
   assert.match(js, /stopImmediatePropagation/);
   assert.match(js, /window\.OmegaOfflineHybridAtlas\.activate\(\)/);
   assert.match(css, /#layers-drawer \.layer-opt-btn[\s\S]*?pointer-events:\s*auto\s*!important/);
@@ -180,7 +177,7 @@ test("layer drawer click routing executes the controller and tracks the visible 
     querySelector() { return atlasButton; },
     querySelectorAll() { return buttons; }
   };
-  runInNewContext(js, { window, document, L: window.L, Game, navigator: { onLine: false }, console });
+  runInNewContext(js, { window, document, L: window.L, Game, navigator: { onLine: true }, console });
 
   assert.equal(viewportVars["--omega-visible-height"], "436px");
   assert.equal(viewportVars["--omega-visible-offset-top"], "0px");
