@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 
 const recommendationData = JSON.parse(readFileSync(new URL('../omega_home_ministry_police_capability_recommendations_v1.json', import.meta.url), 'utf8'));
+const materialRequirementsData = JSON.parse(readFileSync(new URL('../omega_home_ministry_police_capability_material_requirements_v1.json', import.meta.url), 'utf8'));
 const engineSource = readFileSync(new URL('../omega_home_ministry_engine_v1.js', import.meta.url), 'utf8');
 const uiSource = readFileSync(new URL('../omega_home_ministry_police_operations_ui_v1.js', import.meta.url), 'utf8');
 const runtimeSource = readFileSync(new URL('../omega_home_ministry_police_capability_runtime_v1.js', import.meta.url), 'utf8');
@@ -49,6 +50,10 @@ test('engine, interface and recommendation loader parse and expose the capabilit
   assert.ok(indexSource.includes('omega_shared_number_format_v1.js'));
   assert.ok(serviceWorkerSource.includes('omega_home_ministry_training_materials_runtime_v1.js'));
   assert.ok(serviceWorkerSource.includes('omega_shared_number_format_v1.js'));
+  assert.ok(serviceWorkerSource.includes('omega_home_ministry_police_capability_material_requirements_v1.json'));
+  assert.ok(materialRuntimeSource.includes('omega_home_ministry_police_capability_material_requirements_v1.json'));
+  assert.ok(engineSource.includes('runtime.getRequirements(type,target)'));
+  assert.ok(!engineSource.includes("resourceId:'CONSTRUCTION_AGGREGATE'"));
   assert.ok(engineSource.includes('INSUFFICIENT_RESOURCE_STOCK'));
   assert.ok(runtimeSource.includes('omega_home_ministry_police_capability_recommendations_v1.json'));
 });
@@ -57,6 +62,7 @@ test('capability projects require facilities, charge Finance on start, and compl
   const events = new Map();
   globalThis.window = globalThis;
   globalThis.Omega = {};
+  globalThis.OmegaHomePoliceCapabilityMaterialRequirements = materialRequirementsData;
   globalThis.CustomEvent = class CustomEvent { constructor(type, init = {}) { this.type = type; this.detail = init.detail || null; } };
   globalThis.addEventListener = (type, fn) => { const listeners = events.get(type) || []; listeners.push(fn); events.set(type, listeners); };
   globalThis.dispatchEvent = event => { for (const fn of events.get(event.type) || []) fn(event); return true; };
