@@ -879,6 +879,7 @@
       }
     });
 
+    const dayBefore = finite(state.simulationDay) || 0;
     state.elapsedSimulationMs = (finite(state.elapsedSimulationMs) || 0) + dt;
     while (state.elapsedSimulationMs >= DAY_MS) {
       state.elapsedSimulationMs -= DAY_MS;
@@ -893,6 +894,7 @@
       currencyCount: currencies.size, baseCurrency: 'USD'
     });
     refreshPanelMetrics();
+    if ((finite(state.simulationDay) || 0) !== dayBefore) renderCurrentCharts(false);
     return { ok: true, turn: turnNumber, processed: currencies.size, simulationDay: state.simulationDay };
   }
 
@@ -1011,8 +1013,8 @@
       + '<label class="ofx-inline-label">Currency<select id="ofx-chart-currency">' + currencyOptions(playerCode) + '</select></label>'
       + '<label class="ofx-inline-label">Series<select id="ofx-chart-mode">' + rateModeOptions(mode) + '</select></label></div>'
       + '<div class="ofx-chart-grid"><article class="ofx-chart"><h5>USD exchange rate line</h5><p>Local units for 1 USD</p><canvas id="ofx-line-chart" aria-label="One-month exchange rate line chart"></canvas></article>'
-      + '<article class="ofx-chart"><h5>Daily rate movement</h5><p>Daily percentage change</p><canvas id="ofx-bar-chart" aria-label="Daily appreciation and depreciation bar chart"></canvas></article>'
-      + '<article class="ofx-chart"><h5>Appreciation / depreciation days</h5><p>Share of observed daily moves</p><canvas id="ofx-pie-chart" aria-label="Currency movement pie chart"></canvas>'
+      + '<article class="ofx-chart"><h5>Daily rate movement</h5><p>Positive = local currency weakened; negative = strengthened</p><canvas id="ofx-bar-chart" aria-label="Daily local currency depreciation and appreciation bar chart"></canvas></article>'
+      + '<article class="ofx-chart"><h5>Appreciation / depreciation days</h5><p>How often the local currency weakened, strengthened or stayed flat</p><canvas id="ofx-pie-chart" aria-label="Currency depreciation and appreciation day share pie chart"></canvas>'
       + '<div class="ofx-chart-legend" data-ofx-pie-legend></div></article></div>'
       + '<div class="ofx-note" data-ofx-history-status>Loading one-month observations...</div></section>'
       + '<details class="ofx-section"><summary>Global Currency Catalogue · ' + escapeHTML(String(currencies.size)) + ' ISO-style currency codes</summary>'
@@ -1192,8 +1194,8 @@
     ctx.fillStyle = '#d8e6f3'; ctx.font = '11px system-ui'; ctx.textAlign = 'center';
     ctx.fillText(String(total) + ' daily moves', cx, c.height - 9);
     const legend = global.document && global.document.querySelector('[data-ofx-pie-legend]');
-    if (legend) legend.innerHTML = '<span><i style="background:#f59e0b"></i>Up ' + up + '</span>'
-      + '<span><i style="background:#34d399"></i>Down ' + down + '</span>'
+    if (legend) legend.innerHTML = '<span><i style="background:#f59e0b"></i>Weakened (rate ↑) ' + up + '</span>'
+      + '<span><i style="background:#34d399"></i>Strengthened (rate ↓) ' + down + '</span>'
       + '<span><i style="background:#64748b"></i>Flat ' + flat + '</span>';
   }
   async function renderCurrentCharts(force) {
