@@ -244,6 +244,7 @@
         "regulatoryQualityWgiEstimate",
         "voiceAccountabilityWgiEstimate",
         "corruptionPerceptionIndex",
+        "corruptionPerceptionRank",
         "democracyIndex",
         "pressFreedomIndex",
         "fragileStatesIndex",
