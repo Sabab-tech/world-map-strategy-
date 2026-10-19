@@ -245,15 +245,30 @@
     const resources = behavior?.domainSignals?.resources || {};
     const diplomacy = strategic?.diplomacy || behavior?.domainSignals?.diplomacy || {};
     const dependencies = strategic?.dependencies || behavior?.domainSignals?.dependencies || {};
-    const strengths = [
+    const narrative = behavior?.profileNarrative || {};
+    const strengths = Array.from(new Set([
       ...arr(strategic?.overallStrengths),
-      ...arr(strategic?.economy?.strengths)
-    ];
-    const weaknesses = [
+      ...arr(strategic?.economy?.strengths),
+      ...arr(behavior?.domainSignals?.economy?.registeredStrengths),
+      ...arr(narrative.overallStrengths)
+    ].map(x => typeof x === 'string' ? x : (isObj(x) ? x.title || x.detail || x.signal || '' : s(x))).filter(Boolean)));
+    const weaknesses = Array.from(new Set([
       ...arr(strategic?.overallWeaknesses),
       ...arr(strategic?.economy?.vulnerabilities),
-      ...arr(strategic?.economy?.pressurePoints).map(x => isObj(x) ? x.title || x.detail : x)
-    ];
+      ...arr(behavior?.domainSignals?.economy?.registeredVulnerabilities),
+      ...arr(narrative.overallWeaknesses),
+      ...arr(strategic?.economy?.pressurePoints).map(x => isObj(x) ? x.title || x.detail : x),
+      ...arr(behavior?.domainSignals?.economy?.registeredPressurePoints).map(x => isObj(x) ? x.title || x.detail : x)
+    ].map(x => typeof x === 'string' ? x : (isObj(x) ? x.title || x.detail || x.signal || '' : s(x))).filter(Boolean)));
+    const playerAdvantages = arr(strategic?.playerAdvantages).length ? arr(strategic.playerAdvantages) : arr(narrative.playerAdvantages);
+    const playerChallenges = arr(strategic?.playerChallenges).length ? arr(strategic.playerChallenges) : arr(narrative.playerChallenges);
+    const registeredOptions = arr(adaptive?.registeredStrategyOptions).length
+      ? arr(adaptive.registeredStrategyOptions) : arr(strategic?.strategyOptions);
+    const actionPreferences = isObj(adaptive?.actionPreferences) ? adaptive.actionPreferences :
+      (isObj(behavior?.actionPreferences) ? behavior.actionPreferences : {});
+    const actionPreferenceRows = Object.entries(actionPreferences)
+      .filter(([, row]) => isObj(row) && num(row.value) !== null)
+      .sort((a, b) => (num(b[1].value) || 0) - (num(a[1].value) || 0));
     const priorities = arr(behavior?.priorityStack).length ? arr(behavior.priorityStack) : arr(strategic?.strategyOptions);
     const priorityBody = priorities.length ? '<ol class="ocov-priority-list">' + priorities.slice(0, 6).map((row, i) =>
       '<li><span class="ocov-priority-number">' + (i + 1) + '</span><div><strong>' + esc(row.title || row.action || row.domain || 'Strategic priority') +
@@ -328,11 +343,23 @@
       '<span>Derived dimensions: ' + esc(behavior?.evidence?.derivedDimensionCount ?? arr(behavior?.evidence?.availableDimensions).length) + '/10</span>' +
       '<span>Adaptive AI source: ' + esc(adaptive?.behaviorSource || (adaptive?.derivedDimensionCount > 0 ? 'CONNECTED' : 'WAITING/EXPLICIT DOCTRINE')) + '</span></div>' +
       dimensionCards(adaptive?.dimensions || behavior?.dimensions) +
+      panel('Runtime action preference signals', 'Derived from current evidence and registered country strategy options; the score influences AI ranking but does not execute an order.',
+        actionPreferenceRows.length
+          ? '<ul class="ocov-action-pref-list">' + actionPreferenceRows.slice(0, 12).map(([action, row]) =>
+              '<li><div><strong>' + esc(action.replace(/_/g, ' ')) + '</strong><small>' + esc(row.title || row.domain || row.source || 'Country strategic option') +
+              '</small></div><span>' + Math.round(Math.max(0, Math.min(1, Number(row.value))) * 100) + '/100</span></li>').join('') + '</ul>'
+          : '<p class="ocov-empty">No action-specific priority signal is registered for this country yet.</p>') +
       '<div class="ocov-domain-grid">' +
       panel('Country-specific strengths', 'Evidence-backed signals, not a single invented national score.',
         bulletList(strengths, 'No registered strength signal is available.')) +
       panel('Country-specific weaknesses & pressures', 'An unavailable field does not mean a country is weak.',
         bulletList(weaknesses, 'No registered weakness signal is available.')) +
+      panel('Player advantages', 'Potential gameplay advantages grounded in the registered country profile.',
+        bulletList(playerAdvantages, 'No country-specific player advantage has been established.')) +
+      panel('Player challenges', 'Strategic challenges for the player; these are not automatic penalties.',
+        bulletList(playerChallenges, 'No country-specific player challenge has been established.')) +
+      panel('Registered strategic options', 'Profile-builder options retained alongside current runtime priorities.',
+        bulletList(registeredOptions, 'No separately registered strategic option is available.')) +
       '</div>' +
       '<div class="ocov-section-heading"><span>03</span><div><h3>Priority stack</h3><p>Current candidate priorities generated from this country’s available evidence.</p></div></div>' +
       '<section class="ocov-panel"><div class="ocov-panel-body">' + priorityBody + '</div></section>' +
