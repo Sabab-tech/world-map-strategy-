@@ -182,6 +182,7 @@ test('finance, FX, macro and ministry time fallbacks treat one turn as one day',
   const home = fs.readFileSync(path.join(root, 'omega_home_ministry_engine_v1.js'), 'utf8');
   const military = fs.readFileSync(path.join(root, 'omega_battlefield_command_runtime_v1.js'), 'utf8');
   const industrial = fs.readFileSync(path.join(root, 'omega_resource_industrial_network_v1.js'), 'utf8');
+  const industrialCatalog = JSON.parse(fs.readFileSync(path.join(root, 'resource_industrial_catalog_v1.json'), 'utf8'));
 
   assert.equal(transmissionRules.simulationTurnDurationMs, DAY_MS);
   assert.equal(macroRules.simulationTurnDurationMs, DAY_MS);
@@ -195,4 +196,5 @@ test('finance, FX, macro and ministry time fallbacks treat one turn as one day',
   assert.match(military, /simTurn\(\) \* 86400000/);
   assert.match(industrial, /clock\?\.stepDurationMs/);
   assert.match(industrial, /milliseconds\/86400000/);
+  assert.equal(industrialCatalog.turnAssumption.daysPerTurn, 1);
 });
