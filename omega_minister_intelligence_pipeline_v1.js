@@ -235,6 +235,7 @@
       if (canonicalActive(state)) return state;
       const old = getLegacyState(preferred);
       if (legacyActive(old)) return old;
+      return null;
     }
     if (registry && registry.getActiveMinister && countryId && ministryId) {
       try {
