@@ -455,9 +455,13 @@
           this.world.state.simulation.subsystemTurns=this.world.state.simulation.subsystemTurns||{};
           this.world.state.simulation.subsystemTurns[entry.id]=turn;
           results.push({id:entry.id,turn,status:'COMPLETED',result:value===undefined?null:clone(value)});
+          this.lastTurnParticipantResults=results.slice(-256);
+          this.world.state.simulation.lastTurnParticipantResults=clone(this.lastTurnParticipantResults);
         }catch(error){
           const failure={id:entry.id,turn,status:'FAILED',error:String(error?.message||error)};
           results.push(failure);
+          this.lastTurnParticipantResults=results.slice(-256);
+          this.world.state.simulation.lastTurnParticipantResults=clone(this.lastTurnParticipantResults);
           // Stop the world immediately rather than silently let one sector miss a day.
           this.status='ERROR';
           this.clock.pause();
@@ -744,16 +748,21 @@
 
     async advance(turns=1){
       const count=Math.max(0,Math.floor(finite(turns,0)));
+      if(this.status==='ERROR')return {turn:this.clock.turn,steps:0,last:null,status:'ERROR',reason:'SIMULATION_IN_ERROR'};
       const wasRunning=this.status==='RUNNING';
       if(!wasRunning)this.status='RUNNING';
-      let last=null;
-      for(let i=0;i<count;i++)last=await this.step();
-      if(!wasRunning)this.status='READY';
-      return {turn:this.clock.turn,steps:count,last};
+      let last=null,completed=0;
+      for(let i=0;i<count&&this.status!=='ERROR';i++){
+        last=await this.step();
+        completed+=1;
+      }
+      if(!wasRunning&&this.status!=='ERROR')this.status='READY';
+      return {turn:this.clock.turn,steps:completed,last,status:this.status};
     }
 
     async step(){
       if(this.stepInProgress)throw new Error('SIMULATION_STEP_REENTRANT');
+      if(this.status==='ERROR')throw new Error('SIMULATION_IN_ERROR:'+String(this.lastError||'UNKNOWN'));
       this.stepInProgress=true;
       this.lastError=null;
       const commandResults=[];
