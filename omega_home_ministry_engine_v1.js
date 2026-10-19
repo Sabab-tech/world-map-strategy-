@@ -849,7 +849,7 @@
     if(s.lastPayrollDay===null||s.lastPayrollDay===undefined){s.lastPayrollDay=day;changed=true;}
     else if(day>s.lastPayrollDay){
       const days=Math.min(3650,day-s.lastPayrollDay),due=dailyOperatingCost(s)*days;
-      const finance=financeApi();let debit=null,paid=0;
+      const finance=financeApi();let debit=null,paid=0,treasuryUnavailable=false;
       if(finance&&typeof finance.applyAction==='function'){
         const payrollDue=dailyPayroll(s)*days,maintenanceDue=Math.max(0,due-payrollDue),snapshot=getHomeBudgetSnapshot(cid,s);
         const payrollCheck=validateHomeBudgetExpense(cid,payrollDue,'POLICE_PAYROLL',s,snapshot);
@@ -870,13 +870,15 @@
       }else{
         const treasury=getTreasury(cid);
         if(treasury.available){paid=Math.min(due,Math.max(0,treasury.balance));debit=debitTreasury(cid,paid,'HOME_MINISTRY_DAILY_OPERATIONS',s);}
-        else debit={ok:false,reason:'TREASURY_DATA_UNAVAILABLE'};
+        else {treasuryUnavailable=true;debit={ok:false,reason:'TREASURY_DATA_UNAVAILABLE'};}
       }
       if(debit&&debit.ok){
         payrollDebit=debit;
         if(paid<due){s.unpaidPayroll+=due-paid;s.policeTrust=clamp(s.policeTrust-Math.min(5,days),0,100);s.policeEfficiency=clamp(s.policeEfficiency-Math.min(5,days),0,100);s.sabotageRisk=clamp(s.sabotageRisk+Math.min(5,days),5,95);}
         emit('OMEGA_HOME_POLICE_PAYROLL_SETTLED',{countryId:cid,days:days,due:due,paid:paid,unpaid:Math.max(0,due-paid),turn:turn()});
         s.lastPayrollDay=day;changed=true;
+      }else if(treasuryUnavailable){
+        emit('OMEGA_HOME_POLICE_PAYROLL_SKIPPED',{countryId:cid,days:days,due:due,reason:'TREASURY_DATA_UNAVAILABLE',turn:turn()});
       }else{
         s.unpaidPayroll+=due;s.policeTrust=clamp(s.policeTrust-Math.min(5,days),0,100);s.policeEfficiency=clamp(s.policeEfficiency-Math.min(5,days),0,100);s.sabotageRisk=clamp(s.sabotageRisk+Math.min(5,days),5,95);
         emit('OMEGA_HOME_POLICE_PAYROLL_SETTLED',{countryId:cid,days:days,due:due,paid:0,unpaid:due,reason:debit&&debit.reason||'BUDGET_UNAVAILABLE',turn:turn()});
