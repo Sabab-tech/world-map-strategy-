@@ -2,7 +2,7 @@
   "schemaVersion": "1.0.0",
   "baselineYear": 2015,
   "annualizationMs": 31536000000,
-  "simulationTurnDurationMs": 3600000,
+  "simulationTurnDurationMs": 86400000,
   "defaultTargetInflationPct": 3,
   "defaultTargetDebtToGdpPct": 100,
   "defaultTargetUnemploymentPct": 6,
