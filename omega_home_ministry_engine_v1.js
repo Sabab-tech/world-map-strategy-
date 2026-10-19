@@ -311,7 +311,7 @@
     if(num(s.unlockedVehicleLevel)===null)s.unlockedVehicleLevel=1;if(num(s.unpaidMaintenance)===null)s.unpaidMaintenance=0;return s;
   }
   function storedState(country){const root=rootState(),raw=root&&root.interior&&root.interior[country]&&root.interior[country].police;return raw&&typeof raw==='object'?mergeState(raw):null;}
-  function publicState(s){return{schemaVersion:2,budgetPlan:clone(normalizedBudgetPlan(s.budgetPlan)),policeCount:s.policeCount,policeEfficiency:s.policeEfficiency,policeTrust:s.policeTrust,unpaidMaintenance:s.unpaidMaintenance,unlockedVehicleLevel:s.unlockedVehicleLevel,vehiclesOwned:clone(s.vehiclesOwned),pendingVehicleOrder:clone(s.pendingVehicleOrder),facilityLevels:clone(s.facilityLevels),trainingQualityLevel:s.trainingQualityLevel,tacticsResearched:clone(s.tacticsResearched),pendingResearch:clone(s.pendingResearch),specialAgents:s.specialAgents,sabotageRisk:s.sabotageRisk,unpaidPayroll:s.unpaidPayroll,agentDeployments:clone(s.agentDeployments),intelligenceReports:clone(s.intelligenceReports),incidentLedger:clone(s.incidentLedger),guardDeployments:clone(s.guardDeployments),nextGuardDeploymentId:s.nextGuardDeploymentId,vehicleFleet:clone(s.vehicleFleet),nextVehicleUnitId:s.nextVehicleUnitId,vehicleMaintenanceLog:clone(s.vehicleMaintenanceLog),lastFleetSimulationDay:s.lastFleetSimulationDay};}
+  function publicState(s){return{schemaVersion:2,budgetPlan:clone(normalizedBudgetPlan(s.budgetPlan)),policeCount:s.policeCount,policeEfficiency:s.policeEfficiency,policeTrust:s.policeTrust,unpaidPayroll:s.unpaidPayroll,unpaidMaintenance:s.unpaidMaintenance,unlockedVehicleLevel:s.unlockedVehicleLevel,vehiclesOwned:clone(s.vehiclesOwned),pendingVehicleOrder:clone(s.pendingVehicleOrder),facilityLevels:clone(s.facilityLevels),trainingQualityLevel:s.trainingQualityLevel,tacticsResearched:clone(s.tacticsResearched),pendingResearch:clone(s.pendingResearch),specialAgents:s.specialAgents,sabotageRisk:s.sabotageRisk,unpaidPayroll:s.unpaidPayroll,agentDeployments:clone(s.agentDeployments),intelligenceReports:clone(s.intelligenceReports),incidentLedger:clone(s.incidentLedger),guardDeployments:clone(s.guardDeployments),nextGuardDeploymentId:s.nextGuardDeploymentId,vehicleFleet:clone(s.vehicleFleet),nextVehicleUnitId:s.nextVehicleUnitId,vehicleMaintenanceLog:clone(s.vehicleMaintenanceLog),lastFleetSimulationDay:s.lastFleetSimulationDay};}
   function emit(type,detail){try{if(typeof g.dispatchEvent==='function'&&typeof g.CustomEvent==='function')g.dispatchEvent(new g.CustomEvent(type,{detail:clone(detail||{})}));}catch(_){}}
   function dispatchState(country,next,eventName){
     const mesh=interop();
@@ -848,16 +848,38 @@
     const now=simulationTimeMs(),day=Math.floor(now/DAY_MS),s=getState(cid);let changed=false,payrollDebit=null;
     if(s.lastPayrollDay===null||s.lastPayrollDay===undefined){s.lastPayrollDay=day;changed=true;}
     else if(day>s.lastPayrollDay){
-      const days=Math.min(3650,day-s.lastPayrollDay),due=dailyOperatingCost(s)*days,treasury=getTreasury(cid);
-      if(treasury.available){
-        const paid=Math.min(due,Math.max(0,treasury.balance)),debit=debitTreasury(cid,paid);
+      const days=Math.min(3650,day-s.lastPayrollDay);
+      const salaryDue=Math.round(dailyPayroll(s)*days*100)/100;
+      const maintenanceDue=Math.round(Math.max(0,dailyOperatingCost(s)-dailyPayroll(s))*days*100)/100;
+      const due=Math.round((salaryDue+maintenanceDue)*100)/100,treasury=getTreasury(cid);
+      const salaryBudget=budgetSpendCheck(s,cid,'personnel',salaryDue);
+      const maintenanceBudget=budgetSpendCheck(s,cid,'maintenance',maintenanceDue);
+      const budgetOK=salaryBudget.ok&&maintenanceBudget.ok;
+      if(treasury.available&&treasury.balance+0.000001>=due&&budgetOK){
+        const debit=debitTreasury(cid,due);
         if(debit.ok){
           payrollDebit=debit;
-          if(paid<due){s.unpaidPayroll+=due-paid;s.policeTrust=clamp(s.policeTrust-Math.min(5,days),0,100);s.policeEfficiency=clamp(s.policeEfficiency-Math.min(5,days),0,100);s.sabotageRisk=clamp(s.sabotageRisk+Math.min(5,days),5,95);}
-          emit('OMEGA_HOME_POLICE_PAYROLL_SETTLED',{countryId:cid,days:days,due:due,paid:paid,unpaid:Math.max(0,due-paid),turn:turn()});
-          s.lastPayrollDay=day;changed=true;
+          recordBudgetSpend(s,cid,'personnel',salaryDue,'DAILY_POLICE_PAYROLL');
+          recordBudgetSpend(s,cid,'maintenance',maintenanceDue,'DAILY_FLEET_MAINTENANCE');
+          emit('OMEGA_HOME_POLICE_PAYROLL_SETTLED',{countryId:cid,days:days,due:due,paid:due,unpaid:0,salaryDue,maintenanceDue,turn:turn()});
+        }else{
+          s.unpaidPayroll=Math.round((s.unpaidPayroll+salaryDue)*100)/100;
+          s.unpaidMaintenance=Math.round((s.unpaidMaintenance+maintenanceDue)*100)/100;
+          s.policeTrust=clamp(s.policeTrust-Math.min(5,days),0,100);
+          s.policeEfficiency=clamp(s.policeEfficiency-Math.min(5,days),0,100);
+          s.sabotageRisk=clamp(s.sabotageRisk+Math.min(5,days),5,95);
+          emit('OMEGA_HOME_POLICE_PAYROLL_BLOCKED',{countryId:cid,days,reason:debit.reason||'TREASURY_DEBIT_FAILED',due,treasuryBalance:treasury.balance,turn:turn()});
         }
+      }else{
+        const blockedReason=!budgetOK?(salaryBudget.reason||maintenanceBudget.reason||'MINISTRY_BUDGET_INSUFFICIENT'):'INSUFFICIENT_TREASURY';
+        s.unpaidPayroll=Math.round((s.unpaidPayroll+salaryDue)*100)/100;
+        s.unpaidMaintenance=Math.round((s.unpaidMaintenance+maintenanceDue)*100)/100;
+        s.policeTrust=clamp(s.policeTrust-Math.min(5,days),0,100);
+        s.policeEfficiency=clamp(s.policeEfficiency-Math.min(5,days),0,100);
+        s.sabotageRisk=clamp(s.sabotageRisk+Math.min(5,days),5,95);
+        emit('OMEGA_HOME_POLICE_PAYROLL_BLOCKED',{countryId:cid,days,reason:blockedReason,due,treasuryBalance:treasury.balance,salaryCategoryAvailable:salaryBudget.available,maintenanceCategoryAvailable:maintenanceBudget.available,turn:turn()});
       }
+      s.lastPayrollDay=day;changed=true;
     }
     const order=s.pendingVehicleOrder;
     if(order&&now>=order.completesAtMs){const v=VEHICLES.find(x=>x.level===order.level);if(v){
