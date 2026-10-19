@@ -103,10 +103,10 @@ test("browser shell resources are cached locally for offline relaunch", () => {
   assert.match(serviceWorker, /omega_home_ministry_country_police_baseline_v1[.]json/);
   assert.match(serviceWorker, /omega_home_ministry_police_operations_ui_v1[.]js/);
   assert.match(serviceWorker, /military_command_catalog_v1[.]json/);
-  assert.match(serviceWorker, /omega_government_banking_runtime_v1\\.js/);
-  assert.match(serviceWorker, /omega_economic_transmission_runtime_v1\\.js/);
-  assert.match(serviceWorker, /government_banking_rules_v1\\.json/);
-  assert.match(serviceWorker, /financial_transmission_rules_v1\\.json/);
+  assert.match(serviceWorker, /omega_government_banking_runtime_v1[.]js/);
+  assert.match(serviceWorker, /omega_economic_transmission_runtime_v1[.]js/);
+  assert.match(serviceWorker, /government_banking_rules_v1[.]json/);
+  assert.match(serviceWorker, /financial_transmission_rules_v1[.]json/);
   assert.match(serviceWorker, /self\.addEventListener\("install"/);
   assert.match(serviceWorker, /self\.addEventListener\("fetch"/);
   assert.match(serviceWorker, /request\.mode === "navigate"/);
