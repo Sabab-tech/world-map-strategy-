@@ -145,6 +145,13 @@
         state.siteRows = data.records.filter(row => obj(row) && row.countryId && row.resourceId);
         state.siteStatus = 'AVAILABLE';
         state.siteError = null;
+        try {
+          if (typeof g.dispatchEvent === 'function' && typeof g.CustomEvent === 'function') {
+            g.dispatchEvent(new g.CustomEvent('OMEGA_COUNTRY_BEHAVIOR_READY', {
+              detail: { version: VERSION, siteCatalogCount: state.siteRows.length }
+            }));
+          }
+        } catch (_) {}
         return true;
       })
       .catch(error => {
@@ -437,6 +444,7 @@
     });
 
     const dynamicArchetype = strategic?.archetype || (
+      (evidenceCount < 2 && (!sites.siteCount || sites.siteCount === 0)) ? 'INSUFFICIENT EVIDENCE' :
       sites.availability === 'AVAILABLE' && sites.resourceDiversity >= 3 && sites.siteCount >= 4 ? 'RESOURCE-DIVERSE GAMEPLAY ECONOMY' :
       openness !== null && openness >= 0.7 ? 'TRADE-EXPOSED ECONOMY' :
       fiscalStress && fiscalStress.value >= 0.62 ? 'MACRO-PRESSURE STATE' :
