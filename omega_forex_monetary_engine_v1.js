@@ -347,14 +347,22 @@
     const debt = finite(input.debtToGdpPct) ?? 0;
     const reserves = finite(input.reservesToGdpPct) ?? 0;
     const moneySupply = finite(input.moneySupplyGrowthPct) ?? 0;
+    const capitalFlow = finite(input.capitalFlowToGdpPct);
+    const confidence = finite(input.confidenceIndex);
+    const reserveCover = finite(input.reserveCoverMonths);
+    const pegAttack = Math.max(0, finite(input.pegAttackPressurePct) ?? 0);
     const shock = finite(input.shockPct) ?? 0;
+    const capitalFlowPressure = capitalFlow === null ? 0 : -capitalFlow * 0.08;
+    const confidencePressure = confidence === null ? 0 : Math.max(0, 50 - clamp(confidence, 0, 100)) * 0.10;
+    const reserveCoverPressure = reserveCover === null ? 0 : Math.max(0, 3 - Math.max(0, reserveCover)) * 1.8;
+    const pegAttackEffect = pegAttack * 0.25;
     const annual = (localInflation - usInflation) * 0.90
       - (localRate - usRate) * 0.22
       - (localGrowth - usGrowth) * 0.10
       - trade * 0.035
       + Math.max(0, debt - 60) * 0.012
       - Math.max(0, reserves - 10) * 0.012
-      + moneySupply * 0.10 + shock;
+      + moneySupply * 0.10 + capitalFlowPressure + confidencePressure + reserveCoverPressure + pegAttackEffect + shock;
     return clamp(annual, -60, 120);
   }
   function evolveInflation(input) {
@@ -830,13 +838,21 @@
       const localGrowth = finite(macro.growth) ?? 0;
       const hash = code.split('').reduce(function (sum, ch) { return sum + ch.charCodeAt(0); }, 0);
       const shock = Math.sin((turnNumber + hash) * 1.61803398875) * 0.35;
+      const bankState = rootState().governmentBanking || {};
+      const monetaryStress = (bankState.monetaryStressByCurrency && bankState.monetaryStressByCurrency[code])
+        || (global.OmegaEconomicTransmissionRuntime && global.OmegaEconomicTransmissionRuntime.getMonetaryStress
+          ? global.OmegaEconomicTransmissionRuntime.getMonetaryStress(code) : null) || {};
       const drift = computeAnnualDrift({
         localInflationPct: localInflation, usInflationPct: usInflation,
         localPolicyRatePct: localPolicyRate, usPolicyRatePct: usPolicyRate,
         localGrowthPct: localGrowth, usGrowthPct: usGrowth,
         tradeBalanceToGdpPct: macro.tradeToGdpPct, debtToGdpPct: macro.debtToGdpPct,
         reservesToGdpPct: macro.reservesToGdpPct,
-        moneySupplyGrowthPct: policy.moneySupplyGrowthPct, shockPct: shock
+        moneySupplyGrowthPct: policy.moneySupplyGrowthPct,
+        capitalFlowToGdpPct: finite(monetaryStress.capitalFlowToGdpPct),
+        confidenceIndex: finite(monetaryStress.confidenceIndex),
+        reserveCoverMonths: finite(monetaryStress.reserveCoverMonths),
+        pegAttackPressurePct: finite(monetaryStress.pegAttackPressurePct), shockPct: shock
       });
       let nextRate = oldRate * Math.pow(Math.max(0.0001, 1 + drift / 100), years);
       if (policy.currencyRegime === 'MANAGED_FLOAT') {
