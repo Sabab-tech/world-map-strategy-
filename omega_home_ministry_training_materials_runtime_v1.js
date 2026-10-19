@@ -342,6 +342,11 @@
 
   var api = Object.freeze({ VERSION: VERSION, COMMAND: COMMAND, init: init, register: register, handle: handle, diagnostics: diagnostics });
   g.OmegaHomePoliceTrainingMaterialsRuntime = api;
+  if (g.addEventListener) {
+    ['OMEGA_MINISTRY_INTEROPERABILITY_READY','OMEGA_MINISTRY_RUNTIME_READY','OMEGA_HOME_POLICE_BASELINE_READY'].forEach(function (type) {
+      g.addEventListener(type, function () { if (!handlerRegistered) register(); });
+    });
+  }
   if (g.document) {
     var start = function () { init(); };
     if (g.document.readyState === 'loading') g.document.addEventListener('DOMContentLoaded', start, { once: true });
