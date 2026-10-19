@@ -103,9 +103,14 @@ test('Finance route renders its dashboard through the existing Cabinet UI and lo
   assert.equal(elements.get('dash-layer-status').textContent,'FINANCE & TREASURY CONTROL ROOM');
   const html=elements.get('ministry-dashboard-content').innerHTML;
   assert.ok(html.includes('Finance Ministry'));
-  assert.ok(html.includes('data-ofm-action="set-allocation"'));
-  assert.ok(html.includes('data-ofm-action="spend-budget"'));
-  assert.ok(html.includes('GLOBAL ECONOMIC REGISTER'));
+  assert.ok(html.includes('data-ofm-tab="budget"'));
+  assert.ok(html.includes('data-ofm-tab="treasury"'));
+  assert.ok(!html.includes('data-ofm-action="set-allocation"'),'budget edit forms stay inside the Budget tab');
+  assert.equal(context.OmegaFinanceMinistry.selectTab('budget').ok,true);
+  const budgetHTML=elements.get('ministry-dashboard-content').innerHTML;
+  assert.ok(budgetHTML.includes('data-ofm-action="set-allocation"'));
+  assert.ok(budgetHTML.includes('data-ofm-action="set-sector-share"'));
+  assert.ok(budgetHTML.includes('data-ofm-action="spend-budget"'));
   const selected=context.OmegaFinanceMinistry.selectCountry('USA');
   assert.equal(selected.ok,true);
   const readOnlyHTML=elements.get('ministry-dashboard-content').innerHTML;
@@ -162,7 +167,7 @@ test('Finance tabs place cash and macro details behind separate icons while over
   assert.ok(!overview.includes('GDP (current baseline)'));
   assert.equal(context.OmegaFinanceMinistry.selectTab('budget').ok,true);
   const budget=elements.get('ministry-dashboard-content').innerHTML;
-  assert.ok(budget.includes('Chemicals & Advanced Materials'));
+  assert.ok(budget.includes('Chemical Industry &amp; Advanced Materials')||budget.includes('Chemical Industry & Advanced Materials'));
   assert.ok(budget.includes('data-ofm-action="set-sector-share"'));
   assert.ok(budget.includes('data-ofm-action="spend-budget"'));
   assert.equal(context.OmegaFinanceMinistry.selectTab('treasury').ok,true);
