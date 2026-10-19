@@ -260,7 +260,7 @@
   }
 
   function persistBackup(snapshot) {
-    dbWriteChain = dbWriteChain.then(function () { return writeIndexedSave(snapshot); });
+    dbWriteChain = dbWriteChain.catch(function () { return null; }).then(function () { return writeIndexedSave(snapshot); });
     return dbWriteChain;
   }
 
@@ -513,7 +513,7 @@
 
   function onPageExit() {
     // visibilitychange has already written the running state before pausing the live page.
-    if (hiddenSnapshotSaved && g.document && g.document.visibilityState === 'hidden') return;
+    if (hiddenWasRunning && hiddenSnapshotSaved && g.document && g.document.visibilityState === 'hidden') return;
     saveNow({ force: true });
   }
 
