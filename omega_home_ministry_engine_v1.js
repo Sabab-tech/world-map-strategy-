@@ -720,6 +720,10 @@
     const fuelReserveDays=clamp(num(state.fuelSupplyDays)===null?14:num(state.fuelSupplyDays),0,180);
     const fuelReadiness=clamp(fuelReserveDays/14,0,1);
     reduction+=(fuelReadiness-1)*0.08;
+    const unresolvedCases=(state.policeCases||[]).filter(function(row){
+      return row&&row.status!=='CLOSED'&&(row.responseDeadlineMissed||row.warrantDeadlineMissed||row.evidenceDeadlineMissed||row.arrestReviewOverdue||row.detentionDeadlineMissed||row.forceReviewOverdue);
+    }).length;
+    reduction-=Math.min(0.18,unresolvedCases*0.012);
     return clamp(reduction,-0.65,0.75);
   }
   function getCrimeSnapshot(country,suppliedState){
