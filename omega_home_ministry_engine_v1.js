@@ -469,6 +469,17 @@
   function totalOperationalFleetCount(counts){
     return Object.keys(counts||{}).reduce(function(sum,key){return sum+Math.max(0,num(counts[key])||0);},0);
   }
+  function operationalVehicleUnitCount(state){
+    const rows=Array.isArray(state&&state.vehicleFleet)?state.vehicleFleet:[];
+    if(!rows.length)return totalFleetCount(currentFleetCounts(state));
+    return rows.filter(function(unit){
+      const condition=clamp(num(unit&&unit.condition)===null?100:num(unit.condition),0,100);
+      const status=String(unit&&unit.status||'AVAILABLE');
+      const serviceTarget=Math.max(1,num(unit&&unit.nextServiceAtKm)||5000);
+      const odometer=Math.max(0,num(unit&&unit.odometerKm)||0);
+      return condition>15&&(status==='AVAILABLE'||status==='DEPLOYED')&&odometer<serviceTarget;
+    }).length;
+  }
   function totalFleetCount(counts){
     return Object.keys(counts||{}).reduce(function(sum,key){return sum+Math.max(0,Math.floor(num(counts[key])||0));},0);
   }
@@ -759,7 +770,8 @@
       fuel: getFuelSnapshot(cid,state),
       staffingTargetRatePer100k:staffingTarget.targetRatePer100k,
       requiredPoliceEstimate:targetPolice,policeStaffingCoveragePct:targetPolice?Math.round(state.policeCount/targetPolice*1000)/10:null,
-      currentFleetUnits:ownedFleetUnits,currentOperationalFleetUnits:Math.round(fleetUnits*10)/10,requiredFleetEstimate:targetFleet,vehicleCoveragePct:targetFleet?Math.round(fleetUnits/targetFleet*1000)/10:null,
+      currentFleetUnits:ownedFleetUnits,currentOperationalFleetUnits:Math.round(fleetUnits*10)/10,
+      currentOperationalVehicleUnits:operationalVehicleUnitCount(state),requiredFleetEstimate:targetFleet,vehicleCoveragePct:targetFleet?Math.round(fleetUnits/targetFleet*1000)/10:null,
       facilityReadinessPct:facilityReadinessPct,trainingCoveragePct:trainingCoveragePct,
       simulationTargetSource:'GAMEPLAY_POLICY_TARGET_NOT_OFFICIAL_COUNTRY_STANDARD',
       estimatedAnnualFinancialImpactUsd:estimatedAnnualFinancialImpactUsd,baselineAnnualFinancialImpactUsd:baselineAnnualFinancialImpactUsd,
