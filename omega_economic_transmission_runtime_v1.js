@@ -491,9 +491,10 @@
     const confidence = clamp((num(getMonetaryStress(currency)?.confidenceIndex) ?? (100 - before.economicPressureIndex)) + (num(scenario.confidenceDelta) || 0), 0, 100);
     const usInflation = num(uf && uf.inflationPct) ?? 2;
     const usRate = num(uf && uf.policy && uf.policy.interestRateAnnualPct) ?? 3;
+    const scenarioPolicyRate = (num(simPolicy.interestRateAnnualPct) ?? num(policy.interestRateAnnualPct) ?? 3) + (num(scenario.policyRateDeltaPp) || 0);
     const drift = callDrift({
       localInflationPct: inflation, usInflationPct: usInflation,
-      localPolicyRatePct: (num(simPolicy.interestRateAnnualPct) ?? num(policy.interestRateAnnualPct) ?? 3) + (num(scenario.policyRateDeltaPp) || 0),
+      localPolicyRatePct: scenarioPolicyRate,
       usPolicyRatePct: usRate, localGrowthPct: facts.growthPct, usGrowthPct: num(uf && uf.growthPct) ?? 2,
       tradeBalanceToGdpPct: tradePct, debtToGdpPct: debtToGdp, reservesToGdpPct: reservesToGdp,
       moneySupplyGrowthPct: num(simPolicy.moneySupplyGrowthPct) ?? 0,
@@ -509,19 +510,24 @@
       nextRate = clamp(nextRate, peg * (1 - band * 2), peg * (1 + band * 2));
     }
     const depreciationPct = (nextRate / facts.localPerUsd - 1) * 100;
-    const postInflation = clamp(inflation + ((num(scenario.inflationDeltaPp) || 0) * 0.25)
-      + Math.max(0, depreciationPct) * 0.10 - Math.max(0, (num(simPolicy.interestRateAnnualPct) || 3) - (num(simPolicy.inflationTargetPct) || 3)) * 0.10, -5, 1000);
+    const annualizedDepreciationPct = (Math.pow(Math.max(0.000001, nextRate / facts.localPerUsd), 1 / years) - 1) * 100;
+    const inflationDelta = num(scenario.inflationDeltaPp) || 0;
+    const targetRate = num(simPolicy.inflationTargetPct) ?? 3;
+    const postInflation = clamp(inflation + inflationDelta * 0.25
+      + Math.max(0, annualizedDepreciationPct) * 0.10 - Math.max(0, scenarioPolicyRate - targetRate) * 0.10, -5, 1000);
     const postCpi = before.cpiIndex * Math.pow(Math.max(0.0001, 1 + postInflation / 100), years);
     const postWages = before.nominalWageIndex * Math.pow(Math.max(0.0001, 1 + before.wageGrowthPctUsed / 100), years);
     const postRealWage = 100 * postWages / postCpi;
-    const postImportCost = before.importCostIndex * Math.pow(Math.max(0.0001, 1 + usInflation + Math.max(0, depreciationPct) / years), years);
+    const annualImportInflationPct = usInflation + Math.max(0, annualizedDepreciationPct);
+    const postImportCost = before.importCostIndex * Math.pow(Math.max(0.0001, 1 + annualImportInflationPct / 100), years);
     const result = {
       ok: true, scenario: code, label: scenario.label, countryCode: profileId(p), countryName: p.name, projectionYears: years,
       assumption: 'COUNTERFACTUAL_GAME_MODEL_ONLY_NO_STATE_MUTATION',
       before: { localPerUsd: facts.localPerUsd, inflationPct: facts.inflationPct, cpiIndex: before.cpiIndex, realWageIndex: before.realWageIndex, importCostIndex: before.importCostIndex, economicStabilityIndex: before.economicStabilityIndex, reserveUsd: reservesBase, reserveCoverMonths: facts.reserveCoverMonths },
       after: { localPerUsd: nextRate, currencyDepreciationPct: depreciationPct, inflationPct: postInflation, cpiIndex: postCpi,
         realWageIndex: postRealWage, importCostIndex: postImportCost, reserveUsd: reservesAfter, reserveCoverMonths: cover },
-      annualFxPressurePct: drift, currencyRegime: regime,
+      annualFxPressurePct: drift, annualizedCurrencyDepreciationPct: annualizedDepreciationPct,
+      annualizedImportInflationPct: annualImportInflationPct, currencyRegime: regime,
       interpretation: 'Scenario output is deterministic gameplay analysis. It does not change Treasury, market rates, reservations or account balances.'
     };
     return result;
