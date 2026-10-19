@@ -1,0 +1,165 @@
+{
+  "schemaVersion": "1.0.0",
+  "baselinePolicy": "GAME_RULE_ESTIMATES_NOT_OBSERVED_COUNTRY_INVENTORIES",
+  "economy": {
+    "recruitmentCostPerSoldierUsd": 2500,
+    "dailyPayrollPerSoldierUsd": 85,
+    "minimumRecruitment": 1,
+    "maximumRecruitmentPerOrder": 200000,
+    "defaultReadinessPct": 55,
+    "maximumReadinessPct": 100
+  },
+  "baselineForce": {
+    "activePersonnelShareOfPopulation": 0.00045,
+    "minimumPersonnel": 500,
+    "maximumPersonnel": 1200000,
+    "garrisonShareOfActivePersonnel": 0.12,
+    "estimatedEquipmentRatios": {
+      "logistics_truck": 0.0025,
+      "utility_vehicle": 0.0015,
+      "apc": 0.0008,
+      "mbt": 0.00035,
+      "artillery_battery": 0.00022,
+      "multirole_aircraft": 0.00012,
+      "patrol_vessel": 0.00008
+    }
+  },
+  "procurement": [
+    {
+      "id": "logistics_truck",
+      "name": "Military Logistics Truck",
+      "category": "Logistics",
+      "unit": "vehicle",
+      "costUsd": 70000,
+      "combatPower": 0.8,
+      "logisticsPower": 5,
+      "defensePower": 0.4,
+      "description": "Moves supplies and supports field operations."
+    },
+    {
+      "id": "utility_vehicle",
+      "name": "Utility Support Vehicle",
+      "category": "Mobility",
+      "unit": "vehicle",
+      "costUsd": 35000,
+      "combatPower": 1.2,
+      "logisticsPower": 2,
+      "defensePower": 0.5,
+      "description": "General-purpose movement and utility support."
+    },
+    {
+      "id": "apc",
+      "name": "Armoured Personnel Carrier",
+      "category": "Protected Mobility",
+      "unit": "vehicle",
+      "costUsd": 160000,
+      "combatPower": 4.5,
+      "logisticsPower": 1.5,
+      "defensePower": 2.2,
+      "description": "Protected troop transport for the game’s ground-force model."
+    },
+    {
+      "id": "mbt",
+      "name": "Main Battle Tank",
+      "category": "Armour",
+      "unit": "vehicle",
+      "costUsd": 6500000,
+      "combatPower": 15,
+      "logisticsPower": 0.8,
+      "defensePower": 4.3,
+      "description": "Heavy ground-force asset with high upkeep and procurement cost."
+    },
+    {
+      "id": "artillery_battery",
+      "name": "Artillery Battery",
+      "category": "Fire Support",
+      "unit": "battery",
+      "costUsd": 2400000,
+      "combatPower": 11,
+      "logisticsPower": 0.5,
+      "defensePower": 1.2,
+      "description": "Long-range fire-support asset in the abstract battle model."
+    },
+    {
+      "id": "multirole_aircraft",
+      "name": "Multirole Aircraft",
+      "category": "Air Support",
+      "unit": "aircraft",
+      "costUsd": 55000000,
+      "combatPower": 20,
+      "logisticsPower": 0.4,
+      "defensePower": 1.8,
+      "description": "High-cost air-support asset in the abstract battle model."
+    },
+    {
+      "id": "patrol_vessel",
+      "name": "Coastal Patrol Vessel",
+      "category": "Maritime",
+      "unit": "vessel",
+      "costUsd": 12000000,
+      "combatPower": 12,
+      "logisticsPower": 0.8,
+      "defensePower": 2,
+      "description": "Maritime patrol and coastal logistics asset."
+    }
+  ],
+  "terrain": {
+    "urban": {
+      "label": "Urban",
+      "attackModifier": 0.84,
+      "defenseModifier": 1.22,
+      "supplyModifier": 0.88
+    },
+    "rural": {
+      "label": "Rural",
+      "attackModifier": 1,
+      "defenseModifier": 1,
+      "supplyModifier": 0.96
+    },
+    "coastal": {
+      "label": "Coastal",
+      "attackModifier": 0.95,
+      "defenseModifier": 1.04,
+      "supplyModifier": 1.12
+    },
+    "industrial": {
+      "label": "Industrial",
+      "attackModifier": 0.92,
+      "defenseModifier": 1.12,
+      "supplyModifier": 1.06
+    },
+    "mountain": {
+      "label": "Mountain",
+      "attackModifier": 0.72,
+      "defenseModifier": 1.3,
+      "supplyModifier": 0.72
+    },
+    "border": {
+      "label": "Border",
+      "attackModifier": 0.92,
+      "defenseModifier": 1.1,
+      "supplyModifier": 0.88
+    },
+    "military": {
+      "label": "Military zone",
+      "attackModifier": 0.92,
+      "defenseModifier": 1.15,
+      "supplyModifier": 1.04
+    },
+    "capital": {
+      "label": "Capital",
+      "attackModifier": 0.82,
+      "defenseModifier": 1.28,
+      "supplyModifier": 1.08
+    }
+  },
+  "combat": {
+    "minimumGarrison": 500,
+    "maximumGarrisonShare": 0.3,
+    "baseAttackLossPct": 0.05,
+    "baseDefenseLossPct": 0.04,
+    "maximumLossPct": 0.32,
+    "readinessFactorFloor": 0.45,
+    "equipmentCommitmentDefaultPct": 30
+  }
+}
