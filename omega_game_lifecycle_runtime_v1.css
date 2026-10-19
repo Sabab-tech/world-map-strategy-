@@ -4,7 +4,7 @@
   top: 51px;
   left: 6px;
   right: 6px;
-  z-index: 999900;
+  z-index: 1000001;
   box-sizing: border-box;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -19,6 +19,16 @@
   font-family: Inter, Arial, sans-serif;
   line-height: 1.2;
   contain: layout paint;
+}
+/* The ministry layer is a separate high-z stacking surface; leave room so its title row stays usable. */
+#map-metric-dropdown { z-index: 1000002 !important; }
+body[data-active-layer]:not([data-active-layer="0"]) #ministry-dashboard-view,
+body.ios-active #ministry-dashboard-view,
+body[data-active-layer]:not([data-active-layer="0"]) #cabinet-full-window,
+body.ios-active #cabinet-full-window {
+  top: 70px !important;
+  height: calc(100vh - 70px) !important;
+  max-height: calc(100vh - 70px) !important;
 }
 #omega-global-time-hud * { box-sizing: border-box; }
 #omega-global-time-hud .ogth-topline {
@@ -59,28 +69,32 @@
   gap: 3px;
 }
 #omega-global-time-hud .ogth-controls button {
-  min-width: 27px;
-  min-height: 23px;
-  padding: 2px 6px;
-  border: 1px solid rgba(124, 162, 194, .35);
-  border-radius: 4px;
-  background: rgba(14, 30, 49, .96);
-  color: #d7e6f5;
-  font-family: inherit;
-  font-size: 10px;
-  font-weight: 800;
-  line-height: 1;
-  cursor: pointer;
-  touch-action: manipulation;
+  box-sizing: border-box !important;
+  min-width: 27px !important;
+  width: auto !important;
+  min-height: 23px !important;
+  height: 23px !important;
+  padding: 2px 6px !important;
+  border: 1px solid rgba(124, 162, 194, .35) !important;
+  border-radius: 4px !important;
+  background: rgba(14, 30, 49, .96) !important;
+  color: #d7e6f5 !important;
+  font-family: inherit !important;
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
+  box-shadow: none !important;
+  cursor: pointer !important;
+  touch-action: manipulation !important;
 }
 #omega-global-time-hud .ogth-controls button.active {
-  border-color: #5cbd93;
-  background: rgba(27, 90, 69, .68);
-  color: #c8ffe2;
+  border-color: #5cbd93 !important;
+  background: rgba(27, 90, 69, .68) !important;
+  color: #c8ffe2 !important;
 }
 #omega-global-time-hud .ogth-controls button[data-omega-action="toggle"] {
-  min-width: 31px;
-  color: #fff;
+  min-width: 31px !important;
+  color: #fff !important;
 }
 #omega-global-time-hud .ogth-economy,
 #omega-global-time-hud .ogth-assets {
@@ -168,12 +182,13 @@ body.modal-open #omega-global-time-hud {
   #omega-global-time-hud .ogth-controls { gap: 1px; }
   #omega-global-time-hud .ogth-save { max-width: 40px; font-size: 7px; }
   #omega-global-time-hud .ogth-controls button {
-    min-width: 20px;
-    min-height: 22px;
-    padding: 2px 4px;
-    font-size: 9px;
+    min-width: 20px !important;
+    min-height: 22px !important;
+    height: 22px !important;
+    padding: 2px 4px !important;
+    font-size: 9px !important;
   }
-  #omega-global-time-hud .ogth-controls button[data-omega-action="toggle"] { min-width: 23px; }
+  #omega-global-time-hud .ogth-controls button[data-omega-action="toggle"] { min-width: 23px !important; }
   #omega-global-time-hud .ogth-economy,
   #omega-global-time-hud .ogth-assets { font-size: 8px; }
 }
