@@ -92,7 +92,7 @@ test('country selection UI uses the shared bridge and removes hardcoded cross-co
 
   const countryIOS = read('country-ios.js');
   assert.match(countryIOS, /OmegaCountryRuntimeData/);
-  assert.doesNotMatch(countryIOS, /\"WESTERN \/ TRANSLANTIC\"/i);
+  assert.doesNotMatch(countryIOS, /Western \/ Transatlantic/i);
 });
 
 test('offline app shell caches the country runtime bridge and city records', () => {
