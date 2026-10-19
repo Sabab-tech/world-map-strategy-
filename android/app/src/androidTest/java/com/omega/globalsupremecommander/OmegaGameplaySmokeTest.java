@@ -13,7 +13,6 @@ import android.webkit.WebView;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
-import androidx.test.runner.MonitoringInstrumentation;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -70,6 +69,18 @@ public final class OmegaGameplaySmokeTest {
             assertEquals(
                     "Bundled offline gameplay shell and core runtime must finish booting within 90 seconds",
                     "true", ready
+            );
+
+            final String speedControlScript =
+                    "(function() {" +
+                    " var button = document.querySelector('.speed-btn[data-speed=\\\"2\\\"]');" +
+                    " if (!button) return false;" +
+                    " button.click();" +
+                    " return !!(button.classList.contains('active') && window.Game.gameSpeed === 2);" +
+                    "})()";
+            assertEquals(
+                    "Tapping the 2x control must update the actual simulation speed",
+                    "true", evaluate(instrumentation, webViewRef.get(), speedControlScript)
             );
 
             final String ministryNavigationScript =
