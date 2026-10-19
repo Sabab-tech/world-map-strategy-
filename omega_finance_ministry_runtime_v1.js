@@ -224,7 +224,8 @@
     const industries=(sectorRegistry.economicSectors||[]).map(s=>{
       const output=finite(metrics?.gdpCurrentUsd)===null?null:metrics.gdpCurrentUsd*(Number(s.outputSharePct)||0)/100;
       const tax=finite(model?.fiscalModel?.annualRevenueUsd)===null?null:model.fiscalModel.annualRevenueUsd*(Number(s.taxReceiptSharePct)||0)/100;
-      return {id:s.id,name:s.name,icon:s.icon,outputSharePct:Number(s.outputSharePct)||0,taxReceiptSharePct:Number(s.taxReceiptSharePct)||0,
+      return {id:s.id,name:s.name,icon:s.icon,budgetSectorId:s.budgetSectorId||null,
+        outputSharePct:Number(s.outputSharePct)||0,taxReceiptSharePct:Number(s.taxReceiptSharePct)||0,
         estimatedOutputUsd:output,projectedTaxReceiptUsd:tax,type:'MODELED_ESTIMATE'};
     });
     return {rows,industries,recordedRevenueUsd:recordedRevenue,recordedTaxRevenueUsd:recordedTax,
@@ -476,6 +477,8 @@
       const allocation=fm.allocations[dep];
       if(!DEPARTMENTS.some(x=>x[0]===dep))return {ok:false,code:'MINISTRY_INVALID',message:'Choose a supported government sector.'};
       if(!validTypes.includes(category))return {ok:false,code:'EXPENSE_CATEGORY_INVALID',message:'Choose salary, purchase, maintenance, general, investment, emergency or debt service.'};
+      if(category==='emergency'&&dep!=='emergency_reserve')return {ok:false,code:'EMERGENCY_SECTOR_REQUIRED',message:'Emergency spending must use the Emergency & Strategic Reserve sector.'};
+      if(category==='debt_service'&&dep!=='debt_service')return {ok:false,code:'DEBT_SERVICE_SECTOR_REQUIRED',message:'Debt-service spending must use the Debt Service & Financial Stability sector.'};
       if(amount===null||amount<=0)return {ok:false,code:'EXPENSE_AMOUNT_INVALID',message:'Expense amount must be greater than zero.'};
       if(!isObject(allocation))return {ok:false,code:'BUDGET_ALLOCATION_REQUIRED',message:'This sector has no budget allocation. Distribute the budget before spending.'};
       if(amount>(finite(allocation.remainingUsd)||0))return {ok:false,code:'ALLOCATION_LIMIT_EXCEEDED',message:'Expense exceeds this sector’s remaining fiscal-year allocation.'};
@@ -580,7 +583,10 @@
     safeDispatch('OMEGA_FINANCE_STATE_UPDATED',{countryCode:getPlayerCode(),turn:turnNumber,processed,revision:VERSION});
     refreshVisibleMetrics();return {ok:true,turn:turnNumber,processed};
   }
-  function departmentOptions(selected){return DEPARTMENTS.map(d=>'<option value="'+escapeHTML(d[0])+'"'+(selected===d[0]?' selected':'')+'>'+escapeHTML(d[1])+'</option>').join('');}
+  function departmentOptions(selected){
+    const options=(sectorRegistry.budgetSectors&&sectorRegistry.budgetSectors.length)?sectorRegistry.budgetSectors.map(s=>[s.id,s.name]):DEPARTMENTS;
+    return options.map(d=>'<option value="'+escapeHTML(d[0])+'"'+(d[0]===selected?' selected':'')+'>'+escapeHTML(d[1])+'</option>').join('');
+  }
   function metricCard(label,value,key,sub){return '<article class="ofm-kpi"><div class="ofm-kpi-label">'+escapeHTML(label)+'</div><div class="ofm-kpi-value"'+(key?' data-ofm-live="'+escapeHTML(key)+'"':'')+'>'+escapeHTML(value)+'</div><div class="ofm-kpi-sub">'+escapeHTML(sub||'')+'</div></article>';}
   function renderCountryOptions(){return profiles.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(p=>'<option value="'+escapeHTML(p.countryCode)+'"'+(selectedCountryCode===p.countryCode?' selected':'')+'>'+escapeHTML(p.name)+' ('+escapeHTML(p.iso3)+')'+(p.profileStatus==='UNAVAILABLE'?' · DATA N/A':'')+'</option>').join('');}
   function renderAllocationRows(fm){
@@ -644,9 +650,15 @@
   }
   function renderEconomicSectorTable(p,m,fm,root){
     const data=revenueState(p,fm,m,root),rows=data.industries;
-    return '<div class="ofm-table-scroll"><table class="ofm-table ofm-budget-table"><thead><tr><th>Industry / sector</th><th>GDP mix</th><th>Estimated output</th><th>Receipt mix</th><th>Projected public receipts</th></tr></thead><tbody>'+
-      rows.map(r=>'<tr><td><span class="ofm-sector-cell"><span class="ofm-sector-glyph">'+escapeHTML(r.icon)+'</span><strong>'+escapeHTML(r.name)+'</strong></span></td><td>'+fmtPct(r.outputSharePct)+'</td><td>'+fmtMoney(r.estimatedOutputUsd)+'</td><td>'+fmtPct(r.taxReceiptSharePct)+'</td><td>'+fmtMoney(r.projectedTaxReceiptUsd)+'</td></tr>').join('')+
-      '</tbody></table></div><p class="ofm-data-note">All industry outputs and sector tax contributions are configurable game-model estimates, computed as GDP × sector share. They are not observed real-world accounts for each country.</p>';
+    return '<div class="ofm-table-scroll"><table class="ofm-table ofm-budget-table ofm-industry-ledger"><thead><tr><th>Industry / sector</th><th>GDP mix</th><th>Estimated output</th><th>Receipt mix</th><th>Projected public receipts</th><th>Budget sector</th><th>Annual budget</th><th>Spent</th><th>Remaining</th></tr></thead><tbody>'+
+      rows.map(r=>{
+        const plan=r.budgetSectorId?fm?.allocations?.[r.budgetSectorId]:null;
+        const sector=r.budgetSectorId?budgetSectorById(r.budgetSectorId):null;
+        return '<tr><td><span class="ofm-sector-cell"><span class="ofm-sector-glyph">'+escapeHTML(r.icon)+'</span><span><strong>'+escapeHTML(r.name)+'</strong><small>Model estimate</small></span></span></td>'+
+          '<td>'+fmtPct(r.outputSharePct)+'</td><td>'+fmtMoney(r.estimatedOutputUsd)+'</td><td>'+fmtPct(r.taxReceiptSharePct)+'</td><td>'+fmtMoney(r.projectedTaxReceiptUsd)+'</td>'+
+          '<td>'+escapeHTML(sector?.name||'No linked budget sector')+'</td><td>'+fmtMoney(plan?plan.budgetUsd:null)+'</td><td>'+fmtMoney(plan?plan.spentUsd:null)+'</td><td>'+fmtMoney(plan?plan.remainingUsd:null)+'</td></tr>';
+      }).join('')+
+      '</tbody></table></div><p class="ofm-data-note">Output and sector-receipt values are configurable game-model estimates, computed from in-game GDP × sector mix. Budget and posted spending are live Finance plan values. The mapping is a planning link, not an observed national industry account.</p>';
   }
   function renderOverviewTab(p,m,fm,rows,editable,root){
     const totals=budgetTotals(fm),revenues=revenueState(p,fm,m,root),cash=Math.max(0,finite(fm.treasuryBalanceUsd)||0);
