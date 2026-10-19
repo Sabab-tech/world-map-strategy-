@@ -244,9 +244,6 @@ async function fetchUndpHdi() {
   return { byIso3, loaded: true, error: null, sourceId, sourceUrl, rowCount: byIso3.size, observationYear: 2023 };
 }
 
-  return { byIso3, loaded: true, error: null, sourceId, sourceUrl, rowCount: byIso3.size, observationYear: 2023 };
-}
-
 async function fetchTransparencyInternationalCpi2025() {
   // Maintained machine-readable mirror of the Transparency International CPI
   // 2025 full results table. The record stores the publisher and publication
