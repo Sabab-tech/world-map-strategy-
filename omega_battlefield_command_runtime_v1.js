@@ -196,13 +196,18 @@
     emit('OMEGA_MILITARY_COMMAND_STATE_UPDATED', { countryId: countryKey(profile), state: clone(state), turn: simTurn(), revision: state.revision });
     return { ok: true, state: clone(state) };
   }
-  function resolveFinanceFor(profile) {
+  function resolveFinanceFor(profile, allowSimulationTurn) {
     var api = g.OmegaFinanceMinistry || (g.Omega && g.Omega.FinanceMinistry);
     if (!api || typeof api.applyAction !== 'function' || typeof api.getFinanceState !== 'function' || typeof api.diagnostics !== 'function') return { ok: false, code: 'FINANCE_RUNTIME_NOT_READY' };
     var d = api.diagnostics();
     if (!d || d.initialized !== true) return { ok: false, code: 'FINANCE_RUNTIME_NOT_READY' };
     var player = api.getPlayerCountry && api.getPlayerCountry(), resolved = api.resolveCountry && api.resolveCountry(profile.iso3 || profile.code || profile.name);
-    if (player && resolved && player.countryCode && resolved.countryCode && player.countryCode !== resolved.countryCode) return { ok: false, code: 'PLAYER_COUNTRY_SCOPE_VIOLATION' };
+    var authorizedSimulationTurn = allowSimulationTurn === true &&
+      g.__OMEGA_SIMULATION_PIPELINE_ACTIVE__ === true &&
+      !!(g.Omega && g.Omega.Simulation && g.Omega.Simulation.stepInProgress);
+    if (player && resolved && player.countryCode && resolved.countryCode &&
+      player.countryCode !== resolved.countryCode && !authorizedSimulationTurn)
+      return { ok: false, code: 'PLAYER_COUNTRY_SCOPE_VIOLATION' };
     if (!resolved) return { ok: false, code: 'FINANCE_COUNTRY_NOT_FOUND' };
     var model = api.getFinanceState(resolved.countryCode), parent = model && model.allocations && model.allocations.defense;
     if (!model || !parent || !(num(parent.budgetUsd) > 0)) return { ok: false, code: 'DEFENSE_BUDGET_ALLOCATION_UNAVAILABLE' };
@@ -216,9 +221,9 @@
       return sum + Math.max(0, num(row.amountUsd) || 0);
     }, 0);
   }
-  function defenseBudgetSnapshot(profile, suppliedState) {
+  function defenseBudgetSnapshot(profile, suppliedState, allowSimulationTurn) {
     profile = profile || currentPlayerCountry();
-    var access = resolveFinanceFor(profile);
+    var access = resolveFinanceFor(profile, allowSimulationTurn);
     if (!access.ok) return { available: false, reason: access.code, countryCode: countryKey(profile) };
     var state = suppliedState || readState(profile), total = Math.max(0, num(access.parent.budgetUsd) || 0);
     var remaining = Math.max(0, num(access.parent.remainingUsd) ?? total), cash = Math.max(0, num(access.model.treasuryBalanceUsd) || 0), plan = normalizeShares(state.budgetPlan), rows = {}, planned = 0;
@@ -247,10 +252,10 @@
     var saved = saveState(profile, state);
     return saved.ok ? { ok: true, code: 'DEFENSE_PLAN_SAVED', snapshot: defenseBudgetSnapshot(profile, state) } : saved;
   }
-  function spendDefense(profile, category, amount, spendType, description) {
+  function spendDefense(profile, category, amount, spendType, description, allowSimulationTurn) {
     var cost = Math.max(0, num(amount) || 0);
     if (cost <= 0) return { ok: false, code: 'EXPENSE_AMOUNT_INVALID', message: 'Expense must be greater than zero.' };
-    var state = readState(profile), snap = defenseBudgetSnapshot(profile, state);
+    var state = readState(profile), snap = defenseBudgetSnapshot(profile, state, allowSimulationTurn);
     if (!snap.available) return { ok: false, code: snap.reason || 'DEFENSE_BUDGET_UNAVAILABLE' };
     if (!snap.valid) return { ok: false, code: 'DEFENSE_PLAN_OVERALLOCATED' };
     var row = snap.categories[category];
@@ -261,8 +266,11 @@
     var api = g.OmegaFinanceMinistry || (g.Omega && g.Omega.FinanceMinistry), type = spendType || (category === 'personnel' ? 'salary' : category === 'equipment' ? 'purchase' : 'general');
     var result;
     try {
-      result = api.applyAction({ type: 'spend-budget', countryId: snap.financeCountryCode, department: 'defense',
-        amountUsd: cost, spendType: type, description: 'OMEGA_MILITARY_BUDGET:' + category + '|' + String(description || 'MILITARY_ACTION') });
+      var financeAction={ type: 'spend-budget', countryId: snap.financeCountryCode, department: 'defense',
+        amountUsd: cost, spendType: type, description: 'OMEGA_MILITARY_BUDGET:' + category + '|' + String(description || 'MILITARY_ACTION') };
+      result = allowSimulationTurn && typeof api.applySimulationAction === 'function'
+        ? api.applySimulationAction(financeAction)
+        : api.applyAction(financeAction);
     } catch (error) { return { ok: false, code: 'FINANCE_TRANSACTION_FAILED', message: String(error && error.message || error) }; }
     return result && result.ok ? { ok: true, transactionId: result.transactionId || null, cost: cost, snapshot: defenseBudgetSnapshot(profile, state) } :
       { ok: false, code: result && result.code || 'FINANCE_TRANSACTION_FAILED', message: result && result.message, balance: result && result.treasuryBalanceUsd };
@@ -675,25 +683,50 @@
     if (modal) modal.classList.remove('is-open');
     uiState.open = false;
   }
-  function onTurn(event) {
-    if (!ready || !data.catalog) return;
-    var d = event && event.detail || {}, payload = d.payload || d, player = currentPlayerCountry();
-    var eventCountry = resolveCountryRow(payload.countryId || d.countryId);
-    if (eventCountry && countryKey(eventCountry) !== countryKey(player)) return;
-    var nextDay = Math.floor(simTimeMs() / 86400000), state = readState(player), lastDay = num(state.lastPayrollDay);
-    if (lastDay === null || lastDay < 0) { state.lastPayrollDay = nextDay; saveState(player, state); return; }
-    if (nextDay <= lastDay) return;
-    var elapsed = Math.min(3650, nextDay - lastDay), due = Math.max(0, state.personnel * (num(data.catalog.economy.dailyPayrollPerSoldierUsd) || 0) * elapsed);
-    var payment = spendDefense(player, 'personnel', due, 'salary', 'MILITARY_PAYROLL');
-    if (payment.ok) {
-      state.lastPayrollDay = nextDay; state.unpaidPayrollUsd = 0;
-      emit('OMEGA_MILITARY_PAYROLL_SETTLED', { countryId: countryKey(player), days: elapsed, dueUsd: due, paidUsd: due, turn: simTurn() });
-    } else {
-      state.unpaidPayrollUsd = Math.max(0, num(state.unpaidPayrollUsd) || 0) + due;
-      state.readiness = clamp(state.readiness - Math.min(8, elapsed * 2), 10, 100);
-      emit('OMEGA_MILITARY_PAYROLL_SHORTFALL', { countryId: countryKey(player), days: elapsed, dueUsd: due, paidUsd: 0, reason: payment.code || 'BUDGET_UNAVAILABLE', turn: simTurn() });
+  function processCountryPayroll(profile, nextDay) {
+    var state = readState(profile), lastDay = num(state.lastPayrollDay);
+    if (lastDay === null || lastDay < 0) {
+      state.lastPayrollDay = nextDay;
+      saveState(profile, state);
+      return;
     }
-    saveState(player, state);
+    if (nextDay <= lastDay) return;
+    var elapsed = Math.min(3650, nextDay - lastDay);
+    var currentDue = Math.max(0, state.personnel * (num(data.catalog.economy.dailyPayrollPerSoldierUsd) || 0) * elapsed);
+    var due = currentDue + Math.max(0, num(state.unpaidPayrollUsd) || 0);
+    var payment = due > 0
+      ? spendDefense(profile, 'personnel', due, 'salary', 'MILITARY_PAYROLL', true)
+      : { ok: true, cost: 0 };
+    state.lastPayrollDay = nextDay;
+    if (payment.ok) {
+      state.unpaidPayrollUsd = 0;
+      emit('OMEGA_MILITARY_PAYROLL_SETTLED', {
+        countryId: countryKey(profile), days: elapsed, dueUsd: due, paidUsd: due, turn: simTurn()
+      });
+    } else {
+      state.unpaidPayrollUsd = due;
+      state.readiness = clamp(state.readiness - Math.min(8, elapsed * 2), 10, 100);
+      emit('OMEGA_MILITARY_PAYROLL_SHORTFALL', {
+        countryId: countryKey(profile), days: elapsed, dueUsd: due, paidUsd: 0,
+        reason: payment.code || 'BUDGET_UNAVAILABLE', turn: simTurn()
+      });
+    }
+    saveState(profile, state);
+  }
+
+  function onTurn() {
+    if (!ready || !data.catalog) return;
+    var nextDay = Math.floor(simTimeMs() / 86400000), failures = [];
+    var seen = new Set();
+    for (var i = 0; i < data.countries.length; i++) {
+      var profile = data.countries[i];
+      var key = countryKey(profile);
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      try { processCountryPayroll(profile, nextDay); }
+      catch (error) { failures.push(key + ':' + String(error && error.message || error)); }
+    }
+    if (failures.length) throw new Error('MILITARY_DAILY_TURN_FAILED:' + failures.join('|'));
   }
   function diagnostics() {
     var current = currentPlayerCountry();
