@@ -20,7 +20,12 @@ test('all map country and area identities exist, and unknown values are explicit
 });
 function createRuntime(){
   const handlers=new Map();
-  const document={readyState:'loading',addEventListener(type,fn){const k='doc:'+type;handlers.set(k,[...(handlers.get(k)||[]),fn]);},getElementById(){return null;}};
+  const elements=new Map();
+  const document={readyState:'loading',addEventListener(type,fn){const k='doc:'+type;handlers.set(k,[...(handlers.get(k)||[]),fn]);},getElementById(id){return elements.get(id)||null;}};
+  elements.set('ministry-dashboard-view',{className:'',style:{display:'none'}});
+  elements.set('ministry-dashboard-content',{innerHTML:'',listeners:{},addEventListener(type,fn){this.listeners[type]=fn;}});
+  elements.set('dash-crumb-title',{textContent:''});
+  elements.set('dash-layer-status',{textContent:''});
   const profile=profileData.countries.find(p=>p.iso3==='BGD');
   const economy=JSON.parse(JSON.stringify(profile.sourceValues));
   const state={economy:{BANGLADESH:economy},finance:{BGD:{available:123,reserves:456}},population:{BGD:{population_2015:profile.indicators.population2015}},simulation:{turn:1,session:{playerCountryId:'BGD'}}};
@@ -33,10 +38,10 @@ function createRuntime(){
     Omega:{Simulation:{world:{state},clock:{turn:1,stepDurationMs:3600000},getPlayerCountryId(){return 'BGD';}}},
     Game:{state:{economy:{BANGLADESH:JSON.parse(JSON.stringify(economy))},finance:{},simulation:{turn:1}},currentActiveCountry:'BGD'},
     gameState:{economy:{BANGLADESH:JSON.parse(JSON.stringify(economy))},finance:{},population:{},simulation:{turn:1}},
-    CountryIOS:{activeCountry:'BGD'}};
+    CountryIOS:{activeCountry:'BGD'},OmegaCabinetUI:{renderMinistryDashboard(id){this.legacyMinistryId=id;return 'legacy';}}};
   context.window=context;context.globalThis=context;
   vm.runInNewContext(runtime,context,{filename:'omega_finance_ministry_runtime_v1.js'});
-  return {context,state};
+  return {context,state,document,elements};
 }
 test('Finance preserves existing finance data and enforces allocation, treasury and tax rules',async()=>{
   const {context,state}=createRuntime();const boot=await context.OmegaFinanceMinistry.init();
@@ -68,4 +73,23 @@ test('Finance commands cannot change a non-player country',async()=>{
   const {context}=createRuntime();await context.OmegaFinanceMinistry.init();
   const result=context.OmegaFinanceMinistry.applyAction({type:'set-tax-rate',countryId:'USA',value:40});
   assert.equal(result.ok,false);assert.equal(result.code,'PLAYER_COUNTRY_SCOPE_VIOLATION');
+});
+
+test('Finance route renders its dashboard through the existing Cabinet UI and locks foreign-country controls',async()=>{
+  const {context,elements}=createRuntime();
+  await context.OmegaFinanceMinistry.init();
+  const opened=context.OmegaCabinetUI.renderMinistryDashboard('finance');
+  assert.equal(opened,true);
+  assert.equal(elements.get('ministry-dashboard-view').style.display,'flex');
+  assert.equal(elements.get('dash-layer-status').textContent,'FINANCE & TREASURY CONTROL ROOM');
+  const html=elements.get('ministry-dashboard-content').innerHTML;
+  assert.ok(html.includes('Finance Ministry'));
+  assert.ok(html.includes('data-ofm-action="set-allocation"'));
+  assert.ok(html.includes('data-ofm-action="spend-budget"'));
+  assert.ok(html.includes('GLOBAL ECONOMIC REGISTER'));
+  const selected=context.OmegaFinanceMinistry.selectCountry('USA');
+  assert.equal(selected.ok,true);
+  const readOnlyHTML=elements.get('ministry-dashboard-content').innerHTML;
+  assert.ok(readOnlyHTML.includes('READ-ONLY PROFILE'));
+  assert.ok(!readOnlyHTML.includes('data-ofm-action="spend-budget"'));
 });
