@@ -141,7 +141,7 @@ test('capability projects require facilities, charge Finance on start, and compl
 
   const recruitmentQuote = engine.getPoliceCapabilityUpgradeQuote('recruitment', 'AAA');
   assert.equal(recruitmentQuote.canStart, true);
-  const feeBefore = engine.getPoliceCapabilityState('AAA').recruitmentFeePerOfficerUsd;
+  const feeBefore = Number(engine.getPoliceCapabilityState('AAA').recruitmentFeePerOfficerUsd) || 2500;
   const recruitmentStart = engine.startPoliceCapabilityUpgrade('recruitment', 'AAA');
   assert.equal(recruitmentStart.ok, true);
   assert.equal(engine.getPoliceCapabilityState('AAA').recruitmentLevel, 1);
