@@ -779,9 +779,14 @@ var Game = window.Game = {
             attr = 'OpenTopoMap Weather Grid';
         }
 
-        const permitSatelliteInOfflineShell = window.OMEGA_ANDROID_OFFLINE && layerType === 'satellite';
-        if (window.OMEGA_ANDROID_OFFLINE && !permitSatelliteInOfflineShell) {
+        const offlineShell = Boolean(window.OMEGA_ANDROID_OFFLINE)
+            || (typeof navigator !== 'undefined' && navigator.onLine === false);
+        if (offlineShell) {
+            // Never request online map tiles from the APK or an explicitly offline browser.
             window.currentMapTileLayer = null;
+            if (window.OmegaOfflineHybridAtlas && typeof window.OmegaOfflineHybridAtlas.activate === 'function') {
+                window.OmegaOfflineHybridAtlas.activate();
+            }
         } else {
             window.currentMapTileLayer = L.tileLayer(tileUrl, {
                 attribution: attr,
@@ -909,20 +914,8 @@ window.map = L.map('map', {
     zoomControl: false
 }).setView([20, 0], 2.5);
 
-// 🛰️ ULTRA HD SATELLITE TILE LAYER (ArcGIS World Imagery)
-if (!window.OMEGA_ANDROID_OFFLINE) {
-    window.satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        attribution: 'Esri World Imagery Satellite',
-        maxZoom: 18,
-        opacity: 0.95,
-    }).addTo(window.map);
-
-    window.satelliteLayer.on('tileerror', function(e) {
-        console.warn('[Map Engine] Satellite tile load glitch handled gracefully:', e.coords);
-    });
-} else {
-    window.satelliteLayer = null;
-}
+// The default basemap is the local offline atlas. Remote raster layers are opt-in.
+window.satelliteLayer = null;
 
 window.hubsGroupLayer = L.layerGroup().addTo(window.map);
 
