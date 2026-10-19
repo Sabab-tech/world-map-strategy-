@@ -40,8 +40,13 @@ function createRuntime() {
     },
     addEventListener(type, listener) {
       const rows = listeners.get(type) || [];
-      rows.push(listener);
+      if (!rows.includes(listener)) rows.push(listener);
       listeners.set(type, rows);
+    },
+    removeEventListener(type, listener) {
+      const rows = listeners.get(type) || [];
+      const index = rows.indexOf(listener);
+      if (index >= 0) rows.splice(index, 1);
     },
     dispatchEvent(event) {
       dispatched.push(event);
