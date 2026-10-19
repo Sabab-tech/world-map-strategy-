@@ -163,21 +163,26 @@
   function clamp(n,min,max){return Math.max(min,Math.min(max,n));}
   function normalizeCountry(value){
     let raw=String(value||'').trim();if(!raw)return '';
-    try{
-      const r=g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega&&g.Omega.CanonicalIdentity;
-      const hit=r&&typeof r.resolveCountry==='function'?r.resolveCountry(raw):null;
-      if(hit&&hit.id){
-        const row=hit.raw&&hit.raw.raw||hit.raw||{};
-        raw=String(row.iso3||row.iso3Code||row.ISO_A3||row.iso_a3||hit.id);
-      }
-    }catch(_){}
+    try{const r=g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega&&g.Omega.CanonicalIdentity;const hit=r&&typeof r.resolveCountry==='function'?r.resolveCountry(raw):null;if(hit&&hit.id)raw=String(hit.id);}catch(_){}
     const normalized=raw.toUpperCase().replace(/[-\s]+/g,'_');
     try{
       const baseline=countryPoliceBaselineByCode&&countryPoliceBaselineByCode[normalized];
-      if(baseline&&baseline.iso3)return String(baseline.iso3).trim().toUpperCase().replace(/[-\s]+/g,'_');
       if(baseline&&baseline.code)return String(baseline.code).trim().toUpperCase().replace(/[-\s]+/g,'_');
     }catch(_){}
     return normalized;
+  }
+  function preferredCountryStorageKey(country){
+    const raw=String(country||'').trim();if(!raw)return '';
+    try{
+      const registry=g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega&&g.Omega.CanonicalIdentity;
+      if(registry&&typeof registry.resolveCountry==='function'){
+        const hit=registry.resolveCountry(raw)||registry.resolveCountry(raw.replace(/[_-]+/g,' '));
+        const row=hit&&hit.raw&&hit.raw.raw||hit&&hit.raw||{};
+        const iso3=row.iso3||row.iso3Code||row.ISO_A3||row.iso_a3;
+        if(iso3)return String(iso3).trim().toUpperCase().replace(/[-\s]+/g,'_');
+      }
+    }catch(_){}
+    return '';
   }
   function countryAliasKeys(country){
     const raw=String(country||'').trim();if(!raw)return [];
@@ -205,8 +210,14 @@
     }
     const canonical=normalizeCountry(country);
     const aliases=countryAliasKeys(country);
-    const candidates=[canonical,...aliases].filter(Boolean);
-    let key=candidates.find(k=>Object.prototype.hasOwnProperty.call(section,k));
+    const preferred=preferredCountryStorageKey(country);
+    let key;
+    if(preferred&&Object.prototype.hasOwnProperty.call(section,preferred))key=preferred;
+    if(key===undefined&&canonical&&Object.prototype.hasOwnProperty.call(section,canonical))key=canonical;
+    if(key===undefined){
+      const candidates=[preferred,...aliases,canonical].filter(Boolean);
+      key=candidates.find(k=>Object.prototype.hasOwnProperty.call(section,k));
+    }
     if(key===undefined){
       key=Object.keys(section).find(k=>{
         const normalized=String(k).trim().toUpperCase().replace(/[-\s]+/g,'_');
