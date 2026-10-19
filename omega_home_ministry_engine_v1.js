@@ -1132,7 +1132,8 @@
     if(inventory.quantity===null)return{resourceId:resourceId,inventoryQuantity:null,availableQuantity:null,unit:null,source:'RESOURCE_INVENTORY_UNAVAILABLE',resourceCountryId:found.countryId};
     const trade=materialMapEntry(bucket.tradeAvailability,resourceId),reserve=materialMapEntry(bucket.strategicReserve&&bucket.strategicReserve.availableByResource,resourceId);
     const reserved=Math.max(0,reserve.quantity===null?0:reserve.quantity);
-    const available=trade.quantity===null?Math.max(0,inventory.quantity-reserved):Math.max(0,trade.quantity);
+    const inventoryOutsideReserve=Math.max(0,inventory.quantity-reserved);
+    const available=trade.quantity===null?inventoryOutsideReserve:Math.min(inventoryOutsideReserve,Math.max(0,trade.quantity));
     const resourceTypes=Array.isArray(g.ResourceMinistryEngine&&g.ResourceMinistryEngine.resourceTypes)?g.ResourceMinistryEngine.resourceTypes:[];
     const type=resourceTypes.find(function(item){return materialToken(item&&item.id)===materialToken(resourceId);});
     const labels={CONSTRUCTION_AGGREGATE:'Construction aggregate',COPPER:'Copper',BAUXITE_ALUMINUM:'Bauxite / aluminum',CRUDE_OIL:'Crude oil',IRON_ORE:'Iron ore'};
