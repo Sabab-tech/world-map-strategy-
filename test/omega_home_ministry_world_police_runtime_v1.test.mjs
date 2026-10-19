@@ -152,6 +152,23 @@ test('patrol plan and active police rules change crime outputs, satisfaction and
   assert.match(financeModel.ledger.at(-1).description, /^OMEGA_HOME_BUDGET:operations\|POLICE_POLICY_BODY_CAMERA_AUDIT$/);
 });
 
+test('selected country police data follows the shared view context without permitting foreign mutations', () => {
+  engine.bootstrapCountryPoliceBaselines(baselineData.countries);
+  globalThis.OmegaMinistryViewCountry = 'NGA';
+  const expected = baselineData.countries.find(row => row.iso3 === 'NGA');
+  assert.equal(engine.getCurrentCountryId(), 'NGA');
+  const state = engine.getState();
+  assert.equal(state.baselinePolicePersonnel, expected.baselinePolice.activePersonnel);
+  assert.equal(engine.getCrimeSnapshot().countryId, 'NGA');
+
+  const before = engine.getState('NGA').policeCount;
+  const result = engine.recruitPolice(1);
+  assert.equal(result.ok, false);
+  assert.equal(result.reason, 'PLAYER_COUNTRY_SCOPE_VIOLATION');
+  assert.equal(engine.getState('NGA').policeCount, before);
+  delete globalThis.OmegaMinistryViewCountry;
+});
+
 test('insufficient treasury rejects police recruitment and preserves both headcount and Finance balance', () => {
   engine.bootstrapCountryPoliceBaselines(baselineData.countries);
   const beforeHeadcount = engine.getState('BD').policeCount;
