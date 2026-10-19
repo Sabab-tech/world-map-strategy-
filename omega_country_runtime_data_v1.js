@@ -4,7 +4,7 @@
  */
 (function (root) {
   'use strict';
-  const state = { ready:false, settled:false, error:null, promise:null, profiles:[], byCode:new Map(), byIso3:new Map(), byNumeric:new Map(), aliases:new Map(), cities:new Map() };
+  const state = { ready:false, settled:false, error:null, promise:null, profiles:[], extras:new Map(), byCode:new Map(), byIso3:new Map(), byNumeric:new Map(), aliases:new Map(), cities:new Map(), legacyEconomy:{}, legacyPopulation:{} };
   const s = v => String(v == null ? '' : v).trim();
   const norm = v => s(v).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/&/g, ' AND ').replace(/[_’'`-]+/g, ' ').replace(/[^A-Z0-9]+/gi, ' ').trim().toUpperCase().replace(/\s+/g, ' ');
   const fixedAliases = {
@@ -13,6 +13,7 @@
     'NORTH KOREA':'KP','TAIWAN':'TW',MACAU:'MO',MACAO:'MO','CZECH REPUBLIC':'CZ',
     'COTE D IVOIRE':'CI','IVORY COAST':'CI','DEMOCRATIC REPUBLIC OF CONGO':'CD',
     'DEMOCRATIC REPUBLIC OF THE CONGO':'CD','DR CONGO':'CD','REPUBLIC OF CONGO':'CG',
+    'REPUBLIC OF THE CONGO':'CG','KOSOVO':'XK',
     'CONGO BRAZZAVILLE':'CG','BRITISH VIRGIN ISLANDS':'VG','US VIRGIN ISLANDS':'VI',
     'UNITED STATES VIRGIN ISLANDS':'VI','SINT MAARTEN':'SX','FALKLAND ISLANDS':'FK',
     MICRONESIA:'FM','FEDERATED STATES OF MICRONESIA':'FM','PITCAIRN ISLANDS':'PN',
@@ -36,6 +37,28 @@
       [p.name,p.officialName,p.shortName,p.countryCode,p.iso3,p.numericCode,p.economyKey,p.populationKey].forEach(a => addAlias(a,p,false));
     });
     Object.entries(fixedAliases).forEach(([name,code]) => { const p=state.byCode.get(code); if (p) addAlias(name,p,true); });
+  }
+  function addSupplementalIdentities() {
+    // Kosovo occurs in the repository's legacy economy, population, and city datasets
+    // but is not part of the ISO country roster. Keep it as a transparent runtime-only
+    // identity rather than losing its existing records.
+    const kosovo = {
+      countryCode:'XK',
+      iso3:'XKX',
+      numericCode:null,
+      name:'Kosovo',
+      officialName:'Republic of Kosovo',
+      economyKey:'KOSOVO',
+      populationKey:'KOSOVO',
+      profileStatus:'RUNTIME_ONLY_ALIAS',
+      sourceValues:null,
+      populationValues:null,
+      indicators:{},
+      metricAvailability:{},
+      provenance:{status:'LEGACY_DATASET_ALIAS; no canonical profile row'}
+    };
+    state.extras.set('XK', kosovo);
+    ['XK','XKX','KOSOVO','REPUBLIC OF KOSOVO'].forEach(alias => addAlias(alias,kosovo,true));
   }
   function resolveCountry(value) {
     if (value && typeof value === 'object') value=value.countryCode||value.iso2||value.iso3||value.countryId||value.code||value.name;
@@ -74,13 +97,24 @@
     }
     return null;
   }
+  function legacyRecord(domain,profile,input) {
+    const source=domain==='economy'?state.legacyEconomy:(domain==='population'?state.legacyPopulation:null);
+    if(!source||typeof source!=='object')return null;
+    const keys=candidateKeys(profile,input);
+    for(const key of keys) {
+      const hit=Object.keys(source).find(candidate=>norm(candidate)===key);
+      if(hit!==undefined&&source[hit]&&typeof source[hit]==='object')return source[hit];
+    }
+    return null;
+  }
   function getRecord(domain,input) {
     const kind=norm(domain).toLowerCase(), p=resolveCountry(input);
     if (['country','countries','profile'].includes(kind)) return p?Object.assign({},p):null;
     let base=null; if (p&&kind==='economy') base=p.sourceValues; if (p&&kind==='population') base=p.populationValues;
+    const legacy=legacyRecord(kind,p,input);
     const live=liveRecord(kind,p,input);
-    if ((!base||typeof base!=='object')&&(!live||typeof live!=='object')) return null;
-    return Object.assign({},base&&typeof base==='object'?base:{},live&&typeof live==='object'?live:{});
+    if ((!base||typeof base!=='object')&&(!legacy||typeof legacy!=='object')&&(!live||typeof live!=='object')) return null;
+    return Object.assign({},legacy&&typeof legacy==='object'?legacy:{},base&&typeof base==='object'?base:{},live&&typeof live==='object'?live:{});
   }
   function getCities(value) {
     const p=resolveCountry(value), row=p&&state.cities.get(p.countryCode);
@@ -95,7 +129,7 @@
     return Object.assign({},p,{flag:flagFor(p),capital:getCapital(p.countryCode),cities:getCities(p.countryCode)});
   }
   function diagnostics() {
-    return {version:'1.0.0',ready:state.ready,settled:state.settled,error:state.error,profileCount:state.profiles.length,countryIdentityCount:state.byCode.size,flagCount:state.profiles.filter(p=>!!flagFor(p)).length,capitalCount:state.cities.size,profilesWithEconomy:state.profiles.filter(p=>p.sourceValues&&typeof p.sourceValues==='object').length,profilesWithPopulation:state.profiles.filter(p=>p.populationValues&&typeof p.populationValues==='object').length};
+    return {version:'1.0.0',ready:state.ready,settled:state.settled,error:state.error,profileCount:state.profiles.length,countryIdentityCount:state.byCode.size+state.extras.size,flagCount:state.profiles.concat(Array.from(state.extras.values())).filter(p=>!!flagFor(p)).length,capitalCount:state.cities.size,profilesWithEconomy:state.profiles.filter(p=>p.sourceValues&&typeof p.sourceValues==='object').length,profilesWithPopulation:state.profiles.filter(p=>p.populationValues&&typeof p.populationValues==='object').length,legacyEconomyRecords:Object.keys(state.legacyEconomy).length,legacyPopulationRecords:Object.keys(state.legacyPopulation).length};
   }
   async function load(path,optional) {
     if (typeof root.fetch!=='function') { if(optional)return null; throw new Error('FETCH_UNAVAILABLE:'+path); }
@@ -105,10 +139,19 @@
   }
   function init() {
     if(state.promise)return state.promise;
-    state.promise=Promise.all([load('./economy_global_profiles_v1.json',false),load('./cities.json',true).catch(()=>null)])
-      .then(([data,cityData])=>{
+    state.promise=Promise.all([
+      load('./economy_global_profiles_v1.json',false),
+      load('./cities.json',true).catch(()=>null),
+      load('./economy.json',true).catch(()=>null),
+      load('./population.json',true).catch(()=>null)
+    ])
+      .then(([data,cityData,economyData,populationData])=>{
         if(!data||!Array.isArray(data.countries))throw new Error('COUNTRY_PROFILE_REGISTRY_INVALID');
-        buildProfiles(data.countries); state.cities.clear();
+        buildProfiles(data.countries);
+        addSupplementalIdentities();
+        state.legacyEconomy=economyData&&typeof economyData==='object'?economyData:{};
+        state.legacyPopulation=populationData&&typeof populationData==='object'?populationData:{};
+        state.cities.clear();
         (Array.isArray(cityData?.countries)?cityData.countries:[]).forEach(row=>{
           const p=row&&resolveCountry(row.name); if(p)state.cities.set(p.countryCode,row);
         });
