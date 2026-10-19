@@ -414,11 +414,18 @@
   function addGlobalLedger(entry) {
     const bank = bankingState(true);
     const row = Object.assign({ transactionId: nextId('GB'), turn: turn(), timestamp: new Date().toISOString() }, clone(entry || {}));
-    bank.ledger.push(row);
+    const key = String(row.idempotencyKey || '').trim();
+    if (key) {
+      // A delayed payment is one transaction that changes state; update its journal row
+      // from PENDING to SETTLED/CANCELLED rather than leaving two contradictory "latest" rows.
+      const priorIndex = bank.ledger.findIndex(x => String(x.idempotencyKey || '') === key);
+      if (priorIndex >= 0) bank.ledger[priorIndex] = row;
+      else bank.ledger.push(row);
+      bank.idempotency[key] = { transactionId: row.transactionId, status: row.status, result: clone(row) };
+    } else {
+      bank.ledger.push(row);
+    }
     bank.ledger = bank.ledger.slice(-Number(rules.maximumLedgerEntries || 4096));
-    if (row.idempotencyKey) bank.idempotency[String(row.idempotencyKey)] = {
-      transactionId: row.transactionId, status: row.status, result: clone(row)
-    };
     return row;
   }
   function getOpenTransferRows(countryCode) {
