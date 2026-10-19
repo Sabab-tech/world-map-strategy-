@@ -83,7 +83,22 @@ function handleTurn(d){
  render();return{ok:true,turn:t,updated,mode:'LIVE_TURNS'};
 }
 function seriesFor(p,id){const s=liveData.get(iso(p))?.[id];if(live&&s?.length)return s.slice();return(preview.get(iso(p))?.series[id]||[]).slice();}
-function fmt(v,m){const z=n(v);if(z===null)return'N/A';if(m.format==='money'){const a=Math.abs(z);if(a>=1e12)return(z/1e12).toFixed(2)+'T USD';if(a>=1e9)return(z/1e9).toFixed(2)+'B USD';if(a>=1e6)return(z/1e6).toFixed(2)+'M USD';return new Intl.NumberFormat('en-US',{maximumFractionDigits:0}).format(z)+' USD';}return z.toLocaleString('en-US',{maximumFractionDigits:2})+(m.format==='pct'?'%':'');}
+function fmt(v,m){
+ const z=n(v);if(z===null)return'N/A';
+ if(m.format==='money'){
+  const a=Math.abs(z),scale=a>=1e12?{value:1e12,label:'trillion'}:a>=1e9?{value:1e9,label:'billion'}:a>=1e6?{value:1e6,label:'million'}:a>=1e3?{value:1e3,label:'thousand'}:null;
+  if(scale){let amount;try{amount=new Intl.NumberFormat('en-US',{maximumFractionDigits:2}).format(a/scale.value);}catch(_){amount=(a/scale.value).toFixed(2).replace(/\.?0+$/,'');}return(z<0?'-':'')+'$'+amount+' '+scale.label;}
+  try{return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(z);}catch(_){return(z<0?'-':'')+'$'+Math.round(a).toLocaleString('en-US');}
+ }
+ return z.toLocaleString('en-US',{maximumFractionDigits:2})+(m.format==='pct'?'%':'');
+}
+function compactRawNumber(value){
+ const z=n(value);if(z===null)return value==null?'N/A':String(value);
+ const a=Math.abs(z),scale=a>=1e12?{value:1e12,label:'trillion'}:a>=1e9?{value:1e9,label:'billion'}:a>=1e6?{value:1e6,label:'million'}:a>=1e3?{value:1e3,label:'thousand'}:null;
+ if(!scale)return z.toLocaleString('en-US',{maximumFractionDigits:6});
+ let amount;try{amount=new Intl.NumberFormat('en-US',{maximumFractionDigits:2}).format(a/scale.value);}catch(_){amount=(a/scale.value).toFixed(2).replace(/\.?0+$/,'');}
+ return(z<0?'-':'')+amount+' '+scale.label;
+}
 function path(points,w,h,small){
  const vals=points.map((p,i)=>({i,v:n(p.value)})).filter(x=>x.v!==null);if(!vals.length)return null;
  const lo=Math.min(...vals.map(x=>x.v)),hi=Math.max(...vals.map(x=>x.v)),delta=hi-lo||Math.max(Math.abs(hi)*.02,1),left=small?2:78,right=small?2:18,top=small?3:20,bottom=small?3:35,pw=w-left-right,ph=h-top-bottom;
@@ -100,7 +115,7 @@ function spark(points){const q=path(points,140,38,true);return q?'<svg viewBox="
 function optionsCountry(){return profiles.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(p=>'<option value="'+esc(p.countryCode||p.iso3)+'"'+(iso(p)===String(chosen).toUpperCase()?' selected':'')+'>'+esc(p.name)+' ('+esc(iso(p))+')</option>').join('');}
 function optionsMetric(){return metrics.map(m=>'<option value="'+m.id+'"'+(m.id===metricId?' selected':'')+'>'+esc(m.label)+' · '+esc(m.unit)+'</option>').join('');}
 function rawHTML(p){const raw=preview.get(iso(p))?.raw||{},v=raw.rawIndicators||{},prov=raw.fieldProvenance||{};
- return Object.keys(v).sort().map(k=>'<tr><td>'+esc(k.replace(/([a-z0-9])([A-Z])/g,'$1 $2'))+'</td><td><code>'+esc(k)+'</code></td><td>'+esc(v[k]==null?'N/A':typeof v[k]==='number'?v[k].toLocaleString('en-US',{maximumFractionDigits:6}):v[k])+'</td><td>'+esc(prov[k]||(v[k]==null?'UNAVAILABLE':'LOCAL BASELINE'))+'</td></tr>').join('');}
+ return Object.keys(v).sort().map(k=>'<tr><td>'+esc(k.replace(/([a-z0-9])([A-Z])/g,'$1 $2'))+'</td><td><code>'+esc(k)+'</code></td><td>'+esc(typeof v[k]==='number'?compactRawNumber(v[k]):v[k]==null?'N/A':v[k])+'</td><td>'+esc(prov[k]||(v[k]==null?'UNAVAILABLE':'LOCAL BASELINE'))+'</td></tr>').join('');}
 function countriesHTML(){
  const m=metrics.find(x=>x.id===metricId)||metrics[0],q=query.trim().toLowerCase(),all=profiles.filter(p=>!q||String(p.name).toLowerCase().includes(q)||iso(p).toLowerCase().includes(q)||code(p).toLowerCase().includes(q)),pages=Math.max(1,Math.ceil(all.length/PAGE));
  page=clamp(page,0,pages-1);
