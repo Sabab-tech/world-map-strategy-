@@ -32,7 +32,8 @@
     'SIMULATE',
     'COMMIT',
     'PUBLISH',
-    'CHECKPOINT'
+    'CHECKPOINT',
+    'FINALIZE'
   ]);
 
   function clone(value,seen=new WeakMap()){
