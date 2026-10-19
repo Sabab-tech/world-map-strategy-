@@ -217,7 +217,11 @@
     shares=shares&&typeof shares==='object'?shares:{};
     const defaults={salary:30,vehicles:30,maintenance:25,operations:15};
     const nextShares={};let total=0;
-    Object.keys(defaults).forEach(key=>{const v=num(shares[key]??defaults[key]);if(v===null||v<0||v>100)throw new Error('HOME_BUDGET_SHARE_INVALID');nextShares[key]=v;total+=v;});
+    for(const key of Object.keys(defaults)){
+      const v=num(shares[key]??defaults[key]);
+      if(v===null||v<0||v>100)return{ok:false,reason:'HOME_BUDGET_SHARE_INVALID',category:key,message:'Each category share must be between 0% and 100%.'};
+      nextShares[key]=v;total+=v;
+    }
     if(total>100.00001)return{ok:false,reason:'HOME_BUDGET_SHARES_EXCEED_100',message:'Home Ministry category shares cannot exceed 100%.'};
     const state=getState(cid),next=clone(state),old=next.homeBudget||clone(DEFAULT_STATE.homeBudget);
     for(const key of Object.keys(defaults)){
