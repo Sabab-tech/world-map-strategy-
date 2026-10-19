@@ -279,6 +279,10 @@
     const militaryPct = num(behavior?.metrics?.militaryExpenditurePctGdp) ??
       strategicNumber(strategic, 'military.militaryExpenditurePctGdp') ?? num(base?.indicators?.militaryExpenditurePctGdp);
     const governance = strategic?.politics || behavior?.domainSignals?.politics || {};
+    const governmentEffectiveness = num(behavior?.metrics?.governmentEffectivenessWgiEstimate) ??
+      num(governance.governmentEffectivenessWgiEstimate);
+    const politicalStability = num(behavior?.metrics?.politicalStabilityWgiEstimate) ??
+      num(governance.politicalStabilityWgiEstimate);
     const resources = behavior?.domainSignals?.resources || {};
     const resourceRuntime = resources.runtimeState || {};
     const diplomacy = strategic?.diplomacy || behavior?.domainSignals?.diplomacy || {};
@@ -336,7 +340,7 @@
       metricCard('Inflation', inflation.value, '%', inflation.source || 'not recorded') +
       metricCard('Unemployment', unemployment.value, '%', unemployment.source || 'not recorded') +
       metricCard('Public debt / GDP', debtRatio.value, '%', debtRatio.source || 'not recorded') +
-      metricCard('Budget balance', behavior?.metrics?.budgetBalanceToGdpPct !== null && behavior?.metrics?.budgetBalanceToGdpPct !== undefined
+      metricCard(behavior?.metrics?.budgetBalanceToGdpPct !== null && behavior?.metrics?.budgetBalanceToGdpPct !== undefined ? 'Budget balance / GDP' : 'Budget balance', behavior?.metrics?.budgetBalanceToGdpPct !== null && behavior?.metrics?.budgetBalanceToGdpPct !== undefined
         ? behavior.metrics.budgetBalanceToGdpPct : budget.value,
         behavior?.metrics?.budgetBalanceToGdpPct !== null && behavior?.metrics?.budgetBalanceToGdpPct !== undefined ? '%' : 'USD',
         behavior?.metrics?.budgetBalanceToGdpPct !== null && behavior?.metrics?.budgetBalanceToGdpPct !== undefined
@@ -395,8 +399,8 @@
         'ocov-panel-military') +
       panel('Politics & institutions', 'Governance indicators are kept separate; no unsupported regime label.',
         '<div class="ocov-kpi-grid ocov-kpi-grid-small">' +
-        metricCard('Government effectiveness', governance.governmentEffectivenessWgiEstimate, '', 'WGI estimate; scale is not 0–100') +
-        metricCard('Political stability', governance.politicalStabilityWgiEstimate, '', 'WGI estimate; scale is not 0–100') +
+        metricCard('Government effectiveness', governmentEffectiveness, '', 'WGI estimate; scale is not 0–100') +
+        metricCard('Political stability', politicalStability, '', 'WGI estimate; scale is not 0–100') +
         metricCard('Rule of law', strategicNumber(strategic, 'politics.ruleOfLawWgiEstimate'), '', 'WGI estimate; scale is not 0–100') +
         metricCard('Control of corruption', strategicNumber(strategic, 'politics.controlOfCorruptionWgiEstimate'), '', 'WGI estimate; scale is not 0–100') +
         '</div><p><strong>Political system:</strong> ' + esc(governance.regimeClassification || strategic?.politics?.politicalSystemClassification || 'NOT CLASSIFIED') + '</p>' +
