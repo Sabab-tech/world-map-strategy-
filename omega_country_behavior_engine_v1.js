@@ -212,6 +212,101 @@
     };
   }
 
+  function getLiveResourceSignals(identity) {
+    const api = g.OmegaResourceAuthoritativeAdapter || g.Omega?.ResourceAuthoritativeAdapter || null;
+    if (!api || typeof api.getSummary !== 'function') {
+      return {
+        availability: 'UNAVAILABLE', source: null, observedResourceCount: 0,
+        inventoryObservedCount: 0, productionObservedCount: 0, consumptionObservedCount: 0,
+        selfSufficiencyObservedCount: 0, productionDeficitCount: null,
+        productionDeficitResources: [], averageSelfSufficiencyPct: null,
+        productionDeficitPressure: null, stockDepletionPressure: null, supplyPressure: null,
+        reason: 'AUTHORITATIVE_RESOURCE_ADAPTER_UNAVAILABLE'
+      };
+    }
+
+    let summary = null;
+    for (const key of [identity.iso3, identity.countryCode, identity.canonicalId, identity.name]) {
+      if (!key) continue;
+      try {
+        const candidate = api.getSummary(key);
+        if (!candidate || !Array.isArray(candidate.resourcesList)) continue;
+        if (!summary) summary = candidate;
+        const rows = candidate.resourcesList;
+        const hasLiveSource = rows.some(row => row && row.source === 'Game.state.resource');
+        const hasLiveNumbers = rows.some(row => row && row.source === 'Game.state.resource' &&
+          ['inventory', 'dailyProduction', 'dailyConsumption', 'reserve', 'stockDays', 'selfSufficiencyRatio']
+            .some(field => num(row[field]) !== null));
+        if (hasLiveNumbers || hasLiveSource) { summary = candidate; break; }
+      } catch (_) {}
+    }
+    if (!summary) {
+      return {
+        availability: 'UNAVAILABLE', source: null, observedResourceCount: 0,
+        inventoryObservedCount: 0, productionObservedCount: 0, consumptionObservedCount: 0,
+        selfSufficiencyObservedCount: 0, productionDeficitCount: null,
+        productionDeficitResources: [], averageSelfSufficiencyPct: null,
+        productionDeficitPressure: null, stockDepletionPressure: null, supplyPressure: null,
+        reason: 'AUTHORITATIVE_RESOURCE_SUMMARY_UNAVAILABLE'
+      };
+    }
+
+    const rows = summary.resourcesList.filter(row => row && row.source === 'Game.state.resource');
+    const observed = rows.filter(row =>
+      ['inventory', 'dailyProduction', 'dailyConsumption', 'reserve', 'stockDays', 'selfSufficiencyRatio']
+        .some(field => num(row[field]) !== null));
+    const inventoryRows = rows.filter(row => num(row.inventory) !== null);
+    const productionRows = rows.filter(row => num(row.dailyProduction) !== null);
+    const consumptionRows = rows.filter(row => num(row.dailyConsumption) !== null);
+    const ratioRows = rows.filter(row => num(row.selfSufficiencyRatio) !== null &&
+      num(row.dailyConsumption) !== null && num(row.dailyConsumption) > 0);
+    const stockRows = rows.filter(row => num(row.stockDays) !== null && num(row.dailyConsumption) !== null &&
+      num(row.dailyConsumption) > 0);
+
+    const mean = values => values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
+    const selfSufficiencies = ratioRows.map(row => clamp(num(row.selfSufficiencyRatio) / 100));
+    const deficits = ratioRows.map(row => clamp(1 - num(row.selfSufficiencyRatio) / 100));
+    const stockPressures = stockRows.map(row => clamp(1 / (1 + Math.max(0, num(row.stockDays)))));
+    const averageSelfSufficiency = mean(selfSufficiencies);
+    const productionDeficitPressure = mean(deficits);
+    const stockDepletionPressure = mean(stockPressures);
+    const supplyParts = [];
+    if (productionDeficitPressure !== null) supplyParts.push({ weight: 0.65, value: productionDeficitPressure });
+    if (stockDepletionPressure !== null) supplyParts.push({ weight: 0.35, value: stockDepletionPressure });
+    const totalWeight = supplyParts.reduce((sum, row) => sum + row.weight, 0);
+    const supplyPressure = totalWeight > 0
+      ? supplyParts.reduce((sum, row) => sum + row.weight * row.value, 0) / totalWeight : null;
+    const deficitRows = ratioRows.filter(row => num(row.selfSufficiencyRatio) < 100);
+    const hasLiveSource = rows.length > 0;
+    const availability = observed.length ? 'AVAILABLE' : (hasLiveSource ? 'PRESENT_UNOBSERVED' : 'UNAVAILABLE');
+
+    return {
+      availability,
+      source: hasLiveSource ? 'OMEGA_RESOURCE_AUTHORITATIVE_ADAPTER:Game.state.resource' : null,
+      observedResourceCount: observed.length,
+      inventoryObservedCount: inventoryRows.length,
+      productionObservedCount: productionRows.length,
+      consumptionObservedCount: consumptionRows.length,
+      selfSufficiencyObservedCount: ratioRows.length,
+      productionDeficitCount: availability === 'AVAILABLE' ? deficitRows.length : null,
+      productionDeficitResources: deficitRows.map(row => ({
+        resourceId: String(row.id || row.name || 'UNKNOWN_RESOURCE'),
+        name: String(row.name || row.id || 'UNKNOWN_RESOURCE'),
+        selfSufficiencyPct: num(row.selfSufficiencyRatio),
+        stockDays: num(row.stockDays),
+        inventory: num(row.inventory),
+        dailyProduction: num(row.dailyProduction),
+        dailyConsumption: num(row.dailyConsumption)
+      })),
+      averageSelfSufficiencyPct: averageSelfSufficiency === null ? null : Number((averageSelfSufficiency * 100).toFixed(2)),
+      productionDeficitPressure: productionDeficitPressure === null ? null : Number(productionDeficitPressure.toFixed(3)),
+      stockDepletionPressure: stockDepletionPressure === null ? null : Number(stockDepletionPressure.toFixed(3)),
+      supplyPressure: supplyPressure === null ? null : Number(supplyPressure.toFixed(3)),
+      sourceStatus: summary.live?.countryName ? 'COUNTRY_RESOURCE_RUNTIME_RECOGNISED' : 'COUNTRY_RESOURCE_RUNTIME_SOURCE_ROW',
+      reason: observed.length ? null : 'NO_NUMERIC_RESOURCE_RUNTIME_FIELDS_OBSERVED'
+    };
+  }
+
   function firstValue(values) {
     for (const item of values) if (item && item.value !== null && item.value !== undefined && Number.isFinite(item.value)) return item;
     return null;
@@ -311,6 +406,7 @@
     };
     const evidenceCount = Object.values(evidenceByMetric).filter(x => x && x.value !== null && Number.isFinite(x.value)).length;
     const sites = getSiteStats(identity);
+    const resourceRuntime = getLiveResourceSignals(identity);
 
     const fiscalParts = [];
     if (debtRatio) fiscalParts.push({ value: clamp(Math.max(0, debtRatio.value) / 150), evidence: [{ metric: 'debtToGdpPct', value: debtRatio.value, source: debtRatio.source }] });
@@ -369,15 +465,27 @@
       ],
       'Trade-exposure proxy calculated only when GDP, exports and imports are all present; trade deficit alone is not treated as foreign dependence.',
       openness === null ? 0 : 0.72);
-    setDim('selfSufficiencyPriority',
-      siteCapability === null && tradePressure === null ? null :
-        0.2 + 0.45 * (siteCapability === null ? 0.25 : siteCapability) + 0.35 * (tradePressure === null ? 0 : tradePressure),
+    const resourcePressure = resourceRuntime.availability === 'AVAILABLE' ? resourceRuntime.supplyPressure : null;
+    const domesticSupplyPriority = resourcePressure === null
+      ? (siteCapability === null && tradePressure === null ? null :
+        0.2 + 0.45 * (siteCapability === null ? 0.25 : siteCapability) + 0.35 * (tradePressure === null ? 0 : tradePressure))
+      : 0.2 + 0.25 * (siteCapability === null ? 0.25 : siteCapability) +
+        0.25 * (tradePressure === null ? 0 : tradePressure) + 0.3 * resourcePressure;
+    setDim('selfSufficiencyPriority', domesticSupplyPriority,
       [
         ...(sites.availability === 'AVAILABLE' ? [{ metric: 'gameplaySiteCount', value: sites.siteCount, diversity: sites.resourceDiversity, source: sites.source, status: 'SIMULATION_SITE_CATALOGUE_ONLY' }] : []),
-        ...(tradeRatio ? [{ metric: 'tradeBalanceToGdpPct', value: tradeRatio.value, source: tradeRatio.source }] : [])
+        ...(tradeRatio ? [{ metric: 'tradeBalanceToGdpPct', value: tradeRatio.value, source: tradeRatio.source }] : []),
+        ...(resourcePressure !== null ? [{
+          metric: 'observedResourceSupplyPressure', value: resourcePressure,
+          inventoryObservedCount: resourceRuntime.inventoryObservedCount,
+          productionObservedCount: resourceRuntime.productionObservedCount,
+          consumptionObservedCount: resourceRuntime.consumptionObservedCount,
+          source: resourceRuntime.source, status: 'LIVE_RESOURCE_RUNTIME'
+        }] : [])
       ],
-      'Modelled incentive to build domestic processing, substitute inputs or protect supply chains. Site counts are game assets, not verified national reserves.',
-      siteCapability !== null && tradePressure !== null ? 0.72 : 0.45);
+      'Modelled incentive to protect supply chains. When authoritative resource runtime values exist, observed production versus consumption and available stock-days influence this policy. Registered site counts remain gameplay assets, not verified national reserves.',
+      resourcePressure !== null ? 0.7 :
+        (siteCapability !== null && tradePressure !== null ? 0.72 : 0.45));
     const innovationParts = [];
     if (internet) innovationParts.push({ value: clamp(internet.value / 100), evidence: [{ metric: 'internetUsersPct', value: internet.value, source: internet.source }] });
     if (electricity) innovationParts.push({ value: clamp(electricity.value / 100), evidence: [{ metric: 'electricityAccessPct', value: electricity.value, source: electricity.source }] });
@@ -429,6 +537,16 @@
       domain: 'DOMESTIC_STABILITY', priority: 2, title: 'Prioritise jobs, prices and domestic stability',
       basis: 'REGISTERED_MACRO_AND_GOVERNANCE_SIGNALS', evidence: domesticStress.evidence
     });
+    if (resourceRuntime.availability === 'AVAILABLE' && (resourceRuntime.productionDeficitCount || 0) > 0) priorities.push({
+      domain: 'RESOURCE_STOCK_OR_PRODUCTION_DEFICIT', priority: 2.5,
+      title: 'Address observed resource production and consumption shortfalls',
+      basis: 'LIVE_RESOURCE_RUNTIME',
+      evidence: [{
+        metric: 'productionDeficitResourceCount', value: resourceRuntime.productionDeficitCount,
+        source: resourceRuntime.source,
+        resourceIds: resourceRuntime.productionDeficitResources.map(row => row.resourceId)
+      }]
+    });
     if (sites.availability === 'AVAILABLE' && sites.siteCount > 0) priorities.push({
       domain: 'RESOURCES_AND_INDUSTRY', priority: 3, title: 'Connect registered resource sites to processing and logistics',
       basis: 'SIMULATION_SITE_CATALOGUE', evidence: [{ metric: 'gameplaySiteCount', value: sites.siteCount, source: sites.source }]
@@ -466,6 +584,7 @@
     const ACTIONS_BY_STRATEGIC_DOMAIN = Object.freeze({
       ECONOMY: ['EFFICIENCY', 'RESERVE_RELEASE', 'SUBSTITUTION'],
       DEPENDENCY: ['SUPPLIER_CHANGE', 'SUBSTITUTION', 'RESERVE_RELEASE'],
+      RESOURCE_STOCK_OR_PRODUCTION_DEFICIT: ['IMPORT', 'RESERVE_RELEASE', 'SUBSTITUTION', 'EFFICIENCY', 'SUPPLIER_CHANGE'],
       INDUSTRY_AND_RESOURCES: ['INDUSTRY_BUILD', 'PROCESSING_EXPANSION', 'DOMESTIC_EXPANSION', 'INFRASTRUCTURE_EXPANSION'],
       RESOURCES_AND_INDUSTRY: ['INDUSTRY_BUILD', 'PROCESSING_EXPANSION', 'DOMESTIC_EXPANSION', 'INFRASTRUCTURE_EXPANSION'],
       SUPPLY_SECURITY: ['SUPPLIER_CHANGE', 'SUBSTITUTION', 'RESERVE_RELEASE'],
@@ -557,7 +676,7 @@
           recordedResourceContext: clone(strategic?.economy?.recordedResourceContext || null),
           sectorProfile: clone(strategic?.economy?.sectorProfile || null)
         },
-        resources: clone(sites),
+        resources: Object.assign(clone(sites), { runtimeState: clone(resourceRuntime) }),
         diplomacy: {
           evidenceMode: diplomacy.evidenceMode || 'NO_REGISTERED_COUNTRY_SPECIFIC_DIPLOMACY_PROFILE',
           strategicPosture: hasSpecificDiplomacyModel ? diplomacy.strategicPosture || null : 'NOT_ESTABLISHED',
