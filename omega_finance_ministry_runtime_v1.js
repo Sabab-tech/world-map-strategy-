@@ -285,8 +285,8 @@
       if(finite(model.fiscalModel.annualBudgetBalanceUsd)===null)model.fiscalModel.annualBudgetBalanceUsd=model.fiscalModel.annualRevenueUsd-model.fiscalModel.annualSpendingUsd;
       model.fiscalModel.balanceBaselineSource=observedBalance!==null?'EXISTING_GAME_DATASET':'GAME_RULE_ESTIMATE';
       for(const k of ['cumulativeRevenueUsd','cumulativeSpendingUsd','cumulativeInterestUsd','cumulativeBorrowingUsd',
-        'cumulativeExternalInflowUsd','cumulativeExternalOutflowUsd','currentYearTaxRevenueUsd','currentYearSpendingUsd',
-        'currentYearInterestUsd','currentYearExternalInflowUsd','currentYearExternalOutflowUsd'])if(finite(model[k])===null)model[k]=0;
+        'cumulativeExternalInflowUsd','cumulativeExternalOutflowUsd','cumulativeDebtServiceUsd','currentYearTaxRevenueUsd','currentYearSpendingUsd',
+        'currentYearInterestUsd','currentYearDebtServiceUsd','currentYearExternalInflowUsd','currentYearExternalOutflowUsd'])if(finite(model[k])===null)model[k]=0;
       model.fiscalYearIndex=finite(model.fiscalYearIndex)??fiscalYearIndexFor(currentTurn(),Number(rules.simulationTurnDurationMs||HOUR_MS));
       model.priceIndex=finite(model.priceIndex)??100;model.allocations=isObject(model.allocations)?model.allocations:{};
       if(!Array.isArray(model.ledger))model.ledger=[];model.revision=finite(model.revision)??0;
@@ -298,7 +298,7 @@
     }
     if(finite(model.lastSyncedTreasuryBalanceUsd)===null)model.lastSyncedTreasuryBalanceUsd=finite(model.treasuryBalanceUsd)??0;
     for(const k of ['cumulativeExternalInflowUsd','cumulativeExternalOutflowUsd','currentYearTaxRevenueUsd','currentYearSpendingUsd',
-      'currentYearInterestUsd','currentYearExternalInflowUsd','currentYearExternalOutflowUsd'])if(finite(model[k])===null)model[k]=0;
+      'currentYearInterestUsd','currentYearDebtServiceUsd','cumulativeDebtServiceUsd','currentYearExternalInflowUsd','currentYearExternalOutflowUsd'])if(finite(model[k])===null)model[k]=0;
     if(finite(model.fiscalYearIndex)===null)model.fiscalYearIndex=fiscalYearIndexFor(currentTurn(),Number(rules.simulationTurnDurationMs||HOUR_MS));
     if(!isObject(model.currentYearSectorReceiptsUsd))model.currentYearSectorReceiptsUsd={};
     for(const s of sectorRegistry.economicSectors||[])if(finite(model.currentYearSectorReceiptsUsd[s.id])===null)model.currentYearSectorReceiptsUsd[s.id]=0;
@@ -567,6 +567,7 @@
       if(amount>cash)return {ok:false,code:'INSUFFICIENT_TREASURY',message:'Insufficient treasury balance for this repayment.'};
       if(amount>debt)return {ok:false,code:'REPAY_EXCEEDS_DEBT',message:'Repayment cannot exceed outstanding public debt.'};
       e.debt=debt-amount;fm.treasuryBalanceUsd=cash-amount;
+      try{const wb=global.OmegaWorldBankLending;if(wb&&typeof wb.applyManualRepayment==='function')wb.applyManualRepayment(p.countryCode,amount);}catch(_){}
       fm.cumulativeDebtRepaymentUsd=(finite(fm.cumulativeDebtRepaymentUsd)||0)+amount;
       const fb=financeBucketFor(root,p,true);fb.debtRepayments=(finite(fb.debtRepayments)||0)+amount;
       postLedger(fm,p,{department:'finance',action:'DEBT_REPAYMENT',category:'sovereign_debt',amountUsd:amount,description:String(action.description||'Principal repayment').slice(0,160)});
@@ -599,7 +600,7 @@
       const e=root.economy?.[p.economyKey]||getEconomyRecord(p);if(!isObject(e))continue;
       if(newYearIndex>(finite(fm.fiscalYearIndex)||0)){
         fm.fiscalYearIndex=newYearIndex;
-        fm.currentYearTaxRevenueUsd=0;fm.currentYearSpendingUsd=0;fm.currentYearInterestUsd=0;
+        fm.currentYearTaxRevenueUsd=0;fm.currentYearSpendingUsd=0;fm.currentYearInterestUsd=0;fm.currentYearDebtServiceUsd=0;
         fm.currentYearExternalInflowUsd=0;fm.currentYearExternalOutflowUsd=0;
         fm.currentYearSectorReceiptsUsd={};
         for(const sector of sectorRegistry.economicSectors||[])fm.currentYearSectorReceiptsUsd[sector.id]=0;
@@ -615,12 +616,28 @@
       const gdpAfter=Math.max(0,gdpBefore*Math.pow(1+growth/100,years));e.gdp=gdpAfter;
       const debtBefore=Math.max(0,finite(e.debt)??finite(p.indicators?.publicDebtUsd)??0);
       const rate=clamp(finite(fm.policy?.interestRateAnnualPct)??Number(rules.defaultPolicyInterestRatePct||3),0,100);
-      const interest=debtBefore*(Math.pow(1+rate/100,years)-1),debtAfter=debtBefore+interest;
+      const wbLending=global.OmegaWorldBankLending;
+      const wbOutstandingBefore=wbLending&&typeof wbLending.getOutstandingBalance==='function'
+        ?Math.max(0,finite(wbLending.getOutstandingBalance(p.countryCode))||0):0;
+      const conventionalDebt=Math.max(0,debtBefore-wbOutstandingBefore);
+      const policyInterest=conventionalDebt*(Math.pow(1+rate/100,years)-1);
+      const wbInterest=wbLending&&typeof wbLending.accrueInterest==='function'
+        ?Math.max(0,finite(wbLending.accrueInterest(p.countryCode,years,turnNumber))||0):0;
+      const interest=policyInterest+wbInterest;
+      let debtAfter=debtBefore+interest;
       recalculateFiscal(p,fm,e);
       const income=(finite(fm.fiscalModel.annualRevenueUsd)||0)*years;
-      fm.treasuryBalanceUsd=Math.max(0,(finite(fm.treasuryBalanceUsd)||0)+income-interest);
+      const cashAfterIncomeAndInterest=Math.max(0,(finite(fm.treasuryBalanceUsd)||0)+income-interest);
+      const debtService=wbLending&&typeof wbLending.serviceDebt==='function'
+        ?wbLending.serviceDebt(p.countryCode,years,cashAfterIncomeAndInterest,gdpAfter,turnNumber):null;
+      const debtServicePaid=Math.min(cashAfterIncomeAndInterest,Math.max(0,finite(debtService&&debtService.paidUsd)||0));
+      fm.treasuryBalanceUsd=Math.max(0,cashAfterIncomeAndInterest-debtServicePaid);
+      debtAfter=Math.max(0,debtAfter-debtServicePaid);
       fm.cumulativeRevenueUsd=(finite(fm.cumulativeRevenueUsd)||0)+income;
       fm.cumulativeInterestUsd=(finite(fm.cumulativeInterestUsd)||0)+interest;
+      fm.cumulativeDebtServiceUsd=(finite(fm.cumulativeDebtServiceUsd)||0)+debtServicePaid;
+      fm.currentYearDebtServiceUsd=(finite(fm.currentYearDebtServiceUsd)||0)+debtServicePaid;
+      if(debtServicePaid>0.01)postLedger(fm,p,{department:'finance',action:'WORLD_BANK_DEBT_SERVICE',category:'world_bank_repayment',amountUsd:debtServicePaid,description:'Scheduled simulated World Bank loan principal and interest'});
       fm.currentYearTaxRevenueUsd=(finite(fm.currentYearTaxRevenueUsd)||0)+income;
       fm.currentYearInterestUsd=(finite(fm.currentYearInterestUsd)||0)+interest;
       if(!isObject(fm.currentYearSectorReceiptsUsd))fm.currentYearSectorReceiptsUsd={};
