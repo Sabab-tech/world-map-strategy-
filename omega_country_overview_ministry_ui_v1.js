@@ -191,7 +191,8 @@
       selfSufficiencyPriority: 'Domestic supply / self-sufficiency',
       innovationPreference: 'Technology investment readiness',
       domesticStabilityPriority: 'Domestic stability pressure',
-      escalationTolerance: 'Escalation tolerance'
+      escalationTolerance: 'Escalation tolerance',
+      economicCapacity: 'Economic capacity / investment headroom'
     };
     return labels[key] || key;
   }
@@ -417,7 +418,7 @@
       '</div>' +
       '<div class="ocov-section-heading"><span>02</span><div><h3>Executable behaviour profile</h3><p>These dimensions flow into adaptive action scoring. They are simulation policies, not real-world intent labels.</p></div></div>' +
       '<div class="ocov-behaviour-summary"><span>Behaviour engine: ' + esc(behavior?.engineVersion || 'UNAVAILABLE') + '</span>' +
-      '<span>Derived dimensions: ' + esc(behavior?.evidence?.derivedDimensionCount ?? arr(behavior?.evidence?.availableDimensions).length) + '/10</span>' +
+      '<span>Derived dimensions: ' + esc(behavior?.evidence?.derivedDimensionCount ?? arr(behavior?.evidence?.availableDimensions).length) + '/' + esc(Object.keys(behavior?.dimensions || {}).length || 11) + '</span>' +
       '<span>Adaptive AI source: ' + esc(adaptive?.behaviorSource || (adaptive?.derivedDimensionCount > 0 ? 'CONNECTED' : 'WAITING/EXPLICIT DOCTRINE')) + '</span></div>' +
       dimensionCards(adaptive?.dimensions || behavior?.dimensions) +
       panel('Runtime action preference signals', 'Derived from current evidence and registered country strategy options; the score influences AI ranking but does not execute an order.',
