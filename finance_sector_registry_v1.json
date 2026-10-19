@@ -209,7 +209,8 @@
       "shortName": "Agriculture",
       "icon": "AG",
       "outputSharePct": 12,
-      "taxReceiptSharePct": 12
+      "taxReceiptSharePct": 12,
+      "budgetSectorId": "agriculture"
     },
     {
       "id": "chemicals",
@@ -217,7 +218,8 @@
       "shortName": "Chemicals",
       "icon": "CH",
       "outputSharePct": 6,
-      "taxReceiptSharePct": 6
+      "taxReceiptSharePct": 6,
+      "budgetSectorId": "chemicals"
     },
     {
       "id": "engineering_manufacturing",
@@ -225,7 +227,8 @@
       "shortName": "Engineering",
       "icon": "EM",
       "outputSharePct": 12,
-      "taxReceiptSharePct": 12
+      "taxReceiptSharePct": 12,
+      "budgetSectorId": "engineering"
     },
     {
       "id": "energy_utilities",
@@ -233,7 +236,8 @@
       "shortName": "Energy",
       "icon": "EU",
       "outputSharePct": 8,
-      "taxReceiptSharePct": 8
+      "taxReceiptSharePct": 8,
+      "budgetSectorId": "energy"
     },
     {
       "id": "natural_resources",
@@ -241,7 +245,8 @@
       "shortName": "Resources",
       "icon": "NR",
       "outputSharePct": 6,
-      "taxReceiptSharePct": 6
+      "taxReceiptSharePct": 6,
+      "budgetSectorId": "resource"
     },
     {
       "id": "technology_telecom",
@@ -249,7 +254,8 @@
       "shortName": "Technology",
       "icon": "TT",
       "outputSharePct": 8,
-      "taxReceiptSharePct": 8
+      "taxReceiptSharePct": 8,
+      "budgetSectorId": "technology"
     },
     {
       "id": "construction_housing",
@@ -257,7 +263,8 @@
       "shortName": "Construction",
       "icon": "CH",
       "outputSharePct": 6,
-      "taxReceiptSharePct": 6
+      "taxReceiptSharePct": 6,
+      "budgetSectorId": "construction"
     },
     {
       "id": "trade_logistics",
@@ -265,7 +272,8 @@
       "shortName": "Trade / Logistics",
       "icon": "TL",
       "outputSharePct": 9,
-      "taxReceiptSharePct": 9
+      "taxReceiptSharePct": 9,
+      "budgetSectorId": "trade"
     },
     {
       "id": "financial_services",
@@ -273,7 +281,8 @@
       "shortName": "Finance",
       "icon": "FB",
       "outputSharePct": 10,
-      "taxReceiptSharePct": 10
+      "taxReceiptSharePct": 10,
+      "budgetSectorId": "financial_services"
     },
     {
       "id": "public_administration",
@@ -281,7 +290,8 @@
       "shortName": "Public services",
       "icon": "PA",
       "outputSharePct": 5,
-      "taxReceiptSharePct": 5
+      "taxReceiptSharePct": 5,
+      "budgetSectorId": "cabinet"
     },
     {
       "id": "healthcare",
@@ -289,7 +299,8 @@
       "shortName": "Healthcare",
       "icon": "HC",
       "outputSharePct": 5,
-      "taxReceiptSharePct": 5
+      "taxReceiptSharePct": 5,
+      "budgetSectorId": "health"
     },
     {
       "id": "education",
@@ -297,7 +308,8 @@
       "shortName": "Education",
       "icon": "ES",
       "outputSharePct": 3,
-      "taxReceiptSharePct": 3
+      "taxReceiptSharePct": 3,
+      "budgetSectorId": "education"
     },
     {
       "id": "transport",
@@ -305,7 +317,8 @@
       "shortName": "Transport",
       "icon": "TI",
       "outputSharePct": 5,
-      "taxReceiptSharePct": 5
+      "taxReceiptSharePct": 5,
+      "budgetSectorId": "transport"
     },
     {
       "id": "defense_industry",
@@ -313,7 +326,8 @@
       "shortName": "Defense industry",
       "icon": "DI",
       "outputSharePct": 1,
-      "taxReceiptSharePct": 1
+      "taxReceiptSharePct": 1,
+      "budgetSectorId": "defense"
     },
     {
       "id": "environment_circular",
@@ -321,7 +335,8 @@
       "shortName": "Environment",
       "icon": "CE",
       "outputSharePct": 4,
-      "taxReceiptSharePct": 4
+      "taxReceiptSharePct": 4,
+      "budgetSectorId": "environment"
     }
   ],
   "revenueStreams": [
