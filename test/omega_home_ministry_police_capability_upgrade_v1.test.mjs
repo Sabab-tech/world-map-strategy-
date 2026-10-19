@@ -8,6 +8,9 @@ const engineSource = readFileSync(new URL('../omega_home_ministry_engine_v1.js',
 const uiSource = readFileSync(new URL('../omega_home_ministry_police_operations_ui_v1.js', import.meta.url), 'utf8');
 const runtimeSource = readFileSync(new URL('../omega_home_ministry_police_capability_runtime_v1.js', import.meta.url), 'utf8');
 const materialRuntimeSource = readFileSync(new URL('../omega_home_ministry_training_materials_runtime_v1.js', import.meta.url), 'utf8');
+const legacyHomeUiSource = readFileSync(new URL('../omega_home_ministry_ui_v1.js', import.meta.url), 'utf8');
+const indexSource = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+const serviceWorkerSource = readFileSync(new URL('../omega-offline-map-sw.js', import.meta.url), 'utf8');
 
 test('recommendation data covers each baseline country once and keeps levels explicitly modelled', () => {
   const baseline = JSON.parse(readFileSync(new URL('../omega_home_ministry_country_police_baseline_v1.json', import.meta.url), 'utf8'));
@@ -37,6 +40,15 @@ test('engine, interface and recommendation loader parse and expose the capabilit
   assert.ok(uiSource.includes('ohpu-capability-upgrade-start'));
   assert.ok(uiSource.includes('data-ohpu-capability-open'));
   assert.ok(uiSource.includes('RESOURCE MATERIALS · LIVE COUNTRY INVENTORY'));
+  assert.ok(legacyHomeUiSource.includes('ui.getHomeMinistryRoot = function () { return bodyNode(); }'));
+  assert.ok(uiSource.includes('ui.getHomeMinistryRoot()'));
+  assert.ok(!uiSource.includes('ohpu-rulebook-head'));
+  assert.ok(!uiSource.includes('ohpu-open-rulebook-launch'));
+  assert.equal((uiSource.match(/'rulebook','POLICE RULEBOOK'/g) || []).length, 1);
+  assert.ok(indexSource.includes('omega_home_ministry_training_materials_runtime_v1.js'));
+  assert.ok(indexSource.includes('omega_shared_number_format_v1.js'));
+  assert.ok(serviceWorkerSource.includes('omega_home_ministry_training_materials_runtime_v1.js'));
+  assert.ok(serviceWorkerSource.includes('omega_shared_number_format_v1.js'));
   assert.ok(engineSource.includes('INSUFFICIENT_RESOURCE_STOCK'));
   assert.ok(runtimeSource.includes('omega_home_ministry_police_capability_recommendations_v1.json'));
 });
