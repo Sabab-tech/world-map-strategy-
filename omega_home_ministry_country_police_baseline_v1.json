@@ -173,8 +173,8 @@
         "unemploymentRatePct": 12,
         "inflationRatePct": 8,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 1130496250,
-        "estimatedAnnualPoliceOperatingCostUsd": 1172770550
+        "annualGrossPolicePayrollUsd": 15237041,
+        "estimatedAnnualPoliceOperatingCostUsd": 57511341
       },
       "baselinePolice": {
         "activePersonnel": 47650,
@@ -242,6 +242,11 @@
           "homicide": 1768
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 0.88,
+        "recruitmentFeePerOfficerUsd": 232.56,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -336,6 +341,11 @@
           "homicide": 0
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -361,8 +371,8 @@
         "unemploymentRatePct": 17.1,
         "inflationRatePct": 1.9,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 74282975,
-        "estimatedAnnualPoliceOperatingCostUsd": 77075225
+        "annualGrossPolicePayrollUsd": 6769430,
+        "estimatedAnnualPoliceOperatingCostUsd": 9561680
       },
       "baselinePolice": {
         "activePersonnel": 3131,
@@ -430,6 +440,11 @@
           "homicide": 33
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 5.92,
+        "recruitmentFeePerOfficerUsd": 1572.41,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -455,8 +470,8 @@
         "unemploymentRatePct": 11.2,
         "inflationRatePct": 4.8,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 1568032700,
-        "estimatedAnnualPoliceOperatingCostUsd": 1627341550
+        "annualGrossPolicePayrollUsd": 152378807,
+        "estimatedAnnualPoliceOperatingCostUsd": 211687657
       },
       "baselinePolice": {
         "activePersonnel": 66092,
@@ -524,6 +539,11 @@
           "homicide": 551
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 6.32,
+        "recruitmentFeePerOfficerUsd": 1676.77,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -549,8 +569,8 @@
         "unemploymentRatePct": 18,
         "inflationRatePct": 1.5,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 1660750,
-        "estimatedAnnualPoliceOperatingCostUsd": 1724625
+        "annualGrossPolicePayrollUsd": 446875,
+        "estimatedAnnualPoliceOperatingCostUsd": 510750
       },
       "baselinePolice": {
         "activePersonnel": 70,
@@ -618,6 +638,11 @@
           "homicide": 12
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 17.49,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -641,8 +666,8 @@
         "unemploymentRatePct": 4,
         "inflationRatePct": 0.5,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 3179150,
-        "estimatedAnnualPoliceOperatingCostUsd": 3297775
+        "annualGrossPolicePayrollUsd": 3158571,
+        "estimatedAnnualPoliceOperatingCostUsd": 3277196
       },
       "baselinePolice": {
         "activePersonnel": 134,
@@ -710,6 +735,11 @@
           "homicide": 2
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 64.58,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -804,6 +834,11 @@
           "homicide": 1600
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -898,6 +933,11 @@
           "homicide": 0
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -992,6 +1032,11 @@
           "homicide": 0
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -1086,6 +1131,11 @@
           "homicide": 10
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -1111,8 +1161,8 @@
         "unemploymentRatePct": 7.5,
         "inflationRatePct": 25,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 1681865250,
-        "estimatedAnnualPoliceOperatingCostUsd": 1747620000
+        "annualGrossPolicePayrollUsd": 525904802,
+        "estimatedAnnualPoliceOperatingCostUsd": 591659552
       },
       "baselinePolice": {
         "activePersonnel": 70890,
@@ -1180,6 +1230,11 @@
           "homicide": 2060
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 20.32,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -1203,8 +1258,8 @@
         "unemploymentRatePct": 18.5,
         "inflationRatePct": 3.7,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 98506200,
-        "estimatedAnnualPoliceOperatingCostUsd": 102245625
+        "annualGrossPolicePayrollUsd": 7992600,
+        "estimatedAnnualPoliceOperatingCostUsd": 11732025
       },
       "baselinePolice": {
         "activePersonnel": 4152,
@@ -1272,6 +1327,11 @@
           "homicide": 68
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 5.27,
+        "recruitmentFeePerOfficerUsd": 1400,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -1366,6 +1426,11 @@
           "homicide": 2
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -1461,6 +1526,11 @@
           "homicide": 236
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -1553,6 +1623,11 @@
           "homicide": 81
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -1576,8 +1651,8 @@
         "unemploymentRatePct": 5,
         "inflationRatePct": 4,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 327974400,
-        "estimatedAnnualPoliceOperatingCostUsd": 340473825
+        "annualGrossPolicePayrollUsd": 41119322,
+        "estimatedAnnualPoliceOperatingCostUsd": 53618747
       },
       "baselinePolice": {
         "activePersonnel": 13824,
@@ -1645,6 +1720,11 @@
           "homicide": 221
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 8.15,
+        "recruitmentFeePerOfficerUsd": 2163.26,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -1739,6 +1819,11 @@
           "homicide": 130
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -1764,8 +1849,8 @@
         "unemploymentRatePct": 3.8,
         "inflationRatePct": 1.8,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 59692100,
-        "estimatedAnnualPoliceOperatingCostUsd": 61916775
+        "annualGrossPolicePayrollUsd": 30641290,
+        "estimatedAnnualPoliceOperatingCostUsd": 32865965
       },
       "baselinePolice": {
         "activePersonnel": 2516,
@@ -1833,6 +1918,11 @@
           "homicide": 3
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 33.37,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -1858,8 +1948,8 @@
         "unemploymentRatePct": 4.4,
         "inflationRatePct": 6.2,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 4873518325,
-        "estimatedAnnualPoliceOperatingCostUsd": 5055746400
+        "annualGrossPolicePayrollUsd": 141224188,
+        "estimatedAnnualPoliceOperatingCostUsd": 323452263
       },
       "baselinePolice": {
         "activePersonnel": 205417,
@@ -1927,6 +2017,11 @@
           "homicide": 4115
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 1.88,
+        "recruitmentFeePerOfficerUsd": 500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -2021,6 +2116,11 @@
           "homicide": 21
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -2044,8 +2144,8 @@
         "unemploymentRatePct": 1,
         "inflationRatePct": 12,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 307286200,
-        "estimatedAnnualPoliceOperatingCostUsd": 319075700
+        "annualGrossPolicePayrollUsd": 41991770,
+        "estimatedAnnualPoliceOperatingCostUsd": 53781270
       },
       "baselinePolice": {
         "activePersonnel": 12952,
@@ -2113,6 +2213,11 @@
           "homicide": 217
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 8.88,
+        "recruitmentFeePerOfficerUsd": 2357.9,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -2138,8 +2243,8 @@
         "unemploymentRatePct": 8.5,
         "inflationRatePct": 0.6,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 467358775,
-        "estimatedAnnualPoliceOperatingCostUsd": 485590525
+        "annualGrossPolicePayrollUsd": 446921063,
+        "estimatedAnnualPoliceOperatingCostUsd": 465152813
       },
       "baselinePolice": {
         "activePersonnel": 19699,
@@ -2207,6 +2312,11 @@
           "homicide": 129
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 62.16,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -2301,6 +2411,11 @@
           "homicide": 119
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -2326,8 +2441,8 @@
         "unemploymentRatePct": 2.5,
         "inflationRatePct": 0.9,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 415662000,
-        "estimatedAnnualPoliceOperatingCostUsd": 431167200
+        "annualGrossPolicePayrollUsd": 7617065,
+        "estimatedAnnualPoliceOperatingCostUsd": 23122265
       },
       "baselinePolice": {
         "activePersonnel": 17520,
@@ -2395,6 +2510,11 @@
           "homicide": 167
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 1.19,
+        "recruitmentFeePerOfficerUsd": 316.19,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -2489,6 +2609,11 @@
           "homicide": 4
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -2512,8 +2637,8 @@
         "unemploymentRatePct": 3.1,
         "inflationRatePct": 4.2,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 23630100,
-        "estimatedAnnualPoliceOperatingCostUsd": 24502450
+        "annualGrossPolicePayrollUsd": 1695748,
+        "estimatedAnnualPoliceOperatingCostUsd": 2568098
       },
       "baselinePolice": {
         "activePersonnel": 996,
@@ -2581,6 +2706,11 @@
           "homicide": 20
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 4.66,
+        "recruitmentFeePerOfficerUsd": 1238.22,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -2604,8 +2734,8 @@
         "unemploymentRatePct": 4,
         "inflationRatePct": 4,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 406219450,
-        "estimatedAnnualPoliceOperatingCostUsd": 421598725
+        "annualGrossPolicePayrollUsd": 29317410,
+        "estimatedAnnualPoliceOperatingCostUsd": 44696685
       },
       "baselinePolice": {
         "activePersonnel": 17122,
@@ -2673,6 +2803,11 @@
           "homicide": 556
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 4.69,
+        "recruitmentFeePerOfficerUsd": 1245.28,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -2767,6 +2902,11 @@
           "homicide": 0
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -2792,8 +2932,8 @@
         "unemploymentRatePct": 27.7,
         "inflationRatePct": -1,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 97296225,
-        "estimatedAnnualPoliceOperatingCostUsd": 101072150
+        "annualGrossPolicePayrollUsd": 9497061,
+        "estimatedAnnualPoliceOperatingCostUsd": 13272986
       },
       "baselinePolice": {
         "activePersonnel": 4101,
@@ -2861,6 +3001,11 @@
           "homicide": 38
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 6.34,
+        "recruitmentFeePerOfficerUsd": 1684.21,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -2884,8 +3029,8 @@
         "unemploymentRatePct": 17.5,
         "inflationRatePct": 3.1,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 85837050,
-        "estimatedAnnualPoliceOperatingCostUsd": 89019850
+        "annualGrossPolicePayrollUsd": 13024791,
+        "estimatedAnnualPoliceOperatingCostUsd": 16207591
       },
       "baselinePolice": {
         "activePersonnel": 3618,
@@ -2953,6 +3098,11 @@
           "homicide": 291
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 9.86,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -3047,6 +3197,11 @@
           "homicide": 0
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -3072,8 +3227,8 @@
         "unemploymentRatePct": 8.5,
         "inflationRatePct": 9,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 7524288850,
-        "estimatedAnnualPoliceOperatingCostUsd": 7815551550
+        "annualGrossPolicePayrollUsd": 1539090985,
+        "estimatedAnnualPoliceOperatingCostUsd": 1830353685
       },
       "baselinePolice": {
         "activePersonnel": 317146,
@@ -3141,6 +3296,11 @@
           "homicide": 41020
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 13.3,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -3235,6 +3395,11 @@
           "homicide": 0
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -3260,8 +3425,8 @@
         "unemploymentRatePct": 6.9,
         "inflationRatePct": -0.4,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 17319250,
-        "estimatedAnnualPoliceOperatingCostUsd": 17974425
+        "annualGrossPolicePayrollUsd": 12427381,
+        "estimatedAnnualPoliceOperatingCostUsd": 13082556
       },
       "baselinePolice": {
         "activePersonnel": 730,
@@ -3329,6 +3494,11 @@
           "homicide": 2
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 46.64,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -3354,8 +3524,8 @@
         "unemploymentRatePct": 9.1,
         "inflationRatePct": -0.1,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 218886850,
-        "estimatedAnnualPoliceOperatingCostUsd": 227285500
+        "annualGrossPolicePayrollUsd": 35238172,
+        "estimatedAnnualPoliceOperatingCostUsd": 43636822
       },
       "baselinePolice": {
         "activePersonnel": 9226,
@@ -3423,6 +3593,11 @@
           "homicide": 70
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 10.46,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -3446,8 +3621,8 @@
         "unemploymentRatePct": 6.2,
         "inflationRatePct": 0.9,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 633149075,
-        "estimatedAnnualPoliceOperatingCostUsd": 656815675
+        "annualGrossPolicePayrollUsd": 8480568,
+        "estimatedAnnualPoliceOperatingCostUsd": 32147168
       },
       "baselinePolice": {
         "activePersonnel": 26687,
@@ -3515,6 +3690,11 @@
           "homicide": 301
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 0.87,
+        "recruitmentFeePerOfficerUsd": 231.11,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -3538,8 +3718,8 @@
         "unemploymentRatePct": 17,
         "inflationRatePct": 5.5,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 356942625,
-        "estimatedAnnualPoliceOperatingCostUsd": 370294325
+        "annualGrossPolicePayrollUsd": 4118569,
+        "estimatedAnnualPoliceOperatingCostUsd": 17470269
       },
       "baselinePolice": {
         "activePersonnel": 15045,
@@ -3607,6 +3787,11 @@
           "homicide": 813
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 0.75,
+        "recruitmentFeePerOfficerUsd": 114.28,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -3701,6 +3886,11 @@
           "homicide": 37
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -3726,8 +3916,8 @@
         "unemploymentRatePct": 0.5,
         "inflationRatePct": 1.2,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 474262750,
-        "estimatedAnnualPoliceOperatingCostUsd": 491952475
+        "annualGrossPolicePayrollUsd": 12767803,
+        "estimatedAnnualPoliceOperatingCostUsd": 30457528
       },
       "baselinePolice": {
         "activePersonnel": 19990,
@@ -3795,6 +3985,11 @@
           "homicide": 325
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 1.75,
+        "recruitmentFeePerOfficerUsd": 464.52,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -3820,8 +4015,8 @@
         "unemploymentRatePct": 4.3,
         "inflationRatePct": 1.2,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 882830975,
-        "estimatedAnnualPoliceOperatingCostUsd": 915863475
+        "annualGrossPolicePayrollUsd": 28474415,
+        "estimatedAnnualPoliceOperatingCostUsd": 61506915
       },
       "baselinePolice": {
         "activePersonnel": 37211,
@@ -3889,6 +4084,11 @@
           "homicide": 2020
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 2.1,
+        "recruitmentFeePerOfficerUsd": 556.52,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -3985,6 +4185,11 @@
           "homicide": 825
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -4079,6 +4284,11 @@
           "homicide": 3
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -4102,8 +4312,8 @@
         "unemploymentRatePct": 18,
         "inflationRatePct": 5.5,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 149562400,
-        "estimatedAnnualPoliceOperatingCostUsd": 155219900
+        "annualGrossPolicePayrollUsd": 1725720,
+        "estimatedAnnualPoliceOperatingCostUsd": 7383220
       },
       "baselinePolice": {
         "activePersonnel": 6304,
@@ -4171,6 +4381,11 @@
           "homicide": 1109
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 0.75,
+        "recruitmentFeePerOfficerUsd": 136.17,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -4194,8 +4409,8 @@
         "unemploymentRatePct": 5.7,
         "inflationRatePct": 4.4,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 545153050,
-        "estimatedAnnualPoliceOperatingCostUsd": 565571150
+        "annualGrossPolicePayrollUsd": 9839490,
+        "estimatedAnnualPoliceOperatingCostUsd": 30257590
       },
       "baselinePolice": {
         "activePersonnel": 22978,
@@ -4263,6 +4478,11 @@
           "homicide": 1092
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 1.17,
+        "recruitmentFeePerOfficerUsd": 311.43,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -4288,8 +4508,8 @@
         "unemploymentRatePct": 6.4,
         "inflationRatePct": 4.3,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 723897200,
-        "estimatedAnnualPoliceOperatingCostUsd": 752038700
+        "annualGrossPolicePayrollUsd": 228754688,
+        "estimatedAnnualPoliceOperatingCostUsd": 256896188
       },
       "baselinePolice": {
         "activePersonnel": 30512,
@@ -4357,6 +4577,11 @@
           "homicide": 1261
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 20.54,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -4382,8 +4607,8 @@
         "unemploymentRatePct": 4.05,
         "inflationRatePct": 1.4,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 46123772500,
-        "estimatedAnnualPoliceOperatingCostUsd": 47909451050
+        "annualGrossPolicePayrollUsd": 8625787011,
+        "estimatedAnnualPoliceOperatingCostUsd": 10411465561
       },
       "baselinePolice": {
         "activePersonnel": 1944100,
@@ -4451,6 +4676,11 @@
           "homicide": 7061
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 12.16,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -4545,6 +4775,11 @@
           "homicide": 0
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -4639,6 +4874,11 @@
           "homicide": 0
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -4665,8 +4905,8 @@
         "unemploymentRatePct": 8.9,
         "inflationRatePct": 5,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 1818568700,
-        "estimatedAnnualPoliceOperatingCostUsd": 1888079300
+        "annualGrossPolicePayrollUsd": 256275384,
+        "estimatedAnnualPoliceOperatingCostUsd": 325785984
       },
       "baselinePolice": {
         "activePersonnel": 76652,
@@ -4734,6 +4974,11 @@
           "homicide": 13310
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 9.16,
+        "recruitmentFeePerOfficerUsd": 2431.54,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -4759,8 +5004,8 @@
         "unemploymentRatePct": 6.5,
         "inflationRatePct": 2,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 23297950,
-        "estimatedAnnualPoliceOperatingCostUsd": 24170300
+        "annualGrossPolicePayrollUsd": 405075,
+        "estimatedAnnualPoliceOperatingCostUsd": 1277425
       },
       "baselinePolice": {
         "activePersonnel": 982,
@@ -4828,6 +5073,11 @@
           "homicide": 46
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 1.13,
+        "recruitmentFeePerOfficerUsd": 300,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -4922,6 +5172,11 @@
           "homicide": 337
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -4947,8 +5202,8 @@
         "unemploymentRatePct": 4.6,
         "inflationRatePct": 1,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 3089208525,
-        "estimatedAnnualPoliceOperatingCostUsd": 3204723725
+        "annualGrossPolicePayrollUsd": 35644714,
+        "estimatedAnnualPoliceOperatingCostUsd": 151159914
       },
       "baselinePolice": {
         "activePersonnel": 130209,
@@ -5016,6 +5271,11 @@
           "homicide": 5867
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 0.75,
+        "recruitmentFeePerOfficerUsd": 189.74,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -5041,8 +5301,8 @@
         "unemploymentRatePct": 6,
         "inflationRatePct": 1.5,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 640575,
-        "estimatedAnnualPoliceOperatingCostUsd": 688025
+        "annualGrossPolicePayrollUsd": 247500,
+        "estimatedAnnualPoliceOperatingCostUsd": 294950
       },
       "baselinePolice": {
         "activePersonnel": 27,
@@ -5110,6 +5370,11 @@
           "homicide": 1
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 25.11,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -5136,8 +5401,8 @@
         "unemploymentRatePct": 9,
         "inflationRatePct": 0.8,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 182824850,
-        "estimatedAnnualPoliceOperatingCostUsd": 189980675
+        "annualGrossPolicePayrollUsd": 48563840,
+        "estimatedAnnualPoliceOperatingCostUsd": 55719665
       },
       "baselinePolice": {
         "activePersonnel": 7706,
@@ -5205,6 +5470,11 @@
           "homicide": 914
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 17.27,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -5230,8 +5500,8 @@
         "unemploymentRatePct": 5.3,
         "inflationRatePct": 1.2,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 960411725,
-        "estimatedAnnualPoliceOperatingCostUsd": 996335025
+        "annualGrossPolicePayrollUsd": 30613756,
+        "estimatedAnnualPoliceOperatingCostUsd": 66537056
       },
       "baselinePolice": {
         "activePersonnel": 40481,
@@ -5299,6 +5569,11 @@
           "homicide": 1701
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 2.07,
+        "recruitmentFeePerOfficerUsd": 550,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -5324,8 +5599,8 @@
         "unemploymentRatePct": 16.2,
         "inflationRatePct": -0.5,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 129941825,
-        "estimatedAnnualPoliceOperatingCostUsd": 134889400
+        "annualGrossPolicePayrollUsd": 35144093,
+        "estimatedAnnualPoliceOperatingCostUsd": 40091668
       },
       "baselinePolice": {
         "activePersonnel": 5477,
@@ -5393,6 +5668,11 @@
           "homicide": 26
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 17.58,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -5418,8 +5698,8 @@
         "unemploymentRatePct": 2.5,
         "inflationRatePct": 4.6,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 376990250,
-        "estimatedAnnualPoliceOperatingCostUsd": 391389500
+        "annualGrossPolicePayrollUsd": 67887212,
+        "estimatedAnnualPoliceOperatingCostUsd": 82286462
       },
       "baselinePolice": {
         "activePersonnel": 15890,
@@ -5487,6 +5767,11 @@
           "homicide": 488
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 11.7,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -5581,6 +5866,11 @@
           "homicide": 26
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -5606,8 +5896,8 @@
         "unemploymentRatePct": 15,
         "inflationRatePct": -2.1,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 48019400,
-        "estimatedAnnualPoliceOperatingCostUsd": 49837100
+        "annualGrossPolicePayrollUsd": 19193104,
+        "estimatedAnnualPoliceOperatingCostUsd": 21010804
       },
       "baselinePolice": {
         "activePersonnel": 2024,
@@ -5675,6 +5965,11 @@
           "homicide": 11
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 25.98,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -5698,8 +5993,8 @@
         "unemploymentRatePct": 5.1,
         "inflationRatePct": 0.3,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 387358075,
-        "estimatedAnnualPoliceOperatingCostUsd": 402470900
+        "annualGrossPolicePayrollUsd": 159071667,
+        "estimatedAnnualPoliceOperatingCostUsd": 174184492
       },
       "baselinePolice": {
         "activePersonnel": 16327,
@@ -5767,6 +6062,11 @@
           "homicide": 84
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 26.69,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -5862,6 +6162,11 @@
           "homicide": 51
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -5887,8 +6192,8 @@
         "unemploymentRatePct": 48,
         "inflationRatePct": 2.1,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 37983725,
-        "estimatedAnnualPoliceOperatingCostUsd": 39427300
+        "annualGrossPolicePayrollUsd": 1663262,
+        "estimatedAnnualPoliceOperatingCostUsd": 3106837
       },
       "baselinePolice": {
         "activePersonnel": 1601,
@@ -5956,6 +6261,11 @@
           "homicide": 62
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 2.85,
+        "recruitmentFeePerOfficerUsd": 755.56,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -6050,6 +6360,11 @@
           "homicide": 18
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -6075,8 +6390,8 @@
         "unemploymentRatePct": 14,
         "inflationRatePct": 0.8,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 399671350,
-        "estimatedAnnualPoliceOperatingCostUsd": 414933825
+        "annualGrossPolicePayrollUsd": 64493715,
+        "estimatedAnnualPoliceOperatingCostUsd": 79756190
       },
       "baselinePolice": {
         "activePersonnel": 16846,
@@ -6144,6 +6459,11 @@
           "homicide": 1258
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 10.49,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -6169,8 +6489,8 @@
         "unemploymentRatePct": 4.8,
         "inflationRatePct": 3.4,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 602994600,
-        "estimatedAnnualPoliceOperatingCostUsd": 626016975
+        "annualGrossPolicePayrollUsd": 85425984,
+        "estimatedAnnualPoliceOperatingCostUsd": 108448359
       },
       "baselinePolice": {
         "activePersonnel": 25416,
@@ -6238,6 +6558,11 @@
           "homicide": 8363
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 9.21,
+        "recruitmentFeePerOfficerUsd": 2444.44,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -6264,8 +6589,8 @@
         "unemploymentRatePct": 12.8,
         "inflationRatePct": 10.4,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 3589070550,
-        "estimatedAnnualPoliceOperatingCostUsd": 3724801275
+        "annualGrossPolicePayrollUsd": 303553300,
+        "estimatedAnnualPoliceOperatingCostUsd": 439284025
       },
       "baselinePolice": {
         "activePersonnel": 151278,
@@ -6333,6 +6658,11 @@
           "homicide": 1553
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 5.5,
+        "recruitmentFeePerOfficerUsd": 1459.34,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -6359,8 +6689,8 @@
         "unemploymentRatePct": 7,
         "inflationRatePct": 1,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 206360050,
-        "estimatedAnnualPoliceOperatingCostUsd": 214132725
+        "annualGrossPolicePayrollUsd": 19434594,
+        "estimatedAnnualPoliceOperatingCostUsd": 27207269
       },
       "baselinePolice": {
         "activePersonnel": 8698,
@@ -6428,6 +6758,11 @@
           "homicide": 503
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 6.12,
+        "recruitmentFeePerOfficerUsd": 1625,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -6453,8 +6788,8 @@
         "unemploymentRatePct": 8,
         "inflationRatePct": 2,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 67023125,
-        "estimatedAnnualPoliceOperatingCostUsd": 69534325
+        "annualGrossPolicePayrollUsd": 15537500,
+        "estimatedAnnualPoliceOperatingCostUsd": 18048700
       },
       "baselinePolice": {
         "activePersonnel": 2825,
@@ -6522,6 +6857,11 @@
           "homicide": 101
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 15.07,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -6547,8 +6887,8 @@
         "unemploymentRatePct": 8.5,
         "inflationRatePct": 9,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 98150325,
-        "estimatedAnnualPoliceOperatingCostUsd": 101785725
+        "annualGrossPolicePayrollUsd": 1132504,
+        "estimatedAnnualPoliceOperatingCostUsd": 4767904
       },
       "baselinePolice": {
         "activePersonnel": 4137,
@@ -6616,6 +6956,11 @@
           "homicide": 563
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 0.75,
+        "recruitmentFeePerOfficerUsd": 153.85,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -6641,8 +6986,8 @@
         "unemploymentRatePct": 6.2,
         "inflationRatePct": 0.1,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 48066850,
-        "estimatedAnnualPoliceOperatingCostUsd": 49900975
+        "annualGrossPolicePayrollUsd": 18857388,
+        "estimatedAnnualPoliceOperatingCostUsd": 20691513
       },
       "baselinePolice": {
         "activePersonnel": 2026,
@@ -6710,6 +7055,11 @@
           "homicide": 21
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 25.5,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -6733,8 +7083,8 @@
         "unemploymentRatePct": 22,
         "inflationRatePct": 5,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 36109450,
-        "estimatedAnnualPoliceOperatingCostUsd": 37472725
+        "annualGrossPolicePayrollUsd": 3043997,
+        "estimatedAnnualPoliceOperatingCostUsd": 4407272
       },
       "baselinePolice": {
         "activePersonnel": 1522,
@@ -6802,6 +7152,11 @@
           "homicide": 157
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 5.48,
+        "recruitmentFeePerOfficerUsd": 1454.54,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -6825,8 +7180,8 @@
         "unemploymentRatePct": 5.2,
         "inflationRatePct": 9.6,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 3439057375,
-        "estimatedAnnualPoliceOperatingCostUsd": 3567593950
+        "annualGrossPolicePayrollUsd": 50023608,
+        "estimatedAnnualPoliceOperatingCostUsd": 178560183
       },
       "baselinePolice": {
         "activePersonnel": 144955,
@@ -6894,6 +7249,11 @@
           "homicide": 11530
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 0.95,
+        "recruitmentFeePerOfficerUsd": 250.98,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -6988,6 +7348,11 @@
           "homicide": 0
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -7082,6 +7447,11 @@
           "homicide": 3
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -7107,8 +7477,8 @@
         "unemploymentRatePct": 6,
         "inflationRatePct": 1.4,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 29751150,
-        "estimatedAnnualPoliceOperatingCostUsd": 30844325
+        "annualGrossPolicePayrollUsd": 3295235,
+        "estimatedAnnualPoliceOperatingCostUsd": 4388410
       },
       "baselinePolice": {
         "activePersonnel": 1254,
@@ -7176,6 +7546,11 @@
           "homicide": 19
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 7.2,
+        "recruitmentFeePerOfficerUsd": 1911.11,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -7201,8 +7576,8 @@
         "unemploymentRatePct": 9.4,
         "inflationRatePct": -0.2,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 215114575,
-        "estimatedAnnualPoliceOperatingCostUsd": 223518700
+        "annualGrossPolicePayrollUsd": 210354409,
+        "estimatedAnnualPoliceOperatingCostUsd": 218758534
       },
       "baselinePolice": {
         "activePersonnel": 9067,
@@ -7270,6 +7645,11 @@
           "homicide": 55
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 63.56,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -7295,8 +7675,8 @@
         "unemploymentRatePct": 10.4,
         "inflationRatePct": 0,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 2572406850,
-        "estimatedAnnualPoliceOperatingCostUsd": 2676723850
+        "annualGrossPolicePayrollUsd": 2182400100,
+        "estimatedAnnualPoliceOperatingCostUsd": 2286717100
       },
       "baselinePolice": {
         "activePersonnel": 108426,
@@ -7364,6 +7744,11 @@
           "homicide": 917
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 55.15,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -7458,6 +7843,11 @@
           "homicide": 0
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -7483,8 +7873,8 @@
         "unemploymentRatePct": 12,
         "inflationRatePct": 0.8,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 9893325,
-        "estimatedAnnualPoliceOperatingCostUsd": 10245550
+        "annualGrossPolicePayrollUsd": 4505090,
+        "estimatedAnnualPoliceOperatingCostUsd": 4857315
       },
       "baselinePolice": {
         "activePersonnel": 417,
@@ -7552,6 +7942,11 @@
           "homicide": 1
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 29.6,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -7647,6 +8042,11 @@
           "homicide": 0
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -7672,8 +8072,8 @@
         "unemploymentRatePct": 18.5,
         "inflationRatePct": 1.2,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 91056550,
-        "estimatedAnnualPoliceOperatingCostUsd": 94567850
+        "annualGrossPolicePayrollUsd": 14776300,
+        "estimatedAnnualPoliceOperatingCostUsd": 18287600
       },
       "baselinePolice": {
         "activePersonnel": 3838,
@@ -7741,6 +8141,11 @@
           "homicide": 135
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 10.55,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -7766,8 +8171,8 @@
         "unemploymentRatePct": 15,
         "inflationRatePct": 6,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 81258125,
-        "estimatedAnnualPoliceOperatingCostUsd": 84232875
+        "annualGrossPolicePayrollUsd": 941875,
+        "estimatedAnnualPoliceOperatingCostUsd": 3916625
       },
       "baselinePolice": {
         "activePersonnel": 3425,
@@ -7835,6 +8240,11 @@
           "homicide": 147
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 0.75,
+        "recruitmentFeePerOfficerUsd": 200,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -7860,8 +8270,8 @@
         "unemploymentRatePct": 12,
         "inflationRatePct": 4,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 124176650,
-        "estimatedAnnualPoliceOperatingCostUsd": 128916175
+        "annualGrossPolicePayrollUsd": 10892367,
+        "estimatedAnnualPoliceOperatingCostUsd": 15631892
       },
       "baselinePolice": {
         "activePersonnel": 5234,
@@ -7929,6 +8339,11 @@
           "homicide": 80
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 5.7,
+        "recruitmentFeePerOfficerUsd": 1513.51,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -7954,8 +8369,8 @@
         "unemploymentRatePct": 4.6,
         "inflationRatePct": 0.5,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 3109042625,
-        "estimatedAnnualPoliceOperatingCostUsd": 3235666600
+        "annualGrossPolicePayrollUsd": 2990947164,
+        "estimatedAnnualPoliceOperatingCostUsd": 3117571139
       },
       "baselinePolice": {
         "activePersonnel": 131045,
@@ -8023,6 +8438,11 @@
           "homicide": 761
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 62.53,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -8048,8 +8468,8 @@
         "unemploymentRatePct": 5.2,
         "inflationRatePct": 17.2,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 1040934375,
-        "estimatedAnnualPoliceOperatingCostUsd": 1079821475
+        "annualGrossPolicePayrollUsd": 33068741,
+        "estimatedAnnualPoliceOperatingCostUsd": 71955841
       },
       "baselinePolice": {
         "activePersonnel": 43875,
@@ -8117,6 +8537,11 @@
           "homicide": 642
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 2.06,
+        "recruitmentFeePerOfficerUsd": 548.15,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -8211,6 +8636,11 @@
           "homicide": 1
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -8236,8 +8666,8 @@
         "unemploymentRatePct": 24.9,
         "inflationRatePct": -1.7,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 375210875,
-        "estimatedAnnualPoliceOperatingCostUsd": 389885700
+        "annualGrossPolicePayrollUsd": 157051775,
+        "estimatedAnnualPoliceOperatingCostUsd": 171726600
       },
       "baselinePolice": {
         "activePersonnel": 15815,
@@ -8305,6 +8735,11 @@
           "homicide": 87
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 27.21,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -8331,8 +8766,8 @@
         "unemploymentRatePct": 9.1,
         "inflationRatePct": 1,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 2182700,
-        "estimatedAnnualPoliceOperatingCostUsd": 2268475
+        "annualGrossPolicePayrollUsd": 2168571,
+        "estimatedAnnualPoliceOperatingCostUsd": 2254346
       },
       "baselinePolice": {
         "activePersonnel": 92,
@@ -8400,6 +8835,11 @@
           "homicide": 3
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 64.58,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -8494,6 +8934,11 @@
           "homicide": 16
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -8588,6 +9033,11 @@
           "homicide": 0
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -8613,8 +9063,8 @@
         "unemploymentRatePct": 7,
         "inflationRatePct": 1.5,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 6500650,
-        "estimatedAnnualPoliceOperatingCostUsd": 6734250
+        "annualGrossPolicePayrollUsd": 5052882,
+        "estimatedAnnualPoliceOperatingCostUsd": 5286482
       },
       "baselinePolice": {
         "activePersonnel": 274,
@@ -8682,6 +9132,11 @@
           "homicide": 7
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 50.52,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -8777,6 +9232,11 @@
           "homicide": 4367
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -8871,6 +9331,11 @@
           "homicide": 0
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -8896,8 +9361,8 @@
         "unemploymentRatePct": 4.5,
         "inflationRatePct": 8.2,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 407903925,
-        "estimatedAnnualPoliceOperatingCostUsd": 423137200
+        "annualGrossPolicePayrollUsd": 6934478,
+        "estimatedAnnualPoliceOperatingCostUsd": 22167753
       },
       "baselinePolice": {
         "activePersonnel": 17193,
@@ -8965,6 +9430,11 @@
           "homicide": 785
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 1.11,
+        "recruitmentFeePerOfficerUsd": 293.33,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -8990,8 +9460,8 @@
         "unemploymentRatePct": 8.5,
         "inflationRatePct": 1.5,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 61590100,
-        "estimatedAnnualPoliceOperatingCostUsd": 63845800
+        "annualGrossPolicePayrollUsd": 872543,
+        "estimatedAnnualPoliceOperatingCostUsd": 3128243
       },
       "baselinePolice": {
         "activePersonnel": 2596,
@@ -9059,6 +9529,11 @@
           "homicide": 25
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 0.92,
+        "recruitmentFeePerOfficerUsd": 244.44,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -9084,8 +9559,8 @@
         "unemploymentRatePct": 12,
         "inflationRatePct": 1.5,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 24507925,
-        "estimatedAnnualPoliceOperatingCostUsd": 25418600
+        "annualGrossPolicePayrollUsd": 2392213,
+        "estimatedAnnualPoliceOperatingCostUsd": 3302888
       },
       "baselinePolice": {
         "activePersonnel": 1033,
@@ -9153,6 +9628,11 @@
           "homicide": 160
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 6.34,
+        "recruitmentFeePerOfficerUsd": 1684.21,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -9178,8 +9658,8 @@
         "unemploymentRatePct": 14,
         "inflationRatePct": 9,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 342399200,
-        "estimatedAnnualPoliceOperatingCostUsd": 355258150
+        "annualGrossPolicePayrollUsd": 6716400,
+        "estimatedAnnualPoliceOperatingCostUsd": 19575350
       },
       "baselinePolice": {
         "activePersonnel": 14432,
@@ -9247,6 +9727,11 @@
           "homicide": 4900
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 1.28,
+        "recruitmentFeePerOfficerUsd": 338.46,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -9341,6 +9826,11 @@
           "homicide": 0
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -9433,6 +9923,11 @@
           "homicide": 0
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -9459,8 +9954,8 @@
         "unemploymentRatePct": 7.4,
         "inflationRatePct": 3.2,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 338081250,
-        "estimatedAnnualPoliceOperatingCostUsd": 350730325
+        "annualGrossPolicePayrollUsd": 19363249,
+        "estimatedAnnualPoliceOperatingCostUsd": 32012324
       },
       "baselinePolice": {
         "activePersonnel": 14250,
@@ -9528,6 +10023,11 @@
           "homicide": 3460
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 3.72,
+        "recruitmentFeePerOfficerUsd": 988.24,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -9553,8 +10053,8 @@
         "unemploymentRatePct": 3.3,
         "inflationRatePct": 3,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 295067825,
-        "estimatedAnnualPoliceOperatingCostUsd": 306574450
+        "annualGrossPolicePayrollUsd": 289543602,
+        "estimatedAnnualPoliceOperatingCostUsd": 301050227
       },
       "baselinePolice": {
         "activePersonnel": 12437,
@@ -9622,6 +10122,11 @@
           "homicide": 28
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 63.78,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -9645,8 +10150,8 @@
         "unemploymentRatePct": 6.8,
         "inflationRatePct": -0.1,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 331343350,
-        "estimatedAnnualPoliceOperatingCostUsd": 344178575
+        "annualGrossPolicePayrollUsd": 97191950,
+        "estimatedAnnualPoliceOperatingCostUsd": 110027175
       },
       "baselinePolice": {
         "activePersonnel": 13966,
@@ -9714,6 +10219,11 @@
           "homicide": 69
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 19.07,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -9809,6 +10319,11 @@
           "homicide": 5
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -9834,8 +10349,8 @@
         "unemploymentRatePct": 5,
         "inflationRatePct": 4.9,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 41026479975,
-        "estimatedAnnualPoliceOperatingCostUsd": 42560244650
+        "annualGrossPolicePayrollUsd": 1524641699,
+        "estimatedAnnualPoliceOperatingCostUsd": 3058406374
       },
       "baselinePolice": {
         "activePersonnel": 1729251,
@@ -9903,6 +10418,11 @@
           "homicide": 41208
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 2.42,
+        "recruitmentFeePerOfficerUsd": 641.22,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -9929,8 +10449,8 @@
         "unemploymentRatePct": 6.18,
         "inflationRatePct": 6.4,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 8861524750,
-        "estimatedAnnualPoliceOperatingCostUsd": 9196718850
+        "annualGrossPolicePayrollUsd": 692824633,
+        "estimatedAnnualPoliceOperatingCostUsd": 1028018733
       },
       "baselinePolice": {
         "activePersonnel": 373510,
@@ -9998,6 +10518,11 @@
           "homicide": 869
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 5.08,
+        "recruitmentFeePerOfficerUsd": 1349.02,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -10023,8 +10548,8 @@
         "unemploymentRatePct": 11,
         "inflationRatePct": 13.7,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 3086836025,
-        "estimatedAnnualPoliceOperatingCostUsd": 3203621425
+        "annualGrossPolicePayrollUsd": 348300882,
+        "estimatedAnnualPoliceOperatingCostUsd": 465086282
       },
       "baselinePolice": {
         "activePersonnel": 130109,
@@ -10092,6 +10617,11 @@
           "homicide": 2195
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 7.33,
+        "recruitmentFeePerOfficerUsd": 1946.9,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -10117,8 +10647,8 @@
         "unemploymentRatePct": 16,
         "inflationRatePct": 1.4,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 1553228300,
-        "estimatedAnnualPoliceOperatingCostUsd": 1611984175
+        "annualGrossPolicePayrollUsd": 180037000,
+        "estimatedAnnualPoliceOperatingCostUsd": 238792875
       },
       "baselinePolice": {
         "activePersonnel": 65468,
@@ -10186,6 +10716,11 @@
           "homicide": 4450
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 7.53,
+        "recruitmentFeePerOfficerUsd": 2000,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -10280,6 +10815,11 @@
           "homicide": 36
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -10374,6 +10914,11 @@
           "homicide": 1
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -10399,8 +10944,8 @@
         "unemploymentRatePct": 5.3,
         "inflationRatePct": -0.6,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 388378250,
-        "estimatedAnnualPoliceOperatingCostUsd": 403507500
+        "annualGrossPolicePayrollUsd": 317770609,
+        "estimatedAnnualPoliceOperatingCostUsd": 332899859
       },
       "baselinePolice": {
         "activePersonnel": 16370,
@@ -10468,6 +11013,11 @@
           "homicide": 165
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 53.18,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -10493,8 +11043,8 @@
         "unemploymentRatePct": 11.9,
         "inflationRatePct": 0,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 2136792125,
-        "estimatedAnnualPoliceOperatingCostUsd": 2223693150
+        "annualGrossPolicePayrollUsd": 1498353898,
+        "estimatedAnnualPoliceOperatingCostUsd": 1585254923
       },
       "baselinePolice": {
         "activePersonnel": 90065,
@@ -10562,6 +11112,11 @@
           "homicide": 335
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 45.58,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -10587,8 +11142,8 @@
         "unemploymentRatePct": 13.5,
         "inflationRatePct": 3.7,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 90249900,
-        "estimatedAnnualPoliceOperatingCostUsd": 93651700
+        "annualGrossPolicePayrollUsd": 10100284,
+        "estimatedAnnualPoliceOperatingCostUsd": 13502084
       },
       "baselinePolice": {
         "activePersonnel": 3804,
@@ -10656,6 +11211,11 @@
           "homicide": 1403
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 7.27,
+        "recruitmentFeePerOfficerUsd": 1931.04,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -10681,8 +11241,8 @@
         "unemploymentRatePct": 3.4,
         "inflationRatePct": 0.8,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 4725901375,
-        "estimatedAnnualPoliceOperatingCostUsd": 4918090300
+        "annualGrossPolicePayrollUsd": 3830190481,
+        "estimatedAnnualPoliceOperatingCostUsd": 4022379406
       },
       "baselinePolice": {
         "activePersonnel": 199195,
@@ -10750,6 +11310,11 @@
           "homicide": 283
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 52.68,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -10844,6 +11409,11 @@
           "homicide": 0
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -10869,8 +11439,8 @@
         "unemploymentRatePct": 13,
         "inflationRatePct": -0.9,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 398105500,
-        "estimatedAnnualPoliceOperatingCostUsd": 413212850
+        "annualGrossPolicePayrollUsd": 38803792,
+        "estimatedAnnualPoliceOperatingCostUsd": 53911142
       },
       "baselinePolice": {
         "activePersonnel": 16780,
@@ -10938,6 +11508,11 @@
           "homicide": 114
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 6.34,
+        "recruitmentFeePerOfficerUsd": 1681.82,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -10961,8 +11536,8 @@
         "unemploymentRatePct": 5,
         "inflationRatePct": 13.6,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 689709475,
-        "estimatedAnnualPoliceOperatingCostUsd": 716580775
+        "annualGrossPolicePayrollUsd": 168113509,
+        "estimatedAnnualPoliceOperatingCostUsd": 194984809
       },
       "baselinePolice": {
         "activePersonnel": 29071,
@@ -11030,6 +11605,11 @@
           "homicide": 532
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 15.84,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -11055,8 +11635,8 @@
         "unemploymentRatePct": 9.3,
         "inflationRatePct": 6.6,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 1570903425,
-        "estimatedAnnualPoliceOperatingCostUsd": 1629655650
+        "annualGrossPolicePayrollUsd": 50667181,
+        "estimatedAnnualPoliceOperatingCostUsd": 109419406
       },
       "baselinePolice": {
         "activePersonnel": 66213,
@@ -11124,6 +11704,11 @@
           "homicide": 2803
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 2.1,
+        "recruitmentFeePerOfficerUsd": 556.52,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -11149,8 +11734,8 @@
         "unemploymentRatePct": 15,
         "inflationRatePct": 1.5,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 4080700,
-        "estimatedAnnualPoliceOperatingCostUsd": 4215750
+        "annualGrossPolicePayrollUsd": 146200,
+        "estimatedAnnualPoliceOperatingCostUsd": 281250
       },
       "baselinePolice": {
         "activePersonnel": 172,
@@ -11218,6 +11803,11 @@
           "homicide": 10
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 2.33,
+        "recruitmentFeePerOfficerUsd": 618.18,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -11243,8 +11833,8 @@
         "unemploymentRatePct": 4.5,
         "inflationRatePct": 5,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 762782475,
-        "estimatedAnnualPoliceOperatingCostUsd": 791303575
+        "annualGrossPolicePayrollUsd": 11227322,
+        "estimatedAnnualPoliceOperatingCostUsd": 39748422
       },
       "baselinePolice": {
         "activePersonnel": 32151,
@@ -11312,6 +11902,11 @@
           "homicide": 1382
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 0.96,
+        "recruitmentFeePerOfficerUsd": 253.97,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -11337,8 +11932,8 @@
         "unemploymentRatePct": 3.6,
         "inflationRatePct": 0.7,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 1922579100,
-        "estimatedAnnualPoliceOperatingCostUsd": 2001065050
+        "annualGrossPolicePayrollUsd": 1267180475,
+        "estimatedAnnualPoliceOperatingCostUsd": 1345666425
       },
       "baselinePolice": {
         "activePersonnel": 81036,
@@ -11406,6 +12001,11 @@
           "homicide": 247
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 42.84,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -11431,8 +12031,8 @@
         "unemploymentRatePct": 2.2,
         "inflationRatePct": 3.3,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 187474950,
-        "estimatedAnnualPoliceOperatingCostUsd": 194607050
+        "annualGrossPolicePayrollUsd": 127039849,
+        "estimatedAnnualPoliceOperatingCostUsd": 134171949
       },
       "baselinePolice": {
         "activePersonnel": 7902,
@@ -11500,6 +12100,11 @@
           "homicide": 12
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 44.05,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -11523,8 +12128,8 @@
         "unemploymentRatePct": 7.5,
         "inflationRatePct": 3.2,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 203180900,
-        "estimatedAnnualPoliceOperatingCostUsd": 210756475
+        "annualGrossPolicePayrollUsd": 5269018,
+        "estimatedAnnualPoliceOperatingCostUsd": 12844593
       },
       "baselinePolice": {
         "activePersonnel": 8564,
@@ -11592,6 +12197,11 @@
           "homicide": 128
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 1.69,
+        "recruitmentFeePerOfficerUsd": 447.46,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -11615,8 +12225,8 @@
         "unemploymentRatePct": 1.5,
         "inflationRatePct": 1.3,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 224296150,
-        "estimatedAnnualPoliceOperatingCostUsd": 232707575
+        "annualGrossPolicePayrollUsd": 10705246,
+        "estimatedAnnualPoliceOperatingCostUsd": 19116671
       },
       "baselinePolice": {
         "activePersonnel": 9454,
@@ -11684,6 +12294,11 @@
           "homicide": 409
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 3.1,
+        "recruitmentFeePerOfficerUsd": 823.53,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -11709,8 +12324,8 @@
         "unemploymentRatePct": 9.9,
         "inflationRatePct": 0.2,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 64104950,
-        "estimatedAnnualPoliceOperatingCostUsd": 66530375
+        "annualGrossPolicePayrollUsd": 20062350,
+        "estimatedAnnualPoliceOperatingCostUsd": 22487775
       },
       "baselinePolice": {
         "activePersonnel": 2702,
@@ -11778,6 +12393,11 @@
           "homicide": 46
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 20.34,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -11803,8 +12423,8 @@
         "unemploymentRatePct": 6.3,
         "inflationRatePct": -3.7,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 207688650,
-        "estimatedAnnualPoliceOperatingCostUsd": 215788000
+        "annualGrossPolicePayrollUsd": 40122484,
+        "estimatedAnnualPoliceOperatingCostUsd": 48221834
       },
       "baselinePolice": {
         "activePersonnel": 8754,
@@ -11872,6 +12492,11 @@
           "homicide": 131
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 12.56,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -11895,8 +12520,8 @@
         "unemploymentRatePct": 24,
         "inflationRatePct": 4.8,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 64081225,
-        "estimatedAnnualPoliceOperatingCostUsd": 66482925
+        "annualGrossPolicePayrollUsd": 1768518,
+        "estimatedAnnualPoliceOperatingCostUsd": 4170218
       },
       "baselinePolice": {
         "activePersonnel": 2701,
@@ -11964,6 +12589,11 @@
           "homicide": 904
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 1.79,
+        "recruitmentFeePerOfficerUsd": 476.19,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -11989,8 +12619,8 @@
         "unemploymentRatePct": 3.7,
         "inflationRatePct": 8,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 160713150,
-        "estimatedAnnualPoliceOperatingCostUsd": 166744775
+        "annualGrossPolicePayrollUsd": 1854383,
+        "estimatedAnnualPoliceOperatingCostUsd": 7886008
       },
       "baselinePolice": {
         "activePersonnel": 6774,
@@ -12058,6 +12688,11 @@
           "homicide": 177
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 0.75,
+        "recruitmentFeePerOfficerUsd": 177.78,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -12083,8 +12718,8 @@
         "unemploymentRatePct": 19,
         "inflationRatePct": 10,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 251081675,
-        "estimatedAnnualPoliceOperatingCostUsd": 260557075
+        "annualGrossPolicePayrollUsd": 27225625,
+        "estimatedAnnualPoliceOperatingCostUsd": 36701025
       },
       "baselinePolice": {
         "activePersonnel": 10583,
@@ -12152,6 +12787,11 @@
           "homicide": 388
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 7.05,
+        "recruitmentFeePerOfficerUsd": 1870.97,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -12244,6 +12884,11 @@
           "homicide": 2
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -12269,8 +12914,8 @@
         "unemploymentRatePct": 9.1,
         "inflationRatePct": -0.7,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 100214400,
-        "estimatedAnnualPoliceOperatingCostUsd": 103952000
+        "annualGrossPolicePayrollUsd": 32845239,
+        "estimatedAnnualPoliceOperatingCostUsd": 36582839
       },
       "baselinePolice": {
         "activePersonnel": 4224,
@@ -12338,6 +12983,11 @@
           "homicide": 76
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 21.3,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -12430,6 +13080,11 @@
           "homicide": 11
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -12524,6 +13179,11 @@
           "homicide": 4
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -12549,8 +13209,8 @@
         "unemploymentRatePct": 2.1,
         "inflationRatePct": 7.4,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 880078875,
-        "estimatedAnnualPoliceOperatingCostUsd": 913009175
+        "annualGrossPolicePayrollUsd": 10154756,
+        "estimatedAnnualPoliceOperatingCostUsd": 43085056
       },
       "baselinePolice": {
         "activePersonnel": 37095,
@@ -12618,6 +13278,11 @@
           "homicide": 1703
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 0.75,
+        "recruitmentFeePerOfficerUsd": 161.67,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -12641,8 +13306,8 @@
         "unemploymentRatePct": 6,
         "inflationRatePct": 21.9,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 558439050,
-        "estimatedAnnualPoliceOperatingCostUsd": 579364500
+        "annualGrossPolicePayrollUsd": 6443528,
+        "estimatedAnnualPoliceOperatingCostUsd": 27368978
       },
       "baselinePolice": {
         "activePersonnel": 23538,
@@ -12710,6 +13375,11 @@
           "homicide": 395
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 0.75,
+        "recruitmentFeePerOfficerUsd": 142.22,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -12736,8 +13406,8 @@
         "unemploymentRatePct": 3.1,
         "inflationRatePct": 2.1,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 1250971800,
-        "estimatedAnnualPoliceOperatingCostUsd": 1299365325
+        "annualGrossPolicePayrollUsd": 280649051,
+        "estimatedAnnualPoliceOperatingCostUsd": 329042576
       },
       "baselinePolice": {
         "activePersonnel": 52728,
@@ -12805,6 +13475,11 @@
           "homicide": 264
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 14.58,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -12830,8 +13505,8 @@
         "unemploymentRatePct": 5,
         "inflationRatePct": 1.4,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 16915925,
-        "estimatedAnnualPoliceOperatingCostUsd": 17554675
+        "annualGrossPolicePayrollUsd": 3921500,
+        "estimatedAnnualPoliceOperatingCostUsd": 4560250
       },
       "baselinePolice": {
         "activePersonnel": 713,
@@ -12899,6 +13574,11 @@
           "homicide": 3
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 15.07,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -12922,8 +13602,8 @@
         "unemploymentRatePct": 8.1,
         "inflationRatePct": 1.4,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 689638300,
-        "estimatedAnnualPoliceOperatingCostUsd": 715421900
+        "annualGrossPolicePayrollUsd": 11876400,
+        "estimatedAnnualPoliceOperatingCostUsd": 37660000
       },
       "baselinePolice": {
         "activePersonnel": 29068,
@@ -12991,6 +13671,11 @@
           "homicide": 1310
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 1.12,
+        "recruitmentFeePerOfficerUsd": 297.14,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -13016,8 +13701,8 @@
         "unemploymentRatePct": 5.4,
         "inflationRatePct": 1.2,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 22016800,
-        "estimatedAnnualPoliceOperatingCostUsd": 22841700
+        "annualGrossPolicePayrollUsd": 12463253,
+        "estimatedAnnualPoliceOperatingCostUsd": 13288153
       },
       "baselinePolice": {
         "activePersonnel": 928,
@@ -13085,6 +13770,11 @@
           "homicide": 3
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 36.8,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -13110,8 +13800,8 @@
         "unemploymentRatePct": 10,
         "inflationRatePct": 1.5,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 1186250,
-        "estimatedAnnualPoliceOperatingCostUsd": 1233700
+        "annualGrossPolicePayrollUsd": 93396,
+        "estimatedAnnualPoliceOperatingCostUsd": 140846
       },
       "baselinePolice": {
         "activePersonnel": 50,
@@ -13179,6 +13869,11 @@
           "homicide": 2
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 5.12,
+        "recruitmentFeePerOfficerUsd": 1358.49,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -13273,6 +13968,11 @@
           "homicide": 0
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -13298,8 +13998,8 @@
         "unemploymentRatePct": 10.3,
         "inflationRatePct": 0.5,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 156988325,
-        "estimatedAnnualPoliceOperatingCostUsd": 162901325
+        "annualGrossPolicePayrollUsd": 4159268,
+        "estimatedAnnualPoliceOperatingCostUsd": 10072268
       },
       "baselinePolice": {
         "activePersonnel": 6617,
@@ -13367,6 +14067,11 @@
           "homicide": 53
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 1.72,
+        "recruitmentFeePerOfficerUsd": 457.14,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -13392,8 +14097,8 @@
         "unemploymentRatePct": 7.5,
         "inflationRatePct": 1.3,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 39454675,
-        "estimatedAnnualPoliceOperatingCostUsd": 40974900
+        "annualGrossPolicePayrollUsd": 8161495,
+        "estimatedAnnualPoliceOperatingCostUsd": 9681720
       },
       "baselinePolice": {
         "activePersonnel": 1663,
@@ -13461,6 +14166,11 @@
           "homicide": 28
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 13.45,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -13555,6 +14265,11 @@
           "homicide": 0
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -13581,8 +14296,8 @@
         "unemploymentRatePct": 4.3,
         "inflationRatePct": 2.7,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 4620586100,
-        "estimatedAnnualPoliceOperatingCostUsd": 4799467125
+        "annualGrossPolicePayrollUsd": 1035747659,
+        "estimatedAnnualPoliceOperatingCostUsd": 1214628684
       },
       "baselinePolice": {
         "activePersonnel": 194756,
@@ -13650,6 +14365,11 @@
           "homicide": 32801
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 14.57,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -13675,8 +14395,8 @@
         "unemploymentRatePct": 16,
         "inflationRatePct": 1.5,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 3202875,
-        "estimatedAnnualPoliceOperatingCostUsd": 3321500
+        "annualGrossPolicePayrollUsd": 222750,
+        "estimatedAnnualPoliceOperatingCostUsd": 341375
       },
       "baselinePolice": {
         "activePersonnel": 135,
@@ -13744,6 +14464,11 @@
           "homicide": 1
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 4.52,
+        "recruitmentFeePerOfficerUsd": 1200,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -13767,8 +14492,8 @@
         "unemploymentRatePct": 4.9,
         "inflationRatePct": 9.7,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 68778775,
-        "estimatedAnnualPoliceOperatingCostUsd": 71315525
+        "annualGrossPolicePayrollUsd": 2961117,
+        "estimatedAnnualPoliceOperatingCostUsd": 5497867
       },
       "baselinePolice": {
         "activePersonnel": 2899,
@@ -13836,6 +14561,11 @@
           "homicide": 60
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 2.8,
+        "recruitmentFeePerOfficerUsd": 742.86,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -13930,6 +14660,11 @@
           "homicide": 1
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -13953,8 +14688,8 @@
         "unemploymentRatePct": 7.5,
         "inflationRatePct": 5.8,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 115754275,
-        "estimatedAnnualPoliceOperatingCostUsd": 120209100
+        "annualGrossPolicePayrollUsd": 10465455,
+        "estimatedAnnualPoliceOperatingCostUsd": 14920280
       },
       "baselinePolice": {
         "activePersonnel": 4879,
@@ -14022,6 +14757,11 @@
           "homicide": 211
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 5.88,
+        "recruitmentFeePerOfficerUsd": 1560,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -14047,8 +14787,8 @@
         "unemploymentRatePct": 17.5,
         "inflationRatePct": 1.5,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 20593300,
-        "estimatedAnnualPoliceOperatingCostUsd": 21319650
+        "annualGrossPolicePayrollUsd": 3079999,
+        "estimatedAnnualPoliceOperatingCostUsd": 3806349
       },
       "baselinePolice": {
         "activePersonnel": 868,
@@ -14116,6 +14856,11 @@
           "homicide": 5
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 9.72,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -14210,6 +14955,11 @@
           "homicide": 0
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -14235,8 +14985,8 @@
         "unemploymentRatePct": 9.7,
         "inflationRatePct": 1.6,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 1205704500,
-        "estimatedAnnualPoliceOperatingCostUsd": 1250816675
+        "annualGrossPolicePayrollUsd": 83030961,
+        "estimatedAnnualPoliceOperatingCostUsd": 128143136
       },
       "baselinePolice": {
         "activePersonnel": 50820,
@@ -14304,6 +15054,11 @@
           "homicide": 655
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 4.48,
+        "recruitmentFeePerOfficerUsd": 1188.24,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -14329,8 +15084,8 @@
         "unemploymentRatePct": 22,
         "inflationRatePct": 3.5,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 948928825,
-        "estimatedAnnualPoliceOperatingCostUsd": 984414125
+        "annualGrossPolicePayrollUsd": 13036002,
+        "estimatedAnnualPoliceOperatingCostUsd": 48521302
       },
       "baselinePolice": {
         "activePersonnel": 39997,
@@ -14398,6 +15153,11 @@
           "homicide": 1279
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 0.89,
+        "recruitmentFeePerOfficerUsd": 237.04,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -14423,8 +15183,8 @@
         "unemploymentRatePct": 4,
         "inflationRatePct": 10,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 1512895800,
-        "estimatedAnnualPoliceOperatingCostUsd": 1569476275
+        "annualGrossPolicePayrollUsd": 41028044,
+        "estimatedAnnualPoliceOperatingCostUsd": 97608519
       },
       "baselinePolice": {
         "activePersonnel": 63768,
@@ -14492,6 +15252,11 @@
           "homicide": 1412
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 1.76,
+        "recruitmentFeePerOfficerUsd": 467.92,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -14517,8 +15282,8 @@
         "unemploymentRatePct": 28.1,
         "inflationRatePct": 3.4,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 97557200,
-        "estimatedAnnualPoliceOperatingCostUsd": 101333125
+        "annualGrossPolicePayrollUsd": 10836841,
+        "estimatedAnnualPoliceOperatingCostUsd": 14612766
       },
       "baselinePolice": {
         "activePersonnel": 4112,
@@ -14586,6 +15351,11 @@
           "homicide": 347
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 7.22,
+        "recruitmentFeePerOfficerUsd": 1916.67,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -14611,8 +15381,8 @@
         "unemploymentRatePct": 12,
         "inflationRatePct": 2,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 593125,
-        "estimatedAnnualPoliceOperatingCostUsd": 640575
+        "annualGrossPolicePayrollUsd": 151250,
+        "estimatedAnnualPoliceOperatingCostUsd": 198700
       },
       "baselinePolice": {
         "activePersonnel": 25,
@@ -14680,6 +15450,11 @@
           "homicide": 1
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 16.58,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -14703,8 +15478,8 @@
         "unemploymentRatePct": 7.2,
         "inflationRatePct": 6.5,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 754787150,
-        "estimatedAnnualPoliceOperatingCostUsd": 783032675
+        "annualGrossPolicePayrollUsd": 12818815,
+        "estimatedAnnualPoliceOperatingCostUsd": 41064340
       },
       "baselinePolice": {
         "activePersonnel": 31814,
@@ -14772,6 +15547,11 @@
           "homicide": 631
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 1.1,
+        "recruitmentFeePerOfficerUsd": 293.04,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -14866,6 +15646,11 @@
           "homicide": 125
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -14891,8 +15676,8 @@
         "unemploymentRatePct": 12,
         "inflationRatePct": 1,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 10818600,
-        "estimatedAnnualPoliceOperatingCostUsd": 11209150
+        "annualGrossPolicePayrollUsd": 8359999,
+        "estimatedAnnualPoliceOperatingCostUsd": 8750549
       },
       "baselinePolice": {
         "activePersonnel": 456,
@@ -14960,6 +15745,11 @@
           "homicide": 9
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 50.23,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -14985,8 +15775,8 @@
         "unemploymentRatePct": 5.4,
         "inflationRatePct": 0.3,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 202445425,
-        "estimatedAnnualPoliceOperatingCostUsd": 210358625
+        "annualGrossPolicePayrollUsd": 180584246,
+        "estimatedAnnualPoliceOperatingCostUsd": 188497446
       },
       "baselinePolice": {
         "activePersonnel": 8533,
@@ -15054,6 +15844,11 @@
           "homicide": 78
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 57.98,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -15080,8 +15875,8 @@
         "unemploymentRatePct": 6,
         "inflationRatePct": 4,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 214711250,
-        "estimatedAnnualPoliceOperatingCostUsd": 222770450
+        "annualGrossPolicePayrollUsd": 10195861,
+        "estimatedAnnualPoliceOperatingCostUsd": 18255061
       },
       "baselinePolice": {
         "activePersonnel": 9050,
@@ -15149,6 +15944,11 @@
           "homicide": 795
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 3.09,
+        "recruitmentFeePerOfficerUsd": 819.36,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -15172,8 +15972,8 @@
         "unemploymentRatePct": 5.1,
         "inflationRatePct": 1,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 704086825,
-        "estimatedAnnualPoliceOperatingCostUsd": 730467200
+        "annualGrossPolicePayrollUsd": 8124079,
+        "estimatedAnnualPoliceOperatingCostUsd": 34504454
       },
       "baselinePolice": {
         "activePersonnel": 29677,
@@ -15241,6 +16041,11 @@
           "homicide": 1233
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 0.75,
+        "recruitmentFeePerOfficerUsd": 144,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -15266,8 +16071,8 @@
         "unemploymentRatePct": 10.4,
         "inflationRatePct": 9,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 7166776825,
-        "estimatedAnnualPoliceOperatingCostUsd": 7434683175
+        "annualGrossPolicePayrollUsd": 439090971,
+        "estimatedAnnualPoliceOperatingCostUsd": 706997321
       },
       "baselinePolice": {
         "activePersonnel": 302077,
@@ -15335,6 +16140,11 @@
           "homicide": 37403
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 3.98,
+        "recruitmentFeePerOfficerUsd": 1057.14,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -15360,8 +16170,8 @@
         "unemploymentRatePct": 4,
         "inflationRatePct": 1.5,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 593125,
-        "estimatedAnnualPoliceOperatingCostUsd": 640575
+        "annualGrossPolicePayrollUsd": 85938,
+        "estimatedAnnualPoliceOperatingCostUsd": 133388
       },
       "baselinePolice": {
         "activePersonnel": 25,
@@ -15429,6 +16239,11 @@
           "homicide": 0
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 9.42,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -15454,8 +16269,8 @@
         "unemploymentRatePct": 2,
         "inflationRatePct": 1.5,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 593125,
-        "estimatedAnnualPoliceOperatingCostUsd": 640575
+        "annualGrossPolicePayrollUsd": 437500,
+        "estimatedAnnualPoliceOperatingCostUsd": 484950
       },
       "baselinePolice": {
         "activePersonnel": 25,
@@ -15523,6 +16338,11 @@
           "homicide": 0
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 47.95,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -15546,8 +16366,8 @@
         "unemploymentRatePct": 26.1,
         "inflationRatePct": -0.3,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 58339775,
-        "estimatedAnnualPoliceOperatingCostUsd": 60562625
+        "annualGrossPolicePayrollUsd": 6440232,
+        "estimatedAnnualPoliceOperatingCostUsd": 8663082
       },
       "baselinePolice": {
         "activePersonnel": 2459,
@@ -15615,6 +16435,11 @@
           "homicide": 28
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 7.18,
+        "recruitmentFeePerOfficerUsd": 1904.76,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -15709,6 +16534,11 @@
           "homicide": 2
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -15804,6 +16634,11 @@
           "homicide": 41
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -15829,8 +16664,8 @@
         "unemploymentRatePct": 7.5,
         "inflationRatePct": 0.1,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 196609075,
-        "estimatedAnnualPoliceOperatingCostUsd": 204285025
+        "annualGrossPolicePayrollUsd": 71475383,
+        "estimatedAnnualPoliceOperatingCostUsd": 79151333
       },
       "baselinePolice": {
         "activePersonnel": 8287,
@@ -15898,6 +16733,11 @@
           "homicide": 8
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 23.63,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -15923,8 +16763,8 @@
         "unemploymentRatePct": 6,
         "inflationRatePct": 4.5,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 7148176425,
-        "estimatedAnnualPoliceOperatingCostUsd": 7415436725
+        "annualGrossPolicePayrollUsd": 224833574,
+        "estimatedAnnualPoliceOperatingCostUsd": 492093874
       },
       "baselinePolice": {
         "activePersonnel": 301293,
@@ -15992,6 +16832,11 @@
           "homicide": 11064
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 2.04,
+        "recruitmentFeePerOfficerUsd": 542.71,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -16017,8 +16862,8 @@
         "unemploymentRatePct": 4,
         "inflationRatePct": 1.5,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 640575,
-        "estimatedAnnualPoliceOperatingCostUsd": 688025
+        "annualGrossPolicePayrollUsd": 205071,
+        "estimatedAnnualPoliceOperatingCostUsd": 252521
       },
       "baselinePolice": {
         "activePersonnel": 27,
@@ -16086,6 +16931,11 @@
           "homicide": 2
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 20.81,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -16111,8 +16961,8 @@
         "unemploymentRatePct": 26,
         "inflationRatePct": 1.5,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 175161675,
-        "estimatedAnnualPoliceOperatingCostUsd": 181711600
+        "annualGrossPolicePayrollUsd": 10367611,
+        "estimatedAnnualPoliceOperatingCostUsd": 16917536
       },
       "baselinePolice": {
         "activePersonnel": 7383,
@@ -16180,6 +17030,11 @@
           "homicide": 34
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 3.85,
+        "recruitmentFeePerOfficerUsd": 1021.28,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -16206,8 +17061,8 @@
         "unemploymentRatePct": 5.1,
         "inflationRatePct": 0.1,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 158269475,
-        "estimatedAnnualPoliceOperatingCostUsd": 164291975
+        "annualGrossPolicePayrollUsd": 47697650,
+        "estimatedAnnualPoliceOperatingCostUsd": 53720150
       },
       "baselinePolice": {
         "activePersonnel": 6671,
@@ -16275,6 +17130,11 @@
           "homicide": 535
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 19.59,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -16300,8 +17160,8 @@
         "unemploymentRatePct": 2.5,
         "inflationRatePct": 6,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 293383350,
-        "estimatedAnnualPoliceOperatingCostUsd": 304380800
+        "annualGrossPolicePayrollUsd": 17898165,
+        "estimatedAnnualPoliceOperatingCostUsd": 28895615
       },
       "baselinePolice": {
         "activePersonnel": 12366,
@@ -16369,6 +17229,11 @@
           "homicide": 1005
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 3.97,
+        "recruitmentFeePerOfficerUsd": 1052.63,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -16392,8 +17257,8 @@
         "unemploymentRatePct": 5.7,
         "inflationRatePct": 3.1,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 224746925,
-        "estimatedAnnualPoliceOperatingCostUsd": 233258725
+        "annualGrossPolicePayrollUsd": 20687369,
+        "estimatedAnnualPoliceOperatingCostUsd": 29199169
       },
       "baselinePolice": {
         "activePersonnel": 9473,
@@ -16461,6 +17326,11 @@
           "homicide": 475
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 5.98,
+        "recruitmentFeePerOfficerUsd": 1588.24,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -16486,8 +17356,8 @@
         "unemploymentRatePct": 6,
         "inflationRatePct": 3.5,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 1179939150,
-        "estimatedAnnualPoliceOperatingCostUsd": 1225071400
+        "annualGrossPolicePayrollUsd": 166576921,
+        "estimatedAnnualPoliceOperatingCostUsd": 211709171
       },
       "baselinePolice": {
         "activePersonnel": 49734,
@@ -16555,6 +17425,11 @@
           "homicide": 2975
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 9.18,
+        "recruitmentFeePerOfficerUsd": 2435.9,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -16580,8 +17455,8 @@
         "unemploymentRatePct": 6.3,
         "inflationRatePct": 1.4,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 3532391525,
-        "estimatedAnnualPoliceOperatingCostUsd": 3664455825
+        "annualGrossPolicePayrollUsd": 236748324,
+        "estimatedAnnualPoliceOperatingCostUsd": 368812624
       },
       "baselinePolice": {
         "activePersonnel": 148889,
@@ -16649,6 +17524,11 @@
           "homicide": 5078
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 4.36,
+        "recruitmentFeePerOfficerUsd": 1156.44,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -16743,6 +17623,11 @@
           "homicide": 0
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -16768,8 +17653,8 @@
         "unemploymentRatePct": 7.5,
         "inflationRatePct": -0.9,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 1235099775,
-        "estimatedAnnualPoliceOperatingCostUsd": 1283292550
+        "annualGrossPolicePayrollUsd": 359412551,
+        "estimatedAnnualPoliceOperatingCostUsd": 407605326
       },
       "baselinePolice": {
         "activePersonnel": 52059,
@@ -16837,6 +17722,11 @@
           "homicide": 292
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 18.91,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -16862,8 +17752,8 @@
         "unemploymentRatePct": 12.6,
         "inflationRatePct": 0.5,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 379813525,
-        "estimatedAnnualPoliceOperatingCostUsd": 394658075
+        "annualGrossPolicePayrollUsd": 170115068,
+        "estimatedAnnualPoliceOperatingCostUsd": 184959618
       },
       "baselinePolice": {
         "activePersonnel": 16009,
@@ -16931,6 +17821,11 @@
           "homicide": 78
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 29.11,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -17025,6 +17920,11 @@
           "homicide": 465
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -17119,6 +18019,11 @@
           "homicide": 2
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -17213,6 +18118,11 @@
           "homicide": 0
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -17238,8 +18148,8 @@
         "unemploymentRatePct": 6.8,
         "inflationRatePct": -0.6,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 623967500,
-        "estimatedAnnualPoliceOperatingCostUsd": 648119550
+        "annualGrossPolicePayrollUsd": 129308276,
+        "estimatedAnnualPoliceOperatingCostUsd": 153460326
       },
       "baselinePolice": {
         "activePersonnel": 26300,
@@ -17307,6 +18217,11 @@
           "homicide": 211
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 13.47,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -17334,8 +18249,8 @@
         "unemploymentRatePct": 5.6,
         "inflationRatePct": 15.5,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 4960114575,
-        "estimatedAnnualPoliceOperatingCostUsd": 5152221375
+        "annualGrossPolicePayrollUsd": 1085986406,
+        "estimatedAnnualPoliceOperatingCostUsd": 1278093206
       },
       "baselinePolice": {
         "activePersonnel": 209067,
@@ -17403,6 +18318,11 @@
           "homicide": 9709
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 14.23,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -17426,8 +18346,8 @@
         "unemploymentRatePct": 3.4,
         "inflationRatePct": 2.5,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 367879850,
-        "estimatedAnnualPoliceOperatingCostUsd": 381665900
+        "annualGrossPolicePayrollUsd": 5898769,
+        "estimatedAnnualPoliceOperatingCostUsd": 19684819
       },
       "baselinePolice": {
         "activePersonnel": 15506,
@@ -17495,6 +18415,11 @@
           "homicide": 526
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 1.04,
+        "recruitmentFeePerOfficerUsd": 276.67,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -17589,6 +18514,11 @@
           "homicide": 0
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -17683,6 +18613,11 @@
           "homicide": 0
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -17777,6 +18712,11 @@
           "homicide": 30
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -17871,6 +18811,11 @@
           "homicide": 70
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -17965,6 +18910,11 @@
           "homicide": 7
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -18059,6 +19009,11 @@
           "homicide": 0
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -18153,6 +19108,11 @@
           "homicide": 51
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -18178,8 +19138,8 @@
         "unemploymentRatePct": 5.7,
         "inflationRatePct": 1.5,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 6287125,
-        "estimatedAnnualPoliceOperatingCostUsd": 6520725
+        "annualGrossPolicePayrollUsd": 613685,
+        "estimatedAnnualPoliceOperatingCostUsd": 847285
       },
       "baselinePolice": {
         "activePersonnel": 265,
@@ -18247,6 +19207,11 @@
           "homicide": 14
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 6.34,
+        "recruitmentFeePerOfficerUsd": 1684.21,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -18339,6 +19304,11 @@
           "homicide": 1
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -18433,6 +19403,11 @@
           "homicide": 8
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -18458,8 +19433,8 @@
         "unemploymentRatePct": 5.6,
         "inflationRatePct": 1.2,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 1356524325,
-        "estimatedAnnualPoliceOperatingCostUsd": 1410431175
+        "annualGrossPolicePayrollUsd": 652906736,
+        "estimatedAnnualPoliceOperatingCostUsd": 706813586
       },
       "baselinePolice": {
         "activePersonnel": 57177,
@@ -18527,6 +19502,11 @@
           "homicide": 346
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 31.29,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -18552,8 +19532,8 @@
         "unemploymentRatePct": 12,
         "inflationRatePct": 0.1,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 535141100,
-        "estimatedAnnualPoliceOperatingCostUsd": 555192375
+        "annualGrossPolicePayrollUsd": 11578705,
+        "estimatedAnnualPoliceOperatingCostUsd": 31629980
       },
       "baselinePolice": {
         "activePersonnel": 22556,
@@ -18621,6 +19601,11 @@
           "homicide": 51
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 1.41,
+        "recruitmentFeePerOfficerUsd": 373.33,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -18644,8 +19629,8 @@
         "unemploymentRatePct": 17.7,
         "inflationRatePct": 1.5,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 209752725,
-        "estimatedAnnualPoliceOperatingCostUsd": 217766300
+        "annualGrossPolicePayrollUsd": 25340061,
+        "estimatedAnnualPoliceOperatingCostUsd": 33353636
       },
       "baselinePolice": {
         "activePersonnel": 8841,
@@ -18713,6 +19698,11 @@
           "homicide": 86
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 7.85,
+        "recruitmentFeePerOfficerUsd": 2084.51,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -18738,8 +19728,8 @@
         "unemploymentRatePct": 4.1,
         "inflationRatePct": 4,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 4151875,
-        "estimatedAnnualPoliceOperatingCostUsd": 4286925
+        "annualGrossPolicePayrollUsd": 1497223,
+        "estimatedAnnualPoliceOperatingCostUsd": 1632273
       },
       "baselinePolice": {
         "activePersonnel": 175,
@@ -18807,6 +19797,11 @@
           "homicide": 10
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 23.44,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -18832,8 +19827,8 @@
         "unemploymentRatePct": 9.1,
         "inflationRatePct": 13,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 240737575,
-        "estimatedAnnualPoliceOperatingCostUsd": 249705625
+        "annualGrossPolicePayrollUsd": 3348510,
+        "estimatedAnnualPoliceOperatingCostUsd": 12316560
       },
       "baselinePolice": {
         "activePersonnel": 10147,
@@ -18901,6 +19896,11 @@
           "homicide": 196
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 0.9,
+        "recruitmentFeePerOfficerUsd": 240,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -18996,6 +19996,11 @@
           "homicide": 4
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -19090,6 +20095,11 @@
           "homicide": 2
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -19113,8 +20123,8 @@
         "unemploymentRatePct": 11.5,
         "inflationRatePct": -0.3,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 183180725,
-        "estimatedAnnualPoliceOperatingCostUsd": 190336550
+        "annualGrossPolicePayrollUsd": 68416634,
+        "estimatedAnnualPoliceOperatingCostUsd": 75572459
       },
       "baselinePolice": {
         "activePersonnel": 7721,
@@ -19182,6 +20192,11 @@
           "homicide": 61
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 24.28,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -19207,8 +20222,8 @@
         "unemploymentRatePct": 9,
         "inflationRatePct": -0.5,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 73239075,
-        "estimatedAnnualPoliceOperatingCostUsd": 75983875
+        "annualGrossPolicePayrollUsd": 35440564,
+        "estimatedAnnualPoliceOperatingCostUsd": 38185364
       },
       "baselinePolice": {
         "activePersonnel": 3087,
@@ -19276,6 +20291,11 @@
           "homicide": 12
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 31.45,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -19301,8 +20321,8 @@
         "unemploymentRatePct": 10,
         "inflationRatePct": 1,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 23036975,
-        "estimatedAnnualPoliceOperatingCostUsd": 23892900
+        "annualGrossPolicePayrollUsd": 979090,
+        "estimatedAnnualPoliceOperatingCostUsd": 1835015
       },
       "baselinePolice": {
         "activePersonnel": 971,
@@ -19370,6 +20390,11 @@
           "homicide": 31
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 2.76,
+        "recruitmentFeePerOfficerUsd": 733.33,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -19395,8 +20420,8 @@
         "unemploymentRatePct": 47,
         "inflationRatePct": 1.5,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 541380775,
-        "estimatedAnnualPoliceOperatingCostUsd": 561636450
+        "annualGrossPolicePayrollUsd": 6246701,
+        "estimatedAnnualPoliceOperatingCostUsd": 26502376
       },
       "baselinePolice": {
         "activePersonnel": 22819,
@@ -19464,6 +20489,11 @@
           "homicide": 1022
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 0.75,
+        "recruitmentFeePerOfficerUsd": 75,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -19490,8 +20520,8 @@
         "unemploymentRatePct": 25,
         "inflationRatePct": 4.6,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 2138785025,
-        "estimatedAnnualPoliceOperatingCostUsd": 2220530425
+        "annualGrossPolicePayrollUsd": 285772510,
+        "estimatedAnnualPoliceOperatingCostUsd": 367517910
       },
       "baselinePolice": {
         "activePersonnel": 90149,
@@ -19559,6 +20589,11 @@
           "homicide": 28308
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 8.68,
+        "recruitmentFeePerOfficerUsd": 2305.46,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -19653,6 +20688,11 @@
           "homicide": 0
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -19676,8 +20716,8 @@
         "unemploymentRatePct": 13,
         "inflationRatePct": 52.8,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 313383525,
-        "estimatedAnnualPoliceOperatingCostUsd": 325134700
+        "annualGrossPolicePayrollUsd": 5944037,
+        "estimatedAnnualPoliceOperatingCostUsd": 17695212
       },
       "baselinePolice": {
         "activePersonnel": 13209,
@@ -19745,6 +20785,11 @@
           "homicide": 1704
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 1.23,
+        "recruitmentFeePerOfficerUsd": 327.27,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -19770,8 +20815,8 @@
         "unemploymentRatePct": 22.1,
         "inflationRatePct": -0.5,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 1817501075,
-        "estimatedAnnualPoliceOperatingCostUsd": 1889825825
+        "annualGrossPolicePayrollUsd": 1089668578,
+        "estimatedAnnualPoliceOperatingCostUsd": 1161993328
       },
       "baselinePolice": {
         "activePersonnel": 76607,
@@ -19839,6 +20884,11 @@
           "homicide": 341
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 38.97,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -19864,8 +20914,8 @@
         "unemploymentRatePct": 4.7,
         "inflationRatePct": 3.9,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 618842900,
-        "estimatedAnnualPoliceOperatingCostUsd": 642226625
+        "annualGrossPolicePayrollUsd": 58067966,
+        "estimatedAnnualPoliceOperatingCostUsd": 81451691
       },
       "baselinePolice": {
         "activePersonnel": 26084,
@@ -19933,6 +20983,11 @@
           "homicide": 720
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 6.1,
+        "recruitmentFeePerOfficerUsd": 1619.05,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -19958,8 +21013,8 @@
         "unemploymentRatePct": 13,
         "inflationRatePct": 16.9,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 1490475675,
-        "estimatedAnnualPoliceOperatingCostUsd": 1546216650
+        "annualGrossPolicePayrollUsd": 83373471,
+        "estimatedAnnualPoliceOperatingCostUsd": 139114446
       },
       "baselinePolice": {
         "activePersonnel": 62823,
@@ -20027,6 +21082,11 @@
           "homicide": 2660
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 3.64,
+        "recruitmentFeePerOfficerUsd": 965.18,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -20052,8 +21112,8 @@
         "unemploymentRatePct": 8.9,
         "inflationRatePct": 25,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 21589750,
-        "estimatedAnnualPoliceOperatingCostUsd": 22398225
+        "annualGrossPolicePayrollUsd": 4290001,
+        "estimatedAnnualPoliceOperatingCostUsd": 5098476
       },
       "baselinePolice": {
         "activePersonnel": 910,
@@ -20121,6 +21181,11 @@
           "homicide": 42
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 12.92,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -20216,6 +21281,11 @@
           "homicide": 0
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -20310,6 +21380,11 @@
           "homicide": 122
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -20402,6 +21477,11 @@
           "homicide": 54
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -20427,8 +21507,8 @@
         "unemploymentRatePct": 50,
         "inflationRatePct": 38,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 736115575,
-        "estimatedAnnualPoliceOperatingCostUsd": 763658475
+        "annualGrossPolicePayrollUsd": 14220651,
+        "estimatedAnnualPoliceOperatingCostUsd": 41763551
       },
       "baselinePolice": {
         "activePersonnel": 31027,
@@ -20496,6 +21576,11 @@
           "homicide": 528
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 1.26,
+        "recruitmentFeePerOfficerUsd": 333.33,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -20521,8 +21606,8 @@
         "unemploymentRatePct": 3.78,
         "inflationRatePct": -0.3,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 855855650,
-        "estimatedAnnualPoliceOperatingCostUsd": 889793350
+        "annualGrossPolicePayrollUsd": 447471077,
+        "estimatedAnnualPoliceOperatingCostUsd": 481408777
       },
       "baselinePolice": {
         "activePersonnel": 36074,
@@ -20590,6 +21675,11 @@
           "homicide": 1222
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 33.98,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -20613,8 +21703,8 @@
         "unemploymentRatePct": 6.8,
         "inflationRatePct": 5.8,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 286882700,
-        "estimatedAnnualPoliceOperatingCostUsd": 297659325
+        "annualGrossPolicePayrollUsd": 6175548,
+        "estimatedAnnualPoliceOperatingCostUsd": 16952173
       },
       "baselinePolice": {
         "activePersonnel": 12092,
@@ -20682,6 +21772,11 @@
           "homicide": 96
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 1.4,
+        "recruitmentFeePerOfficerUsd": 371.43,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -20707,8 +21802,8 @@
         "unemploymentRatePct": 5.2,
         "inflationRatePct": 5.6,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 1888628625,
-        "estimatedAnnualPoliceOperatingCostUsd": 1959267075
+        "annualGrossPolicePayrollUsd": 37174182,
+        "estimatedAnnualPoliceOperatingCostUsd": 107812632
       },
       "baselinePolice": {
         "activePersonnel": 79605,
@@ -20776,6 +21871,11 @@
           "homicide": 2645
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 1.28,
+        "recruitmentFeePerOfficerUsd": 339.62,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -20802,8 +21902,8 @@
         "unemploymentRatePct": 0.9,
         "inflationRatePct": -0.9,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 2267564325,
-        "estimatedAnnualPoliceOperatingCostUsd": 2354215325
+        "annualGrossPolicePayrollUsd": 309992817,
+        "estimatedAnnualPoliceOperatingCostUsd": 396643817
       },
       "baselinePolice": {
         "activePersonnel": 95577,
@@ -20871,6 +21971,11 @@
           "homicide": 3432
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 8.89,
+        "recruitmentFeePerOfficerUsd": 2358.82,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -20897,8 +22002,8 @@
         "unemploymentRatePct": 4.8,
         "inflationRatePct": 0.6,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 39217425,
-        "estimatedAnnualPoliceOperatingCostUsd": 40699325
+        "annualGrossPolicePayrollUsd": 1212197,
+        "estimatedAnnualPoliceOperatingCostUsd": 2694097
       },
       "baselinePolice": {
         "activePersonnel": 1653,
@@ -20966,6 +22071,11 @@
           "homicide": 58
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 2.01,
+        "recruitmentFeePerOfficerUsd": 533.33,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -20991,8 +22101,8 @@
         "unemploymentRatePct": 6.9,
         "inflationRatePct": 1.8,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 233809875,
-        "estimatedAnnualPoliceOperatingCostUsd": 242547975
+        "annualGrossPolicePayrollUsd": 2963088,
+        "estimatedAnnualPoliceOperatingCostUsd": 11701188
       },
       "baselinePolice": {
         "activePersonnel": 9855,
@@ -21060,6 +22170,11 @@
           "homicide": 447
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 0.82,
+        "recruitmentFeePerOfficerUsd": 218.67,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -21085,8 +22200,8 @@
         "unemploymentRatePct": 4,
         "inflationRatePct": 1.5,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 593125,
-        "estimatedAnnualPoliceOperatingCostUsd": 640575
+        "annualGrossPolicePayrollUsd": 98214,
+        "estimatedAnnualPoliceOperatingCostUsd": 145664
       },
       "baselinePolice": {
         "activePersonnel": 25,
@@ -21154,6 +22269,11 @@
           "homicide": 0
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 10.76,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -21179,8 +22299,8 @@
         "unemploymentRatePct": 5,
         "inflationRatePct": 1,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 3013075,
-        "estimatedAnnualPoliceOperatingCostUsd": 3131700
+        "annualGrossPolicePayrollUsd": 300355,
+        "estimatedAnnualPoliceOperatingCostUsd": 418980
       },
       "baselinePolice": {
         "activePersonnel": 127,
@@ -21248,6 +22368,11 @@
           "homicide": 1
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 6.48,
+        "recruitmentFeePerOfficerUsd": 1720,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -21273,8 +22398,8 @@
         "unemploymentRatePct": 3.4,
         "inflationRatePct": 4.7,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 46406100,
-        "estimatedAnnualPoliceOperatingCostUsd": 48176350
+        "annualGrossPolicePayrollUsd": 19125336,
+        "estimatedAnnualPoliceOperatingCostUsd": 20895586
       },
       "baselinePolice": {
         "activePersonnel": 1956,
@@ -21342,6 +22467,11 @@
           "homicide": 553
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 26.79,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -21367,8 +22497,8 @@
         "unemploymentRatePct": 15.2,
         "inflationRatePct": 4.9,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 401355825,
-        "estimatedAnnualPoliceOperatingCostUsd": 416545300
+        "annualGrossPolicePayrollUsd": 36043842,
+        "estimatedAnnualPoliceOperatingCostUsd": 51233317
       },
       "baselinePolice": {
         "activePersonnel": 16917,
@@ -21436,6 +22566,11 @@
           "homicide": 580
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 5.84,
+        "recruitmentFeePerOfficerUsd": 1549.55,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -21461,8 +22596,8 @@
         "unemploymentRatePct": 10.3,
         "inflationRatePct": 7.7,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 2998555300,
-        "estimatedAnnualPoliceOperatingCostUsd": 3115619925
+        "annualGrossPolicePayrollUsd": 766429724,
+        "estimatedAnnualPoliceOperatingCostUsd": 883494349
       },
       "baselinePolice": {
         "activePersonnel": 126388,
@@ -21530,6 +22665,11 @@
           "homicide": 2772
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 16.61,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -21553,8 +22693,8 @@
         "unemploymentRatePct": 4.5,
         "inflationRatePct": 6,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 244391225,
-        "estimatedAnnualPoliceOperatingCostUsd": 253735225
+        "annualGrossPolicePayrollUsd": 36721149,
+        "estimatedAnnualPoliceOperatingCostUsd": 46065149
       },
       "baselinePolice": {
         "activePersonnel": 10301,
@@ -21622,6 +22762,11 @@
           "homicide": 77
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 9.77,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -21716,6 +22861,11 @@
           "homicide": 36
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -21741,8 +22891,8 @@
         "unemploymentRatePct": 16,
         "inflationRatePct": 1.5,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 593125,
-        "estimatedAnnualPoliceOperatingCostUsd": 640575
+        "annualGrossPolicePayrollUsd": 46250,
+        "estimatedAnnualPoliceOperatingCostUsd": 93700
       },
       "baselinePolice": {
         "activePersonnel": 25,
@@ -21810,6 +22960,11 @@
           "homicide": 2
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 5.07,
+        "recruitmentFeePerOfficerUsd": 1345.46,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -21833,8 +22988,8 @@
         "unemploymentRatePct": 1.9,
         "inflationRatePct": 5.2,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 1323166975,
-        "estimatedAnnualPoliceOperatingCostUsd": 1372642725
+        "annualGrossPolicePayrollUsd": 21235952,
+        "estimatedAnnualPoliceOperatingCostUsd": 70711702
       },
       "baselinePolice": {
         "activePersonnel": 55771,
@@ -21902,6 +23057,11 @@
           "homicide": 4611
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 1.04,
+        "recruitmentFeePerOfficerUsd": 276.92,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -21927,8 +23087,8 @@
         "unemploymentRatePct": 9.5,
         "inflationRatePct": 48.7,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 1225064100,
-        "estimatedAnnualPoliceOperatingCostUsd": 1270864300
+        "annualGrossPolicePayrollUsd": 56799600,
+        "estimatedAnnualPoliceOperatingCostUsd": 102599800
       },
       "baselinePolice": {
         "activePersonnel": 51636,
@@ -21996,6 +23156,11 @@
           "homicide": 1472
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 3.01,
+        "recruitmentFeePerOfficerUsd": 800,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -22090,6 +23255,11 @@
           "homicide": 80
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -22184,6 +23354,11 @@
           "homicide": 778
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -22280,6 +23455,11 @@
           "homicide": 19697
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -22374,6 +23554,11 @@
           "homicide": 0
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -22399,8 +23584,8 @@
         "unemploymentRatePct": 7.5,
         "inflationRatePct": 8.7,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 125861125,
-        "estimatedAnnualPoliceOperatingCostUsd": 130655400
+        "annualGrossPolicePayrollUsd": 45482587,
+        "estimatedAnnualPoliceOperatingCostUsd": 50276862
       },
       "baselinePolice": {
         "activePersonnel": 5305,
@@ -22468,6 +23653,11 @@
           "homicide": 381
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 23.49,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -22491,8 +23681,8 @@
         "unemploymentRatePct": 5.2,
         "inflationRatePct": 8.5,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 1079914550,
-        "estimatedAnnualPoliceOperatingCostUsd": 1120258000
+        "annualGrossPolicePayrollUsd": 64994356,
+        "estimatedAnnualPoliceOperatingCostUsd": 105337806
       },
       "baselinePolice": {
         "activePersonnel": 45518,
@@ -22560,6 +23750,11 @@
           "homicide": 518
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 3.91,
+        "recruitmentFeePerOfficerUsd": 1038.46,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -22585,8 +23780,8 @@
         "unemploymentRatePct": 4.8,
         "inflationRatePct": 1.5,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 9537450,
-        "estimatedAnnualPoliceOperatingCostUsd": 9889675
+        "annualGrossPolicePayrollUsd": 614167,
+        "estimatedAnnualPoliceOperatingCostUsd": 966392
       },
       "baselinePolice": {
         "activePersonnel": 402,
@@ -22654,6 +23849,11 @@
           "homicide": 1
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 4.19,
+        "recruitmentFeePerOfficerUsd": 1111.11,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -22679,8 +23879,8 @@
         "unemploymentRatePct": 14,
         "inflationRatePct": 180,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 1012820250,
-        "estimatedAnnualPoliceOperatingCostUsd": 1051953725
+        "annualGrossPolicePayrollUsd": 196924914,
+        "estimatedAnnualPoliceOperatingCostUsd": 236058389
       },
       "baselinePolice": {
         "activePersonnel": 42690,
@@ -22748,6 +23948,11 @@
           "homicide": 3607
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 12.64,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -22773,8 +23978,8 @@
         "unemploymentRatePct": 2.1,
         "inflationRatePct": 0.6,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 2904319600,
-        "estimatedAnnualPoliceOperatingCostUsd": 3012899800
+        "annualGrossPolicePayrollUsd": 139725439,
+        "estimatedAnnualPoliceOperatingCostUsd": 248305639
       },
       "baselinePolice": {
         "activePersonnel": 122416,
@@ -22842,6 +24047,11 @@
           "homicide": 1560
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 3.13,
+        "recruitmentFeePerOfficerUsd": 830.11,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -22936,6 +24146,11 @@
           "homicide": 3
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -23030,6 +24245,11 @@
           "homicide": 52
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -23055,8 +24275,8 @@
         "unemploymentRatePct": 8,
         "inflationRatePct": 1.5,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 593125,
-        "estimatedAnnualPoliceOperatingCostUsd": 640575
+        "annualGrossPolicePayrollUsd": 75000,
+        "estimatedAnnualPoliceOperatingCostUsd": 122450
       },
       "baselinePolice": {
         "activePersonnel": 25,
@@ -23124,6 +24344,11 @@
           "homicide": 1
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 8.22,
+        "recruitmentFeePerOfficerUsd": 2181.82,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -23218,6 +24443,11 @@
           "homicide": 0
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 65,
+        "recruitmentFeePerOfficerUsd": 2500,
+        "source": "GLOBAL_GAME_DEFAULT"
       }
     },
     {
@@ -23243,8 +24473,8 @@
         "unemploymentRatePct": 35,
         "inflationRatePct": 30,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 1142050325,
-        "estimatedAnnualPoliceOperatingCostUsd": 1184740725
+        "annualGrossPolicePayrollUsd": 24514321,
+        "estimatedAnnualPoliceOperatingCostUsd": 67204721
       },
       "baselinePolice": {
         "activePersonnel": 48137,
@@ -23312,6 +24542,11 @@
           "homicide": 2427
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 1.4,
+        "recruitmentFeePerOfficerUsd": 370.37,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -23335,8 +24570,8 @@
         "unemploymentRatePct": 7.5,
         "inflationRatePct": 10.1,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 624726700,
-        "estimatedAnnualPoliceOperatingCostUsd": 648108600
+        "annualGrossPolicePayrollUsd": 17890211,
+        "estimatedAnnualPoliceOperatingCostUsd": 41272111
       },
       "baselinePolice": {
         "activePersonnel": 26332,
@@ -23404,6 +24639,11 @@
           "homicide": 1140
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 1.86,
+        "recruitmentFeePerOfficerUsd": 494.12,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     },
     {
@@ -23427,8 +24667,8 @@
         "unemploymentRatePct": 5,
         "inflationRatePct": -2.4,
         "source": "EXISTING_LOCAL_ECONOMY_PROFILE",
-        "annualGrossPolicePayrollUsd": 468094250,
-        "estimatedAnnualPoliceOperatingCostUsd": 485585050
+        "annualGrossPolicePayrollUsd": 13564375,
+        "estimatedAnnualPoliceOperatingCostUsd": 31055175
       },
       "baselinePolice": {
         "activePersonnel": 19730,
@@ -23496,6 +24736,11 @@
           "homicide": 1146
         },
         "source": "MIXED_OBSERVED_HOMICIDE_AND_MODELED_NON_HOMICIDE_BASELINES"
+      },
+      "payrollRules": {
+        "dailySalaryPerOfficerUsd": 1.88,
+        "recruitmentFeePerOfficerUsd": 500,
+        "source": "MODELED_FROM_LOCAL_GDP_PER_CAPITA"
       }
     }
   ]
