@@ -807,7 +807,8 @@ async function main() {
       energyFields.map((key) => row.naturalResources.energyResourceBase[key]),
       row.naturalResources.administrativeResourceRegions,
       row.naturalResources.administrativeResourceRegionCount,
-      row.naturalResources.countryNameInResourceSource
+      row.naturalResources.countryNameInResourceSource,
+      row.naturalResources.emptyListsMeaning
     ],
     publicSafety: [
       [row.publicSafety.baselinePolice.activePersonnel, row.publicSafety.baselinePolice.staffingRatePer100k, row.publicSafety.baselinePolice.source],
