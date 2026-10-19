@@ -1,0 +1,95 @@
+/* OMEGA browser offline shell cache.
+ * Same-origin app files are cached for offline relaunch; remote map tiles are never cached here.
+ */
+"use strict";
+const CACHE_NAME = "omega-offline-atlas-shell-v1";
+const APP_BASE = new URL("./", self.location.href);
+const INDEX_URL = new URL("index.html", APP_BASE).href;
+const CORE_ASSETS = [
+  "./", "./index.html", "./world.json", "./leaflet.js", "./leaflet.css",
+  "./style.css", "./map-engine-1.js", "./map-engine-2.js",
+  "./offline-hybrid-map.js", "./offline-hybrid-map.css"
+];
+
+function isLocalAppUrl(value) {
+  try {
+    const url = new URL(value, INDEX_URL);
+    return url.origin === self.location.origin &&
+      url.pathname.startsWith(APP_BASE.pathname) &&
+      /\.(?:html?|js|mjs|css|json|png|jpe?g|webp|svg|woff2?)$/i.test(url.pathname);
+  } catch (_) {
+    return false;
+  }
+}
+
+async function fetchAndCache(cache, url) {
+  try {
+    const response = await fetch(url, { cache: "reload" });
+    if (response && response.ok && response.type !== "opaque") {
+      await cache.put(url, response.clone());
+    }
+    return response;
+  } catch (_) {
+    return null;
+  }
+}
+
+self.addEventListener("install", event => {
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE_NAME);
+    const assets = new Set(CORE_ASSETS.map(asset => new URL(asset, APP_BASE).href));
+    const htmlResponse = await fetchAndCache(cache, INDEX_URL);
+    if (htmlResponse && htmlResponse.ok) {
+      await cache.put(APP_BASE.href, htmlResponse.clone());
+      const html = await htmlResponse.text();
+      const refs = /(?:src|href)\s*=\s*["']([^"']+)["']/gi;
+      let match;
+      while ((match = refs.exec(html)) !== null) {
+        if (isLocalAppUrl(match[1])) assets.add(new URL(match[1], INDEX_URL).href);
+      }
+    }
+    await Promise.allSettled(Array.from(assets).map(url => fetchAndCache(cache, url)));
+    await self.skipWaiting();
+  })());
+});
+
+self.addEventListener("activate", event => {
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys
+      .filter(key => key.startsWith("omega-offline-atlas-shell-") && key !== CACHE_NAME)
+      .map(key => caches.delete(key)));
+    await self.clients.claim();
+  })());
+});
+
+self.addEventListener("fetch", event => {
+  const request = event.request;
+  if (request.method !== "GET") return;
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin || !url.pathname.startsWith(APP_BASE.pathname)) return;
+
+  event.respondWith((async () => {
+    const cache = await caches.open(CACHE_NAME);
+    const cached = await cache.match(request, { ignoreSearch: true }) ||
+      (request.mode === "navigate"
+        ? await cache.match(APP_BASE.href) || await cache.match(INDEX_URL)
+        : null);
+
+    if (cached) {
+      event.waitUntil(fetchAndCache(cache, url.href).then(() => undefined));
+      return cached;
+    }
+
+    const response = await fetchAndCache(cache, url.href);
+    if (response && response.ok) return response;
+    if (request.mode === "navigate") {
+      const shell = await cache.match(APP_BASE.href) || await cache.match(INDEX_URL);
+      if (shell) return shell;
+    }
+    return new Response("OMEGA offline resource is not cached yet.", {
+      status: 504, statusText: "Offline resource unavailable",
+      headers: { "Content-Type": "text/plain; charset=utf-8" }
+    });
+  })());
+});
