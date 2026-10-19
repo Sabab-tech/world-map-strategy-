@@ -55,6 +55,13 @@
       if (!candidate) continue;
       const identity = api?.resolveCountry?.(candidate);
       if (identity) return identity.iso3 || identity.countryCode || String(candidate);
+      // Keep the requested country while the async identity registry is still loading.
+      // The first Country Overview render after runtime.ready canonicalizes it.
+      if (typeof candidate === 'string' && candidate.trim()) return candidate.trim();
+      if (isObj(candidate)) {
+        const raw = candidate.countryId || candidate.countryCode || candidate.iso3 || candidate.iso2 || candidate.code || candidate.name;
+        if (raw) return String(raw);
+      }
     }
     return 'USA';
   }
@@ -97,6 +104,13 @@
       }
     }
     return { value: null, source: null };
+  }
+
+  function preferBehaviorMetric(behavior, key, fallback) {
+    const value = num(behavior?.metrics?.[key]);
+    if (value === null) return fallback;
+    const record = behavior?.metricSources?.[key] || {};
+    return { value, source: record.source || record.status || 'OMEGA_COUNTRY_BEHAVIOR_ENGINE_V1' };
   }
 
   function strategicNumber(profile, path) {
@@ -251,19 +265,19 @@
     const archetype = behavior?.archetype || strategic?.archetype || 'NOT CLASSIFIED';
     const sourceStatus = behavior?.evidence?.baselineStatus || base?.provenance?.status || 'SOURCE STATUS NOT RECORDED';
 
-    const gdp = sourceNumber(base, ['gdpCurrentUsd', 'gdp', 'grossDomesticProductUsd']);
-    const pop = sourceNumber(base, ['populationTotal', 'population2015', 'population_2015', 'population']);
-    const growth = sourceNumber(base, ['gdpGrowthPct', 'gdp_growth', 'growthRatePct']);
-    const inflation = sourceNumber(base, ['inflationRatePct', 'inflationPct', 'inflation']);
-    const unemployment = sourceNumber(base, ['unemploymentRatePct', 'unemployment_rate', 'unemploymentPct']);
-    const debtRatio = sourceNumber(base, ['publicDebtToGdpPct', 'debtToGdpPct']);
-    const budget = sourceNumber(base, ['governmentBudgetBalanceUsd', 'budget_balance', 'budgetBalance']);
-    const tradeRatio = sourceNumber(base, ['tradeBalanceToGdpPct', 'tradeBalancePctGdp']);
-    const tradeBalance = sourceNumber(base, ['tradeBalanceUsd', 'trade_balance', 'tradeBalance']);
-    const reserves = sourceNumber(base, ['foreignExchangeReservesUsd', 'fxReservesUsd', 'reserves']);
-    const fx = num(base?.indicators?.foreignExchangeReservesUsd ?? base?.indicators?.fxReservesUsd ?? base?.sourceValues?.reserves);
-    const militaryPct = strategicNumber(strategic, 'military.militaryExpenditurePctGdp') ??
-      num(base?.indicators?.militaryExpenditurePctGdp);
+    const gdp = preferBehaviorMetric(behavior, 'gdpUsd', sourceNumber(base, ['gdpCurrentUsd', 'gdp', 'grossDomesticProductUsd']));
+    const pop = preferBehaviorMetric(behavior, 'population', sourceNumber(base, ['populationTotal', 'population2015', 'population_2015', 'population']));
+    const growth = preferBehaviorMetric(behavior, 'gdpGrowthPct', sourceNumber(base, ['gdpGrowthPct', 'gdp_growth', 'growthRatePct']));
+    const inflation = preferBehaviorMetric(behavior, 'inflationPct', sourceNumber(base, ['inflationRatePct', 'inflationPct', 'inflation']));
+    const unemployment = preferBehaviorMetric(behavior, 'unemploymentPct', sourceNumber(base, ['unemploymentRatePct', 'unemployment_rate', 'unemploymentPct']));
+    const debtRatio = preferBehaviorMetric(behavior, 'debtToGdpPct', sourceNumber(base, ['publicDebtToGdpPct', 'debtToGdpPct']));
+    const budget = preferBehaviorMetric(behavior, 'budgetBalanceToGdpPct', sourceNumber(base, ['governmentBudgetBalanceUsd', 'budget_balance', 'budgetBalance']));
+    const tradeRatio = preferBehaviorMetric(behavior, 'tradeBalanceToGdpPct', sourceNumber(base, ['tradeBalanceToGdpPct', 'tradeBalancePctGdp']));
+    const tradeBalance = preferBehaviorMetric(behavior, 'tradeBalanceUsd', sourceNumber(base, ['tradeBalanceUsd', 'trade_balance', 'tradeBalance']));
+    const reserves = preferBehaviorMetric(behavior, 'fxReservesUsd', sourceNumber(base, ['foreignExchangeReservesUsd', 'fxReservesUsd', 'reserves']));
+    const fx = num(behavior?.metrics?.fxReservesUsd) ?? num(base?.indicators?.foreignExchangeReservesUsd ?? base?.indicators?.fxReservesUsd ?? base?.sourceValues?.reserves);
+    const militaryPct = num(behavior?.metrics?.militaryExpenditurePctGdp) ??
+      strategicNumber(strategic, 'military.militaryExpenditurePctGdp') ?? num(base?.indicators?.militaryExpenditurePctGdp);
     const governance = strategic?.politics || behavior?.domainSignals?.politics || {};
     const resources = behavior?.domainSignals?.resources || {};
     const diplomacy = strategic?.diplomacy || behavior?.domainSignals?.diplomacy || {};
@@ -321,7 +335,12 @@
       metricCard('Inflation', inflation.value, '%', inflation.source || 'not recorded') +
       metricCard('Unemployment', unemployment.value, '%', unemployment.source || 'not recorded') +
       metricCard('Public debt / GDP', debtRatio.value, '%', debtRatio.source || 'not recorded') +
-      metricCard('Budget balance', budget.value, 'USD', budget.source || 'not recorded') +
+      metricCard('Budget balance', behavior?.metrics?.budgetBalanceToGdpPct !== null && behavior?.metrics?.budgetBalanceToGdpPct !== undefined
+        ? behavior.metrics.budgetBalanceToGdpPct : budget.value,
+        behavior?.metrics?.budgetBalanceToGdpPct !== null && behavior?.metrics?.budgetBalanceToGdpPct !== undefined ? '%' : 'USD',
+        behavior?.metrics?.budgetBalanceToGdpPct !== null && behavior?.metrics?.budgetBalanceToGdpPct !== undefined
+          ? 'Budget balance / GDP · ' + (behavior.metricSources?.budgetBalanceToGdpPct?.source || 'registered ratio')
+          : budget.source || 'not recorded') +
       metricCard('Trade balance', tradeBalance.value, 'USD', tradeBalance.source || 'not recorded') +
       metricCard('Trade balance / GDP', tradeRatio.value, '%', tradeRatio.source || 'not recorded') +
       metricCard('Foreign-exchange reserves', fx ?? reserves.value, 'USD', reserves.source || 'not recorded') +
