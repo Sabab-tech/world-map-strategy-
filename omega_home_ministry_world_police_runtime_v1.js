@@ -26,6 +26,42 @@
       if (!response || !response.ok) throw new Error('POLICE_BASELINE_FETCH_FAILED');
       return response.json();
     }).then(function (payload) {
+      return g.fetch(new URL('omega_home_ministry_training_recruitment_level_baseline_v1.json', dataUrl()).toString(), { cache: 'no-cache' }).then(function (response) {
+        if (!response || !response.ok) throw new Error('CAPABILITY_BASELINE_FETCH_FAILED');
+        return response.json();
+      }).then(function (capabilityPayload) {
+        if (!capabilityPayload || capabilityPayload.schemaVersion !== '1.0.0' || !Array.isArray(capabilityPayload.countries) || capabilityPayload.countries.length < 200)
+          throw new Error('CAPABILITY_BASELINE_DATA_INVALID');
+        function alias(value) { return String(value || '').trim().toUpperCase().replace(/[-\\s]+/g, '_'); }
+        var lookup = Object.create(null);
+        capabilityPayload.countries.forEach(function (row) {
+          [row.code, row.iso2, row.iso3, row.name].filter(Boolean).forEach(function (value) { lookup[alias(value)] = row; });
+        });
+        var matched = 0;
+        payload.countries.forEach(function (row) {
+          var capability = lookup[alias(row.code)] || lookup[alias(row.iso2)] || lookup[alias(row.iso3)] || lookup[alias(row.name)];
+          if (!capability || !Number.isFinite(Number(capability.trainingLevel)) || !Number.isFinite(Number(capability.recruitmentLevel))) return;
+          row.capabilityBaseline = {
+            modelVersion: capabilityPayload.model && capabilityPayload.model.version || 'country-capability-score-v1',
+            trainingLevel: Number(capability.trainingLevel), recruitmentLevel: Number(capability.recruitmentLevel),
+            trainingScore: Number(capability.trainingScore), recruitmentScore: Number(capability.recruitmentScore),
+            costIndex: Number(capability.costIndex), levelAuthority: capability.levelAuthority || 'MODELED_SIMULATION_ESTIMATE',
+            dataCoverage: capability.dataCoverage || {}, observedHomicide: capability.observedHomicide || null,
+            sourceAsset: 'omega_home_ministry_training_recruitment_level_baseline_v1.json'
+          };
+          matched += 1;
+        });
+        payload.capabilityBaselineVersion = capabilityPayload.schemaVersion;
+        payload.capabilityBaselineCoverage = matched;
+        payload.capabilityBaselineError = matched < 200 ? 'CAPABILITY_BASELINE_COUNTRY_COVERAGE_LOW' : null;
+        if (matched < 200) throw new Error('CAPABILITY_BASELINE_COUNTRY_COVERAGE_LOW');
+        return payload;
+      }).catch(function (error) {
+        payload.capabilityBaselineError = String(error && error.message || error);
+        payload.capabilityBaselineCoverage = payload.countries.filter(function (row) { return !!row.capabilityBaseline; }).length;
+        return payload;
+      });
+    }).then(function (payload) {
       var e = engine();
       if (!e || typeof e.bootstrapCountryPoliceBaselines !== 'function') throw new Error('HOME_MINISTRY_BASELINE_API_UNAVAILABLE');
       if (!payload || payload.schemaVersion !== '1.0.0' || !Array.isArray(payload.countries) || payload.countries.length < 200)
@@ -38,6 +74,9 @@
         migratedLegacyFleetCountries: result.migratedLegacyFleetCountries || 0,
         populationCoverage: payload.countries.filter(function (r) { return r.population && Number(r.population.value) > 0; }).length,
         observedHomicideCoverage: payload.countries.filter(function (r) { return r.crime && r.crime.observedHomicide && Number.isFinite(Number(r.crime.observedHomicide.ratePer100k)); }).length,
+        capabilityBaselineVersion: payload.capabilityBaselineVersion || null,
+        capabilityBaselineCoverage: Number(payload.capabilityBaselineCoverage) || 0,
+        capabilityBaselineError: payload.capabilityBaselineError || null,
         vehicleTypes: Array.isArray(payload.vehicles) ? payload.vehicles.length : 0,
         globalStartingPoliceEstimate: payload.countries.reduce(function (sum, r) { return sum + Math.max(0, Number(r.baselinePolice && r.baselinePolice.activePersonnel) || 0); }, 0),
         globalStartingFleetEstimate: payload.countries.reduce(function (sum, r) { return sum + Math.max(0, Number(r.baselineFleet && r.baselineFleet.totalUnits) || 0); }, 0),
