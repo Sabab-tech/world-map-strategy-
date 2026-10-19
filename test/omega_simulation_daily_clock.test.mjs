@@ -184,12 +184,12 @@ test('finance, FX, macro and ministry time fallbacks treat one turn as one day',
 
   assert.equal(transmissionRules.simulationTurnDurationMs, DAY_MS);
   assert.equal(macroRules.simulationTurnDurationMs, DAY_MS);
-  assert.match(transmission, /\\?\\?DAY_MS/);
-  assert.doesNotMatch(transmission, /Math\\.floor\\(currentTurn\\(\\)\\s*\\/\\s*24\\)/);
-  assert.match(fx, /finite\\(durationMs\\) \\?\\? DAY_MS/);
-  assert.match(fx, /Math\\.floor\\(turnNumber\\) % 3 === 0/);
-  assert.match(macro, /simulationTurnDurationMs\\|\\|86400000/);
+  assert.match(transmission, /\?\?DAY_MS/);
+  assert.doesNotMatch(transmission, /Math\.floor\(currentTurn\(\)\s*\/\s*24\)/);
+  assert.match(fx, /finite\(durationMs\) \?\? DAY_MS/);
+  assert.match(fx, /Math\.floor\(turnNumber\) % 3 === 0/);
+  assert.match(macro, /simulationTurnDurationMs\|\|86400000/);
   assert.doesNotMatch(macro, /315864000000/);
-  assert.match(home, /const step=num\\(sim&&sim\\.clock&&sim\\.stepDurationMs\\)\\|\\|DAY_MS/);
-  assert.match(military, /simTurn\\(\\) \\* 86400000/);
+  assert.match(home, /const step=num\(sim&&sim\.clock&&sim\.stepDurationMs\)\|\|DAY_MS/);
+  assert.match(military, /simTurn\(\) \* 86400000/);
 });
