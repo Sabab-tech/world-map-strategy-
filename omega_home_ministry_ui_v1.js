@@ -385,7 +385,7 @@
           '<div class="home-police-kpi"><strong>' + esc(money(e, summary ? summary.unallocated : 0)) + '</strong><span>Not assigned to a category</span></div>' +
         '</div>' +
         '<div class="home-police-alert">' +
-          (summary && summary.financeAllocation > 0 ? 'Finance allocation source: <strong>' + esc(summary.financeAllocationSource || 'Recorded finance ledger') + '</strong>. The category caps cannot exceed the approved ministry budget.' : 'No recognizable Home Ministry allocation was found in Finance. Enter a budget ceiling below; it must not exceed the treasury balance. This is a ministry spending ceiling, not a cash credit.') +
+          (summary && summary.financeAllocationSource ? 'Finance allocation source: <strong>' + esc(summary.financeAllocationSource) + '</strong>. Recorded allocation: <strong>' + esc(money(e,summary.financeAllocation)) + '</strong>. A zero allocation means no Home Ministry spending is authorized.' : 'No recognizable Home Ministry allocation was found in Finance. Enter a budget ceiling below; it must not exceed the treasury balance. This is a ministry spending ceiling, not a cash credit.') +
         '</div>' +
         '<div class="home-police-panel"><label class="home-police-label" for="home-police-budget-amount">Home Ministry authorized total budget</label>' +
           '<input id="home-police-budget-amount" class="home-police-field" type="number" min="0" step="any" inputmode="decimal" value="' + esc(amount) + '">' +
@@ -423,13 +423,14 @@
         if (hint) hint.textContent = money(e,cap);
       });
       const financeLimit = Number(summary && summary.financeAllocation) || 0;
-      const ceiling = financeLimit > 0 ? financeLimit : (treasury && treasury.available ? treasury.balance : 0);
+      const hasFinanceAllocation = !!(summary && summary.financeAllocationSource);
+      const ceiling = hasFinanceAllocation ? financeLimit : (treasury && treasury.available ? treasury.balance : 0);
       const caps = Math.max(0,total) * percent / 100 + fixed;
       const message = invalid ? 'Invalid amount: use non-negative numbers only.' :
         !Number.isFinite(total) || total < 0 ? 'BLOCKED: enter a non-negative total budget.' :
         percent > 100.000001 ? 'BLOCKED: percentage allocation exceeds 100%.' :
         caps > total + 0.01 ? 'BLOCKED: category caps exceed this budget.' :
-        financeLimit > 0 && total > financeLimit + 0.01 ? 'BLOCKED: exceeds the Finance Ministry allocation.' :
+        hasFinanceAllocation && total > financeLimit + 0.01 ? 'BLOCKED: exceeds the Finance Ministry allocation.' :
         !(treasury && treasury.available) ? 'BLOCKED: authoritative national treasury is unavailable.' :
         total > ceiling + 0.01 ? 'BLOCKED: amount exceeds the available authorization ceiling ' + money(e,ceiling) + '.' :
         'Valid preview: ' + money(e,caps) + ' assigned across categories; ' + money(e,Math.max(0,total-caps)) + ' remains unallocated.';
