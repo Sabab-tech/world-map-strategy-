@@ -530,10 +530,9 @@
       lifecycleTickUnregister = null;
     }
     lifecycleTickUnregister = sim.registerTurnParticipant('omega.game-lifecycle.autosave', function () {
-      // Runs last, after the complete awaited sector pipeline. localStorage is synchronous;
-      // IndexedDB is maintained as the secondary durable copy.
-      saveNow({ force: true, committedTurn: true });
-      updateHud();
+      // Runs last, after the complete awaited sector pipeline. saveNow reconciles HUD data
+      // before snapshotting; do not mutate state again after the durable write.
+      return saveNow({ force: true, committedTurn: true });
     }, { priority: Number.MAX_SAFE_INTEGER });
     return true;
   }
