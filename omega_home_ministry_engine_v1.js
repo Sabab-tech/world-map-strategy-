@@ -163,7 +163,9 @@
     const cid=normalizeCountry(country||currentCountry());
     const aliases=new Set(['interiorsecurity','homeaffairs','homeministry','ministryofhomeaffairs','homeaffairsministry','police','interior']);
     for(const root of [g.Game&&g.Game.state,g.gameState].filter(Boolean)){
-      const finance=root&&root.finance&&root.finance[cid],allocations=finance&&finance.ministryAllocations;
+      const financeRows=root&&root.finance||{};
+      const financeKey=Object.keys(financeRows).find(key=>normalizeCountry(key)===cid)||cid;
+      const finance=financeRows&&financeRows[financeKey],allocations=finance&&finance.ministryAllocations;
       if(!allocations)continue;
       if(Array.isArray(allocations)){
         const row=allocations.find(item=>aliases.has(normalizeKey(item&&(item.ministryId||item.ministry||item.department||item.key||item.id||item.name))));
