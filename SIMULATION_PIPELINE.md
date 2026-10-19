@@ -36,6 +36,6 @@ Participants should be deterministic and idempotent by turn. Persist the turn th
 
 ## Save contract
 
-The lifecycle autosave runs as the final participant after all sector handlers have finished. It writes the authoritative simulation snapshot synchronously to local storage where available and queues an IndexedDB backup. State-change events trigger a debounced save after any current turn finishes. `visibilitychange`, page `freeze`, `pagehide`, and `beforeunload` also trigger a synchronous best-effort snapshot.
+The lifecycle autosave runs in the dedicated finalizer phase after all sector participants, the publish hook, and the checkpoint phase have finished. It writes the authoritative simulation snapshot synchronously to local storage where available and waits for the IndexedDB transaction if that is the only durable storage available. State-change events outside a turn save synchronously; mutations during a turn are persisted after that turn finishes. `visibilitychange`, page `freeze`, `pagehide`, and `beforeunload` trigger a best-effort snapshot. If exit occurs mid-turn, the runtime preserves the last coherent checkpoint rather than overwrite it with a half-applied day.
 
 No browser application can guarantee a new write after the operating system has killed its process or power has been lost. The mitigation is to save each completed turn and meaningful state mutation before relying on an exit callback, rather than treating the Back button or unload event as the primary save mechanism.
