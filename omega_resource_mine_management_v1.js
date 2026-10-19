@@ -61,6 +61,19 @@ function sourceStatus(site){const op=site?.operation||{};return op.realWorldStat
 function playerCommissioned(site,country){return assetRows(country).some(a=>String(a.siteId)===siteIdOf(site)&&String(a.status||'').toUpperCase()==='OPERATIONAL');}
 function projectFor(site,country){return playerProjects(country).filter(p=>p.projectType==='MINE_CONSTRUCTION'&&String(p.siteId)===siteIdOf(site)).slice(-1)[0]||null;}
 function resourceLabel(site){return label(site?.identity?.resourceName||resourceOf(site));}
+function reserveSummary(site){
+ const reserve=site?.quantitative?.reserve||{},measured=num(reserve.quantity),status=String(reserve.status||'UNOBSERVED').toUpperCase();
+ if(measured!==null&&['OBSERVED','OBSERVED_ATTRIBUTABLE','REPORTED'].includes(status))return 'Reported reserve: '+formatNum(measured,2)+' '+String(reserve.unit||'units')+' ('+label(status)+')';
+ const seed=num(site?.simulation?.reserve?.quantity??site?.reserve?.quantity);
+ if(seed!==null&&String(site?.simulation?.reserve?.status||site?.reserve?.status||'').toUpperCase()==='SIMULATED')return 'Gameplay seed only: '+formatNum(seed,2)+' '+String(site?.simulation?.reserve?.unit||site?.reserve?.unit||'units');
+ return 'Reserve: '+label(status)+' (no measured quantity)';
+}
+function productionSummary(site){
+ const p=site?.quantitative?.production||{},annual=num(p.annual),rate=num(p.rate),status=String(p.status||'UNOBSERVED').toUpperCase();
+ if(annual!==null&&['OBSERVED','OBSERVED_ATTRIBUTABLE','REPORTED'].includes(status))return 'Annual output: '+formatNum(annual,2)+' '+String(p.annualUnit||p.unit||'units')+' ('+label(status)+')';
+ if(rate!==null&&['OBSERVED','OBSERVED_ATTRIBUTABLE','REPORTED'].includes(status))return 'Output rate: '+formatNum(rate,2)+' '+String(p.unit||'units')+' ('+label(status)+')';
+ return 'Measured production: '+label(status);
+}
 function quoteFor(site,country,workers){
  const api=network();if(!api?.quoteMineProject)return{status:'BLOCKED',reason:'MINE_CONSTRUCTION_API_UNAVAILABLE'};
  return api.quoteMineProject({countryId:country,siteId:siteIdOf(site),resourceId:resourceOf(site),assignedWorkers:workers});
@@ -140,7 +153,9 @@ function siteCard(site,country,view){
  html+='<div class="omm-lines"><div class="omm-line"><span class="omm-muted">Site source status</span><br>'+esc(label(source))+'</div>'+
    '<div class="omm-line"><span class="omm-muted">Mine asset status</span><br>'+esc(asset?'Operational · turn '+asset.commissionedTurn:(project?label(project.status):'Not player-commissioned'))+'</div>'+
    '<div class="omm-line"><span class="omm-muted">Resource ID</span><br>'+esc(rid)+'</div>'+
-   '<div class="omm-line"><span class="omm-muted">Data precision</span><br>'+esc(label(site.location?.coordinatePrecision||site.location?.coordinateStatus||'UNOBSERVED'))+'</div></div>';
+   '<div class="omm-line"><span class="omm-muted">Data precision</span><br>'+esc(label(site.location?.coordinatePrecision||site.location?.coordinateStatus||'UNOBSERVED'))+'</div>'+
+    '<div class="omm-line"><span class="omm-muted">Reserve status</span><br>'+esc(reserveSummary(site))+'</div>'+
+    '<div class="omm-line"><span class="omm-muted">Production status</span><br>'+esc(productionSummary(site))+'</div></div>';
  if(quote.status==='QUOTED'){
   html+='<div class="omm-section"><h4>Construction estimate</h4><div class="omm-lines">'+
    '<div class="omm-line"><span class="omm-muted">Estimated capital cost</span><br><strong>'+formatMoney(quote.costUsd)+'</strong></div>'+
@@ -186,7 +201,7 @@ function myMines(country){
   const site=canonical.find(x=>siteIdOf(x)===String(a.siteId))||{siteId:a.siteId,siteName:a.siteName,identity:{resourceTypeId:a.resourceId}};
   return '<article class="omm-card"><div class="omm-card-head"><div><h3>'+esc(a.siteName||site.siteName||a.siteId)+'</h3><div class="omm-sub">'+esc(label(a.resourceId))+'</div></div><span class="omm-pill">'+esc(label(a.status))+'</span></div>'+
   '<div class="omm-lines"><div class="omm-line"><span class="omm-muted">Commissioned</span><br>'+esc(a.commissionedTurn??'—')+'</div><div class="omm-line"><span class="omm-muted">Project</span><br>'+esc(a.buildProjectId||'—')+'</div><div class="omm-line"><span class="omm-muted">Construction cost</span><br>'+formatMoney(a.constructionCostUsd)+'</div><div class="omm-line"><span class="omm-muted">Staffed workforce</span><br>'+formatNum(a.workersCommitted)+' / '+formatNum(a.workersRequired)+'</div></div>'+
-  '<div class="omm-actions"><button data-omm-action="focus-site" data-site-id="'+esc(a.siteId)+'">'+SVG_MOUNTAIN+' View site</button><button data-omm-action="run-mine" data-site-id="'+esc(a.siteId)+'" data-resource-id="'+esc(a.resourceId)+'">Run extraction pipeline</button></div></article>';
+  '<div class="omm-actions"><label for="omm-output-'+esc(a.siteId)+'">Ore quantity</label><input class="omm-input" id="omm-output-'+esc(a.siteId)+'" data-omm-quantity="'+esc(a.siteId)+'" type="number" min="1" step="1" value="1000" aria-label="Extraction quantity for '+esc(a.siteName||a.siteId)+'"><button data-omm-action="focus-site" data-site-id="'+esc(a.siteId)+'">'+SVG_MOUNTAIN+' View site</button><button data-omm-action="run-mine" data-site-id="'+esc(a.siteId)+'" data-resource-id="'+esc(a.resourceId)+'">Run extraction pipeline</button></div></article>';
  }).join('')+'</div>';
  out+='<div class="omm-section"><h3>Mine construction & commissioning</h3>';
  if(!projects.length)out+='<div class="omm-empty">No mine construction projects yet.</div>';
@@ -208,14 +223,14 @@ function ensureModal(){
  shellStyle();let modal=g.document.getElementById('omega-mine-management-modal');if(modal)return modal;
  modal=g.document.createElement('div');modal.id='omega-mine-management-modal';modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');modal.setAttribute('aria-label','Resource Ministry mine management');
  modal.addEventListener('click',onClick);
- modal.addEventListener('change',function(e){if(e.target?.matches?.('[data-omm-country]')){currentCountry=iso3(e.target.value);render();}});
+ modal.addEventListener('change',function(e){if(e.target?.matches?.('[data-omm-country]')){currentCountry=currentView==='mines'?iso3(e.target.value):playerCountry();render();}});
  modal.addEventListener('keydown',function(e){if(e.key==='Escape')close();});
  g.document.body.appendChild(modal);return modal;
 }
 function render(){
  const modal=ensureModal(),country=currentCountry||playerCountry(),player=playerCountry();currentCountry=country;
  const isPlayer=country===player;
- modal.innerHTML='<div class="omm-shell"><header class="omm-head"><div><h2>'+SVG_MOUNTAIN+' Resource Ministry · Mine Management</h2><div class="omm-sub">Country-scoped site registry, mine construction, extraction and stock ledger · '+esc(VERSION)+'</div></div><div class="omm-actions">'+countrySelect()+'<button data-omm-action="refresh">Refresh</button><button class="omm-danger" data-omm-action="close" aria-label="Close mine management">Close</button></div></header>'+
+ modal.innerHTML='<div class="omm-shell"><header class="omm-head"><div><h2>'+SVG_MOUNTAIN+' Resource Ministry · Mine Management</h2><div class="omm-sub">Country-scoped site registry, mine construction, extraction and stock ledger · '+esc(VERSION)+'</div></div><div class="omm-actions">'+(currentView==='mines'?countrySelect():'<span class="omm-pill">PLAYER COUNTRY · '+esc(countryName(country))+'</span>')+'<button data-omm-action="refresh">Refresh</button><button class="omm-danger" data-omm-action="close" aria-label="Close mine management">Close</button></div></header>'+
  '<div class="omm-tabs"><button data-omm-action="tab-my-mines" class="'+(currentView==='my-mines'?'omm-primary':'')+'">'+SVG_PICKAXE+' My Mines</button><button data-omm-action="tab-mines" class="'+(currentView==='mines'?'omm-primary':'')+'">'+SVG_MOUNTAIN+' Mines</button></div>'+
  (!isPlayer?'<div class="omm-alert">Viewing '+esc(countryName(country))+' in read-only mode. Mine building and production are restricted to the active player country ('+esc(player||'UNRESOLVED')+').</div>':'')+
  (lastOutcome?'<div class="omm-status" role="status" aria-live="polite">'+esc(lastOutcome)+'</div>':'')+
