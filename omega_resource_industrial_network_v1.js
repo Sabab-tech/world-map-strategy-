@@ -1065,7 +1065,7 @@ function mineConstructionStock(c,rid){
   if(invAmount!==null&&warehouseFree!==null){available=Math.min(invAmount,warehouseFree);authority='INVENTORY_AND_RAW_WAREHOUSE_LEDGER';}
   else if(warehouseFree!==null){available=warehouseFree;authority='RAW_WAREHOUSE_LEDGER';}
   else if(invAmount!==null){available=invAmount;authority='LEGACY_INVENTORY_AGGREGATE_ONLY';}
-  return{resourceId:rid,inventoryKey:invKey,warehouseKey,inventoryAmount:invAmount,warehouseAvailable:warehouseFree,reserved,available:available===null?0:available,authority};
+  return{resourceId:rid,inventoryKey:invKey,warehouseKey,inventoryAmount:invAmount,warehouseBalance:warehouseAmount,warehouseAvailable:warehouseFree,reserved,available:available===null?0:available,authority};
 }
 function quoteMineProject(input={}){
   const cid=canonicalCountry(input.countryId),siteId=String(input.siteId||'').trim(),rid=tok(input.resourceId||'');
@@ -1138,13 +1138,14 @@ function consumeMineConstructionMaterial(c,material,quantity,projectId){
   const invKey=stock.inventoryKey||material,warehouseKey=stock.warehouseKey||material;
   if(stock.inventoryAmount!==null)inv[invKey]=Math.max(0,stock.inventoryAmount-quantity);
   else inv[invKey]=Math.max(0,Number(inv[invKey])||0);
-  if(stock.warehouseAvailable!==null)warehouse.availableByResource[warehouseKey]=Math.max(0,stock.warehouseAvailable-quantity);
-  else warehouse.availableByResource[warehouseKey]=Math.max(0,(num(warehouse.availableByResource[warehouseKey])||0)-quantity);
+  if(stock.warehouseBalance!==null)warehouse.availableByResource[warehouseKey]=Math.max(0,stock.warehouseBalance-quantity);
   rs.inventory=inv;rs.warehouse=warehouse;rs.batches=batches;rs.inventoryLots=lots;
   return allocations;
 }
 function startMineProject(input={}){
   const cid=canonicalCountry(input.countryId),siteId=String(input.siteId||'').trim(),requestId=String(input.requestId||'').trim();
+  if(!cid||!/^[A-Z]{3}$/.test(cid))return{status:'BLOCKED',reason:'VALID_ISO3_COUNTRY_REQUIRED'};
+  if(!siteId)return{status:'BLOCKED',reason:'MINE_SITE_REQUIRED'};
   const n=netState(cid),requests=Array.isArray(n.projects)?n.projects:[];
   if(requestId){
     const prior=requests.find(p=>p.projectType==='MINE_CONSTRUCTION'&&String(p.requestId||'')===requestId);
