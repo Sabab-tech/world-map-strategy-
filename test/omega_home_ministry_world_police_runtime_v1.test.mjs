@@ -94,6 +94,20 @@ test('world police baseline covers the full country registry with provenance-sep
   assert.ok(Object.values(bangladesh.baselineFleet.countsByTier).reduce((sum,n)=>sum+Number(n),0) > 0);
 });
 
+test('country-aware modeled police fleet baseline has diverse mixes and transparent island estimates', () => {
+  const uniqueFleetMixes = new Set(baselineData.countries.map(row => JSON.stringify(row.baselineFleet.countsByTier)));
+  assert.ok(uniqueFleetMixes.size > 200, 'Country-aware vehicle mixes must not collapse into a small shared default catalogue.');
+  for (const code of ['BM', 'MF', 'VG']) {
+    const row = baselineData.countries.find(country => country.code === code);
+    assert.ok(row, code + ': country baseline must exist');
+    assert.match(row.baselineFleet.modelNote || '', /^MODELED_ESTIMATE_NOT_OBSERVED_ROSTER:/,
+      code + ': modeled fleet adjustments must remain clearly distinct from an observed police roster');
+    assert.equal(Object.values(row.baselineFleet.countsByTier).reduce((sum, count) => sum + Number(count), 0),
+      row.baselineFleet.totalUnits, code + ': modeled fleet totals must reconcile');
+    assert.equal(row.fleetProfile.baselineFleetAdjustment.observed, false);
+  }
+});
+
 test('baseline bootstrap seeds every country once, preserves a country opening fleet and produces a baseline crime index of 100', () => {
   const result = engine.bootstrapCountryPoliceBaselines(baselineData.countries);
   assert.equal(result.ok, true);
