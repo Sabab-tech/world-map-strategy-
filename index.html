@@ -39,6 +39,7 @@
     </script>
     <link rel="stylesheet" href="leaflet.css">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="omega_game_lifecycle_runtime_v1.css">
     <link rel="stylesheet" href="omega_forex_monetary_engine_v1.css">
 
     <style>
@@ -261,6 +262,26 @@
                     <span class="status-item debug-fps"><span id="status-fps">FPS N/A</span></span>
                 </div>
             </div>
+
+            <!-- OMEGA persistent game-time and national-finance controls -->
+            <section id="omega-global-time-hud" aria-label="Global game clock and national status">
+                <div class="ogth-topline">
+                    <div class="ogth-time">
+                        <span data-omega-game-status>READY</span>
+                        <strong data-omega-game-date>2015-01-01</strong>
+                        <span data-omega-game-day>DAY 1 · TURN 0</span>
+                    </div>
+                    <span class="ogth-save" data-omega-save>Autosave ready</span>
+                    <div class="ogth-controls" role="group" aria-label="Global simulation controls">
+                        <button type="button" data-omega-action="toggle" aria-label="Resume game" title="Resume game">▶</button>
+                        <button type="button" data-omega-speed="1" class="active" aria-label="Normal game speed" title="Normal speed">1x</button>
+                        <button type="button" data-omega-speed="2" aria-label="Fast game speed" title="Fast speed">2x</button>
+                        <button type="button" data-omega-speed="5" aria-label="Very fast game speed" title="Very fast speed">5x</button>
+                    </div>
+                </div>
+                <div class="ogth-economy" data-omega-economy title="Daily revenue, spending and net are modeled annual Finance figures divided by 365, not observed daily cash receipts.">Treasury and daily fiscal flow: Not recorded</div>
+                <div class="ogth-assets" data-omega-assets>Assets/resources not recorded</div>
+            </section>
 
             <!-- 📊 MAP METRIC & SOVEREIGN INTELLIGENCE DROPDOWN DRAWER -->
             <div id="map-metric-dropdown" class="map-metric-dropdown hidden" style="display:none; position:fixed; top:54px; left:50%; transform:translateX(-50%); z-index:1000000; background:rgba(8,15,26,0.98); border:1.5px solid #00e5ff; border-radius:12px; width:360px; max-width:94vw; padding:12px; box-shadow:0 12px 35px rgba(0,0,0,0.95), 0 0 25px rgba(0,229,255,0.35); backdrop-filter:blur(16px); font-family:var(--font-mono); color:#f8fafc; flex-direction:column; gap:8px;">
@@ -911,6 +932,7 @@
 <script src="education_engine.js" defer></script>
 <script src="world_ecosystem_engine.js" defer></script>
 <script src="omega_simulation_runtime.js" defer></script>
+<script src="omega_game_lifecycle_runtime_v1.js" defer></script>
 <script src="opponent_country_rules.js" defer></script>
 <script src="display_and_layer_system.js" defer></script>
 
