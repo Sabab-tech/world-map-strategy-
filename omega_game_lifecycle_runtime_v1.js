@@ -27,6 +27,14 @@
     return (sim && sim.world && sim.world.state) || (g.Game && g.Game.state) || g.gameState || {};
   }
 
+  function countryCode(value) {
+    if (value && typeof value === 'object') {
+      value = value.iso3 || value.countryCode || value.countryId || value.code || value.id || value.alpha3;
+    }
+    var text = String(value == null ? '' : value).trim().toUpperCase();
+    return text && text !== 'GLOBAL' && text !== 'WORLD' && text !== '[OBJECT OBJECT]' ? text : null;
+  }
+
   function playerCountry(sim) {
     sim = sim || runtime();
     var session = sim && sim.world && sim.world.state && sim.world.state.simulation &&
@@ -41,8 +49,8 @@
       g.currentActiveCountry
     ];
     for (var i = 0; i < candidates.length; i++) {
-      var value = String(candidates[i] == null ? '' : candidates[i]).trim();
-      if (value && value.toUpperCase() !== 'GLOBAL' && value.toUpperCase() !== 'WORLD') return value.toUpperCase();
+      var value = countryCode(candidates[i]);
+      if (value) return value;
     }
     return null;
   }
@@ -325,7 +333,7 @@
     try {
       if (g.Game) {
         g.Game.currentActiveCountry = country;
-        g.Game.playerCountry = country;
+        if (typeof g.Game.playerCountry === 'string' || g.Game.playerCountry == null) g.Game.playerCountry = country;
       }
     } catch (_) {}
     try { if (g.CountryIOS) g.CountryIOS.activeCountry = country; } catch (_) {}
@@ -526,6 +534,9 @@
     g.addEventListener && g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED', queueTurnSave);
     g.addEventListener && g.addEventListener('OMEGA_SIMULATION_STEP_COMPLETED', updateHud);
     g.addEventListener && g.addEventListener('OMEGA_FINANCE_STATE_UPDATED', updateHud);
+    ['COUNTRY_SELECTED', 'COUNTRY_CHANGED', 'OMEGA_COUNTRY_SELECTED', 'OMEGA_PLAYER_COUNTRY_CHANGED', 'MINISTRY_SELECTED'].forEach(function (type) {
+      g.addEventListener && g.addEventListener(type, updateHud);
+    });
     g.addEventListener && g.addEventListener('RESOURCE_STATE_UPDATED', updateHud);
     g.addEventListener && g.addEventListener('OMEGA_READY', function () {
       restoreOnReady().catch(function () {
