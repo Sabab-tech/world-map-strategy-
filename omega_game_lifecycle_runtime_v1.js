@@ -11,6 +11,7 @@
   var lastSavedAt = 0;
   var lastSavedSerialized = '';
   var stateSaveTimer = null;
+  var saveInProgress = false;
   var lifecycleTickUnregister = null;
   var lastKnownSpeed = 1;
   var hiddenWasRunning = false;
@@ -278,7 +279,7 @@
     return dbWriteChain;
   }
 
-  function saveNow(options) {
+  function writeSnapshotNow(options) {
     options = options || {};
     var sim = runtime();
     if (!sim || typeof sim.saveState !== 'function') return false;
@@ -326,6 +327,13 @@
     // Exposed promise lets diagnostics and tests observe IndexedDB completion when available.
     saveNow.lastBackupPromise = backupPromise;
     return localSaved || !!g.indexedDB;
+  }
+
+  function saveNow(options) {
+    if (saveInProgress) return true;
+    saveInProgress = true;
+    try { return writeSnapshotNow(options); }
+    finally { saveInProgress = false; }
   }
   saveNow.lastBackupPromise = Promise.resolve(false);
 
@@ -484,6 +492,7 @@
   }
 
   function scheduleStateSave() {
+    if (saveInProgress) return; // The outer save snapshots after its reconciliation work.
     var sim = runtime();
     // Avoid persisting a half-applied sector turn. The committed-turn finalizer
     // will save synchronously once the ordered pipeline finishes.
@@ -499,11 +508,11 @@
     }
     if (stateSaveTimer !== null) {
       try { g.clearTimeout(stateSaveTimer); } catch (_) {}
-    }
-    stateSaveTimer = g.setTimeout(function () {
       stateSaveTimer = null;
-      saveNow({ force: true });
-    }, 120);
+    }
+    // Outside a turn, persist immediately. Do not leave the newest mutation in a
+    // debounce window that could be lost if the OS terminates the page.
+    saveNow({ force: true });
   }
 
   function registerLifecycleParticipant() {
