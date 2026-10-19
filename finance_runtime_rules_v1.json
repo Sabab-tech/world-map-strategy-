@@ -3,7 +3,7 @@
   "baselineYear": 2015,
   "currency": "USD",
   "annualizationMs": 31536000000,
-  "simulationTurnDurationMs": 3600000,
+  "simulationTurnDurationMs": 86400000,
   "startingTreasuryPercentOfGDP": 2,
   "defaultTaxRatePct": 18,
   "defaultPolicyInterestRatePct": 3,
