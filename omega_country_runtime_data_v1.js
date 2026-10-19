@@ -4,7 +4,7 @@
  */
 (function (root) {
   'use strict';
-  const state = { ready:false, settled:false, error:null, promise:null, profiles:[], extras:new Map(), byCode:new Map(), byIso3:new Map(), byNumeric:new Map(), aliases:new Map(), cities:new Map(), legacyEconomy:{}, legacyPopulation:{} };
+  const state = { ready:false, settled:false, error:null, promise:null, profiles:[], extras:new Map(), byCode:new Map(), byIso3:new Map(), byNumeric:new Map(), aliases:new Map(), cities:new Map(), legacyEconomy:{}, legacyPopulation:{}, generalDataReady:false, generalDataRegistry:null, generalDataByIso3:new Map(), generalDataByCode:new Map(), generalDataMetricIndexes:new Map(), generalDataIdentityIndexes:null };
   const s = v => String(v == null ? '' : v).trim();
   const norm = v => s(v).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/&/g, ' AND ').replace(/[_’'`-]+/g, ' ').replace(/[^A-Z0-9]+/gi, ' ').trim().toUpperCase().replace(/\s+/g, ' ');
   const fixedAliases = {
@@ -37,6 +37,50 @@
       [p.name,p.officialName,p.shortName,p.countryCode,p.iso3,p.numericCode,p.economyKey,p.populationKey].forEach(a => addAlias(a,p,false));
     });
     Object.entries(fixedAliases).forEach(([name,code]) => { const p=state.byCode.get(code); if (p) addAlias(name,p,true); });
+  }
+  function buildGeneralDataRegistry(data) {
+    state.generalDataReady = false;
+    state.generalDataRegistry = null;
+    state.generalDataByIso3.clear();
+    state.generalDataByCode.clear();
+    state.generalDataMetricIndexes.clear();
+    state.generalDataIdentityIndexes = null;
+
+    const schema = data && data.metadata && data.metadata.recordSchema;
+    const identityFields = schema && schema.identityFields;
+    const metricFields = schema && schema.metricFields;
+    if (!Array.isArray(data && data.countries) ||
+        !schema || schema.encoding !== 'ORDERED_VALUE_ARRAYS_V1' ||
+        !Array.isArray(identityFields) || !Array.isArray(metricFields) ||
+        !data.metadata.provenanceEncoding) return false;
+
+    const indexes = {
+      iso2: identityFields.indexOf('iso2'),
+      iso3: identityFields.indexOf('iso3'),
+      name: identityFields.indexOf('name')
+    };
+    if (indexes.iso2 < 0 || indexes.iso3 < 0 || indexes.name < 0) return false;
+
+    metricFields.forEach((key, index) => {
+      if (typeof key === 'string' && key) state.generalDataMetricIndexes.set(key, index);
+    });
+    data.countries.forEach(row => {
+      if (!row || !Array.isArray(row.identity) || !Array.isArray(row.metrics) || !row.metricMetadata) return;
+      const iso3 = s(row.identity[indexes.iso3]).toUpperCase();
+      const iso2 = s(row.identity[indexes.iso2]).toUpperCase();
+      if (!/^[A-Z]{3}$/.test(iso3) || row.metrics.length !== metricFields.length) return;
+      state.generalDataByIso3.set(iso3, row);
+      if (/^[A-Z]{2}$/.test(iso2)) state.generalDataByCode.set(iso2, row);
+    });
+
+    if (!state.generalDataByIso3.size) {
+      state.generalDataMetricIndexes.clear();
+      return false;
+    }
+    state.generalDataRegistry = data;
+    state.generalDataIdentityIndexes = indexes;
+    state.generalDataReady = true;
+    return true;
   }
   function addSupplementalIdentities() {
     // Kosovo occurs in the repository's legacy economy, population, and city datasets
@@ -116,6 +160,64 @@
     if ((!base||typeof base!=='object')&&(!legacy||typeof legacy!=='object')&&(!live||typeof live!=='object')) return null;
     return Object.assign({},legacy&&typeof legacy==='object'?legacy:{},base&&typeof base==='object'?base:{},live&&typeof live==='object'?live:{});
   }
+  function getGeneralData(value) {
+    if (!state.generalDataReady || !state.generalDataRegistry) return null;
+    const profile = resolveCountry(value);
+    if (!profile) return null;
+    const row = state.generalDataByIso3.get(s(profile.iso3).toUpperCase()) ||
+      state.generalDataByCode.get(s(profile.countryCode).toUpperCase());
+    if (!row) return null;
+
+    const metadata = state.generalDataRegistry.metadata || {};
+    const schema = metadata.recordSchema || {};
+    const enc = metadata.provenanceEncoding || {};
+    const recordIdentity = {};
+    (schema.identityFields || []).forEach((key, index) => {
+      recordIdentity[key] = row.identity[index] === undefined ? null : row.identity[index];
+    });
+
+    const metrics = {};
+    (schema.metricFields || []).forEach((key, index) => {
+      const metricInfo = Array.isArray(state.generalDataRegistry.fieldCatalogue)
+        ? state.generalDataRegistry.fieldCatalogue.find(field => field && field.key === key) || {}
+        : {};
+      const metricMeta = row.metricMetadata || {};
+      const decode = (fieldName, dictionary) => {
+        const valueAtIndex = Array.isArray(metricMeta[fieldName]) ? metricMeta[fieldName][index] : null;
+        if (typeof valueAtIndex !== 'number' || valueAtIndex < 0 || !Array.isArray(dictionary)) return null;
+        return dictionary[valueAtIndex] === undefined ? null : dictionary[valueAtIndex];
+      };
+      const year = Array.isArray(metricMeta.years) ? metricMeta.years[index] : null;
+      const value = Array.isArray(row.metrics) ? row.metrics[index] : null;
+      metrics[key] = {
+        key,
+        name: metricInfo.name || key,
+        unit: metricInfo.unit || null,
+        description: metricInfo.description || null,
+        value: value === undefined ? null : value,
+        year: Number.isFinite(year) ? year : null,
+        status: decode('statusCodes', enc.statuses),
+        sourceId: decode('sourceCodes', enc.sourceIds),
+        sourceName: decode('sourceNameCodes', enc.sourceNames),
+        method: decode('methodCodes', enc.methods),
+        sourceUrl: Array.isArray(metricMeta.sourceUrls) ? metricMeta.sourceUrls[index] || null : null,
+        note: Array.isArray(metricMeta.notes) ? metricMeta.notes[index] || null : null
+      };
+    });
+
+    return {
+      identity: recordIdentity,
+      metrics,
+      generatedAt: metadata.generatedAt || null,
+      dataQualityPolicy: metadata.dataQualityPolicy || null
+    };
+  }
+  function getGeneralMetric(value, key) {
+    const data = getGeneralData(value);
+    const metricKey = s(key);
+    return data && data.metrics && Object.prototype.hasOwnProperty.call(data.metrics, metricKey)
+      ? data.metrics[metricKey] : null;
+  }
   function getCities(value) {
     const p=resolveCountry(value), row=p&&state.cities.get(p.countryCode);
     return row&&Array.isArray(row.cities)?row.cities.map(item=>Object.assign({},item)):[];
@@ -129,7 +231,10 @@
     return Object.assign({},p,{flag:flagFor(p),capital:getCapital(p.countryCode),cities:getCities(p.countryCode)});
   }
   function diagnostics() {
-    return {version:'1.0.0',ready:state.ready,settled:state.settled,error:state.error,profileCount:state.profiles.length,countryIdentityCount:state.byCode.size+state.extras.size,flagCount:state.profiles.concat(Array.from(state.extras.values())).filter(p=>!!flagFor(p)).length,capitalCount:state.cities.size,profilesWithEconomy:state.profiles.filter(p=>p.sourceValues&&typeof p.sourceValues==='object').length,profilesWithPopulation:state.profiles.filter(p=>p.populationValues&&typeof p.populationValues==='object').length,legacyEconomyRecords:Object.keys(state.legacyEconomy).length,legacyPopulationRecords:Object.keys(state.legacyPopulation).length};
+    const rows = Array.from(state.generalDataByIso3.values());
+    const populationIndex = state.generalDataMetricIndexes.get('populationTotal');
+    const gdpIndex = state.generalDataMetricIndexes.get('gdpCurrentUsd');
+    return {version:'1.1.0',ready:state.ready,settled:state.settled,error:state.error,profileCount:state.profiles.length,countryIdentityCount:state.byCode.size+state.extras.size,flagCount:state.profiles.concat(Array.from(state.extras.values())).filter(p=>!!flagFor(p)).length,capitalCount:state.cities.size,profilesWithEconomy:state.profiles.filter(p=>p.sourceValues&&typeof p.sourceValues==='object').length,profilesWithPopulation:state.profiles.filter(p=>p.populationValues&&typeof p.populationValues==='object').length,legacyEconomyRecords:Object.keys(state.legacyEconomy).length,legacyPopulationRecords:Object.keys(state.legacyPopulation).length,generalDataRegistryReady:state.generalDataReady,generalDataRecordCount:state.generalDataByIso3.size,generalDataMetricCount:state.generalDataMetricIndexes.size,generalDataPopulationCoverage:populationIndex===undefined?0:rows.filter(row=>row.metrics[populationIndex]!==null&&row.metrics[populationIndex]!==undefined).length,generalDataGdpCoverage:gdpIndex===undefined?0:rows.filter(row=>row.metrics[gdpIndex]!==null&&row.metrics[gdpIndex]!==undefined).length};
   }
   async function load(path,optional) {
     if (typeof root.fetch!=='function') { if(optional)return null; throw new Error('FETCH_UNAVAILABLE:'+path); }
@@ -143,14 +248,16 @@
       load('./economy_global_profiles_v1.json',false),
       load('./cities.json',true).catch(()=>null),
       load('./economy.json',true).catch(()=>null),
-      load('./population.json',true).catch(()=>null)
+      load('./population.json',true).catch(()=>null),
+      load('./country_general_data_registry_v1.json',true).catch(()=>null)
     ])
-      .then(([data,cityData,economyData,populationData])=>{
+      .then(([data,cityData,economyData,populationData,generalData])=>{
         if(!data||!Array.isArray(data.countries))throw new Error('COUNTRY_PROFILE_REGISTRY_INVALID');
         buildProfiles(data.countries);
         addSupplementalIdentities();
         state.legacyEconomy=economyData&&typeof economyData==='object'?economyData:{};
         state.legacyPopulation=populationData&&typeof populationData==='object'?populationData:{};
+        buildGeneralDataRegistry(generalData);
         state.cities.clear();
         (Array.isArray(cityData?.countries)?cityData.countries:[]).forEach(row=>{
           const p=row&&resolveCountry(row.name); if(p)state.cities.set(p.countryCode,row);
@@ -159,5 +266,5 @@
       }).catch(error=>{state.ready=false;state.settled=true;state.error=String(error?.message||error);return false;});
     return state.promise;
   }
-  root.OmegaCountryRuntimeData=Object.freeze({version:'1.0.0',init,ready:init(),isReady:()=>state.ready,isSettled:()=>state.settled,resolveCountry,flagFor,getProfile,getRecord,getCapital,getCities,diagnostics});
+  root.OmegaCountryRuntimeData=Object.freeze({version:'1.1.0',init,ready:init(),isReady:()=>state.ready,isSettled:()=>state.settled,resolveCountry,flagFor,getProfile,getRecord,getGeneralData,getGeneralMetric,getCapital,getCities,diagnostics});
 })(window);
