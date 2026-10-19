@@ -148,7 +148,7 @@ const METRIC_CATALOGUE = [
   { key: 'fiscalRiskIndex', name: 'Repository-derived fiscal risk index', unit: 'index 0-100', description: 'Custom game index. Not a sovereign credit rating.' },
   { key: 'fiscalHealthIndex', name: 'Repository-derived fiscal health index', unit: 'index 0-100', description: '100 minus the repository-derived fiscal risk index.' },
   { key: 'gdpWorldRank', name: 'GDP world rank in local profile', unit: 'rank', description: 'Legacy local-profile rank; methodology and year require verification.' },
-  { key: 'humanDevelopmentIndex', name: 'Human Development Index', unit: 'index 0-1', description: 'Reserved for a sourced UNDP observation; not inferred from GDP.' },
+  { key: 'humanDevelopmentIndex', name: 'Human Development Index', unit: 'index 0-1', description: 'UNDP Human Development Report 2025; official value is for observation year 2023.' },
   { key: 'corruptionPerceptionIndex', name: 'Corruption Perceptions Index', unit: 'rank or score per source release', description: 'Reserved for a dated Transparency International release.' },
   { key: 'globalPeaceIndexRank', name: 'Global Peace Index rank', unit: 'rank', description: 'Reserved for a dated Institute for Economics & Peace release.' },
   { key: 'democracyIndex', name: 'Democracy Index', unit: 'score 0-10', description: 'Reserved for a dated Economist Intelligence Unit release.' },
@@ -173,6 +173,74 @@ async function getJson(url) {
   const response = await fetch(url, { headers: { 'User-Agent': 'OMEGA-Country-General-Data-Registry/1.0', 'Accept': 'application/json' } });
   if (!response.ok) throw new Error('HTTP_' + response.status + ' from ' + url);
   return response.json();
+}
+
+async function getText(url) {
+  const response = await fetch(url, { headers: { 'User-Agent': 'OMEGA-Country-General-Data-Registry/1.0', 'Accept': 'text/csv,text/plain,*/*' } });
+  if (!response.ok) throw new Error('HTTP_' + response.status + ' from ' + url);
+  return response.text();
+}
+
+// Minimal RFC-4180-compatible parser; the registry refresh has no extra runtime dependency.
+function parseCsv(text) {
+  const rows = [];
+  let row = [];
+  let field = '';
+  let quoted = false;
+  for (let i = 0; i < text.length; i += 1) {
+    const ch = text[i];
+    if (quoted) {
+      if (ch === '"' && text[i + 1] === '"') {
+        field += '"';
+        i += 1;
+      } else if (ch === '"') {
+        quoted = false;
+      } else {
+        field += ch;
+      }
+    } else if (ch === '"' && field.length === 0) {
+      quoted = true;
+    } else if (ch === ',') {
+      row.push(field);
+      field = '';
+    } else if (ch === '\n' || ch === '\r') {
+      if (ch === '\r' && text[i + 1] === '\n') i += 1;
+      row.push(field);
+      if (row.some((value) => String(value).trim() !== '')) rows.push(row);
+      row = [];
+      field = '';
+    } else {
+      field += ch;
+    }
+  }
+  if (field.length || row.length) {
+    row.push(field);
+    if (row.some((value) => String(value).trim() !== '')) rows.push(row);
+  }
+  if (quoted) throw new Error('UNDP_HDI_CSV_UNTERMINATED_QUOTED_FIELD');
+  return rows;
+}
+
+async function fetchUndpHdi() {
+  const sourceUrl = 'https://hdr.undp.org/sites/default/files/2025_HDR/HDR25_Composite_indices_complete_time_series.csv';
+  const sourceId = 'UNDP_HDR_2025_COMPOSITE_INDICES';
+  const records = parseCsv(await getText(sourceUrl));
+  if (records.length < 10) throw new Error('UNDP_HDI_CSV_TOO_FEW_ROWS');
+  const headers = records[0].map((value) => String(value).replace(/^\uFEFF/, '').trim().toLowerCase());
+  const isoIndex = headers.indexOf('iso3');
+  const hdiIndex = headers.indexOf('hdi_2023');
+  if (isoIndex < 0 || hdiIndex < 0) {
+    throw new Error('UNDP_HDI_CSV_EXPECTED_COLUMNS_NOT_FOUND: ' + headers.slice(0, 12).join(','));
+  }
+  const byIso3 = new Map();
+  for (const row of records.slice(1)) {
+    const iso3 = String(row[isoIndex] || '').trim().toUpperCase();
+    const value = finite(row[hdiIndex]);
+    if (!/^[A-Z]{3}$/.test(iso3) || value === null || value < 0 || value > 1) continue;
+    byIso3.set(iso3, { value, year: 2023, code: 'hdi_2023', sourceId, sourceUrl });
+  }
+  if (byIso3.size < 100) throw new Error('UNDP_HDI_CSV_TOO_FEW_VALID_COUNTRY_VALUES: ' + byIso3.size);
+  return { byIso3, loaded: true, error: null, sourceId, sourceUrl, rowCount: byIso3.size, observationYear: 2023 };
 }
 
 async function fetchRestCountries() {
@@ -485,7 +553,8 @@ function makeRecord(country, sources, previous, refreshData) {
   for (const field of METRIC_CATALOGUE) {
     const existingMeta = priorMeta[field.key];
     const oldOfficial = existingMeta?.status === 'WORLD_BANK_API_OBSERVATION';
-    if (oldOfficial && finite(priorMetrics[field.key]) !== null) {
+    const oldSourcedHdi = existingMeta?.status === 'UNDP_HDR_OBSERVATION';
+    if ((oldOfficial || oldSourcedHdi) && finite(priorMetrics[field.key]) !== null) {
       metrics[field.key] = finite(priorMetrics[field.key]);
       metricMetadata[field.key] = safeCopy(existingMeta, metricMetadata[field.key]);
     }
@@ -523,6 +592,40 @@ function makeRecord(country, sources, previous, refreshData) {
             : 'The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.'
         };
       }
+    }
+  }
+
+  // HDI is published by UNDP rather than the World Bank WDI API.
+  if (refreshData.undpHdi) {
+    const hdiObservation = refreshData.undpHdi.byIso3.get(String(country.iso3 || '').toUpperCase());
+    if (hdiObservation && hdiObservation.value !== null) {
+      const priorYear = finite(metricMetadata.humanDevelopmentIndex?.year);
+      if (metrics.humanDevelopmentIndex === null || priorYear === null || hdiObservation.year >= priorYear) {
+        metrics.humanDevelopmentIndex = hdiObservation.value;
+        metricMetadata.humanDevelopmentIndex = {
+          year: hdiObservation.year,
+          sourceId: hdiObservation.sourceId,
+          sourceName: 'United Nations Development Programme, Human Development Report 2025',
+          status: 'UNDP_HDR_OBSERVATION',
+          method: 'SOURCE_OBSERVATION',
+          indicatorCode: hdiObservation.code,
+          sourceUrl: hdiObservation.sourceUrl,
+          note: 'Official HDI value from UNDP HDR 2025 composite-index time series; observation year 2023, not publication or simulation year.'
+        };
+      }
+    } else if (REFRESH && metrics.humanDevelopmentIndex === null) {
+      metricMetadata.humanDevelopmentIndex = {
+        year: null,
+        sourceId: refreshData.undpHdi.error ? refreshData.undpHdi.sourceId || 'UNDP_HDR_2025_COMPOSITE_INDICES' : null,
+        sourceName: refreshData.undpHdi.error ? 'United Nations Development Programme, Human Development Reports' : null,
+        status: refreshData.undpHdi.error ? 'SOURCE_REFRESH_FAILED' : 'NO_SOURCE_OBSERVATION',
+        method: 'API_REFRESH_DIAGNOSTIC',
+        indicatorCode: 'hdi_2023',
+        sourceUrl: refreshData.undpHdi.sourceUrl || 'https://hdr.undp.org/data-center/documentation-and-downloads',
+        note: refreshData.undpHdi.error
+          ? 'Official UNDP HDI feed could not be refreshed: ' + refreshData.undpHdi.error
+          : 'No matching ISO3 observation was available in the official UNDP HDI 2023 data. Unknown is not zero.'
+      };
     }
   }
 
@@ -1180,6 +1283,12 @@ async function main() {
   let restCountries = { byIso3: new Map(), loaded: false, error: null };
   let wbMetadata = { metadataByIso2: new Map(), metadataByIso3: new Map(), metadataLoaded: false, metadataError: null };
   let wbData = { byCountry: new Map(), errors: [], loaded: false };
+  let undpHdi = {
+    byIso3: new Map(), loaded: false, error: null,
+    sourceId: 'UNDP_HDR_2025_COMPOSITE_INDICES',
+    sourceUrl: 'https://hdr.undp.org/sites/default/files/2025_HDR/HDR25_Composite_indices_complete_time_series.csv',
+    rowCount: 0, observationYear: 2023
+  };
   if (REFRESH) {
     try { restCountries.byIso3 = await fetchRestCountries(); restCountries.loaded = true; }
     catch (error) { restCountries.error = String(error); console.error('REST Countries refresh failed:', String(error)); }
@@ -1190,9 +1299,12 @@ async function main() {
     } catch (error) { wbMetadata.metadataError = String(error); console.error('World Bank metadata refresh failed:', String(error)); }
     try { const result = await fetchWorldBankIndicators(); wbData.byCountry = result.byCountry; wbData.errors = result.errors; wbData.loaded = true; }
     catch (error) { wbData.errors = [{ error: String(error) }]; console.error('World Bank indicators refresh failed:', String(error)); }
+    try { undpHdi = await fetchUndpHdi(); }
+    catch (error) { undpHdi.error = String(error); console.error('UNDP HDI refresh failed:', String(error)); }
   }
   const refreshData = {
     restCountries,
+    undpHdi,
     worldBank: {
       byCountry: wbData.byCountry, errors: wbData.errors, loaded: wbData.loaded,
       metadataByIso2: wbMetadata.metadataByIso2, metadataByIso3: wbMetadata.metadataByIso3,
@@ -1289,6 +1401,15 @@ async function main() {
       worldBankMetadataLoaded: wbMetadata.metadataLoaded,
       worldBankIndicatorErrors: wbData.errors,
       worldBankMetadataError: wbMetadata.metadataError,
+      undpHdi: {
+        loaded: undpHdi.loaded,
+        error: undpHdi.error,
+        sourceId: undpHdi.sourceId,
+        sourceUrl: undpHdi.sourceUrl,
+        observationYear: undpHdi.observationYear,
+        sourceRowsWithNumericHdi: undpHdi.rowCount,
+        canonicalCountriesWithHdi: rows.filter((row) => undpHdi.byIso3.has(String(row.identity.iso3 || '').toUpperCase())).length
+      },
       governanceIndicatorRefresh: governanceRefresh,
       restCountriesLoaded: restCountries.loaded,
       restCountriesError: restCountries.error,
@@ -1325,6 +1446,7 @@ async function main() {
       { id: 'relation_generation_engine.json', role: 'existing game relation salience profiles; generic default parameters are explicitly detected rather than treated as country-specific behaviour', coverage: relationRows.length, status: 'LOCAL_GAME_MODEL_NOT_INDEPENDENTLY_VERIFIED' },
       { id: 'resource_site_reserve_simulation_v1.json', role: 'existing gameplay extraction-site identities and resource types; simulated reserve amounts are not used as real-world facts', coverage: resourceReserveRows.length, status: 'SCENARIO_SIMULATION_DATA' },
       { id: 'World Bank Indicators API v2', role: 'current/latest non-empty macro, demographic, governance and selected social observations', url: 'https://api.worldbank.org/v2/', enabledBy: '--refresh-sources', status: wbData.loaded ? 'FETCHED' : 'NOT_FETCHED' },
+      { id: 'UNDP Human Development Report 2025 composite-index time series', role: 'official human development index; observation year 2023', url: undpHdi.sourceUrl, enabledBy: '--refresh-sources', status: undpHdi.loaded ? 'FETCHED' : (undpHdi.error ? 'FAILED' : 'NOT_FETCHED'), observationYear: undpHdi.observationYear, matchedRows: undpHdi.rowCount },
       { id: restCountries.byIso3.sourceId || 'REST Countries API', role: 'general facts such as official name, capital, languages, currency codes, area, borders and timezones', url: restCountries.byIso3.sourceId === 'REST_COUNTRIES_GITHUB_MIRROR' ? 'https://github.com/mledoze/countries' : 'https://restcountries.com/', enabledBy: '--refresh-sources', status: restCountries.loaded ? 'FETCHED' : 'NOT_FETCHED' }
     ],
     countries: rows
