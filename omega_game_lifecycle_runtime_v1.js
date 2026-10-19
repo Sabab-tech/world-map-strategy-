@@ -318,6 +318,7 @@
     } catch (_) {
       localSaved = false;
     }
+    saveNow.lastLocalSaved = localSaved;
     var backupPromise = persistBackup(snapshot).then(function () {
       if (!localSaved) setSaveStatus('DEVICE BACKUP SAVED · DAY ' + (turn + 1));
       return true;
@@ -343,6 +344,7 @@
     finally { saveInProgress = false; }
   }
   saveNow.lastBackupPromise = Promise.resolve(false);
+  saveNow.lastLocalSaved = false;
 
   function parseLocalSave() {
     try {
@@ -529,10 +531,16 @@
       try { lifecycleFinalizerUnregister(); } catch (_) {}
       lifecycleFinalizerUnregister = null;
     }
-    lifecycleFinalizerUnregister = sim.registerTurnFinalizer('omega.game-lifecycle.autosave', function () {
+    lifecycleFinalizerUnregister = sim.registerTurnFinalizer('omega.game-lifecycle.autosave', async function (context) {
       // Runs after all sector participants, the publish hook, and the checkpoint phase.
-      // saveNow reconciles HUD data before snapshotting.
-      return saveNow({ force: true, committedTurn: true });
+      // Never report success unless localStorage or the IndexedDB transaction completed.
+      var started = saveNow({ force: true, committedTurn: true });
+      if (!started) throw new Error('NO_DURABLE_SAVE_TARGET');
+      if (!saveNow.lastLocalSaved) {
+        var backupSaved = await saveNow.lastBackupPromise;
+        if (!backupSaved) throw new Error('LOCAL_STORAGE_AND_INDEXEDDB_SAVE_FAILED');
+      }
+      return { turn: context && context.turn, durableTarget: saveNow.lastLocalSaved ? 'localStorage' : 'IndexedDB', savedTurn: lastSavedTurn };
     }, { priority: Number.MAX_SAFE_INTEGER });
     return true;
   }
