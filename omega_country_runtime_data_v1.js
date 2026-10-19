@@ -4,7 +4,7 @@
  */
 (function (root) {
   'use strict';
-  const state = { ready:false, settled:false, error:null, promise:null, profiles:[], extras:new Map(), byCode:new Map(), byIso3:new Map(), byNumeric:new Map(), aliases:new Map(), cities:new Map(), legacyEconomy:{}, legacyPopulation:{} };
+  const state = { ready:false, settled:false, error:null, promise:null, profiles:[], extras:new Map(), byCode:new Map(), byIso3:new Map(), byNumeric:new Map(), aliases:new Map(), cities:new Map(), legacyEconomy:{}, legacyPopulation:{}, strategicProfiles:new Map(), strategicProfileDiagnostics:{available:false,profileCount:0,error:null} };
   const s = v => String(v == null ? '' : v).trim();
   const norm = v => s(v).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/&/g, ' AND ').replace(/[_’'`-]+/g, ' ').replace(/[^A-Z0-9]+/gi, ' ').trim().toUpperCase().replace(/\s+/g, ' ');
   const fixedAliases = {
@@ -124,12 +124,78 @@
     const p=resolveCountry(value), row=p&&state.cities.get(p.countryCode);
     return s(row?.capital?.name)||null;
   }
+  function buildStrategicProfiles(registry) {
+    const profiles = new Map();
+    const schema = registry && registry.metadata && registry.metadata.recordSchema;
+    const identityFields = schema && Array.isArray(schema.identityFields) ? schema.identityFields : [];
+    const strategicFields = schema && Array.isArray(schema.strategicProfileFields) ? schema.strategicProfileFields : [];
+    if (!registry || !Array.isArray(registry.countries) || !identityFields.length || !strategicFields.length) {
+      return {
+        profiles,
+        diagnostics: {
+          available:false,
+          profileCount:0,
+          error:'STRATEGIC_PROFILE_REGISTRY_MISSING_OR_SCHEMA_UNAVAILABLE',
+          expectedSource:'country_general_data_registry_v1.json'
+        }
+      };
+    }
+    const fieldValue = (fields, row, key) => {
+      if (Array.isArray(row)) {
+        const index = fields.indexOf(key);
+        return index >= 0 ? row[index] : null;
+      }
+      return row && typeof row === 'object' ? row[key] : null;
+    };
+    let invalidRows = 0;
+    for (const row of registry.countries) {
+      const identityRow = row && row.identity;
+      const iso2 = String(fieldValue(identityFields, identityRow, 'iso2') || fieldValue(identityFields, identityRow, 'code') || '').trim().toUpperCase();
+      const iso3 = String(fieldValue(identityFields, identityRow, 'iso3') || '').trim().toUpperCase();
+      const profileRow = row && row.strategicProfile;
+      let profile = null;
+      if (Array.isArray(profileRow)) {
+        profile = Object.fromEntries(strategicFields.map((key, index) => [key, profileRow[index] === undefined ? null : profileRow[index]]));
+      } else if (profileRow && typeof profileRow === 'object' && !Array.isArray(profileRow)) {
+        profile = Object.assign({}, profileRow);
+      }
+      if (!iso2 || !profile || !profile.profileVersion || (!iso3 && !fieldValue(identityFields, identityRow, 'name'))) {
+        invalidRows += 1;
+        continue;
+      }
+      profiles.set(iso2, profile);
+      if (iso3) profiles.set(iso3, profile);
+      const name = fieldValue(identityFields, identityRow, 'name');
+      if (name) profiles.set(norm(name), profile);
+    }
+    return {
+      profiles,
+      diagnostics: {
+        available:profiles.size > 0,
+        profileCount:Math.max(0, profiles.size - Math.floor(profiles.size / 2)),
+        indexEntryCount:profiles.size,
+        invalidRows,
+        sourceId:'country_general_data_registry_v1.json',
+        schemaVersion:registry.metadata.schemaVersion || null,
+        profileVersion:registry.metadata.profileVersion || 'PER_RECORD_VERSION',
+        canonicalIdentityCount:Array.isArray(registry.countries) ? registry.countries.length : 0,
+        error:profiles.size ? null : 'STRATEGIC_PROFILE_REGISTRY_CONTAINS_NO_VALID_PROFILE_ROWS'
+      }
+    };
+  }
+  function getStrategicProfile(value) {
+    const identity = resolveCountry(value);
+    if (!identity) return null;
+    return state.strategicProfiles.get(String(identity.countryCode || '').toUpperCase()) ||
+      (identity.iso3 ? state.strategicProfiles.get(String(identity.iso3).toUpperCase()) : null) || null;
+  }
+
   function getProfile(value) {
     const p=resolveCountry(value); if (!p) return null;
     return Object.assign({},p,{flag:flagFor(p),capital:getCapital(p.countryCode),cities:getCities(p.countryCode)});
   }
   function diagnostics() {
-    return {version:'1.0.0',ready:state.ready,settled:state.settled,error:state.error,profileCount:state.profiles.length,countryIdentityCount:state.byCode.size+state.extras.size,flagCount:state.profiles.concat(Array.from(state.extras.values())).filter(p=>!!flagFor(p)).length,capitalCount:state.cities.size,profilesWithEconomy:state.profiles.filter(p=>p.sourceValues&&typeof p.sourceValues==='object').length,profilesWithPopulation:state.profiles.filter(p=>p.populationValues&&typeof p.populationValues==='object').length,legacyEconomyRecords:Object.keys(state.legacyEconomy).length,legacyPopulationRecords:Object.keys(state.legacyPopulation).length};
+    return {version:'1.1.0',ready:state.ready,settled:state.settled,error:state.error,profileCount:state.profiles.length,countryIdentityCount:state.byCode.size+state.extras.size,flagCount:state.profiles.concat(Array.from(state.extras.values())).filter(p=>!!flagFor(p)).length,capitalCount:state.cities.size,profilesWithEconomy:state.profiles.filter(p=>p.sourceValues&&typeof p.sourceValues==='object').length,profilesWithPopulation:state.profiles.filter(p=>p.populationValues&&typeof p.populationValues==='object').length,legacyEconomyRecords:Object.keys(state.legacyEconomy).length,legacyPopulationRecords:Object.keys(state.legacyPopulation).length,strategicProfiles:state.strategicProfileDiagnostics};
   }
   async function load(path,optional) {
     if (typeof root.fetch!=='function') { if(optional)return null; throw new Error('FETCH_UNAVAILABLE:'+path); }
@@ -143,14 +209,18 @@
       load('./economy_global_profiles_v1.json',false),
       load('./cities.json',true).catch(()=>null),
       load('./economy.json',true).catch(()=>null),
-      load('./population.json',true).catch(()=>null)
+      load('./population.json',true).catch(()=>null),
+      load('./country_general_data_registry_v1.json',true).catch(()=>null)
     ])
-      .then(([data,cityData,economyData,populationData])=>{
+      .then(([data,cityData,economyData,populationData,strategicRegistry])=>{
         if(!data||!Array.isArray(data.countries))throw new Error('COUNTRY_PROFILE_REGISTRY_INVALID');
         buildProfiles(data.countries);
         addSupplementalIdentities();
         state.legacyEconomy=economyData&&typeof economyData==='object'?economyData:{};
         state.legacyPopulation=populationData&&typeof populationData==='object'?populationData:{};
+        const strategicIndex=buildStrategicProfiles(strategicRegistry);
+        state.strategicProfiles=strategicIndex.profiles;
+        state.strategicProfileDiagnostics=strategicIndex.diagnostics;
         state.cities.clear();
         (Array.isArray(cityData?.countries)?cityData.countries:[]).forEach(row=>{
           const p=row&&resolveCountry(row.name); if(p)state.cities.set(p.countryCode,row);
@@ -159,5 +229,5 @@
       }).catch(error=>{state.ready=false;state.settled=true;state.error=String(error?.message||error);return false;});
     return state.promise;
   }
-  root.OmegaCountryRuntimeData=Object.freeze({version:'1.0.0',init,ready:init(),isReady:()=>state.ready,isSettled:()=>state.settled,resolveCountry,flagFor,getProfile,getRecord,getCapital,getCities,diagnostics});
+  root.OmegaCountryRuntimeData=Object.freeze({version:'1.1.0',init,ready:init(),isReady:()=>state.ready,isSettled:()=>state.settled,resolveCountry,flagFor,getProfile,getStrategicProfile,getRecord,getCapital,getCities,diagnostics});
 })(window);
