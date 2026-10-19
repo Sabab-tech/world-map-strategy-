@@ -122,3 +122,13 @@ A code change alone is not a successful refresh. During a source refresh, the ge
 The workflow rebuilds both registries from current inputs and remote sources, then tests roster coverage, identity uniqueness, source preservation, year-consistent calculations, missing-value semantics, sector-extension contracts, and WGI source-response diagnostics. Original finance, population, resource and police source files are not rewritten.
 
 The sector profiles are currently a **data layer only**. They are not yet bound to specific dashboard counters or top-screen points; that mapping can be decided separately without rebuilding the underlying data model.
+
+
+### Official HDI source refresh
+
+The registry refresh imports the UNDP Human Development Report Office's published composite-index time series at:
+`https://hdr.undp.org/sites/default/files/2025_HDR/HDR25_Composite_indices_complete_time_series.csv`
+
+The current registry stores the `hdi_2023` series as `humanDevelopmentIndex`, with observation year **2023**, source ID `UNDP_HDR_2025_COMPOSITE_INDICES`, the exact source URL, and status `UNDP_HDR_OBSERVATION`. The year is not relabelled as 2025 merely because the publication is HDR 2025. On refresh failure, a diagnostic status and error are preserved; the builder never manufactures a score or treats missing data as zero. Coverage is recorded in `metadata.externalRefresh.undpHdi` and guarded by tests when an external refresh is requested.
+
+The source publisher reports HDI trends through 2023 in the 2025 HDR tables. The UNDP downloads page lists the time-series dataset and its documentation: https://hdr.undp.org/data-center/documentation-and-downloads.
