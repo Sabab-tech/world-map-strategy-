@@ -77,8 +77,14 @@ jobs:
           node --check omega_ai_context_bridge.js
           node --check test/omega_17_ministry_runtime.test.js
           node --check test/omega_ministry_interoperability.test.js
-          node --check omega_home_ministry_budget_ui_v2.js
+          node --check omega_shared_number_format_v1.js
+          node --check omega_home_ministry_engine_v1.js
+          node --check omega_home_ministry_training_materials_runtime_v1.js
+          node --check omega_home_ministry_ui_v1.js
+          node --check omega_home_ministry_police_operations_ui_v1.js
           node --check omega_battlefield_command_runtime_v1.js
+          node --check test/omega_home_ministry_police_capability_upgrade_v1.test.mjs
+          node --check test/omega_shared_number_format_v1.test.mjs
           node --check omega_home_ministry_world_police_runtime_v1.js
           node --check omega_home_ministry_police_operations_ui_v1.js
           node --check test/omega_home_ministry_budget_integration.test.mjs
@@ -89,6 +95,11 @@ jobs:
         run: |
           set -euo pipefail
           node --test test/omega_home_ministry_budget_integration.test.mjs test/omega_battlefield_command_runtime_v1.test.mjs test/omega_home_ministry_world_police_runtime_v1.test.mjs
+
+      - name: Police upgrade material-ledger and shared-number proof
+        run: |
+          set -euo pipefail
+          node --test test/omega_home_ministry_police_capability_upgrade_v1.test.mjs test/omega_shared_number_format_v1.test.mjs
 
       - name: Independent 17-ministry runtime proof
         run: |
