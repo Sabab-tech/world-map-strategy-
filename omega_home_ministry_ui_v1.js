@@ -370,7 +370,7 @@
         '<select id="home-police-budget-mode-' + key + '"><option value="percent"' + (rule.mode !== 'fixed' ? ' selected' : '') + '>Percentage of authorized budget</option><option value="fixed"' + (rule.mode === 'fixed' ? ' selected' : '') + '>Fixed amount</option></select>' +
         '<label for="home-police-budget-value-' + key + '">Budget ' + (rule.mode === 'fixed' ? 'amount' : 'percentage') + '</label>' +
         '<input id="home-police-budget-value-' + key + '" type="number" min="0" step="any" value="' + esc(rule.value) + '" inputmode="decimal">' +
-        '<p class="home-police-note">Current category cap: <strong>' + esc(money(e, row ? row.limit : 0)) + '</strong> · spent ' + esc(money(e, row ? row.spent : 0)) + ' · remaining ' + esc(money(e, row ? row.available : 0)) + '</p>' +
+        '<p class="home-police-note">Current category cap: <strong id="home-police-budget-cap-' + key + '">' + esc(money(e, row ? row.limit : 0)) + '</strong> · spent ' + esc(money(e, row ? row.spent : 0)) + ' · remaining ' + esc(money(e, row ? row.available : 0)) + '</p>' +
       '</article>';
     }).join('');
     body.innerHTML =
@@ -419,7 +419,7 @@
         if (!Number.isFinite(value) || value < 0) invalid = true;
         if (next[key].mode === 'percent') percent += value; else fixed += value;
         const cap = next[key].mode === 'percent' ? Math.max(0,total) * value / 100 : Math.max(0,value);
-        const hint = input.parentNode && input.parentNode.querySelector ? input.parentNode.querySelector('[data-budget-preview]') : null;
+        const hint = g.document.getElementById('home-police-budget-cap-' + key);
         if (hint) hint.textContent = money(e,cap);
       });
       const financeLimit = Number(summary && summary.financeAllocation) || 0;
