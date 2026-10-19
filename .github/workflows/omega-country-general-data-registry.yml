@@ -1,0 +1,60 @@
+name: OMEGA Country General Data Registry
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "23 4 7 * *"
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/omega-country-general-data-registry.yml"
+      - "scripts/build_country_general_data_registry_v1.mjs"
+      - "test/country_general_data_registry_v1.test.mjs"
+      - "countries.json"
+      - "cities.json"
+      - "population.json"
+      - "economy.json"
+      - "economy_global_profiles_v1.json"
+      - "economy_raw_financial_data_v2.json"
+      - "resource_country_resource_context_index.json"
+      - "omega_home_ministry_country_police_baseline_v1.json"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: omega-country-general-data-registry-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Build unified country registry and refresh source indicators
+        run: node scripts/build_country_general_data_registry_v1.mjs --refresh-sources
+
+      - name: Validate shared schema, source preservation and coverage accounting
+        run: node --test test/country_general_data_registry_v1.test.mjs
+
+      - name: Commit registry only if it changed
+        shell: bash
+        run: |
+          if git diff --quiet -- country_general_data_registry_v1.json; then
+            echo "Registry content unchanged; no generated data commit required."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add country_general_data_registry_v1.json
+          git commit -m "Update unified country general data registry"
+          git push
