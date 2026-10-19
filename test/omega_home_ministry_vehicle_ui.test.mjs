@@ -144,7 +144,7 @@ test('all 15 police vehicles have one-to-one art designs and unique paint identi
 
 test('custom vehicle artwork uses vector police signals and accessible names, not external image URLs', () => {
   assert.match(ui, /function vehicleSvg\(vehicle, slot\)/);
-  assert.match(ui, /aria-label="'\s*\+\s*esc\(vehicle\.name\)\s*\+\s*' police vehicle illustration"/);
+  assert.match(ui, /aria-label="'\s*\+\s*esc\(spec\.name\)\s*\+\s*' police vehicle illustration"/);
   assert.ok(ui.includes("police-gloss-' + key + '"), 'vehicle bodies must have a layered glossy light pass for depth');
   assert.ok(ui.includes("police-metal-' + key + '"), 'wheel rims must use a metallic lighting gradient');
   assert.match(ui, /stroke-width="2\.3" stroke-linecap="round" opacity="\.43"/, 'body highlight bevel must be present');
@@ -375,8 +375,9 @@ test('Home Ministry landing screen shows explicit inline vehicle artwork and bud
 
 test('Home Ministry budget screen reads the active envelope and saves percentage or fixed category allocations', () => {
   const harness = makeUiHarness({1:1});
-  const host = harness.nodes.get('cabinet-body');
   harness.ui.renderBudgetAllocation();
+  const host = harness.nodes.get('cabinet-body');
+  assert.ok(host, 'budget screen should mount into cabinet-body');
   assert.match(host.innerHTML,/HOME MINISTRY BUDGET CONTROL/);
   assert.match(host.innerHTML,/Finance ministry allocation/);
   assert.match(host.innerHTML,/home-police-budget-value-personnel/);
