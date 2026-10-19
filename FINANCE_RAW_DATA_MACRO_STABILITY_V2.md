@@ -14,3 +14,8 @@ The source baseline remains 2015, mapped from the repository's existing \`econom
 The existing Finance Ministry remains responsible for Treasury transactions, revenue collection, borrowing, debt repayment, and sector budget allocation. The existing Forex/Monetary Engine remains responsible for currency markets, FX settlement, exchange regime, money-supply policy, and inflation targets. This extension adds GDP-growth/spending policy presets and counter-cyclical stabilizers, uses the existing simulation turn, and stores state under each country's existing Finance bucket without deleting unrelated fields. User-facing financial actions are restricted to the active player country.
 
 The stability score and policy response are game mechanics, not official national accounts, forecasts, or sovereign credit ratings.
+
+## Finance UI and offline integration
+The macro control panel is mounted only inside Finance's dedicated **Macro Stability** icon tab, using the `data-omss-container` slot. It is not injected below Overview, Budget, Income, Treasury, FX or Reports. Macro state refreshes from existing Finance and FX state and remains country-scoped.
+
+The browser offline shell cache is version `omega-offline-atlas-shell-v3` and precaches the macro runtime, CSS, raw financial registry and macro rules. After the browser has fetched and cached these assets at least once, the tab can open offline; provider-sourced reference FX observations still require a network unless already cached.
