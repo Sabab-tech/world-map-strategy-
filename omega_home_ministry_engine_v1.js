@@ -129,9 +129,22 @@
   }
   function currentCountry(candidate){
     const sim=g.Omega&&g.Omega.Simulation;
-    const raw=candidate||(sim&&typeof sim.getPlayerCountryId==='function'&&sim.getPlayerCountryId())||
+    const raw=candidate||g.OmegaMinistryViewCountry||
+      (sim&&typeof sim.getPlayerCountryId==='function'&&sim.getPlayerCountryId())||
       (g.CountryIOS&&g.CountryIOS.activeCountry)||g.currentActiveCountry||
-      (g.Game&&(g.Game.currentActiveCountry||g.Game.playerCountry||g.Game.countryId))||g.playerCountry||'USA';
+      (g.Game&&(g.Game.selectedCountryId||g.Game.activeCountry||g.Game.currentActiveCountry||g.Game.playerCountry||g.Game.countryId))||
+      g.playerCountry||'USA';
+    return normalizeCountry(raw);
+  }
+  function playerCountry(){
+    const sim=g.Omega&&g.Omega.Simulation,root=rootState();
+    let raw=null;
+    try{if(sim&&typeof sim.getPlayerCountryId==='function')raw=sim.getPlayerCountryId();}catch(_){}
+    raw=raw||root&&root.simulation&&root.simulation.session&&root.simulation.session.playerCountryId||
+      root&&root.simulation&&root.simulation.playerCountryId||root&&root.playerCountryId||root&&root.playerCountryCode||
+      g.Game&&(g.Game.playerCountryId||g.Game.playerCountryCode||g.Game.playerCountry)||
+      g.playerCountry||g.OMEGA_PLAYER_COUNTRY_ID||g.Game&&(g.Game.countryId||g.Game.currentActiveCountry)||
+      g.CountryIOS&&g.CountryIOS.activeCountry||g.currentActiveCountry||'USA';
     return normalizeCountry(raw);
   }
   function rootState(){return g.Game&&g.Game.state&&typeof g.Game.state==='object'?g.Game.state:(g.gameState&&typeof g.gameState==='object'?g.gameState:null);}
@@ -279,7 +292,7 @@
     if(!loaded.ok)return loaded;
     const root=rootState();if(!root)return{ok:false,code:'AUTHORITATIVE_GAME_STATE_UNAVAILABLE',countryCount:loaded.countryCount};
     if(!root.interior||typeof root.interior!=='object')root.interior={};
-    let seeded=0,existing=0,playerCountry=currentCountry();
+    let seeded=0,existing=0,playerCountryId=playerCountry();
     rows.forEach(function(row){
       if(!row||!row.code)return;
       const cid=normalizeCountry(row.code),countryState=root.interior[cid]&&root.interior[cid].police;
@@ -292,13 +305,13 @@
     root.omegaHomePoliceBaselineVersion=1;
     root.omegaHomePoliceBaselineCountryCount=loaded.countryCount;
     root.omegaHomePoliceBaselineUpdatedAt=new Date().toISOString();
-    const playerBaseline=findPoliceBaseline(playerCountry);
+    const playerBaseline=findPoliceBaseline(playerCountryId);
     if(playerBaseline){
       const cid=normalizeCountry(playerBaseline.code);
       getState(cid);
     }
     const diagnostics=Object.assign({},loaded,{ok:true,seededCountries:seeded,existingCountryStatesPreserved:existing,
-      baselineVersion:1,activeCountry:playerCountry});
+      baselineVersion:1,activeCountry:playerCountryId});
     emit('OMEGA_HOME_POLICE_WORLD_BASELINE_READY',diagnostics);
     return diagnostics;
   }
@@ -437,6 +450,19 @@
       before:before,after:after};
   }
   function financeApi(){return g.OmegaFinanceMinistry||g.Omega&&g.Omega.FinanceMinistry||null;}
+  function isPlayerCountry(country){
+    const cid=normalizeCountry(country),finance=financeApi();
+    try{
+      const profile=finance&&typeof finance.resolveCountry==='function'?finance.resolveCountry(cid):null;
+      const player=finance&&typeof finance.getPlayerCountry==='function'?finance.getPlayerCountry():null;
+      if(profile&&player){
+        const a=normalizeCountry(profile.iso3||profile.countryCode||profile.code||profile.name);
+        const b=normalizeCountry(player.iso3||player.countryCode||player.code||player.name);
+        if(a&&b)return a===b;
+      }
+    }catch(_){}
+    return !!cid&&cid===playerCountry();
+  }
   function homeBudgetCategory(action){
     const name=String(action||'HOME_MINISTRY_DAILY_OPERATIONS').toUpperCase();
     for(const [id,row] of Object.entries(HOME_BUDGET_CATEGORIES))if(row.actions.includes(name))return id;
@@ -466,9 +492,8 @@
     const diagnostic=finance.diagnostics();
     if(!diagnostic||diagnostic.initialized!==true)return{available:false,reason:'FINANCE_RUNTIME_NOT_READY',countryId:cid};
     const profile=typeof finance.resolveCountry==='function'?finance.resolveCountry(cid):null;
-    const player=typeof finance.getPlayerCountry==='function'?finance.getPlayerCountry():null;
-    if(profile&&player&&profile.countryCode&&player.countryCode&&profile.countryCode!==player.countryCode)
-      return{available:false,reason:'PLAYER_COUNTRY_SCOPE_VIOLATION',countryId:cid};
+    if(!profile)return{available:false,reason:'COUNTRY_PROFILE_UNAVAILABLE',countryId:cid};
+    const canEdit=isPlayerCountry(cid);
     let model=null;
     try{model=finance.getFinanceState(cid);}catch(_){model=null;}
     const parent=model&&model.allocations&&model.allocations.interior;
@@ -489,8 +514,8 @@
       plannedTotal+=amount;spentTotal+=spent;
     });
     const valid=plannedTotal<=envelope+0.01;
-    return{available:true,valid:valid,reason:valid?null:'HOME_BUDGET_PLAN_EXCEEDS_PARENT_ALLOCATION',
-      countryId:cid,financeCountryCode:profile&&profile.countryCode||null,parentBudgetUsd:envelope,parentRemainingUsd:parentRemaining,
+    return{available:true,valid:valid,canEdit:canEdit,readOnly:!canEdit,reason:valid?null:'HOME_BUDGET_PLAN_EXCEEDS_PARENT_ALLOCATION',
+      countryId:cid,financeCountryCode:profile.countryCode||null,parentBudgetUsd:envelope,parentRemainingUsd:parentRemaining,
       treasuryBalanceUsd:cash,planTotalUsd:plannedTotal,unplannedBudgetUsd:Math.max(0,envelope-plannedTotal),
       spentThisYearUsd:spentTotal,categories:categories,revision:num(model.revision)||0,plan:plan};
   }
@@ -498,6 +523,7 @@
     const cid=normalizeCountry(country||currentCountry()),state=getState(cid);
     const current=getHomeBudgetSnapshot(cid,state);
     if(!current.available)return{ok:false,code:current.reason||'HOME_BUDGET_UNAVAILABLE',snapshot:current};
+    if(current.canEdit===false)return{ok:false,code:'PLAYER_COUNTRY_SCOPE_VIOLATION',message:'Budget changes are restricted to the active player country.',snapshot:current};
     const nextPlan=normalizeHomeBudgetPlan(input);
     let total=0;
     Object.keys(HOME_BUDGET_CATEGORIES).forEach(function(id){
@@ -520,6 +546,7 @@
     const cost=Math.max(0,num(amount)||0);if(!cost)return{ok:true,amount:0};
     const snap=snapshot||getHomeBudgetSnapshot(country,state);
     if(!snap.available)return{ok:false,reason:snap.reason||'HOME_BUDGET_UNAVAILABLE',balance:snap.treasuryBalanceUsd,cost:cost};
+    if(snap.canEdit===false)return{ok:false,reason:'PLAYER_COUNTRY_SCOPE_VIOLATION',balance:snap.treasuryBalanceUsd,cost:cost};
     if(!snap.valid)return{ok:false,reason:'HOME_BUDGET_PLAN_EXCEEDS_PARENT_ALLOCATION',balance:snap.treasuryBalanceUsd,cost:cost};
     const category=homeBudgetCategory(action),row=snap.categories[category];
     if(!row)return{ok:false,reason:'HOME_BUDGET_CATEGORY_UNAVAILABLE',category:category,cost:cost};
@@ -638,6 +665,7 @@
   function money(value){const n=num(value);return n===null?'Unavailable':'$'+Math.round(n).toLocaleString('en-US');}
   function mutation(country,cost,action,mutator){
     const cid=normalizeCountry(country||currentCountry());if(!cid)return{ok:false,reason:'PLAYER_COUNTRY_UNAVAILABLE'};
+    if(!isPlayerCountry(cid))return{ok:false,reason:'PLAYER_COUNTRY_SCOPE_VIOLATION',countryId:cid};
     const amount=Math.max(0,num(cost)||0),state=getState(cid),next=clone(state),result=mutator(next);
     if(result&&result.ok===false)return Object.assign({ok:false},result);
     const debit=debitTreasury(cid,amount,action,state);if(!debit.ok)return{ok:false,reason:debit.reason,balance:debit.balance,cost:amount,category:debit.category,budgetRemaining:debit.budgetRemaining,message:debit.message};
@@ -1205,7 +1233,7 @@
     });s.intelligenceReports=s.intelligenceReports.slice(-100);s.lastIntelWeek=week;return true;
   }
   function onTurnCommitted(event){
-    const detail=event&&event.detail||{},payload=detail.payload||detail,cid=normalizeCountry(payload.countryId||detail.countryId||currentCountry());if(!cid)return;
+    const detail=event&&event.detail||{},payload=detail.payload||detail,cid=normalizeCountry(payload.countryId||detail.countryId||playerCountry());if(!cid)return;
     const now=simulationTimeMs(),day=Math.floor(now/DAY_MS),s=getState(cid);let changed=false,payrollDebit=null;
     if(s.lastPayrollDay===null||s.lastPayrollDay===undefined){s.lastPayrollDay=day;changed=true;}
     else if(day>s.lastPayrollDay){

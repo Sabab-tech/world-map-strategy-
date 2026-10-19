@@ -324,7 +324,7 @@ window.OmegaLayerManager = {
                 fullWin.style.pointerEvents = 'auto';
             }
             document.body.classList.add('modal-open');
-            window.OmegaCabinetUI.renderCabinet(window.Game ? window.Game.currentActiveCountry : 'USA');
+            window.OmegaCabinetUI.renderCabinet(window.OmegaMinistryViewCountry || (window.Game ? window.Game.currentActiveCountry : 'USA'));
         } else if (layerNum === 2 || layerNum === 3) {
             if (fullWin) fullWin.style.display = 'none';
             if (interrogModal) interrogModal.style.display = 'none';
@@ -1146,7 +1146,8 @@ window.OmegaCabinetUI = {
     },
 
     renderCabinet(countryKey) {
-        this.activeCountry = (countryKey || (window.Game && window.Game.currentActiveCountry) || window.currentActiveCountry || "USA").toUpperCase();
+        this.activeCountry = (countryKey || window.OmegaMinistryViewCountry || (window.Game && window.Game.currentActiveCountry) || window.currentActiveCountry || "USA").toUpperCase();
+        window.OmegaMinistryViewCountry = this.activeCountry;
         const countryDetails = this.getCountryDetails(this.activeCountry);
 
         const fullWin = document.getElementById('cabinet-full-window');

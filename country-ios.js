@@ -60,7 +60,9 @@ window.CountryIOS = {
     },
 
     open(countryName, initialChapter = 1) {
-        this.activeCountry = (countryName || (window.Game && window.Game.currentActiveCountry) || window.currentActiveCountry || "USA").toUpperCase();
+        this.activeCountry = (countryName || window.OmegaMinistryViewCountry || (window.Game && window.Game.currentActiveCountry) || window.currentActiveCountry || "USA").toUpperCase();
+        window.OmegaMinistryViewCountry = this.activeCountry;
+        if (window.OmegaCabinetUI) window.OmegaCabinetUI.activeCountry = this.activeCountry;
         this.activeChapter = initialChapter;
 
         // Hide legacy cabinet window if open to prevent screen overlaps

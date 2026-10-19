@@ -81,9 +81,10 @@
       '<div class="ohmb-kpis"><div class="ohmb-kpi"><strong>' + esc(title) + '</strong><span>Annual Finance allocation</span></div>' +
       '<div class="ohmb-kpi"><strong>' + esc(remaining) + '</strong><span>Interior allocation remaining</span></div>' +
       '<div class="ohmb-kpi"><strong>' + esc(cash) + '</strong><span>Available treasury</span></div></div>' +
-      (!snap.available ? '<div class="ohmb-status is-error">Spending is blocked until Finance has initialized and assigned a positive Interior budget. Status: ' + esc(snap.reason || 'UNAVAILABLE') + '.</div>' :
+      (!snap.available ? '<div class="ohmb-status is-error">Finance allocation is unavailable for this country. Status: ' + esc(snap.reason || 'UNAVAILABLE') + '.</div>' :
+        (snap.canEdit === false ? '<div class="ohmb-status">READ-ONLY COUNTRY VIEW. This country’s own allocation and treasury are shown; budget edits and purchases remain restricted to the active player country.</div>' :
         (!snap.valid ? '<div class="ohmb-status is-error">Sub-budget categories exceed the Finance allocation. Adjust the category plan before purchasing.</div>' :
-        '<div class="ohmb-status">Every paid Home Ministry action now checks both its category limit and the parent Finance ceiling. Purchases are rejected when either budget or treasury is insufficient.</div>')) +
+        '<div class="ohmb-status">Every paid Home Ministry action checks its category limit, the parent Finance ceiling and available Treasury.</div>'))) +
       '</section>';
     target.insertAdjacentHTML('beforeend', html);
     var open = g.document.getElementById('ohmb-open-budget');
@@ -116,7 +117,8 @@
         '<td><input class="ohmb-field" type="number" min="0" step="any" inputmode="decimal" data-ohmb-value="' + id + '" value="' + esc(spec.value == null ? 0 : spec.value) + '"></td>' +
         '<td data-ohmb-estimate="' + id + '">' + esc(money(stat ? stat.budgetUsd : (spec.mode === 'amount' ? Number(spec.value) || 0 : envelope * (Number(spec.value) || 0) / 100))) + '</td></tr>';
     }).join('');
-    var fail = snap.available ? '' : '<div class="ohmb-status is-error">Finance allocation is not available: ' + esc(snap.reason || 'UNKNOWN') + '. In Finance Ministry, allocate a positive share to “Internal Security & Civil Administration” first. A sub-budget cannot be created from money that was never allocated.</div>';
+    var fail = !snap.available ? '<div class="ohmb-status is-error">Finance allocation is not available: ' + esc(snap.reason || 'UNKNOWN') + '. In Finance Ministry, allocate a positive share to “Internal Security & Civil Administration” first.</div>' :
+      (snap.canEdit === false ? '<div class="ohmb-status">READ-ONLY COUNTRY VIEW. The displayed budget belongs to ' + esc(snap.countryId || country()) + '. Budget-plan changes and purchases are disabled for this country.</div>' : '');
     root.innerHTML = '<section class="ohmb-screen"><h2>HOME MINISTRY BUDGET CONTROL</h2>' +
       '<div class="ohmb-muted">Choose a percentage of the Home Ministry allocation or enter a fixed USD amount for each category. The sum of all six categories must not exceed the Finance Ministry Interior ceiling.</div>' +
       '<div class="ohmb-kpis"><div class="ohmb-kpi"><strong>' + esc(snap.available ? money(snap.parentBudgetUsd) : 'Not allocated') + '</strong><span>Annual Interior ceiling</span></div>' +
@@ -127,7 +129,7 @@
       '<div class="ohmb-kpis"><div class="ohmb-kpi"><strong id="ohmb-plan-total" class="ohmb-total">' + esc(money(snap.planTotalUsd || 0)) + '</strong><span>Total planned categories</span></div>' +
       '<div class="ohmb-kpi"><strong>' + esc(snap.available ? money(snap.unplannedBudgetUsd) : 'Unavailable') + '</strong><span>Unassigned Interior ceiling</span></div>' +
       '<div class="ohmb-kpi"><strong>' + esc(snap.available ? (snap.valid ? 'WITHIN LIMIT' : 'OVER LIMIT') : 'BLOCKED') + '</strong><span>Plan validation</span></div></div>' +
-      '<div class="ohmb-actions"><button type="submit" class="ohmb-button ohmb-button-main" id="ohmb-save-budget" ' + (!snap.available ? 'disabled' : '') + '>SAVE MINISTRY ALLOCATIONS</button>' +
+      '<div class="ohmb-actions"><button type="submit" class="ohmb-button ohmb-button-main" id="ohmb-save-budget" ' + (!snap.available || snap.canEdit === false ? 'disabled' : '') + '>SAVE MINISTRY ALLOCATIONS</button>' +
       '<button type="button" class="ohmb-button" id="ohmb-budget-back">BACK TO HOME MINISTRY</button></div></form>' +
       '<div class="ohmb-muted">Vehicle orders charge the Vehicles category; police recruitment and payroll charge Personnel; repair charges Maintenance; facility work charges Facilities; research/training charges Training. The Finance Ministry remains the treasury authority.</div>' +
       '</section>';

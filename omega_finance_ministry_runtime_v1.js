@@ -105,7 +105,11 @@
       global.CountryIOS?.activeCountry||global.Game?.currentActiveCountry||global.currentActiveCountry||'USA';
     return resolveProfile(value)||resolveProfile('USA')||profiles[0]||null;
   }
-  function viewedCountryProfile(){return resolveProfile(selectedCountryCode)||playerCountryProfile();}
+  function viewedCountryProfile(){
+    const contextual=resolveProfile(global.OmegaMinistryViewCountry);
+    if(contextual){selectedCountryCode=contextual.countryCode;return contextual;}
+    return resolveProfile(selectedCountryCode)||playerCountryProfile();
+  }
   function isPlayable(p){return !!p&&p.profileStatus!=='UNAVAILABLE'&&finite(p.indicators?.gdpCurrentUsd)>0;}
   function currentTurn(){
     const s=rootState(),vals=[s?.simulation?.turn,s?.simulation?.currentTurn,s?.turn,global.Omega?.Simulation?.clock?.turn];
@@ -835,7 +839,12 @@
       if(summary){setTimeout(function(){const details=content.querySelector?.('#ofm-world-register');const holder=content.querySelector?.('#ofm-world-register-content');if(details&&details.open&&holder&&holder.dataset.loaded!=='true'){holder.innerHTML=renderFullWorldTable(worldSnapshot().rows);holder.dataset.loaded='true';}},0);}
     });
     content.addEventListener('change',function(event){
-      if(event.target&&event.target.id==='ofm-country-select'){selectedCountryCode=event.target.value;renderDashboard('finance');}
+      if(event.target&&event.target.id==='ofm-country-select'){
+        selectedCountryCode=event.target.value;
+        global.OmegaMinistryViewCountry=selectedCountryCode;
+        if(global.OmegaCabinetUI)global.OmegaCabinetUI.activeCountry=selectedCountryCode;
+        renderDashboard('finance');
+      }
     });
     content.addEventListener('submit',function(event){
       const form=event.target,action=form?.getAttribute?.('data-ofm-action');if(!action)return;
@@ -891,7 +900,9 @@
         DEPARTMENTS=[...DEPARTMENTS.filter(d=>!sectorRegistry.budgetSectors.some(s=>s.id===d[0])),
           ...sectorRegistry.budgetSectors.map(s=>[s.id,s.name])];
       }
-      indexProfiles();const player=playerCountryProfile();selectedCountryCode=selectedCountryCode||(player&&player.countryCode)||'US';
+      indexProfiles();const player=playerCountryProfile();
+      const contextual=resolveProfile(global.OmegaMinistryViewCountry);
+      selectedCountryCode=(contextual&&contextual.countryCode)||selectedCountryCode||(player&&player.countryCode)||'US';
       ensureStateInitialized();initialized=true;attachUiBridge();
       global.Omega=global.Omega||{};global.Omega.FinanceMinistry=api;global.OMEGA_FINANCE_DIAGNOSTICS=diagnostics;
       safeDispatch('OMEGA_FINANCE_RUNTIME_READY',diagnostics());return diagnostics();
@@ -906,7 +917,12 @@
   const api={VERSION,init,diagnostics,resolveCountry:resolveProfile,getProfiles:()=>profiles.slice(),getPlayerCountry:playerCountryProfile,
     getIndicators:function(v){const p=resolveProfile(v)||playerCountryProfile();return p?worldSnapshot().byCode.get(p.countryCode)||null:null;},
     getFinanceState:function(v){const p=resolveProfile(v)||playerCountryProfile();if(!p)return null;const root=rootState(),fm=ensureFinanceState(p,root);if(reconcileExternalTreasury(p,fm,root))syncEconomyRecord(p,fm,root);return clone(fm);},
-    selectCountry:function(v){const p=resolveProfile(v);if(!p)return {ok:false,code:'COUNTRY_NOT_FOUND'};selectedCountryCode=p.countryCode;renderDashboard('finance');return {ok:true,countryCode:p.countryCode};},
+    selectCountry:function(v){
+      const p=resolveProfile(v);if(!p)return {ok:false,code:'COUNTRY_NOT_FOUND'};
+      selectedCountryCode=p.countryCode;global.OmegaMinistryViewCountry=p.countryCode;
+      if(global.OmegaCabinetUI)global.OmegaCabinetUI.activeCountry=p.countryCode;
+      renderDashboard('finance');return {ok:true,countryCode:p.countryCode};
+    },
     selectTab:function(v){const tab=String(v||'overview');if(!['overview','budget','income','treasury','reports','fx','macro','analytics'].includes(tab))return {ok:false,code:'FINANCE_TAB_INVALID'};activeTab=tab;renderDashboard('finance');return {ok:true,tab};},
     getBudgetSnapshot:function(v){const p=resolveProfile(v)||playerCountryProfile();if(!p)return null;const fm=ensureFinanceState(p,rootState());return {countryCode:p.countryCode,...budgetTotals(fm)};},
     getRevenueSnapshot:function(v){const p=resolveProfile(v)||playerCountryProfile();if(!p)return null;const fm=ensureFinanceState(p,rootState()),m=worldSnapshot().byCode.get(p.countryCode)||currentMetrics(p);return revenueState(p,fm,m,rootState());},
