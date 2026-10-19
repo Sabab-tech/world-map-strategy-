@@ -5,6 +5,7 @@ import vm from 'node:vm';
 
 const profileData=JSON.parse(readFileSync('economy_global_profiles_v1.json','utf8'));
 const financeRules=JSON.parse(readFileSync('finance_runtime_rules_v1.json','utf8'));
+const sectorRegistry=JSON.parse(readFileSync('finance_sector_registry_v1.json','utf8'));
 const runtime=readFileSync('omega_finance_ministry_runtime_v1.js','utf8');
 
 test('all map country and area identities exist, and unknown values are explicit',()=>{
@@ -17,6 +18,9 @@ test('all map country and area identities exist, and unknown values are explicit
   assert.ok(missing.every(p=>p.indicators.gdpCurrentUsd===null));
   assert.ok(profileData.countries.every(p=>p.indicators.policyInterestRatePct===null));
   assert.ok(profileData.countries.every(p=>p.indicators.economicInfluenceIndex===null||Number.isFinite(p.indicators.economicInfluenceIndex)));
+  assert.equal(sectorRegistry.budgetSectors.reduce((sum,s)=>sum+s.defaultSharePct,0),100);
+  assert.equal(sectorRegistry.economicSectors.reduce((sum,s)=>sum+s.outputSharePct,0),100);
+  assert.equal(sectorRegistry.economicSectors.reduce((sum,s)=>sum+s.taxReceiptSharePct,0),100);
 });
 function createRuntime(){
   const handlers=new Map();
@@ -34,7 +38,8 @@ function createRuntime(){
     addEventListener(type,fn){handlers.set(type,[...(handlers.get(type)||[]),fn]);},
     dispatchEvent(event){for(const fn of handlers.get(event.type)||[])fn(event);return true;},
     fetch:async url=>String(url).includes('economy_global_profiles_v1.json')?{ok:true,json:async()=>profileData}:
-      String(url).includes('finance_runtime_rules_v1.json')?{ok:true,json:async()=>financeRules}:Promise.reject(new Error('Unexpected fetch '+url)),
+      String(url).includes('finance_runtime_rules_v1.json')?{ok:true,json:async()=>financeRules}:
+      String(url).includes('finance_sector_registry_v1.json')?{ok:true,json:async()=>sectorRegistry}:Promise.reject(new Error('Unexpected fetch '+url)),
     Omega:{Simulation:{world:{state},clock:{turn:1,stepDurationMs:3600000},getPlayerCountryId(){return 'BGD';}}},
     Game:{state:{economy:{BANGLADESH:JSON.parse(JSON.stringify(economy))},finance:{},simulation:{turn:1}},currentActiveCountry:'BGD'},
     gameState:{economy:{BANGLADESH:JSON.parse(JSON.stringify(economy))},finance:{},population:{},simulation:{turn:1}},
@@ -105,4 +110,66 @@ test('Finance route renders its dashboard through the existing Cabinet UI and lo
   const readOnlyHTML=elements.get('ministry-dashboard-content').innerHTML;
   assert.ok(readOnlyHTML.includes('READ-ONLY PROFILE'));
   assert.ok(!readOnlyHTML.includes('data-ofm-action="spend-budget"'));
+});
+
+test('Budget sector distribution sums to 100% and rejects an over-allocation',async()=>{
+  const {context}=createRuntime();await context.OmegaFinanceMinistry.init();
+  const snapshot=context.OmegaFinanceMinistry.getBudgetSnapshot('BGD');
+  assert.equal(snapshot.rows.length,22);
+  assert.ok(Math.abs(snapshot.totalSharePct-100)<0.0001);
+  const before=context.OmegaFinanceMinistry.getFinanceState('BGD').allocations;
+  const first=sectorRegistry.budgetSectors[0],second=sectorRegistry.budgetSectors[1];
+  const reduce=context.OmegaFinanceMinistry.applyAction({type:'set-sector-share',countryId:'BGD',sectorId:first.id,sharePct:first.defaultSharePct-1});
+  assert.equal(reduce.ok,true);
+  const excess=context.OmegaFinanceMinistry.applyAction({type:'set-sector-share',countryId:'BGD',sectorId:second.id,sharePct:100});
+  assert.equal(excess.ok,false);assert.equal(excess.code,'BUDGET_SHARES_EXCEED_100');
+  const latest=context.OmegaFinanceMinistry.getBudgetSnapshot('BGD');
+  assert.ok(latest.totalSharePct<=100.0001);
+  assert.ok(before[first.id].budgetUsd>=latest.rows.find(r=>r.id===first.id).budgetUsd);
+});
+
+test('Modeled tax receipts accrue to the existing Finance ledger over simulation time',async()=>{
+  const {context,state}=createRuntime();await context.OmegaFinanceMinistry.init();
+  const beforeTax=Number(state.finance.BGD.taxRevenue)||0;
+  const beforeCash=state.finance.BGD.available;
+  const out=context.OmegaFinanceMinistry.advanceTurn(25,financeRules.annualizationMs);
+  assert.equal(out.ok,true);
+  assert.ok(state.finance.BGD.taxRevenue>beforeTax);
+  assert.ok(state.finance.BGD.available>beforeCash);
+  assert.ok(state.finance.BGD.revenue>=state.finance.BGD.taxRevenue);
+});
+
+test('Debt repayment reduces principal and treasury by the posted amount',async()=>{
+  const {context,state}=createRuntime();await context.OmegaFinanceMinistry.init();
+  const economy=state.economy.BANGLADESH;
+  const debtBefore=economy.debt;
+  const cashBefore=state.finance.BGD.available;
+  const amount=1000000;
+  const result=context.OmegaFinanceMinistry.applyAction({type:'repay-debt',countryId:'BGD',amountUsd:amount,description:'Test principal payment'});
+  assert.equal(result.ok,true);
+  assert.equal(economy.debt,debtBefore-amount);
+  assert.equal(state.finance.BGD.available,cashBefore-amount);
+});
+
+test('Finance tabs place cash and macro details behind separate icons while overview stays compact',async()=>{
+  const {context,elements}=createRuntime();await context.OmegaFinanceMinistry.init();
+  assert.equal(context.OmegaCabinetUI.renderMinistryDashboard('finance'),true);
+  const overview=elements.get('ministry-dashboard-content').innerHTML;
+  assert.ok(overview.includes('data-ofm-tab="budget"'));
+  assert.ok(overview.includes('data-ofm-tab="treasury"'));
+  assert.ok(overview.includes('Available Treasury'));
+  assert.ok(!overview.includes('GDP (current baseline)'));
+  assert.equal(context.OmegaFinanceMinistry.selectTab('budget').ok,true);
+  const budget=elements.get('ministry-dashboard-content').innerHTML;
+  assert.ok(budget.includes('Chemicals & Advanced Materials'));
+  assert.ok(budget.includes('data-ofm-action="set-sector-share"'));
+  assert.ok(budget.includes('data-ofm-action="spend-budget"'));
+  assert.equal(context.OmegaFinanceMinistry.selectTab('treasury').ok,true);
+  const treasury=elements.get('ministry-dashboard-content').innerHTML;
+  assert.ok(treasury.includes('data-ofm-action="borrow"'));
+  assert.ok(treasury.includes('data-ofm-action="repay-debt"'));
+  assert.equal(context.OmegaFinanceMinistry.selectTab('income').ok,true);
+  const income=elements.get('ministry-dashboard-content').innerHTML;
+  assert.ok(income.includes('Estimated output'));
+  assert.ok(income.includes('RECORDED'));
 });

@@ -53,3 +53,45 @@
 .ofm-world-register[open] summary{margin-bottom:2px}
 @media(max-width:900px){.ofm-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.ofm-indicator-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.ofm-toolbar{grid-template-columns:1fr}.ofm-baseline{text-align:left}.ofm-status{white-space:normal}.ofm-hero{align-items:flex-start;flex-direction:column}}
 @media(max-width:520px){#ministry-dashboard-view.theme-finance .ministry-content-area{padding:8px}.ofm-dashboard{gap:8px}.ofm-hero,.ofm-section{padding:11px}.ofm-hero h2{font-size:19px}.ofm-kpi{padding:10px}.ofm-kpi-value{font-size:15px}.ofm-indicator-grid{grid-template-columns:1fr}.ofm-action-grid{grid-template-columns:1fr}.ofm-form-wide{grid-template-columns:1fr}.ofm-toolbar{padding:9px}.ofm-table td,.ofm-table th{padding:8px}.ofm-status{font-size:9px}}
+
+/* OMEGA Finance Ministry interaction system v1.1.0 */
+.ofm-dashboard{gap:10px}
+.ofm-icon-nav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.ofm-icon-tab{display:flex;flex-direction:column;align-items:flex-start;gap:5px;min-width:0;min-height:92px;padding:11px 12px;border:1px solid rgba(121,155,171,.25);border-radius:9px;background:linear-gradient(160deg,rgba(18,34,47,.96),rgba(7,17,26,.98));color:#dce9ef;text-align:left;cursor:pointer}
+.ofm-icon-tab:hover{border-color:rgba(106,221,190,.52);background:linear-gradient(160deg,rgba(20,53,59,.97),rgba(7,20,28,.99))}
+.ofm-icon-tab.is-active{border-color:rgba(103,225,189,.75);box-shadow:inset 0 -2px 0 rgba(103,225,189,.65),0 5px 16px rgba(0,0,0,.18);background:linear-gradient(160deg,rgba(15,66,62,.95),rgba(8,25,34,.99))}
+.ofm-icon-glyph{display:grid;place-items:center;width:30px;height:30px;border:1px solid rgba(111,222,191,.35);border-radius:7px;background:rgba(68,175,148,.10);font:700 19px 'Share Tech Mono',monospace;color:#88e6c7}
+.ofm-icon-tab strong{font-size:11px;line-height:1.35;color:#e9f5f8}
+.ofm-icon-tab small{font-size:9px;line-height:1.4;color:#8ea8b5}
+.ofm-tab-content{display:flex;flex-direction:column;gap:10px;min-width:0}
+.ofm-kpi-grid-three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.ofm-kpi-grid-four{grid-template-columns:repeat(4,minmax(0,1fr))}
+.ofm-nav-shortcuts{display:flex;flex-wrap:wrap;gap:7px}
+.ofm-nav-shortcuts button,.ofm-share-form button{border:1px solid rgba(103,222,188,.44);border-radius:6px;background:rgba(19,73,67,.48);color:#d9fff2;padding:8px 10px;font-size:10px;font-weight:800;cursor:pointer}
+.ofm-nav-shortcuts button:hover,.ofm-share-form button:hover{filter:brightness(1.15)}
+.ofm-sector-bars{display:flex;flex-direction:column;gap:11px}
+.ofm-sector-bar-row{display:grid;grid-template-columns:minmax(200px,1.4fr) minmax(100px,2fr) minmax(100px,.75fr);align-items:center;column-gap:13px;row-gap:5px}
+.ofm-sector-bar-meta{display:flex;align-items:center;gap:8px;min-width:0}
+.ofm-sector-glyph{display:inline-grid;place-items:center;flex:0 0 30px;width:30px;height:30px;border:1px solid rgba(107,211,184,.28);border-radius:7px;background:rgba(44,118,106,.13);color:#a3ead7;font:700 9px 'Share Tech Mono',monospace}
+.ofm-sector-bar-name{font-size:11px;line-height:1.35;color:#cfdee4;min-width:0}
+.ofm-sector-bar-meta strong{margin-left:auto;font:700 11px 'Share Tech Mono',monospace;color:#b8f4df;white-space:nowrap}
+.ofm-bar-track{height:8px;overflow:hidden;border-radius:10px;border:1px solid rgba(125,156,172,.16);background:rgba(1,9,15,.75)}
+.ofm-bar-track span{display:block;height:100%;border-radius:10px;background:linear-gradient(90deg,#23695d,#77e0bf);min-width:0}
+.ofm-sector-bar-money{font:600 10px 'Share Tech Mono',monospace;color:#9ab5c1;text-align:right;white-space:nowrap}
+.ofm-table small{display:block;max-width:280px;margin-top:3px;color:#809aa7;font-size:9px;line-height:1.4;white-space:normal}
+.ofm-sector-cell{display:flex;align-items:center;gap:8px;min-width:180px;max-width:330px}
+.ofm-sector-cell strong{font-size:10px;line-height:1.4;white-space:normal;color:#dcebf1}
+.ofm-share-form{display:flex;align-items:center;justify-content:flex-start;gap:5px;min-width:145px}
+.ofm-share-form input{box-sizing:border-box;width:72px;min-width:72px;padding:7px 6px;border:1px solid #345160;border-radius:5px;background:#08141d;color:#eef9fb;font:600 11px 'Share Tech Mono',monospace}
+.ofm-share-form span{font-size:10px;color:#8fa8b5}
+.ofm-share-form button{padding:7px 8px;white-space:nowrap}
+.ofm-amount-form{min-width:210px}
+.ofm-amount-form input{width:120px;min-width:120px}
+.ofm-data-status{display:inline-block;padding:4px 6px;border-radius:4px;font:700 8px 'Share Tech Mono',monospace;letter-spacing:.4px;white-space:nowrap}
+.ofm-data-status.is-modeled{color:#b6d4ff;border:1px solid rgba(119,163,230,.3);background:rgba(56,87,130,.14)}
+.ofm-data-status.is-recorded{color:#a9f0cf;border:1px solid rgba(89,210,153,.3);background:rgba(26,104,76,.15)}
+.ofm-data-status.is-unavailable{color:#b1bdc4;border:1px solid rgba(126,146,157,.22);background:rgba(61,76,85,.12)}
+.ofm-footer{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:7px 2px;color:#718995;font:9px 'Share Tech Mono',monospace}
+.ofm-share-form button:disabled,.ofm-icon-tab:disabled{opacity:.45;cursor:not-allowed}
+@media(max-width:900px){.ofm-icon-nav{grid-template-columns:repeat(3,minmax(0,1fr))}.ofm-kpi-grid-four{grid-template-columns:repeat(2,minmax(0,1fr))}.ofm-sector-bar-row{grid-template-columns:minmax(150px,1fr) minmax(90px,1fr);gap:5px 10px}.ofm-sector-bar-money{grid-column:2;text-align:right}}
+@media(max-width:520px){.ofm-icon-nav{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.ofm-icon-tab{min-height:80px;padding:9px 8px}.ofm-icon-tab strong{font-size:10px}.ofm-icon-tab small{font-size:8px}.ofm-icon-glyph{width:26px;height:26px;font-size:17px}.ofm-kpi-grid-three{grid-template-columns:repeat(2,minmax(0,1fr))}.ofm-kpi-grid-four{grid-template-columns:repeat(2,minmax(0,1fr))}.ofm-sector-bar-row{grid-template-columns:1fr;gap:5px}.ofm-sector-bar-money{grid-column:auto;text-align:left}.ofm-sector-bar-meta strong{margin-left:auto}.ofm-nav-shortcuts button{flex:1 1 100%}.ofm-footer{flex-direction:column;align-items:flex-start}}

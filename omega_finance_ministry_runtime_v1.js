@@ -1,21 +1,23 @@
 /* OMEGA GLOBAL FINANCE MINISTRY + MACROECONOMIC RUNTIME v1.0.0 */
 (function(global){
   'use strict';
-  if(global.OmegaFinanceMinistry&&global.OmegaFinanceMinistry.VERSION==='1.0.0')return;
-  const VERSION='1.0.0', YEAR_MS=31536000000, HOUR_MS=3600000;
+  if(global.OmegaFinanceMinistry&&global.OmegaFinanceMinistry.VERSION==='1.1.0')return;
+  const VERSION='1.1.0', YEAR_MS=31536000000, HOUR_MS=3600000;
   const BASE_RULES={annualizationMs:YEAR_MS,simulationTurnDurationMs:HOUR_MS,startingTreasuryPercentOfGDP:2,
     defaultTaxRatePct:18,defaultPolicyInterestRatePct:3,defaultDeficitPercentOfGDPWhenUnobserved:3,
     minimumTaxRatePct:0,maximumTaxRatePct:60,minimumPolicyInterestRatePct:0,maximumPolicyInterestRatePct:40,
     maximumBorrowTransactionPercentOfGDP:5,maximumDebtToGDPForNewBorrowingPct:300,maximumLedgerEntries:500,
     influenceWeights:{gdp:.55,population:.20,foreignExchangeReserves:.15,tradeBalanceToGDP:.10},
     fiscalRiskBounds:{debtToGDPPercent:300,inflationPercent:25,unemploymentPercent:35,deficitToGDPPercent:20}};
-  const DEPARTMENTS=Object.freeze([
+  let DEPARTMENTS=[
     ['cabinet','Executive Cabinet'],['defense','Defense'],['military','Military'],['interior','Home / Interior'],
     ['health','Health'],['education','Education'],['resource','Resources'],['transport','Transport'],['technology','Technology'],
-    ['projects','Projects'],['foreign','Foreign Affairs'],['trade','Trade'],['economy','Economy'],['statistics','Statistics'],['culture','Culture']
-  ]);
+    ['projects','Government Projects'],['foreign','Foreign Affairs'],['trade','Trade'],['economy','Economy'],
+    ['statistics','Statistics'],['culture','Culture'],['finance','Finance']
+  ];
+  let sectorRegistry={schemaVersion:'0.0.0',budgetSectors:[],economicSectors:[],revenueStreams:[]};
   let profiles=[],byCountryId=new Map(),rules=JSON.parse(JSON.stringify(BASE_RULES)),initialized=false,initPromise=null;
-  let selectedCountryCode=null,uiHooksAttached=false,uiContainer=null;
+  let selectedCountryCode=null,uiHooksAttached=false,uiContainer=null,activeTab='overview';
   const isObject=v=>!!v&&typeof v==='object'&&!Array.isArray(v);
   const own=(o,k)=>!!o&&Object.prototype.hasOwnProperty.call(o,k);
   function finite(v){if(typeof v==='number'&&Number.isFinite(v))return v;if(typeof v==='string'&&v.trim()!==''&&Number.isFinite(Number(v)))return Number(v);return null;}
@@ -50,8 +52,23 @@
     const available=finite(financeBucketFor(root,profile,false)?.available);
     const last=finite(model.lastSyncedTreasuryBalanceUsd);
     if(available===null||last===null||Math.abs(available-last)<=0.0001)return false;
+    const delta=available-last;
     model.treasuryBalanceUsd=Math.max(0,available);
     model.treasurySource='EXISTING_RUNTIME_FINANCE_AVAILABLE';
+    if(Math.abs(delta)>0.01){
+      const incoming=delta>0;
+      const absAmount=Math.abs(delta);
+      model.cumulativeExternalInflowUsd=(finite(model.cumulativeExternalInflowUsd)||0)+(incoming?absAmount:0);
+      model.cumulativeExternalOutflowUsd=(finite(model.cumulativeExternalOutflowUsd)||0)+(incoming?0:absAmount);
+      model.currentYearExternalInflowUsd=(finite(model.currentYearExternalInflowUsd)||0)+(incoming?absAmount:0);
+      model.currentYearExternalOutflowUsd=(finite(model.currentYearExternalOutflowUsd)||0)+(incoming?0:absAmount);
+      if(!Array.isArray(model.ledger))model.ledger=[];
+      model.ledger.push({turn:currentTurn(),countryCode:profile.countryCode,department:'external-runtime',
+        action:incoming?'EXTERNAL_TREASURY_CREDIT':'EXTERNAL_TREASURY_DEBIT',category:'unclassified_external_cashflow',
+        amountUsd:absAmount,balanceAfterUsd:available,source:'EXISTING_GAME_SUBSYSTEM',description:incoming?'Cash received from another game subsystem':'Cash spent by another game subsystem'});
+      model.ledger=model.ledger.slice(-Number(rules.maximumLedgerEntries||500));
+    }
+    model.lastSyncedTreasuryBalanceUsd=available;
     return true;
   }
   function stateCandidates(){
@@ -116,6 +133,113 @@
       policyInterestRatePct:null,taxRevenueUsd:null,governmentRevenueUsd:null,governmentExpenditureUsd:null,
       exportsUsd:null,importsUsd:null,currentAccountBalanceUsd:null,currentAccountToGdpPct:null};
   }
+  function budgetSectorById(id){return (sectorRegistry.budgetSectors||[]).find(s=>s.id===String(id))||null;}
+  function initializeSectorAllocations(model){
+    if(!model)return;
+    if(!isObject(model.allocations))model.allocations={};
+    const sectors=Array.isArray(sectorRegistry.budgetSectors)?sectorRegistry.budgetSectors:[];
+    if(!sectors.length)return;
+    const envelope=Math.max(0,finite(model.fiscalModel?.annualSpendingUsd)??0);
+    let present=[];
+    for(const s of sectors){
+      const a=model.allocations[s.id];
+      if(!isObject(a))continue;
+      let share=finite(a.sharePct);
+      if(share===null){
+        const oldBudget=finite(a.budgetUsd);
+        share=envelope>0&&oldBudget!==null?Math.max(0,oldBudget/envelope*100):Number(s.defaultSharePct)||0;
+        a.sharePct=share;
+      }
+      a.department=s.id;
+      a.spentUsd=Math.max(0,finite(a.spentUsd)||0);
+      present.push({id:s.id,sharePct:Math.max(0,share),priorBudget:finite(a.budgetUsd)});
+    }
+    const presentIds=new Set(present.map(x=>x.id));
+    const currentShare=present.reduce((n,x)=>n+x.sharePct,0);
+    const missing=sectors.filter(s=>!presentIds.has(s.id));
+    const defaultTotal=missing.reduce((n,s)=>n+(Number(s.defaultSharePct)||0),0);
+    const unassigned=Math.max(0,100-currentShare);
+    for(const s of missing){
+      const share=defaultTotal>0?unassigned*(Number(s.defaultSharePct)||0)/defaultTotal:0;
+      model.allocations[s.id]={department:s.id,sharePct:share,budgetUsd:envelope*share/100,spentUsd:0,
+        remainingUsd:envelope*share/100,updatedTurn:currentTurn(),source:'OMEGA_DEFAULT_BUDGET_PLAN'};
+    }
+    for(const s of sectors){
+      const a=model.allocations[s.id];
+      if(!isObject(a))continue;
+      const share=Math.max(0,finite(a.sharePct)||0);
+      a.sharePct=share;
+      a.budgetUsd=Math.max(0,envelope*share/100);
+      a.remainingUsd=Math.max(0,a.budgetUsd-(finite(a.spentUsd)||0));
+    }
+    if(finite(model.minimumReserveTargetUsd)===null)model.minimumReserveTargetUsd=0;
+  }
+  function budgetTotals(model){
+    const rows=(sectorRegistry.budgetSectors||[]).map(s=>{
+      const a=model?.allocations?.[s.id]||{};
+      return {id:s.id,name:s.name,icon:s.icon,sharePct:Math.max(0,finite(a.sharePct)||0),
+        budgetUsd:Math.max(0,finite(a.budgetUsd)||0),spentUsd:Math.max(0,finite(a.spentUsd)||0),
+        remainingUsd:Math.max(0,finite(a.remainingUsd)||0),defaultSharePct:Number(s.defaultSharePct)||0,
+        description:s.description,updatedTurn:a.updatedTurn??null};
+    });
+    const totalSharePct=rows.reduce((n,x)=>n+x.sharePct,0);
+    const envelope=Math.max(0,finite(model?.fiscalModel?.annualSpendingUsd)||0);
+    const totalAllocatedUsd=rows.reduce((n,x)=>n+x.budgetUsd,0);
+    const totalSpentUsd=rows.reduce((n,x)=>n+x.spentUsd,0);
+    return {rows,envelopeUsd:envelope,totalSharePct,unallocatedSharePct:Math.max(0,100-totalSharePct),
+      overAllocatedSharePct:Math.max(0,totalSharePct-100),totalAllocatedUsd,totalSpentUsd,
+      totalRemainingUsd:rows.reduce((n,x)=>n+x.remainingUsd,0),unallocatedBudgetUsd:Math.max(0,envelope-totalAllocatedUsd)};
+  }
+  function revenueState(p,model,metrics,root){
+    root=root||rootState();
+    const fb=financeBucketFor(root,p,false)||{};
+    const resourceFiscal=isObject(fb.resourceFiscal)?fb.resourceFiscal:{};
+    const cumulativeFiscal=isObject(resourceFiscal.cumulative)?resourceFiscal.cumulative:{};
+    const currentFiscal=isObject(resourceFiscal.thisTurn)?resourceFiscal.thisTurn:{};
+    const recordedRevenue=finite(fb.revenue);
+    const recordedTax=finite(fb.taxRevenue);
+    const recordedResourceCurrent=finite(fb.resourceBudgetContributionThisTurn)??finite(currentFiscal.total);
+    const recordedResourceCumulative=finite(fb.resourceBudgetContribution)??finite(cumulativeFiscal.total);
+    const resourceCumulativeSafe=recordedResourceCumulative===null?null:Math.max(0,recordedResourceCumulative);
+    const nonTax=recordedRevenue!==null&&recordedTax!==null?
+      Math.max(0,recordedRevenue-recordedTax-(resourceCumulativeSafe??0)):null;
+    const extraCandidates=[
+      ['tradeDuties','Trade duties and customs',[fb.tradeTariffRevenue,fb.customsRevenue,fb.tradeDutyRevenue]],
+      ['stateEnterprise','State-owned enterprise dividends',[fb.stateEnterpriseRevenue,fb.dividendsReceived]],
+      ['fees','Licences, fees and service charges',[fb.serviceFeeRevenue,fb.licenceRevenue]],
+      ['foreignTransfers','Grants and external transfers',[fb.externalTransfers,fb.grantsReceived,fb.foreignAidRevenue]]
+    ];
+    const rows=[
+      {id:'tax',name:'Modeled public tax receipts',type:'MODELED',amountUsd:finite(model?.fiscalModel?.annualRevenueUsd),basis:'Annual projection',available:finite(model?.fiscalModel?.annualRevenueUsd)!==null},
+      {id:'resourceCurrent',name:'Recorded resource receipts this turn',type:'RECORDED_RUNTIME',amountUsd:recordedResourceCurrent,basis:'Current simulation turn',available:recordedResourceCurrent!==null},
+      {id:'resourceCumulative',name:'Recorded resource receipts cumulative',type:'RECORDED_RUNTIME',amountUsd:resourceCumulativeSafe,basis:'Runtime cumulative total',available:resourceCumulativeSafe!==null},
+      {id:'recordedTax',name:'Tax receipts recorded to date',type:'RECORDED_RUNTIME',amountUsd:recordedTax,basis:'finance.taxRevenue',available:recordedTax!==null},
+      {id:'recordedRevenue',name:'All recorded government revenue',type:'RECORDED_RUNTIME',amountUsd:recordedRevenue,basis:'finance.revenue',available:recordedRevenue!==null},
+      {id:'otherRecorded',name:'Other recorded non-tax revenue',type:'RECORDED_RUNTIME',amountUsd:nonTax,basis:'Recorded total less tax and resource receipts',available:nonTax!==null},
+      ...extraCandidates.map(([id,name,candidates])=>{
+        const found=candidates.map(finite).find(v=>v!==null)??null;
+        return {id,name,type:'RECORDED_RUNTIME',amountUsd:found,basis:'Existing runtime field only',available:found!==null};
+      })
+    ];
+    const industries=(sectorRegistry.economicSectors||[]).map(s=>{
+      const output=finite(metrics?.gdpCurrentUsd)===null?null:metrics.gdpCurrentUsd*(Number(s.outputSharePct)||0)/100;
+      const tax=finite(model?.fiscalModel?.annualRevenueUsd)===null?null:model.fiscalModel.annualRevenueUsd*(Number(s.taxReceiptSharePct)||0)/100;
+      return {id:s.id,name:s.name,icon:s.icon,outputSharePct:Number(s.outputSharePct)||0,taxReceiptSharePct:Number(s.taxReceiptSharePct)||0,
+        estimatedOutputUsd:output,projectedTaxReceiptUsd:tax,type:'MODELED_ESTIMATE'};
+    });
+    return {rows,industries,recordedRevenueUsd:recordedRevenue,recordedTaxRevenueUsd:recordedTax,
+      recordedResourceCurrentUsd:recordedResourceCurrent,recordedResourceCumulativeUsd:resourceCumulativeSafe,
+      modelRevenueUsd:finite(model?.fiscalModel?.annualRevenueUsd),modelTaxTakePct:finite(model?.policy?.taxRatePct)};
+  }
+  function actualCashflow(model){
+    return (finite(model?.currentYearTaxRevenueUsd)||0)+(finite(model?.currentYearExternalInflowUsd)||0)
+      -(finite(model?.currentYearSpendingUsd)||0)-(finite(model?.currentYearExternalOutflowUsd)||0)
+      -(finite(model?.currentYearInterestUsd)||0);
+  }
+  function fiscalYearIndexFor(turn,stepMs){
+    const n=Math.max(0,finite(turn)||0),dt=Math.max(0,finite(stepMs)||Number(rules.simulationTurnDurationMs||HOUR_MS));
+    return Math.floor(n*dt/Number(rules.annualizationMs||YEAR_MS));
+  }
   function ensureFinanceState(p,root){
     if(!p)return null;root=root||rootState();const bucket=financeBucketFor(root,p,true);if(!bucket)return null;
     const id=p.iso3||p.countryCode;
@@ -142,7 +266,10 @@
       if(finite(model.fiscalModel.spendingToGdpPct)===null)model.fiscalModel.spendingToGdpPct=gdp>0?model.fiscalModel.annualSpendingUsd/gdp*100:0;
       if(finite(model.fiscalModel.annualBudgetBalanceUsd)===null)model.fiscalModel.annualBudgetBalanceUsd=model.fiscalModel.annualRevenueUsd-model.fiscalModel.annualSpendingUsd;
       model.fiscalModel.balanceBaselineSource=observedBalance!==null?'EXISTING_GAME_DATASET':'GAME_RULE_ESTIMATE';
-      for(const k of ['cumulativeRevenueUsd','cumulativeSpendingUsd','cumulativeInterestUsd','cumulativeBorrowingUsd'])if(finite(model[k])===null)model[k]=0;
+      for(const k of ['cumulativeRevenueUsd','cumulativeSpendingUsd','cumulativeInterestUsd','cumulativeBorrowingUsd',
+        'cumulativeExternalInflowUsd','cumulativeExternalOutflowUsd','currentYearTaxRevenueUsd','currentYearSpendingUsd',
+        'currentYearInterestUsd','currentYearExternalInflowUsd','currentYearExternalOutflowUsd'])if(finite(model[k])===null)model[k]=0;
+      model.fiscalYearIndex=finite(model.fiscalYearIndex)??fiscalYearIndexFor(currentTurn(),Number(rules.simulationTurnDurationMs||HOUR_MS));
       model.priceIndex=finite(model.priceIndex)??100;model.allocations=isObject(model.allocations)?model.allocations:{};
       if(!Array.isArray(model.ledger))model.ledger=[];model.revision=finite(model.revision)??0;
     }else{
@@ -152,6 +279,10 @@
       if(!Array.isArray(model.ledger))model.ledger=[];
     }
     if(finite(model.lastSyncedTreasuryBalanceUsd)===null)model.lastSyncedTreasuryBalanceUsd=finite(model.treasuryBalanceUsd)??0;
+    for(const k of ['cumulativeExternalInflowUsd','cumulativeExternalOutflowUsd','currentYearTaxRevenueUsd','currentYearSpendingUsd',
+      'currentYearInterestUsd','currentYearExternalInflowUsd','currentYearExternalOutflowUsd'])if(finite(model[k])===null)model[k]=0;
+    if(finite(model.fiscalYearIndex)===null)model.fiscalYearIndex=fiscalYearIndexFor(currentTurn(),Number(rules.simulationTurnDurationMs||HOUR_MS));
+    initializeSectorAllocations(model);
     return model;
   }
   function ensureStateInitialized(){
@@ -168,12 +299,12 @@
     root=root||rootState();const e=getEconomyRecord(p)||{},m=modelProfileIndicators(p,e),fm=ensureFinanceState(p,root);
     if(fm&&reconcileExternalTreasury(p,fm,root))syncEconomyRecord(p,fm,root);
     m.treasuryBalanceUsd=fm?finite(fm.treasuryBalanceUsd):null;
-    m.availableTreasuryUsd=fm?Math.max(0,(finite(fm.treasuryBalanceUsd)??0)-totalReserved(fm)):null;
+    m.availableTreasuryUsd=fm?Math.max(0,finite(fm.treasuryBalanceUsd)??0):null;
     m.taxRatePct=fm?finite(fm.policy?.taxRatePct):null;m.policyInterestRatePct=fm?finite(fm.policy?.interestRateAnnualPct):null;
     m.annualRevenueUsd=fm?finite(fm.fiscalModel?.annualRevenueUsd):null;
     m.annualSpendingUsd=fm?finite(fm.fiscalModel?.annualSpendingUsd):null;
     m.currentBudgetBalanceUsd=fm?finite(fm.fiscalModel?.annualBudgetBalanceUsd):m.governmentBudgetBalanceUsd;
-    m.priceIndex=fm?finite(fm.priceIndex):null;return m;
+    m.priceIndex=fm?finite(fm.priceIndex):null;m.actualCashflowUsd=fm?actualCashflow(fm):null;return m;
   }
   function percentileMap(rows,key,transform){
     const vals=[];for(const r of rows){const v=finite(r.metrics[key]);if(v!==null)vals.push({code:r.profile.countryCode,value:transform?transform(v):v});}
@@ -263,8 +394,14 @@
     for(const p of profiles)syncEconomyRecord(p,ensureFinanceState(p,root),root);
   }
   function getPlayerCode(){return playerCountryProfile()?.countryCode||null;}
+  function postLedger(model,profile,entry){
+    model.ledger=Array.isArray(model.ledger)?model.ledger:[];
+    model.ledger.push(Object.assign({turn:currentTurn(),countryCode:profile.countryCode,balanceAfterUsd:finite(model.treasuryBalanceUsd)||0},entry));
+    model.ledger=model.ledger.slice(-Number(rules.maximumLedgerEntries||500));
+  }
   function applyAction(action){
-    action=isObject(action)?action:{};const type=String(action.type||'').toLowerCase().replace(/_/g,'-');
+    action=isObject(action)?action:{};
+    const type=String(action.type||'').toLowerCase().replace(/_/g,'-');
     const p=resolveProfile(action.countryId||action.countryCode||selectedCountryCode)||playerCountryProfile();
     if(!p)return {ok:false,code:'COUNTRY_NOT_FOUND',message:'Country profile is not available.'};
     if(p.countryCode!==getPlayerCode())return {ok:false,code:'PLAYER_COUNTRY_SCOPE_VIOLATION',message:'Finance commands are restricted to the active player country.'};
@@ -276,51 +413,112 @@
     let amount=finite(action.amountUsd??action.amount),result=null;
     if(type==='set-tax-rate'||type==='tax-rate'){
       const value=finite(action.value??action.ratePct);
-      if(value===null||value<Number(rules.minimumTaxRatePct??0)||value>Number(rules.maximumTaxRatePct??60))return {ok:false,code:'TAX_RATE_OUT_OF_RANGE',message:'Tax rate is outside the configured game-rule limits.'};
+      if(value===null||value<Number(rules.minimumTaxRatePct??0)||value>Number(rules.maximumTaxRatePct??60))
+        return {ok:false,code:'TAX_RATE_OUT_OF_RANGE',message:'Tax take must remain within the configured game-rule limits.'};
       fm.policy.taxRatePct=value;fm.policy.taxRateSource='PLAYER_POLICY';fm.policy.revision=(finite(fm.policy.revision)||0)+1;
-      fm.fiscalModel.annualRevenueUsd=(finite(e.gdp)||0)*value/100;
-      fm.fiscalModel.annualBudgetBalanceUsd=fm.fiscalModel.annualRevenueUsd-(finite(fm.fiscalModel.annualSpendingUsd)||0);
-      fm.revision+=1;result={ok:true,code:'TAX_RATE_UPDATED',message:'Tax policy updated. Annual revenue is a modeled projection.'};
+      recalculateFiscal(p,fm,e);initializeSectorAllocations(fm);fm.revision+=1;
+      postLedger(fm,p,{department:'finance',action:'TAX_POLICY_CHANGED',category:'tax_take_pct_gdp',amountUsd:0,description:'New tax take: '+value+'% of GDP'});
+      result={ok:true,code:'TAX_RATE_UPDATED',message:'Tax policy updated. Its revenue is a modeled projection.'};
     }else if(type==='set-interest-rate'||type==='interest-rate'){
       const value=finite(action.value??action.ratePct);
-      if(value===null||value<Number(rules.minimumPolicyInterestRatePct??0)||value>Number(rules.maximumPolicyInterestRatePct??40))return {ok:false,code:'POLICY_RATE_OUT_OF_RANGE',message:'Interest rate is outside the configured game-rule limits.'};
+      if(value===null||value<Number(rules.minimumPolicyInterestRatePct??0)||value>Number(rules.maximumPolicyInterestRatePct??40))
+        return {ok:false,code:'POLICY_RATE_OUT_OF_RANGE',message:'Policy interest rate is outside the configured limits.'};
       fm.policy.interestRateAnnualPct=value;fm.policy.interestRateSource='PLAYER_POLICY';fm.policy.revision=(finite(fm.policy.revision)||0)+1;
-      fm.revision+=1;result={ok:true,code:'POLICY_RATE_UPDATED',message:'Modeled policy rate updated. Future debt-interest accrual will use it.'};
+      fm.revision+=1;
+      postLedger(fm,p,{department:'finance',action:'POLICY_RATE_CHANGED',category:'annual_interest_rate',amountUsd:0,description:'New modeled policy rate: '+value+'%'});
+      result={ok:true,code:'POLICY_RATE_UPDATED',message:'Modeled policy interest rate updated. Future debt-interest accrual will use it.'};
+    }else if(type==='set-reserve-target'){
+      const value=finite(action.value??action.sharePct);
+      if(value===null||value<0||value>60)return {ok:false,code:'RESERVE_TARGET_OUT_OF_RANGE',message:'Reserve target must be between 0% and 60% of the annual spending plan.'};
+      fm.policy.minimumReservePctOfAnnualSpending=value;fm.policy.minimumReserveSource='PLAYER_POLICY';fm.revision+=1;
+      postLedger(fm,p,{department:'finance',action:'RESERVE_POLICY_CHANGED',category:'cash_reserve_target',amountUsd:0,description:'Minimum treasury reserve target: '+value+'% of annual budget'});
+      result={ok:true,code:'RESERVE_POLICY_UPDATED',message:'Minimum treasury reserve policy updated.'};
+    }else if(type==='set-sector-share'){
+      const dep=String(action.sectorId||action.department||'').toLowerCase(),sector=budgetSectorById(dep);
+      const share=finite(action.sharePct??action.value);
+      if(!sector)return {ok:false,code:'BUDGET_SECTOR_INVALID',message:'Select a valid budget sector.'};
+      if(share===null||share<0||share>100)return {ok:false,code:'BUDGET_SHARE_OUT_OF_RANGE',message:'Sector share must be between 0% and 100%.'};
+      const otherShare=(sectorRegistry.budgetSectors||[]).filter(s=>s.id!==dep)
+        .reduce((sum,s)=>sum+Math.max(0,finite(fm.allocations?.[s.id]?.sharePct)||0),0);
+      if(otherShare+share>100.00001)return {ok:false,code:'BUDGET_SHARES_EXCEED_100',message:'Total sector allocations cannot exceed 100%. Reduce another sector first.'};
+      const envelope=Math.max(0,finite(fm.fiscalModel.annualSpendingUsd)||0);
+      const budget=envelope*share/100,prior=fm.allocations[dep]||{spentUsd:0};
+      const spent=Math.max(0,finite(prior.spentUsd)||0);
+      if(budget+0.01<spent)return {ok:false,code:'ALLOCATION_BELOW_SPENT',message:'New annual allocation cannot be below money already spent in this fiscal year.'};
+      fm.allocations[dep]=Object.assign({},prior,{department:dep,sharePct:share,budgetUsd:budget,spentUsd:spent,remainingUsd:Math.max(0,budget-spent),updatedTurn:currentTurn(),source:'PLAYER_BUDGET_DISTRIBUTION'});
+      fm.revision+=1;
+      postLedger(fm,p,{department:dep,action:'BUDGET_SHARE_CHANGED',category:'annual_budget_share',amountUsd:budget,description:'New share: '+share+'%; annual ceiling: '+Math.round(budget)});
+      result={ok:true,code:'BUDGET_SHARE_UPDATED',message:sector.name+' set to '+share+'% of the annual budget plan.'};
     }else if(type==='set-allocation'||type==='allocate-budget'){
-      const dep=String(action.department||action.ministryId||'').toLowerCase();
-      if(!DEPARTMENTS.some(x=>x[0]===dep))return {ok:false,code:'MINISTRY_INVALID',message:'Choose a supported government department.'};
+      const dep=String(action.department||action.ministryId||'').toLowerCase(),sector=budgetSectorById(dep);
+      if(!DEPARTMENTS.some(x=>x[0]===dep))return {ok:false,code:'MINISTRY_INVALID',message:'Choose a supported government department or budget sector.'};
       if(amount===null||amount<=0)return {ok:false,code:'ALLOCATION_AMOUNT_INVALID',message:'Allocation must be greater than zero.'};
       const prior=isObject(fm.allocations[dep])?fm.allocations[dep]:{budgetUsd:0,spentUsd:0,remainingUsd:0};
-      if(amount<(finite(prior.spentUsd)||0))return {ok:false,code:'ALLOCATION_BELOW_SPENT',message:'Allocation cannot be below money already spent.'};
-      const reserved=totalReserved(fm,dep),remaining=amount-(finite(prior.spentUsd)||0),cash=finite(fm.treasuryBalanceUsd)||0;
-      if(reserved+remaining>cash)return {ok:false,code:'INSUFFICIENT_UNCOMMITTED_TREASURY',message:'Insufficient uncommitted treasury. Release another allocation or reduce this amount.'};
-      fm.allocations[dep]={department:dep,budgetUsd:amount,spentUsd:finite(prior.spentUsd)||0,remainingUsd:remaining,updatedTurn:currentTurn(),source:'PLAYER_ALLOCATION'};
-      fm.revision+=1;result={ok:true,code:'BUDGET_ALLOCATED',message:'Department budget ceiling reserved; funds have not yet been spent.'};
+      if(amount<(finite(prior.spentUsd)||0))return {ok:false,code:'ALLOCATION_BELOW_SPENT',message:'The new allocation cannot be below money already spent.'};
+      if(sector){
+        const envelope=Math.max(0,finite(fm.fiscalModel.annualSpendingUsd)||0);
+        if(envelope<=0)return {ok:false,code:'BUDGET_ENVELOPE_UNAVAILABLE',message:'The annual expenditure plan is unavailable.'};
+        const share=amount/envelope*100;
+        const otherShare=(sectorRegistry.budgetSectors||[]).filter(s=>s.id!==dep).reduce((sum,s)=>sum+(finite(fm.allocations?.[s.id]?.sharePct)||0),0);
+        if(otherShare+share>100.00001)return {ok:false,code:'BUDGET_SHARES_EXCEED_100',message:'Total sector budgets cannot exceed the annual expenditure plan.'};
+        fm.allocations[dep]=Object.assign({},prior,{department:dep,sharePct:share,budgetUsd:amount,spentUsd:finite(prior.spentUsd)||0,
+          remainingUsd:amount-(finite(prior.spentUsd)||0),updatedTurn:currentTurn(),source:'PLAYER_BUDGET_DISTRIBUTION'});
+      }else{
+        const cash=Math.max(0,finite(fm.treasuryBalanceUsd)||0);
+        if(amount>cash)return {ok:false,code:'INSUFFICIENT_TREASURY',message:'Legacy ministry ceiling cannot exceed the current treasury balance.'};
+        fm.allocations[dep]={department:dep,budgetUsd:amount,spentUsd:finite(prior.spentUsd)||0,
+          remainingUsd:amount-(finite(prior.spentUsd)||0),updatedTurn:currentTurn(),source:'PLAYER_ALLOCATION'};
+      }
+      fm.revision+=1;result={ok:true,code:'BUDGET_ALLOCATED',message:'Annual budget ceiling updated; this action does not spend cash.'};
     }else if(type==='spend-budget'||type==='spend'||type==='pay-expense'){
       const dep=String(action.department||action.ministryId||'').toLowerCase(),category=String(action.spendType||action.category||'general').toLowerCase();
-      const validTypes=['salary','purchase','maintenance','general'],a=fm.allocations[dep];
-      if(!DEPARTMENTS.some(x=>x[0]===dep))return {ok:false,code:'MINISTRY_INVALID',message:'Choose a supported government department.'};
-      if(!validTypes.includes(category))return {ok:false,code:'EXPENSE_CATEGORY_INVALID',message:'Expense must be salary, purchase, maintenance or general.'};
+      const validTypes=['salary','purchase','maintenance','general','investment','emergency','debt_service'];
+      const allocation=fm.allocations[dep];
+      if(!DEPARTMENTS.some(x=>x[0]===dep))return {ok:false,code:'MINISTRY_INVALID',message:'Choose a supported government sector.'};
+      if(!validTypes.includes(category))return {ok:false,code:'EXPENSE_CATEGORY_INVALID',message:'Choose salary, purchase, maintenance, general, investment, emergency or debt service.'};
       if(amount===null||amount<=0)return {ok:false,code:'EXPENSE_AMOUNT_INVALID',message:'Expense amount must be greater than zero.'};
-      if(!isObject(a))return {ok:false,code:'BUDGET_ALLOCATION_REQUIRED',message:'Allocate a department budget before spending.'};
-      if(amount>(finite(a.remainingUsd)||0))return {ok:false,code:'ALLOCATION_LIMIT_EXCEEDED',message:'Expense exceeds the department budget remaining.'};
-      if(amount>(finite(fm.treasuryBalanceUsd)||0))return {ok:false,code:'INSUFFICIENT_TREASURY',message:'Insufficient treasury; expense rejected.'};
-      a.spentUsd=(finite(a.spentUsd)||0)+amount;a.remainingUsd=(finite(a.remainingUsd)||0)-amount;fm.treasuryBalanceUsd-=amount;
-      fm.ledger.push({turn:currentTurn(),countryCode:p.countryCode,department:dep,action:'EXPENSE',category,amountUsd:amount,
-        description:String(action.description||'').slice(0,160),balanceAfterUsd:fm.treasuryBalanceUsd});
-      fm.revision+=1;result={ok:true,code:'EXPENSE_POSTED',message:'Expense posted and charged to the department allocation.'};
+      if(!isObject(allocation))return {ok:false,code:'BUDGET_ALLOCATION_REQUIRED',message:'This sector has no budget allocation. Distribute the budget before spending.'};
+      if(amount>(finite(allocation.remainingUsd)||0))return {ok:false,code:'ALLOCATION_LIMIT_EXCEEDED',message:'Expense exceeds this sector’s remaining fiscal-year allocation.'};
+      const cash=Math.max(0,finite(fm.treasuryBalanceUsd)||0);
+      if(amount>cash)return {ok:false,code:'INSUFFICIENT_TREASURY',message:'Insufficient treasury balance; expense rejected.'};
+      const reservePct=Math.max(0,finite(fm.policy.minimumReservePctOfAnnualSpending)||0);
+      const reserveFloor=Math.max(0,finite(fm.fiscalModel.annualSpendingUsd)||0)*reservePct/100;
+      if(category!=='emergency'&&category!=='debt_service'&&cash-amount+0.01<reserveFloor)
+        return {ok:false,code:'MINIMUM_RESERVE_FLOOR',message:'This expense would breach the configured minimum treasury reserve. Use the emergency category only for an authorized emergency.'};
+      allocation.spentUsd=(finite(allocation.spentUsd)||0)+amount;
+      allocation.remainingUsd=Math.max(0,(finite(allocation.budgetUsd)||0)-allocation.spentUsd);
+      fm.treasuryBalanceUsd=cash-amount;
+      fm.cumulativeSpendingUsd=(finite(fm.cumulativeSpendingUsd)||0)+amount;
+      fm.currentYearSpendingUsd=(finite(fm.currentYearSpendingUsd)||0)+amount;
+      const fb=financeBucketFor(root,p,true);
+      fb.spending=(finite(fb.spending)||0)+amount;
+      fb.operatingExpenditure=(finite(fb.operatingExpenditure)||0)+amount;
+      if(category==='purchase'||category==='investment')fb.capitalExpenditure=(finite(fb.capitalExpenditure)||0)+amount;
+      postLedger(fm,p,{department:dep,action:'EXPENSE',category,amountUsd:amount,description:String(action.description||'').slice(0,160)});
+      fm.revision+=1;result={ok:true,code:'EXPENSE_POSTED',message:'Expense posted, charged to the sector ceiling and deducted from available treasury.'};
     }else if(type==='borrow'||type==='take-loan'){
       if(amount===null||amount<=0)return {ok:false,code:'LOAN_AMOUNT_INVALID',message:'Loan principal must be greater than zero.'};
-      const gdp=finite(e.gdp)||0,debt=finite(e.debt)||0;
+      const gdp=finite(e.gdp)||0,debt=Math.max(0,finite(e.debt)||0);
       if(amount>gdp*Number(rules.maximumBorrowTransactionPercentOfGDP??5)/100)return {ok:false,code:'LOAN_TRANSACTION_LIMIT',message:'Loan exceeds the configured per-transaction GDP limit.'};
       if(debt+amount>gdp*Number(rules.maximumDebtToGDPForNewBorrowingPct??300)/100)return {ok:false,code:'DEBT_CEILING_REACHED',message:'Loan rejected by the modeled debt-to-GDP ceiling.'};
       e.debt=debt+amount;fm.treasuryBalanceUsd=(finite(fm.treasuryBalanceUsd)||0)+amount;
       fm.cumulativeBorrowingUsd=(finite(fm.cumulativeBorrowingUsd)||0)+amount;
-      fm.ledger.push({turn:currentTurn(),countryCode:p.countryCode,department:'finance',action:'BORROW',category:'sovereign_debt',
-        amountUsd:amount,description:String(action.description||'Sovereign borrowing').slice(0,160),balanceAfterUsd:fm.treasuryBalanceUsd});
+      const fb=financeBucketFor(root,p,true);fb.borrowingProceeds=(finite(fb.borrowingProceeds)||0)+amount;
+      postLedger(fm,p,{department:'finance',action:'BORROW',category:'sovereign_debt',amountUsd:amount,description:String(action.description||'Sovereign borrowing').slice(0,160)});
       fm.revision+=1;result={ok:true,code:'BORROW_POSTED',message:'Loan posted to treasury and national debt. Interest accrues in future simulation turns.'};
+    }else if(type==='repay-debt'){
+      const debt=Math.max(0,finite(e.debt)||0),cash=Math.max(0,finite(fm.treasuryBalanceUsd)||0);
+      if(amount===null||amount<=0)return {ok:false,code:'REPAY_AMOUNT_INVALID',message:'Debt repayment must be greater than zero.'};
+      if(amount>cash)return {ok:false,code:'INSUFFICIENT_TREASURY',message:'Insufficient treasury balance for this repayment.'};
+      if(amount>debt)return {ok:false,code:'REPAY_EXCEEDS_DEBT',message:'Repayment cannot exceed outstanding public debt.'};
+      e.debt=debt-amount;fm.treasuryBalanceUsd=cash-amount;
+      fm.cumulativeDebtRepaymentUsd=(finite(fm.cumulativeDebtRepaymentUsd)||0)+amount;
+      const fb=financeBucketFor(root,p,true);fb.debtRepayments=(finite(fb.debtRepayments)||0)+amount;
+      postLedger(fm,p,{department:'finance',action:'DEBT_REPAYMENT',category:'sovereign_debt',amountUsd:amount,description:String(action.description||'Principal repayment').slice(0,160)});
+      fm.revision+=1;result={ok:true,code:'DEBT_REPAID',message:'Principal repaid; both treasury and outstanding public debt were reduced.'};
     }else return {ok:false,code:'UNKNOWN_FINANCE_ACTION',message:'Unknown Finance Ministry command.'};
-    fm.ledger=fm.ledger.slice(-Number(rules.maximumLedgerEntries||500));syncEconomyRecord(p,fm,root);
+    fm.ledger=fm.ledger.slice(-Number(rules.maximumLedgerEntries||500));
+    syncEconomyRecord(p,fm,root);
     safeDispatch('OMEGA_FINANCE_STATE_UPDATED',{countryCode:p.countryCode,action:type,turn:currentTurn(),revision:fm.revision});
     return Object.assign(result,{countryCode:p.countryCode,treasuryBalanceUsd:fm.treasuryBalanceUsd,revision:fm.revision});
   }
@@ -329,17 +527,32 @@
     fm.fiscalModel.annualRevenueUsd=gdp*(finite(fm.policy?.taxRatePct)??Number(rules.defaultTaxRatePct||18))/100;
     fm.fiscalModel.annualSpendingUsd=gdp*(finite(fm.fiscalModel.spendingToGdpPct)??0)/100;
     fm.fiscalModel.annualBudgetBalanceUsd=fm.fiscalModel.annualRevenueUsd-fm.fiscalModel.annualSpendingUsd;
+    initializeSectorAllocations(fm);
   }
   function advanceTurn(turn,stepDurationMs){
     if(!initialized)return {ok:false,reason:'NOT_INITIALIZED',processed:0};
-    const turnNumber=finite(turn)??currentTurn()+1,dt=Math.max(0,finite(stepDurationMs)??Number(rules.simulationTurnDurationMs||HOUR_MS));
+    const turnNumber=finite(turn)??currentTurn()+1;
+    const dt=Math.max(0,finite(stepDurationMs)??Number(rules.simulationTurnDurationMs||HOUR_MS));
     const years=dt/Number(rules.annualizationMs||YEAR_MS);if(years<=0)return {ok:true,turn:turnNumber,processed:0};
     const root=rootState();let processed=0;
+    const newYearIndex=fiscalYearIndexFor(turnNumber,dt);
     for(const p of profiles){
-      if(!isPlayable(p))continue;const fm=ensureFinanceState(p,root);
+      if(!isPlayable(p))continue;
+      const fm=ensureFinanceState(p,root);
       const externalTreasuryChanged=reconcileExternalTreasury(p,fm,root);
       if(finite(fm.lastProcessedTurn)!==null&&turnNumber<=fm.lastProcessedTurn){if(externalTreasuryChanged)syncEconomyRecord(p,fm,root);continue;}
       const e=root.economy?.[p.economyKey]||getEconomyRecord(p);if(!isObject(e))continue;
+      if(newYearIndex>(finite(fm.fiscalYearIndex)||0)){
+        fm.fiscalYearIndex=newYearIndex;
+        fm.currentYearTaxRevenueUsd=0;fm.currentYearSpendingUsd=0;fm.currentYearInterestUsd=0;
+        fm.currentYearExternalInflowUsd=0;fm.currentYearExternalOutflowUsd=0;
+        for(const s of sectorRegistry.budgetSectors||[]){
+          const a=fm.allocations?.[s.id];if(!isObject(a))continue;
+          a.spentUsd=0;a.remainingUsd=Math.max(0,finite(a.budgetUsd)||0);a.updatedTurn=turnNumber;
+        }
+        postLedger(fm,p,{department:'finance',action:'FISCAL_YEAR_ROLLOVER',category:'fiscal_year',
+          amountUsd:0,description:'New modeled fiscal year: '+(Number(rules.baselineYear||2015)+newYearIndex)});
+      }
       const gdpBefore=finite(e.gdp)??finite(p.indicators?.gdpCurrentUsd);if(gdpBefore===null||gdpBefore<=0)continue;
       const growth=clamp(finite(e.gdp_growth)??finite(p.indicators?.gdpGrowthPct)??0,-99,100);
       const gdpAfter=Math.max(0,gdpBefore*Math.pow(1+growth/100,years));e.gdp=gdpAfter;
@@ -347,17 +560,21 @@
       const rate=clamp(finite(fm.policy?.interestRateAnnualPct)??Number(rules.defaultPolicyInterestRatePct||3),0,100);
       const interest=debtBefore*(Math.pow(1+rate/100,years)-1),debtAfter=debtBefore+interest;
       recalculateFiscal(p,fm,e);
-      const income=(finite(fm.fiscalModel.annualRevenueUsd)||0)*years,expenses=(finite(fm.fiscalModel.annualSpendingUsd)||0)*years;
-      const cash=(finite(fm.treasuryBalanceUsd)||0)+income-expenses-interest;
-      fm.treasuryBalanceUsd=Math.max(0,cash);
+      const income=(finite(fm.fiscalModel.annualRevenueUsd)||0)*years;
+      fm.treasuryBalanceUsd=Math.max(0,(finite(fm.treasuryBalanceUsd)||0)+income-interest);
       fm.cumulativeRevenueUsd=(finite(fm.cumulativeRevenueUsd)||0)+income;
-      fm.cumulativeSpendingUsd=(finite(fm.cumulativeSpendingUsd)||0)+expenses;
       fm.cumulativeInterestUsd=(finite(fm.cumulativeInterestUsd)||0)+interest;
+      fm.currentYearTaxRevenueUsd=(finite(fm.currentYearTaxRevenueUsd)||0)+income;
+      fm.currentYearInterestUsd=(finite(fm.currentYearInterestUsd)||0)+interest;
+      const fb=financeBucketFor(root,p,true);
+      fb.taxRevenue=(finite(fb.taxRevenue)||0)+income;
+      fb.revenue=(finite(fb.revenue)||0)+income;
       const inflation=finite(e.inflation)??finite(p.indicators?.inflationRatePct)??0;
       fm.priceIndex=(finite(fm.priceIndex)||100)*Math.pow(Math.max(.0001,1+inflation/100),years);
       fm.lastProcessedTurn=turnNumber;fm.revision=(finite(fm.revision)||0)+1;
       e.debt=debtAfter;e.budget_balance=fm.fiscalModel.annualBudgetBalanceUsd;
-      e.revenue=fm.fiscalModel.annualRevenueUsd;e.expenditure=fm.fiscalModel.annualSpendingUsd;
+      e.revenue=finite(fb.revenue)??fm.fiscalModel.annualRevenueUsd;
+      e.expenditure=finite(fb.spending)??fm.fiscalModel.annualSpendingUsd;
       syncEconomyRecord(p,fm,root);processed+=1;
     }
     safeDispatch('OMEGA_FINANCE_STATE_UPDATED',{countryCode:getPlayerCode(),turn:turnNumber,processed,revision:VERSION});
@@ -383,55 +600,152 @@
     return '<div class="ofm-table-scroll"><table class="ofm-table"><thead><tr><th>GDP rank</th><th>Country / area</th><th>GDP (USD)</th><th>Growth</th><th>Inflation</th><th>Unemployment</th><th>Debt / GDP</th><th>Budget balance</th><th>Trade balance</th><th>FX reserves</th><th>Economic influence</th><th>Fiscal risk</th><th>Data status</th></tr></thead><tbody>'+
       sorted.map(r=>'<tr><td>'+escapeHTML(r.metrics.gdpWorldRank??'—')+'</td><td>'+escapeHTML(r.profile.name)+'</td><td>'+fmtMoney(r.metrics.gdpCurrentUsd)+'</td><td>'+fmtPct(r.metrics.gdpGrowthPct)+'</td><td>'+fmtPct(r.metrics.inflationRatePct)+'</td><td>'+fmtPct(r.metrics.unemploymentRatePct)+'</td><td>'+fmtPct(r.metrics.publicDebtToGdpPct)+'</td><td>'+fmtMoney(r.metrics.currentBudgetBalanceUsd??r.metrics.governmentBudgetBalanceUsd)+'</td><td>'+fmtMoney(r.metrics.tradeBalanceUsd)+'</td><td>'+fmtMoney(r.metrics.foreignExchangeReservesUsd)+'</td><td>'+fmtNumber(r.metrics.economicInfluenceIndex,1)+'</td><td>'+fmtNumber(r.metrics.fiscalRiskIndex,1)+'</td><td>'+escapeHTML(r.profile.profileStatus)+'</td></tr>').join('')+'</tbody></table></div>';
   }
-  function dashboardHTML(p,m,fm,rows,notice){
-    const player=playerCountryProfile(),isPlayer=!!player&&player.countryCode===p.countryCode,editable=isPlayer&&isPlayable(p),disabled=editable?'':' disabled';
-    const status=isPlayable(p)?'ACTIVE GAME MODEL':'ECONOMIC BASELINE UNAVAILABLE';
-    const balance=m.currentBudgetBalanceUsd??m.governmentBudgetBalanceUsd,cash=fm?fm.treasuryBalanceUsd:null;
-    const freeCash=fm?Math.max(0,(finite(cash)||0)-totalReserved(fm)):null;
-    let out='<div class="ofm-dashboard" data-ofm-root><div class="ofm-hero"><div><div class="ofm-eyebrow">OMEGA / SOVEREIGN FISCAL SYSTEM</div><h2>Finance Ministry</h2><p>National accounts, monetary policy, debt service and controlled government spending.</p></div><div class="ofm-status">'+escapeHTML(status)+'</div></div>';
-    out+='<div class="ofm-toolbar"><label for="ofm-country-select">Country profile</label><select id="ofm-country-select">'+renderCountryOptions()+'</select><span class="ofm-baseline">Reference baseline: 2015 · USD unless stated</span></div>';
-    if(notice)out+='<div class="ofm-notice '+(notice.ok?'is-ok':'is-error')+'" role="status">'+escapeHTML(notice.message||'')+'</div>';
-    if(!isPlayer)out+='<div class="ofm-readonly">READ-ONLY PROFILE. Financial controls apply only to the active player country ('+escapeHTML(player?.name||'not selected')+').</div>';
-    if(p.profileStatus==='UNAVAILABLE')out+='<div class="ofm-warning">No matching economy baseline exists for this country/area. Missing statistics remain unavailable and financial actions are disabled.</div>';
-    else if(p.profileStatus==='PARTIAL_LOCAL_BASELINE')out+='<div class="ofm-warning">Partial baseline data. Derived indicators appear only where their source values exist.</div>';
-    out+='<section class="ofm-kpi-grid">'+
-      metricCard('GDP (current USD)',fmtMoney(m.gdpCurrentUsd),'gdpCurrentUsd','Local baseline; runtime growth applied')+
-      metricCard('Annual GDP growth',fmtPct(m.gdpGrowthPct),'gdpGrowthPct','Annualized baseline rate')+
-      metricCard('Inflation rate',fmtPct(m.inflationRatePct),'inflationRatePct','Price index compounds each turn')+
-      metricCard('Public debt / GDP',fmtPct(m.publicDebtToGdpPct),'publicDebtToGdpPct','Derived ratio')+
-      metricCard('Economic influence index',fmtNumber(m.economicInfluenceIndex,1),'economicInfluenceIndex','Custom game index; 0–100')+
-      metricCard('Fiscal risk index',fmtNumber(m.fiscalRiskIndex,1),'fiscalRiskIndex','Higher means higher modeled risk')+
-      metricCard('Treasury balance',fmtMoney(cash),'treasuryBalanceUsd',fm?.treasurySource||'Unavailable')+
-      metricCard('Uncommitted treasury',fmtMoney(freeCash),'availableTreasuryUsd','Cash not reserved for ministry budgets')+'</section>';
-    out+='<section class="ofm-section"><div class="ofm-section-heading"><h3>Macroeconomic indicators</h3><span>Baseline values plus derived ratios</span></div><div class="ofm-indicator-grid">';
-    const cells=[
-      ['Global GDP rank',m.gdpWorldRank===null?'N/A':'#'+m.gdpWorldRank],['GDP per capita',fmtMoney(m.gdpPerCapitaUsd)],
-      ['National debt',fmtMoney(m.publicDebtUsd)],['Budget balance (annualized)',fmtMoney(balance)],
-      ['Budget balance / GDP',fmtPct(m.budgetBalanceToGdpPct)],['Trade balance',fmtMoney(m.tradeBalanceUsd)],
-      ['Trade balance / GDP',fmtPct(m.tradeBalanceToGdpPct)],['Foreign-exchange reserves',fmtMoney(m.foreignExchangeReservesUsd)],
-      ['FX reserves / GDP',fmtPct(m.reservesToGdpPct)],['Debt per capita',fmtMoney(m.debtPerCapitaUsd)],
-      ['Unemployment rate',fmtPct(m.unemploymentRatePct)],['Exchange rate (local / USD)',m.exchangeRateLocalPerUsd===null?'N/A':fmtNumber(m.exchangeRateLocalPerUsd,4)],
-      ['Modeled policy interest rate',fm?fmtPct(fm.policy?.interestRateAnnualPct):'N/A'],['Modeled tax rate',fm?fmtPct(fm.policy?.taxRatePct):'N/A'],
-      ['Modeled annual revenue',fmtMoney(fm?.fiscalModel?.annualRevenueUsd)],['Modeled annual expenditure',fmtMoney(fm?.fiscalModel?.annualSpendingUsd)],
-      ['Price index (100 at start)',fmtNumber(fm?.priceIndex,3)],['Fiscal health index',fmtNumber(m.fiscalHealthIndex,1)]
-    ];
-    out+=cells.map(x=>'<div class="ofm-indicator"><span>'+escapeHTML(x[0])+'</span><strong>'+escapeHTML(x[1])+'</strong></div>').join('');
-    out+='</div><p class="ofm-data-note">Policy rate, tax rate, revenue, expenditure and opening treasury are game-model values unless a runtime value already existed. They are not verified real-world statistics.</p></section>';
+  function budgetRows(fm){
+    return budgetTotals(fm).rows;
+  }
+  function renderBudgetBarRows(fm,limit){
+    const rows=budgetRows(fm).slice().sort((a,b)=>b.sharePct-a.sharePct).slice(0,limit||8);
+    const max=Math.max(1,...rows.map(r=>r.sharePct));
+    return '<div class="ofm-sector-bars">'+rows.map(r=>'<div class="ofm-sector-bar-row"><div class="ofm-sector-bar-meta"><span class="ofm-sector-glyph">'+escapeHTML(r.icon)+'</span><span class="ofm-sector-bar-name">'+escapeHTML(r.name)+'</span><strong>'+fmtPct(r.sharePct)+'</strong></div><div class="ofm-bar-track"><span style="width:'+clamp(r.sharePct/max*100,0,100)+'%"></span></div><div class="ofm-sector-bar-money">'+fmtMoney(r.budgetUsd)+'</div></div>').join('')+'</div>';
+  }
+  function renderBudgetTable(fm,editable){
+    const rows=budgetRows(fm);
+    return '<div class="ofm-table-scroll"><table class="ofm-table ofm-budget-table"><thead><tr><th>Sector</th><th>Share of plan</th><th>Annual ceiling</th><th>Spent this year</th><th>Remaining</th><th>Budget action</th></tr></thead><tbody>'+
+      rows.map(r=>'<tr><td><span class="ofm-sector-cell"><span class="ofm-sector-glyph">'+escapeHTML(r.icon)+'</span><span><strong>'+escapeHTML(r.name)+'</strong><small>'+escapeHTML(r.description||'')+'</small></span></span></td>'+
+        '<td>'+ (editable?'<form class="ofm-share-form" data-ofm-action="set-sector-share"><input type="hidden" name="sectorId" value="'+escapeHTML(r.id)+'"><input aria-label="'+escapeHTML(r.name)+' budget share percentage" name="sharePct" type="number" min="0" max="100" step="0.1" value="'+escapeHTML(String(Number(r.sharePct.toFixed(2))) )+'" required><span>%</span><button type="submit">Apply</button></form>':fmtPct(r.sharePct))+'</td>'+
+        '<td>'+fmtMoney(r.budgetUsd)+'</td><td>'+fmtMoney(r.spentUsd)+'</td><td>'+fmtMoney(r.remainingUsd)+'</td>'+
+        '<td>'+(editable?'<form class="ofm-share-form ofm-amount-form" data-ofm-action="set-allocation"><input type="hidden" name="department" value="'+escapeHTML(r.id)+'"><input aria-label="'+escapeHTML(r.name)+' annual budget amount" name="amountUsd" type="number" min="0" step="1" value="'+escapeHTML(String(Math.round(r.budgetUsd)))+'" required><button type="submit">Set amount</button></form>':'READ ONLY')+'</td></tr>').join('')+
+      '</tbody></table></div>';
+  }
+  function renderBudgetTab(p,m,fm,editable){
+    const totals=budgetTotals(fm);
+    let out='<section class="ofm-section"><div class="ofm-section-heading"><h3>Annual distribution plan</h3><span>Share total must stay at or below 100%</span></div>'+
+      '<div class="ofm-kpi-grid ofm-kpi-grid-three">'+
+      metricCard('Annual spending plan',fmtMoney(totals.envelopeUsd),null,'Modeled government expenditure ceiling')+
+      metricCard('Allocated sectors',fmtPct(totals.totalSharePct),null,fmtMoney(totals.totalAllocatedUsd)+' distributed')+
+      metricCard('Undistributed',fmtPct(totals.unallocatedSharePct),null,fmtMoney(totals.unallocatedBudgetUsd)+' unassigned')+'</div>';
+    if(totals.overAllocatedSharePct>0.01)out+='<div class="ofm-warning">Existing allocations exceed the planned envelope by '+fmtPct(totals.overAllocatedSharePct)+'. Reduce one or more sectors before increasing another.</div>';
+    out+='<p class="ofm-data-note">Change one sector and apply it. Sector shares are validated mathematically; raising one share may require lowering another first. Spending is recorded only after you submit a funded expense.</p>';
+    out+=renderBudgetTable(fm,editable)+'</section>';
     if(editable){
-      out+='<section class="ofm-section"><div class="ofm-section-heading"><h3>Fiscal and monetary policy</h3><span>Changes affect future simulation turns</span></div><div class="ofm-action-grid">';
-      out+='<form class="ofm-form" data-ofm-action="set-tax-rate"><h4>Set tax policy</h4><label>Tax rate (%)<input type="number" name="value" min="'+Number(rules.minimumTaxRatePct??0)+'" max="'+Number(rules.maximumTaxRatePct??60)+'" step="0.1" value="'+escapeHTML(String(fm.policy.taxRatePct))+'" required></label><p>Updates modeled annual revenue and fiscal balance.</p><button type="submit">Apply tax rate</button></form>';
-      out+='<form class="ofm-form" data-ofm-action="set-interest-rate"><h4>Set policy interest rate</h4><label>Annual rate (%)<input type="number" name="value" min="'+Number(rules.minimumPolicyInterestRatePct??0)+'" max="'+Number(rules.maximumPolicyInterestRatePct??40)+'" step="0.1" value="'+escapeHTML(String(fm.policy.interestRateAnnualPct))+'" required></label><p>Updates future modeled interest on public debt.</p><button type="submit">Apply policy rate</button></form></div></section>';
-      out+='<section class="ofm-section"><div class="ofm-section-heading"><h3>Department budget allocation</h3><span>Allocation reserves cash; it does not spend it</span></div>';
-      out+='<form class="ofm-form ofm-form-wide" data-ofm-action="set-allocation"><label>Department<select name="department">'+departmentOptions('interior')+'</select></label><label>Total budget ceiling (USD)<input type="number" name="amountUsd" min="1" step="1" placeholder="e.g. 3000000" required></label><button type="submit">Reserve department budget</button></form>';
-      out+='<div class="ofm-table-scroll"><table class="ofm-table"><thead><tr><th>Department</th><th>Allocated</th><th>Spent</th><th>Remaining</th><th>Updated turn</th></tr></thead><tbody>'+renderAllocationRows(fm)+'</tbody></table></div></section>';
-      out+='<section class="ofm-section"><div class="ofm-section-heading"><h3>Execute a funded expense</h3><span>Insufficient funds or allocation causes rejection</span></div>';
-      out+='<form class="ofm-form ofm-form-wide" data-ofm-action="spend-budget"><label>Department<select name="department">'+departmentOptions('interior')+'</select></label><label>Expense type<select name="spendType"><option value="salary">Salary</option><option value="purchase">Purchase / procurement</option><option value="maintenance">Repair / maintenance</option><option value="general">General expense</option></select></label><label>Amount (USD)<input type="number" name="amountUsd" min="1" step="1" placeholder="e.g. 4000000" required></label><label>Purpose<input type="text" name="description" maxlength="160" placeholder="Salary, vehicles, repairs" required></label><button type="submit">Execute payment</button></form></section>';
-      out+='<section class="ofm-section"><div class="ofm-section-heading"><h3>Sovereign borrowing</h3><span>Debt ceilings and interest accrual apply</span></div>';
-      out+='<form class="ofm-form ofm-form-wide" data-ofm-action="borrow"><label>Loan principal (USD)<input type="number" name="amountUsd" min="1" step="1" placeholder="e.g. 500000000" required></label><label>Purpose<input type="text" name="description" maxlength="160" placeholder="Emergency financing / infrastructure" required></label><button type="submit">Issue sovereign loan</button><p class="ofm-data-note">Loan size and national debt are checked against configured limits.</p></form></section>';
-    }else out+='<section class="ofm-section"><h3>Finance controls locked</h3><p>Fiscal commands are enabled only for the selected player country.</p></section>';
-    out+='<section class="ofm-section"><div class="ofm-section-heading"><h3>Recent financial ledger</h3><span>Last 12 transactions</span></div><div class="ofm-table-scroll"><table class="ofm-table"><thead><tr><th>Turn</th><th>Action</th><th>Department</th><th>Amount</th><th>Category / purpose</th></tr></thead><tbody>'+renderLedgerRows(fm)+'</tbody></table></div></section>';
-    out+='<section class="ofm-section"><div class="ofm-section-heading"><h3>Largest economies in this baseline</h3><span>Ranked by available GDP</span></div><div class="ofm-table-scroll"><table class="ofm-table"><thead><tr><th>Rank</th><th>Country</th><th>GDP</th><th>Influence</th></tr></thead><tbody>'+renderTopRows(rows)+'</tbody></table></div></section>';
-    out+='<details class="ofm-section ofm-world-register" id="ofm-world-register"><summary>GLOBAL ECONOMIC REGISTER · '+profiles.length+' COUNTRY / AREA PROFILES</summary><p class="ofm-data-note">Missing values show N/A. Baseline values and modeled values are intentionally distinguished.</p><div id="ofm-world-register-content"><span class="ofm-empty">Expand to render the full register.</span></div></details></div>';
+      out+='<section class="ofm-section"><div class="ofm-section-heading"><h3>Execute a funded expense</h3><span>Sector allocation and treasury balance are both checked</span></div>'+
+        '<form class="ofm-form ofm-form-wide" data-ofm-action="spend-budget"><label>Sector<select name="department">'+departmentOptions('defense')+'</select></label>'+
+        '<label>Expense type<select name="spendType"><option value="salary">Salary / payroll</option><option value="purchase">Procurement</option><option value="maintenance">Repair / maintenance</option><option value="investment">Capital investment</option><option value="general">General operations</option><option value="debt_service">Debt service</option><option value="emergency">Authorized emergency</option></select></label>'+
+        '<label>Amount (USD)<input name="amountUsd" type="number" min="1" step="1" placeholder="e.g. 3000000" required></label>'+
+        '<label>Purpose / transaction note<input name="description" type="text" maxlength="160" placeholder="Payroll, vehicles, equipment, repairs..." required></label>'+
+        '<button type="submit">Execute & post expense</button></form></section>';
+    }
+    return out;
+  }
+  function renderRevenueTable(p,m,fm,root){
+    const r=revenueState(p,fm,m,root);
+    const rows=r.rows.map(x=>'<tr><td><strong>'+escapeHTML(x.name)+'</strong><small>'+escapeHTML(x.basis||'')+'</small></td><td><span class="ofm-data-status '+(x.type==='MODELED'?'is-modeled':(x.available?'is-recorded':'is-unavailable'))+'">'+escapeHTML(x.type==='MODELED'?'MODELLED':(x.available?'RECORDED':'NOT AVAILABLE'))+'</span></td><td>'+fmtMoney(x.amountUsd)+'</td></tr>').join('');
+    return {snapshot:r,html:'<div class="ofm-table-scroll"><table class="ofm-table"><thead><tr><th>Revenue stream</th><th>Evidence type</th><th>Amount / projection</th></tr></thead><tbody>'+rows+'</tbody></table></div>'};
+  }
+  function renderEconomicSectorTable(p,m,fm,root){
+    const data=revenueState(p,fm,m,root),rows=data.industries;
+    return '<div class="ofm-table-scroll"><table class="ofm-table ofm-budget-table"><thead><tr><th>Industry / sector</th><th>GDP mix</th><th>Estimated output</th><th>Receipt mix</th><th>Projected public receipts</th></tr></thead><tbody>'+
+      rows.map(r=>'<tr><td><span class="ofm-sector-cell"><span class="ofm-sector-glyph">'+escapeHTML(r.icon)+'</span><strong>'+escapeHTML(r.name)+'</strong></span></td><td>'+fmtPct(r.outputSharePct)+'</td><td>'+fmtMoney(r.estimatedOutputUsd)+'</td><td>'+fmtPct(r.taxReceiptSharePct)+'</td><td>'+fmtMoney(r.projectedTaxReceiptUsd)+'</td></tr>').join('')+
+      '</tbody></table></div><p class="ofm-data-note">All industry outputs and sector tax contributions are configurable game-model estimates, computed as GDP × sector share. They are not observed real-world accounts for each country.</p>';
+  }
+  function renderOverviewTab(p,m,fm,rows,editable,root){
+    const totals=budgetTotals(fm),revenues=revenueState(p,fm,m,root),cash=Math.max(0,finite(fm.treasuryBalanceUsd)||0);
+    const actualNet=actualCashflow(fm),debt=Math.max(0,finite(m.publicDebtUsd)||0);
+    let out='<section class="ofm-kpi-grid ofm-kpi-grid-four">'+
+      metricCard('Available Treasury',fmtMoney(cash),null,'Live game cash balance')+
+      metricCard('Annual income forecast',fmtMoney(fm.fiscalModel.annualRevenueUsd),null,'Tax-take model; annualized')+
+      metricCard('Annual budget plan',fmtMoney(totals.envelopeUsd),null,'Authorized spending ceiling')+
+      metricCard('Current-year cashflow',fmtMoney(actualNet),null,'Recorded tax cash + external movements − expenses − interest')+
+      '</section>';
+    out+='<section class="ofm-section"><div class="ofm-section-heading"><h3>Budget distribution at a glance</h3><span>'+fmtPct(totals.totalSharePct)+' allocated</span></div>'+
+      renderBudgetBarRows(fm,8)+'<div class="ofm-nav-shortcuts"><button type="button" data-ofm-tab="budget">Open budget distribution</button><button type="button" data-ofm-tab="income">Open income & industries</button><button type="button" data-ofm-tab="treasury">Open Treasury & debt</button></div></section>';
+    out+='<section class="ofm-section"><div class="ofm-section-heading"><h3>Revenue reality check</h3><span>Model projections and recorded receipts stay separate</span></div>'+
+      '<div class="ofm-kpi-grid ofm-kpi-grid-three">'+
+      metricCard('Recorded tax receipts',fmtMoney(revenues.snapshot.recordedTaxRevenueUsd),null,'finance.taxRevenue; unavailable if not recorded')+
+      metricCard('Resource receipts this turn',fmtMoney(revenues.snapshot.recordedResourceCurrentUsd),null,'Recorded from Resource Economy when published')+
+      metricCard('Public debt',fmtMoney(debt),null,'Debt outstanding in game state')+'</div>'+
+      '<p class="ofm-data-note">The annual income figure is a model forecast. Recorded treasury movements remain a separate ledger so the game does not disguise estimates as actual receipts.</p></section>';
+    if(!editable)out+='<div class="ofm-readonly">READ-ONLY country profile. Finance actions can only be executed for the country selected as the active player in the game.</div>';
+    if(p.profileStatus==='UNAVAILABLE')out+='<div class="ofm-warning">GDP baseline unavailable for this country. Fiscal controls remain disabled.</div>';
+    return out;
+  }
+  function renderIncomeTab(p,m,fm,editable,root){
+    const r=revenueState(p,fm,m,root);
+    return '<section class="ofm-section"><div class="ofm-section-heading"><h3>Industry output & tax contribution</h3><span>Computed using the current in-game GDP</span></div>'+
+      renderEconomicSectorTable(p,m,fm,root)+'</section>'+
+      '<section class="ofm-section"><div class="ofm-section-heading"><h3>Revenue sources</h3><span>Source-aware accounting</span></div>'+
+      renderRevenueTable(p,m,fm,root).html+
+      '<p class="ofm-data-note">“NOT AVAILABLE” means no matching live game field exists. No default figure is fabricated for customs, state-owned enterprise dividends, fees or foreign transfers.</p></section>'+
+      (editable?'<section class="ofm-section"><div class="ofm-section-heading"><h3>Tax policy</h3><span>Effects occur through simulation-time revenue collection</span></div>'+
+      '<form class="ofm-form ofm-form-wide" data-ofm-action="set-tax-rate"><label>Tax take as % of GDP<input type="number" name="value" min="'+Number(rules.minimumTaxRatePct??0)+'" max="'+Number(rules.maximumTaxRatePct??60)+'" step="0.1" value="'+escapeHTML(String(fm.policy.taxRatePct))+'" required></label>'+
+      '<div class="ofm-data-note">This is the game’s aggregate public-revenue take relative to GDP, not a personal income-tax bracket.</div><button type="submit">Apply tax policy</button></form></section>':'');
+  }
+  function renderTreasuryTab(p,m,fm,editable,root){
+    const fb=financeBucketFor(root,p,false)||{},cash=Math.max(0,finite(fm.treasuryBalanceUsd)||0);
+    const debt=Math.max(0,finite(m.publicDebtUsd)||0),rate=finite(fm.policy.interestRateAnnualPct)||0;
+    const reserves=finite(fb.reserves),reservePct=Math.max(0,finite(fm.policy.minimumReservePctOfAnnualSpending)||0);
+    const minimum= Math.max(0,finite(fm.fiscalModel.annualSpendingUsd)||0)*reservePct/100;
+    let out='<section class="ofm-kpi-grid ofm-kpi-grid-four">'+
+      metricCard('Treasury cash',fmtMoney(cash),null,'finance.available synchronised with Finance runtime')+
+      metricCard('Recorded foreign reserves',fmtMoney(reserves),null,'N/A when no reserve field exists')+
+      metricCard('Public debt',fmtMoney(debt),null,'Current game-state principal')+
+      metricCard('Estimated annual interest',fmtMoney(debt*rate/100),null,'Debt × modeled policy interest rate')+
+      '</section><section class="ofm-section"><div class="ofm-section-heading"><h3>Cash safety policy</h3><span>Optional minimum treasury floor</span></div>'+
+      '<div class="ofm-indicator-grid"><div class="ofm-indicator"><span>Minimum reserve policy</span><strong>'+fmtPct(reservePct)+'</strong></div>'+
+      '<div class="ofm-indicator"><span>Reserve floor amount</span><strong>'+fmtMoney(minimum)+'</strong></div>'+
+      '<div class="ofm-indicator"><span>Debt / GDP</span><strong>'+fmtPct(m.publicDebtToGdpPct)+'</strong></div></div>'+
+      (editable?'<form class="ofm-form ofm-form-wide" data-ofm-action="set-reserve-target"><label>Minimum Treasury reserve (% of annual plan)<input type="number" name="value" min="0" max="60" step="0.5" value="'+escapeHTML(String(reservePct))+'" required></label><p>Ordinary expenses that breach this target are rejected; authorized emergency and debt-service payments can bypass the floor.</p><button type="submit">Apply reserve target</button></form>':'')+'</section>';
+    if(editable){
+      out+='<section class="ofm-section"><div class="ofm-section-heading"><h3>Borrowing and repayment</h3><span>Debt caps and cash checks are enforced in runtime</span></div><div class="ofm-action-grid">'+
+        '<form class="ofm-form" data-ofm-action="borrow"><h4>Issue sovereign loan</h4><label>Principal (USD)<input type="number" name="amountUsd" min="1" step="1" placeholder="500000000" required></label><label>Purpose<input type="text" name="description" maxlength="160" placeholder="Infrastructure / emergency finance" required></label><button type="submit">Issue loan</button><p>Limit: '+fmtPct(Number(rules.maximumBorrowTransactionPercentOfGDP??5))+' of GDP per transaction; modeled total debt cap applies.</p></form>'+
+        '<form class="ofm-form" data-ofm-action="repay-debt"><h4>Repay debt principal</h4><label>Principal payment (USD)<input type="number" name="amountUsd" min="1" step="1" placeholder="10000000" required></label><label>Purpose<input type="text" name="description" maxlength="160" placeholder="Scheduled principal repayment" required></label><button type="submit">Repay principal</button><p>Payment reduces both debt outstanding and Treasury cash by the same amount.</p></form></div>'+
+        '<form class="ofm-form ofm-form-wide" data-ofm-action="set-interest-rate"><label>Modeled policy interest rate (% per year)<input type="number" name="value" min="'+Number(rules.minimumPolicyInterestRatePct??0)+'" max="'+Number(rules.maximumPolicyInterestRatePct??40)+'" step="0.1" value="'+escapeHTML(String(rate))+'" required></label><p>Changes future debt-interest accrual; it is a game policy rate, not a verified real-world central-bank rate.</p><button type="submit">Apply policy rate</button></form></section>';
+    }
+    return out;
+  }
+  function renderReportsTab(p,m,fm,rows,editable,root){
+    const cells=[
+      ['GDP (current baseline)',fmtMoney(m.gdpCurrentUsd)],['Annual GDP growth',fmtPct(m.gdpGrowthPct)],
+      ['Inflation',fmtPct(m.inflationRatePct)],['Unemployment',fmtPct(m.unemploymentRatePct)],
+      ['GDP per capita',fmtMoney(m.gdpPerCapitaUsd)],['Public debt / GDP',fmtPct(m.publicDebtToGdpPct)],
+      ['Budget balance / GDP',fmtPct(m.budgetBalanceToGdpPct)],['Trade balance / GDP',fmtPct(m.tradeBalanceToGdpPct)],
+      ['Foreign-exchange reserves',fmtMoney(m.foreignExchangeReservesUsd)],['FX reserves / GDP',fmtPct(m.reservesToGdpPct)],
+      ['Economic influence index',fmtNumber(m.economicInfluenceIndex,1)],['Fiscal risk index',fmtNumber(m.fiscalRiskIndex,1)],
+      ['Fiscal health index',fmtNumber(m.fiscalHealthIndex,1)],['GDP world rank',m.gdpWorldRank===null?'N/A':'#'+m.gdpWorldRank],
+      ['Modeled price index',fmtNumber(fm.priceIndex,3)],['Fiscal year',String(Number(rules.baselineYear||2015)+(finite(fm.fiscalYearIndex)||0))]
+    ];
+    return '<section class="ofm-section"><div class="ofm-section-heading"><h3>Country economic indicators</h3><span>Baseline data and runtime estimates are separated</span></div><div class="ofm-indicator-grid">'+
+      cells.map(x=>'<div class="ofm-indicator"><span>'+escapeHTML(x[0])+'</span><strong>'+escapeHTML(x[1])+'</strong></div>').join('')+
+      '</div><p class="ofm-data-note">The baseline dataset is a game reference, not a live market feed. Derived and custom indices are labelled accordingly.</p></section>'+
+      '<section class="ofm-section"><div class="ofm-section-heading"><h3>Financial transaction ledger</h3><span>Most recent 20 transactions</span></div>'+
+      '<div class="ofm-table-scroll"><table class="ofm-table"><thead><tr><th>Turn</th><th>Action</th><th>Sector / owner</th><th>Amount</th><th>Category / note</th></tr></thead><tbody>'+renderLedgerRows(fm)+'</tbody></table></div></section>'+
+      '<details class="ofm-section ofm-world-register" id="ofm-world-register"><summary>GLOBAL ECONOMIC REGISTER · '+profiles.length+' COUNTRY / AREA PROFILES</summary>'+
+      '<p class="ofm-data-note">Expand only when needed; the full table is built on demand to protect low-end mobile performance. Missing values remain N/A.</p>'+
+      '<div id="ofm-world-register-content"><span class="ofm-empty">Expand to load country rows.</span></div></details>';
+  }
+  function dashboardHTML(p,m,fm,rows,notice,root){
+    const player=playerCountryProfile(),isPlayer=!!player&&player.countryCode===p.countryCode,editable=isPlayer&&isPlayable(p);
+    const totals=budgetTotals(fm);
+    const tabs=[
+      {id:'overview',glyph:'◫',label:'Overview',sub:'Fiscal snapshot'},
+      {id:'budget',glyph:'⊞',label:'Budget sectors',sub:'Distribute & spend'},
+      {id:'income',glyph:'↗',label:'Income & industry',sub:'Output and receipts'},
+      {id:'treasury',glyph:'◇',label:'Treasury & debt',sub:'Cash and borrowing'},
+      {id:'reports',glyph:'≡',label:'Reports',sub:'Indicators & ledger'}
+    ];
+    let out='<div class="ofm-dashboard" data-ofm-root><div class="ofm-hero"><div><div class="ofm-eyebrow">OMEGA / SOVEREIGN FISCAL CONTROL</div><h2>Finance Ministry</h2><p>Budget distribution, state income, recorded Treasury flows and controlled public spending.</p></div><div class="ofm-status">'+escapeHTML(isPlayable(p)?'RUNTIME MODEL ACTIVE':'BASELINE UNAVAILABLE')+'</div></div>';
+    out+='<div class="ofm-toolbar"><label for="ofm-country-select">Country profile</label><select id="ofm-country-select">'+renderCountryOptions()+'</select><span class="ofm-baseline">Game baseline '+Number(rules.baselineYear||2015)+' · USD reference</span></div>';
+    if(notice)out+='<div class="ofm-notice '+(notice.ok?'is-ok':'is-error')+'" role="status">'+escapeHTML(notice.message||'')+'</div>';
+    if(!isPlayer)out+='<div class="ofm-readonly">READ-ONLY PROFILE. Finance actions are restricted to the active player country ('+escapeHTML(player?.name||'not selected')+').</div>';
+    if(p.profileStatus==='UNAVAILABLE')out+='<div class="ofm-warning">No GDP baseline is available for this country/area. Missing financial data remain N/A and fiscal commands are disabled.</div>';
+    out+='<nav class="ofm-icon-nav" aria-label="Finance Ministry sections">'+tabs.map(t=>'<button type="button" class="ofm-icon-tab'+(activeTab===t.id?' is-active':'')+'" data-ofm-tab="'+escapeHTML(t.id)+'" aria-selected="'+(activeTab===t.id?'true':'false')+'"><span class="ofm-icon-glyph">'+escapeHTML(t.glyph)+'</span><strong>'+escapeHTML(t.label)+'</strong><small>'+escapeHTML(t.sub)+'</small></button>').join('')+'</nav>';
+    out+='<div class="ofm-tab-content" data-ofm-active-tab="'+escapeHTML(activeTab)+'">';
+    if(activeTab==='budget')out+=renderBudgetTab(p,m,fm,editable);
+    else if(activeTab==='income')out+=renderIncomeTab(p,m,fm,editable,root);
+    else if(activeTab==='treasury')out+=renderTreasuryTab(p,m,fm,editable,root);
+    else if(activeTab==='reports')out+=renderReportsTab(p,m,fm,rows,editable,root);
+    else out+=renderOverviewTab(p,m,fm,rows,editable,root);
+    out+='</div><footer class="ofm-footer"><span>Country state: '+escapeHTML(p.countryCode)+' / '+escapeHTML(p.iso3)+'</span><span>Turn '+escapeHTML(String(currentTurn()))+'</span><span>Budget plan is not cash already spent.</span></footer></div>';
     return out;
   }
   function renderDashboard(ministryId,notice){
@@ -444,10 +758,16 @@
     if(crumb)crumb.textContent='WORLD / '+p.name+' / FINANCE MINISTRY';
     if(status)status.textContent='FINANCE & TREASURY CONTROL ROOM';
     if(global.OmegaCabinetUI)global.OmegaCabinetUI.currentDashboardMinistryId='treasury_finance';
-    content.innerHTML=dashboardHTML(p,m,fm,snap.rows,notice);uiContainer=content;bindDashboardEvents(content);return true;
+    content.innerHTML=dashboardHTML(p,m,fm,snap.rows,notice,root);uiContainer=content;bindDashboardEvents(content);return true;
   }
   function bindDashboardEvents(content){
     if(!content||content.__omegaFinanceBound)return;content.__omegaFinanceBound=true;
+    content.addEventListener('click',function(event){
+      const tab=event.target?.closest?.('[data-ofm-tab]');
+      if(tab){const id=String(tab.getAttribute('data-ofm-tab')||'overview');if(['overview','budget','income','treasury','reports'].includes(id)){activeTab=id;renderDashboard('finance');return;}}
+      const summary=event.target?.closest?.('#ofm-world-register > summary');
+      if(summary){setTimeout(function(){const details=content.querySelector?.('#ofm-world-register');const holder=content.querySelector?.('#ofm-world-register-content');if(details&&details.open&&holder&&holder.dataset.loaded!=='true'){holder.innerHTML=renderFullWorldTable(worldSnapshot().rows);holder.dataset.loaded='true';}},0);}
+    });
     content.addEventListener('change',function(event){
       if(event.target&&event.target.id==='ofm-country-select'){selectedCountryCode=event.target.value;renderDashboard('finance');}
     });
@@ -457,15 +777,8 @@
       for(const el of Array.from(form.elements||[]))if(el.name)payload[el.name]=el.value;
       if(payload.amountUsd!==undefined)payload.amountUsd=finite(payload.amountUsd);
       if(payload.value!==undefined)payload.value=finite(payload.value);
+      if(payload.sharePct!==undefined)payload.sharePct=finite(payload.sharePct);
       renderDashboard('finance',applyAction(payload));
-    });
-    content.addEventListener('click',function(event){
-      const summary=event.target?.closest?.('#ofm-world-register > summary');if(!summary)return;
-      const holder=content.querySelector('#ofm-world-register-content');
-      if(holder&&holder.dataset.loaded!=='true')setTimeout(function(){
-        const details=content.querySelector('#ofm-world-register');
-        if(details&&details.open){holder.innerHTML=renderFullWorldTable(worldSnapshot().rows);holder.dataset.loaded='true';}
-      },0);
     });
   }
   function refreshVisibleMetrics(){
@@ -506,6 +819,12 @@
       profiles=data.countries;
       const loadedRules=await fetchJSON('finance_runtime_rules_v1.json').catch(()=>null);
       if(isObject(loadedRules))rules=Object.assign({},JSON.parse(JSON.stringify(BASE_RULES)),loadedRules);
+      const loadedSectors=await fetchJSON('finance_sector_registry_v1.json').catch(()=>null);
+      if(isObject(loadedSectors)&&Array.isArray(loadedSectors.budgetSectors)&&Array.isArray(loadedSectors.economicSectors)){
+        sectorRegistry=loadedSectors;
+        DEPARTMENTS=[...DEPARTMENTS.filter(d=>!sectorRegistry.budgetSectors.some(s=>s.id===d[0])),
+          ...sectorRegistry.budgetSectors.map(s=>[s.id,s.name])];
+      }
       indexProfiles();const player=playerCountryProfile();selectedCountryCode=selectedCountryCode||(player&&player.countryCode)||'US';
       ensureStateInitialized();initialized=true;attachUiBridge();
       global.Omega=global.Omega||{};global.Omega.FinanceMinistry=api;global.OMEGA_FINANCE_DIAGNOSTICS=diagnostics;
@@ -522,6 +841,9 @@
     getIndicators:function(v){const p=resolveProfile(v)||playerCountryProfile();return p?worldSnapshot().byCode.get(p.countryCode)||null:null;},
     getFinanceState:function(v){const p=resolveProfile(v)||playerCountryProfile();if(!p)return null;const root=rootState(),fm=ensureFinanceState(p,root);if(reconcileExternalTreasury(p,fm,root))syncEconomyRecord(p,fm,root);return clone(fm);},
     selectCountry:function(v){const p=resolveProfile(v);if(!p)return {ok:false,code:'COUNTRY_NOT_FOUND'};selectedCountryCode=p.countryCode;renderDashboard('finance');return {ok:true,countryCode:p.countryCode};},
+    selectTab:function(v){const tab=String(v||'overview');if(!['overview','budget','income','treasury','reports'].includes(tab))return {ok:false,code:'FINANCE_TAB_INVALID'};activeTab=tab;renderDashboard('finance');return {ok:true,tab};},
+    getBudgetSnapshot:function(v){const p=resolveProfile(v)||playerCountryProfile();if(!p)return null;const fm=ensureFinanceState(p,rootState());return {countryCode:p.countryCode,...budgetTotals(fm)};},
+    getRevenueSnapshot:function(v){const p=resolveProfile(v)||playerCountryProfile();if(!p)return null;const fm=ensureFinanceState(p,rootState()),m=worldSnapshot().byCode.get(p.countryCode)||currentMetrics(p);return revenueState(p,fm,m,rootState());},
     applyAction,advanceTurn,renderDashboard,isFinanceMinistryId};
   global.OmegaFinanceMinistry=api;
   if(global.document){

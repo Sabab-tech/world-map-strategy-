@@ -31,5 +31,13 @@
     "taxRevenueFormula": "GDP multiplied by the active game-model tax rate.",
     "spendingFormula": "For a country with a baseline budget balance, modeled spending equals modeled revenue minus that baseline balance. If balance is missing, use the configured game-rule deficit ratio.",
     "transparency": "Modeled fiscal flows are gameplay assumptions, not observed national budget data."
+  },
+  "defaultMinimumReservePctOfAnnualSpending": 0,
+  "budgetAllocationPolicy": "ANNUAL_PLAN_SHARES_MUST_NOT_EXCEED_100_PERCENT",
+  "cashFlowPolicy": {
+    "modeledTaxRevenue": "Accrues to the live Treasury by simulated duration and is mirrored into finance.taxRevenue and finance.revenue.",
+    "plannedSpending": "Annual budget allocation is a spending ceiling, not an automatic expense. Treasury falls only for actual Finance actions, external runtime outflows, and accrued debt interest.",
+    "externalSubsystems": "Cash changes made by other ministries/resource/trade systems are reconciled from finance.available and recorded as externally classified credits/debits when the source action cannot be reliably inferred.",
+    "estimates": "Country-sector output and projected tax contributions use finance_sector_registry_v1.json default shares and are game estimates, not observed statistics."
   }
 }

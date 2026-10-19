@@ -1,0 +1,377 @@
+{
+  "schemaVersion": "1.0.0",
+  "baselinePolicy": "GAME_RULE_ESTIMATES_NOT_OFFICIAL_STATISTICS",
+  "description": "Government budget sectors and macroeconomic output categories used by OMEGA's interactive Finance Ministry. Shares are configurable game defaults, not country-specific observed figures.",
+  "budgetSectors": [
+    {
+      "id": "defense",
+      "name": "Defense & National Security",
+      "shortName": "Defense",
+      "icon": "DS",
+      "defaultSharePct": 12,
+      "ministryId": "defense",
+      "description": "Defense operations, readiness and approved procurement."
+    },
+    {
+      "id": "interior",
+      "name": "Internal Security & Civil Administration",
+      "shortName": "Security",
+      "icon": "IS",
+      "defaultSharePct": 6,
+      "ministryId": "interior",
+      "description": "Police, civil protection and internal administration."
+    },
+    {
+      "id": "education",
+      "name": "Education & Skills",
+      "shortName": "Education",
+      "icon": "ED",
+      "defaultSharePct": 8,
+      "ministryId": "education",
+      "description": "Schools, skills, vocational and higher education."
+    },
+    {
+      "id": "health",
+      "name": "Healthcare & Public Health",
+      "shortName": "Health",
+      "icon": "HL",
+      "defaultSharePct": 8,
+      "ministryId": "health",
+      "description": "Hospitals, public health and preventive care."
+    },
+    {
+      "id": "transport",
+      "name": "Transport & Infrastructure",
+      "shortName": "Infrastructure",
+      "icon": "TR",
+      "defaultSharePct": 9,
+      "ministryId": "transport",
+      "description": "Roads, rail, ports, bridges and public infrastructure."
+    },
+    {
+      "id": "technology",
+      "name": "Technology, Science & R&D",
+      "shortName": "Technology",
+      "icon": "RD",
+      "defaultSharePct": 6,
+      "ministryId": "technology",
+      "description": "Research, digital systems, science and strategic technology."
+    },
+    {
+      "id": "chemicals",
+      "name": "Chemical Industry & Advanced Materials",
+      "shortName": "Chemicals",
+      "icon": "CH",
+      "defaultSharePct": 3,
+      "ministryId": "economy",
+      "description": "Industrial chemicals, materials engineering and industrial safety."
+    },
+    {
+      "id": "engineering",
+      "name": "Engineering & Manufacturing",
+      "shortName": "Engineering",
+      "icon": "EN",
+      "defaultSharePct": 4,
+      "ministryId": "economy",
+      "description": "Machinery, engineering, manufacturing productivity and equipment."
+    },
+    {
+      "id": "energy",
+      "name": "Energy & Utilities",
+      "shortName": "Energy",
+      "icon": "EG",
+      "defaultSharePct": 5,
+      "ministryId": "resource",
+      "description": "Electricity, grid resilience, fuels and utilities."
+    },
+    {
+      "id": "resource",
+      "name": "Natural Resources & Mining",
+      "shortName": "Resources",
+      "icon": "NR",
+      "defaultSharePct": 4,
+      "ministryId": "resource",
+      "description": "Resource survey, sovereign reserves, extraction oversight and restoration."
+    },
+    {
+      "id": "agriculture",
+      "name": "Agriculture & Food Security",
+      "shortName": "Agriculture",
+      "icon": "AG",
+      "defaultSharePct": 5,
+      "ministryId": "economy",
+      "description": "Agriculture, irrigation, food security and rural productivity."
+    },
+    {
+      "id": "trade",
+      "name": "Trade, Ports & Logistics",
+      "shortName": "Trade",
+      "icon": "LG",
+      "defaultSharePct": 3,
+      "ministryId": "trade",
+      "description": "Trade facilitation, customs, logistics and supply-chain capacity."
+    },
+    {
+      "id": "cabinet",
+      "name": "Public Administration & Government",
+      "shortName": "Administration",
+      "icon": "PA",
+      "defaultSharePct": 3,
+      "ministryId": "cabinet",
+      "description": "Government operations, administration and institutional services."
+    },
+    {
+      "id": "social_protection",
+      "name": "Social Protection & Housing",
+      "shortName": "Social",
+      "icon": "SP",
+      "defaultSharePct": 4,
+      "ministryId": "health",
+      "description": "Public assistance, housing support and social resilience."
+    },
+    {
+      "id": "environment",
+      "name": "Environment & Climate Resilience",
+      "shortName": "Environment",
+      "icon": "EC",
+      "defaultSharePct": 2,
+      "ministryId": "resource",
+      "description": "Environmental safeguards, adaptation and remediation."
+    },
+    {
+      "id": "debt_service",
+      "name": "Debt Service & Financial Stability",
+      "shortName": "Debt service",
+      "icon": "DB",
+      "defaultSharePct": 4,
+      "ministryId": "finance",
+      "description": "Budget provision for debt interest and financial stability."
+    },
+    {
+      "id": "emergency_reserve",
+      "name": "Emergency & Strategic Reserve",
+      "shortName": "Emergency",
+      "icon": "ER",
+      "defaultSharePct": 2,
+      "ministryId": "finance",
+      "description": "Contingency reserve and emergency response funding."
+    },
+    {
+      "id": "industrial_development",
+      "name": "Industrial Development & Investment",
+      "shortName": "Industry",
+      "icon": "ID",
+      "defaultSharePct": 3,
+      "ministryId": "projects",
+      "description": "Industrial parks, productivity programmes and strategic investment."
+    },
+    {
+      "id": "construction",
+      "name": "Construction & Housing Infrastructure",
+      "shortName": "Construction",
+      "icon": "CN",
+      "defaultSharePct": 3,
+      "ministryId": "projects",
+      "description": "Public construction, housing infrastructure and urban services."
+    },
+    {
+      "id": "financial_services",
+      "name": "Financial Services & Market Development",
+      "shortName": "Finance sector",
+      "icon": "FS",
+      "defaultSharePct": 2,
+      "ministryId": "economy",
+      "description": "Financial-system resilience, market access and commercial services."
+    },
+    {
+      "id": "culture",
+      "name": "Culture, Tourism & Creative Industries",
+      "shortName": "Culture",
+      "icon": "CT",
+      "defaultSharePct": 1,
+      "ministryId": "culture",
+      "description": "Culture, tourism and creative-industry programmes."
+    },
+    {
+      "id": "projects",
+      "name": "National Development Projects",
+      "shortName": "Projects",
+      "icon": "NP",
+      "defaultSharePct": 3,
+      "ministryId": "projects",
+      "description": "Approved cross-government capital projects and implementation."
+    }
+  ],
+  "economicSectors": [
+    {
+      "id": "agriculture",
+      "name": "Agriculture & Food",
+      "shortName": "Agriculture",
+      "icon": "AG",
+      "outputSharePct": 12,
+      "taxReceiptSharePct": 12
+    },
+    {
+      "id": "chemicals",
+      "name": "Chemicals & Advanced Materials",
+      "shortName": "Chemicals",
+      "icon": "CH",
+      "outputSharePct": 6,
+      "taxReceiptSharePct": 6
+    },
+    {
+      "id": "engineering_manufacturing",
+      "name": "Engineering & Manufacturing",
+      "shortName": "Engineering",
+      "icon": "EM",
+      "outputSharePct": 12,
+      "taxReceiptSharePct": 12
+    },
+    {
+      "id": "energy_utilities",
+      "name": "Energy & Utilities",
+      "shortName": "Energy",
+      "icon": "EU",
+      "outputSharePct": 8,
+      "taxReceiptSharePct": 8
+    },
+    {
+      "id": "natural_resources",
+      "name": "Natural Resources & Mining",
+      "shortName": "Resources",
+      "icon": "NR",
+      "outputSharePct": 6,
+      "taxReceiptSharePct": 6
+    },
+    {
+      "id": "technology_telecom",
+      "name": "Technology & Telecommunications",
+      "shortName": "Technology",
+      "icon": "TT",
+      "outputSharePct": 8,
+      "taxReceiptSharePct": 8
+    },
+    {
+      "id": "construction_housing",
+      "name": "Construction & Housing",
+      "shortName": "Construction",
+      "icon": "CH",
+      "outputSharePct": 6,
+      "taxReceiptSharePct": 6
+    },
+    {
+      "id": "trade_logistics",
+      "name": "Trade & Logistics",
+      "shortName": "Trade / Logistics",
+      "icon": "TL",
+      "outputSharePct": 9,
+      "taxReceiptSharePct": 9
+    },
+    {
+      "id": "financial_services",
+      "name": "Financial & Business Services",
+      "shortName": "Finance",
+      "icon": "FB",
+      "outputSharePct": 10,
+      "taxReceiptSharePct": 10
+    },
+    {
+      "id": "public_administration",
+      "name": "Public & Administrative Services",
+      "shortName": "Public services",
+      "icon": "PA",
+      "outputSharePct": 5,
+      "taxReceiptSharePct": 5
+    },
+    {
+      "id": "healthcare",
+      "name": "Healthcare Services",
+      "shortName": "Healthcare",
+      "icon": "HC",
+      "outputSharePct": 5,
+      "taxReceiptSharePct": 5
+    },
+    {
+      "id": "education",
+      "name": "Education & Skills Services",
+      "shortName": "Education",
+      "icon": "ES",
+      "outputSharePct": 3,
+      "taxReceiptSharePct": 3
+    },
+    {
+      "id": "transport",
+      "name": "Transport & Infrastructure Services",
+      "shortName": "Transport",
+      "icon": "TI",
+      "outputSharePct": 5,
+      "taxReceiptSharePct": 5
+    },
+    {
+      "id": "defense_industry",
+      "name": "Defense Industry",
+      "shortName": "Defense industry",
+      "icon": "DI",
+      "outputSharePct": 1,
+      "taxReceiptSharePct": 1
+    },
+    {
+      "id": "environment_circular",
+      "name": "Environment & Circular Economy",
+      "shortName": "Environment",
+      "icon": "CE",
+      "outputSharePct": 4,
+      "taxReceiptSharePct": 4
+    }
+  ],
+  "revenueStreams": [
+    {
+      "id": "tax",
+      "name": "Modeled public tax receipts",
+      "type": "MODELED",
+      "description": "GDP × player-set tax take (% of GDP); not an observed national tax receipt."
+    },
+    {
+      "id": "resourceSales",
+      "name": "Recorded resource and commodity receipts",
+      "type": "RUNTIME_IF_AVAILABLE",
+      "description": "Uses the Resource Economy fiscal ledger when the active runtime provides it."
+    },
+    {
+      "id": "otherRecorded",
+      "name": "Other recorded government revenue",
+      "type": "RUNTIME_IF_AVAILABLE",
+      "description": "Uses existing finance revenue and tax fields only where the game state exposes them."
+    },
+    {
+      "id": "tradeDuties",
+      "name": "Trade duties and customs",
+      "type": "RUNTIME_IF_AVAILABLE",
+      "description": "Unavailable unless trade or finance runtime publishes a dedicated receipt value."
+    },
+    {
+      "id": "stateEnterprise",
+      "name": "State-owned enterprise dividends",
+      "type": "RUNTIME_IF_AVAILABLE",
+      "description": "Unavailable unless the economy or finance runtime publishes a dedicated receipt value."
+    },
+    {
+      "id": "fees",
+      "name": "Licences, fees and service charges",
+      "type": "RUNTIME_IF_AVAILABLE",
+      "description": "Unavailable unless the economy or finance runtime publishes a dedicated receipt value."
+    },
+    {
+      "id": "foreignTransfers",
+      "name": "Grants and external transfers",
+      "type": "RUNTIME_IF_AVAILABLE",
+      "description": "Unavailable unless the game records a country-specific transfer."
+    }
+  ],
+  "methodology": {
+    "budgetShares": "Initial allocation percentages are game-rule defaults and sum to 100%. Players may change them, but total planned allocations cannot exceed 100% of the annual expenditure plan.",
+    "economicOutput": "Economic-sector output is estimated as current in-game GDP multiplied by the configurable default sector mix. This is a gameplay estimate, not country-specific observed sector accounts.",
+    "taxReceipts": "Projected sector receipts split modeled annual public tax revenue according to configurable receipt shares. They are projections, not actual sector tax records.",
+    "runtimeReceipts": "Recorded revenue from the finance/resource/trade state is displayed separately and is never relabelled as a modeled industry estimate."
+  }
+}
