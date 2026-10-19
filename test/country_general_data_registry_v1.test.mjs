@@ -296,14 +296,16 @@ test('CPI 2025 score and rank stay distinct and retain the published source year
     }
   }
   const refresh = registry.metadata.externalRefresh;
-  assert.ok(refresh.transparencyInternationalCpi2025, 'Refresh metadata must describe CPI 2025.');
+  assert.ok(refresh.transparencyInternationalCpi2025, 'Source metadata must describe CPI 2025.');
   assert.equal(refresh.transparencyInternationalCpi2025.observationYear, 2025);
+  assert.equal(refresh.transparencyInternationalCpi2025.loaded, true,
+    'CPI 2025 snapshot or source was unavailable: ' + String(refresh.transparencyInternationalCpi2025.error));
+  assert.ok(refresh.transparencyInternationalCpi2025.canonicalCountriesWithCpi >= 150);
+  assert.ok(sourcedScores >= 150, 'CPI scores were not imported with publisher provenance.');
+  assert.ok(sourcedRanks >= 150, 'CPI ranks were not imported as a separate metric.');
   if (refresh.requested) {
-    assert.equal(refresh.transparencyInternationalCpi2025.loaded, true,
-      'CPI 2025 source refresh failed: ' + String(refresh.transparencyInternationalCpi2025.error));
-    assert.ok(refresh.transparencyInternationalCpi2025.canonicalCountriesWithCpi >= 150);
-    assert.ok(sourcedScores >= 150, 'CPI scores were not imported with publisher provenance.');
-    assert.ok(sourcedRanks >= 150, 'CPI ranks were not imported as a separate metric.');
+    assert.ok(['LIVE_REFRESH_OK','SNAPSHOT_FALLBACK_AFTER_LIVE_REFRESH_FAILURE'].includes(refresh.transparencyInternationalCpi2025.sourceLoadStatus),
+      'CPI source refresh state was not recorded.');
   }
 });
 
