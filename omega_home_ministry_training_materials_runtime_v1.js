@@ -126,7 +126,8 @@
       var tradeEntry = mapEntry(tradeAvailability, resourceId);
       var reserveEntry = mapEntry(reserveState.availableByResource, resourceId);
       var reserved = Math.max(0, reserveEntry.quantity == null ? 0 : reserveEntry.quantity);
-      var available = tradeEntry.quantity == null ? Math.max(0, entry.quantity - reserved) : Math.max(0, tradeEntry.quantity);
+      var outsideReserve = Math.max(0, entry.quantity - reserved);
+      var available = tradeEntry.quantity == null ? outsideReserve : Math.min(outsideReserve, Math.max(0, tradeEntry.quantity));
       if (available + 1e-9 < quantity)
         return reject('INSUFFICIENT_UNRESERVED_RESOURCE_STOCK', {
           resourceId: resourceId, requiredQuantity: quantity, availableQuantity: available
@@ -142,10 +143,9 @@
         if (availableBatchQuantity > 0) matchingBatchRows.push({ index: batchIndex, before: availableBatchQuantity, take: 0 });
       });
       var batchTotal = matchingBatchRows.reduce(function (sum, item) { return sum + item.before; }, 0);
-      if (hasResourceBatches && batchTotal + 1e-9 < quantity)
-        return reject('INSUFFICIENT_UNRESERVED_BATCH_STOCK', {
-          resourceId: resourceId, requiredQuantity: quantity, availableBatchQuantity: batchTotal
-        });
+      // Aggregate inventory and trade availability are authoritative. Batch records
+      // are updated where present, but a partial provenance list must not fabricate a
+      // shortage when the verified unreserved aggregate quantity is sufficient.
       if (!hasResourceBatches) matchingBatchRows = [];
 
       var warehouseMap = warehouse && warehouse.availableByResource;
