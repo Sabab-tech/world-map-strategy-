@@ -426,19 +426,19 @@
     return Object.values(bank && bank.pendingTransfers || {}).filter(row =>
       row.status === 'PENDING' && (!countryCode || norm(row.sourceCountryCode) === norm(countryCode)));
   }
-  function availableBalance(profile, code) {
+  function availableBalance(profile, code, exceptTransactionId) {
     const balance = balanceOf(profile, code);
     if (balance === null) return null;
     let held = 0;
     const id = profileId(profile);
     const bank = bankingState(false);
-    for (const row of Object.values(bank && bank.pendingTransfers || {})) {
-      if (row.status !== 'PENDING' || row.sourceCountryCode !== id || row.sourceCurrencyCode !== code) continue;
+    for (const [key, row] of Object.entries(bank && bank.pendingTransfers || {})) {
+      if (key === exceptTransactionId || row.status !== 'PENDING' || row.sourceCountryCode !== id || row.sourceCurrencyCode !== code) continue;
       const r = rate(code, 'SIMULATION');
       held += r ? (num(row.amountUsd) || 0) * r : 0;
     }
-    for (const row of Object.values(bank && bank.pendingTradeSettlements || {})) {
-      if (row.status !== 'PENDING' || row.buyerCountryCode !== id || row.buyerCurrencyCode !== code) continue;
+    for (const [key, row] of Object.entries(bank && bank.pendingTradeSettlements || {})) {
+      if (key === exceptTransactionId || row.status !== 'PENDING' || row.buyerCountryCode !== id || row.buyerCurrencyCode !== code) continue;
       held += num(row.buyerDebitLocal) || 0;
     }
     return Math.max(0, balance - held);
@@ -685,7 +685,7 @@
     const quote = quoteTransfer(input);
     if (!quote.ok) return quote;
     const sourceBook = ensureCountry(from), destBook = ensureCountry(to);
-    const sourceBalance = num(availableBalance(from, quote.fromCode));
+    const sourceBalance = num(availableBalance(from, quote.fromCode, key));
     if (sourceBalance === null || sourceBalance + 1e-8 < quote.amount) {
       const sourceUsd = readTreasuryUsd(from);
       return { ok: false, code: 'INSUFFICIENT_CURRENCY_ACCOUNT_BALANCE',
@@ -722,7 +722,7 @@
     const bank = bankingState(true), sourceBook = ensureCountry(from), destBook = ensureCountry(to);
     const sourceAcct = ensureAccount(from, quote.fromCode), destAcct = ensureAccount(to, quote.toCode);
     if (!sourceAcct || !destAcct) return { ok: false, code: 'BANK_ACCOUNT_UNAVAILABLE' };
-    const sourceAvailable = availableBalance(from, quote.fromCode);
+    const sourceAvailable = availableBalance(from, quote.fromCode, input.idempotencyKey || input.transactionId);
     if (sourceAvailable === null || sourceAvailable + 1e-8 < quote.amount)
       return { ok: false, code: 'INSUFFICIENT_CURRENCY_ACCOUNT_BALANCE', available: sourceAvailable };
     const fromOriginal = num(sourceAcct.balance) || 0, toOriginal = num(destAcct.balance) || 0;
@@ -1373,7 +1373,7 @@
     quoteTransfer, transfer: (input) => settleTransfer(input, false), convert,
     updateTradePolicy, setRiskProfile, riskScore,
     prepareTradeSettlement, commitTradeSettlement, cancelTradeSettlement,
-    getReservedTreasuryUsd, reconcile: reconcileAll,
+    getReservedTreasuryUsd, reconcile: reconcileAll, processPendingTransfers,
     getCountryAccount: countryValue => accountSummary(countryValue),
     getCountryPolicy: countryValue => {
       const p = resolveProfile(countryValue);
