@@ -320,6 +320,7 @@ test('lifecycle autosaves only after async sector work and catches pagehide with
     querySelector() { return null; },
     querySelectorAll() { return []; }
   };
+  win.Omega.App = { state: 'READY', simulation: sim };
   const lifecycleSource = fs.readFileSync(path.join(root, 'omega_game_lifecycle_runtime_v1.js'), 'utf8');
   const lifecycleContext = vm.createContext({
     window: win, globalThis: win, console, setTimeout, clearTimeout,
