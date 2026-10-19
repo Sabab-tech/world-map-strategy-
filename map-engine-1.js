@@ -535,20 +535,23 @@ var Game = window.Game = {
         ]);
 
         // Retry once if the registry was still loading when the map selection occurred.
-        if (runtime && runtime.ready && typeof runtime.isSettled === 'function' &&
-            !runtime.isSettled() && !this._countryRuntimeRefreshPending) {
-            this._countryRuntimeRefreshPending = true;
+        if (runtime && runtime.ready && typeof runtime.isSettled === 'function' && !runtime.isSettled()) {
             const requested = countryName;
-            Promise.resolve(runtime.ready).then(() => {
-                this._countryRuntimeRefreshPending = false;
-                const active = Game.currentActiveCountry || window.currentActiveCountry || '';
-                const activeProfile = runtime.resolveCountry(active);
-                const requestedProfile = runtime.resolveCountry(requested);
-                if (normalizeKey(active) === normalizeKey(requested) ||
-                    (activeProfile && requestedProfile && activeProfile.countryCode === requestedProfile.countryCode)) {
-                    if (Game.Map && typeof Game.Map.updateCountryInfoCard === 'function') Game.Map.updateCountryInfoCard(requested);
-                }
-            }).catch(() => { this._countryRuntimeRefreshPending = false; });
+            const pendingRefreshes = this._countryRuntimeRefreshPending ||
+                (this._countryRuntimeRefreshPending = new Set());
+            if (!pendingRefreshes.has(requested)) {
+                pendingRefreshes.add(requested);
+                Promise.resolve(runtime.ready).then(() => {
+                    pendingRefreshes.delete(requested);
+                    const active = Game.currentActiveCountry || window.currentActiveCountry || '';
+                    const activeProfile = runtime.resolveCountry(active);
+                    const requestedProfile = runtime.resolveCountry(requested);
+                    if (normalizeKey(active) === normalizeKey(requested) ||
+                        (activeProfile && requestedProfile && activeProfile.countryCode === requestedProfile.countryCode)) {
+                        if (Game.Map && typeof Game.Map.updateCountryInfoCard === 'function') Game.Map.updateCountryInfoCard(requested);
+                    }
+                }).catch(() => { pendingRefreshes.delete(requested); });
+            }
         }
 
         // The user opens the full detail panel explicitly via the eye button.
