@@ -7,6 +7,7 @@ const VERSION='1.0.0';
 const CATALOG_URL='resource_site_canonical_catalog_v1.json';
 const MASTER_URL='resource_site_master_registry_v1.json';
 const EXPANSION_URL='resource_site_country_expansion_v1.json';
+const MINEPLAY_BATCH_URL='resource_site_country_mineplay_batch_20261020_v1.json';
 const LEGACY_GAMEPLAY_URLS=['resource_site_legacy_gameplay_expansion_part_1_v1.json','resource_site_legacy_gameplay_expansion_part_2_v1.json','resource_site_legacy_gameplay_expansion_part_3_v1.json','resource_site_legacy_gameplay_expansion_part_4_v1.json','resource_site_legacy_gameplay_expansion_part_5_v1.json','resource_site_legacy_gameplay_expansion_part_6_v1.json'];
 const LEGACY_CANONICAL_ALIAS_IDS={SITE_AUS_olympic_dam_uranium_copper:'SITE_AUS_olympic_dam_mine',SITE_BRA_carajas_iron_ore_mine_legacy2:'SITE_BRA_carajas_iron_ore_mine',SITE_CHL_escondida_copper_mine_legacy2:'SITE_CHL_escondida_copper_mine',SITE_IDN_grasberg_copper_gold_mine:'SITE_IDN_grasberg_mine',SITE_COD_tenke_fungurume_copper_cobalt_complex:'SITE_COD_tenke_fungurume_mine',SITE_COD_kibali_gold_mine_complex:'SITE_COD_kibali_gold_mine'};
 let sites=[], selected=null, markers=[], markerLayer=null, panel=null, statusNode=null, detailNode=null, selectNode=null;
@@ -480,14 +481,16 @@ async function init(){
  g.__OMEGA_RESOURCE_SITE_BINDING_INIT__=true;
  mount();
  try{
-  const urls=['resources.json','resources_2.json',CATALOG_URL,MASTER_URL,EXPANSION_URL,...LEGACY_GAMEPLAY_URLS];
+  const urls=['resources.json','resources_2.json',CATALOG_URL,MASTER_URL,EXPANSION_URL,MINEPLAY_BATCH_URL,...LEGACY_GAMEPLAY_URLS];
   const loaded=await Promise.all(urls.map(async url=>{
    try{const response=await fetch(url,{cache:'no-store'});if(!response.ok)return null;return {url,data:await response.json()};}
    catch(_){return null;}
   }));
   const sources=loaded.filter(Boolean);
   const getData=url=>sources.find(x=>x.url===url)?.data||null;
-  const catalog=getData(CATALOG_URL),master=getData(MASTER_URL),expansion=getData(EXPANSION_URL);
+  const catalog=getData(CATALOG_URL),master=getData(MASTER_URL),expansion=getData(EXPANSION_URL),mineplay=getData(MINEPLAY_BATCH_URL);
+  const mineplayRows=mineplay?.datasetId==='OMEGA_RESOURCE_SITE_COUNTRY_MINEPLAY_BATCH_V1'&&Array.isArray(mineplay.records)?mineplay.records:[];
+  if(mineplayRows.length){g.OmegaResourceCountryMineplaySupplementData=mineplay;g.Omega=g.Omega||{};g.Omega.ResourceCountryMineplaySupplementData=mineplay;}
   if(expansion?.datasetId==='OMEGA_RESOURCE_SITE_COUNTRY_EXPANSION_V1'){
    g.OmegaResourceSiteCountryExpansionData=expansion;g.Omega=g.Omega||{};g.Omega.ResourceSiteCountryExpansionData=expansion;
   }
@@ -495,10 +498,16 @@ async function init(){
   const expansionSites=expansion?.datasetId==='OMEGA_RESOURCE_SITE_COUNTRY_EXPANSION_V1'&&Array.isArray(expansion.records)?expansion.records:[];
   const masterSites=Array.isArray(master?.sites)?master.sites:[];
   const knownSiteIds=new Set([...baseCatalogSites,...expansionSites,...masterSites].map(row=>String(row?.siteId||'')));
+  const acceptedMineplaySites=mineplayRows.filter(row=>{
+   const siteId=String(row?.siteId||'').trim(),country=String(row?.countryId||row?.identity?.countryIso3||'').trim().toUpperCase();
+   const coords=coordsOf(row);
+   if(!siteId||!/^[A-Z]{3}$/.test(country)||!coords||row?.runtime?.aliasOfSiteId||row?.map?.markerEligible===false||knownSiteIds.has(siteId))return false;
+   knownSiteIds.add(siteId);return true;
+  });
   const legacySiteRows=sources.filter(x=>LEGACY_GAMEPLAY_URLS.includes(x.url)).filter(x=>x.data?.datasetId?.startsWith('OMEGA_RESOURCE_SITE_LEGACY_GAMEPLAY_EXPANSION_PART_')).flatMap(x=>Array.isArray(x.data?.records)?x.data.records:[]);
    const canonicalLegacySites=Number(catalog?.legacyGameplayExpansion?.candidateRecordCount)===65?baseCatalogSites.slice(-65):baseCatalogSites.filter(row=>row?.runtime?.identityAuthority==='LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE');
    const activeLegacySites=legacySiteRows.filter(row=>row?.siteId&&!row.runtime?.aliasOfSiteId&&row.map?.markerEligible!==false&&!LEGACY_CANONICAL_ALIAS_IDS[String(row.siteId)]&&!knownSiteIds.has(String(row.siteId)));
-  const catalogSites=[...baseCatalogSites,...expansionSites,...activeLegacySites];
+  const catalogSites=[...baseCatalogSites,...expansionSites,...acceptedMineplaySites,...activeLegacySites];
    const activeLegacyIds=new Set([...canonicalLegacySites,...activeLegacySites].filter(row=>row?.siteId&&row.map?.markerEligible!==false&&!row.runtime?.aliasOfSiteId&&!LEGACY_CANONICAL_ALIAS_IDS[String(row.siteId)]).map(row=>String(row.siteId)));
    const candidateReady=legacySiteRows.length===115&&activeLegacyIds.size===105;
    g.OmegaResourceLegacyGameplayExpansion={status:candidateReady?'READY':'PARTIAL',count:Math.max(legacySiteRows.length,canonicalLegacySites.length),candidateRecordCount:115,activeCandidateCount:activeLegacyIds.size,aliasCount:legacySiteRows.filter(row=>row.runtime?.aliasOfSiteId||row.map?.markerEligible===false).length,canonicalCandidateCount:canonicalLegacySites.length,loadedParts:sources.filter(x=>LEGACY_GAMEPLAY_URLS.includes(x.url)&&x.data?.records).length};
@@ -583,7 +592,9 @@ async function init(){
     }
     return counts;
    },{mineSites:0,runtimeDeposits:0});
-   return {status:'READY',siteCount:sites.length,uniqueSiteIds:new Set(sites.map(s=>s.siteId)).size,countryCount:new Set(sites.map(s=>s.countryId)).size,sourceFiles:sources.map(x=>x.url),sourceRecordCounts,coordinateStatusCounts,mergedDepositAliases,individualMapping:true};
+   return {status:'READY',siteCount:sites.length,uniqueSiteIds:new Set(sites.map(s=>s.siteId)).size,countryCount:new Set(sites.map(s=>s.countryId)).size,sourceFiles:sources.map(x=>x.url),sourceRecordCounts,coordinateStatusCounts,mergedDepositAliases,
+    mineplaySupplement:{datasetId:mineplay?.datasetId||null,sourceRecordCount:mineplayRows.length,acceptedSiteCount:acceptedMineplaySites.length,countryCount:new Set(acceptedMineplaySites.map(x=>cid(x.countryId||x.identity?.countryIso3))).size},
+    individualMapping:true};
   }};
   attachMapRefreshHooks();scheduleMarkerRender();setTimeout(()=>scheduleMarkerRender(),1000);setTimeout(()=>scheduleMarkerRender(),3000);
   setStatus('Resource site data loaded.');
