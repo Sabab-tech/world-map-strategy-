@@ -331,6 +331,10 @@ test('hosted Home Ministry dashboard mounts real controls and returns to its own
   assert.match(host.innerHTML, /CONFIRM VEHICLE ORDER|PROCUREMENT LOCK/);
 });
 
+test('ministry dashboard source parses after the Home Affairs report changes', () => {
+  assert.doesNotThrow(() => new vm.Script(ministryEngine, { filename: 'ministry_engine.js' }));
+});
+
 test('Home Affairs has a separate security operations route and embeds the real Home Ministry runtime', () => {
   assert.match(ministryEngine, /security_operations/);
   assert.match(ministryEngine, /home-ministry-command-root/);
