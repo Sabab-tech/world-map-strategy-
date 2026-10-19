@@ -48,6 +48,7 @@ jobs:
         run: node --test test/country_general_data_registry_v1.test.mjs
 
       - name: Commit registry only if it changed
+        if: github.event_name != 'pull_request'
         shell: bash
         run: |
           if [[ -z "$(git status --porcelain -- country_general_data_registry_v1.json)" ]]; then
