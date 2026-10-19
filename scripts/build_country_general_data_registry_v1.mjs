@@ -146,10 +146,16 @@ async function getJson(url) {
 }
 
 async function fetchRestCountries() {
-  const fields = ['cca2','cca3','ccn3','name','capital','region','subregion','population','area','landlocked','borders','currencies','languages','timezones','idd','independent','unMember'].join(',');
-  const url = 'https://restcountries.com/v3.1/all?fields=' + encodeURIComponent(fields);
+  // Fetch the provider's full current country objects. This avoids field-filter
+  // mismatches silently returning an empty array when the provider changes a field name.
+  const url = 'https://restcountries.com/v3.1/all';
   const records = await getJson(url);
-  return new Map((Array.isArray(records) ? records : []).filter((row) => row && row.cca3).map((row) => [String(row.cca3).toUpperCase(), row]));
+  const countries = Array.isArray(records) ? records : [];
+  const byIso3 = new Map(countries
+    .filter((row) => row && row.cca3)
+    .map((row) => [String(row.cca3).toUpperCase(), row]));
+  if (!byIso3.size) throw new Error('REST_COUNTRIES_EMPTY_OR_UNEXPECTED_RESPONSE');
+  return byIso3;
 }
 
 async function fetchWorldBankMetadata() {
