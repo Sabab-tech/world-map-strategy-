@@ -452,7 +452,8 @@
       'DEVELOPMENT-FOCUSED ECONOMY'
     );
     const availableDimensions = DIMENSIONS.filter(key => dimensions[key]?.value !== null);
-    const profileStatus = evidenceCount === 0 && availableDimensions.length === 0 && sites.availability !== 'AVAILABLE'
+    const nonResourceDimensions = availableDimensions.filter(key => key !== 'selfSufficiencyPriority');
+    const profileStatus = evidenceCount === 0 && nonResourceDimensions.length === 0
       ? 'INSUFFICIENT_EVIDENCE' : (availableDimensions.length >= 4 ? 'PARTIAL_EVIDENCE_PROFILE' : 'LIMITED_EVIDENCE_PROFILE');
     return {
       schemaVersion: 'OMEGA_COUNTRY_BEHAVIOR_PROFILE_V1',
