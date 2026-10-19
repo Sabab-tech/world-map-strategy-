@@ -1755,7 +1755,7 @@
       {id:'recruitmentTeams',label:'Recruitment teams available from current personnel',unit:'team(s)',required:Math.max(1,Math.ceil(target/2)),available:Math.max(1,Math.floor(policeCount/1000)),ok:Math.max(1,Math.floor(policeCount/1000))>=Math.max(1,Math.ceil(target/2))}
     ];
   }
-  function materialToken(value){return String(value||'').trim().toLowerCase().replace(/[\\s-]+/g,'_');}
+  function materialToken(value){return String(value||'').trim().toLowerCase().replace(/[\s-]+/g,'_');}
   function capabilityMaterialRequirements(type,target){
     const level=Math.max(1,Math.floor(num(target)||1));
     if(type==='training')return[
