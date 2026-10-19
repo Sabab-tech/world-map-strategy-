@@ -45,7 +45,7 @@
     return map[s]??null;
   }
   function profile(c){
-    const cid=canonical(c),out={countryId:cid,availability:'UNOBSERVED',source:null,dimensions:{}};
+    const cid=canonical(c),out={countryId:cid,availability:'UNOBSERVED',source:null,dimensions:{},actionPreferences:{},registeredStrategyOptions:[],priorityStack:[],profileNarrative:null};
     for(const dim of DIMENSIONS)out.dimensions[dim]={value:null,availability:'UNOBSERVED',source:null,confidence:0,evidence:[]};
     let canonicalRaw=null;
     try{
@@ -73,6 +73,10 @@
       if (behaviour) {
         out.behaviorSource = 'OMEGA_COUNTRY_BEHAVIOR_ENGINE_V1';
         out.behaviorStatus = behaviour.status || 'UNKNOWN';
+        out.actionPreferences = clone(behaviour.actionPreferences || {});
+        out.registeredStrategyOptions = clone(behaviour.registeredStrategyOptions || []);
+        out.priorityStack = clone(behaviour.priorityStack || []);
+        out.profileNarrative = clone(behaviour.profileNarrative || null);
         for (const dim of DIMENSIONS) {
           if (out.dimensions[dim].value !== null) continue;
           const row = behaviour.dimensions?.[dim];
@@ -146,19 +150,33 @@
     DIPLOMATIC_ADJUSTMENT:['diplomaticPreference','escalationTolerance']
   });
   function scoreAction(c,action){
-    const p=profile(c),dims=ACTION_DIMENSIONS[String(action||'').toUpperCase()]||[];
-    const vals=[],directions=ACTION_DIRECTIONS[String(action||'').toUpperCase()]||{};
+    const actionKey=String(action||'').toUpperCase();
+    const p=profile(c),dims=ACTION_DIMENSIONS[actionKey]||[];
+    const vals=[],directions=ACTION_DIRECTIONS[actionKey]||{};
+    const actionPreference=p.actionPreferences?.[actionKey]||null;
+    const preferenceValue=actionPreference ? clamp(actionPreference.value) : null;
     for(const d of dims){
       const x=p.dimensions[d];
-      if(x?.value!==null){
+      if(x&&x.value!==null&&x.value!==undefined){
         const direction=num(directions[d])??1;
         const utility=direction>=0?x.value:1-x.value;
-        vals.push({dimension:d,value:x.value,direction,utility});
+        vals.push({dimension:d,value:x.value,direction,utility,
+          confidence:clamp(x.confidence??0.5),source:x.source||null});
       }
     }
-    if(!vals.length)return{known:false,score:null,confidence:0,profile:p};
-    const mean=vals.reduce((s,x)=>s+x.utility,0)/vals.length;
-    return{known:true,score:clamp(mean),confidence:clamp(Math.min(1,vals.length/4)),dimensions:vals,profile:p};
+    if(!vals.length&&preferenceValue===null)return{known:false,score:null,confidence:0,profile:p};
+    const mean=vals.length?vals.reduce((s,x)=>s+x.utility,0)/vals.length:null;
+    const preferenceWeight=preferenceValue===null?0:(mean===null?1:0.3);
+    const combined=mean===null?preferenceValue:
+      (preferenceValue===null?mean:(1-preferenceWeight)*mean+preferenceWeight*preferenceValue);
+    const dimensionCoverage=vals.length?Math.min(1,vals.length/4):0;
+    const dimensionQuality=vals.length?vals.reduce((sum,x)=>sum+(x.confidence??0.5),0)/vals.length:0;
+    const dimensionConfidence=dimensionCoverage*dimensionQuality;
+    const preferenceConfidence=preferenceValue===null?0:(clamp(actionPreference.confidence)??0.5);
+    const confidence=preferenceValue===null?dimensionConfidence:
+      (mean===null?preferenceConfidence:clamp(dimensionConfidence*0.72+preferenceConfidence*0.28));
+    return{known:true,score:clamp(combined),confidence,dimensions:vals,
+      actionPreference:actionPreference?clone(actionPreference):null,profile:p};
   }
   function strategicPlan(c,decision){
     const actions=Array.isArray(decision?.candidateActions)?decision.candidateActions:[decision?.selectedAction].filter(Boolean);
