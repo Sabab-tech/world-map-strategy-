@@ -1492,6 +1492,20 @@ window.OmegaCabinetUI = {
 
         if (ministryId === 'defense' || ministryId === 'military') {
             this.renderMoDDashboard(m, contentArea);
+            const battlefieldPanel = document.createElement('section');
+            battlefieldPanel.id = 'omega-defense-battlefield-entry';
+            battlefieldPanel.style.cssText = 'margin:14px 0;padding:15px;border:1px solid rgba(218,177,75,.55);border-radius:12px;background:linear-gradient(135deg,rgba(17,39,57,.98),rgba(5,14,23,.98));color:#edf6ff;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;';
+            battlefieldPanel.innerHTML = '<div style="min-width:180px;flex:1"><div style="color:#f3d27b;font-weight:900;letter-spacing:.08em;font-size:13px">DEFENCE OPERATIONS · BATTLEFIELD SIMULATOR</div><div style="font-size:11px;color:#a8bfd2;line-height:1.6;margin-top:5px">Military recruitment, procurement and battle simulation live here. Police staffing, vehicles, patrols and crime rules remain inside Home Ministry.</div></div><button type="button" id="omega-defense-open-battlefield" style="min-height:42px;border:1px solid #d9ba6b;border-radius:8px;padding:10px 13px;background:linear-gradient(135deg,#795b27,#2b2116);color:#ffebaf;font-size:10px;font-weight:900;letter-spacing:.06em;cursor:pointer">OPEN BATTLEFIELD CONTROL</button>';
+            contentArea.insertAdjacentElement('afterbegin', battlefieldPanel);
+            const battlefieldButton = battlefieldPanel.querySelector('#omega-defense-open-battlefield');
+            if (battlefieldButton) battlefieldButton.onclick = function () {
+                const runtime = window.OmegaBattlefieldCommand;
+                if (runtime && typeof runtime.open === 'function') runtime.open();
+                else {
+                    battlefieldButton.textContent = 'BATTLEFIELD RUNTIME UNAVAILABLE';
+                    battlefieldButton.disabled = true;
+                }
+            };
             return;
         }
 
