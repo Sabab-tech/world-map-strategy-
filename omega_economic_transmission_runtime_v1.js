@@ -309,7 +309,6 @@
     model.lastInflationPct = domesticInflation;
     model.lastLocalPerUsd = currentRate;
     model.revision = (num(model.revision) || 0) + 1;
-    const bankStore = rootTransmissionStore();
     bankStore.economicTransmissionByCountry[id] = clone(model);
     if (profile.economyKey && obj(root.economy) && obj(root.economy[profile.economyKey]))
       root.economy[profile.economyKey].financialTransmission = clone(model.latest);
