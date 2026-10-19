@@ -112,6 +112,13 @@ test('Ministry budget transfers conserve the national budget, post paired entrie
   assert.deepEqual(entries.map(row=>row.action).sort(),['BUDGET_TRANSFER_IN','BUDGET_TRANSFER_OUT']);
   assert.equal(entries.find(row=>row.action==='BUDGET_TRANSFER_OUT').counterpartyDepartment,'interior');
   assert.equal(entries.find(row=>row.action==='BUDGET_TRANSFER_IN').counterpartyDepartment,'defense');
+  const spendBefore=after.treasuryBalanceUsd, targetSpentBefore=after.allocations.interior.spentUsd;
+  const spend=context.OmegaFinanceMinistry.applyAction({type:'spend-budget',countryId:'BGD',
+    department:'interior',amountUsd:5000,spendType:'purchase',description:'Spend transferred Home budget'});
+  assert.equal(spend.ok,true,spend.message);
+  const afterSpend=context.OmegaFinanceMinistry.getFinanceState('BGD');
+  assert.equal(afterSpend.treasuryBalanceUsd,spendBefore-5000,'cash moves only when the receiving ministry executes an expense');
+  assert.equal(afterSpend.allocations.interior.spentUsd,targetSpentBefore+5000);
   const tooMuch=context.OmegaFinanceMinistry.applyAction({type:'transfer-budget',countryId:'BGD',
     sourceDepartment:'defense',targetDepartment:'interior',amountUsd:after.allocations.defense.remainingUsd+1});
   assert.equal(tooMuch.ok,false);assert.equal(tooMuch.code,'BUDGET_TRANSFER_EXCEEDS_REMAINING');
