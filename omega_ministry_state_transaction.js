@@ -41,7 +41,14 @@
     const registry=global.OmegaCanonicalIdentityRegistry||global.OmegaCountrySemanticBridge||global.Omega?.CanonicalIdentity;
     if(registry&&typeof registry.resolveCountry==='function'){
       for(const candidate of [raw,raw.replace(/[_-]+/g,' ')]){
-        try{const hit=registry.resolveCountry(candidate);if(hit&&hit.id)return String(hit.id).trim().toUpperCase();}catch(_){}
+        try{
+          const hit=registry.resolveCountry(candidate);
+          if(hit&&hit.id){
+            const row=hit.raw?.raw||hit.raw||null;
+            const iso3=row?.iso3||row?.iso3Code||row?.ISO_A3||row?.iso_a3;
+            return String(iso3||hit.id).trim().toUpperCase();
+          }
+        }catch(_){}
       }
     }
     return raw.toUpperCase();
