@@ -449,7 +449,10 @@
     g.document.getElementById('home-police-budget-save').onclick = () => {
       const currentAmount = Number(amountInput.value), currentRules = readRules();
       const validation = refreshPreview();
-      if (validation === false) return;
+      if (validation === false) {
+        this.showAdvisePopup('BUDGET NOT SAVED', preview.textContent || 'The budget allocation is invalid. No budget was saved or money spent.');
+        return;
+      }
       const result = e.configureBudgetPlan(currentAmount,currentRules,countryId);
       if (!result || !result.ok) { report(result); return; }
       report(result,'HOME MINISTRY BUDGET SAVED',
