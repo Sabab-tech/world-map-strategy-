@@ -268,6 +268,45 @@ test('Human Development Index retains official UNDP source, observation year and
   }
 });
 
+test('CPI 2025 score and rank stay distinct and retain the published source year', () => {
+  const scoreIndex = metricIndex.corruptionPerceptionIndex;
+  const rankIndex = metricIndex.corruptionPerceptionRank;
+  assert.notEqual(scoreIndex, undefined, 'CPI score metric is missing.');
+  assert.notEqual(rankIndex, undefined, 'CPI rank metric is missing.');
+  let sourcedScores = 0;
+  let sourcedRanks = 0;
+  for (const row of registry.countries) {
+    const score = row.metrics[scoreIndex];
+    const rank = row.metrics[rankIndex];
+    const scoreStatus = provenance.statuses[row.metricMetadata.statusCodes[scoreIndex]];
+    const rankStatus = provenance.statuses[row.metricMetadata.statusCodes[rankIndex]];
+    if (scoreStatus === 'TRANSPARENCY_INTERNATIONAL_CPI_2025') {
+      sourcedScores += 1;
+      assert.ok(Number.isFinite(score) && score >= 0 && score <= 100);
+      assert.equal(row.metricMetadata.years[scoreIndex], 2025);
+      assert.equal(row.metricMetadata.indicatorCodes?.[scoreIndex], 'CPI score 2025');
+      assert.equal(row.metricMetadata.sourceUrls?.[scoreIndex],
+        'https://raw.githubusercontent.com/loupeat/ti-cpi/main/docs/ti/CPI2025_GlobalResultsTrends.csv');
+    }
+    if (rankStatus === 'TRANSPARENCY_INTERNATIONAL_CPI_2025') {
+      sourcedRanks += 1;
+      assert.ok(Number.isFinite(rank) && rank >= 1);
+      assert.equal(row.metricMetadata.years[rankIndex], 2025);
+      assert.equal(row.metricMetadata.indicatorCodes?.[rankIndex], 'Rank 2025');
+    }
+  }
+  const refresh = registry.metadata.externalRefresh;
+  assert.ok(refresh.transparencyInternationalCpi2025, 'Refresh metadata must describe CPI 2025.');
+  assert.equal(refresh.transparencyInternationalCpi2025.observationYear, 2025);
+  if (refresh.requested) {
+    assert.equal(refresh.transparencyInternationalCpi2025.loaded, true,
+      'CPI 2025 source refresh failed: ' + String(refresh.transparencyInternationalCpi2025.error));
+    assert.ok(refresh.transparencyInternationalCpi2025.canonicalCountriesWithCpi >= 150);
+    assert.ok(sourcedScores >= 150, 'CPI scores were not imported with publisher provenance.');
+    assert.ok(sourcedRanks >= 150, 'CPI ranks were not imported as a separate metric.');
+  }
+});
+
 test('discipline score is not invented or confused with official governance indicators', () => {
   const disciplineIndex = metricIndex.disciplineIndex;
   const ruleOfLawIndex = metricIndex.ruleOfLawWgiEstimate;
