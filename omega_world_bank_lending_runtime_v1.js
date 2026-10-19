@@ -1066,7 +1066,6 @@
         queueRender(true);
       });
       global.addEventListener && global.addEventListener('OMEGA_WORLD_BANK_LENDING_UPDATED', function () {
-        evaluateAll();
         queueRender(true);
       });
       try {
