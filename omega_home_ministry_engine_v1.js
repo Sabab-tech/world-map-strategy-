@@ -799,7 +799,7 @@
           debit=debitTreasury(cid,paid);
           if(!debit.ok)paid=0;
         }
-        if((debit&&debit.ok)||financePaid){
+        if((debit&&debit.ok)||financePaid||(finance&&parent)){
           payrollDebit=debit;
           if(paid<due){s.unpaidPayroll+=due-paid;s.policeTrust=clamp(s.policeTrust-Math.min(5,days),0,100);s.policeEfficiency=clamp(s.policeEfficiency-Math.min(5,days),0,100);s.sabotageRisk=clamp(s.sabotageRisk+Math.min(5,days),5,95);}
           emit('OMEGA_HOME_POLICE_PAYROLL_SETTLED',{countryId:cid,days:days,due:due,paid:paid,unpaid:Math.max(0,due-paid),turn:turn()});
