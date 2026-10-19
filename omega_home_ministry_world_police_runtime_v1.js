@@ -35,6 +35,7 @@
       report = {
         version: VERSION, ready: true, countryCount: result.countryCount || payload.countries.length,
         seededCountries: result.seededCountries || 0, existingCountryStatesPreserved: result.existingCountryStatesPreserved || 0,
+        migratedLegacyFleetCountries: result.migratedLegacyFleetCountries || 0,
         populationCoverage: payload.countries.filter(function (r) { return r.population && Number(r.population.value) > 0; }).length,
         observedHomicideCoverage: payload.countries.filter(function (r) { return r.crime && r.crime.observedHomicide && Number.isFinite(Number(r.crime.observedHomicide.ratePer100k)); }).length,
         vehicleTypes: Array.isArray(payload.vehicles) ? payload.vehicles.length : 0,
