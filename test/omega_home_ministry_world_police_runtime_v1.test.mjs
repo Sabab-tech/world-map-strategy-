@@ -111,7 +111,12 @@ test('baseline bootstrap seeds every country once, preserves a country opening f
   const crime = engine.getCrimeSnapshot('BD');
   assert.equal(crime.available, true);
   assert.equal(crime.baselineCrimeIndex, 100);
-  assert.equal(crime.projectedCrimeIndex, 100);
+  assert.ok(crime.projectedCrimeIndex > 100, 'Opening crime projection reflects modeled staffing, fleet, facility and training gaps');
+  assert.ok(crime.policeStaffingCoveragePct < 100);
+  assert.ok(crime.vehicleCoveragePct < 100);
+  assert.ok(crime.facilityReadinessPct < 50);
+  assert.ok(crime.trainingCoveragePct < 50);
+  assert.equal(crime.simulationTargetSource, 'GAMEPLAY_POLICY_TARGET_NOT_OFFICIAL_COUNTRY_STANDARD');
   assert.equal(crime.population, bangladesh.population.value);
   assert.equal(crime.categories.homicide.observed, true);
   assert.equal(crime.categories.theft.observed, false);
