@@ -995,8 +995,12 @@
       if(!check.ok)return{ok:false,reason:check.reason,balance:check.balance,cost:cost,category:check.category,
         budgetRemaining:check.budgetRemaining,message:check.message};
       let result;
-      try{result=finance.applyAction({type:'spend-budget',countryId:cid,department:'interior',amountUsd:cost,
-        spendType:check.financeType,description:'OMEGA_HOME_BUDGET:'+check.category+'|'+String(action||'HOME_MINISTRY_DAILY_OPERATIONS')});}
+      const financeAction={type:'spend-budget',countryId:cid,department:'interior',amountUsd:cost,
+         spendType:check.financeType,description:'OMEGA_HOME_BUDGET:'+check.category+'|'+String(action||'HOME_MINISTRY_DAILY_OPERATIONS')};
+       try{
+         const simulationSettlement=!isPlayerCountry(cid)&&typeof finance.applySimulationAction==='function';
+         result=simulationSettlement?finance.applySimulationAction(financeAction):finance.applyAction(financeAction);
+       }
       catch(error){return{ok:false,reason:'FINANCE_TRANSACTION_FAILED',message:String(error&&error.message||error),balance:check.snapshot.treasuryBalanceUsd,cost:cost};}
       if(!result||result.ok!==true)return{ok:false,reason:result&&result.code||'FINANCE_TRANSACTION_FAILED',
         balance:result&&result.treasuryBalanceUsd!==undefined?result.treasuryBalanceUsd:check.snapshot.treasuryBalanceUsd,cost:cost,category:check.category,
@@ -1845,9 +1849,9 @@
     if(changed){state.pendingCapabilityProjects=remaining;state.completedCapabilityProjects=completed.slice(-50);}
     return changed;
   }
-  function onTurnCommitted(event){
-    const detail=event&&event.detail||{},payload=detail.payload||detail,cid=normalizeCountry(payload.countryId||detail.countryId||playerCountry());if(!cid)return;
-    const now=simulationTimeMs(),day=Math.floor(now/DAY_MS),s=getState(cid);let changed=false,payrollDebit=null;
+  function processCountryTurn(cid,now,day){
+    cid=normalizeCountry(cid);if(!cid)return;
+    const s=getState(cid);let changed=false,payrollDebit=null;
     if(s.lastPayrollDay===null||s.lastPayrollDay===undefined){s.lastPayrollDay=day;changed=true;}
     else if(day>s.lastPayrollDay){
       const days=Math.min(3650,day-s.lastPayrollDay),due=dailyOperatingCost(s)*days;
@@ -1920,6 +1924,34 @@
     if(processIncident(cid,s,day))changed=true;if(collectIntelligence(cid,s,day))changed=true;
     if(processPoliceCaseDeadlines(s,cid,now))changed=true;
     s.lastUpdatedTurn=turn();if(changed){const committed=dispatchState(cid,s,'OMEGA_HOME_MINISTRY_SIMULATION_UPDATE');if(!committed.ok&&payrollDebit)refundTreasury(payrollDebit);}
+  }
+
+  function simulationCountryIds(){
+    const ids=new Set();
+    const add=value=>{
+      const cid=normalizeCountry(value);
+      if(!cid||cid==='GLOBAL'||cid==='WORLD')return;
+      const row=countryPoliceBaselineByCode&&countryPoliceBaselineByCode[cid];
+      ids.add(normalizeCountry(row&&row.code||cid));
+    };
+    (countryPoliceBaselineRows||[]).forEach(row=>add(row&&(row.iso3||row.code)));
+    const root=rootState()||{};
+    ['economy','population','finance','resource','interior','military','defense','armedForces','armed_forces',
+     'foreign','trade','transport','government','projects'].forEach(domain=>{
+      const bucket=root[domain];
+      if(bucket&&typeof bucket==='object'&&!Array.isArray(bucket))Object.keys(bucket).forEach(add);
+    });
+    add(playerCountry());
+    return [...ids].sort();
+  }
+
+  function onTurnCommitted(){
+    const now=simulationTimeMs(),day=Math.floor(now/DAY_MS),failures=[];
+    for(const cid of simulationCountryIds()){
+      try{processCountryTurn(cid,now,day);}
+      catch(error){failures.push(cid+':'+String(error&&error.message||error));}
+    }
+    if(failures.length)throw new Error('HOME_MINISTRY_TURN_FAILED:'+failures.join('|'));
   }
 
   let handlerRegistered=false,economyHandlerRegistered=false,financeHandlerRegistered=false;
