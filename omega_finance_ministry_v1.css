@@ -56,7 +56,7 @@
 
 /* OMEGA Finance Ministry interaction system v1.1.0 */
 .ofm-dashboard{gap:10px}
-.ofm-icon-nav{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+.ofm-icon-nav{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px}
 .ofm-icon-tab{display:flex;flex-direction:column;align-items:flex-start;gap:5px;min-width:0;min-height:92px;padding:11px 12px;border:1px solid rgba(121,155,171,.25);border-radius:9px;background:linear-gradient(160deg,rgba(18,34,47,.96),rgba(7,17,26,.98));color:#dce9ef;text-align:left;cursor:pointer}
 .ofm-icon-tab:hover{border-color:rgba(106,221,190,.52);background:linear-gradient(160deg,rgba(20,53,59,.97),rgba(7,20,28,.99))}
 .ofm-icon-tab.is-active{border-color:rgba(103,225,189,.75);box-shadow:inset 0 -2px 0 rgba(103,225,189,.65),0 5px 16px rgba(0,0,0,.18);background:linear-gradient(160deg,rgba(15,66,62,.95),rgba(8,25,34,.99))}
