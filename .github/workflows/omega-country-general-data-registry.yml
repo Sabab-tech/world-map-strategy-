@@ -47,6 +47,13 @@ jobs:
         with:
           node-version: "20"
 
+      - name: Snapshot prior registry for source-preservation regression
+        shell: bash
+        run: |
+          if [[ -f country_general_data_registry_v1.json ]]; then
+            cp country_general_data_registry_v1.json /tmp/omega-country-general-registry-before.json
+          fi
+
       - name: Build unified country registry and refresh source indicators
         run: |
           if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
