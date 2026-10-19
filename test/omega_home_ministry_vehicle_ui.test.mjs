@@ -140,9 +140,12 @@ test('custom vehicle artwork uses vector police signals and accessible names, no
   assert.match(ui, /aria-label="'\s*\+\s*esc\(vehicle\.name\)\s*\+\s*' police vehicle illustration"/);
   assert.ok(ui.includes("police-gloss-' + key + '"), 'vehicle bodies must have a layered glossy light pass for depth');
   assert.ok(ui.includes("police-metal-' + key + '"), 'wheel rims must use a metallic lighting gradient');
-  assert.match(ui, /stroke-width="2\.3" stroke-linecap="round" opacity="\.43"/, 'body highlight bevel must be present');
-  assert.match(ui, /<text x="160" y="107"[^>]*>POLICE<\/text>/);
+  assert.ok(ui.includes('maskUnits="userSpaceOnUse"'), 'vehicle body must have an explicit wheel-arch mask');
+  assert.ok(ui.includes('<text x="94" y="92"') && ui.includes('>POLICE</text>'), 'POLICE label must sit on the side door panel, clear of the wheels');
   assert.match(ui, /police-body-/);
+  assert.match(ui, /viewBox="0 20 260 116"/);
+  assert.ok(ui.includes('police-arch-mask-'), 'wheel wells must be cut cleanly from the body silhouette');
+  assert.doesNotMatch(ui, /M34 91 L60 85 L84 61/, 'one shared roof highlight must not distort different vehicle profiles');
   assert.ok(ui.includes("replace(/[^A-Za-z0-9_-]/g, '-').slice(0, 80)"), 'SVG IDs must be sanitized before entering markup');
   assert.match(ui, /<rect x="' \+ art\.siren\[0\]/);
   assert.doesNotMatch(ui, /https?:\/\/[^'"]+\.(png|jpe?g|webp|svg)/i);

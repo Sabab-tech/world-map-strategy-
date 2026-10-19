@@ -81,28 +81,32 @@
   function vehicleSvg(vehicle, slot) {
     const art = VEHICLE_ART[vehicle && vehicle.iconId] || VEHICLE_ART.cityline;
     const key = (String(slot || 'card') + '-' + String(vehicle.level)).replace(/[^A-Za-z0-9_-]/g, '-').slice(0, 80);
-    const wheels = art.wheels.map(function (x) {
-      return '<circle cx="' + x + '" cy="111" r="' + art.wheelR + '" fill="#08111b" stroke="#7e9ab0" stroke-width="2.2"/><path d="M' + (x - art.wheelR * .62) + ' 102 A ' + (art.wheelR * .82) + ' ' + (art.wheelR * .82) + ' 0 0 1 ' + (x + art.wheelR * .62) + ' 102" fill="none" stroke="#dceaf4" stroke-width="1.3" opacity=".55"/><circle cx="' + x + '" cy="111" r="' + Math.round(art.wheelR * .52) + '" fill="url(#police-metal-' + key + ')" stroke="#dce8f1" stroke-width="2"/><circle cx="' + x + '" cy="111" r="3" fill="#243849"/>';
+    const wheelMask = art.wheels.map(function (x) {
+      return '<circle cx="' + x + '" cy="111" r="' + (art.wheelR + 2) + '" fill="#000"/>';
     }).join('');
-    return '<svg class="home-police-vehicle-art ' + (slot === 'hero' ? 'home-police-vehicle-art-hero' : '') + '" viewBox="0 27 260 104" role="img" aria-label="' + esc(vehicle.name) + ' police vehicle illustration" xmlns="http://www.w3.org/2000/svg">' +
-      '<defs><linearGradient id="police-body-' + key + '" x1="0" y1="0" x2="0.15" y2="1"><stop offset="0" stop-color="' + art.colors[0] + '"/><stop offset=".2" stop-color="' + art.colors[0] + '"/><stop offset=".58" stop-color="' + art.colors[1] + '"/><stop offset="1" stop-color="#071321"/></linearGradient><linearGradient id="police-gloss-' + key + '" x1="0" y1="0" x2=".15" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity=".44"/><stop offset=".24" stop-color="#ffffff" stop-opacity=".08"/><stop offset=".62" stop-color="#ffffff" stop-opacity=".015"/><stop offset="1" stop-color="#020812" stop-opacity=".27"/></linearGradient><linearGradient id="police-metal-' + key + '" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f4fbff"/><stop offset=".42" stop-color="#7891a4"/><stop offset="1" stop-color="#263b4d"/></linearGradient><linearGradient id="police-glass-' + key + '" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e8fbff"/><stop offset=".23" stop-color="#7db7cc"/><stop offset=".55" stop-color="#35637c"/><stop offset="1" stop-color="#091827"/></linearGradient></defs>' +
-      '<ellipse cx="132" cy="128" rx="112" ry="8" fill="#02060c" opacity=".68"/>' +
+    const wheels = art.wheels.map(function (x) {
+      return '<g class="police-wheel"><circle cx="' + x + '" cy="111" r="' + art.wheelR + '" fill="#08111b" stroke="#7e9ab0" stroke-width="2.2"/><path d="M' + (x - art.wheelR * .62) + ' 102 A ' + (art.wheelR * .82) + ' ' + (art.wheelR * .82) + ' 0 0 1 ' + (x + art.wheelR * .62) + ' 102" fill="none" stroke="#dceaf4" stroke-width="1.3" opacity=".55"/><circle cx="' + x + '" cy="111" r="' + Math.round(art.wheelR * .52) + '" fill="url(#police-metal-' + key + ')" stroke="#dce8f1" stroke-width="2"/><circle cx="' + x + '" cy="111" r="3" fill="#243849"/></g>';
+    }).join('');
+    return '<svg class="home-police-vehicle-art ' + (slot === 'hero' ? 'home-police-vehicle-art-hero' : '') + '" viewBox="0 20 260 116" role="img" aria-label="' + esc(vehicle.name) + ' police vehicle illustration" xmlns="http://www.w3.org/2000/svg">' +
+      '<defs><linearGradient id="police-body-' + key + '" x1="0" y1="0" x2="0.15" y2="1"><stop offset="0" stop-color="' + art.colors[0] + '"/><stop offset=".2" stop-color="' + art.colors[0] + '"/><stop offset=".58" stop-color="' + art.colors[1] + '"/><stop offset="1" stop-color="#071321"/></linearGradient><linearGradient id="police-gloss-' + key + '" x1="0" y1="0" x2=".15" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity=".44"/><stop offset=".24" stop-color="#ffffff" stop-opacity=".08"/><stop offset=".62" stop-color="#ffffff" stop-opacity=".015"/><stop offset="1" stop-color="#020812" stop-opacity=".27"/></linearGradient><linearGradient id="police-metal-' + key + '" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f4fbff"/><stop offset=".42" stop-color="#7891a4"/><stop offset="1" stop-color="#263b4d"/></linearGradient><linearGradient id="police-glass-' + key + '" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e8fbff"/><stop offset=".23" stop-color="#7db7cc"/><stop offset=".55" stop-color="#35637c"/><stop offset="1" stop-color="#091827"/></linearGradient>' +
+      '<mask id="police-arch-mask-' + key + '" maskUnits="userSpaceOnUse" x="0" y="0" width="260" height="140"><rect x="0" y="0" width="260" height="140" fill="#fff"/>' + wheelMask + '</mask></defs>' +
+      '<ellipse cx="132" cy="128" rx="112" ry="7" fill="#02060c" opacity=".58"/>' +
+      '<g mask="url(#police-arch-mask-' + key + ')">' +
       '<path d="' + art.body + '" fill="url(#police-body-' + key + ')" stroke="#e2edf8" stroke-width="2.2" stroke-linejoin="round"/>' +
-      '<path d="' + art.body + '" fill="url(#police-gloss-' + key + ')" opacity=".72"/>' +
-      '<path d="M34 91 L60 85 L84 61 Q92 53 105 53 H150 Q160 54 173 75" fill="none" stroke="#f5fbff" stroke-width="2.3" stroke-linecap="round" opacity=".43"/>' +
-      '<path d="' + art.stripe + '" fill="' + art.colors[2] + '" opacity=".93"/>' +
-      '<path d="M24 101 L234 101 L233 110 L22 110 Z" fill="#020915" opacity=".21"/>' +
-      '<path d="' + art.glass + '" fill="url(#police-glass-' + key + ')" stroke="#cde5f0" stroke-width="1.7" stroke-linejoin="round"/>' +
-      '<path d="M91 61 L104 57 H122" fill="none" stroke="#ffffff" stroke-width="2" opacity=".5" stroke-linecap="round"/>' +
-      '<path d="M132 57 L132 78 M177 79 L174 93" stroke="#a6c5d7" stroke-width="1.4" opacity=".8"/>' +
+      '<path d="' + art.body + '" fill="url(#police-gloss-' + key + ')" opacity=".68"/>' +
+      '<path d="' + art.glass + '" fill="url(#police-glass-' + key + ')" stroke="#d7eaf4" stroke-width="1.7" stroke-linejoin="round"/>' +
+      '<path d="' + art.stripe + '" fill="' + art.colors[2] + '" opacity=".92"/>' +
+      '<path d="M24 101 L234 101 L233 110 L22 110 Z" fill="#020915" opacity=".19"/>' +
+      '<path d="M82 80 L80 95 M156 80 L160 95" fill="none" stroke="#9db8c9" stroke-width="1.15" opacity=".78" stroke-linecap="round"/>' +
+      '<path d="M128 85 H135" stroke="#eaf4fb" stroke-width="1.6" stroke-linecap="round" opacity=".78"/>' +
       '<path d="M28 103 L44 103" stroke="#edfaff" stroke-width="3" stroke-linecap="round"/><path d="M222 100 L233 101" stroke="#fff3bf" stroke-width="4" stroke-linecap="round"/>' +
-      '<path d="M108 49 H137" stroke="#d5e9f7" stroke-width="3" stroke-linecap="round"/>' +
-      '<rect x="' + art.siren[0] + '" y="' + art.siren[1] + '" width="14" height="5" rx="2" fill="#f4485b" stroke="#ffe5e7" stroke-width=".7"/><rect x="' + (art.siren[0] + 14) + '" y="' + art.siren[1] + '" width="14" height="5" rx="2" fill="#33dcff" stroke="#e0fbff" stroke-width=".7"/>' +
-      '<path d="M109 86 L127 86" stroke="#f7fbff" stroke-width="2" opacity=".8"/><path d="M123 90 L128 86 L123 82" fill="none" stroke="#f7fbff" stroke-width="1.5"/>' +
-      '<circle cx="143" cy="91" r="7" fill="#0b1622" stroke="' + art.colors[2] + '" stroke-width="1.7"/><path d="M143 85 L145 89 L150 90 L146 93 L147 98 L143 95 L139 98 L140 93 L136 90 L141 89 Z" fill="#f5d77a" stroke="#fff0be" stroke-width=".5"/>' +
-      '<text x="160" y="107" font-size="7.5" font-weight="900" fill="#f7fbff" stroke="#122638" stroke-width=".45" paint-order="stroke" letter-spacing=".65">POLICE</text>' +
-      art.addon + wheels +
+      '<circle cx="140" cy="88" r="5.6" fill="#0b1622" stroke="' + art.colors[2] + '" stroke-width="1.5"/><path d="M140 83 L141.6 86 L145 86.5 L142.5 89 L143.2 92.5 L140 90.7 L136.8 92.5 L137.5 89 L135 86.5 L138.4 86 Z" fill="#f5d77a" stroke="#fff0be" stroke-width=".45"/>' +
+      '<text x="94" y="92" font-size="7.2" font-weight="900" fill="#f7fbff" stroke="#122638" stroke-width=".45" paint-order="stroke" letter-spacing=".45">POLICE</text>' +
       '<path d="M29 115 L42 115 M222 115 L233 115" stroke="' + art.colors[2] + '" stroke-width="3" stroke-linecap="round"/>' +
+      '</g>' +
+      art.addon +
+      '<rect x="' + art.siren[0] + '" y="' + art.siren[1] + '" width="14" height="5" rx="2" fill="#f4485b" stroke="#ffe5e7" stroke-width=".7"/><rect x="' + (art.siren[0] + 14) + '" y="' + art.siren[1] + '" width="14" height="5" rx="2" fill="#33dcff" stroke="#e0fbff" stroke-width=".7"/>' +
+      wheels +
       '</svg>';
   }
 
@@ -157,8 +161,8 @@
       '.home-police-fleet-meta>div{min-width:0;padding:7px;border-radius:6px;background:rgba(0,0,0,.18);font-size:10px;color:#9fb7ca;overflow-wrap:anywhere}',
       '.home-police-fleet-meta strong{display:block;color:#eef6ff;font-size:11px;margin-top:3px}',
       '.home-police-card-emoji{font-size:30px;line-height:1.2;min-height:36px}',
-      '.home-police-vehicle-art{display:block;box-sizing:border-box;width:100%;height:100px;min-height:90px;max-width:260px;margin:3px auto 6px;overflow:visible;filter:none;shape-rendering:geometricPrecision;flex:0 0 auto;position:relative;z-index:1}',
-      '.home-police-vehicle-art-hero{height:132px;min-height:120px;max-width:360px;margin:0 auto 8px;background:radial-gradient(ellipse at 50% 90%,rgba(67,175,224,.13),transparent 68%)}', 
+      '.home-police-vehicle-art{display:block;box-sizing:border-box;width:100%;height:auto;min-height:0;max-width:260px;aspect-ratio:65/29;margin:3px auto 6px;overflow:visible;filter:none;shape-rendering:geometricPrecision;flex:0 0 auto;position:relative;z-index:1}',
+      '.home-police-vehicle-art-hero{height:auto;min-height:0;max-width:360px;aspect-ratio:65/29;margin:0 auto 8px;background:radial-gradient(ellipse at 50% 90%,rgba(67,175,224,.13),transparent 68%)}', 
       '.home-police-card{overflow:visible;padding-top:9px}',
       '.home-police-card .home-police-vehicle-art{width:100%;min-width:110px;max-width:260px}',
       '.home-police-vehicle-art text{font-family:Arial,sans-serif}',
@@ -173,7 +177,7 @@
       '.home-police-deployment-card{min-width:0;padding:12px;border:1px solid rgba(98,180,218,.28);background:linear-gradient(150deg,rgba(18,43,63,.95),rgba(7,15,26,.97));border-radius:11px}',
       '.home-police-deployment-card h3{font-size:12px;color:#ffdfa0;line-height:1.4;margin:5px 0}',
       '.home-police-score-line{display:flex;justify-content:space-between;gap:10px;font-size:10px;color:#9fb7ca;margin-top:9px}',
-      '@media(max-width:540px){.home-police-vehicle-art{height:94px;min-height:88px}.home-police-vehicle-art-hero{height:116px;min-height:110px}.home-police-deployment-list{grid-template-columns:1fr}.home-police-vehicle-brief{gap:6px}.home-police-feature-chip{font-size:9px;padding:6px 7px}}',
+      '@media(max-width:540px){.home-police-vehicle-art,.home-police-vehicle-art-hero{height:auto;min-height:0;aspect-ratio:65/29}.home-police-deployment-list{grid-template-columns:1fr}.home-police-vehicle-brief{gap:6px}.home-police-feature-chip{font-size:9px;padding:6px 7px}}',
       '.home-police-card-name{font-size:11px;font-weight:850;line-height:1.35;overflow-wrap:anywhere}',
       '.home-police-tag{display:inline-flex;align-items:center;justify-content:center;padding:4px 7px;border-radius:5px;background:rgba(13,173,211,.15);color:#7cdeff;border:1px solid rgba(13,173,211,.32);font-size:9px;font-weight:900;letter-spacing:.07em}',
       '.home-police-tag-gold{color:#ffe199;background:rgba(200,154,38,.13);border-color:rgba(245,207,104,.42)}',
