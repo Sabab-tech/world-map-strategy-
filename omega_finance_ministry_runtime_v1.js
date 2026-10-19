@@ -27,7 +27,7 @@
   function escapeHTML(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
   function fmtMoney(v){
     const n=finite(v);if(n===null)return 'N/A';
-    const format=g.OmegaNumberFormat;
+    const format=global.OmegaNumberFormat;
     if(format&&typeof format.money==='function')return format.money(n,{unavailable:'N/A'});
     const abs=Math.abs(n);
     const scale=abs>=1e12?{value:1e12,label:'trillion'}:abs>=1e9?{value:1e9,label:'billion'}:abs>=1e6?{value:1e6,label:'million'}:abs>=1e3?{value:1e3,label:'thousand'}:null;
@@ -37,7 +37,7 @@
   }
   function fmtNumber(v,digits){
     const n=finite(v);if(n===null)return 'N/A';
-    const format=g.OmegaNumberFormat;
+    const format=global.OmegaNumberFormat;
     return format&&typeof format.compact==='function'?format.compact(n,{maximumFractionDigits:digits===undefined?2:digits}):n.toLocaleString('en-US',{maximumFractionDigits:digits===undefined?2:digits});
   }
   function fmtPct(v){const n=finite(v);return n===null?'N/A':n.toFixed(2)+'%';}
