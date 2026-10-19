@@ -5,7 +5,13 @@
 (function (g) {
   'use strict';
   if (g.OmegaHomePoliceBaselineRuntime && g.OmegaHomePoliceBaselineRuntime.VERSION === '1.0.0') return;
-  var VERSION = '1.0.0', promise = null, report = { ready: false, countryCount: 0, seededCountries: 0 };
+  var VERSION = '1.1.0', promise = null, report = { ready: false, countryCount: 0, seededCountries: 0 };
+  var SCRIPT_URL = g.document && g.document.currentScript && g.document.currentScript.src || null;
+  function dataUrl() {
+    try { if (SCRIPT_URL && typeof URL === 'function') return new URL('omega_home_ministry_country_police_baseline_v1.json', SCRIPT_URL).toString(); } catch (_) {}
+    try { if (g.location && g.location.href && typeof URL === 'function') return new URL('omega_home_ministry_country_police_baseline_v1.json', g.location.href).toString(); } catch (_) {}
+    return 'omega_home_ministry_country_police_baseline_v1.json';
+  }
   function engine() { return g.OmegaHomeMinistryEngine || (g.Omega && g.Omega.HomeMinistry) || null; }
   function emit(type, detail) {
     try { if (g.dispatchEvent && g.CustomEvent) g.dispatchEvent(new g.CustomEvent(type, { detail: detail || {} })); } catch (_) {}
@@ -15,7 +21,7 @@
     if (promise) return promise;
     promise = Promise.resolve().then(function () {
       if (typeof g.fetch !== 'function') throw new Error('FETCH_UNAVAILABLE');
-      return g.fetch('omega_home_ministry_country_police_baseline_v1.json', { cache: 'no-cache' });
+      return g.fetch(dataUrl(), { cache: 'no-cache' });
     }).then(function (response) {
       if (!response || !response.ok) throw new Error('POLICE_BASELINE_FETCH_FAILED');
       return response.json();
@@ -45,7 +51,7 @@
     }).finally(function () { promise = null; });
     return promise;
   }
-  var api = Object.freeze({ VERSION: VERSION, init: init, diagnostics: function () { return Object.assign({}, report); } });
+  var api = Object.freeze({ VERSION: VERSION, init: init, retry: init, dataUrl: dataUrl, diagnostics: function () { return Object.assign({}, report); } });
   g.OmegaHomePoliceBaselineRuntime = api;
   if (g.document) {
     var start = function () { init(); };
