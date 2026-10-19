@@ -1,0 +1,45 @@
+name: OMEGA Daily Game Clock
+
+on:
+  push:
+    branches:
+      - main
+      - feat/unified-daily-game-clock-autosave-hud-20261020
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'omega_simulation_runtime.js'
+      - 'omega_game_lifecycle_runtime_v1.js'
+      - 'omega_game_lifecycle_runtime_v1.css'
+      - 'omega_finance_ministry_runtime_v1.js'
+      - 'finance_runtime_rules_v1.json'
+      - 'omega_government_banking_runtime_v1.js'
+      - 'omega-offline-map-sw.js'
+      - 'index.html'
+      - 'test/omega_simulation_daily_clock.test.mjs'
+      - '.github/workflows/omega-game-clock.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  daily-clock-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify JavaScript syntax
+        run: |
+          node --check omega_simulation_runtime.js
+          node --check omega_game_lifecycle_runtime_v1.js
+          node --check omega_finance_ministry_runtime_v1.js
+          node --check omega_government_banking_runtime_v1.js
+          node --check omega-offline-map-sw.js
+      - name: Test shared daily clock, saves and lifecycle wiring
+        run: node --test test/omega_simulation_daily_clock.test.mjs
