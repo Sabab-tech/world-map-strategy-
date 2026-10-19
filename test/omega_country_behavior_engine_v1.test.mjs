@@ -225,7 +225,7 @@ test('country overview is inside ministry dashboard, uses shared behaviour runti
   assert.match(ui, /setActiveTab/);
   assert.match(ui, /OMEGA_COUNTRY_CONTEXT_CHANGED/);
   assert.match(ui, /Simulation state remains unchanged/);
-  assert.match(ui, /reserve values are not treated as factual national geology/i);
+  assert.match(ui, /the game does not substitute invented stock or production/i);
 
   const sw = read('omega-offline-map-sw.js');
   assert.match(sw, /omega-offline-atlas-shell-v10/);
@@ -233,7 +233,7 @@ test('country overview is inside ministry dashboard, uses shared behaviour runti
   assert.match(sw, /omega_country_overview_ministry_ui_v1\.js/);
   assert.match(sw, /resource_site_reserve_simulation_v1\.json/);
   assert.match(read('server_bootstrap.js'), /'omega_country_behavior_engine_v1\.js',\s*'omega_opponent_adaptive_strategy_system\.js'/);
-  assert.match(read('style.css'), /#omega-country-overview-tabs/);
+  assert.match(read('style.css'), /\.omega-country-overview-tabs/);
 
   const autonomy = read('omega_opponent_autonomy_system.js');
   const weightBlock = autonomy.match(/const DECISION_WEIGHTS=Object\.freeze\(\{([\s\S]*?)\}\);/);
