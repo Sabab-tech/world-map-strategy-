@@ -161,7 +161,7 @@ test('all canonical country profiles receive a currency and simulation USD quote
   assert.equal(profiles.length, 249);
   assert.equal(diagnostics.countryAreaCount, 249);
   assert.equal(diagnostics.countriesWithCurrency, 248);
-  assert.equal(diagnostics.countriesWithSimulationRate, 248);
+  assert.equal(diagnostics.countriesWithSimulationRate, 248, JSON.stringify({ missingRates, countriesWithoutQuote: quotes.filter(row => row.currencyCode && !(Number(row.localPerUsd) > 0)).map(row => ({ name: row.countryName, iso3: row.iso3, countryCode: row.countryCode, currencyCode: row.currencyCode, rateSource: row.rateSource, status: row.status })) }));
   assert.equal(noCurrency.length, 1);
   assert.equal(noCurrency[0].iso3, 'ATA');
   assert.equal(missingRates.length, 0, 'every currency-using country must resolve to a positive simulated USD rate');
