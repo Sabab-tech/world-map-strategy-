@@ -163,6 +163,29 @@ body.ios-active #cabinet-full-window {
 .top-status-bar #active-metric-label { font-size: 9px !important; }
 #top-status-bar .res-val,
 .top-status-bar .res-val { font-size: 9px !important; }
+/* The visual-system sheet gives its buttons a more-specific 36px minimum; override it explicitly. */
+#ui-engine-root #top-status-bar .speed-controls .speed-btn {
+  min-width: 23px !important;
+  width: auto !important;
+  min-height: 21px !important;
+  height: 21px !important;
+  padding: 2px 4px !important;
+  font-size: 9px !important;
+  line-height: 1 !important;
+}
+#ui-engine-root #top-status-bar .status-resources .res-node {
+  min-height: 22px !important;
+  height: auto !important;
+  gap: 3px !important;
+  padding: 2px 5px !important;
+  font-size: 9px !important;
+}
+#ui-engine-root #top-status-bar .status-resources .res-icon,
+#ui-engine-root #top-status-bar .status-resources .res-trend {
+  font-size: 9px !important;
+  margin-left: 0 !important;
+}
+
 body[data-active-layer]:not([data-active-layer="0"]) #omega-global-time-hud,
 body.ios-active #omega-global-time-hud,
 body.modal-open #omega-global-time-hud {
