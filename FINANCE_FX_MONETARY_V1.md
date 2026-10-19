@@ -180,3 +180,14 @@ The FX engine accepts optional capital-flow, confidence, reserve-cover and peg-a
 
 ### Validation gates
 The Finance GitHub Actions workflow runs existing Finance tests plus FX conversions/policy/history, Government Banking account/transfer/tariff/delay/idempotency tests, economic transmission/wage/import-cost/stress tests, the Global Trade and National Demand suites, and offline-cache checks for the new banking/transmission assets. Green CI means the tested contracts pass on that commit; it does not certify every country source-data field or guarantee real-world FX forecasts.
+
+
+## Finance FX coverage and interaction repair (2026-10-19)
+
+- Country currency lookup now falls back through legacy profile fields, indicators and canonical general-fact currency-code lists before applying the explicit exceptional-area override table.
+- Bouvet Island is mapped to NOK through its Norwegian administration; Antarctica remains without an invented national currency.
+- The country registry exposes one row per country/area with its currency, local units per USD, USD per local unit, FX-rate source and data status. Areas sharing a currency correctly share that currency's quote.
+- The FX dashboard reports country-level quote coverage. The country registry opens by default and is contained in a scroll region so it stays usable on narrow screens.
+- **Calculate quote** runs the common USD-numeraire formula without changing the clearing ledger. **Record simulated exchange** is the explicit action that records a simulated settlement. Amount and currency/source changes update the quote preview.
+- The getCountryQuotes(mode) API and country-level diagnostics expose coverage for simulation and reference quotes. Reference rates remain contingent on provider availability; missing rates are reported rather than fabricated.
+- Validation added to test/omega_forex_monetary_engine_v1.test.mjs covers country quote direction, fallback currency mapping and the new FX control affordances. Run npm run test:finance-fx and npm run test:finance before merging.
