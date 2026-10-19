@@ -8,13 +8,13 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = name => fs.readFileSync(path.join(root, name), 'utf8');
 
-async function createRuntime() {
+async function createRuntime(fileOverrides = {}) {
   const context = {
     console,
     fetch: async input => {
       const relative = String(input).replace(/^\.\//, '');
-      const body = read(relative);
-      return { ok: true, json: async () => JSON.parse(body) };
+      const body = Object.prototype.hasOwnProperty.call(fileOverrides, relative) ? fileOverrides[relative] : read(relative);
+      return { ok: true, json: async () => typeof body === 'string' ? JSON.parse(body) : body };
     }
   };
   context.window = context;
@@ -62,6 +62,43 @@ test('country aliases resolve to the same canonical profile and source records',
   assert.equal(api.getCapital('Bangladesh'), 'Dhaka');
 });
 
+test('strategic profiles decode from the existing compact country registry and resolve by aliases', async () => {
+  const strategicProfile = {
+    profileVersion: 'OMEGA_COUNTRY_STRATEGIC_PROFILE_V2',
+    executiveSummary: 'A test country profile built from registered evidence.',
+    diplomacy: { relationProfileStatus: 'COUNTRY_SPECIFIC_PARAMETERS' },
+    playerAdvantages: ['Test advantage'],
+    playerChallenges: ['Test challenge']
+  };
+  const registry = {
+    metadata: {
+      schemaVersion: '1.3.0',
+      recordSchema: {
+        identityFields: ['iso2', 'iso3', 'name'],
+        strategicProfileFields: Object.keys(strategicProfile)
+      }
+    },
+    countries: [{
+      identity: ['BD', 'BGD', 'Bangladesh'],
+      strategicProfile: Object.values(strategicProfile)
+    }]
+  };
+  const { api } = await createRuntime({ 'country_general_data_registry_v1.json': registry });
+  assert.equal(api.diagnostics().strategicProfiles.available, true);
+  assert.equal(api.diagnostics().strategicProfiles.profileCount, 1);
+  assert.equal(api.getStrategicProfile('Bangladesh')?.profileVersion, 'OMEGA_COUNTRY_STRATEGIC_PROFILE_V2');
+  assert.equal(api.getStrategicProfile('BGD')?.executiveSummary, strategicProfile.executiveSummary);
+  assert.deepEqual(api.getStrategicProfile('BD')?.playerAdvantages, ['Test advantage']);
+});
+
+test('missing strategic registry leaves canonical identity and economy runtime usable', async () => {
+  const { api } = await createRuntime();
+  assert.ok(api.resolveCountry('Bangladesh'));
+  assert.ok(api.getRecord('economy', 'Bangladesh'));
+  assert.equal(api.getStrategicProfile('Bangladesh'), null);
+  assert.equal(api.diagnostics().strategicProfiles.available, false);
+});
+
 test('live runtime records override baseline values without losing unrelated source fields', async () => {
   const { api, context } = await createRuntime();
   const baseline = api.getRecord('economy', 'Bangladesh');
@@ -100,7 +137,28 @@ test('country selection UI uses the shared bridge and removes hardcoded cross-co
   assert.doesNotMatch(countryIOS, /Western \/ Transatlantic/i);
 });
 
+test('strategic profile is attached to the existing country IOS chapter and responsive stylesheet', () => {
+  const html = read('index.html');
+  const countryIOS = read('country-ios.js');
+  const styles = read('style.css');
+  const sw = read('omega-offline-map-sw.js');
+  assert.ok(html.includes('data-chapter="13"') && html.includes('STRATEGIC PROFILE'));
+  assert.ok(countryIOS.includes('renderChapter13_StrategicProfile'));
+  assert.ok(countryIOS.includes('getStrategicProfile'));
+  assert.ok(styles.includes('.sc-profile-shell'));
+  assert.ok(styles.includes('@media (max-width: 560px)'));
+  assert.ok(sw.includes('./country_general_data_registry_v1.json'));
+});
+
 test('offline app shell caches the country runtime bridge and city records', () => {
+  const sw = read('omega-offline-map-sw.js');
+  assert.match(sw, /\.\/omega_country_runtime_data_v1\.js/);
+  assert.match(sw, /\.\/cities\.json/);
+  assert.match(sw, /\.\/economy\.json/);
+  assert.match(sw, /\.\/population\.json/);
+  assert.match(sw, /\.\/country_general_data_registry_v1\.json/);
+});
+
   const sw = read('omega-offline-map-sw.js');
   assert.match(sw, /\.\/omega_country_runtime_data_v1\.js/);
   assert.match(sw, /\.\/cities\.json/);
