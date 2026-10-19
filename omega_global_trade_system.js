@@ -571,6 +571,10 @@
     const sellerBlockade=strategicPolicy?.isRouteBlocked?.(seller,{resourceId:rid,transportMode:routeMode,routeId:p.routeId||auth.routeId,siteId:p.siteId||auth.siteId});
     if(buyerBlockade?.blocked||sellerBlockade?.blocked)return{accepted:false,reason:'RESOURCE_ROUTE_BLOCKADE_ACTIVE',blockades:[...(buyerBlockade?.blockades||[]),...(sellerBlockade?.blockades||[])]};
     if(!rid||q===null||q<=0)return{accepted:false,reason:'RESOURCE_SETTLEMENT_INPUT_INVALID'};
+    const existingExportLedger=Array.isArray(ctx.stateTransaction.get('resource.inventoryLedger'))?ctx.stateTransaction.get('resource.inventoryLedger'):[];
+    const priorExport=existingExportLedger.find(x=>String(x?.settlementId||'')===String(p.settlementId||'')&&x?.type==='INTERNATIONAL_TRADE_EXPORT');
+    if(priorExport)return{accepted:true,duplicate:true,resourceId:rid,quantity:num(priorExport.quantity)||q,
+      sourceCountryId:seller,destinationCountryId:buyer,transferType:'TRADE',batchTransfers:clone(priorExport.batchTransfers||[])};
     if(!inv||typeof inv!=='object')return{accepted:false,reason:'RESOURCE_INVENTORY_NOT_OBSERVED'};
     const k=Object.prototype.hasOwnProperty.call(inv,rid)?rid:Object.keys(inv).find(x=>token(x)===token(rid));
     if(!k)return{accepted:false,reason:'RESOURCE_NOT_OBSERVED'};
@@ -670,6 +674,11 @@
     const seller=canonical(auth.sourceCountryId);
     if(!seller||seller===buyer)return{accepted:false,reason:'TRADE_SOURCE_COUNTRY_INVALID'};
     if(!rid||q===null||q<=0)return{accepted:false,reason:'RESOURCE_SETTLEMENT_INPUT_INVALID'};
+    const existingImportLedger=Array.isArray(ctx.stateTransaction.get('resource.inventoryLedger'))?ctx.stateTransaction.get('resource.inventoryLedger'):[];
+    const priorImport=existingImportLedger.find(x=>String(x?.settlementId||'')===String(p.settlementId||auth.settlementId||'')&&x?.type==='INTERNATIONAL_TRADE_IMPORT');
+    if(priorImport)return{accepted:true,duplicate:true,resourceId:rid,quantity:num(priorImport.quantity)||q,
+      sourceCountryId:seller,destinationCountryId:buyer,transferType:'TRADE',sourceBatchTransfers:clone(priorImport.batchTransfers||[]),
+      batchTransfers:clone(priorImport.batchTransfers||[]),createdBatchIds:clone(priorImport.createdBatchIds||[])};
     if(!inv||typeof inv!=='object')return{accepted:false,reason:'RESOURCE_INVENTORY_NOT_OBSERVED'};
     const k=Object.prototype.hasOwnProperty.call(inv,rid)?rid:(Object.keys(inv).find(x=>token(x)===token(rid))||rid);
     const next=clone(inv),current=num(next[k])??0,transfers=Array.isArray(auth.batchTransfers)?clone(auth.batchTransfers):[];
