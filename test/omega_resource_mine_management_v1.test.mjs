@@ -175,6 +175,38 @@ test('mine construction commits treasury/materials once, deduplicates request an
   assert.ok(events.some(x => (x.type === 'OMEGA_RESOURCE_MINE_COMMISSIONED') || (x.detail?.eventType === 'OMEGA_RESOURCE_MINE_COMMISSIONED')));
 });
 
+test('mine construction resolves synchronized finance-model cash without losing the canonical balance', () => {
+  const { ctx, state } = fixture();
+  const api = ctx.Omega.ResourceIndustrialNetwork;
+  state.finance.BWA.omegaFinance = {
+    treasuryBalanceUsd: 420000000,
+    lastSyncedTreasuryBalanceUsd: 420000000,
+    currentYearSpendingUsd: 0,
+    cumulativeSpendingUsd: 0,
+    revision: 0,
+    ledger: []
+  };
+  state.economy.BWA.treasury = 420000000;
+  delete state.finance.BWA.available;
+  const quote = api.quoteMineProject({
+    countryId: 'BWA', siteId: 'SITE_BWA_TEST_GOLD_MINE', resourceId: 'gold', assignedWorkers: 1000
+  });
+  assert.equal(quote.status, 'QUOTED');
+  assert.equal(quote.treasury.available, 420000000);
+  assert.equal(quote.treasury.source, 'state.finance.BWA.omegaFinance.treasuryBalanceUsd');
+  assert.equal(quote.ready, true);
+  const project = api.startMineProject({
+    countryId: 'BWA', siteId: 'SITE_BWA_TEST_GOLD_MINE', resourceId: 'gold',
+    assignedWorkers: 1000, requestId: 'FINANCE-FALLBACK-MINE-001'
+  });
+  assert.equal(project.status, 'UNDER_CONSTRUCTION');
+  assert.equal(state.finance.BWA.available, 420000000 - project.costUsd);
+  assert.equal(state.finance.BWA.omegaFinance.treasuryBalanceUsd, 420000000 - project.costUsd);
+  assert.equal(state.finance.BWA.omegaFinance.lastSyncedTreasuryBalanceUsd, 420000000 - project.costUsd);
+  assert.equal(state.economy.BWA.treasury, 420000000 - project.costUsd);
+  assert.equal(state.finance.BWA.omegaFinance.ledger.filter(x => x.action === 'MINE_CONSTRUCTION_PAYMENT').length, 1);
+});
+
 test('mine construction blocks without changing ledgers when treasury, materials or workforce is insufficient', () => {
   const { ctx, state } = fixture();
   const api = ctx.Omega.ResourceIndustrialNetwork;
