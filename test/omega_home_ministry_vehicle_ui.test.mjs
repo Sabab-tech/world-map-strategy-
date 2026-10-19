@@ -347,6 +347,8 @@ test('Home Affairs Reports & Metrics no longer displays mine and shipment diagno
   assert.match(ministryEngine, /Owned police vehicles/);
   assert.match(ministryEngine, /Vehicles needing service \/ repair/);
   assert.match(ministryEngine, /Active guard deployments/);
+  assert.match(ministryEngine, /RECORDED SECURITY INCIDENT HISTORY/);
+  assert.match(ministryEngine, /ministryId !== 'interior_security'/);
   assert.match(ministryEngine, /const rows = isHomeMinistryReport \? \[/);
   assert.match(ministryEngine, /\['Mine \/ site records', activity && activity\.mineRecords\]/);
   assert.match(ministryEngine, /isHomeMinistryReport \? 'HOME MINISTRY SECURITY OPERATIONS REPORT' : 'LIVE SOVEREIGN ENGINE REPORT'/);
