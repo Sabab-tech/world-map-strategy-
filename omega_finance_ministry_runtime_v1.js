@@ -474,6 +474,45 @@
           remainingUsd:amount-(finite(prior.spentUsd)||0),updatedTurn:currentTurn(),source:'PLAYER_ALLOCATION'};
       }
       fm.revision+=1;result={ok:true,code:'BUDGET_ALLOCATED',message:'Annual budget ceiling updated; this action does not spend cash.'};
+    }else if(type==='transfer-budget'||type==='transfer-allocation'){
+      const from=String(action.sourceDepartment||action.fromDepartment||'').toLowerCase();
+      const to=String(action.targetDepartment||action.toDepartment||'').toLowerCase();
+      if(!from||!to||!budgetSectorById(from)||!budgetSectorById(to))
+        return {ok:false,code:'BUDGET_TRANSFER_SECTOR_INVALID',message:'Choose two valid budgeted ministries in this country.'};
+      if(from===to)
+        return {ok:false,code:'BUDGET_TRANSFER_SAME_MINISTRY',message:'Source and destination ministries must be different.'};
+      if(amount===null||amount<=0)
+        return {ok:false,code:'BUDGET_TRANSFER_AMOUNT_INVALID',message:'Transfer amount must be greater than zero.'};
+      const source=fm.allocations[from],target=fm.allocations[to];
+      if(!isObject(source)||!isObject(target))
+        return {ok:false,code:'BUDGET_TRANSFER_ALLOCATION_MISSING',message:'Both ministries need an existing national budget allocation before money can be reallocated.'};
+      const sourceBudget=Math.max(0,finite(source.budgetUsd)||0);
+      const sourceSpent=Math.max(0,finite(source.spentUsd)||0);
+      const sourceRemaining=Math.max(0,finite(source.remainingUsd)??(sourceBudget-sourceSpent));
+      if(amount>sourceRemaining+0.01)
+        return {ok:false,code:'BUDGET_TRANSFER_EXCEEDS_REMAINING',message:'Transfer exceeds the source ministry’s unspent allocation. No funds were moved.'};
+      const targetBudget=Math.max(0,finite(target.budgetUsd)||0);
+      const targetSpent=Math.max(0,finite(target.spentUsd)||0);
+      const envelope=Math.max(0,finite(fm.fiscalModel.annualSpendingUsd)||0);
+      if(envelope<=0)
+        return {ok:false,code:'BUDGET_ENVELOPE_UNAVAILABLE',message:'The national annual budget envelope is unavailable.'};
+      const moved=Math.round(amount*100)/100;
+      const sourceNext=sourceBudget-moved,targetNext=targetBudget+moved;
+      if(sourceNext+0.01<sourceSpent)
+        return {ok:false,code:'BUDGET_TRANSFER_BELOW_ALREADY_SPENT',message:'The source allocation cannot be reduced below its recorded spending.'};
+      source.budgetUsd=sourceNext;source.remainingUsd=Math.max(0,sourceNext-sourceSpent);
+      source.sharePct=sourceNext/envelope*100;source.updatedTurn=currentTurn();source.source='INTER_MINISTRY_TRANSFER';
+      target.budgetUsd=targetNext;target.remainingUsd=Math.max(0,targetNext-targetSpent);
+      target.sharePct=targetNext/envelope*100;target.updatedTurn=currentTurn();target.source='INTER_MINISTRY_TRANSFER';
+      const transferId='BUDGET-XFER-'+p.countryCode+'-'+currentTurn()+'-'+(Number(fm.revision)||0);
+      const note=String(action.description||('Budget reallocation: '+from+' → '+to)).slice(0,160);
+      postLedger(fm,p,{department:from,action:'BUDGET_TRANSFER_OUT',category:'inter_ministry_budget_transfer',
+        amountUsd:moved,transferId,counterpartyDepartment:to,description:note});
+      postLedger(fm,p,{department:to,action:'BUDGET_TRANSFER_IN',category:'inter_ministry_budget_transfer',
+        amountUsd:moved,transferId,counterpartyDepartment:from,description:note});
+      fm.revision+=1;
+      result={ok:true,code:'BUDGET_TRANSFER_POSTED',message:'Budget allocation transferred within '+p.name+'. National treasury cash is unchanged until the receiving ministry executes a funded expense.',
+        transferId,sourceDepartment:from,targetDepartment:to,amountUsd:moved,treasuryCashMoved:false};
     }else if(type==='spend-budget'||type==='spend'||type==='pay-expense'){
       const dep=String(action.department||action.ministryId||'').toLowerCase(),category=String(action.spendType||action.category||'general').toLowerCase();
       const validTypes=['salary','purchase','maintenance','general','investment','emergency','debt_service'];
@@ -867,7 +906,7 @@
     economicProfiles:profiles.filter(p=>!!p.sourceValues).length,profilesWithGDP:profiles.filter(p=>finite(p.indicators?.gdpCurrentUsd)!==null).length,
     dataUnavailable:profiles.filter(p=>p.profileStatus==='UNAVAILABLE').length,playerCountryCode:getPlayerCode(),simulationTurn:currentTurn(),
     activeCountryCode:selectedCountryCode,hasAuthoritativeEconomy:isObject(root.economy),hasFinanceState:isObject(root.finance),
-    transactionTypes:['set-tax-rate','set-interest-rate','set-allocation','spend-budget','borrow']};}
+    transactionTypes:['set-tax-rate','set-interest-rate','set-allocation','transfer-budget','spend-budget','borrow']};}
   const api={VERSION,init,diagnostics,resolveCountry:resolveProfile,getProfiles:()=>profiles.slice(),getPlayerCountry:playerCountryProfile,
     getIndicators:function(v){const p=resolveProfile(v)||playerCountryProfile();return p?worldSnapshot().byCode.get(p.countryCode)||null:null;},
     getFinanceState:function(v){const p=resolveProfile(v)||playerCountryProfile();if(!p)return null;const root=rootState(),fm=ensureFinanceState(p,root);if(reconcileExternalTreasury(p,fm,root))syncEconomyRecord(p,fm,root);return clone(fm);},
