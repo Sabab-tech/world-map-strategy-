@@ -16,7 +16,7 @@
   const HISTORY_DAYS = 30;
   const FX_FEE_BPS = 15;
   const CURRENCY_OVERRIDES = Object.freeze({
-    ALA: 'EUR', ATA: null, BES: 'USD', BVT: null, IOT: 'USD', ATF: 'EUR',
+    ALA: 'EUR', ATA: null, BES: 'USD', BVT: 'NOK', IOT: 'USD', ATF: 'EUR',
     GGY: 'GBP', HMD: 'AUD', IMN: 'GBP', JEY: 'GBP', MYT: 'EUR', REU: 'EUR',
     BLM: 'EUR', SHN: 'SHP', MAF: 'EUR', SPM: 'EUR', SGS: 'GBP', SJM: 'NOK', UMI: 'USD'
   });
@@ -198,13 +198,38 @@
   function getCountryCurrency(profile) {
     if (!profile) return null;
     const iso3 = normalizeCode(profile.iso3 || profile.numericCode);
-    const saved = normalizeCode(sourceValues(profile).currency_code || profile.currency_code || profile.currencyCode);
-    if (saved && saved.length === 3) return saved;
+    const src = sourceValues(profile);
+    const facts = isObject(profile.generalFacts) ? profile.generalFacts : {};
+    const snapshot = isObject(profile.legacySnapshots) ? profile.legacySnapshots : {};
+    const indicators = isObject(profile.indicators) ? profile.indicators : {};
+    const candidates = [
+      src.currency_code, src.currencyCode,
+      profile.currency_code, profile.currencyCode,
+      indicators.currency_code, indicators.currencyCode,
+      Array.isArray(profile.currencyCodes) ? profile.currencyCodes[0] : profile.currencyCodes,
+      Array.isArray(facts.currencyCodes) ? facts.currencyCodes[0] : facts.currencyCodes,
+      Array.isArray(facts.currency_codes) ? facts.currency_codes[0] : facts.currency_codes,
+      facts.currencyCode, facts.currency_code,
+      snapshot.currency_code, snapshot.currencyCode,
+      snapshot.economy && (snapshot.economy.currency_code || snapshot.economy.currencyCode)
+    ];
+    for (const candidate of candidates) {
+      const code = normalizeCode(candidate);
+      if (code.length === 3 && code !== 'XXX') return code;
+    }
     if (own(CURRENCY_OVERRIDES, iso3)) return CURRENCY_OVERRIDES[iso3];
     return null;
   }
   function getCountryCurrencyName(profile, code) {
-    return sourceValues(profile).currency_name
+    const src = sourceValues(profile);
+    const facts = isObject(profile && profile.generalFacts) ? profile.generalFacts : {};
+    const snapshot = isObject(profile && profile.legacySnapshots) ? profile.legacySnapshots : {};
+    const factNames = Array.isArray(facts.currencyNames) ? facts.currencyNames[0] : facts.currencyNames;
+    const snapshotName = snapshot.currency_name || snapshot.currencyName
+      || (snapshot.economy && (snapshot.economy.currency_name || snapshot.economy.currencyName));
+    return src.currency_name || src.currencyName
+      || (profile && (profile.currency_name || profile.currencyName))
+      || factNames || facts.currencyName || facts.currency_name || snapshotName
       || CURRENCY_NAME_OVERRIDES[code]
       || (currencies.get(code) && currencies.get(code).name)
       || (code ? code + ' (name not supplied)' : 'No national currency / not applicable');
@@ -801,34 +826,53 @@
     action = isObject(action) ? action : {};
     const player = getPlayerProfile();
     const mode = String(action.mode || state.viewMode || 'SIMULATION').toUpperCase() === 'REFERENCE' ? 'REFERENCE' : 'SIMULATION';
-    const rates = allRateValues(mode);
-    const result = calculateConversion(action.amount, action.fromCode, action.toCode, rates, FX_FEE_BPS);
-    if (!result.ok) return result;
+    if (mode === 'REFERENCE') return { ok: false, code: 'REFERENCE_QUOTES_READ_ONLY', message: 'Reference quotes are read-only. Switch to OMEGA Game Simulation to record a conversion.' };
+    const amount = finite(action.amount);
+    const fromCode = normalizeCode(action.fromCode), toCode = normalizeCode(action.toCode);
+    if (!player) return { ok: false, code: 'PLAYER_COUNTRY_UNAVAILABLE' };
+    if (fromCode === toCode) return { ok: false, code: 'SAME_CURRENCY_CONVERSION', message: 'Choose two different currencies.' };
+    const quote = calculateConversion(amount, fromCode, toCode, allRateValues('SIMULATION'), FX_FEE_BPS);
+    if (!quote.ok) return quote;
+    const banking = global.OmegaGovernmentBanking || global.Omega && global.Omega.GovernmentBanking;
+    if (!banking || typeof banking.convert !== 'function')
+      return { ok: false, code: 'GOVERNMENT_BANKING_NOT_READY', message: 'Government Banking is not ready. No transaction was recorded.' };
+    const transactionId = 'FX-CNV-' + String(currentTurn()) + '-' + String(state.nextTransactionId);
+    const settled = banking.convert({
+      countryId: player.countryCode || player.iso3, amount: amount,
+      fromCurrencyCode: fromCode, toCurrencyCode: toCode, feeBps: FX_FEE_BPS,
+      idempotencyKey: transactionId, reference: 'OMEGA Finance FX converter'
+    });
+    if (!settled || settled.ok !== true) return settled || { ok: false, code: 'BANKING_SETTLEMENT_FAILED' };
+    const actualAmount = finite(settled.amountTarget) ?? quote.amountTarget;
+    const actualGross = finite(settled.grossTarget) ?? quote.grossTarget;
+    const actualFeeUsd = finite(settled.feeUsd) ?? quote.feeUsd;
+    const actualNotional = finite(settled.usdNotional) ?? quote.usdNotional;
+    const actualFeeTarget = finite(settled.feeTarget) ?? quote.feeTarget;
+    const bankTransaction = settled.transaction || settled;
     const entry = {
-      id: 'FX-' + String(state.nextTransactionId++), turn: currentTurn(),
-      timestamp: new Date().toISOString(), type: 'CURRENCY_CONVERSION',
-      playerCountryCode: player && (player.countryCode || player.iso3) || null,
-      playerCountryName: player && player.name || null,
-      mode: mode, provider: mode === 'REFERENCE' ? 'FRANKFURTER_V2' : 'OMEGA_SIMULATION',
-      fromCode: result.fromCode, toCode: result.toCode, amountFrom: result.amount,
-      usdNotional: result.usdNotional, crossRate: result.crossRate,
-      amountGrossTo: result.grossTarget, amountTo: result.amountTarget,
-      feeBps: result.feeBps, feeUsd: result.feeUsd, feeTo: result.feeTarget,
-      settlementRoute: result.route, source: 'GOVERNMENT_BANKING_FX_CLEARING'
+      id: 'FX-' + String(state.nextTransactionId++),
+      bankTransactionId: settled.transactionId || bankTransaction.transactionId || null,
+      turn: currentTurn(), timestamp: new Date().toISOString(), type: 'CURRENCY_CONVERSION',
+      playerCountryCode: player.countryCode || player.iso3 || null, playerCountryName: player.name || null,
+      mode: 'SIMULATION', provider: 'OMEGA_GOVERNMENT_BANKING',
+      fromCode: fromCode, toCode: toCode, amountFrom: amount,
+      usdNotional: actualNotional, crossRate: finite(settled.crossRate) ?? quote.crossRate,
+      amountGrossTo: actualGross, amountTo: actualAmount, feeBps: FX_FEE_BPS,
+      feeUsd: actualFeeUsd, feeTo: actualFeeTarget, settlementRoute: settled.route || quote.route,
+      source: 'GOVERNMENT_BANKING_ACCOUNT_SETTLEMENT'
     };
     state.ledger.push(entry);
     state.ledger = state.ledger.slice(-500);
-    state.settledVolumeUsd = (finite(state.settledVolumeUsd) || 0) + result.usdNotional;
-    state.settlementFeesUsd = (finite(state.settlementFeesUsd) || 0) + result.feeUsd;
-    const bank = bankingRoot();
-    const clearing = ensureObject(bank, 'fxClearingHouse');
-    clearing.settledVolumeUsd = state.settledVolumeUsd;
-    clearing.feeRevenueUsd = state.settlementFeesUsd;
-    clearing.transactionCount = finite(clearing.transactionCount) === null ? 1 : clearing.transactionCount + 1;
-    clearing.lastSettlement = safeCopy(entry);
+    state.settledVolumeUsd = (finite(state.settledVolumeUsd) || 0) + actualNotional;
+    state.settlementFeesUsd = (finite(state.settlementFeesUsd) || 0) + actualFeeUsd;
     syncAllCountries();
     dispatch('OMEGA_FX_TRANSACTION_SETTLED', safeCopy(entry));
-    return Object.assign({ ok: true }, result, { transaction: safeCopy(entry) });
+    refreshPanelMetrics();
+    return Object.assign({ ok: true }, quote, {
+      amountTarget: actualAmount, grossTarget: actualGross, feeUsd: actualFeeUsd,
+      feeTarget: actualFeeTarget, usdNotional: actualNotional, route: entry.settlementRoute,
+      mode: 'SIMULATION', transaction: safeCopy(bankTransaction), bankTransactionId: entry.bankTransactionId
+    });
   }
 
   function simulationTick(turn, durationMs) {
@@ -968,6 +1012,71 @@
         + '<td>' + escapeHTML(String(live && live.source || 'N/A')) + '</td></tr>';
     }).join('');
   }
+  function getCountryQuotes(mode) {
+    const selectedMode = String(mode || (state && state.viewMode) || 'SIMULATION').toUpperCase() === 'REFERENCE'
+      ? 'REFERENCE' : 'SIMULATION';
+    return profiles.map(function (profile) {
+      const code = getCountryCurrency(profile);
+      const rate = code ? rateFor(code, selectedMode) : null;
+      const item = code && state && state.simulationRates
+        ? state.simulationRates[code] || state.simulationRates[effectiveRateCode(code)] : null;
+      const source = !code ? 'NO_CURRENCY'
+        : selectedMode === 'REFERENCE'
+          ? (rate !== null ? String(state.referenceStatus || 'REFERENCE') : 'REFERENCE_RATE_UNAVAILABLE')
+          : String(item && item.source || (rate !== null ? 'USD_NUMERAIRE' : 'SIMULATION_RATE_UNAVAILABLE'));
+      return {
+        countryCode: profile.countryCode || profile.code || profile.iso2 || null,
+        iso3: profile.iso3 || null,
+        countryName: profile.name || 'Unknown',
+        currencyCode: code,
+        currencyName: getCountryCurrencyName(profile, code),
+        mode: selectedMode,
+        localPerUsd: rate,
+        usdPerLocalUnit: rate !== null && rate > 0 ? 1 / rate : null,
+        rateSource: source,
+        status: !code ? 'NO_CURRENCY' : rate !== null && rate > 0 ? 'AVAILABLE' : 'RATE_UNAVAILABLE'
+      };
+    });
+  }
+  function countryRateCoverage(mode) {
+    const rows = getCountryQuotes(mode);
+    const applicable = rows.filter(function (row) { return !!row.currencyCode; });
+    const covered = applicable.filter(function (row) { return row.localPerUsd !== null && row.localPerUsd > 0; });
+    return covered.length + '/' + applicable.length;
+  }
+  function renderCountryLookup(query, mode) {
+    const q = String(query || '').trim().toLowerCase();
+    const rows = getCountryQuotes(mode);
+    const player = getPlayerProfile();
+    const playerId = normalizeCode(player && (player.countryCode || player.iso2 || player.iso3));
+    let row = null;
+    if (!q) row = rows.find(function (item) {
+      return normalizeCode(item.countryCode || item.iso3) === playerId
+        || normalizeCode(item.iso3) === normalizeCode(player && player.iso3);
+    }) || rows[0] || null;
+    else row = rows.find(function (item) {
+      return normalizeCode(item.iso3) === normalizeCode(q)
+        || normalizeCode(item.countryCode) === normalizeCode(q)
+        || normalizeCode(item.currencyCode) === normalizeCode(q);
+    }) || rows.find(function (item) {
+      return String(item.countryName || '').toLowerCase() === q;
+    }) || rows.find(function (item) {
+      return String(item.countryName || '').toLowerCase().includes(q)
+        || String(item.currencyName || '').toLowerCase().includes(q);
+    }) || null;
+    if (!row) return '<div class="ofx-country-lookup-empty">No country or currency matched. Try a country name, ISO code or currency code.</div>';
+    const code = escapeHTML(row.currencyCode || 'N/A');
+    const rate = row.localPerUsd, usd = row.usdPerLocalUnit;
+    const status = row.status === 'NO_CURRENCY' ? 'No national currency recorded'
+      : row.status === 'RATE_UNAVAILABLE' ? 'Rate unavailable for this source'
+      : 'Rate available · ' + row.rateSource;
+    return '<div class="ofx-country-lookup-card">'
+      + '<div class="ofx-country-lookup-title"><div><strong>' + escapeHTML(row.countryName) + '</strong><small>' + escapeHTML(row.iso3 || row.countryCode || '') + ' · ' + code + ' · ' + escapeHTML(row.currencyName || 'Currency not recorded') + '</small></div>'
+      + '<span class="ofx-lookup-status' + (row.status === 'AVAILABLE' ? ' is-available' : '') + '">' + escapeHTML(row.status.replace(/_/g, ' ')) + '</span></div>'
+      + '<div class="ofx-country-lookup-rates"><div><span>1 USD equals</span><strong>' + escapeHTML(rate !== null && rate > 0 ? fmtRate(rate) + ' ' + (row.currencyCode || '') : 'N/A') + '</strong></div>'
+      + '<div><span>1 ' + code + ' equals</span><strong>' + escapeHTML(usd !== null && usd > 0 ? '$' + fmtRate(usd) + ' USD' : 'N/A') + '</strong></div></div>'
+      + '<p class="ofx-note">' + escapeHTML(status) + '</p></div>';
+  }
   function renderBankingCountryTable(query, mode) {
     const q = String(query || '').trim().toLowerCase();
     const rows = profiles.filter(function (p) {
@@ -982,16 +1091,25 @@
       const macro = getMacro(p);
       const ref = code ? rateFor(code, 'REFERENCE') : null;
       const sim = code ? rateFor(code, 'SIMULATION') : null;
+      const selectedRate = mode === 'REFERENCE' ? ref : sim;
+      const item = code && state.simulationRates
+        ? state.simulationRates[code] || state.simulationRates[effectiveRateCode(code)] : null;
+      const rateSource = !code ? 'NO_CURRENCY'
+        : mode === 'REFERENCE'
+          ? (ref !== null ? String(state.referenceStatus || 'REFERENCE') : 'REFERENCE_RATE_UNAVAILABLE')
+          : String(item && item.source || (sim !== null ? 'USD_NUMERAIRE' : 'SIMULATION_RATE_UNAVAILABLE'));
+      const dataStatus = !code ? 'NO CURRENCY'
+        : selectedRate === null || selectedRate <= 0 ? 'RATE UNAVAILABLE' : String(p.profileStatus || 'PARTIAL');
       const fm = finance && typeof finance.getFinanceState === 'function'
         ? finance.getFinanceState(p.countryCode || p.iso3) : null;
       const economy = getEconomyRecord(p) || {};
       return '<tr><td>' + escapeHTML(p.name) + '</td><td>' + escapeHTML(p.iso3 || p.countryCode || '') + '</td>'
-        + '<td>' + escapeHTML(code || 'N/A') + '</td><td>' + escapeHTML(fmtRate(mode === 'REFERENCE' ? ref : sim)) + '</td>'
-        + '<td>' + escapeHTML(fmtRate(mode === 'REFERENCE' ? (ref ? 1 / ref : null) : (sim ? 1 / sim : null))) + '</td>'
+        + '<td>' + escapeHTML(code || 'N/A') + '</td><td>' + escapeHTML(fmtRate(selectedRate)) + '</td>'
+        + '<td>' + escapeHTML(fmtRate(selectedRate !== null && selectedRate > 0 ? 1 / selectedRate : null)) + '</td>'
         + '<td>' + escapeHTML(percentageText(finite(economy.inflation) ?? macro.inflation)) + '</td>'
         + '<td>' + escapeHTML(moneyText(finite(fm && fm.treasuryBalanceUsd))) + '</td>'
         + '<td>' + escapeHTML(moneyText(finite(economy.reserves) ?? macro.reserves)) + '</td>'
-        + '<td>' + escapeHTML(String(p.profileStatus || 'PARTIAL')) + '</td></tr>';
+        + '<td>' + escapeHTML(rateSource) + '</td><td>' + escapeHTML(dataStatus) + '</td></tr>';
     }).join('');
   }
   function renderPanel() {
@@ -1002,7 +1120,9 @@
     if (!dashboard || !host || dashboard.querySelector('[data-ofx-panel]')) return false;
     const player = getPlayerProfile();
     const playerCode = getCountryCurrency(player) || 'USD';
-    const defaultTo = currencies.has('NGN') && playerCode !== 'NGN' ? 'NGN' : 'USD';
+    const defaultFrom = 'USD';
+    const defaultTo = playerCode !== 'USD' ? playerCode
+      : (currencies.has('BDT') ? 'BDT' : (Array.from(currencies.keys()).find(function (code) { return code !== 'USD'; }) || 'USD'));
     const mode = state.viewMode === 'REFERENCE' ? 'REFERENCE' : 'SIMULATION';
     const rate = rateFor(playerCode, mode);
     const policy = currencyPolicy(playerCode);
@@ -1013,28 +1133,33 @@
     panel.className = 'ofx-panel';
     panel.setAttribute('data-ofx-panel', 'true');
     panel.innerHTML =
-      '<section class="ofx-section ofx-hero"><div><div class="ofx-eyebrow">OMEGA / GLOBAL FOREIGN EXCHANGE</div>'
-      + '<h3>Currency Market &amp; Monetary Authority</h3>'
-      + '<p>USD is the settlement numeraire. Every conversion uses source currency → USD → destination currency.</p></div>'
+      '<section class="ofx-section ofx-hero"><div><div class="ofx-eyebrow">OMEGA / FINANCE</div>'
+      + '<h3>Foreign Exchange &amp; Banking</h3>'
+      + '<p>Find a country’s rate, calculate a conversion, then record it to Government Banking.</p></div>'
       + '<div class="ofx-status" data-ofx-live="status">' + escapeHTML(state.referenceStatus) + '</div></section>'
       + '<div class="ofx-kpis">'
-      + '<article><span>Active country currency</span><strong data-ofx-live="player-currency">' + escapeHTML(playerCode) + '</strong><small>' + escapeHTML(getCountryCurrencyName(player, playerCode)) + '</small></article>'
-      + '<article><span>Local units per USD</span><strong data-ofx-live="player-rate">' + escapeHTML(fmtRate(rate)) + '</strong><small>' + escapeHTML(sourceLine) + '</small></article>'
-      + '<article><span>USD per local unit</span><strong data-ofx-live="usd-per-local">' + escapeHTML(rate ? fmtRate(1 / rate) : 'N/A') + '</strong><small>Reciprocal FX quote</small></article>'
-      + '<article><span>Known currency codes</span><strong data-ofx-live="currency-count">' + escapeHTML(String(currencies.size)) + '</strong><small>Shared currency zones use one rate</small></article>'
+      + '<article><span>Player currency</span><strong data-ofx-live="player-currency">' + escapeHTML(playerCode) + '</strong><small>' + escapeHTML(getCountryCurrencyName(player, playerCode)) + '</small></article>'
+      + '<article><span>Local units for 1 USD</span><strong data-ofx-live="player-rate">' + escapeHTML(fmtRate(rate)) + '</strong><small>' + escapeHTML(sourceLine) + '</small></article>'
+      + '<article><span>USD for 1 local unit</span><strong data-ofx-live="usd-per-local">' + escapeHTML(rate ? fmtRate(1 / rate) : 'N/A') + '</strong><small>Reciprocal quote</small></article>'
+      + '<article><span>Country rate coverage</span><strong data-ofx-live="country-rate-coverage">' + escapeHTML(countryRateCoverage(mode)) + '</strong><small>Available quotes / currency areas</small></article>'
       + '</div>'
-      + '<section class="ofx-section"><div class="ofx-heading"><div><h4>Cross-Currency Clearing</h4><p>Convert currencies directly, including BDT ↔ NGN. Settlements are recorded in Government Banking.</p></div>'
-      + '<button type="button" class="ofx-secondary" data-ofx-refresh>Refresh reference rates</button></div>'
-      + '<form class="ofx-form" data-ofx-action="ofx-convert">'
+      + '<section class="ofx-section ofx-country-quick-lookup"><div class="ofx-heading"><div><h4>Find a country’s currency</h4><p>Search by country name, ISO code or currency code.</p></div></div>'
+      + '<label class="ofx-search">Country or currency<input type="search" data-ofx-country-lookup value="' + escapeHTML(player && player.name || '') + '" placeholder="Bangladesh, BGD, BDT..." autocomplete="off"></label>'
+      + '<div data-ofx-country-lookup-result>' + renderCountryLookup(player && player.name || '', mode) + '</div></section>'
+      + '<section class="ofx-section ofx-converter-section"><div class="ofx-heading"><div><h4>Currency converter</h4><p>Quote first. Record only when you want in-game account balances to change.</p></div>'
+      + '<button type="button" class="ofx-secondary ofx-icon-button" data-ofx-refresh aria-label="Refresh reference rates" title="Refresh reference rates"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5M5.7 9a7 7 0 0 1 11.6-2L20 12M4 12l2.7 5a7 7 0 0 0 11.6-2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Refresh rates</span></button></div>'
+      + '<form class="ofx-form ofx-converter-form" data-ofx-action="ofx-convert">'
       + '<label>Amount<input name="amount" type="number" min="0.000001" step="any" value="1000" required></label>'
-      + '<label>Sell currency<select name="fromCode">' + currencyOptions(playerCode) + '</select></label>'
-      + '<label>Buy currency<select name="toCode">' + currencyOptions(defaultTo) + '</select></label>'
-      + '<label>Rate source<select name="mode">' + rateModeOptions(mode) + '</select></label>'
-      + '<button type="submit">Simulate &amp; record exchange</button>'
-      + '</form><div class="ofx-result" data-ofx-conversion-result role="status">Choose two supported currencies and submit to calculate the cross-rate.</div>'
-      + '<p class="ofx-note">Model settlement fee: ' + escapeHTML((FX_FEE_BPS / 100).toFixed(2)) + '% of USD notional. This records a simulated clearing transaction; it does not silently withdraw money from the sovereign treasury.</p>'
+      + '<label>From currency<select name="fromCode">' + currencyOptions(defaultFrom) + '</select></label>'
+      + '<button type="button" class="ofx-secondary ofx-swap-button" data-ofx-swap aria-label="Swap currencies" title="Swap currencies"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h15l-3-3M20 17H5l3 3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Swap</span></button>'
+      + '<label>To currency<select name="toCode">' + currencyOptions(defaultTo) + '</select></label>'
+      + '<label>Rate source<select id="ofx-convert-mode" name="mode">' + rateModeOptions(mode) + '</select></label>'
+      + '<div class="ofx-form-actions"><button type="button" class="ofx-secondary" data-ofx-quote><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM8 9h8M8 13h3M15 13h1M8 16h8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Calculate quote</span></button>'
+      + '<button type="submit" data-ofx-record><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h12l2 2v14H5zM8 4v6h8V4M8 20v-6h8v6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg><span>Record exchange</span></button></div>'
+      + '</form><div class="ofx-result" data-ofx-conversion-result role="status" aria-live="polite">Select two different currencies to calculate a quote. Quotes do not change balances.</div>'
+      + '<p class="ofx-note">Reference rates are comparison-only. Only OMEGA Game Simulation rates can be settled in-game. Successful records update currency accounts and Government Banking.</p>'
       + '</section>'
-      + '<section class="ofx-section"><div class="ofx-heading"><div><h4>Central Bank &amp; Monetary Policy</h4><p>Policy changes affect subsequent game turns, inflation and currency pressure.</p></div></div>'
+      + '<details class="ofx-section ofx-advanced-section" data-ofx-policy-details><summary><span class="ofx-summary-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M5 8h14M7 8l-3 6h6L7 8zm10 0-3 6h6l-3-6zM6 21h12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></span><span><strong>Central bank &amp; monetary policy</strong><small>Inflation target, interest rates, exchange regime and reserve interventions</small></span></summary><section class="ofx-detail-body">'
       + '<form class="ofx-form" data-ofx-action="ofx-policy">'
       + '<label>Inflation target (%)<input name="inflationTargetPct" type="number" min="0" max="50" step="0.1" value="' + escapeHTML(String(policy.inflationTargetPct)) + '" required></label>'
       + '<label>Money-supply growth (%)<input name="moneySupplyGrowthPct" type="number" min="-50" max="100" step="0.1" value="' + escapeHTML(String(policy.moneySupplyGrowthPct)) + '" required></label>'
@@ -1049,27 +1174,29 @@
       + '<label>Intervention (USD)<input name="amountUsd" type="number" min="1" step="any" placeholder="e.g. 50000000" required></label>'
       + '<label>Operation<select name="direction"><option value="SUPPORT_CURRENCY">Spend FX reserves to support currency</option><option value="WEAKEN_CURRENCY">Sell local currency to buy USD reserves</option></select></label>'
       + '<button type="submit">Execute central-bank intervention</button></form>'
-      + '<div class="ofx-result" data-ofx-policy-result role="status">Policy controls apply to the active player country only.</div></section>'
-      + '<section class="ofx-section"><div class="ofx-heading"><div><h4>One-Month Currency Trend</h4><p>Daily reference observations or the last 30 in-game day closes. Missing observations are not fabricated.</p></div>'
+      + '<div class="ofx-result" data-ofx-policy-result role="status">Policy controls apply to the active player country only.</div></section></details>'
+      + '<details class="ofx-section ofx-advanced-section" data-ofx-chart-details><summary><span class="ofx-summary-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5M4 19h17M7 15l4-5 3 3 5-7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span><strong>Exchange-rate trends</strong><small>One-month line chart, daily movement and appreciation/depreciation days</small></span></summary><section class="ofx-detail-body"><div class="ofx-heading"><div><h4>One-month currency trend</h4><p>Daily reference observations or the last 30 in-game day closes. Missing observations are not fabricated.</p></div>'
       + '<label class="ofx-inline-label">Currency<select id="ofx-chart-currency">' + currencyOptions(playerCode) + '</select></label>'
       + '<label class="ofx-inline-label">Series<select id="ofx-chart-mode">' + rateModeOptions(mode) + '</select></label></div>'
       + '<div class="ofx-chart-grid"><article class="ofx-chart"><h5>USD exchange rate line</h5><p>Local units for 1 USD</p><canvas id="ofx-line-chart" aria-label="One-month exchange rate line chart"></canvas></article>'
       + '<article class="ofx-chart"><h5>Daily rate movement</h5><p>Positive = local currency weakened; negative = strengthened</p><canvas id="ofx-bar-chart" aria-label="Daily local currency depreciation and appreciation bar chart"></canvas></article>'
       + '<article class="ofx-chart"><h5>Appreciation / depreciation days</h5><p>How often the local currency weakened, strengthened or stayed flat</p><canvas id="ofx-pie-chart" aria-label="Currency depreciation and appreciation day share pie chart"></canvas>'
       + '<div class="ofx-chart-legend" data-ofx-pie-legend></div></article></div>'
-      + '<div class="ofx-note" data-ofx-history-status>Loading one-month observations...</div></section>'
-      + '<details class="ofx-section"><summary>Global Currency Catalogue · ' + escapeHTML(String(currencies.size)) + ' ISO-style currency codes</summary>'
+      + '<div class="ofx-note" data-ofx-history-status>Loading one-month observations...</div></section></details>'
+      + '<details class="ofx-section ofx-advanced-section" data-ofx-catalogue-details><summary><span class="ofx-summary-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM8 9h8M8 13h8M8 16h4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span><strong>Global currency catalogue</strong><small>' + escapeHTML(String(currencies.size)) + ' currency codes · simulation and reference quotes</small></span></summary>'
       + '<div class="ofx-table-scroll"><table class="ofx-table"><thead><tr><th>Code</th><th>Currency</th><th>Areas using it</th><th>Game units / USD</th><th>Reference units / USD</th><th>Game USD / Unit</th><th>Reference USD / Unit</th><th>Game rate source</th></tr></thead>'
       + '<tbody data-ofx-currency-table>' + renderCurrencyMarketTable(mode) + '</tbody></table></div></details>'
-      + '<details class="ofx-section" data-ofx-banking-details><summary>Government Banking Registry · ' + escapeHTML(String(profiles.length)) + ' countries / areas</summary>'
+      + '<details class="ofx-section ofx-advanced-section ofx-country-registry" data-ofx-banking-details><summary><span class="ofx-summary-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 7v10l8 4 8-4V7zM4 7l8 4 8-4M12 11v10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></span><span><strong>All-country FX registry</strong><small>' + escapeHTML(String(profiles.length)) + ' countries / areas · searchable USD rates and data provenance</small></span></summary>'
       + '<label class="ofx-search">Filter country, ISO code or currency<input type="search" data-ofx-bank-filter placeholder="Bangladesh, NGA, BDT..."></label>'
-      + '<div class="ofx-table-scroll"><table class="ofx-table"><thead><tr><th>Country / area</th><th>ISO</th><th>Currency</th><th>Local units / USD</th><th>USD / local currency unit</th><th>Inflation</th><th>Treasury (USD)</th><th>FX reserves (USD)</th><th>Data state</th></tr></thead>'
+      + '<div class="ofx-table-scroll ofx-country-rate-scroll"><table class="ofx-table"><thead><tr><th>Country / area</th><th>ISO</th><th>Currency</th><th>Local units / USD</th><th>USD / local currency unit</th><th>Inflation</th><th>Treasury (USD)</th><th>FX reserves (USD)</th><th>Rate source</th><th>Data state</th></tr></thead>'
       + '<tbody data-ofx-banking-table></tbody></table></div></details>'
-      + '<section class="ofx-section"><div class="ofx-heading"><div><h4>Recent FX Settlements</h4><p>Ledger shared with the Government Banking state.</p></div></div>'
+      + '<details class="ofx-section ofx-advanced-section" data-ofx-ledger-details><summary><span class="ofx-summary-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l4 4v14H6zM15 3v5h4M9 12h7M9 16h7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg></span><span><strong>Recent FX settlements</strong><small>Auditable clearing entries linked to Government Banking transactions</small></span></summary><section class="ofx-detail-body"><div class="ofx-heading"><div><h4>Settlement ledger</h4><p>Recent FX-side references to actual account conversions and central-bank interventions.</p></div></div>'
       + '<div class="ofx-table-scroll"><table class="ofx-table"><thead><tr><th>Turn / date</th><th>Transaction</th><th>Pair</th><th>USD notional</th><th>Fee</th><th>Settlement route</th></tr></thead>'
-      + '<tbody data-ofx-ledger-table></tbody></table></div></section>'
-      + '<p class="ofx-footnote">Reference rates are daily central-bank/official-source observations, not live tick-by-tick quotes. Game rates begin from the repository baseline where available and then follow OMEGA policy and macroeconomic rules. Shared currency codes share a single FX rate.</p>';
+      + '<tbody data-ofx-ledger-table></tbody></table></div></section></details>'
+      + '<p class="ofx-footnote">Reference rates are official-provider daily observations when available, not live tick-by-tick prices. Game rates follow OMEGA policy and simulation rules. Missing rates are not invented; shared currency codes share one quote.</p>';
     host.appendChild(panel);
+    const converterForm = panel.querySelector('[data-ofx-action="ofx-convert"]');
+    if (converterForm) previewConversion(converterForm, panel);
     const table = panel.querySelector('[data-ofx-ledger-table]');
     if (table) table.innerHTML = renderLedger();
     const status = panel.querySelector('[data-ofx-history-status]');
@@ -1100,7 +1227,7 @@
     if (!panel) return;
     const player = getPlayerProfile();
     const code = getCountryCurrency(player) || 'USD';
-    const modeEl = panel.querySelector('#ofx-chart-mode');
+    const modeEl = panel.querySelector('#ofx-convert-mode');
     const mode = modeEl && modeEl.value === 'REFERENCE' ? 'REFERENCE' : state.viewMode;
     const activeRate = rateFor(code, mode);
     const values = {
@@ -1108,7 +1235,8 @@
       'player-currency': code,
       'player-rate': fmtRate(activeRate),
       'usd-per-local': activeRate ? fmtRate(1 / activeRate) : 'N/A',
-      'currency-count': String(currencies.size)
+      'currency-count': String(currencies.size),
+      'country-rate-coverage': countryRateCoverage(mode)
     };
     panel.querySelectorAll('[data-ofx-live]').forEach(function (node) {
       const key = node.getAttribute('data-ofx-live');
@@ -1122,6 +1250,10 @@
       const filter = panel.querySelector('[data-ofx-bank-filter]');
       bankTbody.innerHTML = renderBankingCountryTable(filter && filter.value, mode);
     }
+    const lookup = panel.querySelector('[data-ofx-country-lookup-result]');
+    const lookupInput = panel.querySelector('[data-ofx-country-lookup]');
+    if (lookup) lookup.innerHTML = renderCountryLookup(lookupInput && lookupInput.value, mode);
+    updateRecordButtonState(panel, mode);
     const ledger = panel.querySelector('[data-ofx-ledger-table]');
     if (ledger) ledger.innerHTML = renderLedger();
   }
@@ -1265,11 +1397,11 @@
         : 'No simulated daily closes yet. The game must advance for 24 hours of simulation time.');
   }
 
-  function showConversionResult(panel, result) {
+  function showConversionResult(panel, result, recorded) {
     const output = panel && panel.querySelector('[data-ofx-conversion-result]');
     if (!output) return;
     if (!result || result.ok !== true) {
-      output.textContent = 'Conversion unavailable: ' + String(result && result.code || 'unknown rate or amount');
+      output.textContent = 'Conversion unavailable: ' + String(result && (result.message || result.code) || 'unknown rate or amount');
       output.classList.add('is-error'); output.classList.remove('is-ok');
       return;
     }
@@ -1278,7 +1410,8 @@
       + ' = ' + numberText(result.amountTarget, 6) + ' ' + result.toCode
       + ' (gross ' + numberText(result.grossTarget, 6) + ', cross-rate '
       + numberText(result.crossRate, 8) + ' ' + result.toCode + '/' + result.fromCode
-      + ', fee ' + moneyText(result.feeUsd) + ', settlement via USD). Transaction recorded in Government Banking.';
+      + ', fee ' + moneyText(result.feeUsd) + ', settlement via USD).'
+      + (recorded ? ' Transaction recorded in Government Banking.' : ' Quote only; no transaction has been recorded.');
   }
   function showPolicyResult(panel, result) {
     const output = panel && panel.querySelector('[data-ofx-policy-result]');
@@ -1293,6 +1426,30 @@
       if (el && el.name) out[el.name] = el.value;
     });
     return out;
+  }
+  function updateRecordButtonState(panel, mode) {
+    const button = panel && panel.querySelector('[data-ofx-record]');
+    if (!button) return;
+    const readOnly = String(mode || 'SIMULATION').toUpperCase() === 'REFERENCE';
+    button.disabled = readOnly;
+    button.title = readOnly ? 'Reference rates are comparison-only. Switch to OMEGA Game Simulation to record.' : 'Record this conversion in Government Banking';
+    button.setAttribute('aria-disabled', readOnly ? 'true' : 'false');
+  }
+  function previewConversion(form, panel) {
+    if (!form || !panel) return { ok: false, code: 'CONVERTER_NOT_READY' };
+    const data = readForm(form);
+    const mode = data.mode === 'REFERENCE' ? 'REFERENCE' : 'SIMULATION';
+    updateRecordButtonState(panel, mode);
+    let result;
+    if (normalizeCode(data.fromCode) === normalizeCode(data.toCode)) {
+      result = { ok: false, code: 'SAME_CURRENCY_CONVERSION', message: 'Choose two different currencies.' };
+    } else {
+      result = calculateConversion(
+        finite(data.amount), data.fromCode, data.toCode, allRateValues(mode), FX_FEE_BPS
+      );
+    }
+    showConversionResult(panel, result, false);
+    return result;
   }
   function bindGlobalEvents() {
     if (!global.document || global.document.__omegaForexEventsBound) return;
@@ -1311,7 +1468,8 @@
         const result = executeConversion({
           amount: finite(data.amount), fromCode: data.fromCode, toCode: data.toCode, mode: mode
         });
-        showConversionResult(panel, result);
+        showConversionResult(panel, result, !!(result && result.ok === true));
+        updateRecordButtonState(panel, mode);
         refreshPanelMetrics();
       } else if (action === 'ofx-policy') {
         const result = applyMonetaryPolicy({
@@ -1341,10 +1499,7 @@
       const target = event.target;
       if (!target) return;
       if (target.id === 'ofx-chart-mode') {
-        state.viewMode = target.value === 'REFERENCE' ? 'REFERENCE' : 'SIMULATION';
-        syncAllCountries();
         renderCurrentCharts(false);
-        refreshPanelMetrics();
       } else if (target.id === 'ofx-chart-currency') {
         renderCurrentCharts(false);
       } else if (target.matches && target.matches('[data-ofx-bank-filter]')) {
@@ -1352,8 +1507,20 @@
         const panel = content && content.querySelector('[data-ofx-panel]');
         const body = panel && panel.querySelector('[data-ofx-banking-table]');
         if (body) body.innerHTML = renderBankingCountryTable(target.value, state.viewMode);
-      } else if (target.matches && target.matches('[data-ofx-action="ofx-convert"] select[name="mode"]')) {
-        state.viewMode = target.value === 'REFERENCE' ? 'REFERENCE' : 'SIMULATION';
+      }
+      const converterForm = target.closest && target.closest('[data-ofx-action="ofx-convert"]');
+      if (converterForm && ['fromCode', 'toCode', 'mode'].includes(target.name)) {
+        const content = global.document.getElementById('ministry-dashboard-content');
+        const panel = content && content.querySelector('[data-ofx-panel]');
+        if (target.name === 'mode') state.viewMode = target.value === 'REFERENCE' ? 'REFERENCE' : 'SIMULATION';
+        previewConversion(converterForm, panel);
+        refreshPanelMetrics();
+      }
+      if (target.matches && target.matches('[data-ofx-country-lookup]')) {
+        const panel = target.closest('[data-ofx-panel]');
+        const output = panel && panel.querySelector('[data-ofx-country-lookup-result]');
+        const mode = panel && panel.querySelector('#ofx-convert-mode');
+        if (output) output.innerHTML = renderCountryLookup(target.value, mode && mode.value || state.viewMode);
       }
     });
     global.document.addEventListener('input', function (event) {
@@ -1365,19 +1532,67 @@
           body.innerHTML = renderBankingCountryTable(target.value, state.viewMode);
         }
       }
+      if (target && target.matches && target.matches('[data-ofx-country-lookup]')) {
+        const panel = target.closest('[data-ofx-panel]');
+        const output = panel && panel.querySelector('[data-ofx-country-lookup-result]');
+        const mode = panel && panel.querySelector('#ofx-convert-mode');
+        if (output) output.innerHTML = renderCountryLookup(target.value, mode && mode.value || state.viewMode);
+      }
+      const converterForm = target && target.closest && target.closest('[data-ofx-action="ofx-convert"]');
+      if (converterForm && target.name === 'amount') {
+        const content = global.document.getElementById('ministry-dashboard-content');
+        previewConversion(converterForm, content && content.querySelector('[data-ofx-panel]'));
+      }
     });
     global.document.addEventListener('click', function (event) {
-      const target = event.target && event.target.closest && event.target.closest('[data-ofx-refresh]');
-      if (!target) return;
+      const swapButton = event.target && event.target.closest && event.target.closest('[data-ofx-swap]');
+      if (swapButton) {
+        event.preventDefault();
+        const form = swapButton.closest('[data-ofx-action="ofx-convert"]');
+        const from = form && form.querySelector('[name="fromCode"]');
+        const to = form && form.querySelector('[name="toCode"]');
+        if (from && to) {
+          const value = from.value; from.value = to.value; to.value = value;
+          const content = global.document.getElementById('ministry-dashboard-content');
+          const panel = content && content.querySelector('[data-ofx-panel]');
+          previewConversion(form, panel);
+          refreshPanelMetrics();
+        }
+        return;
+      }
+      const quoteButton = event.target && event.target.closest && event.target.closest('[data-ofx-quote]');
+      if (quoteButton) {
+        event.preventDefault();
+        const form = quoteButton.closest('[data-ofx-action="ofx-convert"]');
+        const panel = quoteButton.closest('[data-ofx-panel]');
+        previewConversion(form, panel);
+        return;
+      }
+      const refreshButton = event.target && event.target.closest && event.target.closest('[data-ofx-refresh]');
+      if (!refreshButton) return;
+      const priorLabel = refreshButton.textContent;
+      refreshButton.disabled = true;
+      refreshButton.textContent = 'Refreshing rates…';
       refreshReferenceRates(true).then(function () {
         renderCurrentCharts(true);
         refreshPanelMetrics();
+        const panel = refreshButton.closest('[data-ofx-panel]');
+        const form = panel && panel.querySelector('[data-ofx-action="ofx-convert"]');
+        if (form) previewConversion(form, panel);
+      }).finally(function () {
+        refreshButton.disabled = false;
+        refreshButton.textContent = priorLabel;
       });
     });
     global.document.addEventListener('toggle', function (event) {
       const target = event.target;
-      if (!target || !target.matches || !target.matches('[data-ofx-banking-details]') || !target.open) return;
+      if (!target || !target.matches || !target.open) return;
       const panel = target.closest('[data-ofx-panel]');
+      if (target.matches('[data-ofx-chart-details]')) {
+        renderCurrentCharts(false);
+        return;
+      }
+      if (!target.matches('[data-ofx-banking-details]')) return;
       const filter = panel && panel.querySelector('[data-ofx-bank-filter]');
       const body = panel && panel.querySelector('[data-ofx-banking-table]');
       if (body) body.innerHTML = renderBankingCountryTable(filter && filter.value, state.viewMode);
@@ -1497,6 +1712,13 @@
     return {
       version: VERSION, initialized: initialized, countryAreaCount: profiles.length,
       currencyCount: currencies.size,
+      countriesWithCurrency: profiles.filter(profile => !!getCountryCurrency(profile)).length,
+      countriesWithSimulationRate: profiles.filter(profile => {
+        const code = getCountryCurrency(profile); return !!code && rateFor(code, 'SIMULATION') !== null;
+      }).length,
+      countriesWithReferenceRate: profiles.filter(profile => {
+        const code = getCountryCurrency(profile); return !!code && rateFor(code, 'REFERENCE') !== null;
+      }).length,
       currenciesWithSimulationRate: currencies.size ? Array.from(currencies.keys()).filter(code => rateFor(code, 'SIMULATION') !== null).length : 0,
       currenciesWithReferenceRate: currencies.size ? Array.from(currencies.keys()).filter(code => rateFor(code, 'REFERENCE') !== null).length : 0,
       referenceStatus: state && state.referenceStatus || 'NOT_INITIALIZED',
@@ -1521,6 +1743,7 @@
     getRate: rateFor,
     getRates: allRateValues,
     getCurrencyCode: getCountryCurrency,
+    getCountryQuotes: getCountryQuotes,
     getPolicy: function (code) { return safeCopy(currencyPolicy(normalizeCode(code))); },
     applyMonetaryPolicy: applyMonetaryPolicy,
     intervene: applyFxIntervention,

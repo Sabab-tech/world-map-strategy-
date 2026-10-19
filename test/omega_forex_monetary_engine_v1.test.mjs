@@ -126,7 +126,46 @@ test('currency metadata uses existing country data and explicit exceptional-area
   assert.equal(engine.math.getCountryCurrency({
     iso3: 'ATA', sourceValues: {}
   }), null);
+  assert.equal(engine.math.getCountryCurrency({
+    iso3: 'BVT', sourceValues: {}
+  }), 'NOK');
+  assert.equal(engine.math.getCountryCurrency({
+    iso3: 'GEO', sourceValues: {}
+  }), null);
+  assert.equal(engine.math.getCountryCurrency({
+    iso3: 'GEO', generalFacts: { currencyCodes: ['GEL'] }
+  }), 'GEL');
+  assert.equal(engine.math.getCountryCurrency({
+    iso3: 'BGD', indicators: { currencyCode: 'BDT' }
+  }), 'BDT');
   assert.equal(engine.math.effectiveRateCode('SHP'), 'GBP');
+});
+
+test('all canonical country profiles receive a currency and simulation USD quote where a currency applies', async () => {
+  const profiles = JSON.parse(readFileSync('economy_global_profiles_v1.json', 'utf8')).countries;
+  const context = vm.createContext({ console });
+  context.OmegaFinanceMinistry = {
+    VERSION: 'TEST_FINANCE_ALL_COUNTRIES',
+    init: async () => ({ initialized: true }),
+    getProfiles: () => profiles,
+    getPlayerCountry: () => profiles.find(row => row.countryCode === 'BD') || profiles[0] || null,
+    getFinanceState: () => null,
+    applyAction: () => ({ ok: true })
+  };
+  vm.runInContext(source, context, { filename: 'omega_forex_monetary_engine_v1.js' });
+  const engine = context.OmegaForexMonetaryEngine;
+  const diagnostics = await engine.init();
+  const quotes = engine.getCountryQuotes('SIMULATION');
+  const noCurrency = quotes.filter(row => !row.currencyCode);
+  const missingRates = quotes.filter(row => row.currencyCode && !(Number(row.localPerUsd) > 0));
+  assert.equal(profiles.length, 249);
+  assert.equal(diagnostics.countryAreaCount, 249);
+  assert.equal(diagnostics.countriesWithCurrency, 248);
+  assert.equal(diagnostics.countriesWithSimulationRate, 248);
+  assert.equal(noCurrency.length, 1);
+  assert.equal(noCurrency[0].iso3, 'ATA');
+  assert.equal(missingRates.length, 0, 'every currency-using country must resolve to a positive simulated USD rate');
+  assert.equal(engine.math.getCountryCurrency(profiles.find(row => row.iso3 === 'BVT')), 'NOK');
 });
 
 test('runtime syncs country finance into Government Banking and settles FX with turn idempotency', async () => {
@@ -217,18 +256,69 @@ test('runtime syncs country finance into Government Banking and settles FX with 
   const diagnostics = await engine.init();
   assert.equal(diagnostics.countryAreaCount, 3);
   assert.ok(diagnostics.currencyCount >= 3);
+  assert.equal(diagnostics.countriesWithCurrency, 3);
+  assert.equal(diagnostics.countriesWithSimulationRate, 3);
+  const quotes = engine.getCountryQuotes('SIMULATION');
+  assert.equal(quotes.length, 3);
+  const bangladeshQuote = quotes.find(row => row.iso3 === 'BGD');
+  const nigeriaQuote = quotes.find(row => row.iso3 === 'NGA');
+  const unitedStatesQuote = quotes.find(row => row.iso3 === 'USA');
+  assert.equal(bangladeshQuote.currencyCode, 'BDT');
+  assert.equal(bangladeshQuote.localPerUsd, 120);
+  assert.equal(bangladeshQuote.usdPerLocalUnit, 1 / 120);
+  assert.equal(nigeriaQuote.localPerUsd, 1500);
+  assert.equal(nigeriaQuote.usdPerLocalUnit, 1 / 1500);
+  assert.equal(unitedStatesQuote.currencyCode, 'USD');
+  assert.equal(unitedStatesQuote.localPerUsd, 1);
+  assert.equal(unitedStatesQuote.usdPerLocalUnit, 1);
   assert.equal(engine.getRate('BDT', 'SIMULATION'), 120);
   assert.equal(context.gameState.governmentBanking.countries.BD.currencyCode, 'BDT');
   assert.equal(context.gameState.governmentBanking.countries.NG.currencyCode, 'NGN');
   assert.equal(context.gameState.finance.BGD.governmentBanking.currencyCode, 'BDT');
 
+  const bankingConversions = [];
+  context.OmegaGovernmentBanking = {
+    convert(input) {
+      bankingConversions.push(input);
+      const quote = engine.math.calculateConversion(
+        input.amount, input.fromCurrencyCode, input.toCurrencyCode,
+        engine.getRates('SIMULATION'), input.feeBps
+      );
+      if (!quote.ok) return quote;
+      const bank = context.gameState.governmentBanking;
+      bank.fxClearingHouse = bank.fxClearingHouse || {};
+      bank.fxClearingHouse.transactionCount = (bank.fxClearingHouse.transactionCount || 0) + 1;
+      bank.fxClearingHouse.settledVolumeUsd = (bank.fxClearingHouse.settledVolumeUsd || 0) + quote.usdNotional;
+      bank.fxClearingHouse.feeRevenueUsd = (bank.fxClearingHouse.feeRevenueUsd || 0) + quote.feeUsd;
+      return {
+        ...quote, ok: true, mode: 'SIMULATION', transactionId: input.idempotencyKey,
+        transaction: { transactionId: input.idempotencyKey, type: 'CROSS_BORDER_TRANSFER', status: 'SETTLED' }
+      };
+    }
+  };
   const conversion = engine.convert({
     amount: 12000, fromCode: 'BDT', toCode: 'NGN', mode: 'SIMULATION'
   });
   assert.equal(conversion.ok, true);
   assert.equal(conversion.route, 'SOURCE_TO_USD_TO_TARGET');
   assert.equal(conversion.amountTarget, 149775);
+  assert.equal(bankingConversions.length, 1);
+  assert.equal(bankingConversions[0].countryId, 'BD');
+  assert.equal(bankingConversions[0].feeBps, 15);
+  assert.equal(conversion.transaction.type, 'CROSS_BORDER_TRANSFER');
   assert.equal(context.gameState.governmentBanking.fxClearingHouse.transactionCount, 1);
+
+  const referenceSettlement = engine.convert({
+    amount: 12000, fromCode: 'BDT', toCode: 'NGN', mode: 'REFERENCE'
+  });
+  assert.equal(referenceSettlement.ok, false);
+  assert.equal(referenceSettlement.code, 'REFERENCE_QUOTES_READ_ONLY');
+  const sameCurrencySettlement = engine.convert({
+    amount: 500, fromCode: 'BDT', toCode: 'BDT', mode: 'SIMULATION'
+  });
+  assert.equal(sameCurrencySettlement.ok, false);
+  assert.equal(sameCurrencySettlement.code, 'SAME_CURRENCY_CONVERSION');
+  assert.equal(bankingConversions.length, 1);
 
   const tick = engine.simulationTick(1, 24 * 60 * 60 * 1000);
   assert.equal(tick.ok, true);
@@ -254,4 +344,18 @@ test('FX panel mounts only inside the dedicated Finance FX tab host',()=>{
   assert.match(source,/host\.appendChild\(panel\)/);
   assert.match(source,/\.ofm-dashboard \[data-ofx-container\]/);
   assert.match(source,/if \(!dashboard \|\| !host \|\| dashboard\.querySelector\('\[data-ofx-panel\]'\)\) return false/);
+  assert.match(source, /data-ofx-quote/);
+  assert.match(source, /function previewConversion/);
+  assert.match(source, /function renderCountryLookup/);
+  assert.match(source, /data-ofx-country-lookup/);
+  assert.match(source, /data-ofx-swap/);
+  assert.match(source, /data-ofx-policy-details/);
+  assert.match(source, /data-ofx-chart-details/);
+  assert.match(source, /data-ofx-catalogue-details/);
+  assert.match(source, /data-ofx-banking-details/);
+  assert.match(source, /data-ofx-ledger-details/);
+  assert.match(source, /data-ofx-record/);
+  assert.match(source, /GOVERNMENT_BANKING_ACCOUNT_SETTLEMENT/);
+  assert.match(source, /banking\.convert/);
+  assert.match(source, /country-rate-coverage/);
 });
