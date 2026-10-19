@@ -259,7 +259,7 @@
       '<li><span class="ocov-priority-number">' + (i + 1) + '</span><div><strong>' + esc(row.title || row.action || row.domain || 'Strategic priority') +
       '</strong><p>' + esc(row.detail || row.basis || row.reason || row.description || 'Based on currently registered evidence.') + '</p>' +
       (row.basis ? '<small>Basis: ' + esc(row.basis) + '</small>' : '') + '</div></li>').join('') +
-      '</ol><p class="ocov-note">These are candidate priorities, not executed orders. Live decisions still pass through the simulation's action, finance, materials and authority checks.</p>'
+      '</ol><p class="ocov-note">These are candidate priorities, not executed orders. Live decisions still pass through the simulation\'s action, finance, materials and authority checks.</p>'
       : '<p class="ocov-empty">No evidence-backed priority is available yet.</p>';
 
     const overviewHtml =
