@@ -14,6 +14,10 @@ on:
       - 'omega_ui_visual_system_v1.css'
       - 'omega_ui_system_redesign_v1.css'
       - 'omega_ui_system_redesign_v1.js'
+      - 'omega-offline-map-sw.js'
+      - 'omega_home_ministry_engine_v1.js'
+      - 'test/omega_home_ministry_engine_v1.test.mjs'
+      - 'test/omega_home_ministry_world_police_runtime_v1.test.mjs'
       - 'test/omega_ui_system_redesign_v1.test.mjs'
       - 'omega_icon_system_v1.js'
       - 'omega_icon_system_v1.css'
@@ -33,6 +37,10 @@ on:
       - 'omega_ui_visual_system_v1.css'
       - 'omega_ui_system_redesign_v1.css'
       - 'omega_ui_system_redesign_v1.js'
+      - 'omega-offline-map-sw.js'
+      - 'omega_home_ministry_engine_v1.js'
+      - 'test/omega_home_ministry_engine_v1.test.mjs'
+      - 'test/omega_home_ministry_world_police_runtime_v1.test.mjs'
       - 'test/omega_ui_system_redesign_v1.test.mjs'
       - 'omega_icon_system_v1.js'
       - 'omega_icon_system_v1.css'
@@ -61,6 +69,8 @@ jobs:
           node --check map-engine-1.js
           node --check map-engine-2.js
           node --check omega_ui_system_redesign_v1.js
+          node --check omega_home_ministry_engine_v1.js
+          node --check omega-offline-map-sw.js
           node --check offline-hybrid-map.js
       - name: Run UI visual and map-layer regression tests
         run: npm run test:ui-visual
