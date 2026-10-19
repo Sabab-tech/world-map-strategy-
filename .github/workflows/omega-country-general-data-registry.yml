@@ -11,7 +11,12 @@ on:
     paths:
       - ".github/workflows/omega-country-general-data-registry.yml"
       - "scripts/build_country_general_data_registry_v1.mjs"
+      - "scripts/build_country_sector_profiles_v1.mjs"
+      - "country_sector_profile_schema_v1.json"
+      - "country_official_index_observations_v1.json"
+      - "country_sector_profiles_v1.json"
       - "test/country_general_data_registry_v1.test.mjs"
+      - "test/country_sector_profiles_v1.test.mjs"
       - "countries.json"
       - "cities.json"
       - "population.json"
@@ -19,6 +24,8 @@ on:
       - "economy_global_profiles_v1.json"
       - "economy_raw_financial_data_v2.json"
       - "resource_country_resource_context_index.json"
+      - "relation_generation_engine.json"
+      - "resource_site_reserve_simulation_v1.json"
       - "omega_home_ministry_country_police_baseline_v1.json"
 
 permissions:
@@ -41,21 +48,39 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Build unified country registry and refresh source indicators
-        run: node scripts/build_country_general_data_registry_v1.mjs --refresh-sources
-
-      - name: Validate shared schema, source preservation and coverage accounting
-        run: node --test test/country_general_data_registry_v1.test.mjs
-
-      - name: Commit registry only if it changed
+      - name: Snapshot prior registry for source-preservation regression
         shell: bash
         run: |
-          if [[ -z "$(git status --porcelain -- country_general_data_registry_v1.json)" ]]; then
-            echo "Registry content unchanged; no generated data commit required."
+          if [[ -f country_general_data_registry_v1.json ]]; then
+            cp country_general_data_registry_v1.json /tmp/omega-country-general-registry-before.json
+          fi
+
+      - name: Build unified country registry and refresh source indicators
+        run: |
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+            node scripts/build_country_general_data_registry_v1.mjs
+          else
+            node scripts/build_country_general_data_registry_v1.mjs --refresh-sources
+          fi
+
+      - name: Build sector profiles and transparent comparative calculations
+        run: node scripts/build_country_sector_profiles_v1.mjs
+
+      - name: Validate source registry, sector profiles, calculations and coverage
+        run: node --test test/country_general_data_registry_v1.test.mjs test/country_sector_profiles_v1.test.mjs
+
+      - name: Commit generated registries only if they changed
+        if: github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          # Force-add generated output: the sector profile registry may be ignored
+          # by a broad JSON ignore rule even though it is a deliberate source artifact.
+          git add -f country_general_data_registry_v1.json country_sector_profiles_v1.json
+          if git diff --cached --quiet; then
+            echo "Generated registries unchanged; no data commit required."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add country_general_data_registry_v1.json
-          git commit -m "Update unified country general data registry"
+          git commit -m "Refresh country observations and sector profiles"
           git push
