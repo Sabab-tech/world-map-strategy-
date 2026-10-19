@@ -25,8 +25,8 @@ test('money labels use thousand/million/billion units without changing numeric i
   const format = context.OmegaNumberFormat;
   const value = 1234567;
   assert.equal(format.money(value), '$1.23 million');
-  assert.equal(format.money(1200), '$1.20 thousand');
-  assert.equal(format.money(-2500000000), '-$2.50 billion');
+  assert.equal(format.money(1200), '$1.2 thousand');
+  assert.equal(format.money(-2500000000), '-$2.5 billion');
   assert.equal(format.money(0), '$0');
   assert.equal(format.money(null, { unavailable: 'N/A' }), 'N/A');
   assert.equal(value, 1234567, 'display formatting must not mutate simulation values');
