@@ -210,6 +210,6 @@
   if(window.visualViewport){window.visualViewport.addEventListener("resize",updateVisibleViewportSize,{passive:true});window.visualViewport.addEventListener("scroll",updateVisibleViewportSize,{passive:true});}
   window.map.on("moveend zoomend",updateCoordinateLabels);
   function startOfflineAtlas(){syncButton();activate();}
-  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",startOfflineAtlas,{once:true});
-  else startOfflineAtlas();
+  if(document.readyState==="complete"||document.readyState==="interactive")startOfflineAtlas();
+  else document.addEventListener("DOMContentLoaded",startOfflineAtlas,{once:true});
 })();
