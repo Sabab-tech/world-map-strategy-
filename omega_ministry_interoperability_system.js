@@ -13,6 +13,25 @@
   const DEFAULT_MAX_INBOX=256;
   const DEFAULT_MAX_HISTORY=128;
 
+  function canonicalCountryId(value){
+    const raw=String(value??'').trim();
+    if(!raw)return '';
+    const registry=global.OmegaCanonicalIdentityRegistry||global.OmegaCountrySemanticBridge||global.Omega?.CanonicalIdentity;
+    if(registry&&typeof registry.resolveCountry==='function'){
+      for(const candidate of [raw,raw.replace(/[_-]+/g,' ')]){
+        try{
+          const hit=registry.resolveCountry(candidate);
+          if(hit&&hit.id){
+            const row=hit.raw?.raw||hit.raw||null;
+            const iso3=row?.iso3||row?.iso3Code||row?.ISO_A3||row?.iso_a3;
+            return String(iso3||hit.id).trim().toUpperCase();
+          }
+        }catch(_){}
+      }
+    }
+    return raw.toUpperCase();
+  }
+
   const FALLBACK_IDS=Object.freeze([
     'cabinet','defense','military','finance','economy','trade','foreign',
     'intelligence','interior','transport','resource','health','education',
@@ -371,7 +390,7 @@
         dropped:0,expired:0,failed:0,processed:0,
         requests:0,responses:0,acks:0,alerts:0,
         statePublications:0,decisionEvaluations:0,commands:0,events:0,
-        providerReads:0,providerMisses:0
+        noStateWrites:0,providerReads:0,providerMisses:0
       };
       this._rebuildTopology();
     }
@@ -553,7 +572,7 @@
     send(source,target,topic,payload={},options={}){
       const src=String(source||'');
       const dst=String(target||'');
-      const countryId=String(options.countryId||'').trim().toUpperCase();
+      const countryId=canonicalCountryId(options.countryId);
       const turn=Number.isFinite(Number(options.turn))?Number(options.turn):this.lastTurn;
       if(!this.ids.includes(src)||!this.ids.includes(dst)){
         this.metrics.rejected+=1;
@@ -724,14 +743,14 @@
     acceptMessage(idOrCountry,targetOrMessage,messageOrTurn,maybeTurn){
       let countryId,targetId,message,currentTurn;
       if(arguments.length>=3){
-        countryId=String(idOrCountry||'').trim().toUpperCase();
+        countryId=canonicalCountryId(idOrCountry);
         targetId=String(targetOrMessage||'');
         message=messageOrTurn;
         currentTurn=Number.isFinite(Number(maybeTurn))?Number(maybeTurn):this.lastTurn;
       }else{
         targetId=String(idOrCountry||'');
         message=targetOrCountry;
-        countryId=String(message?.countryId||'').trim().toUpperCase();
+        countryId=canonicalCountryId(message?.countryId);
         currentTurn=this.lastTurn;
       }
       const unwrapped=unwrapMessage(message);
@@ -739,7 +758,7 @@
         this.metrics.rejected+=1;
         return {ok:false,status:DELIVERY_STATUS.REJECTED,reason:'INVALID_MESSAGE'};
       }
-      if(unwrapped.countryId!==countryId){
+      if(canonicalCountryId(unwrapped.countryId)!==countryId){
         this.metrics.rejected+=1;
         return {ok:false,status:DELIVERY_STATUS.REJECTED,reason:'COUNTRY_SCOPE_MISMATCH'};
       }
@@ -853,14 +872,14 @@
     }
 
     drainInbox(countryId,ministryId,callback,maxMessages=100){
-      const c=String(countryId||'').trim().toUpperCase();
+      const c=canonicalCountryId(countryId);
       const id=String(ministryId||'');
       const inbox=this.inboxes.get(id);
       if(!c||!inbox||typeof callback!=='function')return 0;
       let count=0;
       while(count<Number(maxMessages)&&inbox.length){
         const message=inbox.shift();
-        if(String(message.countryId||'').toUpperCase()!==c){
+        if(canonicalCountryId(message.countryId)!==c){
           this.metrics.rejected+=1;
           this._transitionDelivery(message.messageId,DELIVERY_STATUS.REJECTED,this.lastTurn,'COUNTRY_SCOPE_MISMATCH');
           count+=1;
@@ -875,14 +894,14 @@
     }
 
     getMinistryInbox(countryId,ministryId){
-      const c=String(countryId||'').trim().toUpperCase();
+      const c=canonicalCountryId(countryId);
       const id=String(ministryId||'');
       const inbox=this.inboxes.get(id)||[];
       return clone(inbox.filter(m=>String(m.countryId||'').toUpperCase()===c));
     }
 
     _compilePublicSnapshot(ministryId,packet={}){
-      const countryId=String(packet.context?.countryId||'').trim().toUpperCase();
+      const countryId=canonicalCountryId(packet.context?.countryId);
       if(!countryId)throw new Error('COUNTRY_ID_REQUIRED_FOR_PUBLICATION');
       const turn=this._currentTurn(packet.context,packet);
       this.lastTurn=Math.max(this.lastTurn,turn);
@@ -1252,7 +1271,7 @@
     getPeerState(requesterId,targetId,countryId,options={}){
       const viewer=String(requesterId||'');
       const target=String(targetId||'');
-      const c=String(countryId||'').trim().toUpperCase();
+      const c=canonicalCountryId(countryId);
       if(!this.ids.includes(viewer)||!this.ids.includes(target)||!c)return null;
       const snapshot=this.snapshots.get(snapshotKey(c,target));
       return this._filterSnapshotFor(viewer,target,snapshot,options.currentTurn??this.lastTurn);
@@ -1371,7 +1390,7 @@
 
     getContext(ministryId,options={}){
       const id=String(ministryId||'');
-      const countryId=String(options.countryId||'').trim().toUpperCase();
+      const countryId=canonicalCountryId(options.countryId);
       if(!this.ids.includes(id)||!countryId)return null;
       const turn=Number.isFinite(Number(options.turn))?Number(options.turn):this.lastTurn;
       const readModel=this._getKnowledgeReadModel(id,countryId,turn);
@@ -1397,7 +1416,7 @@
 
     createPort(source,countryId){
       const src=String(source||'');
-      const c=String(countryId||'').trim().toUpperCase();
+      const c=canonicalCountryId(countryId);
       if(!this.ids.includes(src)||!c)throw new Error('INVALID_MINISTRY_PORT');
       const self=this;
       return Object.freeze({
@@ -1418,7 +1437,7 @@
 
     evaluateAction(ministryId,actionId,options={}){
       const id=String(ministryId||'');
-      const countryId=String(options.countryId||'').trim().toUpperCase();
+      const countryId=canonicalCountryId(options.countryId);
       if(!this.ids.includes(id))return {status:'UNKNOWN',reason:'UNKNOWN_MINISTRY',ministryId:id,countryId};
       const briefing=this.getMinistryBriefing(id,countryId,{currentTurn:options.currentTurn??this.lastTurn});
       const framework=this.decisionFramework||global.OmegaMinistryDecisionFramework?.instance||null;
@@ -1456,7 +1475,7 @@
         this.configure({});
       }
       const source=String(sourceMinistry||'');
-      const country=String(countryId||'').trim().toUpperCase();
+      const country=canonicalCountryId(countryId);
       if(!this.ids.includes(source)||!country)throw new Error('INVALID_COMMAND_SOURCE_OR_COUNTRY');
       const turn=Number.isFinite(Number(options.turn))?Number(options.turn):this.lastTurn;
       this._commandSequence+=1;
@@ -1505,29 +1524,51 @@
         row.status='PROCESSING';
         row.statusHistory.push({status:'PROCESSING',simulationTurn:turn});
         const transactionFactory=this.stateTransaction||global.OmegaMinistryStateTransaction||null;
+        const authoritativeState=this.provider&&typeof this.provider.root==='function'
+          ?this.provider.root()
+          :(global.Game?.state||global.gameState||global.Omega?.World?.state||null);
         const stateTransaction=transactionFactory?.create
-          ? transactionFactory.create(handler.ownerMinistry,country,turn,commandId)
+          ? transactionFactory.create(handler.ownerMinistry,country,turn,commandId,authoritativeState)
           : null;
         if(!stateTransaction){
           throw new Error('AUTHORITATIVE_STATE_TRANSACTION_UNAVAILABLE');
         }
+        let emittedEventCount=0;
         const result=handler.handler(deepFreeze(clone(command)),{
           countryId:country,
           simulationTurn:turn,
           stateProvider:this.provider,
           stateTransaction,
-          emitEvent:(eventType,eventPayload={},eventOptions={})=>this.emitEvent(eventType,country,handler.ownerMinistry,eventPayload,{...eventOptions,turn,causationId:commandId})
+          emitEvent:(eventType,eventPayload={},eventOptions={})=>{
+            emittedEventCount+=1;
+            return this.emitEvent(eventType,country,handler.ownerMinistry,eventPayload,{...eventOptions,turn,causationId:commandId});
+          }
         });
         if(result?.accepted!==false && stateTransaction){
           row.transaction=stateTransaction.commit();
         }else if(stateTransaction){
           stateTransaction.rollback();
         }
+        const stagedWrites=Array.isArray(stateTransaction?.operations)?stateTransaction.operations.length:0;
+        const intentionalNoWrite=result?.noStateChangeAccepted===true||result?.duplicate===true||result?.idempotent===true||options.allowNoStateChange===true;
         row.result=clone(result);
-        row.status=result?.accepted===false?'FAILED':'APPLIED';
         row.stateChanged=Boolean(row.transaction?.changed);
+        row.stateWriteCount=stagedWrites;
+        row.eventsEmitted=emittedEventCount;
+        row.status=result?.accepted===false?'FAILED':
+          (stagedWrites===0&&!intentionalNoWrite?'ACCEPTED_NO_STATE_WRITE':'APPLIED');
+        if(row.status==='ACCEPTED_NO_STATE_WRITE'){
+          row.reason='NO_AUTHORITATIVE_STATE_WRITE';
+          row.result={accepted:false,code:'NO_AUTHORITATIVE_STATE_WRITE',reason:'NO_AUTHORITATIVE_STATE_WRITE',
+            handlerResult:clone(result),warning:'The handler acknowledged the command but staged no authoritative state write.'};
+          this.metrics.noStateWrites+=1;
+        }
         if(row.transaction?.afterRevision)row.stateRevisionAfter=row.transaction.afterRevision;
-        row.statusHistory.push({status:row.status,simulationTurn:turn});
+        row.statusHistory.push({status:row.status,simulationTurn:turn,reason:row.reason||null});
+        if(row.status==='ACCEPTED_NO_STATE_WRITE')this._emit('OMEGA_COMMAND_ACCEPTED_NO_STATE_WRITE',{
+          commandId,commandType,countryId:country,sourceMinistryId:source,targetMinistryId:handler.ownerMinistry,
+          eventsEmitted:emittedEventCount
+        },turn);
         if(result?.eventType)this.emitEvent(result.eventType,country,handler.ownerMinistry,result.eventPayload||{},{
           turn,causationId:commandId,provenance:result.provenance||null
         });
@@ -1557,7 +1598,7 @@
 
     emitEvent(eventType,countryId,sourceMinistry,payload={},options={}){
       const type=String(eventType||'');
-      const country=String(countryId||'').trim().toUpperCase();
+      const country=canonicalCountryId(countryId);
       const source=String(sourceMinistry||'');
       if(!Object.prototype.hasOwnProperty.call(EVENT_TYPES,type))throw new Error('NON_CANONICAL_EVENT:'+type);
       if(!this.ids.includes(source)||!country)throw new Error('INVALID_EVENT_SCOPE');
@@ -1602,7 +1643,7 @@
     }
 
     getPendingRequests(countryId,requesterMinistry=null){
-      const c=String(countryId||'').trim().toUpperCase();
+      const c=canonicalCountryId(countryId);
       const out=[];
       for(const row of this.requestLedger.values()){
         if(row?.countryId!==c)continue;
@@ -1640,7 +1681,7 @@
 
     publishFiscalStatus(ministryId,status={},options={}){
       const source=String(ministryId||'');
-      const countryId=String(options.countryId||'').trim().toUpperCase();
+      const countryId=canonicalCountryId(options.countryId);
       if(!this.ids.includes(source)||!countryId)throw new Error('INVALID_FISCAL_PUBLICATION_SCOPE');
       const turn=Number.isFinite(Number(options.turn))?Number(options.turn):this.lastTurn;
       const payload={
@@ -1656,7 +1697,7 @@
 
     recordBudgetRequest(ministryId,request={},options={}){
       const source=String(ministryId||'');
-      const countryId=String(options.countryId||'').trim().toUpperCase();
+      const countryId=canonicalCountryId(options.countryId);
       if(!this.ids.includes(source)||!countryId)throw new Error('INVALID_BUDGET_REQUEST_SCOPE');
       const turn=Number.isFinite(Number(options.turn))?Number(options.turn):this.lastTurn;
       this._requestSequence+=1;
@@ -1685,7 +1726,7 @@
 
     publishProjectStatus(ministryId,status={},options={}){
       const source=String(ministryId||'');
-      const countryId=String(options.countryId||'').trim().toUpperCase();
+      const countryId=canonicalCountryId(options.countryId);
       if(!this.ids.includes(source)||!countryId)throw new Error('INVALID_PROJECT_PUBLICATION_SCOPE');
       const turn=Number.isFinite(Number(options.turn))?Number(options.turn):this.lastTurn;
       const payload={
@@ -1710,7 +1751,7 @@
 
     publishConstraint(ministryId,constraint={},options={}){
       const source=String(ministryId||'');
-      const countryId=String(options.countryId||'').trim().toUpperCase();
+      const countryId=canonicalCountryId(options.countryId);
       const turn=Number.isFinite(Number(options.turn))?Number(options.turn):this.lastTurn;
       const payload={
         severity:constraint.severity??'INFO',code:constraint.code??null,
@@ -1726,7 +1767,7 @@
 
     publishAlert(ministryId,alert={},options={}){
       const source=String(ministryId||'');
-      const countryId=String(options.countryId||'').trim().toUpperCase();
+      const countryId=canonicalCountryId(options.countryId);
       const turn=Number.isFinite(Number(options.turn))?Number(options.turn):this.lastTurn;
       const payload={priority:alert.priority??'NORMAL',topic:alert.topic??null,evidence:clone(alert.evidence||null),...clone(alert)};
       const message=this.send(source,String(options.target||'cabinet'),'ministry.alert',payload,{
@@ -1738,7 +1779,7 @@
 
     _ingestMessage(message){
       const type=String(message.messageType||MESSAGE_TYPES.STATE_UPDATE);
-      const countryId=String(message.countryId||'').trim().toUpperCase();
+      const countryId=canonicalCountryId(message.countryId);
       const source=String(message.sourceMinistryId||message.source||'');
       if(type===MESSAGE_TYPES.BUDGET_REQUEST)this._recordBudgetLocal(countryId,source,message.payload||{},message.messageId,message.simulationTurn);
       if(type===MESSAGE_TYPES.PROJECT_STATUS)this._recordProjectLocal(countryId,source,message.payload||{},message.messageId,message.simulationTurn);
