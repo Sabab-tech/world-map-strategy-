@@ -560,26 +560,6 @@
         return;
       }
       runtime.baselineByResource[rid] = clone(baseline);
-      var refPrices = object(runtime.referencePriceByResource) || {};
-      runtime.referencePriceByResource = refPrices;
-      var currentPrice = marketPrice(cid, rid, trade);
-      if (refPrices[rid] == null && currentPrice.value !== null) refPrices[rid] = currentPrice.value;
-      var referencePrice = finite(refPrices[rid]);
-      var factors = calculateDemand({
-        config: cfg, profile: profile, baselineRate: baseline.rate,
-        reference: metrics.reference, current: {
-          population: metrics.current.population.value,
-          gdpPerCapita: metrics.current.gdpPerCapita.value,
-          industry: metrics.current.industry.value,
-          militaryPersonnel: metrics.current.militaryPersonnel.value
-        },
-        currentPrice: currentPrice.value, referencePrice: referencePrice,
-        priceSource: currentPrice.source,
-        policyMultiplier: policyMultiplier(resource, rid), warActive: warActive(cid)
-      });
-      // resource.consumption remains a stable daily rate for existing targetDays logic.
-      // Inventory debits use only this turn's fraction of that rate. Factory usage,
-      // which is already debited by production, is converted to a daily equivalent.
       var transmission = g.OmegaEconomicTransmissionRuntime || (g.Omega && g.Omega.EconomicTransmission);
       var purchasingPowerMultiplier = 1, importCostMultiplier = 1, producerCostMultiplier = 1;
       try {
@@ -596,8 +576,32 @@
           if (pc !== null && pc > 0) producerCostMultiplier = clamp(pc, 0.5, 3);
         }
       } catch (_) {}
-      // The native demand engine handles demographics, GDP, industrial use and price elasticity.
-      // Financial transmission applies an additional household purchasing-power ceiling/factor.
+      var refPrices = object(runtime.referencePriceByResource) || {};
+      runtime.referencePriceByResource = refPrices;
+      var rawCurrentPrice = marketPrice(cid, rid, trade);
+      var currentPrice = {
+        value: rawCurrentPrice.value === null ? null : rawCurrentPrice.value * importCostMultiplier,
+        source: rawCurrentPrice.source
+          ? rawCurrentPrice.source + (importCostMultiplier !== 1 ? ':FINANCIAL_TRANSMISSION_IMPORT_COST' : '')
+          : null
+      };
+      if (refPrices[rid] == null && currentPrice.value !== null) refPrices[rid] = currentPrice.value;
+      var referencePrice = finite(refPrices[rid]);
+      var factors = calculateDemand({
+        config: cfg, profile: profile, baselineRate: baseline.rate,
+        reference: metrics.reference, current: {
+          population: metrics.current.population.value,
+          gdpPerCapita: metrics.current.gdpPerCapita.value,
+          industry: metrics.current.industry.value,
+          militaryPersonnel: metrics.current.militaryPersonnel.value
+        },
+        currentPrice: currentPrice.value, referencePrice: referencePrice,
+        priceSource: currentPrice.source,
+        policyMultiplier: policyMultiplier(resource, rid), warActive: warActive(cid)
+      });
+      // Resource demand falls with reduced real household purchasing power; higher import
+      // costs also enter the existing price-elasticity formula above. Industry/producer
+      // cost pressure is supplied to the strategy telemetry and trade unit-price runtime.
       var demanded = Math.max(inputDailyRate, factors.demand) * purchasingPowerMultiplier;
       factors.factors.financialTransmission = {
         householdPurchasingPowerMultiplier: purchasingPowerMultiplier,
