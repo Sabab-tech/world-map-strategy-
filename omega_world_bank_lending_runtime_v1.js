@@ -867,11 +867,11 @@
   function activeLoansTable(profile) {
     const loans = getLoanList(profile).filter(loan => loan.status !== 'REPAID');
     if (!loans.length) return '<p class="owb-empty">No active simulated World Bank facility for this country.</p>';
-    return '<div class="owb-table-wrap"><table class="owb-table"><thead><tr><th>Facility</th><th>Outstanding</th><th>Principal</th><th>Accrued interest</th><th>Rate</th><th>Term</th><th>Status</th></tr></thead><tbody>' +
+    return '<div class="owb-table-wrap"><table class="owb-table"><thead><tr><th>Facility</th><th>Outstanding</th><th>Principal</th><th>Accrued interest</th><th>Rate</th><th>Annual payment estimate</th><th>Term</th><th>Status</th></tr></thead><tbody>' +
       loans.map(loan => '<tr><td><strong>' + esc(loan.loanId) + '</strong><small>' + esc(loan.purpose) + '</small></td><td>' +
         esc(money((finite(loan.outstandingPrincipalUsd) || 0) + (finite(loan.accruedInterestUsd) || 0))) + '</td><td>' +
         esc(money(loan.outstandingPrincipalUsd)) + '</td><td>' + esc(money(loan.accruedInterestUsd)) + '</td><td>' +
-        esc(percent(loan.annualInterestRatePct)) + '</td><td>' + esc(number(loan.termYears, 1)) + 'y / ' + esc(number(loan.graceYears, 1)) + 'y grace</td><td>' +
+        esc(percent(loan.annualInterestRatePct)) + '</td><td>' + esc(money(annualPayment(Math.max(0, finite(loan.outstandingPrincipalUsd) || 0), Math.max(0, finite(loan.annualInterestRatePct) || 0), Math.max(1 / 365, (finite(loan.termYears) || 1) - Math.max(finite(loan.ageYears) || 0, finite(loan.graceYears) || 0))))) + '</td><td>' + esc(number(loan.termYears, 1)) + 'y / ' + esc(number(loan.graceYears, 1)) + 'y grace</td><td>' +
         '<span class="owb-state ' + (loan.status === 'ARREARS' ? 'owb-bad' : 'owb-good') + '">' + esc(loan.status) + '</span></td></tr>').join('') +
       '</tbody></table></div>';
   }
