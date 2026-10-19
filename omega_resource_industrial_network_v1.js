@@ -1043,7 +1043,12 @@ function mineConstructionProfile(site){
 function countryFinanceBucket(c){
   const finance=state()?.finance||{},cid=canonicalCountry(c);
   const key=Object.keys(finance).find(k=>canonicalCountry(k)===cid);
-  if(key&&finance[key]&&typeof finance[key]==='object')return{key,bucket:finance[key],field:'available',value:num(finance[key].available)};
+  if(key&&finance[key]&&typeof finance[key]==='object'){
+    const bucket=finance[key],available=num(bucket.available);
+    if(available!==null)return{key,bucket,field:'available',value:available};
+    const model=num(bucket.omegaFinance?.treasuryBalanceUsd);
+    if(model!==null)return{key,bucket,field:'omegaFinance.treasuryBalanceUsd',value:model,modelFallback:true};
+  }
   const economy=state()?.economy||{},ekey=Object.keys(economy).find(k=>canonicalCountry(k)===cid);
   if(ekey&&economy[ekey]&&num(economy[ekey].treasury)!==null)
     return{key:ekey,bucket:economy[ekey],field:'treasury',value:num(economy[ekey].treasury),fallback:true};
@@ -1102,7 +1107,10 @@ function quoteMineProject(input={}){
     buildClass,projectType:'MINE_CONSTRUCTION',costUsd,durationDays,estimatedTurns:Math.ceil(durationDays/daysPerTurn()),
     workersRequired,assignedWorkers,staffingReady:assignedWorkers!==null&&assignedWorkers>=workersRequired,
     materials,materialsReady:materials.every(x=>x.sufficient),treasury:{available:treasury.value,required:costUsd,
-      sufficient:treasury.value!==null&&treasury.value+1e-9>=costUsd,source:treasury.field?('state.'+(treasury.field==='available'?'finance':'economy')+'.'+treasury.key+'.'+treasury.field):'UNAVAILABLE'},
+      sufficient:treasury.value!==null&&treasury.value+1e-9>=costUsd,
+      source:treasury.field==='available'?'state.finance.'+treasury.key+'.available':
+        treasury.field==='omegaFinance.treasuryBalanceUsd'?'state.finance.'+treasury.key+'.omegaFinance.treasuryBalanceUsd':
+        treasury.field==='treasury'?'state.economy.'+treasury.key+'.treasury':'UNAVAILABLE'},
     commissioningReady:!activeProject,activeProjectId:activeProject?.projectId||null,commissionedAssetCount:completedAssets,
     forecastCapacityMultiplier:Math.min(1.60,1.0+0.12*(completedAssets+1)),
     assumptions:{capexAuthority:'SIMULATED_GAMEPLAY_RULES_NOT_A_REAL_VENDOR_QUOTE',materialRequirementsAuthority:'SIMULATED_CONSTRUCTION_BILL_OF_MATERIALS_V1',
@@ -1169,6 +1177,11 @@ function startMineProject(input={}){
   const treasuryAfter=treasuryBefore-quote.costUsd;
   if(account.field==='available')account.bucket.available=treasuryAfter;
   else if(account.field==='treasury')account.bucket.treasury=treasuryAfter;
+  else if(account.field==='omegaFinance.treasuryBalanceUsd'){
+    account.bucket.available=treasuryAfter;
+    const economyRoot=state()?.economy||{},economyKey=Object.keys(economyRoot).find(k=>canonicalCountry(k)===cid);
+    if(economyKey&&economyRoot[economyKey]&&num(economyRoot[economyKey].treasury)!==null)economyRoot[economyKey].treasury=treasuryAfter;
+  }
   if(account.bucket?.omegaFinance&&typeof account.bucket.omegaFinance==='object'){
     const fm=account.bucket.omegaFinance;
     fm.treasuryBalanceUsd=treasuryAfter;fm.lastSyncedTreasuryBalanceUsd=treasuryAfter;
