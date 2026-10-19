@@ -513,6 +513,32 @@ test('W: aliases route commands into the same canonical country bucket and provi
   assert.equal(s.sandbox.OmegaMinistryStateProvider.instance.get('Bangladesh','economy.gdp'),200);
 });
 
+test('W2: canonical ISO-3 state wins over conflicting ISO-2 and name-key duplicates',()=>{
+  const state={
+    simulationTurn:2,
+    economy:{
+      BGD:{gdp:195,source:'canonical-iso3'},
+      BD:{gdp:999,source:'stale-iso2'},
+      BANGLADESH:{gdp:888,source:'stale-name'}
+    }
+  };
+  const s=createSandbox({countryA:'BD',countryB:'NG',state});
+  s.mesh.registerCommandHandler('TEST_CANONICAL_BUCKET_UPDATE','economy',(command,{stateTransaction})=>{
+    const before=stateTransaction.get('economy.gdp');
+    stateTransaction.set('economy.gdp',before+5);
+    return{accepted:true,before,after:before+5};
+  });
+  const result=s.mesh.dispatchCommand('finance','TEST_CANONICAL_BUCKET_UPDATE','Bangladesh',{},{
+    turn:3,commandType:'TEST_CANONICAL_BUCKET_UPDATE'
+  });
+  assert.equal(result.status,'APPLIED');
+  assert.equal(result.countryId,'BGD');
+  assert.equal(state.economy.BGD.gdp,200);
+  assert.equal(state.economy.BD.gdp,999,'stale alias must not be the read/write source');
+  assert.equal(state.economy.BANGLADESH.gdp,888,'stale name alias must remain untouched');
+  assert.equal(s.sandbox.OmegaMinistryStateProvider.instance.get('Bangladesh','economy.gdp'),200);
+});
+
 test('X: command acknowledgement without an authoritative write is not reported as applied',()=>{
   const s=createSandbox();
   s.mesh.registerCommandHandler('TEST_ACK_ONLY','economy',()=>({accepted:true}));
