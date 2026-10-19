@@ -514,12 +514,50 @@ var Game = window.Game = {
         const elGov = document.getElementById('card-country-gov');
         if (elGov) elGov.innerText = 'Gov: ' + government;
 
+        const publishedPopulation = runtime && typeof runtime.getGeneralMetric === 'function'
+            ? runtime.getGeneralMetric(countryName, 'populationTotal') : null;
+        const publishedGdp = runtime && typeof runtime.getGeneralMetric === 'function'
+            ? runtime.getGeneralMetric(countryName, 'gdpCurrentUsd') : null;
+        const localPopulation = numberExists(pop && pop.population_2015) ? Number(pop.population_2015)
+            : numberExists(pop && pop.population) ? Number(pop.population)
+                : numberExists(pop && pop.totalPopulation) ? Number(pop.totalPopulation) : null;
+        const localGdp = numberExists(econ && econ.gdp) ? Number(econ.gdp)
+            : numberExists(econ && econ.gdpCurrentUsd) ? Number(econ.gdpCurrentUsd) : null;
+        const populationValue = localPopulation !== null ? localPopulation
+            : numberExists(publishedPopulation && publishedPopulation.value) ? Number(publishedPopulation.value) : null;
+        const gdpValue = localGdp !== null ? localGdp
+            : numberExists(publishedGdp && publishedGdp.value) ? Number(publishedGdp.value) : null;
+        const usedPublishedPopulation = localPopulation === null && populationValue !== null;
+        const usedPublishedGdp = localGdp === null && gdpValue !== null;
+        const metricSourceTag = metric => {
+            if (!metric || !Number.isFinite(metric.year)) return '';
+            const label = metric.status === 'WORLD_BANK_API_OBSERVATION' ? 'WB' : 'SRC';
+            return ' · ' + label + ' ' + metric.year;
+        };
+        const setMetricSourceTitle = (element, metric) => {
+            if (!element || !metric) return;
+            const source = metric.sourceName || metric.sourceId || 'Source not recorded';
+            element.title = source + (metric.year ? ' · observation year: ' + metric.year : '') +
+                (metric.status ? ' · status: ' + metric.status : '') +
+                (metric.sourceUrl ? ' · ' + metric.sourceUrl : '') +
+                (metric.note ? ' · ' + metric.note : '');
+        };
         const elPop = document.getElementById('card-stat-pop');
-        if (elPop) elPop.innerText = numberExists(pop && pop.population_2015)
-            ? this.formatPopulationNumber(Number(pop.population_2015)) : unavailable;
+        if (elPop) {
+            elPop.innerText = populationValue !== null
+                ? this.formatPopulationNumber(populationValue) + (usedPublishedPopulation ? metricSourceTag(publishedPopulation) : '')
+                : unavailable;
+            if (usedPublishedPopulation) setMetricSourceTitle(elPop, publishedPopulation);
+            else elPop.title = '';
+        }
         const elGdp = document.getElementById('card-stat-gdp');
-        if (elGdp) elGdp.innerText = numberExists(econ && econ.gdp)
-            ? this.formatGameNumber(Number(econ.gdp)) : unavailable;
+        if (elGdp) {
+            elGdp.innerText = gdpValue !== null
+                ? this.formatGameNumber(gdpValue) + (usedPublishedGdp ? metricSourceTag(publishedGdp) : '')
+                : unavailable;
+            if (usedPublishedGdp) setMetricSourceTitle(elGdp, publishedGdp);
+            else elGdp.title = '';
+        }
 
         const elStab = document.getElementById('card-stat-stability');
         if (elStab) elStab.innerText = countryValue(['government', 'politics', 'society'], [
