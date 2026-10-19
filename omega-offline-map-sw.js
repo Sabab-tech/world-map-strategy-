@@ -14,7 +14,7 @@ const CORE_ASSETS = [
   "./omega_government_banking_runtime_v1.js", "./omega_economic_transmission_runtime_v1.js",
   "./government_banking_rules_v1.json", "./financial_transmission_rules_v1.json",
   "./omega_finance_ministry_runtime_v1.js", "./omega_finance_ministry_v1.css",
-  "./economy_global_profiles_v1.json", "./economy.json", "./population.json", "./finance_runtime_rules_v1.json",
+  "./economy_global_profiles_v1.json", "./country_general_data_registry_v1.json", "./economy.json", "./population.json", "./finance_runtime_rules_v1.json",
   "./finance_sector_registry_v1.json",
   "./omega_macro_stability_runtime_v1.js", "./omega_macro_stability_v1.css",
   "./economy_raw_financial_data_v2.json", "./finance_macro_stability_rules_v1.json",
