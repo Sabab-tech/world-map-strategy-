@@ -61,7 +61,7 @@ const STRATEGIC_PROFILE_FIELDS = [
   'profileVersion', 'sovereigntyScope', 'executiveSummary', 'archetype', 'archetypeSource',
   'diplomacy', 'economy', 'military', 'politics', 'dependencies',
   'overallStrengths', 'overallWeaknesses', 'playerAdvantages', 'playerChallenges',
-  'recommendedStrategy', 'assessmentCriteria', 'dataQuality'
+  'recommendedStrategy', 'strategyOptions', 'assessmentCriteria', 'dataQuality'
 ];
 const STRATEGIC_CORE_METRICS = [
   'gdpCurrentUsd', 'populationTotal', 'gdpPerCapitaUsd', 'gdpGrowthPct', 'inflationPct',
