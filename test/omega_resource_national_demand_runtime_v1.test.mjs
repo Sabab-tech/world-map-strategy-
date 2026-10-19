@@ -81,6 +81,14 @@ function createRuntimeContext(options = {}) {
     dispatchEvent() {},
     CustomEvent: class CustomEvent { constructor(type, init = {}) { this.type = type; this.detail = init.detail; } }
   };
+  if (options.financialTransmission) {
+    const cfg = options.financialTransmission;
+    context.OmegaEconomicTransmissionRuntime = {
+      getHouseholdPurchasingPowerMultiplier: () => cfg.household ?? 1,
+      getImportCostMultiplier: () => cfg.importCost ?? 1,
+      getProducerCostMultiplier: () => cfg.producerCost ?? 1
+    };
+  }
   context.globalThis = context;
   vm.runInNewContext(readFileSync('omega_resource_national_demand_runtime_v1.js', 'utf8'), context, {
     filename: 'omega_resource_national_demand_runtime_v1.js'
@@ -230,4 +238,23 @@ test('opponent procurement is evidence-routed, rate-limited, and never auto-issu
   const playerReport = context.OmegaResourceNationalDemandRuntime.processCountry('BGD', []);
   assert.equal(decisions.length, before, 'player-country automatic procurement is disabled by default');
   assert.equal(playerReport.procurement.length, 0);
+});
+
+
+test('economic transmission reduces resource demand when household purchasing power falls', async () => {
+  const { context, worldState } = createRuntimeContext({
+    financialTransmission: { household: 0.5, importCost: 1.8, producerCost: 1.4 }
+  });
+  await context.OmegaResourceNationalDemandRuntime.prepare();
+  const report = context.OmegaResourceNationalDemandRuntime.processCountry('BGD', []);
+  const row = worldState.resource.BGD.demandRuntime.byResource.iron_ore;
+  assert.equal(report.status, 'ACTIVE');
+  assert.ok(Math.abs(row.demandPerDay - 5) < 1e-8,
+    'household purchasing power should scale the realized daily consumption target');
+  assert.equal(row.financialTransmission.householdPurchasingPowerMultiplier, 0.5);
+  assert.equal(row.financialTransmission.importCostMultiplier, 1.8);
+  assert.equal(row.financialTransmission.producerCostMultiplier, 1.4);
+  assert.equal(row.financialTransmission.source, 'OMEGA_ECONOMIC_TRANSMISSION');
+  assert.ok(worldState.resource.BGD.inventory.iron_ore > 100 - 10 / 24,
+    'lower household purchasing power reduces the actual inventory debit');
 });
