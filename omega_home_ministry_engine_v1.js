@@ -861,7 +861,11 @@
           const upkeepDebit=maintenanceDue>0?debitTreasury(cid,maintenanceDue,'POLICE_FLEET_MAINTENANCE',s):{ok:true,amount:0};
           if(upkeepDebit.ok&&upkeepDebit.financeTransaction)transactions.push(upkeepDebit);
           if(salaryDebit.ok&&upkeepDebit.ok){debit={ok:true,financeTransactions:transactions,amount:due};paid=due;}
-          else {if(salaryDebit.ok&&salaryDebit.financeTransaction)refundTreasury(salaryDebit);debit={ok:false,reason:upkeepDebit.reason||salaryDebit.reason||'FINANCE_TRANSACTION_FAILED'};}
+          else {
+            if(upkeepDebit.ok&&upkeepDebit.financeTransaction)refundTreasury(upkeepDebit);
+            if(salaryDebit.ok&&salaryDebit.financeTransaction)refundTreasury(salaryDebit);
+            debit={ok:false,reason:upkeepDebit.reason||salaryDebit.reason||'FINANCE_TRANSACTION_FAILED'};
+          }
         }else debit={ok:false,reason:!snapshot.available?snapshot.reason||'HOME_BUDGET_UNAVAILABLE':!payrollCheck.ok?payrollCheck.reason:!maintenanceCheck.ok?maintenanceCheck.reason:'HOME_BUDGET_PARENT_EXCEEDED'};
       }else{
         const treasury=getTreasury(cid);
