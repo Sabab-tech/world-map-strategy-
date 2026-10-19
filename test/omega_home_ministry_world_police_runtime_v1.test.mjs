@@ -87,7 +87,13 @@ test('world police baseline covers the full country registry with provenance-sep
   assert.ok(baselineData.countries.every(row => Object.values(row.crime.rateSources).every(source =>
     source === 'MODELED_SIMULATION_BASELINE' || source.startsWith('WORLD_BANK_'))));
   assert.ok(baselineData.countries.every(row => Object.values(row.baselineFleet.countsByTier).reduce((sum,n)=>sum+Number(n),0) === row.baselineFleet.totalUnits));
+  assert.ok(baselineData.countries.every(row => row.fleetProfile?.source === 'MODELED_FROM_COUNTRY_URBANIZATION_OCEAN_ACCESS_AND_ECONOMY'));
+  assert.ok(new Set(baselineData.countries.map(row => JSON.stringify(row.baselineFleet.countsByTier))).size > 180);
+  assert.ok(baselineData.countries.every(row => Object.entries(row.baselineFleet.countsByTier).every(([tier,n]) => Number(tier) <= 8 || Number(n) === 0)));
   const bangladesh = baselineData.countries.find(row => row.iso3 === 'BGD');
+  assert.ok(baselineData.gameRules.fleetSizing.includes('modeled baseline total'));
+  assert.ok(baselineData.gameRules.policeStaffingPlanningTarget.includes('not a claim'));
+  assert.ok(baselineData.gameRules.facilityAndTrainingTargets.includes('strategy-game'));
   assert.ok(bangladesh.population.year >= 2020);
   assert.equal(bangladesh.population.source, 'WORLD_BANK_LATEST_AVAILABLE');
   assert.equal(bangladesh.crime.observedHomicide.source, 'WORLD_BANK_VC.IHR.PSRC.P5');
@@ -122,7 +128,12 @@ test('baseline bootstrap seeds every country once, preserves a country opening f
   const crime = engine.getCrimeSnapshot('BD');
   assert.equal(crime.available, true);
   assert.equal(crime.baselineCrimeIndex, 100);
-  assert.equal(crime.projectedCrimeIndex, 100);
+  assert.ok(crime.projectedCrimeIndex > 100, 'Opening crime projection reflects modeled staffing, fleet, facility and training gaps');
+  assert.ok(crime.policeStaffingCoveragePct < 100);
+  assert.ok(crime.vehicleCoveragePct < 100);
+  assert.ok(crime.facilityReadinessPct < 50);
+  assert.ok(crime.trainingCoveragePct < 50);
+  assert.equal(crime.simulationTargetSource, 'GAMEPLAY_POLICY_TARGET_NOT_OFFICIAL_COUNTRY_STANDARD');
   assert.equal(crime.population, bangladesh.population.value);
   assert.equal(crime.categories.homicide.observed, true);
   assert.equal(crime.categories.theft.observed, false);
@@ -196,4 +207,64 @@ test('insufficient treasury rejects police recruitment and preserves both headco
   assert.equal(financeModel.treasuryBalanceUsd, 1_000);
   financeModel.treasuryBalanceUsd = beforeCash;
   globalThis.Game.state.finance.BD.available = beforeCash;
+});
+
+
+test('country operating profiles and recommended vehicle mix differ by country', () => {
+  engine.bootstrapCountryPoliceBaselines(baselineData.countries);
+  const bangladesh = engine.getCountryOperatingProfile('BD');
+  const unitedStates = engine.getCountryOperatingProfile('US');
+  assert.equal(bangladesh.countryName, 'Bangladesh');
+  assert.equal(unitedStates.countryName, 'United States');
+  assert.notDeepEqual(bangladesh.environmentMixPct, unitedStates.environmentMixPct);
+  assert.ok(Math.abs(Object.values(bangladesh.environmentMixPct).reduce((sum, n) => sum + n, 0) - 100) < 0.11);
+  const recommendations = engine.getCountryVehicleRecommendations('BD', 4);
+  assert.equal(recommendations.length, 4);
+  assert.ok(recommendations.every(row => row.source === 'MODELED_COUNTRY_ENVIRONMENT_SUITABILITY'));
+  assert.notEqual(recommendations[0].fitPct, null);
+});
+
+test('population growth reduces police and vehicle coverage and changes projected incidents and financial exposure', () => {
+  engine.bootstrapCountryPoliceBaselines(baselineData.countries);
+  const originalPopulation = globalThis.Game.state.population.BD.population;
+  const before = engine.getCrimeSnapshot('BD');
+  assert.equal(before.available, true);
+  assert.equal(before.financialImpactSource, 'MODELED_ECONOMIC_EXPOSURE_NOT_POLICE_REVENUE');
+  assert.ok(Number.isFinite(before.estimatedAnnualFinancialImpactUsd));
+  globalThis.Game.state.population.BD.population = originalPopulation * 2;
+  const after = engine.getCrimeSnapshot('BD');
+  globalThis.Game.state.population.BD.population = originalPopulation;
+  assert.equal(after.population, originalPopulation * 2);
+  assert.ok(after.policeStaffingCoveragePct < before.policeStaffingCoveragePct);
+  assert.ok(after.vehicleCoveragePct < before.vehicleCoveragePct);
+  assert.ok(after.projectedCrimeIndex > before.projectedCrimeIndex);
+});
+
+test('interactive rulebook settings persist to the selected country and affect modeled governance quality', () => {
+  engine.bootstrapCountryPoliceBaselines(baselineData.countries);
+  const original = engine.getPoliceRulebook('BD');
+  const beforeScore = engine.getPoliceRulebookQuality('BD');
+  const changed = engine.updatePoliceRulebook(Object.assign({}, original, { bodyCameraMandatory: false }), 'BD');
+  assert.equal(changed.ok, true, JSON.stringify(changed));
+  assert.equal(engine.getPoliceRulebook('BD').bodyCameraMandatory, false);
+  assert.ok(changed.qualityScore < beforeScore);
+  const restored = engine.updatePoliceRulebook(original, 'BD');
+  assert.equal(restored.ok, true, JSON.stringify(restored));
+  assert.equal(engine.getPoliceRulebook('BD').bodyCameraMandatory, true);
+});
+
+
+test('fuel reserve is a country resource and shortages worsen projected crime without inventing a purchase', () => {
+  engine.bootstrapCountryPoliceBaselines(baselineData.countries);
+  const raw = globalThis.Game.state.interior.BD.police;
+  const originalReserve = raw.fuelSupplyDays;
+  const before = engine.getCrimeSnapshot('BD');
+  assert.ok(before.fuel.estimatedDailyFuelCostUsd > 0);
+  assert.equal(before.fuel.status, 'READY');
+  raw.fuelSupplyDays = 0;
+  const shortage = engine.getCrimeSnapshot('BD');
+  assert.equal(shortage.fuel.status, 'CRITICAL');
+  assert.equal(shortage.fuel.reserveDays, 0);
+  assert.ok(shortage.projectedCrimeIndex > before.projectedCrimeIndex);
+  raw.fuelSupplyDays = originalReserve;
 });
