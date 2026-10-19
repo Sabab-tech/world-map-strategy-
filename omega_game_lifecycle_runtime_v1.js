@@ -12,7 +12,7 @@
   var lastSavedSerialized = '';
   var stateSaveTimer = null;
   var saveInProgress = false;
-  var lifecycleTickUnregister = null;
+  var lifecycleFinalizerUnregister = null;
   var lastKnownSpeed = 1;
   var hiddenWasRunning = false;
   var hiddenSnapshotSaved = false;
@@ -522,16 +522,16 @@
     saveNow({ force: true });
   }
 
-  function registerLifecycleParticipant() {
+  function registerLifecycleFinalizer() {
     var sim = runtime();
-    if (!sim || typeof sim.registerTurnParticipant !== 'function') return false;
-    if (lifecycleTickUnregister) {
-      try { lifecycleTickUnregister(); } catch (_) {}
-      lifecycleTickUnregister = null;
+    if (!sim || typeof sim.registerTurnFinalizer !== 'function') return false;
+    if (lifecycleFinalizerUnregister) {
+      try { lifecycleFinalizerUnregister(); } catch (_) {}
+      lifecycleFinalizerUnregister = null;
     }
-    lifecycleTickUnregister = sim.registerTurnParticipant('omega.game-lifecycle.autosave', function () {
-      // Runs last, after the complete awaited sector pipeline. saveNow reconciles HUD data
-      // before snapshotting; do not mutate state again after the durable write.
+    lifecycleFinalizerUnregister = sim.registerTurnFinalizer('omega.game-lifecycle.autosave', function () {
+      // Runs after all sector participants, the publish hook, and the checkpoint phase.
+      // saveNow reconciles HUD data before snapshotting.
       return saveNow({ force: true, committedTurn: true });
     }, { priority: Number.MAX_SAFE_INTEGER });
     return true;
@@ -583,7 +583,7 @@
 
   function init() {
     if (!g.document) return;
-    registerLifecycleParticipant();
+    registerLifecycleFinalizer();
     g.document.addEventListener('click', clickHandler, true);
     g.document.addEventListener('visibilitychange', onVisibilityChange);
     g.document.addEventListener('freeze', onPageExit);
@@ -613,13 +613,13 @@
       restoreOnReady().catch(function () {
         restoreFailed = true;
         setSaveStatus('SAVE RESTORE FAILED · PRESERVED');
-      }).finally(registerLifecycleParticipant);
+      }).finally(registerLifecycleFinalizer);
     });
     updateHud();
     if (g.document.readyState === 'complete' || g.document.readyState === 'interactive') {
       g.setTimeout(function () {
-        if (!restoreFinished) restoreOnReady().catch(function () {}).finally(registerLifecycleParticipant);
-        else registerLifecycleParticipant();
+        if (!restoreFinished) restoreOnReady().catch(function () {}).finally(registerLifecycleFinalizer);
+        else registerLifecycleFinalizer();
       }, 600);
     }
   }
