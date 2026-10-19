@@ -22,6 +22,10 @@ on:
       - 'omega_macro_stability_runtime_v1.js'
       - 'omega_home_ministry_engine_v1.js'
       - 'omega_battlefield_command_runtime_v1.js'
+      - 'omega_resource_endowment_runtime.js'
+      - 'omega_resource_economy_runtime_v2.js'
+      - 'omega_resource_strategic_policy_runtime_v1.js'
+      - 'SIMULATION_PIPELINE.md'
       - 'omega_resource_industrial_network_v1.js'
       - 'resource_industrial_catalog_v1.json'
       - 'test/omega_resource_industrial_network_v1.test.mjs'
@@ -56,6 +60,9 @@ jobs:
           node --check omega_macro_stability_runtime_v1.js
           node --check omega_home_ministry_engine_v1.js
           node --check omega_battlefield_command_runtime_v1.js
+          node --check omega_resource_endowment_runtime.js
+          node --check omega_resource_economy_runtime_v2.js
+          node --check omega_resource_strategic_policy_runtime_v1.js
           node --check omega_resource_industrial_network_v1.js
           node --check omega-offline-map-sw.js
       - name: Test shared daily clock, saves and lifecycle wiring
