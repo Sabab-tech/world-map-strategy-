@@ -132,3 +132,10 @@ The registry refresh imports the UNDP Human Development Report Office's publishe
 The current registry stores the `hdi_2023` series as `humanDevelopmentIndex`, with observation year **2023**, source ID `UNDP_HDR_2025_COMPOSITE_INDICES`, the exact source URL, and status `UNDP_HDR_OBSERVATION`. The year is not relabelled as 2025 merely because the publication is HDR 2025. On refresh failure, a diagnostic status and error are preserved; the builder never manufactures a score or treats missing data as zero. Coverage is recorded in `metadata.externalRefresh.undpHdi` and guarded by tests when an external refresh is requested.
 
 The source publisher reports HDI trends through 2023 in the 2025 HDR tables. The UNDP downloads page lists the time-series dataset and its documentation: https://hdr.undp.org/data-center/documentation-and-downloads.
+
+
+### Corruption Perceptions Index 2025
+
+The data build separately records the **CPI score** (0–100) and the **CPI rank** as two metrics. The imported 2025 results come from the maintained semicolon-delimited CSV mirror `loupeat/ti-cpi`, while each record and the source catalogue also identify Transparency International's original release page: https://www.transparency.org/en/cpi/2025. This is explicitly labelled as a mirror source, not a first-party Transparency International API. The build retains the mirror URL, the publisher URL, source year 2025, and a distinct series label for score versus rank.
+
+CPI covers the countries and territories included in the publisher's 2025 release, not all 249 game identities. For identities outside the published table, values remain unknown with a missing-source status. The CPI score is not swapped with its rank or used as a generic corruption-free percentage.
