@@ -670,6 +670,144 @@ async function main() {
     ],
     countries: rows
   };
+
+  // Store each country's fixed-schema groups as ordered value arrays. This keeps
+  // the all-country registry compact without dropping source values. Field order
+  // and all provenance dictionaries are defined in metadata.recordSchema.
+  const identityFields = Object.keys(rows[0].identity);
+  const factFields = Object.keys(rows[0].generalFacts);
+  const resourceFields = Object.keys(rows[0].naturalResources);
+  const mineralFields = Object.keys(rows[0].naturalResources.mineralResourceBase);
+  const hydrocarbonFields = Object.keys(rows[0].naturalResources.hydrocarbonResourceBase);
+  const energyFields = Object.keys(rows[0].naturalResources.energyResourceBase);
+  const safetyFields = [
+    'baselinePolice', 'observedHomicide', 'crimeRatesPer100k', 'crimeRateSources',
+    'estimatedAnnualIncidents', 'fleetSummary', 'countryContext'
+  ];
+  const localGeographyFields = Object.keys(rows[0].localGeography);
+  const dataStatusFields = Object.keys(rows[0].dataStatus);
+  const statuses = [...new Set(rows.flatMap((row) => METRIC_CATALOGUE.map((field) => row.metricMetadata[field.key]?.status || 'MISSING'))].values()];
+  const sourceIds = [...new Set(rows.flatMap((row) => METRIC_CATALOGUE.map((field) => row.metricMetadata[field.key]?.sourceId || ''))].values()];
+  const sourceNames = [...new Set(rows.flatMap((row) => METRIC_CATALOGUE.map((field) => row.metricMetadata[field.key]?.sourceName || ''))].values()];
+  const methods = [...new Set(rows.flatMap((row) => METRIC_CATALOGUE.map((field) => row.metricMetadata[field.key]?.method || 'NONE'))].values());
+  const codeOf = (list, value) => {
+    if (value === null || value === undefined || value === '') return -1;
+    const code = list.indexOf(value);
+    return code < 0 ? -1 : code;
+  };
+  registry.metadata.recordSchema = {
+    encoding: 'ORDERED_VALUE_ARRAYS_V1',
+    description: 'Each group array follows its listed field names in order. Metric positions follow fieldCatalogue. Provenance integer codes decode with metadata.provenanceEncoding. All source observations are retained; null is never zero.',
+    identityFields,
+    generalFactFields: factFields,
+    factSourceStatusFields: ['restCountries', 'worldBankMetadata'],
+    metricFields: METRIC_CATALOGUE.map((field) => field.key),
+    metricProvenanceFields: ['years', 'statusCodes', 'sourceCodes', 'sourceNameCodes', 'methodCodes', 'sourceUrls', 'notes'],
+    legacySnapshotFields: ['baselineYear', 'rawFinancialRegistry', 'economyGlobalProfile'],
+    rawFinancialRegistryFields: ['baselineYear', 'rawIndicatorValues', 'derivedIndicatorValues'],
+    economyGlobalProfileFields: ['profileStatus', 'economyKey', 'populationKey', 'indicatorValues', 'metricAvailabilityValues', 'provenance'],
+    economyGlobalProfileProvenanceFields: ['economicSource', 'populationSource', 'status', 'derivedIndicators'],
+    naturalResourceFields: resourceFields,
+    mineralResourceFields: mineralFields,
+    hydrocarbonResourceFields: hydrocarbonFields,
+    energyResourceFields: energyFields,
+    publicSafetyFields: safetyFields,
+    policeBaselineFields: ['activePersonnel', 'staffingRatePer100k', 'source'],
+    observedHomicideFields: ['ratePer100k', 'year', 'source', 'verificationStatus'],
+    fleetSummaryFields: ['totalUnits', 'replacementValueUsd', 'annualMaintenanceUsd', 'source'],
+    countryContextFields: ['economyCapacityIndex', 'urbanComplexityIndex', 'roadQualityIndex', 'mountainTerrainIndex', 'coastalLogisticsIndex', 'industrialComplexityIndex', 'remoteCoverageIndex', 'terrainClass', 'contextIndexesAreMeasured', 'environmentMixPct'],
+    environmentMixFields: ENVIRONMENT_MIX_KEYS,
+    crimeFields: CRIME_KEYS,
+    localGeographyFields,
+    economicCenterFields: ['name', 'description'],
+    dataStatusFields
+  };
+  registry.metadata.provenanceEncoding = {
+    statuses,
+    sourceIds,
+    sourceNames,
+    methods,
+    missingCode: -1
+  };
+  registry.metadata.sharedModelNotes = {
+    policePersonnel: 'MODELED_POLICY_BASELINE_NOT_OBSERVED_ROSTER',
+    fleetCountsAndCosts: 'MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY',
+    nonHomicideCrimeRates: 'MODELED_SIMULATION_BASELINE',
+    crimeSourcePolicy: 'Only observedHomicide is marked source-observed in this local baseline. Other crime rates are modeled simulation values unless their source says otherwise.',
+    resourceEmptyLists: 'An empty array means no entries were recorded in this source record; it does not prove the country has no such resource.'
+  };
+  registry.countries = rows.map((row) => ({
+    identity: identityFields.map((key) => row.identity[key]),
+    generalFacts: factFields.map((key) => key === 'factsSourceStatus'
+      ? ['restCountries', 'worldBankMetadata'].map((source) => row.generalFacts.factsSourceStatus?.[source] || 'NOT_IMPORTED')
+      : row.generalFacts[key]),
+    metrics: METRIC_CATALOGUE.map((field) => row.metrics[field.key] ?? null),
+    metricMetadata: {
+      years: METRIC_CATALOGUE.map((field) => finite(row.metricMetadata[field.key]?.year)),
+      statusCodes: METRIC_CATALOGUE.map((field) => codeOf(statuses, row.metricMetadata[field.key]?.status || 'MISSING')),
+      sourceCodes: METRIC_CATALOGUE.map((field) => codeOf(sourceIds, row.metricMetadata[field.key]?.sourceId || '')),
+      sourceNameCodes: METRIC_CATALOGUE.map((field) => codeOf(sourceNames, row.metricMetadata[field.key]?.sourceName || '')),
+      methodCodes: METRIC_CATALOGUE.map((field) => codeOf(methods, row.metricMetadata[field.key]?.method || 'NONE')),
+      sourceUrls: METRIC_CATALOGUE.map((field) => row.metricMetadata[field.key]?.sourceUrl || null),
+      notes: METRIC_CATALOGUE.map((field) => row.metricMetadata[field.key]?.note || null)
+    },
+    legacySnapshots: [
+      row.legacySnapshots.baselineYear,
+      [
+        row.legacySnapshots.rawFinancialRegistry.baselineYear,
+        row.legacySnapshots.rawFinancialRegistry.rawIndicatorValues,
+        row.legacySnapshots.rawFinancialRegistry.derivedIndicatorValues
+      ],
+      [
+        row.legacySnapshots.economyGlobalProfile.profileStatus,
+        row.legacySnapshots.economyGlobalProfile.economyKey,
+        row.legacySnapshots.economyGlobalProfile.populationKey,
+        row.legacySnapshots.economyGlobalProfile.indicatorValues,
+        row.legacySnapshots.economyGlobalProfile.metricAvailabilityValues,
+        [
+          row.legacySnapshots.economyGlobalProfile.provenance.economicSource,
+          row.legacySnapshots.economyGlobalProfile.provenance.populationSource,
+          row.legacySnapshots.economyGlobalProfile.provenance.status,
+          row.legacySnapshots.economyGlobalProfile.provenance.derivedIndicators
+        ]
+      ]
+    ],
+    naturalResources: [
+      row.naturalResources.coverageStatus,
+      row.naturalResources.sourceId,
+      mineralFields.map((key) => row.naturalResources.mineralResourceBase[key]),
+      hydrocarbonFields.map((key) => row.naturalResources.hydrocarbonResourceBase[key]),
+      energyFields.map((key) => row.naturalResources.energyResourceBase[key]),
+      row.naturalResources.administrativeResourceRegions,
+      row.naturalResources.administrativeResourceRegionCount,
+      row.naturalResources.countryNameInResourceSource
+    ],
+    publicSafety: [
+      [row.publicSafety.baselinePolice.activePersonnel, row.publicSafety.baselinePolice.staffingRatePer100k, row.publicSafety.baselinePolice.source],
+      [row.publicSafety.observedHomicide.ratePer100k, row.publicSafety.observedHomicide.year, row.publicSafety.observedHomicide.source, row.publicSafety.observedHomicide.verificationStatus],
+      CRIME_KEYS.map((key) => row.publicSafety.crimeRatesPer100k[key]),
+      CRIME_KEYS.map((key) => row.publicSafety.crimeRateSources[key]),
+      CRIME_KEYS.map((key) => row.publicSafety.estimatedAnnualIncidents[key]),
+      [row.publicSafety.fleetSummary.totalUnits, row.publicSafety.fleetSummary.replacementValueUsd, row.publicSafety.fleetSummary.annualMaintenanceUsd, row.publicSafety.fleetSummary.source],
+      [
+        row.publicSafety.countryContext.economyCapacityIndex, row.publicSafety.countryContext.urbanComplexityIndex,
+        row.publicSafety.countryContext.roadQualityIndex, row.publicSafety.countryContext.mountainTerrainIndex,
+        row.publicSafety.countryContext.coastalLogisticsIndex, row.publicSafety.countryContext.industrialComplexityIndex,
+        row.publicSafety.countryContext.remoteCoverageIndex, row.publicSafety.countryContext.terrainClass,
+        row.publicSafety.countryContext.contextIndexesAreMeasured,
+        ENVIRONMENT_MIX_KEYS.map((key) => row.publicSafety.countryContext.environmentMixPct[key])
+      ]
+    ],
+    localGeography: localGeographyFields.map((key) => key === 'economicCenters'
+      ? (Array.isArray(row.localGeography.economicCenters) ? row.localGeography.economicCenters.map((center) => [center.name, center.description]) : null)
+      : row.localGeography[key]),
+    dataStatus: dataStatusFields.map((key) => key === 'basicFacts'
+      ? ['restCountries', 'worldBankMetadata'].map((source) => row.dataStatus.basicFacts?.[source] || 'NOT_IMPORTED')
+      : key === 'currentSourceRefresh'
+        ? [row.dataStatus.currentSourceRefresh?.requested || false, row.dataStatus.currentSourceRefresh?.worldBankApi || 'NOT_REQUESTED', row.dataStatus.currentSourceRefresh?.restCountriesApi || 'NOT_REQUESTED', row.dataStatus.currentSourceRefresh?.worldBankMetadataApi || 'NOT_REQUESTED']
+        : row.dataStatus[key])
+  }));
+
   writeFileSync(OUTPUT, JSON.stringify(registry, null, 2) + '\n', 'utf8');
   const summary = {
     output: 'country_general_data_registry_v1.json',
