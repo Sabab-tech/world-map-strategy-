@@ -4408,6 +4408,14 @@ body.modal-open .ui-bottom-navigation {
     line-height: 1.5;
     margin: 7px 0 0;
 }
+.sc-profile-archetype-source {
+    color: #7f93aa;
+    font-size: 9px;
+    line-height: 1.5;
+    margin: 4px 0 0;
+    max-width: 720px;
+    overflow-wrap: anywhere;
+}
 .sc-profile-summary {
     font-size: 13px;
     color: #d7e0eb;
