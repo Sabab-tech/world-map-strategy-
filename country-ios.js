@@ -63,6 +63,11 @@ window.CountryIOS = {
         this.activeCountry = (countryName || window.OmegaMinistryViewCountry || (window.Game && window.Game.currentActiveCountry) || window.currentActiveCountry || "USA").toUpperCase();
         window.OmegaMinistryViewCountry = this.activeCountry;
         if (window.OmegaCabinetUI) window.OmegaCabinetUI.activeCountry = this.activeCountry;
+        try {
+            window.dispatchEvent(new CustomEvent('OMEGA_COUNTRY_CONTEXT_CHANGED', {
+                detail: { countryId: this.activeCountry, source: 'CountryIOS.open' }
+            }));
+        } catch (_) {}
         this.activeChapter = initialChapter;
 
         // Hide legacy cabinet window if open to prevent screen overlaps
