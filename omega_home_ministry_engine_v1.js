@@ -289,7 +289,7 @@
     const sim=g.Omega&&g.Omega.Simulation, root=rootState();
     const candidates=[sim&&sim.clock&&sim.clock.simulationTimeMs,sim&&sim.clock&&sim.clock.snapshot&&sim.clock.snapshot().simulationTimeMs,root&&root.simulation&&root.simulation.simulationTimeMs,root&&root.simulationTimeMs];
     for(const v of candidates){const n=num(v);if(n!==null&&n>=0)return n;}
-    const step=num(sim&&sim.clock&&sim.clock.stepDurationMs)||3600000;return turn()*step;
+    const step=num(sim&&sim.clock&&sim.clock.stepDurationMs)||DAY_MS;return turn()*step;
   }
   function interop(){return g.Omega&&g.Omega.MinistryInteroperability||g.OmegaMinistryInteroperability||null;}
   function treasuryRecords(country){
