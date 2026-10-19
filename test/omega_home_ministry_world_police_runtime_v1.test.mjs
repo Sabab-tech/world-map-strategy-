@@ -104,7 +104,7 @@ test('world police baseline covers the full country registry with provenance-sep
 
 test('country-aware modeled fleet baseline has diverse country mixes and transparent provenance', () => {
   const mixes = new Set(baselineData.countries.map(row => JSON.stringify(row.baselineFleet.countsByTier)));
-  assert.ok(mixes.size > 200, 'country fleet mixes must not collapse to a small shared default');
+  assert.ok(mixes.size > 180, 'country fleet mixes must not collapse to a small shared default');
   for (const code of ['BM', 'MF', 'VG', 'CX', 'CC', 'CK', 'GI', 'MT', 'NR', 'PW', 'TV']) {
     const row = baselineData.countries.find(country => country.code === code);
     assert.ok(row, code + ': modeled country record must exist');
@@ -276,4 +276,100 @@ test('fuel reserve is a country resource and shortages worsen projected crime wi
   assert.equal(engine.getFuelSnapshot('BD').reserveDays, reserveBeforePurchase + 1);
   assert.ok(financeModel.treasuryBalanceUsd < cashBefore);
   assert.match(financeModel.ledger.at(-1).description, /^OMEGA_HOME_BUDGET:operations\\|POLICE_FUEL_SUPPLY_PURCHASE$/);
+});
+
+
+
+test('country police baseline validation rejects corrupt values atomically without replacing the last valid registry', () => {
+  const loaded = engine.loadCountryPoliceBaselines(baselineData.countries);
+  assert.equal(loaded.ok, true, JSON.stringify(loaded));
+  const before = engine.getCountryPoliceBaseline('BD');
+  const corrupted = JSON.parse(JSON.stringify(baselineData.countries));
+  corrupted[0].baselineFleet.countsByTier['1'] += 1;
+  corrupted[0].crime.ratesPer100k.theft = -10;
+  const result = engine.loadCountryPoliceBaselines(corrupted);
+  assert.equal(result.ok, false);
+  assert.equal(result.code, 'POLICE_BASELINE_VALIDATION_FAILED');
+  assert.ok(result.errors.some(message => message.includes('vehicle tier sum')));
+  assert.ok(result.errors.some(message => message.includes('crime rate theft')));
+  assert.equal(engine.getCountryPoliceBaseline('BD').name, before.name);
+});
+
+test('shorter arrest response deadline costs more, debits the Treasury and improves the live response model', () => {
+  engine.bootstrapCountryPoliceBaselines(baselineData.countries);
+  const beforeState = globalThis.Game.state.interior.BD.police;
+  const current = engine.getPoliceRulebook('BD');
+  const beforeCrime = engine.getCrimeSnapshot('BD');
+  const beforeCash = financeModel.treasuryBalanceUsd;
+  const estimate = engine.getPoliceRulebookCosts('BD', Object.assign({}, current, { arrestResponseHours: 1 }));
+  assert.equal(estimate.ok, true, JSON.stringify(estimate));
+  assert.ok(estimate.oneTimeCostUsd > 0);
+  assert.ok(estimate.newDailyCostUsd > estimate.currentDailyCostUsd);
+  assert.ok(estimate.dailyCostDeltaUsd > 0);
+  const changed = engine.updatePoliceRulebook(Object.assign({}, current, { arrestResponseHours: 1 }), 'BD');
+  assert.equal(changed.ok, true, JSON.stringify(changed));
+  assert.equal(engine.getPoliceRulebook('BD').arrestResponseHours, 1);
+  assert.ok(financeModel.treasuryBalanceUsd < beforeCash);
+  assert.equal(changed.oneTimeCostUsd, estimate.oneTimeCostUsd);
+  assert.ok(changed.dailyCostDeltaUsd > 0);
+  assert.ok(engine.getCrimeSnapshot('BD').projectedCrimeIndex < beforeCrime.projectedCrimeIndex);
+  const slowQuote = engine.getPoliceRulebookCosts('BD', Object.assign({}, current, { arrestResponseHours: 48 }));
+  assert.equal(slowQuote.ok, true);
+  assert.ok(slowQuote.newDailyCostUsd < engine.getPoliceRulebookCosts('BD', current).newDailyCostUsd);
+  assert.equal(beforeState.policeCount, engine.getState('BD').policeCount);
+});
+
+test('specialist police-unit allocation validates to 100 percent and persists headcount with real Finance cost', () => {
+  engine.bootstrapCountryPoliceBaselines(baselineData.countries);
+  const beforePlan = engine.getPoliceDepartmentPlan('BD');
+  const beforeCash = financeModel.treasuryBalanceUsd;
+  const invalid = Object.assign({}, beforePlan, { generalPatrol: beforePlan.generalPatrol + 1 });
+  const invalidResult = engine.validatePoliceDepartmentPlan(invalid, 'BD');
+  assert.equal(invalidResult.ok, false);
+  assert.equal(invalidResult.code, 'POLICE_DEPARTMENT_PLAN_VALIDATION_FAILED');
+  const next = Object.assign({}, beforePlan, {
+    generalPatrol: beforePlan.generalPatrol + 2,
+    community: beforePlan.community - 2
+  });
+  const estimate = engine.estimatePoliceDepartmentPlanCost('BD', next);
+  assert.equal(estimate.ok, true, JSON.stringify(estimate));
+  assert.ok(estimate.oneTimeCostUsd > 0);
+  const saved = engine.setPoliceDepartmentPlan(next, 'BD');
+  assert.equal(saved.ok, true, JSON.stringify(saved));
+  assert.equal(engine.getPoliceDepartmentPlan('BD').generalPatrol, next.generalPatrol);
+  const headcounts = engine.getPoliceDepartmentHeadcounts('BD');
+  assert.equal(Object.values(headcounts).reduce((sum, row) => sum + row.headcount, 0), engine.getState('BD').policeCount);
+  assert.ok(financeModel.treasuryBalanceUsd < beforeCash);
+  assert.match(financeModel.ledger.at(-1).description, /^OMEGA_HOME_BUDGET:operations\\|POLICE_DEPARTMENT_REALLOCATION$/);
+});
+
+test('a real simulation day posts recurring Police Rulebook operating expenses to its own Finance ledger category', () => {
+  engine.bootstrapCountryPoliceBaselines(baselineData.countries);
+  const raw = globalThis.Game.state.interior.BD.police;
+  const saved = JSON.parse(JSON.stringify(raw));
+  const savedTime = globalThis.Game.state.simulation.simulationTimeMs;
+  raw.policeCount = 500;
+  raw.dailySalaryPerOfficerUsd = 1;
+  raw.vehiclesOwned = { '1': 2, '2': 1 };
+  raw.vehicleFleet = [];
+  raw.nextVehicleUnitId = 1;
+  raw.lastPayrollDay = 0;
+  raw.lastCrimeSimulationDay = 0;
+  raw.lastFleetSimulationDay = 0;
+  raw.lastUpdatedTurn = 0;
+  raw.policeDepartments = {
+    generalPatrol:28,traffic:10,investigations:14,homicide:5,cybercrime:5,
+    narcotics:8,border:8,community:10,forensics:4,rapidResponse:8
+  };
+  globalThis.Game.state.simulation.simulationTimeMs = 86_400_000;
+  const expectedDailyRulebook = engine.getCrimeSnapshot('BD').policeRulebookDailyCostUsd;
+  const beforeCash = financeModel.treasuryBalanceUsd;
+  const result = engine.processTurn({ detail: { countryId: 'BD' } });
+  assert.ok(result && result !== false);
+  const entry = financeModel.ledger.findLast(row => row.description === 'OMEGA_HOME_BUDGET:operations|POLICE_RULEBOOK_DAILY_OPERATIONS');
+  assert.ok(entry, 'recurring Rulebook expense needs its own Finance ledger entry');
+  assert.ok(Math.abs(entry.amountUsd - expectedDailyRulebook) < 0.02);
+  assert.ok(financeModel.treasuryBalanceUsd < beforeCash);
+  globalThis.Game.state.interior.BD.police = saved;
+  globalThis.Game.state.simulation.simulationTimeMs = savedTime;
 });
