@@ -141,6 +141,9 @@ test('BDT to NGN transfer settles through USD once and duplicate keys do not deb
   const second = r.bank.transfer(input);
   assert.equal(second.ok, true);
   assert.equal(second.duplicate, true);
+  const changedPayload = r.bank.transfer({ ...input, amount: 4_000 });
+  assert.equal(changedPayload.ok, false);
+  assert.equal(changedPayload.code, 'IDEMPOTENCY_KEY_PAYLOAD_MISMATCH');
   assert.ok(Math.abs(r.bank.getCountryAccount('BGD').treasuryBalanceUsd - (beforeBuyer - 50)) < 1e-7);
   assert.ok(Math.abs(r.bank.getCountryAccount('NGA').treasuryBalanceUsd - (beforeSeller + 49.925)) < 1e-7);
   assert.ok(Math.abs(r.bank.getCountryAccount('BGD').accountPortfolioUsd - r.bank.getCountryAccount('BGD').treasuryBalanceUsd) < 0.01);
@@ -195,6 +198,14 @@ test('trade two-phase clearing debits buyer gross, returns tariff, credits selle
   assert.ok(Math.abs(r.bank.getCountryAccount('BGD').accountPortfolioUsd - 900) < 0.01);
   assert.ok(Math.abs(r.bank.getCountryAccount('NGA').accountPortfolioUsd - 600) < 0.01);
   assert.equal(r.bank.commitTradeSettlement({ settlementId: 'TRADE-BDT-NGN-1' }).duplicate, true);
+  const changedQuote = r.bank.prepareTradeSettlement({
+    authorization: 'OMEGA_GLOBAL_TRADE', settlementId: 'TRADE-BDT-NGN-1', requestId: 'REQ-1',
+    buyerCountryId: 'BGD', sellerCountryId: 'NGA', resourceId: 'iron_ore',
+    buyerCurrency: 'BDT', sellerCurrency: 'NGN', buyerTotal: 10_000, sellerTotal: 120_000,
+    paymentDelayTurns: 0, importTariffPct: 2.5
+  });
+  assert.equal(changedQuote.ok, false);
+  assert.equal(changedQuote.code, 'SETTLEMENT_ID_PAYLOAD_MISMATCH');
   assert.equal(r.bank.getState().ledger.filter(x => x.transactionId === 'TRADE-BDT-NGN-1' && x.status === 'SETTLED').length, 1);
 });
 
