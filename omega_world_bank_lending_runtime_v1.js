@@ -23,11 +23,12 @@
     { key: 'reservesUsd', code: 'FI.RES.TOTL.CD', label: 'Total reserves including gold (current US$)' }
   ]);
   const SCORE_PARTS = Object.freeze([
-    { key: 'debt', weight: 0.35 },
-    { key: 'inflation', weight: 0.20 },
-    { key: 'growth', weight: 0.20 },
-    { key: 'reserves', weight: 0.15 },
-    { key: 'fiscal', weight: 0.10 }
+    { key: 'debt', weight: 0.315 },
+    { key: 'inflation', weight: 0.18 },
+    { key: 'growth', weight: 0.18 },
+    { key: 'reserves', weight: 0.135 },
+    { key: 'fiscal', weight: 0.09 },
+    { key: 'history', weight: 0.10 }
   ]);
   const TERMS = Object.freeze({
     IDA: { label: 'IDA-style concessional facility', rate: 1.25, years: 35, grace: 5 },
@@ -254,6 +255,25 @@
       referenceUpdatedAt: store(true).reference.refreshedAt || null
     };
   }
+  function creditHistory(value) {
+    const profile = resolveProfile(value);
+    if (!profile) return { score: null, contracts: 0, repaidContracts: 0, arrearsContracts: 0, arrearsUsd: 0 };
+    const rows = (store(true).loansByCountry[codeOf(profile)] || []).filter(loan => loan && loan.loanId);
+    if (!rows.length) return { score: null, contracts: 0, repaidContracts: 0, arrearsContracts: 0, arrearsUsd: 0 };
+    const repaid = rows.filter(loan => loan.status === 'REPAID').length;
+    const arrearsLoans = rows.filter(loan => loan.status === 'ARREARS' || (finite(loan.arrearsUsd) || 0) > 0.01).length;
+    const totalOriginal = rows.reduce((sum, loan) => sum + Math.max(0, finite(loan.originalPrincipalUsd) || 0), 0);
+    const arrears = rows.reduce((sum, loan) => sum + Math.max(0, finite(loan.arrearsUsd) || 0), 0);
+    const arrearsRatio = totalOriginal > 0 ? arrears / totalOriginal : 0;
+    const defaultRatio = arrearsLoans / rows.length;
+    const repaymentRatio = repaid / rows.length;
+    const score = clamp(90 - Math.min(60, arrearsRatio * 300) - Math.min(35, defaultRatio * 35)
+      + repaymentRatio * 10, 0, 100);
+    return {
+      score: round(score, 1), contracts: rows.length, repaidContracts: repaid,
+      arrearsContracts: arrearsLoans, arrearsUsd: round(arrears, 2) || 0
+    };
+  }
   function scoreCountry(value) {
     const facts = countryFacts(value);
     if (!facts) return null;
@@ -273,6 +293,8 @@
     if (facts.fiscalBalanceToGdpPct !== null) {
       components.fiscal = clamp(50 + facts.fiscalBalanceToGdpPct * 2, 0, 100);
     }
+    const history = creditHistory(facts.countryCode);
+    if (history.score !== null) components.history = history.score;
     let scoreTotal = 0, usedWeight = 0;
     SCORE_PARTS.forEach(part => {
       if (finite(components[part.key]) === null) return;
@@ -288,6 +310,8 @@
     if (confidence < 60) reasons.push('Too few credit indicators are available for a reliable lending decision.');
     if (facts.debtToGdpPct !== null && facts.debtToGdpPct >= 250) reasons.push('Debt / GDP is at or above the game model’s 250% lending guardrail.');
     if (facts.inflationPct !== null && facts.inflationPct >= 30) reasons.push('Inflation stress requires additional stabilization before standard lending.');
+    if (history.arrearsContracts > 0) reasons.push('Prior simulated loan record contains overdue payments; the history component lowers the next credit score.');
+    if (history.contracts === 0) reasons.push('No prior simulated World Bank loan contract exists; credit history is not penalized, but this component is unavailable.');
     if (program === 'NONE') reasons.push('World Bank country metadata lists no standard lending window.');
     const criticalDataMissing = facts.gdpUsd === null || facts.gdpUsd <= 0 || facts.debtToGdpPct === null;
     let decision = 'DATA_INSUFFICIENT';
@@ -327,6 +351,7 @@
       incomeLevel: facts.incomeLevel, region: facts.region, lendingType: facts.lendingType,
       referenceStatus: facts.referenceStatus, referenceUpdatedAt: facts.referenceUpdatedAt,
       sourceYears: facts.sourceYears, reasons: reasons,
+      creditHistory: clone(history),
       assessedTurn: currentTurn(), assessedAt: new Date().toISOString()
     };
     return result;
@@ -1058,6 +1083,7 @@
     init: init,
     diagnostics: diagnostics,
     assessCountry: scoreCountry,
+    getCreditHistory: creditHistory,
     evaluateAll: evaluateAll,
     refreshWorldBankData: refreshWorldBankData,
     requestLoan: requestLoan,
