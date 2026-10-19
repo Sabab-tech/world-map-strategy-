@@ -428,7 +428,11 @@
     const type=String(action.type||'').toLowerCase().replace(/_/g,'-');
     const p=resolveProfile(action.countryId||action.countryCode||selectedCountryCode)||playerCountryProfile();
     if(!p)return {ok:false,code:'COUNTRY_NOT_FOUND',message:'Country profile is not available.'};
-    if(p.countryCode!==getPlayerCode())return {ok:false,code:'PLAYER_COUNTRY_SCOPE_VIOLATION',message:'Finance commands are restricted to the active player country.'};
+    const simulationAuthorized=action.__omegaSimulationPipelineAuthority===true&&
+      global.__OMEGA_SIMULATION_PIPELINE_ACTIVE__===true&&
+      !!(global.Omega&&global.Omega.Simulation&&global.Omega.Simulation.stepInProgress);
+    if(simulationAuthorized&&type!=='spend-budget')return{ok:false,code:'SIMULATION_ACTION_NOT_ALLOWED'};
+    if(p.countryCode!==getPlayerCode()&&!simulationAuthorized)return {ok:false,code:'PLAYER_COUNTRY_SCOPE_VIOLATION',message:'Finance commands are restricted to the active player country.'};
     if(!isPlayable(p))return {ok:false,code:'ECONOMIC_BASELINE_UNAVAILABLE',message:'No GDP baseline exists. Fiscal actions are disabled rather than fabricated.'};
     const root=rootState(),fm=ensureFinanceState(p,root);
     reconcileExternalTreasury(p,fm,root);
@@ -926,7 +930,21 @@
     dataUnavailable:profiles.filter(p=>p.profileStatus==='UNAVAILABLE').length,playerCountryCode:getPlayerCode(),simulationTurn:currentTurn(),
     activeCountryCode:selectedCountryCode,hasAuthoritativeEconomy:isObject(root.economy),hasFinanceState:isObject(root.finance),
     transactionTypes:['set-tax-rate','set-interest-rate','set-allocation','spend-budget','borrow']};}
+  function applySimulationAction(action){
+    const type=String(action&&action.type||'').toLowerCase().replace(/_/g,'-');
+    const department=String(action&&action.department||'').toLowerCase().replace(/[\\s-]+/g,'_');
+    const description=String(action&&action.description||'');
+    const inTurn=global.__OMEGA_SIMULATION_PIPELINE_ACTIVE__===true&&
+      !!(global.Omega&&global.Omega.Simulation&&global.Omega.Simulation.stepInProgress);
+    if(!inTurn)return{ok:false,code:'SIMULATION_TURN_AUTHORITY_REQUIRED'};
+    if(type!=='spend-budget')return{ok:false,code:'SIMULATION_ACTION_NOT_ALLOWED'};
+    const homeExpense=department==='interior'&&description.startsWith('OMEGA_HOME_BUDGET:');
+    const militaryExpense=department==='defense'&&description.startsWith('OMEGA_MILITARY_BUDGET:');
+    if(!homeExpense&&!militaryExpense)return{ok:false,code:'SIMULATION_EXPENSE_AUTHORITY_NOT_ALLOWED'};
+    return applyAction(Object.assign({},action,{__omegaSimulationPipelineAuthority:true}));
+  }
   const api={VERSION,init,diagnostics,resolveCountry:resolveProfile,getProfiles:()=>profiles.slice(),getPlayerCountry:playerCountryProfile,
+     applySimulationAction,
     getIndicators:function(v){const p=resolveProfile(v)||playerCountryProfile();return p?worldSnapshot().byCode.get(p.countryCode)||null:null;},
     getFinanceState:function(v){const p=resolveProfile(v)||playerCountryProfile();if(!p)return null;const root=rootState(),fm=ensureFinanceState(p,root);if(reconcileExternalTreasury(p,fm,root))syncEconomyRecord(p,fm,root);return clone(fm);},
     selectCountry:function(v){
