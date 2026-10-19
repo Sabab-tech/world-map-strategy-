@@ -235,8 +235,26 @@ function runtimeCountryIds(){
   return [...ids];
 }
 function siteById(siteId){
-  const s=String(siteId||'').trim();
-  return masterSites().find(x=>String(x?.siteId||'')===s)||null;
+  const key=String(siteId||'').trim();
+  const site=masterSites().find(x=>String(x?.siteId||'')===key)||null;
+  if(!site)return null;
+  const cid=canonicalCountry(site.countryId||site.sourceSiteRecord?.countryCode);
+  const assets=Array.isArray(state()?.resource?.[cid]?.mineAssets)?state().resource[cid].mineAssets:[];
+  const commissioned=assets.filter(x=>String(x?.siteId||'')===key&&String(x?.status||'').toUpperCase()==='OPERATIONAL');
+  if(!commissioned.length)return site;
+  const latest=commissioned[commissioned.length-1];
+  const sourceOperation=site.operation||site.sourceSiteRecord?.operation||{};
+  const sourceStatus=String(sourceOperation.realWorldStatus||sourceOperation.status||site.sourceSiteRecord?.status||'UNOBSERVED');
+  return{
+    ...clone(site),
+    operation:{...clone(sourceOperation),realWorldStatus:sourceStatus,status:'SIMULATED_PLAYER_MINE_OPERATIONAL',
+      operationalStatus:'PLAYER_COMMISSIONED',commercialExtraction:true,
+      statusAuthority:'SIMULATED_PLAYER_MINE_ASSET_OVERRIDE',commissionedByProjectId:latest.buildProjectId||null},
+    sourceSiteRecord:{...clone(site.sourceSiteRecord||{}),realWorldStatus:sourceStatus,status:'SIMULATED_PLAYER_MINE_OPERATIONAL',commercialExtraction:true},
+    real:{...clone(site.real||{}),operationStatus:'SIMULATED_PLAYER_MINE_OPERATIONAL'},
+    runtime:{...clone(site.runtime||{}),playerMineAssetId:latest.mineId||latest.id||null,
+      playerMineAssetCount:commissioned.length,commissioningAuthority:'GAME_STATE_RESOURCE_MINE_ASSETS'}
+  };
 }
 
 function normalizedEventPayload(evt){
@@ -278,7 +296,8 @@ function resolveSiteForExtraction(cid,p,batch){
       }
     }
   }
-  let site=siteId?byCountry.find(x=>String(x.siteId)===siteId):null;
+  let site=siteId?siteById(siteId):null;
+  if(site&&canonicalCountry(site.countryId)!==cid)site=null;
   if(!site&&siteId){
     const ref=(Array.isArray(rs.mineSiteReferences)?rs.mineSiteReferences:[]).find(x=>String(x.siteReferenceKey||x.siteId||'')===siteId);
     if(ref)site={siteId,countryId:cid,siteName:String(ref.siteName||ref.name||siteId),siteType:String(ref.siteType||ref.assetType||'RESOURCE_SITE'),
@@ -1004,6 +1023,213 @@ function advanceShipments(c){
   n.deliveries=n.deliveries.slice(-MAX_SHIPMENTS);
   return{status:'ADVANCED',countryId:cid,turn:turn(),delivered:delivered.length,shipments:delivered};
 }
+const MINE_CONSTRUCTION_PROFILES=Object.freeze({
+  OPEN_PIT:{costUsd:48000000,durationDays:180,workersRequired:520,materials:{iron_ore:8500,copper:700,limestone:14000,coal:3200,crude_oil:1100,construction_aggregate:21000}},
+  UNDERGROUND:{costUsd:92000000,durationDays:300,workersRequired:900,materials:{iron_ore:14000,copper:1150,limestone:22000,coal:6100,crude_oil:1900,construction_aggregate:26000}},
+  TAILINGS:{costUsd:18500000,durationDays:100,workersRequired:190,materials:{iron_ore:2400,copper:180,limestone:5200,coal:1150,crude_oil:420,construction_aggregate:7200}},
+  BRINE:{costUsd:33500000,durationDays:190,workersRequired:370,materials:{iron_ore:4200,copper:950,limestone:7800,coal:2400,crude_oil:1500,construction_aggregate:12500}},
+  PROCESSING:{costUsd:39000000,durationDays:210,workersRequired:410,materials:{iron_ore:6400,copper:1450,limestone:11500,coal:3500,crude_oil:1650,construction_aggregate:16500}}
+});
+const MINE_RESOURCE_COMPLEXITY={diamond:1.28,lithium:1.24,uranium:1.32,rare_earth:1.32,niobium:1.30,platinum:1.25,ruby:1.20,gold:1.12,tungsten:1.12,copper:1.10,tin:1.08};
+function mineConstructionProfile(site){
+  const siteType=String(site?.siteType||site?.identity?.siteType||site?.sourceSiteRecord?.siteType||'').toUpperCase();
+  const method=String(site?.operation?.extractionMethod||site?.sourceSiteRecord?.extractionMethod||'').toUpperCase();
+  if(/TAILINGS|REPROCESSING/.test(siteType+' '+method))return' TAILINGS'.trim();
+  if(/BRINE|SALT|SODA_ASH/.test(siteType+' '+method))return'BRINE';
+  if(/PROCESSING|MILL|PLANT/.test(siteType))return'PROCESSING';
+  if(/UNDERGROUND|LONGWALL|BLOCK_CAVING|ROOM_PILLAR/.test(siteType+' '+method))return'UNDERGROUND';
+  return'OPEN_PIT';
+}
+function countryFinanceBucket(c){
+  const finance=state()?.finance||{},cid=canonicalCountry(c);
+  const key=Object.keys(finance).find(k=>canonicalCountry(k)===cid);
+  if(key&&finance[key]&&typeof finance[key]==='object')return{key,bucket:finance[key],field:'available',value:num(finance[key].available)};
+  const economy=state()?.economy||{},ekey=Object.keys(economy).find(k=>canonicalCountry(k)===cid);
+  if(ekey&&economy[ekey]&&num(economy[ekey].treasury)!==null)
+    return{key:ekey,bucket:economy[ekey],field:'treasury',value:num(economy[ekey].treasury),fallback:true};
+  return{key:null,bucket:null,field:null,value:null};
+}
+function countryStockKey(obj,rid){
+  if(!obj||typeof obj!=='object')return null;
+  if(Object.prototype.hasOwnProperty.call(obj,rid))return rid;
+  return Object.keys(obj).find(k=>tok(k)===tok(rid))||null;
+}
+function mineConstructionStock(c,rid){
+  const rs=state()?.resource?.[canonicalCountry(c)]||{},inv=rs.inventory||{},warehouse=rs.warehouse||{};
+  const invKey=countryStockKey(inv,rid),warehouseRows=warehouse.availableByResource||{},warehouseKey=countryStockKey(warehouseRows,rid);
+  const invAmount=invKey===null?null:Math.max(0,num(inv[invKey])||0);
+  const warehouseAmount=warehouseKey===null?null:Math.max(0,num(warehouseRows[warehouseKey])||0);
+  const reserved=Math.max(0,num(warehouse.reservedByResource?.[warehouseKey||rid])||0);
+  const warehouseFree=warehouseAmount===null?null:Math.max(0,warehouseAmount-reserved);
+  let available=null,authority='UNOBSERVED';
+  if(invAmount!==null&&warehouseFree!==null){available=Math.min(invAmount,warehouseFree);authority='INVENTORY_AND_RAW_WAREHOUSE_LEDGER';}
+  else if(warehouseFree!==null){available=warehouseFree;authority='RAW_WAREHOUSE_LEDGER';}
+  else if(invAmount!==null){available=invAmount;authority='LEGACY_INVENTORY_AGGREGATE_ONLY';}
+  return{resourceId:rid,inventoryKey:invKey,warehouseKey,inventoryAmount:invAmount,warehouseAvailable:warehouseFree,reserved,available:available===null?0:available,authority};
+}
+function quoteMineProject(input={}){
+  const cid=canonicalCountry(input.countryId),siteId=String(input.siteId||'').trim(),rid=tok(input.resourceId||'');
+  if(!cid||!/^[A-Z]{3}$/.test(cid))return{status:'BLOCKED',reason:'VALID_ISO3_COUNTRY_REQUIRED'};
+  if(!siteId)return{status:'BLOCKED',reason:'MINE_SITE_REQUIRED'};
+  const site=siteById(siteId);
+  if(!site)return{status:'BLOCKED',reason:'SITE_NOT_FOUND',countryId:cid,siteId};
+  const siteCountry=canonicalCountry(site.countryId||site.sourceSiteRecord?.countryCode);
+  if(siteCountry!==cid)return{status:'BLOCKED',reason:'COUNTRY_SITE_BOUNDARY_VIOLATION',countryId:cid,siteId,siteCountry};
+  const source=site.sourceSiteRecord||{},actualResource=tok(site.real?.resourceId||source.resourceId||source.resourceTypeId||site.identity?.resourceTypeId);
+  if(!actualResource)return{status:'BLOCKED',reason:'SITE_RESOURCE_ID_UNAVAILABLE',countryId:cid,siteId};
+  if(rid&&rid!==actualResource)return{status:'BLOCKED',reason:'SITE_RESOURCE_ID_MISMATCH',countryId:cid,siteId,requestedResourceId:rid,siteResourceId:actualResource};
+  if(site.map?.markerEligible===false||site.runtime?.aliasOfSiteId)return{status:'BLOCKED',reason:'SITE_NOT_ELIGIBLE_FOR_PLAYER_CONSTRUCTION',countryId:cid,siteId};
+  if(String(site.operation?.status||source.status||'').toUpperCase()==='NOT_APPLICABLE')
+    return{status:'BLOCKED',reason:'SITE_NOT_APPLICABLE',countryId:cid,siteId};
+  const resourceId=actualResource,buildClass=mineConstructionProfile(site),rule=MINE_CONSTRUCTION_PROFILES[buildClass]||MINE_CONSTRUCTION_PROFILES.OPEN_PIT;
+  const complexity=MINE_RESOURCE_COMPLEXITY[resourceId]||1;
+  const costUsd=Math.ceil(rule.costUsd*complexity/1000)*1000;
+  const durationDays=Math.ceil(rule.durationDays*(resourceId==='uranium'||resourceId==='rare_earth'?1.15:1));
+  const workersRequired=Math.ceil(rule.workersRequired*(resourceId==='uranium'||resourceId==='rare_earth'||resourceId==='niobium'?1.12:1));
+  const treasury=countryFinanceBucket(cid),countryResource=state()?.resource?.[cid]||{};
+  const materials=Object.entries(rule.materials).map(([materialId,quantity])=>{
+    const stock=mineConstructionStock(cid,materialId),required=Math.ceil(quantity*complexity);
+    return{resourceId:materialId,required,available:stock.available,shortfall:Math.max(0,required-stock.available),unit:'TONNES',sufficient:stock.available+1e-9>=required,stockAuthority:stock.authority};
+  });
+  const assignedWorkers=num(input.assignedWorkers);
+  const completedAssets=(Array.isArray(countryResource.mineAssets)?countryResource.mineAssets:[]).filter(x=>String(x?.siteId||'')===siteId&&String(x?.status||'').toUpperCase()==='OPERATIONAL').length;
+  const activeProject=(Array.isArray(countryResource.industrialNetwork?.projects)?countryResource.industrialNetwork.projects:[])
+    .find(p=>p.projectType==='MINE_CONSTRUCTION'&&String(p.siteId||'')===siteId&&p.status==='UNDER_CONSTRUCTION');
+  return{
+    status:'QUOTED',contract:'OMEGA_MINE_CONSTRUCTION_QUOTE_V1',countryId:cid,siteId,siteName:site.siteName||siteId,
+    siteCountry,resourceId,resourceName:site.identity?.resourceName||resourceId.replace(/[_-]+/g,' '),
+    sourceStatus:site.operation?.realWorldStatus||site.operation?.status||source.status||'UNOBSERVED',
+    buildClass,projectType:'MINE_CONSTRUCTION',costUsd,durationDays,estimatedTurns:Math.ceil(durationDays/daysPerTurn()),
+    workersRequired,assignedWorkers,staffingReady:assignedWorkers!==null&&assignedWorkers>=workersRequired,
+    materials,materialsReady:materials.every(x=>x.sufficient),treasury:{available:treasury.value,required:costUsd,
+      sufficient:treasury.value!==null&&treasury.value+1e-9>=costUsd,source:treasury.field?('state.'+(treasury.field==='available'?'finance':'economy')+'.'+treasury.key+'.'+treasury.field):'UNAVAILABLE'},
+    commissioningReady:!activeProject,activeProjectId:activeProject?.projectId||null,commissionedAssetCount:completedAssets,
+    forecastCapacityMultiplier:Math.min(1.60,1.0+0.12*(completedAssets+1)),
+    assumptions:{capexAuthority:'SIMULATED_GAMEPLAY_RULES_NOT_A_REAL_VENDOR_QUOTE',materialRequirementsAuthority:'SIMULATED_CONSTRUCTION_BILL_OF_MATERIALS_V1',
+      workforceAuthority:'PLAYER_CONFIRMED_CONSTRUCTION_STAFFING_COMMITMENT',reserveAuthority:site.quantitative?.reserve?.status||site.reserve?.status||'UNOBSERVED',
+      coordinateAuthority:site.location?.coordinatePrecision||site.location?.coordinateStatus||'UNOBSERVED',
+      realWorldStatusIsNotChangedByPlayerCommissioning:true},
+    ready:treasury.value!==null&&treasury.value+1e-9>=costUsd&&materials.every(x=>x.sufficient)&&assignedWorkers!==null&&assignedWorkers>=workersRequired&&!activeProject
+  };
+}
+function consumeMineConstructionMaterial(c,material,quantity,projectId){
+  const cid=canonicalCountry(c),rs=resourceState(cid),stock=mineConstructionStock(cid,material),inv=rs.inventory||(rs.inventory={});
+  const warehouse=rs.warehouse||(rs.warehouse={warehouseId:'WH-'+cid+'-RAW',countryId:cid,type:'SOVEREIGN_RAW_MATERIAL_WAREHOUSE',availableByResource:{},reservedByResource:{}});
+  warehouse.availableByResource=warehouse.availableByResource||{};warehouse.reservedByResource=warehouse.reservedByResource||{};
+  const batches=Array.isArray(rs.batches)?rs.batches:[],lots=rs.inventoryLots&&typeof rs.inventoryLots==='object'?rs.inventoryLots:{};
+  let remaining=quantity;const allocations=[];
+  for(const batch of batches){
+    if(remaining<=1e-9)break;
+    if(tok(batch?.resourceId||batch?.materialIdentity)!==tok(material))continue;
+    if(['FACTORY_INPUT','CONSUMED','TRANSFERRED_TO_FACTORY','SOLD','EXHAUSTED'].includes(String(batch?.stage||batch?.status||'').toUpperCase()))continue;
+    const prior=Math.max(0,num(batch.remainingQuantity!=null?batch.remainingQuantity:batch.quantity)||0);
+    if(prior<=1e-9)continue;
+    const take=Math.min(prior,remaining);
+    batch.remainingQuantity=Math.max(0,prior-take);
+    batch.status=batch.remainingQuantity>1e-9?'PARTIALLY_CONSUMED_MINE_CONSTRUCTION':'CONSUMED_MINE_CONSTRUCTION';
+    batch.lastMovementType='MINE_CONSTRUCTION_MATERIAL_CONSUMPTION';batch.lastMovementTurn=turn();
+    const lot=lots[batch.batchId];
+    if(lot){lot.remainingQuantity=batch.remainingQuantity;lot.status=batch.remainingQuantity>1e-9?'PARTIALLY_CONSUMED_MINE_CONSTRUCTION':'CONSUMED_MINE_CONSTRUCTION';
+      lot.lastMovementType='MINE_CONSTRUCTION_MATERIAL_CONSUMPTION';lot.lastMovementTurn=turn();lots[batch.batchId]=lot;}
+    allocations.push({resourceId:material,sourceBatchId:batch.batchId,quantity:take,unit:batch.unit||'TONNES',authority:batch.provenance?.sourceAuthority||batch.provenance?.authority||'UNOBSERVED'});
+    remaining-=take;
+  }
+  if(remaining>1e-9)allocations.push({resourceId:material,sourceBatchId:null,quantity:remaining,unit:'TONNES',authority:stock.authority==='LEGACY_INVENTORY_AGGREGATE_ONLY'?'LEGACY_AGGREGATE_STOCK':'UNTRACKED_WAREHOUSE_BALANCE'});
+  const invKey=stock.inventoryKey||material,warehouseKey=stock.warehouseKey||material;
+  if(stock.inventoryAmount!==null)inv[invKey]=Math.max(0,stock.inventoryAmount-quantity);
+  else inv[invKey]=Math.max(0,Number(inv[invKey])||0);
+  if(stock.warehouseAvailable!==null)warehouse.availableByResource[warehouseKey]=Math.max(0,stock.warehouseAvailable-quantity);
+  else warehouse.availableByResource[warehouseKey]=Math.max(0,(num(warehouse.availableByResource[warehouseKey])||0)-quantity);
+  rs.inventory=inv;rs.warehouse=warehouse;rs.batches=batches;rs.inventoryLots=lots;
+  return allocations;
+}
+function startMineProject(input={}){
+  const cid=canonicalCountry(input.countryId),siteId=String(input.siteId||'').trim(),requestId=String(input.requestId||'').trim();
+  const n=netState(cid),requests=Array.isArray(n.projects)?n.projects:[];
+  if(requestId){
+    const prior=requests.find(p=>p.projectType==='MINE_CONSTRUCTION'&&String(p.requestId||'')===requestId);
+    if(prior)return{...clone(prior),idempotent:true};
+  }
+  const active=requests.find(p=>p.projectType==='MINE_CONSTRUCTION'&&String(p.siteId||'')===siteId&&p.status==='UNDER_CONSTRUCTION');
+  if(active)return{status:'BLOCKED',reason:'MINE_CONSTRUCTION_ALREADY_IN_PROGRESS',project:clone(active)};
+  const assignedWorkers=num(input.assignedWorkers);
+  const quote=quoteMineProject({...input,assignedWorkers});
+  if(quote.status!=='QUOTED')return quote;
+  if(assignedWorkers===null||assignedWorkers<quote.workersRequired)
+    return{status:'BLOCKED',reason:'INSUFFICIENT_WORKER_COMMITMENT',required:quote.workersRequired,assigned:assignedWorkers,quote};
+  if(quote.treasury.available===null)return{status:'BLOCKED',reason:'TREASURY_AVAILABLE_BALANCE_UNAVAILABLE',required:quote.costUsd,quote};
+  if(!quote.treasury.sufficient)return{status:'BLOCKED',reason:'INSUFFICIENT_TREASURY',required:quote.costUsd,available:quote.treasury.available,quote};
+  const short=quote.materials.filter(x=>!x.sufficient);
+  if(short.length)return{status:'BLOCKED',reason:'INSUFFICIENT_CONSTRUCTION_MATERIALS',materials:short,quote};
+  if(!quote.commissioningReady)return{status:'BLOCKED',reason:'MINE_CONSTRUCTION_ALREADY_IN_PROGRESS',projectId:quote.activeProjectId,quote};
+  const account=countryFinanceBucket(cid),treasuryBefore=account.value;
+  const materialAllocations=[];
+  for(const item of quote.materials)materialAllocations.push(...consumeMineConstructionMaterial(cid,item.resourceId,item.required,'MINE_BUILD:'+siteId));
+  const treasuryAfter=treasuryBefore-quote.costUsd;
+  if(account.field==='available')account.bucket.available=treasuryAfter;
+  else if(account.field==='treasury')account.bucket.treasury=treasuryAfter;
+  if(account.bucket?.omegaFinance&&typeof account.bucket.omegaFinance==='object'){
+    const fm=account.bucket.omegaFinance;
+    fm.treasuryBalanceUsd=treasuryAfter;fm.lastSyncedTreasuryBalanceUsd=treasuryAfter;
+    fm.currentYearSpendingUsd=(num(fm.currentYearSpendingUsd)||0)+quote.costUsd;
+    fm.cumulativeSpendingUsd=(num(fm.cumulativeSpendingUsd)||0)+quote.costUsd;
+    fm.revision=(num(fm.revision)||0)+1;
+    fm.ledger=Array.isArray(fm.ledger)?fm.ledger:[];
+    fm.ledger.push({turn:turn(),countryCode:cid,department:'resource',action:'MINE_CONSTRUCTION_PAYMENT',category:'capital_investment',
+      amountUsd:quote.costUsd,direction:'OUTFLOW',balanceAfterUsd:treasuryAfter,source:'OMEGA_RESOURCE_INDUSTRIAL_NETWORK_V1',
+      description:'Mine construction capex for '+quote.siteName,siteId,projectType:'MINE_CONSTRUCTION'});
+    fm.ledger=fm.ledger.slice(-500);
+  }
+  const txId='MINE-CAPEX:'+cid+':'+siteId+':T'+turn()+':'+h32(String(requestId||JSON.stringify(input)));
+  const rs=resourceState(cid);rs.mineConstructionLedger=Array.isArray(rs.mineConstructionLedger)?rs.mineConstructionLedger:[];
+  const projectId='MINE:'+cid+':'+siteId+':T'+turn()+':'+h32(String(requestId||JSON.stringify(input)));
+  const project={projectId,requestId:requestId||projectId,projectType:'MINE_CONSTRUCTION',countryId:cid,siteId,siteName:quote.siteName,
+    resourceId:quote.resourceId,buildClass:quote.buildClass,mineId:'MINE_ASSET:'+cid+':'+siteId+':'+h32(projectId),
+    status:'UNDER_CONSTRUCTION',startTurn:turn(),progressDays:0,progressPct:0,durationDays:quote.durationDays,
+    estimatedTurns:quote.estimatedTurns,cost:quote.costUsd,costUsd:quote.costUsd,currency:'USD',workersRequired:quote.workersRequired,
+    workersCommitted:assignedWorkers,staffingStatus:'CONTRACTED_BY_PLAYER',staffingAuthority:'PLAYER_CONFIRMED_CONSTRUCTION_STAFFING_COMMITMENT',
+    materialsRequired:clone(quote.materials.map(x=>({resourceId:x.resourceId,quantity:x.required,unit:x.unit}))),
+    materialAllocations:clone(materialAllocations),treasuryTransactionId:txId,treasuryStatus:'DEBITED',
+    treasuryBeforeUsd:treasuryBefore,treasuryAfterUsd:treasuryAfter,constructionMaterialsStatus:'CONSUMED',
+    sourceSiteStatus:quote.sourceStatus,siteIdentityAuthority:siteById(siteId)?.runtime?.identityAuthority||'CANONICAL_SITE_REGISTRY',
+    costAuthority:'SIMULATED_GAMEPLAY_RULES_NOT_A_REAL_VENDOR_QUOTE',createdTurn:turn(),
+    capacityMultiplierAtCommission:quote.forecastCapacityMultiplier,
+    provenance:{source:'OMEGA_RESOURCE_INDUSTRIAL_NETWORK_V1',authority:'SIMULATED_PLAYER_PROJECT',siteId,resourceId:quote.resourceId,simulationTurn:turn()}
+  };
+  n.projects.push(project);n.projects=n.projects.slice(-MAX_PROJECTS);
+  rs.mineConstructionLedger.push({transactionId:txId,projectId,countryId:cid,siteId,resourceId:quote.resourceId,costUsd:quote.costUsd,
+    treasuryBeforeUsd:treasuryBefore,treasuryAfterUsd:treasuryAfter,materialAllocations:clone(materialAllocations),status:'PAID_AND_MATERIALS_ISSUED',turn:turn(),
+    authority:'RESOURCE_MINE_CONSTRUCTION_TRANSACTION_V1'});
+  rs.mineConstructionLedger=rs.mineConstructionLedger.slice(-2048);
+  emit('OMEGA_RESOURCE_MINE_PROJECT_STARTED',cid,{projectId,requestId:project.requestId,siteId,resourceId:project.resourceId,
+    costUsd:project.costUsd,durationDays:project.durationDays,workersRequired:project.workersRequired,workersCommitted:project.workersCommitted,
+    materialsRequired:project.materialsRequired,treasuryTransactionId:txId,authority:'RESOURCE_MINE_CONSTRUCTION_TRANSACTION_V1'});
+  return clone(project);
+}
+function commissionMineProject(cid,p){
+  const rs=resourceState(cid);
+  rs.mineAssets=Array.isArray(rs.mineAssets)?rs.mineAssets:[];
+  let asset=rs.mineAssets.find(x=>String(x?.mineId||x?.id||'')===String(p.mineId||''));
+  if(!asset){
+    const sameSiteCount=rs.mineAssets.filter(x=>String(x?.siteId||'')===String(p.siteId)&&String(x?.status||'').toUpperCase()==='OPERATIONAL').length;
+    asset={mineId:p.mineId,id:p.mineId,siteId:p.siteId,siteName:p.siteName,resourceId:p.resourceId,countryId:cid,ownerCountryId:cid,
+      status:'OPERATIONAL',buildProjectId:p.projectId,commissionedTurn:turn(),capacityMultiplier:Math.min(1.60,1+0.12*(sameSiteCount+1)),
+      workersRequired:p.workersRequired,workersCommitted:p.workersCommitted,constructionCostUsd:p.costUsd,commissioningLevel:sameSiteCount+1,
+      sourceSiteStatus:p.sourceSiteStatus||'UNOBSERVED',siteIdentityAuthority:p.siteIdentityAuthority||'CANONICAL_SITE_REGISTRY',
+      authority:'SIMULATED_PLAYER_MINE_ASSET',productionStatus:'READY_FOR_EXTRACTION',lastProductionTurn:null};
+    rs.mineAssets.push(asset);rs.mineAssets=rs.mineAssets.slice(-1024);
+  }
+  rs.mineConstructionLedger=Array.isArray(rs.mineConstructionLedger)?rs.mineConstructionLedger:[];
+  const ledger=rs.mineConstructionLedger.find(x=>String(x.projectId||'')===String(p.projectId));
+  if(ledger){ledger.status='MINE_COMMISSIONED';ledger.commissionedTurn=turn();ledger.mineId=asset.mineId;}
+  emit('OMEGA_RESOURCE_MINE_COMMISSIONED',cid,{projectId:p.projectId,siteId:p.siteId,mineId:asset.mineId,resourceId:p.resourceId,
+    siteName:p.siteName,status:asset.status,commissionedTurn:turn(),capacityMultiplier:asset.capacityMultiplier,
+    sourceSiteStatus:asset.sourceSiteStatus,authority:'SIMULATED_PLAYER_MINE_ASSET'});
+  emit('OMEGA_RESOURCE_MINE_CAPACITY_CHANGED',cid,{siteId:p.siteId,mineId:asset.mineId,capacityMultiplier:asset.capacityMultiplier,
+    commissioningLevel:asset.commissioningLevel,status:asset.status});
+  return asset;
+}
+
 function startFactoryProject(input={}){
   const cid=canonicalCountry(input.countryId),rid=tok(input.resourceId),rule=recipeFor(rid,{});if(!Object.keys(rule.inputs||{}).length||!Object.keys(rule.outputs||{}).length)return{status:'BLOCKED',reason:'NO_FACTORY_RECIPE'};
   const contractor=String(input.contractorType||'DOMESTIC_EPC'),cr=cat()?.contractorTypes?.[contractor]||cat()?.contractorTypes?.DOMESTIC_EPC;
@@ -1036,7 +1262,10 @@ function advanceProjects(c){
     p.progressPct=(p.progressDays/(num(p.durationDays)||1));
     if(p.progressPct<1)continue;
     p.status='COMPLETED';p.completedTurn=turn();completed.push(clone(p));
-    if(p.projectType==='FACTORY_CONSTRUCTION'){
+    if(p.projectType==='MINE_CONSTRUCTION'){
+      const asset=commissionMineProject(cid,p);
+      p.mineAssetId=asset.mineId;p.commissionedTurn=turn();p.assetStatus=asset.status;
+    }else if(p.projectType==='FACTORY_CONSTRUCTION'){
       const econ=econState(cid);econ.productionAssets=Array.isArray(econ.productionAssets)?econ.productionAssets:[];
       const techReady=(p.requiredTechnologyIds||[]).every(t=>resourceState(cid).technologyCapabilities?.some(x=>tok(x?.technologyId).toUpperCase()===tok(t)));
       const assetStatus=techReady?'OPERATIONAL':'TECHNOLOGY_LOCKED';
@@ -1422,7 +1651,7 @@ function gameplayPipelineDiagnostics(){
     treasuryReceipts:perCountry.reduce((n,x)=>n+x.treasuryReceipts,0),blocked:perCountry.reduce((n,x)=>n+x.blocked,0),perCountry};
 }
 function api(){
-  return Object.freeze({VERSION,loadCatalog,planExtraction,planShipment,dispatchShipment,advanceShipments,startFactoryProject,startInfrastructureProject,startPadmaCorridorProject,advanceProjects,startTechnologyProject,executeFactoryCycle,executeSitePipeline,diagnostics,gameplayPipelineDiagnostics,normalizeInfrastructure,candidateFactories,recipeFor,processPendingFactoryInputs,resourceMethod,buildRoute});
+  return Object.freeze({VERSION,loadCatalog,planExtraction,planShipment,dispatchShipment,advanceShipments,quoteMineProject,startMineProject,startFactoryProject,startInfrastructureProject,startPadmaCorridorProject,advanceProjects,startTechnologyProject,executeFactoryCycle,executeSitePipeline,diagnostics,gameplayPipelineDiagnostics,normalizeInfrastructure,candidateFactories,recipeFor,processPendingFactoryInputs,resourceMethod,buildRoute});
 }
 g.Omega=g.Omega||{};g.Omega.ResourceIndustrialNetwork=api();g.OmegaResourceIndustrialNetwork=g.Omega.ResourceIndustrialNetwork;
 
