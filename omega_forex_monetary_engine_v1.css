@@ -87,3 +87,157 @@
   cursor: wait;
   filter: saturate(.65);
 }
+
+
+/* FX workflow hierarchy: readable first screen, details on demand. */
+.ofx-panel .ofx-advanced-section > summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 46px;
+  padding: 5px 0;
+  list-style: none;
+  cursor: pointer;
+}
+.ofx-panel .ofx-advanced-section > summary::-webkit-details-marker { display: none; }
+.ofx-panel .ofx-advanced-section > summary::after {
+  content: "+";
+  margin-left: auto;
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(116, 162, 192, .32);
+  border-radius: 50%;
+  color: #b8d9e9;
+  font-size: 18px;
+  flex: 0 0 auto;
+}
+.ofx-panel .ofx-advanced-section[open] > summary::after { content: "−"; }
+.ofx-panel .ofx-advanced-section > summary > span:nth-child(2) {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.ofx-panel .ofx-advanced-section > summary strong {
+  color: #dff8ff;
+  font-size: 12px;
+  font-weight: 700;
+}
+.ofx-panel .ofx-advanced-section > summary small {
+  color: #91aabe;
+  font-size: 10px;
+  font-weight: 400;
+  overflow-wrap: anywhere;
+}
+.ofx-panel .ofx-summary-icon {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  border: 1px solid rgba(64, 214, 240, .22);
+  border-radius: 9px;
+  color: #7ddff2;
+  background: rgba(23, 67, 88, .38);
+}
+.ofx-panel .ofx-summary-icon svg { width: 20px; height: 20px; }
+.ofx-panel .ofx-detail-body { min-width: 0; padding-top: 12px; }
+.ofx-panel button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.ofx-panel button svg { width: 16px; height: 16px; flex: 0 0 auto; }
+.ofx-panel .ofx-form-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.ofx-panel .ofx-form-actions button { min-width: 142px; }
+.ofx-panel .ofx-swap-button { align-self: end; min-width: 72px; }
+.ofx-panel .ofx-country-lookup-card {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid rgba(91, 154, 184, .3);
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(20, 44, 65, .72), rgba(8, 18, 32, .82));
+}
+.ofx-panel .ofx-country-lookup-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+.ofx-panel .ofx-country-lookup-title > div { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.ofx-panel .ofx-country-lookup-title strong { color: #eef9ff; font-size: 14px; }
+.ofx-panel .ofx-country-lookup-title small { color: #9eb6c9; overflow-wrap: anywhere; }
+.ofx-panel .ofx-lookup-status {
+  flex: 0 0 auto;
+  max-width: 44%;
+  padding: 4px 7px;
+  border: 1px solid rgba(148, 163, 184, .25);
+  border-radius: 20px;
+  color: #bdcbd6;
+  background: rgba(148, 163, 184, .08);
+  font-size: 9px;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.ofx-panel .ofx-lookup-status.is-available {
+  color: #a8eed4;
+  border-color: rgba(52, 211, 153, .3);
+  background: rgba(16, 185, 129, .08);
+}
+.ofx-panel .ofx-country-lookup-rates {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 11px;
+}
+.ofx-panel .ofx-country-lookup-rates > div {
+  min-width: 0;
+  padding: 10px;
+  border-radius: 8px;
+  background: rgba(2, 11, 22, .5);
+}
+.ofx-panel .ofx-country-lookup-rates span {
+  display: block;
+  margin-bottom: 5px;
+  color: #9eb6c9;
+  font-size: 10px;
+}
+.ofx-panel .ofx-country-lookup-rates strong {
+  display: block;
+  color: #e9f8ff;
+  font: 700 clamp(13px, 2vw, 17px)/1.25 'Share Tech Mono', monospace;
+  overflow-wrap: anywhere;
+}
+.ofx-panel .ofx-country-lookup-empty {
+  padding: 12px;
+  border: 1px dashed rgba(148, 163, 184, .35);
+  border-radius: 8px;
+  color: #b4c4d1;
+}
+.ofx-panel input[type="search"] { min-height: 42px; }
+.ofx-panel button:focus-visible,
+.ofx-panel select:focus-visible,
+.ofx-panel input:focus-visible,
+.ofx-panel summary:focus-visible {
+  outline: 2px solid #75e2f5;
+  outline-offset: 2px;
+}
+@media (max-width: 520px) {
+  .ofx-panel .ofx-country-lookup-rates { grid-template-columns: minmax(0, 1fr); }
+  .ofx-panel .ofx-form-actions { justify-content: stretch; }
+  .ofx-panel .ofx-form-actions button { min-width: 0; flex: 1 1 140px; }
+  .ofx-panel .ofx-swap-button { min-width: 0; }
+  .ofx-panel .ofx-country-lookup-title { flex-direction: column; }
+  .ofx-panel .ofx-lookup-status { max-width: 100%; }
+}
