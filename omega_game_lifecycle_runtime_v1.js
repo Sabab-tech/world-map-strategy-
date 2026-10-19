@@ -526,18 +526,30 @@
     var sim = runtime();
     // Avoid persisting a half-applied sector turn. The committed-turn finalizer
     // will save synchronously once the ordered pipeline finishes.
-    if (sim && sim.stepInProgress) {
-      // The end-of-turn finalizer persists every mutation from a successful turn.
-      // Do not repeatedly serialize a huge world while async sector work is in flight.
-      return;
-    }
+    if (sim && sim.stepInProgress) return;
     if (stateSaveTimer !== null) {
       try { g.clearTimeout(stateSaveTimer); } catch (_) {}
       stateSaveTimer = null;
     }
-    // Outside a turn, persist immediately. Do not leave the newest mutation in a
-    // debounce window that could be lost if the OS terminates the page.
-    saveNow({ force: true });
+    // Collapse bursts of domain events into one synchronous snapshot. pagehide,
+    // freeze and visibilitychange still flush immediately if the app exits first.
+    stateSaveTimer = g.setTimeout(function () {
+      stateSaveTimer = null;
+      saveNow();
+    }, 80);
+  }
+
+  function installMutationEventSaveBridge() {
+    if (g.__OMEGA_AUTOSAVE_MUTATION_EVENT_BRIDGE_V1__ || typeof g.dispatchEvent !== 'function') return;
+    var nativeDispatch = g.dispatchEvent;
+    var mutationEvent = /(?:_STATE_CHANGED|_STATE_UPDATED|_UPDATED|_APPLIED|_COMPLETED|_SETTLED|_ENACTED|_VOTED|_CREATED|_DELETED|_REMOVED|_SAVED|_TRANSFERRED|_COMMITTED|_RECONCILED|_EXECUTED|_REGISTERED|_ADDED|_CANCELLED|_CANCELED|_PROCESSED|_RESOLVED|_ACCEPTED|_SELECTED)$/;
+    g.dispatchEvent = function (event) {
+      var result = nativeDispatch.call(this, event);
+      var type = String(event && event.type || '');
+      if (mutationEvent.test(type)) scheduleStateSave();
+      return result;
+    };
+    g.__OMEGA_AUTOSAVE_MUTATION_EVENT_BRIDGE_V1__ = true;
   }
 
   function registerLifecycleFinalizer() {
@@ -608,12 +620,17 @@
   function onPageExit() {
     // visibilitychange has already written the running state before pausing the live page.
     if (hiddenWasRunning && hiddenSnapshotSaved && g.document && g.document.visibilityState === 'hidden') return;
+    if (stateSaveTimer !== null) {
+      try { g.clearTimeout(stateSaveTimer); } catch (_) {}
+      stateSaveTimer = null;
+    }
     saveNow({ force: true });
   }
 
   function init() {
     if (!g.document) return;
     registerLifecycleFinalizer();
+    installMutationEventSaveBridge();
     g.document.addEventListener('click', clickHandler, true);
     g.document.addEventListener('visibilitychange', onVisibilityChange);
     g.document.addEventListener('freeze', onPageExit);
