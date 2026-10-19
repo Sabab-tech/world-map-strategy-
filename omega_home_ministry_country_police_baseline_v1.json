@@ -24,7 +24,7 @@
   "gameRules": {
     "policePayPerDayUsd": 65,
     "recruitmentFeePerOfficerUsd": 2500,
-    "fleetSizing": "Opening vehicle inventories preserve each country's modeled baseline total; the starting vehicle-type mix is adjusted to country context. For planning, target 1 vehicle per 18 target officers; both opening fleet counts and planning target are game estimates, not observed official rosters.",
+    "fleetSizing": "Opening vehicle inventories preserve each country's modeled baseline total and its previous Tier 9-15 specialist/advanced vehicle counts; lower-tier allocations are adjusted to country context. Planning target: 1 vehicle per 18 target officers. Both opening fleet counts and the planning target are game estimates, not observed official rosters.",
     "baselinePersonnelFormula": "population × estimated police staffing rate per 100000; rate is a game-policy baseline, not observed staffing",
     "nonHomicideCrimePolicy": "Modeled rates are starting gameplay intensity assumptions, not published country crime rates",
     "inheritedAssets": "Initial fleets are seeded as already-owned starting assets; no purchase debit is applied for opening inventory. All subsequent purchases and hiring are charged to Finance.",
@@ -206,7 +206,7 @@
         "replacementValueUsd": 32002000,
         "dailyMaintenanceUsd": 194425,
         "annualMaintenanceUsd": 70965125,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -264,7 +264,8 @@
           "border": 21.9,
           "industrial": 7.1,
           "coastal": 0
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -320,7 +321,7 @@
         "replacementValueUsd": 25000,
         "dailyMaintenanceUsd": 190,
         "annualMaintenanceUsd": 69350,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -378,7 +379,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -434,7 +436,7 @@
         "replacementValueUsd": 1811000,
         "dailyMaintenanceUsd": 11415,
         "annualMaintenanceUsd": 4166475,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -492,7 +494,8 @@
           "border": 7.3,
           "industrial": 10.6,
           "coastal": 8.6
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -548,7 +551,7 @@
         "replacementValueUsd": 35632000,
         "dailyMaintenanceUsd": 228060,
         "annualMaintenanceUsd": 83241900,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -606,7 +609,8 @@
           "border": 6.7,
           "industrial": 11,
           "coastal": 7.7
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -662,7 +666,7 @@
         "replacementValueUsd": 25000,
         "dailyMaintenanceUsd": 190,
         "annualMaintenanceUsd": 69350,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -720,7 +724,8 @@
           "border": 6,
           "industrial": 12.4,
           "coastal": 6.9
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -774,7 +779,7 @@
         "replacementValueUsd": 80000,
         "dailyMaintenanceUsd": 510,
         "annualMaintenanceUsd": 186150,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -832,7 +837,8 @@
           "border": 12.7,
           "industrial": 13.6,
           "coastal": 0
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -888,7 +894,7 @@
         "replacementValueUsd": 26650000,
         "dailyMaintenanceUsd": 167045,
         "annualMaintenanceUsd": 60971425,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -946,7 +952,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -1002,7 +1009,7 @@
         "replacementValueUsd": 25000,
         "dailyMaintenanceUsd": 190,
         "annualMaintenanceUsd": 69350,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -1060,7 +1067,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -1116,7 +1124,7 @@
         "replacementValueUsd": 25000,
         "dailyMaintenanceUsd": 190,
         "annualMaintenanceUsd": 69350,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -1174,7 +1182,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -1230,7 +1239,7 @@
         "replacementValueUsd": 75000,
         "dailyMaintenanceUsd": 465,
         "annualMaintenanceUsd": 169725,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -1288,7 +1297,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -1325,26 +1335,26 @@
       "baselineFleet": {
         "totalUnits": 2836,
         "countsByTier": {
-          "1": 1223,
-          "2": 570,
-          "3": 450,
-          "4": 160,
-          "5": 84,
+          "1": 1217,
+          "2": 567,
+          "3": 447,
+          "4": 159,
+          "5": 83,
           "6": 137,
-          "7": 117,
+          "7": 116,
           "8": 95,
-          "9": 0,
-          "10": 0,
-          "11": 0,
+          "9": 6,
+          "10": 6,
+          "11": 3,
           "12": 0,
           "13": 0,
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 36335000,
-        "dailyMaintenanceUsd": 235355,
-        "annualMaintenanceUsd": 85904575,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 37780000,
+        "dailyMaintenanceUsd": 241075,
+        "annualMaintenanceUsd": 87992375,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -1402,7 +1412,8 @@
           "border": 5.8,
           "industrial": 12.6,
           "coastal": 6.7
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -1456,7 +1467,7 @@
         "replacementValueUsd": 2534000,
         "dailyMaintenanceUsd": 15710,
         "annualMaintenanceUsd": 5734150,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -1514,7 +1525,8 @@
           "border": 16.2,
           "industrial": 10.5,
           "coastal": 0
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -1570,7 +1582,7 @@
         "replacementValueUsd": 87000,
         "dailyMaintenanceUsd": 550,
         "annualMaintenanceUsd": 200750,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -1628,7 +1640,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -1666,26 +1679,26 @@
       "baselineFleet": {
         "totalUnits": 1813,
         "countsByTier": {
-          "1": 760,
-          "2": 375,
-          "3": 275,
-          "4": 101,
+          "1": 755,
+          "2": 372,
+          "3": 273,
+          "4": 100,
           "5": 65,
           "6": 97,
-          "7": 67,
+          "7": 66,
           "8": 73,
-          "9": 0,
-          "10": 0,
-          "11": 0,
-          "12": 0,
-          "13": 0,
+          "9": 4,
+          "10": 3,
+          "11": 2,
+          "12": 2,
+          "13": 1,
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 24030000,
-        "dailyMaintenanceUsd": 154190,
-        "annualMaintenanceUsd": 56279350,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 25547000,
+        "dailyMaintenanceUsd": 159890,
+        "annualMaintenanceUsd": 58359850,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -1743,7 +1756,8 @@
           "border": 5.8,
           "industrial": 13.7,
           "coastal": 6.6
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -1778,26 +1792,26 @@
       "baselineFleet": {
         "totalUnits": 569,
         "countsByTier": {
-          "1": 211,
-          "2": 103,
+          "1": 210,
+          "2": 102,
           "3": 100,
           "4": 29,
           "5": 20,
           "6": 29,
           "7": 55,
           "8": 22,
-          "9": 0,
-          "10": 0,
+          "9": 1,
+          "10": 1,
           "11": 0,
           "12": 0,
           "13": 0,
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 8824000,
-        "dailyMaintenanceUsd": 54400,
-        "annualMaintenanceUsd": 19856000,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 9006000,
+        "dailyMaintenanceUsd": 55145,
+        "annualMaintenanceUsd": 20127925,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -1855,7 +1869,8 @@
           "border": 14.9,
           "industrial": 13.2,
           "coastal": 0
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -1890,7 +1905,7 @@
       "baselineFleet": {
         "totalUnits": 553,
         "countsByTier": {
-          "1": 202,
+          "1": 201,
           "2": 86,
           "3": 117,
           "4": 28,
@@ -1898,7 +1913,7 @@
           "6": 23,
           "7": 69,
           "8": 15,
-          "9": 0,
+          "9": 1,
           "10": 0,
           "11": 0,
           "12": 0,
@@ -1906,10 +1921,10 @@
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 8657000,
-        "dailyMaintenanceUsd": 53315,
-        "annualMaintenanceUsd": 19459975,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 8737000,
+        "dailyMaintenanceUsd": 53650,
+        "annualMaintenanceUsd": 19582250,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -1967,7 +1982,8 @@
           "border": 16.9,
           "industrial": 10.8,
           "coastal": 0
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -2023,7 +2039,7 @@
         "replacementValueUsd": 259000,
         "dailyMaintenanceUsd": 1655,
         "annualMaintenanceUsd": 604075,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -2081,7 +2097,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -2137,7 +2154,7 @@
         "replacementValueUsd": 1327000,
         "dailyMaintenanceUsd": 8535,
         "annualMaintenanceUsd": 3115275,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -2195,7 +2212,8 @@
           "border": 5.8,
           "industrial": 13.1,
           "coastal": 6.7
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -2251,7 +2269,7 @@
         "replacementValueUsd": 125322000,
         "dailyMaintenanceUsd": 779565,
         "annualMaintenanceUsd": 284541225,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -2309,7 +2327,8 @@
           "border": 8.5,
           "industrial": 8.6,
           "coastal": 10.1
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -2365,7 +2384,7 @@
         "replacementValueUsd": 217000,
         "dailyMaintenanceUsd": 1335,
         "annualMaintenanceUsd": 487275,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -2423,7 +2442,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -2459,14 +2479,14 @@
         "totalUnits": 519,
         "countsByTier": {
           "1": 205,
-          "2": 90,
+          "2": 89,
           "3": 96,
           "4": 27,
           "5": 12,
           "6": 22,
           "7": 53,
           "8": 14,
-          "9": 0,
+          "9": 1,
           "10": 0,
           "11": 0,
           "12": 0,
@@ -2474,10 +2494,10 @@
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 7597000,
-        "dailyMaintenanceUsd": 47500,
-        "annualMaintenanceUsd": 17337500,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 7674000,
+        "dailyMaintenanceUsd": 47820,
+        "annualMaintenanceUsd": 17454300,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -2535,7 +2555,8 @@
           "border": 14.6,
           "industrial": 11.4,
           "coastal": 0
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -2572,26 +2593,26 @@
       "baselineFleet": {
         "totalUnits": 788,
         "countsByTier": {
-          "1": 341,
-          "2": 169,
+          "1": 340,
+          "2": 168,
           "3": 110,
-          "4": 45,
+          "4": 44,
           "5": 28,
           "6": 42,
           "7": 21,
-          "8": 32,
-          "9": 0,
-          "10": 0,
-          "11": 0,
+          "8": 31,
+          "9": 2,
+          "10": 1,
+          "11": 1,
           "12": 0,
           "13": 0,
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 10087000,
-        "dailyMaintenanceUsd": 65300,
-        "annualMaintenanceUsd": 23834500,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 10429000,
+        "dailyMaintenanceUsd": 66630,
+        "annualMaintenanceUsd": 24319950,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -2649,7 +2670,8 @@
           "border": 5.5,
           "industrial": 13.8,
           "coastal": 6.2
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -2705,7 +2727,7 @@
         "replacementValueUsd": 319000,
         "dailyMaintenanceUsd": 1955,
         "annualMaintenanceUsd": 713575,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -2763,7 +2785,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -2819,7 +2842,7 @@
         "replacementValueUsd": 10111000,
         "dailyMaintenanceUsd": 63730,
         "annualMaintenanceUsd": 23261450,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -2877,7 +2900,8 @@
           "border": 8,
           "industrial": 8.4,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -2933,7 +2957,7 @@
         "replacementValueUsd": 25000,
         "dailyMaintenanceUsd": 190,
         "annualMaintenanceUsd": 69350,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -2991,7 +3015,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -3045,7 +3070,7 @@
         "replacementValueUsd": 650000,
         "dailyMaintenanceUsd": 3980,
         "annualMaintenanceUsd": 1452700,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -3103,7 +3128,8 @@
           "border": 19.2,
           "industrial": 9.7,
           "coastal": 0
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -3157,7 +3183,7 @@
         "replacementValueUsd": 10103000,
         "dailyMaintenanceUsd": 63080,
         "annualMaintenanceUsd": 23024200,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -3215,7 +3241,8 @@
           "border": 15.4,
           "industrial": 10.5,
           "coastal": 0
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -3271,7 +3298,7 @@
         "replacementValueUsd": 25000,
         "dailyMaintenanceUsd": 190,
         "annualMaintenanceUsd": 69350,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -3329,7 +3356,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -3385,7 +3413,7 @@
         "replacementValueUsd": 2443000,
         "dailyMaintenanceUsd": 15290,
         "annualMaintenanceUsd": 5580850,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -3443,7 +3471,8 @@
           "border": 7.7,
           "industrial": 10.5,
           "coastal": 9
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -3497,7 +3526,7 @@
         "replacementValueUsd": 2173000,
         "dailyMaintenanceUsd": 13510,
         "annualMaintenanceUsd": 4931150,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -3555,7 +3584,8 @@
           "border": 15.3,
           "industrial": 11.4,
           "coastal": 0
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -3611,7 +3641,7 @@
         "replacementValueUsd": 25000,
         "dailyMaintenanceUsd": 190,
         "annualMaintenanceUsd": 69350,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -3669,7 +3699,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -3706,26 +3737,26 @@
       "baselineFleet": {
         "totalUnits": 12686,
         "countsByTier": {
-          "1": 5371,
-          "2": 2431,
-          "3": 2193,
-          "4": 708,
-          "5": 342,
-          "6": 587,
-          "7": 661,
-          "8": 393,
-          "9": 0,
-          "10": 0,
+          "1": 5350,
+          "2": 2422,
+          "3": 2184,
+          "4": 705,
+          "5": 341,
+          "6": 584,
+          "7": 659,
+          "8": 391,
+          "9": 25,
+          "10": 25,
           "11": 0,
           "12": 0,
           "13": 0,
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 165659000,
-        "dailyMaintenanceUsd": 1068110,
-        "annualMaintenanceUsd": 389860150,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 169864000,
+        "dailyMaintenanceUsd": 1085075,
+        "annualMaintenanceUsd": 396052375,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -3783,7 +3814,8 @@
           "border": 6.1,
           "industrial": 12.1,
           "coastal": 7
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -3839,7 +3871,7 @@
         "replacementValueUsd": 25000,
         "dailyMaintenanceUsd": 190,
         "annualMaintenanceUsd": 69350,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -3897,7 +3929,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -3953,7 +3986,7 @@
         "replacementValueUsd": 398000,
         "dailyMaintenanceUsd": 2555,
         "annualMaintenanceUsd": 932575,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -4011,7 +4044,8 @@
           "border": 6.1,
           "industrial": 13.3,
           "coastal": 7.1
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -4048,15 +4082,15 @@
       "baselineFleet": {
         "totalUnits": 370,
         "countsByTier": {
-          "1": 151,
+          "1": 150,
           "2": 67,
-          "3": 71,
+          "3": 70,
           "4": 20,
           "5": 9,
           "6": 17,
-          "7": 24,
+          "7": 25,
           "8": 11,
-          "9": 0,
+          "9": 1,
           "10": 0,
           "11": 0,
           "12": 0,
@@ -4064,10 +4098,10 @@
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 5003000,
-        "dailyMaintenanceUsd": 31980,
-        "annualMaintenanceUsd": 11672700,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 5116000,
+        "dailyMaintenanceUsd": 32460,
+        "annualMaintenanceUsd": 11847900,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -4125,7 +4159,8 @@
           "border": 6.5,
           "industrial": 11.6,
           "coastal": 7.6
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -4179,7 +4214,7 @@
         "replacementValueUsd": 17556000,
         "dailyMaintenanceUsd": 107140,
         "annualMaintenanceUsd": 39106100,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -4237,7 +4272,8 @@
           "border": 21.1,
           "industrial": 7.3,
           "coastal": 0
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -4272,14 +4308,14 @@
       "baselineFleet": {
         "totalUnits": 602,
         "countsByTier": {
-          "1": 188,
-          "2": 54,
-          "3": 187,
-          "4": 28,
-          "5": 3,
-          "6": 14,
-          "7": 123,
-          "8": 5,
+          "1": 183,
+          "2": 64,
+          "3": 174,
+          "4": 27,
+          "5": 10,
+          "6": 20,
+          "7": 112,
+          "8": 12,
           "9": 0,
           "10": 0,
           "11": 0,
@@ -4288,10 +4324,10 @@
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 10436000,
-        "dailyMaintenanceUsd": 63015,
-        "annualMaintenanceUsd": 23000475,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 10630000,
+        "dailyMaintenanceUsd": 63890,
+        "annualMaintenanceUsd": 23319850,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -4349,7 +4385,8 @@
           "border": 24,
           "industrial": 5.7,
           "coastal": 0
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -4405,7 +4442,7 @@
         "replacementValueUsd": 394000,
         "dailyMaintenanceUsd": 2420,
         "annualMaintenanceUsd": 883300,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -4463,7 +4500,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -4519,7 +4557,7 @@
         "replacementValueUsd": 12740000,
         "dailyMaintenanceUsd": 78495,
         "annualMaintenanceUsd": 28650675,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -4577,7 +4615,8 @@
           "border": 9.2,
           "industrial": 8.1,
           "coastal": 10.9
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -4633,7 +4672,7 @@
         "replacementValueUsd": 21140000,
         "dailyMaintenanceUsd": 133710,
         "annualMaintenanceUsd": 48804150,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -4691,7 +4730,8 @@
           "border": 7.6,
           "industrial": 9.3,
           "coastal": 9
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -4730,26 +4770,26 @@
       "baselineFleet": {
         "totalUnits": 2662,
         "countsByTier": {
-          "1": 1088,
-          "2": 535,
-          "3": 429,
-          "4": 146,
+          "1": 1081,
+          "2": 531,
+          "3": 426,
+          "4": 145,
           "5": 96,
-          "6": 143,
-          "7": 118,
+          "6": 142,
+          "7": 117,
           "8": 107,
-          "9": 0,
-          "10": 0,
-          "11": 0,
-          "12": 0,
-          "13": 0,
+          "9": 5,
+          "10": 5,
+          "11": 3,
+          "12": 3,
+          "13": 1,
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 36193000,
-        "dailyMaintenanceUsd": 230775,
-        "annualMaintenanceUsd": 84232875,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 38300000,
+        "dailyMaintenanceUsd": 238740,
+        "annualMaintenanceUsd": 87140100,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -4807,7 +4847,8 @@
           "border": 6,
           "industrial": 13.6,
           "coastal": 6.9
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -4863,7 +4904,7 @@
         "replacementValueUsd": 30000,
         "dailyMaintenanceUsd": 235,
         "annualMaintenanceUsd": 85775,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -4921,7 +4962,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -4975,7 +5017,7 @@
         "replacementValueUsd": 3974000,
         "dailyMaintenanceUsd": 24495,
         "annualMaintenanceUsd": 8940675,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -5033,7 +5075,8 @@
           "border": 20,
           "industrial": 6.9,
           "coastal": 0
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -5087,7 +5130,7 @@
         "replacementValueUsd": 15595000,
         "dailyMaintenanceUsd": 94540,
         "annualMaintenanceUsd": 34507100,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -5145,7 +5188,8 @@
           "border": 22,
           "industrial": 7.4,
           "coastal": 0
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -5182,26 +5226,26 @@
       "baselineFleet": {
         "totalUnits": 1221,
         "countsByTier": {
-          "1": 521,
-          "2": 242,
-          "3": 199,
-          "4": 69,
+          "1": 519,
+          "2": 241,
+          "3": 198,
+          "4": 68,
           "5": 36,
           "6": 59,
           "7": 54,
           "8": 41,
-          "9": 0,
-          "10": 0,
-          "11": 0,
+          "9": 2,
+          "10": 2,
+          "11": 1,
           "12": 0,
           "13": 0,
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 15819000,
-        "dailyMaintenanceUsd": 102175,
-        "annualMaintenanceUsd": 37293875,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 16314000,
+        "dailyMaintenanceUsd": 104145,
+        "annualMaintenanceUsd": 38012925,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -5259,7 +5303,8 @@
           "border": 5.9,
           "industrial": 12.6,
           "coastal": 6.8
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -5296,26 +5341,26 @@
       "baselineFleet": {
         "totalUnits": 77764,
         "countsByTier": {
-          "1": 29382,
-          "2": 12909,
-          "3": 16698,
-          "4": 4092,
-          "5": 2082,
-          "6": 3523,
-          "7": 6688,
-          "8": 2390,
-          "9": 0,
-          "10": 0,
+          "1": 29265,
+          "2": 12858,
+          "3": 16631,
+          "4": 4075,
+          "5": 2073,
+          "6": 3509,
+          "7": 6662,
+          "8": 2381,
+          "9": 155,
+          "10": 155,
           "11": 0,
           "12": 0,
           "13": 0,
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 1131653000,
-        "dailyMaintenanceUsd": 7106480,
-        "annualMaintenanceUsd": 2593865200,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 1157401000,
+        "dailyMaintenanceUsd": 7210045,
+        "annualMaintenanceUsd": 2631666425,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -5373,7 +5418,8 @@
           "border": 7.2,
           "industrial": 11.4,
           "coastal": 8.5
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -5429,7 +5475,7 @@
         "replacementValueUsd": 13000,
         "dailyMaintenanceUsd": 105,
         "annualMaintenanceUsd": 38325,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -5487,7 +5533,8 @@
           "border": 5.4,
           "industrial": 13.8,
           "coastal": 6.2
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -5543,7 +5590,7 @@
         "replacementValueUsd": 13000,
         "dailyMaintenanceUsd": 105,
         "annualMaintenanceUsd": 38325,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -5601,7 +5648,8 @@
           "border": 5.4,
           "industrial": 13.8,
           "coastal": 6.2
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -5639,15 +5687,15 @@
       "baselineFleet": {
         "totalUnits": 3067,
         "countsByTier": {
-          "1": 1268,
-          "2": 557,
-          "3": 577,
+          "1": 1266,
+          "2": 556,
+          "3": 576,
           "4": 169,
-          "5": 76,
+          "5": 75,
           "6": 135,
-          "7": 197,
+          "7": 196,
           "8": 88,
-          "9": 0,
+          "9": 6,
           "10": 0,
           "11": 0,
           "12": 0,
@@ -5655,10 +5703,10 @@
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 41025000,
-        "dailyMaintenanceUsd": 262990,
-        "annualMaintenanceUsd": 95991350,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 41435000,
+        "dailyMaintenanceUsd": 264655,
+        "annualMaintenanceUsd": 96599075,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -5716,7 +5764,8 @@
           "border": 6.4,
           "industrial": 11.5,
           "coastal": 7.5
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -5772,7 +5821,7 @@
         "replacementValueUsd": 637000,
         "dailyMaintenanceUsd": 3915,
         "annualMaintenanceUsd": 1428975,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -5830,7 +5879,8 @@
           "border": 8.9,
           "industrial": 7.7,
           "coastal": 10.6
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -5886,7 +5936,7 @@
         "replacementValueUsd": 4439000,
         "dailyMaintenanceUsd": 27820,
         "annualMaintenanceUsd": 10154300,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -5944,7 +5994,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -6000,7 +6051,7 @@
         "replacementValueUsd": 75340000,
         "dailyMaintenanceUsd": 474790,
         "annualMaintenanceUsd": 173298350,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -6058,7 +6109,8 @@
           "border": 8.3,
           "industrial": 7.5,
           "coastal": 9.8
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -6114,7 +6166,7 @@
         "replacementValueUsd": 13000,
         "dailyMaintenanceUsd": 105,
         "annualMaintenanceUsd": 38325,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -6172,7 +6224,8 @@
           "border": 6.4,
           "industrial": 12.6,
           "coastal": 7.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -6211,25 +6264,25 @@
         "totalUnits": 309,
         "countsByTier": {
           "1": 128,
-          "2": 59,
+          "2": 58,
           "3": 54,
           "4": 17,
           "5": 9,
-          "6": 15,
+          "6": 14,
           "7": 17,
           "8": 10,
-          "9": 0,
-          "10": 0,
+          "9": 1,
+          "10": 1,
           "11": 0,
           "12": 0,
           "13": 0,
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 4130000,
-        "dailyMaintenanceUsd": 26465,
-        "annualMaintenanceUsd": 9659725,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 4282000,
+        "dailyMaintenanceUsd": 27075,
+        "annualMaintenanceUsd": 9882375,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -6287,7 +6340,8 @@
           "border": 6.2,
           "industrial": 12.3,
           "coastal": 7.2
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -6343,7 +6397,7 @@
         "replacementValueUsd": 23162000,
         "dailyMaintenanceUsd": 146245,
         "annualMaintenanceUsd": 53379425,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -6401,7 +6455,8 @@
           "border": 7.7,
           "industrial": 9.2,
           "coastal": 9.1
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -6457,7 +6512,7 @@
         "replacementValueUsd": 3181000,
         "dailyMaintenanceUsd": 20005,
         "annualMaintenanceUsd": 7301825,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -6515,7 +6570,8 @@
           "border": 7.1,
           "industrial": 11.9,
           "coastal": 8.3
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -6552,7 +6608,7 @@
       "baselineFleet": {
         "totalUnits": 636,
         "countsByTier": {
-          "1": 262,
+          "1": 261,
           "2": 117,
           "3": 118,
           "4": 35,
@@ -6560,7 +6616,7 @@
           "6": 29,
           "7": 39,
           "8": 19,
-          "9": 0,
+          "9": 1,
           "10": 0,
           "11": 0,
           "12": 0,
@@ -6568,10 +6624,10 @@
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 8522000,
-        "dailyMaintenanceUsd": 54605,
-        "annualMaintenanceUsd": 19930825,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 8602000,
+        "dailyMaintenanceUsd": 54940,
+        "annualMaintenanceUsd": 20053100,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -6629,7 +6685,8 @@
           "border": 6.4,
           "industrial": 11.8,
           "coastal": 7.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -6685,7 +6742,7 @@
         "replacementValueUsd": 107000,
         "dailyMaintenanceUsd": 690,
         "annualMaintenanceUsd": 251850,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -6743,7 +6800,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -6799,7 +6857,7 @@
         "replacementValueUsd": 1140000,
         "dailyMaintenanceUsd": 7215,
         "annualMaintenanceUsd": 2633475,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -6857,7 +6915,8 @@
           "border": 6.7,
           "industrial": 12.5,
           "coastal": 7.8
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -6892,26 +6951,26 @@
       "baselineFleet": {
         "totalUnits": 654,
         "countsByTier": {
-          "1": 252,
-          "2": 118,
-          "3": 115,
+          "1": 251,
+          "2": 117,
+          "3": 114,
           "4": 34,
           "5": 20,
           "6": 31,
           "7": 62,
           "8": 22,
-          "9": 0,
-          "10": 0,
-          "11": 0,
+          "9": 1,
+          "10": 1,
+          "11": 1,
           "12": 0,
           "13": 0,
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 9789000,
-        "dailyMaintenanceUsd": 60865,
-        "annualMaintenanceUsd": 22215725,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 10109000,
+        "dailyMaintenanceUsd": 62125,
+        "annualMaintenanceUsd": 22675625,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -6969,7 +7028,8 @@
           "border": 14.5,
           "industrial": 12.5,
           "coastal": 0
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -7007,26 +7067,26 @@
       "baselineFleet": {
         "totalUnits": 393,
         "countsByTier": {
-          "1": 164,
-          "2": 81,
+          "1": 163,
+          "2": 80,
           "3": 60,
           "4": 22,
           "5": 14,
           "6": 21,
           "7": 15,
           "8": 16,
-          "9": 0,
-          "10": 0,
+          "9": 1,
+          "10": 1,
           "11": 0,
           "12": 0,
           "13": 0,
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 5238000,
-        "dailyMaintenanceUsd": 33560,
-        "annualMaintenanceUsd": 12249400,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 5420000,
+        "dailyMaintenanceUsd": 34305,
+        "annualMaintenanceUsd": 12521325,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -7084,7 +7144,8 @@
           "border": 5.8,
           "industrial": 13.7,
           "coastal": 6.7
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -7140,7 +7201,7 @@
         "replacementValueUsd": 824000,
         "dailyMaintenanceUsd": 5365,
         "annualMaintenanceUsd": 1958225,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -7198,7 +7259,8 @@
           "border": 6.6,
           "industrial": 10.2,
           "coastal": 7.6
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -7254,7 +7316,7 @@
         "replacementValueUsd": 30000,
         "dailyMaintenanceUsd": 235,
         "annualMaintenanceUsd": 85775,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -7312,7 +7374,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -7352,12 +7415,12 @@
           "1": 283,
           "2": 126,
           "3": 121,
-          "4": 38,
+          "4": 37,
           "5": 17,
           "6": 30,
           "7": 39,
           "8": 20,
-          "9": 0,
+          "9": 1,
           "10": 0,
           "11": 0,
           "12": 0,
@@ -7365,10 +7428,10 @@
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 8875000,
-        "dailyMaintenanceUsd": 57110,
-        "annualMaintenanceUsd": 20845150,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 8945000,
+        "dailyMaintenanceUsd": 57395,
+        "annualMaintenanceUsd": 20949175,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -7426,7 +7489,8 @@
           "border": 6.2,
           "industrial": 11.8,
           "coastal": 7.2
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -7466,12 +7530,12 @@
           "1": 399,
           "2": 173,
           "3": 210,
-          "4": 55,
+          "4": 54,
           "5": 25,
           "6": 45,
-          "7": 81,
+          "7": 80,
           "8": 29,
-          "9": 0,
+          "9": 2,
           "10": 0,
           "11": 0,
           "12": 0,
@@ -7479,10 +7543,10 @@
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 14309000,
-        "dailyMaintenanceUsd": 90590,
-        "annualMaintenanceUsd": 33065350,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 14419000,
+        "dailyMaintenanceUsd": 91025,
+        "annualMaintenanceUsd": 33224125,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -7540,7 +7604,8 @@
           "border": 6.9,
           "industrial": 11.3,
           "coastal": 8.1
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -7597,7 +7662,7 @@
         "replacementValueUsd": 91116000,
         "dailyMaintenanceUsd": 568020,
         "annualMaintenanceUsd": 207327300,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -7655,7 +7720,8 @@
           "border": 7.9,
           "industrial": 10.2,
           "coastal": 9.3
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -7712,7 +7778,7 @@
         "replacementValueUsd": 4806000,
         "dailyMaintenanceUsd": 30580,
         "annualMaintenanceUsd": 11161700,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -7770,7 +7836,8 @@
           "border": 6.9,
           "industrial": 10.8,
           "coastal": 8.1
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -7826,7 +7893,7 @@
         "replacementValueUsd": 1545000,
         "dailyMaintenanceUsd": 9845,
         "annualMaintenanceUsd": 3593425,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -7884,7 +7951,8 @@
           "border": 6.5,
           "industrial": 12,
           "coastal": 7.6
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -7940,7 +8008,7 @@
         "replacementValueUsd": 2448000,
         "dailyMaintenanceUsd": 15345,
         "annualMaintenanceUsd": 5600925,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -7998,7 +8066,8 @@
           "border": 8.5,
           "industrial": 7.2,
           "coastal": 10
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -8054,7 +8123,7 @@
         "replacementValueUsd": 1152000,
         "dailyMaintenanceUsd": 7300,
         "annualMaintenanceUsd": 2664500,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -8112,7 +8181,8 @@
           "border": 6.6,
           "industrial": 12.5,
           "coastal": 7.7
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -8166,7 +8236,7 @@
         "replacementValueUsd": 1061000,
         "dailyMaintenanceUsd": 6390,
         "annualMaintenanceUsd": 2332350,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -8224,7 +8294,8 @@
           "border": 21,
           "industrial": 9.5,
           "coastal": 0
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -8278,7 +8349,7 @@
         "replacementValueUsd": 99028000,
         "dailyMaintenanceUsd": 599505,
         "annualMaintenanceUsd": 218819325,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -8336,7 +8407,8 @@
           "border": 22.6,
           "industrial": 7,
           "coastal": 0
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -8392,7 +8464,7 @@
         "replacementValueUsd": 25000,
         "dailyMaintenanceUsd": 190,
         "annualMaintenanceUsd": 69350,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -8450,7 +8522,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -8506,7 +8579,7 @@
         "replacementValueUsd": 25000,
         "dailyMaintenanceUsd": 190,
         "annualMaintenanceUsd": 69350,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -8564,7 +8637,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -8620,7 +8694,7 @@
         "replacementValueUsd": 721000,
         "dailyMaintenanceUsd": 4560,
         "annualMaintenanceUsd": 1664400,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -8678,7 +8752,8 @@
           "border": 7.3,
           "industrial": 10.8,
           "coastal": 8.6
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -8715,26 +8790,26 @@
       "baselineFleet": {
         "totalUnits": 363,
         "countsByTier": {
-          "1": 150,
-          "2": 74,
+          "1": 149,
+          "2": 73,
           "3": 57,
           "4": 20,
           "5": 13,
           "6": 19,
           "7": 15,
           "8": 15,
-          "9": 0,
-          "10": 0,
+          "9": 1,
+          "10": 1,
           "11": 0,
           "12": 0,
           "13": 0,
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 4891000,
-        "dailyMaintenanceUsd": 31255,
-        "annualMaintenanceUsd": 11408075,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 5073000,
+        "dailyMaintenanceUsd": 32000,
+        "annualMaintenanceUsd": 11680000,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -8792,7 +8867,8 @@
           "border": 5.9,
           "industrial": 13.6,
           "coastal": 6.8
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -8829,26 +8905,26 @@
       "baselineFleet": {
         "totalUnits": 4338,
         "countsByTier": {
-          "1": 1762,
-          "2": 861,
-          "3": 715,
-          "4": 237,
-          "5": 155,
-          "6": 230,
-          "7": 205,
-          "8": 173,
-          "9": 0,
-          "10": 0,
-          "11": 0,
-          "12": 0,
-          "13": 0,
-          "14": 0,
-          "15": 0
+          "1": 1749,
+          "2": 855,
+          "3": 709,
+          "4": 236,
+          "5": 154,
+          "6": 228,
+          "7": 204,
+          "8": 171,
+          "9": 9,
+          "10": 9,
+          "11": 4,
+          "12": 4,
+          "13": 2,
+          "14": 2,
+          "15": 2
         },
-        "replacementValueUsd": 59363000,
-        "dailyMaintenanceUsd": 377940,
-        "annualMaintenanceUsd": 137948100,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 64918000,
+        "dailyMaintenanceUsd": 396140,
+        "annualMaintenanceUsd": 144591100,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -8906,7 +8982,8 @@
           "border": 6.1,
           "industrial": 13.5,
           "coastal": 7
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -8962,7 +9039,7 @@
         "replacementValueUsd": 25000,
         "dailyMaintenanceUsd": 190,
         "annualMaintenanceUsd": 69350,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -9020,7 +9097,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -9076,7 +9154,7 @@
         "replacementValueUsd": 270000,
         "dailyMaintenanceUsd": 1660,
         "annualMaintenanceUsd": 605900,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -9134,7 +9212,8 @@
           "border": 6.8,
           "industrial": 12.6,
           "coastal": 7.9
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -9191,7 +9270,7 @@
         "replacementValueUsd": 25000,
         "dailyMaintenanceUsd": 190,
         "annualMaintenanceUsd": 69350,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -9249,7 +9328,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -9305,7 +9385,7 @@
         "replacementValueUsd": 1966000,
         "dailyMaintenanceUsd": 12760,
         "annualMaintenanceUsd": 4657400,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -9363,7 +9443,8 @@
           "border": 6.1,
           "industrial": 11.9,
           "coastal": 7
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -9419,7 +9500,7 @@
         "replacementValueUsd": 1856000,
         "dailyMaintenanceUsd": 11880,
         "annualMaintenanceUsd": 4336200,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -9477,7 +9558,8 @@
           "border": 7.5,
           "industrial": 8.1,
           "coastal": 8.8
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -9533,7 +9615,7 @@
         "replacementValueUsd": 2976000,
         "dailyMaintenanceUsd": 18815,
         "annualMaintenanceUsd": 6867475,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -9591,7 +9673,8 @@
           "border": 7.3,
           "industrial": 10.6,
           "coastal": 8.6
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -9628,26 +9711,26 @@
       "baselineFleet": {
         "totalUnits": 5242,
         "countsByTier": {
-          "1": 2085,
-          "2": 1023,
-          "3": 894,
-          "4": 284,
-          "5": 191,
-          "6": 280,
-          "7": 273,
-          "8": 212,
-          "9": 0,
-          "10": 0,
-          "11": 0,
-          "12": 0,
-          "13": 0,
-          "14": 0,
-          "15": 0
+          "1": 2070,
+          "2": 1016,
+          "3": 887,
+          "4": 282,
+          "5": 189,
+          "6": 278,
+          "7": 271,
+          "8": 210,
+          "9": 10,
+          "10": 10,
+          "11": 5,
+          "12": 5,
+          "13": 3,
+          "14": 3,
+          "15": 3
         },
-        "replacementValueUsd": 73177000,
-        "dailyMaintenanceUsd": 463615,
-        "annualMaintenanceUsd": 169219475,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 80592000,
+        "dailyMaintenanceUsd": 487315,
+        "annualMaintenanceUsd": 177869975,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -9705,7 +9788,8 @@
           "border": 6.2,
           "industrial": 13.5,
           "coastal": 7.2
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -9761,7 +9845,7 @@
         "replacementValueUsd": 24744000,
         "dailyMaintenanceUsd": 156750,
         "annualMaintenanceUsd": 57213750,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -9819,7 +9903,8 @@
           "border": 7.6,
           "industrial": 9.3,
           "coastal": 8.9
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -9875,7 +9960,7 @@
         "replacementValueUsd": 17000,
         "dailyMaintenanceUsd": 130,
         "annualMaintenanceUsd": 47450,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -9933,7 +10018,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -9970,26 +10056,26 @@
       "baselineFleet": {
         "totalUnits": 633,
         "countsByTier": {
-          "1": 258,
+          "1": 257,
           "2": 121,
-          "3": 111,
+          "3": 110,
           "4": 35,
           "5": 20,
           "6": 31,
           "7": 34,
-          "8": 23,
-          "9": 0,
-          "10": 0,
-          "11": 0,
+          "8": 22,
+          "9": 1,
+          "10": 1,
+          "11": 1,
           "12": 0,
           "13": 0,
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 8610000,
-        "dailyMaintenanceUsd": 54930,
-        "annualMaintenanceUsd": 20049450,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 8878000,
+        "dailyMaintenanceUsd": 55950,
+        "annualMaintenanceUsd": 20421750,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -10047,7 +10133,8 @@
           "border": 6.2,
           "industrial": 12.7,
           "coastal": 7.2
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -10104,7 +10191,7 @@
         "replacementValueUsd": 30000,
         "dailyMaintenanceUsd": 235,
         "annualMaintenanceUsd": 85775,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -10162,7 +10249,8 @@
           "border": 5.8,
           "industrial": 13.7,
           "coastal": 6.7
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -10218,7 +10306,7 @@
         "replacementValueUsd": 87000,
         "dailyMaintenanceUsd": 550,
         "annualMaintenanceUsd": 200750,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -10276,7 +10364,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -10332,7 +10421,7 @@
         "replacementValueUsd": 25000,
         "dailyMaintenanceUsd": 190,
         "annualMaintenanceUsd": 69350,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -10390,7 +10479,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -10446,7 +10536,7 @@
         "replacementValueUsd": 115000,
         "dailyMaintenanceUsd": 790,
         "annualMaintenanceUsd": 288350,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -10504,7 +10594,8 @@
           "border": 5.6,
           "industrial": 13.6,
           "coastal": 6.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -10561,7 +10652,7 @@
         "replacementValueUsd": 12791000,
         "dailyMaintenanceUsd": 80135,
         "annualMaintenanceUsd": 29249275,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -10619,7 +10710,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -10675,7 +10767,7 @@
         "replacementValueUsd": 25000,
         "dailyMaintenanceUsd": 190,
         "annualMaintenanceUsd": 69350,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -10733,7 +10825,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -10789,7 +10882,7 @@
         "replacementValueUsd": 10317000,
         "dailyMaintenanceUsd": 64440,
         "annualMaintenanceUsd": 23520600,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -10847,7 +10940,8 @@
           "border": 8.6,
           "industrial": 7.9,
           "coastal": 10.1
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -10903,7 +10997,7 @@
         "replacementValueUsd": 1493000,
         "dailyMaintenanceUsd": 9430,
         "annualMaintenanceUsd": 3441950,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -10961,7 +11055,8 @@
           "border": 8.3,
           "industrial": 7.9,
           "coastal": 9.7
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -11017,7 +11112,7 @@
         "replacementValueUsd": 660000,
         "dailyMaintenanceUsd": 4075,
         "annualMaintenanceUsd": 1487375,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -11075,7 +11170,8 @@
           "border": 8.6,
           "industrial": 10,
           "coastal": 10.2
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -11131,7 +11227,7 @@
         "replacementValueUsd": 8121000,
         "dailyMaintenanceUsd": 51510,
         "annualMaintenanceUsd": 18801150,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -11189,7 +11285,8 @@
           "border": 7.7,
           "industrial": 8.6,
           "coastal": 9
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -11245,7 +11342,7 @@
         "replacementValueUsd": 25000,
         "dailyMaintenanceUsd": 190,
         "annualMaintenanceUsd": 69350,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -11303,7 +11400,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -11357,7 +11455,7 @@
         "replacementValueUsd": 13000,
         "dailyMaintenanceUsd": 105,
         "annualMaintenanceUsd": 38325,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -11415,7 +11513,8 @@
           "border": 11.5,
           "industrial": 13.8,
           "coastal": 0
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -11472,7 +11571,7 @@
         "replacementValueUsd": 8122000,
         "dailyMaintenanceUsd": 51300,
         "annualMaintenanceUsd": 18724500,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -11530,7 +11629,8 @@
           "border": 7.4,
           "industrial": 10,
           "coastal": 8.7
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -11567,26 +11667,26 @@
       "baselineFleet": {
         "totalUnits": 498,
         "countsByTier": {
-          "1": 217,
+          "1": 216,
           "2": 107,
           "3": 68,
           "4": 28,
           "5": 18,
           "6": 27,
-          "7": 13,
+          "7": 12,
           "8": 20,
-          "9": 0,
-          "10": 0,
+          "9": 1,
+          "10": 1,
           "11": 0,
           "12": 0,
           "13": 0,
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 6357000,
-        "dailyMaintenanceUsd": 41175,
-        "annualMaintenanceUsd": 15028875,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 6502000,
+        "dailyMaintenanceUsd": 41750,
+        "annualMaintenanceUsd": 15238750,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -11644,7 +11744,8 @@
           "border": 5.4,
           "industrial": 13.8,
           "coastal": 6.2
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -11679,26 +11780,26 @@
       "baselineFleet": {
         "totalUnits": 559,
         "countsByTier": {
-          "1": 215,
+          "1": 214,
           "2": 98,
           "3": 101,
           "4": 29,
           "5": 16,
-          "6": 26,
+          "6": 25,
           "7": 56,
           "8": 18,
-          "9": 0,
-          "10": 0,
+          "9": 1,
+          "10": 1,
           "11": 0,
           "12": 0,
           "13": 0,
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 8416000,
-        "dailyMaintenanceUsd": 52255,
-        "annualMaintenanceUsd": 19073075,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 8571000,
+        "dailyMaintenanceUsd": 52880,
+        "annualMaintenanceUsd": 19301200,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -11756,7 +11857,8 @@
           "border": 14.8,
           "industrial": 12.1,
           "coastal": 0
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -11813,7 +11915,7 @@
         "replacementValueUsd": 331000,
         "dailyMaintenanceUsd": 2150,
         "annualMaintenanceUsd": 784750,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -11871,7 +11973,8 @@
           "border": 5.6,
           "industrial": 13.8,
           "coastal": 6.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -11927,7 +12030,7 @@
         "replacementValueUsd": 1066848000,
         "dailyMaintenanceUsd": 6618245,
         "annualMaintenanceUsd": 2415659425,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -11985,7 +12088,8 @@
           "border": 8.6,
           "industrial": 8.9,
           "coastal": 10.2
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -12042,7 +12146,7 @@
         "replacementValueUsd": 216516000,
         "dailyMaintenanceUsd": 1361835,
         "annualMaintenanceUsd": 497069775,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -12100,7 +12204,8 @@
           "border": 7.5,
           "industrial": 10.3,
           "coastal": 8.8
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -12156,7 +12261,7 @@
         "replacementValueUsd": 70163000,
         "dailyMaintenanceUsd": 448970,
         "annualMaintenanceUsd": 163874050,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -12214,7 +12319,8 @@
           "border": 6.6,
           "industrial": 11.2,
           "coastal": 7.7
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -12270,7 +12376,7 @@
         "replacementValueUsd": 35983000,
         "dailyMaintenanceUsd": 229165,
         "annualMaintenanceUsd": 83645225,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -12328,7 +12434,8 @@
           "border": 6.8,
           "industrial": 11.1,
           "coastal": 7.9
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -12365,26 +12472,26 @@
       "baselineFleet": {
         "totalUnits": 342,
         "countsByTier": {
-          "1": 130,
+          "1": 129,
           "2": 63,
           "3": 64,
           "4": 18,
-          "5": 13,
+          "5": 12,
           "6": 18,
           "7": 22,
           "8": 14,
-          "9": 0,
-          "10": 0,
+          "9": 1,
+          "10": 1,
           "11": 0,
           "12": 0,
           "13": 0,
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 4977000,
-        "dailyMaintenanceUsd": 31230,
-        "annualMaintenanceUsd": 11398950,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 5142000,
+        "dailyMaintenanceUsd": 31885,
+        "annualMaintenanceUsd": 11638025,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -12442,7 +12549,8 @@
           "border": 6.7,
           "industrial": 13.3,
           "coastal": 7.8
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -12498,7 +12606,7 @@
         "replacementValueUsd": 30000,
         "dailyMaintenanceUsd": 235,
         "annualMaintenanceUsd": 85775,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -12556,7 +12664,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -12593,26 +12702,26 @@
       "baselineFleet": {
         "totalUnits": 655,
         "countsByTier": {
-          "1": 278,
-          "2": 137,
+          "1": 277,
+          "2": 136,
           "3": 97,
-          "4": 37,
+          "4": 36,
           "5": 23,
           "6": 35,
           "7": 22,
           "8": 26,
-          "9": 0,
-          "10": 0,
-          "11": 0,
+          "9": 1,
+          "10": 1,
+          "11": 1,
           "12": 0,
           "13": 0,
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 8555000,
-        "dailyMaintenanceUsd": 55100,
-        "annualMaintenanceUsd": 20111500,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 8872000,
+        "dailyMaintenanceUsd": 56350,
+        "annualMaintenanceUsd": 20567750,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -12670,7 +12779,8 @@
           "border": 5.7,
           "industrial": 13.6,
           "coastal": 6.5
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -12707,26 +12817,26 @@
       "baselineFleet": {
         "totalUnits": 3603,
         "countsByTier": {
-          "1": 1411,
-          "2": 680,
-          "3": 650,
-          "4": 194,
-          "5": 125,
-          "6": 188,
-          "7": 215,
-          "8": 140,
-          "9": 0,
-          "10": 0,
-          "11": 0,
-          "12": 0,
-          "13": 0,
-          "14": 0,
-          "15": 0
+          "1": 1402,
+          "2": 675,
+          "3": 645,
+          "4": 192,
+          "5": 124,
+          "6": 186,
+          "7": 214,
+          "8": 139,
+          "9": 7,
+          "10": 7,
+          "11": 3,
+          "12": 3,
+          "13": 2,
+          "14": 2,
+          "15": 2
         },
-        "replacementValueUsd": 50985000,
-        "dailyMaintenanceUsd": 322015,
-        "annualMaintenanceUsd": 117535475,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 55885000,
+        "dailyMaintenanceUsd": 337685,
+        "annualMaintenanceUsd": 123255025,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -12784,7 +12894,8 @@
           "border": 6.5,
           "industrial": 13.1,
           "coastal": 7.5
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -12840,7 +12951,7 @@
         "replacementValueUsd": 2198000,
         "dailyMaintenanceUsd": 13860,
         "annualMaintenanceUsd": 5058900,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -12898,7 +13009,8 @@
           "border": 7.4,
           "industrial": 10.8,
           "coastal": 8.6
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -12935,26 +13047,26 @@
       "baselineFleet": {
         "totalUnits": 7968,
         "countsByTier": {
-          "1": 3380,
-          "2": 1654,
-          "3": 1193,
-          "4": 446,
-          "5": 280,
-          "6": 422,
-          "7": 280,
-          "8": 313,
-          "9": 0,
-          "10": 0,
-          "11": 0,
-          "12": 0,
-          "13": 0,
-          "14": 0,
-          "15": 0
+          "1": 3354,
+          "2": 1642,
+          "3": 1185,
+          "4": 442,
+          "5": 278,
+          "6": 419,
+          "7": 278,
+          "8": 310,
+          "9": 16,
+          "10": 16,
+          "11": 8,
+          "12": 8,
+          "13": 4,
+          "14": 4,
+          "15": 4
         },
-        "replacementValueUsd": 104288000,
-        "dailyMaintenanceUsd": 671375,
-        "annualMaintenanceUsd": 245051875,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 115121000,
+        "dailyMaintenanceUsd": 706705,
+        "annualMaintenanceUsd": 257947325,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -13012,7 +13124,8 @@
           "border": 5.7,
           "industrial": 13.6,
           "coastal": 6.5
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -13068,7 +13181,7 @@
         "replacementValueUsd": 25000,
         "dailyMaintenanceUsd": 190,
         "annualMaintenanceUsd": 69350,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -13126,7 +13239,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -13182,7 +13296,7 @@
         "replacementValueUsd": 8456000,
         "dailyMaintenanceUsd": 55070,
         "annualMaintenanceUsd": 20100550,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -13240,7 +13354,8 @@
           "border": 6,
           "industrial": 11.4,
           "coastal": 6.9
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -13275,26 +13390,26 @@
       "baselineFleet": {
         "totalUnits": 1163,
         "countsByTier": {
-          "1": 418,
-          "2": 186,
-          "3": 240,
+          "1": 416,
+          "2": 185,
+          "3": 239,
           "4": 58,
           "5": 32,
           "6": 52,
-          "7": 141,
+          "7": 140,
           "8": 36,
-          "9": 0,
-          "10": 0,
-          "11": 0,
+          "9": 2,
+          "10": 2,
+          "11": 1,
           "12": 0,
           "13": 0,
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 18453000,
-        "dailyMaintenanceUsd": 113270,
-        "annualMaintenanceUsd": 41343550,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 18918000,
+        "dailyMaintenanceUsd": 115105,
+        "annualMaintenanceUsd": 42013325,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -13352,7 +13467,8 @@
           "border": 16.8,
           "industrial": 11.5,
           "coastal": 0
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -13408,7 +13524,7 @@
         "replacementValueUsd": 41625000,
         "dailyMaintenanceUsd": 257175,
         "annualMaintenanceUsd": 93868875,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -13466,7 +13582,8 @@
           "border": 8.9,
           "industrial": 8.5,
           "coastal": 10.6
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -13522,7 +13639,7 @@
         "replacementValueUsd": 92000,
         "dailyMaintenanceUsd": 595,
         "annualMaintenanceUsd": 217175,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -13580,7 +13697,8 @@
           "border": 7.5,
           "industrial": 9.4,
           "coastal": 8.8
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -13636,7 +13754,7 @@
         "replacementValueUsd": 17580000,
         "dailyMaintenanceUsd": 112295,
         "annualMaintenanceUsd": 40987675,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -13694,7 +13812,8 @@
           "border": 7.5,
           "industrial": 8.4,
           "coastal": 8.8
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -13731,26 +13850,26 @@
       "baselineFleet": {
         "totalUnits": 3242,
         "countsByTier": {
-          "1": 1334,
-          "2": 644,
-          "3": 531,
-          "4": 179,
-          "5": 111,
-          "6": 169,
-          "7": 150,
-          "8": 124,
-          "9": 0,
-          "10": 0,
-          "11": 0,
-          "12": 0,
-          "13": 0,
-          "14": 0,
-          "15": 0
+          "1": 1325,
+          "2": 640,
+          "3": 527,
+          "4": 177,
+          "5": 110,
+          "6": 167,
+          "7": 149,
+          "8": 123,
+          "9": 6,
+          "10": 6,
+          "11": 3,
+          "12": 3,
+          "13": 2,
+          "14": 2,
+          "15": 2
         },
-        "replacementValueUsd": 43759000,
-        "dailyMaintenanceUsd": 279580,
-        "annualMaintenanceUsd": 102046700,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 48484000,
+        "dailyMaintenanceUsd": 294545,
+        "annualMaintenanceUsd": 107508925,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -13808,7 +13927,8 @@
           "border": 6,
           "industrial": 13.3,
           "coastal": 7
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -13864,7 +13984,7 @@
         "replacementValueUsd": 4031000,
         "dailyMaintenanceUsd": 26145,
         "annualMaintenanceUsd": 9542925,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -13922,7 +14042,8 @@
           "border": 5.5,
           "industrial": 13.5,
           "coastal": 6.3
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -13976,7 +14097,7 @@
         "replacementValueUsd": 5577000,
         "dailyMaintenanceUsd": 34100,
         "annualMaintenanceUsd": 12446500,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -14034,7 +14155,8 @@
           "border": 20,
           "industrial": 8.3,
           "coastal": 0
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -14088,7 +14210,7 @@
         "replacementValueUsd": 6298000,
         "dailyMaintenanceUsd": 38320,
         "annualMaintenanceUsd": 13986800,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -14146,7 +14268,8 @@
           "border": 20.1,
           "industrial": 9,
           "coastal": 0
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -14202,7 +14325,7 @@
         "replacementValueUsd": 1522000,
         "dailyMaintenanceUsd": 9650,
         "annualMaintenanceUsd": 3522250,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -14260,7 +14383,8 @@
           "border": 6.7,
           "industrial": 12.2,
           "coastal": 7.8
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -14297,26 +14421,26 @@
       "baselineFleet": {
         "totalUnits": 351,
         "countsByTier": {
-          "1": 150,
+          "1": 149,
           "2": 68,
-          "3": 60,
+          "3": 59,
           "4": 20,
           "5": 9,
           "6": 16,
           "7": 17,
           "8": 11,
-          "9": 0,
-          "10": 0,
+          "9": 1,
+          "10": 1,
           "11": 0,
           "12": 0,
           "13": 0,
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 4524000,
-        "dailyMaintenanceUsd": 29270,
-        "annualMaintenanceUsd": 10683550,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 4702000,
+        "dailyMaintenanceUsd": 29990,
+        "annualMaintenanceUsd": 10946350,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -14374,7 +14498,8 @@
           "border": 6,
           "industrial": 12.1,
           "coastal": 6.9
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -14428,7 +14553,7 @@
         "replacementValueUsd": 1847000,
         "dailyMaintenanceUsd": 11180,
         "annualMaintenanceUsd": 4080700,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -14486,7 +14611,8 @@
           "border": 21.1,
           "industrial": 8.2,
           "coastal": 0
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -14542,7 +14668,7 @@
         "replacementValueUsd": 3781000,
         "dailyMaintenanceUsd": 24040,
         "annualMaintenanceUsd": 8774600,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -14600,7 +14726,8 @@
           "border": 8,
           "industrial": 7.7,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -14656,7 +14783,7 @@
         "replacementValueUsd": 5606000,
         "dailyMaintenanceUsd": 36050,
         "annualMaintenanceUsd": 13158250,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -14714,7 +14841,8 @@
           "border": 6.5,
           "industrial": 11.2,
           "coastal": 7.5
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -14768,7 +14896,7 @@
         "replacementValueUsd": 62000,
         "dailyMaintenanceUsd": 360,
         "annualMaintenanceUsd": 131400,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -14826,7 +14954,8 @@
           "border": 20.9,
           "industrial": 12.1,
           "coastal": 0
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -14882,7 +15011,7 @@
         "replacementValueUsd": 2406000,
         "dailyMaintenanceUsd": 15180,
         "annualMaintenanceUsd": 5540700,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -14940,7 +15069,8 @@
           "border": 6.7,
           "industrial": 12.3,
           "coastal": 7.8
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -14994,7 +15124,7 @@
         "replacementValueUsd": 671000,
         "dailyMaintenanceUsd": 4225,
         "annualMaintenanceUsd": 1542125,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -15052,7 +15182,8 @@
           "border": 12.4,
           "industrial": 13.7,
           "coastal": 0
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -15108,7 +15239,7 @@
         "replacementValueUsd": 617000,
         "dailyMaintenanceUsd": 3965,
         "annualMaintenanceUsd": 1447225,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -15166,7 +15297,8 @@
           "border": 5.4,
           "industrial": 13.8,
           "coastal": 6.2
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -15222,7 +15354,7 @@
         "replacementValueUsd": 21887000,
         "dailyMaintenanceUsd": 137330,
         "annualMaintenanceUsd": 50125450,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -15280,7 +15412,8 @@
           "border": 8.6,
           "industrial": 7.1,
           "coastal": 10.2
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -15334,7 +15467,7 @@
         "replacementValueUsd": 16119000,
         "dailyMaintenanceUsd": 97580,
         "annualMaintenanceUsd": 35616700,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -15392,7 +15525,8 @@
           "border": 23.4,
           "industrial": 6.1,
           "coastal": 0
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -15430,26 +15564,26 @@
       "baselineFleet": {
         "totalUnits": 2110,
         "countsByTier": {
-          "1": 862,
-          "2": 390,
-          "3": 389,
-          "4": 116,
+          "1": 859,
+          "2": 389,
+          "3": 387,
+          "4": 115,
           "5": 58,
           "6": 98,
-          "7": 130,
+          "7": 129,
           "8": 67,
-          "9": 0,
-          "10": 0,
+          "9": 4,
+          "10": 4,
           "11": 0,
           "12": 0,
           "13": 0,
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 28588000,
-        "dailyMaintenanceUsd": 182615,
-        "annualMaintenanceUsd": 66654475,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 29261000,
+        "dailyMaintenanceUsd": 185325,
+        "annualMaintenanceUsd": 67643625,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -15507,7 +15641,8 @@
           "border": 6.4,
           "industrial": 12,
           "coastal": 7.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -15563,7 +15698,7 @@
         "replacementValueUsd": 444000,
         "dailyMaintenanceUsd": 2760,
         "annualMaintenanceUsd": 1007400,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -15621,7 +15756,8 @@
           "border": 7.8,
           "industrial": 11.4,
           "coastal": 9.2
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -15675,7 +15811,7 @@
         "replacementValueUsd": 18574000,
         "dailyMaintenanceUsd": 114025,
         "annualMaintenanceUsd": 41619125,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -15733,7 +15869,8 @@
           "border": 19.6,
           "industrial": 7.9,
           "coastal": 0
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -15789,7 +15926,7 @@
         "replacementValueUsd": 506000,
         "dailyMaintenanceUsd": 3240,
         "annualMaintenanceUsd": 1182600,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -15847,7 +15984,8 @@
           "border": 5.6,
           "industrial": 13.3,
           "coastal": 6.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -15903,7 +16041,7 @@
         "replacementValueUsd": 17000,
         "dailyMaintenanceUsd": 130,
         "annualMaintenanceUsd": 47450,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -15961,7 +16099,8 @@
           "border": 6.7,
           "industrial": 10.8,
           "coastal": 7.8
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -16017,7 +16156,7 @@
         "replacementValueUsd": 25000,
         "dailyMaintenanceUsd": 190,
         "annualMaintenanceUsd": 69350,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -16075,7 +16214,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -16131,7 +16271,7 @@
         "replacementValueUsd": 3724000,
         "dailyMaintenanceUsd": 23610,
         "annualMaintenanceUsd": 8617650,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -16189,7 +16329,8 @@
           "border": 7.5,
           "industrial": 9.1,
           "coastal": 8.8
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -16245,7 +16386,7 @@
         "replacementValueUsd": 1027000,
         "dailyMaintenanceUsd": 6375,
         "annualMaintenanceUsd": 2326875,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -16303,7 +16444,8 @@
           "border": 7.8,
           "industrial": 11.2,
           "coastal": 9.2
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -16359,7 +16501,7 @@
         "replacementValueUsd": 25000,
         "dailyMaintenanceUsd": 190,
         "annualMaintenanceUsd": 69350,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -16417,7 +16559,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -16455,26 +16598,26 @@
       "baselineFleet": {
         "totalUnits": 7791,
         "countsByTier": {
-          "1": 3220,
-          "2": 1460,
-          "3": 1403,
-          "4": 429,
-          "5": 216,
-          "6": 363,
-          "7": 453,
-          "8": 247,
-          "9": 0,
-          "10": 0,
+          "1": 3207,
+          "2": 1454,
+          "3": 1398,
+          "4": 427,
+          "5": 215,
+          "6": 362,
+          "7": 451,
+          "8": 246,
+          "9": 16,
+          "10": 15,
           "11": 0,
           "12": 0,
           "13": 0,
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 104361000,
-        "dailyMaintenanceUsd": 668540,
-        "annualMaintenanceUsd": 244017100,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 106958000,
+        "dailyMaintenanceUsd": 679020,
+        "annualMaintenanceUsd": 247842300,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -16532,7 +16675,8 @@
           "border": 6.3,
           "industrial": 12.1,
           "coastal": 7.3
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -16588,7 +16732,7 @@
         "replacementValueUsd": 87000,
         "dailyMaintenanceUsd": 550,
         "annualMaintenanceUsd": 200750,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -16646,7 +16790,8 @@
           "border": 8.9,
           "industrial": 9.4,
           "coastal": 10.6
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -16700,7 +16845,7 @@
         "replacementValueUsd": 1834000,
         "dailyMaintenanceUsd": 11285,
         "annualMaintenanceUsd": 4119025,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -16758,7 +16903,8 @@
           "border": 18.9,
           "industrial": 9.2,
           "coastal": 0
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -16814,7 +16960,7 @@
         "replacementValueUsd": 25000,
         "dailyMaintenanceUsd": 190,
         "annualMaintenanceUsd": 69350,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -16872,7 +17018,8 @@
           "border": 5.4,
           "industrial": 13.8,
           "coastal": 6.2
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -16926,7 +17073,7 @@
         "replacementValueUsd": 2924000,
         "dailyMaintenanceUsd": 18205,
         "annualMaintenanceUsd": 6644825,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -16984,7 +17131,8 @@
           "border": 15.7,
           "industrial": 10.7,
           "coastal": 0
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -17040,7 +17188,7 @@
         "replacementValueUsd": 487000,
         "dailyMaintenanceUsd": 3095,
         "annualMaintenanceUsd": 1129675,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -17098,7 +17246,8 @@
           "border": 6.9,
           "industrial": 11.3,
           "coastal": 8.1
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -17154,7 +17303,7 @@
         "replacementValueUsd": 25000,
         "dailyMaintenanceUsd": 190,
         "annualMaintenanceUsd": 69350,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -17212,7 +17361,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -17268,7 +17418,7 @@
         "replacementValueUsd": 28634000,
         "dailyMaintenanceUsd": 181340,
         "annualMaintenanceUsd": 66189100,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -17326,7 +17476,8 @@
           "border": 7.2,
           "industrial": 10.3,
           "coastal": 8.5
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -17382,7 +17533,7 @@
         "replacementValueUsd": 24062000,
         "dailyMaintenanceUsd": 150240,
         "annualMaintenanceUsd": 54837600,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -17440,7 +17591,8 @@
           "border": 8.7,
           "industrial": 7.6,
           "coastal": 10.3
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -17496,7 +17648,7 @@
         "replacementValueUsd": 38937000,
         "dailyMaintenanceUsd": 242175,
         "annualMaintenanceUsd": 88393875,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -17554,7 +17706,8 @@
           "border": 8.6,
           "industrial": 8.5,
           "coastal": 10.2
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -17610,7 +17763,7 @@
         "replacementValueUsd": 2402000,
         "dailyMaintenanceUsd": 15090,
         "annualMaintenanceUsd": 5507850,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -17668,7 +17821,8 @@
           "border": 7.5,
           "industrial": 10.7,
           "coastal": 8.8
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -17724,7 +17878,7 @@
         "replacementValueUsd": 13000,
         "dailyMaintenanceUsd": 105,
         "annualMaintenanceUsd": 38325,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -17782,7 +17936,8 @@
           "border": 5.5,
           "industrial": 12.6,
           "coastal": 6.3
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -17836,7 +17991,7 @@
         "replacementValueUsd": 21871000,
         "dailyMaintenanceUsd": 132230,
         "annualMaintenanceUsd": 48263950,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -17894,7 +18049,8 @@
           "border": 22.7,
           "industrial": 7.2,
           "coastal": 0
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -17931,26 +18087,26 @@
       "baselineFleet": {
         "totalUnits": 1181,
         "countsByTier": {
-          "1": 499,
-          "2": 246,
-          "3": 176,
+          "1": 497,
+          "2": 245,
+          "3": 175,
           "4": 66,
-          "5": 43,
+          "5": 42,
           "6": 63,
           "7": 41,
           "8": 47,
-          "9": 0,
-          "10": 0,
-          "11": 0,
+          "9": 2,
+          "10": 2,
+          "11": 1,
           "12": 0,
           "13": 0,
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 15510000,
-        "dailyMaintenanceUsd": 99765,
-        "annualMaintenanceUsd": 36414225,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 15995000,
+        "dailyMaintenanceUsd": 101680,
+        "annualMaintenanceUsd": 37113200,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -18008,7 +18164,8 @@
           "border": 5.7,
           "industrial": 13.7,
           "coastal": 6.5
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -18064,7 +18221,7 @@
         "replacementValueUsd": 283000,
         "dailyMaintenanceUsd": 1765,
         "annualMaintenanceUsd": 644225,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -18122,7 +18279,8 @@
           "border": 6.4,
           "industrial": 13.3,
           "coastal": 7.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -18159,26 +18317,26 @@
       "baselineFleet": {
         "totalUnits": 342,
         "countsByTier": {
-          "1": 142,
-          "2": 70,
+          "1": 141,
+          "2": 69,
           "3": 53,
           "4": 19,
           "5": 12,
           "6": 18,
           "7": 14,
           "8": 14,
-          "9": 0,
-          "10": 0,
+          "9": 1,
+          "10": 1,
           "11": 0,
           "12": 0,
           "13": 0,
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 4591000,
-        "dailyMaintenanceUsd": 29360,
-        "annualMaintenanceUsd": 10716400,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 4773000,
+        "dailyMaintenanceUsd": 30105,
+        "annualMaintenanceUsd": 10988325,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -18236,7 +18394,8 @@
           "border": 5.9,
           "industrial": 13.6,
           "coastal": 6.8
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -18293,7 +18452,7 @@
         "replacementValueUsd": 5085000,
         "dailyMaintenanceUsd": 32225,
         "annualMaintenanceUsd": 11762125,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -18351,7 +18510,8 @@
           "border": 7.3,
           "industrial": 9.9,
           "coastal": 8.6
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -18405,7 +18565,7 @@
         "replacementValueUsd": 20303000,
         "dailyMaintenanceUsd": 122935,
         "annualMaintenanceUsd": 44871275,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -18463,7 +18623,8 @@
           "border": 23.2,
           "industrial": 6.1,
           "coastal": 0
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -18519,7 +18680,7 @@
         "replacementValueUsd": 177663000,
         "dailyMaintenanceUsd": 1113880,
         "annualMaintenanceUsd": 406566200,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -18577,7 +18738,8 @@
           "border": 7.8,
           "industrial": 9.9,
           "coastal": 9.1
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -18633,7 +18795,7 @@
         "replacementValueUsd": 17000,
         "dailyMaintenanceUsd": 130,
         "annualMaintenanceUsd": 47450,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -18691,7 +18853,8 @@
           "border": 6.7,
           "industrial": 11.4,
           "coastal": 7.8
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -18747,7 +18910,7 @@
         "replacementValueUsd": 13000,
         "dailyMaintenanceUsd": 105,
         "annualMaintenanceUsd": 38325,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -18805,7 +18968,8 @@
           "border": 5.4,
           "industrial": 13.6,
           "coastal": 6.2
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -18859,7 +19023,7 @@
         "replacementValueUsd": 1542000,
         "dailyMaintenanceUsd": 9505,
         "annualMaintenanceUsd": 3469325,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -18917,7 +19081,8 @@
           "border": 16.6,
           "industrial": 10.7,
           "coastal": 0
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -18973,7 +19138,7 @@
         "replacementValueUsd": 17000,
         "dailyMaintenanceUsd": 130,
         "annualMaintenanceUsd": 47450,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -19031,7 +19196,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -19069,26 +19235,26 @@
       "baselineFleet": {
         "totalUnits": 368,
         "countsByTier": {
-          "1": 151,
-          "2": 74,
+          "1": 150,
+          "2": 73,
           "3": 59,
           "4": 20,
           "5": 13,
           "6": 20,
           "7": 16,
           "8": 15,
-          "9": 0,
-          "10": 0,
+          "9": 1,
+          "10": 1,
           "11": 0,
           "12": 0,
           "13": 0,
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 5000000,
-        "dailyMaintenanceUsd": 31880,
-        "annualMaintenanceUsd": 11636200,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 5182000,
+        "dailyMaintenanceUsd": 32625,
+        "annualMaintenanceUsd": 11908125,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -19146,7 +19312,8 @@
           "border": 6,
           "industrial": 13.6,
           "coastal": 6.9
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -19183,26 +19350,26 @@
       "baselineFleet": {
         "totalUnits": 332,
         "countsByTier": {
-          "1": 136,
+          "1": 135,
           "2": 63,
-          "3": 59,
+          "3": 58,
           "4": 18,
           "5": 10,
           "6": 16,
           "7": 18,
           "8": 12,
-          "9": 0,
-          "10": 0,
+          "9": 1,
+          "10": 1,
           "11": 0,
           "12": 0,
           "13": 0,
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 4502000,
-        "dailyMaintenanceUsd": 28745,
-        "annualMaintenanceUsd": 10491925,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 4680000,
+        "dailyMaintenanceUsd": 29465,
+        "annualMaintenanceUsd": 10754725,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -19260,7 +19427,8 @@
           "border": 6.3,
           "industrial": 12.6,
           "coastal": 7.3
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -19316,7 +19484,7 @@
         "replacementValueUsd": 183097000,
         "dailyMaintenanceUsd": 1139880,
         "annualMaintenanceUsd": 416056200,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -19374,7 +19542,8 @@
           "border": 8.5,
           "industrial": 8.7,
           "coastal": 10
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -19430,7 +19599,7 @@
         "replacementValueUsd": 13000,
         "dailyMaintenanceUsd": 105,
         "annualMaintenanceUsd": 38325,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -19488,7 +19657,8 @@
           "border": 6.2,
           "industrial": 12.5,
           "coastal": 7.2
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -19544,7 +19714,7 @@
         "replacementValueUsd": 3951000,
         "dailyMaintenanceUsd": 25350,
         "annualMaintenanceUsd": 9252750,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -19602,7 +19772,8 @@
           "border": 6.7,
           "industrial": 10.5,
           "coastal": 7.7
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -19659,7 +19830,7 @@
         "replacementValueUsd": 3751000,
         "dailyMaintenanceUsd": 23745,
         "annualMaintenanceUsd": 8666925,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -19717,7 +19888,8 @@
           "border": 6.7,
           "industrial": 12.2,
           "coastal": 7.8
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -19773,7 +19945,7 @@
         "replacementValueUsd": 8251000,
         "dailyMaintenanceUsd": 50310,
         "annualMaintenanceUsd": 18363150,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -19831,7 +20003,8 @@
           "border": 9.4,
           "industrial": 9,
           "coastal": 11.2
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -19885,7 +20058,7 @@
         "replacementValueUsd": 5766000,
         "dailyMaintenanceUsd": 35745,
         "annualMaintenanceUsd": 13046925,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -19943,7 +20116,8 @@
           "border": 16.2,
           "industrial": 10.6,
           "coastal": 0
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -19980,15 +20154,15 @@
       "baselineFleet": {
         "totalUnits": 1990,
         "countsByTier": {
-          "1": 826,
+          "1": 824,
           "2": 363,
-          "3": 372,
-          "4": 110,
+          "3": 371,
+          "4": 109,
           "5": 49,
           "6": 88,
           "7": 125,
           "8": 57,
-          "9": 0,
+          "9": 4,
           "10": 0,
           "11": 0,
           "12": 0,
@@ -19996,10 +20170,10 @@
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 26498000,
-        "dailyMaintenanceUsd": 170060,
-        "annualMaintenanceUsd": 62071900,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 26801000,
+        "dailyMaintenanceUsd": 171310,
+        "annualMaintenanceUsd": 62528150,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -20057,7 +20231,8 @@
           "border": 6.4,
           "industrial": 11.5,
           "coastal": 7.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -20113,7 +20288,7 @@
         "replacementValueUsd": 88028000,
         "dailyMaintenanceUsd": 551190,
         "annualMaintenanceUsd": 201184350,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -20171,7 +20346,8 @@
           "border": 7.8,
           "industrial": 10,
           "coastal": 9.2
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -20227,7 +20403,7 @@
         "replacementValueUsd": 25000,
         "dailyMaintenanceUsd": 190,
         "annualMaintenanceUsd": 69350,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -20285,7 +20461,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -20322,26 +20499,26 @@
       "baselineFleet": {
         "totalUnits": 2083,
         "countsByTier": {
-          "1": 795,
-          "2": 361,
-          "3": 425,
+          "1": 791,
+          "2": 359,
+          "3": 423,
           "4": 110,
           "5": 61,
           "6": 99,
-          "7": 162,
-          "8": 70,
-          "9": 0,
-          "10": 0,
-          "11": 0,
+          "7": 161,
+          "8": 69,
+          "9": 4,
+          "10": 4,
+          "11": 2,
           "12": 0,
           "13": 0,
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 30093000,
-        "dailyMaintenanceUsd": 189240,
-        "annualMaintenanceUsd": 69072600,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 31008000,
+        "dailyMaintenanceUsd": 192840,
+        "annualMaintenanceUsd": 70386600,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -20399,7 +20576,8 @@
           "border": 7,
           "industrial": 12,
           "coastal": 8.2
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -20436,26 +20614,26 @@
       "baselineFleet": {
         "totalUnits": 641,
         "countsByTier": {
-          "1": 249,
-          "2": 117,
+          "1": 248,
+          "2": 116,
           "3": 122,
           "4": 34,
-          "5": 21,
+          "5": 20,
           "6": 32,
           "7": 43,
           "8": 23,
-          "9": 0,
-          "10": 0,
-          "11": 0,
+          "9": 1,
+          "10": 1,
+          "11": 1,
           "12": 0,
           "13": 0,
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 9115000,
-        "dailyMaintenanceUsd": 57525,
-        "annualMaintenanceUsd": 20996625,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 9422000,
+        "dailyMaintenanceUsd": 58720,
+        "annualMaintenanceUsd": 21432800,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -20513,7 +20691,8 @@
           "border": 6.7,
           "industrial": 12.6,
           "coastal": 7.8
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -20569,7 +20748,7 @@
         "replacementValueUsd": 2177000,
         "dailyMaintenanceUsd": 13650,
         "annualMaintenanceUsd": 4982250,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -20627,7 +20806,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -20683,7 +20863,7 @@
         "replacementValueUsd": 2560000,
         "dailyMaintenanceUsd": 16595,
         "annualMaintenanceUsd": 6057175,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -20741,7 +20921,8 @@
           "border": 5.4,
           "industrial": 13.8,
           "coastal": 6.2
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -20797,7 +20978,7 @@
         "replacementValueUsd": 25000,
         "dailyMaintenanceUsd": 190,
         "annualMaintenanceUsd": 69350,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -20855,7 +21036,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -20892,26 +21074,26 @@
       "baselineFleet": {
         "totalUnits": 1052,
         "countsByTier": {
-          "1": 393,
-          "2": 174,
-          "3": 228,
+          "1": 392,
+          "2": 173,
+          "3": 227,
           "4": 55,
-          "5": 29,
+          "5": 28,
           "6": 48,
           "7": 92,
           "8": 33,
-          "9": 0,
-          "10": 0,
+          "9": 2,
+          "10": 2,
           "11": 0,
           "12": 0,
           "13": 0,
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 15443000,
-        "dailyMaintenanceUsd": 96780,
-        "annualMaintenanceUsd": 35324700,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 15783000,
+        "dailyMaintenanceUsd": 98140,
+        "annualMaintenanceUsd": 35821100,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -20969,7 +21151,8 @@
           "border": 7.3,
           "industrial": 11.5,
           "coastal": 8.5
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -21008,26 +21191,26 @@
       "baselineFleet": {
         "totalUnits": 8363,
         "countsByTier": {
-          "1": 3393,
-          "2": 1528,
-          "3": 1569,
-          "4": 456,
+          "1": 3379,
+          "2": 1522,
+          "3": 1562,
+          "4": 454,
           "5": 229,
-          "6": 388,
-          "7": 537,
-          "8": 263,
-          "9": 0,
-          "10": 0,
+          "6": 386,
+          "7": 535,
+          "8": 262,
+          "9": 17,
+          "10": 17,
           "11": 0,
           "12": 0,
           "13": 0,
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 114107000,
-        "dailyMaintenanceUsd": 727650,
-        "annualMaintenanceUsd": 265592250,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 116970000,
+        "dailyMaintenanceUsd": 739205,
+        "annualMaintenanceUsd": 269809825,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -21085,7 +21268,8 @@
           "border": 6.5,
           "industrial": 11.9,
           "coastal": 7.5
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -21139,7 +21323,7 @@
         "replacementValueUsd": 10685000,
         "dailyMaintenanceUsd": 64590,
         "annualMaintenanceUsd": 23575350,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -21197,7 +21381,8 @@
           "border": 22.9,
           "industrial": 7,
           "coastal": 0
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -21253,7 +21438,7 @@
         "replacementValueUsd": 25000,
         "dailyMaintenanceUsd": 190,
         "annualMaintenanceUsd": 69350,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -21311,7 +21496,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -21367,7 +21553,7 @@
         "replacementValueUsd": 25000,
         "dailyMaintenanceUsd": 190,
         "annualMaintenanceUsd": 69350,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -21425,7 +21611,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -21481,7 +21668,7 @@
         "replacementValueUsd": 25000,
         "dailyMaintenanceUsd": 190,
         "annualMaintenanceUsd": 69350,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -21539,7 +21726,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -21595,7 +21783,7 @@
         "replacementValueUsd": 142000,
         "dailyMaintenanceUsd": 870,
         "annualMaintenanceUsd": 317550,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -21653,7 +21841,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -21709,7 +21898,7 @@
         "replacementValueUsd": 17000,
         "dailyMaintenanceUsd": 130,
         "annualMaintenanceUsd": 47450,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -21767,7 +21956,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -21823,7 +22013,7 @@
         "replacementValueUsd": 25000,
         "dailyMaintenanceUsd": 190,
         "annualMaintenanceUsd": 69350,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -21881,7 +22071,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -21937,7 +22128,7 @@
         "replacementValueUsd": 75000,
         "dailyMaintenanceUsd": 465,
         "annualMaintenanceUsd": 169725,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -21995,7 +22186,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -22051,7 +22243,7 @@
         "replacementValueUsd": 169000,
         "dailyMaintenanceUsd": 1050,
         "annualMaintenanceUsd": 383250,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -22109,7 +22301,8 @@
           "border": 8.9,
           "industrial": 9.8,
           "coastal": 10.7
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -22163,7 +22356,7 @@
         "replacementValueUsd": 25000,
         "dailyMaintenanceUsd": 190,
         "annualMaintenanceUsd": 69350,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -22221,7 +22414,8 @@
           "border": 11.8,
           "industrial": 13.8,
           "coastal": 0
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -22277,7 +22471,7 @@
         "replacementValueUsd": 167000,
         "dailyMaintenanceUsd": 1060,
         "annualMaintenanceUsd": 386900,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -22335,7 +22529,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -22372,26 +22567,26 @@
       "baselineFleet": {
         "totalUnits": 2288,
         "countsByTier": {
-          "1": 948,
-          "2": 451,
-          "3": 380,
-          "4": 126,
+          "1": 942,
+          "2": 447,
+          "3": 378,
+          "4": 125,
           "5": 74,
-          "6": 116,
-          "7": 110,
+          "6": 115,
+          "7": 109,
           "8": 83,
-          "9": 0,
-          "10": 0,
-          "11": 0,
-          "12": 0,
-          "13": 0,
+          "9": 5,
+          "10": 5,
+          "11": 2,
+          "12": 2,
+          "13": 1,
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 30638000,
-        "dailyMaintenanceUsd": 196170,
-        "annualMaintenanceUsd": 71602050,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 32412000,
+        "dailyMaintenanceUsd": 202905,
+        "annualMaintenanceUsd": 74060325,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -22449,7 +22644,8 @@
           "border": 6,
           "industrial": 12.9,
           "coastal": 7
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -22505,7 +22701,7 @@
         "replacementValueUsd": 13075000,
         "dailyMaintenanceUsd": 82330,
         "annualMaintenanceUsd": 30050450,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -22563,7 +22759,8 @@
           "border": 8,
           "industrial": 8.5,
           "coastal": 9.5
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -22598,7 +22795,7 @@
       "baselineFleet": {
         "totalUnits": 354,
         "countsByTier": {
-          "1": 130,
+          "1": 129,
           "2": 55,
           "3": 75,
           "4": 18,
@@ -22606,7 +22803,7 @@
           "6": 15,
           "7": 44,
           "8": 9,
-          "9": 0,
+          "9": 1,
           "10": 0,
           "11": 0,
           "12": 0,
@@ -22614,10 +22811,10 @@
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 5505000,
-        "dailyMaintenanceUsd": 33955,
-        "annualMaintenanceUsd": 12393575,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 5585000,
+        "dailyMaintenanceUsd": 34290,
+        "annualMaintenanceUsd": 12515850,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -22675,7 +22872,8 @@
           "border": 16.8,
           "industrial": 10.8,
           "coastal": 0
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -22731,7 +22929,7 @@
         "replacementValueUsd": 92000,
         "dailyMaintenanceUsd": 595,
         "annualMaintenanceUsd": 217175,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -22789,7 +22987,8 @@
           "border": 7.1,
           "industrial": 12.1,
           "coastal": 8.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -22845,7 +23044,7 @@
         "replacementValueUsd": 5910000,
         "dailyMaintenanceUsd": 37185,
         "annualMaintenanceUsd": 13572525,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -22903,7 +23102,8 @@
           "border": 8.3,
           "industrial": 7.8,
           "coastal": 9.8
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -22942,25 +23142,25 @@
         "totalUnits": 411,
         "countsByTier": {
           "1": 179,
-          "2": 89,
+          "2": 88,
           "3": 56,
           "4": 23,
           "5": 15,
           "6": 22,
           "7": 10,
-          "8": 17,
-          "9": 0,
-          "10": 0,
+          "8": 16,
+          "9": 1,
+          "10": 1,
           "11": 0,
           "12": 0,
           "13": 0,
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 5239000,
-        "dailyMaintenanceUsd": 33950,
-        "annualMaintenanceUsd": 12391750,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 5366000,
+        "dailyMaintenanceUsd": 34440,
+        "annualMaintenanceUsd": 12570600,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -23018,7 +23218,8 @@
           "border": 5.4,
           "industrial": 13.8,
           "coastal": 6.2
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -23074,7 +23275,7 @@
         "replacementValueUsd": 25000,
         "dailyMaintenanceUsd": 190,
         "annualMaintenanceUsd": 69350,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -23132,7 +23333,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -23168,25 +23370,25 @@
         "totalUnits": 309,
         "countsByTier": {
           "1": 110,
-          "2": 51,
+          "2": 50,
           "3": 62,
           "4": 16,
           "5": 9,
-          "6": 15,
+          "6": 14,
           "7": 36,
           "8": 10,
-          "9": 0,
-          "10": 0,
+          "9": 1,
+          "10": 1,
           "11": 0,
           "12": 0,
           "13": 0,
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 4912000,
-        "dailyMaintenanceUsd": 30130,
-        "annualMaintenanceUsd": 10997450,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 5064000,
+        "dailyMaintenanceUsd": 30740,
+        "annualMaintenanceUsd": 11220100,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -23244,7 +23446,8 @@
           "border": 16.6,
           "industrial": 12,
           "coastal": 0
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -23300,7 +23503,7 @@
         "replacementValueUsd": 1856000,
         "dailyMaintenanceUsd": 11565,
         "annualMaintenanceUsd": 4221225,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -23358,7 +23561,8 @@
           "border": 7.1,
           "industrial": 12.5,
           "coastal": 8.3
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -23414,7 +23618,7 @@
         "replacementValueUsd": 612000,
         "dailyMaintenanceUsd": 3790,
         "annualMaintenanceUsd": 1383350,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -23472,7 +23676,8 @@
           "border": 9,
           "industrial": 8.8,
           "coastal": 10.7
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -23509,14 +23714,14 @@
       "baselineFleet": {
         "totalUnits": 913,
         "countsByTier": {
-          "1": 350,
-          "2": 116,
-          "3": 247,
-          "4": 48,
-          "5": 4,
-          "6": 24,
-          "7": 116,
-          "8": 8,
+          "1": 341,
+          "2": 130,
+          "3": 228,
+          "4": 46,
+          "5": 15,
+          "6": 33,
+          "7": 102,
+          "8": 18,
           "9": 0,
           "10": 0,
           "11": 0,
@@ -23525,10 +23730,10 @@
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 13002000,
-        "dailyMaintenanceUsd": 82265,
-        "annualMaintenanceUsd": 30026725,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 13371000,
+        "dailyMaintenanceUsd": 83945,
+        "annualMaintenanceUsd": 30639925,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -23586,7 +23791,8 @@
           "border": 8.3,
           "industrial": 7,
           "coastal": 9.8
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -23624,15 +23830,15 @@
       "baselineFleet": {
         "totalUnits": 3606,
         "countsByTier": {
-          "1": 1429,
-          "2": 620,
-          "3": 737,
+          "1": 1426,
+          "2": 618,
+          "3": 736,
           "4": 194,
           "5": 88,
-          "6": 158,
+          "6": 157,
           "7": 278,
           "8": 102,
-          "9": 0,
+          "9": 7,
           "10": 0,
           "11": 0,
           "12": 0,
@@ -23640,10 +23846,10 @@
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 50219000,
-        "dailyMaintenanceUsd": 318760,
-        "annualMaintenanceUsd": 116347400,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 50736000,
+        "dailyMaintenanceUsd": 320900,
+        "annualMaintenanceUsd": 117128500,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -23701,7 +23907,8 @@
           "border": 6.9,
           "industrial": 11.2,
           "coastal": 8
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -23757,7 +23964,7 @@
         "replacementValueUsd": 25000,
         "dailyMaintenanceUsd": 190,
         "annualMaintenanceUsd": 69350,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -23815,7 +24022,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -23869,7 +24077,7 @@
         "replacementValueUsd": 9087000,
         "dailyMaintenanceUsd": 54935,
         "annualMaintenanceUsd": 20051275,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -23927,7 +24135,8 @@
           "border": 22.5,
           "industrial": 7.3,
           "coastal": 0
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -23964,26 +24173,26 @@
       "baselineFleet": {
         "totalUnits": 3065,
         "countsByTier": {
-          "1": 1252,
-          "2": 601,
-          "3": 516,
-          "4": 168,
-          "5": 103,
-          "6": 158,
+          "1": 1243,
+          "2": 597,
+          "3": 512,
+          "4": 167,
+          "5": 102,
+          "6": 157,
           "7": 152,
           "8": 115,
-          "9": 0,
-          "10": 0,
-          "11": 0,
-          "12": 0,
-          "13": 0,
+          "9": 6,
+          "10": 6,
+          "11": 3,
+          "12": 3,
+          "13": 2,
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 41625000,
-        "dailyMaintenanceUsd": 265570,
-        "annualMaintenanceUsd": 96933050,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 44205000,
+        "dailyMaintenanceUsd": 275240,
+        "annualMaintenanceUsd": 100462600,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -24041,7 +24250,8 @@
           "border": 6.1,
           "industrial": 13.1,
           "coastal": 7.1
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -24097,7 +24307,7 @@
         "replacementValueUsd": 17190000,
         "dailyMaintenanceUsd": 105055,
         "annualMaintenanceUsd": 38345075,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -24155,7 +24365,8 @@
           "border": 9,
           "industrial": 9.7,
           "coastal": 10.8
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -24211,7 +24422,7 @@
         "replacementValueUsd": 38848000,
         "dailyMaintenanceUsd": 240800,
         "annualMaintenanceUsd": 87892000,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -24269,7 +24480,8 @@
           "border": 8.4,
           "industrial": 9.4,
           "coastal": 10
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -24325,7 +24537,7 @@
         "replacementValueUsd": 527000,
         "dailyMaintenanceUsd": 3320,
         "annualMaintenanceUsd": 1211800,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -24383,7 +24595,8 @@
           "border": 6.8,
           "industrial": 11.7,
           "coastal": 8
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -24440,7 +24653,7 @@
         "replacementValueUsd": 25000,
         "dailyMaintenanceUsd": 190,
         "annualMaintenanceUsd": 69350,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -24498,7 +24711,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -24535,26 +24749,26 @@
       "baselineFleet": {
         "totalUnits": 692,
         "countsByTier": {
-          "1": 289,
-          "2": 143,
-          "3": 106,
+          "1": 288,
+          "2": 142,
+          "3": 105,
           "4": 38,
           "5": 25,
           "6": 37,
           "7": 26,
           "8": 28,
-          "9": 0,
-          "10": 0,
-          "11": 0,
+          "9": 1,
+          "10": 1,
+          "11": 1,
           "12": 0,
           "13": 0,
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 9201000,
-        "dailyMaintenanceUsd": 58995,
-        "annualMaintenanceUsd": 21533175,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 9521000,
+        "dailyMaintenanceUsd": 60255,
+        "annualMaintenanceUsd": 21993075,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -24612,7 +24826,8 @@
           "border": 5.8,
           "industrial": 13.7,
           "coastal": 6.7
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -24647,26 +24862,26 @@
       "baselineFleet": {
         "totalUnits": 589,
         "countsByTier": {
-          "1": 225,
+          "1": 224,
           "2": 110,
           "3": 97,
           "4": 31,
           "5": 21,
           "6": 30,
-          "7": 52,
+          "7": 51,
           "8": 23,
-          "9": 0,
-          "10": 0,
+          "9": 1,
+          "10": 1,
           "11": 0,
           "12": 0,
           "13": 0,
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 8929000,
-        "dailyMaintenanceUsd": 55325,
-        "annualMaintenanceUsd": 20193625,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 9074000,
+        "dailyMaintenanceUsd": 55900,
+        "annualMaintenanceUsd": 20403500,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -24724,7 +24939,8 @@
           "border": 14.1,
           "industrial": 13.4,
           "coastal": 0
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -24780,7 +24996,7 @@
         "replacementValueUsd": 17406000,
         "dailyMaintenanceUsd": 110465,
         "annualMaintenanceUsd": 40319725,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -24838,7 +25054,8 @@
           "border": 7.7,
           "industrial": 8.6,
           "coastal": 9
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -24875,26 +25092,26 @@
       "baselineFleet": {
         "totalUnits": 1443,
         "countsByTier": {
-          "1": 586,
-          "2": 279,
-          "3": 249,
-          "4": 79,
+          "1": 583,
+          "2": 277,
+          "3": 247,
+          "4": 78,
           "5": 47,
           "6": 73,
-          "7": 77,
+          "7": 76,
           "8": 53,
-          "9": 0,
-          "10": 0,
-          "11": 0,
-          "12": 0,
-          "13": 0,
+          "9": 3,
+          "10": 3,
+          "11": 1,
+          "12": 1,
+          "13": 1,
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 19710000,
-        "dailyMaintenanceUsd": 125580,
-        "annualMaintenanceUsd": 45836700,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 20810000,
+        "dailyMaintenanceUsd": 129690,
+        "annualMaintenanceUsd": 47336850,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -24952,7 +25169,8 @@
           "border": 6.2,
           "industrial": 12.9,
           "coastal": 7.2
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -25006,7 +25224,7 @@
         "replacementValueUsd": 8101000,
         "dailyMaintenanceUsd": 49240,
         "annualMaintenanceUsd": 17972600,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -25064,7 +25282,8 @@
           "border": 21.3,
           "industrial": 7.8,
           "coastal": 0
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -25120,7 +25339,7 @@
         "replacementValueUsd": 48852000,
         "dailyMaintenanceUsd": 303585,
         "annualMaintenanceUsd": 110808525,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -25178,7 +25397,8 @@
           "border": 8.8,
           "industrial": 7.9,
           "coastal": 10.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -25216,15 +25436,15 @@
       "baselineFleet": {
         "totalUnits": 3824,
         "countsByTier": {
-          "1": 1408,
-          "2": 601,
-          "3": 873,
+          "1": 1406,
+          "2": 600,
+          "3": 871,
           "4": 198,
-          "5": 96,
+          "5": 95,
           "6": 167,
-          "7": 370,
-          "8": 111,
-          "9": 0,
+          "7": 369,
+          "8": 110,
+          "9": 8,
           "10": 0,
           "11": 0,
           "12": 0,
@@ -25232,10 +25452,10 @@
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 56849000,
-        "dailyMaintenanceUsd": 355295,
-        "annualMaintenanceUsd": 129682675,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 57357000,
+        "dailyMaintenanceUsd": 357335,
+        "annualMaintenanceUsd": 130427275,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -25293,7 +25513,8 @@
           "border": 7.6,
           "industrial": 10.9,
           "coastal": 8.9
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -25350,7 +25571,7 @@
         "replacementValueUsd": 1013000,
         "dailyMaintenanceUsd": 6315,
         "annualMaintenanceUsd": 2304975,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -25408,7 +25629,8 @@
           "border": 8.6,
           "industrial": 8.6,
           "coastal": 10.3
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -25464,7 +25686,7 @@
         "replacementValueUsd": 5772000,
         "dailyMaintenanceUsd": 36280,
         "annualMaintenanceUsd": 13242200,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -25522,7 +25744,8 @@
           "border": 8.4,
           "industrial": 7.7,
           "coastal": 9.9
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -25578,7 +25801,7 @@
         "replacementValueUsd": 13000,
         "dailyMaintenanceUsd": 105,
         "annualMaintenanceUsd": 38325,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -25636,7 +25859,8 @@
           "border": 5.6,
           "industrial": 12.1,
           "coastal": 6.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -25692,7 +25916,7 @@
         "replacementValueUsd": 87000,
         "dailyMaintenanceUsd": 550,
         "annualMaintenanceUsd": 200750,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -25750,7 +25974,8 @@
           "border": 8.7,
           "industrial": 9.9,
           "coastal": 10.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -25806,7 +26031,7 @@
         "replacementValueUsd": 1198000,
         "dailyMaintenanceUsd": 7440,
         "annualMaintenanceUsd": 2715600,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -25864,7 +26089,8 @@
           "border": 7.2,
           "industrial": 12.3,
           "coastal": 8.5
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -25920,7 +26146,7 @@
         "replacementValueUsd": 9323000,
         "dailyMaintenanceUsd": 59350,
         "annualMaintenanceUsd": 21662750,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -25978,7 +26204,8 @@
           "border": 6.9,
           "industrial": 10.8,
           "coastal": 8
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -26015,26 +26242,26 @@
       "baselineFleet": {
         "totalUnits": 5056,
         "countsByTier": {
-          "1": 2055,
-          "2": 934,
-          "3": 933,
-          "4": 276,
-          "5": 143,
-          "6": 238,
-          "7": 313,
-          "8": 164,
-          "9": 0,
-          "10": 0,
-          "11": 0,
+          "1": 2044,
+          "2": 930,
+          "3": 929,
+          "4": 275,
+          "5": 142,
+          "6": 237,
+          "7": 311,
+          "8": 163,
+          "9": 10,
+          "10": 10,
+          "11": 5,
           "12": 0,
           "13": 0,
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 68913000,
-        "dailyMaintenanceUsd": 439520,
-        "annualMaintenanceUsd": 160424800,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 71253000,
+        "dailyMaintenanceUsd": 448760,
+        "annualMaintenanceUsd": 163797400,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -26092,7 +26319,8 @@
           "border": 6.4,
           "industrial": 12.1,
           "coastal": 7.5
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -26128,14 +26356,14 @@
         "totalUnits": 413,
         "countsByTier": {
           "1": 148,
-          "2": 64,
+          "2": 63,
           "3": 89,
           "4": 21,
           "5": 10,
           "6": 17,
           "7": 52,
           "8": 12,
-          "9": 0,
+          "9": 1,
           "10": 0,
           "11": 0,
           "12": 0,
@@ -26143,10 +26371,10 @@
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 6540000,
-        "dailyMaintenanceUsd": 40180,
-        "annualMaintenanceUsd": 14665700,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 6617000,
+        "dailyMaintenanceUsd": 40500,
+        "annualMaintenanceUsd": 14782500,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -26204,7 +26432,8 @@
           "border": 17.2,
           "industrial": 10.9,
           "coastal": 0
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -26260,7 +26489,7 @@
         "replacementValueUsd": 25000,
         "dailyMaintenanceUsd": 190,
         "annualMaintenanceUsd": 69350,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -26318,7 +26547,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -26374,7 +26604,7 @@
         "replacementValueUsd": 17000,
         "dailyMaintenanceUsd": 130,
         "annualMaintenanceUsd": 47450,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -26432,7 +26662,8 @@
           "border": 7.2,
           "industrial": 10.5,
           "coastal": 8.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -26486,7 +26717,7 @@
         "replacementValueUsd": 37770000,
         "dailyMaintenanceUsd": 229045,
         "annualMaintenanceUsd": 83601425,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -26544,7 +26775,8 @@
           "border": 22.1,
           "industrial": 7.2,
           "coastal": 0
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -26600,7 +26832,7 @@
         "replacementValueUsd": 27866000,
         "dailyMaintenanceUsd": 178410,
         "annualMaintenanceUsd": 65119650,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -26658,7 +26890,8 @@
           "border": 6.9,
           "industrial": 10.1,
           "coastal": 8.1
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -26714,7 +26947,7 @@
         "replacementValueUsd": 7894000,
         "dailyMaintenanceUsd": 49440,
         "annualMaintenanceUsd": 18045600,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -26772,7 +27005,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -26809,26 +27043,26 @@
       "baselineFleet": {
         "totalUnits": 4458,
         "countsByTier": {
-          "1": 1828,
-          "2": 900,
-          "3": 712,
-          "4": 245,
-          "5": 161,
-          "6": 239,
-          "7": 193,
-          "8": 180,
-          "9": 0,
-          "10": 0,
-          "11": 0,
-          "12": 0,
-          "13": 0,
-          "14": 0,
-          "15": 0
+          "1": 1815,
+          "2": 893,
+          "3": 707,
+          "4": 243,
+          "5": 160,
+          "6": 237,
+          "7": 192,
+          "8": 178,
+          "9": 9,
+          "10": 9,
+          "11": 5,
+          "12": 4,
+          "13": 2,
+          "14": 2,
+          "15": 2
         },
-        "replacementValueUsd": 60434000,
-        "dailyMaintenanceUsd": 385615,
-        "annualMaintenanceUsd": 140749475,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 66128000,
+        "dailyMaintenanceUsd": 404345,
+        "annualMaintenanceUsd": 147585925,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -26886,7 +27120,8 @@
           "border": 6,
           "industrial": 13.6,
           "coastal": 6.9
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -26925,26 +27160,26 @@
       "baselineFleet": {
         "totalUnits": 22061,
         "countsByTier": {
-          "1": 8979,
-          "2": 4415,
-          "3": 3582,
-          "4": 1209,
-          "5": 800,
-          "6": 1182,
-          "7": 1004,
-          "8": 890,
-          "9": 0,
-          "10": 0,
-          "11": 0,
-          "12": 0,
-          "13": 0,
-          "14": 0,
-          "15": 0
+          "1": 8913,
+          "2": 4382,
+          "3": 3555,
+          "4": 1200,
+          "5": 794,
+          "6": 1173,
+          "7": 996,
+          "8": 883,
+          "9": 44,
+          "10": 44,
+          "11": 22,
+          "12": 22,
+          "13": 11,
+          "14": 11,
+          "15": 11
         },
-        "replacementValueUsd": 301284000,
-        "dailyMaintenanceUsd": 1918960,
-        "annualMaintenanceUsd": 700420400,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 330996000,
+        "dailyMaintenanceUsd": 2015720,
+        "annualMaintenanceUsd": 735737800,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -27002,7 +27237,8 @@
           "border": 6,
           "industrial": 13.6,
           "coastal": 7
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -27058,7 +27294,7 @@
         "replacementValueUsd": 25000,
         "dailyMaintenanceUsd": 190,
         "annualMaintenanceUsd": 69350,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -27116,7 +27352,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -27172,7 +27409,7 @@
         "replacementValueUsd": 2673000,
         "dailyMaintenanceUsd": 17410,
         "annualMaintenanceUsd": 6354650,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -27230,7 +27467,8 @@
           "border": 5.7,
           "industrial": 12.8,
           "coastal": 6.5
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -27284,7 +27522,7 @@
         "replacementValueUsd": 30067000,
         "dailyMaintenanceUsd": 183150,
         "annualMaintenanceUsd": 66849750,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -27342,7 +27580,8 @@
           "border": 19.6,
           "industrial": 9.4,
           "coastal": 0
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -27398,7 +27637,7 @@
         "replacementValueUsd": 246000,
         "dailyMaintenanceUsd": 1550,
         "annualMaintenanceUsd": 565750,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -27456,7 +27695,8 @@
           "border": 8.8,
           "industrial": 9.4,
           "coastal": 10.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -27493,26 +27733,26 @@
       "baselineFleet": {
         "totalUnits": 1708,
         "countsByTier": {
-          "1": 732,
-          "2": 331,
-          "3": 289,
+          "1": 729,
+          "2": 330,
+          "3": 288,
           "4": 96,
           "5": 45,
-          "6": 79,
+          "6": 78,
           "7": 84,
           "8": 52,
-          "9": 0,
-          "10": 0,
+          "9": 3,
+          "10": 3,
           "11": 0,
           "12": 0,
           "13": 0,
           "14": 0,
           "15": 0
         },
-        "replacementValueUsd": 22006000,
-        "dailyMaintenanceUsd": 142375,
-        "annualMaintenanceUsd": 51966875,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "replacementValueUsd": 22521000,
+        "dailyMaintenanceUsd": 144465,
+        "annualMaintenanceUsd": 52729725,
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -27570,7 +27810,8 @@
           "border": 6,
           "industrial": 12.1,
           "coastal": 6.9
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -27626,7 +27867,7 @@
         "replacementValueUsd": 75446000,
         "dailyMaintenanceUsd": 468075,
         "annualMaintenanceUsd": 170847375,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -27684,7 +27925,8 @@
           "border": 8.5,
           "industrial": 9.2,
           "coastal": 10
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -27740,7 +27982,7 @@
         "replacementValueUsd": 17000,
         "dailyMaintenanceUsd": 130,
         "annualMaintenanceUsd": 47450,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -27798,7 +28040,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -27854,7 +28097,7 @@
         "replacementValueUsd": 75000,
         "dailyMaintenanceUsd": 465,
         "annualMaintenanceUsd": 169725,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -27912,7 +28155,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -27968,7 +28212,7 @@
         "replacementValueUsd": 17000,
         "dailyMaintenanceUsd": 130,
         "annualMaintenanceUsd": 47450,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -28026,7 +28270,8 @@
           "border": 7.5,
           "industrial": 10.8,
           "coastal": 8.9
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -28082,7 +28327,7 @@
         "replacementValueUsd": 25000,
         "dailyMaintenanceUsd": 190,
         "annualMaintenanceUsd": 69350,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -28140,7 +28385,8 @@
           "border": 8,
           "industrial": 9.3,
           "coastal": 9.4
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -28196,7 +28442,7 @@
         "replacementValueUsd": 29051000,
         "dailyMaintenanceUsd": 181215,
         "annualMaintenanceUsd": 66143475,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -28254,7 +28500,8 @@
           "border": 8.5,
           "industrial": 8.2,
           "coastal": 10.1
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -28308,7 +28555,7 @@
         "replacementValueUsd": 16763000,
         "dailyMaintenanceUsd": 102980,
         "annualMaintenanceUsd": 37587700,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -28366,7 +28613,8 @@
           "border": 18.9,
           "industrial": 8.7,
           "coastal": 0
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     },
     {
@@ -28420,7 +28668,7 @@
         "replacementValueUsd": 13040000,
         "dailyMaintenanceUsd": 79470,
         "annualMaintenanceUsd": 29006550,
-        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY"
+        "source": "MODELED_COUNTRY_CONTEXT_AWARE_STARTING_INVENTORY_PREMIUM_TIERS_PRESERVED"
       },
       "crime": {
         "ratesPer100k": {
@@ -28478,7 +28726,8 @@
           "border": 20.4,
           "industrial": 8.4,
           "coastal": 0
-        }
+        },
+        "premiumTierPolicy": "PRESERVE_PREVIOUS_COUNTRY_STARTING_COUNTS_FOR_TIERS_9_TO_15"
       }
     }
   ]
