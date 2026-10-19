@@ -85,6 +85,9 @@ jobs:
           node --check omega_home_ministry_police_operations_ui_v1.js
           node --check omega_finance_ministry_runtime_v1.js
           node --check omega_finance_analytics_runtime_v1.js
+          node --check omega_cognitive_engine.js
+          node --check omega_live_operations_observability_v1.js
+          node --check omega_resource_economy_runtime_v2.js
           node --check omega_forex_monetary_engine_v1.js
           node --check omega_government_banking_runtime_v1.js
           node --check omega_macro_stability_runtime_v1.js
