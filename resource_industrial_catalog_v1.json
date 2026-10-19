@@ -2,8 +2,8 @@
   "schemaVersion": "1.0.0",
   "datasetId": "OMEGA_RESOURCE_INDUSTRIAL_CATALOG_V1",
   "turnAssumption": {
-    "daysPerTurn": 30,
-    "note": "Production and construction are continuous; turns are the game's strategic planning clock."
+    "daysPerTurn": 1,
+    "note": "One authoritative simulation turn is one in-game calendar day. Production, transport ETAs and construction progress are driven by the central simulation clock."
   },
   "extractionMethods": {
     "OPEN_PIT_DRILL_BLAST": {
