@@ -518,7 +518,10 @@
     const postCpi = before.cpiIndex * Math.pow(Math.max(0.0001, 1 + postInflation / 100), years);
     const postWages = before.nominalWageIndex * Math.pow(Math.max(0.0001, 1 + before.wageGrowthPctUsed / 100), years);
     const postRealWage = 100 * postWages / postCpi;
-    const annualImportInflationPct = usInflation + Math.max(0, annualizedDepreciationPct);
+    const stressBank = rootState().governmentBanking || {};
+    const stressTradePolicy = stressBank.tradePolicies && stressBank.tradePolicies[profileId(p)] || {};
+    const scenarioImportTariffPct = clamp(num(stressTradePolicy.importTariffPct) ?? 0, 0, 80);
+    const annualImportInflationPct = usInflation + Math.max(0, annualizedDepreciationPct) + scenarioImportTariffPct;
     const postImportCost = before.importCostIndex * Math.pow(Math.max(0.0001, 1 + annualImportInflationPct / 100), years);
     const result = {
       ok: true, scenario: code, label: scenario.label, countryCode: profileId(p), countryName: p.name, projectionYears: years,
@@ -527,7 +530,7 @@
       after: { localPerUsd: nextRate, currencyDepreciationPct: depreciationPct, inflationPct: postInflation, cpiIndex: postCpi,
         realWageIndex: postRealWage, importCostIndex: postImportCost, reserveUsd: reservesAfter, reserveCoverMonths: cover },
       annualFxPressurePct: drift, annualizedCurrencyDepreciationPct: annualizedDepreciationPct,
-      annualizedImportInflationPct: annualImportInflationPct, currencyRegime: regime,
+      annualizedImportInflationPct: annualImportInflationPct, importTariffPct: scenarioImportTariffPct, currencyRegime: regime,
       interpretation: 'Scenario output is deterministic gameplay analysis. It does not change Treasury, market rates, reservations or account balances.'
     };
     return result;
