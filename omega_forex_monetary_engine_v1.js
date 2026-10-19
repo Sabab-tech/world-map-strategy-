@@ -960,7 +960,8 @@
     if (!global.document || !state || !finance) return false;
     const content = global.document.getElementById('ministry-dashboard-content');
     const dashboard = content && content.querySelector('.ofm-dashboard');
-    if (!dashboard || dashboard.querySelector('[data-ofx-panel]')) return false;
+    const host = dashboard && dashboard.querySelector('[data-ofx-container]');
+    if (!dashboard || !host || dashboard.querySelector('[data-ofx-panel]')) return false;
     const player = getPlayerProfile();
     const playerCode = getCountryCurrency(player) || 'USD';
     const defaultTo = currencies.has('NGN') && playerCode !== 'NGN' ? 'NGN' : 'USD';
@@ -1030,7 +1031,7 @@
       + '<div class="ofx-table-scroll"><table class="ofx-table"><thead><tr><th>Turn / date</th><th>Transaction</th><th>Pair</th><th>USD notional</th><th>Fee</th><th>Settlement route</th></tr></thead>'
       + '<tbody data-ofx-ledger-table></tbody></table></div></section>'
       + '<p class="ofx-footnote">Reference rates are daily central-bank/official-source observations, not live tick-by-tick quotes. Game rates begin from the repository baseline where available and then follow OMEGA policy and macroeconomic rules. Shared currency codes share a single FX rate.</p>';
-    dashboard.appendChild(panel);
+    host.appendChild(panel);
     const table = panel.querySelector('[data-ofx-ledger-table]');
     if (table) table.innerHTML = renderLedger();
     const status = panel.querySelector('[data-ofx-history-status]');
@@ -1383,7 +1384,7 @@
     if (!target) return;
     observer = new global.MutationObserver(function () {
       const content = global.document.getElementById('ministry-dashboard-content');
-      if (content && content.querySelector('.ofm-dashboard') && !content.querySelector('[data-ofx-panel]')) queueRender();
+      if (content && content.querySelector('.ofm-dashboard [data-ofx-container]') && !content.querySelector('[data-ofx-panel]')) queueRender();
     });
     observer.observe(target, { childList: true, subtree: true });
   }
