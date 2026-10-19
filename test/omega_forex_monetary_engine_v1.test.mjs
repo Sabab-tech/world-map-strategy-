@@ -126,6 +126,18 @@ test('currency metadata uses existing country data and explicit exceptional-area
   assert.equal(engine.math.getCountryCurrency({
     iso3: 'ATA', sourceValues: {}
   }), null);
+  assert.equal(engine.math.getCountryCurrency({
+    iso3: 'BVT', sourceValues: {}
+  }), 'NOK');
+  assert.equal(engine.math.getCountryCurrency({
+    iso3: 'GEO', sourceValues: {}
+  }), null);
+  assert.equal(engine.math.getCountryCurrency({
+    iso3: 'GEO', generalFacts: { currencyCodes: ['GEL'] }
+  }), 'GEL');
+  assert.equal(engine.math.getCountryCurrency({
+    iso3: 'BGD', indicators: { currencyCode: 'BDT' }
+  }), 'BDT');
   assert.equal(engine.math.effectiveRateCode('SHP'), 'GBP');
 });
 
@@ -217,6 +229,21 @@ test('runtime syncs country finance into Government Banking and settles FX with 
   const diagnostics = await engine.init();
   assert.equal(diagnostics.countryAreaCount, 3);
   assert.ok(diagnostics.currencyCount >= 3);
+  assert.equal(diagnostics.countriesWithCurrency, 3);
+  assert.equal(diagnostics.countriesWithSimulationRate, 3);
+  const quotes = engine.getCountryQuotes('SIMULATION');
+  assert.equal(quotes.length, 3);
+  const bangladeshQuote = quotes.find(row => row.iso3 === 'BGD');
+  const nigeriaQuote = quotes.find(row => row.iso3 === 'NGA');
+  const unitedStatesQuote = quotes.find(row => row.iso3 === 'USA');
+  assert.equal(bangladeshQuote.currencyCode, 'BDT');
+  assert.equal(bangladeshQuote.localPerUsd, 120);
+  assert.equal(bangladeshQuote.usdPerLocalUnit, 1 / 120);
+  assert.equal(nigeriaQuote.localPerUsd, 1500);
+  assert.equal(nigeriaQuote.usdPerLocalUnit, 1 / 1500);
+  assert.equal(unitedStatesQuote.currencyCode, 'USD');
+  assert.equal(unitedStatesQuote.localPerUsd, 1);
+  assert.equal(unitedStatesQuote.usdPerLocalUnit, 1);
   assert.equal(engine.getRate('BDT', 'SIMULATION'), 120);
   assert.equal(context.gameState.governmentBanking.countries.BD.currencyCode, 'BDT');
   assert.equal(context.gameState.governmentBanking.countries.NG.currencyCode, 'NGN');
@@ -254,4 +281,9 @@ test('FX panel mounts only inside the dedicated Finance FX tab host',()=>{
   assert.match(source,/host\.appendChild\(panel\)/);
   assert.match(source,/\.ofm-dashboard \[data-ofx-container\]/);
   assert.match(source,/if \(!dashboard \|\| !host \|\| dashboard\.querySelector\('\[data-ofx-panel\]'\)\) return false/);
+  assert.match(source, /data-ofx-quote/);
+  assert.match(source, /function previewConversion/);
+  assert.match(source, /Record simulated exchange/);
+  assert.match(source, /data-ofx-banking-details open/);
+  assert.match(source, /country-rate-coverage/);
 });
