@@ -311,7 +311,7 @@
       getState(cid);
     }
     const diagnostics=Object.assign({},loaded,{ok:true,seededCountries:seeded,existingCountryStatesPreserved:existing,
-      baselineVersion:1,activeCountry:playerCountry});
+      baselineVersion:1,activeCountry:playerCountryId});
     emit('OMEGA_HOME_POLICE_WORLD_BASELINE_READY',diagnostics);
     return diagnostics;
   }
