@@ -20,7 +20,8 @@
 
   const VERSION='1.0.0';
   const SESSION_VERSION=1;
-  const STEP_MS=1000;
+  const DAY_MS=86400000;
+  const STEP_MS=10000;
   const MAX_STEPS_PER_FRAME=8;
   const MAX_EVENT_HISTORY=2000;
   const MAX_COMMAND_HISTORY=2000;
@@ -134,7 +135,7 @@
       this.version=VERSION;
       this.turn=finite(options.turn,0);
       this.simulationTimeMs=finite(options.simulationTimeMs,0);
-      this.stepDurationMs=Math.max(1,finite(options.stepDurationMs,3600000));
+      this.stepDurationMs=Math.max(1,finite(options.stepDurationMs,DAY_MS));
       this.accumulatorMs=Math.max(0,finite(options.accumulatorMs,0));
       this.speed=Math.max(0,finite(options.speed,1));
       this.running=false;
@@ -481,6 +482,9 @@
       this.phaseHandlers.set('PUBLISH',async({turn,commandResults})=>{
         const event=this.events.emit('OMEGA_SIMULATION_TURN_COMMITTED',{
           turn,
+          day:turn+1,
+          stepDurationMs:this.clock.stepDurationMs,
+          simulationDate:this.clock.simulationDate(),
           countryId:this.getPlayerCountryId(),
           commandCount:commandResults.length,
           stateRevision:this.world.state.simulation.worldStateRevision
@@ -766,7 +770,19 @@
       // all newly generated snapshots are checksummed before persistence.
       this.lastLoadIntegrity=snapshot.checksum?'VERIFIED':'LEGACY_UNVERIFIED';
       this.world.restore(snapshot.worldState);
-      this.clock.restore(snapshot.clock);
+      // Migrate legacy hourly saves into the canonical daily-turn timeline.
+      // A simulation turn is one game day; wall-clock speed is controlled separately.
+      const restoredClock=clone(snapshot.clock);
+      const savedTurn=Math.max(0,finite(restoredClock.turn,0));
+      if(Number(restoredClock.stepDurationMs)!==DAY_MS){
+        restoredClock.stepDurationMs=DAY_MS;
+        restoredClock.simulationTimeMs=savedTurn*DAY_MS;
+      }
+      restoredClock.stepDurationMs=DAY_MS;
+      restoredClock.accumulatorMs=0;
+      this.clock.restore(restoredClock);
+      this.world.state.simulation.turn=this.clock.turn;
+      this.world.state.simulation.date=this.clock.simulationDate();
       this.commandQueue.restore(snapshot.commands);
       this.events.restore(snapshot.events);
       if(snapshot.ministryRuntime&&this.ministryRuntime?.loadState)this.ministryRuntime.loadState(snapshot.ministryRuntime);
