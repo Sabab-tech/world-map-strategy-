@@ -138,13 +138,13 @@ window.CountryIOS = {
 
     prevChapter() {
         let ch = this.activeChapter - 1;
-        if (ch < 1) ch = 12;
+        if (ch < 1) ch = 13;
         this.switchChapter(ch);
     },
 
     nextChapter() {
         let ch = this.activeChapter + 1;
-        if (ch > 12) ch = 1;
+        if (ch > 13) ch = 1;
         this.switchChapter(ch);
     },
 
@@ -338,6 +338,9 @@ window.CountryIOS = {
                 break;
             case 12:
                 stage.innerHTML = this.renderChapter12_WorldEcosystem(countryKey);
+                break;
+            case 13:
+                stage.innerHTML = this.renderChapter13_StrategicProfile(countryKey);
                 break;
         }
 
@@ -1678,8 +1681,26 @@ window.CountryIOS = {
         return result || { status:'FAILED', stateChanged:false };
     },
 
-    // AI STRATEGIC ADVISOR RECOMMENDATIONS ENGINE
-    updateAdvisor(chNum, countryKey) {
+
+    // -------------------------------------------------------------------------
+    // CHAPTER 13: SOURCE-AWARE STRATEGIC COUNTRY PROFILE
+    // -------------------------------------------------------------------------
+    renderChapter13_StrategicProfile(countryKey) {
+        const runtime = window.OmegaCountryRuntimeData;
+        const identity = runtime && runtime.resolveCountry(countryKey);
+        const profile = runtime && typeof runtime.getStrategicProfile === 'function'
+            ? runtime.getStrategicProfile(countryKey) : null;
+        const name = (identity && identity.name ? identity.name : countryKey).replace(/_/g, ' ');
+        const escapeHtml = value => String(value == null ? '' : value)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        const safeArray = value => Array.isArray(value) ? value : [];
+        const displayValue = (value, unit) => {
+            if (value === null || value === undefined || value === '') return 'NOT RECORDED';
+            if (typeof value === 'number' && Number.isFinite(value)) {
+                const number = Math.abs(value);
+                const shown = unit === 'USD'
+                    ? (number >= 1e12 ? '    updateAdvisor(chNum, countryKey) {
         const chTag = document.getElementById('advisor-chapter-name');
         const text = document.getElementById('advisor-insights-text');
         if (!chTag || !text) return;
@@ -1687,7 +1708,7 @@ window.CountryIOS = {
         const countryName = countryKey.replace(/_/g, " ");
         const chNames = [
             "01 OVERVIEW", "02 GOVERNMENT", "03 MILITARY", "04 ECONOMY", "05 RESOURCES",
-            "06 DIPLOMACY", "07 INTELLIGENCE", "08 INFRASTRUCTURE", "09 TECHNOLOGY", "10 SOCIETY", "11 OPERATIONS", "12 WORLD ECOSYSTEM"
+            "06 DIPLOMACY", "07 INTELLIGENCE", "08 INFRASTRUCTURE", "09 TECHNOLOGY", "10 SOCIETY", "11 OPERATIONS", "12 WORLD ECOSYSTEM", "13 STRATEGIC PROFILE"
         ];
 
         chTag.innerText = chNames[chNum - 1] || "01 OVERVIEW";
@@ -1704,7 +1725,425 @@ window.CountryIOS = {
             9: `<strong>TECHNOLOGY ADVICE:</strong> Recorded AI/technology tier: ${this.formatCountryValue(countryKey, ['technology','research'], ['aiMaturityTier','aiTechnologyTier','technologyTier'])}. Research progress must come from the country's research records.`,
             10: `<strong>SOCIETY ADVICE:</strong> Recorded happiness/public morale: ${this.formatCountryValue(countryKey, ['society','population','politics'], ['happinessIndex','lifeSatisfactionIndex','publicMorale','approvalRating'])}. Civil-unrest risk requires an explicit recorded risk field.`,
             11: `<strong>OPERATIONS ADVICE:</strong> Optimal executive action: Propose Trade Accord or Establish Embassy to solidify strategic dominance.`,
-            12: `<strong>WORLD ECOSYSTEM ADVICE:</strong> Execute a targeted Causal Cascade or inspect structural Node Dependencies to analyze multi-tier systemic feedback loops.`
+            12: `<strong>WORLD ECOSYSTEM ADVICE:</strong> Execute a targeted Causal Cascade or inspect structural Node Dependencies to analyze multi-tier systemic feedback loops.`,
+            13: `<strong>STRATEGIC PROFILE:</strong> Review the country-specific evidence, dependency signals, player advantages and challenges. Missing data is not evidence of zero risk, and a model signal is not an observed national fact.`
+        };
+
+        text.innerHTML = adviceMap[chNum] || "Select a chapter to generate tactical intelligence.";
+    },
+
+    executeAdvisorDirective() {
+        const currentCh = this.activeChapter;
+        if (currentCh === 13) {
+            notify('STRATEGIC REVIEW ONLY', 'The country profile is an analytical briefing. No policy action has been applied; use the relevant ministry or live gameplay action to enact a decision.', 'info');
+            return;
+        }
+        const actionsMap = {
+            1: "influence-gov", 2: "negotiate-terms", 3: "joint-training",
+            4: "trade-agreement", 5: "resource-deal", 6: "alliance",
+            7: "intel-op", 8: "investment", 9: "joint-rd", 10: "humanitarian-aid", 11: "trade-proposal"
+        };
+        const act = actionsMap[currentCh] || "trade-proposal";
+        this.executeAction(act);
+    }
+};
+
+// Auto-initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    window.CountryIOS.init();
+});
+
+window.addEventListener('RESOURCE_STATE_UPDATED', () => {
+    if (window.CountryIOS && window.CountryIOS.activeChapter === 5 && window.CountryIOS.activeCountry) {
+        window.CountryIOS.switchChapter(5);
+    }
+});
+ + (value / 1e12).toFixed(2) + 'T'
+                        : number >= 1e9 ? '    updateAdvisor(chNum, countryKey) {
+        const chTag = document.getElementById('advisor-chapter-name');
+        const text = document.getElementById('advisor-insights-text');
+        if (!chTag || !text) return;
+
+        const countryName = countryKey.replace(/_/g, " ");
+        const chNames = [
+            "01 OVERVIEW", "02 GOVERNMENT", "03 MILITARY", "04 ECONOMY", "05 RESOURCES",
+            "06 DIPLOMACY", "07 INTELLIGENCE", "08 INFRASTRUCTURE", "09 TECHNOLOGY", "10 SOCIETY", "11 OPERATIONS", "12 WORLD ECOSYSTEM", "13 STRATEGIC PROFILE"
+        ];
+
+        chTag.innerText = chNames[chNum - 1] || "01 OVERVIEW";
+
+        const adviceMap = {
+            1: `<strong>OVERVIEW ADVICE:</strong> ${countryName}. Recorded GDP: ${this.formatCountryValue(countryKey, ['economy'], ['gdp','GDP','nominalGDP'])}. Recorded treasury: ${this.formatCountryValue(countryKey, ['finance'], ['available','reserves','treasury','balance'])}. Review live operations for unrecorded indicators before issuing directives.`,
+            2: `<strong>GOVERNMENT ADVICE:</strong> Administrative efficiency recorded: ${this.formatCountryValue(countryKey, ['government','politics'], ['administrativeEfficiencyPercent','administrativeEfficiency','efficiencyPercent'], '%')}. Review governance records before choosing a policy action.`,
+            3: `<strong>MILITARY ADVICE:</strong> Recorded readiness: ${this.formatCountryValue(countryKey, ['military','defense'], ['readiness','overallReadinessPercent','combatReadiness'], '%')}. Review manpower, equipment and supply status before training or deployment.`,
+            4: `<strong>ECONOMY ADVICE:</strong> Recorded GDP: ${this.formatCountryValue(countryKey, ['economy'], ['gdp','GDP','nominalGDP'])}; treasury: ${this.formatCountryValue(countryKey, ['finance'], ['available','reserves','treasury','balance'])}. A trade agreement has no guaranteed revenue effect; verify terms and settlement records.`,
+            5: `<strong>RESOURCE ADVICE:</strong> Inspect Mine & Stock / Pipeline for recorded production, inventory, route constraints and factory-input receipts. Reserve sufficiency is not assumed when records are missing.`,
+            6: `<strong>DIPLOMACY ADVICE:</strong> Review recorded relationship score and contact history before initiating negotiations. An improvement is not guaranteed until an engine result records it.`,
+            7: `<strong>INTELLIGENCE ADVICE:</strong> Recorded threat level: ${this.formatCountryValue(countryKey, ['intelligence'], ['threatAssessment.level','threatLevel','currentThreatLevel'])}; information reliability: ${this.formatCountryValue(countryKey, ['intelligence'], ['informationReliabilityPercent','reliabilityScore','informationReliability'], '%')}. Missing intelligence is not treated as a confirmed low threat.`,
+            8: `<strong>INFRASTRUCTURE ADVICE:</strong> Recorded logistics efficiency: ${this.formatCountryValue(countryKey, ['transport','infrastructure'], ['logisticsEfficiencyPercent','operatingEfficiencyPercent','logistics.efficiencyPercent'], '%')}. Inspect route capacity and blocked-delivery records before expanding logistics.`,
+            9: `<strong>TECHNOLOGY ADVICE:</strong> Recorded AI/technology tier: ${this.formatCountryValue(countryKey, ['technology','research'], ['aiMaturityTier','aiTechnologyTier','technologyTier'])}. Research progress must come from the country's research records.`,
+            10: `<strong>SOCIETY ADVICE:</strong> Recorded happiness/public morale: ${this.formatCountryValue(countryKey, ['society','population','politics'], ['happinessIndex','lifeSatisfactionIndex','publicMorale','approvalRating'])}. Civil-unrest risk requires an explicit recorded risk field.`,
+            11: `<strong>OPERATIONS ADVICE:</strong> Optimal executive action: Propose Trade Accord or Establish Embassy to solidify strategic dominance.`,
+            12: `<strong>WORLD ECOSYSTEM ADVICE:</strong> Execute a targeted Causal Cascade or inspect structural Node Dependencies to analyze multi-tier systemic feedback loops.`,
+            13: `<strong>STRATEGIC PROFILE:</strong> Review the country-specific evidence, dependency signals, player advantages and challenges. Missing data is not evidence of zero risk, and a model signal is not an observed national fact.`
+        };
+
+        text.innerHTML = adviceMap[chNum] || "Select a chapter to generate tactical intelligence.";
+    },
+
+    executeAdvisorDirective() {
+        const currentCh = this.activeChapter;
+        const actionsMap = {
+            1: "influence-gov", 2: "negotiate-terms", 3: "joint-training",
+            4: "trade-agreement", 5: "resource-deal", 6: "alliance",
+            7: "intel-op", 8: "investment", 9: "joint-rd", 10: "humanitarian-aid", 11: "trade-proposal"
+        };
+        const act = actionsMap[currentCh] || "trade-proposal";
+        this.executeAction(act);
+    }
+};
+
+// Auto-initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    window.CountryIOS.init();
+});
+
+window.addEventListener('RESOURCE_STATE_UPDATED', () => {
+    if (window.CountryIOS && window.CountryIOS.activeChapter === 5 && window.CountryIOS.activeCountry) {
+        window.CountryIOS.switchChapter(5);
+    }
+});
+ + (value / 1e9).toFixed(2) + 'B'
+                        : number >= 1e6 ? '    updateAdvisor(chNum, countryKey) {
+        const chTag = document.getElementById('advisor-chapter-name');
+        const text = document.getElementById('advisor-insights-text');
+        if (!chTag || !text) return;
+
+        const countryName = countryKey.replace(/_/g, " ");
+        const chNames = [
+            "01 OVERVIEW", "02 GOVERNMENT", "03 MILITARY", "04 ECONOMY", "05 RESOURCES",
+            "06 DIPLOMACY", "07 INTELLIGENCE", "08 INFRASTRUCTURE", "09 TECHNOLOGY", "10 SOCIETY", "11 OPERATIONS", "12 WORLD ECOSYSTEM", "13 STRATEGIC PROFILE"
+        ];
+
+        chTag.innerText = chNames[chNum - 1] || "01 OVERVIEW";
+
+        const adviceMap = {
+            1: `<strong>OVERVIEW ADVICE:</strong> ${countryName}. Recorded GDP: ${this.formatCountryValue(countryKey, ['economy'], ['gdp','GDP','nominalGDP'])}. Recorded treasury: ${this.formatCountryValue(countryKey, ['finance'], ['available','reserves','treasury','balance'])}. Review live operations for unrecorded indicators before issuing directives.`,
+            2: `<strong>GOVERNMENT ADVICE:</strong> Administrative efficiency recorded: ${this.formatCountryValue(countryKey, ['government','politics'], ['administrativeEfficiencyPercent','administrativeEfficiency','efficiencyPercent'], '%')}. Review governance records before choosing a policy action.`,
+            3: `<strong>MILITARY ADVICE:</strong> Recorded readiness: ${this.formatCountryValue(countryKey, ['military','defense'], ['readiness','overallReadinessPercent','combatReadiness'], '%')}. Review manpower, equipment and supply status before training or deployment.`,
+            4: `<strong>ECONOMY ADVICE:</strong> Recorded GDP: ${this.formatCountryValue(countryKey, ['economy'], ['gdp','GDP','nominalGDP'])}; treasury: ${this.formatCountryValue(countryKey, ['finance'], ['available','reserves','treasury','balance'])}. A trade agreement has no guaranteed revenue effect; verify terms and settlement records.`,
+            5: `<strong>RESOURCE ADVICE:</strong> Inspect Mine & Stock / Pipeline for recorded production, inventory, route constraints and factory-input receipts. Reserve sufficiency is not assumed when records are missing.`,
+            6: `<strong>DIPLOMACY ADVICE:</strong> Review recorded relationship score and contact history before initiating negotiations. An improvement is not guaranteed until an engine result records it.`,
+            7: `<strong>INTELLIGENCE ADVICE:</strong> Recorded threat level: ${this.formatCountryValue(countryKey, ['intelligence'], ['threatAssessment.level','threatLevel','currentThreatLevel'])}; information reliability: ${this.formatCountryValue(countryKey, ['intelligence'], ['informationReliabilityPercent','reliabilityScore','informationReliability'], '%')}. Missing intelligence is not treated as a confirmed low threat.`,
+            8: `<strong>INFRASTRUCTURE ADVICE:</strong> Recorded logistics efficiency: ${this.formatCountryValue(countryKey, ['transport','infrastructure'], ['logisticsEfficiencyPercent','operatingEfficiencyPercent','logistics.efficiencyPercent'], '%')}. Inspect route capacity and blocked-delivery records before expanding logistics.`,
+            9: `<strong>TECHNOLOGY ADVICE:</strong> Recorded AI/technology tier: ${this.formatCountryValue(countryKey, ['technology','research'], ['aiMaturityTier','aiTechnologyTier','technologyTier'])}. Research progress must come from the country's research records.`,
+            10: `<strong>SOCIETY ADVICE:</strong> Recorded happiness/public morale: ${this.formatCountryValue(countryKey, ['society','population','politics'], ['happinessIndex','lifeSatisfactionIndex','publicMorale','approvalRating'])}. Civil-unrest risk requires an explicit recorded risk field.`,
+            11: `<strong>OPERATIONS ADVICE:</strong> Optimal executive action: Propose Trade Accord or Establish Embassy to solidify strategic dominance.`,
+            12: `<strong>WORLD ECOSYSTEM ADVICE:</strong> Execute a targeted Causal Cascade or inspect structural Node Dependencies to analyze multi-tier systemic feedback loops.`,
+            13: `<strong>STRATEGIC PROFILE:</strong> Review the country-specific evidence, dependency signals, player advantages and challenges. Missing data is not evidence of zero risk, and a model signal is not an observed national fact.`
+        };
+
+        text.innerHTML = adviceMap[chNum] || "Select a chapter to generate tactical intelligence.";
+    },
+
+    executeAdvisorDirective() {
+        const currentCh = this.activeChapter;
+        const actionsMap = {
+            1: "influence-gov", 2: "negotiate-terms", 3: "joint-training",
+            4: "trade-agreement", 5: "resource-deal", 6: "alliance",
+            7: "intel-op", 8: "investment", 9: "joint-rd", 10: "humanitarian-aid", 11: "trade-proposal"
+        };
+        const act = actionsMap[currentCh] || "trade-proposal";
+        this.executeAction(act);
+    }
+};
+
+// Auto-initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    window.CountryIOS.init();
+});
+
+window.addEventListener('RESOURCE_STATE_UPDATED', () => {
+    if (window.CountryIOS && window.CountryIOS.activeChapter === 5 && window.CountryIOS.activeCountry) {
+        window.CountryIOS.switchChapter(5);
+    }
+});
+ + (value / 1e6).toFixed(2) + 'M'
+                        : '    updateAdvisor(chNum, countryKey) {
+        const chTag = document.getElementById('advisor-chapter-name');
+        const text = document.getElementById('advisor-insights-text');
+        if (!chTag || !text) return;
+
+        const countryName = countryKey.replace(/_/g, " ");
+        const chNames = [
+            "01 OVERVIEW", "02 GOVERNMENT", "03 MILITARY", "04 ECONOMY", "05 RESOURCES",
+            "06 DIPLOMACY", "07 INTELLIGENCE", "08 INFRASTRUCTURE", "09 TECHNOLOGY", "10 SOCIETY", "11 OPERATIONS", "12 WORLD ECOSYSTEM", "13 STRATEGIC PROFILE"
+        ];
+
+        chTag.innerText = chNames[chNum - 1] || "01 OVERVIEW";
+
+        const adviceMap = {
+            1: `<strong>OVERVIEW ADVICE:</strong> ${countryName}. Recorded GDP: ${this.formatCountryValue(countryKey, ['economy'], ['gdp','GDP','nominalGDP'])}. Recorded treasury: ${this.formatCountryValue(countryKey, ['finance'], ['available','reserves','treasury','balance'])}. Review live operations for unrecorded indicators before issuing directives.`,
+            2: `<strong>GOVERNMENT ADVICE:</strong> Administrative efficiency recorded: ${this.formatCountryValue(countryKey, ['government','politics'], ['administrativeEfficiencyPercent','administrativeEfficiency','efficiencyPercent'], '%')}. Review governance records before choosing a policy action.`,
+            3: `<strong>MILITARY ADVICE:</strong> Recorded readiness: ${this.formatCountryValue(countryKey, ['military','defense'], ['readiness','overallReadinessPercent','combatReadiness'], '%')}. Review manpower, equipment and supply status before training or deployment.`,
+            4: `<strong>ECONOMY ADVICE:</strong> Recorded GDP: ${this.formatCountryValue(countryKey, ['economy'], ['gdp','GDP','nominalGDP'])}; treasury: ${this.formatCountryValue(countryKey, ['finance'], ['available','reserves','treasury','balance'])}. A trade agreement has no guaranteed revenue effect; verify terms and settlement records.`,
+            5: `<strong>RESOURCE ADVICE:</strong> Inspect Mine & Stock / Pipeline for recorded production, inventory, route constraints and factory-input receipts. Reserve sufficiency is not assumed when records are missing.`,
+            6: `<strong>DIPLOMACY ADVICE:</strong> Review recorded relationship score and contact history before initiating negotiations. An improvement is not guaranteed until an engine result records it.`,
+            7: `<strong>INTELLIGENCE ADVICE:</strong> Recorded threat level: ${this.formatCountryValue(countryKey, ['intelligence'], ['threatAssessment.level','threatLevel','currentThreatLevel'])}; information reliability: ${this.formatCountryValue(countryKey, ['intelligence'], ['informationReliabilityPercent','reliabilityScore','informationReliability'], '%')}. Missing intelligence is not treated as a confirmed low threat.`,
+            8: `<strong>INFRASTRUCTURE ADVICE:</strong> Recorded logistics efficiency: ${this.formatCountryValue(countryKey, ['transport','infrastructure'], ['logisticsEfficiencyPercent','operatingEfficiencyPercent','logistics.efficiencyPercent'], '%')}. Inspect route capacity and blocked-delivery records before expanding logistics.`,
+            9: `<strong>TECHNOLOGY ADVICE:</strong> Recorded AI/technology tier: ${this.formatCountryValue(countryKey, ['technology','research'], ['aiMaturityTier','aiTechnologyTier','technologyTier'])}. Research progress must come from the country's research records.`,
+            10: `<strong>SOCIETY ADVICE:</strong> Recorded happiness/public morale: ${this.formatCountryValue(countryKey, ['society','population','politics'], ['happinessIndex','lifeSatisfactionIndex','publicMorale','approvalRating'])}. Civil-unrest risk requires an explicit recorded risk field.`,
+            11: `<strong>OPERATIONS ADVICE:</strong> Optimal executive action: Propose Trade Accord or Establish Embassy to solidify strategic dominance.`,
+            12: `<strong>WORLD ECOSYSTEM ADVICE:</strong> Execute a targeted Causal Cascade or inspect structural Node Dependencies to analyze multi-tier systemic feedback loops.`,
+            13: `<strong>STRATEGIC PROFILE:</strong> Review the country-specific evidence, dependency signals, player advantages and challenges. Missing data is not evidence of zero risk, and a model signal is not an observed national fact.`
+        };
+
+        text.innerHTML = adviceMap[chNum] || "Select a chapter to generate tactical intelligence.";
+    },
+
+    executeAdvisorDirective() {
+        const currentCh = this.activeChapter;
+        const actionsMap = {
+            1: "influence-gov", 2: "negotiate-terms", 3: "joint-training",
+            4: "trade-agreement", 5: "resource-deal", 6: "alliance",
+            7: "intel-op", 8: "investment", 9: "joint-rd", 10: "humanitarian-aid", 11: "trade-proposal"
+        };
+        const act = actionsMap[currentCh] || "trade-proposal";
+        this.executeAction(act);
+    }
+};
+
+// Auto-initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    window.CountryIOS.init();
+});
+
+window.addEventListener('RESOURCE_STATE_UPDATED', () => {
+    if (window.CountryIOS && window.CountryIOS.activeChapter === 5 && window.CountryIOS.activeCountry) {
+        window.CountryIOS.switchChapter(5);
+    }
+});
+ + value.toLocaleString(undefined, {maximumFractionDigits:2}))
+                    : value.toLocaleString(undefined, {maximumFractionDigits:2});
+                return unit && unit !== 'USD' ? shown + ' ' + unit : shown;
+            }
+            return String(value);
+        };
+        const list = (items, emptyText, className = 'sc-point-list') => {
+            const rows = safeArray(items);
+            if (!rows.length) return '<p class="sc-empty-note">' + escapeHtml(emptyText || 'No supported point is recorded for this section.') + '</p>';
+            return '<ul class="' + escapeHtml(className) + '">' + rows.map(item => {
+                const object = item && typeof item === 'object' && !Array.isArray(item) ? item : null;
+                const title = object
+                    ? (object.title || object.signal || object.key || object.field || object.domain || object.name || 'Recorded point')
+                    : item;
+                const detail = object
+                    ? (object.detail || object.meaning || object.interpretation || object.clarification || object.explanation || object.reason || '')
+                    : '';
+                const pieces = [];
+                if (object && object.value !== null && object.value !== undefined) {
+                    pieces.push(displayValue(object.value, object.unit || ''));
+                }
+                if (object && object.year !== null && object.year !== undefined) pieces.push('Year ' + object.year);
+                if (object && object.level !== null && object.level !== undefined) pieces.push('Model level ' + object.level + '/100');
+                if (object && object.intensity) pieces.push(String(object.intensity).replace(/_/g, ' '));
+                if (object && object.domain) pieces.push(String(object.domain).replace(/_/g, ' '));
+                if (object && object.evidenceType) pieces.push(String(object.evidenceType).replace(/_/g, ' '));
+                return '<li><strong>' + escapeHtml(String(title || 'Recorded point').replace(/_/g, ' ')) + '</strong>' +
+                    (detail ? '<span>' + escapeHtml(detail) + '</span>' : '') +
+                    (pieces.length ? '<small>' + escapeHtml(pieces.join(' · ')) + '</small>' : '') +
+                    '</li>';
+            }).join('') + '</ul>';
+        };
+        const card = (title, subtitle, body, full) =>
+            '<section class="sc-profile-card' + (full ? ' sc-profile-card-full' : '') + '">' +
+            '<header><h3>' + escapeHtml(title) + '</h3>' +
+            (subtitle ? '<p>' + escapeHtml(subtitle) + '</p>' : '') + '</header>' +
+            '<div class="sc-profile-card-body">' + body + '</div></section>';
+        const metric = (label, value, unit, note) =>
+            '<div class="sc-metric-tile"><span>' + escapeHtml(label) + '</span><strong>' +
+            escapeHtml(displayValue(value, unit)) + '</strong>' +
+            (note ? '<small>' + escapeHtml(note) + '</small>' : '') + '</div>';
+        const miniHeading = title => '<h4 class="sc-list-heading">' + escapeHtml(title) + '</h4>';
+        const buildEvidenceRows = evidence => Object.entries(evidence || {}).map(([key, row]) => ({
+            title: key,
+            value: row && row.value,
+            unit: /Usd$/i.test(key) ? 'USD' : (/Pct|Percent/i.test(key) ? '%' : ''),
+            year: row && row.year,
+            detail: row ? 'Source status: ' + String(row.status || 'NOT RECORDED') +
+                (row.sourceId ? ' · Source: ' + String(row.sourceId) : '') +
+                (row.method ? ' · Method: ' + String(row.method) : '') : 'No evidence record.',
+            evidenceType: row && row.status
+        }));
+        const diagnostic = runtime && typeof runtime.diagnostics === 'function'
+            ? runtime.diagnostics().strategicProfiles : null;
+        if (!profile) {
+            return '<div class="sc-profile-shell">' +
+                '<section class="sc-profile-hero sc-profile-unavailable">' +
+                '<div class="sc-eyebrow">COUNTRY INTELLIGENCE / STRATEGIC ASSESSMENT</div>' +
+                '<h2>' + escapeHtml(name) + '</h2>' +
+                '<p>The strategic profile for this country is not available in the loaded country registry. The screen will not substitute generic scores or invented claims.</p>' +
+                '<div class="sc-profile-status">PROFILE DATA NOT LOADED</div>' +
+                '<p class="sc-empty-note">Registry status: ' + escapeHtml(diagnostic && diagnostic.error || 'UNAVAILABLE') +
+                '. Expected source: country_general_data_registry_v1.json. This is a data availability issue, not a claim that the country lacks strengths or risks.</p>' +
+                '</section></div>';
+        }
+
+        const quality = profile.dataQuality || {};
+        const criteria = profile.assessmentCriteria || {};
+        const scores = profile.economy && profile.economy.scores || {};
+        const diplomacy = profile.diplomacy || {};
+        const economy = profile.economy || {};
+        const military = profile.military || {};
+        const politics = profile.politics || {};
+        const dependencies = profile.dependencies || {};
+        const coverageLabel = String(quality.profileCoverageLevel || 'UNKNOWN').replace(/_/g, ' ');
+        const relationLabel = String(quality.relationProfileStatus || 'UNKNOWN').replace(/_/g, ' ');
+        const flags = [
+            '<span class="sc-status-chip">' + escapeHtml(coverageLabel) + '</span>',
+            '<span class="sc-status-chip">' + escapeHtml(relationLabel) + '</span>',
+            '<span class="sc-status-chip">RUBRIC ' + escapeHtml(criteria.rubricVersion || quality.rubricVersion || 'UNSPECIFIED') + '</span>'
+        ].join('');
+        const playerPlanBody =
+            '<div class="sc-strategy-lead"><span>RECOMMENDED OPENING APPROACH</span><p>' +
+            escapeHtml(profile.recommendedStrategy || 'No country-specific strategy can be supported by the available evidence.') +
+            '</p></div>' +
+            '<div class="sc-profile-split">' +
+            '<div>' + miniHeading('Player advantages') + list(profile.playerAdvantages, 'No standout advantage is supported by the registered evidence.') + '</div>' +
+            '<div>' + miniHeading('Player challenges') + list(profile.playerChallenges, 'No challenge passed the available evidence thresholds; missing data is still uncertain.') + '</div>' +
+            '</div>' +
+            miniHeading('Priority strategy options') +
+            list(profile.strategyOptions, 'No specific strategy option was generated.', 'sc-point-list sc-ranked-list') +
+            '<p class="sc-method-note">These are strategic recommendations, not actions already applied to the simulation. Use the relevant ministry or gameplay system to enact policies.</p>';
+
+        const diplomacyBody =
+            '<div class="sc-profile-facts">' +
+            '<div><span>Existing game category</span><strong>' + escapeHtml(diplomacy.legacyCategory || profile.archetype || 'NOT RECORDED') + '</strong></div>' +
+            '<div><span>Country-specific model posture</span><strong>' + escapeHtml(diplomacy.strategicPosture || 'NOT ESTABLISHED') + '</strong></div>' +
+            '<div><span>Evidence mode</span><strong>' + escapeHtml(diplomacy.assessment || diplomacy.evidenceMode || 'LIMITED') + '</strong></div>' +
+            '</div>' +
+            miniHeading('Diplomatic priorities in the game model') + list(diplomacy.highWeightFocus, 'No country-specific priority list is available.') +
+            miniHeading('Cooperation / alignment signals') + list(diplomacy.cooperationSignals, 'No specific cooperation signal is registered.') +
+            miniHeading('External pressure points') + list(diplomacy.pressurePoints, 'No country-specific pressure signal is recorded.') +
+            miniHeading('Potential bargaining leverage') + list(diplomacy.leverageSignals, 'No leverage signal is supported by the available data.') +
+            miniHeading('Current behavioral tendencies') + list(diplomacy.tendencies, 'No country-specific behavior can be inferred safely.') +
+            miniHeading('Interpretation limits') + list(diplomacy.limitations, 'No additional limitation note is registered.');
+
+        const economyBody =
+            '<div class="sc-metric-grid">' +
+            metric('GDP', (quality.evidenceMetrics || {}).gdpCurrentUsd?.value, 'USD', 'Observation year: ' + String((quality.evidenceMetrics || {}).gdpCurrentUsd?.year ?? 'unknown')) +
+            metric('GDP growth', (quality.evidenceMetrics || {}).gdpGrowthPct?.value, '%', 'A single observation is not a long-term trend.') +
+            metric('Inflation', (quality.evidenceMetrics || {}).inflationPct?.value, '%', 'Registered value and year only.') +
+            metric('Unemployment', (quality.evidenceMetrics || {}).unemploymentRatePct?.value, '%', 'Definitions can differ by source.') +
+            metric('Public debt / GDP', (quality.evidenceMetrics || {}).publicDebtToGdpPct?.value, '%', 'Observation year: ' + String((quality.evidenceMetrics || {}).publicDebtToGdpPct?.year ?? 'unknown')) +
+            metric('Trade balance', (quality.evidenceMetrics || {}).tradeBalanceUsd?.value, 'USD', 'Not a named-country dependency measure.') +
+            metric('Foreign-exchange reserves', (quality.evidenceMetrics || {}).fxReservesUsd?.value, 'USD', 'Observation year: ' + String((quality.evidenceMetrics || {}).fxReservesUsd?.year ?? 'unknown')) +
+            metric('Military expenditure / GDP', (quality.evidenceMetrics || {}).militaryExpenditurePctGdp?.value, '%', 'Budget effort, not combat strength.') +
+            '</div>' +
+            '<div class="sc-profile-split">' +
+            '<div>' + miniHeading('Economic strengths') + list(economy.strengths, 'No standout economic strength can be established from the available data.') + '</div>' +
+            '<div>' + miniHeading('Economic weaknesses') + list(economy.vulnerabilities, 'No weakness passed the current evidence threshold; this is not proof of no risk.') + '</div>' +
+            '</div>' +
+            miniHeading('Economic and fiscal pressure points') + list(economy.pressurePoints, 'No pressure crossed the stated threshold in the currently available indicators.') +
+            miniHeading('Development signals') + list(economy.developmentSignals, 'No usable development signal is available.') +
+            miniHeading('Production / resource structure') +
+            '<div class="sc-profile-facts"><div><span>Dominant same-year sector</span><strong>' + escapeHtml(economy.sectorProfile && economy.sectorProfile.dominantSector || 'NOT COMPARABLE') + '</strong></div>' +
+            '<div><span>Registered commercial gameplay sites</span><strong>' + escapeHtml(String(economy.gameplayResourceAssets && economy.gameplayResourceAssets.commercialSiteCount || 0)) + '</strong></div>' +
+            '<div><span>Production trend</span><strong>' + escapeHtml(economy.trendStatus || 'NOT MEASURED') + '</strong></div></div>' +
+            '<p class="sc-method-note">Resource-site counts describe the game scenario registry. They do not establish observed national reserves, current output or the economic value of a deposit.</p>';
+
+        const militaryBody =
+            '<div class="sc-metric-grid">' +
+            metric('Defence expenditure / GDP', military.militaryExpenditurePctGdp, '%', 'Year: ' + String(military.expenditureObservationYear ?? 'unknown')) +
+            metric('Defence spending peer percentile', military.expenditureSharePercentile, 'percentile', military.expenditureSharePeerYear ? 'Same-year cohort: ' + military.expenditureSharePeerYear + ' · n=' + String(military.expenditureSharePeerCount || 0) : 'No comparable same-year cohort.') +
+            metric('Economic base percentile', military.financialBasePercentile, 'percentile', military.financialBasePeerYear ? 'Same-year cohort: ' + military.financialBasePeerYear : 'No comparable cohort.') +
+            metric('Population scale percentile', military.populationScalePercentile, 'percentile', military.populationPeerYear ? 'Same-year cohort: ' + military.populationPeerYear : 'No comparable cohort.') +
+            '</div>' +
+            '<div class="sc-profile-status sc-profile-status-warn">' + escapeHtml(military.capabilityStatus || 'CAPABILITY NOT MEASURED') + '</div>' +
+            miniHeading('Potential support factors') + list(military.strengthSignals, 'No clear defense-support factor can be established from the current registry.') +
+            miniHeading('Military pressure / risk signals') + list(military.riskSignals, 'No listed risk signal crossed the existing criteria; force risk remains uncertain.') +
+            miniHeading('Game-model military signals') + list(military.gameModelMilitarySignalDetails, 'No country-specific military parameter is present in the relation model.') +
+            miniHeading('Missing operational capability evidence') + list(military.capabilityGaps, 'No capability-gap list is available.') +
+            '<p class="sc-method-note">No composite military-strength score is displayed. Personnel, equipment quality, readiness, sustainment, ammunition, air/naval availability and logistics must be sourced consistently before a fair ranking is possible.</p>';
+
+        const politicsBody =
+            '<div class="sc-profile-facts"><div><span>Political system classification</span><strong>' + escapeHtml(politics.politicalSystemClassification || 'NOT CLASSIFIED') + '</strong></div>' +
+            '<div><span>Governance evidence coverage</span><strong>' + escapeHtml(String(politics.availableGovernanceIndicatorCount ?? 0)) + ' / 6 indicators</strong></div>' +
+            '<div><span>Political change trend</span><strong>' + escapeHtml(politics.progressStatus || 'NOT MEASURED') + '</strong></div></div>' +
+            miniHeading('Separate governance indicators') + list(politics.governanceIndicatorPoints, 'No governance indicators are available.') +
+            '<div class="sc-profile-split"><div>' + miniHeading('Recorded institutional strengths') + list(politics.strengths, 'No supported strength signal is available.') + '</div>' +
+            '<div>' + miniHeading('Institutional pressure points') + list(politics.risks, 'No pressure signal crossed the available thresholds.') + '</div></div>' +
+            miniHeading('What this does not establish') + list(politics.limitations, 'No further limitations recorded.');
+
+        const dependencyBody =
+            miniHeading('Dependency / vulnerability signals') +
+            list(dependencies.modelSignals, 'No dependency signal can be stated from the current inputs.') +
+            miniHeading('Evidence gaps that block a reliable dependency rating') +
+            list(dependencies.measurementGaps, 'No dependency measurement gap is recorded.') +
+            '<p class="sc-method-note">' + escapeHtml(dependencies.interpretationPolicy || 'Dependency signals are evidence to investigate, not proof of reliance on a named supplier, ally or creditor.') + '</p>';
+
+        const strengthsAndWeaknesses =
+            '<div class="sc-profile-split"><div>' + miniHeading('Cross-domain strengths') + list(profile.overallStrengths, 'No standout strength could be established.') + '</div>' +
+            '<div>' + miniHeading('Cross-domain weaknesses / exposure') + list(profile.overallWeaknesses, 'No exposure crossed the current thresholds; data gaps remain uncertain.') + '</div></div>';
+
+        const evidenceBody =
+            '<div class="sc-profile-facts"><div><span>Core indicators available</span><strong>' + escapeHtml(String(quality.availableCoreMetricCount ?? 0)) + ' / ' + escapeHtml(String(quality.coreMetricCount ?? 0)) + '</strong></div>' +
+            '<div><span>Governance indicators available</span><strong>' + escapeHtml(String(quality.availableGovernanceIndicatorCount ?? 0)) + ' / 6</strong></div>' +
+            '<div><span>Relation model classification</span><strong>' + escapeHtml(relationLabel) + '</strong></div>' +
+            '<div><span>Profile coverage</span><strong>' + escapeHtml(coverageLabel) + '</strong></div></div>' +
+            miniHeading('Source-level evidence records') + list(buildEvidenceRows(quality.evidenceMetrics), 'No supporting metric records are available.') +
+            miniHeading('Standard assessment thresholds') +
+            list(Object.entries(criteria.thresholds || {}).map(([key, value]) => ({title:key,detail:value})), 'Assessment criteria are not available.') +
+            miniHeading('Mandatory interpretation caveats') + list(criteria.mandatoryCaveats, 'No registered caveats.');
+
+        return '<div class="sc-profile-shell">' +
+            '<section class="sc-profile-hero">' +
+            '<div class="sc-eyebrow">COUNTRY INTELLIGENCE / SOURCE-AWARE ASSESSMENT</div>' +
+            '<div class="sc-profile-hero-row"><div><h2>' + escapeHtml(name) + '</h2><p class="sc-profile-archetype">' + escapeHtml(profile.archetype || 'Country strategic profile') + '</p></div>' +
+            '<div class="sc-profile-status">' + escapeHtml(String(profile.sovereigntyScope || 'SCOPE UNKNOWN').replace(/_/g, ' ')) + '</div></div>' +
+            '<p class="sc-profile-summary">' + escapeHtml(profile.executiveSummary || 'No executive summary available.') + '</p>' +
+            '<div class="sc-status-row">' + flags + '</div>' +
+            '<p class="sc-method-note">This assessment uses the game’s registered country data and explicitly labels game-model signals. It does not treat absent facts as zero, and does not claim long-term progress from one observation.</p>' +
+            '</section>' +
+            card('Strategic summary', 'Decision briefing across the country profile', strengthsAndWeaknesses, true) +
+            card('Diplomatic posture', 'Model priorities, cooperation signals and pressure points', diplomacyBody, false) +
+            card('Economic position', 'Strength, fiscal pressure and development evidence', economyBody, false) +
+            card('Military position', 'Defence-spending evidence and capability gaps', militaryBody, false) +
+            card('Political institutions', 'Separate governance measures; no unsupported regime label', politicsBody, false) +
+            card('Dependency exposure', 'Signals grouped by domain with their evidence type', dependencyBody, false) +
+            card('Player strategy', 'Potential benefits, challenges and ranked opening options', playerPlanBody, true) +
+            card('Evidence & methodology', 'Data coverage, sources, peer rules and interpretation limits', evidenceBody, true) +
+            '</div>';
+    },
+
+    // AI STRATEGIC ADVISOR RECOMMENDATIONS ENGINE
+    updateAdvisor(chNum, countryKey) {
+        const chTag = document.getElementById('advisor-chapter-name');
+        const text = document.getElementById('advisor-insights-text');
+        if (!chTag || !text) return;
+
+        const countryName = countryKey.replace(/_/g, " ");
+        const chNames = [
+            "01 OVERVIEW", "02 GOVERNMENT", "03 MILITARY", "04 ECONOMY", "05 RESOURCES",
+            "06 DIPLOMACY", "07 INTELLIGENCE", "08 INFRASTRUCTURE", "09 TECHNOLOGY", "10 SOCIETY", "11 OPERATIONS", "12 WORLD ECOSYSTEM", "13 STRATEGIC PROFILE"
+        ];
+
+        chTag.innerText = chNames[chNum - 1] || "01 OVERVIEW";
+
+        const adviceMap = {
+            1: `<strong>OVERVIEW ADVICE:</strong> ${countryName}. Recorded GDP: ${this.formatCountryValue(countryKey, ['economy'], ['gdp','GDP','nominalGDP'])}. Recorded treasury: ${this.formatCountryValue(countryKey, ['finance'], ['available','reserves','treasury','balance'])}. Review live operations for unrecorded indicators before issuing directives.`,
+            2: `<strong>GOVERNMENT ADVICE:</strong> Administrative efficiency recorded: ${this.formatCountryValue(countryKey, ['government','politics'], ['administrativeEfficiencyPercent','administrativeEfficiency','efficiencyPercent'], '%')}. Review governance records before choosing a policy action.`,
+            3: `<strong>MILITARY ADVICE:</strong> Recorded readiness: ${this.formatCountryValue(countryKey, ['military','defense'], ['readiness','overallReadinessPercent','combatReadiness'], '%')}. Review manpower, equipment and supply status before training or deployment.`,
+            4: `<strong>ECONOMY ADVICE:</strong> Recorded GDP: ${this.formatCountryValue(countryKey, ['economy'], ['gdp','GDP','nominalGDP'])}; treasury: ${this.formatCountryValue(countryKey, ['finance'], ['available','reserves','treasury','balance'])}. A trade agreement has no guaranteed revenue effect; verify terms and settlement records.`,
+            5: `<strong>RESOURCE ADVICE:</strong> Inspect Mine & Stock / Pipeline for recorded production, inventory, route constraints and factory-input receipts. Reserve sufficiency is not assumed when records are missing.`,
+            6: `<strong>DIPLOMACY ADVICE:</strong> Review recorded relationship score and contact history before initiating negotiations. An improvement is not guaranteed until an engine result records it.`,
+            7: `<strong>INTELLIGENCE ADVICE:</strong> Recorded threat level: ${this.formatCountryValue(countryKey, ['intelligence'], ['threatAssessment.level','threatLevel','currentThreatLevel'])}; information reliability: ${this.formatCountryValue(countryKey, ['intelligence'], ['informationReliabilityPercent','reliabilityScore','informationReliability'], '%')}. Missing intelligence is not treated as a confirmed low threat.`,
+            8: `<strong>INFRASTRUCTURE ADVICE:</strong> Recorded logistics efficiency: ${this.formatCountryValue(countryKey, ['transport','infrastructure'], ['logisticsEfficiencyPercent','operatingEfficiencyPercent','logistics.efficiencyPercent'], '%')}. Inspect route capacity and blocked-delivery records before expanding logistics.`,
+            9: `<strong>TECHNOLOGY ADVICE:</strong> Recorded AI/technology tier: ${this.formatCountryValue(countryKey, ['technology','research'], ['aiMaturityTier','aiTechnologyTier','technologyTier'])}. Research progress must come from the country's research records.`,
+            10: `<strong>SOCIETY ADVICE:</strong> Recorded happiness/public morale: ${this.formatCountryValue(countryKey, ['society','population','politics'], ['happinessIndex','lifeSatisfactionIndex','publicMorale','approvalRating'])}. Civil-unrest risk requires an explicit recorded risk field.`,
+            11: `<strong>OPERATIONS ADVICE:</strong> Optimal executive action: Propose Trade Accord or Establish Embassy to solidify strategic dominance.`,
+            12: `<strong>WORLD ECOSYSTEM ADVICE:</strong> Execute a targeted Causal Cascade or inspect structural Node Dependencies to analyze multi-tier systemic feedback loops.`,
+            13: `<strong>STRATEGIC PROFILE:</strong> Review the country-specific evidence, dependency signals, player advantages and challenges. Missing data is not evidence of zero risk, and a model signal is not an observed national fact.`
         };
 
         text.innerHTML = adviceMap[chNum] || "Select a chapter to generate tactical intelligence.";
