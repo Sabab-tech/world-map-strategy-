@@ -155,7 +155,7 @@ async function fetchRestCountries() {
 async function fetchWorldBankMetadata() {
   const url = 'https://api.worldbank.org/v2/country?format=json&per_page=400';
   const payload = await getJson(url);
-  return new Map((Array.isArray(payload?.[1]) ? payload[1] : []).filter((row) => row && row.id).map((row) => [String(row.id).toUpperCase(), row]));
+  return new Map((Array.isArray(payload?.[1]) ? payload[1] : []).filter((row) => row && row.iso2Code).map((row) => [String(row.iso2Code).toUpperCase(), row]));
 }
 
 async function fetchWorldBankIndicators() {
@@ -573,7 +573,7 @@ async function main() {
     catch (error) { restCountries.error = String(error); console.error('REST Countries refresh failed:', String(error)); }
     try {
       wbMetadata.metadataByIso2 = await fetchWorldBankMetadata();
-      wbMetadata.metadataByIso3 = new Map(Array.from(wbMetadata.metadataByIso2.values()).filter((row) => row.iso3Code).map((row) => [String(row.iso3Code).toUpperCase(), row]));
+      wbMetadata.metadataByIso3 = new Map(Array.from(wbMetadata.metadataByIso2.values()).filter((row) => row.iso3Code || row.id).map((row) => [String(row.iso3Code || row.id).toUpperCase(), row]));
       wbMetadata.metadataLoaded = true;
     } catch (error) { wbMetadata.metadataError = String(error); console.error('World Bank metadata refresh failed:', String(error)); }
     try { const result = await fetchWorldBankIndicators(); wbData.byCountry = result.byCountry; wbData.errors = result.errors; wbData.loaded = true; }
