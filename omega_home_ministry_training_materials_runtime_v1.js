@@ -11,6 +11,9 @@
   var MAX_LEDGER = 2048;
   var handlerRegistered = false;
   var lastError = null;
+  var materialRules = null;
+  var materialRulesPromise = null;
+  var materialRulesError = null;
 
   function clone(value) {
     if (value === null || typeof value !== 'object') return value;
@@ -26,6 +29,78 @@
     if (typeof value === 'number' && Number.isFinite(value)) return value;
     if (typeof value === 'string' && value.trim() !== '' && Number.isFinite(Number(value))) return Number(value);
     return null;
+  }
+  function validMaterialRules(value) {
+    if (!value || typeof value !== 'object' || value.schemaVersion !== '1.0.0' ||
+        !value.requirements || typeof value.requirements !== 'object' || Array.isArray(value.requirements)) return false;
+    var categories = Object.keys(value.requirements);
+    if (!categories.length) return false;
+    return categories.every(function (category) {
+      var rows = value.requirements[category];
+      if (!Array.isArray(rows) || !rows.length) return false;
+      var seen = Object.create(null);
+      return rows.every(function (row) {
+        if (!row || typeof row !== 'object' || !String(row.resourceId || '').trim()) return false;
+        var multiplier = number(row.quantityPerTargetLevel);
+        var key = token(row.resourceId);
+        if (multiplier === null || multiplier <= 0 || seen[key]) return false;
+        seen[key] = true;
+        return true;
+      });
+    });
+  }
+  function acceptMaterialRules(value) {
+    if (!validMaterialRules(value)) {
+      materialRulesError = 'MATERIAL_REQUIREMENTS_SCHEMA_INVALID';
+      return false;
+    }
+    materialRules = clone(value);
+    materialRulesError = null;
+    return true;
+  }
+  function loadMaterialRules() {
+    var injected = g.OmegaHomePoliceCapabilityMaterialRequirements;
+    if (acceptMaterialRulesIfAvailable(injected)) return Promise.resolve(true);
+    if (materialRulesPromise) return materialRulesPromise;
+    if (typeof g.fetch !== 'function') {
+      materialRulesError = 'MATERIAL_REQUIREMENTS_FETCH_UNAVAILABLE';
+      return Promise.resolve(false);
+    }
+    materialRulesPromise = Promise.resolve().then(function () {
+      return g.fetch('./omega_home_ministry_police_capability_material_requirements_v1.json', { cache: 'no-store' });
+    }).then(function (response) {
+      if (!response || response.ok === false || typeof response.json !== 'function')
+        throw new Error('MATERIAL_REQUIREMENTS_HTTP_UNAVAILABLE');
+      return response.json();
+    }).then(function (value) {
+      if (!acceptMaterialRules(value)) throw new Error(materialRulesError || 'MATERIAL_REQUIREMENTS_SCHEMA_INVALID');
+      g.OmegaHomePoliceCapabilityMaterialRequirements = clone(materialRules);
+      event('OMEGA_HOME_POLICE_MATERIAL_RULES_READY', { schemaVersion: materialRules.schemaVersion });
+      return true;
+    }).catch(function (error) {
+      materialRulesError = String(error && error.message || error);
+      materialRulesPromise = null;
+      return false;
+    });
+    return materialRulesPromise;
+  }
+  function acceptMaterialRulesIfAvailable(value) {
+    if (materialRules) return true;
+    if (validMaterialRules(value)) return acceptMaterialRules(value);
+    return false;
+  }
+  function getRequirements(type, targetLevel) {
+    if (!materialRules) return null;
+    var key = String(type || '').trim().toLowerCase();
+    var level = number(targetLevel);
+    var rows = materialRules.requirements && materialRules.requirements[key];
+    if (level === null || level <= 0 || !Array.isArray(rows)) return null;
+    var result = rows.map(function (row) {
+      var perLevel = number(row && row.quantityPerTargetLevel);
+      if (!row || perLevel === null || perLevel <= 0) return null;
+      return { resourceId: String(row.resourceId), quantity: Math.ceil(level * perLevel), unit: row.unit || null };
+    });
+    return result.some(function (row) { return !row; }) ? null : result;
   }
   function state() { return g.Game && g.Game.state || g.gameState || {}; }
   function interop() { return g.Omega && g.Omega.MinistryInteroperability || g.OmegaMinistryInteroperability || null; }
@@ -331,20 +406,31 @@
       return handlerRegistered;
     }
   }
-  function init() { register(); return diagnostics(); }
+  function init() {
+    register();
+    loadMaterialRules();
+    return diagnostics();
+  }
   function diagnostics() {
     var mesh = interop();
     return {
-      version: VERSION, ready: !!(handlerRegistered && mesh && typeof mesh.dispatchCommand === 'function'),
-      registered: handlerRegistered, command: COMMAND, ownerMinistry: 'resource', error: lastError
+      version: VERSION,
+      ready: !!(handlerRegistered && mesh && typeof mesh.dispatchCommand === 'function' && materialRules),
+      registered: handlerRegistered,
+      requirementsReady: !!materialRules,
+      requirementsError: materialRulesError,
+      command: COMMAND, ownerMinistry: 'resource', error: lastError
     };
   }
 
-  var api = Object.freeze({ VERSION: VERSION, COMMAND: COMMAND, init: init, register: register, handle: handle, diagnostics: diagnostics });
+  var api = Object.freeze({
+    VERSION: VERSION, COMMAND: COMMAND, init: init, register: register, handle: handle,
+    diagnostics: diagnostics, getRequirements: getRequirements
+  });
   g.OmegaHomePoliceTrainingMaterialsRuntime = api;
   if (g.addEventListener) {
     ['OMEGA_MINISTRY_INTEROPERABILITY_READY','OMEGA_MINISTRY_RUNTIME_READY','OMEGA_HOME_POLICE_BASELINE_READY'].forEach(function (type) {
-      g.addEventListener(type, function () { if (!handlerRegistered) register(); });
+      g.addEventListener(type, function () { if (!handlerRegistered) register(); loadMaterialRules(); });
     });
   }
   if (g.document) {
