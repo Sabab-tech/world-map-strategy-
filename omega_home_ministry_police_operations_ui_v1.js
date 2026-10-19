@@ -287,7 +287,7 @@
       '<p>Assign the actual existing police force to specialist units. Allocations do not create extra officers: moving personnel between units costs money once, changes derived unit headcounts, and changes the crime model for each unit’s responsibilities.</p>'+
       '<div class="ohpu-grid">'+fields+'</div>'+
       '<div class="ohpu-note" id="ohpu-unit-total">'+validationMessage+'</div>'+
-      '<div class="ohpu-grid">'+kpi('One-time reallocation cost',estimate,'Finance Operations allocation and Treasury are charged when saved.')+kpi('Spendable Operations funds',money(funds),'Budget ceiling and treasury already applied.')+'</div>'+
+      '<div class="ohpu-grid" id="ohpu-unit-cost-grid">'+kpi('One-time reallocation cost',estimate,'Finance Operations allocation and Treasury are charged when saved.')+kpi('Spendable Operations funds',money(funds),'Budget ceiling and treasury already applied.')+'</div>'+
       '<button type="button" class="ohpu-btn ohpu-btn-main" id="ohpu-save-units" '+(enabled?'':'disabled')+'>SAVE POLICE UNIT ALLOCATION · CHARGE FINANCE</button>'+
       '<div class="ohpu-note">For a valid change, set all unit shares to exactly 100%. If Finance, treasury or the Operations envelope cannot cover the reallocation, the change is rejected and the prior allocation remains in force.</div></article></section>';
   }
