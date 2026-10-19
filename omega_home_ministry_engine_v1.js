@@ -257,6 +257,73 @@
     } catch (_) {}
     return normalized;
   }
+  function preferredCountryStorageKey(country){
+    const raw=String(country||'').trim();if(!raw)return '';
+    try{
+      const registry=g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega&&g.Omega.CanonicalIdentity;
+      if(registry&&typeof registry.resolveCountry==='function'){
+        const hit=registry.resolveCountry(raw)||registry.resolveCountry(raw.replace(/[_-]+/g,' '));
+        const row=hit&&hit.raw&&hit.raw.raw||hit&&hit.raw||{};
+        const iso3=row.iso3||row.iso3Code||row.ISO_A3||row.iso_a3;
+        if(iso3)return String(iso3).trim().toUpperCase().replace(/[-\s]+/g,'_');
+      }
+    }catch(_){}
+    return '';
+  }
+  function countryAliasKeys(country){
+    const raw=String(country||'').trim();if(!raw)return [];
+    const out=[normalizeCountry(raw)];
+    try{
+      const registry=g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega&&g.Omega.CanonicalIdentity;
+      if(registry&&typeof registry.resolveCountry==='function'){
+        const hit=registry.resolveCountry(raw)||registry.resolveCountry(raw.replace(/[_-]+/g,' '));
+        if(hit){
+          const row=hit.raw&&hit.raw.raw||hit.raw||{};
+          out.push(row.iso3,row.iso3Code,row.ISO_A3,row.iso_a3,row.iso2,row.code,hit.id,row.name,row.officialName);
+          if(Array.isArray(row.aliases))out.push(...row.aliases);
+        }
+      }
+    }catch(_){}
+    out.push(raw);
+    return [...new Set(out.filter(Boolean).map(v=>String(v).trim().toUpperCase().replace(/[-\s]+/g,'_')))];
+  }
+  function countryBucketRef(root,sectionName,country,create){
+    if(!root||typeof root!=='object')return null;
+    let section=root[sectionName];
+    if(!section||typeof section!=='object'||Array.isArray(section)){
+      if(!create)return null;
+      root[sectionName]={};section=root[sectionName];
+    }
+    const canonical=normalizeCountry(country),aliases=countryAliasKeys(country),preferred=preferredCountryStorageKey(country);
+    let key;
+    if(preferred&&Object.prototype.hasOwnProperty.call(section,preferred))key=preferred;
+    if(key===undefined&&canonical&&Object.prototype.hasOwnProperty.call(section,canonical))key=canonical;
+    if(key===undefined){
+      const candidates=[preferred,...aliases,canonical].filter(Boolean);
+      key=candidates.find(k=>Object.prototype.hasOwnProperty.call(section,k));
+    }
+    if(key===undefined){
+      key=Object.keys(section).find(k=>{
+        const normalized=String(k).trim().toUpperCase().replace(/[-\s]+/g,'_');
+        return aliases.includes(normalized)||normalizeCountry(k)===canonical;
+      });
+    }
+    if(key===undefined||key===null){
+      if(!create)return null;
+      key=canonical||aliases[0]||preferred;
+      if(!key)return null;
+      section[key]={};
+    }
+    if(!section[key]||typeof section[key]!=='object'||Array.isArray(section[key])){
+      if(!create)return null;
+      section[key]={};
+    }
+    return {section:section,key:key,value:section[key]};
+  }
+  function countryBucket(root,sectionName,country,create){
+    const ref=countryBucketRef(root,sectionName,country,!!create);
+    return ref?ref.value:null;
+  }
   function currentCountry(candidate){
     const sim=g.Omega&&g.Omega.Simulation;
     const raw=candidate||g.OmegaMinistryViewCountry||
@@ -292,10 +359,10 @@
   function interop(){return g.Omega&&g.Omega.MinistryInteroperability||g.OmegaMinistryInteroperability||null;}
   function treasuryRecords(country){
     const roots=[g.Game&&g.Game.state,g.gameState].filter(Boolean),finance=[];
-    roots.forEach(root=>{const row=root&&root.finance&&root.finance[country];if(row&&typeof row==='object'&&num(row.available)!==null&&!finance.some(x=>x.row===row))finance.push({row:row,key:'available',source:'FINANCE_AVAILABLE'});});
+    roots.forEach(root=>{const row=countryBucket(root,'finance',country,false);if(row&&typeof row==='object'&&num(row.available)!==null&&!finance.some(x=>x.row===row))finance.push({row:row,key:'available',source:'FINANCE_AVAILABLE'});});
     if(finance.length)return finance;
     const economy=[];
-    roots.forEach(root=>{const row=root&&root.economy&&root.economy[country];if(row&&typeof row==='object'&&num(row.treasury)!==null&&!economy.some(x=>x.row===row))economy.push({row:row,key:'treasury',source:'ECONOMY_TREASURY'});});
+    roots.forEach(root=>{const row=countryBucket(root,'economy',country,false);if(row&&typeof row==='object'&&num(row.treasury)!==null&&!economy.some(x=>x.row===row))economy.push({row:row,key:'treasury',source:'ECONOMY_TREASURY'});});
     return economy;
   }
   function getTreasury(country){
@@ -557,11 +624,12 @@
     let seeded=0,existing=0,migrated=0,playerCountryId=playerCountry();
     rows.forEach(function(row){
       if(!row||!row.code)return;
-      const cid=normalizeCountry(row.code),countryState=root.interior[cid]&&root.interior[cid].police;
+      const cid=normalizeCountry(row.code),existingRef=countryBucketRef(root,'interior',cid,false);
+      const existingBucket=existingRef&&existingRef.value,countryState=existingBucket&&existingBucket.police;
       const raw=countryState&&typeof countryState==='object'?countryState:null;
       const state=mergeState(raw||baseState()),result=applyBaselineToPoliceState(state,row,raw);
-      if(!root.interior[cid]||typeof root.interior[cid]!=='object')root.interior[cid]={};
-      root.interior[cid].police=clone(result.state);
+      const targetRef=existingRef||countryBucketRef(root,'interior',cid,true);
+      if(targetRef)targetRef.value.police=clone(result.state);
       if(result.pristine)seeded++;else if(result.refreshedLegacyFleet){seeded++;migrated++;}else existing++;
     });
     root.omegaHomePoliceBaselineVersion=1;
@@ -920,7 +988,7 @@
     }
     const records=treasuryRecords(cid);if(!records.length)return{ok:false,reason:'TREASURY_DATA_UNAVAILABLE'};
     const balance=num(records[0].row[records[0].key]);if(balance===null||balance<cost)return{ok:false,reason:'INSUFFICIENT_TREASURY',balance:balance};
-    const mesh=interop(),root=rootState(),transactionalFinance=records[0].key==='available'&&root&&root.finance&&root.finance[cid]&&num(root.finance[cid].available)!==null&&mesh&&typeof mesh.dispatchCommand==='function'&&financeHandlerRegistered;
+    const mesh=interop(),root=rootState(),authoritativeFinance=countryBucket(root,'finance',cid,false),transactionalFinance=records[0].key==='available'&&authoritativeFinance===records[0].row&&num(authoritativeFinance.available)!==null&&mesh&&typeof mesh.dispatchCommand==='function'&&financeHandlerRegistered;
     if(transactionalFinance){
       const command=mesh.dispatchCommand('interior',FINANCE_CASH_COMMAND,cid,{delta:-cost,reason:'HOME_MINISTRY_POLICE_SPENDING'},{turn:turn(),commandType:FINANCE_CASH_COMMAND,correlationId:'POLICE-FINANCE-'+cid+'-'+turn()+'-'+Math.floor(simulationTimeMs())});
       if(!command||command.status!=='APPLIED')return{ok:false,reason:command&&command.result&&command.result.reason||command&&command.result&&command.result.error||'FINANCE_TRANSACTION_FAILED',balance:balance};
@@ -949,7 +1017,7 @@
     }
     (debit&&debit.previous||[]).forEach(e=>{
       if(e.remote){
-        const root=rootState(),row=root&&root.finance&&root.finance[e.country],current=row&&num(row.available);
+        const root=rootState(),row=countryBucket(root,'finance',e.country,false),current=row&&num(row.available);
         if(row&&current!==null&&current===e.expectedBalance){
           row.available=current+e.amount;
           try{if(typeof g.updateGlobalResourceHUD==='function')g.updateGlobalResourceHUD(e.country);}catch(_){}
@@ -987,7 +1055,7 @@
     if(num(s.policeCount)===null)s.policeCount=250;if(num(s.policeEfficiency)===null)s.policeEfficiency=60;if(num(s.policeTrust)===null)s.policeTrust=55;
     if(num(s.unlockedVehicleLevel)===null)s.unlockedVehicleLevel=1;return s;
   }
-  function storedState(country){const root=rootState(),raw=root&&root.interior&&root.interior[country]&&root.interior[country].police;return raw&&typeof raw==='object'?mergeState(raw):null;}
+  function storedState(country){const root=rootState(),bucket=countryBucket(root,'interior',country,false),raw=bucket&&bucket.police;return raw&&typeof raw==='object'?mergeState(raw):null;}
   function publicState(s){return{policeCount:s.policeCount,policeEfficiency:s.policeEfficiency,policeTrust:s.policeTrust,unlockedVehicleLevel:s.unlockedVehicleLevel,vehiclesOwned:clone(s.vehiclesOwned),pendingVehicleOrder:clone(s.pendingVehicleOrder),fuelSupplyDays:clamp(num(s.fuelSupplyDays)===null?14:num(s.fuelSupplyDays),0,180),lastFuelSupplyPurchaseTurn:s.lastFuelSupplyPurchaseTurn,homeBudgetPlan:clone(normalizeHomeBudgetPlan(s.homeBudgetPlan)),baselineVersion:s.baselineVersion,baselinePolicePersonnel:s.baselinePolicePersonnel,baselineFleetUnits:s.baselineFleetUnits,baselineFleetReplacementValueUsd:s.baselineFleetReplacementValueUsd,dailySalaryPerOfficerUsd:s.dailySalaryPerOfficerUsd,recruitmentFeePerOfficerUsd:s.recruitmentFeePerOfficerUsd,crimeBaseline:clone(s.crimeBaseline),crimeModel:clone(s.crimeModel),crimeHistory:clone(s.crimeHistory),policeRules:clone(s.policeRules),policeRulebook:clone(normalizePoliceRulebook(s.policeRulebook)),policeDepartments:clone(normalizePoliceDepartmentPlan(s.policeDepartments)),patrolPlan:clone(s.patrolPlan),publicSatisfaction:s.publicSatisfaction,misconductRiskPct:s.misconductRiskPct,justiceBacklog:s.justiceBacklog,privacyRiskPct:s.privacyRiskPct,facilityLevels:clone(s.facilityLevels),trainingQualityLevel:s.trainingQualityLevel,tacticsResearched:clone(s.tacticsResearched),pendingResearch:clone(s.pendingResearch),specialAgents:s.specialAgents,sabotageRisk:s.sabotageRisk,unpaidPayroll:s.unpaidPayroll,agentDeployments:clone(s.agentDeployments),intelligenceReports:clone(s.intelligenceReports),incidentLedger:clone(s.incidentLedger),guardDeployments:clone(s.guardDeployments),nextGuardDeploymentId:s.nextGuardDeploymentId,vehicleFleet:clone(s.vehicleFleet),nextVehicleUnitId:s.nextVehicleUnitId,vehicleMaintenanceLog:clone(s.vehicleMaintenanceLog),lastFleetSimulationDay:s.lastFleetSimulationDay};}
   function emit(type,detail){try{if(typeof g.dispatchEvent==='function'&&typeof g.CustomEvent==='function')g.dispatchEvent(new g.CustomEvent(type,{detail:clone(detail||{})}));}catch(_){}}
   function dispatchState(country,next,eventName){
@@ -998,8 +1066,8 @@
       return{ok:false,status:row&&row.status||'FAILED',reason:row&&row.result&&row.result.error||'STATE_COMMAND_FAILED'};
     }
     const root=rootState();if(!root)return{ok:false,reason:'AUTHORITATIVE_GAME_STATE_UNAVAILABLE'};
-    if(!root.interior||typeof root.interior!=='object')root.interior={};if(!root.interior[country]||typeof root.interior[country]!=='object')root.interior[country]={};
-    root.interior[country].police=clone(next);emit(eventName||'OMEGA_HOME_POLICE_STATE_CHANGED',{countryId:country,state:publicState(next),turn:turn()});return{ok:true,status:'DIRECT_STATE_WRITE'};
+    const targetRef=countryBucketRef(root,'interior',country,true);if(!targetRef)return{ok:false,reason:'COUNTRY_STATE_BUCKET_UNAVAILABLE'};
+    targetRef.value.police=clone(next);emit(eventName||'OMEGA_HOME_POLICE_STATE_CHANGED',{countryId:country,state:publicState(next),turn:turn()});return{ok:true,status:'DIRECT_STATE_WRITE'};
   }
   function getState(country){
     const cid=normalizeCountry(country||currentCountry());if(!cid)return baseState();
@@ -1026,7 +1094,7 @@
   }
   function population(country){
     for(const root of [g.Game&&g.Game.state,g.gameState].filter(Boolean)){
-      const p=root&&root.population&&root.population[country];if(!p||typeof p!=='object')continue;
+      const p=countryBucket(root,'population',country,false);if(!p||typeof p!=='object')continue;
       for(const k of ['population','population_2015','total','totalPopulation','people']){const n=num(p[k]);if(n!==null&&n>0)return n;}
     }return null;
   }
@@ -1443,7 +1511,7 @@
     const cost=estimateTrainingCostFrom(s,target);
     return mutation(cid,cost,'TRAINING_UPGRADE',function(next){next.trainingQualityLevel=target;next.policeEfficiency=clamp(next.policeEfficiency+Math.min(20,(target-s.trainingQualityLevel)*4),0,100);next.policeTrust=clamp(next.policeTrust+Math.min(5,target-s.trainingQualityLevel),0,100);next.sabotageRisk=clamp(next.sabotageRisk-Math.min(5,(target-s.trainingQualityLevel)*1.5),5,95);return{target:target,cost:cost,newTrainingQuality:target};});
   }
-  function knownCountry(country){const roots=[g.Game&&g.Game.state,g.gameState].filter(Boolean);return roots.some(root=>(root.economy&&root.economy[country])||(root.population&&root.population[country])||(root.interior&&root.interior[country]));}
+  function knownCountry(country){const roots=[g.Game&&g.Game.state,g.gameState].filter(Boolean);return roots.some(root=>!!(countryBucket(root,'economy',country,false)||countryBucket(root,'population',country,false)||countryBucket(root,'interior',country,false)));}
   function availableCountries(country){const home=normalizeCountry(country||currentCountry()),set=new Set();for(const root of [g.Game&&g.Game.state,g.gameState].filter(Boolean)){for(const bucket of ['economy','population','interior']){const rows=root&&root[bucket];if(rows&&typeof rows==='object')Object.keys(rows).forEach(key=>{const id=normalizeCountry(key);if(id&&id!==home)set.add(id);});}}return Array.from(set).sort();}
   function recruitAgents(amount,country,targetCountry){
     const qty=Math.floor(num(amount)||0),cid=normalizeCountry(country||currentCountry()),target=normalizeCountry(targetCountry||'UNASSIGNED');if(qty<1||qty>100)return{ok:false,reason:'AGENT_QUANTITY_INVALID'};
@@ -1466,7 +1534,7 @@
   }
   function securityAssetCandidates(country){
     const cid=normalizeCountry(country||currentCountry()),root=rootState()||(g.gameState&&typeof g.gameState==='object'?g.gameState:null);
-    const economy=root&&root.economy&&root.economy[cid];
+    const economy=countryBucket(root,'economy',cid,false);
     if(!economy||typeof economy!=='object')return [];
     const found=[];
     findNamedArrays(economy,['factories','industrialfacilities','plants','civilianfacilities','infrastructureassets'],0,found);
@@ -1640,7 +1708,7 @@
   function collectIntelligence(country,s,day){
     const week=Math.floor(day/7);if(day<7||s.lastIntelWeek===week)return false;
     const targets=Object.keys(s.agentDeployments||{}).filter(id=>id!=='UNASSIGNED'&&id!==country&&(num(s.agentDeployments[id])||0)>0&&knownCountry(id));if(!targets.length)return false;
-    targets.forEach(target=>{const observations=[],roots=[g.Game&&g.Game.state,g.gameState].filter(Boolean);for(const root of roots){const economy=root.economy&&root.economy[target],population=root.population&&root.population[target],police=root.interior&&root.interior[target]&&root.interior[target].police;[['economy.gdp',economy&&economy.gdp],['economy.debt',economy&&economy.debt],['economy.treasury',economy&&economy.treasury],['finance.available',root.finance&&root.finance[target]&&root.finance[target].available],['finance.reserves',root.finance&&root.finance[target]&&root.finance[target].reserves],['economy.stability',economy&&economy.stability],['population.population',population&&(population.population||population.population_2015||population.total)],['police.policeCount',police&&police.policeCount],['police.efficiency',police&&police.policeEfficiency],['police.threatExposure',police&&police.sabotageRisk]].forEach(pair=>{const value=num(pair[1]);if(value!==null)observations.push({field:pair[0],value:value});});}
+    targets.forEach(target=>{const observations=[],roots=[g.Game&&g.Game.state,g.gameState].filter(Boolean);for(const root of roots){const economy=countryBucket(root,'economy',target,false),population=countryBucket(root,'population',target,false),interior=countryBucket(root,'interior',target,false),police=interior&&interior.police,finance=countryBucket(root,'finance',target,false);[['economy.gdp',economy&&economy.gdp],['economy.debt',economy&&economy.debt],['economy.treasury',economy&&economy.treasury],['finance.available',finance&&finance.available],['finance.reserves',finance&&finance.reserves],['economy.stability',economy&&economy.stability],['population.population',population&&(population.population||population.population_2015||population.total)],['police.policeCount',police&&police.policeCount],['police.efficiency',police&&police.policeEfficiency],['police.threatExposure',police&&police.sabotageRisk]].forEach(pair=>{const value=num(pair[1]);if(value!==null)observations.push({field:pair[0],value:value});});}
       const report={reportId:'POLICE-INTEL-'+country+'-'+target+'-'+week+'-'+turn(),sourceCountryId:country,targetCountryId:target,simulationWeek:week,simulationTurn:turn(),agentCount:Math.max(0,num(s.agentDeployments[target])||0),confidencePercent:clamp(30+Math.max(0,num(s.agentDeployments[target])||0)*8,30,95),sourceType:'AUTHORITATIVE_GAME_STATE_OBSERVATION',observations:observations,assessment:observations.length?'SIGNALS_COLLECTED':'INSUFFICIENT_OBSERVABLE_FIELDS'};
       s.intelligenceReports.push(report);emit('OMEGA_HOME_MINISTRY_INTELLIGENCE_REPORT',report);
     });s.intelligenceReports=s.intelligenceReports.slice(-100);s.lastIntelWeek=week;return true;
