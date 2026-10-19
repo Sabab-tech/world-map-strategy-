@@ -501,8 +501,8 @@ test('W: aliases route commands into the same canonical country bucket and provi
     turn:3,commandType:'TEST_ROUTE_ECONOMY_UPDATE'
   });
 
-  assert.equal(command.countryId,'BD');
-  assert.equal(command.transaction.countryId,'BD');
+  assert.equal(command.countryId,'BGD');
+  assert.equal(command.transaction.countryId,'BGD');
   assert.equal(command.status,'APPLIED');
   assert.equal(command.stateChanged,true);
   assert.equal(command.stateWriteCount,1);
