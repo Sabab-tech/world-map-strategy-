@@ -926,6 +926,7 @@
       return '<tr><td>' + escapeHTML(c.code) + '</td><td>' + escapeHTML(c.name || c.code) + '</td>'
         + '<td>' + escapeHTML(String(c.countryCount || 0)) + '</td>'
         + '<td>' + escapeHTML(fmtRate(sim)) + '</td><td>' + escapeHTML(fmtRate(ref)) + '</td>'
+        + '<td>' + escapeHTML(fmtRate(sim ? 1 / sim : null)) + '</td><td>' + escapeHTML(fmtRate(ref ? 1 / ref : null)) + '</td>'
         + '<td>' + escapeHTML(String(live && live.source || 'N/A')) + '</td></tr>';
     }).join('');
   }
@@ -948,6 +949,7 @@
       const economy = getEconomyRecord(p) || {};
       return '<tr><td>' + escapeHTML(p.name) + '</td><td>' + escapeHTML(p.iso3 || p.countryCode || '') + '</td>'
         + '<td>' + escapeHTML(code || 'N/A') + '</td><td>' + escapeHTML(fmtRate(mode === 'REFERENCE' ? ref : sim)) + '</td>'
+        + '<td>' + escapeHTML(fmtRate(mode === 'REFERENCE' ? (ref ? 1 / ref : null) : (sim ? 1 / sim : null))) + '</td>'
         + '<td>' + escapeHTML(percentageText(finite(economy.inflation) ?? macro.inflation)) + '</td>'
         + '<td>' + escapeHTML(moneyText(finite(fm && fm.treasuryBalanceUsd))) + '</td>'
         + '<td>' + escapeHTML(moneyText(finite(economy.reserves) ?? macro.reserves)) + '</td>'
@@ -1018,11 +1020,11 @@
       + '<div class="ofx-chart-legend" data-ofx-pie-legend></div></article></div>'
       + '<div class="ofx-note" data-ofx-history-status>Loading one-month observations...</div></section>'
       + '<details class="ofx-section"><summary>Global Currency Catalogue · ' + escapeHTML(String(currencies.size)) + ' ISO-style currency codes</summary>'
-      + '<div class="ofx-table-scroll"><table class="ofx-table"><thead><tr><th>Code</th><th>Currency</th><th>Areas using it</th><th>Game units / USD</th><th>Reference units / USD</th><th>Game rate source</th></tr></thead>'
+      + '<div class="ofx-table-scroll"><table class="ofx-table"><thead><tr><th>Code</th><th>Currency</th><th>Areas using it</th><th>Game units / USD</th><th>Reference units / USD</th><th>Game USD / Unit</th><th>Reference USD / Unit</th><th>Game rate source</th></tr></thead>'
       + '<tbody data-ofx-currency-table>' + renderCurrencyMarketTable(mode) + '</tbody></table></div></details>'
       + '<details class="ofx-section" data-ofx-banking-details><summary>Government Banking Registry · ' + escapeHTML(String(profiles.length)) + ' countries / areas</summary>'
       + '<label class="ofx-search">Filter country, ISO code or currency<input type="search" data-ofx-bank-filter placeholder="Bangladesh, NGA, BDT..."></label>'
-      + '<div class="ofx-table-scroll"><table class="ofx-table"><thead><tr><th>Country / area</th><th>ISO</th><th>Currency</th><th>Active units / USD</th><th>Inflation</th><th>Treasury (USD)</th><th>FX reserves (USD)</th><th>Data state</th></tr></thead>'
+      + '<div class="ofx-table-scroll"><table class="ofx-table"><thead><tr><th>Country / area</th><th>ISO</th><th>Currency</th><th>Local units / USD</th><th>USD / local currency unit</th><th>Inflation</th><th>Treasury (USD)</th><th>FX reserves (USD)</th><th>Data state</th></tr></thead>'
       + '<tbody data-ofx-banking-table></tbody></table></div></details>'
       + '<section class="ofx-section"><div class="ofx-heading"><div><h4>Recent FX Settlements</h4><p>Ledger shared with the Government Banking state.</p></div></div>'
       + '<div class="ofx-table-scroll"><table class="ofx-table"><thead><tr><th>Turn / date</th><th>Transaction</th><th>Pair</th><th>USD notional</th><th>Fee</th><th>Settlement route</th></tr></thead>'
