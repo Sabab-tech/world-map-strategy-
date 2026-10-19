@@ -90,6 +90,12 @@ test("the offline atlas never substitutes a fake remote imagery tile", () => {
 test("browser shell resources are cached locally for offline relaunch", () => {
   assert.match(html, /navigator\.serviceWorker\.register\('\.\/omega-offline-map-sw\.js'/);
   assert.match(serviceWorker, /CORE_ASSETS/);
+  assert.match(serviceWorker, /omega_finance_ministry_runtime_v1\.js/);
+  assert.match(serviceWorker, /omega_finance_ministry_v1\.css/);
+  assert.match(serviceWorker, /economy_global_profiles_v1\.json/);
+  assert.match(serviceWorker, /finance_runtime_rules_v1\.json/);
+  assert.match(serviceWorker, /finance_sector_registry_v1\.json/);
+  assert.match(serviceWorker, /omega-offline-atlas-shell-v2/);
   assert.match(serviceWorker, /self\.addEventListener\("install"/);
   assert.match(serviceWorker, /self\.addEventListener\("fetch"/);
   assert.match(serviceWorker, /request\.mode === "navigate"/);
