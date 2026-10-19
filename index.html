@@ -9,8 +9,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
     <script>
-        /* OMEGA Android shell marker. WebViewAssetLoader serves the local game over HTTPS. */
+        /* WebViewAssetLoader serves bundled APK assets over its local HTTPS origin. */
         window.OMEGA_ANDROID_OFFLINE = window.location.hostname === 'appassets.androidplatform.net';
+
+        /* GitHub Pages browsers can reopen the local app shell after a first online visit. */
+        if (!window.OMEGA_ANDROID_OFFLINE &&
+            window.location.protocol === 'https:' &&
+            'serviceWorker' in navigator) {
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register('./omega-offline-map-sw.js', { scope: './' })
+                    .then(function () {
+                        console.info('[OMEGA Offline] Browser app-shell caching is enabled.');
+                    })
+                    .catch(function (error) {
+                        console.warn('[OMEGA Offline] Browser offline cache registration failed:', error);
+                    });
+            }, { once: true });
+        }
     </script>
     <title>Global Geopolitical Strategy Simulator | OMEGA CORE</title>
 
