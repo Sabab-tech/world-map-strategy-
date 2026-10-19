@@ -85,15 +85,19 @@ window.CountryIOS = {
         const countryRuntime = window.OmegaCountryRuntimeData;
         const requestedCountry = this.activeCountry;
         if (countryRuntime && countryRuntime.ready && typeof countryRuntime.isSettled === 'function' &&
-            !countryRuntime.isSettled() && !this._countryRuntimeRefreshPending) {
-            this._countryRuntimeRefreshPending = true;
-            Promise.resolve(countryRuntime.ready).then(() => {
-                this._countryRuntimeRefreshPending = false;
-                if (this.activeCountry === requestedCountry) {
-                    this.updateHeader();
-                    this.switchChapter(this.activeChapter);
-                }
-            }).catch(() => { this._countryRuntimeRefreshPending = false; });
+            !countryRuntime.isSettled()) {
+            const pendingRefreshes = this._countryRuntimeRefreshPending ||
+                (this._countryRuntimeRefreshPending = new Set());
+            if (!pendingRefreshes.has(requestedCountry)) {
+                pendingRefreshes.add(requestedCountry);
+                Promise.resolve(countryRuntime.ready).then(() => {
+                    pendingRefreshes.delete(requestedCountry);
+                    if (this.activeCountry === requestedCountry) {
+                        this.updateHeader();
+                        this.switchChapter(this.activeChapter);
+                    }
+                }).catch(() => { pendingRefreshes.delete(requestedCountry); });
+            }
         }
 
         if (window.updateGlobalBackButtonVisibility) {
