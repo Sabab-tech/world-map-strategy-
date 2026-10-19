@@ -1930,7 +1930,7 @@
     const ids=new Set();
     const add=value=>{
       const cid=normalizeCountry(value);
-      if(!cid||cid==='GLOBAL'||cid==='WORLD')return;
+      if(!cid||cid==='GLOBAL'||cid==='WORLD'||! /^[A-Z0-9]{2,3}$/.test(cid))return;
       const row=countryPoliceBaselineByCode&&countryPoliceBaselineByCode[cid];
       ids.add(normalizeCountry(row&&row.code||cid));
     };
