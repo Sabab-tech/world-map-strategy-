@@ -248,3 +248,10 @@ test('runtime syncs country finance into Government Banking and settles FX with 
   assert.ok(intervention.transaction.newLocalPerUsd < intervention.transaction.oldLocalPerUsd);
   assert.equal(context.gameState.governmentBanking.forex.ledger.length, 2);
 });
+
+test('FX panel mounts only inside the dedicated Finance FX tab host',()=>{
+  assert.match(source,/querySelector\('\[data-ofx-container\]'\)/);
+  assert.match(source,/host\.appendChild\(panel\)/);
+  assert.match(source,/\.ofm-dashboard \[data-ofx-container\]/);
+  assert.match(source,/if \(!dashboard \|\| !host \|\| dashboard\.querySelector\('\[data-ofx-panel\]'\)\) return false/);
+});
