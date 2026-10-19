@@ -1,7 +1,7 @@
 # OMEGA Finance Ministry Runtime v1.1
 
 ## Interactive control-room layout
-Finance is split into icon-based tabs: Overview; Budget Sectors; Income & Industry; Treasury & Debt; Reports. Detailed balances and indicators are only rendered inside the relevant tab, instead of filling one long screen. The 249-country macroeconomic register is lazy-loaded from the Reports tab to reduce startup work on lower-end phones.
+Finance is split into icon-based tabs: Overview; Budget Sectors; Income & Industry; Treasury & Debt; Reports; FX & Banking; Macro Stability. Detailed balances and indicators are only rendered inside the relevant tab, instead of filling one long screen. The 249-country macroeconomic register is lazy-loaded from the Reports tab to reduce startup work on lower-end phones.
 
 ## Budget distribution
 `finance_sector_registry_v1.json` defines 22 budget sectors including defense, internal security, education, healthcare, infrastructure, technology/R&D, chemicals, engineering/manufacturing, energy, resources/mining, agriculture, trade/logistics, public administration, social protection, environment, debt service, emergency reserves, industrial development, construction, financial services, culture/tourism and national projects. Initial sector shares sum to 100%. The player can edit each share or annual amount. The runtime rejects allocations above the annual budget envelope and expenses above either their sector ceiling or the actual available treasury.
@@ -34,3 +34,6 @@ Each simulation-time tax collection is split across the 15 configurable economic
 
 ## FX & Government Banking tab
 The Finance dashboard includes a sixth icon tab, **FX & Banking**. The existing FX runtime is mounted inside a dedicated `data-ofx-container` slot only when this tab is selected. This keeps the currency conversion, monetary-policy, intervention, rate charts, Government Banking registry and FX clearing ledger out of the other Finance tabs. The FX runtime remains a separate engine and still delegates policy interest-rate actions to Finance's player-country guard.
+
+## Macro Stability tab
+The seventh tab contains the existing macro-stability runtime only inside the `data-omss-container` mount slot. It exposes country stability score and status, raw-data coverage, growth/spending adjustments, targets for debt/GDP and unemployment, policy presets and automatic stabilizers. The macro engine remains separate from Finance and FX engines; it uses the same player-country scope and live simulation clock. This keeps monetary amounts and policy controls inside their own tabs rather than appending another full dashboard below every tab.
