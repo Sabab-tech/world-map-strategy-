@@ -210,7 +210,7 @@ test('Finance tabs place cash and macro details behind separate icons while over
   assert.equal(context.OmegaFinanceMinistry.selectTab('fx').ok,true);
   const fx=elements.get('ministry-dashboard-content').innerHTML;
   assert.ok(fx.includes('data-ofx-container'),'FX engine must have a dedicated mount target');
-  assert.ok(fx.includes('FX & Government Banking'));
+  assert.ok(fx.includes('Foreign Exchange & Government Banking'));
   assert.ok(!fx.includes('data-ofx-panel'),'FX runtime owns rendering into the tab host');
   assert.equal(context.OmegaFinanceMinistry.selectTab('macro').ok,true);
   const macro=elements.get('ministry-dashboard-content').innerHTML;
