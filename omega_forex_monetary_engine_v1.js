@@ -837,7 +837,7 @@
     const last = finite(state.lastProcessedTurn);
     const turnNumber = currentTurnValue === null ? (last === null ? 1 : last + 1) : currentTurnValue;
     if (last !== null && turnNumber <= last) return { ok: true, duplicate: true, turn: turnNumber };
-    const dt = clamp(finite(durationMs) ?? HOUR_MS, 0, 30 * DAY_MS);
+    const dt = clamp(finite(durationMs) ?? DAY_MS, 0, 30 * DAY_MS);
     const years = dt / YEAR_MS;
     if (years <= 0) return { ok: true, turn: turnNumber, processed: 0 };
     const usAnchor = anchorByCurrency.get('USD');
@@ -926,7 +926,7 @@
     }
     state.lastProcessedTurn = turnNumber;
     syncAllCountries();
-    if (Math.floor(turnNumber) % 24 === 0) localStorageWrite();
+    if (Math.floor(turnNumber) % 3 === 0) localStorageWrite();
     dispatch('OMEGA_FX_MARKET_UPDATED', {
       turn: turnNumber, simulationDay: state.simulationDay,
       currencyCount: currencies.size, baseCurrency: 'USD'
@@ -1386,7 +1386,7 @@
       const detail = event && event.detail || {};
       const turn = finite(detail.simulationTurn) ?? finite(detail.payload && detail.payload.turn) ?? finite(detail.turn);
       const duration = finite(global.Omega && global.Omega.Simulation && global.Omega.Simulation.clock
-        && global.Omega.Simulation.clock.stepDurationMs) ?? HOUR_MS;
+        && global.Omega.Simulation.clock.stepDurationMs) ?? DAY_MS;
       simulationTick(turn, duration);
     });
     global.addEventListener && global.addEventListener('OMEGA_FINANCE_STATE_UPDATED', function () {
