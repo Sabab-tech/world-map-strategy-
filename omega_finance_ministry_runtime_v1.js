@@ -714,7 +714,7 @@
       '</section>';
     out+='<section class="ofm-section"><div class="ofm-section-heading"><h3>Budget distribution at a glance</h3><span>'+fmtPct(totals.totalSharePct)+' of plan distributed</span></div>'+
       renderBudgetBarRows(fm,8,false)+
-      '<div class="ofm-nav-shortcuts"><button type="button" data-ofm-tab="budget">Open budget distribution</button><button type="button" data-ofm-tab="income">Open income & industries</button><button type="button" data-ofm-tab="treasury">Open Treasury & debt</button><button type="button" data-ofm-tab="reports">Open economic reports</button></div></section>';
+      '<div class="ofm-nav-shortcuts"><button type="button" data-ofm-tab="budget">Open budget distribution</button><button type="button" data-ofm-tab="income">Open income & industries</button><button type="button" data-ofm-tab="treasury">Open Treasury & debt</button><button type="button" data-ofm-tab="reports">Open economic reports</button><button type="button" data-ofm-tab="analytics">Open analytics &amp; graphs</button></div></section>';
     out+='<section class="ofm-section"><div class="ofm-section-heading"><h3>Fiscal control checks</h3><span>Operational overview, no transaction amounts</span></div>'+
       '<div class="ofm-indicator-grid">'+
       '<div class="ofm-indicator"><span>Annual fiscal model</span><strong>'+(finite(fm.fiscalModel?.annualSpendingUsd)!==null&&finite(fm.fiscalModel?.annualRevenueUsd)!==null?'ACTIVE':'UNAVAILABLE')+'</strong></div>'+
@@ -790,7 +790,8 @@
       {id:'treasury',glyph:'◇',label:'Treasury & debt',sub:'Cash and borrowing'},
       {id:'reports',glyph:'≡',label:'Reports',sub:'Indicators & ledger'},
       {id:'fx',glyph:'FX',label:'FX & Banking',sub:'Currency & central bank'},
-      {id:'macro',glyph:'MS',label:'Macro Stability',sub:'Growth, inflation & jobs'}
+      {id:'macro',glyph:'MS',label:'Macro Stability',sub:'Growth, inflation & jobs'},
+      {id:'analytics',glyph:'∿',label:'Analytics & graphs',sub:'30-day model & raw data'}
     ];
     let out='<div class="ofm-dashboard" data-ofm-root><div class="ofm-hero"><div><div class="ofm-eyebrow">OMEGA / SOVEREIGN FISCAL CONTROL</div><h2>Finance Ministry</h2><p>Budget distribution, state income, recorded Treasury flows and controlled public spending.</p></div><div class="ofm-status">'+escapeHTML(isPlayable(p)?'RUNTIME MODEL ACTIVE':'BASELINE UNAVAILABLE')+'</div></div>';
     out+='<div class="ofm-toolbar"><label for="ofm-country-select">Country profile</label><select id="ofm-country-select">'+renderCountryOptions()+'</select><span class="ofm-baseline">Game baseline '+Number(rules.baselineYear||2015)+' · USD reference</span></div>';
@@ -805,6 +806,7 @@
     else if(activeTab==='reports')out+=renderReportsTab(p,m,fm,rows,editable,root);
     else if(activeTab==='fx')out+='<section class="ofm-section"><div class="ofm-section-heading"><h3>Foreign Exchange & Government Banking</h3><span>Reference quotes, simulation rates and central-bank actions</span></div><p class="ofm-data-note">Currency conversion is an in-game clearing calculation, not a real bank transfer. Policy and reserve interventions apply only to the active player country. Reference rates may be unavailable offline; cached reference and simulation rates are labelled separately.</p><div data-ofx-container></div></section>';
     else if(activeTab==='macro')out+='<section class="ofm-section"><div class="ofm-section-heading"><h3>Macroeconomic Stability</h3><span>Policy stance, stability indicators and automatic stabilizers</span></div><p class="ofm-data-note">This panel combines the available baseline with modeled policies for growth, spending, inflation, debt and employment. It is a game model, not a credit rating or a real-world forecast. Missing baseline observations remain unavailable.</p><div data-omss-container></div></section>';
+    else if(activeTab==='analytics')out+='<section class="ofm-section"><div data-ofa-container></div></section>';
     else out+=renderOverviewTab(p,m,fm,rows,editable,root);
     out+='</div><footer class="ofm-footer"><span>Country state: '+escapeHTML(p.countryCode)+' / '+escapeHTML(p.iso3)+'</span><span>Turn '+escapeHTML(String(currentTurn()))+'</span><span>Budget plan is not cash already spent.</span></footer></div>';
     return out;
@@ -902,7 +904,7 @@
     getIndicators:function(v){const p=resolveProfile(v)||playerCountryProfile();return p?worldSnapshot().byCode.get(p.countryCode)||null:null;},
     getFinanceState:function(v){const p=resolveProfile(v)||playerCountryProfile();if(!p)return null;const root=rootState(),fm=ensureFinanceState(p,root);if(reconcileExternalTreasury(p,fm,root))syncEconomyRecord(p,fm,root);return clone(fm);},
     selectCountry:function(v){const p=resolveProfile(v);if(!p)return {ok:false,code:'COUNTRY_NOT_FOUND'};selectedCountryCode=p.countryCode;renderDashboard('finance');return {ok:true,countryCode:p.countryCode};},
-    selectTab:function(v){const tab=String(v||'overview');if(!['overview','budget','income','treasury','reports','fx','macro'].includes(tab))return {ok:false,code:'FINANCE_TAB_INVALID'};activeTab=tab;renderDashboard('finance');return {ok:true,tab};},
+    selectTab:function(v){const tab=String(v||'overview');if(!['overview','budget','income','treasury','reports','fx','macro','analytics'].includes(tab))return {ok:false,code:'FINANCE_TAB_INVALID'};activeTab=tab;renderDashboard('finance');return {ok:true,tab};},
     getBudgetSnapshot:function(v){const p=resolveProfile(v)||playerCountryProfile();if(!p)return null;const fm=ensureFinanceState(p,rootState());return {countryCode:p.countryCode,...budgetTotals(fm)};},
     getRevenueSnapshot:function(v){const p=resolveProfile(v)||playerCountryProfile();if(!p)return null;const fm=ensureFinanceState(p,rootState()),m=worldSnapshot().byCode.get(p.countryCode)||currentMetrics(p);return revenueState(p,fm,m,rootState());},
     applyAction,advanceTurn,renderDashboard,isFinanceMinistryId};
