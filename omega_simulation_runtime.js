@@ -872,16 +872,17 @@
       const restoredClock=clone(snapshot.clock);
       const savedTurn=Math.max(0,finite(restoredClock.turn,0));
       if(Number(restoredClock.stepDurationMs)!==DAY_MS){
-        // Preserve the saved calendar position; only the duration of future turns changes.
+        // The saved calendar date is the migration anchor. Rebase elapsed time to it,
+        // then apply one full day to each future turn.
+        const savedDate=snapshot.worldState.simulation?.date;
+        const savedEpoch=Date.parse(String(savedDate||''));
+        const startEpoch=Number(restoredClock.startEpochMs);
         restoredClock.stepDurationMs=DAY_MS;
-        if(restoredClock.simulationTimeMs===null||restoredClock.simulationTimeMs===undefined||
+        if(Number.isFinite(savedEpoch)&&Number.isFinite(startEpoch)){
+          restoredClock.simulationTimeMs=Math.max(0,savedEpoch-startEpoch);
+        }else if(restoredClock.simulationTimeMs===null||restoredClock.simulationTimeMs===undefined||
           !Number.isFinite(Number(restoredClock.simulationTimeMs))){
-          const savedDate=snapshot.worldState.simulation?.date;
-          const savedEpoch=Date.parse(String(savedDate||''));
-          const startEpoch=Number(restoredClock.startEpochMs);
-          restoredClock.simulationTimeMs=Number.isFinite(savedEpoch)&&Number.isFinite(startEpoch)
-            ?Math.max(0,savedEpoch-startEpoch)
-            :savedTurn*DAY_MS;
+          restoredClock.simulationTimeMs=savedTurn*DAY_MS;
         }
       }
       restoredClock.stepDurationMs=DAY_MS;
