@@ -280,6 +280,7 @@
       strategicNumber(strategic, 'military.militaryExpenditurePctGdp') ?? num(base?.indicators?.militaryExpenditurePctGdp);
     const governance = strategic?.politics || behavior?.domainSignals?.politics || {};
     const resources = behavior?.domainSignals?.resources || {};
+    const resourceRuntime = resources.runtimeState || {};
     const diplomacy = strategic?.diplomacy || behavior?.domainSignals?.diplomacy || {};
     const dependencies = strategic?.dependencies || behavior?.domainSignals?.dependencies || {};
     const narrative = behavior?.profileNarrative || {};
@@ -346,12 +347,28 @@
       metricCard('Foreign-exchange reserves', fx ?? reserves.value, 'USD', reserves.source || 'not recorded') +
       '</div>' +
       '<div class="ocov-domain-grid">' +
-      panel('Resources & industrial options', 'Gameplay assets only; reserve values are not treated as factual national geology.',
+      panel('Resources & industrial options', 'Gameplay assets are separated from live stock, consumption and production measurements.',
         '<div class="ocov-resource-stat"><strong>' + (num(resources.siteCount) === null ? 'NOT LOADED' : esc(resources.siteCount)) +
         '</strong><span>registered gameplay sites</span><strong>' +
         (num(resources.resourceDiversity) === null ? 'NOT LOADED' : esc(resources.resourceDiversity)) +
         '</strong><span>distinct resource identifiers</span></div>' +
-        '<p class="ocov-source-line">Catalog status: ' + esc(resources.availability || 'UNKNOWN') + '</p>' +
+        '<p class="ocov-source-line">Site catalog: ' + esc(resources.availability || 'UNKNOWN') + ' · Live resource state: ' +
+          esc(resourceRuntime.availability || 'UNAVAILABLE') + '</p>' +
+        '<div class="ocov-resource-runtime-metrics">' +
+          '<div><strong>' + (num(resourceRuntime.inventoryObservedCount) === null ? 'NOT OBSERVED' : esc(resourceRuntime.inventoryObservedCount)) + '</strong><span>observed inventories</span></div>' +
+          '<div><strong>' + (num(resourceRuntime.productionObservedCount) === null ? 'NOT OBSERVED' : esc(resourceRuntime.productionObservedCount)) + '</strong><span>observed production rates</span></div>' +
+          '<div><strong>' + (num(resourceRuntime.consumptionObservedCount) === null ? 'NOT OBSERVED' : esc(resourceRuntime.consumptionObservedCount)) + '</strong><span>observed consumption rates</span></div>' +
+          '<div><strong>' + (num(resourceRuntime.productionDeficitCount) === null ? 'NOT OBSERVED' : esc(resourceRuntime.productionDeficitCount)) + '</strong><span>resources with observed production gaps</span></div>' +
+        '</div>' +
+        (resourceRuntime.averageSelfSufficiencyPct === null || resourceRuntime.averageSelfSufficiencyPct === undefined
+          ? '<p class="ocov-empty">National resource-runtime supply metrics are not yet observed; the game does not substitute invented stock or production.</p>'
+          : '<p class="ocov-source-line">Average observed production / consumption ratio: ' + esc(compactNumber(resourceRuntime.averageSelfSufficiencyPct, '%')) + ' · ' + esc(resourceRuntime.source || 'resource runtime') + '</p>') +
+        bulletList(arr(resourceRuntime.productionDeficitResources).map(row =>
+          (row.name || row.resourceId || 'Resource') + ': observed production ' +
+          compactNumber(row.dailyProduction, '') + ', consumption ' + compactNumber(row.dailyConsumption, '') +
+          ', self-sufficiency ' + compactNumber(row.selfSufficiencyPct, '%') +
+          (num(row.stockDays) === null ? '' : ', stock cover ' + compactNumber(row.stockDays, 'days')),
+        ), 'No observed resource production deficit is currently registered.') +
         bulletList(arr(resources.resources).map(x => String(x)), 'No registered gameplay resource-site information for this country.'),
         'ocov-panel-resources') +
       panel('Economic structure & development', 'Sector and trade details are shown only when registered in the country profile.',
