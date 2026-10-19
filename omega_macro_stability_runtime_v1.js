@@ -134,7 +134,7 @@ function advanceTurn(turn,stepMs){
 }
 function money(v){
   const n=num(v);if(n===null)return'N/A';
-  const format=g.OmegaNumberFormat;
+  const format=global.OmegaNumberFormat;
   if(format&&typeof format.money==='function')return format.money(n,{unavailable:'N/A'});
   const abs=Math.abs(n);
   const scale=abs>=1e12?{value:1e12,label:'trillion'}:abs>=1e9?{value:1e9,label:'billion'}:abs>=1e6?{value:1e6,label:'million'}:abs>=1e3?{value:1e3,label:'thousand'}:null;
@@ -144,7 +144,7 @@ function money(v){
 function pct(v){const n=num(v);return n===null?'N/A':n.toFixed(2)+'%';}
 function nfmt(v,d){
   const n=num(v);if(n===null)return'N/A';
-  const format=g.OmegaNumberFormat;
+  const format=global.OmegaNumberFormat;
   return format&&typeof format.compact==='function'?format.compact(n,{maximumFractionDigits:d===undefined?2:d}):n.toLocaleString('en-US',{maximumFractionDigits:d===undefined?2:d});
 }
 function selectedProfile(){const doc=global.document,sel=doc&&doc.getElementById&&doc.getElementById('ofm-country-select');return(sel&&sel.value&&resolveProfile(sel.value))||playerProfile();}
