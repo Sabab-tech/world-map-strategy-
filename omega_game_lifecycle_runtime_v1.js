@@ -9,6 +9,9 @@
   var DAY_MS = 86400000;
   var lastSavedTurn = -1;
   var lastSavedAt = 0;
+  var lastSavedSerialized = '';
+  var stateSaveTimer = null;
+  var lifecycleTickUnregister = null;
   var lastKnownSpeed = 1;
   var hiddenWasRunning = false;
   var hiddenSnapshotSaved = false;
@@ -282,18 +285,24 @@
     if (restoreFailed && !options.force) return false;
     if (!playerCountry(sim)) return false;
     var turn = Math.max(0, Math.floor(number(sim.clock && sim.clock.turn) || 0));
-    if (!options.force && turn === lastSavedTurn && Date.now() - lastSavedAt < 1200) return true;
-
     var snapshot;
     try { snapshot = sim.saveState(); }
     catch (error) {
       setSaveStatus('SAVE FAILED');
       return false;
     }
+    var serialized;
+    try { serialized = JSON.stringify(snapshot); }
+    catch (_) {
+      setSaveStatus('SAVE FAILED · SNAPSHOT NOT SERIALIZABLE');
+      return false;
+    }
+    if (!options.force && serialized === lastSavedSerialized) return true;
+
     var localSaved = false;
     try {
       if (!g.localStorage) throw new Error('LOCAL_STORAGE_UNAVAILABLE');
-      g.localStorage.setItem(SAVE_KEY, JSON.stringify(snapshot));
+      g.localStorage.setItem(SAVE_KEY, serialized);
       localSaved = true;
     } catch (_) {
       localSaved = false;
@@ -308,6 +317,7 @@
 
     lastSavedTurn = turn;
     lastSavedAt = Date.now();
+    if (localSaved || g.indexedDB) lastSavedSerialized = serialized;
     if (localSaved) setSaveStatus('AUTO-SAVED · DAY ' + (turn + 1));
     else setSaveStatus('SAVING DEVICE BACKUP…');
     updateHud();
@@ -465,23 +475,36 @@
     }
   }
 
-  function queueTurnSave(event) {
-    var sim = runtime();
-    var detail = event && event.detail || {};
-    var turn = number(detail.simulationTurn);
-    if (turn === null) turn = number(detail.payload && detail.payload.turn);
-    if (turn === null) turn = number(detail.turn);
-    if (turn === null && sim && sim.clock) turn = number(sim.clock.turn);
-    if (turn === null || Math.floor(turn) % 3 !== 0 || tickSaveQueued) {
-      updateHud();
-      return;
+  function queueTurnSave() {
+    // This listener runs inside the canonical pipeline; the high-priority save
+    // participant persists after every sector participant has completed.
+    updateHud();
+  }
+
+  function scheduleStateSave() {
+    if (stateSaveTimer !== null) {
+      try { g.clearTimeout(stateSaveTimer); } catch (_) {}
     }
-    tickSaveQueued = true;
-    g.setTimeout(function () {
-      tickSaveQueued = false;
-      saveNow();
+    stateSaveTimer = g.setTimeout(function () {
+      stateSaveTimer = null;
+      saveNow({ force: true });
+    }, 120);
+  }
+
+  function registerLifecycleParticipant() {
+    var sim = runtime();
+    if (!sim || typeof sim.registerTurnParticipant !== 'function') return false;
+    if (lifecycleTickUnregister) {
+      try { lifecycleTickUnregister(); } catch (_) {}
+      lifecycleTickUnregister = null;
+    }
+    lifecycleTickUnregister = sim.registerTurnParticipant('omega.game-lifecycle.autosave', function () {
+      // Runs last, after the complete awaited sector pipeline. localStorage is synchronous;
+      // IndexedDB is maintained as the secondary durable copy.
+      saveNow({ force: true });
       updateHud();
-    }, 25);
+    }, { priority: 1000000 });
+    return true;
   }
 
   function clickHandler(event) {
@@ -530,27 +553,43 @@
 
   function init() {
     if (!g.document) return;
+    registerLifecycleParticipant();
     g.document.addEventListener('click', clickHandler, true);
     g.document.addEventListener('visibilitychange', onVisibilityChange);
+    g.document.addEventListener('freeze', onPageExit);
+    g.document.addEventListener('resume', function () {
+      if (!restoreFinished) restoreOnReady().catch(function () {});
+      updateHud();
+    });
     g.addEventListener && g.addEventListener('pagehide', onPageExit);
     g.addEventListener && g.addEventListener('beforeunload', onPageExit);
     g.addEventListener && g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED', queueTurnSave);
     g.addEventListener && g.addEventListener('OMEGA_SIMULATION_STEP_COMPLETED', updateHud);
     g.addEventListener && g.addEventListener('OMEGA_FINANCE_STATE_UPDATED', updateHud);
+    [
+      'MINISTRY_STATE_CHANGED', 'RESOURCE_STATE_UPDATED', 'OMEGA_FINANCE_STATE_UPDATED',
+      'FINANCE_STATE_UPDATED', 'DECISION_ENACTED', 'POLICY_VOTE_CAST',
+      'OMEGA_COMMAND_APPLIED', 'OMEGA_COMMAND_EXECUTED', 'MINISTRY_COMMAND_EXECUTED',
+      'OMEGA_RESOURCE_ACTION_COMMITTED', 'OMEGA_TREATY_STATE_UPDATED',
+      'OMEGA_SIMULATION_SAVE_REQUESTED'
+    ].forEach(function (type) {
+      g.addEventListener && g.addEventListener(type, scheduleStateSave);
+    });
     ['COUNTRY_SELECTED', 'COUNTRY_CHANGED', 'OMEGA_COUNTRY_SELECTED', 'OMEGA_PLAYER_COUNTRY_CHANGED', 'MINISTRY_SELECTED'].forEach(function (type) {
-      g.addEventListener && g.addEventListener(type, updateHud);
+      g.addEventListener && g.addEventListener(type, function () { updateHud(); scheduleStateSave(); });
     });
     g.addEventListener && g.addEventListener('RESOURCE_STATE_UPDATED', updateHud);
     g.addEventListener && g.addEventListener('OMEGA_READY', function () {
       restoreOnReady().catch(function () {
         restoreFailed = true;
         setSaveStatus('SAVE RESTORE FAILED · PRESERVED');
-      });
+      }).finally(registerLifecycleParticipant);
     });
     updateHud();
     if (g.document.readyState === 'complete' || g.document.readyState === 'interactive') {
       g.setTimeout(function () {
-        if (!restoreFinished) restoreOnReady().catch(function () {});
+        if (!restoreFinished) restoreOnReady().catch(function () {}).finally(registerLifecycleParticipant);
+        else registerLifecycleParticipant();
       }, 600);
     }
   }
@@ -567,7 +606,9 @@
         slot: SLOT,
         saveKey: SAVE_KEY,
         savedTurn: lastSavedTurn,
+        savedChecksum: lastSavedSerialized ? (sim && sim.saveState ? safeCall(function () { return sim.saveState().checksum; }) : null) : null,
         status: saveStatus,
+        participantCount: sim && typeof sim.participantDiagnostics === 'function' ? sim.participantDiagnostics().length : null,
         restoreFinished: restoreFinished,
         restoreFailed: restoreFailed,
         running: !!(sim && sim.status === 'RUNNING'),
