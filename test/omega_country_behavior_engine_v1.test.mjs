@@ -136,7 +136,7 @@ test('country overview is inside ministry dashboard, uses shared behaviour runti
   assert.match(ui, /setActiveTab/);
   assert.match(ui, /OMEGA_COUNTRY_CONTEXT_CHANGED/);
   assert.match(ui, /Simulation state remains unchanged/);
-  assert.match(ui, /simulated reserve quantities are not treated as factual national geology/i);
+  assert.match(ui, /reserve values are not treated as factual national geology/i);
 
   const sw = read('omega-offline-map-sw.js');
   assert.match(sw, /omega-offline-atlas-shell-v10/);
