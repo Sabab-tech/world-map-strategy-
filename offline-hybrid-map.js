@@ -92,8 +92,8 @@
     if(!window.map.getPane(GRID_PANE)){window.map.createPane(GRID_PANE);window.map.getPane(GRID_PANE).style.zIndex="410";window.map.getPane(GRID_PANE).style.pointerEvents="none";}
     if(!window.map.getPane(LABEL_PANE)){window.map.createPane(LABEL_PANE);window.map.getPane(LABEL_PANE).style.zIndex="625";window.map.getPane(LABEL_PANE).style.pointerEvents="none";}
     gridLayer=L.layerGroup();
-    for(var lon=-180;lon<=180;lon+=30){var meridian=[];for(var lat=-60;lat<=84;lat+=3)meridian.push([lat,lon]);addGridLine(meridian);}
-    for(var par=-60;par<=75;par+=15){var line=[];for(var lng=-180;lng<=180;lng+=4)line.push([par,lng]);addGridLine(line);}
+    for (var lon = -180; lon <= 180; lon += 30) { var meridian = [];for(var lat=-60;lat<=84;lat+=3)meridian.push([lat,lon]);addGridLine(meridian);}
+    for (var parallel = -60; parallel <= 75; parallel += 15) { var line = [];for(var lng=-180;lng<=180;lng+=4)line.push([parallel,lng]);addGridLine(line);}
     coordinateLabels=L.layerGroup();
   }
   function updateCoordinateLabels(){
