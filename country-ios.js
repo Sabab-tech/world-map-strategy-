@@ -2119,7 +2119,8 @@ window.addEventListener('RESOURCE_STATE_UPDATED', () => {
         return '<div class="sc-profile-shell">' +
             '<section class="sc-profile-hero">' +
             '<div class="sc-eyebrow">COUNTRY INTELLIGENCE / SOURCE-AWARE ASSESSMENT</div>' +
-            '<div class="sc-profile-hero-row"><div><h2>' + escapeHtml(name) + '</h2><p class="sc-profile-archetype">' + escapeHtml(profile.archetype || 'Country strategic profile') + '</p></div>' +
+            '<div class="sc-profile-hero-row"><div><h2>' + escapeHtml(name) + '</h2><p class="sc-profile-archetype">' + escapeHtml(profile.archetype || 'Country strategic profile') + '</p>' +
+            '<p class="sc-profile-archetype-source">Classification source: ' + escapeHtml(String(profile.archetypeSource || 'NOT RECORDED').replace(/_/g, ' ')) + '</p></div>' +
             '<div class="sc-profile-status">' + escapeHtml(String(profile.sovereigntyScope || 'SCOPE UNKNOWN').replace(/_/g, ' ')) + '</div></div>' +
             '<p class="sc-profile-summary">' + escapeHtml(profile.executiveSummary || 'No executive summary available.') + '</p>' +
             '<div class="sc-status-row">' + flags + '</div>' +
