@@ -507,21 +507,22 @@ function makeRecord(country, sources, previous, refreshData) {
       baselineYear: 2015,
       rawFinancialRegistry: {
         baselineYear: finite(rawFinance.baselineYear) ?? 2015,
-        rawIndicators: normalizedObject(rawIndicators, sources.rawFinancialIndicatorKeys),
-        derivedIndicators: normalizedObject(rawDerived, sources.rawFinancialDerivedKeys),
-        rawSourceRecords: {
-          economy: normalizedObject(rawEconomy, ECONOMY_KEYS),
-          population: normalizedObject(rawPopulation, POPULATION_KEYS)
-        }
+        // Values are stored as arrays in the exact field order declared in metadata.rawFinancialFieldNames.
+        // This lossless column order avoids repeating 68 field names in every country record.
+        rawIndicatorValues: sources.rawFinancialIndicatorKeys.map((key) =>
+          rawIndicators && rawIndicators[key] !== undefined ? rawIndicators[key] : null),
+        derivedIndicatorValues: sources.rawFinancialDerivedKeys.map((key) =>
+          rawDerived && rawDerived[key] !== undefined ? rawDerived[key] : null)
       },
       economyGlobalProfile: {
         profileStatus: profile?.profileStatus || 'UNAVAILABLE',
         economyKey: profile?.economyKey || null,
         populationKey: profile?.populationKey || null,
-        sourceValues: normalizedEconomy,
-        populationValues: normalizedPopulation,
-        indicators: normalizedObject(profile?.indicators, PROFILE_INDICATOR_KEYS),
-        metricAvailability: normalizedObject(profile?.metricAvailability, PROFILE_INDICATOR_KEYS, false),
+        // Decode by metadata.profileIndicatorNames; core public-facing indicators are also named in metrics.
+        indicatorValues: PROFILE_INDICATOR_KEYS.map((key) =>
+          profile?.indicators && profile.indicators[key] !== undefined ? profile.indicators[key] : null),
+        metricAvailabilityValues: PROFILE_INDICATOR_KEYS.map((key) =>
+          profile?.metricAvailability && profile.metricAvailability[key] !== undefined ? profile.metricAvailability[key] : false),
         provenance: {
           economicSource: profile?.provenance?.economicSource || null,
           populationSource: profile?.provenance?.populationSource || null,
@@ -614,6 +615,7 @@ async function main() {
     rawFinancialRegistrySource: 'economy_raw_financial_data_v2.json',
     rawFinancialFieldCount: rawFinancialIndicatorKeys.length,
     rawFinancialFieldNames: rawFinancialIndicatorKeys,
+    profileIndicatorNames: PROFILE_INDICATOR_KEYS,
     rawFinancialDerivedFieldCount: rawFinancialDerivedKeys.length,
     rawFinancialDerivedFieldNames: rawFinancialDerivedKeys,
     localCoverage: {
