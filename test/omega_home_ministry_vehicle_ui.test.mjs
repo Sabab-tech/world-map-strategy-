@@ -383,9 +383,14 @@ test('Home Ministry budget screen reads the active envelope and saves percentage
   assert.match(host.innerHTML,/home-police-budget-value-vehiclePurchase/);
   assert.match(host.innerHTML,/home-police-budget-value-maintenance/);
   assert.match(host.innerHTML,/Fixed amount/);
+  harness.nodes.get('home-police-budget-amount').value = '10000000';
   const salary = harness.nodes.get('home-police-budget-value-personnel');
   salary.value = '50';
   harness.nodes.get('home-police-budget-mode-personnel').value = 'percent';
+  harness.nodes.get('home-police-budget-value-vehiclePurchase').value = '25';
+  harness.nodes.get('home-police-budget-value-maintenance').value = '15';
+  harness.nodes.get('home-police-budget-value-facilities').value = '5';
+  harness.nodes.get('home-police-budget-value-training').value = '5';
   harness.nodes.get('home-police-budget-save').onclick();
   assert.equal(harness.api.getBudgetSummary('AAA').active,true);
   assert.equal(harness.api.getBudgetSummary('AAA').allocationRules.personnel.value,50);
@@ -402,8 +407,24 @@ test('budget input rejects caps that exceed authorized money before any debit', 
     training:{mode:'percent',value:0}
   },'AAA');
   harness.ui.renderBudgetAllocation();
+  harness.nodes.get('home-police-budget-amount').value = '10000000';
+  for (const key of ['personnel','vehiclePurchase','maintenance','facilities','training']) {
+    harness.nodes.get('home-police-budget-mode-' + key).value = 'percent';
+    harness.nodes.get('home-police-budget-value-' + key).value = key === 'personnel' ? '80' : key === 'vehiclePurchase' ? '30' : '0';
+  }
   const before = harness.state.economy.AAA.treasury;
   harness.nodes.get('home-police-budget-save').onclick();
   assert.equal(harness.state.economy.AAA.treasury,before);
+  assert.equal(harness.ui.lastAdvice.title,'ORDER NOT EXECUTED');
   assert.notEqual(harness.api.getBudgetSummary('AAA').allocationRules.personnel.value,80);
+});
+
+
+test('Finance Ministry has a real cross-ministry appropriations screen bound to Home Affairs', () => {
+  assert.match(ministryEngine,/finance_allocations/);
+  assert.match(ministryEngine,/saveFinanceMinistryAllocations\(\)/);
+  assert.match(ministryEngine,/finance\.ministryAllocations/);
+  assert.match(ministryEngine,/OMEGA_FINANCE_MINISTRY_ALLOCATIONS_SET_V1/);
+  assert.match(ministryEngine,/interior_security/);
+  assert.match(ministryEngine,/INSUFFICIENT_TREASURY/);
 });
