@@ -467,6 +467,7 @@
     if(activeTab==='staff')body=recruitmentHtml(d);
     else if(activeTab==='fleet')body=fleetHtml(d);
     else if(activeTab==='units')body=policeUnitsHtml(d);
+    else if(activeTab==='cases')body=policeCaseManagementHtml(d);
     else if(activeTab==='crime')body=crimeHtml(d);
     else if(activeTab==='rules')body=rulesHtml(d);
     else if(activeTab==='rulebook')body=rulebookHtml(d);
@@ -475,7 +476,7 @@
       esc(d.baseline&&d.baseline.name||d.countryId) + ' · live recruitment, fleet procurement, crime model, patrol allocation and accountable police policy.</div></div>' +
       '<div class="ohpu-actions"><button type="button" class="ohpu-btn" id="ohpu-rulebook-head">POLICE RULEBOOK</button><span class="ohpu-tag">COUNTRY-BOUND RUNTIME</span></div></header>' +
       '<nav class="ohpu-tabs">' + navHtml() + '</nav>' + statusHtml() + budgetHtml(d) +
-      '<div class="ohpu-section-title">' + esc(({overview:'LIVE COUNTRY OVERVIEW',staff:'POLICE RECRUITMENT & STAFFING',fleet:'VEHICLE INVENTORY & PROCUREMENT',units:'SPECIALIST POLICE UNITS & DEPLOYMENT',crime:'CRIME RATES & PATROL ALLOCATION',rules:'PAID POLICE PROGRAMMES & OVERSIGHT',rulebook:'POLICE RULEBOOK & RESPONSE PROCEDURES'})[activeTab]||'POLICE CONTROL') + '</div>' +
+      '<div class="ohpu-section-title">' + esc(({overview:'LIVE COUNTRY OVERVIEW',staff:'POLICE RECRUITMENT & STAFFING',fleet:'VEHICLE INVENTORY & PROCUREMENT',units:'SPECIALIST POLICE UNITS & DEPLOYMENT',cases:'POLICE CASES & DUE-PROCESS DEADLINES',crime:'CRIME RATES & PATROL ALLOCATION',rules:'PAID POLICE PROGRAMMES & OVERSIGHT',rulebook:'POLICE RULEBOOK & RESPONSE PROCEDURES'})[activeTab]||'POLICE CONTROL') + '</div>' +
       body +
       '<div class="ohpu-actions"><button type="button" class="ohpu-btn" id="ohpu-back-home">BACK TO HOME MINISTRY</button></div>' +
       '<div class="ohpu-small">State updates and spending are executed by the Home Ministry engine. No mock balances or successful actions are shown when a Finance transaction fails.</div></section>';
@@ -660,7 +661,7 @@
       ['OMEGA_COUNTRY_CONTEXT_CHANGED','OMEGA_COUNTRY_CHANGED','OMEGA_COUNTRY_SELECTED','COUNTRY_CHANGED','GAME_COUNTRY_CHANGED'].forEach(function(name){g.addEventListener(name,function(){if(consoleOpen)render();});});
     }
   }
-  var api=Object.freeze({VERSION:VERSION,open:function(tab){consoleOpen=true;if(tab&&['overview','staff','fleet','units','crime','rules','rulebook'].indexOf(tab)>=0)activeTab=tab;render();},render:render,diagnostics:function(){var d=getData();return{version:VERSION,ready:!!d.ready,baselineReady:!!d.baselineReady,consoleOpen:consoleOpen,activeTab:activeTab,countryId:d.countryId||null,financeAvailable:!!(d.budget&&d.budget.available),crimeAvailable:!!(d.crime&&d.crime.available)};}});
+  var api=Object.freeze({VERSION:VERSION,open:function(tab){consoleOpen=true;if(tab&&['overview','staff','fleet','units','cases','crime','rules','rulebook'].indexOf(tab)>=0)activeTab=tab;render();},render:render,diagnostics:function(){var d=getData();return{version:VERSION,ready:!!d.ready,baselineReady:!!d.baselineReady,consoleOpen:consoleOpen,activeTab:activeTab,countryId:d.countryId||null,financeAvailable:!!(d.budget&&d.budget.available),crimeAvailable:!!(d.crime&&d.crime.available)};}});
   g.OmegaHomePoliceOperationsUI=api;
   if(g.document){
     if(g.document.readyState==='loading')g.document.addEventListener('DOMContentLoaded',install,{once:true});
