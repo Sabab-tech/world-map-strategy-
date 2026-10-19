@@ -437,6 +437,8 @@
         :{type:'OMEGA_SIMULATION_TURN_COMMITTED',detail:clone(event)};
       const turn=Math.max(0,finite(event?.simulationTurn,0));
       const results=[];
+      global.__OMEGA_SIMULATION_PIPELINE_ACTIVE__=true;
+      try{
       for(const entry of rows){
         if(this.turnParticipants.get(entry.id)!==entry)continue;
         try{
@@ -467,6 +469,9 @@
           this.world.setSession(session);
           try{console.error('[OMEGA TURN PARTICIPANT]',failure);}catch(_){}
         }
+      }
+      }finally{
+        global.__OMEGA_SIMULATION_PIPELINE_ACTIVE__=false;
       }
       this.lastTurnParticipantResults=results.slice(-256);
       this.world.state.simulation.lastTurnParticipantResults=clone(this.lastTurnParticipantResults);
@@ -978,7 +983,7 @@
       };
       const unregister=simulation.registerTurnParticipant(id,invoke);
       const wrapped=function(event){
-        if(global.__OMEGA_SIMULATION_PIPELINE_DISPATCH__===true)return;
+        if(global.__OMEGA_SIMULATION_PIPELINE_ACTIVE__===true||global.__OMEGA_SIMULATION_PIPELINE_DISPATCH__===true)return;
         const value=invoke(event);
         if(value&&typeof value.catch==='function')value.catch(error=>{try{console.error('[OMEGA LEGACY TURN LISTENER]',error);}catch(_){}});
       };
@@ -997,7 +1002,7 @@
       const bucket=records.get(listener)||[];
       const capture=captureOf(options);
       const index=bucket.findIndex(row=>row.type===type&&row.capture===capture);
-      if(index<0)return;
+      if(index<0)return nativeRemove.call(this,type,listener,options);
       const row=bucket.splice(index,1)[0];
       if(!bucket.length)records.delete(listener);
       nativeRemove.call(this,type,row.wrapped,options);
