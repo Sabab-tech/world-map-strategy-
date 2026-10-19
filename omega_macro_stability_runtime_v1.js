@@ -81,7 +81,7 @@ function applyAction(action){
 }
 function advanceTurn(turn,stepMs){
  if(!initialized)return{ok:false,code:'MACRO_RUNTIME_NOT_INITIALIZED',processed:0};
- const t=num(turn)??currentTurn()+1,dt=Math.max(0,num(stepMs)??Number(rules.simulationTurnDurationMs||86400000)),years=dt/Number(rules.annualizationMs||315864000000),root=rootState();let processed=0,unavailable=0;const updated=[];
+ const t=num(turn)??currentTurn()+1,dt=Math.max(0,num(stepMs)??Number(rules.simulationTurnDurationMs||86400000)),years=dt/Number(rules.annualizationMs||31536000000),root=rootState();let processed=0,unavailable=0;const updated=[];
  for(const p of profiles){
   const x=ensureModel(p,root);if(!x)continue;const m=x.state,e=x.economy,raw=x.rawIndicators,fm=x.finance;
   if(num(m.lastProcessedTurn)!==null&&t<=num(m.lastProcessedTurn))continue;
