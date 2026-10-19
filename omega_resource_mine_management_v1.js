@@ -248,7 +248,7 @@ async function onClick(event){
  if(action==='build-mine'){
    if(country!==playerCountry()){lastOutcome='Rejected: mine construction is restricted to the active player country.';render();return;}
    if(!api?.startMineProject){lastOutcome='Mine construction runtime unavailable.';render();return;}
-   const workerInput=g.document.querySelector('[data-omm-workers="'+CSS.escape(siteId)+'"]');
+   const workerInput=Array.from(g.document.querySelectorAll('[data-omm-workers]')).find(el=>el.getAttribute('data-omm-workers')===siteId);
    const assignedWorkers=num(workerInput?.value);
    if(assignedWorkers===null||assignedWorkers<0||!Number.isInteger(assignedWorkers)){lastOutcome='Enter a non-negative whole number of committed construction workers.';render();return;}
    button.disabled=true;button.textContent='Validating…';
@@ -266,7 +266,7 @@ async function onClick(event){
  if(action==='run-mine'){
    if(country!==playerCountry()){lastOutcome='Rejected: extraction is restricted to the active player country.';render();return;}
    if(!api?.executeSitePipeline){lastOutcome='Site extraction pipeline unavailable.';render();return;}
-   const quantityInput=g.document.querySelector('[data-omm-quantity="'+CSS.escape(siteId)+'"]'),quantity=num(quantityInput?.value)??1000;
+   const quantityInput=Array.from(g.document.querySelectorAll('[data-omm-quantity]')).find(el=>el.getAttribute('data-omm-quantity')===siteId),quantity=num(quantityInput?.value)??1000;
    if(quantity<=0){lastOutcome='Extraction quantity must be positive.';render();return;}
    button.disabled=true;
    try{const result=await api.executeSitePipeline({countryId:country,siteId,resourceId:rid,quantity});lastOutcome=message('Mine extraction pipeline',result);}
