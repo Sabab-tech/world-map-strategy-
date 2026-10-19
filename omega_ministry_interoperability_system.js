@@ -1550,7 +1550,7 @@
           stateTransaction.rollback();
         }
         const stagedWrites=Array.isArray(stateTransaction?.operations)?stateTransaction.operations.length:0;
-        const intentionalNoWrite=result?.noStateChangeAccepted===true||options.allowNoStateChange===true;
+        const intentionalNoWrite=result?.noStateChangeAccepted===true||result?.duplicate===true||result?.idempotent===true||options.allowNoStateChange===true;
         row.result=clone(result);
         row.stateChanged=Boolean(row.transaction?.changed);
         row.stateWriteCount=stagedWrites;
