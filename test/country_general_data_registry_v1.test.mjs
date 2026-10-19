@@ -167,6 +167,7 @@ test('every canonical identity has a source-aware strategic profile inside the e
     assert.equal(profile.assessmentCriteria.rubricVersion, 'OMEGA_COUNTRY_PROFILE_RUBRIC_V2');
     assert.ok(profile.assessmentCriteria.thresholds.highPublicDebtPressure);
     assert.ok(profile.assessmentCriteria.peerComparison.rule.includes('exact observation year'));
+    assert.ok(profile.assessmentCriteria.peerComparison.governanceCompositeRule.includes('all six governance dimensions'));
     assert.ok(Array.isArray(profile.economy.pressurePoints));
     assert.ok(Array.isArray(profile.economy.developmentSignals));
     assert.equal(profile.economy.trendStatus, 'MULTI_YEAR_ECONOMIC_TREND_NOT_COMPUTED_FROM_SINGLE_LATEST_VALUES');
