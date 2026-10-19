@@ -26,7 +26,7 @@ const unregister = Omega.Simulation.registerSubsystem(
 
 Participant IDs are stable and unique. Registration of the same ID replaces its previous handler instead of creating duplicate ticks. Lower priorities run first; equal priorities preserve registration order. The lifecycle autosave finalizer runs last. A system registered while a turn is running starts on the next turn, so a country or sector cannot join half way through a day.
 
-For backward compatibility, window-level `addEventListener('OMEGA_SIMULATION_TURN_COMMITTED', ...)` subscribers are automatically adapted into awaited participants. The normal browser event is still published after the ordered pipeline for diagnostics and external observers; adapted listeners are suppressed during that final notification to prevent double execution. Return any promise from a legacy listener. Fire-and-forget async work is not part of a completed turn.
+For backward compatibility, window-level `addEventListener('OMEGA_SIMULATION_TURN_COMMITTED', ...)` listeners and `Omega.Simulation.events.subscribe('OMEGA_SIMULATION_TURN_COMMITTED', ...)` subscribers are automatically adapted into awaited participants. Wildcard event-ledger subscribers still receive other event types normally, but their turn-commit callback runs once inside the ordered pipeline. The normal browser event is still published after the ordered pipeline for diagnostics and external observers; adapted listeners are suppressed during that final notification to prevent double execution. Return any promise from a legacy listener. Fire-and-forget async work is not part of a completed turn.
 
 ## Failure policy
 
