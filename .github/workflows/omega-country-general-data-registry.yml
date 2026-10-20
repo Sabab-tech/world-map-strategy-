@@ -47,7 +47,8 @@ jobs:
       - name: Validate shared schema, source preservation and coverage accounting
         run: node --test test/country_general_data_registry_v1.test.mjs
 
-      - name: Commit registry only if it changed
+      - name: Commit refreshed registry only on main push
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         shell: bash
         run: |
           if [[ -z "$(git status --porcelain -- country_general_data_registry_v1.json)" ]]; then
