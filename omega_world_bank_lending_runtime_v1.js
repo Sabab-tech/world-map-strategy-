@@ -388,6 +388,10 @@
     const confidence = round(usedWeight * 100, 1);
     const program = lendingProgram(facts);
     const reasons = [];
+    const insolvency = (context && context.bank ? context.bank : store(true)).insolvencyByCountry
+      && (context && context.bank ? context.bank : store(true)).insolvencyByCountry[facts.countryCode];
+    const insolventHold = !!insolvency && ['DEFAULTED', 'INSOLVENCY_REVIEW', 'BANKRUPTCY_PROCEEDING'].includes(String(insolvency.status || '').toUpperCase());
+    if (insolventHold) reasons.push('New lending is frozen by the simulated sovereign default/workout status: ' + String(insolvency.status) + '.');
     if (!facts.simulationDataAvailable) reasons.push('This country has no live game-economy record; no reference data is substituted.');
     if (facts.gdpUsd === null || facts.gdpUsd <= 0) reasons.push('Current simulated GDP is unavailable; no safe loan ceiling can be calculated.');
     if (facts.debtToGdpPct === null) reasons.push('Public debt / GDP is unavailable.');
@@ -399,7 +403,8 @@
     if (facts.gdpPerCapitaUsd === null) reasons.push('Population is missing from game state; the standard simulation facility tier is used.');
     const criticalDataMissing = !facts.simulationDataAvailable || facts.gdpUsd === null || facts.gdpUsd <= 0 || facts.debtToGdpPct === null;
     let decision = 'DATA_INSUFFICIENT';
-    if (!criticalDataMissing && confidence < 60) decision = 'CONDITIONAL_DATA_GAP';
+    if (insolventHold) decision = 'REJECT_HIGH_RISK';
+    else if (!criticalDataMissing && confidence < 60) decision = 'CONDITIONAL_DATA_GAP';
     else if (!criticalDataMissing && (score === null || score < 35 || facts.debtToGdpPct >= 250)) decision = 'REJECT_HIGH_RISK';
     else if (!criticalDataMissing && score >= 72 && confidence >= 70) decision = 'ELIGIBLE';
     else if (!criticalDataMissing && score >= 55) decision = 'CONDITIONAL';
@@ -417,7 +422,7 @@
       ? Math.min(facts.gdpUsd * capPct / 100 * (confidence / 100), debtCapUsd, facts.gdpUsd * 0.05)
       : 0;
     if (decision !== 'ELIGIBLE' && decision !== 'CONDITIONAL') maxLoanUsd = 0;
-    if (criticalDataMissing || confidence < 60) maxLoanUsd = 0;
+    if (criticalDataMissing || confidence < 60 || insolventHold) maxLoanUsd = 0;
     const facility = context && context.facility || getFacilitySnapshot(context && context.bank);
     maxLoanUsd = Math.min(maxLoanUsd, facility.availableCapacityUsd);
     maxLoanUsd = round(Math.max(0, maxLoanUsd), 2);
@@ -1493,7 +1498,7 @@
     const currency = facts && facts.currencyCode || 'USD';
     const fx = currencySnapshot(currency);
     const localEquivalent = fx.ok && assessment && assessment.gdpUsd !== null
-      ? money(assessment.gdpUsd * fx.localPerUsd) + ' ' + currency : 'N/A';
+      ? number(assessment.gdpUsd * fx.localPerUsd, 2) + ' ' + currency : 'N/A';
     const metrics = [
       ['Simulated GDP', money(assessment && assessment.gdpUsd)],
       ['Public debt / GDP', percent(assessment && assessment.debtToGdpPct)],
