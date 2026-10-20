@@ -190,18 +190,6 @@ var Game = window.Game = {
             });
         });
 
-        // 🏛️ BOTTOM BAR: 17 MINISTRIES BUTTON
-        const btnMinistryDock = document.getElementById('btn-ministry-dock');
-        if (btnMinistryDock) {
-            btnMinistryDock.addEventListener('click', (e) => {
-                if (typeof window.openMainMinistryView === 'function') {
-                    window.openMainMinistryView(e);
-                } else if (window.OmegaLayerManager) {
-                    window.OmegaLayerManager.setLayer(1);
-                }
-            });
-        }
-
         // 🎛️ RIGHT QUICK DOCK BINDINGS
         const btnSearch = document.getElementById('btn-quick-search');
         const drawerSearch = document.getElementById('search-drawer');

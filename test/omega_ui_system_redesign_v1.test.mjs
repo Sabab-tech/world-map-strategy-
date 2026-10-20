@@ -83,6 +83,36 @@ test('runtime exposes a read-only UI audit and uses Visual Viewport updates', ()
   assert.match(js, /event\.key !== 'Escape'/);
 });
 
+test('map ministry entry is a single compact tap target with one click route', () => {
+  const html = read('index.html');
+  const buttonStart = html.indexOf('id="btn-ministry-dock"');
+  assert.ok(buttonStart >= 0, 'map ministry entry button remains in the markup');
+  const buttonEnd = html.indexOf('</button>', buttonStart);
+  assert.ok(buttonEnd > buttonStart, 'map ministry entry button closes correctly');
+  assert.doesNotMatch(html.slice(buttonStart, buttonEnd), /onclick=/i, 'markup must not compete with the central click handler');
+
+  const mapEngine = read('map-engine-1.js');
+  assert.doesNotMatch(mapEngine, /const btnMinistryDock\s*=\s*document\.getElementById\(['"]btn-ministry-dock['"]\)/,
+    'map engine must not register a second ministry-dock route');
+
+  const display = read('display_and_layer_system.js');
+  const bindStart = display.indexOf('const bindDockBtn = (id, handler) => {');
+  const bindEnd = display.indexOf("bindDockBtn('btn-ministry-dock'", bindStart);
+  assert.ok(bindStart >= 0 && bindEnd > bindStart, 'central dock binding exists');
+  const binding = display.slice(bindStart, bindEnd);
+  assert.match(binding, /addEventListener\('click'/, 'dock routes through click');
+  assert.doesNotMatch(binding, /addEventListener\('(pointerdown|touchstart)'/,
+    'touch and pointer listeners must not trigger duplicate layer transitions');
+
+  const css = read('omega_ui_system_redesign_v1.css');
+  assert.match(css, /#ui-engine-root \.ui-bottom-navigation\s*\{[^}]*width:\s*42px\s*!important/s,
+    'the map dock stays compact instead of stretching into a long line');
+  assert.match(css, /#ui-engine-root \.ui-bottom-navigation\s*\{[^}]*background:\s*transparent\s*!important/s,
+    'the dock container remains transparent');
+  assert.match(css, /#ui-engine-root \.ui-bottom-navigation #btn-ministry-dock\s*\{[^}]*touch-action:\s*manipulation\s*!important/s,
+    'the button is tuned for mobile taps');
+});
+
 function createMinistryNavigationHarness({ withLayerManager = true } = {}) {
   const listeners = {};
   const calls = [];
