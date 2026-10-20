@@ -2008,7 +2008,9 @@
               "মন্ত্রী বিষয়টি বুঝিয়ে বল",
               "মন্ত্রী বিষয়টি বুঝিয়ে বল"
             ]
-          }
+          },
+          "operation": "EXPLAIN",
+          "dialogueAction": "CONSULT"
         },
         "MINISTER_RECOMMENDATION": {
           "priority": 97,
@@ -2029,7 +2031,9 @@
               "করণীয় পদক্ষেপ সুপারিশ কর",
               "করণীয় পদক্ষেপ সুপারিশ কর"
             ]
-          }
+          },
+          "operation": "RECOMMEND",
+          "dialogueAction": "RECOMMENDATION"
         },
         "MINISTER_INTELLIGENCE": {
           "priority": 96,
@@ -2055,7 +2059,9 @@
               "ঝুঁকি মূল্যায়ন কর",
               "ঝুঁকি মূল্যায়ন কর"
             ]
-          }
+          },
+          "operation": "ASSESS_SECURITY",
+          "dialogueAction": "INTELLIGENCE_BRIEFING"
         },
         "MINISTER_STATUS": {
           "priority": 94,
@@ -2075,7 +2081,9 @@
               "বর্তমান লক্ষ্যগুলো জানাও",
               "বর্তমান লক্ষ্যগুলি জানাও"
             ]
-          }
+          },
+          "operation": "IDENTIFY",
+          "dialogueAction": "STATUS_REPORT"
         },
         "MINISTER_EXPLANATION": {
           "priority": 93,
@@ -2094,7 +2102,9 @@
               "তোমার অনুমানগুলো দেখাও",
               "ঝুঁকিগুলো ব্যাখ্যা কর"
             ]
-          }
+          },
+          "operation": "EXPLAIN",
+          "dialogueAction": "EXPLAIN_DECISION"
         },
         "MINISTER_STRATEGY": {
           "priority": 92,
@@ -2115,7 +2125,9 @@
               "মন্ত্রণালয়গুলোর সমন্বয় কর",
               "মন্ত্রণালয়গুলোর সমন্বয় কর"
             ]
-          }
+          },
+          "operation": "SCENARIO",
+          "dialogueAction": "STRATEGY_PLANNING"
         },
         "MINISTER_MEMORY": {
           "priority": 91,
@@ -2135,7 +2147,9 @@
               "শেখা শিক্ষাগুলো পর্যালোচনা কর",
               "শেষ ব্রিফিংটি মনে কর"
             ]
-          }
+          },
+          "operation": "IDENTIFY",
+          "dialogueAction": "MEMORY_RECALL"
         }
       },
       "morphology": {
