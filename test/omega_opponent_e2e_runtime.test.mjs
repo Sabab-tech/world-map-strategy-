@@ -1,4 +1,20 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+globalThis.fetch = async input => {
+  const relative = String(input).replace(/^\\.?\\//, '').split(/[?#]/)[0];
+  const fullPath = path.resolve(repoRoot, relative);
+  if (!fullPath.startsWith(repoRoot + path.sep)) return { ok:false, status:403, json:async()=>{throw new Error('PATH_OUTSIDE_REPO');} };
+  try {
+    const body = await fs.readFile(fullPath, 'utf8');
+    return { ok:true, status:200, json:async()=>JSON.parse(body) };
+  } catch (_) {
+    return { ok:false, status:404, json:async()=>{throw new Error('NOT_FOUND:'+relative);} };
+  }
+};
 
 globalThis.Game={state:{
   simulation:{turn:1,simulationTurn:1},
@@ -19,6 +35,20 @@ await import('../omega_universal_entity_identity_engine.js');
 await import('../omega_country_semantic_bridge.js');
 const bridge=globalThis.OmegaCanonicalIdentityRegistry||globalThis.OmegaCountrySemanticBridge;
 await bridge.init();
+await import('../omega_country_runtime_data_v1.js');
+assert.equal(await globalThis.OmegaCountryRuntimeData.ready,true,'canonical country runtime must load');
+await import('../omega_country_general_data_runtime_v1.js');
+assert.equal(await globalThis.OmegaCountryGeneralDataRuntime.init(),true,'source-backed country registry must load');
+await import('../omega_country_behavior_engine_v1.js');
+assert.equal(await globalThis.OmegaCountryBehaviorEngine.init(),true,'country behaviour engine must load');
+const canonicalBangladesh=bridge.resolveCountry('Bangladesh');
+assert.equal(canonicalBangladesh?.id,'BD','country identity must resolve before decisions are scored');
+const countryProfile=globalThis.OmegaCountryBehaviorEngine.getBehaviorProfile('Bangladesh');
+assert.notEqual(countryProfile.status,'ENGINE_ERROR','country identity must build a behaviour profile');
+assert.equal(countryProfile.identity.countryCode,'BD');
+assert.equal(countryProfile.metricSources.gdpUsd.isCurrentGameState,true,'live Game.state GDP must override historical country GDP');
+assert.equal(countryProfile.metricSources.gdpUsd.year,null,'a live game-state value must not inherit the historical observation year');
+assert.equal(countryProfile.metricSources.gdpUsd.confidence,1,'live game-state evidence must be distinguished from historical data');
 await import('../omega_ministry_registry.js');
 await import('../omega_ministry_state_provider.js');
 await import('../omega_ministry_information_policy.js');
@@ -40,6 +70,9 @@ assert.equal(evalResult.countryId,'BD');
 assert.equal(evalResult.status,'COMPLETE');
 
 const autonomy=globalThis.OmegaOpponentAutonomy;
+const adaptive=globalThis.OmegaOpponentAdaptiveStrategy;
+const candidateScore=adaptive.scoreAction('Bangladesh','HOUSING_BUILD');
+assert.equal(candidateScore.known,true,'country profile must reach the adaptive candidate scorer');
 const route=autonomy.routeDecision({
   decisionId:'E2E-HOUSING-1',
   countryId:'BD',
@@ -52,6 +85,13 @@ const route=autonomy.routeDecision({
 },1);
 assert.equal(route.status,'READY_TO_QUEUE');
 assert(route.command);
+assert.equal(route.route.selectedAction,'HOUSING_BUILD');
+assert.equal(route.route.selected.strategyEvaluation.known,true,'the selected candidate must carry the country strategy score');
+assert.equal(route.route.selected.strategyEvaluation.profile.behaviorSource,'OMEGA_COUNTRY_BEHAVIOR_ENGINE_V1',
+  'decision selection must consume the country behaviour profile, not only resolve a country label');
+assert.ok(route.route.selected.strategyEvaluation.confidence>=0&&route.route.selected.strategyEvaluation.confidence<=1);
+const scoredHousing=route.route.candidateEvaluations.find(x=>x.action==='HOUSING_BUILD');
+assert.equal(scoredHousing.strategyEvaluation.score,candidateScore.score,'the real autonomy candidate must use the same country-specific scorer');
 const sim=globalThis.Omega.Simulation;
 await sim.advance(1);
 assert.equal(globalThis.Game.state.projects.BD.registry[0].status,'UNDER_CONSTRUCTION');
