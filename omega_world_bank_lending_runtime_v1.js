@@ -518,7 +518,7 @@
   }
   function getFacilitySnapshot(bankOverride) {
     const bank = bankOverride || store(true);
-    let exposure = 0, activeContracts = 0;
+    let exposure = 0, activeContracts = 0, fundingPrincipalUsd = 0, activeFundingContracts = 0;
     Object.keys(bank.loansByCountry || {}).forEach(code => {
       const loans = bank.loansByCountry[code];
       if (!Array.isArray(loans)) return;
@@ -528,13 +528,109 @@
         activeContracts += 1;
       });
     });
+    for (const loan of bank.fundingLoans || []) {
+      if (!loan || ['REPAID', 'CANCELLED'].includes(String(loan.status || '').toUpperCase())) continue;
+      fundingPrincipalUsd += Math.max(0, finite(loan.outstandingPrincipalUsd) || 0);
+      activeFundingContracts += 1;
+    }
     const capacity = Math.max(0, finite(bank.facilityCapacityUsd) ?? DEFAULT_FACILITY_CAPACITY_USD);
+    const cash = Math.max(0, finite(bank.liquidity && bank.liquidity.cashBalanceUsd) || 0);
     return {
       capacityUsd: round(capacity, 2) || 0,
       outstandingPrincipalUsd: round(exposure, 2) || 0,
       availableCapacityUsd: round(Math.max(0, capacity - exposure), 2) || 0,
       activeContracts: activeContracts,
+      liquidityUsd: round(cash, 2) || 0,
+      externalFundingPrincipalUsd: round(fundingPrincipalUsd, 2) || 0,
+      activeFundingContracts: activeFundingContracts,
       model: 'CONFIGURABLE_SIMULATED_REVOLVING_CAPACITY'
+    };
+  }
+  function ensureInstitutionLiquidity(amountUsd, borrowerProfile) {
+    const bank = store(true);
+    const amount = Math.max(0, finite(amountUsd) || 0);
+    const liquidity = bank.liquidity;
+    let cash = Math.max(0, finite(liquidity.cashBalanceUsd) || 0);
+    if (cash + 0.01 >= amount) return { ok: true, borrowedUsd: 0, cashBalanceUsd: cash };
+    let needed = amount - cash;
+    const root = rootState();
+    const fxBank = global.OmegaGovernmentBanking || (global.Omega && global.Omega.GovernmentBanking) || null;
+    if (!fxBank || typeof fxBank.fundWorldBankLiquidity !== 'function') {
+      return { ok: false, code: 'WORLD_BANK_FUNDING_CONNECTOR_UNAVAILABLE', neededUsd: needed, cashBalanceUsd: cash };
+    }
+    const player = playerProfile();
+    const facility = getFacilitySnapshot(bank);
+    const candidates = [];
+    for (const profile of profiles) {
+      if (!profile || codeOf(profile) === codeOf(borrowerProfile)) continue;
+      if (player && codeOf(profile) === codeOf(player)
+          && String(bank.partnersByCountry[codeOf(profile)] && bank.partnersByCountry[codeOf(profile)].role || '') !== 'LENDER') continue;
+      const facts = countryFacts(profile, { root: root, bank: bank });
+      if (!facts || !facts.simulationDataAvailable || facts.gdpUsd === null || facts.gdpUsd <= 0
+          || facts.treasuryUsd === null || facts.debtToGdpPct === null || facts.debtToGdpPct > 180) continue;
+      if (facts.inflationPct !== null && facts.inflationPct > 20) continue;
+      if (facts.gdpGrowthPct !== null && facts.gdpGrowthPct < -10) continue;
+      const credit = scoreCountry(profile, { root: root, bank: bank, facility: facility });
+      if (!credit || credit.score === null || credit.score < 65 || credit.confidencePct < 60) continue;
+      const reserveFloor = Math.max(1000000, facts.gdpUsd * 0.005);
+      const availableTreasury = Math.max(0, facts.treasuryUsd - reserveFloor);
+      const perDrawCap = facts.gdpUsd * 0.005;
+      const available = Math.min(availableTreasury, perDrawCap);
+      if (available <= 100000) continue;
+      candidates.push({ profile: profile, facts: facts, credit: credit, availableUsd: available });
+    }
+    candidates.sort((a, b) => b.availableUsd - a.availableUsd || (b.credit.score || 0) - (a.credit.score || 0)
+      || String(a.profile.name).localeCompare(String(b.profile.name)));
+    let totalBorrowed = 0;
+    for (const candidate of candidates) {
+      if (needed <= 0.01) break;
+      const amount = Math.min(needed, candidate.availableUsd);
+      const rate = round(clamp(2.5 + Math.max(0, 80 - candidate.credit.score) * 0.035, 2.5, 5.25), 3);
+      const turn = currentTurn();
+      const contractId = 'WBF-' + codeOf(candidate.profile) + '-' + turn + '-' + String(bank.nextSequence);
+      const result = fxBank.fundWorldBankLiquidity({
+        authorization: 'OMEGA_WORLD_BANK_LENDING', action: 'DRAW',
+        countryId: codeOf(candidate.profile), contractId: contractId, amountUsd: amount,
+        minimumReserveUsd: Math.max(1000000, candidate.facts.gdpUsd * 0.005),
+        annualInterestRatePct: rate, termYears: 5
+      });
+      if (!result || result.ok !== true) continue;
+      bank.nextSequence = Number(bank.nextSequence || 1) + 1;
+      const loan = {
+        contractId: contractId, lenderCountryCode: codeOf(candidate.profile),
+        lenderCountryName: candidate.profile.name, borrowerInstitution: 'OMEGA_SIMULATED_WORLD_BANK',
+        originalPrincipalUsd: round(amount, 2), outstandingPrincipalUsd: round(amount, 2),
+        accruedInterestUsd: 0, totalPrincipalPaidUsd: 0, totalInterestPaidUsd: 0,
+        annualInterestRatePct: rate, termYears: 5, graceYears: 1, ageYears: 0,
+        issuedTurn: turn, lastAccruedTurn: turn, daysPastDue: 0, arrearsUsd: 0,
+        status: 'ACTIVE', source: 'SIMULATED_SOVEREIGN_PARTNER_FUNDING',
+        lenderCreditScore: candidate.credit.score, lastPaymentTurn: null
+      };
+      bank.fundingLoans.push(loan);
+      bank.fundingOffers.push({ contractId, countryCode: loan.lenderCountryCode,
+        countryName: loan.lenderCountryName, amountUsd: loan.originalPrincipalUsd,
+        annualInterestRatePct: rate, termYears: 5, status: 'ACCEPTED', turn: turn });
+      bank.fundingOffers = bank.fundingOffers.slice(-MAX_HISTORY);
+      bank.partnersByCountry[loan.lenderCountryCode] = Object.assign({}, bank.partnersByCountry[loan.lenderCountryCode] || {}, {
+        countryCode: loan.lenderCountryCode, countryName: loan.lenderCountryName,
+        role: 'LENDER', joinedTurn: bank.partnersByCountry[loan.lenderCountryCode]?.joinedTurn ?? turn,
+        lastFundingTurn: turn, source: 'AI_SOVEREIGN_LIQUIDITY_OFFER'
+      });
+      liquidity.cashBalanceUsd = Math.max(0, (finite(liquidity.cashBalanceUsd) || 0) + amount);
+      liquidity.borrowedPrincipalUsd = (finite(liquidity.borrowedPrincipalUsd) || 0) + amount;
+      totalBorrowed += amount;
+      needed -= amount;
+      bankLedger({ type: 'WORLD_BANK_PARTNER_FUNDING_DRAW', contractId,
+        countryCode: loan.lenderCountryCode, countryName: loan.lenderCountryName,
+        amountUsd: loan.originalPrincipalUsd, annualInterestRatePct: rate, termYears: 5 });
+      cash = Math.max(0, finite(liquidity.cashBalanceUsd) || 0);
+    }
+    return {
+      ok: cash + 0.01 >= amount,
+      code: cash + 0.01 >= amount ? 'LIQUIDITY_AVAILABLE' : 'WORLD_BANK_LIQUIDITY_SHORTFALL',
+      neededUsd: round(needed, 2) || 0,
+      borrowedUsd: round(totalBorrowed, 2) || 0,
+      cashBalanceUsd: round(cash, 2) || 0
     };
   }
   function requestLoan(input) {
