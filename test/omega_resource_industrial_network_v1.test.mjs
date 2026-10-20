@@ -196,6 +196,10 @@ assert.ok(context.Game.state.resource.KWT.industrialNetwork.projects.some(x=>x.p
 assert.equal(context.Game.state.resource.KW?.industrialNetwork?.projects?.some(x=>x.projectId===kuwaitProject.projectId)||false,false,
   'country alias resolution must not silently create a competing ISO-2 bucket');
 
+// The authoritative daily clock overrides stale 30-day-per-turn hints from older saves.
+context.Omega.Simulation={clock:{turn:42,stepDurationMs:86400000}};
+assert.equal(N.diagnostics().daysPerTurn,1,'industrial route ETAs and construction progress must follow one day per clock turn');
+
 const diag=N.diagnostics();
 assert.equal(diag.siteCount,3);
 assert.equal(diag.extractionPlans,3);
