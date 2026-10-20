@@ -1809,9 +1809,7 @@
       buildProfileIndex();
       store(true);
       loadReferenceCache();
-      evaluateAll();
-      await refreshWorldBankData(false).catch(() => ({ ok: false, status: 'UNAVAILABLE' }));
-      evaluateAll();
+      evaluateAll(true);
       initialized = true;
       installObserver();
       global.addEventListener && global.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED', function (event) {
@@ -1831,6 +1829,10 @@
         global.Omega.WorldBankLending = api;
       } catch (_) {}
       queueRender(false);
+      refreshWorldBankData(false).then(result => {
+        if (result && result.ok) evaluateAll(true);
+        queueRender(true);
+      }).catch(() => queueRender(true));
       return diagnostics();
     })();
     try { return await initPromise; } finally { if (!initialized) initPromise = null; }
