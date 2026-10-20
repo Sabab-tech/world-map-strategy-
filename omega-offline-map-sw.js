@@ -11,7 +11,7 @@ const CORE_ASSETS = [
   "./omega_game_lifecycle_runtime_v1.js", "./omega_game_lifecycle_runtime_v1.css",
   "./omega_shared_number_format_v1.js",
   "./omega_ui_system_redesign_v1.css", "./omega_ui_system_redesign_v1.js",
-  "./omega_country_runtime_data_v1.js", "./cities.json",
+  "./omega_country_runtime_data_v1.js", "./omega_country_general_data_runtime_v1.js", "./country_general_data_registry_v1.json", "./cities.json",
   "./offline-hybrid-map.js", "./offline-hybrid-map.css",
   "./omega_forex_monetary_engine_v1.js", "./omega_forex_monetary_engine_v1.css",
   "./omega_government_banking_runtime_v1.js", "./omega_economic_transmission_runtime_v1.js",
