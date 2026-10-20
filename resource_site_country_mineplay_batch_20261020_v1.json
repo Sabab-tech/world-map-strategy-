@@ -3,8 +3,8 @@
   "datasetId": "OMEGA_RESOURCE_SITE_COUNTRY_MINEPLAY_BATCH_V1",
   "batchId": "COUNTRY_MINEPLAY_20261020",
   "generatedAt": "2026-10-20",
-  "recordCount": 30,
-  "countryCount": 10,
+  "recordCount": 44,
+  "countryCount": 22,
   "authority": "ADDITIVE_SOURCE_REFERENCED_SITE_BATCH",
   "note": "Adds real-world site identities and source-reported context while preserving unknown measured reserve/production values as UNOBSERVED. Every simulation reserve is a gameplay seed, not a geological estimate. Coordinates are regional approximations for strategic-map display.",
   "sourcePolicy": {
@@ -7216,6 +7216,3361 @@
         },
         "authority": "SOURCE_REPORTED_NOT_FULLY_RECONCILED"
       }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_GIN_boke_sangaredi_bauxite_mine",
+      "countryId": "GIN",
+      "siteName": "Sangaredi Bauxite Mine",
+      "identity": {
+        "countryIso3": "GIN",
+        "countryName": "Guinea",
+        "siteType": "BAUXITE_MINE",
+        "resourceTypeId": "bauxite",
+        "resourceName": "Bauxite",
+        "ontologyKey": "BAUXITE",
+        "aliases": []
+      },
+      "location": {
+        "countryName": "Guinea",
+        "adminRegion": "Sangaredi, Boké Region",
+        "locality": "Sangaredi, Boké Region",
+        "coordinates": {
+          "lat": 11.08,
+          "lng": -13.78
+        },
+        "coordinateStatus": "REGIONAL_APPROXIMATION",
+        "coordinateAuthority": "SOURCE-LOCATED REGION; APPROXIMATE COORDINATE FOR STRATEGIC MAP NOT SURVEY GRADE",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "countryBoundaryKey": "GIN"
+      },
+      "ownership": {
+        "owner": "Current equity shares require reconciliation against latest company filings",
+        "operator": "Compagnie des Bauxites de Guinée (CBG)",
+        "ownerEvidenceStatus": "SOURCE_REPORTED_REQUIRES_CURRENT_FILING_RECONCILIATION",
+        "operatorEvidenceStatus": "SOURCE_REPORTED_PRIMARY_OR_PORTFOLIO",
+        "authority": "SOURCE_REFERENCE_WITH_CURRENT_STATUS_CAVEAT",
+        "equityControlCountry": "GIN",
+        "operatorContractId": "OPCONTRACT_SITE_GIN_boke_sangaredi_bauxite_mine"
+      },
+      "operation": {
+        "status": "OPERATING_AS_REPORTED_OPERATOR_CONTEXT",
+        "operationalStatus": "OPERATING_AS_REPORTED_OPERATOR_CONTEXT",
+        "realWorldStatus": "OPERATING_AS_REPORTED_OPERATOR_CONTEXT",
+        "extractionMethod": "OPEN_PIT_BAUXITE_MINING_AND_HAULAGE",
+        "extractionEligibility": "SIMULATED_GAMEPLAY_EXECUTABLE_SUBJECT_TO_RUNTIME_GATES",
+        "commercialExtraction": true,
+        "siteCommissioningLevel": 0,
+        "mineLevel": 0,
+        "statusAuthority": "SOURCE_REPORTED_IDENTITY_AND_STATUS; PLAYER_SIMULATION_STATE_REMAINS_SEPARATE",
+        "gameplayConstructionAllowed": true
+      },
+      "processing": {
+        "upstreamProcess": "OPEN_PIT_BAUXITE_MINING_AND_HAULAGE",
+        "midstreamProcess": "COMMODITY_SPECIFIC_BENEFICIATION_AND_GRADE_CONTROL",
+        "refinedOutputs": [
+          "bauxite ore",
+          "alumina feed"
+        ],
+        "downstreamSectors": [
+          "alumina",
+          "aluminium",
+          "chemicals"
+        ]
+      },
+      "logistics": {
+        "warehouseCountryId": "GIN",
+        "warehouseSiteId": "WH-GIN-RAW",
+        "inventoryRouteStatus": "REQUIRES_RUNTIME_ROUTE_VALIDATION",
+        "factoryRouteStatus": "REQUIRES_FACTORY_COMPATIBILITY_CHECK",
+        "routeStatus": "REGIONAL_ROUTE_TO_BE_PLANNED",
+        "transport": {
+          "routeId": "ROUTE_SITE_GIN_boke_sangaredi_bauxite_mine_RAW_TO_FACTORY",
+          "routeType": "ROAD_RAIL",
+          "originSiteId": "SITE_GIN_boke_sangaredi_bauxite_mine",
+          "originCountryId": "GIN",
+          "warehouseId": "WH-GIN-RAW",
+          "destinationFactoryId": "AUTO_SELECT_COMPATIBLE_FACTORY",
+          "destinationCountryId": "GIN",
+          "distanceKm": null,
+          "averageSpeedKmPerDay": null,
+          "estimatedTravelDays": null,
+          "routeStatus": "UNPLANNED_REQUIRES_RUNTIME_ROUTING",
+          "canBeBlockedByWar": true,
+          "canBeBlockedByNeighborControl": true,
+          "canBeBlockedByNavalInterdiction": true,
+          "strategicRouteNotRoadSurvey": true,
+          "routeCapacityPerDay": null
+        }
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": "TONNES_ORE",
+          "status": "UNOBSERVED",
+          "basis": "No reconciled site-specific reserve estimate promoted"
+        },
+        "production": {
+          "annual": null,
+          "annualUnit": "TONNES_PER_YEAR",
+          "rate": null,
+          "unit": "TONNES_PER_DAY",
+          "status": "UNOBSERVED",
+          "basis": "Current reported facts are preserved separately and not promoted into quantitative authority"
+        },
+        "grade": {
+          "value": null,
+          "unit": "PERCENT",
+          "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": "PERCENT",
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": "TONNES_PER_DAY",
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": "PERCENT",
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": "TONNES_PER_DAY",
+          "status": "UNOBSERVED"
+        },
+        "quantitativeProvenance": {
+          "authority": "SOURCE_REPORTED_IDENTITY_WITH_UNKNOWN_MEASUREMENTS_PRESERVED",
+          "measuredReservePromoted": false,
+          "simulatedReserveSeparate": true,
+          "sourceUrls": [
+            "https://www.cbg-guinee.com/"
+          ],
+          "accessed": "2026-10-20"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "recovery": "UNOBSERVED",
+          "throughput": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "overall": "IDENTITY_AND_GAMEPLAY_SEED_ONLY"
+        }
+      },
+      "reserve": {
+        "quantity": 480000000,
+        "unit": "TONNES_ORE",
+        "status": "SIMULATED",
+        "basis": "MINEPLAY_SCENARIO_SEED_ONLY_NOT_A_GEOLOGICAL_RESERVE",
+        "authority": "SIMULATION_SCENARIO_ONLY",
+        "generatedAt": "2026-10-20"
+      },
+      "simulation": {
+        "simulationOnly": true,
+        "reserve": {
+          "quantity": 480000000,
+          "unit": "TONNES_ORE",
+          "status": "SIMULATED",
+          "basis": "MINEPLAY_SCENARIO_SEED_ONLY_NOT_A_GEOLOGICAL_RESERVE",
+          "authority": "SIMULATION_SCENARIO_ONLY",
+          "generatedAt": "2026-10-20"
+        },
+        "reserveHorizonYears": null,
+        "reserveAuthority": "GAMEPLAY_SEED_ONLY",
+        "nominalDailyCapacity": null,
+        "minimumDailyCapacity": null,
+        "maximumDailyCapacity": null,
+        "productionRate": null,
+        "productionRateUnit": "TONNES_PER_DAY",
+        "utilization": 0.65,
+        "recovery": 0.72,
+        "transportRoute": [
+          {
+            "routeId": "SIM_ROUTE:GIN:SITE_GIN_boke_sangaredi_bauxite_mine",
+            "mode": "truck",
+            "transportMode": "truck",
+            "distanceKm": null,
+            "estimatedTravelDays": null,
+            "status": "SIMULATED_ROUTE_REQUIRES_RUNTIME_PLAN",
+            "blockableByWar": true,
+            "blockableByNeighborControl": true,
+            "blockableByNavalInterdiction": true,
+            "countryIsolationKey": "GIN"
+          }
+        ],
+        "rawWarehouseId": "WH-GIN-RAW",
+        "factoryBinding": {
+          "factoryId": null,
+          "countryId": "GIN",
+          "inputResourceId": "bauxite",
+          "status": "REQUIRES_COMPATIBLE_FACTORY_BOOTSTRAP",
+          "authority": "RUNTIME"
+        },
+        "gameplayConstructionAllowed": true
+      },
+      "map": {
+        "markerEligible": true,
+        "countryIsolationKey": "GIN",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+      },
+      "runtime": {
+        "identityAuthority": "COUNTRY_MINEPLAY_SUPPLEMENT_V1",
+        "quantityAuthority": "SIMULATED",
+        "productionAuthority": "SIMULATED",
+        "requiresFactoryBinding": true,
+        "requiresSiteSpecificRoute": true,
+        "sourceStatusIsNotGameplayCommissioning": true
+      },
+      "sourceReference": {
+        "sourcePath": "https://www.cbg-guinee.com/",
+        "sourceType": "OPERATOR_PRIMARY",
+        "accessed": "2026-10-20",
+        "facts": {},
+        "statusNote": "Source identity/status is separate from simulated reserve and player-owned assets."
+      },
+      "sources": [
+        {
+          "url": "https://www.cbg-guinee.com/",
+          "sourceType": "OPERATOR_PRIMARY",
+          "accessed": "2026-10-20",
+          "scope": "site_identity_commodity_location_and_source_reported_status"
+        }
+      ],
+      "observedFacts": {
+        "reportedStatus": "OPERATING_AS_REPORTED_OPERATOR_CONTEXT",
+        "owner": "Current equity shares require reconciliation against latest company filings",
+        "operator": "Compagnie des Bauxites de Guinée (CBG)",
+        "resource": "Bauxite",
+        "region": "Sangaredi, Boké Region",
+        "facts": {},
+        "authority": "SOURCE_REPORTED_NOT_FULLY_RECONCILED"
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_COD_kipushi_zinc_mine",
+      "countryId": "COD",
+      "siteName": "Kipushi Zinc Mine",
+      "identity": {
+        "countryIso3": "COD",
+        "countryName": "Democratic Republic of the Congo",
+        "siteType": "UNDERGROUND_ZINC_MINE",
+        "resourceTypeId": "zinc",
+        "resourceName": "Zinc",
+        "ontologyKey": "ZINC",
+        "aliases": []
+      },
+      "location": {
+        "countryName": "Democratic Republic of the Congo",
+        "adminRegion": "Kipushi, Haut-Katanga Province",
+        "locality": "Kipushi, Haut-Katanga Province",
+        "coordinates": {
+          "lat": -11.76,
+          "lng": 27.25
+        },
+        "coordinateStatus": "REGIONAL_APPROXIMATION",
+        "coordinateAuthority": "SOURCE-LOCATED REGION; APPROXIMATE COORDINATE FOR STRATEGIC MAP NOT SURVEY GRADE",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "countryBoundaryKey": "COD"
+      },
+      "ownership": {
+        "owner": "Ivanhoe Mines and state-linked Gécamines interest; latest shareholding requires verification",
+        "operator": "Kipushi Corporation / Ivanhoe Mines",
+        "ownerEvidenceStatus": "SOURCE_REPORTED_REQUIRES_CURRENT_FILING_RECONCILIATION",
+        "operatorEvidenceStatus": "SOURCE_REPORTED_PRIMARY_OR_PORTFOLIO",
+        "authority": "SOURCE_REFERENCE_WITH_CURRENT_STATUS_CAVEAT",
+        "equityControlCountry": "COD",
+        "operatorContractId": "OPCONTRACT_SITE_COD_kipushi_zinc_mine"
+      },
+      "operation": {
+        "status": "OPERATING_AS_REPORTED_2026_Q2",
+        "operationalStatus": "OPERATING_AS_REPORTED_2026_Q2",
+        "realWorldStatus": "OPERATING_AS_REPORTED_2026_Q2",
+        "extractionMethod": "UNDERGROUND_ZINC_MINING_AND_CONCENTRATION",
+        "extractionEligibility": "SIMULATED_GAMEPLAY_EXECUTABLE_SUBJECT_TO_RUNTIME_GATES",
+        "commercialExtraction": true,
+        "siteCommissioningLevel": 0,
+        "mineLevel": 0,
+        "statusAuthority": "SOURCE_REPORTED_IDENTITY_AND_STATUS; PLAYER_SIMULATION_STATE_REMAINS_SEPARATE",
+        "gameplayConstructionAllowed": true
+      },
+      "processing": {
+        "upstreamProcess": "UNDERGROUND_ZINC_MINING_AND_CONCENTRATION",
+        "midstreamProcess": "COMMODITY_SPECIFIC_BENEFICIATION_AND_GRADE_CONTROL",
+        "refinedOutputs": [
+          "zinc concentrate"
+        ],
+        "downstreamSectors": [
+          "galvanizing",
+          "alloys",
+          "manufacturing"
+        ]
+      },
+      "logistics": {
+        "warehouseCountryId": "COD",
+        "warehouseSiteId": "WH-COD-RAW",
+        "inventoryRouteStatus": "REQUIRES_RUNTIME_ROUTE_VALIDATION",
+        "factoryRouteStatus": "REQUIRES_FACTORY_COMPATIBILITY_CHECK",
+        "routeStatus": "REGIONAL_ROUTE_TO_BE_PLANNED",
+        "transport": {
+          "routeId": "ROUTE_SITE_COD_kipushi_zinc_mine_RAW_TO_FACTORY",
+          "routeType": "ROAD_RAIL",
+          "originSiteId": "SITE_COD_kipushi_zinc_mine",
+          "originCountryId": "COD",
+          "warehouseId": "WH-COD-RAW",
+          "destinationFactoryId": "AUTO_SELECT_COMPATIBLE_FACTORY",
+          "destinationCountryId": "COD",
+          "distanceKm": null,
+          "averageSpeedKmPerDay": null,
+          "estimatedTravelDays": null,
+          "routeStatus": "UNPLANNED_REQUIRES_RUNTIME_ROUTING",
+          "canBeBlockedByWar": true,
+          "canBeBlockedByNeighborControl": true,
+          "canBeBlockedByNavalInterdiction": true,
+          "strategicRouteNotRoadSurvey": true,
+          "routeCapacityPerDay": null
+        }
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": "TONNES_ORE",
+          "status": "UNOBSERVED",
+          "basis": "No reconciled site-specific reserve estimate promoted"
+        },
+        "production": {
+          "annual": null,
+          "annualUnit": "TONNES_PER_YEAR",
+          "rate": null,
+          "unit": "TONNES_PER_DAY",
+          "status": "UNOBSERVED",
+          "basis": "Current reported facts are preserved separately and not promoted into quantitative authority"
+        },
+        "grade": {
+          "value": null,
+          "unit": "PERCENT",
+          "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": "PERCENT",
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": "TONNES_PER_DAY",
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": "PERCENT",
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": "TONNES_PER_DAY",
+          "status": "UNOBSERVED"
+        },
+        "quantitativeProvenance": {
+          "authority": "SOURCE_REPORTED_IDENTITY_WITH_UNKNOWN_MEASUREMENTS_PRESERVED",
+          "measuredReservePromoted": false,
+          "simulatedReserveSeparate": true,
+          "sourceUrls": [
+            "https://www.ivanhoemines.com/news-stories/news-release/ivanhoe-mines-issues-2026-second-quarter-financial-results-overview-of-operations-and-exploration-activities/"
+          ],
+          "accessed": "2026-10-20"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "recovery": "UNOBSERVED",
+          "throughput": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "overall": "IDENTITY_AND_GAMEPLAY_SEED_ONLY"
+        }
+      },
+      "reserve": {
+        "quantity": 95000000,
+        "unit": "TONNES_ORE",
+        "status": "SIMULATED",
+        "basis": "MINEPLAY_SCENARIO_SEED_ONLY_NOT_A_GEOLOGICAL_RESERVE",
+        "authority": "SIMULATION_SCENARIO_ONLY",
+        "generatedAt": "2026-10-20"
+      },
+      "simulation": {
+        "simulationOnly": true,
+        "reserve": {
+          "quantity": 95000000,
+          "unit": "TONNES_ORE",
+          "status": "SIMULATED",
+          "basis": "MINEPLAY_SCENARIO_SEED_ONLY_NOT_A_GEOLOGICAL_RESERVE",
+          "authority": "SIMULATION_SCENARIO_ONLY",
+          "generatedAt": "2026-10-20"
+        },
+        "reserveHorizonYears": null,
+        "reserveAuthority": "GAMEPLAY_SEED_ONLY",
+        "nominalDailyCapacity": null,
+        "minimumDailyCapacity": null,
+        "maximumDailyCapacity": null,
+        "productionRate": null,
+        "productionRateUnit": "TONNES_PER_DAY",
+        "utilization": 0.65,
+        "recovery": 0.72,
+        "transportRoute": [
+          {
+            "routeId": "SIM_ROUTE:COD:SITE_COD_kipushi_zinc_mine",
+            "mode": "truck",
+            "transportMode": "truck",
+            "distanceKm": null,
+            "estimatedTravelDays": null,
+            "status": "SIMULATED_ROUTE_REQUIRES_RUNTIME_PLAN",
+            "blockableByWar": true,
+            "blockableByNeighborControl": true,
+            "blockableByNavalInterdiction": true,
+            "countryIsolationKey": "COD"
+          }
+        ],
+        "rawWarehouseId": "WH-COD-RAW",
+        "factoryBinding": {
+          "factoryId": null,
+          "countryId": "COD",
+          "inputResourceId": "zinc",
+          "status": "REQUIRES_COMPATIBLE_FACTORY_BOOTSTRAP",
+          "authority": "RUNTIME"
+        },
+        "gameplayConstructionAllowed": true
+      },
+      "map": {
+        "markerEligible": true,
+        "countryIsolationKey": "COD",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+      },
+      "runtime": {
+        "identityAuthority": "COUNTRY_MINEPLAY_SUPPLEMENT_V1",
+        "quantityAuthority": "SIMULATED",
+        "productionAuthority": "SIMULATED",
+        "requiresFactoryBinding": true,
+        "requiresSiteSpecificRoute": true,
+        "sourceStatusIsNotGameplayCommissioning": true
+      },
+      "sourceReference": {
+        "sourcePath": "https://www.ivanhoemines.com/news-stories/news-release/ivanhoe-mines-issues-2026-second-quarter-financial-results-overview-of-operations-and-exploration-activities/",
+        "sourceType": "OPERATOR_PRODUCTION_UPDATE",
+        "accessed": "2026-10-20",
+        "facts": {
+          "reportedZincConcentrateQ2_2026Tonnes": 70177,
+          "reportedZincConcentrateH1_2026Tonnes": 135221
+        },
+        "statusNote": "Source identity/status is separate from simulated reserve and player-owned assets."
+      },
+      "sources": [
+        {
+          "url": "https://www.ivanhoemines.com/news-stories/news-release/ivanhoe-mines-issues-2026-second-quarter-financial-results-overview-of-operations-and-exploration-activities/",
+          "sourceType": "OPERATOR_PRODUCTION_UPDATE",
+          "accessed": "2026-10-20",
+          "scope": "site_identity_commodity_location_and_source_reported_status"
+        }
+      ],
+      "observedFacts": {
+        "reportedStatus": "OPERATING_AS_REPORTED_2026_Q2",
+        "owner": "Ivanhoe Mines and state-linked Gécamines interest; latest shareholding requires verification",
+        "operator": "Kipushi Corporation / Ivanhoe Mines",
+        "resource": "Zinc",
+        "region": "Kipushi, Haut-Katanga Province",
+        "facts": {
+          "reportedZincConcentrateQ2_2026Tonnes": 70177,
+          "reportedZincConcentrateH1_2026Tonnes": 135221
+        },
+        "authority": "SOURCE_REPORTED_NOT_FULLY_RECONCILED"
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_IDN_batu_hijau_copper_gold_mine",
+      "countryId": "IDN",
+      "siteName": "Batu Hijau Copper-Gold Mine",
+      "identity": {
+        "countryIso3": "IDN",
+        "countryName": "Indonesia",
+        "siteType": "COPPER_GOLD_MINE",
+        "resourceTypeId": "copper",
+        "resourceName": "Copper and gold ores",
+        "ontologyKey": "COPPER",
+        "aliases": []
+      },
+      "location": {
+        "countryName": "Indonesia",
+        "adminRegion": "Sumbawa Island, West Nusa Tenggara",
+        "locality": "Sumbawa Island, West Nusa Tenggara",
+        "coordinates": {
+          "lat": -8.96,
+          "lng": 116.86
+        },
+        "coordinateStatus": "REGIONAL_APPROXIMATION",
+        "coordinateAuthority": "SOURCE-LOCATED REGION; APPROXIMATE COORDINATE FOR STRATEGIC MAP NOT SURVEY GRADE",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "countryBoundaryKey": "IDN"
+      },
+      "ownership": {
+        "owner": "Current indirect shareholding chain is not normalized",
+        "operator": "PT Amman Mineral Nusa Tenggara",
+        "ownerEvidenceStatus": "SOURCE_REPORTED_REQUIRES_CURRENT_FILING_RECONCILIATION",
+        "operatorEvidenceStatus": "SOURCE_REPORTED_PRIMARY_OR_PORTFOLIO",
+        "authority": "SOURCE_REFERENCE_WITH_CURRENT_STATUS_CAVEAT",
+        "equityControlCountry": "IDN",
+        "operatorContractId": "OPCONTRACT_SITE_IDN_batu_hijau_copper_gold_mine"
+      },
+      "operation": {
+        "status": "OPERATING_AS_REPORTED_OPERATOR_CONTEXT",
+        "operationalStatus": "OPERATING_AS_REPORTED_OPERATOR_CONTEXT",
+        "realWorldStatus": "OPERATING_AS_REPORTED_OPERATOR_CONTEXT",
+        "extractionMethod": "OPEN_PIT_COPPER_GOLD_MINING_AND_CONCENTRATION",
+        "extractionEligibility": "SIMULATED_GAMEPLAY_EXECUTABLE_SUBJECT_TO_RUNTIME_GATES",
+        "commercialExtraction": true,
+        "siteCommissioningLevel": 0,
+        "mineLevel": 0,
+        "statusAuthority": "SOURCE_REPORTED_IDENTITY_AND_STATUS; PLAYER_SIMULATION_STATE_REMAINS_SEPARATE",
+        "gameplayConstructionAllowed": true
+      },
+      "processing": {
+        "upstreamProcess": "OPEN_PIT_COPPER_GOLD_MINING_AND_CONCENTRATION",
+        "midstreamProcess": "COMMODITY_SPECIFIC_BENEFICIATION_AND_GRADE_CONTROL",
+        "refinedOutputs": [
+          "copper concentrate",
+          "gold by-product where applicable"
+        ],
+        "downstreamSectors": [
+          "smelting",
+          "refining",
+          "electricity grids",
+          "manufacturing"
+        ]
+      },
+      "logistics": {
+        "warehouseCountryId": "IDN",
+        "warehouseSiteId": "WH-IDN-RAW",
+        "inventoryRouteStatus": "REQUIRES_RUNTIME_ROUTE_VALIDATION",
+        "factoryRouteStatus": "REQUIRES_FACTORY_COMPATIBILITY_CHECK",
+        "routeStatus": "REGIONAL_ROUTE_TO_BE_PLANNED",
+        "transport": {
+          "routeId": "ROUTE_SITE_IDN_batu_hijau_copper_gold_mine_RAW_TO_FACTORY",
+          "routeType": "ROAD_RAIL",
+          "originSiteId": "SITE_IDN_batu_hijau_copper_gold_mine",
+          "originCountryId": "IDN",
+          "warehouseId": "WH-IDN-RAW",
+          "destinationFactoryId": "AUTO_SELECT_COMPATIBLE_FACTORY",
+          "destinationCountryId": "IDN",
+          "distanceKm": null,
+          "averageSpeedKmPerDay": null,
+          "estimatedTravelDays": null,
+          "routeStatus": "UNPLANNED_REQUIRES_RUNTIME_ROUTING",
+          "canBeBlockedByWar": true,
+          "canBeBlockedByNeighborControl": true,
+          "canBeBlockedByNavalInterdiction": true,
+          "strategicRouteNotRoadSurvey": true,
+          "routeCapacityPerDay": null
+        }
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": "TONNES_ORE",
+          "status": "UNOBSERVED",
+          "basis": "No reconciled site-specific reserve estimate promoted"
+        },
+        "production": {
+          "annual": null,
+          "annualUnit": "TONNES_PER_YEAR",
+          "rate": null,
+          "unit": "TONNES_PER_DAY",
+          "status": "UNOBSERVED",
+          "basis": "Current reported facts are preserved separately and not promoted into quantitative authority"
+        },
+        "grade": {
+          "value": null,
+          "unit": "PERCENT",
+          "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": "PERCENT",
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": "TONNES_PER_DAY",
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": "PERCENT",
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": "TONNES_PER_DAY",
+          "status": "UNOBSERVED"
+        },
+        "quantitativeProvenance": {
+          "authority": "SOURCE_REPORTED_IDENTITY_WITH_UNKNOWN_MEASUREMENTS_PRESERVED",
+          "measuredReservePromoted": false,
+          "simulatedReserveSeparate": true,
+          "sourceUrls": [
+            "https://www.amman.co.id/"
+          ],
+          "accessed": "2026-10-20"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "recovery": "UNOBSERVED",
+          "throughput": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "overall": "IDENTITY_AND_GAMEPLAY_SEED_ONLY"
+        }
+      },
+      "reserve": {
+        "quantity": 320000000,
+        "unit": "TONNES_ORE",
+        "status": "SIMULATED",
+        "basis": "MINEPLAY_SCENARIO_SEED_ONLY_NOT_A_GEOLOGICAL_RESERVE",
+        "authority": "SIMULATION_SCENARIO_ONLY",
+        "generatedAt": "2026-10-20"
+      },
+      "simulation": {
+        "simulationOnly": true,
+        "reserve": {
+          "quantity": 320000000,
+          "unit": "TONNES_ORE",
+          "status": "SIMULATED",
+          "basis": "MINEPLAY_SCENARIO_SEED_ONLY_NOT_A_GEOLOGICAL_RESERVE",
+          "authority": "SIMULATION_SCENARIO_ONLY",
+          "generatedAt": "2026-10-20"
+        },
+        "reserveHorizonYears": null,
+        "reserveAuthority": "GAMEPLAY_SEED_ONLY",
+        "nominalDailyCapacity": null,
+        "minimumDailyCapacity": null,
+        "maximumDailyCapacity": null,
+        "productionRate": null,
+        "productionRateUnit": "TONNES_PER_DAY",
+        "utilization": 0.65,
+        "recovery": 0.72,
+        "transportRoute": [
+          {
+            "routeId": "SIM_ROUTE:IDN:SITE_IDN_batu_hijau_copper_gold_mine",
+            "mode": "truck",
+            "transportMode": "truck",
+            "distanceKm": null,
+            "estimatedTravelDays": null,
+            "status": "SIMULATED_ROUTE_REQUIRES_RUNTIME_PLAN",
+            "blockableByWar": true,
+            "blockableByNeighborControl": true,
+            "blockableByNavalInterdiction": true,
+            "countryIsolationKey": "IDN"
+          }
+        ],
+        "rawWarehouseId": "WH-IDN-RAW",
+        "factoryBinding": {
+          "factoryId": null,
+          "countryId": "IDN",
+          "inputResourceId": "copper",
+          "status": "REQUIRES_COMPATIBLE_FACTORY_BOOTSTRAP",
+          "authority": "RUNTIME"
+        },
+        "gameplayConstructionAllowed": true
+      },
+      "map": {
+        "markerEligible": true,
+        "countryIsolationKey": "IDN",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+      },
+      "runtime": {
+        "identityAuthority": "COUNTRY_MINEPLAY_SUPPLEMENT_V1",
+        "quantityAuthority": "SIMULATED",
+        "productionAuthority": "SIMULATED",
+        "requiresFactoryBinding": true,
+        "requiresSiteSpecificRoute": true,
+        "sourceStatusIsNotGameplayCommissioning": true
+      },
+      "sourceReference": {
+        "sourcePath": "https://www.amman.co.id/",
+        "sourceType": "OPERATOR_PRIMARY",
+        "accessed": "2026-10-20",
+        "facts": {},
+        "statusNote": "Source identity/status is separate from simulated reserve and player-owned assets."
+      },
+      "sources": [
+        {
+          "url": "https://www.amman.co.id/",
+          "sourceType": "OPERATOR_PRIMARY",
+          "accessed": "2026-10-20",
+          "scope": "site_identity_commodity_location_and_source_reported_status"
+        }
+      ],
+      "observedFacts": {
+        "reportedStatus": "OPERATING_AS_REPORTED_OPERATOR_CONTEXT",
+        "owner": "Current indirect shareholding chain is not normalized",
+        "operator": "PT Amman Mineral Nusa Tenggara",
+        "resource": "Copper and gold ores",
+        "region": "Sumbawa Island, West Nusa Tenggara",
+        "facts": {},
+        "authority": "SOURCE_REPORTED_NOT_FULLY_RECONCILED"
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_MNG_tavan_tolgoi_coal_mine",
+      "countryId": "MNG",
+      "siteName": "Tavan Tolgoi Coal Mine",
+      "identity": {
+        "countryIso3": "MNG",
+        "countryName": "Mongolia",
+        "siteType": "COAL_MINE_COMPLEX",
+        "resourceTypeId": "coal",
+        "resourceName": "Coal",
+        "ontologyKey": "COAL",
+        "aliases": []
+      },
+      "location": {
+        "countryName": "Mongolia",
+        "adminRegion": "Tsogttsetsii, Umnugovi Province",
+        "locality": "Tsogttsetsii, Umnugovi Province",
+        "coordinates": {
+          "lat": 43.58,
+          "lng": 105.27
+        },
+        "coordinateStatus": "REGIONAL_APPROXIMATION",
+        "coordinateAuthority": "SOURCE-LOCATED REGION; APPROXIMATE COORDINATE FOR STRATEGIC MAP NOT SURVEY GRADE",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "countryBoundaryKey": "MNG"
+      },
+      "ownership": {
+        "owner": "Mongolian state-owned company",
+        "operator": "Erdenes Tavan Tolgoi",
+        "ownerEvidenceStatus": "SOURCE_REPORTED_REQUIRES_CURRENT_FILING_RECONCILIATION",
+        "operatorEvidenceStatus": "SOURCE_REPORTED_PRIMARY_OR_PORTFOLIO",
+        "authority": "SOURCE_REFERENCE_WITH_CURRENT_STATUS_CAVEAT",
+        "equityControlCountry": "MNG",
+        "operatorContractId": "OPCONTRACT_SITE_MNG_tavan_tolgoi_coal_mine"
+      },
+      "operation": {
+        "status": "OPERATING_AS_REPORTED_OPERATOR_CONTEXT",
+        "operationalStatus": "OPERATING_AS_REPORTED_OPERATOR_CONTEXT",
+        "realWorldStatus": "OPERATING_AS_REPORTED_OPERATOR_CONTEXT",
+        "extractionMethod": "OPEN_PIT_COAL_MINING_AND_HAULAGE",
+        "extractionEligibility": "SIMULATED_GAMEPLAY_EXECUTABLE_SUBJECT_TO_RUNTIME_GATES",
+        "commercialExtraction": true,
+        "siteCommissioningLevel": 0,
+        "mineLevel": 0,
+        "statusAuthority": "SOURCE_REPORTED_IDENTITY_AND_STATUS; PLAYER_SIMULATION_STATE_REMAINS_SEPARATE",
+        "gameplayConstructionAllowed": true
+      },
+      "processing": {
+        "upstreamProcess": "OPEN_PIT_COAL_MINING_AND_HAULAGE",
+        "midstreamProcess": "COMMODITY_SPECIFIC_BENEFICIATION_AND_GRADE_CONTROL",
+        "refinedOutputs": [
+          "coal products"
+        ],
+        "downstreamSectors": [
+          "power",
+          "steelmaking"
+        ]
+      },
+      "logistics": {
+        "warehouseCountryId": "MNG",
+        "warehouseSiteId": "WH-MNG-RAW",
+        "inventoryRouteStatus": "REQUIRES_RUNTIME_ROUTE_VALIDATION",
+        "factoryRouteStatus": "REQUIRES_FACTORY_COMPATIBILITY_CHECK",
+        "routeStatus": "REGIONAL_ROUTE_TO_BE_PLANNED",
+        "transport": {
+          "routeId": "ROUTE_SITE_MNG_tavan_tolgoi_coal_mine_RAW_TO_FACTORY",
+          "routeType": "ROAD_RAIL",
+          "originSiteId": "SITE_MNG_tavan_tolgoi_coal_mine",
+          "originCountryId": "MNG",
+          "warehouseId": "WH-MNG-RAW",
+          "destinationFactoryId": "AUTO_SELECT_COMPATIBLE_FACTORY",
+          "destinationCountryId": "MNG",
+          "distanceKm": null,
+          "averageSpeedKmPerDay": null,
+          "estimatedTravelDays": null,
+          "routeStatus": "UNPLANNED_REQUIRES_RUNTIME_ROUTING",
+          "canBeBlockedByWar": true,
+          "canBeBlockedByNeighborControl": true,
+          "canBeBlockedByNavalInterdiction": true,
+          "strategicRouteNotRoadSurvey": true,
+          "routeCapacityPerDay": null
+        }
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": "TONNES_ORE",
+          "status": "UNOBSERVED",
+          "basis": "No reconciled site-specific reserve estimate promoted"
+        },
+        "production": {
+          "annual": null,
+          "annualUnit": "TONNES_PER_YEAR",
+          "rate": null,
+          "unit": "TONNES_PER_DAY",
+          "status": "UNOBSERVED",
+          "basis": "Current reported facts are preserved separately and not promoted into quantitative authority"
+        },
+        "grade": {
+          "value": null,
+          "unit": "PERCENT",
+          "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": "PERCENT",
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": "TONNES_PER_DAY",
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": "PERCENT",
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": "TONNES_PER_DAY",
+          "status": "UNOBSERVED"
+        },
+        "quantitativeProvenance": {
+          "authority": "SOURCE_REPORTED_IDENTITY_WITH_UNKNOWN_MEASUREMENTS_PRESERVED",
+          "measuredReservePromoted": false,
+          "simulatedReserveSeparate": true,
+          "sourceUrls": [
+            "https://ett.mn/"
+          ],
+          "accessed": "2026-10-20"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "recovery": "UNOBSERVED",
+          "throughput": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "overall": "IDENTITY_AND_GAMEPLAY_SEED_ONLY"
+        }
+      },
+      "reserve": {
+        "quantity": 2100000000,
+        "unit": "TONNES_ORE",
+        "status": "SIMULATED",
+        "basis": "MINEPLAY_SCENARIO_SEED_ONLY_NOT_A_GEOLOGICAL_RESERVE",
+        "authority": "SIMULATION_SCENARIO_ONLY",
+        "generatedAt": "2026-10-20"
+      },
+      "simulation": {
+        "simulationOnly": true,
+        "reserve": {
+          "quantity": 2100000000,
+          "unit": "TONNES_ORE",
+          "status": "SIMULATED",
+          "basis": "MINEPLAY_SCENARIO_SEED_ONLY_NOT_A_GEOLOGICAL_RESERVE",
+          "authority": "SIMULATION_SCENARIO_ONLY",
+          "generatedAt": "2026-10-20"
+        },
+        "reserveHorizonYears": null,
+        "reserveAuthority": "GAMEPLAY_SEED_ONLY",
+        "nominalDailyCapacity": null,
+        "minimumDailyCapacity": null,
+        "maximumDailyCapacity": null,
+        "productionRate": null,
+        "productionRateUnit": "TONNES_PER_DAY",
+        "utilization": 0.65,
+        "recovery": 0.72,
+        "transportRoute": [
+          {
+            "routeId": "SIM_ROUTE:MNG:SITE_MNG_tavan_tolgoi_coal_mine",
+            "mode": "truck",
+            "transportMode": "truck",
+            "distanceKm": null,
+            "estimatedTravelDays": null,
+            "status": "SIMULATED_ROUTE_REQUIRES_RUNTIME_PLAN",
+            "blockableByWar": true,
+            "blockableByNeighborControl": true,
+            "blockableByNavalInterdiction": true,
+            "countryIsolationKey": "MNG"
+          }
+        ],
+        "rawWarehouseId": "WH-MNG-RAW",
+        "factoryBinding": {
+          "factoryId": null,
+          "countryId": "MNG",
+          "inputResourceId": "coal",
+          "status": "REQUIRES_COMPATIBLE_FACTORY_BOOTSTRAP",
+          "authority": "RUNTIME"
+        },
+        "gameplayConstructionAllowed": true
+      },
+      "map": {
+        "markerEligible": true,
+        "countryIsolationKey": "MNG",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+      },
+      "runtime": {
+        "identityAuthority": "COUNTRY_MINEPLAY_SUPPLEMENT_V1",
+        "quantityAuthority": "SIMULATED",
+        "productionAuthority": "SIMULATED",
+        "requiresFactoryBinding": true,
+        "requiresSiteSpecificRoute": true,
+        "sourceStatusIsNotGameplayCommissioning": true
+      },
+      "sourceReference": {
+        "sourcePath": "https://ett.mn/",
+        "sourceType": "STATE_OWNED_OPERATOR_PRIMARY",
+        "accessed": "2026-10-20",
+        "facts": {},
+        "statusNote": "Source identity/status is separate from simulated reserve and player-owned assets."
+      },
+      "sources": [
+        {
+          "url": "https://ett.mn/",
+          "sourceType": "STATE_OWNED_OPERATOR_PRIMARY",
+          "accessed": "2026-10-20",
+          "scope": "site_identity_commodity_location_and_source_reported_status"
+        }
+      ],
+      "observedFacts": {
+        "reportedStatus": "OPERATING_AS_REPORTED_OPERATOR_CONTEXT",
+        "owner": "Mongolian state-owned company",
+        "operator": "Erdenes Tavan Tolgoi",
+        "resource": "Coal",
+        "region": "Tsogttsetsii, Umnugovi Province",
+        "facts": {},
+        "authority": "SOURCE_REPORTED_NOT_FULLY_RECONCILED"
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_PER_antamina_copper_zinc_mine",
+      "countryId": "PER",
+      "siteName": "Antamina Copper-Zinc Mine",
+      "identity": {
+        "countryIso3": "PER",
+        "countryName": "Peru",
+        "siteType": "COPPER_ZINC_MINE",
+        "resourceTypeId": "copper",
+        "resourceName": "Copper and zinc ores",
+        "ontologyKey": "COPPER",
+        "aliases": []
+      },
+      "location": {
+        "countryName": "Peru",
+        "adminRegion": "San Marcos, Huari Province, Ancash",
+        "locality": "San Marcos, Huari Province, Ancash",
+        "coordinates": {
+          "lat": -9.54,
+          "lng": -77.05
+        },
+        "coordinateStatus": "REGIONAL_APPROXIMATION",
+        "coordinateAuthority": "SOURCE-LOCATED REGION; APPROXIMATE COORDINATE FOR STRATEGIC MAP NOT SURVEY GRADE",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "countryBoundaryKey": "PER"
+      },
+      "ownership": {
+        "owner": "Joint-venture equity shares require current filing verification",
+        "operator": "Compañía Minera Antamina",
+        "ownerEvidenceStatus": "SOURCE_REPORTED_REQUIRES_CURRENT_FILING_RECONCILIATION",
+        "operatorEvidenceStatus": "SOURCE_REPORTED_PRIMARY_OR_PORTFOLIO",
+        "authority": "SOURCE_REFERENCE_WITH_CURRENT_STATUS_CAVEAT",
+        "equityControlCountry": "PER",
+        "operatorContractId": "OPCONTRACT_SITE_PER_antamina_copper_zinc_mine"
+      },
+      "operation": {
+        "status": "OPERATING_AS_REPORTED_OPERATOR_CONTEXT",
+        "operationalStatus": "OPERATING_AS_REPORTED_OPERATOR_CONTEXT",
+        "realWorldStatus": "OPERATING_AS_REPORTED_OPERATOR_CONTEXT",
+        "extractionMethod": "OPEN_PIT_COPPER_ZINC_MINING_AND_CONCENTRATION",
+        "extractionEligibility": "SIMULATED_GAMEPLAY_EXECUTABLE_SUBJECT_TO_RUNTIME_GATES",
+        "commercialExtraction": true,
+        "siteCommissioningLevel": 0,
+        "mineLevel": 0,
+        "statusAuthority": "SOURCE_REPORTED_IDENTITY_AND_STATUS; PLAYER_SIMULATION_STATE_REMAINS_SEPARATE",
+        "gameplayConstructionAllowed": true
+      },
+      "processing": {
+        "upstreamProcess": "OPEN_PIT_COPPER_ZINC_MINING_AND_CONCENTRATION",
+        "midstreamProcess": "COMMODITY_SPECIFIC_BENEFICIATION_AND_GRADE_CONTROL",
+        "refinedOutputs": [
+          "copper concentrate",
+          "gold by-product where applicable"
+        ],
+        "downstreamSectors": [
+          "smelting",
+          "refining",
+          "electricity grids",
+          "manufacturing"
+        ]
+      },
+      "logistics": {
+        "warehouseCountryId": "PER",
+        "warehouseSiteId": "WH-PER-RAW",
+        "inventoryRouteStatus": "REQUIRES_RUNTIME_ROUTE_VALIDATION",
+        "factoryRouteStatus": "REQUIRES_FACTORY_COMPATIBILITY_CHECK",
+        "routeStatus": "REGIONAL_ROUTE_TO_BE_PLANNED",
+        "transport": {
+          "routeId": "ROUTE_SITE_PER_antamina_copper_zinc_mine_RAW_TO_FACTORY",
+          "routeType": "ROAD_RAIL",
+          "originSiteId": "SITE_PER_antamina_copper_zinc_mine",
+          "originCountryId": "PER",
+          "warehouseId": "WH-PER-RAW",
+          "destinationFactoryId": "AUTO_SELECT_COMPATIBLE_FACTORY",
+          "destinationCountryId": "PER",
+          "distanceKm": null,
+          "averageSpeedKmPerDay": null,
+          "estimatedTravelDays": null,
+          "routeStatus": "UNPLANNED_REQUIRES_RUNTIME_ROUTING",
+          "canBeBlockedByWar": true,
+          "canBeBlockedByNeighborControl": true,
+          "canBeBlockedByNavalInterdiction": true,
+          "strategicRouteNotRoadSurvey": true,
+          "routeCapacityPerDay": null
+        }
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": "TONNES_ORE",
+          "status": "UNOBSERVED",
+          "basis": "No reconciled site-specific reserve estimate promoted"
+        },
+        "production": {
+          "annual": null,
+          "annualUnit": "TONNES_PER_YEAR",
+          "rate": null,
+          "unit": "TONNES_PER_DAY",
+          "status": "UNOBSERVED",
+          "basis": "Current reported facts are preserved separately and not promoted into quantitative authority"
+        },
+        "grade": {
+          "value": null,
+          "unit": "PERCENT",
+          "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": "PERCENT",
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": "TONNES_PER_DAY",
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": "PERCENT",
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": "TONNES_PER_DAY",
+          "status": "UNOBSERVED"
+        },
+        "quantitativeProvenance": {
+          "authority": "SOURCE_REPORTED_IDENTITY_WITH_UNKNOWN_MEASUREMENTS_PRESERVED",
+          "measuredReservePromoted": false,
+          "simulatedReserveSeparate": true,
+          "sourceUrls": [
+            "https://www.antamina.com/en/"
+          ],
+          "accessed": "2026-10-20"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "recovery": "UNOBSERVED",
+          "throughput": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "overall": "IDENTITY_AND_GAMEPLAY_SEED_ONLY"
+        }
+      },
+      "reserve": {
+        "quantity": 350000000,
+        "unit": "TONNES_ORE",
+        "status": "SIMULATED",
+        "basis": "MINEPLAY_SCENARIO_SEED_ONLY_NOT_A_GEOLOGICAL_RESERVE",
+        "authority": "SIMULATION_SCENARIO_ONLY",
+        "generatedAt": "2026-10-20"
+      },
+      "simulation": {
+        "simulationOnly": true,
+        "reserve": {
+          "quantity": 350000000,
+          "unit": "TONNES_ORE",
+          "status": "SIMULATED",
+          "basis": "MINEPLAY_SCENARIO_SEED_ONLY_NOT_A_GEOLOGICAL_RESERVE",
+          "authority": "SIMULATION_SCENARIO_ONLY",
+          "generatedAt": "2026-10-20"
+        },
+        "reserveHorizonYears": null,
+        "reserveAuthority": "GAMEPLAY_SEED_ONLY",
+        "nominalDailyCapacity": null,
+        "minimumDailyCapacity": null,
+        "maximumDailyCapacity": null,
+        "productionRate": null,
+        "productionRateUnit": "TONNES_PER_DAY",
+        "utilization": 0.65,
+        "recovery": 0.72,
+        "transportRoute": [
+          {
+            "routeId": "SIM_ROUTE:PER:SITE_PER_antamina_copper_zinc_mine",
+            "mode": "truck",
+            "transportMode": "truck",
+            "distanceKm": null,
+            "estimatedTravelDays": null,
+            "status": "SIMULATED_ROUTE_REQUIRES_RUNTIME_PLAN",
+            "blockableByWar": true,
+            "blockableByNeighborControl": true,
+            "blockableByNavalInterdiction": true,
+            "countryIsolationKey": "PER"
+          }
+        ],
+        "rawWarehouseId": "WH-PER-RAW",
+        "factoryBinding": {
+          "factoryId": null,
+          "countryId": "PER",
+          "inputResourceId": "copper",
+          "status": "REQUIRES_COMPATIBLE_FACTORY_BOOTSTRAP",
+          "authority": "RUNTIME"
+        },
+        "gameplayConstructionAllowed": true
+      },
+      "map": {
+        "markerEligible": true,
+        "countryIsolationKey": "PER",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+      },
+      "runtime": {
+        "identityAuthority": "COUNTRY_MINEPLAY_SUPPLEMENT_V1",
+        "quantityAuthority": "SIMULATED",
+        "productionAuthority": "SIMULATED",
+        "requiresFactoryBinding": true,
+        "requiresSiteSpecificRoute": true,
+        "sourceStatusIsNotGameplayCommissioning": true
+      },
+      "sourceReference": {
+        "sourcePath": "https://www.antamina.com/en/",
+        "sourceType": "OPERATOR_PRIMARY",
+        "accessed": "2026-10-20",
+        "facts": {},
+        "statusNote": "Source identity/status is separate from simulated reserve and player-owned assets."
+      },
+      "sources": [
+        {
+          "url": "https://www.antamina.com/en/",
+          "sourceType": "OPERATOR_PRIMARY",
+          "accessed": "2026-10-20",
+          "scope": "site_identity_commodity_location_and_source_reported_status"
+        }
+      ],
+      "observedFacts": {
+        "reportedStatus": "OPERATING_AS_REPORTED_OPERATOR_CONTEXT",
+        "owner": "Joint-venture equity shares require current filing verification",
+        "operator": "Compañía Minera Antamina",
+        "resource": "Copper and zinc ores",
+        "region": "San Marcos, Huari Province, Ancash",
+        "facts": {},
+        "authority": "SOURCE_REPORTED_NOT_FULLY_RECONCILED"
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_MRT_guelb_moghrein_copper_gold_mine",
+      "countryId": "MRT",
+      "siteName": "Guelb Moghrein Copper-Gold Mine",
+      "identity": {
+        "countryIso3": "MRT",
+        "countryName": "Mauritania",
+        "siteType": "COPPER_GOLD_MINE",
+        "resourceTypeId": "copper",
+        "resourceName": "Copper and gold ores",
+        "ontologyKey": "COPPER",
+        "aliases": []
+      },
+      "location": {
+        "countryName": "Mauritania",
+        "adminRegion": "Near Akjoujt, Inchiri Region",
+        "locality": "Near Akjoujt, Inchiri Region",
+        "coordinates": {
+          "lat": 19.75,
+          "lng": -14.39
+        },
+        "coordinateStatus": "REGIONAL_APPROXIMATION",
+        "coordinateAuthority": "SOURCE-LOCATED REGION; APPROXIMATE COORDINATE FOR STRATEGIC MAP NOT SURVEY GRADE",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "countryBoundaryKey": "MRT"
+      },
+      "ownership": {
+        "owner": "Current operator, licence and restart status require regulator verification",
+        "operator": "Historical First Quantum / Mauritanian operating-company context",
+        "ownerEvidenceStatus": "SOURCE_REPORTED_REQUIRES_CURRENT_FILING_RECONCILIATION",
+        "operatorEvidenceStatus": "SOURCE_REPORTED_PRIMARY_OR_PORTFOLIO",
+        "authority": "SOURCE_REFERENCE_WITH_CURRENT_STATUS_CAVEAT",
+        "equityControlCountry": "MRT",
+        "operatorContractId": "OPCONTRACT_SITE_MRT_guelb_moghrein_copper_gold_mine"
+      },
+      "operation": {
+        "status": "CURRENT_STATUS_REQUIRES_VERIFICATION",
+        "operationalStatus": "CURRENT_STATUS_REQUIRES_VERIFICATION",
+        "realWorldStatus": "CURRENT_STATUS_REQUIRES_VERIFICATION",
+        "extractionMethod": "OPEN_PIT_COPPER_GOLD_MINING_AND_CONCENTRATION",
+        "extractionEligibility": "REQUIRES_PLAYER_RECOMMISSIONING",
+        "commercialExtraction": false,
+        "siteCommissioningLevel": 0,
+        "mineLevel": 0,
+        "statusAuthority": "SOURCE_REPORTED_IDENTITY_AND_STATUS; PLAYER_SIMULATION_STATE_REMAINS_SEPARATE",
+        "gameplayConstructionAllowed": true
+      },
+      "processing": {
+        "upstreamProcess": "OPEN_PIT_COPPER_GOLD_MINING_AND_CONCENTRATION",
+        "midstreamProcess": "COMMODITY_SPECIFIC_BENEFICIATION_AND_GRADE_CONTROL",
+        "refinedOutputs": [
+          "copper concentrate",
+          "gold by-product where applicable"
+        ],
+        "downstreamSectors": [
+          "smelting",
+          "refining",
+          "electricity grids",
+          "manufacturing"
+        ]
+      },
+      "logistics": {
+        "warehouseCountryId": "MRT",
+        "warehouseSiteId": "WH-MRT-RAW",
+        "inventoryRouteStatus": "REQUIRES_RUNTIME_ROUTE_VALIDATION",
+        "factoryRouteStatus": "REQUIRES_FACTORY_COMPATIBILITY_CHECK",
+        "routeStatus": "REGIONAL_ROUTE_TO_BE_PLANNED",
+        "transport": {
+          "routeId": "ROUTE_SITE_MRT_guelb_moghrein_copper_gold_mine_RAW_TO_FACTORY",
+          "routeType": "ROAD_RAIL",
+          "originSiteId": "SITE_MRT_guelb_moghrein_copper_gold_mine",
+          "originCountryId": "MRT",
+          "warehouseId": "WH-MRT-RAW",
+          "destinationFactoryId": "AUTO_SELECT_COMPATIBLE_FACTORY",
+          "destinationCountryId": "MRT",
+          "distanceKm": null,
+          "averageSpeedKmPerDay": null,
+          "estimatedTravelDays": null,
+          "routeStatus": "UNPLANNED_REQUIRES_RUNTIME_ROUTING",
+          "canBeBlockedByWar": true,
+          "canBeBlockedByNeighborControl": true,
+          "canBeBlockedByNavalInterdiction": true,
+          "strategicRouteNotRoadSurvey": true,
+          "routeCapacityPerDay": null
+        }
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": "TONNES_ORE",
+          "status": "UNOBSERVED",
+          "basis": "No reconciled site-specific reserve estimate promoted"
+        },
+        "production": {
+          "annual": null,
+          "annualUnit": "TONNES_PER_YEAR",
+          "rate": null,
+          "unit": "TONNES_PER_DAY",
+          "status": "UNOBSERVED",
+          "basis": "Current reported facts are preserved separately and not promoted into quantitative authority"
+        },
+        "grade": {
+          "value": null,
+          "unit": "PERCENT",
+          "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": "PERCENT",
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": "TONNES_PER_DAY",
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": "PERCENT",
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": "TONNES_PER_DAY",
+          "status": "UNOBSERVED"
+        },
+        "quantitativeProvenance": {
+          "authority": "SOURCE_REPORTED_IDENTITY_WITH_UNKNOWN_MEASUREMENTS_PRESERVED",
+          "measuredReservePromoted": false,
+          "simulatedReserveSeparate": true,
+          "sourceUrls": [
+            "https://www.first-quantum.com/English/operations/default.aspx"
+          ],
+          "accessed": "2026-10-20"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "recovery": "UNOBSERVED",
+          "throughput": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "overall": "IDENTITY_AND_GAMEPLAY_SEED_ONLY"
+        }
+      },
+      "reserve": {
+        "quantity": 42000000,
+        "unit": "TONNES_ORE",
+        "status": "SIMULATED",
+        "basis": "MINEPLAY_SCENARIO_SEED_ONLY_NOT_A_GEOLOGICAL_RESERVE",
+        "authority": "SIMULATION_SCENARIO_ONLY",
+        "generatedAt": "2026-10-20"
+      },
+      "simulation": {
+        "simulationOnly": true,
+        "reserve": {
+          "quantity": 42000000,
+          "unit": "TONNES_ORE",
+          "status": "SIMULATED",
+          "basis": "MINEPLAY_SCENARIO_SEED_ONLY_NOT_A_GEOLOGICAL_RESERVE",
+          "authority": "SIMULATION_SCENARIO_ONLY",
+          "generatedAt": "2026-10-20"
+        },
+        "reserveHorizonYears": null,
+        "reserveAuthority": "GAMEPLAY_SEED_ONLY",
+        "nominalDailyCapacity": null,
+        "minimumDailyCapacity": null,
+        "maximumDailyCapacity": null,
+        "productionRate": null,
+        "productionRateUnit": "TONNES_PER_DAY",
+        "utilization": 0.65,
+        "recovery": 0.72,
+        "transportRoute": [
+          {
+            "routeId": "SIM_ROUTE:MRT:SITE_MRT_guelb_moghrein_copper_gold_mine",
+            "mode": "truck",
+            "transportMode": "truck",
+            "distanceKm": null,
+            "estimatedTravelDays": null,
+            "status": "SIMULATED_ROUTE_REQUIRES_RUNTIME_PLAN",
+            "blockableByWar": true,
+            "blockableByNeighborControl": true,
+            "blockableByNavalInterdiction": true,
+            "countryIsolationKey": "MRT"
+          }
+        ],
+        "rawWarehouseId": "WH-MRT-RAW",
+        "factoryBinding": {
+          "factoryId": null,
+          "countryId": "MRT",
+          "inputResourceId": "copper",
+          "status": "REQUIRES_COMPATIBLE_FACTORY_BOOTSTRAP",
+          "authority": "RUNTIME"
+        },
+        "gameplayConstructionAllowed": true
+      },
+      "map": {
+        "markerEligible": true,
+        "countryIsolationKey": "MRT",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+      },
+      "runtime": {
+        "identityAuthority": "COUNTRY_MINEPLAY_SUPPLEMENT_V1",
+        "quantityAuthority": "SIMULATED",
+        "productionAuthority": "SIMULATED",
+        "requiresFactoryBinding": true,
+        "requiresSiteSpecificRoute": true,
+        "sourceStatusIsNotGameplayCommissioning": true
+      },
+      "sourceReference": {
+        "sourcePath": "https://www.first-quantum.com/English/operations/default.aspx",
+        "sourceType": "OPERATOR_PORTFOLIO_REFERENCE",
+        "accessed": "2026-10-20",
+        "facts": {
+          "currentCommercialOperationNotAssumed": true
+        },
+        "statusNote": "Source identity/status is separate from simulated reserve and player-owned assets."
+      },
+      "sources": [
+        {
+          "url": "https://www.first-quantum.com/English/operations/default.aspx",
+          "sourceType": "OPERATOR_PORTFOLIO_REFERENCE",
+          "accessed": "2026-10-20",
+          "scope": "site_identity_commodity_location_and_source_reported_status"
+        }
+      ],
+      "observedFacts": {
+        "reportedStatus": "CURRENT_STATUS_REQUIRES_VERIFICATION",
+        "owner": "Current operator, licence and restart status require regulator verification",
+        "operator": "Historical First Quantum / Mauritanian operating-company context",
+        "resource": "Copper and gold ores",
+        "region": "Near Akjoujt, Inchiri Region",
+        "facts": {
+          "currentCommercialOperationNotAssumed": true
+        },
+        "authority": "SOURCE_REPORTED_NOT_FULLY_RECONCILED"
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_BFA_hounde_gold_mine",
+      "countryId": "BFA",
+      "siteName": "Houndé Gold Mine",
+      "identity": {
+        "countryIso3": "BFA",
+        "countryName": "Burkina Faso",
+        "siteType": "GOLD_MINE",
+        "resourceTypeId": "gold",
+        "resourceName": "Gold",
+        "ontologyKey": "GOLD",
+        "aliases": []
+      },
+      "location": {
+        "countryName": "Burkina Faso",
+        "adminRegion": "Houndé, Tuy Province",
+        "locality": "Houndé, Tuy Province",
+        "coordinates": {
+          "lat": 11.83,
+          "lng": -3.18
+        },
+        "coordinateStatus": "REGIONAL_APPROXIMATION",
+        "coordinateAuthority": "SOURCE-LOCATED REGION; APPROXIMATE COORDINATE FOR STRATEGIC MAP NOT SURVEY GRADE",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "countryBoundaryKey": "BFA"
+      },
+      "ownership": {
+        "owner": "Current equity attribution should follow latest operator filings",
+        "operator": "Endeavour Mining",
+        "ownerEvidenceStatus": "SOURCE_REPORTED_REQUIRES_CURRENT_FILING_RECONCILIATION",
+        "operatorEvidenceStatus": "SOURCE_REPORTED_PRIMARY_OR_PORTFOLIO",
+        "authority": "SOURCE_REFERENCE_WITH_CURRENT_STATUS_CAVEAT",
+        "equityControlCountry": "BFA",
+        "operatorContractId": "OPCONTRACT_SITE_BFA_hounde_gold_mine"
+      },
+      "operation": {
+        "status": "OPERATING_AS_REPORTED_2025_2026_GUIDANCE",
+        "operationalStatus": "OPERATING_AS_REPORTED_2025_2026_GUIDANCE",
+        "realWorldStatus": "OPERATING_AS_REPORTED_2025_2026_GUIDANCE",
+        "extractionMethod": "OPEN_PIT_GOLD_MINING_AND_CARBON_IN_LEACH",
+        "extractionEligibility": "SIMULATED_GAMEPLAY_EXECUTABLE_SUBJECT_TO_RUNTIME_GATES",
+        "commercialExtraction": true,
+        "siteCommissioningLevel": 0,
+        "mineLevel": 0,
+        "statusAuthority": "SOURCE_REPORTED_IDENTITY_AND_STATUS; PLAYER_SIMULATION_STATE_REMAINS_SEPARATE",
+        "gameplayConstructionAllowed": true
+      },
+      "processing": {
+        "upstreamProcess": "OPEN_PIT_GOLD_MINING_AND_CARBON_IN_LEACH",
+        "midstreamProcess": "COMMODITY_SPECIFIC_BENEFICIATION_AND_GRADE_CONTROL",
+        "refinedOutputs": [
+          "gold concentrate",
+          "doré"
+        ],
+        "downstreamSectors": [
+          "bullion",
+          "jewellery",
+          "electronics"
+        ]
+      },
+      "logistics": {
+        "warehouseCountryId": "BFA",
+        "warehouseSiteId": "WH-BFA-RAW",
+        "inventoryRouteStatus": "REQUIRES_RUNTIME_ROUTE_VALIDATION",
+        "factoryRouteStatus": "REQUIRES_FACTORY_COMPATIBILITY_CHECK",
+        "routeStatus": "REGIONAL_ROUTE_TO_BE_PLANNED",
+        "transport": {
+          "routeId": "ROUTE_SITE_BFA_hounde_gold_mine_RAW_TO_FACTORY",
+          "routeType": "ROAD_RAIL",
+          "originSiteId": "SITE_BFA_hounde_gold_mine",
+          "originCountryId": "BFA",
+          "warehouseId": "WH-BFA-RAW",
+          "destinationFactoryId": "AUTO_SELECT_COMPATIBLE_FACTORY",
+          "destinationCountryId": "BFA",
+          "distanceKm": null,
+          "averageSpeedKmPerDay": null,
+          "estimatedTravelDays": null,
+          "routeStatus": "UNPLANNED_REQUIRES_RUNTIME_ROUTING",
+          "canBeBlockedByWar": true,
+          "canBeBlockedByNeighborControl": true,
+          "canBeBlockedByNavalInterdiction": true,
+          "strategicRouteNotRoadSurvey": true,
+          "routeCapacityPerDay": null
+        }
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": "TONNES_ORE",
+          "status": "UNOBSERVED",
+          "basis": "No reconciled site-specific reserve estimate promoted"
+        },
+        "production": {
+          "annual": null,
+          "annualUnit": "TROY_OUNCES_PER_YEAR",
+          "rate": null,
+          "unit": "TONNES_PER_DAY",
+          "status": "UNOBSERVED",
+          "basis": "Current reported facts are preserved separately and not promoted into quantitative authority"
+        },
+        "grade": {
+          "value": null,
+          "unit": "PERCENT",
+          "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": "PERCENT",
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": "TONNES_PER_DAY",
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": "PERCENT",
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": "TONNES_PER_DAY",
+          "status": "UNOBSERVED"
+        },
+        "quantitativeProvenance": {
+          "authority": "SOURCE_REPORTED_IDENTITY_WITH_UNKNOWN_MEASUREMENTS_PRESERVED",
+          "measuredReservePromoted": false,
+          "simulatedReserveSeparate": true,
+          "sourceUrls": [
+            "https://www.endeavourmining.com/our-portfolio/hounde-mine/"
+          ],
+          "accessed": "2026-10-20"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "recovery": "UNOBSERVED",
+          "throughput": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "overall": "IDENTITY_AND_GAMEPLAY_SEED_ONLY"
+        }
+      },
+      "reserve": {
+        "quantity": 74000000,
+        "unit": "TONNES_ORE",
+        "status": "SIMULATED",
+        "basis": "MINEPLAY_SCENARIO_SEED_ONLY_NOT_A_GEOLOGICAL_RESERVE",
+        "authority": "SIMULATION_SCENARIO_ONLY",
+        "generatedAt": "2026-10-20"
+      },
+      "simulation": {
+        "simulationOnly": true,
+        "reserve": {
+          "quantity": 74000000,
+          "unit": "TONNES_ORE",
+          "status": "SIMULATED",
+          "basis": "MINEPLAY_SCENARIO_SEED_ONLY_NOT_A_GEOLOGICAL_RESERVE",
+          "authority": "SIMULATION_SCENARIO_ONLY",
+          "generatedAt": "2026-10-20"
+        },
+        "reserveHorizonYears": null,
+        "reserveAuthority": "GAMEPLAY_SEED_ONLY",
+        "nominalDailyCapacity": null,
+        "minimumDailyCapacity": null,
+        "maximumDailyCapacity": null,
+        "productionRate": null,
+        "productionRateUnit": "TONNES_PER_DAY",
+        "utilization": 0.65,
+        "recovery": 0.72,
+        "transportRoute": [
+          {
+            "routeId": "SIM_ROUTE:BFA:SITE_BFA_hounde_gold_mine",
+            "mode": "truck",
+            "transportMode": "truck",
+            "distanceKm": null,
+            "estimatedTravelDays": null,
+            "status": "SIMULATED_ROUTE_REQUIRES_RUNTIME_PLAN",
+            "blockableByWar": true,
+            "blockableByNeighborControl": true,
+            "blockableByNavalInterdiction": true,
+            "countryIsolationKey": "BFA"
+          }
+        ],
+        "rawWarehouseId": "WH-BFA-RAW",
+        "factoryBinding": {
+          "factoryId": null,
+          "countryId": "BFA",
+          "inputResourceId": "gold",
+          "status": "REQUIRES_COMPATIBLE_FACTORY_BOOTSTRAP",
+          "authority": "RUNTIME"
+        },
+        "gameplayConstructionAllowed": true
+      },
+      "map": {
+        "markerEligible": true,
+        "countryIsolationKey": "BFA",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+      },
+      "runtime": {
+        "identityAuthority": "COUNTRY_MINEPLAY_SUPPLEMENT_V1",
+        "quantityAuthority": "SIMULATED",
+        "productionAuthority": "SIMULATED",
+        "requiresFactoryBinding": true,
+        "requiresSiteSpecificRoute": true,
+        "sourceStatusIsNotGameplayCommissioning": true
+      },
+      "sourceReference": {
+        "sourcePath": "https://www.endeavourmining.com/our-portfolio/hounde-mine/",
+        "sourceType": "OPERATOR_PRIMARY",
+        "accessed": "2026-10-20",
+        "facts": {
+          "reportedGoldProduction2025Koz": 257,
+          "reportedGoldProduction2025Ounces": 256862,
+          "reported2026GuidanceKoz": [
+            220,
+            255
+          ]
+        },
+        "statusNote": "Source identity/status is separate from simulated reserve and player-owned assets."
+      },
+      "sources": [
+        {
+          "url": "https://www.endeavourmining.com/our-portfolio/hounde-mine/",
+          "sourceType": "OPERATOR_PRIMARY",
+          "accessed": "2026-10-20",
+          "scope": "site_identity_commodity_location_and_source_reported_status"
+        }
+      ],
+      "observedFacts": {
+        "reportedStatus": "OPERATING_AS_REPORTED_2025_2026_GUIDANCE",
+        "owner": "Current equity attribution should follow latest operator filings",
+        "operator": "Endeavour Mining",
+        "resource": "Gold",
+        "region": "Houndé, Tuy Province",
+        "facts": {
+          "reportedGoldProduction2025Koz": 257,
+          "reportedGoldProduction2025Ounces": 256862,
+          "reported2026GuidanceKoz": [
+            220,
+            255
+          ]
+        },
+        "authority": "SOURCE_REPORTED_NOT_FULLY_RECONCILED"
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_BFA_mana_gold_mine",
+      "countryId": "BFA",
+      "siteName": "Mana Gold Mine",
+      "identity": {
+        "countryIso3": "BFA",
+        "countryName": "Burkina Faso",
+        "siteType": "UNDERGROUND_GOLD_MINE",
+        "resourceTypeId": "gold",
+        "resourceName": "Gold",
+        "ontologyKey": "GOLD",
+        "aliases": []
+      },
+      "location": {
+        "countryName": "Burkina Faso",
+        "adminRegion": "Mana, Mouhoun and Balé area",
+        "locality": "Mana, Mouhoun and Balé area",
+        "coordinates": {
+          "lat": 11.94,
+          "lng": -2.97
+        },
+        "coordinateStatus": "REGIONAL_APPROXIMATION",
+        "coordinateAuthority": "SOURCE-LOCATED REGION; APPROXIMATE COORDINATE FOR STRATEGIC MAP NOT SURVEY GRADE",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "countryBoundaryKey": "BFA"
+      },
+      "ownership": {
+        "owner": "Current equity attribution should follow latest operator filings",
+        "operator": "Endeavour Mining",
+        "ownerEvidenceStatus": "SOURCE_REPORTED_REQUIRES_CURRENT_FILING_RECONCILIATION",
+        "operatorEvidenceStatus": "SOURCE_REPORTED_PRIMARY_OR_PORTFOLIO",
+        "authority": "SOURCE_REFERENCE_WITH_CURRENT_STATUS_CAVEAT",
+        "equityControlCountry": "BFA",
+        "operatorContractId": "OPCONTRACT_SITE_BFA_mana_gold_mine"
+      },
+      "operation": {
+        "status": "OPERATING_AS_REPORTED_2025_2026_GUIDANCE",
+        "operationalStatus": "OPERATING_AS_REPORTED_2025_2026_GUIDANCE",
+        "realWorldStatus": "OPERATING_AS_REPORTED_2025_2026_GUIDANCE",
+        "extractionMethod": "UNDERGROUND_GOLD_MINING_AND_CONCENTRATION",
+        "extractionEligibility": "SIMULATED_GAMEPLAY_EXECUTABLE_SUBJECT_TO_RUNTIME_GATES",
+        "commercialExtraction": true,
+        "siteCommissioningLevel": 0,
+        "mineLevel": 0,
+        "statusAuthority": "SOURCE_REPORTED_IDENTITY_AND_STATUS; PLAYER_SIMULATION_STATE_REMAINS_SEPARATE",
+        "gameplayConstructionAllowed": true
+      },
+      "processing": {
+        "upstreamProcess": "UNDERGROUND_GOLD_MINING_AND_CONCENTRATION",
+        "midstreamProcess": "COMMODITY_SPECIFIC_BENEFICIATION_AND_GRADE_CONTROL",
+        "refinedOutputs": [
+          "gold concentrate",
+          "doré"
+        ],
+        "downstreamSectors": [
+          "bullion",
+          "jewellery",
+          "electronics"
+        ]
+      },
+      "logistics": {
+        "warehouseCountryId": "BFA",
+        "warehouseSiteId": "WH-BFA-RAW",
+        "inventoryRouteStatus": "REQUIRES_RUNTIME_ROUTE_VALIDATION",
+        "factoryRouteStatus": "REQUIRES_FACTORY_COMPATIBILITY_CHECK",
+        "routeStatus": "REGIONAL_ROUTE_TO_BE_PLANNED",
+        "transport": {
+          "routeId": "ROUTE_SITE_BFA_mana_gold_mine_RAW_TO_FACTORY",
+          "routeType": "ROAD_RAIL",
+          "originSiteId": "SITE_BFA_mana_gold_mine",
+          "originCountryId": "BFA",
+          "warehouseId": "WH-BFA-RAW",
+          "destinationFactoryId": "AUTO_SELECT_COMPATIBLE_FACTORY",
+          "destinationCountryId": "BFA",
+          "distanceKm": null,
+          "averageSpeedKmPerDay": null,
+          "estimatedTravelDays": null,
+          "routeStatus": "UNPLANNED_REQUIRES_RUNTIME_ROUTING",
+          "canBeBlockedByWar": true,
+          "canBeBlockedByNeighborControl": true,
+          "canBeBlockedByNavalInterdiction": true,
+          "strategicRouteNotRoadSurvey": true,
+          "routeCapacityPerDay": null
+        }
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": "TONNES_ORE",
+          "status": "UNOBSERVED",
+          "basis": "No reconciled site-specific reserve estimate promoted"
+        },
+        "production": {
+          "annual": null,
+          "annualUnit": "TROY_OUNCES_PER_YEAR",
+          "rate": null,
+          "unit": "TONNES_PER_DAY",
+          "status": "UNOBSERVED",
+          "basis": "Current reported facts are preserved separately and not promoted into quantitative authority"
+        },
+        "grade": {
+          "value": null,
+          "unit": "PERCENT",
+          "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": "PERCENT",
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": "TONNES_PER_DAY",
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": "PERCENT",
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": "TONNES_PER_DAY",
+          "status": "UNOBSERVED"
+        },
+        "quantitativeProvenance": {
+          "authority": "SOURCE_REPORTED_IDENTITY_WITH_UNKNOWN_MEASUREMENTS_PRESERVED",
+          "measuredReservePromoted": false,
+          "simulatedReserveSeparate": true,
+          "sourceUrls": [
+            "https://www.endeavourmining.com/our-portfolio/mana-mine/"
+          ],
+          "accessed": "2026-10-20"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "recovery": "UNOBSERVED",
+          "throughput": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "overall": "IDENTITY_AND_GAMEPLAY_SEED_ONLY"
+        }
+      },
+      "reserve": {
+        "quantity": 61000000,
+        "unit": "TONNES_ORE",
+        "status": "SIMULATED",
+        "basis": "MINEPLAY_SCENARIO_SEED_ONLY_NOT_A_GEOLOGICAL_RESERVE",
+        "authority": "SIMULATION_SCENARIO_ONLY",
+        "generatedAt": "2026-10-20"
+      },
+      "simulation": {
+        "simulationOnly": true,
+        "reserve": {
+          "quantity": 61000000,
+          "unit": "TONNES_ORE",
+          "status": "SIMULATED",
+          "basis": "MINEPLAY_SCENARIO_SEED_ONLY_NOT_A_GEOLOGICAL_RESERVE",
+          "authority": "SIMULATION_SCENARIO_ONLY",
+          "generatedAt": "2026-10-20"
+        },
+        "reserveHorizonYears": null,
+        "reserveAuthority": "GAMEPLAY_SEED_ONLY",
+        "nominalDailyCapacity": null,
+        "minimumDailyCapacity": null,
+        "maximumDailyCapacity": null,
+        "productionRate": null,
+        "productionRateUnit": "TONNES_PER_DAY",
+        "utilization": 0.65,
+        "recovery": 0.72,
+        "transportRoute": [
+          {
+            "routeId": "SIM_ROUTE:BFA:SITE_BFA_mana_gold_mine",
+            "mode": "truck",
+            "transportMode": "truck",
+            "distanceKm": null,
+            "estimatedTravelDays": null,
+            "status": "SIMULATED_ROUTE_REQUIRES_RUNTIME_PLAN",
+            "blockableByWar": true,
+            "blockableByNeighborControl": true,
+            "blockableByNavalInterdiction": true,
+            "countryIsolationKey": "BFA"
+          }
+        ],
+        "rawWarehouseId": "WH-BFA-RAW",
+        "factoryBinding": {
+          "factoryId": null,
+          "countryId": "BFA",
+          "inputResourceId": "gold",
+          "status": "REQUIRES_COMPATIBLE_FACTORY_BOOTSTRAP",
+          "authority": "RUNTIME"
+        },
+        "gameplayConstructionAllowed": true
+      },
+      "map": {
+        "markerEligible": true,
+        "countryIsolationKey": "BFA",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+      },
+      "runtime": {
+        "identityAuthority": "COUNTRY_MINEPLAY_SUPPLEMENT_V1",
+        "quantityAuthority": "SIMULATED",
+        "productionAuthority": "SIMULATED",
+        "requiresFactoryBinding": true,
+        "requiresSiteSpecificRoute": true,
+        "sourceStatusIsNotGameplayCommissioning": true
+      },
+      "sourceReference": {
+        "sourcePath": "https://www.endeavourmining.com/our-portfolio/mana-mine/",
+        "sourceType": "OPERATOR_PRIMARY",
+        "accessed": "2026-10-20",
+        "facts": {
+          "reportedGoldProduction2025Koz": 173,
+          "reported2025ProductionOuncesApprox": 173000,
+          "reported2026GuidanceKoz": [
+            155,
+            180
+          ],
+          "changedToFullyUndergroundDuring2024": true
+        },
+        "statusNote": "Source identity/status is separate from simulated reserve and player-owned assets."
+      },
+      "sources": [
+        {
+          "url": "https://www.endeavourmining.com/our-portfolio/mana-mine/",
+          "sourceType": "OPERATOR_PRIMARY",
+          "accessed": "2026-10-20",
+          "scope": "site_identity_commodity_location_and_source_reported_status"
+        }
+      ],
+      "observedFacts": {
+        "reportedStatus": "OPERATING_AS_REPORTED_2025_2026_GUIDANCE",
+        "owner": "Current equity attribution should follow latest operator filings",
+        "operator": "Endeavour Mining",
+        "resource": "Gold",
+        "region": "Mana, Mouhoun and Balé area",
+        "facts": {
+          "reportedGoldProduction2025Koz": 173,
+          "reported2025ProductionOuncesApprox": 173000,
+          "reported2026GuidanceKoz": [
+            155,
+            180
+          ],
+          "changedToFullyUndergroundDuring2024": true
+        },
+        "authority": "SOURCE_REPORTED_NOT_FULLY_RECONCILED"
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_UZB_kalmakyr_copper_mine",
+      "countryId": "UZB",
+      "siteName": "Kalmakyr Copper Mine",
+      "identity": {
+        "countryIso3": "UZB",
+        "countryName": "Uzbekistan",
+        "siteType": "OPEN_PIT_COPPER_MINE",
+        "resourceTypeId": "copper",
+        "resourceName": "Copper",
+        "ontologyKey": "COPPER",
+        "aliases": []
+      },
+      "location": {
+        "countryName": "Uzbekistan",
+        "adminRegion": "Almalyk, Tashkent Region",
+        "locality": "Almalyk, Tashkent Region",
+        "coordinates": {
+          "lat": 40.95,
+          "lng": 69.95
+        },
+        "coordinateStatus": "REGIONAL_APPROXIMATION",
+        "coordinateAuthority": "SOURCE-LOCATED REGION; APPROXIMATE COORDINATE FOR STRATEGIC MAP NOT SURVEY GRADE",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "countryBoundaryKey": "UZB"
+      },
+      "ownership": {
+        "owner": "State-linked mining and metallurgical complex",
+        "operator": "Almalyk Mining and Metallurgical Complex (AMMC)",
+        "ownerEvidenceStatus": "SOURCE_REPORTED_REQUIRES_CURRENT_FILING_RECONCILIATION",
+        "operatorEvidenceStatus": "SOURCE_REPORTED_PRIMARY_OR_PORTFOLIO",
+        "authority": "SOURCE_REFERENCE_WITH_CURRENT_STATUS_CAVEAT",
+        "equityControlCountry": "UZB",
+        "operatorContractId": "OPCONTRACT_SITE_UZB_kalmakyr_copper_mine"
+      },
+      "operation": {
+        "status": "OPERATING_AS_REPORTED_OPERATOR_CONTEXT",
+        "operationalStatus": "OPERATING_AS_REPORTED_OPERATOR_CONTEXT",
+        "realWorldStatus": "OPERATING_AS_REPORTED_OPERATOR_CONTEXT",
+        "extractionMethod": "OPEN_PIT_COPPER_MINING_AND_BENEFICIATION",
+        "extractionEligibility": "SIMULATED_GAMEPLAY_EXECUTABLE_SUBJECT_TO_RUNTIME_GATES",
+        "commercialExtraction": true,
+        "siteCommissioningLevel": 0,
+        "mineLevel": 0,
+        "statusAuthority": "SOURCE_REPORTED_IDENTITY_AND_STATUS; PLAYER_SIMULATION_STATE_REMAINS_SEPARATE",
+        "gameplayConstructionAllowed": true
+      },
+      "processing": {
+        "upstreamProcess": "OPEN_PIT_COPPER_MINING_AND_BENEFICIATION",
+        "midstreamProcess": "COMMODITY_SPECIFIC_BENEFICIATION_AND_GRADE_CONTROL",
+        "refinedOutputs": [
+          "copper concentrate",
+          "gold by-product where applicable"
+        ],
+        "downstreamSectors": [
+          "smelting",
+          "refining",
+          "electricity grids",
+          "manufacturing"
+        ]
+      },
+      "logistics": {
+        "warehouseCountryId": "UZB",
+        "warehouseSiteId": "WH-UZB-RAW",
+        "inventoryRouteStatus": "REQUIRES_RUNTIME_ROUTE_VALIDATION",
+        "factoryRouteStatus": "REQUIRES_FACTORY_COMPATIBILITY_CHECK",
+        "routeStatus": "REGIONAL_ROUTE_TO_BE_PLANNED",
+        "transport": {
+          "routeId": "ROUTE_SITE_UZB_kalmakyr_copper_mine_RAW_TO_FACTORY",
+          "routeType": "ROAD_RAIL",
+          "originSiteId": "SITE_UZB_kalmakyr_copper_mine",
+          "originCountryId": "UZB",
+          "warehouseId": "WH-UZB-RAW",
+          "destinationFactoryId": "AUTO_SELECT_COMPATIBLE_FACTORY",
+          "destinationCountryId": "UZB",
+          "distanceKm": null,
+          "averageSpeedKmPerDay": null,
+          "estimatedTravelDays": null,
+          "routeStatus": "UNPLANNED_REQUIRES_RUNTIME_ROUTING",
+          "canBeBlockedByWar": true,
+          "canBeBlockedByNeighborControl": true,
+          "canBeBlockedByNavalInterdiction": true,
+          "strategicRouteNotRoadSurvey": true,
+          "routeCapacityPerDay": null
+        }
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": "TONNES_ORE",
+          "status": "UNOBSERVED",
+          "basis": "No reconciled site-specific reserve estimate promoted"
+        },
+        "production": {
+          "annual": null,
+          "annualUnit": "TONNES_PER_YEAR",
+          "rate": null,
+          "unit": "TONNES_PER_DAY",
+          "status": "UNOBSERVED",
+          "basis": "Current reported facts are preserved separately and not promoted into quantitative authority"
+        },
+        "grade": {
+          "value": null,
+          "unit": "PERCENT",
+          "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": "PERCENT",
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": "TONNES_PER_DAY",
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": "PERCENT",
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": "TONNES_PER_DAY",
+          "status": "UNOBSERVED"
+        },
+        "quantitativeProvenance": {
+          "authority": "SOURCE_REPORTED_IDENTITY_WITH_UNKNOWN_MEASUREMENTS_PRESERVED",
+          "measuredReservePromoted": false,
+          "simulatedReserveSeparate": true,
+          "sourceUrls": [
+            "https://agmk.uz/en"
+          ],
+          "accessed": "2026-10-20"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "recovery": "UNOBSERVED",
+          "throughput": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "overall": "IDENTITY_AND_GAMEPLAY_SEED_ONLY"
+        }
+      },
+      "reserve": {
+        "quantity": 270000000,
+        "unit": "TONNES_ORE",
+        "status": "SIMULATED",
+        "basis": "MINEPLAY_SCENARIO_SEED_ONLY_NOT_A_GEOLOGICAL_RESERVE",
+        "authority": "SIMULATION_SCENARIO_ONLY",
+        "generatedAt": "2026-10-20"
+      },
+      "simulation": {
+        "simulationOnly": true,
+        "reserve": {
+          "quantity": 270000000,
+          "unit": "TONNES_ORE",
+          "status": "SIMULATED",
+          "basis": "MINEPLAY_SCENARIO_SEED_ONLY_NOT_A_GEOLOGICAL_RESERVE",
+          "authority": "SIMULATION_SCENARIO_ONLY",
+          "generatedAt": "2026-10-20"
+        },
+        "reserveHorizonYears": null,
+        "reserveAuthority": "GAMEPLAY_SEED_ONLY",
+        "nominalDailyCapacity": null,
+        "minimumDailyCapacity": null,
+        "maximumDailyCapacity": null,
+        "productionRate": null,
+        "productionRateUnit": "TONNES_PER_DAY",
+        "utilization": 0.65,
+        "recovery": 0.72,
+        "transportRoute": [
+          {
+            "routeId": "SIM_ROUTE:UZB:SITE_UZB_kalmakyr_copper_mine",
+            "mode": "truck",
+            "transportMode": "truck",
+            "distanceKm": null,
+            "estimatedTravelDays": null,
+            "status": "SIMULATED_ROUTE_REQUIRES_RUNTIME_PLAN",
+            "blockableByWar": true,
+            "blockableByNeighborControl": true,
+            "blockableByNavalInterdiction": true,
+            "countryIsolationKey": "UZB"
+          }
+        ],
+        "rawWarehouseId": "WH-UZB-RAW",
+        "factoryBinding": {
+          "factoryId": null,
+          "countryId": "UZB",
+          "inputResourceId": "copper",
+          "status": "REQUIRES_COMPATIBLE_FACTORY_BOOTSTRAP",
+          "authority": "RUNTIME"
+        },
+        "gameplayConstructionAllowed": true
+      },
+      "map": {
+        "markerEligible": true,
+        "countryIsolationKey": "UZB",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+      },
+      "runtime": {
+        "identityAuthority": "COUNTRY_MINEPLAY_SUPPLEMENT_V1",
+        "quantityAuthority": "SIMULATED",
+        "productionAuthority": "SIMULATED",
+        "requiresFactoryBinding": true,
+        "requiresSiteSpecificRoute": true,
+        "sourceStatusIsNotGameplayCommissioning": true
+      },
+      "sourceReference": {
+        "sourcePath": "https://agmk.uz/en",
+        "sourceType": "STATE_LINKED_OPERATOR_PRIMARY",
+        "accessed": "2026-10-20",
+        "facts": {},
+        "statusNote": "Source identity/status is separate from simulated reserve and player-owned assets."
+      },
+      "sources": [
+        {
+          "url": "https://agmk.uz/en",
+          "sourceType": "STATE_LINKED_OPERATOR_PRIMARY",
+          "accessed": "2026-10-20",
+          "scope": "site_identity_commodity_location_and_source_reported_status"
+        }
+      ],
+      "observedFacts": {
+        "reportedStatus": "OPERATING_AS_REPORTED_OPERATOR_CONTEXT",
+        "owner": "State-linked mining and metallurgical complex",
+        "operator": "Almalyk Mining and Metallurgical Complex (AMMC)",
+        "resource": "Copper",
+        "region": "Almalyk, Tashkent Region",
+        "facts": {},
+        "authority": "SOURCE_REPORTED_NOT_FULLY_RECONCILED"
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_KAZ_karachaganak_gas_condensate_field",
+      "countryId": "KAZ",
+      "siteName": "Karachaganak Gas-Condensate Field",
+      "identity": {
+        "countryIso3": "KAZ",
+        "countryName": "Kazakhstan",
+        "siteType": "GAS_CONDENSATE_FIELD",
+        "resourceTypeId": "natural_gas",
+        "resourceName": "Natural gas and condensates",
+        "ontologyKey": "NATURAL_GAS",
+        "aliases": []
+      },
+      "location": {
+        "countryName": "Kazakhstan",
+        "adminRegion": "West Kazakhstan Region, near Aksai",
+        "locality": "West Kazakhstan Region, near Aksai",
+        "coordinates": {
+          "lat": 51.35,
+          "lng": 53.35
+        },
+        "coordinateStatus": "REGIONAL_APPROXIMATION",
+        "coordinateAuthority": "SOURCE-LOCATED REGION; APPROXIMATE COORDINATE FOR STRATEGIC MAP NOT SURVEY GRADE",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "countryBoundaryKey": "KAZ"
+      },
+      "ownership": {
+        "owner": "International consortium and Kazakhstan state participation; current shares not normalized",
+        "operator": "Karachaganak Petroleum Operating B.V. (KPO)",
+        "ownerEvidenceStatus": "SOURCE_REPORTED_REQUIRES_CURRENT_FILING_RECONCILIATION",
+        "operatorEvidenceStatus": "SOURCE_REPORTED_PRIMARY_OR_PORTFOLIO",
+        "authority": "SOURCE_REFERENCE_WITH_CURRENT_STATUS_CAVEAT",
+        "equityControlCountry": "KAZ",
+        "operatorContractId": "OPCONTRACT_SITE_KAZ_karachaganak_gas_condensate_field"
+      },
+      "operation": {
+        "status": "OPERATING_AS_REPORTED_OPERATOR_CONTEXT",
+        "operationalStatus": "OPERATING_AS_REPORTED_OPERATOR_CONTEXT",
+        "realWorldStatus": "OPERATING_AS_REPORTED_OPERATOR_CONTEXT",
+        "extractionMethod": "GAS_CONDENSATE_PRODUCTION_AND_PROCESSING",
+        "extractionEligibility": "SIMULATED_GAMEPLAY_EXECUTABLE_SUBJECT_TO_RUNTIME_GATES",
+        "commercialExtraction": true,
+        "siteCommissioningLevel": 0,
+        "mineLevel": 0,
+        "statusAuthority": "SOURCE_REPORTED_IDENTITY_AND_STATUS; PLAYER_SIMULATION_STATE_REMAINS_SEPARATE",
+        "gameplayConstructionAllowed": true
+      },
+      "processing": {
+        "upstreamProcess": "GAS_CONDENSATE_PRODUCTION_AND_PROCESSING",
+        "midstreamProcess": "COMMODITY_SPECIFIC_BENEFICIATION_AND_GRADE_CONTROL",
+        "refinedOutputs": [
+          "processed natural gas",
+          "gas condensate where applicable"
+        ],
+        "downstreamSectors": [
+          "power",
+          "fertilizer",
+          "chemicals"
+        ]
+      },
+      "logistics": {
+        "warehouseCountryId": "KAZ",
+        "warehouseSiteId": "WH-KAZ-RAW",
+        "inventoryRouteStatus": "REQUIRES_RUNTIME_ROUTE_VALIDATION",
+        "factoryRouteStatus": "REQUIRES_FACTORY_COMPATIBILITY_CHECK",
+        "routeStatus": "REGIONAL_ROUTE_TO_BE_PLANNED",
+        "transport": {
+          "routeId": "ROUTE_SITE_KAZ_karachaganak_gas_condensate_field_RAW_TO_FACTORY",
+          "routeType": "ROAD_RAIL",
+          "originSiteId": "SITE_KAZ_karachaganak_gas_condensate_field",
+          "originCountryId": "KAZ",
+          "warehouseId": "WH-KAZ-RAW",
+          "destinationFactoryId": "AUTO_SELECT_COMPATIBLE_FACTORY",
+          "destinationCountryId": "KAZ",
+          "distanceKm": null,
+          "averageSpeedKmPerDay": null,
+          "estimatedTravelDays": null,
+          "routeStatus": "UNPLANNED_REQUIRES_RUNTIME_ROUTING",
+          "canBeBlockedByWar": true,
+          "canBeBlockedByNeighborControl": true,
+          "canBeBlockedByNavalInterdiction": true,
+          "strategicRouteNotRoadSurvey": true,
+          "routeCapacityPerDay": null
+        }
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": "MILLION_CUBIC_METRES",
+          "status": "UNOBSERVED",
+          "basis": "No reconciled site-specific reserve estimate promoted"
+        },
+        "production": {
+          "annual": null,
+          "annualUnit": "TONNES_PER_YEAR",
+          "rate": null,
+          "unit": "MILLION_CUBIC_METRES_PER_DAY",
+          "status": "UNOBSERVED",
+          "basis": "Current reported facts are preserved separately and not promoted into quantitative authority"
+        },
+        "grade": {
+          "value": null,
+          "unit": "PERCENT",
+          "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": "PERCENT",
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": "TONNES_PER_DAY",
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": "PERCENT",
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": "TONNES_PER_DAY",
+          "status": "UNOBSERVED"
+        },
+        "quantitativeProvenance": {
+          "authority": "SOURCE_REPORTED_IDENTITY_WITH_UNKNOWN_MEASUREMENTS_PRESERVED",
+          "measuredReservePromoted": false,
+          "simulatedReserveSeparate": true,
+          "sourceUrls": [
+            "https://www.kpo.kz/"
+          ],
+          "accessed": "2026-10-20"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "recovery": "UNOBSERVED",
+          "throughput": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "overall": "IDENTITY_AND_GAMEPLAY_SEED_ONLY"
+        }
+      },
+      "reserve": {
+        "quantity": 630000000,
+        "unit": "MILLION_CUBIC_METRES",
+        "status": "SIMULATED",
+        "basis": "MINEPLAY_SCENARIO_SEED_ONLY_NOT_A_GEOLOGICAL_RESERVE",
+        "authority": "SIMULATION_SCENARIO_ONLY",
+        "generatedAt": "2026-10-20"
+      },
+      "simulation": {
+        "simulationOnly": true,
+        "reserve": {
+          "quantity": 630000000,
+          "unit": "MILLION_CUBIC_METRES",
+          "status": "SIMULATED",
+          "basis": "MINEPLAY_SCENARIO_SEED_ONLY_NOT_A_GEOLOGICAL_RESERVE",
+          "authority": "SIMULATION_SCENARIO_ONLY",
+          "generatedAt": "2026-10-20"
+        },
+        "reserveHorizonYears": null,
+        "reserveAuthority": "GAMEPLAY_SEED_ONLY",
+        "nominalDailyCapacity": null,
+        "minimumDailyCapacity": null,
+        "maximumDailyCapacity": null,
+        "productionRate": null,
+        "productionRateUnit": "TONNES_PER_DAY",
+        "utilization": 0.65,
+        "recovery": 0.72,
+        "transportRoute": [
+          {
+            "routeId": "SIM_ROUTE:KAZ:SITE_KAZ_karachaganak_gas_condensate_field",
+            "mode": "truck",
+            "transportMode": "truck",
+            "distanceKm": null,
+            "estimatedTravelDays": null,
+            "status": "SIMULATED_ROUTE_REQUIRES_RUNTIME_PLAN",
+            "blockableByWar": true,
+            "blockableByNeighborControl": true,
+            "blockableByNavalInterdiction": true,
+            "countryIsolationKey": "KAZ"
+          }
+        ],
+        "rawWarehouseId": "WH-KAZ-RAW",
+        "factoryBinding": {
+          "factoryId": null,
+          "countryId": "KAZ",
+          "inputResourceId": "natural_gas",
+          "status": "REQUIRES_COMPATIBLE_FACTORY_BOOTSTRAP",
+          "authority": "RUNTIME"
+        },
+        "gameplayConstructionAllowed": true
+      },
+      "map": {
+        "markerEligible": true,
+        "countryIsolationKey": "KAZ",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+      },
+      "runtime": {
+        "identityAuthority": "COUNTRY_MINEPLAY_SUPPLEMENT_V1",
+        "quantityAuthority": "SIMULATED",
+        "productionAuthority": "SIMULATED",
+        "requiresFactoryBinding": true,
+        "requiresSiteSpecificRoute": true,
+        "sourceStatusIsNotGameplayCommissioning": true
+      },
+      "sourceReference": {
+        "sourcePath": "https://www.kpo.kz/",
+        "sourceType": "OPERATOR_PRIMARY",
+        "accessed": "2026-10-20",
+        "facts": {},
+        "statusNote": "Source identity/status is separate from simulated reserve and player-owned assets."
+      },
+      "sources": [
+        {
+          "url": "https://www.kpo.kz/",
+          "sourceType": "OPERATOR_PRIMARY",
+          "accessed": "2026-10-20",
+          "scope": "site_identity_commodity_location_and_source_reported_status"
+        }
+      ],
+      "observedFacts": {
+        "reportedStatus": "OPERATING_AS_REPORTED_OPERATOR_CONTEXT",
+        "owner": "International consortium and Kazakhstan state participation; current shares not normalized",
+        "operator": "Karachaganak Petroleum Operating B.V. (KPO)",
+        "resource": "Natural gas and condensates",
+        "region": "West Kazakhstan Region, near Aksai",
+        "facts": {},
+        "authority": "SOURCE_REPORTED_NOT_FULLY_RECONCILED"
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_DZA_hassi_rmel_gas_field",
+      "countryId": "DZA",
+      "siteName": "Hassi R'Mel Gas Field",
+      "identity": {
+        "countryIso3": "DZA",
+        "countryName": "Algeria",
+        "siteType": "NATURAL_GAS_FIELD",
+        "resourceTypeId": "natural_gas",
+        "resourceName": "Natural gas",
+        "ontologyKey": "NATURAL_GAS",
+        "aliases": []
+      },
+      "location": {
+        "countryName": "Algeria",
+        "adminRegion": "Laghouat Province",
+        "locality": "Laghouat Province",
+        "coordinates": {
+          "lat": 33.12,
+          "lng": 3.27
+        },
+        "coordinateStatus": "REGIONAL_APPROXIMATION",
+        "coordinateAuthority": "SOURCE-LOCATED REGION; APPROXIMATE COORDINATE FOR STRATEGIC MAP NOT SURVEY GRADE",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "countryBoundaryKey": "DZA"
+      },
+      "ownership": {
+        "owner": "Algerian state-owned hydrocarbons group",
+        "operator": "Sonatrach",
+        "ownerEvidenceStatus": "SOURCE_REPORTED_REQUIRES_CURRENT_FILING_RECONCILIATION",
+        "operatorEvidenceStatus": "SOURCE_REPORTED_PRIMARY_OR_PORTFOLIO",
+        "authority": "SOURCE_REFERENCE_WITH_CURRENT_STATUS_CAVEAT",
+        "equityControlCountry": "DZA",
+        "operatorContractId": "OPCONTRACT_SITE_DZA_hassi_rmel_gas_field"
+      },
+      "operation": {
+        "status": "OPERATING_AS_REPORTED_OPERATOR_CONTEXT",
+        "operationalStatus": "OPERATING_AS_REPORTED_OPERATOR_CONTEXT",
+        "realWorldStatus": "OPERATING_AS_REPORTED_OPERATOR_CONTEXT",
+        "extractionMethod": "GAS_WELL_PRODUCTION_AND_PROCESSING",
+        "extractionEligibility": "SIMULATED_GAMEPLAY_EXECUTABLE_SUBJECT_TO_RUNTIME_GATES",
+        "commercialExtraction": true,
+        "siteCommissioningLevel": 0,
+        "mineLevel": 0,
+        "statusAuthority": "SOURCE_REPORTED_IDENTITY_AND_STATUS; PLAYER_SIMULATION_STATE_REMAINS_SEPARATE",
+        "gameplayConstructionAllowed": true
+      },
+      "processing": {
+        "upstreamProcess": "GAS_WELL_PRODUCTION_AND_PROCESSING",
+        "midstreamProcess": "COMMODITY_SPECIFIC_BENEFICIATION_AND_GRADE_CONTROL",
+        "refinedOutputs": [
+          "processed natural gas",
+          "gas condensate where applicable"
+        ],
+        "downstreamSectors": [
+          "power",
+          "fertilizer",
+          "chemicals"
+        ]
+      },
+      "logistics": {
+        "warehouseCountryId": "DZA",
+        "warehouseSiteId": "WH-DZA-RAW",
+        "inventoryRouteStatus": "REQUIRES_RUNTIME_ROUTE_VALIDATION",
+        "factoryRouteStatus": "REQUIRES_FACTORY_COMPATIBILITY_CHECK",
+        "routeStatus": "REGIONAL_ROUTE_TO_BE_PLANNED",
+        "transport": {
+          "routeId": "ROUTE_SITE_DZA_hassi_rmel_gas_field_RAW_TO_FACTORY",
+          "routeType": "ROAD_RAIL",
+          "originSiteId": "SITE_DZA_hassi_rmel_gas_field",
+          "originCountryId": "DZA",
+          "warehouseId": "WH-DZA-RAW",
+          "destinationFactoryId": "AUTO_SELECT_COMPATIBLE_FACTORY",
+          "destinationCountryId": "DZA",
+          "distanceKm": null,
+          "averageSpeedKmPerDay": null,
+          "estimatedTravelDays": null,
+          "routeStatus": "UNPLANNED_REQUIRES_RUNTIME_ROUTING",
+          "canBeBlockedByWar": true,
+          "canBeBlockedByNeighborControl": true,
+          "canBeBlockedByNavalInterdiction": true,
+          "strategicRouteNotRoadSurvey": true,
+          "routeCapacityPerDay": null
+        }
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": "MILLION_CUBIC_METRES",
+          "status": "UNOBSERVED",
+          "basis": "No reconciled site-specific reserve estimate promoted"
+        },
+        "production": {
+          "annual": null,
+          "annualUnit": "TONNES_PER_YEAR",
+          "rate": null,
+          "unit": "MILLION_CUBIC_METRES_PER_DAY",
+          "status": "UNOBSERVED",
+          "basis": "Current reported facts are preserved separately and not promoted into quantitative authority"
+        },
+        "grade": {
+          "value": null,
+          "unit": "PERCENT",
+          "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": "PERCENT",
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": "TONNES_PER_DAY",
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": "PERCENT",
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": "TONNES_PER_DAY",
+          "status": "UNOBSERVED"
+        },
+        "quantitativeProvenance": {
+          "authority": "SOURCE_REPORTED_IDENTITY_WITH_UNKNOWN_MEASUREMENTS_PRESERVED",
+          "measuredReservePromoted": false,
+          "simulatedReserveSeparate": true,
+          "sourceUrls": [
+            "https://sonatrach.com/"
+          ],
+          "accessed": "2026-10-20"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "recovery": "UNOBSERVED",
+          "throughput": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "overall": "IDENTITY_AND_GAMEPLAY_SEED_ONLY"
+        }
+      },
+      "reserve": {
+        "quantity": 940000000,
+        "unit": "MILLION_CUBIC_METRES",
+        "status": "SIMULATED",
+        "basis": "MINEPLAY_SCENARIO_SEED_ONLY_NOT_A_GEOLOGICAL_RESERVE",
+        "authority": "SIMULATION_SCENARIO_ONLY",
+        "generatedAt": "2026-10-20"
+      },
+      "simulation": {
+        "simulationOnly": true,
+        "reserve": {
+          "quantity": 940000000,
+          "unit": "MILLION_CUBIC_METRES",
+          "status": "SIMULATED",
+          "basis": "MINEPLAY_SCENARIO_SEED_ONLY_NOT_A_GEOLOGICAL_RESERVE",
+          "authority": "SIMULATION_SCENARIO_ONLY",
+          "generatedAt": "2026-10-20"
+        },
+        "reserveHorizonYears": null,
+        "reserveAuthority": "GAMEPLAY_SEED_ONLY",
+        "nominalDailyCapacity": null,
+        "minimumDailyCapacity": null,
+        "maximumDailyCapacity": null,
+        "productionRate": null,
+        "productionRateUnit": "TONNES_PER_DAY",
+        "utilization": 0.65,
+        "recovery": 0.72,
+        "transportRoute": [
+          {
+            "routeId": "SIM_ROUTE:DZA:SITE_DZA_hassi_rmel_gas_field",
+            "mode": "truck",
+            "transportMode": "truck",
+            "distanceKm": null,
+            "estimatedTravelDays": null,
+            "status": "SIMULATED_ROUTE_REQUIRES_RUNTIME_PLAN",
+            "blockableByWar": true,
+            "blockableByNeighborControl": true,
+            "blockableByNavalInterdiction": true,
+            "countryIsolationKey": "DZA"
+          }
+        ],
+        "rawWarehouseId": "WH-DZA-RAW",
+        "factoryBinding": {
+          "factoryId": null,
+          "countryId": "DZA",
+          "inputResourceId": "natural_gas",
+          "status": "REQUIRES_COMPATIBLE_FACTORY_BOOTSTRAP",
+          "authority": "RUNTIME"
+        },
+        "gameplayConstructionAllowed": true
+      },
+      "map": {
+        "markerEligible": true,
+        "countryIsolationKey": "DZA",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+      },
+      "runtime": {
+        "identityAuthority": "COUNTRY_MINEPLAY_SUPPLEMENT_V1",
+        "quantityAuthority": "SIMULATED",
+        "productionAuthority": "SIMULATED",
+        "requiresFactoryBinding": true,
+        "requiresSiteSpecificRoute": true,
+        "sourceStatusIsNotGameplayCommissioning": true
+      },
+      "sourceReference": {
+        "sourcePath": "https://sonatrach.com/",
+        "sourceType": "STATE_OWNED_OPERATOR_PRIMARY",
+        "accessed": "2026-10-20",
+        "facts": {},
+        "statusNote": "Source identity/status is separate from simulated reserve and player-owned assets."
+      },
+      "sources": [
+        {
+          "url": "https://sonatrach.com/",
+          "sourceType": "STATE_OWNED_OPERATOR_PRIMARY",
+          "accessed": "2026-10-20",
+          "scope": "site_identity_commodity_location_and_source_reported_status"
+        }
+      ],
+      "observedFacts": {
+        "reportedStatus": "OPERATING_AS_REPORTED_OPERATOR_CONTEXT",
+        "owner": "Algerian state-owned hydrocarbons group",
+        "operator": "Sonatrach",
+        "resource": "Natural gas",
+        "region": "Laghouat Province",
+        "facts": {},
+        "authority": "SOURCE_REPORTED_NOT_FULLY_RECONCILED"
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_DZA_ourhoud_oil_field",
+      "countryId": "DZA",
+      "siteName": "Ourhoud Oil Field",
+      "identity": {
+        "countryIso3": "DZA",
+        "countryName": "Algeria",
+        "siteType": "OIL_FIELD",
+        "resourceTypeId": "crude_oil",
+        "resourceName": "Crude oil",
+        "ontologyKey": "CRUDE_OIL",
+        "aliases": []
+      },
+      "location": {
+        "countryName": "Algeria",
+        "adminRegion": "Eastern Algeria basin area",
+        "locality": "Eastern Algeria basin area",
+        "coordinates": {
+          "lat": 31.85,
+          "lng": 6.16
+        },
+        "coordinateStatus": "REGIONAL_APPROXIMATION",
+        "coordinateAuthority": "SOURCE-LOCATED REGION; APPROXIMATE COORDINATE FOR STRATEGIC MAP NOT SURVEY GRADE",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "countryBoundaryKey": "DZA"
+      },
+      "ownership": {
+        "owner": "Current contractual interests require regulator/operator verification",
+        "operator": "Sonatrach and field partners",
+        "ownerEvidenceStatus": "SOURCE_REPORTED_REQUIRES_CURRENT_FILING_RECONCILIATION",
+        "operatorEvidenceStatus": "SOURCE_REPORTED_PRIMARY_OR_PORTFOLIO",
+        "authority": "SOURCE_REFERENCE_WITH_CURRENT_STATUS_CAVEAT",
+        "equityControlCountry": "DZA",
+        "operatorContractId": "OPCONTRACT_SITE_DZA_ourhoud_oil_field"
+      },
+      "operation": {
+        "status": "OPERATING_AS_REPORTED_OPERATOR_CONTEXT",
+        "operationalStatus": "OPERATING_AS_REPORTED_OPERATOR_CONTEXT",
+        "realWorldStatus": "OPERATING_AS_REPORTED_OPERATOR_CONTEXT",
+        "extractionMethod": "OIL_WELL_PRODUCTION_AND_TREATMENT",
+        "extractionEligibility": "SIMULATED_GAMEPLAY_EXECUTABLE_SUBJECT_TO_RUNTIME_GATES",
+        "commercialExtraction": true,
+        "siteCommissioningLevel": 0,
+        "mineLevel": 0,
+        "statusAuthority": "SOURCE_REPORTED_IDENTITY_AND_STATUS; PLAYER_SIMULATION_STATE_REMAINS_SEPARATE",
+        "gameplayConstructionAllowed": true
+      },
+      "processing": {
+        "upstreamProcess": "OIL_WELL_PRODUCTION_AND_TREATMENT",
+        "midstreamProcess": "COMMODITY_SPECIFIC_BENEFICIATION_AND_GRADE_CONTROL",
+        "refinedOutputs": [
+          "stabilized crude oil"
+        ],
+        "downstreamSectors": [
+          "refining",
+          "petrochemicals",
+          "transport fuels"
+        ]
+      },
+      "logistics": {
+        "warehouseCountryId": "DZA",
+        "warehouseSiteId": "WH-DZA-RAW",
+        "inventoryRouteStatus": "REQUIRES_RUNTIME_ROUTE_VALIDATION",
+        "factoryRouteStatus": "REQUIRES_FACTORY_COMPATIBILITY_CHECK",
+        "routeStatus": "REGIONAL_ROUTE_TO_BE_PLANNED",
+        "transport": {
+          "routeId": "ROUTE_SITE_DZA_ourhoud_oil_field_RAW_TO_FACTORY",
+          "routeType": "ROAD_RAIL",
+          "originSiteId": "SITE_DZA_ourhoud_oil_field",
+          "originCountryId": "DZA",
+          "warehouseId": "WH-DZA-RAW",
+          "destinationFactoryId": "AUTO_SELECT_COMPATIBLE_FACTORY",
+          "destinationCountryId": "DZA",
+          "distanceKm": null,
+          "averageSpeedKmPerDay": null,
+          "estimatedTravelDays": null,
+          "routeStatus": "UNPLANNED_REQUIRES_RUNTIME_ROUTING",
+          "canBeBlockedByWar": true,
+          "canBeBlockedByNeighborControl": true,
+          "canBeBlockedByNavalInterdiction": true,
+          "strategicRouteNotRoadSurvey": true,
+          "routeCapacityPerDay": null
+        }
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": "BARRELS",
+          "status": "UNOBSERVED",
+          "basis": "No reconciled site-specific reserve estimate promoted"
+        },
+        "production": {
+          "annual": null,
+          "annualUnit": "TONNES_PER_YEAR",
+          "rate": null,
+          "unit": "BARRELS_PER_DAY",
+          "status": "UNOBSERVED",
+          "basis": "Current reported facts are preserved separately and not promoted into quantitative authority"
+        },
+        "grade": {
+          "value": null,
+          "unit": "PERCENT",
+          "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": "PERCENT",
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": "TONNES_PER_DAY",
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": "PERCENT",
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": "TONNES_PER_DAY",
+          "status": "UNOBSERVED"
+        },
+        "quantitativeProvenance": {
+          "authority": "SOURCE_REPORTED_IDENTITY_WITH_UNKNOWN_MEASUREMENTS_PRESERVED",
+          "measuredReservePromoted": false,
+          "simulatedReserveSeparate": true,
+          "sourceUrls": [
+            "https://sonatrach.com/"
+          ],
+          "accessed": "2026-10-20"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "recovery": "UNOBSERVED",
+          "throughput": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "overall": "IDENTITY_AND_GAMEPLAY_SEED_ONLY"
+        }
+      },
+      "reserve": {
+        "quantity": 210000000,
+        "unit": "BARRELS",
+        "status": "SIMULATED",
+        "basis": "MINEPLAY_SCENARIO_SEED_ONLY_NOT_A_GEOLOGICAL_RESERVE",
+        "authority": "SIMULATION_SCENARIO_ONLY",
+        "generatedAt": "2026-10-20"
+      },
+      "simulation": {
+        "simulationOnly": true,
+        "reserve": {
+          "quantity": 210000000,
+          "unit": "BARRELS",
+          "status": "SIMULATED",
+          "basis": "MINEPLAY_SCENARIO_SEED_ONLY_NOT_A_GEOLOGICAL_RESERVE",
+          "authority": "SIMULATION_SCENARIO_ONLY",
+          "generatedAt": "2026-10-20"
+        },
+        "reserveHorizonYears": null,
+        "reserveAuthority": "GAMEPLAY_SEED_ONLY",
+        "nominalDailyCapacity": null,
+        "minimumDailyCapacity": null,
+        "maximumDailyCapacity": null,
+        "productionRate": null,
+        "productionRateUnit": "TONNES_PER_DAY",
+        "utilization": 0.65,
+        "recovery": 0.72,
+        "transportRoute": [
+          {
+            "routeId": "SIM_ROUTE:DZA:SITE_DZA_ourhoud_oil_field",
+            "mode": "truck",
+            "transportMode": "truck",
+            "distanceKm": null,
+            "estimatedTravelDays": null,
+            "status": "SIMULATED_ROUTE_REQUIRES_RUNTIME_PLAN",
+            "blockableByWar": true,
+            "blockableByNeighborControl": true,
+            "blockableByNavalInterdiction": true,
+            "countryIsolationKey": "DZA"
+          }
+        ],
+        "rawWarehouseId": "WH-DZA-RAW",
+        "factoryBinding": {
+          "factoryId": null,
+          "countryId": "DZA",
+          "inputResourceId": "crude_oil",
+          "status": "REQUIRES_COMPATIBLE_FACTORY_BOOTSTRAP",
+          "authority": "RUNTIME"
+        },
+        "gameplayConstructionAllowed": true
+      },
+      "map": {
+        "markerEligible": true,
+        "countryIsolationKey": "DZA",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+      },
+      "runtime": {
+        "identityAuthority": "COUNTRY_MINEPLAY_SUPPLEMENT_V1",
+        "quantityAuthority": "SIMULATED",
+        "productionAuthority": "SIMULATED",
+        "requiresFactoryBinding": true,
+        "requiresSiteSpecificRoute": true,
+        "sourceStatusIsNotGameplayCommissioning": true
+      },
+      "sourceReference": {
+        "sourcePath": "https://sonatrach.com/",
+        "sourceType": "STATE_OWNED_OPERATOR_PRIMARY",
+        "accessed": "2026-10-20",
+        "facts": {},
+        "statusNote": "Source identity/status is separate from simulated reserve and player-owned assets."
+      },
+      "sources": [
+        {
+          "url": "https://sonatrach.com/",
+          "sourceType": "STATE_OWNED_OPERATOR_PRIMARY",
+          "accessed": "2026-10-20",
+          "scope": "site_identity_commodity_location_and_source_reported_status"
+        }
+      ],
+      "observedFacts": {
+        "reportedStatus": "OPERATING_AS_REPORTED_OPERATOR_CONTEXT",
+        "owner": "Current contractual interests require regulator/operator verification",
+        "operator": "Sonatrach and field partners",
+        "resource": "Crude oil",
+        "region": "Eastern Algeria basin area",
+        "facts": {},
+        "authority": "SOURCE_REPORTED_NOT_FULLY_RECONCILED"
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_CIV_lafigue_gold_mine",
+      "countryId": "CIV",
+      "siteName": "Lafigué Gold Mine",
+      "identity": {
+        "countryIso3": "CIV",
+        "countryName": "Côte d’Ivoire",
+        "siteType": "GOLD_MINE",
+        "resourceTypeId": "gold",
+        "resourceName": "Gold",
+        "ontologyKey": "GOLD",
+        "aliases": []
+      },
+      "location": {
+        "countryName": "Côte d’Ivoire",
+        "adminRegion": "Dabakala area, north-central Côte d’Ivoire",
+        "locality": "Dabakala area, north-central Côte d’Ivoire",
+        "coordinates": {
+          "lat": 7.38,
+          "lng": -5.45
+        },
+        "coordinateStatus": "REGIONAL_APPROXIMATION",
+        "coordinateAuthority": "SOURCE-LOCATED REGION; APPROXIMATE COORDINATE FOR STRATEGIC MAP NOT SURVEY GRADE",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "countryBoundaryKey": "CIV"
+      },
+      "ownership": {
+        "owner": "Current equity attribution should follow latest operator filings",
+        "operator": "Endeavour Mining",
+        "ownerEvidenceStatus": "SOURCE_REPORTED_REQUIRES_CURRENT_FILING_RECONCILIATION",
+        "operatorEvidenceStatus": "SOURCE_REPORTED_PRIMARY_OR_PORTFOLIO",
+        "authority": "SOURCE_REFERENCE_WITH_CURRENT_STATUS_CAVEAT",
+        "equityControlCountry": "CIV",
+        "operatorContractId": "OPCONTRACT_SITE_CIV_lafigue_gold_mine"
+      },
+      "operation": {
+        "status": "OPERATING_AS_REPORTED_OPERATOR_CONTEXT",
+        "operationalStatus": "OPERATING_AS_REPORTED_OPERATOR_CONTEXT",
+        "realWorldStatus": "OPERATING_AS_REPORTED_OPERATOR_CONTEXT",
+        "extractionMethod": "OPEN_PIT_GOLD_MINING_AND_CARBON_IN_LEACH",
+        "extractionEligibility": "SIMULATED_GAMEPLAY_EXECUTABLE_SUBJECT_TO_RUNTIME_GATES",
+        "commercialExtraction": true,
+        "siteCommissioningLevel": 0,
+        "mineLevel": 0,
+        "statusAuthority": "SOURCE_REPORTED_IDENTITY_AND_STATUS; PLAYER_SIMULATION_STATE_REMAINS_SEPARATE",
+        "gameplayConstructionAllowed": true
+      },
+      "processing": {
+        "upstreamProcess": "OPEN_PIT_GOLD_MINING_AND_CARBON_IN_LEACH",
+        "midstreamProcess": "COMMODITY_SPECIFIC_BENEFICIATION_AND_GRADE_CONTROL",
+        "refinedOutputs": [
+          "gold concentrate",
+          "doré"
+        ],
+        "downstreamSectors": [
+          "bullion",
+          "jewellery",
+          "electronics"
+        ]
+      },
+      "logistics": {
+        "warehouseCountryId": "CIV",
+        "warehouseSiteId": "WH-CIV-RAW",
+        "inventoryRouteStatus": "REQUIRES_RUNTIME_ROUTE_VALIDATION",
+        "factoryRouteStatus": "REQUIRES_FACTORY_COMPATIBILITY_CHECK",
+        "routeStatus": "REGIONAL_ROUTE_TO_BE_PLANNED",
+        "transport": {
+          "routeId": "ROUTE_SITE_CIV_lafigue_gold_mine_RAW_TO_FACTORY",
+          "routeType": "ROAD_RAIL",
+          "originSiteId": "SITE_CIV_lafigue_gold_mine",
+          "originCountryId": "CIV",
+          "warehouseId": "WH-CIV-RAW",
+          "destinationFactoryId": "AUTO_SELECT_COMPATIBLE_FACTORY",
+          "destinationCountryId": "CIV",
+          "distanceKm": null,
+          "averageSpeedKmPerDay": null,
+          "estimatedTravelDays": null,
+          "routeStatus": "UNPLANNED_REQUIRES_RUNTIME_ROUTING",
+          "canBeBlockedByWar": true,
+          "canBeBlockedByNeighborControl": true,
+          "canBeBlockedByNavalInterdiction": true,
+          "strategicRouteNotRoadSurvey": true,
+          "routeCapacityPerDay": null
+        }
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": "TONNES_ORE",
+          "status": "UNOBSERVED",
+          "basis": "No reconciled site-specific reserve estimate promoted"
+        },
+        "production": {
+          "annual": null,
+          "annualUnit": "TROY_OUNCES_PER_YEAR",
+          "rate": null,
+          "unit": "TONNES_PER_DAY",
+          "status": "UNOBSERVED",
+          "basis": "Current reported facts are preserved separately and not promoted into quantitative authority"
+        },
+        "grade": {
+          "value": null,
+          "unit": "PERCENT",
+          "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": "PERCENT",
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": "TONNES_PER_DAY",
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": "PERCENT",
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": "TONNES_PER_DAY",
+          "status": "UNOBSERVED"
+        },
+        "quantitativeProvenance": {
+          "authority": "SOURCE_REPORTED_IDENTITY_WITH_UNKNOWN_MEASUREMENTS_PRESERVED",
+          "measuredReservePromoted": false,
+          "simulatedReserveSeparate": true,
+          "sourceUrls": [
+            "https://www.endeavourmining.com/our-portfolio/"
+          ],
+          "accessed": "2026-10-20"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "recovery": "UNOBSERVED",
+          "throughput": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "overall": "IDENTITY_AND_GAMEPLAY_SEED_ONLY"
+        }
+      },
+      "reserve": {
+        "quantity": 56000000,
+        "unit": "TONNES_ORE",
+        "status": "SIMULATED",
+        "basis": "MINEPLAY_SCENARIO_SEED_ONLY_NOT_A_GEOLOGICAL_RESERVE",
+        "authority": "SIMULATION_SCENARIO_ONLY",
+        "generatedAt": "2026-10-20"
+      },
+      "simulation": {
+        "simulationOnly": true,
+        "reserve": {
+          "quantity": 56000000,
+          "unit": "TONNES_ORE",
+          "status": "SIMULATED",
+          "basis": "MINEPLAY_SCENARIO_SEED_ONLY_NOT_A_GEOLOGICAL_RESERVE",
+          "authority": "SIMULATION_SCENARIO_ONLY",
+          "generatedAt": "2026-10-20"
+        },
+        "reserveHorizonYears": null,
+        "reserveAuthority": "GAMEPLAY_SEED_ONLY",
+        "nominalDailyCapacity": null,
+        "minimumDailyCapacity": null,
+        "maximumDailyCapacity": null,
+        "productionRate": null,
+        "productionRateUnit": "TONNES_PER_DAY",
+        "utilization": 0.65,
+        "recovery": 0.72,
+        "transportRoute": [
+          {
+            "routeId": "SIM_ROUTE:CIV:SITE_CIV_lafigue_gold_mine",
+            "mode": "truck",
+            "transportMode": "truck",
+            "distanceKm": null,
+            "estimatedTravelDays": null,
+            "status": "SIMULATED_ROUTE_REQUIRES_RUNTIME_PLAN",
+            "blockableByWar": true,
+            "blockableByNeighborControl": true,
+            "blockableByNavalInterdiction": true,
+            "countryIsolationKey": "CIV"
+          }
+        ],
+        "rawWarehouseId": "WH-CIV-RAW",
+        "factoryBinding": {
+          "factoryId": null,
+          "countryId": "CIV",
+          "inputResourceId": "gold",
+          "status": "REQUIRES_COMPATIBLE_FACTORY_BOOTSTRAP",
+          "authority": "RUNTIME"
+        },
+        "gameplayConstructionAllowed": true
+      },
+      "map": {
+        "markerEligible": true,
+        "countryIsolationKey": "CIV",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+      },
+      "runtime": {
+        "identityAuthority": "COUNTRY_MINEPLAY_SUPPLEMENT_V1",
+        "quantityAuthority": "SIMULATED",
+        "productionAuthority": "SIMULATED",
+        "requiresFactoryBinding": true,
+        "requiresSiteSpecificRoute": true,
+        "sourceStatusIsNotGameplayCommissioning": true
+      },
+      "sourceReference": {
+        "sourcePath": "https://www.endeavourmining.com/our-portfolio/",
+        "sourceType": "OPERATOR_PORTFOLIO_PRIMARY",
+        "accessed": "2026-10-20",
+        "facts": {
+          "firstGoldPouredAtEndOfQ2_2024": true
+        },
+        "statusNote": "Source identity/status is separate from simulated reserve and player-owned assets."
+      },
+      "sources": [
+        {
+          "url": "https://www.endeavourmining.com/our-portfolio/",
+          "sourceType": "OPERATOR_PORTFOLIO_PRIMARY",
+          "accessed": "2026-10-20",
+          "scope": "site_identity_commodity_location_and_source_reported_status"
+        }
+      ],
+      "observedFacts": {
+        "reportedStatus": "OPERATING_AS_REPORTED_OPERATOR_CONTEXT",
+        "owner": "Current equity attribution should follow latest operator filings",
+        "operator": "Endeavour Mining",
+        "resource": "Gold",
+        "region": "Dabakala area, north-central Côte d’Ivoire",
+        "facts": {
+          "firstGoldPouredAtEndOfQ2_2024": true
+        },
+        "authority": "SOURCE_REPORTED_NOT_FULLY_RECONCILED"
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_PNG_porgera_gold_mine",
+      "countryId": "PNG",
+      "siteName": "Porgera Gold Mine",
+      "identity": {
+        "countryIso3": "PNG",
+        "countryName": "Papua New Guinea",
+        "siteType": "OPEN_PIT_AND_UNDERGROUND_GOLD_MINE",
+        "resourceTypeId": "gold",
+        "resourceName": "Gold",
+        "ontologyKey": "GOLD",
+        "aliases": []
+      },
+      "location": {
+        "countryName": "Papua New Guinea",
+        "adminRegion": "Porgera, Enga Province",
+        "locality": "Porgera, Enga Province",
+        "coordinates": {
+          "lat": -5.46,
+          "lng": 143.12
+        },
+        "coordinateStatus": "REGIONAL_APPROXIMATION",
+        "coordinateAuthority": "SOURCE-LOCATED REGION; APPROXIMATE COORDINATE FOR STRATEGIC MAP NOT SURVEY GRADE",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "countryBoundaryKey": "PNG"
+      },
+      "ownership": {
+        "owner": "Joint venture with State and landowner participation; verify current equity and licence records",
+        "operator": "Porgera Joint Venture / Barrick Niugini",
+        "ownerEvidenceStatus": "SOURCE_REPORTED_REQUIRES_CURRENT_FILING_RECONCILIATION",
+        "operatorEvidenceStatus": "SOURCE_REPORTED_PRIMARY_OR_PORTFOLIO",
+        "authority": "SOURCE_REFERENCE_WITH_CURRENT_STATUS_CAVEAT",
+        "equityControlCountry": "PNG",
+        "operatorContractId": "OPCONTRACT_SITE_PNG_porgera_gold_mine"
+      },
+      "operation": {
+        "status": "RESTARTED_AND_OPERATING_AS_REPORTED_2024_2026_CONTEXT",
+        "operationalStatus": "RESTARTED_AND_OPERATING_AS_REPORTED_2024_2026_CONTEXT",
+        "realWorldStatus": "RESTARTED_AND_OPERATING_AS_REPORTED_2024_2026_CONTEXT",
+        "extractionMethod": "OPEN_PIT_AND_UNDERGROUND_GOLD_MINING",
+        "extractionEligibility": "SIMULATED_GAMEPLAY_EXECUTABLE_SUBJECT_TO_RUNTIME_GATES",
+        "commercialExtraction": true,
+        "siteCommissioningLevel": 0,
+        "mineLevel": 0,
+        "statusAuthority": "SOURCE_REPORTED_IDENTITY_AND_STATUS; PLAYER_SIMULATION_STATE_REMAINS_SEPARATE",
+        "gameplayConstructionAllowed": true
+      },
+      "processing": {
+        "upstreamProcess": "OPEN_PIT_AND_UNDERGROUND_GOLD_MINING",
+        "midstreamProcess": "COMMODITY_SPECIFIC_BENEFICIATION_AND_GRADE_CONTROL",
+        "refinedOutputs": [
+          "gold concentrate",
+          "doré"
+        ],
+        "downstreamSectors": [
+          "bullion",
+          "jewellery",
+          "electronics"
+        ]
+      },
+      "logistics": {
+        "warehouseCountryId": "PNG",
+        "warehouseSiteId": "WH-PNG-RAW",
+        "inventoryRouteStatus": "REQUIRES_RUNTIME_ROUTE_VALIDATION",
+        "factoryRouteStatus": "REQUIRES_FACTORY_COMPATIBILITY_CHECK",
+        "routeStatus": "REGIONAL_ROUTE_TO_BE_PLANNED",
+        "transport": {
+          "routeId": "ROUTE_SITE_PNG_porgera_gold_mine_RAW_TO_FACTORY",
+          "routeType": "ROAD_RAIL",
+          "originSiteId": "SITE_PNG_porgera_gold_mine",
+          "originCountryId": "PNG",
+          "warehouseId": "WH-PNG-RAW",
+          "destinationFactoryId": "AUTO_SELECT_COMPATIBLE_FACTORY",
+          "destinationCountryId": "PNG",
+          "distanceKm": null,
+          "averageSpeedKmPerDay": null,
+          "estimatedTravelDays": null,
+          "routeStatus": "UNPLANNED_REQUIRES_RUNTIME_ROUTING",
+          "canBeBlockedByWar": true,
+          "canBeBlockedByNeighborControl": true,
+          "canBeBlockedByNavalInterdiction": true,
+          "strategicRouteNotRoadSurvey": true,
+          "routeCapacityPerDay": null
+        }
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": "TONNES_ORE",
+          "status": "UNOBSERVED",
+          "basis": "No reconciled site-specific reserve estimate promoted"
+        },
+        "production": {
+          "annual": null,
+          "annualUnit": "TROY_OUNCES_PER_YEAR",
+          "rate": null,
+          "unit": "TONNES_PER_DAY",
+          "status": "UNOBSERVED",
+          "basis": "Current reported facts are preserved separately and not promoted into quantitative authority"
+        },
+        "grade": {
+          "value": null,
+          "unit": "PERCENT",
+          "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": "PERCENT",
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": "TONNES_PER_DAY",
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": "PERCENT",
+          "status": "UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": "TONNES_PER_DAY",
+          "status": "UNOBSERVED"
+        },
+        "quantitativeProvenance": {
+          "authority": "SOURCE_REPORTED_IDENTITY_WITH_UNKNOWN_MEASUREMENTS_PRESERVED",
+          "measuredReservePromoted": false,
+          "simulatedReserveSeparate": true,
+          "sourceUrls": [
+            "https://www.barrick.com/operations/porgera/default.aspx"
+          ],
+          "accessed": "2026-10-20"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "recovery": "UNOBSERVED",
+          "throughput": "UNOBSERVED",
+          "purity": "UNOBSERVED",
+          "overall": "IDENTITY_AND_GAMEPLAY_SEED_ONLY"
+        }
+      },
+      "reserve": {
+        "quantity": 79000000,
+        "unit": "TONNES_ORE",
+        "status": "SIMULATED",
+        "basis": "MINEPLAY_SCENARIO_SEED_ONLY_NOT_A_GEOLOGICAL_RESERVE",
+        "authority": "SIMULATION_SCENARIO_ONLY",
+        "generatedAt": "2026-10-20"
+      },
+      "simulation": {
+        "simulationOnly": true,
+        "reserve": {
+          "quantity": 79000000,
+          "unit": "TONNES_ORE",
+          "status": "SIMULATED",
+          "basis": "MINEPLAY_SCENARIO_SEED_ONLY_NOT_A_GEOLOGICAL_RESERVE",
+          "authority": "SIMULATION_SCENARIO_ONLY",
+          "generatedAt": "2026-10-20"
+        },
+        "reserveHorizonYears": null,
+        "reserveAuthority": "GAMEPLAY_SEED_ONLY",
+        "nominalDailyCapacity": null,
+        "minimumDailyCapacity": null,
+        "maximumDailyCapacity": null,
+        "productionRate": null,
+        "productionRateUnit": "TONNES_PER_DAY",
+        "utilization": 0.65,
+        "recovery": 0.72,
+        "transportRoute": [
+          {
+            "routeId": "SIM_ROUTE:PNG:SITE_PNG_porgera_gold_mine",
+            "mode": "truck",
+            "transportMode": "truck",
+            "distanceKm": null,
+            "estimatedTravelDays": null,
+            "status": "SIMULATED_ROUTE_REQUIRES_RUNTIME_PLAN",
+            "blockableByWar": true,
+            "blockableByNeighborControl": true,
+            "blockableByNavalInterdiction": true,
+            "countryIsolationKey": "PNG"
+          }
+        ],
+        "rawWarehouseId": "WH-PNG-RAW",
+        "factoryBinding": {
+          "factoryId": null,
+          "countryId": "PNG",
+          "inputResourceId": "gold",
+          "status": "REQUIRES_COMPATIBLE_FACTORY_BOOTSTRAP",
+          "authority": "RUNTIME"
+        },
+        "gameplayConstructionAllowed": true
+      },
+      "map": {
+        "markerEligible": true,
+        "countryIsolationKey": "PNG",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+      },
+      "runtime": {
+        "identityAuthority": "COUNTRY_MINEPLAY_SUPPLEMENT_V1",
+        "quantityAuthority": "SIMULATED",
+        "productionAuthority": "SIMULATED",
+        "requiresFactoryBinding": true,
+        "requiresSiteSpecificRoute": true,
+        "sourceStatusIsNotGameplayCommissioning": true
+      },
+      "sourceReference": {
+        "sourcePath": "https://www.barrick.com/operations/porgera/default.aspx",
+        "sourceType": "OPERATOR_PRIMARY",
+        "accessed": "2026-10-20",
+        "facts": {},
+        "statusNote": "Source identity/status is separate from simulated reserve and player-owned assets."
+      },
+      "sources": [
+        {
+          "url": "https://www.barrick.com/operations/porgera/default.aspx",
+          "sourceType": "OPERATOR_PRIMARY",
+          "accessed": "2026-10-20",
+          "scope": "site_identity_commodity_location_and_source_reported_status"
+        }
+      ],
+      "observedFacts": {
+        "reportedStatus": "RESTARTED_AND_OPERATING_AS_REPORTED_2024_2026_CONTEXT",
+        "owner": "Joint venture with State and landowner participation; verify current equity and licence records",
+        "operator": "Porgera Joint Venture / Barrick Niugini",
+        "resource": "Gold",
+        "region": "Porgera, Enga Province",
+        "facts": {},
+        "authority": "SOURCE_REPORTED_NOT_FULLY_RECONCILED"
+      }
     }
-  ]
+  ],
+  "updatedAt": "2026-10-20",
+  "changeSummary": {
+    "totalSiteCount": 44,
+    "totalCountryCount": 22,
+    "addedSiteCount": 14,
+    "coordinateCorrection": "SITE_ZMB_mopani_copper_mines"
+  }
 }
