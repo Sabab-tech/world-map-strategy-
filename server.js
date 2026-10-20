@@ -23,6 +23,7 @@ const __dirname = path.dirname(__filename);
 const INDEX_PATH = path.join(__dirname, 'index.html');
 const CANDIDATE_MODELS = ['gemini-2.5-flash','gemini-2.0-flash'];
 const resourceDecisionAiRateLimits = new Map();
+const ministerConsultRateLimits = new Map();
 const AI_INTEGRITY_SCRIPT = '<script src="/omega_ai_integrity_layer.js"></script>';
 const HEALTH_LOGO_SCRIPT = '<script src="/health-ministry-logo.js"></script>';
 const MINISTRY_REGISTRY_SCRIPT = '<script src="/omega_ministry_registry.js"></script>';
@@ -162,6 +163,105 @@ app.get('/api/minister-candidates', (req, res) => {
 });
 
 app.get('/api/ai/status', (req, res) => { const hasKey = !!process.env.GEMINI_API_KEY; res.json({ ok: true, aiAvailable: hasKey, models: CANDIDATE_MODELS, primaryModel: CANDIDATE_MODELS[0], resourceDecisionAI: { endpoint: '/api/resource-decision/ai-evaluate', configured: hasKey, inputQuestions: 12, authority: 'OMEGA_SERVER_RESOURCE_DECISION_AI' }, integrityLayer: '2.1.0', ministerStateSystem: '1.0.0', deepCore: OfflineQueryEngine?.VERSION || null, semanticRuntime: { authority: ProductionSemanticRuntime?.VERSION || null, diagnostics: ProductionSemanticRuntime?.diagnostics?.() || canonicalSemanticRuntime }, cognitiveBridge: { authority: OmegaReasoningDispatcher?.VERSION || null, full40: OmegaReasoningDispatcher?.full40 === true }, timestamp: new Date().toISOString() }); });
+
+app.post('/api/ai/minister-consult', async (req, res) => {
+  const body = req.body && typeof req.body === 'object' ? req.body : {};
+  const question = String(body.prompt || '').trim();
+  if (!question) return res.status(400).json({ ok: false, status: 'INVALID_REQUEST', error: 'PROMPT_REQUIRED' });
+  if (question.length > 12000) return res.status(413).json({ ok: false, status: 'INVALID_REQUEST', error: 'PROMPT_TOO_LARGE' });
+
+  const now = Date.now();
+  const clientKey = String(req.ip || req.socket?.remoteAddress || 'unknown');
+  let rate = ministerConsultRateLimits.get(clientKey);
+  if (!rate || now - rate.windowStartedAt >= 60_000) rate = { windowStartedAt: now, count: 0 };
+  if (rate.count >= 20) {
+    return res.status(429).json({ ok: false, status: 'RATE_LIMITED', error: 'MINISTER_CONSULT_RATE_LIMIT' });
+  }
+  rate.count += 1;
+  ministerConsultRateLimits.set(clientKey, rate);
+  if (ministerConsultRateLimits.size > 2048) {
+    for (const [key, value] of ministerConsultRateLimits) {
+      if (now - value.windowStartedAt >= 120_000) ministerConsultRateLimits.delete(key);
+      if (ministerConsultRateLimits.size <= 2048) break;
+    }
+  }
+
+  const apiKey = String(process.env.GEMINI_API_KEY || '').trim();
+  if (!apiKey) {
+    return res.status(503).json({
+      ok: false, status: 'UNAVAILABLE', aiPowered: false,
+      error: 'GEMINI_API_KEY_NOT_CONFIGURED',
+      message: 'Server-side minister AI is not configured; the client may use its deterministic offline fallback.'
+    });
+  }
+
+  const language = String(body.language || '').toLowerCase() === 'bn' ? 'bn' : 'en';
+  const ministerContext = body.ministerContext && typeof body.ministerContext === 'object' ? body.ministerContext : {};
+  const history = (Array.isArray(body.conversationHistory) ? body.conversationHistory : [])
+    .slice(-12)
+    .map(row => ({
+      role: String(row?.role || 'user').toLowerCase() === 'assistant' ? 'assistant' : 'user',
+      content: String(row?.content || '').slice(0, 2000)
+    }))
+    .filter(row => row.content);
+  const simulationContext = {
+    country: {
+      countryCode: String(body.countryCode || body.countryId || 'UNKNOWN'),
+      countryName: String(body.countryName || 'Not recorded')
+    },
+    ministryId: String(body.ministryId || ministerContext.ministryId || 'Not recorded'),
+    minister: {
+      id: String(body.ministerId || ministerContext.ministerId || 'Not recorded'),
+      name: String(body.ministerName || 'Not recorded'),
+      role: String(body.ministerRole || ministerContext.role || 'Not recorded'),
+      runtime: ministerContext.runtime || body.gameState?.ministerRuntime || {},
+      learning: ministerContext.learning || body.gameState?.ministerLearning || {},
+      capability: ministerContext.effectiveCapability ?? body.gameState?.ministerCapability ?? null
+    },
+    dialogueIntent: body.dialogueIntent || ministerContext.dialogueIntent || null,
+    gameState: body.gameState && typeof body.gameState === 'object' ? body.gameState : {},
+    canonicalContextPacket: body.canonicalContextPacket || null,
+    conversationHistory: history
+  };
+  let contextJSON = '{}';
+  try { contextJSON = JSON.stringify(simulationContext, null, 2).slice(0, 24000); }
+  catch (_) { contextJSON = '{"context":"UNSERIALIZABLE_CONTEXT_OMITTED"}'; }
+
+  const prompt = [
+    'You are the appointed minister inside the OMEGA geopolitical simulation.',
+    'Answer in ' + (language === 'bn' ? 'Bengali' : 'English') + '.',
+    'Use the supplied minister identity, current runtime, learning record, conversation history, canonical context packet, and game state as simulation context.',
+    'Do not invent absent facts, numeric values, country records, prior actions, or capabilities. Label estimates and explicitly say when required information is not recorded.',
+    'Provide analysis and advice only. Never claim that a policy, order, recruitment, payment, or world-state change has been executed.',
+    'Respect the dialogue intent when one is supplied. Give a clear recommendation and concise reasoning when asked; include risks, dependencies, and uncertainty when relevant.',
+    'PLAYER QUESTION:\n' + question,
+    'SIMULATION CONTEXT (JSON):\n' + contextJSON
+  ].join('\n\n');
+
+  try {
+    const client = new GoogleGenAI({ apiKey });
+    let lastError = null;
+    for (const model of CANDIDATE_MODELS) {
+      try {
+        const response = await client.models.generateContent({ model, contents: prompt });
+        const answer = String(response?.text || '').trim();
+        if (answer) return res.status(200).json({ ok: true, status: 'ANSWERED', aiPowered: true, model, language, text: answer });
+        lastError = new Error('EMPTY_MINISTER_AI_RESPONSE');
+      } catch (error) { lastError = error; }
+    }
+    console.error('[OMEGA Minister AI] Provider failure:', lastError?.message || 'NO_MODEL_RESPONSE');
+    return res.status(502).json({
+      ok: false, status: 'FAILED', aiPowered: false,
+      error: 'MINISTER_AI_PROVIDER_FAILED',
+      message: 'Minister AI did not produce a usable response; use the deterministic offline fallback.'
+    });
+  } catch (error) {
+    console.error('[OMEGA Minister AI] Request failed:', error?.message || error);
+    return res.status(502).json({ ok: false, status: 'FAILED', aiPowered: false, error: 'MINISTER_AI_REQUEST_FAILED' });
+  }
+});
+
+
 
 app.post('/api/resource-decision/ai-evaluate', async (req, res) => {
   const now = Date.now();
