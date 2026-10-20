@@ -178,6 +178,8 @@ test('all canonical country and territory identities build a non-error behaviour
   const signatures = new Set();
   const failures = [];
   let scoredCountries = 0;
+  let countriesWithMultipleKnownActions = 0;
+  let countriesWithDistinctAlternativeScores = 0;
   for (const row of countries) {
     const profile = behavior.getBehaviorProfile(row.iso3 || row.countryCode);
     if (!profile || profile.status === 'ENGINE_ERROR') {
@@ -194,17 +196,29 @@ test('all canonical country and territory identities build a non-error behaviour
           'every scored dimension declares availability and source for ' + row.name);
       }
     }
-    const actionScore = adaptive.scoreAction(row.iso3 || row.countryCode, 'EFFICIENCY');
-    const actionProfile = adaptive.profile(row.iso3 || row.countryCode);
-    const expectedKnown = adaptive.ACTION_DIMENSIONS.EFFICIENCY.some(key =>
-      actionProfile.dimensions[key]?.value !== null && actionProfile.dimensions[key]?.value !== undefined) ||
-      actionProfile.actionPreferences?.EFFICIENCY?.value !== undefined;
-    assert.equal(actionScore.known, expectedKnown, 'action-score availability should reflect evidence for ' + row.name);
-    if (actionScore.known) {
-      assert.ok(Number.isFinite(actionScore.score) && actionScore.score >= 0 && actionScore.score <= 1);
-      assert.ok(Number.isFinite(actionScore.confidence) && actionScore.confidence >= 0 && actionScore.confidence <= 1);
-      assert.ok(Number.isFinite(actionScore.rawScore) && actionScore.rawScore >= 0 && actionScore.rawScore <= 1);
+    const countryId = row.iso3 || row.countryCode;
+    const actionProfile = adaptive.profile(countryId);
+    const actionCodes = ['EFFICIENCY', 'HOUSING_BUILD', 'MILITARY_EQUIP', 'TREATY_NEGOTIATION'];
+    const actionScores = actionCodes.map(action => ({ action, result: adaptive.scoreAction(countryId, action) }));
+    const knownScores = [];
+    for (const { action, result } of actionScores) {
+      const expectedKnown = (adaptive.ACTION_DIMENSIONS[action] || []).some(key =>
+        actionProfile.dimensions[key]?.value !== null && actionProfile.dimensions[key]?.value !== undefined) ||
+        actionProfile.actionPreferences?.[action]?.value !== undefined;
+      assert.equal(result.known, expectedKnown,
+        'candidate-score availability should reflect this country’s evidence for ' + row.name + '/' + action);
+      if (result.known) {
+        assert.ok(Number.isFinite(result.score) && result.score >= 0 && result.score <= 1,
+          'country-specific action score must be normalised for ' + row.name + '/' + action);
+        assert.ok(Number.isFinite(result.confidence) && result.confidence >= 0 && result.confidence <= 1,
+          'country-specific action confidence must be normalised for ' + row.name + '/' + action);
+        assert.ok(Number.isFinite(result.rawScore) && result.rawScore >= 0 && result.rawScore <= 1,
+          'unadjusted candidate score must remain inspectable for ' + row.name + '/' + action);
+        knownScores.push(result.score);
+      }
     }
+    if (knownScores.length > 1) countriesWithMultipleKnownActions += 1;
+    if (new Set(knownScores.map(value => value.toFixed(5))).size > 1) countriesWithDistinctAlternativeScores += 1;
     scoredCountries += 1;
     signatures.add(JSON.stringify({
       status: profile.status,
@@ -214,7 +228,11 @@ test('all canonical country and territory identities build a non-error behaviour
     }));
   }
   assert.deepEqual(failures, [], 'no country-specific runtime profile should throw');
-  assert.equal(scoredCountries, countries.length, 'each canonical country must traverse identity -> behaviour profile -> action score');
+  assert.equal(scoredCountries, countries.length, 'each canonical country must traverse identity -> behaviour profile -> multiple candidate action scores');
+  assert.ok(countriesWithMultipleKnownActions > 20,
+    'candidate scoring should evaluate multiple evidence-backed actions for representative countries');
+  assert.ok(countriesWithDistinctAlternativeScores > 10,
+    'country-specific evidence should change the relative scores of alternative actions where evidence differs');
   assert.ok(signatures.size > 20, 'country records should produce differentiated runtime signatures, not a common preset');
 });
 
