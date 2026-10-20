@@ -85,6 +85,7 @@ const registry = {
 const languageSystem = {
   VERSION: 'TEST_LANGUAGE',
   diagnostics() { return { ready: true }; },
+  sourceData(path) { return path === 'offline_language_vocabulary.json' ? languageVocabulary : null; },
   setContext(value) { contextUpdates.push(value); },
   parse(question, context) {
     return { raw: question, surface: question, language: /[\u0980-\u09FF]/.test(question) ? 'bn' : 'en',
@@ -137,6 +138,14 @@ assert.equal(pipeline.resolveContext({ countryId: 'BGD', ministryId: 'finance', 
 activeMinisterForScope = minister;
 
 (async () => {
+  const intentContext = pipeline.resolveContext({ countryId: 'BGD', ministryId: 'finance', ministerId: minister.ministerId });
+  const intentResult = await pipeline.prepareLanguage('গোয়েন্দা ব্রিফিং দাও', intentContext);
+  assert.equal(intentResult.parsed.dialogueIntent.intent, 'MINISTER_INTELLIGENCE');
+  assert.equal(intentResult.parsed.dialogueIntent.action, 'INTELLIGENCE_BRIEFING');
+  assert.equal(intentResult.parsed.dialogueIntent.operation, 'ASSESS_SECURITY');
+  assert.equal(intentResult.parsed.dialogueIntent.source, 'offline_language_vocabulary.json',
+    'Minister dialogue intent must come from the language dataset, not a hardcoded phrase list.');
+
   const answer = await pipeline.ask('বাজেটের ঝুঁকি কত?', {
     countryId: 'BGD',
     countryCode: 'BGD',
