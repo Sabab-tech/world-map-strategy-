@@ -2780,6 +2780,25 @@ const _omegaExport = (function (globalScope) {
       const mRole = (minister && minister.role) || (countryDetails.ministers && countryDetails.ministers[mId] && countryDetails.ministers[mId].role) || 'Cabinet Minister';
       const countryName = countryDetails.name || countryKey;
       const gameRes = typeof window !== 'undefined' ? (window.resources || {}) : {};
+      const parsedIntent = minister && minister.parsedIntent && typeof minister.parsedIntent === 'object' ? minister.parsedIntent : {};
+      const dialogueIntent = parsedIntent.dialogueIntent && typeof parsedIntent.dialogueIntent === 'object' ? parsedIntent.dialogueIntent : null;
+      const ministryId = minister && (minister.ministryId || minister.profile?.ministryId) || '';
+      const ministerContext = {
+        ministerId: mId,
+        ministryId,
+        role: mRole,
+        runtime: minister?.runtime && typeof minister.runtime === 'object' ? minister.runtime : {},
+        learning: minister?.learning && typeof minister.learning === 'object' ? minister.learning : {},
+        effectiveCapability: Number.isFinite(Number(minister?.effectiveCapability)) ? Number(minister.effectiveCapability) : null,
+        dialogueIntent: dialogueIntent ? {
+          intent: dialogueIntent.intent || null,
+          operation: dialogueIntent.operation || null,
+          action: dialogueIntent.action || null,
+          phrase: dialogueIntent.phrase || null,
+          matchedLanguage: dialogueIntent.matchedLanguage || (isBn ? 'bn' : 'en')
+        } : null
+      };
+      const conversationHistory = Array.isArray(minister?.recentConversation) ? minister.recentConversation.slice(-12) : [];
 
       try {
         if (typeof fetch === 'function') {
@@ -2796,11 +2815,19 @@ const _omegaExport = (function (globalScope) {
               ministerRole: mRole,
               countryName: countryName,
               countryCode: countryDetails.countryCode || 'BGD',
+              ministryId,
+              dialogueIntent: ministerContext.dialogueIntent,
+              ministerContext,
+              conversationHistory,
               prompt: questionText,
               language: isBn ? 'bn' : 'en',
               gameState: {
                 cash: gameRes.cash,
-                reserves: gameRes
+                reserves: gameRes,
+                countryDetails,
+                ministerRuntime: ministerContext.runtime,
+                ministerLearning: ministerContext.learning,
+                ministerCapability: ministerContext.effectiveCapability
               }
             })
           });
