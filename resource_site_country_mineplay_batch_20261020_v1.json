@@ -5802,11 +5802,11 @@
         "adminRegion": "Mufulira and Kitwe, Copperbelt Province",
         "locality": "Mufulira and Kitwe, Copperbelt Province",
         "coordinates": {
-          "lat": -12.55,
-          "lng": 28.24
+          "lat": -12.81,
+          "lng": 28.2
         },
         "coordinateStatus": "REGIONAL_APPROXIMATION",
-        "coordinateAuthority": "REGIONAL LOCATION REPORTED BY SOURCE; COORDINATE IS APPROXIMATE, NOT SURVEY GRADE",
+        "coordinateAuthority": "REGIONAL APPROXIMATION ADJUSTED TO AVOID DUPLICATE MARKER WITH Mufulira mine; NOT SURVEY GRADE",
         "coordinatePrecision": "REGIONAL_APPROXIMATION",
         "countryBoundaryKey": "ZMB"
       },
