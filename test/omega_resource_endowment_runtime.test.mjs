@@ -360,7 +360,10 @@ const expandedCommercialCatalogIds=legacyExpansionRows
   .filter(site=>site?.operation?.commercialExtraction===true&&site?.map?.markerEligible!==false&&
     !site?.runtime?.aliasOfSiteId&&!legacyCanonicalAliasIds.has(String(site?.siteId||'')))
   .map(site=>String(site.siteId));
-const commercialCatalogIds=[...new Set([...baseCommercialCatalogIds,...expandedCommercialCatalogIds])];
+const mineplayCommercialCatalogIds=mineplayScenario.records
+  .filter(site=>site?.operation?.commercialExtraction===true&&site?.map?.markerEligible!==false)
+  .map(site=>String(site.siteId));
+const commercialCatalogIds=[...new Set([...baseCommercialCatalogIds,...expandedCommercialCatalogIds,...mineplayCommercialCatalogIds])];
 const canonicalSiteIds=new Set((globalThis.OmegaResourceSiteCanonicalCatalogData?.sites||[]).map(x=>x.siteId).filter(Boolean));
 const executedProfileSiteIds=new Set(siteLinkedExecutionOutputs.map(x=>x.siteReferenceKey).filter(x=>canonicalSiteIds.has(x)));
 const missingCommercialSiteIds=commercialCatalogIds.filter(siteId=>!executedProfileSiteIds.has(siteId));
