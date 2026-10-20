@@ -25,7 +25,7 @@ const CORE_ASSETS = [
   "./omega_home_ministry_budget_ui_v2.js", "./omega_home_ministry_world_police_runtime_v1.js",
   "./omega_home_ministry_police_operations_ui_v1.js", "./omega_home_ministry_police_capability_runtime_v1.js",
   "./omega_home_ministry_police_capability_recommendations_v1.json", "./omega_home_ministry_police_capability_material_requirements_v1.json", "./omega_home_ministry_country_police_baseline_v1.json",
-  "./omega_battlefield_command_runtime_v1.js", "./military_command_catalog_v1.json"
+  "./omega_battlefield_command_runtime_v1.js", "./military_command_catalog_v1.json", "./resource_industrial_catalog_v1.json"
 ];
 
 function isLocalAppUrl(value) {
