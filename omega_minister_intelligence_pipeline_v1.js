@@ -670,8 +670,14 @@
 
   function shouldHandleQuestion(overrides, question) {
     if (!text(question)) return false;
-    const context = resolveContext(overrides || {});
-    return !!(context.ministerId && context.isActiveMinister);
+    const input = overrides && typeof overrides === 'object' ? overrides : {};
+    const requestedMinisterId = text(input.ministerId || input.ministerID || '');
+    if (requestedMinisterId && !getCanonicalState(requestedMinisterId) && !getLegacyState(requestedMinisterId)) return false;
+    const context = resolveContext(input);
+    // Keep questions inside a selected ministry on the minister route even if
+    // its chair is vacant, so the player gets an explicit recruitment notice
+    // instead of a generic AI pretending to speak for a minister.
+    return !!(context.ministryId && (context.isActiveMinister || !context.ministerId));
   }
 
   function onCanonicalRecruit(eventObject) {
