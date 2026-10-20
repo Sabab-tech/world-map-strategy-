@@ -116,6 +116,12 @@ window.EducationEngine = (() => {
     // -------------------------------------------------------------------------
     // 2. MAIN DASHBOARD RENDERER
     // -------------------------------------------------------------------------
+    function compactDisplayNumber(value) {
+        const n = Number(value), formatter = window.OmegaNumberFormat;
+        if (!Number.isFinite(n)) return String(value == null ? '' : value);
+        return formatter && typeof formatter.compact === 'function' ? formatter.compact(n) : n.toLocaleString();
+    }
+
     function renderDashboard(ministryObj, containerEl) {
         const countryKey = (window.OmegaCabinetUI && window.OmegaCabinetUI.activeCountry) || window.activeCountry || 'BANGLADESH';
         state.activeCountry = countryKey;
@@ -258,8 +264,8 @@ window.EducationEngine = (() => {
                             </div>
 
                             <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; background:rgba(15,23,42,0.6); padding:8px; border-radius:6px; font-size:11px;">
-                                <div><span style="color:#94a3b8;">Student Cap:</span> <strong style="color:#f8fafc;">${inst.capacity.toLocaleString()}</strong></div>
-                                <div><span style="color:#94a3b8;">Annual Grads:</span> <strong style="color:#10b981;">${inst.graduates.toLocaleString()}</strong></div>
+                                <div><span style="color:#94a3b8;">Student Cap:</span> <strong style="color:#f8fafc;">${compactDisplayNumber(inst.capacity)}</strong></div>
+                                <div><span style="color:#94a3b8;">Annual Grads:</span> <strong style="color:#10b981;">${compactDisplayNumber(inst.graduates)}</strong></div>
                                 <div><span style="color:#94a3b8;">Research Score:</span> <strong style="color:#a855f7;">${inst.researchScore}/100</strong></div>
                                 <div><span style="color:#94a3b8;">Node Status:</span> <strong style="color:#00e5ff;">${inst.status}</strong></div>
                             </div>
@@ -419,7 +425,7 @@ window.EducationEngine = (() => {
         const metrics = calculateTalentMigration(data);
         const pools = data.talentPools;
         const isNetGain = metrics.netBrainFlow >= 0;
-        const netFlowFormatted = (metrics.netBrainFlow >= 0 ? '+' : '') + metrics.netBrainFlow.toLocaleString();
+        const netFlowFormatted = (metrics.netBrainFlow >= 0 ? '+' : '') + compactDisplayNumber(metrics.netBrainFlow);
 
         return `
             <div style="display:flex; flex-direction:column; gap:16px;">
@@ -482,8 +488,8 @@ window.EducationEngine = (() => {
                     </div>
 
                     <div style="display:flex; justify-content:space-between; font-size:11px; color:#cbd5e1; background:rgba(0,0,0,0.4); padding:8px 12px; border-radius:6px; flex-wrap:wrap; gap:6px;">
-                        <span>Total Incoming Experts: <strong style="color:#10b981;">+${metrics.totalIncoming.toLocaleString()} / yr</strong></span>
-                        <span>Total Emigrating Experts: <strong style="color:#ef4444;">-${metrics.totalOutgoing.toLocaleString()} / yr</strong></span>
+                        <span>Total Incoming Experts: <strong style="color:#10b981;">+${compactDisplayNumber(metrics.totalIncoming)} / yr</strong></span>
+                        <span>Total Emigrating Experts: <strong style="color:#ef4444;">-${compactDisplayNumber(metrics.totalOutgoing)} / yr</strong></span>
                         <span>Migration Score Index: <strong style="color:#38bdf8;">${metrics.migrationScore}/100</strong></span>
                     </div>
                 </div>
@@ -503,7 +509,7 @@ window.EducationEngine = (() => {
                                     <span style="font-size:10px; padding:2px 6px; border-radius:4px; font-weight:bold; background:${isSurplus ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)'}; color:${isSurplus ? '#10b981' : '#ef4444'};">${pool.status}</span>
                                 </div>
                                 <div style="display:flex; justify-content:space-between; align-items:baseline;">
-                                    <div style="font-size:22px; font-weight:800; color:#f8fafc; font-family:'Share Tech Mono',monospace;">${pool.count.toLocaleString()}</div>
+                                    <div style="font-size:22px; font-weight:800; color:#f8fafc; font-family:'Share Tech Mono',monospace;">${compactDisplayNumber(pool.count)}</div>
                                     <div style="font-size:12px; font-weight:bold; color:${isSurplus ? '#10b981' : '#ef4444'}; font-family:'Share Tech Mono',monospace;">${netFlowStr}/yr</div>
                                 </div>
                                 <div style="display:flex; justify-content:space-between; font-size:10px; color:#94a3b8;">

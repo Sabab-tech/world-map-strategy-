@@ -43,7 +43,10 @@
     if (value === null || value === undefined || value === '') return 'Unavailable';
     if (typeof value === 'object') return shortJson(value);
     const n = Number(value);
-    return Number.isFinite(n) ? n.toLocaleString() + (unit || '') : esc(value);
+    if (!Number.isFinite(n)) return esc(value);
+    const format=g.OmegaNumberFormat;
+    const output=format&&typeof format.compact==='function'?format.compact(n):n.toLocaleString();
+    return output + (unit || '');
   }
   function shortJson(value) {
     try { return esc(JSON.stringify(value)); } catch (_) { return 'Unavailable'; }

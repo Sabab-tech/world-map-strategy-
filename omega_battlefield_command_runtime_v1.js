@@ -450,7 +450,11 @@
     emit('OMEGA_MILITARY_BATTLE_RESOLVED', clone(battle));
     return { ok: true, battle: battle, playerState: clone(playerState), targetState: clone(enemyState) };
   }
-  function formatMoney(v) { var n = num(v); return n === null ? 'Unavailable' : '$' + Math.round(n).toLocaleString('en-US'); }
+  function formatMoney(v) {
+    var n=num(v),format=g.OmegaNumberFormat;
+    if(n===null)return 'Unavailable';
+    return format&&typeof format.money==='function'?format.money(n,{unavailable:'Unavailable'}):'$'+Math.round(n).toLocaleString('en-US');
+  }
   function runtimeDataDiagnostics() {
     return { version: VERSION, ready: ready, countryCount: data.countries.length, cityCountryCount: data.cities.length,
       countriesWithoutCityRecords: Math.max(0, data.countries.length - data.cities.length), catalogAvailable: !!data.catalog,
@@ -513,7 +517,7 @@
   }
   function stateSummaryCards(s, profile) {
     var snap = defenseBudgetSnapshot(profile, s);
-    return '<div class="obfc-grid"><article class="obfc-card"><div class="obfc-label">Active personnel</div><div class="obfc-num">' + Math.round(s.personnel).toLocaleString() + '</div><p>Source: ' + esc(s.personnelSource || 'SAVED_GAME_STATE') + '</p></article>' +
+    return '<div class="obfc-grid"><article class="obfc-card"><div class="obfc-label">Active personnel</div><div class="obfc-num">' + (g.OmegaNumberFormat&&g.OmegaNumberFormat.compact?g.OmegaNumberFormat.compact(s.personnel):Math.round(s.personnel).toLocaleString()) + '</div><p>Source: ' + esc(s.personnelSource || 'SAVED_GAME_STATE') + '</p></article>' +
       '<article class="obfc-card"><div class="obfc-label">Readiness</div><div class="obfc-num">' + Math.round(s.readiness) + ' / 100</div><p>Readiness is a game-simulation measure, not a real-world capability rating.</p></article>' +
       '<article class="obfc-card"><div class="obfc-label">Equipment types</div><div class="obfc-num">' + Object.keys(s.equipment || {}).filter(function (id) { return (num(s.equipment[id]) || 0) > 0; }).length + '</div><p>Inventory source: ' + esc(s.equipmentSource || 'SAVED_OR_MODELED') + '</p></article>' +
       '<article class="obfc-card"><div class="obfc-label">Defense budget</div><div class="obfc-num">' + esc(snap.available ? formatMoney(snap.parentRemainingUsd) : 'Unavailable') + '</div><p>' + esc(snap.available ? 'Parent allocation remaining' : snap.reason) + '</p></article></div>';
@@ -562,9 +566,9 @@
       '<label class="obfc-label" for="obfc-target-country">OPPONENT COUNTRY</label><select id="obfc-target-country" class="obfc-field obfc-select">' + profileOptions(countryKey(target)) + '</select>' +
       '<div class="obfc-form-row"><div><label class="obfc-label" for="obfc-terrain-filter">THEATER FILTER</label><select id="obfc-terrain-filter" class="obfc-field">' +
       [['all','All theaters'],['urban','Urban cities'],['rural','Rural regions'],['coastal','Coastal'],['industrial','Industrial'],['mountain','Mountain'],['border','Border'],['military','Military zones'],['capital','Capitals']].map(function (o) { return '<option value="' + o[0] + '"' + (uiState.terrainFilter === o[0] ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') +
-      '</select></div><div><label class="obfc-label">AVAILABLE FORCE</label><div class="obfc-num">' + Math.round(s.personnel).toLocaleString() + ' personnel</div><div class="obfc-muted">' + esc(s.personnelSource || 'SAVED_STATE') + '</div></div></div>' +
+      '</select></div><div><label class="obfc-label">AVAILABLE FORCE</label><div class="obfc-num">' + (g.OmegaNumberFormat&&g.OmegaNumberFormat.compact?g.OmegaNumberFormat.compact(s.personnel):Math.round(s.personnel).toLocaleString()) + ' personnel</div><div class="obfc-muted">' + esc(s.personnelSource || 'SAVED_STATE') + '</div></div></div>' +
       '<div class="obfc-grid">' + filtered.map(function (t) {
-        var isSelected = selected && selected.id === t.id, ctl = enemy.cityControl && enemy.cityControl[t.id], ruralPop = t.populationEstimate === null ? 'No rural-population baseline' : 'Estimated rural population: ' + Math.round(t.populationEstimate).toLocaleString();
+        var isSelected = selected && selected.id === t.id, ctl = enemy.cityControl && enemy.cityControl[t.id], ruralPop = t.populationEstimate === null ? 'No rural-population baseline' : 'Estimated rural population: ' + (g.OmegaNumberFormat&&g.OmegaNumberFormat.compact?g.OmegaNumberFormat.compact(t.populationEstimate):Math.round(t.populationEstimate).toLocaleString());
         return '<button type="button" class="obfc-terrain ' + (isSelected ? 'is-selected' : '') + '" data-obfc-theater="' + esc(t.id) + '">' +
           '<span class="obfc-label">' + esc(t.group === 'rural' ? 'RURAL / MODELED' : t.terrainLabel) + '</span><h3>' + esc(t.name) + '</h3>' +
           '<div class="obfc-muted">' + esc(t.role) + ' · ' + esc(t.source) + '</div>' +
@@ -605,7 +609,7 @@
       if (q && costNode) q.oninput = function () { costNode.textContent = formatMoney((num(q.value) || 0) * data.catalog.economy.recruitmentCostPerSoldierUsd); };
       rec.onclick = function () {
         var result = recruit(q && q.value);
-        setStatus(result.ok ? 'Recruited ' + Number(result.quantity).toLocaleString() + ' personnel. Treasury and Defense personnel budget were charged.' :
+        setStatus(result.ok ? 'Recruited ' + (g.OmegaNumberFormat&&g.OmegaNumberFormat.compact?g.OmegaNumberFormat.compact(result.quantity):Number(result.quantity).toLocaleString()) + ' personnel. Treasury and Defense personnel budget were charged.' :
           'Recruitment rejected: ' + String(result.message || result.code || 'UNKNOWN_ERROR') + '. No recruitment was added.', result.ok ? 'ok' : 'error');
         render();
       };
@@ -614,7 +618,7 @@
       button.onclick = function () {
         var id = button.getAttribute('data-obfc-buy'), q = modal.querySelector('#obfc-buy-' + id);
         var result = purchase(id, q && q.value);
-        setStatus(result.ok ? 'Procurement completed: ' + Number(result.quantity).toLocaleString() + ' × ' + id + '. Cost: ' + formatMoney(result.costUsd) + '.' :
+        setStatus(result.ok ? 'Procurement completed: ' + (g.OmegaNumberFormat&&g.OmegaNumberFormat.compact?g.OmegaNumberFormat.compact(result.quantity):Number(result.quantity).toLocaleString()) + ' × ' + id + '. Cost: ' + formatMoney(result.costUsd) + '.' :
           'Procurement rejected: ' + String(result.message || result.code || 'UNKNOWN_ERROR') + '. No equipment was added.', result.ok ? 'ok' : 'error');
         render();
       };

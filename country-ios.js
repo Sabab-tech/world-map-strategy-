@@ -237,7 +237,8 @@ window.CountryIOS = {
         const value = this.readCountryValue(countryKey, domains, paths);
         if (value === null || value === undefined || value === '') return 'NOT RECORDED';
         if (typeof value === 'number') {
-            const formatted = value.toLocaleString(undefined, { maximumFractionDigits: 2 });
+            const formatter=window.OmegaNumberFormat;
+            const formatted = formatter && typeof formatter.compact === 'function' ? formatter.compact(value) : value.toLocaleString(undefined, { maximumFractionDigits: 2 });
             return unit ? formatted + ' ' + unit : formatted;
         }
         const text = String(value);
@@ -759,7 +760,7 @@ window.CountryIOS = {
             const number = typeof value === 'number' ? value :
                 (typeof value === 'string' && /^-?\\d+(?:\\.\\d+)?$/.test(value.trim()) ? Number(value) : null);
             return number !== null && Number.isFinite(number)
-                ? number.toLocaleString(undefined, { maximumFractionDigits: 2 }) : 'NOT RECORDED';
+                ? (window.OmegaNumberFormat && typeof window.OmegaNumberFormat.compact === 'function' ? window.OmegaNumberFormat.compact(number) : number.toLocaleString(undefined, { maximumFractionDigits: 2 })) : 'NOT RECORDED';
         };
         const numericObserved = value => value !== null && value !== undefined && value !== '' &&
             Number.isFinite(typeof value === 'number' ? value : (typeof value === 'string' && /^-?\\d+(?:\\.\\d+)?$/.test(value.trim()) ? Number(value) : NaN));
@@ -830,7 +831,7 @@ window.CountryIOS = {
                         <div class="ios-card" style="padding:8px 10px;">
                             <div class="ios-card-title">CAPITAL & LAND AREA</div>
                             <div class="ios-card-val" style="font-size:12px; color:#00e5ff;">${geo.capital || 'N/A'}</div>
-                            <div class="ios-card-sub">${geo.landAreaKm2 ? geo.landAreaKm2.toLocaleString() + ' km²' : 'Land Area'}</div>
+                            <div class="ios-card-sub">${geo.landAreaKm2 ? (window.OmegaNumberFormat && window.OmegaNumberFormat.compact ? window.OmegaNumberFormat.compact(geo.landAreaKm2) : geo.landAreaKm2.toLocaleString()) + ' km²' : 'Land Area'}</div>
                         </div>
                         <div class="ios-card" style="padding:8px 10px;">
                             <div class="ios-card-title">RICHNESS CLASS</div>
