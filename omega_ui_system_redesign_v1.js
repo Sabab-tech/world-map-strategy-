@@ -406,9 +406,13 @@
       const cabinetUI = global.OmegaCabinetUI;
       if (cabinetUI && typeof cabinetUI.renderCabinet === 'function') cabinetUI.renderCabinet(activeCountry());
 
+      const opened = visible(cabinet);
       const dock = doc.getElementById('omega-ministry-entry');
-      if (dock) dock.setAttribute('data-last-open-result', 'opened');
-      return visible(cabinet);
+      if (dock) dock.setAttribute('data-last-open-result', opened ? 'opened' : 'failed');
+      if (!opened && typeof global.showOmegaNotification === 'function') {
+        global.showOmegaNotification('MINISTRY ENTRY FAILED', 'Cabinet was requested but did not become visible. Check OMEGA diagnostics for the runtime error.', 'danger');
+      }
+      return opened;
     } catch (error) {
       const dock = doc.getElementById('omega-ministry-entry');
       if (dock) dock.setAttribute('data-last-open-result', 'failed');
