@@ -42,6 +42,7 @@
   let finance = null;
   let profiles = [];
   let byId = new Map();
+  let ambiguousAliases = new Set();
   let byISO3 = new Map();
   let byISO2 = new Map();
   let ambiguousISO3 = new Set();
@@ -81,7 +82,7 @@
   }
   function codeOf(profile) { return String(profile && (profile.countryCode || profile.iso3 || profile.code) || '').trim().toUpperCase(); }
   function iso3Of(profile) { return String(profile && (profile.iso3 || profile.countryCode || profile.code) || '').trim().toUpperCase(); }
-  function iso2Of(profile) { return String(profile && profile.iso2 || '').trim().toUpperCase(); }
+  function iso2Of(profile) { const code = String(profile && (profile.iso2 || profile.countryCode) || '').trim().toUpperCase(); return code.length === 2 ? code : ''; }
   function dateValue(value) {
     const n = finite(value);
     if (n !== null) return n;
@@ -152,16 +153,30 @@
     return bank;
   }
   function resolveProfile(value) {
-    if (value && typeof value === 'object') value = value.countryCode || value.iso3 || value.code || value.name || value.id;
+    if (value && typeof value === 'object') value = value.iso3 || value.iso2 || value.countryCode || value.code || value.name || value.id;
     const raw = String(value == null ? '' : value).trim();
     if (!raw) return null;
+    const upper = raw.toUpperCase();
+    if (/^[A-Z]{3}$/.test(upper)) {
+      if (ambiguousISO3.has(upper)) return null;
+      const exact3 = byISO3.get(upper);
+      if (exact3) return exact3;
+    }
+    if (/^[A-Z]{2}$/.test(upper)) {
+      if (ambiguousISO2.has(upper)) return null;
+      const exact2 = byISO2.get(upper);
+      if (exact2) return exact2;
+    }
+    if (ambiguousAliases.has(upper) || ambiguousAliases.has(norm(raw))) return null;
+    const exact = byId.get(upper) || byId.get(norm(raw));
+    if (exact) return exact;
     try {
       if (finance && typeof finance.resolveCountry === 'function') {
         const profile = finance.resolveCountry(raw);
         if (profile) return profile;
       }
     } catch (_) {}
-    return byId.get(raw.toUpperCase()) || byId.get(norm(raw)) || null;
+    return null;
   }
   function playerProfile() {
     try {
@@ -183,6 +198,7 @@
   }
   function buildProfileIndex() {
     byId = new Map();
+    ambiguousAliases = new Set();
     byISO3 = new Map();
     byISO2 = new Map();
     ambiguousISO3 = new Set();
@@ -199,9 +215,22 @@
       }
       index.set(key, profile);
     }
+    function addAlias(value, profile) {
+      const keys = [String(value || '').trim().toUpperCase(), norm(value)].filter(Boolean);
+      for (const key of keys) {
+        if (ambiguousAliases.has(key)) continue;
+        const previous = byId.get(key);
+        if (previous && previous !== profile) {
+          byId.delete(key);
+          ambiguousAliases.add(key);
+        } else {
+          byId.set(key, profile);
+        }
+      }
+    }
     profiles.forEach(profile => {
       [profile.name, profile.countryCode, profile.iso3, profile.iso2, profile.numericCode, profile.economyKey]
-        .filter(Boolean).forEach(value => { byId.set(String(value).toUpperCase(), profile); byId.set(norm(value), profile); });
+        .filter(Boolean).forEach(value => addAlias(value, profile));
       addExact(byISO3, ambiguousISO3, profile.iso3, profile);
       addExact(byISO2, ambiguousISO2, profile.iso2 || (String(profile.countryCode || '').length === 2 ? profile.countryCode : ''), profile);
     });
@@ -979,7 +1008,7 @@
           const map = {};
           rows.forEach(row => {
             if (!row) return;
-            const profile = matchProfileForISO(row.id || row.iso3Code, row.iso2Code);
+            const profile = matchProfileForISO(row.iso3Code, row.iso2Code || row.id);
             if (!profile) return;
             map[codeOf(profile)] = {
               id: row.id || iso3Of(profile),
