@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 globalThis.fetch = async input => {
-  const relative = String(input).replace(/^\\.?\\//, '').split(/[?#]/)[0];
+  const relative = String(input).replace(/^\.\//, '').split(/[?#]/)[0];
   const fullPath = path.resolve(repoRoot, relative);
   if (!fullPath.startsWith(repoRoot + path.sep)) return { ok:false, status:403, json:async()=>{throw new Error('PATH_OUTSIDE_REPO');} };
   try {
