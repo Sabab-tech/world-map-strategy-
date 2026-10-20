@@ -119,6 +119,7 @@ const CANONICAL_AI_SCRIPTS = Object.freeze([
   'omega_cognitive_engine.js',
   'omega_reasoning_dispatcher.js',
   'omega_universal_ai_runtime.js',
+  'omega_minister_intelligence_pipeline_v1.js',
   'omega_ai_context_bridge.js',
   'omega_resource_country_boundary_guard.js',
   'omega_resource_site_integrity_v1.js',
@@ -159,7 +160,7 @@ if (!globalThis.__omegaUniversalIndexInjection) {
       if (!err && typeof data === 'string' && /(?:^|[\\/])index\.html$/i.test(String(file))) {
         let html = String(data);
         for (const name of CANONICAL_AI_SCRIPTS) html = html.replace(canonicalTags(name), '');
-        const additions = CANONICAL_AI_SCRIPTS.map(name => `    <script src="${name}" defer></script>`).join('\n');
+        const additions = CANONICAL_AI_SCRIPTS.map(name => `    <script src="/${name}" defer></script>`).join('\n');
         if (!html.includes('</body>')) {
           return callback(new Error('[OMEGA BOOT] index.html has no </body> insertion point'), data);
         }

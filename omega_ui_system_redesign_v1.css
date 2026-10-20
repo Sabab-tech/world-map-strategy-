@@ -822,3 +822,81 @@ body.modal-open #top-status-bar {
   pointer-events: none !important;
 }
 
+
+
+/* MAP MINISTRY ENTRY FIX
+ * Restore the compact map-corner action. The responsive redesign must not
+ * turn its transparent one-button dock into a long horizontal navigation bar.
+ */
+#ui-engine-root .ui-bottom-navigation {
+  position: fixed !important;
+  top: auto !important;
+  right: auto !important;
+  bottom: calc(12px + var(--omega-safe-bottom)) !important;
+  left: 12px !important;
+  transform: none !important;
+  box-sizing: border-box !important;
+  width: 42px !important;
+  min-width: 42px !important;
+  max-width: 42px !important;
+  height: 42px !important;
+  min-height: 42px !important;
+  max-height: 42px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  gap: 0 !important;
+  justify-content: center !important;
+  align-items: center !important;
+  flex-wrap: nowrap !important;
+  overflow: visible !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 50% !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  z-index: 1200 !important;
+}
+
+#ui-engine-root .ui-bottom-navigation #btn-ministry-dock {
+  box-sizing: border-box !important;
+  position: relative !important;
+  flex: 0 0 42px !important;
+  width: 42px !important;
+  min-width: 42px !important;
+  max-width: 42px !important;
+  height: 42px !important;
+  min-height: 42px !important;
+  max-height: 42px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0 !important;
+  border-radius: 50% !important;
+  touch-action: manipulation !important;
+  user-select: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+  transform: none !important;
+}
+
+#ui-engine-root .ui-bottom-navigation #btn-ministry-dock .nav-icon {
+  display: block !important;
+  margin: 0 !important;
+  line-height: 1 !important;
+}
+
+#ui-engine-root .ui-bottom-navigation #btn-ministry-dock .nav-text {
+  display: none !important;
+}
+
+#ui-engine-root .ui-bottom-navigation #btn-ministry-dock::before,
+#ui-engine-root .ui-bottom-navigation #btn-ministry-dock::after {
+  content: none !important;
+  display: none !important;
+}
+
+#ui-engine-root .ui-bottom-navigation #btn-ministry-dock:active {
+  transform: scale(0.96) !important;
+}
