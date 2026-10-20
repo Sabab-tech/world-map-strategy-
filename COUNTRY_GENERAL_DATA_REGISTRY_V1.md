@@ -79,3 +79,12 @@ The test suite verifies:
 - missing resource context stays unknown rather than becoming an empty-resource assertion;
 - metric coverage totals reconcile to 249; and
 - no duplicate deletion occurred.
+
+
+## Runtime consumption and opponent gameplay integration
+
+The browser runtime in omega_country_general_data_runtime_v1.js decodes the existing ordered-array registry in place. It does not maintain a second country facts file. Country Overview reads that shared registry to render general facts, economic/demographic indicators, governance, military expenditure, source/year labels, resource context and available city-catalogue counts.
+
+OMEGA's opponent adaptive strategy runtime consumes the same decoded country record. Explicit country doctrine/strategy values remain authoritative; formula-derived behaviour dimensions fill only missing dimensions. Derived values are labelled DERIVED_HEURISTIC and keep source metric names and observation years as evidence. These are gameplay priors inferred from measurements, not claims that any single indicator directly measures national intent.
+
+Trade dependence is derived only when GDP, exports and imports have matching non-null observation years. Missing or mismatched observations remain unobserved. Current simulated Game.state and validated execution contracts remain authoritative; reference registry values never directly overwrite simulation state.
