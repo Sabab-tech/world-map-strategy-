@@ -187,6 +187,9 @@ activeMinisterForScope = minister;
 
   assert.ok(server.includes('MINISTER_INTELLIGENCE_PIPELINE_SCRIPT'));
   assert.ok(server.includes('omega_minister_intelligence_pipeline_v1.js'));
+  assert.ok(server.includes("app.post('/api/ai/minister-consult'"), 'A real server-side minister AI endpoint must exist.');
+  assert.ok(server.includes('PROMPT_REQUIRED') && server.includes('GEMINI_API_KEY_NOT_CONFIGURED'),
+    'The minister AI endpoint must validate input and declare an explicit offline fallback state.');
   assert.ok(bootstrap.includes("'omega_minister_intelligence_pipeline_v1.js'"));
   assert.ok(universal.includes("source:'MINISTER_INTELLIGENCE_PIPELINE'"));
   assert.ok(universal.indexOf('const ministerPipeline=global.OmegaMinisterIntelligencePipeline') < universal.indexOf('const conversation=localConversation(question)'),
@@ -197,6 +200,8 @@ activeMinisterForScope = minister;
     'Communication must prefer the canonical state registry.');
   assert.ok(cognitiveSource.includes('dialogueIntent: ministerContext.dialogueIntent'),
     'The cognitive AI request must receive the vocabulary-resolved minister dialogue intent.');
+  assert.ok(!cognitiveSource.includes("countryDetails.countryCode || 'BGD'"),
+    'The cognitive AI client must not silently substitute Bangladesh for a missing country code.');
   assert.ok(cognitiveSource.includes('ministerRuntime: ministerContext.runtime') &&
     cognitiveSource.includes('ministerLearning: ministerContext.learning') &&
     cognitiveSource.includes('conversationHistory'),
