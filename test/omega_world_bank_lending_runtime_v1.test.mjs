@@ -192,11 +192,9 @@ test('contract interest accrues once per turn and scheduled debt service reduces
   assert.ok(early.paidUsd > 0);
   const loan = api.getLoans('BGD')[0];
   assert.ok(loan.accruedInterestUsd < accrued + 1e-3);
-  loan.ageYears = 6;
-  loan.graceYears = 0;
   const priorPrincipal = loan.outstandingPrincipalUsd;
   const priorAvailableCapacity = api.getFacilitySnapshot().availableCapacityUsd;
-  api.accrueInterest('BGD', 1, 3);
+  api.accrueInterest('BGD', 6, 3);
   const regular = api.serviceDebt('BGD', 1, 10e9, 100e9, 3);
   assert.equal(regular.ok, true);
   assert.ok(regular.paidUsd > 0);
