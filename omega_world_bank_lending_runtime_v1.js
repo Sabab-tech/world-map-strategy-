@@ -53,6 +53,10 @@
   let observer = null;
   let uiState = { search: '', notice: null, tab: 'overview' };
   let uiRoot = null;
+  let renderQueued = false;
+  let renderForcePending = false;
+  let assessmentQueued = false;
+  let forceAssessmentPending = false;
 
   const isObject = value => !!value && typeof value === 'object' && !Array.isArray(value);
   const own = (object, key) => !!object && Object.prototype.hasOwnProperty.call(object, key);
@@ -553,18 +557,20 @@
     const denom = 1 - Math.pow(1 + r, -n);
     return denom > 0 ? p * r / denom : p / n;
   }
-  function bankLedger(row) {
+  function bankLedger(row, silent) {
     const bank = store(true);
     const entry = Object.assign({ turn: currentTurn(), timestamp: new Date().toISOString() }, clone(row || {}));
     bank.ledger.push(entry);
     bank.ledger = bank.ledger.slice(-MAX_LOAN_LEDGER);
     bank.history.push(entry);
     bank.history = bank.history.slice(-MAX_HISTORY);
-    try {
-      if (typeof global.dispatchEvent === 'function' && typeof global.CustomEvent === 'function') {
-        global.dispatchEvent(new global.CustomEvent('OMEGA_WORLD_BANK_LENDING_UPDATED', { detail: clone(entry) }));
-      }
-    } catch (_) {}
+    if (!silent) {
+      try {
+        if (typeof global.dispatchEvent === 'function' && typeof global.CustomEvent === 'function') {
+          global.dispatchEvent(new global.CustomEvent('OMEGA_WORLD_BANK_LENDING_UPDATED', { detail: clone(entry) }));
+        }
+      } catch (_) {}
+    }
     return entry;
   }
   function evaluateAll(force) {
@@ -575,7 +581,7 @@
     const root = rootState();
     const facility = getFacilitySnapshot(bank);
     const next = {};
-    let eligible = 0, conditional = 0, insufficient = 0;
+    let eligible = 0, conditional = 0, insufficient = 0, materialChangeCount = 0;
     for (const profile of profiles) {
       const assessment = scoreCountry(profile, { root: root, bank: bank, facility: facility });
       if (!assessment) continue;
@@ -584,25 +590,40 @@
       else if (assessment.decision === 'CONDITIONAL') conditional++;
       else if (assessment.decision === 'DATA_INSUFFICIENT') insufficient++;
       const previous = bank.assessmentsByCountry[assessment.countryCode];
+      const previousScore = finite(previous && previous.score);
+      const currentScore = finite(assessment.score);
+      const previousLimit = Math.max(0, finite(previous && previous.maxLoanUsd) || 0);
+      const currentLimit = Math.max(0, finite(assessment.maxLoanUsd) || 0);
       const materiallyChanged = !previous
         || previous.decision !== assessment.decision
-        || (finite(previous.score) === null) !== (finite(assessment.score) === null)
-        || (finite(previous.score) !== null && Math.abs(previous.score - assessment.score) >= 1)
-        || Math.abs((finite(previous.maxLoanUsd) || 0) - (finite(assessment.maxLoanUsd) || 0)) >= 1000000;
-      if (materiallyChanged) bankLedger({
-        type: 'COUNTRY_CREDIT_ASSESSMENT', countryCode: assessment.countryCode,
-        countryName: assessment.countryName, decision: assessment.decision,
-        creditScore: assessment.score, confidencePct: assessment.confidencePct,
-        suggestedFacilityUsd: assessment.maxLoanUsd
-      });
+        || (previousScore === null) !== (currentScore === null)
+        || (previousScore !== null && currentScore !== null && Math.abs(previousScore - currentScore) >= 2)
+        || Math.abs(previousLimit - currentLimit) >= Math.max(50000000, previousLimit * 0.01);
+      if (materiallyChanged) {
+        bankLedger({
+          type: 'COUNTRY_CREDIT_ASSESSMENT', countryCode: assessment.countryCode,
+          countryName: assessment.countryName, decision: assessment.decision,
+          creditScore: assessment.score, confidencePct: assessment.confidencePct,
+          suggestedFacilityUsd: assessment.maxLoanUsd
+        }, true);
+        materialChangeCount++;
+      }
     }
     bank.assessmentsByCountry = next;
     bank.lastEvaluatedTurn = turnNumber;
     bank.lastEvaluatedAt = new Date().toISOString();
     bank.lastEvaluationSummary = {
       ok: true, turn: turnNumber, countriesAssessed: Object.keys(next).length,
-      eligible: eligible, conditional: conditional, insufficient: insufficient
+      eligible: eligible, conditional: conditional, insufficient: insufficient,
+      materiallyChangedCountries: materialChangeCount
     };
+    if (materialChangeCount > 0) {
+      try {
+        if (typeof global.dispatchEvent === 'function' && typeof global.CustomEvent === 'function') {
+          global.dispatchEvent(new global.CustomEvent('OMEGA_WORLD_BANK_ASSESSMENTS_UPDATED', { detail: clone(bank.lastEvaluationSummary) }));
+        }
+      } catch (_) {}
+    }
     return clone(bank.lastEvaluationSummary);
   }
   function getLoanList(value) {
@@ -1737,9 +1758,40 @@
     return true;
   }
   function queueRender(force) {
+    renderForcePending = renderForcePending || !!force;
+    if (renderQueued) return;
     if (typeof global.setTimeout === 'function') {
-      global.setTimeout(() => renderPanel(!!force), 0);
-    } else renderPanel(!!force);
+      renderQueued = true;
+      global.setTimeout(() => {
+        const doForce = renderForcePending;
+        renderQueued = false;
+        renderForcePending = false;
+        renderPanel(doForce);
+      }, 0);
+    } else {
+      const doForce = renderForcePending;
+      renderForcePending = false;
+      renderPanel(doForce);
+    }
+  }
+  function scheduleAssessment(force) {
+    forceAssessmentPending = forceAssessmentPending || !!force;
+    if (assessmentQueued) return;
+    if (typeof global.setTimeout !== 'function') {
+      const runForce = forceAssessmentPending;
+      forceAssessmentPending = false;
+      evaluateAll(runForce);
+      queueRender(true);
+      return;
+    }
+    assessmentQueued = true;
+    global.setTimeout(() => {
+      const runForce = forceAssessmentPending;
+      assessmentQueued = false;
+      forceAssessmentPending = false;
+      evaluateAll(runForce);
+      queueRender(true);
+    }, 0);
   }
   function installUiEvents() {
     const content = global.document && global.document.getElementById && global.document.getElementById('ministry-dashboard-content');
@@ -1905,11 +1957,15 @@
         refreshWorldBankData(false).catch(() => {});
         queueRender(true);
       });
-      global.addEventListener && global.addEventListener('OMEGA_FINANCE_STATE_UPDATED', function () {
-        evaluateAll(true);
+      global.addEventListener && global.addEventListener('OMEGA_FINANCE_STATE_UPDATED', function (event) {
+        const detail = event && event.detail || {};
+        scheduleAssessment(!!detail.action);
         queueRender(true);
       });
       global.addEventListener && global.addEventListener('OMEGA_WORLD_BANK_LENDING_UPDATED', function () {
+        queueRender(true);
+      });
+      global.addEventListener && global.addEventListener('OMEGA_WORLD_BANK_ASSESSMENTS_UPDATED', function () {
         queueRender(true);
       });
       try {
