@@ -109,6 +109,8 @@ assert.ok(pipeline, 'The new pipeline must register its public API.');
 assert.equal(pipeline.VERSION, '1.0.0');
 assert.equal(pipeline.shouldHandleQuestion({ countryId: 'BGD', ministryId: 'finance', ministerId: minister.ministerId }, 'বাজেটের ঝুঁকি কত?'), true);
 assert.equal(pipeline.shouldHandleQuestion({ countryId: 'BGD', ministryId: 'finance', ministerId: 'unknown' }, 'What is the budget risk?'), false);
+assert.equal(pipeline.shouldHandleQuestion({ countryId: 'SAU', ministryId: 'foreign_affairs', ministerId: minister.ministerId }, 'Give me an intelligence briefing'), false,
+  'A minister assigned to one country/ministry must not answer for another country/ministry.');
 
 (async () => {
   const answer = await pipeline.ask('বাজেটের ঝুঁকি কত?', {
