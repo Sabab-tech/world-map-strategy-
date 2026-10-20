@@ -12,7 +12,7 @@ const clamp=(v,a=0,b=1)=>n(v)===null?null:Math.max(a,Math.min(b,n(v)));
 const norm=v=>str(v).normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/&/g,' AND ').replace(/[_'-]+/g,' ').replace(/[^A-Z0-9]+/gi,' ').trim().toUpperCase().replace(/\s+/g,' ');
 const obj=v=>!!v&&typeof v==='object'&&!Array.isArray(v);
 const currentYear=()=>new Date().getUTCFullYear();
-function inferredSourceConfidence(value,status,sourceId,sourceName,method,persisted){
+function inferredSourceConfidence(value,status,sourceId,sourceName,method,year,persisted){
  if(n(value)===null)return 0;
  const saved=clamp(persisted);
  if(saved!==null)return saved;
@@ -24,6 +24,7 @@ function inferredSourceConfidence(value,status,sourceId,sourceName,method,persis
  else if(/MODELED|MODELLED|SIMULATION|GAMEPLAY|LOCAL_/.test(st))confidence=.46;
  else if(source)confidence=.58;
  if(!source)confidence=Math.min(confidence,.32);
+ if(n(year)===null)confidence=Math.min(confidence,.68);
  return Number(Math.max(0,Math.min(1,confidence)).toFixed(3));
 }
 function metricFreshness(year){
@@ -69,7 +70,7 @@ function decode(row){
  const schema=s.schema,enc=s.data.metadata.provenanceEncoding||{},identity=map(schema.identityFields,row.identity),generalFacts=map(schema.generalFactFields,row.generalFacts),metrics=map(schema.metricFields,row.metrics),a=row.metricMetadata||{},metricMetadata={};
  schema.metricFields.forEach((k,i)=>{
   const observedYear=n(a.years?.[i]),status=code(enc.statuses,a.statusCodes?.[i]),sourceId=code(enc.sourceIds,a.sourceCodes?.[i]),sourceName=code(enc.sourceNames,a.sourceNameCodes?.[i]),method=code(enc.methods,a.methodCodes?.[i]),value=metrics[k];
-  const sourceConfidence=inferredSourceConfidence(value,status,sourceId,sourceName,method,a.confidenceScores?.[i]);
+  const sourceConfidence=inferredSourceConfidence(value,status,sourceId,sourceName,method,observedYear,a.confidenceScores?.[i]);
   const freshness=value===null?0:metricFreshness(observedYear);
   metricMetadata[k]={year:observedYear,status,sourceId,sourceName,method,sourceUrl:a.sourceUrls?.[i]??null,note:a.notes?.[i]??null,sourceConfidence,freshness,confidence:Number((sourceConfidence*freshness).toFixed(3)),dataGap:inferredDataGap(value,status,sourceId,sourceName,observedYear,a.dataGaps?.[i]),isCurrentGameState:false};
  });
