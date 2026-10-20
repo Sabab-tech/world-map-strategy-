@@ -41,6 +41,10 @@
   let finance = null;
   let profiles = [];
   let byId = new Map();
+  let byISO3 = new Map();
+  let byISO2 = new Map();
+  let ambiguousISO3 = new Set();
+  let ambiguousISO2 = new Set();
   let initialized = false;
   let initPromise = null;
   let refreshPromise = null;
@@ -168,10 +172,44 @@
   }
   function buildProfileIndex() {
     byId = new Map();
+    byISO3 = new Map();
+    byISO2 = new Map();
+    ambiguousISO3 = new Set();
+    ambiguousISO2 = new Set();
+    function addExact(index, ambiguous, code, profile) {
+      const key = String(code || '').trim().toUpperCase();
+      if (!key) return;
+      if (ambiguous.has(key)) return;
+      const previous = index.get(key);
+      if (previous && previous !== profile) {
+        index.delete(key);
+        ambiguous.add(key);
+        return;
+      }
+      index.set(key, profile);
+    }
     profiles.forEach(profile => {
       [profile.name, profile.countryCode, profile.iso3, profile.iso2, profile.numericCode, profile.economyKey]
         .filter(Boolean).forEach(value => { byId.set(String(value).toUpperCase(), profile); byId.set(norm(value), profile); });
+      addExact(byISO3, ambiguousISO3, profile.iso3, profile);
+      addExact(byISO2, ambiguousISO2, profile.iso2 || (String(profile.countryCode || '').length === 2 ? profile.countryCode : ''), profile);
     });
+  }
+  function findLiveEconomy(profile, root) {
+    root = root || rootState();
+    if (!profile || !profile.economyKey || !isObject(root.economy)) return null;
+    const record = root.economy[profile.economyKey];
+    return isObject(record) ? record : null;
+  }
+  function findLiveFinanceModel(profile, root) {
+    root = root || rootState();
+    if (!profile || !isObject(root.finance)) return null;
+    const keys = [profile.iso3, profile.countryCode].filter(Boolean);
+    for (const key of keys) {
+      const bucket = root.finance[key];
+      if (isObject(bucket) && isObject(bucket.omegaFinance)) return bucket.omegaFinance;
+    }
+    return null;
   }
   function findEconomy(profile, root) {
     root = root || rootState();
@@ -209,53 +247,46 @@
   function referenceValue(reference, key) {
     return finite(reference && reference.data && reference.data[key] && reference.data[key].value);
   }
-  function countryFacts(value) {
+  function countryFacts(value, context) {
     const profile = resolveProfile(value);
     if (!profile) return null;
-    const root = rootState();
-    const economy = findEconomy(profile, root);
-    const indicators = profileIndicators(profile);
-    const model = financeModel(profile);
-    const reference = referenceFor(profile);
-    const refData = reference.data || {};
-    const gdp = finite(economy.gdp) ?? finite(indicators.gdpCurrentUsd) ?? referenceValue(reference, 'gdpUsd');
-    const referenceDebtRatio = referenceValue(reference, 'publicDebtPctGdp');
-    let debt = finite(economy.debt) ?? finite(indicators.publicDebtUsd);
-    if (debt === null && gdp !== null && referenceDebtRatio !== null) debt = gdp * referenceDebtRatio / 100;
-    const debtToGdp = gdp !== null && gdp > 0 && debt !== null
-      ? debt / gdp * 100 : referenceDebtRatio;
-    const growth = finite(economy.gdp_growth) ?? finite(indicators.gdpGrowthPct) ?? referenceValue(reference, 'gdpGrowthPct');
-    const inflation = finite(economy.inflation) ?? finite(indicators.inflationRatePct) ?? referenceValue(reference, 'inflationPct');
-    const unemployment = finite(economy.unemployment_rate) ?? finite(indicators.unemploymentRatePct) ?? referenceValue(reference, 'unemploymentPct');
-    const reserves = finite(economy.reserves) ?? finite(indicators.foreignExchangeReservesUsd) ?? referenceValue(reference, 'reservesUsd');
+    const root = context && context.root || rootState();
+    const economy = findLiveEconomy(profile, root);
+    const model = findLiveFinanceModel(profile, root);
+    const populationRecord = isObject(root.population)
+      ? (root.population[profile.populationKey] || root.population[profile.economyKey] || null) : null;
+    const population = finite(populationRecord && (populationRecord.population || populationRecord.populationCurrent || populationRecord.population_2015))
+      ?? finite(profile.populationValues && profile.populationValues.population_2015);
+    const gdp = finite(economy && economy.gdp);
+    const debt = finite(economy && economy.debt);
+    const debtToGdp = gdp !== null && gdp > 0 && debt !== null ? debt / gdp * 100 : null;
+    const growth = finite(economy && economy.gdp_growth);
+    const inflation = finite(economy && economy.inflation);
+    const unemployment = finite(economy && economy.unemployment_rate);
+    const reserves = finite(economy && economy.reserves);
     const reservesToGdp = gdp !== null && gdp > 0 && reserves !== null ? reserves / gdp * 100 : null;
-    const fiscalBalance = finite(economy.budget_balance) ?? finite(indicators.governmentBudgetBalanceUsd)
-      ?? finite(model.fiscalModel && model.fiscalModel.annualBudgetBalanceUsd);
+    const fiscalBalance = finite(economy && economy.budget_balance)
+      ?? finite(model && model.fiscalModel && model.fiscalModel.annualBudgetBalanceUsd);
     const fiscalBalanceToGdp = gdp !== null && gdp > 0 && fiscalBalance !== null ? fiscalBalance / gdp * 100 : null;
-    const population = finite(profile.populationValues && profile.populationValues.population_2015)
-      ?? finite(indicators.population2015) ?? referenceValue(reference, 'population');
-    const treasury = finite(model.treasuryBalanceUsd)
-      ?? finite(root.finance && root.finance[codeOf(profile)] && root.finance[codeOf(profile)].available)
-      ?? finite(economy.treasury);
-    const meta = isObject(reference.metadata) ? reference.metadata : {};
-    const sourceYears = {};
-    Object.keys(refData).forEach(key => { sourceYears[key] = finite(refData[key] && refData[key].year); });
+    const treasury = finite(model && model.treasuryBalanceUsd)
+      ?? finite(root.finance && root.finance[iso3Of(profile)] && root.finance[iso3Of(profile)].available);
+    const fx = global.OmegaForexMonetaryEngine || (global.Omega && global.Omega.ForexMonetaryEngine) || null;
+    let currencyCode = null, fxRateLocalPerUsd = null;
+    try {
+      if (fx && typeof fx.getCurrencyCode === 'function') currencyCode = fx.getCurrencyCode(profile);
+      if (currencyCode && typeof fx.getRate === 'function') fxRateLocalPerUsd = finite(fx.getRate(currencyCode));
+    } catch (_) {}
     return {
-      countryCode: codeOf(profile), iso3: iso3Of(profile), iso2: iso2Of(profile), name: profile.name,
-      profileStatus: profile.profileStatus || 'UNKNOWN',
+      countryCode: codeOf(profile), iso3: iso3Of(profile), iso2: iso2Of(profile), countryName: profile.name,
+      profileStatus: profile.profileStatus || 'UNKNOWN', simulationDataAvailable: !!economy,
       gdpUsd: gdp, debtUsd: debt, debtToGdpPct: debtToGdp,
       gdpGrowthPct: growth, inflationPct: inflation, unemploymentPct: unemployment,
       reservesUsd: reserves, reservesToGdpPct: reservesToGdp,
       fiscalBalanceUsd: fiscalBalance, fiscalBalanceToGdpPct: fiscalBalanceToGdp,
-      population: population, treasuryUsd: treasury,
-      incomeLevel: meta.incomeLevel && (meta.incomeLevel.value || meta.incomeLevel.id) || null,
-      incomeLevelId: meta.incomeLevel && meta.incomeLevel.id || null,
-      region: meta.region && (meta.region.value || meta.region.id) || null,
-      lendingType: meta.lendingType && (meta.lendingType.value || meta.lendingType.id) || null,
-      lendingTypeId: meta.lendingType && meta.lendingType.id || null,
-      sourceYears: sourceYears,
-      referenceStatus: store(true).reference.status || 'UNAVAILABLE',
-      referenceUpdatedAt: store(true).reference.refreshedAt || null
+      population: population, gdpPerCapitaUsd: gdp !== null && population !== null && population > 0 ? gdp / population : null,
+      treasuryUsd: treasury, currencyCode: currencyCode,
+      fxRateLocalPerUsd: fxRateLocalPerUsd,
+      financeModelAvailable: !!model
     };
   }
   function creditHistory(value) {
@@ -722,10 +753,12 @@
     } catch (_) {}
   }
   function matchProfileForISO(iso3, iso2) {
-    const profile = resolveProfile(iso3) || resolveProfile(iso2);
-    if (profile) return profile;
-    return profiles.find(item => (iso3 && iso3Of(item) === String(iso3).toUpperCase())
-      || (iso2 && iso2Of(item) === String(iso2).toUpperCase())) || null;
+    const a = String(iso3 || '').trim().toUpperCase();
+    const b = String(iso2 || '').trim().toUpperCase();
+    const profile3 = a && !ambiguousISO3.has(a) ? byISO3.get(a) || null : null;
+    const profile2 = b && !ambiguousISO2.has(b) ? byISO2.get(b) || null : null;
+    if (profile3 && profile2 && profile3 !== profile2) return null;
+    return profile3 || profile2 || null;
   }
   async function refreshWorldBankData(force) {
     if (!initialized && !finance) return { ok: false, code: 'WORLD_BANK_RUNTIME_NOT_READY' };
