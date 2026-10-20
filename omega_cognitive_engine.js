@@ -2789,7 +2789,7 @@ const _omegaExport = (function (globalScope) {
         role: mRole,
         runtime: minister?.runtime && typeof minister.runtime === 'object' ? minister.runtime : {},
         learning: minister?.learning && typeof minister.learning === 'object' ? minister.learning : {},
-        effectiveCapability: Number.isFinite(Number(minister?.effectiveCapability)) ? Number(minister.effectiveCapability) : null,
+        effectiveCapability: minister?.effectiveCapability != null && Number.isFinite(Number(minister.effectiveCapability)) ? Number(minister.effectiveCapability) : null,
         dialogueIntent: dialogueIntent ? {
           intent: dialogueIntent.intent || null,
           operation: dialogueIntent.operation || null,
