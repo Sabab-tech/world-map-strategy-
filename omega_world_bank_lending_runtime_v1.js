@@ -1256,12 +1256,23 @@
       }
       processed++;
     }
-    const externalActive = (bank.fundingLoans || []).some(loan =>
+    const activeFunding = (bank.fundingLoans || []).filter(loan =>
       loan && !['REPAID', 'CANCELLED'].includes(String(loan.status || '').toUpperCase()));
-    if (!externalActive && !['RECONCILIATION_REQUIRED'].includes(String(bank.liquidity.institutionStatus || '').toUpperCase())) {
+    const reconciliationPending = activeFunding.some(loan => (finite(loan.unsyncedInterestUsd) || 0) > 0.000001);
+    const overdueFunding = activeFunding.filter(loan => (finite(loan.arrearsUsd) || 0) > 0.01);
+    const maxOverdueDays = overdueFunding.reduce((maximum, loan) =>
+      Math.max(maximum, finite(loan.daysPastDue) || 0), 0);
+    if (reconciliationPending) {
+      bank.liquidity.institutionStatus = 'RECONCILIATION_REQUIRED';
+    } else if (maxOverdueDays >= 360) {
+      bank.liquidity.institutionStatus = 'BANKRUPTCY_PROCEEDING';
+    } else if (maxOverdueDays >= 180) {
+      bank.liquidity.institutionStatus = 'DEFAULTED';
+    } else if (maxOverdueDays > 0) {
+      bank.liquidity.institutionStatus = 'ARREARS';
+    } else {
       bank.liquidity.institutionStatus = 'ACTIVE';
-      if (bank.liquidity.institutionInsolvency && bank.liquidity.institutionInsolvency.status !== 'RECONCILIATION_REQUIRED')
-        bank.liquidity.institutionInsolvency.resolvedTurn = turn;
+      if (bank.liquidity.institutionInsolvency) bank.liquidity.institutionInsolvency.resolvedTurn = turn;
       delete bank.liquidity.institutionInsolvency;
     }
     bank.lastInstitutionTurn = turn;
