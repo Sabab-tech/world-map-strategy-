@@ -1590,6 +1590,35 @@ async function main() {
     const code = list.indexOf(value);
     return code < 0 ? -1 : code;
   };
+  // Confidence is source quality; runtime applies observation-age decay separately.
+  const metricSourceConfidence = (value, meta) => {
+    if (finite(value) === null) return 0;
+    const status = String(meta?.status || 'MISSING').toUpperCase();
+    const sourceId = String(meta?.sourceId || '').trim();
+    const sourceName = String(meta?.sourceName || '').trim();
+    let confidence = 0.32;
+    if (status === 'WORLD_BANK_API_OBSERVATION') confidence = 0.92;
+    else if (status === 'DERIVED_SAME_YEAR_OBSERVATIONS') confidence = 0.80;
+    else if (status === 'SOURCE_OBSERVATION') confidence = 0.84;
+    else if (/MODELED|MODELLED|SIMULATION|GAMEPLAY|LOCAL_/.test(status)) confidence = 0.46;
+    else if (sourceId || sourceName) confidence = 0.58;
+    if (!sourceId && !sourceName) confidence = Math.min(confidence, 0.32);
+    if (finite(meta?.year) === null) confidence = Math.min(confidence, 0.68);
+    return Number(Math.max(0, Math.min(1, confidence)).toFixed(3));
+  };
+  const metricDataGap = (value, meta) => {
+    const status = String(meta?.status || 'MISSING').toUpperCase();
+    if (finite(value) === null) {
+      if (status.includes('SOURCE_REFRESH_FAILED')) return 'SOURCE_REFRESH_FAILED';
+      if (status.includes('NO_SOURCE_OBSERVATION')) return 'NO_SOURCE_OBSERVATION';
+      return 'MISSING_OBSERVATION';
+    }
+    if (!meta?.sourceId && !meta?.sourceName) return 'SOURCE_METADATA_MISSING';
+    if (finite(meta?.year) === null) return 'OBSERVATION_YEAR_UNKNOWN';
+    if (/NOT_EXTERNALLY_REVALIDATED|LEGACY/.test(status)) return 'LEGACY_SOURCE_NOT_REVALIDATED';
+    if (/MODELED|MODELLED|SIMULATION|GAMEPLAY|LOCAL_/.test(status)) return 'UNVERIFIED_OR_MODELLED_SOURCE';
+    return null;
+  };
   registry.metadata.recordSchema = {
     encoding: 'ORDERED_VALUE_ARRAYS_V1',
     description: 'Each group array follows its listed field names in order. Metric positions follow fieldCatalogue. Provenance integer codes decode with metadata.provenanceEncoding. All source observations are retained; null is never zero.',
@@ -1597,7 +1626,7 @@ async function main() {
     generalFactFields: factFields,
     factSourceStatusFields: ['restCountries', 'worldBankMetadata'],
     metricFields: METRIC_CATALOGUE.map((field) => field.key),
-    metricProvenanceFields: ['years', 'statusCodes', 'sourceCodes', 'sourceNameCodes', 'methodCodes', 'sourceUrls', 'notes'],
+    metricProvenanceFields: ['years', 'statusCodes', 'sourceCodes', 'sourceNameCodes', 'methodCodes', 'sourceUrls', 'notes', 'confidenceScores', 'dataGaps'],
     legacySnapshotFields: ['baselineYear', 'rawFinancialRegistry', 'economyGlobalProfile'],
     rawFinancialRegistryFields: ['baselineYear', 'rawIndicatorValues', 'derivedIndicatorValues'],
     economyGlobalProfileFields: ['profileStatus', 'economyKey', 'populationKey', 'indicatorValues', 'metricAvailabilityValues', 'provenance'],
@@ -1646,7 +1675,9 @@ async function main() {
       sourceNameCodes: METRIC_CATALOGUE.map((field) => codeOf(sourceNames, row.metricMetadata[field.key]?.sourceName || '')),
       methodCodes: METRIC_CATALOGUE.map((field) => codeOf(methods, row.metricMetadata[field.key]?.method || 'NONE')),
       sourceUrls: METRIC_CATALOGUE.map((field) => row.metricMetadata[field.key]?.sourceUrl || null),
-      notes: METRIC_CATALOGUE.map((field) => row.metricMetadata[field.key]?.note || null)
+      notes: METRIC_CATALOGUE.map((field) => row.metricMetadata[field.key]?.note || null),
+      confidenceScores: METRIC_CATALOGUE.map((field) => metricSourceConfidence(row.metrics[field.key], row.metricMetadata[field.key])),
+      dataGaps: METRIC_CATALOGUE.map((field) => metricDataGap(row.metrics[field.key], row.metricMetadata[field.key]))
     },
     legacySnapshots: [
       row.legacySnapshots.baselineYear,
