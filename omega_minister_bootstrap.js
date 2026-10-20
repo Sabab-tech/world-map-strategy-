@@ -6,9 +6,9 @@
   if(global.OmegaMinisterBootstrap?.version==='1.4.0') return;
 
   const scripts=[
-    {src:'/minister_behavior_engine.js',ready:()=>!!global.OmegaMinisterBehavior},
-    {src:'/omega_minister_integration.js',ready:()=>!!global.OmegaMinisterIntegration},
-    {src:'/minister_communication_engine.js',ready:()=>!!global.OmegaMinisterCommunication}
+    {src:'minister_behavior_engine.js',ready:()=>!!global.OmegaMinisterBehavior},
+    {src:'omega_minister_integration.js',ready:()=>!!global.OmegaMinisterIntegration},
+    {src:'minister_communication_engine.js',ready:()=>!!global.OmegaMinisterCommunication}
   ];
   const pendingScripts=new Map();
   let attempts=0,started=false,booting=null,retryTimer=null;
@@ -55,7 +55,7 @@
 
   async function loadConfig(registry){
     try{
-      const response=await fetch('/minister_system_config.json',{cache:'no-store'});
+      const response=await fetch('minister_system_config.json',{cache:'no-store'});
       if(response.ok){
         const config=await response.json();
         global.OmegaMinisterRuntimeConfig=config;
@@ -64,7 +64,7 @@
     }catch(error){console.warn('[Minister Bootstrap] optional config load:',error.message);}
   }
   async function loadMinisters(ui){
-    const response=await fetch('/ministers.json',{cache:'no-store'});
+    const response=await fetch('ministers.json',{cache:'no-store'});
     if(!response.ok)throw new Error('Minister profile request failed: HTTP '+response.status);
     const raw=await response.json();
     const db=raw.ministers_database||raw.ministers||{};
