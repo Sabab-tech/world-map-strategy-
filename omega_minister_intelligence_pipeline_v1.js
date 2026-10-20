@@ -505,7 +505,19 @@
           timeHorizon: 'CURRENT'
         });
         const answer = extractText(result);
-        if (answer) return { ok: true, status: 'ANSWERED_BY_REASONING_FALLBACK', text: answer, raw: result, method: 'OMEGA_REASONING_DISPATCHER' };
+        const packet = result?.cognitive?.result?.aiGroundingPacket || result?.cognitiveTrace?.aiGroundingPacket || null;
+        const answerEvidence = packet?.answerEvidence || null;
+        const answerContract = packet?.answerContract || null;
+        const hasEvidence = Array.isArray(answerEvidence?.facts) && answerEvidence.facts.length > 0;
+        const contractIsGrounded = answerContract?.evidenceOnly === true && answerContract?.doNotInventMissingValues === true;
+        const completedReasoning = result?.used === true && result?.cognitive?.available === true && result?.cognitive?.full40 === true;
+        if (answer && completedReasoning && hasEvidence && contractIsGrounded) {
+          return { ok: true, status: 'ANSWERED_BY_GROUNDED_REASONING', text: answer, raw: result, method: 'OMEGA_REASONING_DISPATCHER' };
+        }
+        if (answer) {
+          lastError = new Error('UNVERIFIED_REASONING_FALLBACK_IGNORED');
+          rememberError('UNVERIFIED_REASONING_FALLBACK_IGNORED', lastError, { ministerId: context.ministerId, hasEvidence, contractIsGrounded, completedReasoning });
+        }
       } catch (error) { lastError = error; rememberError('REASONING_FALLBACK_FAILED', error, { ministerId: context.ministerId }); }
     }
     return { ok: false, status: lastError ? 'COGNITIVE_RESPONSE_UNAVAILABLE' : 'COGNITIVE_DIALOGUE_METHOD_UNAVAILABLE', text: '', raw: null, error: lastError && lastError.message || null };
