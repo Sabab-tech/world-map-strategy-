@@ -1458,7 +1458,7 @@
         esc(money((finite(loan.outstandingPrincipalUsd) || 0) + (finite(loan.accruedInterestUsd) || 0))) + '</td><td>' +
         esc(money(loan.outstandingPrincipalUsd)) + '</td><td>' + esc(money(loan.accruedInterestUsd)) + '</td><td>' +
         esc(percent(loan.annualInterestRatePct)) + '</td><td>' + esc(money(annualPayment(Math.max(0, finite(loan.outstandingPrincipalUsd) || 0), Math.max(0, finite(loan.annualInterestRatePct) || 0), Math.max(1 / 365, (finite(loan.termYears) || 1) - Math.max(finite(loan.ageYears) || 0, finite(loan.graceYears) || 0))))) + '</td><td>' + esc(number(loan.termYears, 1)) + 'y / ' + esc(number(loan.graceYears, 1)) + 'y grace</td><td>' +
-        '<span class="owb-state ' + (loan.status === 'ARREARS' ? 'owb-bad' : 'owb-good') + '">' + esc(loan.status) + '</span></td></tr>').join('') +
+        '<span class="owb-state ' + (['ARREARS', 'DEFAULTED', 'INSOLVENT'].includes(String(loan.status || '').toUpperCase()) ? 'owb-bad' : loan.status === 'RESTRUCTURED' ? 'owb-warn' : 'owb-good') + '">' + esc(loan.status) + '</span><small>' + esc(number(loan.daysPastDue, 0)) + ' overdue days</small></td></tr>').join('') +
       '</tbody></table></div>';
   }
   function ensureStyles() {
@@ -1539,10 +1539,10 @@
         '<option value="' + esc(code) + '"' + (code === currencyCode ? ' selected' : '') + '>' + esc(code) + '</option>').join('');
     return '<form class="owb-section" data-owb-form="request-loan" data-owb-request-id="WB-UI-' + esc(codeOf(profile)) + '-' + esc(currentTurn()) + '-' + esc(bank.nextSequence) + '">'
       + '<div class="owb-section-head"><h4>New simulated loan proposal</h4><span class="owb-state ' + decisionClass(assessment.decision) + '">' + esc(decisionLabel(assessment.decision)) + '</span></div>'
-      + '<div class="owb-form-grid"><label class="owb-field">Purpose<select name="purpose"><option value="infrastructure">Infrastructure</option><option value="health">Health</option><option value="education">Education</option><option value="climate">Climate resilience</option><option value="emergency">Emergency stabilisation</option><option value="budget-support">Budget support</option></select></label>'
+      + '<div class="owb-form-grid"><label class="owb-field">Purpose<select name="purpose" data-owb-purpose><option value="infrastructure">Infrastructure</option><option value="health">Health</option><option value="education">Education</option><option value="climate">Climate resilience</option><option value="emergency">Emergency stabilisation</option><option value="budget-support">Budget support</option></select></label>'
       + '<label class="owb-field">Principal requested · USD<input name="amountUsd" type="number" min="1" max="' + esc(String(Math.floor(assessment.maxLoanUsd))) + '" step="1" value="' + esc(String(Math.floor(assessment.maxLoanUsd))) + '" required></label>'
       + '<label class="owb-field">Local-currency equivalent<select name="currencyCode">' + currencyOptions + '</select><small>USD remains the authoritative debt ledger. Equivalent uses simulation FX only.</small></label>'
-      + '<label class="owb-field">Annual interest rate<input name="annualInterestRatePct" type="number" min="' + esc(String(bounds.minimumRatePct)) + '" max="' + esc(String(bounds.maximumRatePct)) + '" step="0.05" value="' + esc(String(base.annualInterestRatePct)) + '" required></label>'
+      + '<label class="owb-field">Annual interest / financing return<input name="annualInterestRatePct" type="number" min="' + esc(String(bounds.minimumRatePct)) + '" max="' + esc(String(bounds.maximumRatePct)) + '" step="0.05" value="' + esc(String(base.annualInterestRatePct)) + '" required></label>'
       + '<label class="owb-field">Term · years<input name="termYears" type="number" min="' + esc(String(bounds.minimumTermYears)) + '" max="' + esc(String(bounds.maximumTermYears)) + '" step="1" value="' + esc(String(base.termYears)) + '" required></label>'
       + '<label class="owb-field">Grace period · years<input name="graceYears" type="number" min="' + esc(String(bounds.minimumGraceYears)) + '" max="' + esc(String(bounds.maximumGraceYears)) + '" step="1" value="' + esc(String(base.graceYears)) + '" required></label></div>'
       + '<div class="owb-term-guard"><strong>IMPORTANT · Negotiation limits</strong><p>Rate: ' + esc(percent(bounds.minimumRatePct)) + ' to ' + esc(percent(bounds.maximumRatePct)) + '. Term: ' + esc(bounds.minimumTermYears) + '–' + esc(bounds.maximumTermYears) + ' years. Grace: ' + esc(bounds.minimumGraceYears) + '–' + esc(bounds.maximumGraceYears) + ' years.</p>'
@@ -1750,6 +1750,23 @@
         if (finance && typeof finance.selectCountry === 'function') finance.selectCountry(country);
         if (finance && typeof finance.selectTab === 'function') finance.selectTab('worldbank');
       }
+    });
+    content.addEventListener('change', event => {
+      const purposeSelect = event.target && event.target.closest && event.target.closest('[data-owb-purpose]');
+      if (!purposeSelect) return;
+      const form = purposeSelect.closest && purposeSelect.closest('[data-owb-form="request-loan"]');
+      const profile = currentCountryProfile();
+      if (!form || !profile) return;
+      const assessment = scoreCountry(profile);
+      const purpose = String(purposeSelect.value || 'infrastructure');
+      const base = termsFor(assessment, purpose);
+      const bounds = negotiationBounds(assessment, purpose);
+      const rateInput = form.querySelector('[name="annualInterestRatePct"]');
+      const termInput = form.querySelector('[name="termYears"]');
+      const graceInput = form.querySelector('[name="graceYears"]');
+      if (rateInput) { rateInput.min = bounds.minimumRatePct; rateInput.max = bounds.maximumRatePct; rateInput.value = base.annualInterestRatePct; }
+      if (termInput) { termInput.min = bounds.minimumTermYears; termInput.max = bounds.maximumTermYears; termInput.value = base.termYears; }
+      if (graceInput) { graceInput.min = bounds.minimumGraceYears; graceInput.max = bounds.maximumGraceYears; graceInput.value = base.graceYears; }
     });
     content.addEventListener('input', event => {
       const search = event.target && event.target.closest && event.target.closest('[data-owb-country-filter]');
