@@ -18,7 +18,7 @@ const schema={encoding:'ORDERED_VALUE_ARRAYS_V1',identityFields,generalFactField
 const alpha={populationTotal:100000000,gdpCurrentUsd:500000000000,exportsUsd:200000000000,importsUsd:200000000000,
   budgetBalancePctGdp:2,publicDebtToGdpPct:30,inflationPct:2,gdpGrowthPct:4,militaryExpenditurePctGdp:3,
   internetUsersPct:90,electricityAccessPct:99,rAndDSpendPctGdp:3,educationSpendPctGdp:5,
-  politicalStabilityWgiEstimate:1.3,voiceAccountabilityWgiEstimate:1,unemploymentRatePct:4,homicideRatePer100k:1,
+  politicalStabilityWgiEstimate:1.3,voiceAccountabilityWgiEstimate:1,unemploymentRatePct:4,
   industryValueAddedPctGdp:25,agricultureValueAddedPctGdp:5};
 const beta={populationTotal:30000000,gdpCurrentUsd:50000000000,exportsUsd:2000000000,importsUsd:20000000000,
   budgetBalancePctGdp:-8,publicDebtToGdpPct:110,inflationPct:20,gdpGrowthPct:-2,militaryExpenditurePctGdp:0.5,
@@ -45,6 +45,13 @@ test('shared registry decoding keeps identity, provenance, metrics and geography
  assert.equal(await runtime.init(),true);assert.equal(runtime.diagnostics().recordCount,2);
  const a=runtime.getCountryRecord('AAA');assert.equal(a.identity.name,'Alpha');assert.equal(a.generalFacts.capital,'Alpha Capital');
  assert.equal(a.metrics.gdpCurrentUsd,500000000000);assert.equal(a.metricMetadata.gdpCurrentUsd.year,2022);
+ assert.equal(a.metricMetadata.gdpCurrentUsd.status,'WORLD_BANK_API_OBSERVATION');
+ assert.ok(a.metricMetadata.gdpCurrentUsd.sourceConfidence>0);
+ assert.ok(a.metricMetadata.gdpCurrentUsd.confidence>0&&a.metricMetadata.gdpCurrentUsd.confidence<=1);
+ assert.equal(a.metricMetadata.gdpCurrentUsd.dataGap,null);
+ assert.equal(a.metricMetadata.gdpCurrentUsd.isCurrentGameState,false);
+ assert.equal(a.metricMetadata.homicideRatePer100k.confidence,0);
+ assert.equal(a.metricMetadata.homicideRatePer100k.dataGap,'MISSING_OBSERVATION');
  assert.deepEqual(a.localGeography.economicCenters,[{name:'Alpha City',description:'fixture city record'}]);
  assert.equal(runtime.getCountryRecord('BBB').metrics.populationTotal,30000000);assert.equal(runtime.getCountryRecord('MISSING'),null);
 });

@@ -168,22 +168,30 @@
       if(x&&x.value!==null&&x.value!==undefined){
         const direction=num(directions[d])??1;
         const utility=direction>=0?x.value:1-x.value;
-        vals.push({dimension:d,value:x.value,direction,utility,
-          confidence:clamp(x.confidence??0.5),source:x.source||null});
+        const confidence=clamp(x.confidence??0.5)??0.5;
+        const effectiveUtility=0.5+(utility-0.5)*confidence;
+        vals.push({dimension:d,value:x.value,direction,utility,rawUtility:utility,effectiveUtility,
+          confidence,source:x.source||null});
       }
     }
     if(!vals.length&&preferenceValue===null)return{known:false,score:null,confidence:0,profile:p};
-    const mean=vals.length?vals.reduce((s,x)=>s+x.utility,0)/vals.length:null;
+    const rawMean=vals.length?vals.reduce((s,x)=>s+x.utility,0)/vals.length:null;
+    const mean=vals.length?vals.reduce((s,x)=>s+x.effectiveUtility,0)/vals.length:null;
     const preferenceWeight=preferenceValue===null?0:(mean===null?1:0.3);
-    const combined=mean===null?preferenceValue:
-      (preferenceValue===null?mean:(1-preferenceWeight)*mean+preferenceWeight*preferenceValue);
+    const preferenceConfidence=preferenceValue===null?0:(clamp(actionPreference.confidence)??0.5);
+    const effectivePreferenceValue=preferenceValue===null?null:0.5+(preferenceValue-0.5)*preferenceConfidence;
+    const rawCombined=rawMean===null?preferenceValue:
+      (preferenceValue===null?rawMean:(1-preferenceWeight)*rawMean+preferenceWeight*preferenceValue);
+    const combined=mean===null?effectivePreferenceValue:
+      (effectivePreferenceValue===null?mean:(1-preferenceWeight)*mean+preferenceWeight*effectivePreferenceValue);
     const dimensionCoverage=vals.length?Math.min(1,vals.length/4):0;
     const dimensionQuality=vals.length?vals.reduce((sum,x)=>sum+(x.confidence??0.5),0)/vals.length:0;
     const dimensionConfidence=dimensionCoverage*dimensionQuality;
-    const preferenceConfidence=preferenceValue===null?0:(clamp(actionPreference.confidence)??0.5);
     const confidence=preferenceValue===null?dimensionConfidence:
       (mean===null?preferenceConfidence:clamp(dimensionConfidence*0.72+preferenceConfidence*0.28));
-    return{known:true,score:clamp(combined),confidence,dimensions:vals,
+    return{known:true,score:clamp(combined),rawScore:clamp(rawCombined),confidence,
+      uncertaintyAdjustment:Number((clamp(rawCombined)-clamp(combined)).toFixed(6)),
+      actionPreferenceEffectiveValue:effectivePreferenceValue,dimensions:vals,
       actionPreference:actionPreference?clone(actionPreference):null,profile:p};
   }
   function strategicPlan(c,decision){

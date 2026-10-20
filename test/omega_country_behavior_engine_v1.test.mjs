@@ -96,9 +96,15 @@ test('country behaviour profile is evidence-backed and differs with country macr
   const investmentAction = bangladesh.actionPreferences.PROCESSING_EXPANSION ? 'PROCESSING_EXPANSION' : 'INDUSTRY_BUILD';
   const investmentScore = adaptive.scoreAction('BGD', investmentAction);
   assert.ok(investmentScore.actionPreference, 'country-specific action preferences should be read by the adaptive scorer');
-  const dimensionMean = investmentScore.dimensions.reduce((sum, row) => sum + row.utility, 0) / investmentScore.dimensions.length;
-  assert.ok(Math.abs(investmentScore.score - (0.7 * dimensionMean + 0.3 * investmentScore.actionPreference.value)) < 0.000001,
-    'candidate strategy score should combine country dimensions with the registered action preference');
+  const dimensionMean = investmentScore.dimensions.reduce((sum, row) => sum + row.effectiveUtility, 0) / investmentScore.dimensions.length;
+  const effectivePreference = investmentScore.actionPreferenceEffectiveValue;
+  assert.ok(Math.abs(investmentScore.score - (0.7 * dimensionMean + 0.3 * effectivePreference)) < 0.000001,
+    'candidate score must combine confidence-adjusted country dimensions and confidence-adjusted action preference');
+  assert.ok(investmentScore.confidence >= 0 && investmentScore.confidence <= 1);
+  assert.ok(investmentScore.dimensions.every(row => row.confidence >= 0 && row.confidence <= 1));
+  assert.ok(Number.isFinite(bangladesh.dimensions.innovationPreference.confidence));
+  assert.ok(bangladesh.metricSources.gdpUsd && Number.isFinite(bangladesh.metricSources.gdpUsd.confidence));
+  assert.ok(Array.isArray(bangladesh.dataGaps));
   assert.ok(bangladesh.evidence.registeredMacroMetricCount > 0);
   assert.match(bangladesh.evidence.missingDataPolicy, /NULL/);
   assert.equal(behavior.diagnostics().dimensionCount, 11);
@@ -107,30 +113,73 @@ test('country behaviour profile is evidence-backed and differs with country macr
 test('source-backed registry metrics take precedence over legacy country snapshots', async () => {
   const { context, behavior } = await loadCountryEngines();
   const api = context.OmegaCountryGeneralDataRuntime;
-  const candidates = ['BGD', 'USA', 'IND', 'GBR', 'JPN'];
-  const selected = candidates
-    .map(code => ({ code, record: api.getCountryRecord(code) }))
-    .find(item => item.record &&
-      Number.isFinite(item.record.metrics?.gdpCurrentUsd) &&
-      item.record.metrics.gdpCurrentUsd > 0 &&
-      item.record.metricMetadata?.gdpCurrentUsd?.status === 'WORLD_BANK_API_OBSERVATION');
+  const originalGetCountryRecord = api.getCountryRecord.bind(api);
+  const syntheticGdp = 9876543210123;
+  const syntheticYear = 2024;
 
-  assert.ok(selected, 'at least one representative country should expose a refreshed GDP observation');
-  const profile = behavior.getBehaviorProfile(selected.code);
-  assert.equal(profile.metrics.gdpUsd, selected.record.metrics.gdpCurrentUsd,
-    'opponent behaviour must use the latest registered GDP when the live game has no override');
+  // A deterministic observed-record fixture tests precedence independently of
+  // whether the optional external-source refresh ran in this environment.
+  context.OmegaCountryGeneralDataRuntime = Object.assign({}, api, {
+    getCountryRecord(value) {
+      const record = originalGetCountryRecord(value);
+      const recordIdentity = record?.identity || {};
+      const aliases = value && typeof value === 'object'
+        ? [value.iso3, value.countryCode, value.canonicalId, value.name, value.officialName]
+        : [value];
+      aliases.push(recordIdentity.iso3, recordIdentity.iso2, recordIdentity.countryCode, recordIdentity.name);
+      const normalizedAliases = aliases.map(item => String(item || '').toUpperCase());
+      if (!record || !normalizedAliases.some(alias => ['BGD', 'BD', 'BANGLADESH'].includes(alias))) return record;
+      const oldMeta = record.metricMetadata?.gdpCurrentUsd || {};
+      return {
+        ...record,
+        metrics: { ...record.metrics, gdpCurrentUsd: syntheticGdp },
+        metricMetadata: {
+          ...record.metricMetadata,
+          gdpCurrentUsd: {
+            ...oldMeta,
+            year: syntheticYear,
+            status: 'WORLD_BANK_API_OBSERVATION',
+            sourceId: 'WORLD_BANK_WDI',
+            sourceName: 'World Bank Indicators API v2',
+            method: 'SOURCE_OBSERVATION',
+            sourceUrl: 'https://api.worldbank.org/v2/country/bgd/indicator/NY.GDP.MKTP.CD?format=json',
+            sourceConfidence: 0.92,
+            freshness: 0.90,
+            confidence: 0.828,
+            dataGap: null,
+            isCurrentGameState: false
+          }
+        }
+      };
+    }
+  });
+
+  const profile = behavior.getBehaviorProfile('BGD');
+  assert.equal(profile.metrics.gdpUsd, syntheticGdp,
+    'an observed registry GDP must take precedence over legacy country snapshots');
   assert.equal(profile.metricSources.gdpUsd.status, 'WORLD_BANK_API_OBSERVATION',
     'the selected metric must retain source status');
+  assert.equal(profile.metricSources.gdpUsd.year, syntheticYear,
+    'the selected metric must retain its observation year');
+  assert.equal(profile.metricSources.gdpUsd.sourceId, 'WORLD_BANK_WDI',
+    'the selected metric must retain its source ID');
+  assert.equal(profile.metricSources.gdpUsd.sourceConfidence, 0.92,
+    'the selected metric must retain source-quality confidence');
+  assert.equal(profile.metricSources.gdpUsd.isCurrentGameState, false,
+    'historical registry observations must not be labelled as live game state');
   assert.match(profile.metricSources.gdpUsd.source, /country_general_data_registry_v1[.]json/,
     'metric provenance should identify the unified source registry');
 });
 
 test('all canonical country and territory identities build a non-error behaviour profile with explicit evidence state', async () => {
-  const { runtime, behavior } = await loadCountryEngines();
+  const { runtime, behavior, adaptive } = await loadCountryEngines();
   const countries = runtime.listProfiles();
   assert.ok(countries.length >= 249, 'existing canonical roster should remain available');
   const signatures = new Set();
   const failures = [];
+  let scoredCountries = 0;
+  let countriesWithMultipleKnownActions = 0;
+  let countriesWithDistinctAlternativeScores = 0;
   for (const row of countries) {
     const profile = behavior.getBehaviorProfile(row.iso3 || row.countryCode);
     if (!profile || profile.status === 'ENGINE_ERROR') {
@@ -147,6 +196,30 @@ test('all canonical country and territory identities build a non-error behaviour
           'every scored dimension declares availability and source for ' + row.name);
       }
     }
+    const countryId = row.iso3 || row.countryCode;
+    const actionProfile = adaptive.profile(countryId);
+    const actionCodes = ['EFFICIENCY', 'HOUSING_BUILD', 'MILITARY_EQUIP', 'TREATY_NEGOTIATION'];
+    const actionScores = actionCodes.map(action => ({ action, result: adaptive.scoreAction(countryId, action) }));
+    const knownScores = [];
+    for (const { action, result } of actionScores) {
+      const expectedKnown = (adaptive.ACTION_DIMENSIONS[action] || []).some(key =>
+        actionProfile.dimensions[key]?.value !== null && actionProfile.dimensions[key]?.value !== undefined) ||
+        actionProfile.actionPreferences?.[action]?.value !== undefined;
+      assert.equal(result.known, expectedKnown,
+        'candidate-score availability should reflect this country’s evidence for ' + row.name + '/' + action);
+      if (result.known) {
+        assert.ok(Number.isFinite(result.score) && result.score >= 0 && result.score <= 1,
+          'country-specific action score must be normalised for ' + row.name + '/' + action);
+        assert.ok(Number.isFinite(result.confidence) && result.confidence >= 0 && result.confidence <= 1,
+          'country-specific action confidence must be normalised for ' + row.name + '/' + action);
+        assert.ok(Number.isFinite(result.rawScore) && result.rawScore >= 0 && result.rawScore <= 1,
+          'unadjusted candidate score must remain inspectable for ' + row.name + '/' + action);
+        knownScores.push(result.score);
+      }
+    }
+    if (knownScores.length > 1) countriesWithMultipleKnownActions += 1;
+    if (new Set(knownScores.map(value => value.toFixed(5))).size > 1) countriesWithDistinctAlternativeScores += 1;
+    scoredCountries += 1;
     signatures.add(JSON.stringify({
       status: profile.status,
       dimensions: Object.fromEntries(Object.entries(profile.dimensions).map(([key, item]) => [key, item.value])),
@@ -155,6 +228,11 @@ test('all canonical country and territory identities build a non-error behaviour
     }));
   }
   assert.deepEqual(failures, [], 'no country-specific runtime profile should throw');
+  assert.equal(scoredCountries, countries.length, 'each canonical country must traverse identity -> behaviour profile -> multiple candidate action scores');
+  assert.ok(countriesWithMultipleKnownActions > 20,
+    'candidate scoring should evaluate multiple evidence-backed actions for representative countries');
+  assert.ok(countriesWithDistinctAlternativeScores > 10,
+    'country-specific evidence should change the relative scores of alternative actions where evidence differs');
   assert.ok(signatures.size > 20, 'country records should produce differentiated runtime signatures, not a common preset');
 });
 
@@ -229,6 +307,31 @@ test('adaptive decision scoring consumes country behaviour but respects explicit
   context.Game = { state: {} };
   const recalculated = adaptive.profile('BGD');
   assert.notEqual(recalculated.dimensions.riskAppetite.value, 0.97, 'derived heuristics should return when the explicit override is absent');
+});
+
+test('low-confidence evidence moves an action score toward neutral rather than pretending certainty', async () => {
+  const { context, adaptive } = await loadCountryEngines();
+  const originalEngine = context.OmegaCountryBehaviorEngine;
+  const sample = confidence => ({
+    status:'PARTIAL_EVIDENCE_PROFILE',
+    actionPreferences:{},
+    dimensions:Object.fromEntries(adaptive.DIMENSIONS.map(key => [key, {
+      value:.9, availability:'DERIVED_SIMULATION_POLICY', source:'TEST_EVIDENCE',
+      confidence, evidence:[{metric:'fixture',value:.9,confidence}]
+    }]))
+  });
+  try {
+    context.OmegaCountryBehaviorEngine = {getBehaviorProfile:() => sample(.1)};
+    const low = adaptive.scoreAction('BGD','MILITARY_EQUIP');
+    context.OmegaCountryBehaviorEngine = {getBehaviorProfile:() => sample(.95)};
+    const high = adaptive.scoreAction('BGD','MILITARY_EQUIP');
+    assert.ok(Math.abs(low.score-.5) < Math.abs(high.score-.5),
+      'weak evidence should pull candidate utility toward neutral');
+    assert.ok(low.confidence < high.confidence);
+    assert.ok(Number.isFinite(low.uncertaintyAdjustment));
+  } finally {
+    context.OmegaCountryBehaviorEngine = originalEngine;
+  }
 });
 
 test('country overview is inside ministry dashboard, uses shared behaviour runtime, and remains cached for offline play', () => {
