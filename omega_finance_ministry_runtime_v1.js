@@ -2,8 +2,8 @@
 (function(global){
   'use strict';
   if(global.OmegaFinanceMinistry&&global.OmegaFinanceMinistry.VERSION==='1.1.0')return;
-  const VERSION='1.1.0', YEAR_MS=31536000000, HOUR_MS=3600000;
-  const BASE_RULES={annualizationMs:YEAR_MS,simulationTurnDurationMs:HOUR_MS,startingTreasuryPercentOfGDP:2,
+  const VERSION='1.1.0', YEAR_MS=31536000000, DAY_MS=86400000;
+  const BASE_RULES={annualizationMs:YEAR_MS,simulationTurnDurationMs:DAY_MS,startingTreasuryPercentOfGDP:2,
     defaultTaxRatePct:18,defaultPolicyInterestRatePct:3,defaultDeficitPercentOfGDPWhenUnobserved:3,
     minimumTaxRatePct:0,maximumTaxRatePct:60,minimumPolicyInterestRatePct:0,maximumPolicyInterestRatePct:40,
     maximumBorrowTransactionPercentOfGDP:5,maximumDebtToGDPForNewBorrowingPct:300,maximumLedgerEntries:500,
@@ -256,7 +256,7 @@
       -(finite(model?.currentYearInterestUsd)||0);
   }
   function fiscalYearIndexFor(turn,stepMs){
-    const n=Math.max(0,finite(turn)||0),dt=Math.max(0,finite(stepMs)||Number(rules.simulationTurnDurationMs||HOUR_MS));
+    const n=Math.max(0,finite(turn)||0),dt=Math.max(0,finite(stepMs)||Number(rules.simulationTurnDurationMs||DAY_MS));
     return Math.floor(n*dt/Number(rules.annualizationMs||YEAR_MS));
   }
   function ensureFinanceState(p,root){
@@ -288,7 +288,7 @@
       for(const k of ['cumulativeRevenueUsd','cumulativeSpendingUsd','cumulativeInterestUsd','cumulativeBorrowingUsd',
         'cumulativeExternalInflowUsd','cumulativeExternalOutflowUsd','currentYearTaxRevenueUsd','currentYearSpendingUsd',
         'currentYearInterestUsd','currentYearExternalInflowUsd','currentYearExternalOutflowUsd'])if(finite(model[k])===null)model[k]=0;
-      model.fiscalYearIndex=finite(model.fiscalYearIndex)??fiscalYearIndexFor(currentTurn(),Number(rules.simulationTurnDurationMs||HOUR_MS));
+      model.fiscalYearIndex=finite(model.fiscalYearIndex)??fiscalYearIndexFor(currentTurn(),Number(rules.simulationTurnDurationMs||DAY_MS));
       model.priceIndex=finite(model.priceIndex)??100;model.allocations=isObject(model.allocations)?model.allocations:{};
       if(!Array.isArray(model.ledger))model.ledger=[];model.revision=finite(model.revision)??0;
     }else{
@@ -300,7 +300,7 @@
     if(finite(model.lastSyncedTreasuryBalanceUsd)===null)model.lastSyncedTreasuryBalanceUsd=finite(model.treasuryBalanceUsd)??0;
     for(const k of ['cumulativeExternalInflowUsd','cumulativeExternalOutflowUsd','currentYearTaxRevenueUsd','currentYearSpendingUsd',
       'currentYearInterestUsd','currentYearExternalInflowUsd','currentYearExternalOutflowUsd'])if(finite(model[k])===null)model[k]=0;
-    if(finite(model.fiscalYearIndex)===null)model.fiscalYearIndex=fiscalYearIndexFor(currentTurn(),Number(rules.simulationTurnDurationMs||HOUR_MS));
+    if(finite(model.fiscalYearIndex)===null)model.fiscalYearIndex=fiscalYearIndexFor(currentTurn(),Number(rules.simulationTurnDurationMs||DAY_MS));
     if(!isObject(model.currentYearSectorReceiptsUsd))model.currentYearSectorReceiptsUsd={};
     for(const s of sectorRegistry.economicSectors||[])if(finite(model.currentYearSectorReceiptsUsd[s.id])===null)model.currentYearSectorReceiptsUsd[s.id]=0;
     initializeSectorAllocations(model);
@@ -429,7 +429,16 @@
     const type=String(action.type||'').toLowerCase().replace(/_/g,'-');
     const p=resolveProfile(action.countryId||action.countryCode||selectedCountryCode)||playerCountryProfile();
     if(!p)return {ok:false,code:'COUNTRY_NOT_FOUND',message:'Country profile is not available.'};
-    if(p.countryCode!==getPlayerCode())return {ok:false,code:'PLAYER_COUNTRY_SCOPE_VIOLATION',message:'Finance commands are restricted to the active player country.'};
+    const actionDepartment=String(action.department||'').toLowerCase().replace(/[\s-]+/g,'_');
+    const actionDescription=String(action.description||'');
+    const approvedSimulationExpense=(actionDepartment==='interior'&&actionDescription.startsWith('OMEGA_HOME_BUDGET:'))||
+      (actionDepartment==='defense'&&actionDescription.startsWith('OMEGA_MILITARY_BUDGET:'));
+    const simulationAuthorized=action.__omegaSimulationPipelineAuthority===true&&
+      global.__OMEGA_SIMULATION_PIPELINE_ACTIVE__===true&&
+      !!(global.Omega&&global.Omega.Simulation&&global.Omega.Simulation.stepInProgress)&&
+      type==='spend-budget'&&approvedSimulationExpense;
+    if(simulationAuthorized&&type!=='spend-budget')return{ok:false,code:'SIMULATION_ACTION_NOT_ALLOWED'};
+    if(p.countryCode!==getPlayerCode()&&!simulationAuthorized)return {ok:false,code:'PLAYER_COUNTRY_SCOPE_VIOLATION',message:'Finance commands are restricted to the active player country.'};
     if(!isPlayable(p))return {ok:false,code:'ECONOMIC_BASELINE_UNAVAILABLE',message:'No GDP baseline exists. Fiscal actions are disabled rather than fabricated.'};
     const root=rootState(),fm=ensureFinanceState(p,root);
     reconcileExternalTreasury(p,fm,root);
@@ -588,7 +597,7 @@
   function advanceTurn(turn,stepDurationMs){
     if(!initialized)return {ok:false,reason:'NOT_INITIALIZED',processed:0};
     const turnNumber=finite(turn)??currentTurn()+1;
-    const dt=Math.max(0,finite(stepDurationMs)??Number(rules.simulationTurnDurationMs||HOUR_MS));
+    const dt=Math.max(0,finite(stepDurationMs)??Number(rules.simulationTurnDurationMs||DAY_MS));
     const years=dt/Number(rules.annualizationMs||YEAR_MS);if(years<=0)return {ok:true,turn:turnNumber,processed:0};
     const root=rootState();let processed=0;
     const newYearIndex=fiscalYearIndexFor(turnNumber,dt);
@@ -882,7 +891,7 @@
     if(uiHooksAttached)return;uiHooksAttached=true;
     global.addEventListener?.('OMEGA_SIMULATION_TURN_COMMITTED',function(event){
       const d=event?.detail||{},turn=finite(d.simulationTurn)??finite(d.payload?.turn)??finite(d.turn);
-      const duration=finite(global.Omega?.Simulation?.clock?.stepDurationMs)??Number(rules.simulationTurnDurationMs||HOUR_MS);
+      const duration=finite(global.Omega?.Simulation?.clock?.stepDurationMs)??Number(rules.simulationTurnDurationMs||DAY_MS);
       advanceTurn(turn,duration);
     });
     global.addEventListener?.('OMEGA_READY',function(){if(!initialized)init().catch(error=>console.error('[OMEGA FINANCE INIT]',error));});
@@ -927,7 +936,21 @@
     dataUnavailable:profiles.filter(p=>p.profileStatus==='UNAVAILABLE').length,playerCountryCode:getPlayerCode(),simulationTurn:currentTurn(),
     activeCountryCode:selectedCountryCode,hasAuthoritativeEconomy:isObject(root.economy),hasFinanceState:isObject(root.finance),
     transactionTypes:['set-tax-rate','set-interest-rate','set-allocation','spend-budget','borrow']};}
+  function applySimulationAction(action){
+    const type=String(action&&action.type||'').toLowerCase().replace(/_/g,'-');
+    const department=String(action&&action.department||'').toLowerCase().replace(/[\s-]+/g,'_');
+    const description=String(action&&action.description||'');
+    const inTurn=global.__OMEGA_SIMULATION_PIPELINE_ACTIVE__===true&&
+      !!(global.Omega&&global.Omega.Simulation&&global.Omega.Simulation.stepInProgress);
+    if(!inTurn)return{ok:false,code:'SIMULATION_TURN_AUTHORITY_REQUIRED'};
+    if(type!=='spend-budget')return{ok:false,code:'SIMULATION_ACTION_NOT_ALLOWED'};
+    const homeExpense=department==='interior'&&description.startsWith('OMEGA_HOME_BUDGET:');
+    const militaryExpense=department==='defense'&&description.startsWith('OMEGA_MILITARY_BUDGET:');
+    if(!homeExpense&&!militaryExpense)return{ok:false,code:'SIMULATION_EXPENSE_AUTHORITY_NOT_ALLOWED'};
+    return applyAction(Object.assign({},action,{__omegaSimulationPipelineAuthority:true}));
+  }
   const api={VERSION,init,diagnostics,resolveCountry:resolveProfile,getProfiles:()=>profiles.slice(),getPlayerCountry:playerCountryProfile,
+     applySimulationAction,
     getIndicators:function(v){const p=resolveProfile(v)||playerCountryProfile();return p?worldSnapshot().byCode.get(p.countryCode)||null:null;},
     getFinanceState:function(v){const p=resolveProfile(v)||playerCountryProfile();if(!p)return null;const root=rootState(),fm=ensureFinanceState(p,root);if(reconcileExternalTreasury(p,fm,root))syncEconomyRecord(p,fm,root);return clone(fm);},
     selectCountry:function(v){
