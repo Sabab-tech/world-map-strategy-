@@ -46,6 +46,7 @@ const RESOURCE_AUTHORITATIVE_ADAPTER_SCRIPT = '<script src="/omega_resource_auth
 const RESOURCE_ACTION_EXECUTION_SCRIPT = '<script src="/omega_resource_action_execution_runtime.js"></script>';
 const GLOBAL_MARKET_SCRIPT = '<script src="/omega_global_market_system.js"></script>';
 const OPPONENT_INTELLIGENCE_SCRIPT = '<script src="/omega_opponent_intelligence_evolution_system.js"></script>';
+const COUNTRY_GENERAL_DATA_SCRIPT = '<script src="/omega_country_general_data_runtime_v1.js"></script>';
 const OPPONENT_STRATEGY_SCRIPT = '<script src="/omega_opponent_adaptive_strategy_system.js"></script>';
 const OPPONENT_AUTONOMY_SCRIPT = '<script src="/omega_opponent_autonomy_system.js"></script>';
 const OPPONENT_TRADE_SCRIPT = '<script src="/omega_global_trade_system.js"></script>';
