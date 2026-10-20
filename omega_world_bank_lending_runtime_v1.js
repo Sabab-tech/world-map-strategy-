@@ -155,7 +155,17 @@
     return bank;
   }
   function resolveProfile(value) {
-    if (value && typeof value === 'object') value = value.iso3 || value.iso2 || value.countryCode || value.code || value.name || value.id;
+    if (value && typeof value === 'object') {
+      const row = value;
+      const iso3 = String(row.iso3 || (String(row.countryCode || '').trim().length === 3 ? row.countryCode : '') || '').trim().toUpperCase();
+      const iso2 = String(row.iso2 || (String(row.countryCode || '').trim().length === 2 ? row.countryCode : '') || '').trim().toUpperCase();
+      const exact3 = iso3 && /^[A-Z]{3}$/.test(iso3) && !ambiguousISO3.has(iso3) ? byISO3.get(iso3) || null : null;
+      const exact2 = iso2 && /^[A-Z]{2}$/.test(iso2) && !ambiguousISO2.has(iso2) ? byISO2.get(iso2) || null : null;
+      if ((iso3 && ambiguousISO3.has(iso3)) || (iso2 && ambiguousISO2.has(iso2))) return null;
+      if (exact3 && exact2 && exact3 !== exact2) return null;
+      if (exact3 || exact2) return exact3 || exact2;
+      value = row.name || row.countryName || row.code || row.id;
+    }
     const raw = String(value == null ? '' : value).trim();
     if (!raw) return null;
     const upper = raw.toUpperCase();
@@ -175,7 +185,13 @@
     try {
       if (finance && typeof finance.resolveCountry === 'function') {
         const profile = finance.resolveCountry(raw);
-        if (profile) return profile;
+        if (profile && profile !== value) {
+          const f3 = String(profile.iso3 || '').trim().toUpperCase();
+          const f2 = String(profile.iso2 || (String(profile.countryCode || '').length === 2 ? profile.countryCode : '') || '').trim().toUpperCase();
+          if ((f3 && ambiguousISO3.has(f3)) || (f2 && ambiguousISO2.has(f2))) return null;
+          if (f3 && f2 && byISO3.get(f3) && byISO2.get(f2) && byISO3.get(f3) !== byISO2.get(f2)) return null;
+          return profile;
+        }
       }
     } catch (_) {}
     return null;
