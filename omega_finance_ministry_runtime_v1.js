@@ -253,7 +253,7 @@
   function actualCashflow(model){
     return (finite(model?.currentYearTaxRevenueUsd)||0)+(finite(model?.currentYearExternalInflowUsd)||0)
       -(finite(model?.currentYearSpendingUsd)||0)-(finite(model?.currentYearExternalOutflowUsd)||0)
-      -(finite(model?.currentYearInterestUsd)||0);
+      -(finite(model?.currentYearInterestUsd)||0)-(finite(model?.currentYearDebtPrincipalRepaymentUsd)||0);
   }
   function fiscalYearIndexFor(turn,stepMs){
     const n=Math.max(0,finite(turn)||0),dt=Math.max(0,finite(stepMs)||Number(rules.simulationTurnDurationMs||DAY_MS));
