@@ -1172,7 +1172,7 @@
       const effectiveRate = clamp(baseRate + penaltySpread, 0, 10.5);
       const newInterest = (principal + interestBalance) * (Math.pow(1 + effectiveRate / 100, years) - 1);
       const unsynced = Math.max(0, finite(loan.unsyncedInterestUsd) || 0) + newInterest;
-      if (unsynced > 0.000001) {
+      if (unsynced > 0) {
         if (!banking || typeof banking.fundWorldBankLiquidity !== 'function') {
           loan.unsyncedInterestUsd = unsynced;
           bank.liquidity.institutionStatus = 'RECONCILIATION_REQUIRED';
@@ -1251,6 +1251,14 @@
         bank.liquidity.institutionStatus = 'ACTIVE';
       }
       processed++;
+    }
+    const externalActive = (bank.fundingLoans || []).some(loan =>
+      loan && !['REPAID', 'CANCELLED'].includes(String(loan.status || '').toUpperCase()));
+    if (!externalActive && !['RECONCILIATION_REQUIRED'].includes(String(bank.liquidity.institutionStatus || '').toUpperCase())) {
+      bank.liquidity.institutionStatus = 'ACTIVE';
+      if (bank.liquidity.institutionInsolvency && bank.liquidity.institutionInsolvency.status !== 'RECONCILIATION_REQUIRED')
+        bank.liquidity.institutionInsolvency.resolvedTurn = turn;
+      delete bank.liquidity.institutionInsolvency;
     }
     bank.lastInstitutionTurn = turn;
     return { ok: true, turn: turn, processed: processed, repaymentsUsd: round(repayments, 2) || 0,
