@@ -183,6 +183,7 @@ activeMinisterForScope = minister;
   const universal = read('omega_universal_ai_runtime.js');
   const ministerBootstrap = read('omega_minister_bootstrap.js');
   const communication = read('minister_communication_engine.js');
+  const cognitiveSource = read('omega_cognitive_engine.js');
 
   assert.ok(server.includes('MINISTER_INTELLIGENCE_PIPELINE_SCRIPT'));
   assert.ok(server.includes('omega_minister_intelligence_pipeline_v1.js'));
@@ -194,6 +195,12 @@ activeMinisterForScope = minister;
   assert.ok(ministerBootstrap.includes('scheduleRetry'));
   assert.ok(communication.includes('global.OmegaMinisterStateRegistry||global.OmegaMinisterState?.registry'),
     'Communication must prefer the canonical state registry.');
+  assert.ok(cognitiveSource.includes('dialogueIntent: ministerContext.dialogueIntent'),
+    'The cognitive AI request must receive the vocabulary-resolved minister dialogue intent.');
+  assert.ok(cognitiveSource.includes('ministerRuntime: ministerContext.runtime') &&
+    cognitiveSource.includes('ministerLearning: ministerContext.learning') &&
+    cognitiveSource.includes('conversationHistory'),
+    'The cognitive AI request must receive live minister state and recent conversation context.');
 
   for (const lang of ['en', 'bn']) {
     for (const attr of ['intelligence', 'recommendation', 'capability', 'decision_quality', 'institutional_memory']) {
