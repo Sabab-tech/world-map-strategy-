@@ -243,7 +243,7 @@ test('Finance tabs place cash and macro details behind separate icons while over
 });
 
 
-test('all eight Finance section buttons respond to click delegation',async()=>{
+test('all nine Finance section buttons respond to click delegation',async()=>{
   const {context,elements}=createRuntime();
   await context.OmegaFinanceMinistry.init();
   assert.equal(context.OmegaCabinetUI.renderMinistryDashboard('finance'),true);
