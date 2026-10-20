@@ -24,7 +24,7 @@ function iso3(value){
 function playerCountry(){
  const s=state();let value=null;
  try{value=g.Omega?.Simulation?.getPlayerCountryId?.();}catch(_){}
- value=value||s?.simulation?.session?.playerCountryId||s?.simulation?.playerCountryId||g.Omega?.Simulation?.playerCountryId||g.CountryIOS?.playerCountryId||g.Game?.playerCountryId||g.currentPlayerCountry;
+ value=value||s?.simulation?.session?.playerCountryId||s?.simulation?.playerCountryId||g.Omega?.Simulation?.playerCountryId||g.CountryIOS?.playerCountryId||g.Game?.playerCountryId||g.currentPlayerCountry||g.CountryIOS?.activeCountry||g.Game?.currentActiveCountry||g.currentActiveCountry;
  return iso3(value||'');
 }
 function selectedMinistryCountry(){
