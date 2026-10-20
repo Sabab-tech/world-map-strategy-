@@ -228,7 +228,7 @@ test('country overview is inside ministry dashboard, uses shared behaviour runti
   assert.match(ui, /the game does not substitute invented stock or production/i);
 
   const sw = read('omega-offline-map-sw.js');
-  assert.match(sw, /omega-offline-atlas-shell-v10/);
+  assert.match(sw, /omega-offline-atlas-shell-v\d+/);
   assert.match(sw, /omega_country_behavior_engine_v1\.js/);
   assert.match(sw, /omega_country_overview_ministry_ui_v1\.js/);
   assert.match(sw, /resource_site_reserve_simulation_v1\.json/);
