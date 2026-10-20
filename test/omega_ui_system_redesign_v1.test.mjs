@@ -108,6 +108,10 @@ test('map ministry entry is outside map stacking and has independent click recov
   assert.ok(runtime.includes('function openCabinet(event)'));
   assert.ok(runtime.includes('manager.setLayer(1)'));
   assert.ok(runtime.includes('data-last-open-result'));
+  assert.ok(runtime.includes("function syncDockPosition()"));
+  assert.ok(runtime.includes("rect.bottom + 8"));
+  assert.ok(runtime.includes("new global.ResizeObserver(syncDockPosition)"),
+    'button placement follows the status header when it wraps on mobile');
   assert.ok(runtime.includes("data-omega-map-active"));
   assert.ok(!runtime.includes("dock.style.display = onMap ? 'flex' : 'none'"),
     'returning to the map must not depend on clearing a sticky inline display style');
@@ -269,6 +273,11 @@ function createMapMinistryDockHarness({ primaryFails = false, managerFails = fal
     isConnected: true,
     closest(selector) { return selector === '#btn-ministry-dock' ? this : null; }
   };
+  const header = {
+    style: { display: 'flex', visibility: 'visible', opacity: '1' },
+    isConnected: true,
+    getBoundingClientRect() { return { left: 0, top: 0, right: 360, bottom: 150, width: 360, height: 150 }; }
+  };
   const cabinet = {
     style: { display: 'none', visibility: 'visible', opacity: '0', pointerEvents: 'none' },
     attrs: {},
@@ -291,6 +300,7 @@ function createMapMinistryDockHarness({ primaryFails = false, managerFails = fal
     getElementById(id) {
       if (id === 'omega-ministry-entry') return dock;
       if (id === 'btn-ministry-dock') return button;
+      if (id === 'top-status-bar') return header;
       if (id === 'cabinet-full-window') return cabinet;
       if (id === 'ministry-dashboard-view') return dashboard;
       return null;
@@ -346,6 +356,7 @@ test('map ministry dock click opens the cabinet through the independent capture 
   assert.ok(h.listeners.length > 0, 'the standalone capture handler is registered');
   h.listeners.forEach((handler) => handler(h.event));
   assert.ok(h.calls.includes('primary'), 'the original cabinet route is attempted first');
+  assert.equal(h.dock.style.top, '158px', 'dock sits below the measured 150px status header plus an 8px gap');
   assert.equal(h.cabinet.style.display, 'flex', 'the cabinet becomes visible after the tap');
   assert.equal(h.event.prevented, true);
   assert.equal(h.event.stoppedImmediate, true);
