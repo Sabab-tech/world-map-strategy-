@@ -50,6 +50,13 @@ jobs:
       - name: Commit registry only if it changed
         shell: bash
         run: |
+          # Pull-request runs are detached HEADs: validate the generated registry,
+          # but never attempt to push an automated data commit from a PR checkout.
+          # Scheduled/manual automation may commit only on the canonical main branch.
+          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" || "${GITHUB_REF}" != "refs/heads/main" ]]; then
+            echo "Registry build and tests completed; automated commit is restricted to main branch runs."
+            exit 0
+          fi
           if [[ -z "$(git status --porcelain -- country_general_data_registry_v1.json)" ]]; then
             echo "Registry content unchanged; no generated data commit required."
             exit 0
