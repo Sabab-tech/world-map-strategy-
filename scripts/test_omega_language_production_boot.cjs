@@ -62,6 +62,15 @@ async function main() {
     assert.ok(status.deepCore, 'production AI status must expose Deep Core');
     assert.ok(status.cognitiveBridge?.authority, 'production AI status must expose cognitive bridge');
 
+    const ministerValidation = await request('/api/ai/minister-consult', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({})
+    });
+    assert.equal(ministerValidation.status, 400, 'minister AI endpoint must validate empty prompts before provider access');
+    const ministerValidationBody = await ministerValidation.json();
+    assert.equal(ministerValidationBody.error, 'PROMPT_REQUIRED');
+
     const queryResponse = await request('/api/deep-core/query', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
