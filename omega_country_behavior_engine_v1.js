@@ -125,10 +125,58 @@
     return null;
   }
 
+  function registeredMetric(identity, fields) {
+    const api = g.OmegaCountryGeneralDataRuntime || g.Omega?.CountryGeneralData;
+    if (!api || typeof api.getCountryRecord !== 'function') return null;
+    let record = null;
+    try { record = api.getCountryRecord(identity) || null; } catch (_) {}
+    if (!record) {
+      for (const key of [identity?.iso3, identity?.countryCode, identity?.canonicalId, identity?.name]) {
+        if (!key) continue;
+        try { record = api.getCountryRecord(key) || null; } catch (_) {}
+        if (record) break;
+      }
+    }
+    if (!record || !obj(record.metrics)) return null;
+    for (const key of fields || []) {
+      const value = num(record.metrics[key]);
+      if (value === null) continue;
+      const metadata = obj(record.metricMetadata?.[key]) ? record.metricMetadata[key] : {};
+      const status = String(metadata.status || 'REGISTERED_COUNTRY_DATA');
+      const year = num(metadata.year);
+      return {
+        value,
+        source: [
+          'country_general_data_registry_v1.json',
+          metadata.sourceName || metadata.sourceId || 'source-not-recorded',
+          year === null ? null : 'year=' + year,
+          status
+        ].filter(Boolean).join(':'),
+        key,
+        status,
+        year,
+        sourceId: metadata.sourceId || null,
+        sourceName: metadata.sourceName || null,
+        method: metadata.method || null
+      };
+    }
+    return null;
+  }
+
+  const CURRENT_REGISTRY_STATUSES = new Set([
+    'WORLD_BANK_API_OBSERVATION',
+    'DERIVED_SAME_YEAR_OBSERVATIONS'
+  ]);
+
   function readMetric(identity, base, spec) {
-    const live = liveMetric(identity, spec.domains || [], spec.live || spec.fields);
+    const fields = spec.fields || [];
+    const live = liveMetric(identity, spec.domains || [], spec.live || fields);
     if (live) return live;
-    return recordedMetric(base, spec.fields || []);
+    const registered = registeredMetric(identity, fields);
+    if (registered && CURRENT_REGISTRY_STATUSES.has(registered.status)) return registered;
+    // Older/local baselines remain useful when the source registry has no recent
+    // observation, but they must never shadow a current source-backed observation.
+    return recordedMetric(base, fields) || registered;
   }
 
   function pct(value) {
