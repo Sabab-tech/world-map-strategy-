@@ -789,12 +789,16 @@
     if (facts.debtToGdpPct > 180 || (facts.inflationPct !== null && facts.inflationPct > 20))
       return { ok: false, code: 'PARTNER_MACRO_RISK_ABOVE_LIMIT' };
     const reserveFloor = Math.max(1000000, facts.gdpUsd * 0.005);
-    const maxCommitment = Math.max(0, Math.min(facts.gdpUsd * 0.02, facts.treasuryUsd - reserveFloor));
-    const commitment = finite(input.commitmentLimitUsd);
-    if (commitment === null || commitment < 1000000 || commitment > maxCommitment + 0.01)
-      return { ok: false, code: 'PARTNER_COMMITMENT_OUT_OF_RANGE', minimumUsd: 1000000, maximumUsd: round(maxCommitment, 2) || 0 };
     const code = codeOf(profile);
     const prior = bank.partnersByCountry[code] || {};
+    const alreadyDrawn = Math.max(0, finite(prior.totalDrawnUsd) || 0);
+    const freshCapacity = Math.max(0, Math.min(facts.gdpUsd * 0.02, facts.treasuryUsd - reserveFloor + alreadyDrawn));
+    const maxCommitment = Math.max(alreadyDrawn, freshCapacity);
+    const commitment = finite(input.commitmentLimitUsd);
+    if (commitment === null || commitment < Math.max(1000000, alreadyDrawn) || commitment > maxCommitment + 0.01)
+      return { ok: false, code: 'PARTNER_COMMITMENT_OUT_OF_RANGE',
+        minimumUsd: round(Math.max(1000000, alreadyDrawn), 2), maximumUsd: round(maxCommitment, 2) || 0,
+        message: 'Commitments cannot fall below already-drawn principal or exceed the available reserve-adjusted limit.' };
     bank.partnersByCountry[code] = Object.assign({}, prior, {
       countryCode: code, countryName: profile.name, role: 'LENDER',
       commitmentLimitUsd: round(commitment, 2), consentTurn: currentTurn(),
