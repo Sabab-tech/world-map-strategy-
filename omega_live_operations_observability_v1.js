@@ -92,7 +92,11 @@
   const h = x => txt(x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   const fmt = (x, digits = 2) => {
     const n = numeric(x);
-    return n === null ? 'Not recorded' : n.toLocaleString(undefined, { maximumFractionDigits: digits });
+    if (n === null) return 'Not recorded';
+    const formatter = g.OmegaNumberFormat;
+    return formatter && typeof formatter.compact === 'function'
+      ? formatter.compact(n, { maximumFractionDigits: digits })
+      : n.toLocaleString(undefined, { maximumFractionDigits: digits });
   };
   const gameState = () => obj(g.Game && g.Game.state || g.gameState || g.Omega && g.Omega.Simulation && g.Omega.Simulation.state);
   const currentTurn = () => {

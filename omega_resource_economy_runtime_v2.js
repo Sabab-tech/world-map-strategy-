@@ -1061,8 +1061,16 @@
   }
   var uiOriginal=null;
   function esc(v){return String(v==null?'':v).replace(/[&<>"]/g,function(ch){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch];});}
-  function money(v){var n=num(v);return n===null?'—':n.toLocaleString(undefined,{maximumFractionDigits:2});}
-  function sig(v){var n=num(v);return n===null?'—':(n>0?'+':'')+n.toLocaleString(undefined,{maximumFractionDigits:2});}
+  function money(v){
+    var n=num(v),formatter=g.OmegaNumberFormat;
+    if(n===null)return '—';
+    return formatter&&typeof formatter.compact==='function'?formatter.compact(n,{maximumFractionDigits:2}):n.toLocaleString(undefined,{maximumFractionDigits:2});
+  }
+  function sig(v){
+    var n=num(v),formatter=g.OmegaNumberFormat;
+    if(n===null)return '—';
+    return (n>0?'+':'')+(formatter&&typeof formatter.compact==='function'?formatter.compact(n,{maximumFractionDigits:2}):n.toLocaleString(undefined,{maximumFractionDigits:2}));
+  }
   function pct(v){var n=num(v);return n===null?'—':(n*100).toFixed(2)+'%';}
   function ui(){
     if(!g.CountryIOS||typeof g.CountryIOS.renderChapter5_Resources!=='function')return;

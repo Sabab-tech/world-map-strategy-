@@ -25,7 +25,8 @@
   }
   function esc(v) { return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
   function money(v) {
-    var e = engine();
+    var e = engine(), formatter=g.OmegaNumberFormat;
+    if(formatter&&typeof formatter.money==='function')return formatter.money(v,{unavailable:'Unavailable'});
     if (e && e.formatMoney) return e.formatMoney(v);
     var n = Number(v);
     return Number.isFinite(n) ? '$' + Math.round(n).toLocaleString('en-US') : 'Unavailable';

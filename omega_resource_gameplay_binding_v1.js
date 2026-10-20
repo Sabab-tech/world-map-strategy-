@@ -48,10 +48,14 @@ function humanize(value){
  return label.replace(/\b[a-z]/g,c=>c.toUpperCase());
 }
 function formatScalar(value){
- if(typeof value==='number'&&Number.isFinite(value))return new Intl.NumberFormat('en-US',{maximumFractionDigits:3}).format(value);
+ const root=typeof window!=='undefined'?window:globalThis,formatter=root.OmegaNumberFormat;
+ if(typeof value==='number'&&Number.isFinite(value))return formatter&&typeof formatter.compact==='function'?formatter.compact(value):new Intl.NumberFormat('en-US',{maximumFractionDigits:3}).format(value);
  if(typeof value==='string'){
   const trimmed=value.trim();
-  if(/^-?\d[\d,]*(\.\d+)?$/.test(trimmed))return new Intl.NumberFormat('en-US',{maximumFractionDigits:3}).format(Number(trimmed.replace(/,/g,'')));
+  if(/^-?\d[\d,]*(\.\d+)?$/.test(trimmed)){
+   const numeric=Number(trimmed.replace(/,/g,''));
+   return formatter&&typeof formatter.compact==='function'?formatter.compact(numeric):new Intl.NumberFormat('en-US',{maximumFractionDigits:3}).format(numeric);
+  }
   return trimmed;
  }
  return humanize(value);
