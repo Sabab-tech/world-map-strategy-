@@ -303,6 +303,26 @@ test('runtime renders all global sites and applies nation/resource scope without
   assert.equal(diagnosticsAfterLoad.sourceRecordCounts.runtimeDeposits,43,'diagnostics must count all raw runtime deposit records');
   assert.ok(Object.values(diagnosticsAfterLoad.coordinateStatusCounts).reduce((a,b)=>a+b,0)===diagnosticsAfterLoad.siteCount,
     'coordinate confidence reporting must cover every mapped site');
+  // The supplemental country dataset must populate the same map registry and survive a nation-scope switch.
+  const mappedBotswanaSites=context.Omega.IndividualResourceSiteBinding.sites.filter(site=>site.countryId==='BWA');
+  assert.ok(mappedBotswanaSites.length>=4,'Botswana supplemental sites must be visible in the shared map registry');
+  assert.ok(mappedBotswanaSites.some(site=>site.siteId==='SITE_BWA_sua_pan_salt_soda_ash_operation'),
+    'Botswana Sua Pan must join the map and country-filter registry');
+  context.Game.Map.resourceState.scope='NATION';
+  context.Game.currentActiveCountry='BWA';
+  context.Game.Map.resourceState.selectedResources=vm.runInContext("new Set(['all'])",context);
+  context.Omega.IndividualResourceSiteBinding.refresh();
+  assert.equal(markerCount(),mappedBotswanaSites.length,'selecting Botswana must render only Botswana mine/site markers');
+  const visibleBotswanaMarkers=[...layers].flatMap(layer=>layer.markers);
+  for(const site of mappedBotswanaSites){
+    const c=site.location.coordinates;
+    assert.ok(visibleBotswanaMarkers.some(marker=>Math.abs(Number(marker.latlng[0])-Number(c.lat))<1e-7&&Math.abs(Number(marker.latlng[1])-Number(c.lng))<1e-7),
+      site.siteId+': Botswana site must be visible at its individual coordinates');
+  }
+  context.Game.Map.resourceState.scope='NATION';
+  context.Game.currentActiveCountry='Saudi Arabia';
+  context.Game.Map.resourceState.selectedResources=vm.runInContext("new Set(['all'])",context);
+  context.Omega.IndividualResourceSiteBinding.refresh();
   const loadedSaudiSites=context.Omega.IndividualResourceSiteBinding.sites.filter(site=>site.countryId==='SAU');
   assert.equal(loadedSaudiSites.length,5,'Saudi Arabia must retain its three original source records plus two newly integrated physical sites');
   assert.ok(loadedSaudiSites.every(site=>site.location.coordinateStatus),
