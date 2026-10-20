@@ -301,7 +301,7 @@ test('a failed sector stops future days and exposes the exact failed participant
     order.push('failed-sector');
     throw new Error('SYNTHETIC_SECTOR_FAILURE');
   }, { priority: 10 });
-  sim.registerTurnParticipant('test.after-failure', async context => {
+  sim.registerTurnParticipant('test.after-failure', async (_event, context) => {
     order.push('later-sector:' + context.turn);
   }, { priority: 20 });
   sim.startSession({ playerCountryId: 'BGD' });
@@ -374,7 +374,7 @@ test('internal Simulation.events subscribers are awaited and ordered with legacy
     await new Promise(resolve => setTimeout(resolve, 5));
     order.push('ledger:end:' + event.simulationTurn);
   });
-  sim.registerSubsystem('test.after-ledger', async context => {
+  sim.registerSubsystem('test.after-ledger', async (_event, context) => {
     order.push('explicit:' + context.turn);
   }, { priority: 5 });
 
