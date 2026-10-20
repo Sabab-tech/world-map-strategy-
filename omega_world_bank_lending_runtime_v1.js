@@ -885,8 +885,12 @@
       if (loan.status === 'REPAID') continue;
       if (finite(loan.lastAccruedTurn) !== null && turn <= loan.lastAccruedTurn) continue;
       const balance = Math.max(0, finite(loan.outstandingPrincipalUsd) || 0) + Math.max(0, finite(loan.accruedInterestUsd) || 0);
-      const rate = Math.max(0, finite(loan.annualInterestRatePct) || 0) / 100;
-      const interest = balance * (Math.pow(1 + rate, elapsedYears) - 1);
+      const baseRate = Math.max(0, finite(loan.annualInterestRatePct) || 0);
+      const daysPastDue = Math.max(0, finite(loan.daysPastDue) || 0);
+      const penaltySpread = daysPastDue > 0 || ['ARREARS', 'DEFAULTED', 'INSOLVENT'].includes(String(loan.status || '').toUpperCase()) ? 2 : 0;
+      const effectiveRate = clamp(baseRate + penaltySpread, 0, 10.5);
+      loan.penaltySpreadPct = penaltySpread;
+      const interest = balance * (Math.pow(1 + effectiveRate / 100, elapsedYears) - 1);
       loan.accruedInterestUsd = round((finite(loan.accruedInterestUsd) || 0) + interest, 6);
       loan.lastInterestAccruedUsd = interest;
       loan.ageYears = Math.max(0, finite(loan.ageYears) || 0) + elapsedYears;
@@ -899,12 +903,14 @@
     const profile = resolveProfile(value);
     if (!profile) return { ok: false, paidUsd: 0, principalPaidUsd: 0, interestPaidUsd: 0, arrearsUsd: 0, entries: [] };
     const elapsedYears = Math.max(0, finite(years) || 0);
+    const elapsedDays = Math.max(0, elapsedYears * 365);
     const turn = finite(turnNumber) ?? currentTurn();
     let cash = Math.max(0, finite(treasuryAfterInterestUsd) || 0);
     const gdp = Math.max(0, finite(gdpUsd) || 0);
     const reserveFloor = gdp * 0.005;
     cash = Math.max(0, cash - reserveFloor);
     const bank = store(true);
+    if (!isObject(bank.insolvencyByCountry)) bank.insolvencyByCountry = {};
     const loans = bank.loansByCountry[codeOf(profile)] || [];
     let totalPaid = 0, principalPaid = 0, interestPaid = 0, totalArrears = 0;
     const entries = [];
@@ -920,11 +926,12 @@
       const overdue = Math.max(0, finite(loan.arrearsUsd) || 0);
       let due;
       if (age <= grace) due = Math.max(0, finite(loan.lastInterestAccruedUsd) || 0) + overdue;
-      else if (age >= term) due = principal + accrued;
+      else if (age >= term) due = principal + accrued + overdue;
       else due = annualPayment(principal, rate, Math.max(1 / 365, term - age)) * elapsedYears + overdue;
       due = Math.min(principal + accrued, Math.max(0, due));
       if (due <= 0) {
         loan.lastServiceTurn = turn;
+        if (!finite(loan.daysPastDue)) loan.daysPastDue = 0;
         continue;
       }
       const paid = Math.min(due, cash);
@@ -936,21 +943,59 @@
       loan.totalPrincipalPaidUsd = round((finite(loan.totalPrincipalPaidUsd) || 0) + paidPrincipal, 6);
       loan.arrearsUsd = round(Math.max(0, due - paid), 6);
       loan.lastServiceTurn = turn;
-      loan.status = loan.outstandingPrincipalUsd <= 0.01 && loan.accruedInterestUsd <= 0.01
-        ? 'REPAID' : loan.arrearsUsd > 0.01 ? 'ARREARS' : 'ACTIVE';
+      if (loan.arrearsUsd > 0.01) {
+        loan.daysPastDue = Math.max(0, finite(loan.daysPastDue) || 0) + elapsedDays;
+        loan.firstMissedPaymentTurn = finite(loan.firstMissedPaymentTurn) ?? turn;
+        loan.penaltySpreadPct = 2;
+        loan.status = loan.daysPastDue >= 180 ? 'DEFAULTED' : 'ARREARS';
+        if (loan.daysPastDue >= 180) loan.everDefaulted = true;
+        const insolvencyStatus = loan.daysPastDue >= 360 ? 'BANKRUPTCY_PROCEEDING'
+          : loan.daysPastDue >= 270 ? 'INSOLVENCY_REVIEW'
+            : loan.daysPastDue >= 180 ? 'DEFAULTED' : 'ARREARS';
+        const existing = bank.insolvencyByCountry[codeOf(profile)] || {};
+        const rank = { ARREARS: 1, DEFAULTED: 2, INSOLVENCY_REVIEW: 3, BANKRUPTCY_PROCEEDING: 4 };
+        const oldRank = rank[String(existing.status || '').toUpperCase()] || 0;
+        if ((rank[insolvencyStatus] || 0) > oldRank) {
+          bank.insolvencyByCountry[codeOf(profile)] = {
+            countryCode: codeOf(profile), countryName: profile.name, status: insolvencyStatus,
+            loanId: loan.loanId, overdueDays: Math.floor(loan.daysPastDue), overdueUsd: loan.arrearsUsd,
+            updatedTurn: turn,
+            reason: insolvencyStatus === 'BANKRUPTCY_PROCEEDING'
+              ? '360 simulated days in arrears; new credit is frozen while a sovereign workout is reviewed.'
+              : insolvencyStatus === 'INSOLVENCY_REVIEW'
+                ? '270 simulated days in arrears; a restructuring review is required.'
+                : insolvencyStatus === 'DEFAULTED'
+                  ? '180 simulated days in arrears; a default hold is active.'
+                  : 'A payment is overdue; the simulated notice and mediation sequence has started.'
+          };
+          bankLedger({ type: 'SOVEREIGN_PAYMENT_STATUS_CHANGED', loanId: loan.loanId,
+            countryCode: codeOf(profile), countryName: profile.name, status: insolvencyStatus,
+            overdueDays: Math.floor(loan.daysPastDue), arrearsUsd: loan.arrearsUsd });
+        }
+      } else {
+        loan.daysPastDue = 0;
+        loan.firstMissedPaymentTurn = null;
+        loan.arrearsUsd = 0;
+        loan.penaltySpreadPct = 0;
+        loan.status = loan.outstandingPrincipalUsd <= 0.01 && loan.accruedInterestUsd <= 0.01
+          ? 'REPAID' : (loan.everDefaulted ? 'DEFAULTED' : 'ACTIVE');
+      }
       cash -= paid;
       totalPaid += paid;
       principalPaid += paidPrincipal;
       interestPaid += paidInterest;
       totalArrears += loan.arrearsUsd;
-      if (paid > 0.01) {
-        entries.push({
-          type: 'WORLD_BANK_DEBT_SERVICE', loanId: loan.loanId, countryCode: codeOf(profile),
-          principalPaidUsd: round(paidPrincipal, 2), interestPaidUsd: round(paidInterest, 2),
-          amountUsd: round(paid, 2), status: loan.status, turn: turn
-        });
-      }
+      if (paid > 0.01) entries.push({
+        type: 'WORLD_BANK_DEBT_SERVICE', loanId: loan.loanId, countryCode: codeOf(profile),
+        principalPaidUsd: round(paidPrincipal, 2), interestPaidUsd: round(paidInterest, 2),
+        amountUsd: round(paid, 2), status: loan.status, turn: turn
+      });
       if (cash <= 0.01) break;
+    }
+    if (totalPaid > 0.01) {
+      bank.liquidity.cashBalanceUsd = Math.max(0, (finite(bank.liquidity.cashBalanceUsd) || 0) + totalPaid);
+      bank.liquidity.totalRepaymentsReceivedUsd = (finite(bank.liquidity.totalRepaymentsReceivedUsd) || 0) + totalPaid;
+      bank.liquidity.lastRepaymentTurn = turn;
     }
     entries.forEach(entry => bankLedger(entry));
     return {
