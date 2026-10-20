@@ -1022,8 +1022,185 @@
       applied += paid;
       if (loan.outstandingPrincipalUsd <= 0.01 && (finite(loan.accruedInterestUsd) || 0) <= 0.01) loan.status = 'REPAID';
     }
-    if (applied > 0) bankLedger({ type: 'WORLD_BANK_MANUAL_PRINCIPAL_REPAYMENT', countryCode: codeOf(profile), amountUsd: round(applied, 2) });
+    if (applied > 0) {
+      bank.liquidity.cashBalanceUsd = Math.max(0, (finite(bank.liquidity.cashBalanceUsd) || 0) + applied);
+      bank.liquidity.totalRepaymentsReceivedUsd = (finite(bank.liquidity.totalRepaymentsReceivedUsd) || 0) + applied;
+      bankLedger({ type: 'WORLD_BANK_MANUAL_PRINCIPAL_REPAYMENT', countryCode: codeOf(profile), amountUsd: round(applied, 2) });
+    }
     return { ok: true, amountAppliedUsd: round(applied, 2) || 0, unappliedUsd: round(remaining, 2) || 0 };
+  }
+
+  function requestRestructuring(input) {
+    input = isObject(input) ? input : {};
+    const profile = resolveProfile(input.countryId || currentCountryProfile());
+    if (!profile) return { ok: false, code: 'COUNTRY_NOT_FOUND' };
+    const player = playerProfile();
+    if (!player || codeOf(player) !== codeOf(profile))
+      return { ok: false, code: 'PLAYER_COUNTRY_SCOPE_VIOLATION' };
+    const bank = store(true);
+    const loanId = String(input.loanId || '').trim();
+    const loan = getLoanList(profile).find(item => item.loanId === loanId && item.status !== 'REPAID');
+    if (!loan) return { ok: false, code: 'ACTIVE_LOAN_NOT_FOUND' };
+    const overdue = Math.max(0, finite(loan.daysPastDue) || 0);
+    if (overdue < 30 && !['ARREARS', 'DEFAULTED', 'INSOLVENT'].includes(String(loan.status || '').toUpperCase()))
+      return { ok: false, code: 'RESTRUCTURING_NOT_YET_ELIGIBLE', minimumDaysPastDue: 30 };
+    const currentRate = Math.max(0.5, finite(loan.annualInterestRatePct) || 0.5);
+    const rate = finite(input.annualInterestRatePct) ?? currentRate;
+    const term = finite(input.termYears) ?? finite(loan.termYears);
+    const grace = finite(input.graceYears) ?? 0;
+    if (rate < Math.max(0.5, currentRate - 1) || rate > Math.min(10.5, currentRate + 2))
+      return { ok: false, code: 'RESTRUCTURE_RATE_OUT_OF_RANGE', minimumRatePct: Math.max(0.5, currentRate - 1), maximumRatePct: Math.min(10.5, currentRate + 2) };
+    if (!Number.isInteger(term) || term < Math.max(5, Math.ceil(finite(loan.termYears) || 5)) || term > Math.min(40, Math.ceil(finite(loan.termYears) || 5) + 5))
+      return { ok: false, code: 'RESTRUCTURE_TERM_OUT_OF_RANGE', minimumTermYears: Math.max(5, Math.ceil(finite(loan.termYears) || 5)), maximumTermYears: Math.min(40, Math.ceil(finite(loan.termYears) || 5) + 5) };
+    if (!Number.isInteger(grace) || grace < 0 || grace > 2)
+      return { ok: false, code: 'RESTRUCTURE_GRACE_OUT_OF_RANGE', minimumGraceYears: 0, maximumGraceYears: 2 };
+    const facts = countryFacts(profile);
+    const assessment = scoreCountry(profile);
+    if (!facts || !facts.simulationDataAvailable || facts.gdpUsd === null || facts.debtToGdpPct === null || facts.debtToGdpPct >= 300)
+      return { ok: false, code: 'RESTRUCTURING_FISCAL_REVIEW_REQUIRED', message: 'Core game-economic data must be available and debt/GDP must remain below the 300% hard stop.' };
+    if (!Array.isArray(bank.restructuringProposals)) bank.restructuringProposals = [];
+    const proposalId = 'WBR-' + codeOf(profile) + '-' + currentTurn() + '-' + String(bank.nextSequence++);
+    const proposed = {
+      proposalId: proposalId, loanId: loanId, countryCode: codeOf(profile), countryName: profile.name,
+      status: 'APPROVED_SIMULATED_WORKOUT', priorStatus: loan.status, overdueDaysAtProposal: overdue,
+      annualInterestRatePct: round(rate, 3), termYears: term, graceYears: grace,
+      createdTurn: currentTurn(), resolvedTurn: currentTurn(),
+      terms: 'GAME_RULE_RESTRUCTURE_NOT_REAL_INTERNATIONAL_LAW'
+    };
+    loan.preRestructure = { status: loan.status, rate: loan.annualInterestRatePct,
+      termYears: loan.termYears, graceYears: loan.graceYears, overdueDays: overdue };
+    loan.outstandingPrincipalUsd = round(Math.max(0, finite(loan.outstandingPrincipalUsd) || 0), 6);
+    loan.accruedInterestUsd = round(Math.max(0, finite(loan.accruedInterestUsd) || 0) + Math.max(0, finite(loan.arrearsUsd) || 0), 6);
+    loan.arrearsUsd = 0;
+    loan.daysPastDue = 0;
+    loan.firstMissedPaymentTurn = null;
+    loan.penaltySpreadPct = 0;
+    loan.annualInterestRatePct = round(rate, 3);
+    loan.termYears = term;
+    loan.graceYears = grace;
+    loan.ageYears = 0;
+    loan.status = 'RESTRUCTURED';
+    loan.restructuredAtTurn = currentTurn();
+    loan.restructuringCount = (finite(loan.restructuringCount) || 0) + 1;
+    loan.lastAccruedTurn = currentTurn();
+    bank.insolvencyByCountry[codeOf(profile)] = {
+      countryCode: codeOf(profile), countryName: profile.name, status: 'RESTRUCTURED',
+      loanId: loanId, proposalId: proposalId, updatedTurn: currentTurn(),
+      reason: 'A bounded OMEGA simulation workout reset the repayment schedule. Capital and accrued obligations remain recorded.'
+    };
+    bank.restructuringProposals.push(proposed);
+    bank.restructuringProposals = bank.restructuringProposals.slice(-MAX_HISTORY);
+    bankLedger({ type: 'SOVEREIGN_LOAN_RESTRUCTURED', countryCode: codeOf(profile), loanId: loanId,
+      proposalId: proposalId, annualInterestRatePct: rate, termYears: term, graceYears: grace,
+      score: assessment && assessment.score, reason: String(input.reason || 'Liquidity-stress workout').slice(0, 180) });
+    evaluateAll(true);
+    return { ok: true, proposal: clone(proposed), loan: clone(loan) };
+  }
+
+  function processTurn(turnNumber, stepDurationMs) {
+    const bank = store(true);
+    const turn = finite(turnNumber) ?? currentTurn();
+    if (finite(bank.lastInstitutionTurn) === turn) return { ok: true, cached: true, turn: turn, processed: 0 };
+    const dt = Math.max(0, finite(stepDurationMs) || 0);
+    const years = dt / DAY_MS / 365;
+    if (years <= 0) return { ok: true, turn: turn, processed: 0 };
+    let processed = 0, repayments = 0, accrued = 0;
+    const banking = global.OmegaGovernmentBanking || (global.Omega && global.Omega.GovernmentBanking) || null;
+    for (const loan of bank.fundingLoans || []) {
+      if (!loan || ['REPAID', 'CANCELLED'].includes(String(loan.status || '').toUpperCase())) continue;
+      if (finite(loan.lastAccruedTurn) !== null && turn <= loan.lastAccruedTurn) continue;
+      const principal = Math.max(0, finite(loan.outstandingPrincipalUsd) || 0);
+      const interestBalance = Math.max(0, finite(loan.accruedInterestUsd) || 0);
+      const baseRate = Math.max(0, finite(loan.annualInterestRatePct) || 0);
+      const daysPastDue = Math.max(0, finite(loan.daysPastDue) || 0);
+      const penaltySpread = daysPastDue > 0 ? 2 : 0;
+      const effectiveRate = clamp(baseRate + penaltySpread, 0, 10.5);
+      const newInterest = (principal + interestBalance) * (Math.pow(1 + effectiveRate / 100, years) - 1);
+      const unsynced = Math.max(0, finite(loan.unsyncedInterestUsd) || 0) + newInterest;
+      if (unsynced > 0.000001) {
+        if (!banking || typeof banking.fundWorldBankLiquidity !== 'function') {
+          loan.unsyncedInterestUsd = unsynced;
+          bank.liquidity.institutionStatus = 'RECONCILIATION_REQUIRED';
+          continue;
+        }
+        const sync = banking.fundWorldBankLiquidity({
+          authorization: 'OMEGA_WORLD_BANK_LENDING', action: 'ACCRUE',
+          countryId: loan.lenderCountryCode, contractId: loan.contractId,
+          accrualId: loan.contractId + ':TURN:' + String(turn), amountUsd: unsynced
+        });
+        if (!sync || sync.ok !== true) {
+          loan.unsyncedInterestUsd = unsynced;
+          bank.liquidity.institutionStatus = 'RECONCILIATION_REQUIRED';
+          bankLedger({ type: 'WORLD_BANK_FUNDING_ACCRUAL_SYNC_FAILED', contractId: loan.contractId,
+            countryCode: loan.lenderCountryCode, turn: turn, code: sync && sync.code || 'UNKNOWN' });
+          continue;
+        }
+        loan.unsyncedInterestUsd = 0;
+        loan.accruedInterestUsd = interestBalance + unsynced;
+        accrued += unsynced;
+      }
+      loan.ageYears = Math.max(0, finite(loan.ageYears) || 0) + years;
+      loan.lastAccruedTurn = turn;
+      let due = loan.ageYears <= Math.max(0, finite(loan.graceYears) || 0)
+        ? newInterest + Math.max(0, finite(loan.arrearsUsd) || 0)
+        : annualPayment(principal, effectiveRate, Math.max(1 / 365, (finite(loan.termYears) || 1) - loan.ageYears)) * years + Math.max(0, finite(loan.arrearsUsd) || 0);
+      if (loan.ageYears >= Math.max(1 / 365, finite(loan.termYears) || 1)) due = principal + loan.accruedInterestUsd;
+      due = Math.max(0, Math.min(principal + loan.accruedInterestUsd, due));
+      const cashPool = Math.max(0, finite(bank.liquidity.cashBalanceUsd) || 0);
+      const poolFloor = Math.max(1000000, (finite(bank.liquidity.initialCapitalUsd) || DEFAULT_OPENING_LIQUIDITY_USD) * 0.01);
+      const availableCash = Math.max(0, cashPool - poolFloor);
+      const pay = Math.min(due, availableCash);
+      const paidInterest = Math.min(loan.accruedInterestUsd, pay);
+      const paidPrincipal = Math.min(principal, Math.max(0, pay - paidInterest));
+      if (pay > 0.01 && banking && typeof banking.fundWorldBankLiquidity === 'function') {
+        const settled = banking.fundWorldBankLiquidity({
+          authorization: 'OMEGA_WORLD_BANK_LENDING', action: 'REPAY',
+          countryId: loan.lenderCountryCode, contractId: loan.contractId,
+          amountUsd: pay, principalPaidUsd: paidPrincipal, interestPaidUsd: paidInterest
+        });
+        if (!settled || settled.ok !== true) {
+          bank.liquidity.institutionStatus = 'RECONCILIATION_REQUIRED';
+          bankLedger({ type: 'WORLD_BANK_FUNDING_REPAYMENT_SYNC_FAILED', contractId: loan.contractId,
+            countryCode: loan.lenderCountryCode, turn: turn, code: settled && settled.code || 'UNKNOWN' });
+          continue;
+        }
+        loan.outstandingPrincipalUsd = round(Math.max(0, principal - paidPrincipal), 6);
+        loan.accruedInterestUsd = round(Math.max(0, loan.accruedInterestUsd - paidInterest), 6);
+        loan.totalPrincipalPaidUsd = (finite(loan.totalPrincipalPaidUsd) || 0) + paidPrincipal;
+        loan.totalInterestPaidUsd = (finite(loan.totalInterestPaidUsd) || 0) + paidInterest;
+        loan.arrearsUsd = round(Math.max(0, due - pay), 6);
+        bank.liquidity.cashBalanceUsd = Math.max(0, cashPool - pay);
+        bank.liquidity.totalFundingDebtServiceUsd = (finite(bank.liquidity.totalFundingDebtServiceUsd) || 0) + pay;
+        repayments += pay;
+      } else {
+        loan.arrearsUsd = round(Math.max(0, due - pay), 6);
+      }
+      if (loan.arrearsUsd > 0.01) {
+        loan.daysPastDue = Math.max(0, finite(loan.daysPastDue) || 0) + years * 365;
+        loan.status = loan.daysPastDue >= 180 ? 'DEFAULTED' : 'ARREARS';
+      } else if (loan.outstandingPrincipalUsd <= 0.01 && loan.accruedInterestUsd <= 0.01) {
+        loan.status = 'REPAID';
+        loan.daysPastDue = 0;
+      } else {
+        loan.status = 'ACTIVE';
+        loan.daysPastDue = 0;
+      }
+      if (loan.daysPastDue >= 360) {
+        bank.liquidity.institutionStatus = 'BANKRUPTCY_PROCEEDING';
+        bank.liquidity.institutionInsolvency = { status: 'BANKRUPTCY_PROCEEDING', contractId: loan.contractId,
+          lenderCountryCode: loan.lenderCountryCode, overdueDays: Math.floor(loan.daysPastDue), turn: turn,
+          reason: 'OMEGA failed to service simulated sovereign partner funding for 360 days.' };
+      } else if (loan.daysPastDue >= 180 && bank.liquidity.institutionStatus !== 'BANKRUPTCY_PROCEEDING') {
+        bank.liquidity.institutionStatus = 'DEFAULTED';
+      } else if (!['DEFAULTED', 'BANKRUPTCY_PROCEEDING', 'RECONCILIATION_REQUIRED'].includes(bank.liquidity.institutionStatus)) {
+        bank.liquidity.institutionStatus = 'ACTIVE';
+      }
+      processed++;
+    }
+    bank.lastInstitutionTurn = turn;
+    return { ok: true, turn: turn, processed: processed, repaymentsUsd: round(repayments, 2) || 0,
+      interestAccruedUsd: round(accrued, 2) || 0, cashBalanceUsd: bank.liquidity.cashBalanceUsd,
+      status: bank.liquidity.institutionStatus || 'ACTIVE' };
   }
 
   async function fetchWB(url) {
@@ -1674,6 +1851,9 @@
     accrueInterest: accrueInterest,
     serviceDebt: serviceDebt,
     applyManualRepayment: applyManualRepayment,
+    requestRestructuring: requestRestructuring,
+    registerFundingPartner: registerFundingPartner,
+    processTurn: processTurn,
     getState: function () { return clone(store(true)); }
   };
   global.OmegaWorldBankLending = api;
