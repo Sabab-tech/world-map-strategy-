@@ -65,6 +65,19 @@
         if(v!==null){out.dimensions[dim]={value:v,availability:'AVAILABLE',source:src};observedDimensions+=1;}
       }
     }
+    // Explicit country doctrine remains authoritative. Shared source metrics only fill missing traits.
+    try {
+      const countryData=g.OmegaCountryGeneralDataRuntime||g.Omega&&g.Omega.CountryGeneralData;
+      const derived=countryData&&typeof countryData.getBehaviorProfile==='function'?countryData.getBehaviorProfile(cid):null;
+      if(derived&&derived.dimensions)for(const dim of DIMENSIONS){
+        if(out.dimensions[dim].value!==null)continue;
+        const item=derived.dimensions[dim],v=normalize(item&&item.value);
+        if(v===null)continue;
+        out.dimensions[dim]={value:v,availability:'DERIVED_HEURISTIC',
+          source:'COUNTRY_GENERAL_DATA_REGISTRY_V1:DERIVED_HEURISTIC',formula:item.formula||null,evidence:clone(item.evidence||[])};
+        observedDimensions+=1;out.source=out.source||'COUNTRY_GENERAL_DATA_REGISTRY_V1:DERIVED_HEURISTIC';
+      }
+    } catch(_) {}
     if(observedDimensions>0)out.availability='AVAILABLE';
     return out;
   }
