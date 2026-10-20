@@ -279,6 +279,7 @@
         status: 'ACTIVE', source: 'OMEGA_SIMULATED_WORLD_BANK_FUNDING',
         sourceTreasuryBeforeUsd: treasury, sourceTreasuryAfterUsd: treasury - amount
       };
+      claim.accrualsById = {};
       claims.push(claim);
       const usdAccount = ensureAccount(profile, 'USD');
       if (usdAccount) {
@@ -292,6 +293,21 @@
       bank.ledger = bank.ledger.slice(-Number(rules.maximumLedgerEntries || 1000));
       emitLedgerEvent('OMEGA_WORLD_BANK_FUNDING_DRAW', { countryCode, contractId, amountUsd: amount });
       return { ok: true, claim: clone(claim), treasuryBalanceUsd: treasury - amount };
+    }
+    if (action === 'ACCRUE') {
+      if (!prior) return { ok: false, code: 'FUNDING_CLAIM_NOT_FOUND', contractId };
+      const accrualId = String(input.accrualId || '').trim();
+      if (!accrualId || accrualId.length > 160) return { ok: false, code: 'FUNDING_ACCRUAL_ID_REQUIRED' };
+      if (!obj(prior.accrualsById)) prior.accrualsById = {};
+      if (prior.accrualsById[accrualId]) return { ok: true, duplicate: true, claim: clone(prior) };
+      prior.accrualsById[accrualId] = { amountUsd: amount, turn: turn() };
+      prior.accruedInterestUsd = (num(prior.accruedInterestUsd) || 0) + amount;
+      bank.ledger.push({ type: 'WORLD_BANK_FUNDING_INTEREST_ACCRUED', countryCode, countryName: profile.name,
+        contractId, accrualId, amountUsd: amount, accruedInterestUsd: prior.accruedInterestUsd,
+        turn: turn(), timestamp: new Date().toISOString() });
+      bank.ledger = bank.ledger.slice(-Number(rules.maximumLedgerEntries || 1000));
+      emitLedgerEvent('OMEGA_WORLD_BANK_FUNDING_INTEREST_ACCRUED', { countryCode, contractId, accrualId, amountUsd: amount });
+      return { ok: true, claim: clone(prior), accruedInterestUsd: prior.accruedInterestUsd };
     }
     if (action === 'REPAY') {
       if (!prior) return { ok: false, code: 'FUNDING_CLAIM_NOT_FOUND', contractId };
