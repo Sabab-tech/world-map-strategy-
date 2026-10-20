@@ -50,6 +50,10 @@ async function loadCountryEngines() {
   assert.ok(runtime, 'shared country runtime should register');
   assert.equal(await runtime.ready, true, 'shared country runtime should initialize');
   assert.equal(typeof runtime.listProfiles, 'function', 'runtime should list canonical country identities');
+  vm.runInContext(read('omega_country_general_data_runtime_v1.js'), context, { filename: 'omega_country_general_data_runtime_v1.js' });
+  const generalData = context.OmegaCountryGeneralDataRuntime;
+  assert.ok(generalData, 'unified country general data runtime should register');
+  assert.equal(await generalData.init(), true, 'unified source-backed country registry should initialize');
   vm.runInContext(read('omega_country_behavior_engine_v1.js'), context, { filename: 'omega_country_behavior_engine_v1.js' });
   const behavior = context.OmegaCountryBehaviorEngine;
   assert.ok(behavior, 'country behaviour engine should register');
@@ -98,6 +102,27 @@ test('country behaviour profile is evidence-backed and differs with country macr
   assert.ok(bangladesh.evidence.registeredMacroMetricCount > 0);
   assert.match(bangladesh.evidence.missingDataPolicy, /NULL/);
   assert.equal(behavior.diagnostics().dimensionCount, 11);
+});
+
+test('source-backed registry metrics take precedence over legacy country snapshots', async () => {
+  const { context, behavior } = await loadCountryEngines();
+  const api = context.OmegaCountryGeneralDataRuntime;
+  const candidates = ['BGD', 'USA', 'IND', 'GBR', 'JPN'];
+  const selected = candidates
+    .map(code => ({ code, record: api.getCountryRecord(code) }))
+    .find(item => item.record &&
+      Number.isFinite(item.record.metrics?.gdpCurrentUsd) &&
+      item.record.metrics.gdpCurrentUsd > 0 &&
+      item.record.metricMetadata?.gdpCurrentUsd?.status === 'WORLD_BANK_API_OBSERVATION');
+
+  assert.ok(selected, 'at least one representative country should expose a refreshed GDP observation');
+  const profile = behavior.getBehaviorProfile(selected.code);
+  assert.equal(profile.metrics.gdpUsd, selected.record.metrics.gdpCurrentUsd,
+    'opponent behaviour must use the latest registered GDP when the live game has no override');
+  assert.equal(profile.metricSources.gdpUsd.status, 'WORLD_BANK_API_OBSERVATION',
+    'the selected metric must retain source status');
+  assert.match(profile.metricSources.gdpUsd.source, /country_general_data_registry_v1\\.json/,
+    'metric provenance should identify the unified source registry');
 });
 
 test('all canonical country and territory identities build a non-error behaviour profile with explicit evidence state', async () => {
