@@ -439,8 +439,10 @@
     const layer = doc.body && typeof doc.body.getAttribute === 'function'
       ? doc.body.getAttribute('data-active-layer') : null;
     const onMap = layer === null || layer === '' || layer === '0';
-    dock.style.display = onMap ? 'flex' : 'none';
+    // Let the layer CSS decide visibility. Avoid sticky inline display:none
+    // after returning to the map when observers/events are delayed on WebView.
     dock.setAttribute('aria-hidden', onMap ? 'false' : 'true');
+    dock.setAttribute('data-omega-map-active', onMap ? 'true' : 'false');
   }
 
   doc.addEventListener('click', handleMapMinistryDockClick, true);
