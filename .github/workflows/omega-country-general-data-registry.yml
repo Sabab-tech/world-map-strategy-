@@ -10,6 +10,19 @@ on:
       - main
     paths:
       - ".github/workflows/omega-country-general-data-registry.yml"
+      - "country-ios.js"
+      - "index.html"
+      - "style.css"
+      - "omega_country_runtime_data_v1.js"
+      - "omega_country_behavior_engine_v1.js"
+      - "omega_country_overview_ministry_ui_v1.js"
+      - "omega_opponent_adaptive_strategy_system.js"
+      - "server_bootstrap.js"
+      - "omega-offline-map-sw.js"
+      - "test/omega_country_runtime_data_v1.test.mjs"
+      - "test/omega_country_behavior_engine_v1.test.mjs"
+      - "relation_generation_engine.json"
+      - "resource_site_reserve_simulation_v1.json"
       - "scripts/build_country_general_data_registry_v1.mjs"
       - "test/country_general_data_registry_v1.test.mjs"
       - "countries.json"
@@ -42,13 +55,23 @@ jobs:
           node-version: "20"
 
       - name: Build unified country registry and refresh source indicators
-        run: node scripts/build_country_general_data_registry_v1.mjs --refresh-sources
+        run: |
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+            node scripts/build_country_general_data_registry_v1.mjs
+          else
+            node scripts/build_country_general_data_registry_v1.mjs --refresh-sources
+          fi
 
       - name: Validate shared schema, source preservation and coverage accounting
-        run: node --test test/country_general_data_registry_v1.test.mjs
+        run: |
+          node --check omega_country_behavior_engine_v1.js
+          node --check omega_country_overview_ministry_ui_v1.js
+          node --check omega_opponent_adaptive_strategy_system.js
+          node --check country-ios.js
+          node --test test/country_general_data_registry_v1.test.mjs test/omega_country_runtime_data_v1.test.mjs test/omega_country_behavior_engine_v1.test.mjs
 
       - name: Commit registry only if it changed
-        if: github.event_name != 'pull_request'
+        if: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
         shell: bash
         run: |
           set -euo pipefail
