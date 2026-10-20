@@ -2779,6 +2779,7 @@ const _omegaExport = (function (globalScope) {
       const mName = (minister && (minister.ministerName || minister.name)) || (countryDetails.ministers && countryDetails.ministers[mId] && countryDetails.ministers[mId].name) || 'Honorable Minister';
       const mRole = (minister && minister.role) || (countryDetails.ministers && countryDetails.ministers[mId] && countryDetails.ministers[mId].role) || 'Cabinet Minister';
       const countryName = countryDetails.name || countryKey;
+      const countryCode = String(countryDetails.countryCode || countryDetails.countryId || '').trim();
       const gameRes = typeof window !== 'undefined' ? (window.resources || {}) : {};
       const parsedIntent = minister && minister.parsedIntent && typeof minister.parsedIntent === 'object' ? minister.parsedIntent : {};
       const dialogueIntent = parsedIntent.dialogueIntent && typeof parsedIntent.dialogueIntent === 'object' ? parsedIntent.dialogueIntent : null;
@@ -2814,7 +2815,7 @@ const _omegaExport = (function (globalScope) {
               ministerName: mName,
               ministerRole: mRole,
               countryName: countryName,
-              countryCode: countryDetails.countryCode || 'BGD',
+              countryCode,
               ministryId,
               dialogueIntent: ministerContext.dialogueIntent,
               ministerContext,
@@ -2837,12 +2838,14 @@ const _omegaExport = (function (globalScope) {
           if (res.ok) {
             const data = await res.json();
             if (data.ok && data.aiPowered && data.text) {
+              const modelLabel = String(data.model || 'configured minister model');
               return {
                 text: data.text,
                 impact: isBn
-                  ? `কগনিটিভ এআই ইন্টেলিজেন্স (Gemini 3.7 Flash) • মন্ত্রী কার্যক্ষমতা: ${minister ? minister.efficiency : 90}% • সার্বভৌম স্থিতিশীলতা: ${countryDetails.stability || '89%'}`
-                  : `Gemini 3.7 Flash Sovereign Synthesis • Minister Efficiency: ${minister ? minister.efficiency : 90}% • Stability: ${countryDetails.stability || '89%'}`,
-                aiPowered: true
+                  ? `কগনিটিভ এআই ইন্টেলিজেন্স (${modelLabel}) • মন্ত্রী কার্যক্ষমতা: ${minister && minister.efficiency != null ? minister.efficiency : 'Not recorded'} • সার্বভৌম স্থিতিশীলতা: ${countryDetails.stability || 'Not recorded'}`
+                  : `Minister AI Synthesis (${modelLabel}) • Minister Efficiency: ${minister && minister.efficiency != null ? minister.efficiency : 'Not recorded'} • Stability: ${countryDetails.stability || 'Not recorded'}`,
+                aiPowered: true,
+                model: modelLabel
               };
             }
           }
