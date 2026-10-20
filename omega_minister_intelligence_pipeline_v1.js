@@ -325,6 +325,44 @@
     };
   }
 
+  function resolveDialogueIntent(question, language, system) {
+    let vocabulary = null;
+    try { vocabulary = system && typeof system.sourceData === 'function' ? system.sourceData('offline_language_vocabulary.json') : null; }
+    catch (error) { rememberError('DIALOGUE_VOCABULARY_READ_FAILED', error, {}); }
+    const rules = vocabulary && vocabulary.languages && vocabulary.languages.conversation && vocabulary.languages.conversation.intentRules;
+    if (!rules || typeof rules !== 'object') return null;
+    const languageKey = language === 'bn' ? 'bn' : 'en';
+    const normalize = value => text(value).normalize('NFKC').toLowerCase()
+      .replace(/[?!.,;:،؛।"'“”‘’()[\]{}<>]+/g, ' ')
+      .replace(/\s+/g, ' ').trim();
+    const normalizedQuestion = normalize(question);
+    if (!normalizedQuestion) return null;
+    const matches = [];
+    for (const [intent, rule] of Object.entries(rules)) {
+      const phrases = rule && rule.phrases && rule.phrases[languageKey];
+      if (!Array.isArray(phrases)) continue;
+      for (const phrase of phrases) {
+        const normalizedPhrase = normalize(phrase);
+        if (!normalizedPhrase) continue;
+        const matched = normalizedQuestion === normalizedPhrase ||
+          normalizedQuestion.startsWith(normalizedPhrase + ' ') ||
+          normalizedQuestion.includes(' ' + normalizedPhrase + ' ') ||
+          normalizedQuestion.endsWith(' ' + normalizedPhrase);
+        if (matched) matches.push({
+          intent,
+          phrase: text(phrase),
+          operation: text(rule.operation || ''),
+          action: text(rule.dialogueAction || intent),
+          priority: Number(rule.priority || 0),
+          matchedLanguage: languageKey,
+          source: 'offline_language_vocabulary.json'
+        });
+      }
+    }
+    matches.sort((a, b) => b.priority - a.priority || b.phrase.length - a.phrase.length);
+    return matches[0] || null;
+  }
+
   async function prepareLanguage(question, context) {
     const system = global.OmegaLanguageSystem;
     const languageContext = {
@@ -344,7 +382,10 @@
       if (typeof system.diagnostics === 'function' && system.diagnostics().ready !== true && typeof system.load === 'function') await system.load();
       if (system.setContext) system.setContext(languageContext);
       const parsed = system.parse(question, languageContext) || {};
-      return { parsed: parsed, language: text(parsed.language || (isBengali ? 'bn' : 'en')), ready: true };
+      const language = text(parsed.language || (isBengali ? 'bn' : 'en'));
+      const dialogueIntent = resolveDialogueIntent(question, language, system);
+      if (dialogueIntent) parsed.dialogueIntent = dialogueIntent;
+      return { parsed: parsed, language: language, ready: true };
     } catch (error) {
       rememberError('LANGUAGE_PARSE_FAILED', error, { ministerId: context.ministerId });
       return { parsed: { raw: question, surface: question, language: isBengali ? 'bn' : 'en', operation: 'CONVERSATION', targetDomain: 'MINISTER' }, language: isBengali ? 'bn' : 'en', ready: false };
@@ -730,6 +771,7 @@
     resolveContext: resolveContext,
     getActiveMinister: getActiveMinister,
     prepareLanguage: prepareLanguage,
+    resolveDialogueIntent: resolveDialogueIntent,
     installLegacyFacade: installLegacyFacade,
     sync: syncAllCanonicalToLegacy,
     diagnostics: diagnostics
