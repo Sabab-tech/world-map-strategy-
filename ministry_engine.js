@@ -455,169 +455,96 @@ window.OmegaCabinetUI = {
     },
 
     // Country Intelligence & Specifications Lookup Core (No hardcoded countries)
+    // Country Intelligence & Specifications Lookup Core.
+    // Canonical runtime data is the only factual source; absent fields stay absent.
     getCountryDetails(countryKey) {
-        const raw = (countryKey || (window.Game && window.Game.currentActiveCountry) || window.currentActiveCountry || "USA").toString().toUpperCase().trim();
-        const norm = raw.replace(/_/g, " ");
-
-        const lookup = {
-            "BANGLADESH": {
-                code: "BD", flag: "🇧🇩", name: "Bangladesh",
-                govtName: "People's Republic of Bangladesh Executive Cabinet",
-                capital: "Dhaka", govtSystem: "Parliamentary Republic",
-                population: "173.0 Million", gdp: "$455.2 Billion",
-                militaryRank: "#37 Worldwide", economicRank: "#33 Worldwide",
-                hdi: "0.661 (Medium)", stability: "88% High",
-                leader: "Executive Prime Minister", currency: "BDT (৳)", language: "Bangla",
-                ministers: {
-                    foreign_affairs: { name: "Dr. A. K. Abdul Momen", role: "Foreign Minister of Bangladesh" },
-                    defense: { name: "Gen. Waker-Uz-Zaman", role: "Chief of Army & Defense Command" },
-                    finance_economy: { name: "Abul Hassan Mahmood Ali", role: "Minister of Finance & Treasury" },
-                    agriculture_food: { name: "Dr. Md. Abdus Shahid", role: "Minister of Agriculture & Food" },
-                    interior_security: { name: "Asaduzzaman Khan", role: "Minister of Home Affairs" },
-                    infrastructure: { name: "Obaidul Quader", role: "Minister of Road Transport & Bridges" },
-                    health_welfare: { name: "Dr. Samanta Lal Sen", role: "Minister of Health & Welfare" },
-                    education: { name: "Mohibul Hassan Chowdhoury", role: "Minister of Education" },
-                    science_research: { name: "Yafes Osman", role: "Minister of Science & Technology" },
-                    energy_mining: { name: "Nasrul Hamid", role: "State Minister for Power & Resources" }
-                }
-            },
-            "USA": {
-                code: "US", flag: "🇺🇸", name: "United States",
-                govtName: "United States Executive Cabinet",
-                capital: "Washington, D.C.", govtSystem: "Federal Presidential Constitutional Republic",
-                population: "335.0 Million", gdp: "$27.36 Trillion",
-                militaryRank: "#1 Worldwide", economicRank: "#1 Worldwide",
-                hdi: "0.921 (Very High)", stability: "92% High",
-                leader: "President of the United States", currency: "USD ($)", language: "English",
-                ministers: {
-                    foreign_affairs: { name: "Hon. Alexander Vance", role: "Secretary of State & Diplomatic Missions" },
-                    defense: { name: "General Marcus Sterling", role: "Secretary of Defense & Supreme Command" },
-                    finance_economy: { name: "Dr. Evelyn Reed", role: "Secretary of Treasury & Economic Policy" },
-                    agriculture_food: { name: "Hon. Sarah Jenkins", role: "Secretary of Agriculture & Strategic Reserves" }
-                }
-            },
-            "UNITED STATES": {
-                code: "US", flag: "🇺🇸", name: "United States",
-                govtName: "United States Executive Cabinet",
-                capital: "Washington, D.C.", govtSystem: "Federal Presidential Constitutional Republic",
-                population: "335.0 Million", gdp: "$27.36 Trillion",
-                militaryRank: "#1 Worldwide", economicRank: "#1 Worldwide",
-                hdi: "0.921 (Very High)", stability: "92% High",
-                leader: "President of the United States", currency: "USD ($)", language: "English"
-            },
-            "UNITED STATES OF AMERICA": {
-                code: "US", flag: "🇺🇸", name: "United States",
-                govtName: "United States Executive Cabinet",
-                capital: "Washington, D.C.", govtSystem: "Federal Presidential Constitutional Republic",
-                population: "335.0 Million", gdp: "$27.36 Trillion",
-                militaryRank: "#1 Worldwide", economicRank: "#1 Worldwide",
-                hdi: "0.921 (Very High)", stability: "92% High",
-                leader: "President of the United States", currency: "USD ($)", language: "English"
-            },
-            "JAPAN": {
-                code: "JP", flag: "🇯🇵", name: "Japan",
-                govtName: "Cabinet of Japan",
-                capital: "Tokyo", govtSystem: "Constitutional Monarchy with Parliamentary Government",
-                population: "124.5 Million", gdp: "$4.21 Trillion",
-                militaryRank: "#8 Worldwide", economicRank: "#4 Worldwide",
-                hdi: "0.920 (Very High)", stability: "95% Very High",
-                leader: "Prime Minister of Japan", currency: "JPY (¥)", language: "Japanese"
-            },
-            "BRAZIL": {
-                code: "BR", flag: "🇧🇷", name: "Brazil",
-                govtName: "Federative Republic of Brazil Cabinet",
-                capital: "Brasília", govtSystem: "Federal Presidential Republic",
-                population: "215.3 Million", gdp: "$2.17 Trillion",
-                militaryRank: "#12 Worldwide", economicRank: "#9 Worldwide",
-                hdi: "0.760 (High)", stability: "82% Stable",
-                leader: "President of Brazil", currency: "BRL (R$)", language: "Portuguese"
-            },
-            "TURKEY": {
-                code: "TR", flag: "🇹🇷", name: "Türkiye",
-                govtName: "Presidential Cabinet of Türkiye",
-                capital: "Ankara", govtSystem: "Unitary Presidential Republic",
-                population: "85.3 Million", gdp: "$1.15 Trillion",
-                militaryRank: "#11 Worldwide", economicRank: "#17 Worldwide",
-                hdi: "0.838 (Very High)", stability: "84% Stable",
-                leader: "President of Türkiye", currency: "TRY (₺)", language: "Turkish"
-            },
-            "TURKIYE": {
-                code: "TR", flag: "🇹🇷", name: "Türkiye",
-                govtName: "Presidential Cabinet of Türkiye",
-                capital: "Ankara", govtSystem: "Unitary Presidential Republic",
-                population: "85.3 Million", gdp: "$1.15 Trillion",
-                militaryRank: "#11 Worldwide", economicRank: "#17 Worldwide",
-                hdi: "0.838 (Very High)", stability: "84% Stable",
-                leader: "President of Türkiye", currency: "TRY (₺)", language: "Turkish"
-            },
-            "GERMANY": {
-                code: "DE", flag: "🇩🇪", name: "Germany",
-                govtName: "Cabinet of Germany",
-                capital: "Berlin", govtSystem: "Federal Parliamentary Republic",
-                population: "84.4 Million", gdp: "$4.46 Trillion",
-                militaryRank: "#19 Worldwide", economicRank: "#3 Worldwide",
-                hdi: "0.942 (Very High)", stability: "94% Very High",
-                leader: "Chancellor of Germany", currency: "EUR (€)", language: "German"
-            },
-            "UNITED KINGDOM": {
-                code: "GB", flag: "🇬🇧", name: "United Kingdom",
-                govtName: "His Majesty's Government Cabinet",
-                capital: "London", govtSystem: "Constitutional Monarchy & Parliamentary Democracy",
-                population: "67.7 Million", gdp: "$3.33 Trillion",
-                militaryRank: "#6 Worldwide", economicRank: "#6 Worldwide",
-                hdi: "0.929 (Very High)", stability: "91% High",
-                leader: "Prime Minister", currency: "GBP (£)", language: "English"
-            },
-            "CHINA": {
-                code: "CN", flag: "🇨🇳", name: "China",
-                govtName: "State Council of the People's Republic of China",
-                capital: "Beijing", govtSystem: "Socialist One-Party Republic",
-                population: "1.41 Billion", gdp: "$17.7 Trillion",
-                militaryRank: "#3 Worldwide", economicRank: "#2 Worldwide",
-                hdi: "0.768 (High)", stability: "90% High",
-                leader: "Premier of the State Council", currency: "CNY (¥)", language: "Mandarin Chinese"
-            },
-            "INDIA": {
-                code: "IN", flag: "🇮🇳", name: "India",
-                govtName: "Union Council of Ministers of India",
-                capital: "New Delhi", govtSystem: "Federal Parliamentary Democratic Republic",
-                population: "1.43 Billion", gdp: "$3.73 Trillion",
-                militaryRank: "#4 Worldwide", economicRank: "#5 Worldwide",
-                hdi: "0.633 (Medium)", stability: "86% Stable",
-                leader: "Prime Minister of India", currency: "INR (₹)", language: "Hindi & English"
-            },
-            "RUSSIA": {
-                code: "RU", flag: "🇷🇺", name: "Russia",
-                govtName: "Government of the Russian Federation",
-                capital: "Moscow", govtSystem: "Federal Semi-Presidential Republic",
-                population: "144.4 Million", gdp: "$2.24 Trillion",
-                militaryRank: "#2 Worldwide", economicRank: "#8 Worldwide",
-                hdi: "0.822 (Very High)", stability: "85% Stable",
-                leader: "Chairman of the Government", currency: "RUB (₽)", language: "Russian"
-            }
+        const requested = String(countryKey || (window.Game && window.Game.currentActiveCountry) || window.currentActiveCountry || '').trim();
+        const runtime = window.OmegaCountryRuntimeData;
+        const general = window.OmegaCountryGeneralDataRuntime;
+        const unavailable = 'তথ্য অনুপস্থিত';
+        const asText = value => value === null || value === undefined || String(value).trim() === '' ? unavailable : String(value);
+        const number = value => {
+            if (value === null || value === undefined || (typeof value === 'string' && value.trim() === '')) return null;
+            const parsed = Number(value);
+            return Number.isFinite(parsed) ? parsed : null;
+        };
+        const formatMoney = value => {
+            const n = number(value);
+            if (n === null) return unavailable;
+            return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2,
+                notation: Math.abs(n) >= 1e12 ? 'compact' : 'standard' }).format(n);
+        };
+        const formatPopulation = value => {
+            const n = number(value);
+            if (n === null) return unavailable;
+            return new Intl.NumberFormat('en-US', { maximumFractionDigits: 2, notation: n >= 1e9 ? 'compact' : 'standard' }).format(n);
         };
 
-        const resObj = lookup[norm] || lookup[raw] || {
-            code: raw.substring(0, 2), flag: "🌐", name: norm.toLowerCase().replace(/\b\w/g, l => l.toUpperCase()),
-            govtName: `${norm.toLowerCase().replace(/\b\w/g, l => l.toUpperCase())} Executive Cabinet`,
-            capital: "State Capital", govtSystem: "Sovereign Republic",
-            population: "50.0 Million", gdp: "$150.0 Billion",
-            militaryRank: "#25 Worldwide", economicRank: "#28 Worldwide",
-            hdi: "0.780 (High)", stability: "85% Stable",
-            leader: "Head of State", currency: "National Currency", language: "Official Language"
+        let identity = null;
+        let runtimeProfile = null;
+        let countryRecord = null;
+        let economyRecord = null;
+        let populationRecord = null;
+        try {
+            identity = runtime?.resolveCountry?.(requested) || null;
+            runtimeProfile = identity ? runtime?.getProfile?.(identity.countryCode) : null;
+            countryRecord = identity ? general?.getCountryRecord?.(identity.iso3 || identity.countryCode) : null;
+            economyRecord = identity ? runtime?.getRecord?.('economy', identity.countryCode) : null;
+            populationRecord = identity ? runtime?.getRecord?.('population', identity.countryCode) : null;
+        } catch (error) {
+            console.warn('[OMEGA Country Details] Runtime lookup failed:', error);
+        }
+
+        const metrics = countryRecord?.metrics || {};
+        const metadata = countryRecord?.metricMetadata || {};
+        const identityCode = identity?.countryCode || identity?.code || null;
+        const canonicalName = identity?.name || identity?.officialName || countryRecord?.identity?.name || null;
+        const capital = runtimeProfile?.capital || runtime?.getCapital?.(identityCode) || null;
+        const population = metrics.populationTotal ?? metrics.population ?? populationRecord?.population ?? populationRecord?.population_total ?? null;
+        const gdp = metrics.gdpCurrentUsd ?? metrics.gdpUsd ?? economyRecord?.gdp ?? economyRecord?.gdp_current_usd ?? null;
+        const gdpYear = metadata.gdpCurrentUsd?.year ?? metadata.gdpUsd?.year ?? null;
+        const strategicProfile = runtime?.getStrategicProfile?.(identityCode) || null;
+
+        const resObj = {
+            code: identityCode,
+            iso3: identity?.iso3 || null,
+            flag: runtimeProfile?.flag || runtime?.flagFor?.(identityCode) || '🌐',
+            name: asText(canonicalName),
+            govtName: unavailable,
+            capital: asText(capital),
+            govtSystem: unavailable,
+            population: formatPopulation(population),
+            populationValue: number(population),
+            gdp: formatMoney(gdp),
+            gdpValue: number(gdp),
+            gdpObservationYear: gdpYear,
+            militaryRank: unavailable,
+            economicRank: unavailable,
+            hdi: metrics.humanDevelopmentIndex == null ? unavailable : String(metrics.humanDevelopmentIndex),
+            stability: metrics.politicalStabilityWgiEstimate == null ? unavailable : String(metrics.politicalStabilityWgiEstimate),
+            leader: unavailable,
+            currency: asText(economyRecord?.currency_code || economyRecord?.currencyCode),
+            language: unavailable,
+            strategicProfile: strategicProfile || null,
+            dataStatus: {
+                availability: identity ? (countryRecord ? 'PARTIAL' : 'IDENTITY_ONLY') : 'UNAVAILABLE',
+                source: countryRecord?.datasetId || 'OmegaCountryRuntimeData',
+                schemaVersion: countryRecord?.schemaVersion || null,
+                missingValuePolicy: 'MISSING_VALUES_REMAIN_UNAVAILABLE',
+                gdpSource: metadata.gdpCurrentUsd?.sourceName || metadata.gdpCurrentUsd?.sourceId || null,
+                gdpYear
+            },
+            ministers: {}
         };
 
-        resObj.ministers = resObj.ministers || {};
         const minKeys = ['defense', 'foreign_affairs', 'treasury_finance', 'interior_security', 'laws', 'intelligence_cyber', 'energy_mining', 'mega_projects', 'trade', 'production', 'taxes', 'central_bank', 'infrastructure', 'science_research', 'education', 'health_welfare', 'agriculture_food', 'environment', 'media', 'labor', 'religion'];
-        minKeys.forEach(mId => {
-            const prof = this.getMinisterProfile(mId, raw);
-            if (prof) {
-                resObj.ministers[mId] = {
-                    name: prof.name,
-                    role: `Minister of ${mId.replace(/_/g, " ").toUpperCase()}`,
-                    profile: prof
-                };
-            }
+        if (identity) minKeys.forEach(mId => {
+            const prof = this.getMinisterProfile(mId, identity.countryCode);
+            if (prof) resObj.ministers[mId] = {
+                name: prof.name,
+                role: 'Minister of ' + mId.replace(/_/g, ' ').toUpperCase(),
+                profile: prof
+            };
         });
 
         return resObj;
