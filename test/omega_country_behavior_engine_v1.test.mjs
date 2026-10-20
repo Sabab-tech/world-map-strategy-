@@ -113,20 +113,54 @@ test('country behaviour profile is evidence-backed and differs with country macr
 test('source-backed registry metrics take precedence over legacy country snapshots', async () => {
   const { context, behavior } = await loadCountryEngines();
   const api = context.OmegaCountryGeneralDataRuntime;
-  const candidates = ['BGD', 'USA', 'IND', 'GBR', 'JPN'];
-  const selected = candidates
-    .map(code => ({ code, record: api.getCountryRecord(code) }))
-    .find(item => item.record &&
-      Number.isFinite(item.record.metrics?.gdpCurrentUsd) &&
-      item.record.metrics.gdpCurrentUsd > 0 &&
-      item.record.metricMetadata?.gdpCurrentUsd?.status === 'WORLD_BANK_API_OBSERVATION');
+  const originalGetCountryRecord = api.getCountryRecord.bind(api);
+  const syntheticGdp = 9876543210123;
+  const syntheticYear = 2024;
 
-  assert.ok(selected, 'at least one representative country should expose a refreshed GDP observation');
-  const profile = behavior.getBehaviorProfile(selected.code);
-  assert.equal(profile.metrics.gdpUsd, selected.record.metrics.gdpCurrentUsd,
-    'opponent behaviour must use the latest registered GDP when the live game has no override');
+  // A deterministic observed-record fixture tests precedence independently of
+  // whether the optional external-source refresh ran in this environment.
+  context.OmegaCountryGeneralDataRuntime = Object.assign({}, api, {
+    getCountryRecord(value) {
+      const record = originalGetCountryRecord(value);
+      if (!record || !['BGD', 'BANGLADESH'].includes(String(value || '').toUpperCase())) return record;
+      const oldMeta = record.metricMetadata?.gdpCurrentUsd || {};
+      return {
+        ...record,
+        metrics: { ...record.metrics, gdpCurrentUsd: syntheticGdp },
+        metricMetadata: {
+          ...record.metricMetadata,
+          gdpCurrentUsd: {
+            ...oldMeta,
+            year: syntheticYear,
+            status: 'WORLD_BANK_API_OBSERVATION',
+            sourceId: 'WORLD_BANK_WDI',
+            sourceName: 'World Bank Indicators API v2',
+            method: 'SOURCE_OBSERVATION',
+            sourceUrl: 'https://api.worldbank.org/v2/country/bgd/indicator/NY.GDP.MKTP.CD?format=json',
+            sourceConfidence: 0.92,
+            freshness: 0.90,
+            confidence: 0.828,
+            dataGap: null,
+            isCurrentGameState: false
+          }
+        }
+      };
+    }
+  });
+
+  const profile = behavior.getBehaviorProfile('BGD');
+  assert.equal(profile.metrics.gdpUsd, syntheticGdp,
+    'an observed registry GDP must take precedence over legacy country snapshots');
   assert.equal(profile.metricSources.gdpUsd.status, 'WORLD_BANK_API_OBSERVATION',
     'the selected metric must retain source status');
+  assert.equal(profile.metricSources.gdpUsd.year, syntheticYear,
+    'the selected metric must retain its observation year');
+  assert.equal(profile.metricSources.gdpUsd.sourceId, 'WORLD_BANK_WDI',
+    'the selected metric must retain its source ID');
+  assert.equal(profile.metricSources.gdpUsd.sourceConfidence, 0.92,
+    'the selected metric must retain source-quality confidence');
+  assert.equal(profile.metricSources.gdpUsd.isCurrentGameState, false,
+    'historical registry observations must not be labelled as live game state');
   assert.match(profile.metricSources.gdpUsd.source, /country_general_data_registry_v1[.]json/,
     'metric provenance should identify the unified source registry');
 });
