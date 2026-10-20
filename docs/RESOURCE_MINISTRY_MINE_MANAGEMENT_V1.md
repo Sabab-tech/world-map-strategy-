@@ -36,7 +36,7 @@ The authoritative physical flow remains:
 
 ## New site supplement and data policy
 
-`resource_site_country_mineplay_batch_20261020_v1.json` adds 30 source-referenced site identities across Botswana, Rwanda, Malawi, Senegal, Zimbabwe, Tanzania, Mozambique, Zambia, Ghana and Namibia. The supplemental file is loaded independently by the endowment runtime and individual site/map binding. Existing canonical, reserve-simulation, legacy expansion and migration files remain in place.
+`resource_site_country_mineplay_batch_20261020_v1.json` adds 44 source-referenced site identities across 22 countries: Botswana, Rwanda, Malawi, Senegal, Zimbabwe, Tanzania, Mozambique, Zambia, Ghana, Namibia, Guinea, the Democratic Republic of the Congo, Indonesia, Mongolia, Peru, Mauritania, Burkina Faso, Uzbekistan, Kazakhstan, Algeria, Côte d’Ivoire and Papua New Guinea. The supplemental file is loaded independently by the endowment runtime and individual site/map binding. Existing canonical, reserve-simulation, legacy expansion and migration files remain in place.
 
 The supplement deliberately separates four kinds of information:
 
@@ -45,7 +45,7 @@ The supplement deliberately separates four kinds of information:
 - Current measured reserve / grade / production fields, which remain `UNOBSERVED` when no site-specific value has been verified.
 - A clearly marked `SIMULATED` gameplay reserve seed, which is only a deterministic scenario input and never represented as a geological reserve.
 
-Some site-level operator, ownership or operating-state details have a source-verification caveat. Before external real-world use, these should be rechecked against current mining regulator and operator filings. Real-world operational status is not automatically overwritten by player commissioning.
+Some site-level operator, ownership or operating-state details have a source-verification caveat. Before external real-world use, these should be rechecked against current mining regulator and operator filings. The mapped coordinate for the Mopani copper mine complex is a regional approximation adjusted to avoid an accidental duplicate marker with the separately listed Mufulira mine; it is not survey-grade. Real-world operational status is not automatically overwritten by player commissioning.
 
 ## Recommended next increments
 
