@@ -57,7 +57,7 @@ for (const site of rows.filter(s => migratedIds.has(s.siteId))) {
   assert.ok(site.sourceReference.evidence.some(e => /^https:\/\//.test(e.url)), site.siteId + ': source reference required');
 }
 assert.match(runtime, /function normalizeSiteQuantitative\(row\)/);
-assert.match(runtime, /const normalizedRows=rows\.map\(normalizeSiteRecord\)/);
+assert.match(runtime, /const normalizedRows=rows\.map\(row=>normalizeSiteRecord\(applyPlayerMineCommissionOverlay\(row\)\)\)/);
 assert.match(runtime, /g\.OmegaResourceSiteDataContract=/);
 assert.match(network, /quantitative:clone\(row\?\.quantitative\|\|\{\}\)/);
 assert.match(network, /function quantitativeEngineAdapter\(site, quantitative\)/);
