@@ -721,44 +721,72 @@
     const profile = resolveProfile(input.countryId || input.countryCode || currentCountryProfile());
     if (!profile) return { ok: false, code: 'COUNTRY_NOT_FOUND' };
     const player = playerProfile();
-    if (!player || codeOf(player) !== codeOf(profile)) {
+    if (!player || codeOf(player) !== codeOf(profile))
       return { ok: false, code: 'PLAYER_COUNTRY_SCOPE_VIOLATION', message: 'Only the active player country can issue the Finance Treasury borrowing action.' };
-    }
     const bank = store(true);
     const requestId = String(input.requestId || ('WB-' + codeOf(profile) + '-' + currentTurn() + '-' + bank.nextSequence)).slice(0, 120);
     const allowedPurposes = ['infrastructure', 'health', 'education', 'climate', 'emergency', 'budget-support'];
     const purpose = allowedPurposes.includes(String(input.purpose || '').toLowerCase())
       ? String(input.purpose).toLowerCase() : 'infrastructure';
+    const insolvency = bank.insolvencyByCountry && bank.insolvencyByCountry[codeOf(profile)];
+    if (insolvency && ['DEFAULTED', 'INSOLVENCY_REVIEW', 'BANKRUPTCY_PROCEEDING'].includes(String(insolvency.status || '').toUpperCase()))
+      return { ok: false, code: 'SOVEREIGN_INSOLVENCY_HOLD', insolvency: clone(insolvency),
+        message: 'New lending is blocked during simulated default/insolvency review. Submit a bounded restructuring proposal first.' };
     if (bank.idempotency[requestId]) {
       const previousLoanId = bank.idempotency[requestId];
       const existing = getLoanList(profile).find(loan => loan.loanId === previousLoanId);
       if (!existing) return { ok: false, code: 'IDEMPOTENCY_REFERENCE_MISSING', loanId: previousLoanId };
       const requestedAmount = finite(input.amountUsd);
+      const rateInput = finite(input.annualInterestRatePct);
+      const termInput = finite(input.termYears);
+      const graceInput = finite(input.graceYears);
+      const currencyInput = String(input.currencyCode || existing.settlementCurrencyCode || 'USD').toUpperCase();
       if ((requestedAmount !== null && Math.abs(requestedAmount - existing.originalPrincipalUsd) > 0.01)
-          || purpose !== existing.purpose) {
-        return { ok: false, code: 'IDEMPOTENCY_KEY_PAYLOAD_MISMATCH', message: 'This request ID was already used for a different loan amount or purpose.' };
+          || purpose !== existing.purpose
+          || (rateInput !== null && Math.abs(rateInput - existing.annualInterestRatePct) > 0.0001)
+          || (termInput !== null && termInput !== existing.termYears)
+          || (graceInput !== null && graceInput !== existing.graceYears)
+          || currencyInput !== String(existing.settlementCurrencyCode || 'USD').toUpperCase()) {
+        return { ok: false, code: 'IDEMPOTENCY_KEY_PAYLOAD_MISMATCH', message: 'This request ID was already used for different financing terms.' };
       }
       return { ok: true, duplicate: true, loan: clone(existing), loanId: previousLoanId };
     }
-    const assessment = scoreCountry(profile);
-    if (!assessment || (assessment.decision !== 'ELIGIBLE' && assessment.decision !== 'CONDITIONAL') || assessment.maxLoanUsd <= 0) {
-      return { ok: false, code: 'WORLD_BANK_CREDIT_REJECTED', assessment: assessment, message: 'The current country assessment does not support a new facility.' };
-    }
+    const root = rootState();
+    const facility = getFacilitySnapshot(bank);
+    const assessment = scoreCountry(profile, { root: root, bank: bank, facility: facility });
+    if (!assessment || (assessment.decision !== 'ELIGIBLE' && assessment.decision !== 'CONDITIONAL') || assessment.maxLoanUsd <= 0)
+      return { ok: false, code: 'WORLD_BANK_CREDIT_REJECTED', assessment: assessment,
+        message: 'The current simulated-country assessment does not support a new facility.' };
     const amount = finite(input.amountUsd) ?? assessment.maxLoanUsd;
-    if (amount <= 0 || amount > assessment.maxLoanUsd + 0.01) {
-      return { ok: false, code: 'WORLD_BANK_AMOUNT_OUT_OF_RANGE', maxLoanUsd: assessment.maxLoanUsd, message: 'Requested principal must be positive and not exceed the current approved game-model ceiling.' };
-    }
+    if (amount <= 0 || amount > assessment.maxLoanUsd + 0.01)
+      return { ok: false, code: 'WORLD_BANK_AMOUNT_OUT_OF_RANGE', maxLoanUsd: assessment.maxLoanUsd,
+        message: 'Requested principal must be positive and not exceed the current game-credit ceiling.' };
+    const currencyCode = String(input.currencyCode || assessment.currencyCode || 'USD').trim().toUpperCase();
+    const fxQuote = currencySnapshot(currencyCode);
+    if (!fxQuote.ok) return { ok: false, code: fxQuote.code, currencyCode: currencyCode };
+    const negotiated = negotiateTerms(assessment, purpose, input);
+    if (!negotiated.ok)
+      return { ok: false, code: negotiated.code, negotiation: {
+        minimumRatePct: negotiated.range.minimumRatePct, maximumRatePct: negotiated.range.maximumRatePct,
+        minimumTermYears: negotiated.range.minimumTermYears, maximumTermYears: negotiated.range.maximumTermYears,
+        minimumGraceYears: negotiated.range.minimumGraceYears, maximumGraceYears: negotiated.range.maximumGraceYears
+      } };
     if (!finance || typeof finance.applyAction !== 'function') return { ok: false, code: 'FINANCE_RUNTIME_UNAVAILABLE' };
-    const terms = termsFor(assessment, purpose);
+    const liquidity = ensureInstitutionLiquidity(amount, profile);
+    if (!liquidity.ok) return { ok: false, code: liquidity.code, liquidity: liquidity,
+      message: 'The simulated institution does not currently have sufficient cash or approved partner funding.' };
+    const terms = negotiated.terms;
     const financeResult = finance.applyAction({
       type: 'borrow', countryId: codeOf(profile), amountUsd: amount,
-      description: 'Simulated World Bank ' + terms.program + ' facility / ' + purpose
+      description: 'Simulated institutional ' + terms.program + ' facility / ' + purpose
     });
-    if (!financeResult || financeResult.ok !== true) {
+    if (!financeResult || financeResult.ok !== true)
       return { ok: false, code: financeResult && financeResult.code || 'FINANCE_BORROW_REJECTED',
         message: financeResult && financeResult.message || 'The authoritative Finance runtime rejected this borrowing action.',
         financeResult: clone(financeResult || null) };
-    }
+    bank.liquidity.cashBalanceUsd = Math.max(0, (finite(bank.liquidity.cashBalanceUsd) || 0) - amount);
+    bank.liquidity.totalDisbursedUsd = (finite(bank.liquidity.totalDisbursedUsd) || 0) + amount;
+    bank.liquidity.lastDisbursementTurn = currentTurn();
     const sequence = Number(bank.nextSequence || 1);
     bank.nextSequence = sequence + 1;
     const loanId = 'WB-' + codeOf(profile) + '-' + currentTurn() + '-' + sequence;
@@ -768,7 +796,10 @@
       originalPrincipalUsd: round(amount, 2), outstandingPrincipalUsd: round(amount, 2), accruedInterestUsd: 0,
       annualInterestRatePct: terms.annualInterestRatePct, termYears: terms.termYears, graceYears: terms.graceYears,
       ageYears: 0, issuedTurn: currentTurn(), lastAccruedTurn: currentTurn(), lastInterestAccruedUsd: 0,
-      arrearsUsd: 0, status: 'ACTIVE', source: 'SIMULATED_WORLD_BANK_LENDING',
+      arrearsUsd: 0, daysPastDue: 0, defaultedTurn: null, penaltySpreadPct: 0,
+      status: 'ACTIVE', source: 'SIMULATED_WORLD_BANK_LENDING',
+      settlementCurrencyCode: currencyCode, issueFxRateLocalPerUsd: fxQuote.localPerUsd,
+      originalPrincipalCurrency: round(amount * fxQuote.localPerUsd, 2),
       approvedCreditScore: assessment.score, approvedConfidencePct: assessment.confidencePct,
       approvedDebtToGdpPct: assessment.debtToGdpPct, issuedAt: new Date().toISOString(),
       totalInterestPaidUsd: 0, totalPrincipalPaidUsd: 0, lastServiceTurn: null
@@ -786,10 +817,11 @@
       type: 'WORLD_BANK_LOAN_ISSUED', loanId: loanId, countryCode: codeOf(profile),
       countryName: profile.name, amountUsd: round(amount, 2), program: terms.program,
       annualInterestRatePct: terms.annualInterestRatePct, termYears: terms.termYears,
-      graceYears: terms.graceYears, purpose: purpose
+      graceYears: terms.graceYears, purpose: purpose, settlementCurrencyCode: currencyCode,
+      issueFxRateLocalPerUsd: fxQuote.localPerUsd, originalPrincipalCurrency: loan.originalPrincipalCurrency
     });
-    evaluateAll();
-    return { ok: true, loan: clone(loan), loanId: loanId, financeResult: clone(financeResult) };
+    evaluateAll(true);
+    return { ok: true, loan: clone(loan), loanId: loanId, financeResult: clone(financeResult), liquidity: liquidity };
   }
   function accrueInterest(value, years, turnNumber) {
     const profile = resolveProfile(value);
