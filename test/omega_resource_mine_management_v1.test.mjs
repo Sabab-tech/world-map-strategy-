@@ -10,6 +10,9 @@ const reserveRegistry = JSON.parse(fs.readFileSync(new URL('resource_site_reserv
 const legacySiteRegistries = [1,2,3,4,5,6].map(n =>
   JSON.parse(fs.readFileSync(new URL('resource_site_legacy_gameplay_expansion_part_' + n + '_v1.json', repoRoot), 'utf8'))
 );
+const expandedSiteRegistries = [1,2,3,4].map(n =>
+  JSON.parse(fs.readFileSync(new URL('resource_site_reference_expanded_part_' + String(n).padStart(2,'0') + '.json', repoRoot), 'utf8'))
+);
 const industrialSource = fs.readFileSync(new URL('omega_resource_industrial_network_v1.js', repoRoot), 'utf8');
 const endowmentSource = fs.readFileSync(new URL('omega_resource_endowment_runtime.js', repoRoot), 'utf8');
 const economySource = fs.readFileSync(new URL('omega_resource_economy_runtime_v2.js', repoRoot), 'utf8');
@@ -96,10 +99,11 @@ test('supplemental dataset adds valid, distinct sites without pretending simulat
   assert.equal(new Set(supplement.records.map(x => x.siteId)).size, supplement.records.length);
   const existingIds = new Set([
     ...reserveRegistry.records.map(x => x.siteId),
-    ...legacySiteRegistries.flatMap(pack => (pack.records || []).map(x => x.siteId))
+    ...legacySiteRegistries.flatMap(pack => (pack.records || []).map(x => x.siteId)),
+    ...expandedSiteRegistries.flatMap(pack => (pack.records || []).map(x => x.siteId))
   ].filter(Boolean));
   assert.deepEqual(supplement.records.filter(x => existingIds.has(x.siteId)).map(x => x.siteId), [],
-    'the additive site batch must not duplicate identities in authoritative reserve or any legacy map/gameplay pack');
+    'the additive site batch must not duplicate identities in authoritative reserve, expanded site parts, or any legacy map/gameplay pack');
   for (const row of supplement.records) {
     assert.match(row.countryId, /^[A-Z]{3}$/);
     assert.ok(row.location.coordinates.lat >= -90 && row.location.coordinates.lat <= 90);
