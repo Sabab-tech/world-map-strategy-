@@ -83,34 +83,46 @@ test('runtime exposes a read-only UI audit and uses Visual Viewport updates', ()
   assert.match(js, /event\.key !== 'Escape'/);
 });
 
-test('map ministry entry is a single compact tap target with one click route', () => {
+test('map ministry entry is outside map stacking and has independent click recovery', () => {
   const html = read('index.html');
-  const buttonStart = html.indexOf('id="btn-ministry-dock"');
-  assert.ok(buttonStart >= 0, 'map ministry entry button remains in the markup');
+  const navStart = html.indexOf('<nav id="omega-ministry-entry" class="ui-bottom-navigation omega-ministry-entry"');
+  assert.ok(navStart >= 0, 'the standalone ministry entry remains in the page');
+  const uiRootStart = html.indexOf('<div id="ui-engine-root">');
+  const rootCloseMatch = /<\/div>\s*<!-- Independent ministry entry/.exec(html);
+  const rootEndMarker = rootCloseMatch ? rootCloseMatch.index : -1;
+  assert.ok(uiRootStart >= 0 && rootEndMarker > uiRootStart && navStart > rootEndMarker,
+    'the entry is moved after the map UI root');
+  const buttonStart = html.indexOf('id="btn-ministry-dock"', navStart);
   const buttonEnd = html.indexOf('</button>', buttonStart);
-  assert.ok(buttonEnd > buttonStart, 'map ministry entry button closes correctly');
-  assert.doesNotMatch(html.slice(buttonStart, buttonEnd), /onclick=/i, 'markup must not compete with the central click handler');
+  assert.ok(buttonStart > navStart && buttonEnd > buttonStart, 'the ministry button is inside the standalone nav');
+  assert.match(html.slice(buttonStart, buttonEnd), /OMEGAMinistryDock/, 'markup keeps a direct recovery fallback');
 
   const mapEngine = read('map-engine-1.js');
   assert.doesNotMatch(mapEngine, /const btnMinistryDock\s*=\s*document\.getElementById\(['"]btn-ministry-dock['"]\)/,
     'map engine must not register a second ministry-dock route');
 
   const display = read('display_and_layer_system.js');
-  const bindStart = display.indexOf('const bindDockBtn = (id, handler) => {');
-  const bindEnd = display.indexOf("bindDockBtn('btn-ministry-dock'", bindStart);
-  assert.ok(bindStart >= 0 && bindEnd > bindStart, 'central dock binding exists');
-  const binding = display.slice(bindStart, bindEnd);
-  assert.match(binding, /addEventListener\('click'/, 'dock routes through click');
-  assert.doesNotMatch(binding, /addEventListener\('(pointerdown|touchstart)'/,
-    'touch and pointer listeners must not trigger duplicate layer transitions');
+  assert.ok(display.includes("bindDockBtn('btn-ministry-dock', window.openMainMinistryView)"),
+    'legacy semantic click binding remains available as a fallback');
+
+  const runtime = read('omega_ui_system_redesign_v1.js');
+  assert.ok(runtime.includes("addEventListener('click', handleMapMinistryDockClick, true)"),
+    'late-loaded recovery listens in document capture phase');
+  assert.ok(runtime.includes('function openCabinet(event)'));
+  assert.ok(runtime.includes('manager.setLayer(1)'));
+  assert.ok(runtime.includes('data-last-open-result'));
+  assert.ok(runtime.includes("function syncDockPosition()"));
+  assert.ok(runtime.includes("rect.bottom + 8"));
+  assert.ok(runtime.includes("new global.ResizeObserver(syncDockPosition)"),
+    'button placement follows the status header when it wraps on mobile');
+  assert.ok(runtime.includes("data-omega-map-active"));
+  assert.ok(!runtime.includes("dock.style.display = onMap ? 'flex' : 'none'"),
+    'returning to the map must not depend on clearing a sticky inline display style');
 
   const css = read('omega_ui_system_redesign_v1.css');
-  assert.match(css, /#ui-engine-root \.ui-bottom-navigation\s*\{[^}]*width:\s*42px\s*!important/s,
-    'the map dock stays compact instead of stretching into a long line');
-  assert.match(css, /#ui-engine-root \.ui-bottom-navigation\s*\{[^}]*background:\s*transparent\s*!important/s,
-    'the dock container remains transparent');
-  assert.match(css, /#ui-engine-root \.ui-bottom-navigation #btn-ministry-dock\s*\{[^}]*touch-action:\s*manipulation\s*!important/s,
-    'the button is tuned for mobile taps');
+  assert.ok(css.includes('.omega-ministry-entry.ui-bottom-navigation'));
+  assert.ok(css.includes('z-index: 2147483000 !important'),
+    'the entry is above the map renderer and its interaction layers');
 });
 
 function createMinistryNavigationHarness({ withLayerManager = true } = {}) {
@@ -155,7 +167,10 @@ function createMinistryNavigationHarness({ withLayerManager = true } = {}) {
     documentElement: { style: { setProperty() {} }, dataset: {} },
     body,
     addEventListener(type, handler, capture) {
-      if (type === 'click' && capture === true) listeners.click = handler;
+      if (type === 'click' && capture === true) {
+        if (!listeners.click) listeners.click = [];
+        listeners.click.push(handler);
+      }
     },
     getElementById(id) {
       if (id === 'ministry-dashboard-view') return dashboard;
@@ -208,8 +223,8 @@ function createMinistryNavigationHarness({ withLayerManager = true } = {}) {
 
 test('main cabinet ministry-card tap opens its requested ministry and suppresses duplicate legacy routing', () => {
   const h = createMinistryNavigationHarness();
-  assert.equal(typeof h.listeners.click, 'function', 'capture-phase ministry-card route must be installed');
-  h.listeners.click(h.event);
+  assert.ok(Array.isArray(h.listeners.click) && h.listeners.click.length > 0, 'capture-phase ministry routes must be installed');
+  h.listeners.click.forEach((handler) => handler(h.event));
   assert.equal(h.calls.length, 1);
   assert.equal(h.calls[0].layer, 2);
   assert.equal(h.calls[0].ministryId, 'finance');
@@ -221,7 +236,7 @@ test('main cabinet ministry-card tap opens its requested ministry and suppresses
 
 test('ministry-card tap can recover directly when the layer manager is unavailable', () => {
   const h = createMinistryNavigationHarness({ withLayerManager: false });
-  h.listeners.click(h.event);
+  h.listeners.click.forEach((handler) => handler(h.event));
   assert.deepEqual(h.rendered, ['finance']);
   assert.equal(h.dashboard.style.display, 'flex');
   assert.equal(h.dashboard.style.pointerEvents, 'auto');
@@ -235,3 +250,129 @@ test('ministry card hit targets remain tap-enabled on mobile', () => {
   assert.match(css, /#cabinet-full-window \.parchment-card-btn[\s\S]*?touch-action:\s*manipulation\s*!important/);
 });
 
+
+function createMapMinistryDockHarness({ primaryFails = false, managerFails = false } = {}) {
+  const listeners = [];
+  const calls = [];
+  const attributes = {};
+  const bodyClasses = new Set();
+  const body = {
+    setAttribute(name, value) { attributes[name] = String(value); },
+    getAttribute(name) { return Object.prototype.hasOwnProperty.call(attributes, name) ? attributes[name] : null; },
+    classList: {
+      add(name) { bodyClasses.add(name); },
+      remove(name) { bodyClasses.delete(name); }
+    }
+  };
+  const dock = {
+    style: { display: 'flex' },
+    attrs: {},
+    setAttribute(name, value) { this.attrs[name] = String(value); },
+    getAttribute(name) { return this.attrs[name] || null; },
+    isConnected: true,
+    getBoundingClientRect() { return { width: 142, height: 46 }; }
+  };
+  const button = {
+    isConnected: true,
+    closest(selector) { return selector === '#btn-ministry-dock' ? this : null; }
+  };
+  const header = {
+    style: { display: 'flex', visibility: 'visible', opacity: '1' },
+    isConnected: true,
+    getBoundingClientRect() { return { left: 0, top: 0, right: 360, bottom: 150, width: 360, height: 150 }; }
+  };
+  const cabinet = {
+    style: { display: 'none', visibility: 'visible', opacity: '0', pointerEvents: 'none' },
+    attrs: {},
+    setAttribute(name, value) { this.attrs[name] = String(value); },
+    getAttribute(name) { return this.attrs[name] || null; },
+    isConnected: true,
+    getBoundingClientRect() {
+      return this.style.display !== 'none' && this.style.visibility !== 'hidden' && Number(this.style.opacity) !== 0
+        ? { width: 360, height: 640 } : { width: 0, height: 0 };
+    }
+  };
+  const dashboard = { style: { display: 'none', opacity: '0', pointerEvents: 'none' }, setAttribute() {} };
+  const document = {
+    readyState: 'loading',
+    body,
+    documentElement: { style: { setProperty() {} }, dataset: {} },
+    addEventListener(type, handler, capture) {
+      if (type === 'click' && capture === true) listeners.push(handler);
+    },
+    getElementById(id) {
+      if (id === 'omega-ministry-entry') return dock;
+      if (id === 'btn-ministry-dock') return button;
+      if (id === 'top-status-bar') return header;
+      if (id === 'cabinet-full-window') return cabinet;
+      if (id === 'ministry-dashboard-view') return dashboard;
+      return null;
+    }
+  };
+  const context = {
+    document,
+    console: { log() {}, warn() {}, error() {}, info() {} },
+    getComputedStyle(element) {
+      return {
+        display: element.style.display || 'block',
+        visibility: element.style.visibility || 'visible',
+        opacity: element.style.opacity === undefined ? '1' : element.style.opacity
+      };
+    },
+    openMainMinistryView(event) {
+      calls.push('primary');
+      if (primaryFails) throw new Error('simulated primary failure');
+      cabinet.style.display = 'flex';
+      cabinet.style.opacity = '1';
+      cabinet.style.pointerEvents = 'auto';
+      body.setAttribute('data-active-layer', '1');
+    },
+    OmegaLayerManager: {
+      currentLayer: 0,
+      layerStack: [0],
+      setLayer(layer) {
+        calls.push('manager');
+        if (managerFails) throw new Error('simulated layer-manager failure');
+        cabinet.style.display = layer === 1 ? 'flex' : 'none';
+        cabinet.style.opacity = layer === 1 ? '1' : '0';
+        body.setAttribute('data-active-layer', String(layer));
+      }
+    },
+    OmegaCabinetUI: { renderCabinet(country) { calls.push('render:' + country); } },
+    Game: { currentActiveCountry: 'BANGLADESH' }
+  };
+  context.window = context;
+  context.addEventListener = () => {};
+  vm.runInNewContext(read('omega_ui_system_redesign_v1.js'), context, { filename: 'omega_ui_system_redesign_v1.js' });
+  const event = {
+    target: button,
+    prevented: false,
+    stoppedImmediate: false,
+    preventDefault() { this.prevented = true; },
+    stopImmediatePropagation() { this.stoppedImmediate = true; }
+  };
+  return { listeners, event, calls, cabinet, dock, context, attributes };
+}
+
+test('map ministry dock click opens the cabinet through the independent capture route', () => {
+  const h = createMapMinistryDockHarness();
+  assert.ok(h.listeners.length > 0, 'the standalone capture handler is registered');
+  h.listeners.forEach((handler) => handler(h.event));
+  assert.ok(h.calls.includes('primary'), 'the original cabinet route is attempted first');
+  assert.equal(h.dock.style.top, '158px', 'dock sits below the measured 150px status header plus an 8px gap');
+  assert.equal(h.cabinet.style.display, 'flex', 'the cabinet becomes visible after the tap');
+  assert.equal(h.event.prevented, true);
+  assert.equal(h.event.stoppedImmediate, true);
+  assert.equal(h.dock.attrs['data-last-open-result'], 'opened');
+  assert.equal(h.context.OMEGAMinistryDock.audit().cabinetVisible, true);
+});
+
+test('map ministry dock recovers when both the original route and layer manager fail', () => {
+  const h = createMapMinistryDockHarness({ primaryFails: true, managerFails: true });
+  h.listeners.forEach((handler) => handler(h.event));
+  assert.equal(h.cabinet.style.display, 'flex', 'direct DOM fallback opens the cabinet surface');
+  assert.equal(h.cabinet.style.pointerEvents, 'auto');
+  assert.equal(h.attributes['data-active-layer'], '1');
+  assert.ok(h.calls.includes('render:BANGLADESH'), 'fallback renders the current-country cabinet');
+  assert.equal(h.dock.attrs['data-last-open-result'], 'opened');
+});

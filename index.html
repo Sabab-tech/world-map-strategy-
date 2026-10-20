@@ -782,14 +782,17 @@
                 </div>
             </div>
 
-            <nav class="ui-bottom-navigation" role="navigation" aria-label="Main Command Navigation">
-                <button id="btn-ministry-dock" class="nav-btn active" type="button"
-                        aria-label="Open Ministries" title="Open Ministries">
-                    <span class="nav-icon" aria-hidden="true">≡</span>
-                    <span class="nav-text">MINISTRIES</span>
-                </button>
-            </nav>
-        </div>
+                    </div>
+
+        <!-- Independent ministry entry: outside map/UI stacking contexts for reliable mobile taps. -->
+        <nav id="omega-ministry-entry" class="ui-bottom-navigation omega-ministry-entry" role="navigation" aria-label="Main Command Navigation">
+            <button id="btn-ministry-dock" class="nav-btn active" type="button"
+                    aria-label="Open Ministries" title="Open Ministries"
+                    onclick="if (window.OMEGAMinistryDock && typeof window.OMEGAMinistryDock.open === 'function') { window.OMEGAMinistryDock.open(event); } else if (typeof window.openMainMinistryView === 'function') { window.openMainMinistryView(event); } else if (window.OmegaLayerManager && typeof window.OmegaLayerManager.setLayer === 'function') { window.OmegaLayerManager.setLayer(1); }">
+                <span class="nav-icon" aria-hidden="true">≡</span>
+                <span class="nav-text">MINISTRIES</span>
+            </button>
+        </nav>
         
         <!-- 💎 RESOURCE INTELLIGENCE CONTROL PANEL -->
         <div id="resource-filter-box" class="resource-filter-box hidden" style="display:none; position:fixed; top:54px; right:20px; z-index:1000000; width:340px; max-width:92vw; max-height:calc(100vh - 65px); background:rgba(8, 15, 26, 0.98); border:1.5px solid #00e5ff; border-radius:12px; padding:12px; box-shadow:0 12px 35px rgba(0,0,0,0.95), 0 0 25px rgba(0,229,255,0.25); backdrop-filter:blur(14px); font-family:var(--font-mono); color:#f8fafc; flex-direction:column; gap:8px; overflow-y:auto;">

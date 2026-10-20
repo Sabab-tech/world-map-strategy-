@@ -900,3 +900,120 @@ body.modal-open #top-status-bar {
 #ui-engine-root .ui-bottom-navigation #btn-ministry-dock:active {
   transform: scale(0.96) !important;
 }
+
+
+/* INDEPENDENT MINISTRY ENTRY v2
+ * The entry control is intentionally a direct body-level sibling, not a child
+ * of the map UI stacking context. This avoids Leaflet panes/overlays owning taps.
+ */
+.omega-ministry-entry.ui-bottom-navigation {
+  position: fixed !important;
+  top: calc(env(safe-area-inset-top, 0px) + 64px) !important;
+  right: auto !important;
+  bottom: auto !important;
+  left: max(12px, calc(env(safe-area-inset-left, 0px) + 8px)) !important;
+  transform: none !important;
+  box-sizing: border-box !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-wrap: nowrap !important;
+  width: auto !important;
+  min-width: 142px !important;
+  max-width: calc(100vw - 24px) !important;
+  height: 46px !important;
+  min-height: 46px !important;
+  max-height: 46px !important;
+  margin: 0 !important;
+  padding: 0 10px !important;
+  gap: 0 !important;
+  overflow: visible !important;
+  border: 1px solid rgba(0, 229, 255, .72) !important;
+  border-radius: 13px !important;
+  background: rgba(5, 17, 31, .97) !important;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, .48), 0 0 10px rgba(0, 229, 255, .14) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  isolation: auto !important;
+  z-index: 2147483000 !important;
+  pointer-events: auto !important;
+  touch-action: manipulation !important;
+}
+
+.omega-ministry-entry #btn-ministry-dock {
+  position: relative !important;
+  display: flex !important;
+  flex: 1 1 auto !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-direction: row !important;
+  gap: 9px !important;
+  width: auto !important;
+  min-width: 120px !important;
+  max-width: 100% !important;
+  height: 44px !important;
+  min-height: 44px !important;
+  max-height: 44px !important;
+  margin: 0 !important;
+  padding: 0 5px !important;
+  border: 0 !important;
+  border-radius: 9px !important;
+  background: transparent !important;
+  color: #e8fbff !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  letter-spacing: .5px !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  cursor: pointer !important;
+  pointer-events: auto !important;
+  touch-action: manipulation !important;
+  user-select: none !important;
+  -webkit-tap-highlight-color: rgba(0, 229, 255, .24) !important;
+}
+
+.omega-ministry-entry #btn-ministry-dock .nav-icon {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 22px !important;
+  height: 22px !important;
+  font-size: 23px !important;
+  line-height: 1 !important;
+  pointer-events: none !important;
+}
+
+.omega-ministry-entry #btn-ministry-dock .nav-text {
+  display: inline !important;
+  visibility: visible !important;
+  color: inherit !important;
+  font-size: 11px !important;
+  letter-spacing: .6px !important;
+  pointer-events: none !important;
+}
+
+.omega-ministry-entry #btn-ministry-dock:active {
+  background: rgba(0, 229, 255, .15) !important;
+  transform: scale(.98) !important;
+}
+
+.omega-ministry-entry #btn-ministry-dock:focus-visible {
+  outline: 2px solid #00e5ff !important;
+  outline-offset: 2px !important;
+}
+
+@media (max-width: 390px) {
+  .omega-ministry-entry.ui-bottom-navigation {
+    top: calc(env(safe-area-inset-top, 0px) + 58px) !important;
+    left: max(8px, calc(env(safe-area-inset-left, 0px) + 6px)) !important;
+    min-width: 136px !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    max-height: 44px !important;
+  }
+  .omega-ministry-entry #btn-ministry-dock {
+    height: 42px !important;
+    min-height: 42px !important;
+    max-height: 42px !important;
+  }
+}
