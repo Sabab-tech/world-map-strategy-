@@ -439,6 +439,59 @@
       annualPaymentPerDollar: annualPayment(1, rate, years - grace)
     };
   }
+  function negotiationBounds(assessment, purpose) {
+    const base = termsFor(assessment, purpose);
+    const score = finite(assessment && assessment.score) ?? 0;
+    const discount = score >= 80 ? 0.75 : score >= 70 ? 0.5 : 0;
+    const surcharge = score >= 80 ? 0.75 : score >= 70 ? 1 : score >= 55 ? 1.25 : 0;
+    const termFlex = score >= 80 ? 5 : score >= 70 ? 3 : score >= 55 ? 2 : 0;
+    const graceFlex = score >= 80 ? 2 : score >= 70 ? 1 : score >= 55 ? 1 : 0;
+    return {
+      base: base,
+      minimumRatePct: round(Math.max(0.5, base.annualInterestRatePct - discount), 3),
+      maximumRatePct: round(Math.min(8.5, base.annualInterestRatePct + surcharge), 3),
+      minimumTermYears: Math.max(5, Math.floor(base.termYears - termFlex)),
+      maximumTermYears: Math.min(40, Math.ceil(base.termYears + termFlex)),
+      minimumGraceYears: Math.max(0, Math.floor(base.graceYears - graceFlex)),
+      maximumGraceYears: Math.min(6, Math.ceil(base.graceYears + graceFlex)),
+      reason: score >= 80 ? 'Strong current game credit permits modest concessions.'
+        : score >= 70 ? 'Moderate credit permits limited rate and maturity negotiation.'
+          : score >= 55 ? 'Conditional credit permits small changes; concessions are restricted.'
+            : 'Credit score does not support a negotiable facility.'
+    };
+  }
+  function negotiateTerms(assessment, purpose, input) {
+    const range = negotiationBounds(assessment, purpose);
+    const rate = finite(input && input.annualInterestRatePct) ?? range.base.annualInterestRatePct;
+    const years = finite(input && input.termYears) ?? range.base.termYears;
+    const grace = finite(input && input.graceYears) ?? range.base.graceYears;
+    if (rate < range.minimumRatePct - 0.0001 || rate > range.maximumRatePct + 0.0001)
+      return { ok: false, code: 'RATE_OUTSIDE_NEGOTIATION_RANGE', range: range };
+    if (!Number.isInteger(years) || years < range.minimumTermYears || years > range.maximumTermYears)
+      return { ok: false, code: 'TERM_OUTSIDE_NEGOTIATION_RANGE', range: range };
+    if (!Number.isInteger(grace) || grace < range.minimumGraceYears || grace > range.maximumGraceYears || grace >= years)
+      return { ok: false, code: 'GRACE_PERIOD_OUTSIDE_NEGOTIATION_RANGE', range: range };
+    return {
+      ok: true, range: range,
+      terms: Object.assign({}, range.base, {
+        annualInterestRatePct: round(rate, 3), termYears: years, graceYears: grace,
+        annualPaymentPerDollar: annualPayment(1, rate, years - grace)
+      })
+    };
+  }
+  function currencySnapshot(code) {
+    const normalized = String(code || 'USD').trim().toUpperCase();
+    if (normalized === 'USD') return { ok: true, currencyCode: 'USD', localPerUsd: 1 };
+    const fx = global.OmegaForexMonetaryEngine || (global.Omega && global.Omega.ForexMonetaryEngine) || null;
+    if (!/^[A-Z]{3}$/.test(normalized) || !fx || typeof fx.getRate !== 'function')
+      return { ok: false, code: 'FX_RATE_UNAVAILABLE', currencyCode: normalized };
+    const currencies = typeof fx.getCurrencies === 'function' ? fx.getCurrencies() : [];
+    if (!currencies.some(row => String(row && row.code || '').toUpperCase() === normalized))
+      return { ok: false, code: 'CURRENCY_NOT_SUPPORTED', currencyCode: normalized };
+    const rate = finite(fx.getRate(normalized));
+    if (rate === null || rate <= 0) return { ok: false, code: 'FX_RATE_UNAVAILABLE', currencyCode: normalized };
+    return { ok: true, currencyCode: normalized, localPerUsd: rate };
+  }
   function annualPayment(principal, ratePct, years) {
     const p = Math.max(0, finite(principal) || 0), r = Math.max(0, finite(ratePct) || 0) / 100;
     const n = Math.max(1 / 365, finite(years) || 1 / 365);
