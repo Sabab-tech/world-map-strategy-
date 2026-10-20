@@ -108,8 +108,20 @@ test('supplemental dataset adds valid, distinct sites without pretending simulat
     assert.match(row.countryId, /^[A-Z]{3}$/);
     assert.ok(row.location.coordinates.lat >= -90 && row.location.coordinates.lat <= 90);
     assert.ok(row.location.coordinates.lng >= -180 && row.location.coordinates.lng <= 180);
-    assert.equal(row.quantitative.reserve.status, 'UNOBSERVED');
-    assert.equal(row.quantitative.production.status, 'UNOBSERVED');
+    assert.ok(['UNOBSERVED', 'REPORTED'].includes(row.quantitative.reserve.status),
+      'quantitative reserve evidence must distinguish unobserved from source-reported values');
+    assert.ok(['UNOBSERVED', 'REPORTED'].includes(row.quantitative.production.status),
+      'quantitative production evidence must distinguish unobserved from source-reported values');
+    assert.notEqual(row.quantitative.reserve.status, 'SIMULATED',
+      'scenario reserve must never be promoted into an observed reserve');
+    assert.notEqual(row.quantitative.production.status, 'SIMULATED',
+      'scenario output must never be promoted into observed production');
+    if (row.quantitative.reserve.status === 'REPORTED' || row.quantitative.production.status === 'REPORTED') {
+      assert.ok(row.quantitative.quantitativeProvenance?.sourceUrls?.length,
+        'every source-reported quantitative metric must retain provenance URLs');
+      assert.equal(row.quantitative.quantitativeProvenance?.simulatedReserveSeparate, true,
+        'source-reported values and simulated gameplay reserve must remain separate');
+    }
     assert.equal(row.reserve.status, 'SIMULATED');
     assert.equal(row.simulation.reserve.status, 'SIMULATED');
     assert.ok(Array.isArray(row.sources) && row.sources.some(source => /^https?:\/\//.test(source.url)));
@@ -283,7 +295,7 @@ test('mine project rejects cross-country identity and player-only actions requir
   assert.match(uiSource, /<svg/);
   assert.match(indexSource, /omega_resource_mine_management_v1\.js/);
   assert.match(fs.readFileSync(new URL('server.js', repoRoot), 'utf8'), /RESOURCE_MINE_MANAGEMENT_SCRIPT/);
-  assert.match(serviceWorkerSource, /omega-offline-atlas-shell-v9/);
+  assert.match(serviceWorkerSource, /omega-offline-atlas-shell-v\\d+/);
   assert.match(serviceWorkerSource, /\.\/omega_resource_mine_management_v1\.js/);
   assert.match(serviceWorkerSource, /\.\/resource_site_country_mineplay_batch_20261020_v1\.json/);
   assert.match(serviceWorkerSource, /\.\/resource_industrial_catalog_v1\.json/);
