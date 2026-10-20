@@ -232,9 +232,19 @@
     const preferred = text(preferredId);
     if (preferred) {
       const state = getCanonicalState(preferred);
-      if (canonicalActive(state)) return state;
+      if (canonicalActive(state)) {
+        const runtime = state.runtimeState || {};
+        const countryMatches = !cc || upper(runtime.countryId) === upper(cc);
+        const ministryMatches = !ministry || text(runtime.ministryId).toLowerCase() === ministry.toLowerCase();
+        return countryMatches && ministryMatches ? state : null;
+      }
       const old = getLegacyState(preferred);
-      if (legacyActive(old)) return old;
+      if (legacyActive(old)) {
+        const runtime = old.runtime || old.runtimeState || {};
+        const countryMatches = !cc || upper(runtime.countryId) === upper(cc);
+        const ministryMatches = !ministry || text(runtime.ministryId).toLowerCase() === ministry.toLowerCase();
+        return countryMatches && ministryMatches ? old : null;
+      }
       return null;
     }
     if (registry && registry.getActiveMinister && countryId && ministryId) {
