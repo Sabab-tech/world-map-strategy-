@@ -1,0 +1,291 @@
+'use strict';
+
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+
+const root = path.resolve(__dirname, '..');
+const read = name => fs.readFileSync(path.join(root, name), 'utf8');
+const pipelineSource = read('omega_minister_intelligence_pipeline_v1.js');
+const languageVocabulary = JSON.parse(read('offline_language_vocabulary.json'));
+
+new Function(pipelineSource);
+
+const listeners = new Map();
+const events = [];
+class TestCustomEvent {
+  constructor(type, init = {}) {
+    this.type = type;
+    this.detail = init.detail || {};
+  }
+}
+const minister = {
+  ministerId: 'minister-finance-01',
+  staticProfile: {
+    ministerId: 'minister-finance-01',
+    baseName: 'Dr. Amina Rahman',
+    background: 'Public finance and macroeconomic policy',
+    baseAge: 47,
+    baseStats: { accuracy: 86, strategic: 82 },
+    efficiencyProfile: { fiscal: 88 },
+    ideology: { type: 'technocrat' },
+    ministryId: 'finance'
+  },
+  runtimeState: {
+    ministerId: 'minister-finance-01',
+    countryId: 'BGD',
+    ministryId: 'finance',
+    status: 'ACTIVE',
+    workload: 20,
+    stress: 10,
+    confidence: 80,
+    trust: 75,
+    activeTasks: []
+  },
+  learningState: { totalServiceTime: 12, domainExperience: { fiscal: 8 } },
+  memoryState: {},
+  effectiveCapability: 84
+};
+const formerMinister = {
+  ...minister,
+  ministerId: 'minister-finance-former',
+  staticProfile: { ...minister.staticProfile, ministerId: 'minister-finance-former', baseName: 'Former Finance Minister' },
+  runtimeState: { ...minister.runtimeState, ministerId: 'minister-finance-former', status: 'FIRED' }
+};
+const replacementMinister = {
+  ...minister,
+  ministerId: 'minister-finance-replacement',
+  staticProfile: { ...minister.staticProfile, ministerId: 'minister-finance-replacement', baseName: 'Replacement Finance Minister' },
+  runtimeState: { ...minister.runtimeState, ministerId: 'minister-finance-replacement', status: 'ACTIVE' }
+};
+let activeMinisterForScope = minister;
+const messages = [];
+const episodes = [];
+const contextUpdates = [];
+const registry = {
+  VERSION: 'TEST_CANONICAL_REGISTRY',
+  getMinister(id) {
+    if (String(id) === minister.ministerId) return minister;
+    if (String(id) === formerMinister.ministerId) return formerMinister;
+    if (String(id) === replacementMinister.ministerId) return replacementMinister;
+    return null;
+  },
+  getActiveMinister(countryId, ministryId) {
+    if (String(countryId) === 'BGD' && String(ministryId) === 'finance' && activeMinisterForScope.runtimeState.status === 'ACTIVE') return activeMinisterForScope;
+    return null;
+  },
+  getRegistry() { return new Map(); },
+  getAssignments() { return new Map(); },
+  retrieveMemory() { return messages.slice(-12); },
+  sendMessage(id, message) { assert.equal(String(id), minister.ministerId); messages.push(message); return message; },
+  storeEpisode(id, episode) { assert.equal(String(id), minister.ministerId); episodes.push(episode); return episode; },
+  consistencyCheck() { return { ok: true, errors: [], count: 0 }; }
+};
+const languageSystem = {
+  VERSION: 'TEST_LANGUAGE',
+  diagnostics() { return { ready: true }; },
+  sourceData(path) { return path === 'offline_language_vocabulary.json' ? languageVocabulary : null; },
+  setContext(value) { contextUpdates.push(value); },
+  parse(question, context) {
+    return { raw: question, surface: question, language: /[\u0980-\u09FF]/.test(question) ? 'bn' : 'en',
+      operation: 'ASK', targetDomain: 'MINISTER', entities: { minister: { id: context.ministerId } } };
+  }
+};
+let cognitiveIsPowered = true;
+const cognitive = {
+  async askMinisterWithAI(question, profile, countryId, countryDetails) {
+    assert.equal(profile.ministerId, minister.ministerId);
+    assert.equal(countryId, 'BGD');
+    assert.equal(countryDetails.countryCode, 'BGD', 'Resolved country identity must reach the cognitive engine.');
+    assert.equal(profile.ministryId, 'finance');
+    assert.equal(profile.efficiency, 84, 'Canonical capability should reach the legacy cognitive contract.');
+    assert.ok(profile.parsedIntent);
+    assert.ok(countryDetails);
+    return { text: 'বাজেটের ঝুঁকি বিশ্লেষণ করছি এবং প্রমাণ যাচাই করে সুপারিশ দেব।', aiPowered: cognitiveIsPowered, model: 'test-provider' };
+  }
+};
+
+const sandbox = {
+  console,
+  CustomEvent: TestCustomEvent,
+  dispatchEvent(event) { events.push(event); for (const fn of listeners.get(event.type) || []) fn(event); return true; },
+  addEventListener(type, fn) { if (!listeners.has(type)) listeners.set(type, new Set()); listeners.get(type).add(fn); },
+  removeEventListener(type, fn) { listeners.get(type)?.delete(fn); },
+  OmegaMinisterStateRegistry: registry,
+  OmegaLanguageSystem: languageSystem,
+  OmegaCognitiveOS: cognitive,
+  OmegaReasoningDispatcher: {
+    dispatch() {
+      return {
+        used: true,
+        text: 'UNVERIFIED FAKE INTELLIGENCE ANSWER',
+        cognitive: {
+          available: true,
+          full40: true,
+          result: { aiGroundingPacket: { answerEvidence: { facts: [] }, answerContract: { evidenceOnly: true, doNotInventMissingValues: true } } }
+        }
+      };
+    }
+  },
+  Game: { state: { countryCode: 'BGD', countryName: 'Bangladesh', treasury: 100 } },
+  OmegaCabinetUI: { activeCountry: 'BGD', currentMinistryId: 'finance', currentInterrogatedMinister: {
+    ministerId: minister.ministerId, name: 'Dr. Amina Rahman', countryCode: 'BGD', ministryId: 'finance', role: 'Finance Minister'
+  } }
+};
+sandbox.window = sandbox;
+sandbox.globalThis = sandbox;
+
+vm.runInNewContext(pipelineSource, sandbox, { filename: 'omega_minister_intelligence_pipeline_v1.js' });
+const pipeline = sandbox.OmegaMinisterIntelligencePipeline;
+assert.ok(pipeline, 'The new pipeline must register its public API.');
+assert.equal(pipeline.VERSION, '1.0.0');
+assert.equal(pipeline.shouldHandleQuestion({ countryId: 'BGD', ministryId: 'finance', ministerId: minister.ministerId }, 'বাজেটের ঝুঁকি কত?'), true);
+assert.equal(pipeline.shouldHandleQuestion({ countryId: 'BGD', ministryId: 'finance', ministerId: 'unknown' }, 'What is the budget risk?'), false);
+assert.equal(pipeline.shouldHandleQuestion({ countryId: 'SAU', ministryId: 'foreign_affairs', ministerId: minister.ministerId }, 'Give me an intelligence briefing'), false,
+  'A minister assigned to one country/ministry must not answer for another country/ministry.');
+activeMinisterForScope = replacementMinister;
+assert.equal(pipeline.shouldHandleQuestion({ countryId: 'BGD', ministryId: 'finance', ministerId: formerMinister.ministerId }, 'বাজেটের ঝুঁকি কত?'), true,
+  'A stale, inactive minister ID must resolve to the current appointment within the same scope.');
+assert.equal(pipeline.resolveContext({ countryId: 'BGD', ministryId: 'finance', ministerId: formerMinister.ministerId }).ministerId,
+  replacementMinister.ministerId, 'The replacement must become the active conversation identity.');
+activeMinisterForScope = minister;
+
+(async () => {
+  const intentContext = pipeline.resolveContext({ countryId: 'BGD', ministryId: 'finance', ministerId: minister.ministerId });
+  const intentResult = await pipeline.prepareLanguage('গোয়েন্দা ব্রিফিং দাও', intentContext);
+  assert.equal(intentResult.parsed.dialogueIntent.intent, 'MINISTER_INTELLIGENCE');
+  assert.equal(intentResult.parsed.dialogueIntent.action, 'INTELLIGENCE_BRIEFING');
+  assert.equal(intentResult.parsed.dialogueIntent.operation, 'ASSESS_SECURITY');
+  assert.equal(intentResult.parsed.dialogueIntent.source, 'offline_language_vocabulary.json',
+    'Minister dialogue intent must come from the language dataset, not a hardcoded phrase list.');
+
+  const answer = await pipeline.ask('বাজেটের ঝুঁকি কত?', {
+    countryId: 'BGD',
+    countryCode: 'BGD',
+    countryName: 'Bangladesh',
+    ministryId: 'finance',
+    ministerId: minister.ministerId,
+    ministerRole: 'Finance Minister',
+    countryDetails: { treasury: 100 },
+    gameState: { treasury: 100 },
+    aiProvider: 'GOOGLE'
+  });
+
+  assert.equal(answer.ok, true, JSON.stringify({ status: answer.status, error: answer.error }));
+  assert.equal(answer.source, 'OMEGA_MINISTER_INTELLIGENCE_PIPELINE_V1');
+  assert.equal(answer.language, 'bn');
+  assert.match(answer.text, /বাজেটের ঝুঁকি বিশ্লেষণ করছি/);
+  assert.equal(answer.route[0], 'OMEGA_LANGUAGE_SYSTEM');
+  assert.equal(answer.route[1], 'CANONICAL_MINISTER_STATE');
+  assert.equal(answer.route[2], 'OMEGA_COGNITIVE_OS');
+  assert.equal(answer.route[3], 'MINISTER_RELATIONAL_MEMORY');
+  assert.equal(messages.length, 2, 'Both player and minister turns must enter canonical relational memory.');
+  assert.equal(messages[0].role, 'user');
+  assert.equal(messages[1].role, 'assistant');
+  assert.equal(episodes.length, 1, 'A structured conversation episode must be stored.');
+  assert.equal(episodes[0].type, 'MINISTER_CONVERSATION');
+  assert.ok(contextUpdates.length > 0, 'The language runtime must receive minister/country context.');
+  assert.ok(events.some(event => event.type === 'OMEGA_MINISTER_CONVERSATION_COMPLETED'));
+
+  const diagnostics = pipeline.diagnostics();
+  assert.equal(diagnostics.canonicalRegistryAvailable, true);
+  assert.equal(diagnostics.languageSystemAvailable, true);
+  assert.equal(diagnostics.cognitiveEngineAvailable, true);
+
+  const offlineAnswer = await pipeline.ask('গোয়েন্দা ব্রিফিং দাও', {
+    countryId: 'BGD',
+    countryCode: 'BGD',
+    countryName: 'Bangladesh',
+    ministryId: 'finance',
+    ministerId: minister.ministerId,
+    ministerRole: 'Finance Minister',
+    aiProvider: 'OFFLINE',
+    countryDetails: { treasury: 100 },
+    gameState: { treasury: 100 }
+  });
+  assert.equal(offlineAnswer.status, 'OFFLINE_CONTEXT_FALLBACK');
+  assert.equal(offlineAnswer.offlineFallback, true);
+  assert.match(offlineAnswer.text, /প্রামাণ্য গেম-ডেটা/);
+  assert.equal(messages.length, 4, 'Offline fallback turns must also persist into minister memory.');
+  assert.equal(episodes.length, 2, 'Offline fallback must store a conversation episode.');
+
+  cognitiveIsPowered = false;
+  const unverifiedProviderAnswer = await pipeline.ask('গোয়েন্দা ব্রিফিং দাও', {
+    countryId: 'BGD', countryCode: 'BGD', countryName: 'Bangladesh',
+    ministryId: 'finance', ministerId: minister.ministerId, ministerRole: 'Finance Minister',
+    aiProvider: 'GOOGLE', countryDetails: { treasury: 100 }, gameState: { treasury: 100 }
+  });
+  assert.equal(unverifiedProviderAnswer.status, 'OFFLINE_CONTEXT_FALLBACK',
+    'An unverified legacy fallback must be replaced with the safe contextual fallback.');
+  assert.doesNotMatch(unverifiedProviderAnswer.text, /UNVERIFIED FAKE INTELLIGENCE ANSWER/);
+  assert.equal(messages.length, 6, 'Unverified AI/dispatcher output must be replaced and recorded as a safe fallback.');
+  assert.equal(episodes.length, 3);
+  cognitiveIsPowered = true;
+
+  minister.runtimeState.status = 'FIRED';
+  const vacantContext = { countryId: 'BGD', ministryId: 'finance', aiProvider: 'OFFLINE' };
+  assert.equal(pipeline.shouldHandleQuestion(vacantContext, 'মন্ত্রীর সঙ্গে কথা বল'), true,
+    'A selected but vacant ministry must retain the minister dialogue route.');
+  const vacantAnswer = await pipeline.ask('মন্ত্রীর সঙ্গে কথা বল', vacantContext);
+  assert.equal(vacantAnswer.status, 'MINISTER_NOT_ACTIVE',
+    'A vacant ministry must ask for recruitment instead of falling through to generic AI.');
+  minister.runtimeState.status = 'ACTIVE';
+
+  const server = read('server.js');
+  const bootstrap = read('server_bootstrap.js');
+  const universal = read('omega_universal_ai_runtime.js');
+  const ministerBootstrap = read('omega_minister_bootstrap.js');
+  const communication = read('minister_communication_engine.js');
+  const cognitiveSource = read('omega_cognitive_engine.js');
+
+  assert.ok(server.includes('MINISTER_INTELLIGENCE_PIPELINE_SCRIPT'));
+  assert.ok(server.includes('omega_minister_intelligence_pipeline_v1.js'));
+  assert.ok(server.includes("app.post('/api/ai/minister-consult'"), 'A real server-side minister AI endpoint must exist.');
+  assert.ok(server.includes('PROMPT_REQUIRED') && server.includes('GEMINI_API_KEY_NOT_CONFIGURED'),
+    'The minister AI endpoint must validate input and declare an explicit offline fallback state.');
+  assert.ok(bootstrap.includes("'omega_minister_intelligence_pipeline_v1.js'"));
+  assert.ok(universal.includes("source:'MINISTER_INTELLIGENCE_PIPELINE'"));
+  assert.ok(universal.indexOf('const ministerPipeline=global.OmegaMinisterIntelligencePipeline') < universal.indexOf('const selfQuery=resolveSelfQuery(question,ctx)'),
+    'An active minister must handle dialogue before generic AI self-query shortcuts.');
+  assert.ok(universal.indexOf('const ministerPipeline=global.OmegaMinisterIntelligencePipeline') < universal.indexOf('const conversation=localConversation(question)'),
+    'The active minister must get first refusal before generic conversation handling.');
+  assert.ok(ministerBootstrap.includes('MAX_BOOT_ATTEMPTS'));
+  assert.ok(ministerBootstrap.includes('scheduleRetry'));
+  assert.ok(communication.includes('global.OmegaMinisterStateRegistry||global.OmegaMinisterState?.registry'),
+    'Communication must prefer the canonical state registry.');
+  assert.ok(cognitiveSource.includes('dialogueIntent: ministerContext.dialogueIntent'),
+    'The cognitive AI request must receive the vocabulary-resolved minister dialogue intent.');
+  assert.ok(!cognitiveSource.includes("countryDetails.countryCode || 'BGD'"),
+    'The cognitive AI client must not silently substitute Bangladesh for a missing country code.');
+  assert.ok(cognitiveSource.includes('ministerRuntime: ministerContext.runtime') &&
+    cognitiveSource.includes('ministerLearning: ministerContext.learning') &&
+    cognitiveSource.includes('conversationHistory'),
+    'The cognitive AI request must receive live minister state and recent conversation context.');
+
+  for (const lang of ['en', 'bn']) {
+    for (const attr of ['intelligence', 'recommendation', 'capability', 'decision_quality', 'institutional_memory']) {
+      assert.ok(Array.isArray(languageVocabulary.languages[lang].attributes[attr]), lang + ' attribute missing: ' + attr);
+      assert.ok(languageVocabulary.languages[lang].attributes[attr].length > 0);
+    }
+    for (const op of ['analyze', 'recommend', 'consult', 'delegate', 'coordinate']) {
+      assert.ok(Array.isArray(languageVocabulary.languages[lang].operators[op]), lang + ' operator missing: ' + op);
+    }
+  }
+  for (const intent of ['MINISTER_CONSULT', 'MINISTER_RECOMMENDATION', 'MINISTER_INTELLIGENCE', 'MINISTER_STATUS', 'MINISTER_EXPLANATION', 'MINISTER_STRATEGY', 'MINISTER_MEMORY']) {
+    assert.ok(languageVocabulary.languages.conversation.intentRules[intent], 'Bilingual dialog intent missing: ' + intent);
+    assert.ok(languageVocabulary.languages.conversation.intentRules[intent].phrases.en.length > 0);
+    assert.ok(languageVocabulary.languages.conversation.intentRules[intent].phrases.bn.length > 0);
+  }
+
+  console.log('OMEGA MINISTER INTELLIGENCE PIPELINE V1: PASS');
+  console.log('Canonical active-minister resolution: PASS');
+  console.log('Bengali language-context parsing: PASS');
+  console.log('Cognitive minister dialogue dispatch: PASS');
+  console.log('Canonical conversation memory and episode persistence: PASS');
+  console.log('Browser/server boot integration and retry contracts: PASS');
+  console.log('Bilingual minister-intelligence vocabulary: PASS');
+})().catch(error => {
+  console.error(error);
+  process.exitCode = 1;
+});

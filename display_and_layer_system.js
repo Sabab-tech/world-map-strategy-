@@ -842,15 +842,17 @@
 
         const bindDockBtn = (id, handler) => {
             const el = document.getElementById(id);
-            if (!el) return;
-            const wrapHandler = (e) => {
+            if (!el || el.getAttribute('data-omega-dock-click-bound') === 'true') return;
+            el.setAttribute('data-omega-dock-click-bound', 'true');
+
+            // Use one semantic click route. Touch and pointer events synthesize
+            // a click on Android WebView; binding all three opens the same layer
+            // multiple times and can cancel the synthesized click.
+            el.addEventListener('click', (e) => {
                 if (e.cancelable) e.preventDefault();
-                e.stopPropagation();
-                handler(e);
-            };
-            el.addEventListener('click', wrapHandler);
-            el.addEventListener('pointerdown', wrapHandler);
-            el.addEventListener('touchstart', wrapHandler, { passive: false });
+                e.stopImmediatePropagation();
+                if (typeof handler === 'function') handler(e);
+            }, { passive: false });
         };
 
         bindDockBtn('btn-ministry-dock', window.openMainMinistryView);
