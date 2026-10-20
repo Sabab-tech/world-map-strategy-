@@ -4,7 +4,49 @@ const VERSION='2.2.0',MAX_CANDIDATES=5;
 const text=v=>String(v==null?'':v).trim(),esc=v=>text(v).replace(/[&<>\"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[s]));
 const registry=()=>global.OmegaMinisterStateRegistry;
 function countryCode(){const g=global.Game||{},c=g.currentActiveCountry;if(typeof c==='string')return text(c).toUpperCase();return text(c?.iso||c?.iso3||c?.code||g.countryCode||global.currentActiveCountry||'').toUpperCase()}
-async function fetchRoster(ministryId,cc){const r=await fetch(`/api/minister-candidates?ministryId=${encodeURIComponent(ministryId)}&countryCode=${encodeURIComponent(cc||countryCode())}`,{headers:{Accept:'application/json'}});if(!r.ok)throw new Error(`Minister roster request failed (${r.status})`);const d=await r.json();if(!d.ok)throw new Error(d.error||'Minister roster unavailable');if(!Array.isArray(d.candidates)||d.candidates.length!==MAX_CANDIDATES)throw new Error(`Exactly five verified candidates are required; received ${d.candidates?.length||0}.`);return d.candidates}
+function normalizeCandidateKey(value){return String(value||'').trim().toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'')}
+function candidateTokens(value){return new Set(normalizeCandidateKey(value).split('_').filter(Boolean))}
+function scoreCandidateCategory(category,ministryId){const a=candidateTokens(category),b=candidateTokens(ministryId);let score=0;for(const token of a)if(b.has(token))score+=3;return score}
+function scoreCandidate(minister,ministryId){const target=candidateTokens(ministryId),blob=[minister.__category,minister.background,minister.id].map(normalizeCandidateKey).join(' ');let score=scoreCandidateCategory(minister.__category,ministryId);for(const token of target)if(blob.includes(token))score+=1;return score}
+async function offlineRoster(ministryId,cc){
+  let source=global.OmegaMinistersDB;
+  if(!source||!Object.values(source).some(Array.isArray)){
+    try{
+      const response=await fetch('ministers.json',{cache:'no-store'});
+      if(response.ok){const raw=await response.json();source=raw.ministers_database||raw.ministers||raw;global.OmegaMinistersDB=source}
+    }catch(_){}
+  }
+  const database=source?.ministers_database||source?.ministers||source||{};
+  const all=[];
+  for(const [category,list] of Object.entries(database)){
+    if(!Array.isArray(list))continue;
+    for(const minister of list){
+      const id=text(minister?.id||minister?.ministerId);
+      if(id)all.push({...minister,id,__category:category});
+    }
+  }
+  const target=normalizeCandidateKey(ministryId);
+  const exact=all.filter(minister=>normalizeCandidateKey(minister.__category)===target);
+  const pool=exact.length>=MAX_CANDIDATES?exact:[...all].sort((a,b)=>scoreCandidate(b,ministryId)-scoreCandidate(a,ministryId)||String(a.id).localeCompare(String(b.id)));
+  const unique=new Map();
+  for(const minister of pool){if(!unique.has(minister.id))unique.set(minister.id,minister);if(unique.size>=MAX_CANDIDATES)break}
+  return [...unique.values()].slice(0,MAX_CANDIDATES).map(minister=>({...minister,displayName:displayName(minister),ministryCategory:minister.__category,rosterSource:'MINISTERS_JSON_OFFLINE'}));
+}
+async function fetchRoster(ministryId,cc){
+  let apiError='API unavailable';
+  try{
+    const r=await fetch(`api/minister-candidates?ministryId=${encodeURIComponent(ministryId)}&countryCode=${encodeURIComponent(cc||countryCode())}`,{headers:{Accept:'application/json'}});
+    if(!r.ok)apiError=`HTTP ${r.status}`;
+    else{
+      const d=await r.json();
+      if(d.ok&&Array.isArray(d.candidates)&&d.candidates.length===MAX_CANDIDATES)return d.candidates;
+      apiError=d.error||`Expected five verified candidates; received ${d.candidates?.length||0}`;
+    }
+  }catch(error){apiError=text(error?.message||error||apiError)}
+  const roster=await offlineRoster(ministryId,cc||countryCode());
+  if(roster.length===MAX_CANDIDATES)return roster;
+  throw new Error(`Minister roster unavailable (${apiError}). ${roster.length} unique candidates could be found in ministers.json; five are required.`);
+}
 function activeId(ministryId,cc){return registry()?.getActiveMinister(cc||countryCode(),ministryId)?.ministerId||null}
 function operationFor(ministryId){const rules=registry()?.getConfig?.()?.roles||[];const n=String(ministryId||'').toLowerCase();return rules.find(r=>(r.match||[]).some(x=>n.includes(String(x).toLowerCase())))?.operations?.[0]||rules.find(r=>!(r.match||[]).length)?.operations?.[0]||'EXECUTION'}
 function capability(candidate,ministryId){const engine=global.OmegaMinisterCapability;if(!engine)return null;return engine.evaluate(candidate,operationFor(ministryId),{workload:0,stress:0,experience:0,informationQuality:1})}
