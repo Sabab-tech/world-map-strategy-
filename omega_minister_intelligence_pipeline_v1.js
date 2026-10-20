@@ -229,6 +229,8 @@
   function getActiveMinister(countryId, ministryId, preferredId) {
     const registry = canonical();
     const system = legacy();
+    const cc = text(countryId);
+    const ministry = text(ministryId);
     const preferred = text(preferredId);
     if (preferred) {
       const state = getCanonicalState(preferred);
