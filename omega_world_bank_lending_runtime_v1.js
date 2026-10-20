@@ -340,7 +340,7 @@
     } catch (_) {}
     return {
       countryCode: codeOf(profile), iso3: iso3Of(profile), iso2: iso2Of(profile), countryName: profile.name,
-      profileStatus: profile.profileStatus || 'UNKNOWN', simulationDataAvailable: !!economy,
+      profileStatus: profile.profileStatus || 'UNKNOWN', simulationDataAvailable: !!economy && finite(economy.gdp) !== null,
       gdpUsd: gdp, debtUsd: debt, debtToGdpPct: debtToGdp,
       gdpGrowthPct: growth, inflationPct: inflation, unemploymentPct: unemployment,
       reservesUsd: reserves, reservesToGdpPct: reservesToGdp,
@@ -1534,11 +1534,11 @@
   function activeLoansTable(profile) {
     const loans = getLoanList(profile).filter(loan => loan.status !== 'REPAID');
     if (!loans.length) return '<p class="owb-empty">No active simulated World Bank facility for this country.</p>';
-    return '<div class="owb-table-wrap"><table class="owb-table"><thead><tr><th>Facility</th><th>Outstanding</th><th>Principal</th><th>Accrued interest</th><th>Rate</th><th>Annual payment estimate</th><th>Term</th><th>Status</th></tr></thead><tbody>' +
+    return '<div class="owb-table-wrap"><table class="owb-table"><thead><tr><th>Facility</th><th>Outstanding</th><th>Principal</th><th>Accrued interest</th><th>Rate</th><th>FX equivalent</th><th>Annual payment estimate</th><th>Term</th><th>Status</th></tr></thead><tbody>' +
       loans.map(loan => '<tr><td><strong>' + esc(loan.loanId) + '</strong><small>' + esc(loan.purpose) + '</small></td><td>' +
         esc(money((finite(loan.outstandingPrincipalUsd) || 0) + (finite(loan.accruedInterestUsd) || 0))) + '</td><td>' +
         esc(money(loan.outstandingPrincipalUsd)) + '</td><td>' + esc(money(loan.accruedInterestUsd)) + '</td><td>' +
-        esc(percent(loan.annualInterestRatePct)) + '</td><td>' + esc(money(annualPayment(Math.max(0, finite(loan.outstandingPrincipalUsd) || 0), Math.max(0, finite(loan.annualInterestRatePct) || 0), Math.max(1 / 365, (finite(loan.termYears) || 1) - Math.max(finite(loan.ageYears) || 0, finite(loan.graceYears) || 0))))) + '</td><td>' + esc(number(loan.termYears, 1)) + 'y / ' + esc(number(loan.graceYears, 1)) + 'y grace</td><td>' +
+        esc(percent(loan.annualInterestRatePct)) + '</td><td>' + (function(){const currency=String(loan.settlementCurrencyCode||'USD').toUpperCase();const quote=currencySnapshot(currency);const equivalent=quote.ok?number((Math.max(0,finite(loan.outstandingPrincipalUsd)||0)+Math.max(0,finite(loan.accruedInterestUsd)||0))*quote.localPerUsd,2)+' '+currency:'N/A';return esc(equivalent)+'<small>Issue snapshot: '+esc(number(loan.originalPrincipalCurrency,2))+' '+esc(currency)+'</small>';})() + '</td><td>' + esc(money(annualPayment(Math.max(0, finite(loan.outstandingPrincipalUsd) || 0), Math.max(0, finite(loan.annualInterestRatePct) || 0), Math.max(1 / 365, (finite(loan.termYears) || 1) - Math.max(finite(loan.ageYears) || 0, finite(loan.graceYears) || 0))))) + '</td><td>' + esc(number(loan.termYears, 1)) + 'y / ' + esc(number(loan.graceYears, 1)) + 'y grace</td><td>' +
         '<span class="owb-state ' + (['ARREARS', 'DEFAULTED', 'INSOLVENT'].includes(String(loan.status || '').toUpperCase()) ? 'owb-bad' : loan.status === 'RESTRUCTURED' ? 'owb-warn' : 'owb-good') + '">' + esc(loan.status) + '</span><small>' + esc(number(loan.daysPastDue, 0)) + ' overdue days</small></td></tr>').join('') +
       '</tbody></table></div>';
   }
@@ -1592,7 +1592,11 @@
     const reasons = assessment && assessment.reasons && assessment.reasons.length
       ? '<ul class="owb-reasons">' + assessment.reasons.map(reason => '<li>' + esc(reason) + '</li>').join('') + '</ul>'
       : '<p class="owb-sub">No credit guardrail is currently triggered. The score is a game heuristic, not an official rating.</p>';
-    return '<section class="owb-section"><div class="owb-section-head"><h4>Selected country · ' + esc(profile.name) + '</h4><span class="owb-state ' + decisionClass(assessment && assessment.decision) + '">' + esc(decisionLabel(assessment && assessment.decision)) + '</span></div>'
+    const institutionStatus = String(liquidity.institutionStatus || 'ACTIVE').toUpperCase();
+    const institutionHold = ['DEFAULTED', 'BANKRUPTCY_PROCEEDING', 'RECONCILIATION_REQUIRED'].includes(institutionStatus)
+      ? '<div class="owb-notice owb-risk-box"><strong>IMPORTANT · INSTITUTIONAL ' + esc(institutionStatus.replace(/_/g, ' ')) + '</strong><p>New loan disbursements are frozen. Resolve partner arrears or ledger reconciliation before issuing new credit.</p></div>'
+      : '';
+    return institutionHold + '<section class="owb-section"><div class="owb-section-head"><h4>Selected country · ' + esc(profile.name) + '</h4><span class="owb-state ' + decisionClass(assessment && assessment.decision) + '">' + esc(decisionLabel(assessment && assessment.decision)) + '</span></div>'
       + '<div class="owb-kpis"><article class="owb-kpi"><small>Credit score</small><strong>' + esc(assessment && assessment.score !== null ? number(assessment.score, 1) + '/100' : 'N/A') + '</strong><small>' + esc(assessment && assessment.riskBand || 'Unrated') + '</small></article>'
       + '<article class="owb-kpi"><small>Maximum new facility</small><strong>' + esc(money(assessment && assessment.maxLoanUsd)) + '</strong><small>USD · confidence ' + esc(number(assessment && assessment.confidencePct, 0)) + '%</small></article>'
       + '<article class="owb-kpi"><small>Active borrower contracts</small><strong>' + esc(number(activeLoans.length, 0)) + '</strong><small>Exposure ' + esc(money(getOutstandingBalance(profile))) + '</small></article>'
