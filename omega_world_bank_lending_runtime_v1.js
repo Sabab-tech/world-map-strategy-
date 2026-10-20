@@ -1621,6 +1621,9 @@
       + '</section>';
   }
   function renderLoanPane(profile, assessment, canAct, bank) {
+    const institutionStatus = String(bank && bank.liquidity && bank.liquidity.institutionStatus || 'ACTIVE').toUpperCase();
+    if (['DEFAULTED', 'BANKRUPTCY_PROCEEDING', 'RECONCILIATION_REQUIRED'].includes(institutionStatus))
+      return '<section class="owb-section"><div class="owb-term-guard"><strong>IMPORTANT · NEW LENDING FROZEN</strong><p>The simulated institution is in ' + esc(institutionStatus.replace(/_/g, ' ')) + ' status. Clear overdue partner funding or reconciliation first.</p></div></section>';
     if (!assessment || assessment.maxLoanUsd <= 0 || !['ELIGIBLE', 'CONDITIONAL'].includes(assessment.decision)) {
       return '<section class="owb-section"><h4>New facility unavailable</h4><p class="owb-sub">' + esc(assessment && assessment.reasons && assessment.reasons.join(' ') || 'The current simulation does not support a new facility.') + '</p></section>';
     }
@@ -1690,14 +1693,16 @@
       + partners.map(row => '<tr><td>' + esc(row.countryName || row.countryCode) + '</td><td>' + esc(row.role || 'MEMBER') + '</td><td>' + esc(money(row.commitmentLimitUsd)) + '</td><td>' + esc(money(row.totalDrawnUsd)) + '</td><td>' + esc(number(row.joinedTurn, 0)) + '</td></tr>').join('')
       + '</tbody></table></div>' : '<p class="owb-empty">No registered sovereign funding partners yet.</p>';
     const facts = countryFacts(profile);
-    const reserveFloor = facts && facts.gdpUsd !== null ? Math.max(1000000, facts.gdpUsd * 0.005) : null;
-    const maxCommit = facts && facts.gdpUsd !== null && facts.treasuryUsd !== null && reserveFloor !== null
-      ? Math.max(0, Math.min(facts.gdpUsd * 0.02, facts.treasuryUsd - reserveFloor)) : 0;
     const currentPartner = bank.partnersByCountry && bank.partnersByCountry[codeOf(profile)];
+    const alreadyDrawn = Math.max(0, finite(currentPartner && currentPartner.totalDrawnUsd) || 0);
+    const reserveFloor = facts && facts.gdpUsd !== null ? Math.max(1000000, facts.gdpUsd * 0.005) : null;
+    const freshCapacity = facts && facts.gdpUsd !== null && facts.treasuryUsd !== null && reserveFloor !== null
+      ? Math.max(0, Math.min(facts.gdpUsd * 0.02, facts.treasuryUsd - reserveFloor + alreadyDrawn)) : 0;
+    const maxCommit = Math.max(alreadyDrawn, freshCapacity);
     let form = '<div class="owb-notice"><strong>IMPORTANT · Voluntary participation</strong><p>A player-controlled country is never auto-debited as a lender unless you explicitly register it. NPC lender countries may offer capped liquidity under the same reserve/credit rules.</p></div>';
     if (canAct && assessment && assessment.score >= 65 && maxCommit > 0) {
       form += '<form class="owb-section" data-owb-form="partner"><div class="owb-section-head"><h4>' + (currentPartner && currentPartner.role === 'LENDER' ? 'Update lender commitment' : 'Register as a sovereign funding partner') + '</h4></div>'
-        + '<label class="owb-field">Maximum aggregate commitment · USD<input type="number" name="commitmentLimitUsd" min="1000000" max="' + esc(String(Math.floor(maxCommit))) + '" step="1000000" value="' + esc(String(Math.floor(currentPartner && currentPartner.commitmentLimitUsd || Math.min(maxCommit, facts.gdpUsd * 0.005)))) + '" required></label>'
+        + '<label class="owb-field">Maximum aggregate commitment · USD<input type="number" name="commitmentLimitUsd" min="' + esc(String(Math.max(1000000, alreadyDrawn))) + '" max="' + esc(String(Math.floor(maxCommit))) + '" step="1000000" value="' + esc(String(Math.floor(currentPartner && currentPartner.commitmentLimitUsd || Math.max(1000000, Math.min(maxCommit, facts.gdpUsd * 0.005)))) ) + '" required></label>'
         + '<p class="owb-sub">Maximum ' + esc(money(maxCommit)) + '. Minimum cash reserve remains protected; per-draw cap is 0.5% of GDP. Funds move only when the simulated institution is short and records a repayable funding contract.</p>'
         + '<button class="owb-btn owb-primary" type="submit">' + svgIcon('partners') + ' Save partner consent</button></form>';
     } else if (canAct) {
