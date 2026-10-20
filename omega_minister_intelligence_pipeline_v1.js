@@ -247,7 +247,10 @@
         const ministryMatches = !ministry || text(runtime.ministryId).toLowerCase() === ministry.toLowerCase();
         return countryMatches && ministryMatches ? old : null;
       }
-      return null;
+      // A known but inactive minister can be stale UI state after dismissal.
+      // Resolve the current appointment in the requested country/ministry below.
+      // An unknown explicit ID still fails closed instead of selecting another minister.
+      if (!state && !old) return null;
     }
     if (registry && registry.getActiveMinister && countryId && ministryId) {
       try {
