@@ -24,8 +24,15 @@ function iso3(value){
 function playerCountry(){
  const s=state();let value=null;
  try{value=g.Omega?.Simulation?.getPlayerCountryId?.();}catch(_){}
- value=value||s?.simulation?.session?.playerCountryId||s?.simulation?.playerCountryId||g.CountryIOS?.activeCountry||g.Game?.currentActiveCountry||g.currentActiveCountry;
+ value=value||s?.simulation?.session?.playerCountryId||s?.simulation?.playerCountryId||g.Omega?.Simulation?.playerCountryId||g.CountryIOS?.playerCountryId||g.Game?.playerCountryId||g.currentPlayerCountry;
  return iso3(value||'');
+}
+function selectedMinistryCountry(){
+ const s=state();
+ const value=g.OmegaMinistryViewCountry||g.Omega?.MinistryViewCountry||g.OmegaCabinetUI?.activeCountry||
+   g.Omega?.CabinetUI?.activeCountry||s?.simulation?.viewCountryId||s?.selectedCountryId||
+   g.Game?.currentActiveCountry||g.CountryIOS?.activeCountry||playerCountry();
+ return iso3(value||playerCountry());
 }
 function siteIdOf(x){return String(x?.siteId||x?.siteReferenceKey||x?.id||'').trim();}
 function countryOf(x){return iso3(x?.countryId||x?.countryCode||x?.identity?.countryIso3||x?.sourceSiteRecord?.countryCode||'');}
@@ -352,7 +359,7 @@ function injectButtons(){
 function delegatedEntry(e){
  const button=e.target?.closest?.('[data-omega-mine-entry]');if(!button)return;
  e.preventDefault();currentView=button.getAttribute('data-omega-mine-entry')==='my-mines'?'my-mines':'mines';
- currentCountry=currentView==='my-mines'?playerCountry():(currentCountry||playerCountry());lastOutcome='';
+ currentCountry=currentView==='my-mines'?playerCountry():(selectedMinistryCountry()||currentCountry||playerCountry());lastOutcome='';
  if(!currentCountry){lastOutcome='Player country is not resolvable; construction remains disabled.';}
  void Promise.resolve(network()?.loadCatalog?.()).then(()=>endowment()?.initialize?.()).catch(()=>{}).finally(render);
 }
@@ -367,9 +374,17 @@ function boot(){
  for(const name of ['OMEGA_RESOURCE_MINE_PROJECT_STARTED','OMEGA_RESOURCE_MINE_COMMISSIONED','OMEGA_SIMULATION_TURN_COMMITTED','OMEGA_RESOURCE_EXTRACTION_COMPLETED','OMEGA_RESOURCE_INVENTORY_CHANGED','OMEGA_RESOURCE_PROCESSING_COMPLETED','OMEGA_TRADE_SETTLEMENT_COMPLETED','OMEGA_RESOURCE_FISCAL_RECEIPT_POSTED','OMEGA_RESOURCE_TRADE_RECONCILED']){
   g.addEventListener?.(name,function(){const modal=g.document.getElementById('omega-mine-management-modal');if(modal?.style.display==='flex')render();});
  }
+ for(const name of ['MINISTRY_SELECTED','OMEGA_MINISTRY_VIEW_COUNTRY_CHANGED','OMEGA_COUNTRY_SELECTED','COUNTRY_SELECTED','OMEGA_COUNTRY_CONTEXT_CHANGED','OMEGA_SELECTED_COUNTRY_CHANGED']){
+  g.addEventListener?.(name,function(event){
+   if(currentView!=='mines')return;
+   const detail=event?.detail||{};
+   const next=iso3(detail.countryId||detail.countryCode||detail.iso3||detail.country||g.OmegaMinistryViewCountry||g.OmegaCabinetUI?.activeCountry||'');
+   if(/^[A-Z]{3}$/.test(next)){currentCountry=next;const modal=g.document.getElementById('omega-mine-management-modal');if(modal?.style.display==='flex')render();}
+  });
+ }
 }
 if(g.document?.readyState==='loading')g.document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 g.Omega=g.Omega||{};
-g.Omega.ResourceMineManagementUI=Object.freeze({VERSION,open:function(view,country){currentView=view==='mines'?'mines':'my-mines';currentCountry=iso3(country||playerCountry());render();},refresh:render});
+g.Omega.ResourceMineManagementUI=Object.freeze({VERSION,open:function(view,country){currentView=view==='mines'?'mines':'my-mines';currentCountry=iso3(country||(currentView==='mines'?selectedMinistryCountry():playerCountry()));render();},refresh:render});
 g.OmegaResourceMineManagementUI=g.Omega.ResourceMineManagementUI;
 })(typeof window!=='undefined'?window:globalThis);
