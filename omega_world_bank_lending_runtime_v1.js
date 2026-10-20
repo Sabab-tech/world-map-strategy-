@@ -13,6 +13,7 @@
   const REFRESH_TTL_MS = DAY_MS;
   const RETRY_BACKOFF_MS = 60 * 60 * 1000;
   const DEFAULT_FACILITY_CAPACITY_USD = 1_000_000_000_000;
+  const DEFAULT_OPENING_LIQUIDITY_USD = 250_000_000_000;
   const MAX_HISTORY = 5000;
   const MAX_LOAN_LEDGER = 4000;
   const INDICATORS = Object.freeze([
@@ -33,9 +34,9 @@
     { key: 'history', weight: 0.10 }
   ]);
   const TERMS = Object.freeze({
-    IDA: { label: 'IDA-style concessional facility', rate: 1.25, years: 35, grace: 5 },
-    IDA_BLEND: { label: 'Blend facility', rate: 2.25, years: 30, grace: 4 },
-    IBRD: { label: 'IBRD-style development facility', rate: 3.25, years: 20, grace: 3 }
+    CONCESSIONAL_SIM: { label: 'Concessional-style simulation facility', rate: 1.25, years: 35, grace: 5 },
+    BLEND_SIM: { label: 'Blended simulation facility', rate: 2.25, years: 30, grace: 4 },
+    STANDARD_SIM: { label: 'Standard development simulation facility', rate: 3.25, years: 20, grace: 3 }
   });
 
   let finance = null;
@@ -133,6 +134,16 @@
       if (!isObject(bank.reference)) bank.reference = {};
       if (!isObject(bank.reference.countries)) bank.reference.countries = {};
       if (finite(bank.facilityCapacityUsd) === null || finite(bank.facilityCapacityUsd) < 0) bank.facilityCapacityUsd = DEFAULT_FACILITY_CAPACITY_USD;
+      if (!isObject(bank.liquidity)) bank.liquidity = {};
+      if (finite(bank.liquidity.cashBalanceUsd) === null || finite(bank.liquidity.cashBalanceUsd) < 0)
+        bank.liquidity.cashBalanceUsd = DEFAULT_OPENING_LIQUIDITY_USD;
+      if (finite(bank.liquidity.initialCapitalUsd) === null || finite(bank.liquidity.initialCapitalUsd) < 0)
+        bank.liquidity.initialCapitalUsd = bank.liquidity.cashBalanceUsd;
+      if (!bank.liquidity.source) bank.liquidity.source = 'SIMULATION_RULE_OPENING_CAPITAL';
+      if (!Array.isArray(bank.fundingLoans)) bank.fundingLoans = [];
+      if (!Array.isArray(bank.fundingOffers)) bank.fundingOffers = [];
+      if (!isObject(bank.partnersByCountry)) bank.partnersByCountry = {};
+      if (!finite(bank.lastInstitutionTurn)) bank.lastInstitutionTurn = -1;
       if (!isObject(bank.reference.indicatorStatus)) bank.reference.indicatorStatus = {};
       if (!bank.reference.provider) bank.reference.provider = 'WORLD_BANK_WDI_V2';
       if (!bank.reference.status) bank.reference.status = 'UNAVAILABLE';
