@@ -300,10 +300,11 @@
       financeModelAvailable: !!model
     };
   }
-  function creditHistory(value) {
+  function creditHistory(value, bankOverride) {
     const profile = resolveProfile(value);
     if (!profile) return { score: null, contracts: 0, repaidContracts: 0, arrearsContracts: 0, arrearsUsd: 0 };
-    const rows = (store(true).loansByCountry[codeOf(profile)] || []).filter(loan => loan && loan.loanId);
+    const bank = bankOverride || store(true);
+    const rows = (bank.loansByCountry[codeOf(profile)] || []).filter(loan => loan && loan.loanId);
     const repaid = rows.filter(loan => loan.status === 'REPAID').length;
     const arrearsLoans = rows.filter(loan => loan.status === 'ARREARS' || (finite(loan.arrearsUsd) || 0) > 0.01).length;
     const totalOriginal = rows.reduce((sum, loan) => sum + Math.max(0, finite(loan.originalPrincipalUsd) || 0), 0);
@@ -324,8 +325,8 @@
       arrearsContracts: arrearsLoans, arrearsUsd: round(arrears, 2) || 0
     };
   }
-  function scoreCountry(value) {
-    const facts = countryFacts(value);
+  function scoreCountry(value, context) {
+    const facts = countryFacts(value, context);
     if (!facts) return null;
     const components = {};
     if (facts.debtToGdpPct !== null && facts.debtToGdpPct >= 0) {
@@ -343,7 +344,7 @@
     if (facts.fiscalBalanceToGdpPct !== null) {
       components.fiscal = clamp(50 + facts.fiscalBalanceToGdpPct * 2, 0, 100);
     }
-    const history = creditHistory(facts.countryCode);
+    const history = creditHistory(facts.countryCode, context && context.bank);
     if (history.score !== null) components.history = history.score;
     let scoreTotal = 0, usedWeight = 0;
     SCORE_PARTS.forEach(part => {
@@ -355,18 +356,18 @@
     const confidence = round(usedWeight * 100, 1);
     const program = lendingProgram(facts);
     const reasons = [];
-    if (facts.gdpUsd === null || facts.gdpUsd <= 0) reasons.push('GDP is unavailable; no safe loan ceiling can be calculated.');
+    if (!facts.simulationDataAvailable) reasons.push('This country has no live game-economy record; no reference data is substituted.');
+    if (facts.gdpUsd === null || facts.gdpUsd <= 0) reasons.push('Current simulated GDP is unavailable; no safe loan ceiling can be calculated.');
     if (facts.debtToGdpPct === null) reasons.push('Public debt / GDP is unavailable.');
     if (confidence < 60) reasons.push('Too few credit indicators are available for a reliable lending decision.');
     if (facts.debtToGdpPct !== null && facts.debtToGdpPct >= 250) reasons.push('Debt / GDP is at or above the game model’s 250% lending guardrail.');
     if (facts.inflationPct !== null && facts.inflationPct >= 30) reasons.push('Inflation stress requires additional stabilization before standard lending.');
     if (history.arrearsContracts > 0) reasons.push('Prior simulated loan record contains overdue payments; the history component lowers the next credit score.');
     if (history.contracts === 0) reasons.push('No prior simulated World Bank loan contract exists; credit history is not penalized, but this component is unavailable.');
-    if (program === 'NONE') reasons.push('World Bank country metadata lists no standard lending window.');
-    const criticalDataMissing = facts.gdpUsd === null || facts.gdpUsd <= 0 || facts.debtToGdpPct === null;
+    if (facts.gdpPerCapitaUsd === null) reasons.push('Population is missing from game state; the standard simulation facility tier is used.');
+    const criticalDataMissing = !facts.simulationDataAvailable || facts.gdpUsd === null || facts.gdpUsd <= 0 || facts.debtToGdpPct === null;
     let decision = 'DATA_INSUFFICIENT';
-    if (!criticalDataMissing && program === 'NONE') decision = 'NO_LENDING_WINDOW';
-    else if (!criticalDataMissing && confidence < 60) decision = 'CONDITIONAL_DATA_GAP';
+    if (!criticalDataMissing && confidence < 60) decision = 'CONDITIONAL_DATA_GAP';
     else if (!criticalDataMissing && (score === null || score < 35 || facts.debtToGdpPct >= 250)) decision = 'REJECT_HIGH_RISK';
     else if (!criticalDataMissing && score >= 72 && confidence >= 70) decision = 'ELIGIBLE';
     else if (!criticalDataMissing && score >= 55) decision = 'CONDITIONAL';
@@ -384,14 +385,14 @@
       ? Math.min(facts.gdpUsd * capPct / 100 * (confidence / 100), debtCapUsd, facts.gdpUsd * 0.05)
       : 0;
     if (decision !== 'ELIGIBLE' && decision !== 'CONDITIONAL') maxLoanUsd = 0;
-    if (program === 'NONE' || criticalDataMissing || confidence < 60) maxLoanUsd = 0;
-    const facility = getFacilitySnapshot();
+    if (criticalDataMissing || confidence < 60) maxLoanUsd = 0;
+    const facility = context && context.facility || getFacilitySnapshot(context && context.bank);
     maxLoanUsd = Math.min(maxLoanUsd, facility.availableCapacityUsd);
     maxLoanUsd = round(Math.max(0, maxLoanUsd), 2);
     const riskBand = score === null ? 'UNRATED' : score >= 80 ? 'A / LOW RISK'
       : score >= 70 ? 'B / MODERATE-LOW' : score >= 55 ? 'C / MODERATE' : score >= 35 ? 'D / HIGH' : 'E / VERY HIGH';
     const result = {
-      countryCode: facts.countryCode, iso3: facts.iso3, iso2: facts.iso2, countryName: facts.name,
+      countryCode: facts.countryCode, iso3: facts.iso3, iso2: facts.iso2, countryName: facts.countryName,
       score: score, confidencePct: confidence, components: components,
       decision: decision, riskBand: riskBand, program: program,
       maxLoanUsd: maxLoanUsd, debtCapacityUsd: round(Math.max(0, debtCapUsd), 2),
@@ -402,32 +403,29 @@
       inflationPct: round(facts.inflationPct, 2), reservesUsd: round(facts.reservesUsd, 2),
       reservesToGdpPct: round(facts.reservesToGdpPct, 2), treasuryUsd: round(facts.treasuryUsd, 2),
       fiscalBalanceToGdpPct: round(facts.fiscalBalanceToGdpPct, 2), population: facts.population,
-      incomeLevel: facts.incomeLevel, region: facts.region, lendingType: facts.lendingType,
-      referenceStatus: facts.referenceStatus, referenceUpdatedAt: facts.referenceUpdatedAt,
-      sourceYears: facts.sourceYears, reasons: reasons,
+      gdpPerCapitaUsd: round(facts.gdpPerCapitaUsd, 2), currencyCode: facts.currencyCode,
+      fxRateLocalPerUsd: round(facts.fxRateLocalPerUsd, 6),
+      simulationDataAvailable: facts.simulationDataAvailable, financeModelAvailable: facts.financeModelAvailable,
+      reasons: reasons,
       creditHistory: clone(history),
       assessedTurn: currentTurn(), assessedAt: new Date().toISOString()
     };
     return result;
   }
   function lendingProgram(facts) {
-    const id = String(facts && facts.lendingTypeId || '').trim().toUpperCase();
-    const label = String(facts && facts.lendingType || '').trim().toUpperCase();
-    if (id === 'IDA' || label === 'IDA') return 'IDA';
-    if (id === 'IDX' || id === 'BLEND' || label === 'BLEND' || label.indexOf('IDA/IBRD') >= 0) return 'IDA_BLEND';
-    if (id === 'IBD' || id === 'IBRD' || label === 'IBRD') return 'IBRD';
-    if (id === 'LNX' || id === 'NA' || label === 'NOT APPLICABLE' || label === 'N/A') return 'NONE';
-    const income = String(facts && facts.incomeLevelId || '').toUpperCase();
-    if (income === 'LIC' || income === 'L' || /LOW INCOME/.test(String(facts && facts.incomeLevel || '').toUpperCase())) return 'PROVISIONAL_IDA';
-    if (facts && facts.incomeLevel) return 'PROVISIONAL_IBRD';
-    return 'PROVISIONAL_IBRD';
+    const gdpPerCapita = finite(facts && facts.gdpPerCapitaUsd);
+    if (gdpPerCapita === null || gdpPerCapita < 0) return 'STANDARD_SIM';
+    if (gdpPerCapita < 3500) return 'CONCESSIONAL_SIM';
+    if (gdpPerCapita < 15000) return 'BLEND_SIM';
+    return 'STANDARD_SIM';
   }
   function termsFor(assessment, purpose) {
     const sourceProgram = String(assessment && assessment.program || '');
     const program = sourceProgram.replace(/^PROVISIONAL_/, '');
-    const base = TERMS[program] || TERMS.IBRD;
+    const base = TERMS[program] || TERMS.STANDARD_SIM;
     let rate = Number(base.rate) + Math.max(0, 70 - (finite(assessment && assessment.score) || 0)) * 0.03;
-    rate += Math.max(0, (finite(assessment && assessment.inflationPct) || 0) - 10) * 0.02;
+    const observedInflation = finite(assessment && assessment.inflationPct);
+    if (observedInflation !== null) rate += Math.max(0, observedInflation - 10) * 0.02;
     let years = Number(base.years), grace = Number(base.grace);
     if (String(purpose || '').toLowerCase() === 'emergency') {
       rate += 0.75;
@@ -436,7 +434,7 @@
     }
     rate = round(clamp(rate, 0.5, 8.5), 3);
     return {
-      program: sourceProgram, facilityLabel: base.label + (sourceProgram.indexOf('PROVISIONAL_') === 0 ? ' (provisional gameplay window)' : ''),
+      program: sourceProgram, facilityLabel: base.label,
       annualInterestRatePct: rate, termYears: years, graceYears: grace,
       annualPaymentPerDollar: annualPayment(1, rate, years - grace)
     };
@@ -463,12 +461,17 @@
     } catch (_) {}
     return entry;
   }
-  function evaluateAll() {
+  function evaluateAll(force) {
     const bank = store(true);
+    const turnNumber = currentTurn();
+    if (!force && finite(bank.lastEvaluatedTurn) === turnNumber && isObject(bank.lastEvaluationSummary))
+      return Object.assign({ cached: true }, clone(bank.lastEvaluationSummary));
+    const root = rootState();
+    const facility = getFacilitySnapshot(bank);
     const next = {};
     let eligible = 0, conditional = 0, insufficient = 0;
     for (const profile of profiles) {
-      const assessment = scoreCountry(profile);
+      const assessment = scoreCountry(profile, { root: root, bank: bank, facility: facility });
       if (!assessment) continue;
       next[assessment.countryCode] = assessment;
       if (assessment.decision === 'ELIGIBLE') eligible++;
@@ -488,12 +491,13 @@
       });
     }
     bank.assessmentsByCountry = next;
-    bank.lastEvaluatedTurn = currentTurn();
+    bank.lastEvaluatedTurn = turnNumber;
     bank.lastEvaluatedAt = new Date().toISOString();
-    return {
-      ok: true, turn: bank.lastEvaluatedTurn, countriesAssessed: Object.keys(next).length,
+    bank.lastEvaluationSummary = {
+      ok: true, turn: turnNumber, countriesAssessed: Object.keys(next).length,
       eligible: eligible, conditional: conditional, insufficient: insufficient
     };
+    return clone(bank.lastEvaluationSummary);
   }
   function getLoanList(value) {
     const profile = resolveProfile(value);
@@ -512,8 +516,8 @@
     return round(getLoanList(value).filter(loan => loan.status !== 'REPAID')
       .reduce((sum, loan) => sum + Math.max(0, finite(loan.outstandingPrincipalUsd) || 0), 0), 2) || 0;
   }
-  function getFacilitySnapshot() {
-    const bank = store(true);
+  function getFacilitySnapshot(bankOverride) {
+    const bank = bankOverride || store(true);
     let exposure = 0, activeContracts = 0;
     Object.keys(bank.loansByCountry || {}).forEach(code => {
       const loans = bank.loansByCountry[code];
@@ -1059,7 +1063,7 @@
       if (action) {
         const command = action.getAttribute('data-owb-action');
         if (command === 'recalculate') {
-          const result = evaluateAll();
+          const result = evaluateAll(true);
           uiState.notice = 'Reassessed ' + result.countriesAssessed + ' country profiles for simulation turn ' + result.turn + '.';
           renderPanel(true);
         } else if (command === 'refresh-data') {
@@ -1155,12 +1159,12 @@
       initialized = true;
       installObserver();
       global.addEventListener && global.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED', function (event) {
-        evaluateAll();
+        evaluateAll(false);
         refreshWorldBankData(false).catch(() => {});
         queueRender(true);
       });
       global.addEventListener && global.addEventListener('OMEGA_FINANCE_STATE_UPDATED', function () {
-        evaluateAll();
+        evaluateAll(true);
         queueRender(true);
       });
       global.addEventListener && global.addEventListener('OMEGA_WORLD_BANK_LENDING_UPDATED', function () {
