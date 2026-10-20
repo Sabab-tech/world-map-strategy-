@@ -51,7 +51,7 @@
   let initPromise = null;
   let refreshPromise = null;
   let observer = null;
-  let uiState = { search: '', notice: null };
+  let uiState = { search: '', notice: null, tab: 'overview' };
   let uiRoot = null;
 
   const isObject = value => !!value && typeof value === 'object' && !Array.isArray(value);
@@ -1192,60 +1192,206 @@
     style.textContent = '.owb-panel{color:var(--omega-text,#e7edf5);display:grid;gap:14px}.owb-header,.owb-section-head,.owb-flex{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}.owb-header h3,.owb-section h4{margin:0}.owb-sub{color:var(--omega-muted,#94a3b8);font-size:12px;line-height:1.5}.owb-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}.owb-kpi,.owb-section{border:1px solid var(--omega-border,rgba(148,163,184,.25));border-radius:12px;padding:12px;background:rgba(15,23,42,.3);min-width:0}.owb-kpi small,.owb-table small{display:block;color:var(--omega-muted,#94a3b8);font-size:11px;margin-top:4px}.owb-kpi strong{display:block;font-size:19px;margin-top:5px;overflow-wrap:anywhere}.owb-section{display:grid;gap:10px}.owb-state{display:inline-block;border-radius:99px;padding:4px 8px;font-size:11px;font-weight:700;background:rgba(148,163,184,.13)}.owb-good{color:#86efac}.owb-warn{color:#fcd34d}.owb-bad{color:#fca5a5}.owb-neutral{color:#cbd5e1}.owb-table-wrap{width:100%;overflow:auto}.owb-table{border-collapse:collapse;width:100%;font-size:12px;min-width:670px}.owb-table th,.owb-table td{text-align:left;padding:9px 8px;border-bottom:1px solid rgba(148,163,184,.15);vertical-align:top}.owb-table th{color:var(--omega-muted,#94a3b8);font-weight:600}.owb-country-link{background:none;border:0;color:inherit;cursor:pointer;text-align:left;font:inherit;padding:0}.owb-country-link:hover{text-decoration:underline}.owb-btn{border:1px solid rgba(148,163,184,.4);border-radius:8px;padding:8px 11px;background:rgba(148,163,184,.12);color:inherit;cursor:pointer;font:inherit}.owb-btn:disabled{opacity:.45;cursor:not-allowed}.owb-form-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.owb-field{display:grid;gap:5px;font-size:12px}.owb-field input,.owb-field select,.owb-search{min-width:0;width:100%;box-sizing:border-box;padding:9px;border-radius:7px;border:1px solid rgba(148,163,184,.3);background:rgba(2,6,23,.45);color:inherit}.owb-notice{padding:10px 12px;border-radius:8px;background:rgba(148,163,184,.12);font-size:12px}.owb-empty{color:var(--omega-muted,#94a3b8);font-size:12px}.owb-two-col{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.owb-data-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.owb-data-grid>div{padding:8px;border-radius:8px;background:rgba(148,163,184,.07)}.owb-data-grid small{display:block;color:var(--omega-muted,#94a3b8);font-size:11px}.owb-data-grid strong{display:block;margin-top:4px;overflow-wrap:anywhere}@media(max-width:760px){.owb-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.owb-form-grid,.owb-two-col,.owb-data-grid{grid-template-columns:1fr}.owb-table{min-width:620px}}';
     doc.head.appendChild(style);
   }
+  function svgIcon(name) {
+    const paths = {
+      overview: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+      loan: '<path d="M12 3v18"/><path d="M17 7H9.5a3.5 3.5 0 0 0 0 7H14a3 3 0 0 1 0 6H6"/>',
+      contracts: '<path d="M8 3h8l4 4v14H4V3z"/><path d="M16 3v5h4M8 12h8M8 16h8"/>',
+      countries: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/>',
+      partners: '<path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M20 8v6M17 11h6"/>',
+      reference: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>',
+      rules: '<path d="M12 3 20 7v5c0 5-3.4 8-8 9-4.6-1-8-4-8-9V7z"/><path d="m9 12 2 2 4-4"/>',
+      refresh: '<path d="M20 7v5h-5"/><path d="M4 17v-5h5"/><path d="M5.6 9a7 7 0 0 1 11.6-2L20 12M4 12l2.8 5a7 7 0 0 0 11.6-2"/>',
+      calculate: '<path d="M8 3h8a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M9 7h6M9 12h1m4 0h1M9 16h1m4 0h1"/>',
+      arrow: '<path d="M5 12h14"/><path d="m13 6 6 6-6 6"/>',
+      shield: '<path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11z"/><path d="m9 12 2 2 4-4"/>'
+    };
+    return '<svg class="owb-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + (paths[name] || paths.overview) + '</svg>';
+  }
+  function subtabButton(id, label, icon) {
+    return '<button type="button" class="owb-subtab' + (uiState.tab === id ? ' is-active' : '')
+      + '" data-owb-subtab="' + esc(id) + '" aria-pressed="' + (uiState.tab === id ? 'true' : 'false') + '">'
+      + svgIcon(icon) + '<span>' + esc(label) + '</span></button>';
+  }
+  function renderOverviewPane(profile, assessment, facility, bank, canAct) {
+    const facts = countryFacts(profile);
+    const activeLoans = getLoanList(profile).filter(loan => loan.status !== 'REPAID');
+    const insolvency = bank.insolvencyByCountry && bank.insolvencyByCountry[codeOf(profile)];
+    const liquidity = bank.liquidity || {};
+    const currency = facts && facts.currencyCode || 'USD';
+    const fx = currencySnapshot(currency);
+    const localEquivalent = fx.ok && assessment && assessment.gdpUsd !== null
+      ? money(assessment.gdpUsd * fx.localPerUsd) + ' ' + currency : 'N/A';
+    const metrics = [
+      ['Simulated GDP', money(assessment && assessment.gdpUsd)],
+      ['Public debt / GDP', percent(assessment && assessment.debtToGdpPct)],
+      ['GDP growth', percent(assessment && assessment.gdpGrowthPct)],
+      ['Inflation', percent(assessment && assessment.inflationPct)],
+      ['Treasury cash', money(assessment && assessment.treasuryUsd)],
+      ['FX reserves', money(assessment && assessment.reservesUsd)]
+    ];
+    const cards = metrics.map(item => '<div class="owb-metric"><small>' + esc(item[0]) + '</small><strong>' + esc(item[1]) + '</strong></div>').join('');
+    const reasons = assessment && assessment.reasons && assessment.reasons.length
+      ? '<ul class="owb-reasons">' + assessment.reasons.map(reason => '<li>' + esc(reason) + '</li>').join('') + '</ul>'
+      : '<p class="owb-sub">No credit guardrail is currently triggered. The score is a game heuristic, not an official rating.</p>';
+    return '<section class="owb-section"><div class="owb-section-head"><h4>Selected country · ' + esc(profile.name) + '</h4><span class="owb-state ' + decisionClass(assessment && assessment.decision) + '">' + esc(decisionLabel(assessment && assessment.decision)) + '</span></div>'
+      + '<div class="owb-kpis"><article class="owb-kpi"><small>Credit score</small><strong>' + esc(assessment && assessment.score !== null ? number(assessment.score, 1) + '/100' : 'N/A') + '</strong><small>' + esc(assessment && assessment.riskBand || 'Unrated') + '</small></article>'
+      + '<article class="owb-kpi"><small>Maximum new facility</small><strong>' + esc(money(assessment && assessment.maxLoanUsd)) + '</strong><small>USD · confidence ' + esc(number(assessment && assessment.confidencePct, 0)) + '%</small></article>'
+      + '<article class="owb-kpi"><small>Active borrower contracts</small><strong>' + esc(number(activeLoans.length, 0)) + '</strong><small>Exposure ' + esc(money(getOutstandingBalance(profile))) + '</small></article>'
+      + '<article class="owb-kpi"><small>Institution liquidity</small><strong>' + esc(money(liquidity.cashBalanceUsd)) + '</strong><small>Available simulated cash pool</small></article>'
+      + '<article class="owb-kpi"><small>Revolving capacity left</small><strong>' + esc(money(facility.availableCapacityUsd)) + '</strong><small>of ' + esc(money(facility.capacityUsd)) + ' game capacity</small></article></div>'
+      + '<div class="owb-data-grid">' + cards + '<div class="owb-metric"><small>Simulation currency</small><strong>' + esc(currency) + '</strong><small>Current simulated equivalent</small><strong>' + esc(localEquivalent) + '</strong></div>'
+      + '<div class="owb-metric"><small>Game funding sources</small><strong>' + esc(number(facility.activeFundingContracts, 0)) + ' partner contracts</strong><small>Outstanding ' + esc(money(facility.externalFundingPrincipalUsd)) + '</small></div></div>'
+      + (insolvency ? '<div class="owb-notice owb-risk-box"><strong>IMPORTANT · ' + esc(String(insolvency.status || 'INSOLVENCY REVIEW')) + '</strong><p>' + esc(insolvency.reason || 'New borrowing is frozen pending the simulated workout process.') + '</p></div>' : '')
+      + '<div class="owb-section"><div class="owb-section-head"><h4>Decision guardrails</h4><span class="owb-sub">Live game-state inputs only</span></div>' + reasons + '</div>'
+      + '<p class="owb-sub">Published World Bank observations are isolated in the Reference data tab and never substituted into the simulated credit calculation. Internal contract accounting is USD; the local-currency figure above is a display equivalent using the current simulated FX quote.</p>'
+      + '</section>';
+  }
+  function renderLoanPane(profile, assessment, canAct, bank) {
+    if (!assessment || assessment.maxLoanUsd <= 0 || !['ELIGIBLE', 'CONDITIONAL'].includes(assessment.decision)) {
+      return '<section class="owb-section"><h4>New facility unavailable</h4><p class="owb-sub">' + esc(assessment && assessment.reasons && assessment.reasons.join(' ') || 'The current simulation does not support a new facility.') + '</p></section>';
+    }
+    if (!canAct) return '<section class="owb-section"><h4>Read-only country</h4><p class="owb-sub">You can inspect terms for this country. Issuance is restricted to the active player country.</p></section>';
+    const base = termsFor(assessment, 'infrastructure');
+    const bounds = negotiationBounds(assessment, 'infrastructure');
+    const currencies = global.OmegaForexMonetaryEngine && typeof global.OmegaForexMonetaryEngine.getCurrencies === 'function'
+      ? global.OmegaForexMonetaryEngine.getCurrencies() : [];
+    const currencyCode = assessment.currencyCode || 'USD';
+    const currencyOptions = ['USD', ...currencies.map(row => String(row.code || '').toUpperCase()).filter(code => /^[A-Z]{3}$/.test(code) && code !== 'USD')]
+      .filter((code, index, list) => list.indexOf(code) === index).map(code =>
+        '<option value="' + esc(code) + '"' + (code === currencyCode ? ' selected' : '') + '>' + esc(code) + '</option>').join('');
+    return '<form class="owb-section" data-owb-form="request-loan" data-owb-request-id="WB-UI-' + esc(codeOf(profile)) + '-' + esc(currentTurn()) + '-' + esc(bank.nextSequence) + '">'
+      + '<div class="owb-section-head"><h4>New simulated loan proposal</h4><span class="owb-state ' + decisionClass(assessment.decision) + '">' + esc(decisionLabel(assessment.decision)) + '</span></div>'
+      + '<div class="owb-form-grid"><label class="owb-field">Purpose<select name="purpose"><option value="infrastructure">Infrastructure</option><option value="health">Health</option><option value="education">Education</option><option value="climate">Climate resilience</option><option value="emergency">Emergency stabilisation</option><option value="budget-support">Budget support</option></select></label>'
+      + '<label class="owb-field">Principal requested · USD<input name="amountUsd" type="number" min="1" max="' + esc(String(Math.floor(assessment.maxLoanUsd))) + '" step="1" value="' + esc(String(Math.floor(assessment.maxLoanUsd))) + '" required></label>'
+      + '<label class="owb-field">Local-currency equivalent<select name="currencyCode">' + currencyOptions + '</select><small>USD remains the authoritative debt ledger. Equivalent uses simulation FX only.</small></label>'
+      + '<label class="owb-field">Annual interest rate<input name="annualInterestRatePct" type="number" min="' + esc(String(bounds.minimumRatePct)) + '" max="' + esc(String(bounds.maximumRatePct)) + '" step="0.05" value="' + esc(String(base.annualInterestRatePct)) + '" required></label>'
+      + '<label class="owb-field">Term · years<input name="termYears" type="number" min="' + esc(String(bounds.minimumTermYears)) + '" max="' + esc(String(bounds.maximumTermYears)) + '" step="1" value="' + esc(String(base.termYears)) + '" required></label>'
+      + '<label class="owb-field">Grace period · years<input name="graceYears" type="number" min="' + esc(String(bounds.minimumGraceYears)) + '" max="' + esc(String(bounds.maximumGraceYears)) + '" step="1" value="' + esc(String(base.graceYears)) + '" required></label></div>'
+      + '<div class="owb-term-guard"><strong>IMPORTANT · Negotiation limits</strong><p>Rate: ' + esc(percent(bounds.minimumRatePct)) + ' to ' + esc(percent(bounds.maximumRatePct)) + '. Term: ' + esc(bounds.minimumTermYears) + '–' + esc(bounds.maximumTermYears) + ' years. Grace: ' + esc(bounds.minimumGraceYears) + '–' + esc(bounds.maximumGraceYears) + ' years.</p>'
+      + '<p>Penalty spread is capped at 2 percentage points. Missed-payment notices start after 30 simulated days; a default hold is possible after 180 days, and insolvency review after 360 days in arrears.</p></div>'
+      + '<div class="owb-flex"><button class="owb-btn owb-primary" type="submit">' + svgIcon('loan') + ' Issue simulated loan</button><span class="owb-sub">Credit limit ' + esc(money(assessment.maxLoanUsd)) + '</span></div>'
+      + '<p class="owb-sub">Illustrative contract, not real World Bank approval. Interest, term and FX are bounded game rules. Missing live game inputs stop disbursement.</p></form>';
+  }
+  function renderContractsPane(profile, bank) {
+    const loans = getLoanList(profile);
+    const insolvency = bank.insolvencyByCountry && bank.insolvencyByCountry[codeOf(profile)];
+    const active = loans.filter(loan => loan.status !== 'REPAID');
+    const defaulted = active.filter(loan => ['DEFAULTED', 'INSOLVENT'].includes(String(loan.status || '').toUpperCase())).length;
+    const restructuring = insolvency && insolvency.status ? '<div class="owb-notice owb-risk-box"><strong>IMPORTANT · ' + esc(insolvency.status) + '</strong><p>' + esc(insolvency.reason || 'New credit is suspended during the simulated workout.') + '</p>'
+      + '<p><strong>Workout rules:</strong> existing payments continue where possible; automatic new borrowing stays frozen until the restructuring is accepted or the overdues are cured.</p></div>' : '';
+    return '<section class="owb-section"><div class="owb-section-head"><h4>Loan contracts & repayment</h4><span class="owb-sub">' + esc(active.length) + ' active · ' + esc(defaulted) + ' in default</span></div>'
+      + restructuring + activeLoansTable(profile)
+      + '<div class="owb-term-guard"><strong>IMPORTANT · Simulated sovereign workout protocol</strong><p>30 days overdue: formal notice. 90 days: mediation review. 180 days: default and new-credit hold. 270 days: restructuring review. 360 days: insolvency/bankruptcy review.</p>'
+      + '<p>These are OMEGA gameplay rules inspired by debt-workout processes, not a statement of binding real-world international law.</p></div></section>';
+  }
+  function renderCountriesPane(table) {
+    const registerSearch = '<input class="owb-search" type="search" data-owb-country-filter="true" placeholder="Search country name or ISO code" value="' + esc(uiState.search) + '" aria-label="Search country lending register">';
+    return '<section class="owb-section"><div class="owb-section-head"><h4>Country lending register</h4><span class="owb-sub" data-owb-register-count>Showing ' + esc(table.shown) + ' of ' + esc(table.total) + ' matches (' + esc(table.totalCountries) + ' profiles)</span></div>'
+      + registerSearch + '<div class="owb-table-wrap"><table class="owb-table"><thead><tr><th>Country</th><th>Score</th><th>Decision</th><th>Modeled limit</th><th>Simulation tier</th><th>Confidence</th></tr></thead><tbody data-owb-country-rows>' + table.html + '</tbody></table></div>'
+      + '<p class="owb-sub">Country rows use their exact canonical identity. Missing simulation facts remain unavailable; World Bank reference observations are not used to fill credit fields.</p></section>';
+  }
+  function renderPartnersPane(profile, assessment, bank, canAct, facility) {
+    const liquidity = bank.liquidity || {};
+    const partners = Object.values(bank.partnersByCountry || {});
+    const rows = partners.length ? '<div class="owb-table-wrap"><table class="owb-table"><thead><tr><th>Partner country</th><th>Role</th><th>Committed cap</th><th>Drawn</th><th>Joined turn</th></tr></thead><tbody>'
+      + partners.map(row => '<tr><td>' + esc(row.countryName || row.countryCode) + '</td><td>' + esc(row.role || 'MEMBER') + '</td><td>' + esc(money(row.commitmentLimitUsd)) + '</td><td>' + esc(money(row.totalDrawnUsd)) + '</td><td>' + esc(number(row.joinedTurn, 0)) + '</td></tr>').join('')
+      + '</tbody></table></div>' : '<p class="owb-empty">No registered sovereign funding partners yet.</p>';
+    const facts = countryFacts(profile);
+    const reserveFloor = facts && facts.gdpUsd !== null ? Math.max(1000000, facts.gdpUsd * 0.005) : null;
+    const maxCommit = facts && facts.gdpUsd !== null && facts.treasuryUsd !== null && reserveFloor !== null
+      ? Math.max(0, Math.min(facts.gdpUsd * 0.02, facts.treasuryUsd - reserveFloor)) : 0;
+    const currentPartner = bank.partnersByCountry && bank.partnersByCountry[codeOf(profile)];
+    let form = '<div class="owb-notice"><strong>IMPORTANT · Voluntary participation</strong><p>A player-controlled country is never auto-debited as a lender unless you explicitly register it. NPC lender countries may offer capped liquidity under the same reserve/credit rules.</p></div>';
+    if (canAct && assessment && assessment.score >= 65 && maxCommit > 0) {
+      form += '<form class="owb-section" data-owb-form="partner"><div class="owb-section-head"><h4>' + (currentPartner && currentPartner.role === 'LENDER' ? 'Update lender commitment' : 'Register as a sovereign funding partner') + '</h4></div>'
+        + '<label class="owb-field">Maximum aggregate commitment · USD<input type="number" name="commitmentLimitUsd" min="1000000" max="' + esc(String(Math.floor(maxCommit))) + '" step="1000000" value="' + esc(String(Math.floor(currentPartner && currentPartner.commitmentLimitUsd || Math.min(maxCommit, facts.gdpUsd * 0.005)))) + '" required></label>'
+        + '<p class="owb-sub">Maximum ' + esc(money(maxCommit)) + '. Minimum cash reserve remains protected; per-draw cap is 0.5% of GDP. Funds move only when the simulated institution is short and records a repayable funding contract.</p>'
+        + '<button class="owb-btn owb-primary" type="submit">' + svgIcon('partners') + ' Save partner consent</button></form>';
+    } else if (canAct) {
+      form += '<p class="owb-sub">This country does not currently satisfy the simulated partner-credit, data or reserve threshold.</p>';
+    } else {
+      form += '<p class="owb-sub">Inspect partner status read-only. Only the active player country can register its own consent.</p>';
+    }
+    return '<div class="owb-kpis"><article class="owb-kpi"><small>Institution cash pool</small><strong>' + esc(money(liquidity.cashBalanceUsd)) + '</strong></article>'
+      + '<article class="owb-kpi"><small>Partner principal outstanding</small><strong>' + esc(money(facility.externalFundingPrincipalUsd)) + '</strong></article>'
+      + '<article class="owb-kpi"><small>Registered funding partners</small><strong>' + esc(number(partners.filter(p => p.role === 'LENDER').length, 0)) + '</strong></article>'
+      + '<article class="owb-kpi"><small>Current country commitment</small><strong>' + esc(money(currentPartner && currentPartner.commitmentLimitUsd)) + '</strong></article></div>'
+      + form + '<section class="owb-section"><h4>Funding partner register</h4>' + rows + '</section>'
+      + '<p class="owb-sub">Partner finance is simulated, ledgered and repayable; it does not represent a real World Bank syndication or external bank account.</p>';
+  }
+  function renderReferencePane(profile, bank) {
+    const reference = bank.reference || {};
+    const row = referenceFor(profile);
+    const data = row.data || {};
+    const rows = INDICATORS.map(indicator => {
+      const item = data[indicator.key] || {};
+      return '<tr><td>' + esc(indicator.label) + '</td><td>' + esc(item.value === null || item.value === undefined ? 'N/A' : number(item.value, 3)) + '</td><td>' + esc(item.year || 'Not recorded') + '</td><td>' + esc(item.indicatorCode || indicator.code) + '</td></tr>';
+    }).join('');
+    const metadata = row.metadata || {};
+    return '<section class="owb-section"><div class="owb-section-head"><h4>Published World Bank reference snapshot · ' + esc(profile.name) + '</h4><span class="owb-state ' + (reference.status === 'LIVE' ? 'owb-good' : 'owb-warn') + '">' + esc(reference.status || 'UNAVAILABLE') + '</span></div>'
+      + '<div class="owb-term-guard"><strong>IMPORTANT · Reference data only</strong><p>These external observations do not enter OMEGA Credit Score, lending limits, simulated Treasury or daily economic decisions. Only the country’s game-state data can control lending.</p></div>'
+      + '<p class="owb-sub">Provider refresh: ' + esc(formatDate(reference.refreshedAt)) + ' · last attempt: ' + esc(formatDate(reference.lastAttemptAt)) + '</p>'
+      + '<div class="owb-table-wrap"><table class="owb-table"><thead><tr><th>Indicator</th><th>Value</th><th>Observation year</th><th>Source code</th></tr></thead><tbody>' + rows + '</tbody></table></div>'
+      + '<div class="owb-data-grid"><div class="owb-metric"><small>Provider region</small><strong>' + esc(metadata.region && metadata.region.value || 'N/A') + '</strong></div>'
+      + '<div class="owb-metric"><small>Provider income class</small><strong>' + esc(metadata.incomeLevel && metadata.incomeLevel.value || 'N/A') + '</strong></div>'
+      + '<div class="owb-metric"><small>Provider lending metadata</small><strong>' + esc(metadata.lendingType && metadata.lendingType.value || 'N/A') + '</strong></div></div>'
+      + '<p class="owb-sub">The official reference values may be delayed, revised or absent. They are kept separate from the game’s simulated values and never overwrite a country’s runtime economy.</p></section>';
+  }
+  function renderRulesPane(assessment) {
+    const terms = termsFor(assessment, 'infrastructure');
+    const bounds = negotiationBounds(assessment, 'infrastructure');
+    return '<section class="owb-section"><h4>Credit, interest and repayment rules</h4>'
+      + '<div class="owb-data-grid"><div class="owb-metric"><small>Base facility rate</small><strong>' + esc(percent(terms.annualInterestRatePct)) + '</strong></div>'
+      + '<div class="owb-metric"><small>Negotiated rate range</small><strong>' + esc(percent(bounds.minimumRatePct)) + '–' + esc(percent(bounds.maximumRatePct)) + '</strong></div>'
+      + '<div class="owb-metric"><small>Term range</small><strong>' + esc(bounds.minimumTermYears) + '–' + esc(bounds.maximumTermYears) + ' years</strong></div>'
+      + '<div class="owb-metric"><small>Grace range</small><strong>' + esc(bounds.minimumGraceYears) + '–' + esc(bounds.maximumGraceYears) + ' years</strong></div></div>'
+      + '<div class="owb-term-guard"><strong>IMPORTANT · Contract requirements</strong><ul><li><strong>Currency:</strong> sovereign obligations are recorded in USD; the selected local currency is an FX equivalent snapshot.</li>'
+      + '<li><strong>Rate:</strong> negotiation stays inside the credit-score-specific band, absolute model bounds 0.5%–8.5%.</li>'
+      + '<li><strong>Term:</strong> whole years only, bounded between 5 and 40; grace period must be shorter than maturity.</li>'
+      + '<li><strong>Penalty:</strong> late-payment spread is capped at 2 percentage points above the agreed rate, with total effective rate capped at 10.5%.</li>'
+      + '<li><strong>Default sequence:</strong> notice at 30 days, mediation review at 90 days, default/new-credit hold at 180 days, restructuring review at 270 days, insolvency review at 360 days overdue.</li>'
+      + '<li><strong>Institution liquidity:</strong> no new loan is posted unless simulation cash exists or an eligible partner has funded the cash pool.</li>'
+      + '<li><strong>Data integrity:</strong> missing game GDP or debt/GDP blocks approval. External reference observations cannot fill missing inputs.</li></ul></div>'
+      + '<p class="owb-sub">Rules are explicit game mechanics inspired by lending and sovereign workout concepts. They are not claims about actual World Bank term sheets or binding international law.</p></section>';
+  }
   function renderPanelHTML() {
     const profile = currentCountryProfile();
     if (!profile) return '<div class="owb-panel"><p class="owb-empty">Finance country profile is not available yet.</p></div>';
     const assessment = scoreCountry(profile);
     const bank = store(true);
-    const reference = bank.reference;
-    const facility = getFacilitySnapshot();
+    const facility = getFacilitySnapshot(bank);
     const player = playerProfile();
     const canAct = !!player && codeOf(player) === codeOf(profile);
     const table = countryTableRows(uiState.search);
-    const loans = getLoanList(profile);
-    const activePrincipal = loans.filter(loan => loan.status !== 'REPAID')
-      .reduce((sum, loan) => sum + Math.max(0, finite(loan.outstandingPrincipalUsd) || 0), 0);
-    const activeBalance = getOutstandingBalance(profile);
-    const wbStatus = String(reference.status || 'UNAVAILABLE');
-    const sourceAge = dateValue(reference.refreshedAt);
-    const stale = sourceAge === null || Date.now() - sourceAge >= REFRESH_TTL_MS;
-    let notice = uiState.notice ? '<div class="owb-notice" role="status">' + esc(uiState.notice) + '</div>' : '';
-    let form = '';
-    if (canAct && assessment && assessment.maxLoanUsd > 0
-        && (assessment.decision === 'ELIGIBLE' || assessment.decision === 'CONDITIONAL')) {
-      form = '<form class="owb-section" data-owb-form="request-loan" data-owb-request-id="WB-UI-' + esc(codeOf(profile)) + '-' + esc(currentTurn()) + '-' + esc(bank.nextSequence) + '"><div class="owb-section-head"><h4>Request simulated facility</h4><span class="owb-state ' + decisionClass(assessment.decision) + '">' + esc(decisionLabel(assessment.decision)) + '</span></div>' +
-        '<div class="owb-form-grid"><label class="owb-field">Purpose<select name="purpose"><option value="infrastructure">Infrastructure</option><option value="health">Health</option><option value="education">Education</option><option value="climate">Climate resilience</option><option value="emergency">Emergency stabilization</option><option value="budget-support">Budget support</option></select></label>' +
-        '<label class="owb-field">Loan principal (USD)<input name="amountUsd" type="number" min="1" max="' + esc(String(Math.floor(assessment.maxLoanUsd))) + '" step="1" value="' + esc(String(Math.floor(assessment.maxLoanUsd))) + '" required></label>' +
-        '<div class="owb-flex"><button class="owb-btn" type="submit">Issue loan</button><span class="owb-sub">Limit ' + esc(money(assessment.maxLoanUsd)) + '</span></div></div>' +
-        '<p class="owb-sub">Issuance posts through Finance Treasury. Rate and maturity are gameplay assumptions, not a quote or promise from the real World Bank.</p></form>';
-    } else if (canAct) {
-      form = '<section class="owb-section"><h4>New facility not available</h4><p class="owb-sub">' +
-        esc((assessment && assessment.reasons && assessment.reasons.join(' ')) || 'The current assessment has no eligible loan ceiling.') + '</p></section>';
-    } else {
-      form = '<section class="owb-section"><h4>Read-only country profile</h4><p class="owb-sub">You can inspect this country’s recommendation. A loan can only be issued for the active player country through the Finance Treasury control.</p></section>';
-    }
-    const reasons = assessment && assessment.reasons && assessment.reasons.length
-      ? '<ul class="owb-sub">' + assessment.reasons.map(reason => '<li>' + esc(reason) + '</li>').join('') + '</ul>'
-      : '<p class="owb-sub">No model guardrail is currently triggered. This remains a gameplay assessment, not a real credit rating.</p>';
-    const registerSearch = '<input class="owb-search" type="search" data-owb-country-filter="true" placeholder="Search any country name or code" value="' + esc(uiState.search) + '" aria-label="Search country lending register">';
-    return '<div class="owb-panel" data-owb-panel><div class="owb-header"><div><div class="ofm-eyebrow">OMEGA / WORLD BANK SIMULATION</div><h3>Country credit & lending decisions</h3><p class="owb-sub">Selected profile: ' + esc(profile.name) + ' (' + esc(codeOf(profile)) + '). Live game values are reassessed each simulation turn; public World Bank reference observations refresh at most once per 24 hours.</p></div>' +
-      '<div class="owb-flex"><button type="button" class="owb-btn" data-owb-action="recalculate">Recalculate countries</button><button type="button" class="owb-btn" data-owb-action="refresh-data">Refresh World Bank data</button></div></div>' +
-      notice +
-      '<div class="owb-kpis"><article class="owb-kpi"><small>Country credit score</small><strong>' + esc(assessment && assessment.score !== null ? number(assessment.score, 1) + '/100' : 'N/A') + '</strong><small>' + esc(assessment && assessment.riskBand || 'Unrated') + '</small></article>' +
-      '<article class="owb-kpi"><small>Current recommendation</small><strong class="owb-state ' + decisionClass(assessment && assessment.decision) + '">' + esc(decisionLabel(assessment && assessment.decision)) + '</strong><small>Confidence ' + esc(number(assessment && assessment.confidencePct, 0)) + '%</small></article>' +
-      '<article class="owb-kpi"><small>Maximum modeled facility</small><strong>' + esc(money(assessment && assessment.maxLoanUsd)) + '</strong><small>' + esc(assessment && assessment.program || 'No window') + '</small></article>' +
-      '<article class="owb-kpi"><small>World Bank exposure</small><strong>' + esc(money(activeBalance)) + '</strong><small>Principal ' + esc(money(activePrincipal)) + '</small></article>' +
-      '<article class="owb-kpi"><small>Global capacity available</small><strong>' + esc(money(facility.availableCapacityUsd)) + '</strong><small>of ' + esc(money(facility.capacityUsd)) + ' simulated revolving limit</small></article></div>' +
-      '<div class="owb-section"><div class="owb-section-head"><h4>Country financial snapshot</h4><span class="owb-state ' + (stale ? 'owb-warn' : 'owb-good') + '">' + esc(wbStatus) + '</span></div>' +
-      '<div class="owb-data-grid"><div><small>GDP</small><strong>' + esc(money(assessment && assessment.gdpUsd)) + '</strong></div><div><small>Public debt / GDP</small><strong>' + esc(percent(assessment && assessment.debtToGdpPct)) + '</strong></div><div><small>GDP growth</small><strong>' + esc(percent(assessment && assessment.gdpGrowthPct)) + '</strong></div><div><small>Inflation</small><strong>' + esc(percent(assessment && assessment.inflationPct)) + '</strong></div><div><small>FX reserves</small><strong>' + esc(money(assessment && assessment.reservesUsd)) + '</strong></div><div><small>Treasury cash</small><strong>' + esc(money(assessment && assessment.treasuryUsd)) + '</strong></div><div><small>Income level</small><strong>' + esc(assessment && assessment.incomeLevel || 'N/A') + '</strong></div><div><small>WB lending category</small><strong>' + esc(assessment && assessment.lendingType || assessment && assessment.program || 'N/A') + '</strong></div><div><small>Prior loan record</small><strong>' + esc(assessment && assessment.creditHistory && assessment.creditHistory.score !== null ? number(assessment.creditHistory.score, 1) + '/100' : (assessment && assessment.creditHistory && assessment.creditHistory.contracts > 0 ? 'No repayment history yet' : 'No record')) + '</strong><small>' + esc(number(assessment && assessment.creditHistory && assessment.creditHistory.repaidContracts, 0)) + ' repaid / ' + esc(number(assessment && assessment.creditHistory && assessment.creditHistory.contracts, 0)) + ' contracts · arrears ' + esc(money(assessment && assessment.creditHistory && assessment.creditHistory.arrearsUsd)) + '</small></div><div><small>Latest reference refresh</small><strong>' + esc(formatDate(reference.refreshedAt)) + '</strong></div></div>' +
-      '<p class="owb-sub">Reference status: ' + esc(wbStatus) + '. Latest observation years vary by indicator and country; missing observations remain N/A. ' + esc(reasons && '') + '</p>' +
-      (assessment && assessment.reasons && assessment.reasons.length ? '<ul class="owb-sub">' + assessment.reasons.map(reason => '<li>' + esc(reason) + '</li>').join('') + '</ul>' : '') +
-      '</div>' + form +
-      '<section class="owb-section"><div class="owb-section-head"><h4>Loan contracts & repayment</h4><span class="owb-sub">Automatic scheduled servicing protects a 0.5% of GDP Treasury cash floor where possible.</span></div>' +
-      activeLoansTable(profile) + '</section>' +
-      '<section class="owb-section"><div class="owb-section-head"><div><h4>All-country lending register</h4><p class="owb-sub">Assesses each Finance country profile separately. Select a row to inspect its country profile.</p></div><div class="owb-sub" data-owb-register-count>Showing ' + esc(table.shown) + ' of ' + esc(table.total) + ' matches (' + esc(table.totalCountries) + ' country profiles).</div></div>' +
-      registerSearch + '<div class="owb-table-wrap"><table class="owb-table"><thead><tr><th>Country</th><th>Score</th><th>Decision</th><th>Modeled limit</th><th>Window</th><th>Confidence</th></tr></thead><tbody data-owb-country-rows>' + table.html + '</tbody></table></div></section>' +
-      '<p class="owb-sub">This is a game institution using public data for reference. The revolving capacity is a configurable gameplay limit, not the World Bank balance sheet. It does not connect to World Bank internal loan approval systems, request real funding, or move real money.</p></div>';
+    const tabs = [
+      ['overview', 'Overview', 'overview'],
+      ['lend', 'Loan desk', 'loan'],
+      ['contracts', 'Contracts', 'contracts'],
+      ['countries', 'Countries', 'countries'],
+      ['partners', 'Partners & liquidity', 'partners'],
+      ['reference', 'Reference data', 'reference'],
+      ['rules', 'Rules & safeguards', 'rules']
+    ];
+    const activeTab = tabs.some(row => row[0] === uiState.tab) ? uiState.tab : 'overview';
+    let body = '';
+    if (activeTab === 'overview') body = renderOverviewPane(profile, assessment, facility, bank, canAct);
+    else if (activeTab === 'lend') body = renderLoanPane(profile, assessment, canAct, bank);
+    else if (activeTab === 'contracts') body = renderContractsPane(profile, bank);
+    else if (activeTab === 'countries') body = renderCountriesPane(table);
+    else if (activeTab === 'partners') body = renderPartnersPane(profile, assessment, bank, canAct, facility);
+    else if (activeTab === 'reference') body = renderReferencePane(profile, bank);
+    else body = renderRulesPane(assessment);
+    const liquidity = bank.liquidity || {};
+    const headerButtons = '<button type="button" class="owb-btn" data-owb-action="recalculate" title="Recalculate game-state scores">' + svgIcon('calculate') + '<span>Recalculate</span></button>'
+      + '<button type="button" class="owb-btn" data-owb-action="refresh-data" title="Refresh separate public reference cache">' + svgIcon('refresh') + '<span>Refresh reference</span></button>';
+    const subtabs = tabs.map(row => subtabButton(row[0], row[1], row[2])).join('');
+    const notice = uiState.notice ? '<div class="owb-notice" role="status">' + esc(uiState.notice) + '</div>' : '';
+    return '<div class="owb-panel" data-owb-panel><header class="owb-header"><div><div class="ofm-eyebrow">OMEGA / SIMULATED SOVEREIGN FINANCE</div><h3>International lending institution</h3>'
+      + '<p class="owb-sub">Current country: <strong>' + esc(profile.name) + '</strong> · game turn ' + esc(currentTurn()) + ' · pool cash ' + esc(money(liquidity.cashBalanceUsd)) + '</p></div><div class="owb-flex">' + headerButtons + '</div></header>'
+      + notice + '<nav class="owb-subtabs" aria-label="World Bank simulation sections">' + subtabs + '</nav>'
+      + '<div class="owb-inner-content" data-owb-current-tab="' + esc(activeTab) + '">' + body + '</div>'
+      + '<p class="owb-sub">This is a game-only institution. It neither creates real funding nor connects to internal World Bank systems. Public reference data are separated and used only in the Reference data tab.</p></div>';
   }
   function renderPanel(force) {
     const doc = global.document;
