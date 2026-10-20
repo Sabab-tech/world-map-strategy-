@@ -824,6 +824,10 @@
     if (insolvency && ['DEFAULTED', 'INSOLVENCY_REVIEW', 'BANKRUPTCY_PROCEEDING'].includes(String(insolvency.status || '').toUpperCase()))
       return { ok: false, code: 'SOVEREIGN_INSOLVENCY_HOLD', insolvency: clone(insolvency),
         message: 'New lending is blocked during simulated default/insolvency review. Submit a bounded restructuring proposal first.' };
+    const institutionStatus = String(bank.liquidity && bank.liquidity.institutionStatus || 'ACTIVE').toUpperCase();
+    if (['DEFAULTED', 'BANKRUPTCY_PROCEEDING', 'RECONCILIATION_REQUIRED'].includes(institutionStatus))
+      return { ok: false, code: 'INSTITUTION_LIQUIDITY_HOLD', institutionStatus: institutionStatus,
+        message: 'The simulated institution has suspended new lending while funding arrears or a ledger reconciliation issue is resolved.' };
     if (bank.idempotency[requestId]) {
       const previousLoanId = bank.idempotency[requestId];
       const existing = getLoanList(profile).find(loan => loan.loanId === previousLoanId);
