@@ -98,7 +98,7 @@
       if (!bucket) continue;
       for (const key of fields) {
         const value = num(bucket[key]);
-        if (value !== null) return { value, source: 'LIVE_GAME_STATE.' + domain + '.' + key, key, status: 'LIVE' };
+        if (value !== null) return { value, source: 'LIVE_GAME_STATE.' + domain + '.' + key, key, status: 'LIVE', year: null, confidence: 1, sourceConfidence: 1, freshness: 1, dataGap: null, isCurrentGameState: true };
       }
     }
     return null;
@@ -118,7 +118,12 @@
         const value = num(container[key]);
         if (value !== null) return {
           value, source: (profile?.provenance?.economicSource || 'economy_global_profiles_v1.json') + ':' + label + '.' + key,
-          key, status: 'RECORDED_BASELINE'
+          key, status: 'RECORDED_BASELINE',
+          year: num(profile?.baselineYear ?? profile?.provenance?.baselineYear),
+          sourceConfidence: 0.42,
+          freshness: (() => { const y = num(profile?.baselineYear ?? profile?.provenance?.baselineYear); return y === null ? 0.72 : Math.max(0.25, 1 - 0.055 * Math.max(0, new Date().getUTCFullYear() - y - 2)); })(),
+          confidence: (() => { const y = num(profile?.baselineYear ?? profile?.provenance?.baselineYear); const fresh = y === null ? 0.72 : Math.max(0.25, 1 - 0.055 * Math.max(0, new Date().getUTCFullYear() - y - 2)); return Number((0.42 * fresh).toFixed(3)); })(),
+          dataGap: 'LEGACY_SOURCE_NOT_REVALIDATED', isCurrentGameState: false
         };
       }
     }
@@ -157,7 +162,13 @@
         year,
         sourceId: metadata.sourceId || null,
         sourceName: metadata.sourceName || null,
-        method: metadata.method || null
+        method: metadata.method || null,
+        sourceUrl: metadata.sourceUrl || null,
+        sourceConfidence: num(metadata.sourceConfidence) ?? num(metadata.confidence) ?? 0.45,
+        freshness: num(metadata.freshness) ?? 0.72,
+        confidence: num(metadata.confidence) ?? 0.45,
+        dataGap: metadata.dataGap || null,
+        isCurrentGameState: false
       };
     }
     return null;
@@ -459,6 +470,23 @@
     const sites = getSiteStats(identity);
     const resourceRuntime = getLiveResourceSignals(identity);
 
+    const evidenceQuality = item => {
+      const source = String(item?.source || '');
+      if (source.startsWith('LIVE_GAME_STATE.')) return { confidence: 1, year: null, isCurrentGameState: true, dataGap: null };
+      const linked = Object.values(evidenceByMetric).find(metric => metric && metric.source && metric.source === source);
+      if (linked) return {
+        confidence: clamp(linked.confidence ?? linked.sourceConfidence ?? 0.45, 0, 1) ?? 0.45,
+        year: linked.isCurrentGameState ? null : (linked.year ?? null),
+        isCurrentGameState: linked.isCurrentGameState === true,
+        dataGap: linked.dataGap ?? null
+      };
+      if (/LIVE_RESOURCE_RUNTIME/.test(source)) return { confidence: 0.8, year: null, isCurrentGameState: true, dataGap: null };
+      if (/SIMULATION_SITE_CATALOGUE|SIMULATION_SITE_CATALOG/.test(source)) return { confidence: 0.5, year: null, isCurrentGameState: false, dataGap: 'GAMEPLAY_ASSET_NOT_COUNTRY_STATISTIC' };
+      if (/COUNTRY_SPECIFIC_OMEGA_RELATION_MODEL/.test(source)) return { confidence: 0.55, year: null, isCurrentGameState: false, dataGap: 'GAME_MODEL_SIGNAL_NOT_INDEPENDENTLY_VERIFIED' };
+      if (/COUNTRY_STRATEGIC_PROFILE/.test(source)) return { confidence: 0.58, year: null, isCurrentGameState: false, dataGap: 'STRATEGIC_PROFILE_PROVENANCE_PARTIAL' };
+      if (/country_general_data_registry_v1\.json|WORLD_BANK|DERIVED_SAME_YEAR/.test(source)) return { confidence: 0.55, year: item?.year ?? null, isCurrentGameState: false, dataGap: item?.year == null ? 'OBSERVATION_YEAR_UNKNOWN' : null };
+      return { confidence: clamp(item?.confidence ?? 0.45, 0, 1) ?? 0.45, year: item?.year ?? null, isCurrentGameState: false, dataGap: item?.dataGap ?? null };
+    };
     const fiscalParts = [];
     if (debtRatio) fiscalParts.push({ value: clamp(Math.max(0, debtRatio.value) / 150), evidence: [{ metric: 'debtToGdpPct', value: debtRatio.value, source: debtRatio.source }] });
     if (budgetRatio) fiscalParts.push({ value: clamp(Math.max(0, -budgetRatio.value) / 20), evidence: [{ metric: 'budgetBalanceToGdpPct', value: budgetRatio.value, source: budgetRatio.source }] });
@@ -491,8 +519,17 @@
         value: value01 === null ? null : Number(value01.toFixed(3)),
         availability: value01 === null ? 'UNOBSERVED' : 'DERIVED_SIMULATION_POLICY',
         source: value01 === null ? null : (source || 'OMEGA_COUNTRY_BEHAVIOR_ENGINE_V1'),
-        confidence: value01 === null ? 0 : Number(clamp(confidence == null ? 0.5 : confidence, 0, 1).toFixed(2)),
-        evidence: value01 === null ? [] : clone(evidence || []),
+        confidence: value01 === null ? 0 : Number((clamp(confidence == null ? 0.5 : confidence, 0, 1) * ((Array.isArray(evidence) && evidence.length)
+          ? evidence.reduce((sum, item) => sum + evidenceQuality(item).confidence, 0) / evidence.length : 0.5)).toFixed(3)),
+        evidence: value01 === null ? [] : (Array.isArray(evidence) ? evidence.map(item => {
+          const quality = evidenceQuality(item);
+          return Object.assign({}, clone(item), {
+            confidence: quality.confidence,
+            observationYear: quality.isCurrentGameState ? null : (item?.year ?? quality.year ?? null),
+            isCurrentGameState: quality.isCurrentGameState,
+            dataGap: item?.dataGap ?? quality.dataGap ?? null
+          });
+        }) : []),
         interpretation: value01 === null ? 'Not enough country-specific evidence to derive this dimension.' : interpretation
       };
     };
@@ -719,7 +756,23 @@
         ]
       },
       metrics: clone(macro),
-      metricSources: Object.fromEntries(Object.entries(evidenceByMetric).filter(([, v]) => v).map(([k, v]) => [k, { value: v.value, source: v.source, status: v.status || 'RECORDED' }])),
+      metricSources: Object.fromEntries(Object.entries(evidenceByMetric).map(([key, metric]) => [key, metric ? {
+        value: metric.value ?? null, source: metric.source || null, status: metric.status || 'RECORDED',
+        year: metric.isCurrentGameState ? null : (metric.year ?? null),
+        sourceId: metric.sourceId || null, sourceName: metric.sourceName || null,
+        method: metric.method || null, sourceUrl: metric.sourceUrl || null,
+        sourceConfidence: metric.sourceConfidence ?? metric.confidence ?? 0,
+        freshness: metric.freshness ?? null, confidence: metric.confidence ?? 0,
+        dataGap: metric.dataGap ?? null, isCurrentGameState: metric.isCurrentGameState === true
+      } : {
+        value: null, source: null, status: 'NO_USABLE_OBSERVATION', year: null,
+        sourceId: null, sourceName: null, method: null, sourceUrl: null,
+        sourceConfidence: 0, freshness: null, confidence: 0,
+        dataGap: 'NO_USABLE_OBSERVATION', isCurrentGameState: false
+      }])),
+      dataGaps: Object.entries(evidenceByMetric).filter(([, metric]) => !metric || metric.value === null || metric.dataGap)
+        .map(([metric, item]) => ({ metric, reason: item?.dataGap || 'NO_USABLE_OBSERVATION', year: item?.year ?? null, source: item?.source ?? null })),
+      evidenceQualityPolicy: 'Live Game.state metrics are current-state overrides; registered values retain source/year/gap metadata and confidence is freshness-adjusted before adaptive scoring.',
       dimensions: clone(dimensions),
       domainSignals: {
         economy: {
