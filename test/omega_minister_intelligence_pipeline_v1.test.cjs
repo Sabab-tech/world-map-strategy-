@@ -101,7 +101,7 @@ const cognitive = {
     assert.equal(profile.efficiency, 84, 'Canonical capability should reach the legacy cognitive contract.');
     assert.ok(profile.parsedIntent);
     assert.ok(countryDetails);
-    return { text: 'বাজেটের ঝুঁকি বিশ্লেষণ করছি এবং প্রমাণ যাচাই করে সুপারিশ দেব।' };
+    return { text: 'বাজেটের ঝুঁকি বিশ্লেষণ করছি এবং প্রমাণ যাচাই করে সুপারিশ দেব।', aiPowered: true, model: 'test-provider' };
   }
 };
 
@@ -154,7 +154,8 @@ activeMinisterForScope = minister;
     ministerId: minister.ministerId,
     ministerRole: 'Finance Minister',
     countryDetails: { treasury: 100 },
-    gameState: { treasury: 100 }
+    gameState: { treasury: 100 },
+    aiProvider: 'GOOGLE'
   });
 
   assert.equal(answer.ok, true, JSON.stringify({ status: answer.status, error: answer.error }));
@@ -177,6 +178,23 @@ activeMinisterForScope = minister;
   assert.equal(diagnostics.canonicalRegistryAvailable, true);
   assert.equal(diagnostics.languageSystemAvailable, true);
   assert.equal(diagnostics.cognitiveEngineAvailable, true);
+
+  const offlineAnswer = await pipeline.ask('গোয়েন্দা ব্রিফিং দাও', {
+    countryId: 'BGD',
+    countryCode: 'BGD',
+    countryName: 'Bangladesh',
+    ministryId: 'finance',
+    ministerId: minister.ministerId,
+    ministerRole: 'Finance Minister',
+    aiProvider: 'OFFLINE',
+    countryDetails: { treasury: 100 },
+    gameState: { treasury: 100 }
+  });
+  assert.equal(offlineAnswer.status, 'OFFLINE_CONTEXT_FALLBACK');
+  assert.equal(offlineAnswer.offlineFallback, true);
+  assert.match(offlineAnswer.text, /প্রামাণ্য গেম-ডেটা/);
+  assert.equal(messages.length, 4, 'Offline fallback turns must also persist into minister memory.');
+  assert.equal(episodes.length, 2, 'Offline fallback must store a conversation episode.');
 
   const server = read('server.js');
   const bootstrap = read('server_bootstrap.js');
