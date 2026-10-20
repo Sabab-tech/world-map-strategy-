@@ -258,7 +258,7 @@ test('mine project rejects cross-country identity and player-only actions requir
   assert.match(uiSource, /quoteMineProject/);
   assert.match(uiSource, /My Mines/);
   assert.match(uiSource, /data-omega-mine-entry="my-mines"/);
-  assert.match(uiSource, /data-omega-mine-entry="mines"/);
+  assert.match(uiSource, /setAttribute\('data-omega-mine-entry','mines'\)/);
   assert.match(uiSource, /function stationDirectory/);
   assert.match(uiSource, /action==='run-factory'/);
   assert.match(uiSource, /executeFactoryCycle/);
