@@ -656,6 +656,10 @@
       e.expenditure=finite(fb.spending)??fm.fiscalModel.annualSpendingUsd;
       syncEconomyRecord(p,fm,root);processed+=1;
     }
+    const worldBankLending=global.OmegaWorldBankLending;
+    if(worldBankLending&&typeof worldBankLending.processTurn==='function'){
+      try{worldBankLending.processTurn(turnNumber,dt);}catch(error){safeDispatch('OMEGA_WORLD_BANK_LENDING_ERROR',{turn:turnNumber,message:String(error?.message||error)});}
+    }
     safeDispatch('OMEGA_FINANCE_STATE_UPDATED',{countryCode:getPlayerCode(),turn:turnNumber,processed,revision:VERSION});
     refreshVisibleMetrics();return {ok:true,turn:turnNumber,processed};
   }
