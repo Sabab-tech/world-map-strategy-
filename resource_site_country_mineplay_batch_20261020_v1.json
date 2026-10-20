@@ -1951,13 +1951,13 @@
     },
     {
       "schemaVersion": "1.0.0",
-      "siteId": "SITE_SEN_mako_gold_mine",
+      "siteId": "SITE_SEN_boto_gold_mine",
       "countryId": "SEN",
-      "siteName": "Mako Gold Mine",
+      "siteName": "Boto Gold Mine",
       "identity": {
         "countryIso3": "SEN",
         "countryName": "Senegal",
-        "siteType": "GOLD_MINE",
+        "siteType": "OPEN_PIT_GOLD_MINE",
         "resourceTypeId": "gold",
         "resourceName": "Gold",
         "ontologyKey": "GOLD",
@@ -1965,48 +1965,49 @@
       },
       "location": {
         "countryName": "Senegal",
-        "adminRegion": "Kedougou Region",
-        "locality": "Kedougou Region",
+        "adminRegion": "Madina Baffé, Kédougou Region",
+        "locality": "Madina Baffé, Kédougou Region",
         "coordinates": {
           "lat": 12.55,
-          "lng": 12.33
+          "lng": -12.2
         },
         "coordinateStatus": "REGIONAL_APPROXIMATION",
-        "coordinateAuthority": "REGIONAL LOCATION REPORTED BY SOURCE; COORDINATE IS APPROXIMATE, NOT SURVEY GRADE",
+        "coordinateAuthority": "Source-located region; strategic map coordinate is approximate, not survey grade",
         "coordinatePrecision": "REGIONAL_APPROXIMATION",
         "countryBoundaryKey": "SEN"
       },
       "ownership": {
-        "owner": "Teranga / Endeavour-related ownership chain; verify current legal entity",
-        "operator": "Petowal Mining Company",
-        "ownerEvidenceStatus": "SOURCE_REPORTED_NOT_INDEPENDENTLY_RECONCILED",
-        "operatorEvidenceStatus": "SOURCE_REPORTED_NOT_INDEPENDENTLY_RECONCILED",
+        "owner": "Managem Group; verify current legal equity attribution against filings",
+        "operator": "Managem Group / Boto operating company",
+        "ownerEvidenceStatus": "SOURCE_REPORTED_REQUIRES_CURRENT_FILING_RECONCILIATION",
+        "operatorEvidenceStatus": "SOURCE_REPORTED_PRIMARY",
         "authority": "SOURCE_REFERENCE_WITH_CURRENT_STATUS_CAVEAT",
         "equityControlCountry": "SEN",
-        "operatorContractId": "OPCONTRACT_SITE_SEN_mako_gold_mine"
+        "operatorContractId": "OPCONTRACT_SITE_SEN_boto_gold_mine"
       },
       "operation": {
-        "status": "OPERATING_AS_REPORTED_BY_MINISTRY",
-        "operationalStatus": "OPERATING_AS_REPORTED_BY_MINISTRY",
-        "extractionMethod": "OPEN_PIT_DRILL_BLAST_LOAD_HAUL",
+        "status": "OPERATING_RAMP_UP_REPORTED_2025_2026",
+        "operationalStatus": "OPERATING_RAMP_UP_REPORTED_2025_2026",
+        "extractionMethod": "OPEN_PIT_GOLD_MINING_AND_CARBON_IN_LEACH",
         "extractionEligibility": "SIMULATED_GAMEPLAY_EXECUTABLE_SUBJECT_TO_RUNTIME_GATES",
         "commercialExtraction": true,
         "siteCommissioningLevel": 0,
         "mineLevel": 0,
-        "statusAuthority": "SOURCE_REPORTED_REAL_WORLD_STATUS; SIMULATION_STATUS_AND_PLAYER_COMMISSIONING_ARE_SEPARATE",
-        "realWorldStatus": "OPERATING_AS_REPORTED_BY_MINISTRY",
+        "statusAuthority": "Source-reported status is separate from simulated player commissioning",
+        "realWorldStatus": "OPERATING_RAMP_UP_REPORTED_2025_2026",
         "gameplayConstructionAllowed": true
       },
       "processing": {
-        "upstreamProcess": "OPEN_PIT_DRILL_BLAST_LOAD_HAUL",
+        "upstreamProcess": "OPEN_PIT_GOLD_MINING_AND_CARBON_IN_LEACH",
         "midstreamProcess": "COMMODITY_SPECIFIC_BENEFICIATION_AND_GRADE_CONTROL",
         "refinedOutputs": [
-          "Gold"
+          "gold concentrate",
+          "doré"
         ],
         "downstreamSectors": [
+          "bullion",
           "jewellery",
-          "electronics",
-          "bullion"
+          "electronics"
         ]
       },
       "logistics": {
@@ -2016,9 +2017,9 @@
         "factoryRouteStatus": "REQUIRES_FACTORY_COMPATIBILITY_CHECK",
         "routeStatus": "REGIONAL_ROUTE_TO_BE_PLANNED",
         "transport": {
-          "routeId": "ROUTE_SITE_SEN_mako_gold_mine_RAW_TO_FACTORY",
+          "routeId": "ROUTE_SITE_SEN_boto_gold_mine_RAW_TO_FACTORY",
           "routeType": "ROAD_RAIL",
-          "originSiteId": "SITE_SEN_mako_gold_mine",
+          "originSiteId": "SITE_SEN_boto_gold_mine",
           "originCountryId": "SEN",
           "warehouseId": "WH-SEN-RAW",
           "destinationFactoryId": "AUTO_SELECT_COMPATIBLE_FACTORY",
@@ -2036,10 +2037,10 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": null,
-          "unit": "TONNES_ORE",
-          "status": "UNOBSERVED",
-          "basis": "No verified current site-specific reserve figure attached in this additive batch"
+          "quantity": 1800000,
+          "unit": "TROY_OUNCES",
+          "status": "REPORTED",
+          "basis": "Managem-reported 1.8 Moz estimated mineral reserves"
         },
         "production": {
           "annual": null,
@@ -2047,7 +2048,7 @@
           "rate": null,
           "unit": "TONNES_PER_DAY",
           "status": "UNOBSERVED",
-          "basis": "No current site-level output figure assumed"
+          "basis": "No reconciled quantitative production metric promoted unless verified"
         },
         "grade": {
           "value": null,
@@ -2070,46 +2071,49 @@
           "status": "UNOBSERVED"
         },
         "capacity": {
-          "nominal": null,
+          "nominal": 2750000,
           "minimum": null,
           "maximum": null,
-          "unit": "TONNES_PER_DAY",
-          "status": "UNOBSERVED"
+          "unit": "TONNES_PER_YEAR",
+          "status": "REPORTED",
+          "period": "PROCESSING_PLANT_CAPACITY",
+          "basis": "Managem-reported 2.75 Mtpa processing plant capacity"
         },
         "quantitativeProvenance": {
-          "authority": "REAL_SITE_IDENTITY_WITH_GAPS_PRESERVED",
+          "authority": "SOURCE_REPORTED_IDENTITY_AND_VERIFIED_METRICS_WHEN_AVAILABLE",
           "measuredReservePromoted": false,
           "simulatedReserveSeparate": true,
           "sourceUrls": [
-            "https://energie-mines.gouv.sn/mines-et-carrieres/"
+            "https://www.managemgroup.com/boto",
+            "https://www.managemgroup.com/en/managem-announces-first-gold-boto-gold-mine-senegal"
           ],
           "accessed": "2026-10-20"
         },
         "completeness": {
-          "reserve": "UNOBSERVED",
+          "reserve": "REPORTED",
           "production": "UNOBSERVED",
           "grade": "UNOBSERVED",
           "recovery": "UNOBSERVED",
           "throughput": "UNOBSERVED",
           "purity": "UNOBSERVED",
-          "overall": "IDENTITY_AND_GAMEPLAY_SEED_ONLY"
+          "overall": "PARTIAL"
         }
       },
       "reserve": {
-        "quantity": 16000000,
+        "quantity": 28000000,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
-        "basis": "MINEPLAY_GAMEPLAY_SEED_ONLY_NOT_A_GEOLOGICAL_RESERVE",
+        "basis": "MINEPLAY_SCENARIO_SEED_ONLY_NOT_A_GEOLOGICAL_RESERVE",
         "authority": "SIMULATION_SCENARIO_ONLY",
         "generatedAt": "2026-10-20"
       },
       "simulation": {
         "simulationOnly": true,
         "reserve": {
-          "quantity": 16000000,
+          "quantity": 28000000,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
-          "basis": "MINEPLAY_GAMEPLAY_SEED_ONLY_NOT_A_GEOLOGICAL_RESERVE",
+          "basis": "MINEPLAY_SCENARIO_SEED_ONLY_NOT_A_GEOLOGICAL_RESERVE",
           "authority": "SIMULATION_SCENARIO_ONLY",
           "generatedAt": "2026-10-20"
         },
@@ -2124,7 +2128,7 @@
         "recovery": 0.72,
         "transportRoute": [
           {
-            "routeId": "SIM_ROUTE:SEN:SITE_SEN_mako_gold_mine",
+            "routeId": "SIM_ROUTE:SEN:SITE_SEN_boto_gold_mine",
             "mode": "truck",
             "transportMode": "truck",
             "distanceKm": null,
@@ -2160,37 +2164,52 @@
         "sourceStatusIsNotGameplayCommissioning": true
       },
       "sourceReference": {
-        "sourcePath": "https://energie-mines.gouv.sn/mines-et-carrieres/",
-        "sourceType": "GOVERNMENT_OR_EITI_SOURCE",
+        "sourcePath": "https://www.managemgroup.com/boto",
+        "sourceType": "OPERATOR_PRIMARY",
         "accessed": "2026-10-20",
         "facts": {
-          "reportedGoldAndSilverProducedIn2018To2022Tonnes": 25.12,
-          "reportedMineLifeEndYear": 2027,
-          "figuresAreHistoricalNotCurrentAnnualOutput": true
+          "firstGoldPouredOn": "2025-09-02",
+          "reportedContributionToGroupGoldProduction2025TroyOunces": 75000,
+          "reportedAverageAnnualGoldTargetFirstThreeYearsTroyOunces": 160000,
+          "reportedContainedGoldReservesTroyOunces": 1800000,
+          "reportedOpenPitRockExtractionCapacityTonnesPerYear": 35000000,
+          "reportedProcessingPlantCapacityTonnesPerYear": 2750000,
+          "reportedInvestmentEUR": 354000000
         },
-        "statusNote": "Real-world identity and source-reported status are distinct from this game's simulated reserves, production and player-owned assets."
+        "statusNote": "Reported data and simulation-only reserve seed are kept separate."
       },
       "sources": [
         {
-          "url": "https://energie-mines.gouv.sn/mines-et-carrieres/",
-          "sourceType": "GOVERNMENT_OR_EITI_SOURCE",
+          "url": "https://www.managemgroup.com/boto",
+          "sourceType": "OPERATOR_PRIMARY",
           "accessed": "2026-10-20",
-          "scope": "site_identity_location_commodity_status_and_stated_operational_context"
+          "scope": "site_identity_location_operational_context_and_reported_metrics"
+        },
+        {
+          "url": "https://www.managemgroup.com/en/managem-announces-first-gold-boto-gold-mine-senegal",
+          "sourceType": "GOVERNMENT_OR_SECONDARY_SOURCE",
+          "accessed": "2026-10-20",
+          "scope": "site_identity_location_operational_context_and_reported_metrics"
         }
       ],
       "observedFacts": {
-        "reportedStatus": "OPERATING_AS_REPORTED_BY_MINISTRY",
-        "owner": "Teranga / Endeavour-related ownership chain; verify current legal entity",
-        "operator": "Petowal Mining Company",
+        "reportedStatus": "OPERATING_RAMP_UP_REPORTED_2025_2026",
+        "owner": "Managem Group; verify current legal equity attribution against filings",
+        "operator": "Managem Group / Boto operating company",
         "resource": "Gold",
-        "region": "Kedougou Region",
+        "region": "Madina Baffé, Kédougou Region",
         "facts": {
-          "reportedGoldAndSilverProducedIn2018To2022Tonnes": 25.12,
-          "reportedMineLifeEndYear": 2027,
-          "figuresAreHistoricalNotCurrentAnnualOutput": true
+          "firstGoldPouredOn": "2025-09-02",
+          "reportedContributionToGroupGoldProduction2025TroyOunces": 75000,
+          "reportedAverageAnnualGoldTargetFirstThreeYearsTroyOunces": 160000,
+          "reportedContainedGoldReservesTroyOunces": 1800000,
+          "reportedOpenPitRockExtractionCapacityTonnesPerYear": 35000000,
+          "reportedProcessingPlantCapacityTonnesPerYear": 2750000,
+          "reportedInvestmentEUR": 354000000
         },
         "authority": "SOURCE_REPORTED_NOT_FULLY_RECONCILED"
-      }
+      },
+      "changeNote": "Replaced a duplicate ID from a legacy gameplay pack with a distinct source-referenced site."
     },
     {
       "schemaVersion": "1.0.0",
@@ -3390,62 +3409,63 @@
     },
     {
       "schemaVersion": "1.0.0",
-      "siteId": "SITE_ZWE_unki_platinum_mine",
+      "siteId": "SITE_ZWE_freda_rebecca_gold_mine",
       "countryId": "ZWE",
-      "siteName": "Unki Platinum Mine",
+      "siteName": "Freda Rebecca Gold Mine",
       "identity": {
         "countryIso3": "ZWE",
         "countryName": "Zimbabwe",
-        "siteType": "PLATINUM_GROUP_METALS_MINE",
-        "resourceTypeId": "platinum",
-        "resourceName": "Platinum group metals",
-        "ontologyKey": "PLATINUM",
+        "siteType": "GOLD_MINE",
+        "resourceTypeId": "gold",
+        "resourceName": "Gold",
+        "ontologyKey": "GOLD",
         "aliases": []
       },
       "location": {
         "countryName": "Zimbabwe",
-        "adminRegion": "Shurugwi, Midlands Province",
-        "locality": "Shurugwi, Midlands Province",
+        "adminRegion": "Bindura, Mashonaland Central",
+        "locality": "Bindura, Mashonaland Central",
         "coordinates": {
-          "lat": -19.84,
-          "lng": 30.56
+          "lat": -17.3,
+          "lng": 31.33
         },
         "coordinateStatus": "REGIONAL_APPROXIMATION",
-        "coordinateAuthority": "REGIONAL LOCATION REPORTED BY SOURCE; COORDINATE IS APPROXIMATE, NOT SURVEY GRADE",
+        "coordinateAuthority": "Source-located region; strategic map coordinate is approximate, not survey grade",
         "coordinatePrecision": "REGIONAL_APPROXIMATION",
         "countryBoundaryKey": "ZWE"
       },
       "ownership": {
-        "owner": "Anglo American Platinum",
-        "operator": "Unki Mines / Anglo American Platinum",
-        "ownerEvidenceStatus": "SOURCE_REPORTED_NOT_INDEPENDENTLY_RECONCILED",
-        "operatorEvidenceStatus": "SOURCE_REPORTED_NOT_INDEPENDENTLY_RECONCILED",
+        "owner": "Mutapa Gold Resources; confirm current legal title against regulatory filings",
+        "operator": "Freda Rebecca Gold Mine / Mutapa Gold Resources",
+        "ownerEvidenceStatus": "SOURCE_REPORTED_REQUIRES_CURRENT_FILING_RECONCILIATION",
+        "operatorEvidenceStatus": "SOURCE_REPORTED_PRIMARY",
         "authority": "SOURCE_REFERENCE_WITH_CURRENT_STATUS_CAVEAT",
         "equityControlCountry": "ZWE",
-        "operatorContractId": "OPCONTRACT_SITE_ZWE_unki_platinum_mine"
+        "operatorContractId": "OPCONTRACT_SITE_ZWE_freda_rebecca_gold_mine"
       },
       "operation": {
-        "status": "OPERATING_AS_REPORTED_BY_USGS_2024",
-        "operationalStatus": "OPERATING_AS_REPORTED_BY_USGS_2024",
-        "extractionMethod": "UNDERGROUND_MINE_AND_CONCENTRATION",
+        "status": "OPERATING_AS_REPORTED_2026",
+        "operationalStatus": "OPERATING_AS_REPORTED_2026",
+        "extractionMethod": "UNDERGROUND_GOLD_MINING_AND_CONCENTRATION",
         "extractionEligibility": "SIMULATED_GAMEPLAY_EXECUTABLE_SUBJECT_TO_RUNTIME_GATES",
         "commercialExtraction": true,
         "siteCommissioningLevel": 0,
         "mineLevel": 0,
-        "statusAuthority": "SOURCE_REPORTED_REAL_WORLD_STATUS; SIMULATION_STATUS_AND_PLAYER_COMMISSIONING_ARE_SEPARATE",
-        "realWorldStatus": "OPERATING_AS_REPORTED_BY_USGS_2024",
+        "statusAuthority": "Source-reported status is separate from simulated player commissioning",
+        "realWorldStatus": "OPERATING_AS_REPORTED_2026",
         "gameplayConstructionAllowed": true
       },
       "processing": {
-        "upstreamProcess": "UNDERGROUND_MINE_AND_CONCENTRATION",
+        "upstreamProcess": "UNDERGROUND_GOLD_MINING_AND_CONCENTRATION",
         "midstreamProcess": "COMMODITY_SPECIFIC_BENEFICIATION_AND_GRADE_CONTROL",
         "refinedOutputs": [
-          "PGM concentrate"
+          "gold concentrate",
+          "doré"
         ],
         "downstreamSectors": [
-          "catalysts",
-          "electronics",
-          "jewellery"
+          "bullion",
+          "jewellery",
+          "electronics"
         ]
       },
       "logistics": {
@@ -3455,9 +3475,9 @@
         "factoryRouteStatus": "REQUIRES_FACTORY_COMPATIBILITY_CHECK",
         "routeStatus": "REGIONAL_ROUTE_TO_BE_PLANNED",
         "transport": {
-          "routeId": "ROUTE_SITE_ZWE_unki_platinum_mine_RAW_TO_FACTORY",
+          "routeId": "ROUTE_SITE_ZWE_freda_rebecca_gold_mine_RAW_TO_FACTORY",
           "routeType": "ROAD_RAIL",
-          "originSiteId": "SITE_ZWE_unki_platinum_mine",
+          "originSiteId": "SITE_ZWE_freda_rebecca_gold_mine",
           "originCountryId": "ZWE",
           "warehouseId": "WH-ZWE-RAW",
           "destinationFactoryId": "AUTO_SELECT_COMPATIBLE_FACTORY",
@@ -3478,7 +3498,7 @@
           "quantity": null,
           "unit": "TONNES_ORE",
           "status": "UNOBSERVED",
-          "basis": "No verified current site-specific reserve figure attached in this additive batch"
+          "basis": "No measured site reserve promoted unless supported by site-specific source fact"
         },
         "production": {
           "annual": null,
@@ -3486,7 +3506,7 @@
           "rate": null,
           "unit": "TONNES_PER_DAY",
           "status": "UNOBSERVED",
-          "basis": "No current site-level output figure assumed"
+          "basis": "No reconciled quantitative production metric promoted unless verified"
         },
         "grade": {
           "value": null,
@@ -3516,11 +3536,12 @@
           "status": "UNOBSERVED"
         },
         "quantitativeProvenance": {
-          "authority": "REAL_SITE_IDENTITY_WITH_GAPS_PRESERVED",
+          "authority": "SOURCE_REPORTED_IDENTITY_AND_VERIFIED_METRICS_WHEN_AVAILABLE",
           "measuredReservePromoted": false,
           "simulatedReserveSeparate": true,
           "sourceUrls": [
-            "https://www.usgs.gov/centers/national-minerals-information-center/zimbabwe"
+            "https://mutapagold.com/",
+            "https://www.heraldonline.co.zw/us250-million-needed-to-ramp-up-gold-production-at-mutapa-mines/"
           ],
           "accessed": "2026-10-20"
         },
@@ -3535,20 +3556,20 @@
         }
       },
       "reserve": {
-        "quantity": 190000000,
+        "quantity": 43000000,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
-        "basis": "MINEPLAY_GAMEPLAY_SEED_ONLY_NOT_A_GEOLOGICAL_RESERVE",
+        "basis": "MINEPLAY_SCENARIO_SEED_ONLY_NOT_A_GEOLOGICAL_RESERVE",
         "authority": "SIMULATION_SCENARIO_ONLY",
         "generatedAt": "2026-10-20"
       },
       "simulation": {
         "simulationOnly": true,
         "reserve": {
-          "quantity": 190000000,
+          "quantity": 43000000,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
-          "basis": "MINEPLAY_GAMEPLAY_SEED_ONLY_NOT_A_GEOLOGICAL_RESERVE",
+          "basis": "MINEPLAY_SCENARIO_SEED_ONLY_NOT_A_GEOLOGICAL_RESERVE",
           "authority": "SIMULATION_SCENARIO_ONLY",
           "generatedAt": "2026-10-20"
         },
@@ -3563,7 +3584,7 @@
         "recovery": 0.72,
         "transportRoute": [
           {
-            "routeId": "SIM_ROUTE:ZWE:SITE_ZWE_unki_platinum_mine",
+            "routeId": "SIM_ROUTE:ZWE:SITE_ZWE_freda_rebecca_gold_mine",
             "mode": "truck",
             "transportMode": "truck",
             "distanceKm": null,
@@ -3579,7 +3600,7 @@
         "factoryBinding": {
           "factoryId": null,
           "countryId": "ZWE",
-          "inputResourceId": "platinum",
+          "inputResourceId": "gold",
           "status": "REQUIRES_COMPATIBLE_FACTORY_BOOTSTRAP",
           "authority": "RUNTIME"
         },
@@ -3599,33 +3620,44 @@
         "sourceStatusIsNotGameplayCommissioning": true
       },
       "sourceReference": {
-        "sourcePath": "https://www.usgs.gov/centers/national-minerals-information-center/zimbabwe",
-        "sourceType": "GOVERNMENT_COMMODITY_SUMMARY",
+        "sourcePath": "https://mutapagold.com/",
+        "sourceType": "OPERATOR_PRIMARY_AND_PUBLIC_REPORTING",
         "accessed": "2026-10-20",
         "facts": {
-          "platinumGroupMetalProductionListedInUSGS2024": true
+          "listedWithinMutapaGoldResourcesPortfolio": true,
+          "reportedOperationAndResourceDelineationPriorities2026": true,
+          "currentSiteSpecificReserveNotPromoted": true
         },
-        "statusNote": "Real-world identity and source-reported status are distinct from this game's simulated reserves, production and player-owned assets."
+        "statusNote": "Reported data and simulation-only reserve seed are kept separate."
       },
       "sources": [
         {
-          "url": "https://www.usgs.gov/centers/national-minerals-information-center/zimbabwe",
-          "sourceType": "GOVERNMENT_COMMODITY_SUMMARY",
+          "url": "https://mutapagold.com/",
+          "sourceType": "OPERATOR_PRIMARY_AND_PUBLIC_REPORTING",
           "accessed": "2026-10-20",
-          "scope": "site_identity_location_commodity_status_and_stated_operational_context"
+          "scope": "site_identity_location_operational_context_and_reported_metrics"
+        },
+        {
+          "url": "https://www.heraldonline.co.zw/us250-million-needed-to-ramp-up-gold-production-at-mutapa-mines/",
+          "sourceType": "GOVERNMENT_OR_SECONDARY_SOURCE",
+          "accessed": "2026-10-20",
+          "scope": "site_identity_location_operational_context_and_reported_metrics"
         }
       ],
       "observedFacts": {
-        "reportedStatus": "OPERATING_AS_REPORTED_BY_USGS_2024",
-        "owner": "Anglo American Platinum",
-        "operator": "Unki Mines / Anglo American Platinum",
-        "resource": "Platinum group metals",
-        "region": "Shurugwi, Midlands Province",
+        "reportedStatus": "OPERATING_AS_REPORTED_2026",
+        "owner": "Mutapa Gold Resources; confirm current legal title against regulatory filings",
+        "operator": "Freda Rebecca Gold Mine / Mutapa Gold Resources",
+        "resource": "Gold",
+        "region": "Bindura, Mashonaland Central",
         "facts": {
-          "platinumGroupMetalProductionListedInUSGS2024": true
+          "listedWithinMutapaGoldResourcesPortfolio": true,
+          "reportedOperationAndResourceDelineationPriorities2026": true,
+          "currentSiteSpecificReserveNotPromoted": true
         },
         "authority": "SOURCE_REPORTED_NOT_FULLY_RECONCILED"
-      }
+      },
+      "changeNote": "Replaced a duplicate ID from a legacy gameplay pack with a distinct source-referenced site."
     },
     {
       "schemaVersion": "1.0.0",
@@ -4107,13 +4139,13 @@
     },
     {
       "schemaVersion": "1.0.0",
-      "siteId": "SITE_TZA_bulyanhulu_gold_mine",
+      "siteId": "SITE_TZA_buckreef_gold_mine",
       "countryId": "TZA",
-      "siteName": "Bulyanhulu Gold Mine",
+      "siteName": "Buckreef Gold Mine",
       "identity": {
         "countryIso3": "TZA",
         "countryName": "Tanzania",
-        "siteType": "UNDERGROUND_GOLD_MINE",
+        "siteType": "OPEN_PIT_GOLD_MINE",
         "resourceTypeId": "gold",
         "resourceName": "Gold",
         "ontologyKey": "GOLD",
@@ -4121,48 +4153,49 @@
       },
       "location": {
         "countryName": "Tanzania",
-        "adminRegion": "Kahama District, Shinyanga Region",
-        "locality": "Kahama District, Shinyanga Region",
+        "adminRegion": "Geita Region, near Geita",
+        "locality": "Geita Region, near Geita",
         "coordinates": {
-          "lat": -3.04,
-          "lng": 32.09
+          "lat": -2.74,
+          "lng": 32.72
         },
         "coordinateStatus": "REGIONAL_APPROXIMATION",
-        "coordinateAuthority": "REGIONAL LOCATION REPORTED BY SOURCE; COORDINATE IS APPROXIMATE, NOT SURVEY GRADE",
+        "coordinateAuthority": "Source-located region; strategic map coordinate is approximate, not survey grade",
         "coordinatePrecision": "REGIONAL_APPROXIMATION",
         "countryBoundaryKey": "TZA"
       },
       "ownership": {
-        "owner": "Barrick Gold (via Twiga Minerals structure)",
-        "operator": "Bulyanhulu Gold Mine / Barrick",
-        "ownerEvidenceStatus": "SOURCE_REPORTED_NOT_INDEPENDENTLY_RECONCILED",
-        "operatorEvidenceStatus": "SOURCE_REPORTED_NOT_INDEPENDENTLY_RECONCILED",
+        "owner": "TRX Gold operating interest; verify current title and partners in filings",
+        "operator": "TRX Gold / Buckreef Gold Company",
+        "ownerEvidenceStatus": "SOURCE_REPORTED_REQUIRES_CURRENT_FILING_RECONCILIATION",
+        "operatorEvidenceStatus": "SOURCE_REPORTED_PRIMARY",
         "authority": "SOURCE_REFERENCE_WITH_CURRENT_STATUS_CAVEAT",
         "equityControlCountry": "TZA",
-        "operatorContractId": "OPCONTRACT_SITE_TZA_bulyanhulu_gold_mine"
+        "operatorContractId": "OPCONTRACT_SITE_TZA_buckreef_gold_mine"
       },
       "operation": {
-        "status": "OPERATING_AS_REPORTED_BY_TANZANIA_MINING_SOURCES",
-        "operationalStatus": "OPERATING_AS_REPORTED_BY_TANZANIA_MINING_SOURCES",
-        "extractionMethod": "UNDERGROUND_HARD_ROCK_MINING_AND_CONCENTRATION",
+        "status": "OPERATING_AS_REPORTED_FISCAL_2026",
+        "operationalStatus": "OPERATING_AS_REPORTED_FISCAL_2026",
+        "extractionMethod": "OPEN_PIT_GOLD_MINING_AND_CONCENTRATION",
         "extractionEligibility": "SIMULATED_GAMEPLAY_EXECUTABLE_SUBJECT_TO_RUNTIME_GATES",
         "commercialExtraction": true,
         "siteCommissioningLevel": 0,
         "mineLevel": 0,
-        "statusAuthority": "SOURCE_REPORTED_REAL_WORLD_STATUS; SIMULATION_STATUS_AND_PLAYER_COMMISSIONING_ARE_SEPARATE",
-        "realWorldStatus": "OPERATING_AS_REPORTED_BY_TANZANIA_MINING_SOURCES",
+        "statusAuthority": "Source-reported status is separate from simulated player commissioning",
+        "realWorldStatus": "OPERATING_AS_REPORTED_FISCAL_2026",
         "gameplayConstructionAllowed": true
       },
       "processing": {
-        "upstreamProcess": "UNDERGROUND_HARD_ROCK_MINING_AND_CONCENTRATION",
+        "upstreamProcess": "OPEN_PIT_GOLD_MINING_AND_CONCENTRATION",
         "midstreamProcess": "COMMODITY_SPECIFIC_BENEFICIATION_AND_GRADE_CONTROL",
         "refinedOutputs": [
-          "Gold"
+          "gold concentrate",
+          "doré"
         ],
         "downstreamSectors": [
+          "bullion",
           "jewellery",
-          "electronics",
-          "bullion"
+          "electronics"
         ]
       },
       "logistics": {
@@ -4172,9 +4205,9 @@
         "factoryRouteStatus": "REQUIRES_FACTORY_COMPATIBILITY_CHECK",
         "routeStatus": "REGIONAL_ROUTE_TO_BE_PLANNED",
         "transport": {
-          "routeId": "ROUTE_SITE_TZA_bulyanhulu_gold_mine_RAW_TO_FACTORY",
+          "routeId": "ROUTE_SITE_TZA_buckreef_gold_mine_RAW_TO_FACTORY",
           "routeType": "ROAD_RAIL",
-          "originSiteId": "SITE_TZA_bulyanhulu_gold_mine",
+          "originSiteId": "SITE_TZA_buckreef_gold_mine",
           "originCountryId": "TZA",
           "warehouseId": "WH-TZA-RAW",
           "destinationFactoryId": "AUTO_SELECT_COMPATIBLE_FACTORY",
@@ -4195,15 +4228,16 @@
           "quantity": null,
           "unit": "TONNES_ORE",
           "status": "UNOBSERVED",
-          "basis": "No verified current site-specific reserve figure attached in this additive batch"
+          "basis": "No measured site reserve promoted unless supported by site-specific source fact"
         },
         "production": {
-          "annual": null,
-          "annualUnit": "TONNES_PER_YEAR",
+          "annual": 29650,
+          "annualUnit": "TROY_OUNCES_PER_YEAR",
           "rate": null,
           "unit": "TONNES_PER_DAY",
-          "status": "UNOBSERVED",
-          "basis": "No current site-level output figure assumed"
+          "status": "REPORTED",
+          "basis": "TRX Gold preliminary fiscal-2026 result reported 29,650 ounces of gold",
+          "year": 2026
         },
         "grade": {
           "value": null,
@@ -4226,46 +4260,50 @@
           "status": "UNOBSERVED"
         },
         "capacity": {
-          "nominal": null,
+          "nominal": 2000,
           "minimum": null,
           "maximum": null,
           "unit": "TONNES_PER_DAY",
-          "status": "UNOBSERVED"
+          "status": "REPORTED",
+          "period": "EXISTING_PROCESS_PLANT",
+          "basis": "TRX Gold operator-reported existing process-plant capacity"
         },
         "quantitativeProvenance": {
-          "authority": "REAL_SITE_IDENTITY_WITH_GAPS_PRESERVED",
+          "authority": "SOURCE_REPORTED_IDENTITY_AND_VERIFIED_METRICS_WHEN_AVAILABLE",
           "measuredReservePromoted": false,
           "simulatedReserveSeparate": true,
           "sourceUrls": [
-            "https://www.tumemadini.go.tz/"
+            "https://trxgold.com/project/buckreef/buckreef-gold-overview/",
+            "https://trxgold.com/project/buckreef/gold-production/",
+            "https://trxgold.com/news/trx-gold-delivers-record-q4-2026-achieves-top-end-of-production-guidance/"
           ],
           "accessed": "2026-10-20"
         },
         "completeness": {
           "reserve": "UNOBSERVED",
-          "production": "UNOBSERVED",
+          "production": "REPORTED",
           "grade": "UNOBSERVED",
           "recovery": "UNOBSERVED",
           "throughput": "UNOBSERVED",
           "purity": "UNOBSERVED",
-          "overall": "IDENTITY_AND_GAMEPLAY_SEED_ONLY"
+          "overall": "PARTIAL"
         }
       },
       "reserve": {
-        "quantity": 88000000,
+        "quantity": 24000000,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
-        "basis": "MINEPLAY_GAMEPLAY_SEED_ONLY_NOT_A_GEOLOGICAL_RESERVE",
+        "basis": "MINEPLAY_SCENARIO_SEED_ONLY_NOT_A_GEOLOGICAL_RESERVE",
         "authority": "SIMULATION_SCENARIO_ONLY",
         "generatedAt": "2026-10-20"
       },
       "simulation": {
         "simulationOnly": true,
         "reserve": {
-          "quantity": 88000000,
+          "quantity": 24000000,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
-          "basis": "MINEPLAY_GAMEPLAY_SEED_ONLY_NOT_A_GEOLOGICAL_RESERVE",
+          "basis": "MINEPLAY_SCENARIO_SEED_ONLY_NOT_A_GEOLOGICAL_RESERVE",
           "authority": "SIMULATION_SCENARIO_ONLY",
           "generatedAt": "2026-10-20"
         },
@@ -4280,7 +4318,7 @@
         "recovery": 0.72,
         "transportRoute": [
           {
-            "routeId": "SIM_ROUTE:TZA:SITE_TZA_bulyanhulu_gold_mine",
+            "routeId": "SIM_ROUTE:TZA:SITE_TZA_buckreef_gold_mine",
             "mode": "truck",
             "transportMode": "truck",
             "distanceKm": null,
@@ -4316,33 +4354,60 @@
         "sourceStatusIsNotGameplayCommissioning": true
       },
       "sourceReference": {
-        "sourcePath": "https://www.tumemadini.go.tz/",
-        "sourceType": "GOVERNMENT_OR_EITI_SOURCE",
+        "sourcePath": "https://trxgold.com/project/buckreef/buckreef-gold-overview/",
+        "sourceType": "OPERATOR_PRIMARY",
         "accessed": "2026-10-20",
         "facts": {
-          "namedAsMiningSiteByTanzaniaMiningCommissionContext": true
+          "reportedGoldProductionFiscal2025TroyOunces": 18935,
+          "reportedPreliminaryGoldProductionFiscal2026TroyOunces": 29650,
+          "reportedFiscal2026GuidanceTroyOunces": [
+            25000,
+            30000
+          ],
+          "reportedExistingProcessingPlantCapacityTonnesPerDay": 2000,
+          "largerSulphideProcessingCircuitExpansionPlanned": true
         },
-        "statusNote": "Real-world identity and source-reported status are distinct from this game's simulated reserves, production and player-owned assets."
+        "statusNote": "Reported data and simulation-only reserve seed are kept separate."
       },
       "sources": [
         {
-          "url": "https://www.tumemadini.go.tz/",
-          "sourceType": "GOVERNMENT_OR_EITI_SOURCE",
+          "url": "https://trxgold.com/project/buckreef/buckreef-gold-overview/",
+          "sourceType": "OPERATOR_PRIMARY",
           "accessed": "2026-10-20",
-          "scope": "site_identity_location_commodity_status_and_stated_operational_context"
+          "scope": "site_identity_location_operational_context_and_reported_metrics"
+        },
+        {
+          "url": "https://trxgold.com/project/buckreef/gold-production/",
+          "sourceType": "GOVERNMENT_OR_SECONDARY_SOURCE",
+          "accessed": "2026-10-20",
+          "scope": "site_identity_location_operational_context_and_reported_metrics"
+        },
+        {
+          "url": "https://trxgold.com/news/trx-gold-delivers-record-q4-2026-achieves-top-end-of-production-guidance/",
+          "sourceType": "GOVERNMENT_OR_SECONDARY_SOURCE",
+          "accessed": "2026-10-20",
+          "scope": "site_identity_location_operational_context_and_reported_metrics"
         }
       ],
       "observedFacts": {
-        "reportedStatus": "OPERATING_AS_REPORTED_BY_TANZANIA_MINING_SOURCES",
-        "owner": "Barrick Gold (via Twiga Minerals structure)",
-        "operator": "Bulyanhulu Gold Mine / Barrick",
+        "reportedStatus": "OPERATING_AS_REPORTED_FISCAL_2026",
+        "owner": "TRX Gold operating interest; verify current title and partners in filings",
+        "operator": "TRX Gold / Buckreef Gold Company",
         "resource": "Gold",
-        "region": "Kahama District, Shinyanga Region",
+        "region": "Geita Region, near Geita",
         "facts": {
-          "namedAsMiningSiteByTanzaniaMiningCommissionContext": true
+          "reportedGoldProductionFiscal2025TroyOunces": 18935,
+          "reportedPreliminaryGoldProductionFiscal2026TroyOunces": 29650,
+          "reportedFiscal2026GuidanceTroyOunces": [
+            25000,
+            30000
+          ],
+          "reportedExistingProcessingPlantCapacityTonnesPerDay": 2000,
+          "largerSulphideProcessingCircuitExpansionPlanned": true
         },
         "authority": "SOURCE_REPORTED_NOT_FULLY_RECONCILED"
-      }
+      },
+      "changeNote": "Replaced a duplicate ID from a legacy gameplay pack with a distinct source-referenced site."
     },
     {
       "schemaVersion": "1.0.0",
@@ -5065,65 +5130,63 @@
     },
     {
       "schemaVersion": "1.0.0",
-      "siteId": "SITE_MOZ_moma_heavy_mineral_sands_mine",
+      "siteId": "SITE_MOZ_balama_graphite_mine",
       "countryId": "MOZ",
-      "siteName": "Moma Heavy Mineral Sands Mine",
+      "siteName": "Balama Graphite Operation",
       "identity": {
         "countryIso3": "MOZ",
         "countryName": "Mozambique",
-        "siteType": "MINERAL_SANDS_MINE",
-        "resourceTypeId": "ilmenite",
-        "resourceName": "Heavy mineral sands (ilmenite, rutile, zircon)",
-        "ontologyKey": "ILMENITE",
+        "siteType": "OPEN_PIT_GRAPHITE_MINE_AND_PROCESSING_OPERATION",
+        "resourceTypeId": "graphite",
+        "resourceName": "Natural graphite",
+        "ontologyKey": "GRAPHITE",
         "aliases": []
       },
       "location": {
         "countryName": "Mozambique",
-        "adminRegion": "Moma, Nampula Province",
-        "locality": "Moma, Nampula Province",
+        "adminRegion": "Balama District, Cabo Delgado Province",
+        "locality": "Balama District, Cabo Delgado Province",
         "coordinates": {
-          "lat": -16.77,
-          "lng": 39.28
+          "lat": -13.33,
+          "lng": 38.76
         },
         "coordinateStatus": "REGIONAL_APPROXIMATION",
-        "coordinateAuthority": "REGIONAL LOCATION REPORTED BY SOURCE; COORDINATE IS APPROXIMATE, NOT SURVEY GRADE",
+        "coordinateAuthority": "Source-located region; strategic map coordinate is approximate, not survey grade",
         "coordinatePrecision": "REGIONAL_APPROXIMATION",
         "countryBoundaryKey": "MOZ"
       },
       "ownership": {
-        "owner": "Kenmare Resources and Government of Mozambique participation structure; check latest annual report",
-        "operator": "Kenmare Resources",
-        "ownerEvidenceStatus": "SOURCE_REPORTED_NOT_INDEPENDENTLY_RECONCILED",
-        "operatorEvidenceStatus": "SOURCE_REPORTED_NOT_INDEPENDENTLY_RECONCILED",
+        "owner": "Syrah Resources Limited; verify current interests against filings",
+        "operator": "Syrah Resources Limited / Twigg Exploration and Mining Limitada",
+        "ownerEvidenceStatus": "SOURCE_REPORTED_REQUIRES_CURRENT_FILING_RECONCILIATION",
+        "operatorEvidenceStatus": "SOURCE_REPORTED_PRIMARY",
         "authority": "SOURCE_REFERENCE_WITH_CURRENT_STATUS_CAVEAT",
         "equityControlCountry": "MOZ",
-        "operatorContractId": "OPCONTRACT_SITE_MOZ_moma_heavy_mineral_sands_mine"
+        "operatorContractId": "OPCONTRACT_SITE_MOZ_balama_graphite_mine"
       },
       "operation": {
-        "status": "OPERATING_AS_REPORTED_BY_OPERATOR",
-        "operationalStatus": "OPERATING_AS_REPORTED_BY_OPERATOR",
-        "extractionMethod": "DREDGING_AND_MINERAL_SANDS_SEPARATION",
+        "status": "OPERATING_AS_REPORTED_2026",
+        "operationalStatus": "OPERATING_AS_REPORTED_2026",
+        "extractionMethod": "OPEN_CUT_GRAPHITE_MINING_AND_FLOTATION",
         "extractionEligibility": "SIMULATED_GAMEPLAY_EXECUTABLE_SUBJECT_TO_RUNTIME_GATES",
         "commercialExtraction": true,
         "siteCommissioningLevel": 0,
         "mineLevel": 0,
-        "statusAuthority": "SOURCE_REPORTED_REAL_WORLD_STATUS; SIMULATION_STATUS_AND_PLAYER_COMMISSIONING_ARE_SEPARATE",
-        "realWorldStatus": "OPERATING_AS_REPORTED_BY_OPERATOR",
+        "statusAuthority": "Source-reported status is separate from simulated player commissioning",
+        "realWorldStatus": "OPERATING_AS_REPORTED_2026",
         "gameplayConstructionAllowed": true
       },
       "processing": {
-        "upstreamProcess": "DREDGING_AND_MINERAL_SANDS_SEPARATION",
+        "upstreamProcess": "OPEN_CUT_GRAPHITE_MINING_AND_FLOTATION",
         "midstreamProcess": "COMMODITY_SPECIFIC_BENEFICIATION_AND_GRADE_CONTROL",
         "refinedOutputs": [
-          "ilmenite",
-          "rutile",
-          "zircon",
-          "mineral-sands concentrate"
+          "graphite concentrate"
         ],
         "downstreamSectors": [
-          "metals",
-          "manufacturing",
-          "chemicals"
+          "lithium-ion batteries",
+          "anodes",
+          "refractories",
+          "industrial lubricants"
         ]
       },
       "logistics": {
@@ -5133,9 +5196,9 @@
         "factoryRouteStatus": "REQUIRES_FACTORY_COMPATIBILITY_CHECK",
         "routeStatus": "REGIONAL_ROUTE_TO_BE_PLANNED",
         "transport": {
-          "routeId": "ROUTE_SITE_MOZ_moma_heavy_mineral_sands_mine_RAW_TO_FACTORY",
+          "routeId": "ROUTE_SITE_MOZ_balama_graphite_mine_RAW_TO_FACTORY",
           "routeType": "ROAD_RAIL",
-          "originSiteId": "SITE_MOZ_moma_heavy_mineral_sands_mine",
+          "originSiteId": "SITE_MOZ_balama_graphite_mine",
           "originCountryId": "MOZ",
           "warehouseId": "WH-MOZ-RAW",
           "destinationFactoryId": "AUTO_SELECT_COMPATIBLE_FACTORY",
@@ -5153,23 +5216,28 @@
       },
       "quantitative": {
         "reserve": {
-          "quantity": null,
+          "quantity": 110000000,
           "unit": "TONNES_ORE",
-          "status": "UNOBSERVED",
-          "basis": "No verified current site-specific reserve figure attached in this additive batch"
+          "status": "REPORTED",
+          "basis": "Syrah reported a 110 Mt graphite ore reserve",
+          "year": 2025
         },
         "production": {
-          "annual": null,
+          "annual": 67000,
           "annualUnit": "TONNES_PER_YEAR",
           "rate": null,
           "unit": "TONNES_PER_DAY",
-          "status": "UNOBSERVED",
-          "basis": "No current site-level output figure assumed"
+          "status": "REPORTED",
+          "basis": "Syrah reported 67 kt of natural graphite production in 2025",
+          "year": 2025
         },
         "grade": {
-          "value": null,
+          "value": 16,
           "unit": "PERCENT",
-          "status": "UNOBSERVED"
+          "status": "REPORTED",
+          "year": 2025,
+          "metric": "TOTAL_GRAPHITIC_CARBON",
+          "basis": "Syrah reported reserve grade 16% TGC"
         },
         "recovery": {
           "value": null,
@@ -5187,46 +5255,49 @@
           "status": "UNOBSERVED"
         },
         "capacity": {
-          "nominal": null,
+          "nominal": 2000000,
           "minimum": null,
           "maximum": null,
-          "unit": "TONNES_PER_DAY",
-          "status": "UNOBSERVED"
+          "unit": "TONNES_PER_YEAR",
+          "status": "REPORTED",
+          "period": "ORE_THROUGHPUT",
+          "basis": "Syrah operator-reported 2 Mtpa ore throughput plant capacity"
         },
         "quantitativeProvenance": {
-          "authority": "REAL_SITE_IDENTITY_WITH_GAPS_PRESERVED",
+          "authority": "SOURCE_REPORTED_IDENTITY_AND_VERIFIED_METRICS_WHEN_AVAILABLE",
           "measuredReservePromoted": false,
           "simulatedReserveSeparate": true,
           "sourceUrls": [
-            "https://www.kenmareresources.com/our-business/moma-mine/"
+            "https://www.syrahresources.com.au/our-business/balama-graphite-operation",
+            "https://www.syrahresources.com.au/news/balama-graphite-operations"
           ],
           "accessed": "2026-10-20"
         },
         "completeness": {
-          "reserve": "UNOBSERVED",
-          "production": "UNOBSERVED",
-          "grade": "UNOBSERVED",
+          "reserve": "REPORTED",
+          "production": "REPORTED",
+          "grade": "REPORTED",
           "recovery": "UNOBSERVED",
           "throughput": "UNOBSERVED",
           "purity": "UNOBSERVED",
-          "overall": "IDENTITY_AND_GAMEPLAY_SEED_ONLY"
+          "overall": "PARTIAL"
         }
       },
       "reserve": {
-        "quantity": 360000000,
+        "quantity": 420000000,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
-        "basis": "MINEPLAY_GAMEPLAY_SEED_ONLY_NOT_A_GEOLOGICAL_RESERVE",
+        "basis": "MINEPLAY_SCENARIO_SEED_ONLY_NOT_A_GEOLOGICAL_RESERVE",
         "authority": "SIMULATION_SCENARIO_ONLY",
         "generatedAt": "2026-10-20"
       },
       "simulation": {
         "simulationOnly": true,
         "reserve": {
-          "quantity": 360000000,
+          "quantity": 420000000,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
-          "basis": "MINEPLAY_GAMEPLAY_SEED_ONLY_NOT_A_GEOLOGICAL_RESERVE",
+          "basis": "MINEPLAY_SCENARIO_SEED_ONLY_NOT_A_GEOLOGICAL_RESERVE",
           "authority": "SIMULATION_SCENARIO_ONLY",
           "generatedAt": "2026-10-20"
         },
@@ -5241,7 +5312,7 @@
         "recovery": 0.72,
         "transportRoute": [
           {
-            "routeId": "SIM_ROUTE:MOZ:SITE_MOZ_moma_heavy_mineral_sands_mine",
+            "routeId": "SIM_ROUTE:MOZ:SITE_MOZ_balama_graphite_mine",
             "mode": "truck",
             "transportMode": "truck",
             "distanceKm": null,
@@ -5257,7 +5328,7 @@
         "factoryBinding": {
           "factoryId": null,
           "countryId": "MOZ",
-          "inputResourceId": "ilmenite",
+          "inputResourceId": "graphite",
           "status": "REQUIRES_COMPATIBLE_FACTORY_BOOTSTRAP",
           "authority": "RUNTIME"
         },
@@ -5277,33 +5348,56 @@
         "sourceStatusIsNotGameplayCommissioning": true
       },
       "sourceReference": {
-        "sourcePath": "https://www.kenmareresources.com/our-business/moma-mine/",
-        "sourceType": "OPERATOR_OR_COMPANY_PRIMARY",
+        "sourcePath": "https://www.syrahresources.com.au/our-business/balama-graphite-operation",
+        "sourceType": "OPERATOR_PRIMARY",
         "accessed": "2026-10-20",
         "facts": {
-          "mineralProductsIncludeIlmeniteRutileZircon": true
+          "reportedOreReserveTonnes": 110000000,
+          "reportedReserveGradeTotalGraphiticCarbonPercent": 16,
+          "reportedResourceTonnes": 1035000000,
+          "reportedResourceGradeTotalGraphiticCarbonPercent": 12,
+          "reportedOreThroughputCapacityTonnesPerYear": 2000000,
+          "reportedApproximateGraphiteProductCapacityTonnesPerYear": 350000,
+          "reportedGraphiteProduction2025Tonnes": 67000,
+          "reserveReferenceYear": 2025,
+          "productCapacityIsNotActualAnnualProduction": true
         },
-        "statusNote": "Real-world identity and source-reported status are distinct from this game's simulated reserves, production and player-owned assets."
+        "statusNote": "Reported data and simulation-only reserve seed are kept separate."
       },
       "sources": [
         {
-          "url": "https://www.kenmareresources.com/our-business/moma-mine/",
-          "sourceType": "OPERATOR_OR_COMPANY_PRIMARY",
+          "url": "https://www.syrahresources.com.au/our-business/balama-graphite-operation",
+          "sourceType": "OPERATOR_PRIMARY",
           "accessed": "2026-10-20",
-          "scope": "site_identity_location_commodity_status_and_stated_operational_context"
+          "scope": "site_identity_location_operational_context_and_reported_metrics"
+        },
+        {
+          "url": "https://www.syrahresources.com.au/news/balama-graphite-operations",
+          "sourceType": "GOVERNMENT_OR_SECONDARY_SOURCE",
+          "accessed": "2026-10-20",
+          "scope": "site_identity_location_operational_context_and_reported_metrics"
         }
       ],
       "observedFacts": {
-        "reportedStatus": "OPERATING_AS_REPORTED_BY_OPERATOR",
-        "owner": "Kenmare Resources and Government of Mozambique participation structure; check latest annual report",
-        "operator": "Kenmare Resources",
-        "resource": "Heavy mineral sands (ilmenite, rutile, zircon)",
-        "region": "Moma, Nampula Province",
+        "reportedStatus": "OPERATING_AS_REPORTED_2026",
+        "owner": "Syrah Resources Limited; verify current interests against filings",
+        "operator": "Syrah Resources Limited / Twigg Exploration and Mining Limitada",
+        "resource": "Natural graphite",
+        "region": "Balama District, Cabo Delgado Province",
         "facts": {
-          "mineralProductsIncludeIlmeniteRutileZircon": true
+          "reportedOreReserveTonnes": 110000000,
+          "reportedReserveGradeTotalGraphiticCarbonPercent": 16,
+          "reportedResourceTonnes": 1035000000,
+          "reportedResourceGradeTotalGraphiticCarbonPercent": 12,
+          "reportedOreThroughputCapacityTonnesPerYear": 2000000,
+          "reportedApproximateGraphiteProductCapacityTonnesPerYear": 350000,
+          "reportedGraphiteProduction2025Tonnes": 67000,
+          "reserveReferenceYear": 2025,
+          "productCapacityIsNotActualAnnualProduction": true
         },
         "authority": "SOURCE_REPORTED_NOT_FULLY_RECONCILED"
-      }
+      },
+      "changeNote": "Replaced a duplicate ID from a legacy gameplay pack with a distinct source-referenced site."
     },
     {
       "schemaVersion": "1.0.0",
@@ -5546,62 +5640,64 @@
     },
     {
       "schemaVersion": "1.0.0",
-      "siteId": "SITE_ZMB_lumwana_copper_mine",
+      "siteId": "SITE_ZMB_kansanshi_copper_mine",
       "countryId": "ZMB",
-      "siteName": "Lumwana Copper Mine",
+      "siteName": "Kansanshi Copper-Gold Mine",
       "identity": {
         "countryIso3": "ZMB",
         "countryName": "Zambia",
-        "siteType": "OPEN_PIT_COPPER_MINE",
+        "siteType": "OPEN_PIT_COPPER_GOLD_MINE",
         "resourceTypeId": "copper",
-        "resourceName": "Copper",
+        "resourceName": "Copper with gold by-product",
         "ontologyKey": "COPPER",
         "aliases": []
       },
       "location": {
         "countryName": "Zambia",
-        "adminRegion": "North-Western Province",
-        "locality": "North-Western Province",
+        "adminRegion": "Solwezi, North-Western Province",
+        "locality": "Solwezi, North-Western Province",
         "coordinates": {
-          "lat": -12.25,
-          "lng": 25.85
+          "lat": -12.1,
+          "lng": 26.43
         },
         "coordinateStatus": "REGIONAL_APPROXIMATION",
-        "coordinateAuthority": "REGIONAL LOCATION REPORTED BY SOURCE; COORDINATE IS APPROXIMATE, NOT SURVEY GRADE",
+        "coordinateAuthority": "Source-located region; strategic map coordinate is approximate, not survey grade",
         "coordinatePrecision": "REGIONAL_APPROXIMATION",
         "countryBoundaryKey": "ZMB"
       },
       "ownership": {
-        "owner": "Barrick",
-        "operator": "Barrick",
-        "ownerEvidenceStatus": "SOURCE_REPORTED_NOT_INDEPENDENTLY_RECONCILED",
-        "operatorEvidenceStatus": "SOURCE_REPORTED_NOT_INDEPENDENTLY_RECONCILED",
+        "owner": "First Quantum Minerals and Zambian state-linked interest; verify current equity shares",
+        "operator": "First Quantum Minerals / Kansanshi Mining Plc",
+        "ownerEvidenceStatus": "SOURCE_REPORTED_REQUIRES_CURRENT_FILING_RECONCILIATION",
+        "operatorEvidenceStatus": "SOURCE_REPORTED_PRIMARY",
         "authority": "SOURCE_REFERENCE_WITH_CURRENT_STATUS_CAVEAT",
         "equityControlCountry": "ZMB",
-        "operatorContractId": "OPCONTRACT_SITE_ZMB_lumwana_copper_mine"
+        "operatorContractId": "OPCONTRACT_SITE_ZMB_kansanshi_copper_mine"
       },
       "operation": {
-        "status": "OPERATING_AS_REPORTED_BY_OPERATOR",
-        "operationalStatus": "OPERATING_AS_REPORTED_BY_OPERATOR",
+        "status": "OPERATING_AS_REPORTED_JANUARY_2026",
+        "operationalStatus": "OPERATING_AS_REPORTED_JANUARY_2026",
         "extractionMethod": "OPEN_PIT_COPPER_MINING_AND_CONCENTRATION",
         "extractionEligibility": "SIMULATED_GAMEPLAY_EXECUTABLE_SUBJECT_TO_RUNTIME_GATES",
         "commercialExtraction": true,
         "siteCommissioningLevel": 0,
         "mineLevel": 0,
-        "statusAuthority": "SOURCE_REPORTED_REAL_WORLD_STATUS; SIMULATION_STATUS_AND_PLAYER_COMMISSIONING_ARE_SEPARATE",
-        "realWorldStatus": "OPERATING_AS_REPORTED_BY_OPERATOR",
+        "statusAuthority": "Source-reported status is separate from simulated player commissioning",
+        "realWorldStatus": "OPERATING_AS_REPORTED_JANUARY_2026",
         "gameplayConstructionAllowed": true
       },
       "processing": {
         "upstreamProcess": "OPEN_PIT_COPPER_MINING_AND_CONCENTRATION",
         "midstreamProcess": "COMMODITY_SPECIFIC_BENEFICIATION_AND_GRADE_CONTROL",
         "refinedOutputs": [
-          "Copper"
+          "copper concentrate",
+          "gold doré"
         ],
         "downstreamSectors": [
-          "metals",
-          "manufacturing",
-          "chemicals"
+          "smelting",
+          "electrical wiring",
+          "power grids",
+          "industrial alloys"
         ]
       },
       "logistics": {
@@ -5611,9 +5707,9 @@
         "factoryRouteStatus": "REQUIRES_FACTORY_COMPATIBILITY_CHECK",
         "routeStatus": "REGIONAL_ROUTE_TO_BE_PLANNED",
         "transport": {
-          "routeId": "ROUTE_SITE_ZMB_lumwana_copper_mine_RAW_TO_FACTORY",
+          "routeId": "ROUTE_SITE_ZMB_kansanshi_copper_mine_RAW_TO_FACTORY",
           "routeType": "ROAD_RAIL",
-          "originSiteId": "SITE_ZMB_lumwana_copper_mine",
+          "originSiteId": "SITE_ZMB_kansanshi_copper_mine",
           "originCountryId": "ZMB",
           "warehouseId": "WH-ZMB-RAW",
           "destinationFactoryId": "AUTO_SELECT_COMPATIBLE_FACTORY",
@@ -5634,15 +5730,16 @@
           "quantity": null,
           "unit": "TONNES_ORE",
           "status": "UNOBSERVED",
-          "basis": "No verified current site-specific reserve figure attached in this additive batch"
+          "basis": "No measured site reserve promoted unless supported by site-specific source fact"
         },
         "production": {
-          "annual": null,
+          "annual": 181183,
           "annualUnit": "TONNES_PER_YEAR",
           "rate": null,
           "unit": "TONNES_PER_DAY",
-          "status": "UNOBSERVED",
-          "basis": "No current site-level output figure assumed"
+          "status": "REPORTED",
+          "basis": "First Quantum reported Kansanshi produced 181,183 tonnes of copper in 2025",
+          "year": 2025
         },
         "grade": {
           "value": null,
@@ -5672,39 +5769,40 @@
           "status": "UNOBSERVED"
         },
         "quantitativeProvenance": {
-          "authority": "REAL_SITE_IDENTITY_WITH_GAPS_PRESERVED",
+          "authority": "SOURCE_REPORTED_IDENTITY_AND_VERIFIED_METRICS_WHEN_AVAILABLE",
           "measuredReservePromoted": false,
           "simulatedReserveSeparate": true,
           "sourceUrls": [
-            "https://www.barrick.com/English/operations/lumwana/default.aspx"
+            "https://www.first-quantum.com/news/first-quantum-minerals-announces-2025-preliminary-production-and-2026-2028-guidance/",
+            "https://www.first-quantum.com/news/first-quantum-minerals-reports-fourth-quarter-2025-results/"
           ],
           "accessed": "2026-10-20"
         },
         "completeness": {
           "reserve": "UNOBSERVED",
-          "production": "UNOBSERVED",
+          "production": "REPORTED",
           "grade": "UNOBSERVED",
           "recovery": "UNOBSERVED",
           "throughput": "UNOBSERVED",
           "purity": "UNOBSERVED",
-          "overall": "IDENTITY_AND_GAMEPLAY_SEED_ONLY"
+          "overall": "PARTIAL"
         }
       },
       "reserve": {
-        "quantity": 470000000,
+        "quantity": 510000000,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
-        "basis": "MINEPLAY_GAMEPLAY_SEED_ONLY_NOT_A_GEOLOGICAL_RESERVE",
+        "basis": "MINEPLAY_SCENARIO_SEED_ONLY_NOT_A_GEOLOGICAL_RESERVE",
         "authority": "SIMULATION_SCENARIO_ONLY",
         "generatedAt": "2026-10-20"
       },
       "simulation": {
         "simulationOnly": true,
         "reserve": {
-          "quantity": 470000000,
+          "quantity": 510000000,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
-          "basis": "MINEPLAY_GAMEPLAY_SEED_ONLY_NOT_A_GEOLOGICAL_RESERVE",
+          "basis": "MINEPLAY_SCENARIO_SEED_ONLY_NOT_A_GEOLOGICAL_RESERVE",
           "authority": "SIMULATION_SCENARIO_ONLY",
           "generatedAt": "2026-10-20"
         },
@@ -5719,7 +5817,7 @@
         "recovery": 0.72,
         "transportRoute": [
           {
-            "routeId": "SIM_ROUTE:ZMB:SITE_ZMB_lumwana_copper_mine",
+            "routeId": "SIM_ROUTE:ZMB:SITE_ZMB_kansanshi_copper_mine",
             "mode": "truck",
             "transportMode": "truck",
             "distanceKm": null,
@@ -5755,33 +5853,52 @@
         "sourceStatusIsNotGameplayCommissioning": true
       },
       "sourceReference": {
-        "sourcePath": "https://www.barrick.com/English/operations/lumwana/default.aspx",
-        "sourceType": "OPERATOR_OR_COMPANY_PRIMARY",
+        "sourcePath": "https://www.first-quantum.com/news/first-quantum-minerals-announces-2025-preliminary-production-and-2026-2028-guidance/",
+        "sourceType": "OPERATOR_PRODUCTION_UPDATE",
         "accessed": "2026-10-20",
         "facts": {
-          "operatorMineProfileAvailable": true
+          "reportedCopperProduction2025Tonnes": 181183,
+          "reportedCopperProductionGuidance2026Tonnes": [
+            175000,
+            205000
+          ],
+          "s3CommercialProductionDeclaredOn": "2025-12-01",
+          "goldIsImportantByProduct": true
         },
-        "statusNote": "Real-world identity and source-reported status are distinct from this game's simulated reserves, production and player-owned assets."
+        "statusNote": "Reported data and simulation-only reserve seed are kept separate."
       },
       "sources": [
         {
-          "url": "https://www.barrick.com/English/operations/lumwana/default.aspx",
-          "sourceType": "OPERATOR_OR_COMPANY_PRIMARY",
+          "url": "https://www.first-quantum.com/news/first-quantum-minerals-announces-2025-preliminary-production-and-2026-2028-guidance/",
+          "sourceType": "OPERATOR_PRODUCTION_UPDATE",
           "accessed": "2026-10-20",
-          "scope": "site_identity_location_commodity_status_and_stated_operational_context"
+          "scope": "site_identity_location_operational_context_and_reported_metrics"
+        },
+        {
+          "url": "https://www.first-quantum.com/news/first-quantum-minerals-reports-fourth-quarter-2025-results/",
+          "sourceType": "GOVERNMENT_OR_SECONDARY_SOURCE",
+          "accessed": "2026-10-20",
+          "scope": "site_identity_location_operational_context_and_reported_metrics"
         }
       ],
       "observedFacts": {
-        "reportedStatus": "OPERATING_AS_REPORTED_BY_OPERATOR",
-        "owner": "Barrick",
-        "operator": "Barrick",
-        "resource": "Copper",
-        "region": "North-Western Province",
+        "reportedStatus": "OPERATING_AS_REPORTED_JANUARY_2026",
+        "owner": "First Quantum Minerals and Zambian state-linked interest; verify current equity shares",
+        "operator": "First Quantum Minerals / Kansanshi Mining Plc",
+        "resource": "Copper with gold by-product",
+        "region": "Solwezi, North-Western Province",
         "facts": {
-          "operatorMineProfileAvailable": true
+          "reportedCopperProduction2025Tonnes": 181183,
+          "reportedCopperProductionGuidance2026Tonnes": [
+            175000,
+            205000
+          ],
+          "s3CommercialProductionDeclaredOn": "2025-12-01",
+          "goldIsImportantByProduct": true
         },
         "authority": "SOURCE_REPORTED_NOT_FULLY_RECONCILED"
-      }
+      },
+      "changeNote": "Replaced a duplicate ID from a legacy gameplay pack with a distinct source-referenced site."
     },
     {
       "schemaVersion": "1.0.0",
@@ -7960,61 +8077,62 @@
     },
     {
       "schemaVersion": "1.0.0",
-      "siteId": "SITE_MNG_tavan_tolgoi_coal_mine",
+      "siteId": "SITE_MNG_baganuur_coal_mine",
       "countryId": "MNG",
-      "siteName": "Tavan Tolgoi Coal Mine",
+      "siteName": "Baganuur Coal Mine",
       "identity": {
         "countryIso3": "MNG",
         "countryName": "Mongolia",
-        "siteType": "COAL_MINE_COMPLEX",
+        "siteType": "OPEN_PIT_LIGNITE_MINE",
         "resourceTypeId": "coal",
-        "resourceName": "Coal",
+        "resourceName": "Brown coal / thermal coal",
         "ontologyKey": "COAL",
         "aliases": []
       },
       "location": {
         "countryName": "Mongolia",
-        "adminRegion": "Tsogttsetsii, Umnugovi Province",
-        "locality": "Tsogttsetsii, Umnugovi Province",
+        "adminRegion": "Baganuur District, Ulaanbaatar",
+        "locality": "Baganuur District, Ulaanbaatar",
         "coordinates": {
-          "lat": 43.58,
-          "lng": 105.27
+          "lat": 47.78,
+          "lng": 108.37
         },
         "coordinateStatus": "REGIONAL_APPROXIMATION",
-        "coordinateAuthority": "SOURCE-LOCATED REGION; APPROXIMATE COORDINATE FOR STRATEGIC MAP NOT SURVEY GRADE",
+        "coordinateAuthority": "Source-located region; strategic map coordinate is approximate, not survey grade",
         "coordinatePrecision": "REGIONAL_APPROXIMATION",
         "countryBoundaryKey": "MNG"
       },
       "ownership": {
-        "owner": "Mongolian state-owned company",
-        "operator": "Erdenes Tavan Tolgoi",
+        "owner": "State participation reported through Mongolia's state holding structure; verify current shares in filings",
+        "operator": "Baganuur JSC",
         "ownerEvidenceStatus": "SOURCE_REPORTED_REQUIRES_CURRENT_FILING_RECONCILIATION",
-        "operatorEvidenceStatus": "SOURCE_REPORTED_PRIMARY_OR_PORTFOLIO",
+        "operatorEvidenceStatus": "SOURCE_REPORTED_PRIMARY",
         "authority": "SOURCE_REFERENCE_WITH_CURRENT_STATUS_CAVEAT",
         "equityControlCountry": "MNG",
-        "operatorContractId": "OPCONTRACT_SITE_MNG_tavan_tolgoi_coal_mine"
+        "operatorContractId": "OPCONTRACT_SITE_MNG_baganuur_coal_mine"
       },
       "operation": {
-        "status": "OPERATING_AS_REPORTED_OPERATOR_CONTEXT",
-        "operationalStatus": "OPERATING_AS_REPORTED_OPERATOR_CONTEXT",
-        "realWorldStatus": "OPERATING_AS_REPORTED_OPERATOR_CONTEXT",
-        "extractionMethod": "OPEN_PIT_COAL_MINING_AND_HAULAGE",
+        "status": "OPERATING_AS_REPORTED_OPERATOR_2026",
+        "operationalStatus": "OPERATING_AS_REPORTED_OPERATOR_2026",
+        "realWorldStatus": "OPERATING_AS_REPORTED_OPERATOR_2026",
+        "extractionMethod": "OPEN_PIT_BROWN_COAL_MINING_AND_HAULAGE",
         "extractionEligibility": "SIMULATED_GAMEPLAY_EXECUTABLE_SUBJECT_TO_RUNTIME_GATES",
         "commercialExtraction": true,
         "siteCommissioningLevel": 0,
         "mineLevel": 0,
-        "statusAuthority": "SOURCE_REPORTED_IDENTITY_AND_STATUS; PLAYER_SIMULATION_STATE_REMAINS_SEPARATE",
+        "statusAuthority": "Source-reported status is separate from simulated player commissioning",
         "gameplayConstructionAllowed": true
       },
       "processing": {
-        "upstreamProcess": "OPEN_PIT_COAL_MINING_AND_HAULAGE",
+        "upstreamProcess": "OPEN_PIT_BROWN_COAL_MINING_AND_HAULAGE",
         "midstreamProcess": "COMMODITY_SPECIFIC_BENEFICIATION_AND_GRADE_CONTROL",
         "refinedOutputs": [
-          "coal products"
+          "thermal coal"
         ],
         "downstreamSectors": [
-          "power",
-          "steelmaking"
+          "power generation",
+          "district heating",
+          "industrial boilers"
         ]
       },
       "logistics": {
@@ -8024,9 +8142,9 @@
         "factoryRouteStatus": "REQUIRES_FACTORY_COMPATIBILITY_CHECK",
         "routeStatus": "REGIONAL_ROUTE_TO_BE_PLANNED",
         "transport": {
-          "routeId": "ROUTE_SITE_MNG_tavan_tolgoi_coal_mine_RAW_TO_FACTORY",
+          "routeId": "ROUTE_SITE_MNG_baganuur_coal_mine_RAW_TO_FACTORY",
           "routeType": "ROAD_RAIL",
-          "originSiteId": "SITE_MNG_tavan_tolgoi_coal_mine",
+          "originSiteId": "SITE_MNG_baganuur_coal_mine",
           "originCountryId": "MNG",
           "warehouseId": "WH-MNG-RAW",
           "destinationFactoryId": "AUTO_SELECT_COMPATIBLE_FACTORY",
@@ -8047,7 +8165,7 @@
           "quantity": null,
           "unit": "TONNES_ORE",
           "status": "UNOBSERVED",
-          "basis": "No reconciled site-specific reserve estimate promoted"
+          "basis": "No measured site reserve promoted unless supported by site-specific source fact"
         },
         "production": {
           "annual": null,
@@ -8055,7 +8173,7 @@
           "rate": null,
           "unit": "TONNES_PER_DAY",
           "status": "UNOBSERVED",
-          "basis": "Current reported facts are preserved separately and not promoted into quantitative authority"
+          "basis": "No reconciled quantitative production metric promoted unless verified"
         },
         "grade": {
           "value": null,
@@ -8078,18 +8196,21 @@
           "status": "UNOBSERVED"
         },
         "capacity": {
-          "nominal": null,
+          "nominal": 4000000,
           "minimum": null,
           "maximum": null,
-          "unit": "TONNES_PER_DAY",
-          "status": "UNOBSERVED"
+          "unit": "TONNES_PER_YEAR",
+          "status": "REPORTED",
+          "period": "MINE_EXTRACTION_CAPACITY",
+          "basis": "Baganuur JSC states 4.0 Mt/year annual coal extraction capacity"
         },
         "quantitativeProvenance": {
-          "authority": "SOURCE_REPORTED_IDENTITY_WITH_UNKNOWN_MEASUREMENTS_PRESERVED",
+          "authority": "SOURCE_REPORTED_IDENTITY_AND_VERIFIED_METRICS_WHEN_AVAILABLE",
           "measuredReservePromoted": false,
           "simulatedReserveSeparate": true,
           "sourceUrls": [
-            "https://ett.mn/"
+            "https://baganuurmine.mn/",
+            "https://baganuurmine.mn/%D2%AF%D0%B9%D0%BB%D1%87%D0%B8%D0%BB%D0%B3%D1%8D%D1%8D%D0%BD%D0%B8%D0%B9-%D1%82%D3%A9%D1%80%D3%A9%D0%BB/"
           ],
           "accessed": "2026-10-20"
         },
@@ -8100,11 +8221,11 @@
           "recovery": "UNOBSERVED",
           "throughput": "UNOBSERVED",
           "purity": "UNOBSERVED",
-          "overall": "IDENTITY_AND_GAMEPLAY_SEED_ONLY"
+          "overall": "PARTIAL"
         }
       },
       "reserve": {
-        "quantity": 2100000000,
+        "quantity": 400000000,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
         "basis": "MINEPLAY_SCENARIO_SEED_ONLY_NOT_A_GEOLOGICAL_RESERVE",
@@ -8114,7 +8235,7 @@
       "simulation": {
         "simulationOnly": true,
         "reserve": {
-          "quantity": 2100000000,
+          "quantity": 400000000,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
           "basis": "MINEPLAY_SCENARIO_SEED_ONLY_NOT_A_GEOLOGICAL_RESERVE",
@@ -8132,7 +8253,7 @@
         "recovery": 0.72,
         "transportRoute": [
           {
-            "routeId": "SIM_ROUTE:MNG:SITE_MNG_tavan_tolgoi_coal_mine",
+            "routeId": "SIM_ROUTE:MNG:SITE_MNG_baganuur_coal_mine",
             "mode": "truck",
             "transportMode": "truck",
             "distanceKm": null,
@@ -8168,29 +8289,44 @@
         "sourceStatusIsNotGameplayCommissioning": true
       },
       "sourceReference": {
-        "sourcePath": "https://ett.mn/",
-        "sourceType": "STATE_OWNED_OPERATOR_PRIMARY",
+        "sourcePath": "https://baganuurmine.mn/",
+        "sourceType": "OPERATOR_PRIMARY",
         "accessed": "2026-10-20",
-        "facts": {},
-        "statusNote": "Source identity/status is separate from simulated reserve and player-owned assets."
+        "facts": {
+          "reportedAnnualCoalExtractionCapacityTonnes": 4000000,
+          "operatorSourceNotesActualExtractionCanReachApprox4900000TonnesDependingOnDomesticDemand": true,
+          "capacityIsNotActualAnnualOutput": true
+        },
+        "statusNote": "Reported data and simulation-only reserve seed are kept separate."
       },
       "sources": [
         {
-          "url": "https://ett.mn/",
-          "sourceType": "STATE_OWNED_OPERATOR_PRIMARY",
+          "url": "https://baganuurmine.mn/",
+          "sourceType": "OPERATOR_PRIMARY",
           "accessed": "2026-10-20",
-          "scope": "site_identity_commodity_location_and_source_reported_status"
+          "scope": "site_identity_location_operational_context_and_reported_metrics"
+        },
+        {
+          "url": "https://baganuurmine.mn/%D2%AF%D0%B9%D0%BB%D1%87%D0%B8%D0%BB%D0%B3%D1%8D%D1%8D%D0%BD%D0%B8%D0%B9-%D1%82%D3%A9%D1%80%D3%A9%D0%BB/",
+          "sourceType": "GOVERNMENT_OR_SECONDARY_SOURCE",
+          "accessed": "2026-10-20",
+          "scope": "site_identity_location_operational_context_and_reported_metrics"
         }
       ],
       "observedFacts": {
-        "reportedStatus": "OPERATING_AS_REPORTED_OPERATOR_CONTEXT",
-        "owner": "Mongolian state-owned company",
-        "operator": "Erdenes Tavan Tolgoi",
-        "resource": "Coal",
-        "region": "Tsogttsetsii, Umnugovi Province",
-        "facts": {},
+        "reportedStatus": "OPERATING_AS_REPORTED_OPERATOR_2026",
+        "owner": "State participation reported through Mongolia's state holding structure; verify current shares in filings",
+        "operator": "Baganuur JSC",
+        "resource": "Brown coal / thermal coal",
+        "region": "Baganuur District, Ulaanbaatar",
+        "facts": {
+          "reportedAnnualCoalExtractionCapacityTonnes": 4000000,
+          "operatorSourceNotesActualExtractionCanReachApprox4900000TonnesDependingOnDomesticDemand": true,
+          "capacityIsNotActualAnnualOutput": true
+        },
         "authority": "SOURCE_REPORTED_NOT_FULLY_RECONCILED"
-      }
+      },
+      "changeNote": "Replaced a duplicate ID from a legacy gameplay pack with a distinct source-referenced site."
     },
     {
       "schemaVersion": "1.0.0",
@@ -10380,63 +10516,65 @@
     },
     {
       "schemaVersion": "1.0.0",
-      "siteId": "SITE_PNG_porgera_gold_mine",
+      "siteId": "SITE_PNG_ok_tedi_copper_gold_mine",
       "countryId": "PNG",
-      "siteName": "Porgera Gold Mine",
+      "siteName": "Ok Tedi Copper-Gold Mine",
       "identity": {
         "countryIso3": "PNG",
         "countryName": "Papua New Guinea",
-        "siteType": "OPEN_PIT_AND_UNDERGROUND_GOLD_MINE",
-        "resourceTypeId": "gold",
-        "resourceName": "Gold",
-        "ontologyKey": "GOLD",
+        "siteType": "OPEN_PIT_COPPER_GOLD_MINE",
+        "resourceTypeId": "copper",
+        "resourceName": "Copper with gold and silver by-products",
+        "ontologyKey": "COPPER",
         "aliases": []
       },
       "location": {
         "countryName": "Papua New Guinea",
-        "adminRegion": "Porgera, Enga Province",
-        "locality": "Porgera, Enga Province",
+        "adminRegion": "Mount Fubilan, Western Province, near Tabubil",
+        "locality": "Mount Fubilan, Western Province, near Tabubil",
         "coordinates": {
-          "lat": -5.46,
-          "lng": 143.12
+          "lat": -5.2,
+          "lng": 141.15
         },
         "coordinateStatus": "REGIONAL_APPROXIMATION",
-        "coordinateAuthority": "SOURCE-LOCATED REGION; APPROXIMATE COORDINATE FOR STRATEGIC MAP NOT SURVEY GRADE",
+        "coordinateAuthority": "Source-located region; strategic map coordinate is approximate, not survey grade",
         "coordinatePrecision": "REGIONAL_APPROXIMATION",
         "countryBoundaryKey": "PNG"
       },
       "ownership": {
-        "owner": "Joint venture with State and landowner participation; verify current equity and licence records",
-        "operator": "Porgera Joint Venture / Barrick Niugini",
+        "owner": "Papua New Guinea's 100% nationally owned Ok Tedi Mining Limited",
+        "operator": "Ok Tedi Mining Limited",
         "ownerEvidenceStatus": "SOURCE_REPORTED_REQUIRES_CURRENT_FILING_RECONCILIATION",
-        "operatorEvidenceStatus": "SOURCE_REPORTED_PRIMARY_OR_PORTFOLIO",
+        "operatorEvidenceStatus": "SOURCE_REPORTED_PRIMARY",
         "authority": "SOURCE_REFERENCE_WITH_CURRENT_STATUS_CAVEAT",
         "equityControlCountry": "PNG",
-        "operatorContractId": "OPCONTRACT_SITE_PNG_porgera_gold_mine"
+        "operatorContractId": "OPCONTRACT_SITE_PNG_ok_tedi_copper_gold_mine"
       },
       "operation": {
-        "status": "RESTARTED_AND_OPERATING_AS_REPORTED_2024_2026_CONTEXT",
-        "operationalStatus": "RESTARTED_AND_OPERATING_AS_REPORTED_2024_2026_CONTEXT",
-        "realWorldStatus": "RESTARTED_AND_OPERATING_AS_REPORTED_2024_2026_CONTEXT",
-        "extractionMethod": "OPEN_PIT_AND_UNDERGROUND_GOLD_MINING",
+        "status": "OPERATING_AS_REPORTED_JANUARY_2026",
+        "operationalStatus": "OPERATING_AS_REPORTED_JANUARY_2026",
+        "realWorldStatus": "OPERATING_AS_REPORTED_JANUARY_2026",
+        "extractionMethod": "OPEN_PIT_COPPER_GOLD_MINING_AND_CONCENTRATION",
         "extractionEligibility": "SIMULATED_GAMEPLAY_EXECUTABLE_SUBJECT_TO_RUNTIME_GATES",
         "commercialExtraction": true,
         "siteCommissioningLevel": 0,
         "mineLevel": 0,
-        "statusAuthority": "SOURCE_REPORTED_IDENTITY_AND_STATUS; PLAYER_SIMULATION_STATE_REMAINS_SEPARATE",
+        "statusAuthority": "Source-reported status is separate from simulated player commissioning",
         "gameplayConstructionAllowed": true
       },
       "processing": {
-        "upstreamProcess": "OPEN_PIT_AND_UNDERGROUND_GOLD_MINING",
+        "upstreamProcess": "OPEN_PIT_COPPER_GOLD_MINING_AND_CONCENTRATION",
         "midstreamProcess": "COMMODITY_SPECIFIC_BENEFICIATION_AND_GRADE_CONTROL",
         "refinedOutputs": [
-          "gold concentrate",
-          "doré"
+          "copper concentrate",
+          "gold doré",
+          "silver by-product"
         ],
         "downstreamSectors": [
-          "bullion",
-          "jewellery",
-          "electronics"
+          "copper smelting",
+          "electrical wiring",
+          "power grids",
+          "industrial alloys"
         ]
       },
       "logistics": {
@@ -10446,9 +10584,9 @@
         "factoryRouteStatus": "REQUIRES_FACTORY_COMPATIBILITY_CHECK",
         "routeStatus": "REGIONAL_ROUTE_TO_BE_PLANNED",
         "transport": {
-          "routeId": "ROUTE_SITE_PNG_porgera_gold_mine_RAW_TO_FACTORY",
+          "routeId": "ROUTE_SITE_PNG_ok_tedi_copper_gold_mine_RAW_TO_FACTORY",
           "routeType": "ROAD_RAIL",
-          "originSiteId": "SITE_PNG_porgera_gold_mine",
+          "originSiteId": "SITE_PNG_ok_tedi_copper_gold_mine",
           "originCountryId": "PNG",
           "warehouseId": "WH-PNG-RAW",
           "destinationFactoryId": "AUTO_SELECT_COMPATIBLE_FACTORY",
@@ -10469,15 +10607,16 @@
           "quantity": null,
           "unit": "TONNES_ORE",
           "status": "UNOBSERVED",
-          "basis": "No reconciled site-specific reserve estimate promoted"
+          "basis": "No measured site reserve promoted unless supported by site-specific source fact"
         },
         "production": {
-          "annual": null,
-          "annualUnit": "TROY_OUNCES_PER_YEAR",
+          "annual": 106018,
+          "annualUnit": "TONNES_PER_YEAR",
           "rate": null,
           "unit": "TONNES_PER_DAY",
-          "status": "UNOBSERVED",
-          "basis": "Current reported facts are preserved separately and not promoted into quantitative authority"
+          "status": "REPORTED",
+          "basis": "Ok Tedi reported 106,018 tonnes of copper produced in 2025",
+          "year": 2025
         },
         "grade": {
           "value": null,
@@ -10507,26 +10646,26 @@
           "status": "UNOBSERVED"
         },
         "quantitativeProvenance": {
-          "authority": "SOURCE_REPORTED_IDENTITY_WITH_UNKNOWN_MEASUREMENTS_PRESERVED",
+          "authority": "SOURCE_REPORTED_IDENTITY_AND_VERIFIED_METRICS_WHEN_AVAILABLE",
           "measuredReservePromoted": false,
           "simulatedReserveSeparate": true,
           "sourceUrls": [
-            "https://www.barrick.com/operations/porgera/default.aspx"
+            "https://www.oktedi.com/2026/01/22/ok-tedi-reports-strong-2025-performance-results-for-png/"
           ],
           "accessed": "2026-10-20"
         },
         "completeness": {
           "reserve": "UNOBSERVED",
-          "production": "UNOBSERVED",
+          "production": "REPORTED",
           "grade": "UNOBSERVED",
           "recovery": "UNOBSERVED",
           "throughput": "UNOBSERVED",
           "purity": "UNOBSERVED",
-          "overall": "IDENTITY_AND_GAMEPLAY_SEED_ONLY"
+          "overall": "PARTIAL"
         }
       },
       "reserve": {
-        "quantity": 79000000,
+        "quantity": 350000000,
         "unit": "TONNES_ORE",
         "status": "SIMULATED",
         "basis": "MINEPLAY_SCENARIO_SEED_ONLY_NOT_A_GEOLOGICAL_RESERVE",
@@ -10536,7 +10675,7 @@
       "simulation": {
         "simulationOnly": true,
         "reserve": {
-          "quantity": 79000000,
+          "quantity": 350000000,
           "unit": "TONNES_ORE",
           "status": "SIMULATED",
           "basis": "MINEPLAY_SCENARIO_SEED_ONLY_NOT_A_GEOLOGICAL_RESERVE",
@@ -10554,7 +10693,7 @@
         "recovery": 0.72,
         "transportRoute": [
           {
-            "routeId": "SIM_ROUTE:PNG:SITE_PNG_porgera_gold_mine",
+            "routeId": "SIM_ROUTE:PNG:SITE_PNG_ok_tedi_copper_gold_mine",
             "mode": "truck",
             "transportMode": "truck",
             "distanceKm": null,
@@ -10570,7 +10709,7 @@
         "factoryBinding": {
           "factoryId": null,
           "countryId": "PNG",
-          "inputResourceId": "gold",
+          "inputResourceId": "copper",
           "status": "REQUIRES_COMPATIBLE_FACTORY_BOOTSTRAP",
           "authority": "RUNTIME"
         },
@@ -10590,29 +10729,40 @@
         "sourceStatusIsNotGameplayCommissioning": true
       },
       "sourceReference": {
-        "sourcePath": "https://www.barrick.com/operations/porgera/default.aspx",
-        "sourceType": "OPERATOR_PRIMARY",
+        "sourcePath": "https://www.oktedi.com/2026/01/22/ok-tedi-reports-strong-2025-performance-results-for-png/",
+        "sourceType": "STATE_OWNED_OPERATOR_PRODUCTION_UPDATE",
         "accessed": "2026-10-20",
-        "facts": {},
-        "statusNote": "Source identity/status is separate from simulated reserve and player-owned assets."
+        "facts": {
+          "reportedCopperProduction2025Tonnes": 106018,
+          "reportedGoldProduction2025TroyOunces": 298350,
+          "reportedSilverProduction2025TroyOunces": 1008346,
+          "nationalOwnershipStatus": "100% nationally owned"
+        },
+        "statusNote": "Reported data and simulation-only reserve seed are kept separate."
       },
       "sources": [
         {
-          "url": "https://www.barrick.com/operations/porgera/default.aspx",
-          "sourceType": "OPERATOR_PRIMARY",
+          "url": "https://www.oktedi.com/2026/01/22/ok-tedi-reports-strong-2025-performance-results-for-png/",
+          "sourceType": "STATE_OWNED_OPERATOR_PRODUCTION_UPDATE",
           "accessed": "2026-10-20",
-          "scope": "site_identity_commodity_location_and_source_reported_status"
+          "scope": "site_identity_location_operational_context_and_reported_metrics"
         }
       ],
       "observedFacts": {
-        "reportedStatus": "RESTARTED_AND_OPERATING_AS_REPORTED_2024_2026_CONTEXT",
-        "owner": "Joint venture with State and landowner participation; verify current equity and licence records",
-        "operator": "Porgera Joint Venture / Barrick Niugini",
-        "resource": "Gold",
-        "region": "Porgera, Enga Province",
-        "facts": {},
+        "reportedStatus": "OPERATING_AS_REPORTED_JANUARY_2026",
+        "owner": "Papua New Guinea's 100% nationally owned Ok Tedi Mining Limited",
+        "operator": "Ok Tedi Mining Limited",
+        "resource": "Copper with gold and silver by-products",
+        "region": "Mount Fubilan, Western Province, near Tabubil",
+        "facts": {
+          "reportedCopperProduction2025Tonnes": 106018,
+          "reportedGoldProduction2025TroyOunces": 298350,
+          "reportedSilverProduction2025TroyOunces": 1008346,
+          "nationalOwnershipStatus": "100% nationally owned"
+        },
         "authority": "SOURCE_REPORTED_NOT_FULLY_RECONCILED"
-      }
+      },
+      "changeNote": "Replaced a duplicate ID from a legacy gameplay pack with a distinct source-referenced site."
     }
   ],
   "updatedAt": "2026-10-20",
@@ -10632,6 +10782,37 @@
         "with": "SITE_PER_toromocho_copper_mine"
       }
     ],
-    "sourceIntegrityPolicy": "No supplement record may reuse a siteId in the authoritative reserve simulation; measured reserve and production remain unobserved unless sourced."
+    "sourceIntegrityPolicy": "No supplement record may reuse a siteId in the authoritative reserve simulation; measured reserve and production remain unobserved unless sourced.",
+    "legacyDuplicateReplacements": [
+      {
+        "replaced": "SITE_SEN_mako_gold_mine",
+        "with": "SITE_SEN_boto_gold_mine"
+      },
+      {
+        "replaced": "SITE_ZWE_unki_platinum_mine",
+        "with": "SITE_ZWE_freda_rebecca_gold_mine"
+      },
+      {
+        "replaced": "SITE_TZA_bulyanhulu_gold_mine",
+        "with": "SITE_TZA_buckreef_gold_mine"
+      },
+      {
+        "replaced": "SITE_MOZ_moma_heavy_mineral_sands_mine",
+        "with": "SITE_MOZ_balama_graphite_mine"
+      },
+      {
+        "replaced": "SITE_ZMB_lumwana_copper_mine",
+        "with": "SITE_ZMB_kansanshi_copper_mine"
+      },
+      {
+        "replaced": "SITE_MNG_tavan_tolgoi_coal_mine",
+        "with": "SITE_MNG_baganuur_coal_mine"
+      },
+      {
+        "replaced": "SITE_PNG_porgera_gold_mine",
+        "with": "SITE_PNG_ok_tedi_copper_gold_mine"
+      }
+    ],
+    "evidencePolicy": "Only source-reported quantitative values are marked REPORTED; gameplay seed reserves remain SIMULATED and separate."
   }
 }
