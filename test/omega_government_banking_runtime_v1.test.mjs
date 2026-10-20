@@ -257,3 +257,62 @@ test('a cancelled trade settlement ID cannot be reused for fresh debits', async 
   assert.equal(retry.code, 'SETTLEMENT_ID_FINALIZED');
   assert.equal(r.bank.getState().ledger.filter(x => x.transactionId === 'FINALIZED-TRADE-1' && x.status === 'SETTLED').length, 0);
 });
+
+test('World Bank liquidity funding requires consent token, protects lender reserves, and settles interest exactly once', async () => {
+  const r = makeRuntime();
+  await r.bank.init();
+  const funding = r.bank.fundWorldBankLiquidity;
+  assert.equal(typeof funding, 'function');
+  const denied = funding({ action: 'DRAW', countryId: 'NG', contractId: 'WBF-NGA-A', amountUsd: 20, minimumReserveUsd: 100 });
+  assert.equal(denied.ok, false);
+  assert.equal(denied.code, 'INSTITUTION_AUTHORIZATION_REQUIRED');
+
+  const before = r.state.finance.NGA.available;
+  const reserveRejected = funding({
+    authorization: 'OMEGA_WORLD_BANK_LENDING', action: 'DRAW', countryId: 'NG',
+    contractId: 'WBF-NGA-A', amountUsd: 100, minimumReserveUsd: 450
+  });
+  assert.equal(reserveRejected.ok, false);
+  assert.equal(reserveRejected.code, 'LENDER_RESERVE_GUARD');
+  assert.equal(r.state.finance.NGA.available, before);
+
+  const draw = funding({
+    authorization: 'OMEGA_WORLD_BANK_LENDING', action: 'DRAW', countryId: 'NG',
+    contractId: 'WBF-NGA-A', amountUsd: 20, minimumReserveUsd: 400,
+    annualInterestRatePct: 3.5, termYears: 5
+  });
+  assert.equal(draw.ok, true);
+  assert.equal(r.state.finance.NGA.available, before - 20);
+  assert.equal(draw.claim.outstandingPrincipalUsd, 20);
+  const duplicateDraw = funding({
+    authorization: 'OMEGA_WORLD_BANK_LENDING', action: 'DRAW', countryId: 'NG',
+    contractId: 'WBF-NGA-A', amountUsd: 20, minimumReserveUsd: 400,
+    annualInterestRatePct: 3.5, termYears: 5
+  });
+  assert.equal(duplicateDraw.ok, true);
+  assert.equal(duplicateDraw.duplicate, true);
+
+  const accrued = funding({
+    authorization: 'OMEGA_WORLD_BANK_LENDING', action: 'ACCRUE', countryId: 'NG',
+    contractId: 'WBF-NGA-A', accrualId: 'WBF-NGA-A:TURN:2', amountUsd: 5
+  });
+  assert.equal(accrued.ok, true);
+  const accruedDuplicate = funding({
+    authorization: 'OMEGA_WORLD_BANK_LENDING', action: 'ACCRUE', countryId: 'NG',
+    contractId: 'WBF-NGA-A', accrualId: 'WBF-NGA-A:TURN:2', amountUsd: 5
+  });
+  assert.equal(accruedDuplicate.ok, true);
+  assert.equal(accruedDuplicate.duplicate, true);
+  assert.equal(accruedDuplicate.claim.accruedInterestUsd, 5);
+
+  const repayment = funding({
+    authorization: 'OMEGA_WORLD_BANK_LENDING', action: 'REPAY', countryId: 'NG',
+    contractId: 'WBF-NGA-A', amountUsd: 25, principalPaidUsd: 20, interestPaidUsd: 5
+  });
+  assert.equal(repayment.ok, true);
+  assert.equal(r.state.finance.NGA.available, before + 5);
+  assert.equal(repayment.claim.status, 'REPAID');
+  assert.equal(repayment.claim.outstandingPrincipalUsd, 0);
+});
+
+
