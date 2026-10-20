@@ -107,3 +107,14 @@ test('offline app shell caches the country runtime bridge and city records', () 
   assert.match(sw, /\.\/economy\.json/);
   assert.match(sw, /\.\/population\.json/);
 });
+
+test('strategic profile chapter is safely wired into the existing Country IOS', () => {
+  const html = read('index.html');
+  const countryIOS = read('country-ios.js');
+  const bridge = read('omega_country_runtime_data_v1.js');
+  assert.match(countryIOS, /renderChapter13_StrategicProfile/);
+  assert.match(countryIOS, /getStrategicProfile/);
+  assert.match(countryIOS, /case 13:/);
+  assert.match(bridge, /getStrategicProfile/);
+  assert.match(html, /STRATEGIC PROFILE/);
+});
