@@ -1879,6 +1879,8 @@
     diagnostics: diagnostics,
     assessCountry: scoreCountry,
     getCreditHistory: creditHistory,
+    resolveWorldBankCountry: matchProfileForISO,
+    getNegotiationBounds: function (value, purpose) { const assessment = scoreCountry(value); if (!assessment) return null; const b = negotiationBounds(assessment, purpose || 'infrastructure'); return { minimumRatePct: b.minimumRatePct, maximumRatePct: b.maximumRatePct, minimumTermYears: b.minimumTermYears, maximumTermYears: b.maximumTermYears, minimumGraceYears: b.minimumGraceYears, maximumGraceYears: b.maximumGraceYears, base: clone(b.base) }; },
     evaluateAll: evaluateAll,
     refreshWorldBankData: refreshWorldBankData,
     requestLoan: requestLoan,
