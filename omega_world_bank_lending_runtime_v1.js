@@ -1020,7 +1020,7 @@
         loan.arrearsUsd = 0;
         loan.penaltySpreadPct = 0;
         loan.status = loan.outstandingPrincipalUsd <= 0.01 && loan.accruedInterestUsd <= 0.01
-          ? 'REPAID' : (loan.everDefaulted ? 'DEFAULTED' : 'ACTIVE');
+          ? 'REPAID' : (loan.restructuredAtTurn !== undefined && loan.restructuredAtTurn !== null ? 'RESTRUCTURED' : (loan.everDefaulted ? 'DEFAULTED' : 'ACTIVE'));
       }
       cash -= paid;
       totalPaid += paid;
@@ -1039,7 +1039,15 @@
       bank.liquidity.totalRepaymentsReceivedUsd = (finite(bank.liquidity.totalRepaymentsReceivedUsd) || 0) + totalPaid;
       bank.liquidity.lastRepaymentTurn = turn;
     }
-    entries.forEach(entry => bankLedger(entry));
+    entries.forEach(entry => bankLedger(entry, true));
+    const insolvencyState = bank.insolvencyByCountry[codeOf(profile)];
+    if (insolvencyState && ['DEFAULTED', 'INSOLVENCY_REVIEW', 'BANKRUPTCY_PROCEEDING'].includes(String(insolvencyState.status || '').toUpperCase())
+        && loans.every(loan => loan.status === 'REPAID' || (loan.status === 'RESTRUCTURED' && (finite(loan.arrearsUsd) || 0) <= 0.01))) {
+      insolvencyState.status = 'CLEARED';
+      insolvencyState.resolvedTurn = turn;
+      insolvencyState.reason = 'All overdue amounts were cured or moved to an approved simulated restructuring; the new-credit hold was lifted.';
+      bankLedger({ type: 'SOVEREIGN_WORKOUT_HOLD_CLEARED', countryCode: codeOf(profile), countryName: profile.name, turn: turn }, true);
+    }
     return {
       ok: true, paidUsd: round(totalPaid, 2) || 0,
       principalPaidUsd: round(principalPaid, 2) || 0,
@@ -1084,8 +1092,9 @@
     const loan = getLoanList(profile).find(item => item.loanId === loanId && item.status !== 'REPAID');
     if (!loan) return { ok: false, code: 'ACTIVE_LOAN_NOT_FOUND' };
     const overdue = Math.max(0, finite(loan.daysPastDue) || 0);
-    if (overdue < 30 && !['ARREARS', 'DEFAULTED', 'INSOLVENT'].includes(String(loan.status || '').toUpperCase()))
-      return { ok: false, code: 'RESTRUCTURING_NOT_YET_ELIGIBLE', minimumDaysPastDue: 30 };
+    if (overdue < 90 && !['DEFAULTED', 'INSOLVENT'].includes(String(loan.status || '').toUpperCase()))
+      return { ok: false, code: 'RESTRUCTURING_NOT_YET_ELIGIBLE', minimumDaysPastDue: 90,
+        message: 'The simulated mediation window starts after 90 overdue days unless the contract has already defaulted.' };
     const currentRate = Math.max(0.5, finite(loan.annualInterestRatePct) || 0.5);
     const rate = finite(input.annualInterestRatePct) ?? currentRate;
     const term = finite(input.termYears) ?? finite(loan.termYears);
@@ -1615,8 +1624,8 @@
       + '<p><strong>Workout rules:</strong> existing payments continue where possible; automatic new borrowing stays frozen until the restructuring is accepted or overdues are cured.</p></div>' : '';
     const player = playerProfile();
     const canAct = !!player && codeOf(player) === codeOf(profile);
-    const workoutLoan = active.find(loan => Math.max(0, finite(loan.daysPastDue) || 0) >= 30
-      || ['ARREARS', 'DEFAULTED', 'INSOLVENT'].includes(String(loan.status || '').toUpperCase()));
+    const workoutLoan = active.find(loan => Math.max(0, finite(loan.daysPastDue) || 0) >= 90
+      || ['DEFAULTED', 'INSOLVENT'].includes(String(loan.status || '').toUpperCase()));
     let workoutForm = '';
     if (canAct && workoutLoan) {
       const rate = Math.max(0.5, finite(workoutLoan.annualInterestRatePct) || 1);
