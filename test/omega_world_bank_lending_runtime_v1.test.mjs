@@ -241,6 +241,8 @@ test('partner registration, negotiation limits, restructuring and nonblocking re
   const tooLargePartner = api.registerFundingPartner({ countryId: 'BGD', commitmentLimitUsd: 9e9 });
   assert.equal(tooLargePartner.ok, false);
   assert.equal(tooLargePartner.code, 'PARTNER_COMMITMENT_OUT_OF_RANGE');
+  const issue = api.requestLoan({ countryId: 'BGD', amountUsd: 100e6, requestId: 'workout-test-loan' });
+  assert.equal(issue.ok, true);
   const loan = api.getLoans('BGD')[0];
   if (loan) {
     const rawLoan = state.governmentBanking.worldBankLending.loansByCountry.BGD[0];
