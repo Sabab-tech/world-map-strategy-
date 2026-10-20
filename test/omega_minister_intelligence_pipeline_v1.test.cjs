@@ -47,14 +47,32 @@ const minister = {
   memoryState: {},
   effectiveCapability: 84
 };
+const formerMinister = {
+  ...minister,
+  ministerId: 'minister-finance-former',
+  staticProfile: { ...minister.staticProfile, ministerId: 'minister-finance-former', baseName: 'Former Finance Minister' },
+  runtimeState: { ...minister.runtimeState, ministerId: 'minister-finance-former', status: 'FIRED' }
+};
+const replacementMinister = {
+  ...minister,
+  ministerId: 'minister-finance-replacement',
+  staticProfile: { ...minister.staticProfile, ministerId: 'minister-finance-replacement', baseName: 'Replacement Finance Minister' },
+  runtimeState: { ...minister.runtimeState, ministerId: 'minister-finance-replacement', status: 'ACTIVE' }
+};
+let activeMinisterForScope = minister;
 const messages = [];
 const episodes = [];
 const contextUpdates = [];
 const registry = {
   VERSION: 'TEST_CANONICAL_REGISTRY',
-  getMinister(id) { return String(id) === minister.ministerId ? minister : null; },
+  getMinister(id) {
+    if (String(id) === minister.ministerId) return minister;
+    if (String(id) === formerMinister.ministerId) return formerMinister;
+    if (String(id) === replacementMinister.ministerId) return replacementMinister;
+    return null;
+  },
   getActiveMinister(countryId, ministryId) {
-    if (String(countryId) === 'BGD' && String(ministryId) === 'finance' && minister.runtimeState.status === 'ACTIVE') return minister;
+    if (String(countryId) === 'BGD' && String(ministryId) === 'finance' && activeMinisterForScope.runtimeState.status === 'ACTIVE') return activeMinisterForScope;
     return null;
   },
   getRegistry() { return new Map(); },
@@ -111,6 +129,12 @@ assert.equal(pipeline.shouldHandleQuestion({ countryId: 'BGD', ministryId: 'fina
 assert.equal(pipeline.shouldHandleQuestion({ countryId: 'BGD', ministryId: 'finance', ministerId: 'unknown' }, 'What is the budget risk?'), false);
 assert.equal(pipeline.shouldHandleQuestion({ countryId: 'SAU', ministryId: 'foreign_affairs', ministerId: minister.ministerId }, 'Give me an intelligence briefing'), false,
   'A minister assigned to one country/ministry must not answer for another country/ministry.');
+activeMinisterForScope = replacementMinister;
+assert.equal(pipeline.shouldHandleQuestion({ countryId: 'BGD', ministryId: 'finance', ministerId: formerMinister.ministerId }, 'বাজেটের ঝুঁকি কত?'), true,
+  'A stale, inactive minister ID must resolve to the current appointment within the same scope.');
+assert.equal(pipeline.resolveContext({ countryId: 'BGD', ministryId: 'finance', ministerId: formerMinister.ministerId }).ministerId,
+  replacementMinister.ministerId, 'The replacement must become the active conversation identity.');
+activeMinisterForScope = minister;
 
 (async () => {
   const answer = await pipeline.ask('বাজেটের ঝুঁকি কত?', {
