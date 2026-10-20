@@ -1556,9 +1556,28 @@
     const active = loans.filter(loan => loan.status !== 'REPAID');
     const defaulted = active.filter(loan => ['DEFAULTED', 'INSOLVENT'].includes(String(loan.status || '').toUpperCase())).length;
     const restructuring = insolvency && insolvency.status ? '<div class="owb-notice owb-risk-box"><strong>IMPORTANT · ' + esc(insolvency.status) + '</strong><p>' + esc(insolvency.reason || 'New credit is suspended during the simulated workout.') + '</p>'
-      + '<p><strong>Workout rules:</strong> existing payments continue where possible; automatic new borrowing stays frozen until the restructuring is accepted or the overdues are cured.</p></div>' : '';
+      + '<p><strong>Workout rules:</strong> existing payments continue where possible; automatic new borrowing stays frozen until the restructuring is accepted or overdues are cured.</p></div>' : '';
+    const player = playerProfile();
+    const canAct = !!player && codeOf(player) === codeOf(profile);
+    const workoutLoan = active.find(loan => Math.max(0, finite(loan.daysPastDue) || 0) >= 30
+      || ['ARREARS', 'DEFAULTED', 'INSOLVENT'].includes(String(loan.status || '').toUpperCase()));
+    let workoutForm = '';
+    if (canAct && workoutLoan) {
+      const rate = Math.max(0.5, finite(workoutLoan.annualInterestRatePct) || 1);
+      const minRate = Math.max(0.5, rate - 1);
+      const maxRate = Math.min(10.5, rate + 2);
+      const oldTerm = Math.max(5, Math.ceil(finite(workoutLoan.termYears) || 5));
+      const maxTerm = Math.min(40, oldTerm + 5);
+      workoutForm = '<form class="owb-section" data-owb-form="restructure" data-owb-loan-id="' + esc(workoutLoan.loanId) + '"><div class="owb-section-head"><h4>Request bounded restructuring</h4><span class="owb-state owb-warn">' + esc(number(workoutLoan.daysPastDue, 0)) + ' days overdue</span></div>'
+        + '<div class="owb-form-grid"><label class="owb-field">Proposed annual rate<input type="number" name="annualInterestRatePct" min="' + esc(String(minRate)) + '" max="' + esc(String(maxRate)) + '" step="0.05" value="' + esc(String(rate)) + '" required></label>'
+        + '<label class="owb-field">New repayment term<input type="number" name="termYears" min="' + esc(String(oldTerm)) + '" max="' + esc(String(maxTerm)) + '" step="1" value="' + esc(String(maxTerm)) + '" required></label>'
+        + '<label class="owb-field">Temporary grace period<input type="number" name="graceYears" min="0" max="2" step="1" value="1" required></label>'
+        + '<label class="owb-field">Reason<select name="reason"><option value="temporary-liquidity-shock">Temporary liquidity shock</option><option value="revenue-collapse">Revenue collapse</option><option value="currency-stress">Currency stress</option><option value="disaster-recovery">Disaster recovery</option></select></label></div>'
+        + '<p class="owb-term-guard"><strong>IMPORTANT:</strong> rate range ' + esc(percent(minRate)) + '–' + esc(percent(maxRate)) + '; maturity ' + esc(oldTerm) + '–' + esc(maxTerm) + ' years; grace period at most two years. Accrued obligations remain on record.</p>'
+        + '<button class="owb-btn owb-primary" type="submit">' + svgIcon('shield') + ' Submit workout proposal</button></form>';
+    }
     return '<section class="owb-section"><div class="owb-section-head"><h4>Loan contracts & repayment</h4><span class="owb-sub">' + esc(active.length) + ' active · ' + esc(defaulted) + ' in default</span></div>'
-      + restructuring + activeLoansTable(profile)
+      + restructuring + activeLoansTable(profile) + workoutForm
       + '<div class="owb-term-guard"><strong>IMPORTANT · Simulated sovereign workout protocol</strong><p>30 days overdue: formal notice. 90 days: mediation review. 180 days: default and new-credit hold. 270 days: restructuring review. 360 days: insolvency/bankruptcy review.</p>'
       + '<p>These are OMEGA gameplay rules inspired by debt-workout processes, not a statement of binding real-world international law.</p></div></section>';
   }
@@ -1748,12 +1767,24 @@
       const form = event.target;
       if (!form || !form.getAttribute) return;
       const formType = form.getAttribute('data-owb-form');
-      if (formType !== 'request-loan' && formType !== 'partner') return;
+      if (formType !== 'request-loan' && formType !== 'partner' && formType !== 'restructure') return;
       event.preventDefault();
       const data = new FormData(form);
       const profile = currentCountryProfile();
       let result;
-      if (formType === 'partner') {
+      if (formType === 'restructure') {
+        result = requestRestructuring({
+          countryId: codeOf(profile),
+          loanId: String(form.getAttribute('data-owb-loan-id') || ''),
+          annualInterestRatePct: finite(data.get('annualInterestRatePct')),
+          termYears: finite(data.get('termYears')),
+          graceYears: finite(data.get('graceYears')),
+          reason: String(data.get('reason') || 'payment-difficulty')
+        });
+        uiState.notice = result.ok
+          ? 'Restructuring approved under the game’s bounded workout rules. Accrued obligations remain on the loan record.'
+          : 'Restructuring rejected (' + (result.code || 'REJECTED') + '): ' + (result.message || 'The workout conditions were not met.');
+      } else if (formType === 'partner') {
         result = registerFundingPartner({
           countryId: codeOf(profile), commitmentLimitUsd: finite(data.get('commitmentLimitUsd'))
         });
