@@ -1922,7 +1922,7 @@ function batchFromExtraction(x,record){
     g.__omegaResourceEndowmentBootstrapPromise=work;
     return work;
   }
-  function onTurn(){void extractAll();}
+  function onTurn(){return extractAll();}
   function diagnostics(){
     const r=g.__OmegaResourceReserveRegistry, e=engine(), mines=[];
     for(const c of countries()){
