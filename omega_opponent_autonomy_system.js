@@ -119,18 +119,18 @@
   });
 
   const DECISION_WEIGHTS=Object.freeze({
-    needPressure:0.17,
-    treasury:0.12,
+    needPressure:0.15,
+    treasury:0.11,
     labor:0.09,
     materials:0.10,
     debt:0.08,
-    existingProjects:0.07,
-    strategicPriority:0.09,
+    existingProjects:0.06,
+    strategicPriority:0.08,
     time:0.06,
     risk:0.05,
     relations:0.03,
-    memory:0.08,
-    strategy:0.06
+    memory:0.07,
+    strategy:0.12
   });
 
   const EVENT_ROUTES=Object.freeze({
