@@ -1301,32 +1301,51 @@
         return dataValues.some(row => finite(row && row.value) !== null)
           || Object.keys(isObject(country.metadata) ? country.metadata : {}).length > 0;
       });
-      const indicatorJobs = INDICATORS.map(async indicator => {
+      const indicatorJob = (async function () {
         try {
-          const url = WB_BASE + '/country/all/indicator/' + encodeURIComponent(indicator.code)
-            + '?format=json&per_page=20000&date=2000%3A2026';
+          const codes = INDICATORS.map(indicator => indicator.code).join(';');
+          const url = WB_BASE + '/country/all/indicator/' + codes
+            + '?format=json&per_page=20000&mrnev=1&source=2';
           const records = await fetchWB(url);
-          const latest = {};
+          const byIndicator = {};
+          INDICATORS.forEach(indicator => { byIndicator[indicator.key] = {}; });
+          const keyByCode = {};
+          INDICATORS.forEach(indicator => { keyByCode[indicator.code] = indicator.key; });
           records.forEach(row => {
             if (!row || row.value === null || row.value === undefined || row.value === '') return;
-            const recordCode = String(row.countryiso3code || (row.country && row.country.id) || '').toUpperCase();
+            const indicatorCode = String(row.indicator && row.indicator.id || '').toUpperCase();
+            const key = keyByCode[indicatorCode];
+            if (!key) return;
+            const recordCode = String(row.countryiso3code || '').toUpperCase();
             const recordIso2 = String(row.country && row.country.id || '').toUpperCase();
             const profile = matchProfileForISO(recordCode, recordIso2);
             if (!profile) return;
             const year = finite(row.date);
             const value = finite(row.value);
             if (year === null || value === null) return;
-            const code = codeOf(profile);
-            if (!latest[code] || year > latest[code].year) {
-              latest[code] = { value: value, year: year, indicatorCode: indicator.code, source: 'WORLD_BANK_WDI_API_V2' };
+            const country = codeOf(profile);
+            const current = byIndicator[key][country];
+            if (!current || year > current.year) {
+              byIndicator[key][country] = {
+                value: value, year: year, indicatorCode: indicatorCode,
+                source: 'WORLD_BANK_WDI_API_V2_MRNEV'
+              };
             }
           });
-          return { indicator: indicator, latest: latest, ok: true };
+          return {
+            ok: true,
+            results: INDICATORS.map(indicator => ({
+              indicator: indicator, latest: byIndicator[indicator.key], ok: true
+            }))
+          };
         } catch (error) {
-          errors.push({ source: indicator.code, message: String(error && error.message || error) });
-          return { indicator: indicator, latest: {}, ok: false };
+          errors.push({ source: 'world-bank-multi-indicator', message: String(error && error.message || error) });
+          return {
+            ok: false,
+            results: INDICATORS.map(indicator => ({ indicator: indicator, latest: {}, ok: false }))
+          };
         }
-      });
+      })();
       const metadataJob = (async function () {
         try {
           const rows = await fetchWB(WB_BASE + '/country?format=json&per_page=400');
@@ -1351,9 +1370,9 @@
           return { ok: false, map: {} };
         }
       })();
-      const results = await Promise.all(indicatorJobs);
-      const metadataResult = await metadataJob;
-      let successCount = results.filter(result => result.ok).length + (metadataResult.ok ? 1 : 0);
+      const [indicatorBatch, metadataResult] = await Promise.all([indicatorJob, metadataJob]);
+      const results = indicatorBatch.results;
+      let successCount = (indicatorBatch.ok ? 1 : 0) + (metadataResult.ok ? 1 : 0);
       const countries = clone(previous.countries || {});
       profiles.forEach(profile => {
         const code = codeOf(profile);
@@ -1374,7 +1393,7 @@
           countries[code].metadata = metadataResult.map[code];
         });
       }
-      const complete = successCount === INDICATORS.length + 1;
+      const complete = successCount === 2;
       const status = successCount === 0
         ? (previousHasData ? 'OFFLINE_STALE' : 'UNAVAILABLE')
         : complete ? 'LIVE' : 'PARTIAL';
@@ -1400,7 +1419,7 @@
       evaluateAll();
       queueRender(true);
       return { ok: successCount > 0, status: status, successfulSources: successCount,
-        expectedSources: INDICATORS.length + 1, countriesWithReference: Object.keys(countries).filter(code => Object.keys(countries[code].data || {}).length > 0).length,
+        expectedSources: 2, countriesWithReference: Object.keys(countries).filter(code => Object.keys(countries[code].data || {}).length > 0).length,
         errors: clone(errors.slice(0, 12)), refreshedAt: reference.refreshedAt };
     })();
     try { return await refreshPromise; } finally { refreshPromise = null; }
