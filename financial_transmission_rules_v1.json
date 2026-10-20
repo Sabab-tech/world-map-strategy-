@@ -3,7 +3,7 @@
   "modelVersion": "FINANCIAL_TRANSMISSION_1",
   "baselineYear": 2015,
   "annualizationMs": 31536000000,
-  "simulationTurnDurationMs": 3600000,
+  "simulationTurnDurationMs": 86400000,
   "historyDays": 30,
   "historyMaxPoints": 31,
   "maximumCountriesPerTurn": 300,
