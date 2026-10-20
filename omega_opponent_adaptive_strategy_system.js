@@ -71,7 +71,9 @@
       const derived=countryData&&typeof countryData.getBehaviorProfile==='function'?countryData.getBehaviorProfile(cid):null;
       if(derived&&derived.dimensions)for(const dim of DIMENSIONS){
         if(out.dimensions[dim].value!==null)continue;
-        const item=derived.dimensions[dim],v=normalize(item&&item.value);
+        const item=derived.dimensions[dim];
+        if(!item||item.value===null||item.value===undefined)continue;
+        const v=normalize(item.value);
         if(v===null)continue;
         out.dimensions[dim]={value:v,availability:'DERIVED_HEURISTIC',
           source:'COUNTRY_GENERAL_DATA_REGISTRY_V1:DERIVED_HEURISTIC',formula:item.formula||null,evidence:clone(item.evidence||[])};
