@@ -87,8 +87,11 @@ test('map ministry entry is outside map stacking and has independent click recov
   const html = read('index.html');
   const navStart = html.indexOf('<nav id="omega-ministry-entry" class="ui-bottom-navigation omega-ministry-entry"');
   assert.ok(navStart >= 0, 'the standalone ministry entry remains in the page');
-  const rootEndMarker = html.indexOf('\n        </div>\n\n        <!-- Independent ministry entry', html.indexOf('<div id="ui-engine-root">'));
-  assert.ok(rootEndMarker >= 0 && navStart > rootEndMarker, 'the entry is moved after the map UI root');
+  const uiRootStart = html.indexOf('<div id="ui-engine-root">');
+  const rootCloseMatch = /<\/div>\s*<!-- Independent ministry entry/.exec(html);
+  const rootEndMarker = rootCloseMatch ? rootCloseMatch.index : -1;
+  assert.ok(uiRootStart >= 0 && rootEndMarker > uiRootStart && navStart > rootEndMarker,
+    'the entry is moved after the map UI root');
   const buttonStart = html.indexOf('id="btn-ministry-dock"', navStart);
   const buttonEnd = html.indexOf('</button>', buttonStart);
   assert.ok(buttonStart > navStart && buttonEnd > buttonStart, 'the ministry button is inside the standalone nav');
