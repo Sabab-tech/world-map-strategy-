@@ -104,8 +104,12 @@ await import('./omega_server_ai_gateway.js');
 const CANONICAL_AI_SCRIPTS = Object.freeze([
   'omega_language_system.js',
   'omega_language_batch03_semantic_extension.js',
+  'omega_universal_entity_identity_engine.js',
   'omega_country_semantic_bridge.js',
   'omega_resource_semantic_bridge.js',
+  'offline_semantic_brain.js',
+  'offline_query_engine.js',
+  'omega_production_semantic_runtime_v3.js',
   'resource_ministry_engine.js',
   'omega_resource_part04_identity_runtime.js',
   'omega_resource_part05_reserve_extraction_runtime.js',
@@ -113,7 +117,14 @@ const CANONICAL_AI_SCRIPTS = Object.freeze([
   'omega_resource_realism_runtime_v1.js',
   'omega_resource_production_model_v2.js',
   'omega_resource_research_runtime_v1.js',
+  'omega_minister_state_system.js',
+  'minister_capability_engine.js',
   'omega_minister_runtime_v2.js',
+  'minister_behavior_engine.js',
+  'omega_minister_integration.js',
+  'minister_communication_engine.js',
+  'minister_recruitment_engine.js',
+  'omega_minister_bootstrap.js',
   'omega_ai_integrity_layer.js',
   'omega_ai_integrity_canonical_bridge.js',
   'omega_cognitive_engine.js',
@@ -139,7 +150,7 @@ const CANONICAL_AI_SCRIPTS = Object.freeze([
   'omega_global_market_system.js',
   'omega_global_trade_system.js',
   'omega_opponent_treaty_lifecycle_system.js',
-  'omega_opponent_second_order_consequence_system.js'
+  'omega_opponent_second_order_consequence_system.js',
 ]);
 
 const escapeRegExp = value => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
