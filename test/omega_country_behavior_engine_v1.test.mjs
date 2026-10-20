@@ -121,7 +121,7 @@ test('source-backed registry metrics take precedence over legacy country snapsho
     'opponent behaviour must use the latest registered GDP when the live game has no override');
   assert.equal(profile.metricSources.gdpUsd.status, 'WORLD_BANK_API_OBSERVATION',
     'the selected metric must retain source status');
-  assert.match(profile.metricSources.gdpUsd.source, /country_general_data_registry_v1\\.json/,
+  assert.match(profile.metricSources.gdpUsd.source, /country_general_data_registry_v1[.]json/,
     'metric provenance should identify the unified source registry');
 });
 
