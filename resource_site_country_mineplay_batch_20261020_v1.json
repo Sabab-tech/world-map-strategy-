@@ -6,7 +6,7 @@
   "recordCount": 44,
   "countryCount": 22,
   "authority": "ADDITIVE_SOURCE_REFERENCED_SITE_BATCH",
-  "note": "Adds real-world site identities and source-reported context while preserving unknown measured reserve/production values as UNOBSERVED. Every simulation reserve is a gameplay seed, not a geological estimate. Coordinates are regional approximations for strategic-map display.",
+  "note": "Additive, source-referenced resource and mine site coverage for undercovered and additional countries. The dataset now contains 44 site records across 22 countries, including Botswana and twelve newly represented countries. Real measured reserves, grade and production remain UNOBSERVED unless verified from site-specific evidence; gameplay reserve seeds are separate simulated values. Regional coordinates are approximations for strategic map display, not survey-grade coordinates.",
   "sourcePolicy": {
     "measuredReservesInvented": false,
     "measuredProductionInvented": false,
@@ -10571,6 +10571,7 @@
     "totalSiteCount": 44,
     "totalCountryCount": 22,
     "addedSiteCount": 14,
-    "coordinateCorrection": "SITE_ZMB_mopani_copper_mines"
+    "coordinateCorrection": "SITE_ZMB_mopani_copper_mines",
+    "sourceEvidencePolicy": "Reported identity/status facts are kept separate from unobserved measured quantities and simulated gameplay reserve seeds."
   }
 }
