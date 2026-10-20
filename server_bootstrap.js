@@ -160,7 +160,7 @@ if (!globalThis.__omegaUniversalIndexInjection) {
       if (!err && typeof data === 'string' && /(?:^|[\\/])index\.html$/i.test(String(file))) {
         let html = String(data);
         for (const name of CANONICAL_AI_SCRIPTS) html = html.replace(canonicalTags(name), '');
-        const additions = CANONICAL_AI_SCRIPTS.map(name => `    <script src="${name}" defer></script>`).join('\n');
+        const additions = CANONICAL_AI_SCRIPTS.map(name => `    <script src="/${name}" defer></script>`).join('\n');
         if (!html.includes('</body>')) {
           return callback(new Error('[OMEGA BOOT] index.html has no </body> insertion point'), data);
         }
