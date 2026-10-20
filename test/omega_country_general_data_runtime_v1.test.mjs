@@ -18,7 +18,7 @@ const schema={encoding:'ORDERED_VALUE_ARRAYS_V1',identityFields,generalFactField
 const alpha={populationTotal:100000000,gdpCurrentUsd:500000000000,exportsUsd:200000000000,importsUsd:200000000000,
   budgetBalancePctGdp:2,publicDebtToGdpPct:30,inflationPct:2,gdpGrowthPct:4,militaryExpenditurePctGdp:3,
   internetUsersPct:90,electricityAccessPct:99,rAndDSpendPctGdp:3,educationSpendPctGdp:5,
-  politicalStabilityWgiEstimate:1.3,voiceAccountabilityWgiEstimate:1,unemploymentRatePct:4,homicideRatePer100k:1,
+  politicalStabilityWgiEstimate:1.3,voiceAccountabilityWgiEstimate:1,unemploymentRatePct:4,
   industryValueAddedPctGdp:25,agricultureValueAddedPctGdp:5};
 const beta={populationTotal:30000000,gdpCurrentUsd:50000000000,exportsUsd:2000000000,importsUsd:20000000000,
   budgetBalancePctGdp:-8,publicDebtToGdpPct:110,inflationPct:20,gdpGrowthPct:-2,militaryExpenditurePctGdp:0.5,
