@@ -92,6 +92,7 @@ const languageSystem = {
       operation: 'ASK', targetDomain: 'MINISTER', entities: { minister: { id: context.ministerId } } };
   }
 };
+let cognitiveIsPowered = true;
 const cognitive = {
   async askMinisterWithAI(question, profile, countryId, countryDetails) {
     assert.equal(profile.ministerId, minister.ministerId);
@@ -101,7 +102,7 @@ const cognitive = {
     assert.equal(profile.efficiency, 84, 'Canonical capability should reach the legacy cognitive contract.');
     assert.ok(profile.parsedIntent);
     assert.ok(countryDetails);
-    return { text: 'বাজেটের ঝুঁকি বিশ্লেষণ করছি এবং প্রমাণ যাচাই করে সুপারিশ দেব।', aiPowered: true, model: 'test-provider' };
+    return { text: 'বাজেটের ঝুঁকি বিশ্লেষণ করছি এবং প্রমাণ যাচাই করে সুপারিশ দেব।', aiPowered: cognitiveIsPowered, model: 'test-provider' };
   }
 };
 
@@ -114,6 +115,19 @@ const sandbox = {
   OmegaMinisterStateRegistry: registry,
   OmegaLanguageSystem: languageSystem,
   OmegaCognitiveOS: cognitive,
+  OmegaReasoningDispatcher: {
+    dispatch() {
+      return {
+        used: true,
+        text: 'UNVERIFIED FAKE INTELLIGENCE ANSWER',
+        cognitive: {
+          available: true,
+          full40: true,
+          result: { aiGroundingPacket: { answerEvidence: { facts: [] }, answerContract: { evidenceOnly: true, doNotInventMissingValues: true } } }
+        }
+      };
+    }
+  },
   Game: { state: { countryCode: 'BGD', countryName: 'Bangladesh', treasury: 100 } },
   OmegaCabinetUI: { activeCountry: 'BGD', currentMinistryId: 'finance', currentInterrogatedMinister: {
     ministerId: minister.ministerId, name: 'Dr. Amina Rahman', countryCode: 'BGD', ministryId: 'finance', role: 'Finance Minister'
@@ -195,6 +209,19 @@ activeMinisterForScope = minister;
   assert.match(offlineAnswer.text, /প্রামাণ্য গেম-ডেটা/);
   assert.equal(messages.length, 4, 'Offline fallback turns must also persist into minister memory.');
   assert.equal(episodes.length, 2, 'Offline fallback must store a conversation episode.');
+
+  cognitiveIsPowered = false;
+  const unverifiedProviderAnswer = await pipeline.ask('গোয়েন্দা ব্রিফিং দাও', {
+    countryId: 'BGD', countryCode: 'BGD', countryName: 'Bangladesh',
+    ministryId: 'finance', ministerId: minister.ministerId, ministerRole: 'Finance Minister',
+    aiProvider: 'GOOGLE', countryDetails: { treasury: 100 }, gameState: { treasury: 100 }
+  });
+  assert.equal(unverifiedProviderAnswer.status, 'OFFLINE_CONTEXT_FALLBACK',
+    'An unverified legacy fallback must be replaced with the safe contextual fallback.');
+  assert.doesNotMatch(unverifiedProviderAnswer.text, /UNVERIFIED FAKE INTELLIGENCE ANSWER/);
+  assert.equal(messages.length, 6, 'Unverified AI/dispatcher output must be replaced and recorded as a safe fallback.');
+  assert.equal(episodes.length, 3);
+  cognitiveIsPowered = true;
 
   minister.runtimeState.status = 'FIRED';
   const vacantContext = { countryId: 'BGD', ministryId: 'finance', aiProvider: 'OFFLINE' };
