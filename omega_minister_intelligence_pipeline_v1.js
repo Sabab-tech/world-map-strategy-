@@ -321,7 +321,8 @@
       gameState: clone(extra.gameState || gameState || {}),
       countryDetails: resolvedDetails,
       history: history,
-      language: text(extra.language || '')
+      language: text(extra.language || ''),
+      aiProvider: upper(extra.aiProvider || 'OFFLINE')
     };
   }
 
@@ -463,17 +464,23 @@
     if (!engine) return { ok: false, status: 'COGNITIVE_ENGINE_UNAVAILABLE', text: '', raw: null };
     const minister = ministerPayload(context, analysis);
     let lastError = null;
-    for (const method of ['askMinisterWithAI', 'thinkMinisterQuestion']) {
-      if (typeof engine[method] !== 'function') continue;
+    // Only treat a provider-identified answer as live AI output. The legacy
+    // thinkMinisterQuestion fallback contains synthetic defaults, so it must not
+    // be presented as a verified minister assessment when the server is offline.
+    if (typeof engine.askMinisterWithAI === 'function') {
       try {
-        const raw = await engine[method](question, minister, context.countryId || context.countryCode || 'NATIONAL_SOVEREIGN', context.countryDetails || context.gameState || {});
+        const raw = await engine.askMinisterWithAI(question, minister, context.countryId || context.countryCode || 'NATIONAL_SOVEREIGN', context.countryDetails || context.gameState || {});
         const answer = extractText(raw);
-        if (answer) return { ok: true, status: 'ANSWERED', text: answer, raw: raw, method: method };
-        lastError = new Error(method + '_RETURNED_NO_TEXT');
+        if (answer && raw && typeof raw === 'object' && raw.aiPowered === true) {
+          return { ok: true, status: 'ANSWERED', text: answer, raw: raw, method: 'askMinisterWithAI' };
+        }
+        lastError = new Error(answer ? 'UNVERIFIED_LEGACY_OFFLINE_RESPONSE_IGNORED' : 'ASK_MINISTER_WITH_AI_RETURNED_NO_VERIFIED_TEXT');
       } catch (error) {
         lastError = error;
-        rememberError('COGNITIVE_DIALOGUE_FAILED', error, { ministerId: context.ministerId, method: method });
+        rememberError('COGNITIVE_DIALOGUE_FAILED', error, { ministerId: context.ministerId, method: 'askMinisterWithAI' });
       }
+    } else {
+      lastError = new Error('LIVE_MINISTER_AI_METHOD_UNAVAILABLE');
     }
     const dispatcher = global.OmegaReasoningDispatcher;
     if (dispatcher && dispatcher.dispatch && analysis && analysis.parsed) {
@@ -556,10 +563,47 @@
     return { turnId: turnId, userMessage: userMessage, ministerMessage: ministerMessage };
   }
 
-  function localizedUnavailable(language) {
+  function offlineContextFallback(question, context, analysis) {
+    const language = analysis.language === 'bn' ? 'bn' : 'en';
+    const runtime = context.ministerRuntime || {};
+    const capability = context.effectiveCapability;
+    const recorded = (value, suffix = '') => value === undefined || value === null || value === ''
+      ? (language === 'bn' ? 'নথিভুক্ত নেই' : 'Not recorded')
+      : String(value) + suffix;
+    const identity = [
+      (language === 'bn' ? 'দেশ' : 'Country') + ': ' + recorded(context.countryName || context.countryId),
+      (language === 'bn' ? 'মন্ত্রণালয়' : 'Ministry') + ': ' + recorded(context.ministryId),
+      (language === 'bn' ? 'মন্ত্রী' : 'Minister') + ': ' + recorded(context.ministerName),
+      (language === 'bn' ? 'কার্যকর সক্ষমতা' : 'Effective capability') + ': ' + recorded(capability)
+    ];
+    const state = [
+      (language === 'bn' ? 'কাজের চাপ' : 'Workload') + ': ' + recorded(runtime.workload),
+      (language === 'bn' ? 'মানসিক চাপ' : 'Stress') + ': ' + recorded(runtime.stress),
+      (language === 'bn' ? 'ক্লান্তি' : 'Fatigue') + ': ' + recorded(runtime.fatigue),
+      (language === 'bn' ? 'আস্থা' : 'Trust') + ': ' + recorded(runtime.trust)
+    ];
+    const action = text(analysis.parsed?.dialogueIntent?.action);
+    if (action === 'MEMORY_RECALL') {
+      const history = (context.history || []).filter(item => text(item?.content)).slice(-4);
+      if (history.length) {
+        const entries = history.map(item => (text(item.role) === 'assistant' ? (language === 'bn' ? 'মন্ত্রী' : 'Minister') : (language === 'bn' ? 'আপনি' : 'You')) + ': ' + text(item.content).slice(0, 500));
+        return language === 'bn'
+          ? 'অফলাইন স্মৃতি থেকে পাওয়া সাম্প্রতিক কথোপকথন:\n' + entries.join('\n') + '\n\nএটি সংরক্ষিত কথোপকথনের সারাংশ, স্বাধীনভাবে যাচাইকৃত বাহ্যিক তথ্য নয়।'
+          : 'Recent recorded conversation from offline memory:\n' + entries.join('\n') + '\n\nThis is a recap of stored conversation, not independently verified external information.';
+      }
+      return language === 'bn'
+        ? 'এই মন্ত্রীর জন্য আগের কোনো কথোপকথন স্মৃতিতে পাওয়া যায়নি। তাই আগের কোনো সিদ্ধান্ত বা বার্তা অনুমান করে বলছি না।'
+        : 'No earlier conversation was found in this minister’s stored memory. I will not guess prior decisions or messages.';
+    }
+    if (action === 'STATUS_REPORT') {
+      return language === 'bn'
+        ? 'অফলাইন মন্ত্রী-স্টেট রিপোর্ট (শুধু বর্তমানে নথিভুক্ত মান):\n' + identity.join('\n') + '\n' + state.join('\n') + '\n\nবাকি অবস্থা বা উদ্দেশ্য রানটাইমে নথিভুক্ত না থাকলে তা অনুমান করা হবে না।'
+        : 'Offline minister status report (recorded values only):\n' + identity.join('\n') + '\n' + state.join('\n') + '\n\nOther status fields and objectives are not inferred when the runtime has not recorded them.';
+    }
+    const intentLabel = text(analysis.parsed?.dialogueIntent?.intent || analysis.parsed?.operation || 'CONVERSATION');
     return language === 'bn'
-      ? 'মন্ত্রী-সংলাপের জ্ঞানীয় ইঞ্জিন নির্ভরযোগ্য উত্তর দিতে পারেনি। কোনো তথ্য বানিয়ে দেওয়া হয়নি; মন্ত্রী ইন্টেলিজেন্স ডায়াগনস্টিক পরীক্ষা করুন।'
-      : 'The minister dialogue engine could not produce a grounded answer. No answer was fabricated; inspect the minister intelligence diagnostics.';
+      ? 'অফলাইন নির্ভরযোগ্য fallback সক্রিয়।\n' + identity.join('\n') + '\n' + state.join('\n') + '\n\nআপনার অনুরোধের (' + intentLabel + ') উত্তর দেওয়ার জন্য প্রয়োজনীয় প্রামাণ্য গেম-ডেটা বা AI provider response পাওয়া যায়নি। তাই হুমকি, অর্থনৈতিক ফল, সুপারিশ বা কোনো কার্যক্রমের সফলতা বানিয়ে বলা হচ্ছে না। AI provider চালু হলে একই প্রশ্ন পূর্ণ বিশ্লেষণের জন্য পুনরায় পাঠান।'
+      : 'Safe offline fallback is active.\n' + identity.join('\n') + '\n' + state.join('\n') + '\n\nThe authoritative game evidence or AI provider response needed to answer your request (' + intentLabel + ') is not available. I will not invent threats, economic outcomes, recommendations, or claims that an action succeeded. Enable the configured AI provider to retry the full analysis.';
   }
 
   async function ask(question, overrides) {
@@ -579,17 +623,32 @@
     const analysis = await prepareLanguage(prompt, context);
     context.language = analysis.language;
     context.history = readHistory(context.ministerId).slice(-12);
-    const response = await invokeCognitive(prompt, context, analysis);
+    let response;
+    if (context.aiProvider === 'OFFLINE' || context.aiProvider === 'LOCAL' || context.aiProvider === 'DETERMINISTIC') {
+      response = { ok: false, status: 'OFFLINE_PROVIDER_SELECTED', text: '', error: 'AI_PROVIDER_DISABLED' };
+    } else {
+      response = await invokeCognitive(prompt, context, analysis);
+    }
     if (!response.ok || !response.text) {
-      return {
-        ok: false,
-        status: response.status,
-        text: localizedUnavailable(analysis.language),
-        error: response.error || null,
+      const offlineText = offlineContextFallback(prompt, context, analysis);
+      const offlineResponse = { status: 'OFFLINE_CONTEXT_FALLBACK', method: 'DETERMINISTIC_CONTEXT_FALLBACK' };
+      const memory = storeConversation(context, prompt, offlineText, analysis, offlineResponse);
+      const fallbackResult = {
+        ok: true,
+        status: 'OFFLINE_CONTEXT_FALLBACK',
+        offlineFallback: true,
+        text: offlineText,
+        language: analysis.language,
         source: SOURCE,
+        route: ['OMEGA_LANGUAGE_SYSTEM', 'CANONICAL_MINISTER_STATE', 'DETERMINISTIC_CONTEXT_FALLBACK', 'MINISTER_RELATIONAL_MEMORY'],
         analysis: clone(analysis.parsed),
+        minister: { id: context.ministerId, name: context.ministerName, ministryId: context.ministryId, capability: context.effectiveCapability },
+        cognitiveMethod: offlineResponse.method,
+        conversation: memory,
         diagnostics: diagnostics()
       };
+      event('OMEGA_MINISTER_CONVERSATION_COMPLETED', fallbackResult);
+      return fallbackResult;
     }
     const memory = storeConversation(context, prompt, response.text, analysis, response);
     const result = {
