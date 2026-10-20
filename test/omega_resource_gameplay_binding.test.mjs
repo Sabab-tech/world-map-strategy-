@@ -154,6 +154,7 @@ test('runtime renders all global sites and applies nation/resource scope without
     'resource_site_canonical_catalog_v1.json': catalog,
     'resource_site_master_registry_v1.json': master,
     'resource_site_country_expansion_v1.json': expansion,
+    'resource_site_country_mineplay_batch_20261020_v1.json': JSON.parse(read('resource_site_country_mineplay_batch_20261020_v1.json')),
     'resource_site_legacy_gameplay_expansion_part_6_v1.json': JSON.parse(read('resource_site_legacy_gameplay_expansion_part_6_v1.json'))
   };
   // Test-only fixture: force two separate site identities to share one coordinate so pixel-spider offsets are verified.
