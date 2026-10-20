@@ -188,5 +188,5 @@ function diagnostics(){
 }
 function apply(){patchSiteModel();patchExtraction();ensureFactoryRecipes();patchLogistics();g.Omega=g.Omega||{};g.Omega.ResourceSystemHardening={VERSION,TARGET_HORIZON_YEARS,MIN_HORIZON_YEARS,MAX_HORIZON_YEARS,resolveSimulation,processModel,ensureFactoryRecipes,logisticsConstraints,constrainedLogisticsPlan,auditCountry,diagnostics};g.OmegaResourceSystemHardening=g.Omega.ResourceSystemHardening;}
 try{apply();}catch(e){g.OmegaResourceSystemHardeningError=String(e?.message||e);}
-try{g.addEventListener?.('OMEGA_READY',apply);g.addEventListener?.('OMEGA_GAME_SESSION_STARTED',apply);g.addEventListener?.('OMEGA_SIMULATION_TURN_COMMITTED',()=>{try{ensureFactoryRecipes();}catch(_){} });}catch(_){}
+try{g.addEventListener?.('OMEGA_READY',apply);g.addEventListener?.('OMEGA_GAME_SESSION_STARTED',apply);g.addEventListener?.('OMEGA_SIMULATION_TURN_COMMITTED',()=>{ensureFactoryRecipes();});}catch(_){}
 })(typeof window!=='undefined'?window:globalThis);
