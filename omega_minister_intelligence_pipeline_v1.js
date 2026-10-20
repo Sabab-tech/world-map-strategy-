@@ -672,7 +672,16 @@
     if (!text(question)) return false;
     const input = overrides && typeof overrides === 'object' ? overrides : {};
     const requestedMinisterId = text(input.ministerId || input.ministerID || '');
-    if (requestedMinisterId && !getCanonicalState(requestedMinisterId) && !getLegacyState(requestedMinisterId)) return false;
+    if (requestedMinisterId) {
+      const canonicalState = getCanonicalState(requestedMinisterId);
+      const legacyState = getLegacyState(requestedMinisterId);
+      if (!canonicalState && !legacyState) return false;
+      const requestedRuntime = canonicalState?.runtimeState || legacyState?.runtime || legacyState?.runtimeState || {};
+      const requestedCountry = text(input.countryId || input.countryCode || '');
+      const requestedMinistry = text(input.ministryId || '');
+      if (requestedCountry && requestedRuntime.countryId && upper(requestedCountry) !== upper(requestedRuntime.countryId)) return false;
+      if (requestedMinistry && requestedRuntime.ministryId && requestedMinistry.toLowerCase() !== text(requestedRuntime.ministryId).toLowerCase()) return false;
+    }
     const context = resolveContext(input);
     // Keep questions inside a selected ministry on the minister route even if
     // its chair is vacant, so the player gets an explicit recruitment notice
