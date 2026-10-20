@@ -1546,7 +1546,7 @@
     const loans = getLoanList(profile).filter(loan => loan.status !== 'REPAID');
     if (!loans.length) return '<p class="owb-empty">No active simulated World Bank facility for this country.</p>';
     return '<div class="owb-table-wrap"><table class="owb-table"><thead><tr><th>Facility</th><th>Outstanding</th><th>Principal</th><th>Accrued interest</th><th>Rate</th><th>FX equivalent</th><th>Annual payment estimate</th><th>Term</th><th>Status</th></tr></thead><tbody>' +
-      loans.map(loan => '<tr><td><strong>' + esc(loan.loanId) + '</strong><small>' + esc(loan.purpose) + '</small></td><td>' +
+      loans.map(loan => '<tr><td><strong>' + esc(loan.loanId) + '</strong><small>' + esc(loan.purpose) + '</small><small>Principal repaid: ' + esc(money(loan.totalPrincipalPaidUsd)) + '</small><small>Interest paid: ' + esc(money(loan.totalInterestPaidUsd)) + '</small></td><td>' +
         esc(money((finite(loan.outstandingPrincipalUsd) || 0) + (finite(loan.accruedInterestUsd) || 0))) + '</td><td>' +
         esc(money(loan.outstandingPrincipalUsd)) + '</td><td>' + esc(money(loan.accruedInterestUsd)) + '</td><td>' +
         esc(percent(loan.annualInterestRatePct)) + '</td><td>' + (function(){const currency=String(loan.settlementCurrencyCode||'USD').toUpperCase();const quote=currencySnapshot(currency);const equivalent=quote.ok?number((Math.max(0,finite(loan.outstandingPrincipalUsd)||0)+Math.max(0,finite(loan.accruedInterestUsd)||0))*quote.localPerUsd,2)+' '+currency:'N/A';return esc(equivalent)+'<small>Issue snapshot: '+esc(number(loan.originalPrincipalCurrency,2))+' '+esc(currency)+'</small>';})() + '</td><td>' + esc(money(annualPayment(Math.max(0, finite(loan.outstandingPrincipalUsd) || 0), Math.max(0, finite(loan.annualInterestRatePct) || 0), Math.max(1 / 365, (finite(loan.termYears) || 1) - Math.max(finite(loan.ageYears) || 0, finite(loan.graceYears) || 0))))) + '</td><td>' + esc(number(loan.termYears, 1)) + 'y / ' + esc(number(loan.graceYears, 1)) + 'y grace</td><td>' +
@@ -1591,13 +1591,18 @@
     const fx = currencySnapshot(currency);
     const localEquivalent = fx.ok && assessment && assessment.gdpUsd !== null
       ? number(assessment.gdpUsd * fx.localPerUsd, 2) + ' ' + currency : 'N/A';
+    const history = assessment && assessment.creditHistory || {};
+    const historyLabel = finite(history.score) !== null ? number(history.score, 1) + '/100 · '
+      + number(history.repaidContracts, 0) + ' repaid / ' + number(history.contracts, 0) + ' contracts'
+      : (finite(history.contracts) > 0 ? 'No repayment performance yet' : 'No prior simulated record');
     const metrics = [
       ['Simulated GDP', money(assessment && assessment.gdpUsd)],
       ['Public debt / GDP', percent(assessment && assessment.debtToGdpPct)],
       ['GDP growth', percent(assessment && assessment.gdpGrowthPct)],
       ['Inflation', percent(assessment && assessment.inflationPct)],
       ['Treasury cash', money(assessment && assessment.treasuryUsd)],
-      ['FX reserves', money(assessment && assessment.reservesUsd)]
+      ['FX reserves', money(assessment && assessment.reservesUsd)],
+      ['Prior repayment record', historyLabel]
     ];
     const cards = metrics.map(item => '<div class="owb-metric"><small>' + esc(item[0]) + '</small><strong>' + esc(item[1]) + '</strong></div>').join('');
     const reasons = assessment && assessment.reasons && assessment.reasons.length
