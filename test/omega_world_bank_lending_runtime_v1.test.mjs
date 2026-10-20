@@ -248,7 +248,7 @@ test('partner registration, negotiation limits, restructuring and nonblocking re
     const rawLoan = state.governmentBanking.worldBankLending.loansByCountry.BGD[0];
     rawLoan.status = 'ARREARS';
     rawLoan.arrearsUsd = 1e6;
-    rawLoan.daysPastDue = 45;
+    rawLoan.daysPastDue = 120;
     const workout = api.requestRestructuring({
       countryId: 'BGD', loanId: rawLoan.loanId, annualInterestRatePct: rawLoan.annualInterestRatePct,
       termYears: Math.min(40, Math.ceil(rawLoan.termYears) + 1), graceYears: 1,
