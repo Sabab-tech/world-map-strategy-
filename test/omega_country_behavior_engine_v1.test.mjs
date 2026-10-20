@@ -122,9 +122,11 @@ test('source-backed registry metrics take precedence over legacy country snapsho
   context.OmegaCountryGeneralDataRuntime = Object.assign({}, api, {
     getCountryRecord(value) {
       const record = originalGetCountryRecord(value);
+      const recordIdentity = record?.identity || {};
       const aliases = value && typeof value === 'object'
         ? [value.iso3, value.countryCode, value.canonicalId, value.name, value.officialName]
         : [value];
+      aliases.push(recordIdentity.iso3, recordIdentity.iso2, recordIdentity.countryCode, recordIdentity.name);
       const normalizedAliases = aliases.map(item => String(item || '').toUpperCase());
       if (!record || !normalizedAliases.some(alias => ['BGD', 'BD', 'BANGLADESH'].includes(alias))) return record;
       const oldMeta = record.metricMetadata?.gdpCurrentUsd || {};
