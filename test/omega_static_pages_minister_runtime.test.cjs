@@ -59,6 +59,8 @@ const expected = [
   'omega_opponent_deep_memory_system.js',
   'omega_opponent_memory_trace_log_system.js',
   'omega_opponent_intelligence_evolution_system.js',
+  'omega_country_general_data_runtime_v1.js',
+  'omega_country_behavior_engine_v1.js',
   'omega_opponent_adaptive_strategy_system.js',
   'omega_opponent_autonomy_system.js',
   'omega_global_market_system.js',
