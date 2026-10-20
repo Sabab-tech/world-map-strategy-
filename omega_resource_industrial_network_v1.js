@@ -27,7 +27,14 @@ const id=v=>String(v??'').trim().toUpperCase();
 const tok=v=>String(v??'').trim().toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');
 const state=()=>g.Game?.state||g.gameState||{};
 const turn=()=>num(state()?.simulation?.turn??state()?.turn??state()?.simulationTurn)??0;
-const daysPerTurn=()=>Math.max(1,num(state()?.simulation?.daysPerTurn??state()?.simulation?.turnDays)??30);
+const daysPerTurn=()=>{
+  const clock=g.Omega?.Simulation?.clock;
+  let milliseconds=num(clock?.stepDurationMs);
+  if(milliseconds===null)milliseconds=num(state()?.simulation?.stepDurationMs);
+  // The authoritative game clock wins over legacy month-length turn hints.
+  if(milliseconds!==null&&milliseconds>0)return Math.max(1/86400000,milliseconds/86400000);
+  return Math.max(1/86400000,num(state()?.simulation?.daysPerTurn??state()?.simulation?.turnDays)??1);
+};
 const year=()=>{const d=state()?.simulation?.date;if(d){const y=num(String(d).slice(0,4));if(y!==null)return y;}return num(state()?.simulation?.startYear)??2015};
 const canonicalCountry=v=>{
   const raw=String(v??'').trim();if(!raw)return null;
@@ -1429,9 +1436,20 @@ g.Omega=g.Omega||{};g.Omega.ResourceIndustrialNetwork=api();g.OmegaResourceIndus
 function boot(){
   loadCatalog().then(()=>{emit('OMEGA_RESOURCE_INDUSTRIAL_NETWORK_READY','GLOBAL',{version:VERSION,catalogResourceRules:Object.keys(rules()).length,factoryRules:Object.keys(processRules()).length})}).catch(()=>{});
   if(typeof g.addEventListener==='function'){
-    g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED',()=>{
-      const countries=runtimeCountryIds();
-      countries.forEach(c=>{try{processPendingFactoryInputs(c);advanceShipments(c);advanceProjects(c)}catch(_){}});
+    g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED',async()=>{
+      // Catalog readiness and every country update are awaited by the authoritative turn runner.
+      await loadCatalog();
+      const countries=runtimeCountryIds(),failures=[];
+      for(const countryId of countries){
+        try{
+          await processPendingFactoryInputs(countryId);
+          await advanceShipments(countryId);
+          await advanceProjects(countryId);
+        }catch(error){
+          failures.push(countryId+':'+String(error?.message||error));
+        }
+      }
+      if(failures.length)throw new Error('INDUSTRIAL_TURN_FAILED:'+failures.join('|'));
     });
     g.addEventListener('OMEGA_RESOURCE_EXTRACTION_COMPLETED',onExtractionCommitted);
     g.addEventListener('OMEGA_RESOURCE_EXTRACTION_BLOCKED',onExtractionBlocked);

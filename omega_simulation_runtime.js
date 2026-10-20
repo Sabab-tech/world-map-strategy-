@@ -20,7 +20,8 @@
 
   const VERSION='1.0.0';
   const SESSION_VERSION=1;
-  const STEP_MS=1000;
+  const DAY_MS=86400000;
+  const STEP_MS=10000;
   const MAX_STEPS_PER_FRAME=8;
   const MAX_EVENT_HISTORY=2000;
   const MAX_COMMAND_HISTORY=2000;
@@ -31,7 +32,8 @@
     'SIMULATE',
     'COMMIT',
     'PUBLISH',
-    'CHECKPOINT'
+    'CHECKPOINT',
+    'FINALIZE'
   ]);
 
   function clone(value,seen=new WeakMap()){
@@ -134,7 +136,7 @@
       this.version=VERSION;
       this.turn=finite(options.turn,0);
       this.simulationTimeMs=finite(options.simulationTimeMs,0);
-      this.stepDurationMs=Math.max(1,finite(options.stepDurationMs,3600000));
+      this.stepDurationMs=Math.max(1,finite(options.stepDurationMs,DAY_MS));
       this.accumulatorMs=Math.max(0,finite(options.accumulatorMs,0));
       this.speed=Math.max(0,finite(options.speed,1));
       this.running=false;
@@ -400,7 +402,153 @@
       this.hooks={};
       this.frameInProgress=false;
       this.pendingRealDeltaMs=0;
+      this.turnParticipants=new Map();
+      this.turnParticipantSequence=0;
+      this.lastTurnParticipantResults=[];
+      this.turnFinalizers=new Map();
+      this.turnFinalizerSequence=0;
+      this.lastTurnFinalizerResults=[];
       this.installDefaultHandlers();
+    }
+
+    registerTurnParticipant(id,handler,options={}){
+      const key=String(id||'').trim();
+      if(!key)throw new Error('SIMULATION_PARTICIPANT_ID_REQUIRED');
+      if(typeof handler!=='function')throw new Error('SIMULATION_PARTICIPANT_HANDLER_REQUIRED');
+      const previous=this.turnParticipants.get(key);
+      const entry={
+        id:key,
+        handler,
+        priority:finite(options.priority)??0,
+        sequence:previous?.sequence??(++this.turnParticipantSequence),
+        token:{}
+      };
+      this.turnParticipants.set(key,entry);
+      return ()=>{
+        const current=this.turnParticipants.get(key);
+        if(current&&current.token===entry.token)this.turnParticipants.delete(key);
+      };
+    }
+
+    registerSubsystem(id,handler,options={}){
+      return this.registerTurnParticipant(id,handler,options);
+    }
+
+    async runTurnParticipants(event){
+      const rows=[...this.turnParticipants.values()].sort((a,b)=>a.priority-b.priority||a.sequence-b.sequence);
+      const browserEvent=typeof global.CustomEvent==='function'
+        ?new global.CustomEvent('OMEGA_SIMULATION_TURN_COMMITTED',{detail:clone(event)})
+        :{type:'OMEGA_SIMULATION_TURN_COMMITTED',detail:clone(event)};
+      const turn=Math.max(0,finite(event?.simulationTurn,0));
+      const results=[];
+      global.__OMEGA_SIMULATION_PIPELINE_ACTIVE__=true;
+      try{
+      for(const entry of rows){
+        if(this.turnParticipants.get(entry.id)!==entry)continue;
+        try{
+          const value=await entry.handler.call(global,browserEvent,{
+            turn,
+            day:turn+1,
+            stepDurationMs:this.clock.stepDurationMs,
+            simulationDate:this.clock.simulationDate(),
+            countryId:this.getPlayerCountryId(),
+            state:this.world.state,
+            clock:this.clock,
+            simulation:this
+          });
+          this.world.state.simulation.subsystemTurns=this.world.state.simulation.subsystemTurns||{};
+          this.world.state.simulation.subsystemTurns[entry.id]=turn;
+          results.push({id:entry.id,turn,status:'COMPLETED',result:value===undefined?null:clone(value)});
+          this.lastTurnParticipantResults=results.slice(-256);
+          this.world.state.simulation.lastTurnParticipantResults=clone(this.lastTurnParticipantResults);
+        }catch(error){
+          const failure={id:entry.id,turn,status:'FAILED',error:String(error?.message||error)};
+          results.push(failure);
+          this.lastTurnParticipantResults=results.slice(-256);
+          this.world.state.simulation.lastTurnParticipantResults=clone(this.lastTurnParticipantResults);
+          // Stop the world immediately rather than silently let one sector miss a day.
+          this.status='ERROR';
+          this.clock.pause();
+          this.lastError='TURN_PARTICIPANT_FAILED:'+entry.id+':'+failure.error;
+          const session=this.world.state.simulation.session||{};
+          session.status='ERROR';
+          session.lastError=this.lastError;
+          session.failedParticipant=entry.id;
+          this.world.setSession(session);
+          try{console.error('[OMEGA TURN PARTICIPANT]',failure);}catch(_){}
+        }
+      }
+      }finally{
+        global.__OMEGA_SIMULATION_PIPELINE_ACTIVE__=false;
+      }
+      this.lastTurnParticipantResults=results.slice(-256);
+      this.world.state.simulation.lastTurnParticipantResults=clone(this.lastTurnParticipantResults);
+      return results;
+    }
+
+    registerTurnFinalizer(id,handler,options={}){
+      const key=String(id||'').trim();
+      if(!key)throw new Error('SIMULATION_FINALIZER_ID_REQUIRED');
+      if(typeof handler!=='function')throw new Error('SIMULATION_FINALIZER_HANDLER_REQUIRED');
+      const previous=this.turnFinalizers.get(key);
+      const entry={
+        id:key,
+        handler,
+        priority:finite(options.priority)??0,
+        sequence:previous?.sequence??(++this.turnFinalizerSequence),
+        token:{}
+      };
+      this.turnFinalizers.set(key,entry);
+      return ()=>{
+        const current=this.turnFinalizers.get(key);
+        if(current&&current.token===entry.token)this.turnFinalizers.delete(key);
+      };
+    }
+
+    async runTurnFinalizers(context,registeredAtTurnStart){
+      const rows=(registeredAtTurnStart||[...this.turnFinalizers.values()])
+        .slice().sort((a,b)=>{
+          // Durable autosave is a reserved system finalizer and must run after
+          // every present or future optional finalizer, regardless of its priority.
+          if(a.id==='omega.game-lifecycle.autosave')return 1;
+          if(b.id==='omega.game-lifecycle.autosave')return -1;
+          return a.priority-b.priority||a.sequence-b.sequence;
+        });
+      const results=[];
+      for(const entry of rows){
+        if(this.turnFinalizers.get(entry.id)!==entry)continue;
+        try{
+          const value=await entry.handler.call(global,context);
+          results.push({id:entry.id,turn:context.turn,status:'COMPLETED',result:value===undefined?null:clone(value)});
+        }catch(error){
+          const failure={id:entry.id,turn:context.turn,status:'FAILED',error:String(error?.message||error)};
+          results.push(failure);
+          this.status='ERROR';
+          this.clock.pause();
+          this.lastError=this.lastError||('TURN_FINALIZER_FAILED:'+entry.id+':'+failure.error);
+          const session=this.world.state.simulation.session||{};
+          session.status='ERROR';
+          session.lastError=this.lastError;
+          session.failedFinalizer=entry.id;
+          this.world.setSession(session);
+          try{console.error('[OMEGA TURN FINALIZER]',failure);}catch(_){}
+        }
+        this.lastTurnFinalizerResults=results.slice(-64);
+        this.world.state.simulation.lastTurnFinalizerResults=clone(this.lastTurnFinalizerResults);
+      }
+      return results;
+    }
+
+    finalizerDiagnostics(){
+      return [...this.turnFinalizers.values()]
+        .sort((a,b)=>a.priority-b.priority||a.sequence-b.sequence)
+        .map(entry=>({id:entry.id,priority:entry.priority,sequence:entry.sequence}));
+    }
+
+    participantDiagnostics(){
+      return [...this.turnParticipants.values()]
+        .sort((a,b)=>a.priority-b.priority||a.sequence-b.sequence)
+        .map(entry=>({id:entry.id,priority:entry.priority,sequence:entry.sequence}));
     }
 
     installDefaultHandlers(){
@@ -481,13 +629,21 @@
       this.phaseHandlers.set('PUBLISH',async({turn,commandResults})=>{
         const event=this.events.emit('OMEGA_SIMULATION_TURN_COMMITTED',{
           turn,
+          day:turn+1,
+          stepDurationMs:this.clock.stepDurationMs,
+          simulationDate:this.clock.simulationDate(),
           countryId:this.getPlayerCountryId(),
           commandCount:commandResults.length,
           stateRevision:this.world.state.simulation.worldStateRevision
         },turn);
+        const participantResults=await this.runTurnParticipants(event);
         try{
+          global.__OMEGA_SIMULATION_PIPELINE_DISPATCH__=true;
           global.dispatchEvent?.(new CustomEvent('OMEGA_SIMULATION_TURN_COMMITTED',{detail:clone(event)}));
-        }catch(_){}
+        }catch(_){
+        }finally{
+          global.__OMEGA_SIMULATION_PIPELINE_DISPATCH__=false;
+        }
         if(typeof this.hooks.onPublish==='function'){
           await this.hooks.onPublish({
             turn,
@@ -495,7 +651,7 @@
             event:clone(event)
           });
         }
-        return {event};
+        return {event,participants:clone(participantResults)};
       });
 
       this.phaseHandlers.set('CHECKPOINT',async({turn})=>{
@@ -641,10 +797,13 @@
         this.world.hydrateCompatibility();
         const combinedDelta=delta+this.pendingRealDeltaMs;
         this.pendingRealDeltaMs=0;
-        const steps=this.clock.consumeRealDelta(combinedDelta);
-        let last=null;
-        for(let i=0;i<steps;i++)last=await this.step();
-        return {steps,turn:this.clock.turn,last};
+        const scheduledSteps=this.clock.consumeRealDelta(combinedDelta);
+        let completedSteps=0,last=null;
+        for(let i=0;i<scheduledSteps&&this.status==='RUNNING';i++){
+          last=await this.step();
+          completedSteps+=1;
+        }
+        return {steps:completedSteps,scheduledSteps,turn:this.clock.turn,last,status:this.status};
       }finally{
         this.frameInProgress=false;
       }
@@ -652,18 +811,24 @@
 
     async advance(turns=1){
       const count=Math.max(0,Math.floor(finite(turns,0)));
+      if(this.status==='ERROR')return {turn:this.clock.turn,steps:0,last:null,status:'ERROR',reason:'SIMULATION_IN_ERROR'};
       const wasRunning=this.status==='RUNNING';
       if(!wasRunning)this.status='RUNNING';
-      let last=null;
-      for(let i=0;i<count;i++)last=await this.step();
-      if(!wasRunning)this.status='READY';
-      return {turn:this.clock.turn,steps:count,last};
+      let last=null,completed=0;
+      for(let i=0;i<count&&this.status!=='ERROR';i++){
+        last=await this.step();
+        completed+=1;
+      }
+      if(!wasRunning&&this.status!=='ERROR')this.status='READY';
+      return {turn:this.clock.turn,steps:completed,last,status:this.status};
     }
 
     async step(){
       if(this.stepInProgress)throw new Error('SIMULATION_STEP_REENTRANT');
+      if(this.status==='ERROR')throw new Error('SIMULATION_IN_ERROR:'+String(this.lastError||'UNKNOWN'));
       this.stepInProgress=true;
       this.lastError=null;
+      const finalizersAtTurnStart=[...this.turnFinalizers.values()];
       const commandResults=[];
       try{
         this.world.hydrateCompatibility();
@@ -693,19 +858,39 @@
         phaseResults.PUBLISH=clone(await this.phaseHandlers.get('PUBLISH')({...context,commandResults,phaseResults}));
         phaseResults.CHECKPOINT=clone(await this.phaseHandlers.get('CHECKPOINT')({...context,commandResults,phaseResults}));
 
+        // Mark the world/session as committed before the finalizer phase so its
+        // durable snapshot contains the exact date, turn, and completion metadata.
         const session=this.world.state.simulation?.session||{};
-        session.lastCommittedTurn=turn;
+        if(this.status==='ERROR'){
+          session.failedTurn=turn;
+          session.failedTurnDate=this.clock.simulationDate();
+        }else{
+          session.lastCommittedTurn=turn;
+        }
         session.status=this.status;
         this.world.setSession(session);
-
         this.stepCount+=1;
         this.lastStepSummary={
           turn,
-          phases:phaseResults,
+          phases:clone(phaseResults),
           commandResults:clone(commandResults),
           stateRevision:this.world.state.simulation.worldStateRevision
         };
         this.events.emit('OMEGA_SIMULATION_STEP_COMPLETED',this.lastStepSummary,turn);
+
+        // The save finalizer executes after all state mutations and the completion
+        // event, so the durable snapshot represents the completed turn, not a preview.
+        phaseResults.FINALIZE=clone(await this.runTurnFinalizers({
+          turn,
+          day:turn+1,
+          stepDurationMs:this.clock.stepDurationMs,
+          simulationDate:this.clock.simulationDate(),
+          countryId:this.getPlayerCountryId(),
+          state:this.world.state,
+          clock:this.clock,
+          simulation:this
+        },finalizersAtTurnStart));
+        this.lastStepSummary.phases=clone(phaseResults);
         return clone(this.lastStepSummary);
       }catch(error){
         this.lastError=String(error?.message||error);
@@ -766,7 +951,41 @@
       // all newly generated snapshots are checksummed before persistence.
       this.lastLoadIntegrity=snapshot.checksum?'VERIFIED':'LEGACY_UNVERIFIED';
       this.world.restore(snapshot.worldState);
-      this.clock.restore(snapshot.clock);
+      // Migrate legacy hourly saves into the canonical daily-turn timeline.
+      // A simulation turn is one game day; wall-clock speed is controlled separately.
+      const restoredClock=clone(snapshot.clock);
+      const clockTurn=Math.max(0,finite(restoredClock.turn,0));
+      const worldTurn=Math.max(0,finite(snapshot.worldState.simulation?.turn,0));
+      const savedTurn=Math.max(clockTurn,worldTurn);
+      const savedDate=snapshot.worldState.simulation?.date;
+      const savedEpoch=Date.parse(String(savedDate||''));
+      const startEpoch=Number(restoredClock.startEpochMs);
+      const legacyClock=Number(restoredClock.stepDurationMs)!==DAY_MS;
+      restoredClock.turn=savedTurn;
+      if(legacyClock){
+        // The saved calendar date is the migration anchor. Rebase elapsed time to it,
+        // then apply one full day to each future turn.
+        restoredClock.stepDurationMs=DAY_MS;
+        if(Number.isFinite(savedEpoch)&&Number.isFinite(startEpoch)){
+          restoredClock.simulationTimeMs=Math.max(0,savedEpoch-startEpoch);
+        }else if(worldTurn>clockTurn||
+          restoredClock.simulationTimeMs===null||restoredClock.simulationTimeMs===undefined||
+          !Number.isFinite(Number(restoredClock.simulationTimeMs))){
+          restoredClock.simulationTimeMs=savedTurn*DAY_MS;
+        }
+      }else if(worldTurn>clockTurn){
+        // Early legacy snapshots may have updated Game.state before the clock existed.
+        // Prefer its saved calendar date when present; otherwise never rewind to the
+        // stale default clock turn.
+        restoredClock.simulationTimeMs=Number.isFinite(savedEpoch)&&Number.isFinite(startEpoch)
+          ?Math.max(0,savedEpoch-startEpoch)
+          :savedTurn*DAY_MS;
+      }
+      restoredClock.stepDurationMs=DAY_MS;
+      restoredClock.accumulatorMs=0;
+      this.clock.restore(restoredClock);
+      this.world.state.simulation.turn=this.clock.turn;
+      this.world.state.simulation.date=this.clock.simulationDate();
       this.commandQueue.restore(snapshot.commands);
       this.events.restore(snapshot.events);
       if(snapshot.ministryRuntime&&this.ministryRuntime?.loadState)this.ministryRuntime.loadState(snapshot.ministryRuntime);
@@ -816,7 +1035,13 @@
         stepCount:this.stepCount,
         lastStep:clone(this.lastStepSummary),
         lastError:this.lastError,
-        lastLoadIntegrity:this.lastLoadIntegrity
+        lastLoadIntegrity:this.lastLoadIntegrity,
+        turnParticipantCount:this.turnParticipants.size,
+        turnParticipants:this.participantDiagnostics(),
+        lastTurnParticipantResults:clone(this.lastTurnParticipantResults),
+        turnFinalizerCount:this.turnFinalizers.size,
+        turnFinalizers:this.finalizerDiagnostics(),
+        lastTurnFinalizerResults:clone(this.lastTurnFinalizerResults)
       };
     }
   }
@@ -834,6 +1059,106 @@
   global.Omega.GameSession=simulation;
   global.Omega.AuthoritativeWorldState=simulation.world;
   global.Omega.SimulationClock=SimulationClock;
+
+  // Legacy compatibility bridge: every window-level turn listener becomes an awaited
+  // participant. New subsystems should use registerTurnParticipant/registerSubsystem.
+  // The final browser event is still emitted for external tools, but wrapped listeners are
+  // suppressed during that dispatch to prevent a second execution of the same turn.
+  (function installEventLedgerTurnBridge(){
+    const ledger=simulation.events;
+    if(ledger.__OMEGA_TURN_LEDGER_BRIDGE_V1__)return;
+    const nativeSubscribe=ledger.subscribe.bind(ledger);
+    const registries=new Map();
+    let sequence=0;
+    ledger.subscribe=function(type,listener){
+      const key=String(type||'*');
+      if((key!=='OMEGA_SIMULATION_TURN_COMMITTED'&&key!=='*')||typeof listener!=='function')
+        return nativeSubscribe(type,listener);
+      let registry=registries.get(key);
+      if(!registry){registry=new WeakMap();registries.set(key,registry);}
+      const previous=registry.get(listener);
+      if(previous)return previous.remove;
+      const id='legacy.event-ledger.'+(++sequence)+':'+key;
+      let unregisterTurn=()=>{},unsubscribeNative=()=>{};
+      if(key==='OMEGA_SIMULATION_TURN_COMMITTED'){
+        unregisterTurn=simulation.registerTurnParticipant(id,event=>listener.call(global,clone(event.detail)));
+      }else{
+        // Preserve wildcard semantics for other ledger event types, but route their
+        // turn-commit observation through the awaited participant list exactly once.
+        const filtered=event=>{
+          if(event&&event.eventType==='OMEGA_SIMULATION_TURN_COMMITTED')return;
+          return listener.call(global,event);
+        };
+        unsubscribeNative=nativeSubscribe('*',filtered);
+        unregisterTurn=simulation.registerTurnParticipant(id,event=>listener.call(global,clone(event.detail)));
+      }
+      const remove=()=>{
+        unsubscribeNative();
+        unregisterTurn();
+        registry.delete(listener);
+      };
+      registry.set(listener,{remove});
+      return remove;
+    };
+    ledger.__OMEGA_TURN_LEDGER_BRIDGE_V1__=true;
+  })();
+
+  (function installTurnEventBridge(){
+    if(global.__OMEGA_TURN_EVENT_BRIDGE_V1__)return;
+    const nativeAdd=global.addEventListener;
+    const nativeRemove=global.removeEventListener;
+    if(typeof nativeAdd!=='function'||typeof nativeRemove!=='function')return;
+    const records=new Map();
+    let legacySequence=0;
+    const captureOf=options=>typeof options==='boolean'?options:!!(options&&options.capture);
+    global.addEventListener=function(type,listener,options){
+      if(type!=='OMEGA_SIMULATION_TURN_COMMITTED'||!listener){
+        return nativeAdd.call(this,type,listener,options);
+      }
+      if(options&&typeof options==='object'&&options.signal?.aborted)return;
+      const capture=captureOf(options);
+      const bucket=records.get(listener)||[];
+      const existing=bucket.find(row=>row.type===type&&row.capture===capture);
+      if(existing)return;
+      const id='legacy.turn-listener.'+(++legacySequence);
+      const once=!!(options&&typeof options==='object'&&options.once);
+      let called=false,unregister=()=>{};
+      const invoke=async event=>{
+        if(once&&called)return;
+        if(once){called=true;unregister();}
+        if(typeof listener==='function')return listener.call(global,event);
+        if(listener&&typeof listener.handleEvent==='function')return listener.handleEvent.call(listener,event);
+      };
+      unregister=simulation.registerTurnParticipant(id,invoke);
+      const wrapped=function(event){
+        if(global.__OMEGA_SIMULATION_PIPELINE_ACTIVE__===true||global.__OMEGA_SIMULATION_PIPELINE_DISPATCH__===true)return;
+        const value=invoke(event);
+        if(value&&typeof value.catch==='function')value.catch(error=>{try{console.error('[OMEGA LEGACY TURN LISTENER]',error);}catch(_){}});
+      };
+      const row={type,capture,wrapped,unregister,signal:options&&typeof options==='object'?options.signal:null,onAbort:null};
+      bucket.push(row);records.set(listener,bucket);
+      nativeAdd.call(this,type,wrapped,options);
+      if(row.signal&&typeof row.signal.addEventListener==='function'){
+        row.onAbort=()=>global.removeEventListener(type,listener,capture);
+        row.signal.addEventListener('abort',row.onAbort,{once:true});
+      }
+    };
+    global.removeEventListener=function(type,listener,options){
+      if(type!=='OMEGA_SIMULATION_TURN_COMMITTED'||!listener){
+        return nativeRemove.call(this,type,listener,options);
+      }
+      const bucket=records.get(listener)||[];
+      const capture=captureOf(options);
+      const index=bucket.findIndex(row=>row.type===type&&row.capture===capture);
+      if(index<0)return nativeRemove.call(this,type,listener,options);
+      const row=bucket.splice(index,1)[0];
+      if(!bucket.length)records.delete(listener);
+      nativeRemove.call(this,type,row.wrapped,options);
+      row.unregister();
+      if(row.signal&&row.onAbort)row.signal.removeEventListener('abort',row.onAbort);
+    };
+    global.__OMEGA_TURN_EVENT_BRIDGE_V1__=true;
+  })();
 
   global.Omega.Simulation.configure({
     worldEngine:global.WorldEcosystemEngine||null,
