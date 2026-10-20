@@ -137,11 +137,26 @@ test('country assessments use source facts, lower confidence for missing fields 
   assert.equal(ready.profileCount, 3);
   const bangladesh = context.OmegaWorldBankLending.assessCountry('BGD');
   assert.ok(bangladesh.score >= 72);
-  assert.equal(bangladesh.program, 'IDA');
+  assert.equal(bangladesh.program, 'CONCESSIONAL_SIM');
   assert.equal(bangladesh.debtToGdpPct, 45);
   assert.ok(bangladesh.maxLoanUsd > 0);
   assert.ok(bangladesh.maxLoanUsd <= 2.5e9);
-  assert.equal(bangladesh.sourceYears.gdpUsd, 2024);
+  assert.equal(bangladesh.simulationDataAvailable, true);
+  const originalScore = bangladesh.score;
+  const originalLimit = bangladesh.maxLoanUsd;
+  const state = context.gameState;
+  state.governmentBanking.worldBankLending.reference.countries.BGD.data.gdpUsd.value = 9e15;
+  state.governmentBanking.worldBankLending.reference.countries.BGD.data.publicDebtPctGdp.value = 999;
+  state.governmentBanking.worldBankLending.reference.countries.USA.data.gdpUsd.value = 1;
+  const afterReferenceMutation = context.OmegaWorldBankLending.assessCountry('BGD');
+  assert.equal(afterReferenceMutation.score, originalScore, 'published reference observations must not affect game credit scoring');
+  assert.equal(afterReferenceMutation.maxLoanUsd, originalLimit, 'published reference observations must not change the in-game credit limit');
+  state.economy.BANGLADESH.gdp_growth = -10;
+  state.economy.BANGLADESH.debt = 90e9;
+  const afterGameMutation = context.OmegaWorldBankLending.assessCountry('BGD');
+  assert.ok(afterGameMutation.score < originalScore, 'live game GDP growth and debt must change the credit score');
+  assert.equal(context.OmegaWorldBankLending.resolveWorldBankCountry('USA', 'BD'), null,
+    'conflicting ISO3/ISO2 identities must be rejected rather than routed to the wrong country');
   const unknown = context.OmegaWorldBankLending.assessCountry('DGT');
   assert.equal(unknown.decision, 'DATA_INSUFFICIENT');
   assert.equal(unknown.maxLoanUsd, 0);
@@ -198,9 +213,49 @@ test('contract interest accrues once per turn and scheduled debt service reduces
   const regular = api.serviceDebt('BGD', 1, 10e9, 100e9, 3);
   assert.equal(regular.ok, true);
   assert.ok(regular.paidUsd > 0);
-  assert.ok(loan.outstandingPrincipalUsd < priorPrincipal);
+  const updatedLoan = api.getLoans('BGD')[0];
+  assert.ok(updatedLoan.outstandingPrincipalUsd < priorPrincipal, 'service must update the stored contract, not a returned clone');
   assert.ok(api.getOutstandingBalance('BGD') > 0);
   assert.equal(api.getFacilitySnapshot().availableCapacityUsd, priorAvailableCapacity + regular.principalPaidUsd);
+  assert.ok(api.getFacilitySnapshot().liquidityUsd > 250e9 - 500e6, 'borrower repayments return cash to the institutional pool');
+});
+
+test('partner registration, negotiation limits, restructuring and nonblocking reference startup have guardrails', async () => {
+  const { context, state } = makeRuntime();
+  const api = context.OmegaWorldBankLending;
+  await api.init();
+  const runtimeState = api.getState();
+  assert.ok(runtimeState.liquidity.cashBalanceUsd > 0);
+  const terms = api.getNegotiationBounds('BGD', 'infrastructure');
+  assert.ok(terms.maximumRatePct <= 8.5);
+  assert.ok(terms.maximumTermYears <= 40);
+  const badTerms = api.requestLoan({
+    countryId: 'BGD', amountUsd: 500e6, requestId: 'out-of-band-rate',
+    annualInterestRatePct: 99, termYears: 20, graceYears: 3
+  });
+  assert.equal(badTerms.ok, false);
+  assert.equal(badTerms.code, 'RATE_OUTSIDE_NEGOTIATION_RANGE');
+  const partner = api.registerFundingPartner({ countryId: 'BGD', commitmentLimitUsd: 100e6 });
+  assert.equal(partner.ok, true);
+  assert.equal(partner.partner.role, 'LENDER');
+  const tooLargePartner = api.registerFundingPartner({ countryId: 'BGD', commitmentLimitUsd: 9e9 });
+  assert.equal(tooLargePartner.ok, false);
+  assert.equal(tooLargePartner.code, 'PARTNER_COMMITMENT_OUT_OF_RANGE');
+  const loan = api.getLoans('BGD')[0];
+  if (loan) {
+    const rawLoan = state.governmentBanking.worldBankLending.loansByCountry.BGD[0];
+    rawLoan.status = 'ARREARS';
+    rawLoan.arrearsUsd = 1e6;
+    rawLoan.daysPastDue = 45;
+    const workout = api.requestRestructuring({
+      countryId: 'BGD', loanId: rawLoan.loanId, annualInterestRatePct: rawLoan.annualInterestRatePct,
+      termYears: Math.min(40, Math.ceil(rawLoan.termYears) + 1), graceYears: 1,
+      reason: 'temporary-liquidity-shock'
+    });
+    assert.equal(workout.ok, true);
+    assert.equal(workout.loan.status, 'RESTRUCTURED');
+    assert.equal(workout.loan.arrearsUsd, 0);
+  }
 });
 
 test('failed live refresh preserves the last valid World Bank observations and exposes offline status', async () => {
