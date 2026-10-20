@@ -49,9 +49,11 @@ async function main() {
     const languageIndex = html.indexOf('/omega_language_system.js');
     const batch03Index = html.indexOf('/omega_language_batch03_semantic_extension.js');
     const universalIndex = html.indexOf('/omega_universal_ai_runtime.js');
+    const ministerPipelineIndex = html.indexOf('/omega_minister_intelligence_pipeline_v1.js');
     assert.ok(languageIndex >= 0, 'production HTML must load Omega Language System');
     assert.ok(batch03Index > languageIndex, 'production HTML must load Batch 03 after Language System');
     assert.ok(universalIndex > batch03Index, 'production HTML must load Universal AI after Batch 03');
+    assert.ok(ministerPipelineIndex > universalIndex, 'production HTML must load minister intelligence pipeline after Universal AI');
 
     const statusResponse = await request('/api/ai/status');
     assert.equal(statusResponse.ok, true, `production AI status failed: HTTP ${statusResponse.status}`);
