@@ -7696,64 +7696,63 @@
     },
     {
       "schemaVersion": "1.0.0",
-      "siteId": "SITE_IDN_batu_hijau_copper_gold_mine",
+      "siteId": "SITE_IDN_sorowako_nickel_mine",
       "countryId": "IDN",
-      "siteName": "Batu Hijau Copper-Gold Mine",
+      "siteName": "Sorowako Nickel Mining & Processing Operation",
       "identity": {
         "countryIso3": "IDN",
         "countryName": "Indonesia",
-        "siteType": "COPPER_GOLD_MINE",
-        "resourceTypeId": "copper",
-        "resourceName": "Copper and gold ores",
-        "ontologyKey": "COPPER",
+        "siteType": "NICKEL_MINE_AND_PROCESSING_OPERATION",
+        "resourceTypeId": "nickel",
+        "resourceName": "Nickel laterite ore / nickel matte",
+        "ontologyKey": "NICKEL",
         "aliases": []
       },
       "location": {
         "countryName": "Indonesia",
-        "adminRegion": "Sumbawa Island, West Nusa Tenggara",
-        "locality": "Sumbawa Island, West Nusa Tenggara",
+        "adminRegion": "Sorowako Block, East Luwu Regency, South Sulawesi",
+        "locality": "Sorowako Block, East Luwu Regency, South Sulawesi",
         "coordinates": {
-          "lat": -8.96,
-          "lng": 116.86
+          "lat": -2.53,
+          "lng": 121.35
         },
         "coordinateStatus": "REGIONAL_APPROXIMATION",
-        "coordinateAuthority": "SOURCE-LOCATED REGION; APPROXIMATE COORDINATE FOR STRATEGIC MAP NOT SURVEY GRADE",
+        "coordinateAuthority": "SOURCE-LOCATED REGION; APPROXIMATE COORDINATE FOR STRATEGIC MAP, NOT SURVEY GRADE",
         "coordinatePrecision": "REGIONAL_APPROXIMATION",
         "countryBoundaryKey": "IDN"
       },
       "ownership": {
-        "owner": "Current indirect shareholding chain is not normalized",
-        "operator": "PT Amman Mineral Nusa Tenggara",
-        "ownerEvidenceStatus": "SOURCE_REPORTED_REQUIRES_CURRENT_FILING_RECONCILIATION",
-        "operatorEvidenceStatus": "SOURCE_REPORTED_PRIMARY_OR_PORTFOLIO",
+        "owner": "PT Vale Indonesia Tbk; current shareholder structure should be checked against latest filings",
+        "operator": "PT Vale Indonesia Tbk",
+        "ownerEvidenceStatus": "PUBLIC_COMPANY_AND_OPERATOR_SOURCE_REPORTED",
+        "operatorEvidenceStatus": "SOURCE_REPORTED_PRIMARY_OR_GOVERNMENT",
         "authority": "SOURCE_REFERENCE_WITH_CURRENT_STATUS_CAVEAT",
         "equityControlCountry": "IDN",
-        "operatorContractId": "OPCONTRACT_SITE_IDN_batu_hijau_copper_gold_mine"
+        "operatorContractId": "OPCONTRACT_SITE_IDN_sorowako_nickel_mine"
       },
       "operation": {
-        "status": "OPERATING_AS_REPORTED_OPERATOR_CONTEXT",
-        "operationalStatus": "OPERATING_AS_REPORTED_OPERATOR_CONTEXT",
-        "realWorldStatus": "OPERATING_AS_REPORTED_OPERATOR_CONTEXT",
-        "extractionMethod": "OPEN_PIT_COPPER_GOLD_MINING_AND_CONCENTRATION",
+        "status": "OPERATING_AS_REPORTED_AUGUST_2026",
+        "operationalStatus": "OPERATING_AS_REPORTED_AUGUST_2026",
+        "realWorldStatus": "OPERATING_AS_REPORTED_AUGUST_2026",
+        "extractionMethod": "LATERITE_NICKEL_MINING_AND_PYROMETALLURGICAL_PROCESSING",
         "extractionEligibility": "SIMULATED_GAMEPLAY_EXECUTABLE_SUBJECT_TO_RUNTIME_GATES",
         "commercialExtraction": true,
         "siteCommissioningLevel": 0,
         "mineLevel": 0,
-        "statusAuthority": "SOURCE_REPORTED_IDENTITY_AND_STATUS; PLAYER_SIMULATION_STATE_REMAINS_SEPARATE",
+        "statusAuthority": "SOURCE-REPORTED IDENTITY AND OPERATIONAL CONTEXT; PLAYER SIMULATION STATE IS SEPARATE",
         "gameplayConstructionAllowed": true
       },
       "processing": {
-        "upstreamProcess": "OPEN_PIT_COPPER_GOLD_MINING_AND_CONCENTRATION",
+        "upstreamProcess": "LATERITE_NICKEL_MINING_AND_PYROMETALLURGICAL_PROCESSING",
         "midstreamProcess": "COMMODITY_SPECIFIC_BENEFICIATION_AND_GRADE_CONTROL",
         "refinedOutputs": [
-          "copper concentrate",
-          "gold by-product where applicable"
+          "nickel matte",
+          "nickel intermediate products"
         ],
         "downstreamSectors": [
-          "smelting",
-          "refining",
-          "electricity grids",
-          "manufacturing"
+          "stainless steel",
+          "battery materials",
+          "nickel refining"
         ]
       },
       "logistics": {
@@ -7763,9 +7762,9 @@
         "factoryRouteStatus": "REQUIRES_FACTORY_COMPATIBILITY_CHECK",
         "routeStatus": "REGIONAL_ROUTE_TO_BE_PLANNED",
         "transport": {
-          "routeId": "ROUTE_SITE_IDN_batu_hijau_copper_gold_mine_RAW_TO_FACTORY",
+          "routeId": "ROUTE_SITE_IDN_sorowako_nickel_mine_RAW_TO_FACTORY",
           "routeType": "ROAD_RAIL",
-          "originSiteId": "SITE_IDN_batu_hijau_copper_gold_mine",
+          "originSiteId": "SITE_IDN_sorowako_nickel_mine",
           "originCountryId": "IDN",
           "warehouseId": "WH-IDN-RAW",
           "destinationFactoryId": "AUTO_SELECT_COMPATIBLE_FACTORY",
@@ -7794,7 +7793,7 @@
           "rate": null,
           "unit": "TONNES_PER_DAY",
           "status": "UNOBSERVED",
-          "basis": "Current reported facts are preserved separately and not promoted into quantitative authority"
+          "basis": "No reconciled site-specific production metric promoted; source facts stay separate"
         },
         "grade": {
           "value": null,
@@ -7824,11 +7823,12 @@
           "status": "UNOBSERVED"
         },
         "quantitativeProvenance": {
-          "authority": "SOURCE_REPORTED_IDENTITY_WITH_UNKNOWN_MEASUREMENTS_PRESERVED",
+          "authority": "SOURCE_REPORTED_SITE_IDENTITY_WITH_UNKNOWN_MEASUREMENTS_PRESERVED",
           "measuredReservePromoted": false,
           "simulatedReserveSeparate": true,
           "sourceUrls": [
-            "https://www.amman.co.id/"
+            "https://www.valeindonesia.com/indonesia/our-operation-in-sorowako.html",
+            "https://www.valeindonesia.com/indonesia/operasi-kami.html"
           ],
           "accessed": "2026-10-20"
         },
@@ -7887,7 +7887,7 @@
         "factoryBinding": {
           "factoryId": null,
           "countryId": "IDN",
-          "inputResourceId": "copper",
+          "inputResourceId": "nickel",
           "status": "REQUIRES_COMPATIBLE_FACTORY_BOOTSTRAP",
           "authority": "RUNTIME"
         },
@@ -7907,29 +7907,56 @@
         "sourceStatusIsNotGameplayCommissioning": true
       },
       "sourceReference": {
-        "sourcePath": "https://www.amman.co.id/",
+        "sourcePath": "https://www.valeindonesia.com/indonesia/our-operation-in-sorowako.html",
         "sourceType": "OPERATOR_PRIMARY",
         "accessed": "2026-10-20",
-        "facts": {},
-        "statusNote": "Source identity/status is separate from simulated reserve and player-owned assets."
+        "facts": {
+          "mainOperationReportedSince1978": true,
+          "integratedExplorationMiningAndProcessing": true,
+          "reportedNickelMatteProcessingCapacityTonnesPerDay": [
+            180,
+            216
+          ],
+          "capacityDefinition": "reported plant nickel-matte production capacity range; not ore throughput or geological reserve",
+          "currentStatusSourcePageDated": "2026-08",
+          "measuredMineReserveNotIngested": true
+        },
+        "statusNote": "Source-reported site identity and selected operating facts are separate from simulated reserves and player-owned assets."
       },
       "sources": [
         {
-          "url": "https://www.amman.co.id/",
+          "url": "https://www.valeindonesia.com/indonesia/our-operation-in-sorowako.html",
           "sourceType": "OPERATOR_PRIMARY",
           "accessed": "2026-10-20",
-          "scope": "site_identity_commodity_location_and_source_reported_status"
+          "scope": "site_identity_location_commodity_and_reported_operational_context"
+        },
+        {
+          "url": "https://www.valeindonesia.com/indonesia/operasi-kami.html",
+          "sourceType": "GOVERNMENT_MINISTRY_SOURCE",
+          "accessed": "2026-10-20",
+          "scope": "site_identity_location_commodity_and_reported_operational_context"
         }
       ],
       "observedFacts": {
-        "reportedStatus": "OPERATING_AS_REPORTED_OPERATOR_CONTEXT",
-        "owner": "Current indirect shareholding chain is not normalized",
-        "operator": "PT Amman Mineral Nusa Tenggara",
-        "resource": "Copper and gold ores",
-        "region": "Sumbawa Island, West Nusa Tenggara",
-        "facts": {},
+        "reportedStatus": "OPERATING_AS_REPORTED_AUGUST_2026",
+        "owner": "PT Vale Indonesia Tbk; current shareholder structure should be checked against latest filings",
+        "operator": "PT Vale Indonesia Tbk",
+        "resource": "Nickel laterite ore / nickel matte",
+        "region": "Sorowako Block, East Luwu Regency, South Sulawesi",
+        "facts": {
+          "mainOperationReportedSince1978": true,
+          "integratedExplorationMiningAndProcessing": true,
+          "reportedNickelMatteProcessingCapacityTonnesPerDay": [
+            180,
+            216
+          ],
+          "capacityDefinition": "reported plant nickel-matte production capacity range; not ore throughput or geological reserve",
+          "currentStatusSourcePageDated": "2026-08",
+          "measuredMineReserveNotIngested": true
+        },
         "authority": "SOURCE_REPORTED_NOT_FULLY_RECONCILED"
-      }
+      },
+      "changeNote": "Replaced a duplicate site ID already present in the authoritative reserve simulation with a distinct source-referenced site."
     },
     {
       "schemaVersion": "1.0.0",
@@ -8167,64 +8194,64 @@
     },
     {
       "schemaVersion": "1.0.0",
-      "siteId": "SITE_PER_antamina_copper_zinc_mine",
+      "siteId": "SITE_PER_toromocho_copper_mine",
       "countryId": "PER",
-      "siteName": "Antamina Copper-Zinc Mine",
+      "siteName": "Toromocho Open-Pit Copper Mine",
       "identity": {
         "countryIso3": "PER",
         "countryName": "Peru",
-        "siteType": "COPPER_ZINC_MINE",
+        "siteType": "OPEN_PIT_COPPER_MINE",
         "resourceTypeId": "copper",
-        "resourceName": "Copper and zinc ores",
+        "resourceName": "Copper",
         "ontologyKey": "COPPER",
         "aliases": []
       },
       "location": {
         "countryName": "Peru",
-        "adminRegion": "San Marcos, Huari Province, Ancash",
-        "locality": "San Marcos, Huari Province, Ancash",
+        "adminRegion": "Morococha District, Junín Region",
+        "locality": "Morococha District, Junín Region",
         "coordinates": {
-          "lat": -9.54,
-          "lng": -77.05
+          "lat": -11.55,
+          "lng": -76.13
         },
         "coordinateStatus": "REGIONAL_APPROXIMATION",
-        "coordinateAuthority": "SOURCE-LOCATED REGION; APPROXIMATE COORDINATE FOR STRATEGIC MAP NOT SURVEY GRADE",
+        "coordinateAuthority": "SOURCE-LOCATED REGION; APPROXIMATE COORDINATE FOR STRATEGIC MAP, NOT SURVEY GRADE",
         "coordinatePrecision": "REGIONAL_APPROXIMATION",
         "countryBoundaryKey": "PER"
       },
       "ownership": {
-        "owner": "Joint-venture equity shares require current filing verification",
-        "operator": "Compañía Minera Antamina",
-        "ownerEvidenceStatus": "SOURCE_REPORTED_REQUIRES_CURRENT_FILING_RECONCILIATION",
-        "operatorEvidenceStatus": "SOURCE_REPORTED_PRIMARY_OR_PORTFOLIO",
+        "owner": "Chinalco Peru; legal equity attribution should be checked against latest filings",
+        "operator": "Minera Chinalco Perú S.A.",
+        "ownerEvidenceStatus": "OPERATOR_AND_GOVERNMENT_SOURCE_REPORTED",
+        "operatorEvidenceStatus": "SOURCE_REPORTED_PRIMARY_OR_GOVERNMENT",
         "authority": "SOURCE_REFERENCE_WITH_CURRENT_STATUS_CAVEAT",
         "equityControlCountry": "PER",
-        "operatorContractId": "OPCONTRACT_SITE_PER_antamina_copper_zinc_mine"
+        "operatorContractId": "OPCONTRACT_SITE_PER_toromocho_copper_mine"
       },
       "operation": {
-        "status": "OPERATING_AS_REPORTED_OPERATOR_CONTEXT",
-        "operationalStatus": "OPERATING_AS_REPORTED_OPERATOR_CONTEXT",
-        "realWorldStatus": "OPERATING_AS_REPORTED_OPERATOR_CONTEXT",
-        "extractionMethod": "OPEN_PIT_COPPER_ZINC_MINING_AND_CONCENTRATION",
+        "status": "OPERATING_WITH_EXPANSION_REPORTED_2026",
+        "operationalStatus": "OPERATING_WITH_EXPANSION_REPORTED_2026",
+        "realWorldStatus": "OPERATING_WITH_EXPANSION_REPORTED_2026",
+        "extractionMethod": "OPEN_PIT_COPPER_MINING_AND_CONCENTRATION",
         "extractionEligibility": "SIMULATED_GAMEPLAY_EXECUTABLE_SUBJECT_TO_RUNTIME_GATES",
         "commercialExtraction": true,
         "siteCommissioningLevel": 0,
         "mineLevel": 0,
-        "statusAuthority": "SOURCE_REPORTED_IDENTITY_AND_STATUS; PLAYER_SIMULATION_STATE_REMAINS_SEPARATE",
+        "statusAuthority": "SOURCE-REPORTED IDENTITY AND OPERATIONAL CONTEXT; PLAYER SIMULATION STATE IS SEPARATE",
         "gameplayConstructionAllowed": true
       },
       "processing": {
-        "upstreamProcess": "OPEN_PIT_COPPER_ZINC_MINING_AND_CONCENTRATION",
+        "upstreamProcess": "OPEN_PIT_COPPER_MINING_AND_CONCENTRATION",
         "midstreamProcess": "COMMODITY_SPECIFIC_BENEFICIATION_AND_GRADE_CONTROL",
         "refinedOutputs": [
           "copper concentrate",
-          "gold by-product where applicable"
+          "molybdenum concentrate"
         ],
         "downstreamSectors": [
-          "smelting",
-          "refining",
-          "electricity grids",
-          "manufacturing"
+          "copper smelting",
+          "wire and cable",
+          "power grids",
+          "industrial alloys"
         ]
       },
       "logistics": {
@@ -8234,9 +8261,9 @@
         "factoryRouteStatus": "REQUIRES_FACTORY_COMPATIBILITY_CHECK",
         "routeStatus": "REGIONAL_ROUTE_TO_BE_PLANNED",
         "transport": {
-          "routeId": "ROUTE_SITE_PER_antamina_copper_zinc_mine_RAW_TO_FACTORY",
+          "routeId": "ROUTE_SITE_PER_toromocho_copper_mine_RAW_TO_FACTORY",
           "routeType": "ROAD_RAIL",
-          "originSiteId": "SITE_PER_antamina_copper_zinc_mine",
+          "originSiteId": "SITE_PER_toromocho_copper_mine",
           "originCountryId": "PER",
           "warehouseId": "WH-PER-RAW",
           "destinationFactoryId": "AUTO_SELECT_COMPATIBLE_FACTORY",
@@ -8265,7 +8292,7 @@
           "rate": null,
           "unit": "TONNES_PER_DAY",
           "status": "UNOBSERVED",
-          "basis": "Current reported facts are preserved separately and not promoted into quantitative authority"
+          "basis": "No reconciled site-specific production metric promoted; source facts stay separate"
         },
         "grade": {
           "value": null,
@@ -8295,11 +8322,12 @@
           "status": "UNOBSERVED"
         },
         "quantitativeProvenance": {
-          "authority": "SOURCE_REPORTED_IDENTITY_WITH_UNKNOWN_MEASUREMENTS_PRESERVED",
+          "authority": "SOURCE_REPORTED_SITE_IDENTITY_WITH_UNKNOWN_MEASUREMENTS_PRESERVED",
           "measuredReservePromoted": false,
           "simulatedReserveSeparate": true,
           "sourceUrls": [
-            "https://www.antamina.com/en/"
+            "https://www.chinalco.com.pe/operaciones/toromocho",
+            "https://www.gob.pe/institucion/minem/noticias/1378448-minem-impulsa-incremento-en-la-produccion-de-minerales-criticos-a-traves-de-la-expansion-del-proyecto-toromocho"
           ],
           "accessed": "2026-10-20"
         },
@@ -8378,29 +8406,50 @@
         "sourceStatusIsNotGameplayCommissioning": true
       },
       "sourceReference": {
-        "sourcePath": "https://www.antamina.com/en/",
-        "sourceType": "OPERATOR_PRIMARY",
+        "sourcePath": "https://www.chinalco.com.pe/operaciones/toromocho",
+        "sourceType": "OPERATOR_PRIMARY_AND_GOVERNMENT_MINISTRY",
         "accessed": "2026-10-20",
-        "facts": {},
-        "statusNote": "Source identity/status is separate from simulated reserve and player-owned assets."
+        "facts": {
+          "openPitCopperConcentrateOperation": true,
+          "expansionProjectReportedByPeruMinistryOn": "2026-04-14",
+          "expansionInvestmentReportedUSDLowerBound": 700000000,
+          "investmentIsExpansionProgramFactNotMineReserve": true,
+          "processingFlowIncludesCrushingMillingFlotationCopperConcentrateAndMolybdenumRecovery": true,
+          "measuredMineReserveNotIngested": true
+        },
+        "statusNote": "Source-reported site identity and selected operating facts are separate from simulated reserves and player-owned assets."
       },
       "sources": [
         {
-          "url": "https://www.antamina.com/en/",
-          "sourceType": "OPERATOR_PRIMARY",
+          "url": "https://www.chinalco.com.pe/operaciones/toromocho",
+          "sourceType": "OPERATOR_PRIMARY_AND_GOVERNMENT_MINISTRY",
           "accessed": "2026-10-20",
-          "scope": "site_identity_commodity_location_and_source_reported_status"
+          "scope": "site_identity_location_commodity_and_reported_operational_context"
+        },
+        {
+          "url": "https://www.gob.pe/institucion/minem/noticias/1378448-minem-impulsa-incremento-en-la-produccion-de-minerales-criticos-a-traves-de-la-expansion-del-proyecto-toromocho",
+          "sourceType": "GOVERNMENT_MINISTRY_SOURCE",
+          "accessed": "2026-10-20",
+          "scope": "site_identity_location_commodity_and_reported_operational_context"
         }
       ],
       "observedFacts": {
-        "reportedStatus": "OPERATING_AS_REPORTED_OPERATOR_CONTEXT",
-        "owner": "Joint-venture equity shares require current filing verification",
-        "operator": "Compañía Minera Antamina",
-        "resource": "Copper and zinc ores",
-        "region": "San Marcos, Huari Province, Ancash",
-        "facts": {},
+        "reportedStatus": "OPERATING_WITH_EXPANSION_REPORTED_2026",
+        "owner": "Chinalco Peru; legal equity attribution should be checked against latest filings",
+        "operator": "Minera Chinalco Perú S.A.",
+        "resource": "Copper",
+        "region": "Morococha District, Junín Region",
+        "facts": {
+          "openPitCopperConcentrateOperation": true,
+          "expansionProjectReportedByPeruMinistryOn": "2026-04-14",
+          "expansionInvestmentReportedUSDLowerBound": 700000000,
+          "investmentIsExpansionProgramFactNotMineReserve": true,
+          "processingFlowIncludesCrushingMillingFlotationCopperConcentrateAndMolybdenumRecovery": true,
+          "measuredMineReserveNotIngested": true
+        },
         "authority": "SOURCE_REPORTED_NOT_FULLY_RECONCILED"
-      }
+      },
+      "changeNote": "Replaced a duplicate site ID already present in the authoritative reserve simulation with a distinct source-referenced site."
     },
     {
       "schemaVersion": "1.0.0",
@@ -10572,6 +10621,17 @@
     "totalCountryCount": 22,
     "addedSiteCount": 14,
     "coordinateCorrection": "SITE_ZMB_mopani_copper_mines",
-    "sourceEvidencePolicy": "Reported identity/status facts are kept separate from unobserved measured quantities and simulated gameplay reserve seeds."
+    "sourceEvidencePolicy": "Reported identity/status facts are kept separate from unobserved measured quantities and simulated gameplay reserve seeds.",
+    "distinctSiteIdentityFixes": [
+      {
+        "replaced": "SITE_IDN_batu_hijau_copper_gold_mine",
+        "with": "SITE_IDN_sorowako_nickel_mine"
+      },
+      {
+        "replaced": "SITE_PER_antamina_copper_zinc_mine",
+        "with": "SITE_PER_toromocho_copper_mine"
+      }
+    ],
+    "sourceIntegrityPolicy": "No supplement record may reuse a siteId in the authoritative reserve simulation; measured reserve and production remain unobserved unless sourced."
   }
 }
