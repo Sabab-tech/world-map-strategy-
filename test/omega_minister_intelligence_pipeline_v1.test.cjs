@@ -192,6 +192,8 @@ activeMinisterForScope = minister;
     'The minister AI endpoint must validate input and declare an explicit offline fallback state.');
   assert.ok(bootstrap.includes("'omega_minister_intelligence_pipeline_v1.js'"));
   assert.ok(universal.includes("source:'MINISTER_INTELLIGENCE_PIPELINE'"));
+  assert.ok(universal.indexOf('const ministerPipeline=global.OmegaMinisterIntelligencePipeline') < universal.indexOf('const selfQuery=resolveSelfQuery(question,ctx)'),
+    'An active minister must handle dialogue before generic AI self-query shortcuts.');
   assert.ok(universal.indexOf('const ministerPipeline=global.OmegaMinisterIntelligencePipeline') < universal.indexOf('const conversation=localConversation(question)'),
     'The active minister must get first refusal before generic conversation handling.');
   assert.ok(ministerBootstrap.includes('MAX_BOOT_ATTEMPTS'));
