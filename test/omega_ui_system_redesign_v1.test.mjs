@@ -108,6 +108,9 @@ test('map ministry entry is outside map stacking and has independent click recov
   assert.ok(runtime.includes('function openCabinet(event)'));
   assert.ok(runtime.includes('manager.setLayer(1)'));
   assert.ok(runtime.includes('data-last-open-result'));
+  assert.ok(runtime.includes("data-omega-map-active"));
+  assert.ok(!runtime.includes("dock.style.display = onMap ? 'flex' : 'none'"),
+    'returning to the map must not depend on clearing a sticky inline display style');
 
   const css = read('omega_ui_system_redesign_v1.css');
   assert.ok(css.includes('.omega-ministry-entry.ui-bottom-navigation'));
