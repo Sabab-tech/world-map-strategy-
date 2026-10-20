@@ -82,9 +82,12 @@ function fixture(overrides = {}) {
 test('supplemental dataset adds valid, distinct sites without pretending simulated reserve/production is observed', () => {
   assert.equal(supplement.datasetId, 'OMEGA_RESOURCE_SITE_COUNTRY_MINEPLAY_BATCH_V1');
   assert.equal(supplement.recordCount, supplement.records.length);
-  assert.equal(supplement.records.length, 30);
-  assert.ok(supplement.countryCount >= 8);
+  assert.equal(supplement.records.length, 44);
+  assert.ok(supplement.countryCount >= 20);
   assert.ok(supplement.records.filter(x => x.countryId === 'BWA').length >= 4);
+  for (const country of ['GIN','COD','IDN','MNG','PER','MRT','BFA','UZB','KAZ','DZA','CIV','PNG']) {
+    assert.ok(supplement.records.some(x => x.countryId === country), 'missing expanded country ' + country);
+  }
   assert.equal(new Set(supplement.records.map(x => x.siteId)).size, supplement.records.length);
   for (const row of supplement.records) {
     assert.match(row.countryId, /^[A-Z]{3}$/);
@@ -264,6 +267,9 @@ test('mine project rejects cross-country identity and player-only actions requir
   assert.match(uiSource, /executeFactoryCycle/);
   assert.match(uiSource, /<svg/);
   assert.match(indexSource, /omega_resource_mine_management_v1\.js/);
+  assert.match(fs.readFileSync(new URL('server.js', repoRoot), 'utf8'), /RESOURCE_MINE_MANAGEMENT_SCRIPT/);
+  assert.match(uiSource, /selectedMinistryCountry\(\)/);
+  assert.match(bindingSource, /MINEPLAY_BATCH_URL/);
   assert.match(endowmentSource, /OMEGA_RESOURCE_MINE_COMMISSIONED/);
   assert.match(bindingSource, /resource_site_country_mineplay_batch_20261020_v1\.json/);
 });
