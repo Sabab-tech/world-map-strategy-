@@ -90,6 +90,23 @@ assert.equal(route.route.selected.strategyEvaluation.known,true,'the selected ca
 assert.equal(route.route.selected.strategyEvaluation.profile.behaviorSource,'OMEGA_COUNTRY_BEHAVIOR_ENGINE_V1',
   'decision selection must consume the country behaviour profile, not only resolve a country label');
 assert.ok(route.route.selected.strategyEvaluation.confidence>=0&&route.route.selected.strategyEvaluation.confidence<=1);
+assert.ok(route.route.candidateEvaluations.length > 1,
+  'the decision engine must compare multiple candidate actions, not force a single preselected action');
+for (const candidate of route.route.candidateEvaluations) {
+  const expected = adaptive.scoreAction('Bangladesh', candidate.action);
+  assert.equal(candidate.strategyEvaluation?.known, expected.known,
+    'each autonomy candidate must carry the country-specific score availability for ' + candidate.action);
+  if (expected.known) {
+    assert.equal(candidate.strategyEvaluation.score, expected.score,
+      'each alternative candidate must use the shared country-specific score for ' + candidate.action);
+  }
+}
+const readyAlternatives=route.route.candidateEvaluations
+  .filter(candidate=>candidate.status==='READY')
+  .sort((a,b)=>b.score-a.score||a.action.localeCompare(b.action));
+assert.ok(readyAlternatives.length > 0,'the game should retain at least one rule-permitted alternative');
+assert.equal(route.route.selectedAction,readyAlternatives[0].action,
+  'the selected action must be the highest-scoring candidate among actions allowed by game rules');
 const scoredHousing=route.route.candidateEvaluations.find(x=>x.action==='HOUSING_BUILD');
 assert.equal(scoredHousing.strategyEvaluation.score,candidateScore.score,'the real autonomy candidate must use the same country-specific scorer');
 const sim=globalThis.Omega.Simulation;
