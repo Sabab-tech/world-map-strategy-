@@ -645,8 +645,9 @@
     const candidates = [];
     for (const profile of profiles) {
       if (!profile || codeOf(profile) === codeOf(borrowerProfile)) continue;
+      const partnerRecord = bank.partnersByCountry[codeOf(profile)] || null;
       if (player && codeOf(profile) === codeOf(player)
-          && String(bank.partnersByCountry[codeOf(profile)] && bank.partnersByCountry[codeOf(profile)].role || '') !== 'LENDER') continue;
+          && String(partnerRecord && partnerRecord.role || '') !== 'LENDER') continue;
       const facts = countryFacts(profile, { root: root, bank: bank });
       if (!facts || !facts.simulationDataAvailable || facts.gdpUsd === null || facts.gdpUsd <= 0
           || facts.treasuryUsd === null || facts.debtToGdpPct === null || facts.debtToGdpPct > 180) continue;
@@ -657,9 +658,14 @@
       const reserveFloor = Math.max(1000000, facts.gdpUsd * 0.005);
       const availableTreasury = Math.max(0, facts.treasuryUsd - reserveFloor);
       const perDrawCap = facts.gdpUsd * 0.005;
-      const available = Math.min(availableTreasury, perDrawCap);
+      const partner = partnerRecord || {};
+      const defaultCommitment = facts.gdpUsd * 0.02;
+      const committed = Math.max(0, finite(partner.commitmentLimitUsd) ?? defaultCommitment);
+      const drawn = Math.max(0, finite(partner.totalDrawnUsd) || 0);
+      const commitmentRemaining = Math.max(0, committed - drawn);
+      const available = Math.min(availableTreasury, perDrawCap, commitmentRemaining);
       if (available <= 100000) continue;
-      candidates.push({ profile: profile, facts: facts, credit: credit, availableUsd: available });
+      candidates.push({ profile: profile, facts: facts, credit: credit, availableUsd: available, commitmentLimitUsd: committed });
     }
     candidates.sort((a, b) => b.availableUsd - a.availableUsd || (b.credit.score || 0) - (a.credit.score || 0)
       || String(a.profile.name).localeCompare(String(b.profile.name)));
@@ -693,10 +699,13 @@
         countryName: loan.lenderCountryName, amountUsd: loan.originalPrincipalUsd,
         annualInterestRatePct: rate, termYears: 5, status: 'ACCEPTED', turn: turn });
       bank.fundingOffers = bank.fundingOffers.slice(-MAX_HISTORY);
-      bank.partnersByCountry[loan.lenderCountryCode] = Object.assign({}, bank.partnersByCountry[loan.lenderCountryCode] || {}, {
+      const priorPartner = bank.partnersByCountry[loan.lenderCountryCode] || {};
+      bank.partnersByCountry[loan.lenderCountryCode] = Object.assign({}, priorPartner, {
         countryCode: loan.lenderCountryCode, countryName: loan.lenderCountryName,
-        role: 'LENDER', joinedTurn: bank.partnersByCountry[loan.lenderCountryCode]?.joinedTurn ?? turn,
-        lastFundingTurn: turn, source: 'AI_SOVEREIGN_LIQUIDITY_OFFER'
+        role: 'LENDER', joinedTurn: priorPartner.joinedTurn ?? turn,
+        commitmentLimitUsd: candidate.commitmentLimitUsd,
+        totalDrawnUsd: (finite(priorPartner.totalDrawnUsd) || 0) + amount,
+        lastFundingTurn: turn, source: priorPartner.source === 'PLAYER_EXPLICIT_CONSENT' ? priorPartner.source : 'AI_SOVEREIGN_LIQUIDITY_OFFER'
       });
       liquidity.cashBalanceUsd = Math.max(0, (finite(liquidity.cashBalanceUsd) || 0) + amount);
       liquidity.borrowedPrincipalUsd = (finite(liquidity.borrowedPrincipalUsd) || 0) + amount;
@@ -714,6 +723,44 @@
       borrowedUsd: round(totalBorrowed, 2) || 0,
       cashBalanceUsd: round(cash, 2) || 0
     };
+  }
+  function registerFundingPartner(input) {
+    input = isObject(input) ? input : {};
+    if (!initialized) return { ok: false, code: 'WORLD_BANK_RUNTIME_NOT_READY' };
+    const profile = resolveProfile(input.countryId || currentCountryProfile());
+    if (!profile) return { ok: false, code: 'COUNTRY_NOT_FOUND' };
+    const player = playerProfile();
+    if (!player || codeOf(player) !== codeOf(profile))
+      return { ok: false, code: 'PLAYER_COUNTRY_SCOPE_VIOLATION', message: 'Only the active player country can approve its own lender participation.' };
+    const bank = store(true);
+    const root = rootState();
+    const facts = countryFacts(profile, { root: root, bank: bank });
+    const assessment = scoreCountry(profile, { root: root, bank: bank, facility: getFacilitySnapshot(bank) });
+    if (!facts || !facts.simulationDataAvailable || facts.gdpUsd === null || facts.gdpUsd <= 0
+        || facts.treasuryUsd === null || facts.debtToGdpPct === null)
+      return { ok: false, code: 'PARTNER_DATA_INSUFFICIENT' };
+    if (!assessment || assessment.score === null || assessment.score < 65 || assessment.confidencePct < 60)
+      return { ok: false, code: 'PARTNER_CREDIT_BELOW_THRESHOLD', score: assessment && assessment.score };
+    if (facts.debtToGdpPct > 180 || (facts.inflationPct !== null && facts.inflationPct > 20))
+      return { ok: false, code: 'PARTNER_MACRO_RISK_ABOVE_LIMIT' };
+    const reserveFloor = Math.max(1000000, facts.gdpUsd * 0.005);
+    const maxCommitment = Math.max(0, Math.min(facts.gdpUsd * 0.02, facts.treasuryUsd - reserveFloor));
+    const commitment = finite(input.commitmentLimitUsd);
+    if (commitment === null || commitment < 1000000 || commitment > maxCommitment + 0.01)
+      return { ok: false, code: 'PARTNER_COMMITMENT_OUT_OF_RANGE', minimumUsd: 1000000, maximumUsd: round(maxCommitment, 2) || 0 };
+    const code = codeOf(profile);
+    const prior = bank.partnersByCountry[code] || {};
+    bank.partnersByCountry[code] = Object.assign({}, prior, {
+      countryCode: code, countryName: profile.name, role: 'LENDER',
+      commitmentLimitUsd: round(commitment, 2), consentTurn: currentTurn(),
+      joinedTurn: prior.joinedTurn ?? currentTurn(),
+      totalDrawnUsd: Math.max(0, finite(prior.totalDrawnUsd) || 0),
+      source: 'PLAYER_EXPLICIT_CONSENT'
+    });
+    bankLedger({ type: 'SOVEREIGN_LENDER_PARTNERSHIP_REGISTERED', countryCode: code,
+      countryName: profile.name, commitmentLimitUsd: round(commitment, 2), score: assessment.score });
+    queueRender(true);
+    return { ok: true, partner: clone(bank.partnersByCountry[code]), maximumCommitmentUsd: round(maxCommitment, 2) };
   }
   function requestLoan(input) {
     input = isObject(input) ? input : {};
@@ -1415,6 +1462,16 @@
     if (!content || content.__omegaWorldBankLendingBound) return;
     content.__omegaWorldBankLendingBound = true;
     content.addEventListener('click', event => {
+      const subtab = event.target && event.target.closest && event.target.closest('[data-owb-subtab]');
+      if (subtab) {
+        const next = String(subtab.getAttribute('data-owb-subtab') || '');
+        if (['overview', 'lend', 'contracts', 'countries', 'partners', 'reference', 'rules'].includes(next)) {
+          uiState.tab = next;
+          uiState.notice = null;
+          renderPanel(true);
+        }
+        return;
+      }
       const action = event.target && event.target.closest && event.target.closest('[data-owb-action]');
       if (action) {
         const command = action.getAttribute('data-owb-action');
@@ -1439,6 +1496,8 @@
       const countryLink = event.target && event.target.closest && event.target.closest('[data-owb-view-country]');
       if (countryLink) {
         const country = countryLink.getAttribute('data-owb-view-country');
+        uiState.tab = 'overview';
+        uiState.notice = null;
         if (finance && typeof finance.selectCountry === 'function') finance.selectCountry(country);
         if (finance && typeof finance.selectTab === 'function') finance.selectTab('worldbank');
       }
@@ -1457,19 +1516,35 @@
     });
     content.addEventListener('submit', async event => {
       const form = event.target;
-      if (!form || !form.getAttribute || form.getAttribute('data-owb-form') !== 'request-loan') return;
+      if (!form || !form.getAttribute) return;
+      const formType = form.getAttribute('data-owb-form');
+      if (formType !== 'request-loan' && formType !== 'partner') return;
       event.preventDefault();
       const data = new FormData(form);
       const profile = currentCountryProfile();
-      const result = requestLoan({
-        countryId: codeOf(profile),
-        requestId: String(form.getAttribute('data-owb-request-id') || ''),
-        amountUsd: finite(data.get('amountUsd')),
-        purpose: String(data.get('purpose') || 'infrastructure')
-      });
-      uiState.notice = result.ok
-        ? 'Loan issued: ' + result.loanId + ' for ' + money(result.loan.originalPrincipalUsd) + '. Finance Treasury and public debt were updated.'
-        : 'Loan not issued (' + (result.code || 'REJECTED') + '): ' + (result.message || 'The Finance runtime did not authorize this action.');
+      let result;
+      if (formType === 'partner') {
+        result = registerFundingPartner({
+          countryId: codeOf(profile), commitmentLimitUsd: finite(data.get('commitmentLimitUsd'))
+        });
+        uiState.notice = result.ok
+          ? 'Funding-partner consent saved. No money moved; funds can be drawn only under the recorded reserve and commitment caps.'
+          : 'Partner registration rejected (' + (result.code || 'REJECTED') + '): ' + (result.message || 'The country did not meet the partner rules.');
+      } else {
+        result = requestLoan({
+          countryId: codeOf(profile),
+          requestId: String(form.getAttribute('data-owb-request-id') || ''),
+          amountUsd: finite(data.get('amountUsd')),
+          purpose: String(data.get('purpose') || 'infrastructure'),
+          currencyCode: String(data.get('currencyCode') || 'USD'),
+          annualInterestRatePct: finite(data.get('annualInterestRatePct')),
+          termYears: finite(data.get('termYears')),
+          graceYears: finite(data.get('graceYears'))
+        });
+        uiState.notice = result.ok
+          ? 'Loan issued: ' + result.loanId + ' for ' + money(result.loan.originalPrincipalUsd) + '. Treasury, debt and institutional cash-pool entries were posted.'
+          : 'Loan not issued (' + (result.code || 'REJECTED') + '): ' + (result.message || 'The Finance runtime did not authorize this action.');
+      }
       renderPanel(true);
     });
   }
