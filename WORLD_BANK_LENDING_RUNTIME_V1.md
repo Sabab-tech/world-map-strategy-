@@ -1,116 +1,216 @@
-# OMEGA World Bank Reference & Sovereign Lending Runtime v1
+# OMEGA Simulated Sovereign Lending Institution v1
 
-## Scope and boundaries
+## Core invariant: two independent data planes
 
-This is an in-game public-data-driven lending simulator. It does not connect to the World Bank's internal loan origination systems, submit real financing applications, move real money, or represent an actual World Bank credit rating. Published World Bank data is used as evidence for a game decision model; simulated GDP, Treasury balances, contractual loan balances and debt service remain OMEGA state.
+This runtime intentionally separates **official World Bank reference observations** from **OMEGA's simulated country economy**.
 
-The existing Finance Ministry remains the authoritative issuer of borrowing proceeds and national debt. The new runtime calls `OmegaFinanceMinistry.applyAction({ type: 'borrow', ... })`; foreign-country profiles are read-only and a loan may only be issued for the active player country.
+### Simulated data plane (authoritative for the game)
 
-## Reference-data connector
+All in-game decisions use the current runtime record for that exact country:
+- `state.economy[profile.economyKey].gdp`
+- `debt`, `gdp_growth`, `inflation`, `unemployment_rate`, `reserves`, `budget_balance`
+- the existing Finance runtime's current Treasury, fiscal budget and policy fields
+- population already in the local game data and the game FX runtime's current quote
 
-The runtime uses the public World Bank Indicators API v2 and country metadata API. No World Bank API key is required for the public WDI endpoints. Indicator observations and metadata are stored separately from live OMEGA economic data.
+The credit engine does not use World Bank GDP, debt, inflation, unemployment, reserve or fiscal observations as fallback values. It never writes game values to the World Bank API. If game GDP or public-debt/GDP cannot be computed, the loan limit is zero and the reason is shown. Missing is never interpreted as zero.
 
-Indicators collected on a successful refresh:
-- GDP, current US dollars: `NY.GDP.MKTP.CD`
-- GDP growth, annual percent: `NY.GDP.MKTP.KD.ZG`
-- Consumer-price inflation, annual percent: `FP.CPI.TOTL.ZG`
-- Unemployment, percent of labour force: `SL.UEM.TOTL.ZS`
-- Central-government debt, percent of GDP: `GC.DOD.TOTL.GD.ZS`
-- Population: `SP.POP.TOTL`
-- Total reserves including gold, current US dollars: `FI.RES.TOTL.CD`
+A committed OMEGA simulation turn re-evaluates game-state credit assessments. A game's GDP fall, inflation rise, Treasury drop, or added debt therefore changes the next in-game decision based on the game's own values.
 
-For each indicator and country, the connector chooses the latest non-empty observation among the retrieved years and retains that observation year and source indicator. Country metadata stores the provider's income level, region and lending-type category. Different indicators often have different latest years; the engine records those years instead of implying all values describe the same year.
+### Public reference data plane (read-only)
 
-Refresh is throttled to once per 24 hours, supports an explicit manual refresh, keeps browser-cache/state snapshots, and preserves prior observations when the network fails. When data is missing, it stays `null`/N/A. No synthetic World Bank observation is created. On first launch without cached data and while offline, the runtime reports unavailability and uses only the existing game data that is available.
+The separate reference cache stores World Bank WDI observations and provider country metadata, including each indicator's actual observation year and source code. They are displayed only in **Finance → World Bank lending → Reference data**. No reference indicator is consumed by the simulated score or lending ceiling.
 
-## Country credit model
+Reference data can be stale, revised, reported for a different year or missing. Those facts are shown rather than filled with guessed values. A refreshed reference snapshot cannot overwrite a country economy, loan, Treasury or in-game decision.
 
-The score is a transparent, game-specific 0–100 heuristic, not a real sovereign rating. Component values are only included when an underlying value exists; the used component weights are renormalized, and confidence is the percentage of total weights actually supported by data.
+The World Bank public API does not expose a game's simulated economy, nor should OMEGA attempt to send its changing GDP or inflation to the provider. "The institution reacts to the game" means the in-game lending institution reacts to OMEGA's state, not that the real World Bank is notified.
 
-Component scores:
+## Low-latency update design
 
-- Debt: `clamp(100 - debtToGDPPercent × 0.40, 0, 100)`
-- Inflation: `clamp(100 - max(0, inflationPercent - 2) × 2.2, 0, 100)`
-- Growth: `clamp(50 + annualGDPGrowthPercent × 4, 0, 100)`
-- Reserves: `clamp(FXReservesToGDPPercent × 4, 0, 100)`
-- Fiscal balance: `clamp(50 + fiscalBalanceToGDPPercent × 2, 0, 100)`
+- The runtime initializes from the local Finance registry and existing game state without waiting for the network.
+- The public-data refresh runs asynchronously after initialization.
+- Seven current WDI indicators are requested in one combined indicators call using the API's most-recent-non-empty-value option, plus one country-metadata request. The engine keeps the year returned for each individual country/indicator.
+- A successful live reference refresh is cached for up to 24 hours. Failed/partial requests use exponential-style throttling with a one-hour minimum retry interval unless the player manually requests a refresh.
+- Offline launch keeps an available cache and game simulation running. It does not make synthetic reference observations to fill holes.
+- Country decisions are indexed by exact ISO3/ISO2 aliases. If the incoming identity is ambiguous or ISO3 and ISO2 identify different profiles, the record is rejected instead of guessed or assigned to the nearest matching name.
+- Game assessment work is cached by simulation turn; significant changes are ledgered, and UI rendering/refresh work is debounced. This avoids repeating expensive country scans for every event or repainting multiple times in the same turn.
+- Country tables are built for the active inner tab only. The all-country view limits the rendered row count and supports a search field instead of building an enormous DOM table.
 
-Base weights:
-- Debt-to-GDP: 31.5%
-- Inflation: 18%
-- GDP growth: 18%
-- FX reserves-to-GDP: 13.5%
-- Fiscal balance-to-GDP: 9%
-- Prior simulated repayment record: 10% (when contract history exists)
+Source references:
+- [World Bank API basic call structures](https://datahelpdesk.worldbank.org/knowledgebase/articles/898581-api-basic-call-structures)
+- [World Bank Indicators API overview](https://datahelpdesk.worldbank.org/knowledgebase/articles/889392-about-the-indicators-api)
+- [World Bank country API queries](https://datahelpdesk.worldbank.org/knowledgebase/articles/898590-country-api-queries)
 
-The history component is scored only when a contract has actual repayment, a completed repayment, or arrears evidence; a newly issued loan alone does not improve the borrower’s history. When scored, it uses a baseline of 90/100, reduces the score for arrears as a share of original principal and for contracts in arrears, and adds up to 10 points for contracts fully repaid. A country without repayment-performance evidence is not penalized; the history component is omitted and its weight is renormalized with the available components. Confidence therefore reflects both missing economic indicators and missing repayment records. If GDP or public-debt-to-GDP is unavailable, the assessment is `DATA_INSUFFICIENT` and the proposed amount is zero. Confidence below 60% blocks a normal credit recommendation; confidence between 60% and 70% can permit only a conditional game recommendation. Debt-to-GDP at or above 250%, extremely high inflation (30%+), missing core inputs or a low score trigger guardrails. A missing value is not interpreted as zero.
+## Simulated credit assessment
 
-Indicative decisions:
-- `ELIGIBLE`: score at least 72 and confidence at least 70%, with core data and guardrails clear.
-- `CONDITIONAL`: score at least 55, with core data and minimum confidence met.
-- `WATCHLIST`, `REJECT_HIGH_RISK`, `DATA_INSUFFICIENT`, `CONDITIONAL_DATA_GAP`, or `NO_LENDING_WINDOW`: no automatically issued loan.
+This is an auditable gameplay heuristic, **not an official World Bank sovereign rating or forecast**. Each component is clamped to the interval 0–100. Available weights are renormalized when a field does not exist, while confidence is reduced.
 
-## Loan amount and terms
+| Input component | Weight when evidence exists |
+|---|---:|
+| Public debt / GDP | 31.5% |
+| Inflation | 18% |
+| GDP growth | 18% |
+| FX reserves / GDP | 13.5% |
+| Fiscal balance / GDP | 9% |
+| OMEGA loan repayment history | 10% |
 
-The model also enforces a single global revolving principal capacity. The saved setting `state.governmentBanking.worldBankLending.facilityCapacityUsd` defaults to **US$1 trillion of simulated outstanding principal capacity** and can be tuned by game rules. New contracts reserve capacity; principal repayments free it again. This figure is a gameplay configuration, not a reported World Bank capital or lending commitment.
+Formulas currently used:
 
-For a country with valid GDP and debt values:
+- Debt score: `clamp(100 − debtToGDP × 0.40, 0, 100)`
+- Inflation score: `clamp(100 − max(0, inflation − 2) × 2.2, 0, 100)`
+- Growth score: `clamp(50 + annualGDPGrowth × 4, 0, 100)`
+- Reserves score: `clamp(reservesToGDP × 4, 0, 100)`
+- Fiscal score: `clamp(50 + fiscalBalanceToGDP × 2, 0, 100)`
+
+The credit-history component is used only after actual repayment/default evidence exists. Arrears and previous defaults reduce the score; repaid contracts can improve it. A country with no historical simulated contract is not automatically punished for being new.
+
+Core game GDP and debt data must be present to issue a loan. The current guardrails include:
+- Debt/GDP at or above 250%: normal lending is rejected.
+- Inflation at or above 30%: stabilization review.
+- Confidence below 60%: no lending decision or positive facility.
+- A country in simulated default/insolvency review: new borrowing is frozen until arrears are cured or an accepted workout resolves the hold.
+
+Decision categories include eligible, conditional, watch list, high-risk rejection, insufficient data and conditional data gap. Each country is evaluated separately; selection aliases cannot route one country's data to another.
+
+## Loan-size ceiling
+
+The game computes the maximum new principal as the minimum of these limits:
 
 ```text
-debt_capacity = max(0, 2.5 × GDP − existing_public_debt)
-score_cap_pct = 3.0% if score ≥ 80
-                2.5% if score ≥ 70
-                2.0% if score ≥ 60
-                1.0% if score ≥ 55
-                0% otherwise
+debtCapacity = max(0, 2.5 × simulatedGDP − currentPublicDebt)
 
-proposed_max = min(
-  GDP × score_cap_pct × confidence / 100,
-  debt_capacity,
-  GDP × 5%
+scoreCap = 3.0% of GDP if score >= 80
+           2.5% of GDP if score >= 70
+           2.0% of GDP if score >= 60
+           1.0% of GDP if score >= 55
+           0 otherwise
+
+countryCap = simulatedGDP × scoreCap × confidence / 100
+
+maxNewLoan = min(
+  countryCap,
+  debtCapacity,
+  simulatedGDP × existing Finance transaction cap (5%),
+  unused OMEGA lending-facility capacity
 )
 ```
 
-Only `ELIGIBLE` and `CONDITIONAL` decisions can carry a positive proposed limit. The issuance action remains subject to the Finance runtime's existing transaction and total-debt checks. The amount approved by this game model is never greater than the current calculated limit.
+Only eligible/conditional assessments can request a positive amount. The request is posted through the existing Finance Ministry `borrow` action; Finance Treasury and national public debt remain the authoritative accounting records.
 
-World Bank country metadata is used to select a *gameplay analogue* for an IDA, Blend, or IBRD window when available. An unknown/unusable provider category is explicitly marked provisional rather than treated as an official determination. Rates and repayment periods in `TERMS` are scenario assumptions; they are not actual World Bank term sheets. Emergency facilities have separate modeled terms.
+## Facility tiers and negotiation limits
 
-Fixed-payment helper:
+The base tiers below are **OMEGA gameplay assumptions** selected from game GDP per capita, not World Bank income/lending classifications:
+
+| Game tier | Base annual rate | Maturity | Initial grace period |
+|---|---:|---:|---:|
+| Concessional simulation | 1.25% | 35 years | 5 years |
+| Blended simulation | 2.25% | 30 years | 4 years |
+| Standard development simulation | 3.25% | 20 years | 3 years |
+
+The Loan Desk exposes a purpose selector, principal, annual interest/financing return, maturity, grace period and currency-equivalent selector. Changing purpose updates the baseline and allowed negotiation ranges.
+
+Negotiation is not unlimited:
+- Absolute ordinary-loan base rate: 0.5%–8.5% per year.
+- Maturity: whole years only, between 5 and 40 years; the score selects how far a proposal may deviate from base terms.
+- Grace period must be a whole number and shorter than maturity; its available range is capped at six years.
+- Stronger scores permit small concessions, while weaker scores restrict them or prevent a facility altogether.
+- Emergency facilities apply a predefined modest surcharge and shorter maturity; they do not bypass country-credit, liquidity or Finance ceilings.
+
+The fixed-payment estimate uses the usual annuity equation for principal (P), annual rate (r), and repayment years (n):
 
 ```text
-payment = principal × r / (1 − (1 + r)^(-n))
-r = annual_rate_percent / 100
-n = repayment years after grace
+payment = P × r / (1 − (1 + r)^(-n))
+r = annual percentage rate / 100
+n = repayment term after grace
 ```
 
-At a zero rate, payment is principal divided by the number of repayment years.
+This is an annualized estimate. The actual runtime services interest and repayment according to elapsed simulation time and the stored contract.
 
-## Daily simulation and debt servicing
+## Currency and settlement
 
-On each committed OMEGA simulation turn, the engine recalculates country credit assessments from the current Finance indicators and current game economy. A changed score, decision, or loan ceiling is recorded in the country assessment ledger. This is a re-evaluation of game state; it does not rewrite the historical World Bank observation.
+The sovereign debt/Treasury ledger remains denominated in USD for consistency with the existing Finance runtime. The currency selector is a display/equivalent currency at the current **simulated** FX quote; each loan stores the issue-rate snapshot and issue-time local-currency equivalent. The contract table can show the current local-currency equivalent separately.
 
-Issued contracts store original principal, remaining principal, accrued interest, annual rate, grace period, maturity, issue turn, approval-score snapshot, total principal repaid, total interest repaid, and arrears. Interest accrual is idempotent per country loan/turn. Finance turn integration excludes the outstanding World Bank contract balance from its general-policy interest calculation to avoid charging it twice, accrues the contract's configured interest, and calls scheduled servicing against available Treasury cash while preserving a cash floor of 0.5% of GDP where possible. Unpaid amounts remain in arrears rather than silently disappearing. Finance's manual principal repayment is also reflected in the matching loan contract record.
+No missing or non-positive FX quote is guessed. If a local currency is unsupported or its simulated rate is unavailable, the conversion is unavailable; the USD contract can still be assessed in USD. Local-currency equivalents do not rewrite the original principal.
 
-## State and user interface
+## Institution capital and partner-country liquidity
 
-Canonical state subtree:
+OMEGA's simulated institution state is kept under `state.governmentBanking.worldBankLending`. Initial opening cash and the global revolving limit are game-rule values:
+- Initial simulation cash pool: US$250 billion.
+- Configurable outstanding-principal capacity: US$1 trillion.
 
-`state.governmentBanking.worldBankLending`
+These are **not** the World Bank's reported capital, cash balance or lending commitment. They exist to limit gameplay disbursements. Loan principal disbursed leaves the pool; borrower repayments return principal/interest to it. The available pool and revolving capacity are tracked separately.
 
-It contains public-data reference observations, country assessments, applications, loan records by country, idempotency keys, and an auditable event/ledger history. It does not replace the existing `state.finance`, `state.economy`, or Government Banking/FX records.
+When the pool is short, the engine may request funding from an eligible sovereign partner:
+- Candidate data must be available in OMEGA's own state.
+- Candidate credit score must be at least 65 with at least 60% evidence confidence.
+- Debt/GDP must be at most 180%, inflation at most 20%, and severe negative growth is filtered out.
+- The lender's existing Treasury must remain above a 0.5% GDP reserve floor (and a small cash minimum).
+- An ordinary per-draw cap is 0.5% GDP and aggregate commitment cannot exceed its configured/capped commitment.
+- The active player country is **never auto-debited**. It must explicitly register a lender commitment in the Partners & liquidity tab.
+- NPC countries can make rule-bound offers only when they pass the same game-state credit/reserve filters.
+- The Finance/Government Banking runtime debits the lender Treasury and records a mirrored claim. The institution records the matching liability; it accrues interest and services partner claims on each committed turn.
+- Duplicate draw/accrual/payment IDs are idempotent. Invalid authorizations, inadequate reserves, missing contracts or inconsistent repayment splits are rejected.
 
-Finance Ministry now includes a dedicated **World Bank lending** tab containing a selected-country snapshot, score/decision/confidence, proposed loan limit, facility terms, active contracts, manual data-refresh and reassessment controls, and a searchable all-country register. Only the active player country sees the issuance form. Offline runtime assets are cached by the service worker.
+If funding cannot be obtained, the borrower loan is not issued. The engine does not create a fictitious top-up to make a transaction appear successful.
 
-## Operational caveats
+## Delinquency, penalty and sovereign workout rules
 
-- This is a heuristic game model. Calibrate thresholds and rates using playtests rather than presenting scores as forecasts.
-- WDI indicators may be old, revised, missing, or published in different years. Check the per-indicator observation year before interpreting or comparing values.
-- A working browser connector requires internet access and provider availability. Browser CORS, offline use, or API errors can prevent a live refresh; old reference observations are preserved.
-- Some map profiles represent territories/areas, not independent sovereign states. Country metadata and lending eligibility are kept separate from game profile identity.
-- This client-side game ledger is not secure enough for competitive multiplayer. A production or multiplayer system would need server-side authority, authenticated commands, idempotent durable storage and independent audit logs.
+These thresholds are explicit **OMEGA simulation rules inspired by common debt-workout concepts**, not a declaration of binding international law or a statement about any country's treaty rights.
 
-## Primary sources
+| Overdue time in the game | Game response |
+|---|---|
+| 30 days | Late-payment notice/status recorded; penalty spread begins when a contract is overdue |
+| 90 days | Mediation/workout request becomes eligible |
+| 180 days | Default status; new borrowing for that country is frozen |
+| 270 days | Insolvency/restructuring review |
+| 360 days | Bankruptcy/sovereign-workout proceeding status |
 
-- World Bank Indicators API overview: https://datahelpdesk.worldbank.org/knowledgebase/articles/889392-about-the-indicators-api
-- World Bank API basic call structures: https://datahelpdesk.worldbank.org/knowledgebase/articles/898581-api-basic-call-structures
-- World Bank country API queries: https://datahelpdesk.worldbank.org/knowledgebase/articles/898590-country-api-queries
+The penalty spread is capped at two percentage points above the negotiated rate; effective interest is capped at 10.5%. Unpaid obligations remain in arrears. A restructuring proposal can adjust the rate within a narrow current-rate band, extend maturity by at most five years (whole-year total remains at most 40), and add no more than two years of new grace. It is not permitted when core game data are absent or debt/GDP reaches the hard-stop threshold. Accrued obligations remain recorded; a restructuring is not debt forgiveness.
+
+Institution-level funding arrears can freeze new lending to every country until partner liabilities are serviced or reconciliation is corrected. These states and every loan/status change are stored in the ledger so the UI can show why an action was rejected.
+
+## Finance user interface
+
+Finance → **World Bank lending** opens the new nested screen. Only the active sub-tab's content is rendered:
+
+1. **Overview** — selected country's live game metrics, score, institution cash, revolving capacity and important risk notices.
+2. **Loan desk** — functional new-loan form and bounded term negotiation.
+3. **Contracts** — outstanding principal, accrued interest, rate, annual-payment estimate, term, status and overdue information; bounded workout form when eligible.
+4. **Countries** — searchable country-credit register with identity-specific rows.
+5. **Partners & liquidity** — institution cash, active funding liabilities, player consent registration and registered partner table.
+6. **Reference data** — only screen that shows actual public World Bank observations/metadata, with observation years and a bold separation notice.
+7. **Rules & safeguards** — highlighted key contract limits, penalty ranges and workout timeline.
+
+The sub-tabs use small SVG line icons, keyboard-accessible buttons and responsive grids. The all-country register renders a small first page and uses search rather than dumping every country row into the mobile DOM. Refresh/recalculate actions, tab navigation, partner consent, loan request and restructuring forms are connected to explicit action handlers. The added runtime is in the HTML load chain and offline shell assets.
+
+## Audit ledger and idempotency
+
+The runtime stores:
+- country assessments and evaluation turn;
+- a public-reference data snapshot and per-indicator year/source;
+- loan applications and idempotency keys;
+- loan contracts, accruals, arrears, restructuring and repayment history;
+- partner agreements, funding liabilities and repayment settlements;
+- an auditable event ledger bounded to the latest configured number of entries.
+
+Assessment updates are logged only when the decision changes materially, score moves by a meaningful amount or maximum limit changes substantially. The turn-level assessment cache and debounced rendering reduce repeated work on slow devices.
+
+## Test coverage and deployment boundary
+
+The branch adds World Bank tests for:
+- game-vs-reference isolation (reference mutations do not change the simulated score; game-state mutations do);
+- cross-ISO identity conflict rejection;
+- loan ceiling, player-country scope, idempotency and mismatched replay rejection;
+- bounded interest and maturity negotiation;
+- partner registration limits;
+- overdue restructuring;
+- cached-reference preservation while offline;
+- Government Banking partner draw/reserve/interest/repayment invariants;
+- dedicated Finance tab, offline-cache asset and workflow validation.
+
+GitHub CI must pass before merge. The UI/contract model has not yet been proven through full Android end-to-end play on a device; the browser-runtime tests do not substitute for that final verification. This client-side system is not safe for a competitive multiplayer economy without a server-authoritative financial ledger, authenticated transactions and durable locking.
+
+## Sources for external reference-data format
+
+- [World Bank Indicators API](https://datahelpdesk.worldbank.org/knowledgebase/articles/889392-about-the-indicators-api)
+- [Basic API call structures and most-recent observations](https://datahelpdesk.worldbank.org/knowledgebase/articles/898581-api-basic-call-structures)
+- [World Bank country metadata API](https://datahelpdesk.worldbank.org/knowledgebase/articles/898590-country-api-queries)
