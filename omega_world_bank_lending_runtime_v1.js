@@ -144,6 +144,8 @@
       if (!Array.isArray(bank.fundingLoans)) bank.fundingLoans = [];
       if (!Array.isArray(bank.fundingOffers)) bank.fundingOffers = [];
       if (!isObject(bank.partnersByCountry)) bank.partnersByCountry = {};
+      if (!isObject(bank.insolvencyByCountry)) bank.insolvencyByCountry = {};
+      if (!Array.isArray(bank.restructuringProposals)) bank.restructuringProposals = [];
       if (!finite(bank.lastInstitutionTurn)) bank.lastInstitutionTurn = -1;
       if (!isObject(bank.reference.indicatorStatus)) bank.reference.indicatorStatus = {};
       if (!bank.reference.provider) bank.reference.provider = 'WORLD_BANK_WDI_V2';
@@ -335,11 +337,12 @@
     const bank = bankOverride || store(true);
     const rows = (bank.loansByCountry[codeOf(profile)] || []).filter(loan => loan && loan.loanId);
     const repaid = rows.filter(loan => loan.status === 'REPAID').length;
+    const defaultedLoans = rows.filter(loan => loan.everDefaulted === true || ['DEFAULTED', 'INSOLVENT'].includes(String(loan.status || '').toUpperCase())).length;
     const arrearsLoans = rows.filter(loan => loan.status === 'ARREARS' || (finite(loan.arrearsUsd) || 0) > 0.01).length;
     const totalOriginal = rows.reduce((sum, loan) => sum + Math.max(0, finite(loan.originalPrincipalUsd) || 0), 0);
     const arrears = rows.reduce((sum, loan) => sum + Math.max(0, finite(loan.arrearsUsd) || 0), 0);
     const hasPerformanceEvidence = rows.some(loan => repaid > 0 || (finite(loan.totalPrincipalPaidUsd) || 0) > 0.01
-      || (finite(loan.totalInterestPaidUsd) || 0) > 0.01 || (finite(loan.arrearsUsd) || 0) > 0.01);
+      || (finite(loan.totalInterestPaidUsd) || 0) > 0.01 || (finite(loan.arrearsUsd) || 0) > 0.01 || loan.everDefaulted === true);
     if (!rows.length || !hasPerformanceEvidence) {
       return { score: null, contracts: rows.length, repaidContracts: repaid,
         arrearsContracts: arrearsLoans, arrearsUsd: round(arrears, 2) || 0 };
@@ -348,10 +351,10 @@
     const defaultRatio = arrearsLoans / rows.length;
     const repaymentRatio = repaid / rows.length;
     const score = clamp(90 - Math.min(60, arrearsRatio * 300) - Math.min(35, defaultRatio * 35)
-      + repaymentRatio * 10, 0, 100);
+      - Math.min(25, defaultedLoans * 15) + repaymentRatio * 10, 0, 100);
     return {
       score: round(score, 1), contracts: rows.length, repaidContracts: repaid,
-      arrearsContracts: arrearsLoans, arrearsUsd: round(arrears, 2) || 0
+      arrearsContracts: arrearsLoans, defaultedContracts: defaultedLoans, arrearsUsd: round(arrears, 2) || 0
     };
   }
   function scoreCountry(value, context) {
