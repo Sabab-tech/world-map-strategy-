@@ -239,6 +239,94 @@
     bucket.available = clean;
     return { ok: true, previousUsd: prior, balanceUsd: clean };
   }
+  function transferWorldBankFunding(input) {
+    input = obj(input) ? input : {};
+    if (input.authorization !== 'OMEGA_WORLD_BANK_LENDING')
+      return { ok: false, code: 'INSTITUTION_AUTHORIZATION_REQUIRED' };
+    const action = String(input.action || '').toUpperCase();
+    const profile = resolveProfile(input.countryId || input.lenderCountryId);
+    const amount = num(input.amountUsd);
+    const contractId = String(input.contractId || '').trim();
+    if (!profile) return { ok: false, code: 'COUNTRY_NOT_FOUND' };
+    if (!contractId || contractId.length > 120) return { ok: false, code: 'FUNDING_CONTRACT_ID_REQUIRED' };
+    if (amount === null || amount <= 0) return { ok: false, code: 'FUNDING_AMOUNT_INVALID' };
+    const bank = bankingState(true);
+    if (!obj(bank.worldBankFundingClaimsByCountry)) bank.worldBankFundingClaimsByCountry = {};
+    const countryCode = profileId(profile);
+    if (!Array.isArray(bank.worldBankFundingClaimsByCountry[countryCode])) bank.worldBankFundingClaimsByCountry[countryCode] = [];
+    const claims = bank.worldBankFundingClaimsByCountry[countryCode];
+    const prior = claims.find(row => row && row.contractId === contractId);
+    if (action === 'DRAW') {
+      if (prior) {
+        if (Math.abs((num(prior.originalPrincipalUsd) || 0) - amount) > 0.01)
+          return { ok: false, code: 'FUNDING_IDEMPOTENCY_MISMATCH', contractId };
+        return { ok: true, duplicate: true, claim: clone(prior) };
+      }
+      const treasury = readTreasuryUsd(profile);
+      const held = Math.max(0, num(heldUsd(countryCode)) || 0);
+      const minimumReserve = Math.max(0, num(input.minimumReserveUsd) || 0);
+      if (treasury === null || amount + held + minimumReserve > treasury + 0.01)
+        return { ok: false, code: 'LENDER_RESERVE_GUARD', availableTreasuryUsd: treasury,
+          heldUsd: held, minimumReserveUsd: minimumReserve, requestedUsd: amount };
+      const written = writeTreasuryUsd(profile, treasury - amount, 'WORLD_BANK_LIQUIDITY_FUNDING');
+      if (!written.ok) return written;
+      const claim = {
+        contractId, lenderCountryCode: countryCode, lenderCountryName: profile.name,
+        originalPrincipalUsd: amount, outstandingPrincipalUsd: amount, accruedInterestUsd: 0,
+        annualInterestRatePct: clamp(num(input.annualInterestRatePct) ?? 3.25, 0.5, 8.5),
+        termYears: clamp(Math.floor(num(input.termYears) ?? 5), 1, 10),
+        issuedTurn: turn(), lastAccruedTurn: turn(), daysPastDue: 0,
+        status: 'ACTIVE', source: 'OMEGA_SIMULATED_WORLD_BANK_FUNDING',
+        sourceTreasuryBeforeUsd: treasury, sourceTreasuryAfterUsd: treasury - amount
+      };
+      claims.push(claim);
+      const usdAccount = ensureAccount(profile, 'USD');
+      if (usdAccount) {
+        usdAccount.balance = treasury - amount;
+        usdAccount.lastUpdatedTurn = turn();
+        usdAccount.revision = (num(usdAccount.revision) || 0) + 1;
+        usdAccount.source = 'FINANCE_TREASURY_MIRROR';
+      }
+      bank.ledger.push({ type: 'WORLD_BANK_FUNDING_DRAW', countryCode, countryName: profile.name,
+        contractId, amountUsd: amount, balanceAfterUsd: treasury - amount, turn: turn(), timestamp: new Date().toISOString() });
+      bank.ledger = bank.ledger.slice(-Number(rules.maximumLedgerEntries || 1000));
+      emitLedgerEvent('OMEGA_WORLD_BANK_FUNDING_DRAW', { countryCode, contractId, amountUsd: amount });
+      return { ok: true, claim: clone(claim), treasuryBalanceUsd: treasury - amount };
+    }
+    if (action === 'REPAY') {
+      if (!prior) return { ok: false, code: 'FUNDING_CLAIM_NOT_FOUND', contractId };
+      if (prior.status === 'REPAID') return { ok: true, duplicate: true, claim: clone(prior) };
+      const principalPaid = clamp(num(input.principalPaidUsd) ?? amount, 0, Math.max(0, num(prior.outstandingPrincipalUsd) || 0));
+      const interestPaid = clamp(num(input.interestPaidUsd) ?? Math.max(0, amount - principalPaid), 0, Math.max(0, num(prior.accruedInterestUsd) || 0));
+      const totalCredit = principalPaid + interestPaid;
+      if (Math.abs(totalCredit - amount) > 0.02)
+        return { ok: false, code: 'FUNDING_REPAYMENT_SPLIT_INVALID', totalCredit, requestedUsd: amount };
+      const treasury = readTreasuryUsd(profile);
+      if (treasury === null) return { ok: false, code: 'LENDER_TREASURY_UNAVAILABLE' };
+      const written = writeTreasuryUsd(profile, treasury + totalCredit, 'WORLD_BANK_LIQUIDITY_REPAYMENT');
+      if (!written.ok) return written;
+      prior.outstandingPrincipalUsd = Math.max(0, (num(prior.outstandingPrincipalUsd) || 0) - principalPaid);
+      prior.accruedInterestUsd = Math.max(0, (num(prior.accruedInterestUsd) || 0) - interestPaid);
+      prior.totalPrincipalPaidUsd = (num(prior.totalPrincipalPaidUsd) || 0) + principalPaid;
+      prior.totalInterestPaidUsd = (num(prior.totalInterestPaidUsd) || 0) + interestPaid;
+      prior.status = prior.outstandingPrincipalUsd <= 0.01 && prior.accruedInterestUsd <= 0.01 ? 'REPAID' : 'ACTIVE';
+      prior.lastPaymentTurn = turn();
+      const usdAccount = ensureAccount(profile, 'USD');
+      if (usdAccount) {
+        usdAccount.balance = treasury + totalCredit;
+        usdAccount.lastUpdatedTurn = turn();
+        usdAccount.revision = (num(usdAccount.revision) || 0) + 1;
+        usdAccount.source = 'FINANCE_TREASURY_MIRROR';
+      }
+      bank.ledger.push({ type: 'WORLD_BANK_FUNDING_REPAYMENT', countryCode, countryName: profile.name,
+        contractId, amountUsd: totalCredit, principalPaidUsd: principalPaid, interestPaidUsd: interestPaid,
+        balanceAfterUsd: treasury + totalCredit, turn: turn(), timestamp: new Date().toISOString() });
+      bank.ledger = bank.ledger.slice(-Number(rules.maximumLedgerEntries || 1000));
+      emitLedgerEvent('OMEGA_WORLD_BANK_FUNDING_REPAYMENT', { countryCode, contractId, amountUsd: totalCredit });
+      return { ok: true, claim: clone(prior), treasuryBalanceUsd: treasury + totalCredit };
+    }
+    return { ok: false, code: 'FUNDING_ACTION_INVALID' };
+  }
   function currentMacro(profile) {
     const root = rootState();
     const economy = obj(root.economy) && profile.economyKey && obj(root.economy[profile.economyKey])
@@ -1426,6 +1514,7 @@
     getTransaction: transactionId => existingTransaction(transactionId),
     quoteTransfer, transfer: (input) => settleTransfer(input, false), convert,
     updateTradePolicy, setRiskProfile, riskScore,
+    fundWorldBankLiquidity: transferWorldBankFunding,
     prepareTradeSettlement, commitTradeSettlement, cancelTradeSettlement,
     getReservedTreasuryUsd, reconcile: reconcileAll, processPendingTransfers,
     getCountryAccount: countryValue => accountSummary(countryValue),
