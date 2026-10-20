@@ -14,6 +14,7 @@ const integritySource = fs.readFileSync(new URL('omega_resource_site_integrity_v
 const bindingSource = fs.readFileSync(new URL('omega_resource_gameplay_binding_v1.js', repoRoot), 'utf8');
 const uiSource = fs.readFileSync(new URL('omega_resource_mine_management_v1.js', repoRoot), 'utf8');
 const indexSource = fs.readFileSync(new URL('index.html', repoRoot), 'utf8');
+const serviceWorkerSource = fs.readFileSync(new URL('omega-offline-map-sw.js', repoRoot), 'utf8');
 
 function fixture(overrides = {}) {
   const materials = {
@@ -268,6 +269,10 @@ test('mine project rejects cross-country identity and player-only actions requir
   assert.match(uiSource, /<svg/);
   assert.match(indexSource, /omega_resource_mine_management_v1\.js/);
   assert.match(fs.readFileSync(new URL('server.js', repoRoot), 'utf8'), /RESOURCE_MINE_MANAGEMENT_SCRIPT/);
+  assert.match(serviceWorkerSource, /omega-offline-atlas-shell-v9/);
+  assert.match(serviceWorkerSource, /\.\/omega_resource_mine_management_v1\.js/);
+  assert.match(serviceWorkerSource, /\.\/resource_site_country_mineplay_batch_20261020_v1\.json/);
+  assert.match(serviceWorkerSource, /\.\/resource_industrial_catalog_v1\.json/);
   assert.match(uiSource, /selectedMinistryCountry\(\)/);
   assert.match(bindingSource, /MINEPLAY_BATCH_URL/);
   assert.match(endowmentSource, /OMEGA_RESOURCE_MINE_COMMISSIONED/);
