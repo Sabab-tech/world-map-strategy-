@@ -196,6 +196,15 @@ activeMinisterForScope = minister;
   assert.equal(messages.length, 4, 'Offline fallback turns must also persist into minister memory.');
   assert.equal(episodes.length, 2, 'Offline fallback must store a conversation episode.');
 
+  minister.runtimeState.status = 'FIRED';
+  const vacantContext = { countryId: 'BGD', ministryId: 'finance', aiProvider: 'OFFLINE' };
+  assert.equal(pipeline.shouldHandleQuestion(vacantContext, 'মন্ত্রীর সঙ্গে কথা বল'), true,
+    'A selected but vacant ministry must retain the minister dialogue route.');
+  const vacantAnswer = await pipeline.ask('মন্ত্রীর সঙ্গে কথা বল', vacantContext);
+  assert.equal(vacantAnswer.status, 'MINISTER_NOT_ACTIVE',
+    'A vacant ministry must ask for recruitment instead of falling through to generic AI.');
+  minister.runtimeState.status = 'ACTIVE';
+
   const server = read('server.js');
   const bootstrap = read('server_bootstrap.js');
   const universal = read('omega_universal_ai_runtime.js');
