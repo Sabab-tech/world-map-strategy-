@@ -6,6 +6,7 @@ import test from 'node:test';
 const repoRoot = new URL('../', import.meta.url);
 const catalog = JSON.parse(fs.readFileSync(new URL('resource_industrial_catalog_v1.json', repoRoot), 'utf8'));
 const supplement = JSON.parse(fs.readFileSync(new URL('resource_site_country_mineplay_batch_20261020_v1.json', repoRoot), 'utf8'));
+const reserveRegistry = JSON.parse(fs.readFileSync(new URL('resource_site_reserve_simulation_v1.json', repoRoot), 'utf8'));
 const industrialSource = fs.readFileSync(new URL('omega_resource_industrial_network_v1.js', repoRoot), 'utf8');
 const endowmentSource = fs.readFileSync(new URL('omega_resource_endowment_runtime.js', repoRoot), 'utf8');
 const economySource = fs.readFileSync(new URL('omega_resource_economy_runtime_v2.js', repoRoot), 'utf8');
@@ -90,6 +91,9 @@ test('supplemental dataset adds valid, distinct sites without pretending simulat
     assert.ok(supplement.records.some(x => x.countryId === country), 'missing expanded country ' + country);
   }
   assert.equal(new Set(supplement.records.map(x => x.siteId)).size, supplement.records.length);
+  const reserveIds = new Set(reserveRegistry.records.map(x => x.siteId));
+  assert.deepEqual(supplement.records.filter(x => reserveIds.has(x.siteId)).map(x => x.siteId), [],
+    'the additive site batch must not duplicate identities already in the authoritative reserve registry');
   for (const row of supplement.records) {
     assert.match(row.countryId, /^[A-Z]{3}$/);
     assert.ok(row.location.coordinates.lat >= -90 && row.location.coordinates.lat <= 90);
