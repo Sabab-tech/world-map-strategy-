@@ -433,6 +433,21 @@
     openCabinet(event);
   }
 
+  function syncDockPosition() {
+    const dock = doc.getElementById('omega-ministry-entry');
+    if (!dock || !dock.style) return;
+    let top = 72;
+    const header = doc.getElementById('top-status-bar');
+    if (visible(header) && typeof header.getBoundingClientRect === 'function') {
+      const rect = header.getBoundingClientRect();
+      if (rect && Number.isFinite(rect.bottom) && rect.height > 0) top = Math.ceil(rect.bottom + 8);
+    }
+    // Inline !important wins against legacy stylesheets with equally important
+    // top offsets, and follows the actual wrapped status bar on small phones.
+    if (typeof dock.style.setProperty === 'function') dock.style.setProperty('top', top + 'px', 'important');
+    else dock.style.top = top + 'px';
+  }
+
   function syncDockVisibility() {
     const dock = doc.getElementById('omega-ministry-entry');
     if (!dock) return;
@@ -443,10 +458,21 @@
     // after returning to the map when observers/events are delayed on WebView.
     dock.setAttribute('aria-hidden', onMap ? 'false' : 'true');
     dock.setAttribute('data-omega-map-active', onMap ? 'true' : 'false');
+    syncDockPosition();
   }
 
   doc.addEventListener('click', handleMapMinistryDockClick, true);
   syncDockVisibility();
+  global.addEventListener('resize', syncDockPosition, { passive: true });
+  global.addEventListener('orientationchange', syncDockPosition, { passive: true });
+  if (global.visualViewport) global.visualViewport.addEventListener('resize', syncDockPosition, { passive: true });
+  if (typeof global.ResizeObserver === 'function') {
+    const header = doc.getElementById('top-status-bar');
+    if (header) {
+      const resizeObserver = new global.ResizeObserver(syncDockPosition);
+      resizeObserver.observe(header);
+    }
+  }
   if (typeof global.MutationObserver === 'function' && doc.body) {
     const observer = new global.MutationObserver(syncDockVisibility);
     observer.observe(doc.body, { attributes: true, attributeFilter: ['data-active-layer'] });
