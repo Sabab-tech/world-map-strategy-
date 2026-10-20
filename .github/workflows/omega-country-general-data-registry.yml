@@ -11,6 +11,8 @@ on:
     paths:
       - ".github/workflows/omega-country-general-data-registry.yml"
       - "country-ios.js"
+      - "ministry_engine.js"
+      - "test/omega_ministry_country_details_runtime.test.mjs"
       - "index.html"
       - "style.css"
       - "omega_country_runtime_data_v1.js"
@@ -68,7 +70,8 @@ jobs:
           node --check omega_country_overview_ministry_ui_v1.js
           node --check omega_opponent_adaptive_strategy_system.js
           node --check country-ios.js
-          node --test test/country_general_data_registry_v1.test.mjs test/omega_country_runtime_data_v1.test.mjs test/omega_country_behavior_engine_v1.test.mjs
+          node --check ministry_engine.js
+          node --test test/country_general_data_registry_v1.test.mjs test/omega_country_runtime_data_v1.test.mjs test/omega_country_behavior_engine_v1.test.mjs test/omega_ministry_country_details_runtime.test.mjs
 
       - name: Commit registry only if it changed
         if: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
