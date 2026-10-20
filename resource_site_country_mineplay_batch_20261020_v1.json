@@ -2081,13 +2081,15 @@
         },
         "quantitativeProvenance": {
           "authority": "SOURCE_REPORTED_IDENTITY_AND_VERIFIED_METRICS_WHEN_AVAILABLE",
-          "measuredReservePromoted": false,
+          "measuredReservePromoted": true,
           "simulatedReserveSeparate": true,
           "sourceUrls": [
             "https://www.managemgroup.com/boto",
             "https://www.managemgroup.com/en/managem-announces-first-gold-boto-gold-mine-senegal"
           ],
-          "accessed": "2026-10-20"
+          "accessed": "2026-10-20",
+          "reserveAuthority": "SOURCE_REPORTED_SITE_SPECIFIC_RESERVE",
+          "reserveUnit": "TROY_OUNCES"
         },
         "completeness": {
           "reserve": "REPORTED",
@@ -5265,13 +5267,15 @@
         },
         "quantitativeProvenance": {
           "authority": "SOURCE_REPORTED_IDENTITY_AND_VERIFIED_METRICS_WHEN_AVAILABLE",
-          "measuredReservePromoted": false,
+          "measuredReservePromoted": true,
           "simulatedReserveSeparate": true,
           "sourceUrls": [
             "https://www.syrahresources.com.au/our-business/balama-graphite-operation",
             "https://www.syrahresources.com.au/news/balama-graphite-operations"
           ],
-          "accessed": "2026-10-20"
+          "accessed": "2026-10-20",
+          "reserveAuthority": "SOURCE_REPORTED_SITE_SPECIFIC_RESERVE",
+          "reserveUnit": "TONNES_ORE"
         },
         "completeness": {
           "reserve": "REPORTED",
