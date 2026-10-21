@@ -1621,7 +1621,8 @@
       const country=canonicalCountryId(countryId);
       if(!this.ids.includes(source)||!country)throw new Error('INVALID_COMMAND_SOURCE_OR_COUNTRY');
       const turn=Number.isFinite(Number(options.turn))?Number(options.turn):this.lastTurn;
-      const commandId=String(options.commandId||('OMI-CMD-'+String(turn)+'-'+String(++this._commandSequence)));
+      this._commandSequence+=1;
+      const commandId=String(options.commandId||('OMI-CMD-'+String(turn)+'-'+String(this._commandSequence)));
       const commandType=String(options.commandType||actionId||'');
       const handler=this.commandHandlers.get(commandType)||null;
       const action=this.decisionFramework?.getAction?.(String(actionId||''))||null;
