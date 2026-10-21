@@ -70,3 +70,31 @@
 @media (prefers-reduced-motion: reduce) {
   .ofx-panel *, .ofx-panel *::before, .ofx-panel *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
 }
+
+/* Country-scoped FX lookup and coverage: responsive, keyboard-friendly controls. */
+.ofx-panel .ofx-country-quick-lookup { display: grid; gap: 10px; }
+.ofx-panel .ofx-country-quick-lookup .ofx-search { display: grid; gap: 6px; }
+.ofx-panel .ofx-country-lookup-card {
+  min-width: 0; padding: 12px; border: 1px solid rgba(91,154,184,.3);
+  border-radius: 10px; background: rgba(20,44,65,.42);
+}
+.ofx-panel .ofx-country-lookup-title { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.ofx-panel .ofx-country-lookup-title > div { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.ofx-panel .ofx-country-lookup-title strong { font-size: 14px; }
+.ofx-panel .ofx-country-lookup-title small { overflow-wrap: anywhere; opacity: .8; }
+.ofx-panel .ofx-lookup-status {
+  flex: 0 0 auto; padding: 4px 7px; border: 1px solid rgba(148,163,184,.3);
+  border-radius: 20px; font-size: 10px; text-align: center; overflow-wrap: anywhere;
+}
+.ofx-panel .ofx-lookup-status.is-available { border-color: rgba(52,211,153,.4); }
+.ofx-panel .ofx-country-lookup-rates { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; margin-top: 11px; }
+.ofx-panel .ofx-country-lookup-rates > div { min-width: 0; padding: 10px; border-radius: 8px; background: rgba(2,11,22,.28); }
+.ofx-panel .ofx-country-lookup-rates span { display: block; margin-bottom: 5px; font-size: 10px; opacity: .8; }
+.ofx-panel .ofx-country-lookup-rates strong { display: block; font-size: clamp(13px,2vw,17px); overflow-wrap: anywhere; }
+.ofx-panel .ofx-country-lookup-empty { padding: 12px; border: 1px dashed rgba(148,163,184,.35); border-radius: 8px; }
+.ofx-panel [data-ofx-country-lookup]:focus-visible { outline: 2px solid #75e2f5; outline-offset: 2px; }
+@media (max-width: 520px) {
+  .ofx-panel .ofx-country-lookup-rates { grid-template-columns: minmax(0,1fr); }
+  .ofx-panel .ofx-country-lookup-title { flex-direction: column; }
+  .ofx-panel .ofx-lookup-status { max-width: 100%; }
+}
