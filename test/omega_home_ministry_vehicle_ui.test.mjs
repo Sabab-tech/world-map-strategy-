@@ -204,6 +204,24 @@ test('vehicle hangar button click submits an order and updates the authoritative
   assert.equal(harness.state.economy.AAA.treasury, 10000000 - harness.api.VEHICLES[0].cost);
 });
 
+test('guard dispatch refuses an empty geographic location before mutating game state', () => {
+  const harness = makeUiHarness({ 1: 1 });
+  harness.ui.renderGuardOut(1);
+  harness.nodes.get('home-police-guard-mission').value = 'industrial_guard';
+  harness.nodes.get('home-police-guard-sector').value = '';
+  harness.nodes.get('home-police-confirm-guard').onclick();
+  assert.equal(harness.api.getState('AAA').guardDeployments.length, 0);
+  assert.match(harness.nodes.get('home-police-guard-error').textContent, /Enter the city, district or rural region/);
+  const area = harness.nodes.get('home-police-guard-area-class');
+  area.value = 'RURAL';
+  area.onchange();
+  assert.equal(harness.nodes.get('home-police-guard-environment').value, 'rural');
+  harness.nodes.get('home-police-guard-sector').value = 'North District';
+  harness.nodes.get('home-police-confirm-guard').onclick();
+  assert.equal(harness.api.getState('AAA').guardDeployments.length, 1);
+  assert.equal(harness.api.getState('AAA').guardDeployments[0].sector, 'RURAL · North District');
+});
+
 test('Guard Out screen dispatches a vehicle, reserves crew, and its stand-down button returns both', () => {
   const harness = makeUiHarness({ 1: 1 });
   harness.ui.renderGuardOut(1);
