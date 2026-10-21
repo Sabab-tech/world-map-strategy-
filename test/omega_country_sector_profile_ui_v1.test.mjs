@@ -27,6 +27,7 @@ test('country sector UI resolves compact references through canonical data and p
  assert.match(runtime,/getMetricDefinition/);
  assert.match(ui,/data-ocsp-toggle/);
  assert.match(ui,/async function toggleDossier/);
+ assert.match(ui,/const metaMatches/);
  assert.doesNotMatch(ui,/localStorage|sessionStorage/);
 });
 
