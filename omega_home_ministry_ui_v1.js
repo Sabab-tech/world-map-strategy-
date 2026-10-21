@@ -190,25 +190,6 @@
       '.home-police-tag-gold{color:#ffe199;background:rgba(200,154,38,.13);border-color:rgba(245,207,104,.42)}',
       '.home-police-tag-green{color:#78edba;background:rgba(23,176,112,.13);border-color:rgba(57,214,154,.36)}',
       '.home-police-form-row{display:flex;align-items:stretch;gap:9px;margin:11px 0}',
-      '.home-budget-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0}',
-      '.home-budget-category{min-width:0;padding:12px;border:1px solid rgba(118,164,199,.24);border-radius:11px;background:linear-gradient(150deg,rgba(19,42,63,.82),rgba(6,15,26,.92))}',
-      '.home-budget-category-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:10px;color:#f6d67e;font-size:12px}',
-      '.home-budget-category-heading span{color:#d5e1eb;font-size:11px;text-align:right;font-variant-numeric:tabular-nums}',
-      '.home-budget-category-controls{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.75fr);gap:8px}',
-      '.home-budget-balances{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:10px}',
-      '.home-budget-balances div{min-width:0;padding:7px;border:1px solid rgba(118,164,199,.16);border-radius:7px;background:rgba(0,0,0,.14)}',
-      '.home-budget-balances span{display:block;color:#9fb5cb;font-size:9px;line-height:1.35}',
-      '.home-budget-balances strong{display:block;margin-top:4px;color:#eaf4ff;font-size:10px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}',
-      '.home-budget-total{padding:12px;border:1px solid rgba(71,205,151,.38);border-radius:9px;background:rgba(23,176,112,.09);color:#78edba;font-size:12px;font-weight:800;font-variant-numeric:tabular-nums}',
-      '.home-budget-total.is-invalid{border-color:rgba(246,105,105,.5);background:rgba(180,32,32,.12);color:#ffb1b1}',
-      '.home-budget-notice{padding:11px 13px;margin:12px 0;border:1px solid rgba(118,164,199,.32);border-radius:9px;background:rgba(10,28,44,.8);color:#dceaf6;font-size:12px;line-height:1.5}',
-      '.home-budget-notice.is-ok{border-color:rgba(57,214,154,.42);color:#8af0bb}',
-      '.home-budget-notice.is-error{border-color:rgba(238,123,105,.5);color:#ffb1a8}',
-      '.home-budget-ledger{display:grid;gap:7px}',
-      '.home-budget-ledger-row{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:10px;border:1px solid rgba(118,164,199,.18);border-radius:8px;background:rgba(0,0,0,.15)}',
-      '.home-budget-ledger-row span{display:block;margin-top:4px;color:#9fb5cb;font-size:10px;line-height:1.4}',
-      '.home-budget-ledger-row>strong{color:#ffdf91;font-size:12px;font-variant-numeric:tabular-nums;white-space:nowrap}',
-      '.home-budget-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}',
       '.home-police-vehicle-art{display:block;visibility:visible;width:100%;max-width:100%;height:auto;min-height:88px;object-fit:contain}',
       '.home-police-vehicle-art-hero{min-height:140px}',
       '.home-police-location-row{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:9px;margin:11px 0}',
@@ -333,7 +314,6 @@
         '<div class="home-police-section-title">Operational control systems</div>' +
         '<div class="home-police-actions">' +
           '<button id="home-police-dashboard-command" class="home-police-btn home-police-btn-green">🚔 POLICE COMMAND & PERSONNEL</button>' +
-          '<button id="home-police-dashboard-budget" class="home-police-btn home-police-btn-gold">BUDGET · FINANCE-LINKED ALLOCATION</button>' +
           '<button id="home-police-dashboard-hangar" class="home-police-btn home-police-btn-gold">🚓 VEHICLE HANGAR · 15 TIERS</button>' +
           '<button id="home-police-dashboard-procurement" class="home-police-btn home-police-btn-gold">🏗️ PROCUREMENT & FACILITIES</button>' +
           '<button id="home-police-dashboard-fleet" class="home-police-btn home-police-btn-purple">🧰 FLEET HEALTH & REPAIR</button>' +
@@ -344,182 +324,12 @@
         '<p class="home-police-note">Fleet units have unique identities and persistent condition, mileage, availability, maintenance and deployment status. Guard posts reserve both vehicles and officers; standing down releases them. Purchase, repair and staffing actions are committed through the simulation state and country treasury ledger.</p>' +
       '</div>';
     g.document.getElementById('home-police-dashboard-command').onclick = () => this.openPoliceCommand();
-    g.document.getElementById('home-police-dashboard-budget').onclick = () => this.renderHomeMinistryBudget();
     g.document.getElementById('home-police-dashboard-hangar').onclick = () => this.renderVehicleCatalog(s.unlockedVehicleLevel);
     g.document.getElementById('home-police-dashboard-procurement').onclick = () => this.renderUpgradeMenu();
     g.document.getElementById('home-police-dashboard-fleet').onclick = () => this.renderFleetMaintenance();
     g.document.getElementById('home-police-dashboard-guard').onclick = () => this.renderGuardOut(s.unlockedVehicleLevel);
     g.document.getElementById('home-police-dashboard-tactics').onclick = () => this.renderTacticsMenu();
     g.document.getElementById('home-police-dashboard-incidents').onclick = () => this.renderPoliceIncidentLog();
-    return true;
-  };
-
-  ui.renderHomeMinistryBudget = function (notice) {
-    injectStyles();
-    const body = bodyNode(), e = engine();
-    if (!body || !e) {
-      if (this.showAdvisePopup) this.showAdvisePopup('HOME MINISTRY BUDGET UNAVAILABLE', 'The Home Ministry runtime is not ready.');
-      return false;
-    }
-    const country = e.getCurrentCountryId(), snapshot = e.getHomeBudgetSnapshot(country);
-    const finance = g.OmegaFinanceMinistry || g.Omega && g.Omega.FinanceMinistry;
-    const treasury = e.getTreasury(country);
-    const formatMoney = value => money(e, value);
-    const showNotice = notice && notice.message
-      ? '<div class="home-budget-notice ' + (notice.ok ? 'is-ok' : 'is-error') + '" role="status">' + esc(notice.message) + '</div>'
-      : '';
-    const openFinanceButton = '<button id="home-budget-open-finance" type="button" class="home-police-btn home-police-btn-gold">OPEN FINANCE MINISTRY</button>';
-
-    if (!snapshot || snapshot.available !== true) {
-      body.innerHTML =
-        '<div class="home-police-shell"><header class="home-police-head"><div class="home-police-orb">HM</div>' +
-        '<h1 class="home-police-title">HOME MINISTRY BUDGET</h1>' +
-        '<p class="home-police-subtitle">Country ' + esc(country || 'UNAVAILABLE') + ' · Finance Ministry is the sole source of the parent allocation.</p></header>' +
-        showNotice +
-        '<section class="home-police-panel"><div class="home-police-section-title">Finance allocation required</div>' +
-        '<p class="home-police-note">The Home Ministry cannot create money or invent an allocation. Open Finance Ministry, set a valid Interior / Home Affairs allocation for the active player country, then return here to distribute it among personnel, vehicles, maintenance, facilities, training and operations.</p>' +
-        '<div class="home-budget-notice is-error" role="status">Status: ' + esc(snapshot && (snapshot.reason || snapshot.code) || 'HOME_BUDGET_UNAVAILABLE') + '. National treasury balance: ' + formatMoney(treasury && treasury.available ? treasury.balance : null) + '.</div>' +
-        '<div class="home-police-actions">' + openFinanceButton + backButton('home-budget-back', '← BACK TO HOME MINISTRY') + '</div></section></div>';
-      const financeButton = g.document.getElementById('home-budget-open-finance');
-      if (financeButton) financeButton.onclick = () => {
-        const cabinet = g.OmegaCabinetUI;
-        if (cabinet && typeof cabinet.renderMinistryDashboard === 'function') cabinet.renderMinistryDashboard('finance');
-        else if (typeof g.dispatchEvent === 'function' && typeof g.CustomEvent === 'function')
-          g.dispatchEvent(new g.CustomEvent('MINISTRY_SELECTED', { detail: { ministryId: 'finance' } }));
-      };
-      const back = g.document.getElementById('home-budget-back');
-      if (back) back.onclick = () => this.openPoliceCommand();
-      return true;
-    }
-
-    const categories = snapshot.categories || {};
-    const plan = snapshot.plan || {};
-    const ids = Object.keys(categories);
-    const financeState = finance && typeof finance.getFinanceState === 'function' ? finance.getFinanceState(country) : null;
-    const ledger = Array.isArray(financeState && financeState.ledger)
-      ? financeState.ledger.filter(row => row && row.action === 'EXPENSE' &&
-          String(row.department || '') === 'interior' &&
-          String(row.description || '').startsWith('OMEGA_HOME_BUDGET:') &&
-          !row.reversedBy)
-      : [];
-    const categoryMarkup = ids.map(id => {
-      const row = categories[id], setting = plan[id] || { mode: 'percent', value: 0 };
-      const mode = setting.mode === 'amount' ? 'amount' : 'percent';
-      const max = mode === 'percent' ? ' max="100"' : '';
-      const step = mode === 'percent' ? '0.1' : '1';
-      return '<article class="home-budget-category">' +
-        '<div class="home-budget-category-heading"><strong>' + esc(row.label || id) + '</strong>' +
-        '<span>' + formatMoney(row.budgetUsd) + ' allocated</span></div>' +
-        '<div class="home-budget-category-controls">' +
-        '<label class="home-police-label" for="home-budget-mode-' + esc(id) + '">Limit type' +
-        '<select id="home-budget-mode-' + esc(id) + '" class="home-police-field" data-home-budget-mode="' + esc(id) + '"' + (snapshot.canEdit ? '' : ' disabled') + '>' +
-        '<option value="percent"' + (mode === 'percent' ? ' selected' : '') + '>Percentage of Finance allocation</option>' +
-        '<option value="amount"' + (mode === 'amount' ? ' selected' : '') + '>Fixed USD amount</option></select></label>' +
-        '<label class="home-police-label" for="home-budget-value-' + esc(id) + '">Limit value' +
-        '<input id="home-budget-value-' + esc(id) + '" class="home-police-field" data-home-budget-value="' + esc(id) + '" type="number" inputmode="decimal" min="0"' + max + ' step="' + step + '" value="' + esc(setting.value) + '"' + (snapshot.canEdit ? '' : ' disabled') + '></label>' +
-        '</div><div class="home-budget-balances">' +
-        '<div><span>Spent this fiscal year</span><strong>' + formatMoney(row.spentUsd) + '</strong></div>' +
-        '<div><span>Remaining category limit</span><strong>' + formatMoney(row.remainingUsd) + '</strong></div>' +
-        '<div><span>Spendable now</span><strong>' + formatMoney(row.spendableUsd) + '</strong></div>' +
-        '</div></article>';
-    }).join('');
-
-    const recent = ledger.slice(-8).reverse();
-    const ledgerMarkup = recent.length ? recent.map(row => {
-      const desc = String(row.description || '');
-      const match = /^OMEGA_HOME_BUDGET:([^|]+)\|(.*)$/.exec(desc);
-      const category = match ? match[1] : 'operations';
-      const action = match ? match[2] : String(row.action || 'EXPENSE');
-      const gameTurn = row.turn ?? row.simulationTurn ?? row.fiscalYearIndex ?? '—';
-      return '<article class="home-budget-ledger-row"><div><strong>' + esc(action.replace(/_/g, ' ')) + '</strong>' +
-        '<span>' + esc(category) + ' · Turn ' + esc(gameTurn) + ' · Finance transaction</span></div><strong>' +
-        formatMoney(row.amountUsd) + '</strong></article>';
-    }).join('') : '<div class="home-police-alert">No Home Ministry expenses are recorded in the Finance ledger yet. Rejected or uncommitted actions do not appear here.</div>';
-
-    body.innerHTML =
-      '<div class="home-police-shell"><header class="home-police-head"><div class="home-police-orb">HM</div>' +
-      '<h1 class="home-police-title">HOME MINISTRY BUDGET</h1>' +
-      '<p class="home-police-subtitle">ACTIVE COUNTRY · ' + esc(country) + ' · Finance allocation → internal limits → expense ledger. Limits do not create treasury cash.</p></header>' +
-      showNotice +
-      (!snapshot.canEdit ? '<div class="home-budget-notice is-error" role="status">READ-ONLY PROFILE. Only the active player country can change this plan.</div>' : '') +
-      '<div class="home-police-kpis home-budget-kpis">' +
-      '<div class="home-police-kpi"><strong>' + formatMoney(snapshot.parentBudgetUsd) + '</strong><span>Finance · Interior allocation</span></div>' +
-      '<div class="home-police-kpi"><strong>' + formatMoney(snapshot.parentRemainingUsd) + '</strong><span>Parent allocation remaining</span></div>' +
-      '<div class="home-police-kpi"><strong>' + formatMoney(snapshot.treasuryBalanceUsd) + '</strong><span>National Treasury cash</span></div>' +
-      '<div class="home-police-kpi"><strong>' + formatMoney(snapshot.planTotalUsd) + '</strong><span>Planned internal limits</span></div>' +
-      '<div class="home-police-kpi"><strong>' + formatMoney(snapshot.spentThisYearUsd) + '</strong><span>Recorded spending this fiscal year</span></div>' +
-      '<div class="home-police-kpi"><strong>' + formatMoney(snapshot.unplannedBudgetUsd) + '</strong><span>Unassigned parent allocation</span></div>' +
-      '</div>' +
-      '<section class="home-police-panel"><div class="home-police-section-title">Internal spending limits</div>' +
-      '<p class="home-police-note">Each category is a ceiling inside the existing Finance Ministry Interior / Home allocation. Choose a percentage or a fixed USD amount. The combined planned value cannot exceed the parent allocation, and a limit cannot be lowered below current-year spending. All expenses still pass treasury, country-scope and Finance-ledger validation.</p>' +
-      '<div class="home-budget-grid">' + categoryMarkup + '</div>' +
-      '<div id="home-budget-total" class="home-budget-total" role="status">Planned: ' + formatMoney(snapshot.planTotalUsd) + ' / ' + formatMoney(snapshot.parentBudgetUsd) + '</div>' +
-      '<div class="home-police-actions"><button id="home-budget-save-plan" type="button" class="home-police-btn home-police-btn-green"' + (snapshot.canEdit ? '' : ' disabled') + '>SAVE INTERNAL BUDGET PLAN</button>' +
-      openFinanceButton + backButton('home-budget-back', '← BACK TO HOME MINISTRY') + '</div></section>' +
-      '<section class="home-police-panel"><div class="home-police-section-title">Finance-backed expense ledger</div>' +
-      '<p class="home-police-note">Source: canonical Finance ledger. Values below are committed game transactions, not an independent duplicate balance.</p>' +
-      '<div class="home-budget-ledger">' + ledgerMarkup + '</div></section></div>';
-
-    const updateTotal = () => {
-      let total = 0, valid = true;
-      ids.forEach(id => {
-        const modeNode = g.document.getElementById('home-budget-mode-' + id);
-        const valueNode = g.document.getElementById('home-budget-value-' + id);
-        const value = Number(valueNode && valueNode.value);
-        if (!modeNode || !valueNode || !Number.isFinite(value) || value < 0 ||
-            (modeNode.value === 'percent' && value > 100)) { valid = false; return; }
-        total += modeNode.value === 'amount' ? value : snapshot.parentBudgetUsd * value / 100;
-      });
-      const totalNode = g.document.getElementById('home-budget-total');
-      if (!totalNode) return;
-      totalNode.textContent = 'Planned: ' + formatMoney(total) + ' / ' + formatMoney(snapshot.parentBudgetUsd) +
-        (valid && total <= snapshot.parentBudgetUsd + 0.01 ? ' · WITHIN FINANCE LIMIT' : ' · INVALID OR ABOVE FINANCE LIMIT');
-      totalNode.classList.toggle('is-invalid', !valid || total > snapshot.parentBudgetUsd + 0.01);
-    };
-    ids.forEach(id => {
-      const modeNode = g.document.getElementById('home-budget-mode-' + id);
-      const valueNode = g.document.getElementById('home-budget-value-' + id);
-      if (modeNode) modeNode.onchange = () => {
-        if (valueNode) valueNode.max = modeNode.value === 'percent' ? '100' : '';
-        if (valueNode) valueNode.step = modeNode.value === 'percent' ? '0.1' : '1';
-        updateTotal();
-      };
-      if (valueNode) valueNode.oninput = updateTotal;
-    });
-    const save = g.document.getElementById('home-budget-save-plan');
-    if (save) save.onclick = () => {
-      if (!snapshot.canEdit) {
-        this.renderHomeMinistryBudget({ ok: false, message: 'Only the active player country can be edited.' });
-        return;
-      }
-      const nextPlan = {};
-      for (const id of ids) {
-        const modeNode = g.document.getElementById('home-budget-mode-' + id);
-        const valueNode = g.document.getElementById('home-budget-value-' + id);
-        const value = Number(valueNode && valueNode.value);
-        if (!modeNode || !valueNode || !Number.isFinite(value) || value < 0 ||
-            (modeNode.value === 'percent' && value > 100)) {
-          this.renderHomeMinistryBudget({ ok: false, message: 'Enter a valid non-negative value for every category; percentage limits cannot exceed 100%.' });
-          return;
-        }
-        nextPlan[id] = { mode: modeNode.value === 'amount' ? 'amount' : 'percent', value: value };
-      }
-      const result = e.setHomeBudgetPlan(nextPlan, country);
-      if (!result || result.ok !== true) {
-        this.renderHomeMinistryBudget({ ok: false, message: result && (result.message || result.code) || 'The Finance runtime rejected this budget plan.' });
-        return;
-      }
-      this.renderHomeMinistryBudget({ ok: true, message: 'Budget plan saved. Existing spending was preserved; future actions will use the updated limits.' });
-    };
-    const financeButton = g.document.getElementById('home-budget-open-finance');
-    if (financeButton) financeButton.onclick = () => {
-      const cabinet = g.OmegaCabinetUI;
-      if (cabinet && typeof cabinet.renderMinistryDashboard === 'function') cabinet.renderMinistryDashboard('finance');
-      else if (typeof g.dispatchEvent === 'function' && typeof g.CustomEvent === 'function')
-        g.dispatchEvent(new g.CustomEvent('MINISTRY_SELECTED', { detail: { ministryId: 'finance' } }));
-    };
-    const back = g.document.getElementById('home-budget-back');
-    if (back) back.onclick = () => this.openPoliceCommand();
     return true;
   };
 
