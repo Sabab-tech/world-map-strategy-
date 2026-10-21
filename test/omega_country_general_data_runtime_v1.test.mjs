@@ -58,6 +58,13 @@ test('shared registry decoding keeps identity, provenance, metrics and geography
  assert.equal(missingMeta.confidence,0);
  assert.equal(missingMeta.dataGap,'MISSING_OBSERVATION');
  assert.equal(missingMeta.confidenceBasis,'INFERRED_FROM_SOURCE_STATUS_AND_YEAR');
+ const gdpIndex=metricFields.indexOf('gdpCurrentUsd');
+ const priorYear=fixture.countries[0].metricMetadata.years[gdpIndex];
+ fixture.countries[0].metricMetadata.years[gdpIndex]=new Date().getUTCFullYear()+4;
+ const futureMeta=runtime.getCountryRecord('AAA').metricMetadata.gdpCurrentUsd;
+ assert.equal(futureMeta.freshness,0.25,'future-dated evidence must be heavily attenuated');
+ assert.equal(futureMeta.dataGap,'OBSERVATION_YEAR_IN_FUTURE');
+ fixture.countries[0].metricMetadata.years[gdpIndex]=priorYear;
  assert.deepEqual(a.localGeography.economicCenters,[{name:'Alpha City',description:'fixture city record'}]);
  assert.equal(runtime.getCountryRecord('BBB').metrics.populationTotal,30000000);assert.equal(runtime.getCountryRecord('MISSING'),null);
 });
