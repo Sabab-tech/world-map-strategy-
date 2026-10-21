@@ -114,12 +114,12 @@ test('world and roster records that resolve to another country are flagged',()=>
 test('new overview, gateway and legacy screen files are wired through the same contract',()=>{
   const read=name=>readFileSync(new URL('../'+name,import.meta.url),'utf8');
   const html=read('index.html');
-  assert.match(html,/omega_country_data_gateway_v1\\.js/);
-  assert.match(read('country-ios.js'),/gateway\\.getValue\\(requested, domains, paths\\)/);
+  assert.match(html,/omega_country_data_gateway_v1\.js/);
+  assert.match(read('country-ios.js'),/gateway\.getValue\(requested, domains, paths\)/);
   assert.match(read('ministry_engine.js'),/OmegaCountryDataGateway/);
   assert.match(read('map-engine-1.js'),/OmegaCountryDataGateway/);
   assert.match(read('omega_country_overview_ministry_ui_v1.js'),/auditAllCountries/);
-  assert.match(read('omega-offline-map-sw.js'),/omega_country_data_gateway_v1\\.js/);
+  assert.match(read('omega-offline-map-sw.js'),/omega_country_data_gateway_v1\.js/);
 });
 
 
