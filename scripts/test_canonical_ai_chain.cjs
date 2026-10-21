@@ -11,6 +11,9 @@ const server = read('server.js');
 const deepCore = read('offline_query_engine.js');
 const bootstrap = read('server_bootstrap.js');
 const ministerRouter = read('minister_query_router.js');
+const countryBridge = read('omega_country_semantic_bridge.js');
+const resourceBridge = read('omega_resource_semantic_bridge.js');
+const productionSemantic = read('omega_production_semantic_runtime_v3.js');
 
 
 assert(packageJson.dependencies?.express, 'express must be a declared runtime dependency');
@@ -85,3 +88,7 @@ console.log('Repository authority: Node local filesystem -> Deep Core internal i
 console.log('Browser authority: server API -> Node Deep Core');
 console.log('Browser GitHub scanning: disabled');
 console.log('Deep Core index structures: preserved');
+assert(countryBridge.includes('canonicalizePlan,diagnostics,getDataset'), 'canonical country bridge must expose its already-parsed canonical datasets');
+assert(resourceBridge.includes('identity.getDataset(path)'), 'resource semantic bridge must reuse the canonical dataset cache before disk parsing');
+assert(productionSemantic.includes('bridge.getDataset(path)'), 'production semantic runtime must reuse the canonical dataset cache before fetching duplicate files');
+assert(productionSemantic.includes('await countryBridge.init()'), 'production semantic runtime must await the shared country cache before loading source datasets');
