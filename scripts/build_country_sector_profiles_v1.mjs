@@ -450,7 +450,7 @@ function compactRelativeSignal(signal) {
     caveat: signal.caveat || null
   };
 }
-function compactDerivedMetric(metric) {
+function compactDerivedMetric(metric, options = {}) {
   if (!metric || typeof metric !== 'object') return null;
   const compact = {
     value: finite(metric.value), unit: metric.unit || null, year: finite(metric.year),
@@ -458,18 +458,21 @@ function compactDerivedMetric(metric) {
     status: metric.status || 'UNKNOWN', method: metric.method || null,
     sourceUrl: metric.sourceUrl || null, note: metric.note || null
   };
-  if (metric.modelId) Object.assign(compact, {
-    modelId: metric.modelId, formula: metric.formula || null,
-    availableInputCount: finite(metric.availableInputCount),
-    requiredInputCount: finite(metric.requiredInputCount),
-    coveragePct: finite(metric.coveragePct),
-    inputYears: metric.inputYears || {}, inputStatuses: metric.inputStatuses || {},
-    minInputYear: finite(metric.minInputYear), maxInputYear: finite(metric.maxInputYear),
-    observationYearSpread: finite(metric.observationYearSpread),
-    legacyOrLocalInputCount: finite(metric.legacyOrLocalInputCount),
-    missingInputs: Array.isArray(metric.missingInputs) ? metric.missingInputs : [],
-    comparabilityNote: metric.comparabilityNote || null
-  });
+  if (metric.modelId) {
+    compact.modelId = metric.modelId;
+    if (options.includeModelEvidence !== false) Object.assign(compact, {
+      formula: metric.formula || null,
+      availableInputCount: finite(metric.availableInputCount),
+      requiredInputCount: finite(metric.requiredInputCount),
+      coveragePct: finite(metric.coveragePct),
+      inputYears: metric.inputYears || {}, inputStatuses: metric.inputStatuses || {},
+      minInputYear: finite(metric.minInputYear), maxInputYear: finite(metric.maxInputYear),
+      observationYearSpread: finite(metric.observationYearSpread),
+      legacyOrLocalInputCount: finite(metric.legacyOrLocalInputCount),
+      missingInputs: Array.isArray(metric.missingInputs) ? metric.missingInputs : [],
+      comparabilityNote: metric.comparabilityNote || null
+    });
+  }
   else if (metric.inputYears) Object.assign(compact, {
     formula: metric.formula || null, inputYears: metric.inputYears,
     missingInputs: Array.isArray(metric.missingInputs) ? metric.missingInputs : []
@@ -525,7 +528,7 @@ const compactProfiles = profiles.map((profile) => ({
     identityValue: profile.identity.iso3
   },
   derivedMetrics: Object.fromEntries(Object.entries(profile.derivedMetrics)
-    .map(([key, metric]) => [key, compactDerivedMetric(metric)])),
+    .map(([key, metric]) => [key, compactDerivedMetric(metric, { includeModelEvidence: false })])),
   analytics: Object.fromEntries(Object.entries(profile.analytics || {})
     .map(([key, metric]) => [key, compactDerivedMetric(metric)])),
   relativeSignals: {
