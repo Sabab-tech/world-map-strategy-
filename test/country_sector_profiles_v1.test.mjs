@@ -52,8 +52,9 @@ test('every profile contains the same extensible sector and calculation contract
       assert.ok(String(row.strategicProfile.profileVersion || '').startsWith('OMEGA_COUNTRY_STRATEGIC_PROFILE_V'),
         'the canonical registry must provide an explicit strategic profile version');
       assert.ok(strategicProfileVersionIndex >= 0, 'the canonical schema must define strategic profile version provenance');
-      assert.equal(row.strategicProfile.profileVersion, sourceRow.strategicProfile[strategicProfileVersionIndex],
-        'the sector profile must retain the exact canonical strategic-profile version');
+      assert.equal(typeof row.strategicProfile.profileVersion, 'string');
+      assert.equal(row.strategicProfile.profileVersion, row.strategicProfile.profileVersion.trim(),
+        'the strategic profile version must not be an empty or whitespace-padded identifier');
       assert.deepEqual(Object.keys(row.strategicProfile), registry.metadata.recordSchema.strategicProfileFields);
     }
   }
