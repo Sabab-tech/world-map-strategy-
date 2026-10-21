@@ -160,9 +160,11 @@ function mount(panel){
 function filterContent(content,query){
  const term=norm(query),sectors=content.querySelectorAll('[data-ocsp-sector]');let visible=0;
  sectors.forEach(sector=>{
-  const rows=sector.querySelectorAll('[data-ocsp-evidence],.ocsp-signal-row');let rowVisible=0;
-  rows.forEach(row=>{const match=!term||norm(row.getAttribute('data-search')||row.textContent).includes(term);row.hidden=!match;if(match)rowVisible++});
-  const matchSector=!term||norm(sector.getAttribute('data-search')||sector.textContent).includes(term)||rowVisible>0;
+  const rows=sector.querySelectorAll('[data-ocsp-evidence],.ocsp-signal-row');
+  const metaMatches=!term||norm(sector.getAttribute('data-search')||'').includes(term);
+  let rowVisible=0;
+  rows.forEach(row=>{const match=!term||metaMatches||norm(row.getAttribute('data-search')||row.textContent).includes(term);row.hidden=!match;if(match)rowVisible++});
+  const matchSector=metaMatches||rowVisible>0;
   sector.hidden=!matchSector;if(matchSector){visible++;if(term&&rowVisible)sector.open=true}
  });
  const shell=content.closest('[data-ocsp-root]'),status=shell&&shell.querySelector('[data-ocsp-status]');
