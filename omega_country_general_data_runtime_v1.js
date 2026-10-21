@@ -11,6 +11,41 @@ const n=v=>typeof v==='number'&&Number.isFinite(v)?v:(typeof v==='string'&&v.tri
 const clamp=(v,a=0,b=1)=>n(v)===null?null:Math.max(a,Math.min(b,n(v)));
 const norm=v=>str(v).normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/&/g,' AND ').replace(/[_'-]+/g,' ').replace(/[^A-Z0-9]+/gi,' ').trim().toUpperCase().replace(/\s+/g,' ');
 const obj=v=>!!v&&typeof v==='object'&&!Array.isArray(v);
+const currentYear=()=>new Date().getUTCFullYear();
+function inferredSourceConfidence(value,status,sourceId,sourceName,method,year,persisted){
+ if(n(value)===null)return 0;
+ const saved=clamp(persisted);
+ if(saved!==null)return saved;
+ const st=str(status).toUpperCase(),source=!!(str(sourceId)||str(sourceName)),m=str(method).toUpperCase();
+ let confidence=.32;
+ if(st==='WORLD_BANK_API_OBSERVATION')confidence=.92;
+ else if(st==='DERIVED_SAME_YEAR_OBSERVATIONS')confidence=.80;
+ else if(st==='SOURCE_OBSERVATION'||m==='SOURCE_OBSERVATION')confidence=.84;
+ else if(/MODELED|MODELLED|SIMULATION|GAMEPLAY|LOCAL_/.test(st))confidence=.46;
+ else if(source)confidence=.58;
+ if(!source)confidence=Math.min(confidence,.32);
+ if(n(year)===null)confidence=Math.min(confidence,.68);
+ return Number(Math.max(0,Math.min(1,confidence)).toFixed(3));
+}
+function metricFreshness(year){
+ const y=n(year);if(y===null)return .72;
+ const age=Math.max(0,currentYear()-y);
+ return Number((age<=2?1:Math.max(.25,1-.055*(age-2))).toFixed(3));
+}
+function inferredDataGap(value,status,sourceId,sourceName,year,persisted){
+ if(str(persisted))return str(persisted);
+ const st=str(status).toUpperCase();
+ if(n(value)===null){
+  if(st.includes('SOURCE_REFRESH_FAILED'))return 'SOURCE_REFRESH_FAILED';
+  if(st.includes('NO_SOURCE_OBSERVATION'))return 'NO_SOURCE_OBSERVATION';
+  return 'MISSING_OBSERVATION';
+ }
+ if(!str(sourceId)&&!str(sourceName))return 'SOURCE_METADATA_MISSING';
+ if(n(year)===null)return 'OBSERVATION_YEAR_UNKNOWN';
+ if(/NOT_EXTERNALLY_REVALIDATED|LEGACY/.test(st))return 'LEGACY_SOURCE_NOT_REVALIDATED';
+ if(/MODELED|MODELLED|SIMULATION|GAMEPLAY|LOCAL_/.test(st))return 'UNVERIFIED_OR_MODELLED_SOURCE';
+ return null;
+}
 function init(){if(s.promise)return s.promise;s.promise=(async()=>{try{
  if(typeof root.fetch!=='function')throw Error('FETCH_UNAVAILABLE');
  const res=await root.fetch(DATA_URL,{cache:'default'});if(!res||res.ok===false)throw Error('COUNTRY_GENERAL_DATA_FETCH_FAILED');
@@ -33,7 +68,17 @@ function map(fields,values){const out={};if(Array.isArray(fields)&&Array.isArray
 function code(list,v){const i=n(v);return i===null||i<0||!Array.isArray(list)?null:(list[i]===undefined?null:list[i])}
 function decode(row){
  const schema=s.schema,enc=s.data.metadata.provenanceEncoding||{},identity=map(schema.identityFields,row.identity),generalFacts=map(schema.generalFactFields,row.generalFacts),metrics=map(schema.metricFields,row.metrics),a=row.metricMetadata||{},metricMetadata={};
- schema.metricFields.forEach((k,i)=>metricMetadata[k]={year:a.years?.[i]??null,status:code(enc.statuses,a.statusCodes?.[i]),sourceId:code(enc.sourceIds,a.sourceCodes?.[i]),sourceName:code(enc.sourceNames,a.sourceNameCodes?.[i]),method:code(enc.methods,a.methodCodes?.[i]),sourceUrl:a.sourceUrls?.[i]??null,note:a.notes?.[i]??null});
+ schema.metricFields.forEach((k,i)=>{
+  const meta={year:a.years?.[i]??null,status:code(enc.statuses,a.statusCodes?.[i]),sourceId:code(enc.sourceIds,a.sourceCodes?.[i]),sourceName:code(enc.sourceNames,a.sourceNameCodes?.[i]),method:code(enc.methods,a.methodCodes?.[i]),sourceUrl:a.sourceUrls?.[i]??null,note:a.notes?.[i]??null};
+  const value=metrics[k];
+  meta.sourceConfidence=inferredSourceConfidence(value,meta.status,meta.sourceId,meta.sourceName,meta.method,meta.year,a.sourceConfidence?.[i]);
+  meta.freshness=metricFreshness(meta.year);
+  meta.confidence=Number((meta.sourceConfidence*meta.freshness).toFixed(3));
+  meta.dataGap=inferredDataGap(value,meta.status,meta.sourceId,meta.sourceName,meta.year,a.dataGaps?.[i]);
+  meta.confidenceBasis=a.sourceConfidence?.[i]!==undefined?'PERSISTED_SOURCE_CONFIDENCE':'INFERRED_FROM_SOURCE_STATUS_AND_YEAR';
+  meta.freshnessBasis=meta.year===null?'UNKNOWN_YEAR_NEUTRAL_FRESHNESS_ESTIMATE':'OBSERVATION_YEAR_DECAY';
+  metricMetadata[k]=meta;
+ });
  const nr=map(schema.naturalResourceFields,row.naturalResources);nr.mineralResourceBase=map(schema.mineralResourceFields,nr.mineralResourceBase);nr.hydrocarbonResourceBase=map(schema.hydrocarbonResourceFields,nr.hydrocarbonResourceBase);nr.energyResourceBase=map(schema.energyResourceFields,nr.energyResourceBase);
  const ps=map(schema.publicSafetyFields,row.publicSafety);ps.baselinePolice=map(schema.policeBaselineFields,ps.baselinePolice);ps.observedHomicide=map(schema.observedHomicideFields,ps.observedHomicide);
  ps.crimeRatesPer100k=map(schema.crimeFields,ps.crimeRatesPer100k);ps.crimeRateSources=map(schema.crimeFields,ps.crimeRateSources);ps.estimatedAnnualIncidents=map(schema.crimeFields,ps.estimatedAnnualIncidents);
