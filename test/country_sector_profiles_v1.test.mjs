@@ -8,8 +8,8 @@ const schema = readJson('country_sector_profile_schema_v1.json');
 const profilesPath = 'country_sector_profiles_v1.json';
 const profiles = existsSync(profilesPath) ? readJson(profilesPath) : null;
 const registryIso3Index = registry.metadata.recordSchema.identityFields.indexOf('iso3');
-const strategicProfileVersionIndex = registry.metadata.recordSchema.strategicProfileFields
-  ? registry.metadata.recordSchema.strategicProfileFields.indexOf('profileVersion') : -1;
+const registryMetricIndex = Object.fromEntries(registry.fieldCatalogue.map((field) => [field.key, field]));
+const metricIndex = new Map(registry.fieldCatalogue.map((field) => [field.key, field]));
 const registryByIso3 = new Map(registry.countries.map((source) => [
   source.identity[registryIso3Index], source
 ]));
@@ -28,6 +28,8 @@ test('sector profile registry covers the canonical roster with unique ISO3 ident
   );
   assert.equal(profiles.metadata.noSourceRecordsDeleted, true);
   assert.equal(profiles.metadata.unknownValuesConvertedToZero, false);
+  assert.equal(profiles.metadata.storageModel, 'COMPACT_REFERENCES_TO_CANONICAL_COUNTRY_REGISTRY');
+  assert.equal(profiles.sourceRegistry.identityKey, 'iso3');
 });
 
 test('every profile contains the same extensible sector and calculation contracts', () => {
@@ -45,17 +47,24 @@ test('every profile contains the same extensible sector and calculation contract
     assert.ok(row.analytics.economicStressIndex);
     assert.ok(row.analytics.diplomaticInfluenceIndex);
     assert.ok(row.analytics.militaryCapabilityIndex);
-    if (registry.metadata.recordSchema.strategicProfileFields) {
-      assert.ok(row.strategicProfile, 'Existing strategic profile was not carried into the sector registry.');
-      const sourceRow = registryByIso3.get(row.identity.iso3);
-      assert.ok(sourceRow, 'the sector identity must resolve to the canonical registry record');
-      assert.ok(String(row.strategicProfile.profileVersion || '').startsWith('OMEGA_COUNTRY_STRATEGIC_PROFILE_V'),
-        'the canonical registry must provide an explicit strategic profile version');
-      assert.ok(strategicProfileVersionIndex >= 0, 'the canonical schema must define strategic profile version provenance');
-      assert.equal(typeof row.strategicProfile.profileVersion, 'string');
-      assert.equal(row.strategicProfile.profileVersion, row.strategicProfile.profileVersion.trim(),
-        'the strategic profile version must not be an empty or whitespace-padded identifier');
-      assert.deepEqual(Object.keys(row.strategicProfile), registry.metadata.recordSchema.strategicProfileFields);
+    assert.deepEqual(row.sourceRegistryRef, {
+      dataset: 'country_general_data_registry_v1.json',
+      identityKey: 'iso3',
+      identityValue: row.identity.iso3
+    });
+    assert.ok(registryByIso3.has(row.identity.iso3), 'sector identity must resolve to the canonical registry record');
+    assert.equal(row.profileVersion, schema.schemaVersion);
+    for (const sector of Object.values(row.sectors)) {
+      for (const ref of Object.values(sector.indicators || {})) {
+        assert.ok(['METRIC','DERIVED_METRIC'].includes(ref.refType));
+        assert.equal(typeof ref.key, 'string');
+        if (ref.refType === 'METRIC') assert.ok(metricIndex.has(ref.key), 'unresolved canonical metric ref: ' + ref.key);
+        else assert.ok(Object.hasOwn(row.derivedMetrics, ref.key), 'unresolved derived metric ref: ' + ref.key);
+      }
+      for (const ref of Object.values(sector.facts || {})) {
+        assert.equal(ref.refType, 'GENERAL_FACT');
+        assert.ok(registry.metadata.recordSchema.generalFactFields.includes(ref.key), 'unresolved general fact ref: ' + ref.key);
+      }
     }
   }
 });
@@ -75,8 +84,12 @@ test('unknown values stay null and derived financial ratios require same-year in
       assert.equal(row.analytics[slot.id].value, null, slot.id + ' must not be fabricated');
       assert.equal(row.analytics[slot.id].status, 'NOT_SCORED_REQUIRED_DATA_MISSING');
     }
-    for (const key of Object.keys(row.metrics)) {
-      const observation = row.metrics[key];
+    const canonicalRow = registryByIso3.get(row.identity.iso3);
+    for (const rawValue of canonicalRow.metrics || []) {
+      assert.ok(rawValue === null || (typeof rawValue === 'number' && Number.isFinite(rawValue)),
+        'canonical metric values must remain finite or null');
+    }
+    for (const observation of Object.values(row.derivedMetrics)) {
       assert.ok(observation.value === null || (typeof observation.value === 'number' && Number.isFinite(observation.value)));
     }
   }
