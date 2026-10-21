@@ -283,6 +283,11 @@ test('metric provenance exposes observation year, confidence, explicit gaps, and
   assert.ok(gdp && typeof gdp.source === 'string' && gdp.source.length > 0);
   assert.ok(gdp.confidence >= 0 && gdp.confidence <= 1);
   assert.ok(Object.prototype.hasOwnProperty.call(gdp, 'observationYear'));
+  assert.ok(gdp.sourceConfidence === null || (gdp.sourceConfidence >= 0 && gdp.sourceConfidence <= 1));
+  assert.ok(gdp.freshness === null || (gdp.freshness >= 0.25 && gdp.freshness <= 1));
+  assert.ok(Object.prototype.hasOwnProperty.call(gdp, 'dataGap'));
+  assert.ok(typeof gdp.confidenceBasis === 'string' && gdp.confidenceBasis.length > 0,
+    'country behaviour must state how its evidence confidence was derived');
   assert.ok(profile.dataGaps && Array.isArray(profile.dataGaps), 'profile must report metrics that remain unobserved');
   assert.ok(profile.evidenceConfidenceModel.includes('NOT_A_CALIBRATED_PROBABILITY'),
     'confidence must disclose that it is a transparent heuristic, not a calibrated probability');
