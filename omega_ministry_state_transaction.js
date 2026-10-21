@@ -1,5 +1,5 @@
 /*
- * OMEGA MINISTRY STATE TRANSACTION SYSTEM v1.0.0
+ * OMEGA MINISTRY STATE TRANSACTION SYSTEM v1.1.0
  *
  * Deterministic write boundary for authoritative country-scoped state.
  * Commands may mutate only the state owned by their registered ministry.
