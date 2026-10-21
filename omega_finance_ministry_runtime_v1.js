@@ -810,14 +810,38 @@
   function renderTreasuryTab(p,m,fm,editable,root){
     const fb=financeBucketFor(root,p,false)||{},cash=Math.max(0,finite(fm.treasuryBalanceUsd)||0);
     const debt=Math.max(0,finite(m.publicDebtUsd)||0),rate=finite(fm.policy.interestRateAnnualPct)||0;
-    const reserves=finite(fb.reserves),reservePct=Math.max(0,finite(fm.policy.minimumReservePctOfAnnualSpending)||0);
+    const reserveRuntime=global.OmegaForeignReserveRuntime;
+    const reserveView=reserveRuntime&&typeof reserveRuntime.getAccount==='function'?reserveRuntime.getAccount(p.iso3||p.countryCode):null;
+    const reserves=reserveView&&own(reserveView,'balanceUsd')?finite(reserveView.balanceUsd)
+      :(finite(fb.governmentBanking&&fb.governmentBanking.foreignExchangeReservesUsd)??finite(fb.reserves)??finite(m.foreignExchangeReservesUsd));
+    const forex=global.OmegaForexMonetaryEngine;
+    const domesticCode=(reserveView&&reserveView.domesticCurrencyCode)||(forex&&typeof forex.getCurrencyCode==='function'?forex.getCurrencyCode(p):null)||(p.sourceValues&&p.sourceValues.currency_code)||null;
+    const domesticRate=reserveView?finite(reserveView.localPerUsd):(forex&&typeof forex.getRate==='function'?finite(forex.getRate(domesticCode,'SIMULATION')):null);
+    const reserveLocalValue=reserves!==null&&domesticRate!==null?reserves*domesticRate:null;
+    const bank=global.OmegaGovernmentBanking;
+    let accountSummary=null;
+    try{accountSummary=bank&&typeof bank.accountSummary==='function'?bank.accountSummary(p.iso3||p.countryCode):null;}catch(_){}
+    const reserveBook=root&&root.governmentBanking&&root.governmentBanking.accountsByCountry;
+    const book=reserveBook&&(reserveBook[p.iso3||p.countryCode]||reserveBook[p.countryCode||p.iso3]);
+    const homeAccount=(accountSummary&&Array.isArray(accountSummary.accounts)?accountSummary.accounts.find(a=>a.currencyCode===domesticCode):null)
+      ||(book&&book.accounts&&book.accounts[domesticCode])||null;
+    const homeBalance=homeAccount?finite(homeAccount.balance):null;
+    const referenceReserves=reserveView?finite(reserveView.referenceReservesUsd):null;
+    const referenceYear=reserveView&&finite(reserveView.baselineYear)!==null?reserveView.baselineYear:2015;
     const minimum= Math.max(0,finite(fm.fiscalModel.annualSpendingUsd)||0)*reservePct/100;
     let out='<section class="ofm-kpi-grid ofm-kpi-grid-four">'+
       metricCard('Treasury cash',fmtMoney(cash),null,'finance.available synchronised with Finance runtime')+
-      metricCard('Recorded foreign reserves',fmtMoney(reserves),null,'N/A when no reserve field exists')+
+      metricCard('Foreign reserves · live USD',fmtMoney(reserves),null,referenceReserves===null?'Reference baseline not recorded':'Separate live balance · '+referenceYear+' reference baseline')+
       metricCard('Public debt',fmtMoney(debt),null,'Current game-state principal')+
       metricCard('Estimated annual interest',fmtMoney(debt*rate/100),null,'Debt × modeled policy interest rate')+
-      '</section><section class="ofm-section"><div class="ofm-section-heading"><h3>Cash safety policy</h3><span>Optional minimum treasury floor</span></div>'+
+      '</section><section class="ofm-section"><div class="ofm-section-heading"><h3>Domestic currency &amp; foreign reserve assets</h3><span>Live game balances · simulation FX</span></div>'+
+      '<div class="ofm-indicator-grid">'+
+      '<div class="ofm-indicator"><span>Domestic currency account</span><strong data-ofm-live="domesticAccountBalance">'+escapeHTML(homeBalance===null?'N/A':fmtNumber(homeBalance,2)+' '+(domesticCode||''))+'</strong><small>Government Banking account; separate from Treasury cash</small></div>'+
+      '<div class="ofm-indicator"><span>Foreign-exchange reserve assets</span><strong data-ofm-live="foreignReservesUsd">'+escapeHTML(fmtMoney(reserves))+'</strong><small>Central-bank reserve asset balance · USD</small></div>'+
+      '<div class="ofm-indicator"><span>Current game exchange rate</span><strong data-ofm-live="gameRateQuote">'+escapeHTML(domesticRate!==null&&domesticCode?'1 USD = '+fmtNumber(domesticRate,4)+' '+domesticCode:'N/A')+'</strong><small>Simulation quote; reference rates are comparison-only</small></div>'+
+      '<div class="ofm-indicator"><span>Reserve value at game FX</span><strong data-ofm-live="localReserveEquivalent">'+escapeHTML(reserveLocalValue!==null&&domesticCode?fmtNumber(reserveLocalValue,2)+' '+domesticCode:'N/A')+'</strong><small>Valuation only, not a second balance</small></div>'+
+      '<div class="ofm-indicator"><span>Reference reserve baseline</span><strong data-ofm-live="referenceReservesUsd">'+escapeHTML(fmtMoney(referenceReserves))+'</strong><small>'+(referenceReserves===null?'Not recorded in source data':'Legacy '+escapeHTML(String(referenceYear))+' baseline · not a current official observation')+'</small></div>'+
+      '</div><p class="ofm-data-note">Domestic-currency account funds can be moved through the FX and Government Banking settlement pipeline. USD foreign reserves are a separate central-bank asset, updated by monetary interventions and the simulation clock. Their local-currency equivalent is informational and is never added to Treasury cash.</p></section><section class="ofm-section"><div class="ofm-section-heading"><h3>Cash safety policy</h3><span>Optional minimum treasury floor</span></div>'+
       '<div class="ofm-indicator-grid"><div class="ofm-indicator"><span>Minimum reserve policy</span><strong>'+fmtPct(reservePct)+'</strong></div>'+
       '<div class="ofm-indicator"><span>Reserve floor amount</span><strong>'+fmtMoney(minimum)+'</strong></div>'+
       '<div class="ofm-indicator"><span>Debt / GDP</span><strong>'+fmtPct(m.publicDebtToGdpPct)+'</strong></div></div>'+
@@ -924,9 +948,27 @@
   function refreshVisibleMetrics(){
     const content=uiContainer||global.document?.getElementById?.('ministry-dashboard-content');if(!content||!content.querySelectorAll)return;
     const p=viewedCountryProfile();if(!p)return;const m=worldSnapshot().byCode.get(p.countryCode);if(!m)return;
+    const reserveRuntime=global.OmegaForeignReserveRuntime;
+    const reserveView=reserveRuntime&&typeof reserveRuntime.getAccount==='function'?reserveRuntime.getAccount(p.iso3||p.countryCode):null;
+    const forex=global.OmegaForexMonetaryEngine;
+    const domesticCode=(reserveView&&reserveView.domesticCurrencyCode)||(forex&&typeof forex.getCurrencyCode==='function'?forex.getCurrencyCode(p):null)||(p.sourceValues&&p.sourceValues.currency_code)||null;
+    const domesticRate=reserveView?finite(reserveView.localPerUsd):(forex&&typeof forex.getRate==='function'?finite(forex.getRate(domesticCode,'SIMULATION')):null);
+    const bank=global.OmegaGovernmentBanking;
+    const bankRoot=root.governmentBanking&&root.governmentBanking.accountsByCountry;
+    const book=bankRoot&&(bankRoot[p.iso3||p.countryCode]||bankRoot[p.countryCode||p.iso3]);
+    let accountSummary=null;try{accountSummary=bank&&typeof bank.accountSummary==='function'?bank.accountSummary(p.iso3||p.countryCode):null;}catch(_){}
+    const homeAccount=(accountSummary&&Array.isArray(accountSummary.accounts)?accountSummary.accounts.find(a=>a.currencyCode===domesticCode):null)||(book&&book.accounts&&book.accounts[domesticCode])||null;
+    const reserveAmount=reserveView&&own(reserveView,'balanceUsd')?finite(reserveView.balanceUsd):finite(m.foreignExchangeReservesUsd);
+    const referenceAmount=reserveView?finite(reserveView.referenceReservesUsd):null;
+    const localReserveValue=reserveAmount!==null&&domesticRate!==null?reserveAmount*domesticRate:null;
     const vals={gdpCurrentUsd:fmtMoney(m.gdpCurrentUsd),gdpGrowthPct:fmtPct(m.gdpGrowthPct),inflationRatePct:fmtPct(m.inflationRatePct),
       publicDebtToGdpPct:fmtPct(m.publicDebtToGdpPct),economicInfluenceIndex:fmtNumber(m.economicInfluenceIndex,1),
-      fiscalRiskIndex:fmtNumber(m.fiscalRiskIndex,1),treasuryBalanceUsd:fmtMoney(m.treasuryBalanceUsd),availableTreasuryUsd:fmtMoney(m.availableTreasuryUsd)};
+      fiscalRiskIndex:fmtNumber(m.fiscalRiskIndex,1),treasuryBalanceUsd:fmtMoney(m.treasuryBalanceUsd),availableTreasuryUsd:fmtMoney(m.availableTreasuryUsd),
+      foreignReservesUsd:fmtMoney(reserveAmount),
+      domesticAccountBalance:homeAccount&&finite(homeAccount.balance)!==null?fmtNumber(homeAccount.balance,2)+' '+(domesticCode||''):'N/A',
+      gameRateQuote:domesticRate!==null&&domesticCode?'1 USD = '+fmtNumber(domesticRate,4)+' '+domesticCode:'N/A',
+      localReserveEquivalent:localReserveValue!==null&&domesticCode?fmtNumber(localReserveValue,2)+' '+domesticCode:'N/A',
+      referenceReservesUsd:fmtMoney(referenceAmount)};
     for(const n of content.querySelectorAll('[data-ofm-live]')){const k=n.getAttribute('data-ofm-live');if(own(vals,k))n.textContent=vals[k];}
   }
   function isFinanceMinistryId(id){return ['finance','treasury_finance','central_bank','taxes','finance_ministry','ministry_of_finance'].includes(String(id||'').toLowerCase().replace(/[\s-]+/g,'_'));}
@@ -938,6 +980,8 @@
       advanceTurn(turn,duration);
     });
     global.addEventListener?.('OMEGA_READY',function(){if(!initialized)init().catch(error=>console.error('[OMEGA FINANCE INIT]',error));});
+    global.addEventListener?.('OMEGA_FOREIGN_RESERVE_RUNTIME_READY',function(){refreshVisibleMetrics();});
+    global.addEventListener?.('OMEGA_FOREIGN_RESERVE_ACCOUNT_UPDATED',function(){refreshVisibleMetrics();});
     global.addEventListener?.('MINISTRY_SELECTED',function(event){const d=event?.detail||{};const id=d.ministryId||d.id||d.ministry;if(isFinanceMinistryId(id))renderDashboard(id);});
     global.document?.addEventListener?.('click',function(event){
       const target=event.target?.closest?.('[data-ministry-id],[data-ministry]');if(!target)return;
