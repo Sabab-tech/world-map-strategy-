@@ -149,6 +149,8 @@
       if (!Array.isArray(bank.fundingOffers)) bank.fundingOffers = [];
       if (!isObject(bank.partnersByCountry)) bank.partnersByCountry = {};
       if (!isObject(bank.insolvencyByCountry)) bank.insolvencyByCountry = {};
+      if (!isObject(bank.lastDebtServiceTurnByCountry)) bank.lastDebtServiceTurnByCountry = {};
+      if (!isObject(bank.lastDebtServiceErrorsByCountry)) bank.lastDebtServiceErrorsByCountry = {};
       if (!Array.isArray(bank.restructuringProposals)) bank.restructuringProposals = [];
       if (!finite(bank.lastInstitutionTurn)) bank.lastInstitutionTurn = -1;
       if (!isObject(bank.reference.indicatorStatus)) bank.reference.indicatorStatus = {};
@@ -1156,6 +1158,91 @@
     return { ok: true, proposal: clone(proposed), loan: clone(loan) };
   }
 
+  function serviceCountryLoansOnTurn(turnNumber, stepDurationMs) {
+    const bank = store(true);
+    const turn = finite(turnNumber) ?? currentTurn();
+    const durationMs = Math.max(0, finite(stepDurationMs) ?? DAY_MS);
+    const years = durationMs / DAY_MS / 365;
+    if (years <= 0) return { ok: true, turn, processed: 0, paidUsd: 0 };
+    const profile = playerProfile();
+    if (!profile) return { ok: false, code: 'PLAYER_COUNTRY_UNAVAILABLE', turn, processed: 0, paidUsd: 0 };
+    const countryCode = codeOf(profile);
+    const loans = bank.loansByCountry[countryCode] || [];
+    const activeLoans = loans.filter(loan => loan && loan.status !== 'REPAID'
+      && ((finite(loan.outstandingPrincipalUsd) || 0) > 0.01 || (finite(loan.accruedInterestUsd) || 0) > 0.01));
+    if (!activeLoans.length) {
+      bank.lastDebtServiceTurnByCountry[countryCode] = turn;
+      delete bank.lastDebtServiceErrorsByCountry[countryCode];
+      return { ok: true, turn, countryCode, processed: 0, paidUsd: 0 };
+    }
+    if (finite(bank.lastDebtServiceTurnByCountry[countryCode]) === turn) {
+      return { ok: true, cached: true, turn, countryCode, processed: 0, paidUsd: 0 };
+    }
+    if (!finance || typeof finance.applyAction !== 'function') {
+      bank.lastDebtServiceErrorsByCountry[countryCode] = { turn, code: 'FINANCE_RUNTIME_UNAVAILABLE' };
+      return { ok: false, turn, countryCode, code: 'FINANCE_RUNTIME_UNAVAILABLE', processed: 0, paidUsd: 0 };
+    }
+    const facts = countryFacts(profile);
+    const model = financeModel(profile);
+    const treasury = finite(model && model.treasuryBalanceUsd) ?? finite(facts && facts.treasuryUsd);
+    const gdp = finite(facts && facts.gdpUsd);
+    const debt = finite(facts && facts.debtUsd);
+    if (!facts || !facts.simulationDataAvailable || treasury === null || gdp === null || gdp <= 0 || debt === null) {
+      bank.lastDebtServiceTurnByCountry[countryCode] = turn;
+      bank.lastDebtServiceErrorsByCountry[countryCode] = { turn, code: 'GAME_FINANCE_DATA_UNAVAILABLE' };
+      return { ok: false, turn, countryCode, code: 'GAME_FINANCE_DATA_UNAVAILABLE', processed: 0, paidUsd: 0 };
+    }
+
+    const beforeLoans = clone(bank.loansByCountry[countryCode] || []);
+    const beforeLiquidity = clone(bank.liquidity || {});
+    const beforeInsolvency = own(bank.insolvencyByCountry, countryCode)
+      ? clone(bank.insolvencyByCountry[countryCode]) : null;
+    const hadInsolvency = own(bank.insolvencyByCountry, countryCode);
+    const ledgerLength = bank.ledger.length;
+    const historyLength = bank.history.length;
+    const payment = serviceDebt(countryCode, years, Math.min(treasury, debt), gdp, turn);
+    if (!payment || payment.ok !== true) {
+      bank.lastDebtServiceTurnByCountry[countryCode] = turn;
+      bank.lastDebtServiceErrorsByCountry[countryCode] = { turn, code: 'WORLD_BANK_DEBT_SERVICE_FAILED' };
+      return Object.assign({ ok: false, turn, countryCode }, clone(payment || {}));
+    }
+    if (payment.paidUsd > 0.01) {
+      const posted = finance.applyAction({
+        type: 'world-bank-debt-service',
+        authorization: 'OMEGA_WORLD_BANK_LENDING',
+        countryId: countryCode,
+        amountUsd: payment.paidUsd,
+        principalPaidUsd: payment.principalPaidUsd,
+        interestPaidUsd: payment.interestPaidUsd,
+        description: 'World Bank scheduled loan service on game turn ' + turn
+      });
+      if (!posted || posted.ok !== true) {
+        bank.loansByCountry[countryCode] = beforeLoans;
+        bank.liquidity = beforeLiquidity;
+        bank.ledger.length = ledgerLength;
+        bank.history.length = historyLength;
+        if (hadInsolvency) bank.insolvencyByCountry[countryCode] = beforeInsolvency;
+        else delete bank.insolvencyByCountry[countryCode];
+        bank.lastDebtServiceTurnByCountry[countryCode] = turn;
+        bank.lastDebtServiceErrorsByCountry[countryCode] = {
+          turn, code: posted && posted.code || 'WORLD_BANK_FINANCE_SYNC_FAILED'
+        };
+        bankLedger({ type: 'WORLD_BANK_DEBT_SERVICE_SYNC_FAILED', countryCode, turn,
+          code: posted && posted.code || 'WORLD_BANK_FINANCE_SYNC_FAILED' }, true);
+        return { ok: false, turn, countryCode, code: 'WORLD_BANK_FINANCE_SYNC_FAILED',
+          financeResult: clone(posted || null), processed: 0, paidUsd: 0 };
+      }
+      bankLedger({ type: 'WORLD_BANK_DEBT_SERVICE_SETTLED', countryCode, countryName: profile.name,
+        turn, amountUsd: payment.paidUsd, principalPaidUsd: payment.principalPaidUsd,
+        interestPaidUsd: payment.interestPaidUsd }, true);
+    }
+    bank.lastDebtServiceTurnByCountry[countryCode] = turn;
+    delete bank.lastDebtServiceErrorsByCountry[countryCode];
+    return { ok: true, turn, countryCode, processed: activeLoans.length, paidUsd: payment.paidUsd,
+      principalPaidUsd: payment.principalPaidUsd, interestPaidUsd: payment.interestPaidUsd,
+      arrearsUsd: payment.arrearsUsd, entries: clone(payment.entries || []) };
+  }
+
   function processTurn(turnNumber, stepDurationMs) {
     const bank = store(true);
     const turn = finite(turnNumber) ?? currentTurn();
@@ -2003,7 +2090,17 @@
       initialized = true;
       installObserver();
       global.addEventListener && global.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED', function (event) {
-        evaluateAll(false);
+        const detail = event && event.detail || {};
+        const turn = finite(detail.simulationTurn) ?? finite(detail.payload && detail.payload.turn)
+          ?? finite(detail.turn) ?? currentTurn();
+        const stepDurationMs = finite(detail.stepDurationMs) ?? finite(detail.durationMs)
+          ?? finite(global.Omega && global.Omega.Simulation && global.Omega.Simulation.clock
+            && global.Omega.Simulation.clock.stepDurationMs) ?? DAY_MS;
+        // The institution's own funding claims and the borrower's scheduled contracts
+        // both advance on the authoritative OMEGA daily clock, exactly once per turn.
+        processTurn(turn, stepDurationMs);
+        serviceCountryLoansOnTurn(turn, stepDurationMs);
+        evaluateAll(true);
         refreshWorldBankData(false).catch(() => {});
         queueRender(true);
       });
