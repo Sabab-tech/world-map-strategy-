@@ -162,7 +162,9 @@
     const p=profile(c),dims=ACTION_DIMENSIONS[actionKey]||[];
     const vals=[],directions=ACTION_DIRECTIONS[actionKey]||{};
     const actionPreference=p.actionPreferences?.[actionKey]||null;
-    const preferenceValue=actionPreference ? clamp(actionPreference.value) : null;
+    const rawPreferenceValue=actionPreference ? clamp(actionPreference.value) : null;
+    const preferenceConfidence=rawPreferenceValue===null?0:(clamp(actionPreference.confidence)??0.5);
+    const preferenceValue=rawPreferenceValue===null?null:0.5+(rawPreferenceValue-0.5)*preferenceConfidence;
     for(const d of dims){
       const x=p.dimensions[d];
       if(x&&x.value!==null&&x.value!==undefined){
@@ -184,11 +186,12 @@
     const dimensionCoverage=vals.length?Math.min(1,vals.length/4):0;
     const dimensionQuality=vals.length?vals.reduce((sum,x)=>sum+(x.confidence??0.5),0)/vals.length:0;
     const dimensionConfidence=dimensionCoverage*dimensionQuality;
-    const preferenceConfidence=preferenceValue===null?0:(clamp(actionPreference.confidence)??0.5);
     const confidence=preferenceValue===null?dimensionConfidence:
       (mean===null?preferenceConfidence:clamp(dimensionConfidence*0.72+preferenceConfidence*0.28));
     return{known:true,score:clamp(combined),confidence,dimensions:vals,
-      actionPreference:actionPreference?clone(actionPreference):null,profile:p};
+      actionPreference:actionPreference?Object.assign(clone(actionPreference),{
+        rawValue:rawPreferenceValue,scoredValue:preferenceValue,confidence:preferenceConfidence
+      }):null,profile:p};
   }
   function strategicPlan(c,decision){
     const actions=Array.isArray(decision?.candidateActions)?decision.candidateActions:[decision?.selectedAction].filter(Boolean);
