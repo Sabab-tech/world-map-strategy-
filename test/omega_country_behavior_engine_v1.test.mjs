@@ -98,7 +98,9 @@ test('country behaviour profile is evidence-backed and differs with country macr
   assert.ok(investmentScore.actionPreference, 'country-specific action preferences should be read by the adaptive scorer');
   const dimensionMean = investmentScore.dimensions.reduce((sum, row) => sum + row.utility, 0) / investmentScore.dimensions.length;
   assert.ok(Math.abs(investmentScore.score - (0.7 * dimensionMean + 0.3 * investmentScore.actionPreference.value)) < 0.000001,
-    'candidate strategy score should combine country dimensions with the registered action preference');
+    'candidate strategy score should combine confidence-adjusted country dimensions with the registered action preference');
+  assert.ok(investmentScore.dimensions.every(row => row.rawUtility !== undefined && row.confidence >= 0 && row.confidence <= 1),
+    'scored dimensions should expose raw utility and the confidence used to attenuate it');
   assert.ok(bangladesh.evidence.registeredMacroMetricCount > 0);
   assert.match(bangladesh.evidence.missingDataPolicy, /NULL/);
   assert.equal(behavior.diagnostics().dimensionCount, 11);
@@ -229,6 +231,25 @@ test('adaptive decision scoring consumes country behaviour but respects explicit
   context.Game = { state: {} };
   const recalculated = adaptive.profile('BGD');
   assert.notEqual(recalculated.dimensions.riskAppetite.value, 0.97, 'derived heuristics should return when the explicit override is absent');
+});
+
+
+test('metric provenance exposes observation year, confidence, explicit gaps, and uncertainty attenuates action scores', async () => {
+  const { context, behavior, adaptive } = await loadCountryEngines();
+  const profile = behavior.getBehaviorProfile('BGD');
+  const gdp = profile.metricSources.gdpUsd;
+  assert.ok(gdp && typeof gdp.source === 'string' && gdp.source.length > 0);
+  assert.ok(gdp.confidence >= 0 && gdp.confidence <= 1);
+  assert.ok(Object.prototype.hasOwnProperty.call(gdp, 'observationYear'));
+  assert.ok(Array.isArray(profile.dataGaps), 'profile must report metrics that remain unobserved');
+  const lowConfidence = adaptive.scoreAction('BGD', 'MILITARY_EQUIP');
+  context.Game = { state: { cabinet: { BGD: { strategyProfile: { riskAppetite: 1 } } } } };
+  const explicit = adaptive.scoreAction('BGD', 'MILITARY_EQUIP');
+  const rawRisk = explicit.dimensions.find(row => row.dimension === 'riskAppetite');
+  assert.equal(rawRisk.confidence, 1, 'explicit doctrine should retain full confidence');
+  assert.equal(rawRisk.utility, rawRisk.rawUtility, 'confidence 1 must not attenuate explicit doctrine');
+  assert.ok(Number.isFinite(lowConfidence.score) && Number.isFinite(explicit.score));
+  assert.ok(lowConfidence.confidence >= 0 && lowConfidence.confidence <= 1);
 });
 
 test('country overview is inside ministry dashboard, uses shared behaviour runtime, and remains cached for offline play', () => {
