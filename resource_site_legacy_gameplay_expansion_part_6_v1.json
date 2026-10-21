@@ -8678,7 +8678,7 @@
         "operationalStatus": "SIMULATED_ACTIVE",
         "extractionMethod": "OPEN_PIT_DRILL_BLAST",
         "extractionEligibility": "SIMULATED_SITE_ELIGIBLE_SUBJECT_TO_GAMEPLAY_GATES",
-        "commercialExtraction": true,
+        "commercialExtraction": false,
         "siteCommissioningLevel": 5,
         "mineLevel": 5,
         "legacyReportedStatusTexts": [
@@ -8891,12 +8891,12 @@
       },
       "mineLevel": 5,
       "map": {
-        "markerEligible": true,
+        "markerEligible": false,
         "countryIsolationKey": "CAN",
         "iconResourceKey": "nickel",
         "markerType": "RESOURCE_SITE",
         "coordinatePrecision": "REGIONAL_APPROXIMATION",
-        "aliasOfSiteId": null,
+        "aliasOfSiteId": "SITE_CAN_voisey_s_bay_nickel_mine",
         "collisionGroup": "SITE_CAN_voiseys_bay_nickel_mine"
       },
       "runtime": {
@@ -8907,7 +8907,7 @@
         "countryWarehouseId": "WH-CAN-RAW",
         "requiresSiteSpecificRoute": true,
         "requiresFactoryBinding": true,
-        "aliasOfSiteId": null,
+        "aliasOfSiteId": "SITE_CAN_voisey_s_bay_nickel_mine",
         "pipeline": {
           "site": "BOUND",
           "extraction": "SIMULATED_ENGINEERING_READY",
