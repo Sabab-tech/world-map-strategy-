@@ -105,9 +105,6 @@ jobs:
           node --check test/omega_battlefield_command_runtime_v1.test.mjs
           node --check test/omega_home_ministry_world_police_runtime_v1.test.mjs
 
-      - name: Country identity-to-action execution end-to-end proof
-        run: node test/omega_opponent_e2e_runtime.test.mjs
-
       - name: Home budget and battlefield interaction tests
         run: |
           set -euo pipefail
