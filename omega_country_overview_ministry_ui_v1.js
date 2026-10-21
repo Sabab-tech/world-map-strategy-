@@ -102,6 +102,10 @@
   function loadCountrySectorProfiles() {
     if (sectorProfileState.ready) return Promise.resolve(true);
     if (sectorProfileState.promise) return sectorProfileState.promise;
+    if (typeof g.fetch !== 'function') {
+      sectorProfileState.error = 'FETCH_UNAVAILABLE';
+      return Promise.reject(new Error(sectorProfileState.error));
+    }
     sectorProfileState.error = null;
     sectorProfileState.promise = Promise.all([
       g.fetch('./country_sector_profiles_v1.json', { cache: 'default' }),
@@ -204,7 +208,7 @@
     }
     if (ref.refType === 'DERIVED_METRIC') return profile?.derivedMetrics?.[key] || { key, value: null, status: 'DERIVED_METRIC_NOT_FOUND' };
     if (ref.refType === 'EXTERNAL_METRIC') return profile?.externalMetrics?.[key] || { key, value: null, status: 'EXTERNAL_METRIC_NOT_IMPORTED' };
-    if (ref.refType === 'ANALYTICS') return profile?.analytics?.[key] || { key, value: null, status: 'ANALYTICS_NOT_AVAILABLE' };
+    if (ref.refType === 'ANALYTICS') return profile?.analytics?.[key] || profile?.derivedMetrics?.[key] || { key, value: null, status: 'ANALYTICS_NOT_AVAILABLE' };
     if (ref.refType === 'GENERAL_FACT') {
       const value = generalRecord?.generalFacts?.[key];
       const statuses = generalRecord?.generalFacts?.factsSourceStatus || {};
@@ -339,10 +343,13 @@
       const body = (fieldRows.length ? fieldRows.join('') :
         '<p class="ocov-empty">No indicators are currently registered for this sector.</p>') +
         extensionHtml + modelHtml;
-      const countAvailable = fieldRows.filter((html, index) => {
-        const refs = [...Object.values(section.indicators || {}), ...Object.values(section.facts || {}), ...Object.values(section.analytics || {})];
-        const ref = refs[index];
-        if (!ref) return false;
+      const countRefs = [
+        ...Object.values(section.indicators || {}),
+        ...Object.values(section.facts || {}),
+        ...(section.sourceGroup ? [section.sourceGroup] : []),
+        ...Object.values(section.analytics || {})
+      ];
+      const countAvailable = countRefs.filter(ref => {
         const resolved = profileObservation(ref, generalRecord, profile, metricCatalog);
         return resolved.value !== null && resolved.value !== undefined && resolved.value !== '';
       }).length;
