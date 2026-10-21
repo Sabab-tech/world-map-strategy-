@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { test } from 'node:test';
 
 const readJson = (path) => JSON.parse(readFileSync(path, 'utf8'));
@@ -8,7 +8,6 @@ const schema = readJson('country_sector_profile_schema_v1.json');
 const profilesPath = 'country_sector_profiles_v1.json';
 const profiles = existsSync(profilesPath) ? readJson(profilesPath) : null;
 const registryIso3Index = registry.metadata.recordSchema.identityFields.indexOf('iso3');
-const registryMetricIndex = Object.fromEntries(registry.fieldCatalogue.map((field) => [field.key, field]));
 const metricIndex = new Map(registry.fieldCatalogue.map((field) => [field.key, field]));
 const registryByIso3 = new Map(registry.countries.map((source) => [
   source.identity[registryIso3Index], source
@@ -16,6 +15,8 @@ const registryByIso3 = new Map(registry.countries.map((source) => [
 
 test('sector profile registry covers the canonical roster with unique ISO3 identities', () => {
   assert.ok(profiles, 'Run scripts/build_country_sector_profiles_v1.mjs before testing.');
+  assert.ok(statSync(profilesPath).size < 12 * 1024 * 1024,
+    'sector profiles must remain compact and reuse canonical registry observations rather than ship a second full country database');
   const canonical = readJson('countries.json');
   assert.equal(profiles.metadata.countryAndTerritoryCount, canonical.length);
   assert.equal(profiles.countries.length, canonical.length);
