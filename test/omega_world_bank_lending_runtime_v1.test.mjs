@@ -96,15 +96,36 @@ function makeRuntime() {
       const p = this.resolveCountry(action.countryId);
       if (!p) return { ok: false, code: 'COUNTRY_NOT_FOUND' };
       if (p.countryCode !== 'BGD') return { ok: false, code: 'PLAYER_COUNTRY_SCOPE_VIOLATION' };
-      if (action.type !== 'borrow') return { ok: false, code: 'UNKNOWN_FINANCE_ACTION' };
       const e = state.economy[p.economyKey];
+      const bucket = state.finance[p.iso3];
+      const model = bucket.omegaFinance;
       const amount = Number(action.amountUsd);
-      if (!(amount > 0) || amount > e.gdp * 0.05) return { ok: false, code: 'LOAN_TRANSACTION_LIMIT' };
-      if (e.debt + amount > e.gdp * 3) return { ok: false, code: 'DEBT_CEILING_REACHED' };
-      e.debt += amount;
-      state.finance[p.iso3].available += amount;
-      state.finance[p.iso3].omegaFinance.treasuryBalanceUsd += amount;
-      return { ok: true, code: 'BORROW_POSTED', treasuryBalanceUsd: state.finance[p.iso3].available };
+      if (action.type === 'borrow') {
+        if (!(amount > 0) || amount > e.gdp * 0.05) return { ok: false, code: 'LOAN_TRANSACTION_LIMIT' };
+        if (e.debt + amount > e.gdp * 3) return { ok: false, code: 'DEBT_CEILING_REACHED' };
+        e.debt += amount;
+        bucket.available += amount;
+        model.treasuryBalanceUsd += amount;
+        return { ok: true, code: 'BORROW_POSTED', treasuryBalanceUsd: bucket.available };
+      }
+      if (action.type === 'world-bank-debt-service') {
+        if (action.authorization !== 'OMEGA_WORLD_BANK_LENDING') return { ok: false, code: 'WORLD_BANK_AUTHORIZATION_REQUIRED' };
+        const principal = Number(action.principalPaidUsd), interest = Number(action.interestPaidUsd);
+        const debt = Math.max(0, Number(e.debt) || 0), cash = Math.max(0, Number(model.treasuryBalanceUsd) || 0);
+        if (!(amount > 0) || principal < 0 || interest < 0 || Math.abs(principal + interest - amount) > 0.02)
+          return { ok: false, code: 'WORLD_BANK_DEBT_SERVICE_SPLIT_INVALID' };
+        if (amount > cash + 0.01) return { ok: false, code: 'INSUFFICIENT_TREASURY' };
+        if (amount > debt + 0.01) return { ok: false, code: 'REPAY_EXCEEDS_DEBT' };
+        e.debt = debt - amount;
+        model.treasuryBalanceUsd = cash - amount;
+        bucket.available = model.treasuryBalanceUsd;
+        model.cumulativeDebtRepaymentUsd = (Number(model.cumulativeDebtRepaymentUsd) || 0) + principal;
+        model.currentYearDebtPrincipalRepaymentUsd = (Number(model.currentYearDebtPrincipalRepaymentUsd) || 0) + principal;
+        model.cumulativeInterestUsd = (Number(model.cumulativeInterestUsd) || 0) + interest;
+        model.currentYearInterestUsd = (Number(model.currentYearInterestUsd) || 0) + interest;
+        return { ok: true, code: 'WORLD_BANK_DEBT_SERVICE_POSTED', treasuryBalanceUsd: model.treasuryBalanceUsd };
+      }
+      return { ok: false, code: 'UNKNOWN_FINANCE_ACTION' };
     }
   };
   const context = {
@@ -273,4 +294,49 @@ test('failed live refresh preserves the last valid World Bank observations and e
     JSON.parse(JSON.stringify(before))
   );
   assert.equal(api.assessCountry('BGD').gdpUsd, 100e9);
+});
+
+
+test('committed game turns automatically service World Bank contracts once and settle through Finance state', async () => {
+  const { context, state } = makeRuntime();
+  const api = context.OmegaWorldBankLending;
+  await api.init();
+  const issue = api.requestLoan({
+    countryId: 'BGD', amountUsd: 500e6, purpose: 'infrastructure',
+    requestId: 'test-automatic-turn-service'
+  });
+  assert.equal(issue.ok, true);
+
+  const bank = state.governmentBanking.worldBankLending;
+  const loan = bank.loansByCountry.BGD[0];
+  loan.graceYears = 0;
+  loan.termYears = 5;
+  loan.ageYears = 1;
+  state.simulation.turn = 2;
+  const accruedInterest = api.accrueInterest('BGD', 1 / 365, 2);
+  assert.ok(accruedInterest > 0);
+  state.economy.BANGLADESH.debt += accruedInterest;
+
+  const treasuryBefore = state.finance.BGD.omegaFinance.treasuryBalanceUsd;
+  const debtBefore = state.economy.BANGLADESH.debt;
+  context.dispatchEvent(new context.CustomEvent('OMEGA_SIMULATION_TURN_COMMITTED', {
+    detail: { turn: 2, simulationTurn: 2, stepDurationMs: 86400000 }
+  }));
+
+  const settled = bank.ledger.filter(row => row.type === 'WORLD_BANK_DEBT_SERVICE_SETTLED' && row.turn === 2);
+  assert.equal(settled.length, 1, 'the daily commit creates one authoritative debt-service settlement');
+  assert.ok(settled[0].amountUsd > 0);
+  assert.ok(loan.outstandingPrincipalUsd < issue.loan.originalPrincipalUsd, 'scheduled payment reduces contract principal');
+  assert.ok(state.finance.BGD.omegaFinance.treasuryBalanceUsd < treasuryBefore, 'repayment debits Treasury cash');
+  assert.ok(state.economy.BANGLADESH.debt < debtBefore, 'repayment reduces authoritative public debt');
+  assert.ok(Math.abs((debtBefore - state.economy.BANGLADESH.debt) - settled[0].amountUsd) < 0.02,
+    'the game-state debt reduction equals the settled principal and interest');
+  const afterDebt = state.economy.BANGLADESH.debt;
+  const afterTreasury = state.finance.BGD.omegaFinance.treasuryBalanceUsd;
+  context.dispatchEvent(new context.CustomEvent('OMEGA_SIMULATION_TURN_COMMITTED', {
+    detail: { turn: 2, simulationTurn: 2, stepDurationMs: 86400000 }
+  }));
+  assert.equal(state.economy.BANGLADESH.debt, afterDebt, 'a duplicate event cannot settle the same turn twice');
+  assert.equal(state.finance.BGD.omegaFinance.treasuryBalanceUsd, afterTreasury);
+  assert.equal(bank.ledger.filter(row => row.type === 'WORLD_BANK_DEBT_SERVICE_SETTLED' && row.turn === 2).length, 1);
 });
