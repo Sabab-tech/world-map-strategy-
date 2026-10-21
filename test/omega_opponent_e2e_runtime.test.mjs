@@ -20,10 +20,13 @@ const projectRoot=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..'
 const nativeFetch=globalThis.fetch.bind(globalThis);
 globalThis.fetch=async input=>{
   const request=String(input);
-  if(request.startsWith('./')){
-    const relative=request.replace(/^\.\//,'').split(/[?#]/)[0];
-    const full=path.join(projectRoot,relative);
-    if(!full.startsWith(projectRoot+path.sep))return{ok:false,status:400,json:async()=>{throw new Error('INVALID_TEST_PATH')}};
+  // The repository engines use both "./file.json" and bare "file.json" paths.
+  // Resolve only relative asset requests locally; preserve real network requests.
+  const isAbsoluteUrl=/^[a-z][a-z\d+.-]*:/i.test(request)||request.startsWith('//');
+  if(!isAbsoluteUrl){
+    const relative=request.replace(/^(?:\.\/)+/,'').split(/[?#]/)[0];
+    const full=path.resolve(projectRoot,relative);
+    if(full!==projectRoot&&!full.startsWith(projectRoot+path.sep))return{ok:false,status:400,json:async()=>{throw new Error('INVALID_TEST_PATH')}};
     try{
       const body=fs.readFileSync(full,'utf8');
       return{ok:true,status:200,json:async()=>JSON.parse(body)};
@@ -87,19 +90,40 @@ const route=autonomy.routeDecision({
 },1);
 assert.equal(route.status,'READY_TO_QUEUE');
 assert(route.command);
+assert.equal(route.route.selectedAction,'HOUSING_BUILD',
+  'an explicit candidateActions shortlist must override scenario defaults and preserve the requested action');
 const candidate=route.route.candidateEvaluations.find(row=>row.action==='HOUSING_BUILD');
 assert(candidate,'autonomy must evaluate the country-specific candidate');
 assert.equal(candidate.strategyEvaluation.score,strategyScore.score,
   'autonomy candidate evaluation must consume the same adaptive country score');
 assert.equal(candidate.factors.strategy,strategyScore.score,
   'country strategy score must reach the autonomy factor model before queueing');
+assert.deepEqual({
+  quantity:route.route.selected.plan.quantity,
+  cost:route.route.selected.plan.cost,
+  labor:route.route.selected.plan.labor,
+  materials:route.route.selected.plan.materials,
+  durationTurns:route.route.selected.plan.durationTurns
+},{
+  quantity:200,cost:1000,labor:50,materials:{steel:50},durationTurns:1
+},'runtimeMeasurement.selected execution fields must survive planning and autonomy routing');
 const sim=globalThis.Omega.Simulation;
-await sim.advance(1);
-assert.equal(globalThis.Game.state.projects.BD.registry[0].status,'UNDER_CONSTRUCTION');
+const firstStep=await sim.advance(1);
+const projectRegistry=globalThis.Game.state.projects?.BD?.registry;
+const executedProject=Array.isArray(projectRegistry)
+  ? projectRegistry.find(row=>row?.decisionId==='E2E-HOUSING-1') : null;
+assert.ok(executedProject,
+  'queued country-specific autonomy action must create a project; step results: '+JSON.stringify({
+    commandResults:firstStep?.commandResults||[],
+    gameProjectCountryKeys:Object.keys(globalThis.Game.state.projects||{}),
+    countryProjectRegistry:projectRegistry||null,
+    simulationError:sim.lastError||null
+  }));
+assert.equal(executedProject.status,'UNDER_CONSTRUCTION');
 await sim.advance(1);
 await sim.advance(1);
 assert.equal(globalThis.Game.state.cities.BD.housing.available,1200);
-assert.equal(globalThis.Game.state.projects.BD.registry[0].status,'COMPLETED');
+assert.equal(globalThis.Game.state.projects.BD.registry.find(row=>row?.decisionId==='E2E-HOUSING-1')?.status,'COMPLETED');
 assert.equal(globalThis.Game.state.resource.BD.inventory.steel,9950);
 assert(globalThis.Game.state.cabinet.BD.autonomyReservations.some(x=>x.status==='RELEASED'));
 assert(globalThis.Game.state.simulation.worldStateRevision>=3);

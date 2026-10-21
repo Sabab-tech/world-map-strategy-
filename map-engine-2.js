@@ -497,10 +497,15 @@ Game.DataLoader = {
                         Game.countryLookup[Game.normalizeName(c.name)] = c;
                     }
                 });
+                // Register the already-loaded roster by reference; the data gateway never clones it.
+                window.OmegaCountryDataGateway?.registerSource('countries.json', countryConfig, { authority: 'CANONICAL_MAP_ROSTER' });
             }
 
             const geoData = await fetcher('world.json');
             if (geoData && geoData.type) {
+                // Keep the actual map source available for identity cross-checks.
+                Game.Map.countryGeoJSON = geoData;
+                window.OmegaCountryDataGateway?.registerSource('world.json', geoData, { authority: 'GEOGRAPHIC_REFERENCE' });
                 Game.Map.renderGeoJSON(geoData);
             }
 
@@ -919,8 +924,32 @@ Game.Map = {
         const lon = lonVal !== undefined ? Number(lonVal).toFixed(2) : '0.00';
         if (elCoords) elCoords.innerText = `${lat}°N, ${lon}°E`;
 
-        let popVal = hub.population ? Game.formatPopulationNumber(hub.population) : (hub.role === 'capital' ? '12.8 Million' : (hub.role === 'economic' ? '6.5 Million' : '2.4 Million'));
-        if (elPop) elPop.innerText = popVal;
+        const countryRuntime = window.OmegaCountryRuntimeData;
+        const normalizeCity = value => String(value == null ? '' : value).normalize('NFKC')
+            .trim().toLowerCase().replace(/[^a-z0-9]+/g, '');
+        const cityRecords = countryRuntime && typeof countryRuntime.getCities === 'function'
+            ? countryRuntime.getCities(countryName || (Game && Game.currentActiveCountry) || '') : [];
+        const cityRecord = Array.isArray(cityRecords)
+            ? cityRecords.find(row => normalizeCity(row && (row.name || row.city || row.cityName)) === normalizeCity(hub && hub.name))
+            : null;
+        const cityPopulation = [
+            hub && hub.population,
+            cityRecord && cityRecord.population,
+            cityRecord && cityRecord.populationTotal,
+            cityRecord && cityRecord.population_total,
+            cityRecord && cityRecord.population_2015
+        ].find(value => value !== null && value !== undefined && !(typeof value === 'string' && value.trim() === ''));
+        const hasNumericPopulation = cityPopulation !== undefined &&
+            cityPopulation !== null && cityPopulation !== '' && Number.isFinite(Number(cityPopulation));
+        const popVal = cityPopulation === undefined ? 'NOT RECORDED'
+            : (hasNumericPopulation ? Game.formatPopulationNumber(Number(cityPopulation)) : String(cityPopulation));
+        if (elPop) {
+            elPop.innerText = popVal;
+            elPop.title = cityPopulation === undefined ? 'City population is not recorded for this location.'
+                : (hub && hub.population !== null && hub.population !== undefined && hub.population !== ''
+                    ? 'Source: current city-hub record'
+                    : 'Source: shared country runtime city record');
+        }
 
         if (elDesc) elDesc.innerText = hub.description || 'Primary regional administrative, industrial, and strategic installation.';
 
@@ -1083,7 +1112,12 @@ Game.selectCountryByName = function(countryName, layerTarget) {
 Game.Map.toggleCommandHub = function(show, initialChapter = 1) {
     if (show) {
         if (window.CountryIOS) {
-            window.CountryIOS.open(Game.currentActiveCountry || "BANGLADESH", initialChapter);
+            const simulation = window.Omega && window.Omega.Simulation;
+            const countryContext = Game.currentActiveCountry || Game.selectedCountryId || Game.activeCountry ||
+                window.currentActiveCountry || window.CountryIOS.activeCountry || window.OmegaMinistryViewCountry ||
+                (simulation && typeof simulation.getPlayerCountryId === 'function' ? simulation.getPlayerCountryId() : null) ||
+                window.playerCountryId || window.playerCountry || 'USA';
+            window.CountryIOS.open(countryContext, initialChapter);
         } else if (Game.dom.hubModal) {
             Game.dom.hubModal.style.display = 'flex';
         }

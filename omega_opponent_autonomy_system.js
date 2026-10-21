@@ -483,8 +483,15 @@
     const sc=String(decision?.scenarioId||'').toUpperCase();
     const registry=g.OmegaOpponentCountryRules?.SCENARIO_REGISTRY||g.Omega?.OpponentCountryRules?.SCENARIO_REGISTRY||[];
     const found=registry.find(x=>String(x.id).toUpperCase()===sc);
-    const base=found?.actions||decision?.candidateActions?.map(x=>x.action)||decision?.selectedActions||[];
-    if(base.length)return[...new Set(base.map(String))];
+    const normaliseActions=values=>(Array.isArray(values)?values:[])
+      .map(value=>typeof value==='string'?value.trim():String(value?.action||'').trim())
+      .filter(Boolean);
+    // An explicit caller shortlist is authoritative. Scenarios provide defaults,
+    // not permission to replace a caller's requested action with a different one.
+    const requested=normaliseActions(decision?.candidateActions);
+    const selected=normaliseActions(decision?.selectedActions);
+    const base=requested.length?requested:(selected.length?selected:found?.actions||[]);
+    if(base.length)return[...new Set(normaliseActions(base))];
     const defaults={
       RESOURCE_DEFICIT:['IMPORT','DOMESTIC_EXPANSION','RESERVE_RELEASE','SUBSTITUTION','EFFICIENCY','SUPPLIER_CHANGE'],
       ENERGY_SHORTAGE:['IMPORT','DOMESTIC_EXPANSION','RESERVE_RELEASE','EFFICIENCY'],
@@ -500,14 +507,18 @@
   function extractPlanInputs(decision,action){
     const selected=decision?.selected||decision?.selectedEvaluations?.find?.(x=>x.action===action);
     const m=decision?.runtimeMeasurement||decision?.measurement||{};
-    const quantity=scalar(selected?.quantity??m?.selected?.quantity??m?.gap??m?.required);
-    const cost=scalar(selected?.cost??m?.cost);
-    const labor=scalar(selected?.labor??m?.labor??m?.requiredLabor);
-    const materials=selected?.materials??m?.materials??null;
-    const duration=scalar(selected?.durationTurns??m?.durationTurns??m?.time);
-    const personnelPerUnit=scalar(selected?.personnelPerUnit??m?.personnelPerUnit??m?.selected?.personnelPerUnit);
-    const readinessDelta=num(selected?.readinessDelta??m?.readinessDelta??m?.selected?.readinessDelta);
-    const item=selected?.item??m?.item??m?.selected?.item??null;
+    // Runtime measurements often keep action-specific execution values inside
+    // selected. Preserve those values instead of silently dropping materials,
+    // labor or costs when a top-level measurement field is absent.
+    const measuredSelection=m?.selected&&typeof m.selected==='object'?m.selected:{};
+    const quantity=scalar(selected?.quantity??measuredSelection.quantity??m?.gap??m?.required);
+    const cost=scalar(selected?.cost??measuredSelection.cost??m?.cost);
+    const labor=scalar(selected?.labor??measuredSelection.labor??m?.labor??m?.requiredLabor);
+    const materials=selected?.materials??measuredSelection.materials??m?.materials??null;
+    const duration=scalar(selected?.durationTurns??measuredSelection.durationTurns??m?.durationTurns??m?.time);
+    const personnelPerUnit=scalar(selected?.personnelPerUnit??measuredSelection.personnelPerUnit??m?.personnelPerUnit);
+    const readinessDelta=num(selected?.readinessDelta??measuredSelection.readinessDelta??m?.readinessDelta);
+    const item=selected?.item??measuredSelection.item??m?.item??null;
     return{quantity,cost,labor,materials:materials&&typeof materials==='object'?clone(materials):null,durationTurns:duration,personnelPerUnit,readinessDelta,item};
   }
 

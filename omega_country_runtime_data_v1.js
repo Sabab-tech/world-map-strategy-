@@ -4,7 +4,7 @@
  */
 (function (root) {
   'use strict';
-  const state = { ready:false, settled:false, error:null, promise:null, profiles:[], extras:new Map(), byCode:new Map(), byIso3:new Map(), byNumeric:new Map(), aliases:new Map(), cities:new Map(), legacyEconomy:{}, legacyPopulation:{}, strategicProfiles:new Map(), strategicProfileDiagnostics:{available:false,profileCount:0,error:null} };
+  const state = { ready:false, settled:false, error:null, promise:null, profiles:[], extras:new Map(), byCode:new Map(), byIso3:new Map(), byNumeric:new Map(), aliases:new Map(), cities:new Map(), legacyEconomy:{}, legacyPopulation:{}, datasets:new Map(), strategicProfiles:new Map(), strategicProfileDiagnostics:{available:false,profileCount:0,error:null} };
   const s = v => String(v == null ? '' : v).trim();
   const norm = v => s(v).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/&/g, ' AND ').replace(/[_’'`-]+/g, ' ').replace(/[^A-Z0-9]+/gi, ' ').trim().toUpperCase().replace(/\s+/g, ' ');
   const fixedAliases = {
@@ -115,6 +115,14 @@
     const live=liveRecord(kind,p,input);
     if ((!base||typeof base!=='object')&&(!legacy||typeof legacy!=='object')&&(!live||typeof live!=='object')) return null;
     return Object.assign({},legacy&&typeof legacy==='object'?legacy:{},base&&typeof base==='object'?base:{},live&&typeof live==='object'?live:{});
+  }
+  // Return only the selected country's live simulation record. This lets screens
+  // prefer player-driven state over historical/source baselines without cloning
+  // or maintaining a second country dataset.
+  function getLiveRecord(domain,input) {
+    const kind=norm(domain).toLowerCase(), p=resolveCountry(input);
+    const live=liveRecord(kind,p,input);
+    return live&&typeof live==='object'&&!Array.isArray(live)?Object.assign({},live):null;
   }
   function getCities(value) {
     const p=resolveCountry(value), row=p&&state.cities.get(p.countryCode);
@@ -231,14 +239,23 @@
       load('./cities.json',true).catch(()=>null),
       load('./economy.json',true).catch(()=>null),
       load('./population.json',true).catch(()=>null),
+      load('./society.json',true).catch(()=>null),
       load('./country_general_data_registry_v1.json',true).catch(()=>null)
     ])
-      .then(([data,cityData,economyData,populationData,strategicRegistry])=>{
+      .then(([data,cityData,economyData,populationData,societyData,strategicRegistry])=>{
         if(!data||!Array.isArray(data.countries))throw new Error('COUNTRY_PROFILE_REGISTRY_INVALID');
         buildProfiles(data.countries);
         addSupplementalIdentities();
         state.legacyEconomy=economyData&&typeof economyData==='object'?economyData:{};
         state.legacyPopulation=populationData&&typeof populationData==='object'?populationData:{};
+        // Keep references to already-loaded source objects so connected UIs can inspect provenance
+        // without copying these datasets into a second country database.
+        state.datasets.set('economy_global_profiles_v1.json',data);
+        if(cityData)state.datasets.set('cities.json',cityData);
+        if(economyData)state.datasets.set('economy.json',economyData);
+        if(populationData)state.datasets.set('population.json',populationData);
+        if(societyData)state.datasets.set('society.json',societyData);
+        if(strategicRegistry)state.datasets.set('country_general_data_registry_v1.json',strategicRegistry);
         const strategicIndex=buildStrategicProfiles(strategicRegistry);
         state.strategicProfiles=strategicIndex.profiles;
         state.strategicProfileDiagnostics=strategicIndex.diagnostics;
@@ -250,5 +267,6 @@
       }).catch(error=>{state.ready=false;state.settled=true;state.error=String(error?.message||error);return false;});
     return state.promise;
   }
-  root.OmegaCountryRuntimeData=Object.freeze({version:'1.1.0',init,ready:init(),isReady:()=>state.ready,isSettled:()=>state.settled,resolveCountry,flagFor,getProfile,getStrategicProfile,getRecord,getCapital,getCities,diagnostics,listProfiles});
+  function getSourceDataset(id){return state.datasets.get(String(id||'').trim())||null;}
+  root.OmegaCountryRuntimeData=Object.freeze({version:'1.3.0',init,ready:init(),isReady:()=>state.ready,isSettled:()=>state.settled,resolveCountry,flagFor,getProfile,getStrategicProfile,getRecord,getLiveRecord,getSourceDataset,getCapital,getCities,diagnostics,listProfiles});
 })(window);

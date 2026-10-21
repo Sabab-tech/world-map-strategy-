@@ -70,10 +70,10 @@
     "test:finance-fx": "node --test test/omega_forex_monetary_engine_v1.test.mjs",
     "test:finance-banking": "node --check omega_government_banking_runtime_v1.js && node --check test/omega_government_banking_runtime_v1.test.mjs && node --test test/omega_government_banking_runtime_v1.test.mjs",
     "test:finance-transmission": "node --check omega_economic_transmission_runtime_v1.js && node --check test/omega_economic_transmission_runtime_v1.test.mjs && node --test test/omega_economic_transmission_runtime_v1.test.mjs",
-    "test:country-runtime": "node --test test/omega_country_runtime_data_v1.test.mjs",
+    "test:country-runtime": "node --test test/omega_country_runtime_data_v1.test.mjs test/omega_ministry_country_details_runtime.test.mjs test/omega_country_data_gateway_v1.test.mjs",
     "test:minister-intelligence": "node test/omega_minister_intelligence_pipeline_v1.test.cjs && node test/omega_minister_intelligence_state_bridge.test.cjs && node test/omega_static_pages_minister_runtime.test.cjs && node test/minister_recruitment_offline_roster.test.cjs",
     "test:country-general-runtime": "node --test test/omega_country_general_data_runtime_v1.test.mjs",
-    "test:country-behavior": "node --check omega_country_behavior_engine_v1.js && node --check omega_country_overview_ministry_ui_v1.js && node --check omega_opponent_adaptive_strategy_system.js && node --check country-ios.js && node --test test/omega_country_behavior_engine_v1.test.mjs test/omega_country_runtime_data_v1.test.mjs test/country_general_data_registry_v1.test.mjs"
+    "test:country-behavior": "node --check omega_country_behavior_engine_v1.js && node --check omega_country_overview_ministry_ui_v1.js && node --check omega_country_data_gateway_v1.js && node --check omega_opponent_adaptive_strategy_system.js && node --check country-ios.js && node --check map-engine-1.js && node --check map-engine-2.js && node --check ministry_engine.js && node --test test/omega_country_behavior_engine_v1.test.mjs test/omega_country_runtime_data_v1.test.mjs test/omega_ministry_country_details_runtime.test.mjs test/omega_country_data_gateway_v1.test.mjs test/country_general_data_registry_v1.test.mjs && node test/omega_opponent_e2e_runtime.test.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.21.0",

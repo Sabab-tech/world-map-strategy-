@@ -16,12 +16,19 @@ on:
       - "index.html"
       - "style.css"
       - "omega_country_runtime_data_v1.js"
+      - "omega_country_data_gateway_v1.js"
       - "omega_country_behavior_engine_v1.js"
       - "omega_country_overview_ministry_ui_v1.js"
+      - "map-engine-1.js"
+      - "map-engine-2.js"
+      - "omega_ministry_entry_v3.js"
+      - "omega_ui_system_redesign_v1.js"
       - "omega_opponent_adaptive_strategy_system.js"
       - "server_bootstrap.js"
       - "omega-offline-map-sw.js"
       - "test/omega_country_runtime_data_v1.test.mjs"
+      - "test/omega_country_data_gateway_v1.test.mjs"
+      - "test/omega_opponent_e2e_runtime.test.mjs"
       - "test/omega_country_behavior_engine_v1.test.mjs"
       - "relation_generation_engine.json"
       - "resource_site_reserve_simulation_v1.json"
@@ -66,15 +73,18 @@ jobs:
 
       - name: Validate shared schema, source preservation and coverage accounting
         run: |
+          node --check omega_country_data_gateway_v1.js
           node --check omega_country_behavior_engine_v1.js
           node --check omega_country_overview_ministry_ui_v1.js
           node --check omega_opponent_adaptive_strategy_system.js
           node --check country-ios.js
           node --check ministry_engine.js
-          node --test test/country_general_data_registry_v1.test.mjs test/omega_country_runtime_data_v1.test.mjs test/omega_country_behavior_engine_v1.test.mjs test/omega_ministry_country_details_runtime.test.mjs
-
-      - name: Country identity-to-action execution end-to-end proof
-        run: node test/omega_opponent_e2e_runtime.test.mjs
+          node --check map-engine-1.js
+          node --check map-engine-2.js
+          node --check omega_ministry_entry_v3.js
+          node --check omega_ui_system_redesign_v1.js
+          node --test test/country_general_data_registry_v1.test.mjs test/omega_country_runtime_data_v1.test.mjs test/omega_country_behavior_engine_v1.test.mjs test/omega_ministry_country_details_runtime.test.mjs test/omega_country_data_gateway_v1.test.mjs
+          node test/omega_opponent_e2e_runtime.test.mjs
 
       - name: Commit registry only if it changed
         if: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
