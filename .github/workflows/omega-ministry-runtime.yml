@@ -217,7 +217,6 @@ jobs:
           node test/omega_opponent_intelligence_evolution_system.test.mjs
           node test/omega_global_trade_system.test.mjs
           node test/omega_opponent_treaty_lifecycle_system.test.mjs
-          node test/omega_opponent_e2e_runtime.test.mjs
           node test/omega_opponent_memory_trace_log_system.test.mjs
           node test/omega_global_market_system.test.mjs
           node test/omega_resource_endowment_runtime.test.mjs

@@ -398,12 +398,26 @@
     const electricity = get('electricity', ['electricityAccessPct', 'electricityAccess'], ['infrastructure', 'energy', 'economy'], ['electricityAccessPct', 'electricityAccess']);
     const reserves = get('reserves', ['foreignExchangeReservesUsd', 'fxReservesUsd', 'reserves'], ['finance'], ['foreignExchangeReservesUsd', 'fxReservesUsd', 'reserves']);
 
-    const debtRatio = debtRatioRecorded || (debtNominal && gdp && gdp.value > 0
-      ? { value: debtNominal.value / gdp.value * 100, source: 'DERIVED_FROM_LIVE_OR_BASELINE_DEBT_AND_GDP', key: 'publicDebtToGdpPct', status: 'DERIVED' } : null);
-    const budgetRatio = budgetRatioRecorded || (budgetNominal && gdp && gdp.value > 0
-      ? { value: budgetNominal.value / gdp.value * 100, source: 'DERIVED_FROM_LIVE_OR_BASELINE_BUDGET_BALANCE_AND_GDP', key: 'budgetBalanceToGdpPct', status: 'DERIVED' } : null);
-    const tradeRatio = tradeRatioRecorded || (tradeNominal && gdp && gdp.value > 0
-      ? { value: tradeNominal.value / gdp.value * 100, source: 'DERIVED_FROM_LIVE_OR_BASELINE_TRADE_BALANCE_AND_GDP', key: 'tradeBalanceToGdpPct', status: 'DERIVED' } : null);
+    const deriveRatio = (recorded, numerator, denominator, source, key) => {
+      if (recorded) return recorded;
+      if (!canDeriveComparableRatio(numerator, denominator) || denominator.value <= 0) return null;
+      const live = numerator.status === 'LIVE' && denominator.status === 'LIVE';
+      return {
+        value: numerator.value / denominator.value * 100,
+        source,
+        key,
+        status: live ? 'LIVE_DERIVED' : 'DERIVED_SAME_YEAR_OBSERVATIONS',
+        year: live ? null : num(numerator.year)
+      };
+    };
+    // Never combine a live value with a historical baseline, or derive ratios
+    // from two baseline metrics unless their observation years are explicitly equal.
+    const debtRatio = deriveRatio(debtRatioRecorded, debtNominal, gdp,
+      'DERIVED_FROM_COMPARABLE_DEBT_AND_GDP', 'publicDebtToGdpPct');
+    const budgetRatio = deriveRatio(budgetRatioRecorded, budgetNominal, gdp,
+      'DERIVED_FROM_COMPARABLE_BUDGET_BALANCE_AND_GDP', 'budgetBalanceToGdpPct');
+    const tradeRatio = deriveRatio(tradeRatioRecorded, tradeNominal, gdp,
+      'DERIVED_FROM_COMPARABLE_TRADE_BALANCE_AND_GDP', 'tradeBalanceToGdpPct');
 
     const fiscalRisk = get('fiscalRisk', ['fiscalRiskIndex'], ['finance', 'economy'], ['fiscalRiskIndex']);
     const govEffect = strategic?.politics?.governmentEffectivenessWgiEstimate != null
@@ -458,6 +472,47 @@
     const evidenceCount = Object.values(evidenceByMetric).filter(x => x && x.value !== null && Number.isFinite(x.value)).length;
     const sites = getSiteStats(identity);
     const resourceRuntime = getLiveResourceSignals(identity);
+    const confidenceReferenceYear = new Date().getUTCFullYear();
+    function metricConfidence(row) {
+      const status = String(row?.status || 'RECORDED');
+      if (status === 'LIVE' || status === 'LIVE_DERIVED') return 1;
+      const base = status === 'WORLD_BANK_API_OBSERVATION' ? 0.9 :
+        (status === 'DERIVED_SAME_YEAR_OBSERVATIONS' ? 0.8 :
+          (status === 'DERIVED' ? 0.65 : 0.45));
+      const year = num(row?.year);
+      if (year === null) return Number((base * 0.65).toFixed(2));
+      const age = Math.max(0, confidenceReferenceYear - year);
+      const recencyFactor = Math.max(0.5, 1 - Math.max(0, age - 2) * 0.05);
+      return Number((base * recencyFactor).toFixed(2));
+    }
+    function confidenceForEvidence(row) {
+      const source = String(row?.source || '');
+      const match = Object.values(evidenceByMetric).find(metric => metric?.source && metric.source === source);
+      if (match) return metricConfidence(match);
+      if (row?.status === 'LIVE_RESOURCE_RUNTIME') return 0.9;
+      if (row?.status === 'SIMULATION_SITE_CATALOGUE_ONLY') return 0.9;
+      if (source.includes('LIVE_GAME_STATE.')) return 1;
+      if (source === 'EXPLICIT_COUNTRY_STRATEGIC_PROFILE') return 0.7;
+      if (source === 'COUNTRY_SPECIFIC_OMEGA_RELATION_MODEL') return 0.7;
+      return null;
+    }
+    function dimensionConfidence(evidence, fallback) {
+      const quality = (Array.isArray(evidence) ? evidence : [])
+        .map(confidenceForEvidence).filter(value => value !== null && Number.isFinite(value));
+      const base = clamp(fallback == null ? 0.5 : fallback, 0, 1);
+      if (!quality.length) return base;
+      const observedQuality = quality.reduce((sum, value) => sum + value, 0) / quality.length;
+      return Math.min(base, observedQuality);
+    }
+    function canDeriveComparableRatio(left, right) {
+      if (!left || !right || left.value === null || right.value === null) return false;
+      const leftLive = left.status === 'LIVE';
+      const rightLive = right.status === 'LIVE';
+      if (leftLive || rightLive) return leftLive && rightLive;
+      const leftYear = num(left.year);
+      const rightYear = num(right.year);
+      return leftYear !== null && rightYear !== null && leftYear === rightYear;
+    }
 
     const fiscalParts = [];
     if (debtRatio) fiscalParts.push({ value: clamp(Math.max(0, debtRatio.value) / 150), evidence: [{ metric: 'debtToGdpPct', value: debtRatio.value, source: debtRatio.source }] });
@@ -491,7 +546,7 @@
         value: value01 === null ? null : Number(value01.toFixed(3)),
         availability: value01 === null ? 'UNOBSERVED' : 'DERIVED_SIMULATION_POLICY',
         source: value01 === null ? null : (source || 'OMEGA_COUNTRY_BEHAVIOR_ENGINE_V1'),
-        confidence: value01 === null ? 0 : Number(clamp(confidence == null ? 0.5 : confidence, 0, 1).toFixed(2)),
+        confidence: value01 === null ? 0 : Number(dimensionConfidence(evidence, confidence).toFixed(2)),
         evidence: value01 === null ? [] : clone(evidence || []),
         interpretation: value01 === null ? 'Not enough country-specific evidence to derive this dimension.' : interpretation
       };
@@ -719,7 +774,30 @@
         ]
       },
       metrics: clone(macro),
-      metricSources: Object.fromEntries(Object.entries(evidenceByMetric).filter(([, v]) => v).map(([k, v]) => [k, { value: v.value, source: v.source, status: v.status || 'RECORDED' }])),
+      evidenceConfidenceModel: 'SOURCE_STATUS_AND_OBSERVATION_RECENCY_HEURISTIC; NOT_A_CALIBRATED_PROBABILITY',
+      metricSources: Object.fromEntries(Object.entries(evidenceByMetric).filter(([, v]) => v).map(([k, v]) => {
+        const observationYear = num(v.year);
+        return [k, {
+          value: v.value, source: v.source, status: v.status || 'RECORDED',
+          observationYear,
+          observationContext: v.status === 'LIVE' || v.status === 'LIVE_DERIVED' ? 'CURRENT_GAME_STATE' :
+            (observationYear === null ? 'OBSERVATION_YEAR_NOT_RECORDED' : 'HISTORICAL_REFERENCE'),
+          confidence: metricConfidence(v),
+          confidenceMethod: 'SOURCE_STATUS_AND_OBSERVATION_RECENCY_HEURISTIC'
+        }];
+      })),
+      dataGaps: Object.entries(evidenceByMetric).flatMap(([metric, v]) => {
+        if (!v || v.value === null || !Number.isFinite(v.value)) {
+          return [{ metric, status: 'UNOBSERVED', value: null,
+            reason: 'No supported numeric observation found in live state or registered baseline.' }];
+        }
+        if (v.status !== 'LIVE' && v.status !== 'LIVE_DERIVED' && num(v.year) === null) {
+          return [{ metric, status: 'OBSERVATION_YEAR_UNAVAILABLE', value: v.value,
+            source: v.source || null,
+            reason: 'A value exists, but its observation year is not recorded; do not treat it as current.' }];
+        }
+        return [];
+      }),
       dimensions: clone(dimensions),
       domainSignals: {
         economy: {

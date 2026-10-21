@@ -97,8 +97,10 @@ test('country behaviour profile is evidence-backed and differs with country macr
   const investmentScore = adaptive.scoreAction('BGD', investmentAction);
   assert.ok(investmentScore.actionPreference, 'country-specific action preferences should be read by the adaptive scorer');
   const dimensionMean = investmentScore.dimensions.reduce((sum, row) => sum + row.utility, 0) / investmentScore.dimensions.length;
-  assert.ok(Math.abs(investmentScore.score - (0.7 * dimensionMean + 0.3 * investmentScore.actionPreference.value)) < 0.000001,
-    'candidate strategy score should combine country dimensions with the registered action preference');
+  assert.ok(Math.abs(investmentScore.score - (0.7 * dimensionMean + 0.3 * investmentScore.actionPreference.scoredValue)) < 0.000001,
+    'candidate strategy score should combine confidence-adjusted dimensions and confidence-adjusted action preference');
+  assert.ok(investmentScore.dimensions.every(row => row.rawUtility !== undefined && row.confidence >= 0 && row.confidence <= 1),
+    'scored dimensions should expose raw utility and the confidence used to attenuate it');
   assert.ok(bangladesh.evidence.registeredMacroMetricCount > 0);
   assert.match(bangladesh.evidence.missingDataPolicy, /NULL/);
   assert.equal(behavior.diagnostics().dimensionCount, 11);
@@ -107,20 +109,37 @@ test('country behaviour profile is evidence-backed and differs with country macr
 test('source-backed registry metrics take precedence over legacy country snapshots', async () => {
   const { context, behavior } = await loadCountryEngines();
   const api = context.OmegaCountryGeneralDataRuntime;
-  const candidates = ['BGD', 'USA', 'IND', 'GBR', 'JPN'];
-  const selected = candidates
-    .map(code => ({ code, record: api.getCountryRecord(code) }))
-    .find(item => item.record &&
-      Number.isFinite(item.record.metrics?.gdpCurrentUsd) &&
-      item.record.metrics.gdpCurrentUsd > 0 &&
-      item.record.metricMetadata?.gdpCurrentUsd?.status === 'WORLD_BANK_API_OBSERVATION');
+  const originalGetCountryRecord = api.getCountryRecord.bind(api);
+  const existing = originalGetCountryRecord('BGD');
+  assert.ok(existing && existing.metrics, 'Bangladesh has a registered metric record');
 
-  assert.ok(selected, 'at least one representative country should expose a refreshed GDP observation');
-  const profile = behavior.getBehaviorProfile(selected.code);
-  assert.equal(profile.metrics.gdpUsd, selected.record.metrics.gdpCurrentUsd,
-    'opponent behaviour must use the latest registered GDP when the live game has no override');
+  // Deterministic test-only source observation. The pull-request build deliberately
+  // avoids network refreshes, so this fixture exercises source precedence without
+  // inserting fictional data into the production registry.
+  const fixtureValue = 987654321012;
+  const fixtureRecord = JSON.parse(JSON.stringify(existing));
+  fixtureRecord.metrics.gdpCurrentUsd = fixtureValue;
+  fixtureRecord.metricMetadata.gdpCurrentUsd = {
+    year: 2024, status: 'WORLD_BANK_API_OBSERVATION', sourceId: 'TEST_FIXTURE',
+    sourceName: 'Deterministic test fixture', method: 'TEST_ONLY', sourceUrl: null
+  };
+  context.OmegaCountryGeneralDataRuntime = Object.assign({}, api, {
+    getCountryRecord(value) {
+      const identity = (value && typeof value === 'object'
+        ? String(value.iso3 || value.countryCode || value.iso2 || value.code || value.name || '')
+        : String(value || '')).toUpperCase();
+      if (['BGD', 'BD', 'BANGLADESH'].includes(identity)) return fixtureRecord;
+      return originalGetCountryRecord(value);
+    }
+  });
+
+  const profile = behavior.getBehaviorProfile('BGD');
+  assert.equal(profile.metrics.gdpUsd, fixtureValue,
+    'registered source-backed GDP should win over the older local baseline');
   assert.equal(profile.metricSources.gdpUsd.status, 'WORLD_BANK_API_OBSERVATION',
     'the selected metric must retain source status');
+  assert.equal(profile.metricSources.gdpUsd.observationYear, 2024,
+    'the selected metric must retain its observation year');
   assert.match(profile.metricSources.gdpUsd.source, /country_general_data_registry_v1[.]json/,
     'metric provenance should identify the unified source registry');
 });
@@ -179,6 +198,11 @@ test('live metrics are resolved from secondary supported runtime state roots', a
   assert.equal(profile.metrics.gdpUsd, 987654321);
   assert.equal(profile.metrics.gdpGrowthPct, 7.25);
   assert.match(profile.metricSources.gdpUsd.source, /LIVE_GAME_STATE\.economy\.gdp/);
+  assert.equal(profile.metricSources.gdpUsd.observationContext, 'CURRENT_GAME_STATE');
+  assert.equal(profile.metricSources.gdpUsd.confidence, 1,
+    'live game observations must be distinguished from historical baselines and carry full source confidence');
+  assert.equal(profile.metricSources.gdpUsd.observationYear, null,
+    'a simulation value must not inherit a historical observation year');
 });
 
 test('authoritative resource inventory and production gaps alter supply behaviour and priorities', async () => {
@@ -229,6 +253,47 @@ test('adaptive decision scoring consumes country behaviour but respects explicit
   context.Game = { state: {} };
   const recalculated = adaptive.profile('BGD');
   assert.notEqual(recalculated.dimensions.riskAppetite.value, 0.97, 'derived heuristics should return when the explicit override is absent');
+});
+
+
+test('metric provenance exposes observation year, confidence, explicit gaps, and uncertainty attenuates action scores', async () => {
+  const { context, behavior, adaptive } = await loadCountryEngines();
+  const profile = behavior.getBehaviorProfile('BGD');
+  const gdp = profile.metricSources.gdpUsd;
+  assert.ok(gdp && typeof gdp.source === 'string' && gdp.source.length > 0);
+  assert.ok(gdp.confidence >= 0 && gdp.confidence <= 1);
+  assert.ok(Object.prototype.hasOwnProperty.call(gdp, 'observationYear'));
+  assert.ok(profile.dataGaps && Array.isArray(profile.dataGaps), 'profile must report metrics that remain unobserved');
+  assert.ok(profile.evidenceConfidenceModel.includes('NOT_A_CALIBRATED_PROBABILITY'),
+    'confidence must disclose that it is a transparent heuristic, not a calibrated probability');
+  assert.ok(profile.dataGaps.some(gap => gap.status === 'OBSERVATION_YEAR_UNAVAILABLE'),
+    'known legacy values without years must be reported as provenance gaps');
+  const lowConfidence = adaptive.scoreAction('BGD', 'MILITARY_EQUIP');
+  context.Game = { state: { cabinet: { BGD: { strategyProfile: { riskAppetite: 1 } } } } };
+  const explicit = adaptive.scoreAction('BGD', 'MILITARY_EQUIP');
+  const rawRisk = explicit.dimensions.find(row => row.dimension === 'riskAppetite');
+  assert.equal(rawRisk.confidence, 1, 'explicit doctrine should retain full confidence');
+  assert.equal(rawRisk.utility, rawRisk.rawUtility, 'confidence 1 must not attenuate explicit doctrine');
+  assert.ok(Number.isFinite(lowConfidence.score) && Number.isFinite(explicit.score));
+  assert.ok(lowConfidence.confidence >= 0 && lowConfidence.confidence <= 1);
+});
+
+
+test('low-confidence action preferences are also attenuated toward neutral', async () => {
+  const { adaptive } = await loadCountryEngines();
+  const explicit = adaptive.profile('BGD');
+  const action = 'MILITARY_EQUIP';
+  const preference = explicit.actionPreferences[action];
+  if (!preference) {
+    // An action with no preference still validates the profile's neutral fallback contract.
+    assert.equal(adaptive.scoreAction('BGD', action).known, true);
+    return;
+  }
+  const raw = Number(preference.value);
+  const confidence = Number(preference.confidence ?? 0.5);
+  const scored = adaptive.scoreAction('BGD', action).actionPreference.scoredValue;
+  assert.ok(Math.abs(scored - (0.5 + (raw - 0.5) * confidence)) < 0.000001);
+  if (confidence < 1) assert.ok(Math.abs(scored - 0.5) <= Math.abs(raw - 0.5));
 });
 
 test('country overview is inside ministry dashboard, uses shared behaviour runtime, and remains cached for offline play', () => {
