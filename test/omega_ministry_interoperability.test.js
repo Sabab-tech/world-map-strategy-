@@ -683,5 +683,5 @@ function stripTelemetry(value){
 }
 
 console.log('OMEGA GOVERNMENT INTEROPERABILITY TEST MATRIX READY');
-console.log('Tests:',27);
+console.log('Tests:',25);;
 console.log('Canonical ministry count:',MINISTRY_COUNT);
