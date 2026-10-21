@@ -9,11 +9,6 @@
   'use strict';
 
   const VERSION='1.1.0';
-  const OWNER_STATE_ROOTS=Object.freeze({
-    resource:Object.freeze(['resourceSummary','resourceInventory','resourceDeposits']),
-    interior:Object.freeze(['cities'])
-  });
-
   function clone(value,seen=new WeakMap()){
     if(value===null||typeof value!=='object')return value;
     if(seen.has(value))return seen.get(value);
@@ -90,8 +85,8 @@
       this.commandId=String(commandId||'');
       this.transactionId='OMI-TX-'+this.turn+'-'+this.ownerMinistry+'-'+this.commandId;
       this.operations=[];
+      this.writeBaseline=new Map();
       this.closed=false;
-      this.expectedRevision=this._scopeRevision();
     }
 
     _assertOpen(){
@@ -116,18 +111,27 @@
       return p;
     }
 
-    _scopeSnapshot(){
-      const out={};
-      const domains=new Set([this.ownerMinistry,...(OWNER_STATE_ROOTS[this.ownerMinistry]||[]),...this.operations.map(operation=>String(operation.path||'').split('.')[0]).filter(Boolean)]);
-      for(const domain of domains){
-        const section=this.state?.[domain],key=countryBucketKey(section,this.countryId);
-        out[domain]=key===null?null:clone(section[key]);
+    _readLivePath(path){
+      const ref=this._countryContainer(path,false);
+      if(!ref)return undefined;
+      let cur=ref.container;
+      for(const part of ref.parts){
+        if(cur==null||!Object.prototype.hasOwnProperty.call(Object(cur),part))return undefined;
+        cur=cur[part];
       }
-      return out;
+      return clone(cur);
     }
 
-    _scopeRevision(){
-      return hash({ownerMinistry:this.ownerMinistry,countryId:this.countryId,scope:this._scopeSnapshot()});
+    _valueFingerprint(value){
+      return hash({present:value!==undefined,value});
+    }
+
+    _writeSetFingerprint(readCurrent=false){
+      const rows=[...this.writeBaseline.keys()].sort().map(path=>{
+        const value=readCurrent?this._readLivePath(path):this.writeBaseline.get(path);
+        return{path,present:value!==undefined,value};
+      });
+      return hash(rows);
     }
 
     _countryContainer(path,create){
@@ -154,6 +158,7 @@
     set(path,value){
       this._assertOpen();
       const p=this._assertOwnedPath(path);
+      if(!this.writeBaseline.has(p))this.writeBaseline.set(p,this._readLivePath(p));
       const existing=this.get(p);
       this.operations.push({op:'SET',path:p,before:clone(existing),after:clone(value)});
       return clone(value);
@@ -162,6 +167,7 @@
     delete(path){
       this._assertOpen();
       const p=this._assertOwnedPath(path);
+      if(!this.writeBaseline.has(p))this.writeBaseline.set(p,this._readLivePath(p));
       const existing=this.get(p);
       this.operations.push({op:'DELETE',path:p,before:clone(existing),after:undefined});
       return existing;
@@ -188,16 +194,20 @@
       // state instead of the entire global Game.state. The previous global hash made
       // every country commit scan all already-materialized countries, producing O(N²)
       // extraction cost during world-scale resource simulation.
-      const beforeDigest=this._scopeRevision();
-      // A transaction with no staged writes cannot overwrite newer state; it is an acknowledged no-op.
-      if(this.operations.length>0&&beforeDigest!==this.expectedRevision){
-        this.closed=true;
-        const conflict=new Error('STATE_TRANSACTION_CONFLICT');
-        conflict.code='STATE_TRANSACTION_CONFLICT';
-        conflict.transactionId=this.transactionId;
-        conflict.expectedRevision='CONTENT:'+this.expectedRevision;
-        conflict.actualRevision='CONTENT:'+beforeDigest;
-        throw conflict;
+      const beforeDigest=this._writeSetFingerprint(false);
+      // Validate every write target before applying any operation. Unrelated state changes do not conflict.
+      for(const [path,expected] of this.writeBaseline.entries()){
+        const actual=this._readLivePath(path);
+        if(this._valueFingerprint(actual)!==this._valueFingerprint(expected)){
+          this.closed=true;
+          const conflict=new Error('STATE_TRANSACTION_CONFLICT');
+          conflict.code='STATE_TRANSACTION_CONFLICT';
+          conflict.transactionId=this.transactionId;
+          conflict.path=path;
+          conflict.expectedRevision='CONTENT:'+this._valueFingerprint(expected);
+          conflict.actualRevision='CONTENT:'+this._valueFingerprint(actual);
+          throw conflict;
+        }
       }
       const applied=[];
       for(const operation of this.operations){
@@ -218,7 +228,7 @@
           after:clone(operation.after)
         });
       }
-      const afterDigest=this._scopeRevision();
+      const afterDigest=this._writeSetFingerprint(true);
       this.closed=true;
       return Object.freeze({
         transactionId:this.transactionId,
