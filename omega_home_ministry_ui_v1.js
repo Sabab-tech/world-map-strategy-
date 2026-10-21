@@ -691,7 +691,6 @@
     assetSelect.onchange = () => {
       const asset = guardableAssets.find(row => row.id === assetSelect.value);
       if (asset) {
-        if (!sectorInput.value.trim() || sectorInput.value.trim() === 'General Sector') sectorInput.value = asset.name;
         if (/factory|industrial|plant|smelt/i.test(String(asset.category || '') + ' ' + String(asset.name || ''))) {
           environmentSelect.value = 'industrial';
           areaClassSelect.value = 'INDUSTRIAL';
