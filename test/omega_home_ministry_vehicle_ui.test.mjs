@@ -420,7 +420,7 @@ test('police deployments require a real country-scoped location and classify the
   assert.match(ui, /home-police-guard-area-class/);
   assert.match(ui, /City \/ district \/ rural region/);
   assert.match(ui, /Enter a real city, district or region/);
-  assert.match(ui, /const environmentByArea = \\{ URBAN:'city', SUBURBAN:'city', RURAL:'rural', BORDER:'border', INDUSTRIAL:'industrial', COASTAL:'coastal', MOUNTAIN:'mountain' \\}/);
+  assert.match(ui, /const environmentByArea = \{ URBAN:'city', SUBURBAN:'city', RURAL:'rural', BORDER:'border', INDUSTRIAL:'industrial', COASTAL:'coastal', MOUNTAIN:'mountain' \}/);
   assert.match(ui, /const sector = areaClassSelect\.value \+ ' · ' \+ locationName/);
   const guardStart = ui.indexOf('deployButton.onclick = () =>');
   const locationCheck = ui.indexOf('Enter the city, district or rural region before dispatch', guardStart);
@@ -431,6 +431,6 @@ test('police deployments require a real country-scoped location and classify the
 
 test('vehicle illustrations preserve aspect ratio and remain visible in compact WebView layouts', () => {
   assert.match(ui, /preserveAspectRatio="xMidYMid meet"/);
-  assert.match(ui, /home-police-vehicle-art\\{display:block;visibility:visible;width:100%;max-width:100%;height:auto;min-height:88px/);
-  assert.match(ui, /home-police-vehicle-art-hero\\{min-height:140px\\}/);
+  assert.match(ui, /home-police-vehicle-art\{display:block;visibility:visible;width:100%;max-width:100%;height:auto;min-height:88px/);
+  assert.match(ui, /home-police-vehicle-art-hero\{min-height:140px\}/);
 });
