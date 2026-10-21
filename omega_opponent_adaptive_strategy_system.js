@@ -180,15 +180,23 @@
     }
     if(!vals.length&&preferenceValue===null)return{known:false,score:null,confidence:0,profile:p};
     const mean=vals.length?vals.reduce((s,x)=>s+x.utility,0)/vals.length:null;
+    const rawMean=vals.length?vals.reduce((s,x)=>s+x.rawUtility,0)/vals.length:null;
     const preferenceWeight=preferenceValue===null?0:(mean===null?1:0.3);
     const combined=mean===null?preferenceValue:
       (preferenceValue===null?mean:(1-preferenceWeight)*mean+preferenceWeight*preferenceValue);
+    const rawCombined=rawMean===null?rawPreferenceValue:
+      (rawPreferenceValue===null?rawMean:(1-preferenceWeight)*rawMean+preferenceWeight*rawPreferenceValue);
+    const rawScore=rawCombined===null?null:clamp(rawCombined);
+    const adjustedScore=clamp(combined);
+    const uncertaintyAdjustment=rawScore===null||adjustedScore===null?null:
+      Number((rawScore-adjustedScore).toFixed(6));
     const dimensionCoverage=vals.length?Math.min(1,vals.length/4):0;
     const dimensionQuality=vals.length?vals.reduce((sum,x)=>sum+(x.confidence??0.5),0)/vals.length:0;
     const dimensionConfidence=dimensionCoverage*dimensionQuality;
     const confidence=preferenceValue===null?dimensionConfidence:
       (mean===null?preferenceConfidence:clamp(dimensionConfidence*0.72+preferenceConfidence*0.28));
-    return{known:true,score:clamp(combined),confidence,dimensions:vals,
+    return{known:true,score:adjustedScore,rawScore,uncertaintyAdjustment,confidence,dimensions:vals,
+      actionPreferenceEffectiveValue:preferenceValue,
       actionPreference:actionPreference?Object.assign(clone(actionPreference),{
         rawValue:rawPreferenceValue,scoredValue:preferenceValue,confidence:preferenceConfidence
       }):null,profile:p};
