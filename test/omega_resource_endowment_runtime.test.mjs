@@ -88,8 +88,8 @@ const indState=runtime.countryResourceState('IND')||{};
 const expansionReport=globalThis.OmegaResourceLegacyGameplayExpansion||globalThis.Omega?.ResourceLegacyGameplayExpansion;
 assert.equal(expansionReport?.status,'READY',JSON.stringify(expansionReport));
 assert.equal(expansionReport?.count,115,JSON.stringify(expansionReport));
-assert.equal(expansionReport?.activeAdded,104,JSON.stringify(expansionReport));
-assert.equal(expansionReport?.aliasCount,11,JSON.stringify(expansionReport));
+assert.equal(expansionReport?.activeAdded,103,JSON.stringify(expansionReport));
+assert.equal(expansionReport?.aliasCount,12,JSON.stringify(expansionReport));
 // Every supplemental site must resolve through the same live country reference API used by the Ministry UI.
 const mineplayByCountry=new Map();
 for(const site of mineplayScenario.records){
@@ -244,8 +244,8 @@ assert(seen.some(x=>x&&x.payload&&x.payload.batch&&x.payload.batch.batchId===bat
 const preGlobal=runtime.diagnostics();
 const expectedResourceCountries=Object.keys(engine.countryProfiles||{});
 assert.equal(preGlobal.countryCount,expectedResourceCountries.length);
-assert.equal(preGlobal.mineSiteReferenceCount,398);
-assert.equal(preGlobal.mineSiteControllerCount,398);
+assert.equal(preGlobal.mineSiteReferenceCount,397);
+assert.equal(preGlobal.mineSiteControllerCount,397);
 const extractionPromiseA=runtime.extractAll();
 const extractionPromiseB=runtime.extractAll();
 assert.equal(extractionPromiseA,extractionPromiseB,'concurrent turn listeners must share one in-flight world extraction');
@@ -265,26 +265,29 @@ const profileMineOutputs=allMineOutputs.filter(x=>x?.assetType==='MINE_SITE');
 const siteLinkedExecutionOutputs=allMineOutputs.filter(x=>x?.siteReferenceKey&&Number(x?.producedQuantity)>0);
 const simulatedMineOutputs=profileMineOutputs.filter(x=>x?.simulationGenerated===true);
 const simulatedFieldOutputs=allMineOutputs.filter(x=>x?.simulationGenerated===true&&['OIL_FIELD','GAS_FIELD'].includes(x?.assetType));
-assert.equal(siteReferenceRows,398);
-assert.equal(siteControllerRows,398);
+assert.equal(siteReferenceRows,397);
+assert.equal(siteControllerRows,397);
 
 // Every new Part 6 mine must use the same authoritative runtime identity and extraction path.
 const part6Data=JSON.parse(fs.readFileSync(new URL('../resource_site_legacy_gameplay_expansion_part_6_v1.json',import.meta.url),'utf8'));
 assert.equal(part6Data.records.length,50,'Part 6 source pack must retain all 50 records including the explicit alias');
 const part6AliasRows=part6Data.records.filter(site=>site?.runtime?.aliasOfSiteId||site?.map?.markerEligible===false);
-assert.equal(part6AliasRows.length,1,'one duplicate physical site must remain a non-executable alias');
-assert.equal(part6AliasRows[0].siteId,'SITE_CAN_voiseys_bay_nickel_mine');
-assert.equal(part6AliasRows[0].runtime?.aliasOfSiteId,'SITE_CAN_voisey_s_bay_nickel_mine');
-assert.equal(part6AliasRows[0].operation?.commercialExtraction,false);
-assert.equal(part6AliasRows[0].map?.markerEligible,false);
+assert.equal(part6AliasRows.length,2,'duplicate physical sites must remain non-executable aliases');
+const voiseyAlias=part6AliasRows.find(site=>site.siteId==='SITE_CAN_voiseys_bay_nickel_mine');
+const boulbyAlias=part6AliasRows.find(site=>site.siteId==='SITE_GBR_boulby_mine');
+assert.equal(voiseyAlias?.runtime?.aliasOfSiteId,'SITE_CAN_voisey_s_bay_nickel_mine');
+assert.equal(boulbyAlias?.runtime?.aliasOfSiteId,'SITE_GBR_boulby_potash_mine');
+assert.equal(part6AliasRows.every(site=>site.operation?.commercialExtraction===false&&site.map?.markerEligible===false),true);
 const part6PhysicalSites=part6Data.records.filter(site=>!site?.runtime?.aliasOfSiteId&&site?.map?.markerEligible!==false);
-assert.equal(part6PhysicalSites.length,49,'only 49 unique physical sites should be executable');
+assert.equal(part6PhysicalSites.length,48,'only 48 unique physical sites should be executable after alias exclusions');
 const part6SiteIds=new Set(part6PhysicalSites.map(site=>site.siteId));
 const part6PositiveOutputs=new Set(siteLinkedExecutionOutputs.map(output=>output.siteReferenceKey).filter(siteId=>part6SiteIds.has(siteId)));
-assert.equal(part6PositiveOutputs.size,49,'each executable Part 6 site must create positive site-linked extraction output');
-const aliasCountryState=worldState[part6AliasRows[0].countryId]||{};
-assert.equal((aliasCountryState.mineSiteReferences||[]).some(ref=>ref.siteReferenceKey===part6AliasRows[0].siteId),false,'alias must not create its own executable site reference');
-assert.equal(Object.values(aliasCountryState.mineOutputs||{}).some(output=>output.siteReferenceKey===part6AliasRows[0].siteId),false,'alias must not produce mine output');
+assert.equal(part6PositiveOutputs.size,48,'each executable Part 6 site must create positive site-linked extraction output');
+for(const alias of part6AliasRows){
+ const aliasCountryState=worldState[alias.countryId]||{};
+ assert.equal((aliasCountryState.mineSiteReferences||[]).some(ref=>ref.siteReferenceKey===alias.siteId),false,alias.siteId+': alias must not create its own executable site reference');
+ assert.equal(Object.values(aliasCountryState.mineOutputs||{}).some(output=>output.siteReferenceKey===alias.siteId),false,alias.siteId+': alias must not produce mine output');
+}
 for(const site of part6PhysicalSites){
   const countryRow=worldState[site.countryId];
   assert(countryRow,site.siteId+': owning country runtime state missing');
@@ -366,7 +369,7 @@ const legacyExpansionRows=[1,2,3,4,5,6].flatMap(part=>{
 const legacyCanonicalAliasIds=new Set([
   'SITE_AUS_olympic_dam_uranium_copper','SITE_BRA_carajas_iron_ore_mine_legacy2',
   'SITE_CHL_escondida_copper_mine_legacy2','SITE_IDN_grasberg_copper_gold_mine',
-  'SITE_COD_tenke_fungurume_copper_cobalt_complex','SITE_COD_kibali_gold_mine_complex','SITE_CAN_voiseys_bay_nickel_mine'
+  'SITE_COD_tenke_fungurume_copper_cobalt_complex','SITE_COD_kibali_gold_mine_complex','SITE_CAN_voiseys_bay_nickel_mine','SITE_GBR_boulby_mine'
 ]);
 const expandedCommercialCatalogIds=legacyExpansionRows
   .filter(site=>site?.operation?.commercialExtraction===true&&site?.map?.markerEligible!==false&&
