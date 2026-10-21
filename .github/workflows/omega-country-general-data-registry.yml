@@ -38,6 +38,7 @@ on:
       - "country_sector_profiles_v1.json"
       - "country_official_index_observations_v1.json"
       - "test/country_sector_profiles_v1.test.mjs"
+      - "test/omega_country_sector_profile_ui_binding_v1.test.mjs"
       - "test/country_general_data_registry_v1.test.mjs"
       - "countries.json"
       - "cities.json"
@@ -94,7 +95,7 @@ jobs:
           node --test test/country_general_data_registry_v1.test.mjs test/omega_country_runtime_data_v1.test.mjs test/omega_country_behavior_engine_v1.test.mjs test/omega_ministry_country_details_runtime.test.mjs test/omega_country_data_gateway_v1.test.mjs
           node test/omega_opponent_e2e_runtime.test.mjs
           node --check scripts/build_country_sector_profiles_v1.mjs
-          node --test test/country_sector_profiles_v1.test.mjs
+          node --test test/country_sector_profiles_v1.test.mjs test/omega_country_sector_profile_ui_binding_v1.test.mjs
 
       - name: Commit canonical country data artifacts only if changed
         if: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
