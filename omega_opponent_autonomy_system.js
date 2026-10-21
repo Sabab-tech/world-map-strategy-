@@ -253,51 +253,18 @@
 
   function resourceRuntime(countryId){
     const cid=canonicalId(countryId);
-    let engineValue=null,providerValue=null;
     try{
       const engine=g.ResourceMinistryEngine;
-      const x=engine?.getIntegratedResourceState?.(cid);
-      if(x&&typeof x==='object')engineValue=clone(x);
+      if(engine?.getIntegratedResourceState){
+        const x=engine.getIntegratedResourceState(cid);
+        if(x)return{value:clone(x),availability:'AVAILABLE',sourceType:'RESOURCE_ENGINE',source:'ResourceMinistryEngine',path:'getIntegratedResourceState',authority:true};
+      }
     }catch(_){}
     const provider=g.Omega?.MinistryStateProvider?.instance||g.OmegaMinistryStateProvider?.instance;
     try{
       const x=provider?.get?.(cid,'resourceEngineState');
-      if(x&&typeof x==='object')providerValue=clone(x);
+      if(x!==undefined)return{value:clone(x),availability:'AVAILABLE',sourceType:'AUTHORITATIVE_RUNTIME_STATE',source:'Game.state/resource',path:'resourceEngineState',authority:true};
     }catch(_){}
-
-    // The resource engine can be present before it has materialized every live
-    // inventory field. Preserve its observed values, but fill missing resource
-    // maps from the authoritative country-scoped Game.state resource bucket.
-    const liveState={};
-    for(const field of ['inventory','production','consumption','reserves','tradeAvailability','strategicReserve']){
-      try{
-        const row=readState(cid,'resource.'+field);
-        if(row?.value!==undefined&&row?.value!==null)liveState[field]=clone(row.value);
-      }catch(_){}
-    }
-    const mergeMap=(...values)=>values.reduce((out,value)=>{
-      if(value&&typeof value==='object'&&!Array.isArray(value))Object.assign(out,value);
-      return out;
-    },{});
-    const value={...liveState,...(providerValue||{}),...(engineValue||{})};
-    for(const field of ['inventory','production','consumption','reserves','tradeAvailability','strategicReserve']){
-      const merged=mergeMap(liveState[field],providerValue?.[field],engineValue?.[field]);
-      if(Object.keys(merged).length)value[field]=merged;
-    }
-    const hasResourceState=Object.keys(liveState).length>0||
-      (providerValue&&Object.keys(providerValue).length>0)||
-      (engineValue&&Object.keys(engineValue).length>0);
-    if(hasResourceState){
-      const sources=[];
-      if(engineValue&&Object.keys(engineValue).length)sources.push('ResourceMinistryEngine');
-      if(providerValue&&Object.keys(providerValue).length)sources.push('resourceEngineState');
-      if(Object.keys(liveState).length)sources.push('Game.state/resource');
-      return{
-        value,availability:'AVAILABLE',
-        sourceType:sources.includes('ResourceMinistryEngine')?'RESOURCE_ENGINE':'AUTHORITATIVE_RUNTIME_STATE',
-        source:sources.join('+'),path:'resource runtime with authoritative live-state fallback',authority:true
-      };
-    }
     return{value:undefined,availability:'UNAVAILABLE',sourceType:'RESOURCE_ENGINE',source:'ResourceMinistryEngine',path:'getIntegratedResourceState',authority:false};
   }
 
@@ -513,21 +480,18 @@
   }
 
   function candidateActions(decision){
-    const normalizeActions=value=>(Array.isArray(value)?value:[])
-      .map(x=>typeof x==='string'?x:x?.action)
-      .filter(x=>x!==undefined&&x!==null&&String(x).trim()!=='')
-      .map(x=>String(x).trim().toUpperCase());
-    // A decision's explicit candidate list is part of the caller's intent and
-    // must take precedence over the scenario's broader default action set.
-    const explicit=normalizeActions(decision?.candidateActions);
-    if(explicit.length)return[...new Set(explicit)];
-    const selected=normalizeActions(decision?.selectedActions);
-    if(selected.length)return[...new Set(selected)];
     const sc=String(decision?.scenarioId||'').toUpperCase();
     const registry=g.OmegaOpponentCountryRules?.SCENARIO_REGISTRY||g.Omega?.OpponentCountryRules?.SCENARIO_REGISTRY||[];
     const found=registry.find(x=>String(x.id).toUpperCase()===sc);
-    const registered=normalizeActions(found?.actions);
-    if(registered.length)return[...new Set(registered)];
+    const normaliseActions=values=>(Array.isArray(values)?values:[])
+      .map(value=>typeof value==='string'?value.trim():String(value?.action||'').trim())
+      .filter(Boolean);
+    // An explicit caller shortlist is authoritative. Scenarios provide defaults,
+    // not permission to replace a caller's requested action with a different one.
+    const requested=normaliseActions(decision?.candidateActions);
+    const selected=normaliseActions(decision?.selectedActions);
+    const base=requested.length?requested:(selected.length?selected:found?.actions||[]);
+    if(base.length)return[...new Set(normaliseActions(base))];
     const defaults={
       RESOURCE_DEFICIT:['IMPORT','DOMESTIC_EXPANSION','RESERVE_RELEASE','SUBSTITUTION','EFFICIENCY','SUPPLIER_CHANGE'],
       ENERGY_SHORTAGE:['IMPORT','DOMESTIC_EXPANSION','RESERVE_RELEASE','EFFICIENCY'],
@@ -543,14 +507,18 @@
   function extractPlanInputs(decision,action){
     const selected=decision?.selected||decision?.selectedEvaluations?.find?.(x=>x.action===action);
     const m=decision?.runtimeMeasurement||decision?.measurement||{};
-    const quantity=scalar(selected?.quantity??m?.selected?.quantity??m?.gap??m?.required);
-    const cost=scalar(selected?.cost??m?.cost);
-    const labor=scalar(selected?.labor??m?.labor??m?.requiredLabor);
-    const materials=selected?.materials??m?.materials??null;
-    const duration=scalar(selected?.durationTurns??m?.durationTurns??m?.time);
-    const personnelPerUnit=scalar(selected?.personnelPerUnit??m?.personnelPerUnit??m?.selected?.personnelPerUnit);
-    const readinessDelta=num(selected?.readinessDelta??m?.readinessDelta??m?.selected?.readinessDelta);
-    const item=selected?.item??m?.item??m?.selected?.item??null;
+    // Runtime measurements often keep action-specific execution values inside
+    // selected. Preserve those values instead of silently dropping materials,
+    // labor or costs when a top-level measurement field is absent.
+    const measuredSelection=m?.selected&&typeof m.selected==='object'?m.selected:{};
+    const quantity=scalar(selected?.quantity??measuredSelection.quantity??m?.gap??m?.required);
+    const cost=scalar(selected?.cost??measuredSelection.cost??m?.cost);
+    const labor=scalar(selected?.labor??measuredSelection.labor??m?.labor??m?.requiredLabor);
+    const materials=selected?.materials??measuredSelection.materials??m?.materials??null;
+    const duration=scalar(selected?.durationTurns??measuredSelection.durationTurns??m?.durationTurns??m?.time);
+    const personnelPerUnit=scalar(selected?.personnelPerUnit??measuredSelection.personnelPerUnit??m?.personnelPerUnit);
+    const readinessDelta=num(selected?.readinessDelta??measuredSelection.readinessDelta??m?.readinessDelta);
+    const item=selected?.item??measuredSelection.item??m?.item??null;
     return{quantity,cost,labor,materials:materials&&typeof materials==='object'?clone(materials):null,durationTurns:duration,personnelPerUnit,readinessDelta,item};
   }
 
