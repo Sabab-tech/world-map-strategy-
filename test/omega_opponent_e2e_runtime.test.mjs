@@ -19,11 +19,17 @@ globalThis.window=globalThis;
 const projectRoot=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const nativeFetch=globalThis.fetch.bind(globalThis);
 globalThis.fetch=async input=>{
-  const request=String(input);
-  if(request.startsWith('./')){
-    const relative=request.replace(/^\.\//,'').split(/[?#]/)[0];
-    const full=path.join(projectRoot,relative);
-    if(!full.startsWith(projectRoot+path.sep))return{ok:false,status:400,json:async()=>{throw new Error('INVALID_TEST_PATH')}};
+  const request=typeof input==='string'?input:(input?.url||String(input));
+  // The engines use relative asset names in browsers; in Node, fetch() requires
+  // absolute URLs. Resolve those names against this checkout so the E2E test uses
+  // the same canonical JSON assets and stays deterministic/offline.
+  const isAbsolute=/^[a-z][a-z0-9+.-]*:/i.test(request)||request.startsWith('//');
+  if(!isAbsolute){
+    const relative=request.replace(/^\.\//,'').replace(/^\/+/, '').split(/[?#]/)[0];
+    const full=path.resolve(projectRoot,relative);
+    if(full!==projectRoot&&!full.startsWith(projectRoot+path.sep)){
+      return{ok:false,status:400,json:async()=>{throw new Error('INVALID_TEST_PATH')}};
+    }
     try{
       const body=fs.readFileSync(full,'utf8');
       return{ok:true,status:200,json:async()=>JSON.parse(body)};
