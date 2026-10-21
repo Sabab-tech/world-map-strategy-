@@ -539,7 +539,7 @@ const compactProfiles = profiles.map((profile) => ({
   sectors: Object.fromEntries(Object.entries(profile.sectors).map(([sectorId, sector]) => {
     const derivedKeys = new Set(Object.keys(profile.derivedMetrics));
     return [sectorId, {
-      id: sector.id, title: sector.title, status: sector.status, description: sector.description,
+      status: sector.status,
       indicators: Object.fromEntries(Object.keys(sector.indicators || {}).map((key) => [key, {
         refType: explicitExternalMetricKeys.has(key) ? 'EXTERNAL_METRIC'
           : derivedKeys.has(key) ? 'DERIVED_METRIC'
@@ -550,7 +550,7 @@ const compactProfiles = profiles.map((profile) => ({
       sourceGroup: sector.sourceGroup ? { refType: 'SOURCE_GROUP', key: sectorId === 'naturalResources' ? 'naturalResources' :
         (sectorId === 'publicSafety' ? 'publicSafety' : (schema.sectors.find((entry) => entry.id === sectorId)?.sourceGroup || null)) } : null,
       analytics: Object.fromEntries(Object.keys(sector.analytics || {}).map((key) => [key, { refType: 'ANALYTICS', key }])),
-      extensionSlots: sector.extensionSlots
+      // The schema file is the sole authority for sector labels and extension-slot definitions.
     }];
   })),
   extensions: profile.extensions
