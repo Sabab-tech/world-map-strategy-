@@ -87,7 +87,7 @@ public final class OmegaGameplaySmokeTest {
                     " typeof Object.fromEntries === 'function' &&" +
                     " typeof Array.prototype.flatMap === 'function' &&" +
                     " window.OmegaAIIntegrityCanonicalBridge &&" +
-                    " window.OmegaAIIntegrityCanonicalBridge.VERSION === '1.1.1'); })()";
+                    " window.OmegaAIIntegrityCanonicalBridge.VERSION === '1.1.0'); })()";
             assertEquals(
                     "APK must execute the Chrome 66 compatibility layer and current canonical bridge; diagnostic="
                             + compatibilityDiagnostic,
