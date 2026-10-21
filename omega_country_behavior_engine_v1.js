@@ -724,7 +724,6 @@
         observationYear: num(v.year),
         confidence: v.status === 'LIVE' ? 1 : (v.status === 'WORLD_BANK_API_OBSERVATION' ? 0.9 :
           (v.status === 'DERIVED_SAME_YEAR_OBSERVATIONS' ? 0.8 : (v.status === 'DERIVED' ? 0.65 : 0.45))),
-        dataGap: null
       }])),
       dataGaps: Object.keys(evidenceByMetric).filter(k => !evidenceByMetric[k] || evidenceByMetric[k].value === null)
         .map(metric => ({ metric, status: 'UNOBSERVED', value: null, reason: 'No supported numeric observation found in live state or registered baseline.' })),
