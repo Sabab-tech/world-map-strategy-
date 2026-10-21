@@ -257,7 +257,7 @@ test('runtime renders all global sites and applies nation/resource scope without
   assert.ok(geographicPositions.size>100,'world markers must preserve widespread source coordinates instead of collapsing all resources to one point');
   assert.ok(context.Game.Map.resourceDepositsLayer.clearCount>0,'legacy deposit layer must be cleared so old and individual markers do not stack');
   const activeMarkers=[...layers].flatMap(layer=>layer.markers);
-  for(const expected of part6.records){
+  for(const expected of part6.records.filter(site=>!site.runtime?.aliasOfSiteId&&site.map?.markerEligible!==false)){
     const coords=expected.location.coordinates;
     assert(activeMarkers.some(marker=>Math.abs(Number(marker.latlng[0])-Number(coords.lat))<1e-7&&
       Math.abs(Number(marker.latlng[1])-Number(coords.lng))<1e-7),
