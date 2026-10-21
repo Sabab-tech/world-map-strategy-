@@ -235,6 +235,7 @@ test('Guard Out asset selector only targets recorded factories and passes the se
   assert.ok(harness.nodes.get('cabinet-body').innerHTML.includes('AL-01') && harness.nodes.get('cabinet-body').innerHTML.includes('Aluminium Plant North Gate'), 'only actual recorded target rows should populate the selector');
   assetSelect.value = 'AL-01';
   assetSelect.onchange();
+  assert.equal(harness.nodes.get('home-police-guard-sector').value, '', 'selecting an asset must not fake a geographic location from the facility name');
   assert.equal(harness.nodes.get('home-police-guard-environment').value, 'industrial');
   assert.equal(harness.nodes.get('home-police-guard-road').value, 'rough');
   harness.nodes.get('home-police-guard-mission').value = 'industrial_guard';
