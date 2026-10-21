@@ -86,7 +86,7 @@ public final class OmegaGameplaySmokeTest {
                     10000L, "2x simulation speed");
             final String speedState = evaluate(instrumentation, webViewRef.get(), speedStateScript);
             assertEquals("2x speed control must update the actual simulation speed",
-                    "{\\\"speed\\\":2,\\\"active\\\":true,\\\"button\\\":true}", speedState);
+                    "\\\"{\\\\\\\"speed\\\\\\\":2,\\\\\\\"active\\\\\\\":true,\\\\\\\"button\\\\\\\":true}\\\"", speedState);
 
             final String clickMinistryScript =
                     "(function() { var b=document.getElementById('btn-ministry-dock');" +
@@ -104,7 +104,7 @@ public final class OmegaGameplaySmokeTest {
                     15000L, "Government HQ Layer 1");
             final String ministryState = evaluate(instrumentation, webViewRef.get(), ministryStateScript);
             assertEquals("Ministry dock must enter Government HQ Layer 1",
-                    "{\\\"manager\\\":true,\\\"layer\\\":1,\\\"activeLayer\\\":\\\"1\\\"}", ministryState);
+                    "\\\"{\\\\\\\"manager\\\\\\\":true,\\\\\\\"layer\\\\\\\":1,\\\\\\\"activeLayer\\\\\\\":\\\\\\\"1\\\\\\\"}\\\"", ministryState);
         } finally {
             instrumentation.runOnMainSync(activity::finish);
         }
