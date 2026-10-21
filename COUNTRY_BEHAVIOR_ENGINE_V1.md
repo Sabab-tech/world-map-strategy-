@@ -10,9 +10,9 @@ The Ministry dashboard exposes the same result through the **Country Overview** 
 
 1. **OmegaCountryRuntimeData** resolves country identity and returns baseline/source values. The bridge exposes **listProfiles()** for canonical country and territory selection.
 2. **OmegaCountryBehaviorEngine.getBehaviorProfile(countryId)** resolves recorded baseline indicators, current live game state, the existing structured strategic profile when available, and the existing gameplay resource-site catalogue.
-3. Each dimension has a value or **null**, an availability classification, source, confidence and evidence list. A missing input is never converted to a numeric zero.
-4. **OmegaOpponentAdaptiveStrategy.profile(countryId)** preserves explicitly registered doctrine/policy dimensions first. The behaviour engine only fills still-missing dimensions.
-5. **OmegaOpponentAdaptiveStrategy.scoreAction(countryId, action)** combines direction-adjusted dimensions with any evidence-backed action preference registered for that country. When both exist, the current implementation gives the dimension score 70% and the action preference 30%. If an action has no usable dimensions but does have a registered preference, the preference can still score the candidate.
+3. Each dimension has a value or **null**, an availability classification, source, confidence and evidence list. Each metric source also exposes its observation year and context; unknown years and unobserved fields are reported in `dataGaps`. A missing input is never converted to a numeric zero. The `evidenceConfidenceModel` explicitly identifies this as a source-status/recency heuristic, not a calibrated probability. Live game-state measurements are labelled separately from historical baselines.
+4. **OmegaOpponentAdaptiveStrategy.profile(countryId)** preserves explicitly registered doctrine/policy dimensions first. The behaviour engine only fills still-missing dimensions, with confidence bounded by the confidence of its supporting evidence.
+5. **OmegaOpponentAdaptiveStrategy.scoreAction(countryId, action)** combines direction-adjusted dimensions with any evidence-backed action preference registered for that country. Each utility is attenuated toward neutral (0.5) in proportion to confidence before scoring. When both exist, the current implementation gives the dimension score 70% and the action preference 30%. An action-only preference is confidence-adjusted too. Explicit doctrine with confidence 1.0 retains its full utility.
 6. The existing **OmegaOpponentAutonomySystem** includes the adaptive strategy score in candidate evaluation. The strategy factor now has a 12% base weight (all configured factor weights sum to 100%; each candidate is then normalized over the factors that have evidence). Existing readiness checks, finance reservations, labour/material requirements, route constraints and domain executors still decide whether a candidate is executable. This engine does not directly execute actions.
 
 ## Inputs and limits
@@ -73,6 +73,7 @@ The view does not mutate simulation state, execute orders, or assign fabricated 
 ## Diagnostics and tests
 
 - **OmegaCountryBehaviorEngine.diagnostics()** reports site-catalogue state and registered identity count.
-- **test/omega_country_behavior_engine_v1.test.mjs** verifies identity coverage, per-country differentiation, null preservation, explicit-doctrine precedence, adaptive action scoring and Ministry UI/offline wiring.
+- **test/omega_country_behavior_engine_v1.test.mjs** verifies identity coverage, per-country differentiation, null preservation, explicit-doctrine precedence, provenance/year/confidence gaps, uncertainty-adjusted scoring and Ministry UI/offline wiring.
+- **test/omega_opponent_e2e_runtime.test.mjs** checks canonical country identity -> behaviour profile -> adaptive score -> autonomy candidate score -> queued simulation execution and committed game-state mutation. The ministry CI workflow runs this test as a blocking step.
 - The Country General Data Registry workflow syntax-checks new runtimes and runs country-registry, country-runtime and country-behaviour tests.
 - A PR/CI result must be green before this branch is merged. The profile catalogue generated during a pull-request test is not automatically published by that pull-request run.
