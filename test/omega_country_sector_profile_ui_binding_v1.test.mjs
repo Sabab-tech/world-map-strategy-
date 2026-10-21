@@ -65,7 +65,7 @@ test('Country Overview renders the packed sectors through canonical source refer
   assert.match(ui, /function profileObservation/);
   assert.match(ui, /getCountryRecord\?\.\(profile\.identity\.iso3\)/);
   assert.match(ui, /getSourceDataset\?\.\('country_general_data_registry_v1\.json'\)/);
-  assert.match(ui, /for \(const definition of definitions\)/);
+  assert.match(ui, /definitions\.map\(definition =>/);
   assert.match(ui, /Object\.entries\(section\.indicators \|\| \{\}\)/);
   assert.match(ui, /Object\.entries\(section\.facts \|\| \{\}\)/);
   assert.match(ui, /definition\.extensionSlots/);
