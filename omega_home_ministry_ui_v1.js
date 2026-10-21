@@ -94,7 +94,7 @@
     const wheels = art.wheels.map(function (x) {
       return '<g class="police-wheel"><circle cx="' + x + '" cy="111" r="' + art.wheelR + '" fill="#08111b" stroke="#7e9ab0" stroke-width="2.2"/><path d="M' + (x - art.wheelR * .62) + ' 102 A ' + (art.wheelR * .82) + ' ' + (art.wheelR * .82) + ' 0 0 1 ' + (x + art.wheelR * .62) + ' 102" fill="none" stroke="#dceaf4" stroke-width="1.3" opacity=".55"/><circle cx="' + x + '" cy="111" r="' + Math.round(art.wheelR * .52) + '" fill="url(#police-metal-' + key + ')" stroke="#dce8f1" stroke-width="2"/><circle cx="' + x + '" cy="111" r="3" fill="#243849"/></g>';
     }).join('');
-    return '<svg class="home-police-vehicle-art ' + (slot === 'hero' ? 'home-police-vehicle-art-hero' : '') + '" viewBox="0 20 260 116" role="img" aria-label="' + esc(vehicle.name) + ' police vehicle illustration" xmlns="http://www.w3.org/2000/svg">' +
+    return '<svg class="home-police-vehicle-art ' + (slot === 'hero' ? 'home-police-vehicle-art-hero' : '') + '" viewBox="0 20 260 116" preserveAspectRatio="xMidYMid meet" role="img" aria-label="' + esc(vehicle.name) + ' police vehicle illustration" xmlns="http://www.w3.org/2000/svg">' +
       '<defs><linearGradient id="police-body-' + key + '" x1="0" y1="0" x2="0.15" y2="1"><stop offset="0" stop-color="' + art.colors[0] + '"/><stop offset=".2" stop-color="' + art.colors[0] + '"/><stop offset=".58" stop-color="' + art.colors[1] + '"/><stop offset="1" stop-color="#071321"/></linearGradient><linearGradient id="police-gloss-' + key + '" x1="0" y1="0" x2=".15" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity=".44"/><stop offset=".24" stop-color="#ffffff" stop-opacity=".08"/><stop offset=".62" stop-color="#ffffff" stop-opacity=".015"/><stop offset="1" stop-color="#020812" stop-opacity=".27"/></linearGradient><linearGradient id="police-metal-' + key + '" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f4fbff"/><stop offset=".42" stop-color="#7891a4"/><stop offset="1" stop-color="#263b4d"/></linearGradient><linearGradient id="police-glass-' + key + '" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e8fbff"/><stop offset=".23" stop-color="#7db7cc"/><stop offset=".55" stop-color="#35637c"/><stop offset="1" stop-color="#091827"/></linearGradient>' +
       '<mask id="police-arch-mask-' + key + '" maskUnits="userSpaceOnUse" x="0" y="0" width="260" height="140"><rect x="0" y="0" width="260" height="140" fill="#fff"/>' + wheelMask + '</mask></defs>' +
       '<ellipse cx="132" cy="128" rx="112" ry="7" fill="#02060c" opacity=".58"/>' +
@@ -190,6 +190,10 @@
       '.home-police-tag-gold{color:#ffe199;background:rgba(200,154,38,.13);border-color:rgba(245,207,104,.42)}',
       '.home-police-tag-green{color:#78edba;background:rgba(23,176,112,.13);border-color:rgba(57,214,154,.36)}',
       '.home-police-form-row{display:flex;align-items:stretch;gap:9px;margin:11px 0}',
+      '.home-police-vehicle-art{display:block;visibility:visible;width:100%;max-width:100%;height:auto;min-height:88px;object-fit:contain}',
+      '.home-police-vehicle-art-hero{min-height:140px}',
+      '.home-police-location-row{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:9px;margin:11px 0}',
+
       '.home-police-field{box-sizing:border-box;width:100%;min-width:0;min-height:44px;border:1px solid rgba(131,174,208,.42);border-radius:8px;background:#07111e;color:#fff;padding:10px 12px;font-size:14px;outline:none}',
       '.home-police-field:focus{border-color:#3bd8ff;box-shadow:0 0 0 2px rgba(59,216,255,.12)}',
       '.home-police-field-wrap{flex:1;min-width:0}',
@@ -597,7 +601,7 @@
           '<p class="home-police-note">Only assets already recorded in this country are listed. An empty selection keeps the unit on general mission coverage; targeted guards affect the matching asset event only.</p>' +
           '<div class="home-police-form-row"><div class="home-police-field-wrap"><label class="home-police-label" for="home-police-guard-quantity">Vehicles to deploy</label><input id="home-police-guard-quantity" class="home-police-field" type="number" min="1" max="' + (selected ? Number(capacity.availableVehicles[selected.level]) || 1 : 1) + '" step="1" value="1" inputmode="numeric" ' + (selected ? '' : 'disabled') + '></div>' +
           '<div class="home-police-cost"><strong id="home-police-guard-officers">' + (selected ? selected.capacity : 0) + '</strong><span>Officers assigned</span></div></div>' +
-          '<label class="home-police-label" for="home-police-guard-sector">Area / sector assignment</label><input id="home-police-guard-sector" class="home-police-field" type="text" maxlength="80" placeholder="e.g. Aluminium Plant North Gate or Sector 4" value="General Sector" ' + (selected ? '' : 'disabled') + '>' +
+          '<div class="home-police-location-row"><div class="home-police-field-wrap"><label class="home-police-label" for="home-police-guard-area-class">Area classification</label><select id="home-police-guard-area-class" class="home-police-field" ' + (selected ? '' : 'disabled') + '><option value="URBAN" selected>Urban / city</option><option value="SUBURBAN">Suburban</option><option value="RURAL">Rural / countryside</option><option value="BORDER">Border district</option><option value="INDUSTRIAL">Industrial zone</option><option value="COASTAL">Coastal / wetland</option><option value="MOUNTAIN">Mountain / remote</option></select></div><div class="home-police-field-wrap"><label class="home-police-label" for="home-police-guard-sector">City / district / rural region</label><input id="home-police-guard-sector" class="home-police-field" type="text" maxlength="80" placeholder="Enter a real city, district or region" value="" ' + (selected ? '' : 'disabled') + '></div></div>' +
           '<div class="home-police-vehicle-brief">' +
             '<div class="home-police-brief-card"><span class="home-police-tag home-police-tag-green">MISSION FIT</span><strong id="home-police-guard-effectiveness">0 / 100</strong><span id="home-police-guard-fit-note">Select a vehicle and mission.</span></div>' +
             '<div class="home-police-brief-card"><span class="home-police-tag home-police-tag-gold">AVAILABILITY CHECK</span><strong id="home-police-guard-availability">Checking…</strong><span id="home-police-guard-availability-note">Vehicles and officers are reserved at dispatch.</span></div>' +
@@ -612,7 +616,7 @@
       '</div>';
     const vehicleSelect = g.document.getElementById('home-police-guard-vehicle'), missionSelect = g.document.getElementById('home-police-guard-mission');
     const environmentSelect = g.document.getElementById('home-police-guard-environment'), roadSelect = g.document.getElementById('home-police-guard-road');
-    const quantityInput = g.document.getElementById('home-police-guard-quantity'), sectorInput = g.document.getElementById('home-police-guard-sector'), assetSelect = g.document.getElementById('home-police-guard-asset');
+    const quantityInput = g.document.getElementById('home-police-guard-quantity'), sectorInput = g.document.getElementById('home-police-guard-sector'), areaClassSelect = g.document.getElementById('home-police-guard-area-class'), assetSelect = g.document.getElementById('home-police-guard-asset');
     const officerLabel = g.document.getElementById('home-police-guard-officers'), effectLabel = g.document.getElementById('home-police-guard-effectiveness');
     const fitNote = g.document.getElementById('home-police-guard-fit-note'), availabilityLabel = g.document.getElementById('home-police-guard-availability');
     const availabilityNote = g.document.getElementById('home-police-guard-availability-note'), errorBox = g.document.getElementById('home-police-guard-error');
@@ -676,12 +680,20 @@
     };
     environmentSelect.onchange = updateRoadOptions;
     roadSelect.onchange = refresh;
+    const applyAreaClass = () => {
+      const area = areaClassSelect.value;
+      const environmentByArea = { URBAN:'city', SUBURBAN:'city', RURAL:'rural', BORDER:'border', INDUSTRIAL:'industrial', COASTAL:'coastal', MOUNTAIN:'mountain' };
+      const wanted = environmentByArea[area] || 'city';
+      if (environments.some(row => row.id === wanted)) environmentSelect.value = wanted;
+      updateRoadOptions();
+    };
+    areaClassSelect.onchange = applyAreaClass;
     assetSelect.onchange = () => {
       const asset = guardableAssets.find(row => row.id === assetSelect.value);
       if (asset) {
-        if (!sectorInput.value.trim() || sectorInput.value.trim() === 'General Sector') sectorInput.value = asset.name;
         if (/factory|industrial|plant|smelt/i.test(String(asset.category || '') + ' ' + String(asset.name || ''))) {
           environmentSelect.value = 'industrial';
+          areaClassSelect.value = 'INDUSTRIAL';
           roadSelect.value = 'rough';
           updateRoadOptions();
           return;
@@ -692,7 +704,11 @@
     g.document.getElementById('home-police-guard-refresh').onclick = () => this.renderGuardOut(Number(vehicleSelect.value) || undefined, { environment: environmentSelect.value, road: roadSelect.value });
     deployButton.onclick = () => {
       const level = Math.floor(Number(vehicleSelect.value) || 0), quantity = Math.floor(Number(quantityInput.value) || 0), missionId = missionSelect.value;
-      const result = e.deployGuard(level, quantity, missionId, sectorInput.value, e.getCurrentCountryId(), assetSelect.value || null, environmentSelect.value, roadSelect.value);
+      const locationName = String(sectorInput.value || '').trim();
+      if (!locationName) { errorBox.textContent = 'Enter the city, district or rural region before dispatch. The assignment is stored under this country and location.'; if (sectorInput && typeof sectorInput.focus === 'function') sectorInput.focus(); return; }
+      const areaClass = String(areaClassSelect && areaClassSelect.value || 'URBAN').toUpperCase();
+      const sector = areaClass + ' · ' + locationName;
+      const result = e.deployGuard(level, quantity, missionId, sector, e.getCurrentCountryId(), assetSelect.value || null, environmentSelect.value, roadSelect.value);
       if (!result.ok) { report(result); this.renderGuardOut(level); return; }
       report(result, 'GUARD DEPLOYMENT COMMITTED', result.deployment.quantity + ' × ' + result.vehicle + ' assigned to ' + result.mission + ' at ' + result.deployment.sector + '. ' + result.assignedOfficers + ' officers reserved; current mission rating ' + result.estimatedEffectiveness + ' / 100.');
       this.renderGuardOut(level, { environment: environmentSelect.value, road: roadSelect.value });
