@@ -707,7 +707,8 @@
       const level = Math.floor(Number(vehicleSelect.value) || 0), quantity = Math.floor(Number(quantityInput.value) || 0), missionId = missionSelect.value;
       const locationName = String(sectorInput.value || '').trim();
       if (!locationName) { errorBox.textContent = 'Enter the city, district or rural region before dispatch. The assignment is stored under this country and location.'; sectorInput.focus(); return; }
-      const sector = areaClassSelect.value + ' · ' + locationName;
+      const areaClass = String(areaClassSelect && areaClassSelect.value || 'URBAN').toUpperCase();
+      const sector = areaClass + ' · ' + locationName;
       const result = e.deployGuard(level, quantity, missionId, sector, e.getCurrentCountryId(), assetSelect.value || null, environmentSelect.value, roadSelect.value);
       if (!result.ok) { report(result); this.renderGuardOut(level); return; }
       report(result, 'GUARD DEPLOYMENT COMMITTED', result.deployment.quantity + ' × ' + result.vehicle + ' assigned to ' + result.mission + ' at ' + result.deployment.sector + '. ' + result.assignedOfficers + ' officers reserved; current mission rating ' + result.estimatedEffectiveness + ' / 100.');
