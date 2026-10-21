@@ -251,7 +251,7 @@ async function fetchTransparencyInternationalCpi2025() {
     return normalized.includes('iso3') && normalized.includes('cpi score 2025') && normalized.includes('rank 2025');
   });
   if (headerIndex < 0) throw new Error('TI_CPI_2025_EXPECTED_HEADER_NOT_FOUND');
-  const headers = rows[headerIndex].map((value) => String(value).replace(/^\\uFEFF/, '').trim().toLowerCase());
+  const headers = rows[headerIndex].map((value) => String(value).replace(String.fromCharCode(0xFEFF), '').trim().toLowerCase());
   const isoIndex = headers.indexOf('iso3');
   const scoreIndex = headers.indexOf('cpi score 2025');
   const rankIndex = headers.indexOf('rank 2025');
