@@ -72,7 +72,6 @@ class Core{
         let entries=[];
         try{entries=await fsp.readdir(directory,{withFileTypes:true})}
         catch(error){failedFiles.push({path:rel(directory,this.root),error:error.message||String(error),stage:'DIRECTORY_SCAN'});return}
-        entries.sort((a,b)=>a.name.localeCompare(b.name));
         for(const entry of entries){
           const file=path.join(directory,entry.name);
           if(entry.isDirectory()){
