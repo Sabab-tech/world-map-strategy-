@@ -67,9 +67,14 @@ test('live runtime records override baseline values without losing unrelated sou
   const baseline = api.getRecord('economy', 'Bangladesh');
   context.Game = { state: { economy: { BANGLADESH: { gdp: 123456, runtimeOnlyField: 'live' } } } };
   const live = api.getRecord('economy', 'BD');
+  const liveOnly = api.getLiveRecord('economy', 'BD');
   assert.equal(live.gdp, 123456);
   assert.equal(live.runtimeOnlyField, 'live');
   assert.equal(live.currency_code, baseline.currency_code);
+  assert.equal(liveOnly.gdp, 123456, "live-only accessor returns the player's current economic record");
+  assert.equal(liveOnly.runtimeOnlyField, 'live');
+  assert.equal(liveOnly.currency_code, undefined, 'live-only accessor does not merge or duplicate baseline data');
+  assert.equal(api.getLiveRecord('population', 'BD'), null, 'missing live domains remain missing');
 });
 
 test('unavailable observations stay unavailable instead of receiving generic fake data', async () => {
@@ -106,6 +111,8 @@ test('offline app shell caches the country runtime bridge and city records', () 
   assert.match(sw, /\.\/cities\.json/);
   assert.match(sw, /\.\/economy\.json/);
   assert.match(sw, /\.\/population\.json/);
+  assert.match(sw, /\.\/society\.json/);
+  assert.match(sw, /\.\/omega_country_data_gateway_v1\.js/);
 });
 
 test('strategic profile chapter is safely wired into the existing Country IOS', () => {
@@ -117,4 +124,49 @@ test('strategic profile chapter is safely wired into the existing Country IOS', 
   assert.match(countryIOS, /case 13:/);
   assert.match(bridge, /getStrategicProfile/);
   assert.match(html, /STRATEGIC PROFILE/);
+});
+
+
+test('country drawer reads live observations first and then the shared general-data registry', () => {
+  const mapEngine = read('map-engine-1.js');
+  assert.match(mapEngine, /getLiveRecord\('economy', countryName\)/);
+  assert.match(mapEngine, /getLiveRecord\('population', countryName\)/);
+  assert.match(mapEngine, /generalMetrics\.populationTotal/);
+  assert.match(mapEngine, /generalMetrics\.gdpCurrentUsd/);
+  assert.match(mapEngine, /Source: live game state/);
+});
+
+test('city detail view never fabricates population by hub role', () => {
+  const mapEngine = read('map-engine-2.js');
+  assert.match(mapEngine, /OmegaCountryRuntimeData/);
+  assert.match(mapEngine, /getCities\(countryName/);
+  assert.match(mapEngine, /NOT RECORDED/);
+  assert.doesNotMatch(mapEngine, /12\.8 Million|6\.5 Million|2\.4 Million/);
+});
+
+
+test('country switch and ministry launcher resolve a selected country before defaults', () => {
+  const entry = read('omega_ministry_entry_v3.js');
+  const redesign = read('omega_ui_system_redesign_v1.js');
+  const map = read('map-engine-2.js');
+  assert.match(entry, /CountryIOS && global\.CountryIOS\.activeCountry/);
+  assert.match(entry, /OmegaMinistryViewCountry/);
+  assert.doesNotMatch(entry, /global\.currentActiveCountry \|\| ['"]BANGLADESH['"]/);
+  assert.match(redesign, /CountryIOS && global\.CountryIOS\.activeCountry/);
+  assert.doesNotMatch(redesign, /OmegaMinistryViewCountry \|\| ['"]BANGLADESH['"]/);
+  assert.match(map, /window\.CountryIOS\.activeCountry/);
+  assert.doesNotMatch(map, /CountryIOS\.open\(Game\.currentActiveCountry \|\| ["']BANGLADESH["']/);
+});
+
+test('modified runtime, ministry and map scripts are syntactically valid', () => {
+  for (const name of [
+    'omega_country_runtime_data_v1.js',
+    'ministry_engine.js',
+    'map-engine-1.js',
+    'map-engine-2.js',
+    'omega_ministry_entry_v3.js',
+    'omega_ui_system_redesign_v1.js'
+  ]) {
+    assert.doesNotThrow(() => new vm.Script(read(name), { filename: name }), name + ' must parse');
+  }
 });
