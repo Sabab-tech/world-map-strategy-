@@ -98,6 +98,8 @@ test("browser shell resources are cached locally for offline relaunch", () => {
   assert.match(serviceWorker, /omega_macro_stability_runtime_v1\.js/);
   assert.match(serviceWorker, /omega_macro_stability_v1\.css/);
   assert.match(serviceWorker, /economy_raw_financial_data_v2\.json/);
+  assert.match(serviceWorker, /foreign_exchange_reserve_profiles_v1\.json/);
+  assert.match(serviceWorker, /omega_foreign_reserve_runtime_v1\.js/);
   assert.match(serviceWorker, /finance_macro_stability_rules_v1\.json/);
   assert.match(serviceWorker, /omega-offline-atlas-shell-v\d+/);
   const activeCache = serviceWorker.match(/const CACHE_NAME = ["'](omega-offline-atlas-shell-v[0-9]+)["'];/);
