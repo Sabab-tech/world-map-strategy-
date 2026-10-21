@@ -403,7 +403,8 @@ test('police deployments require a real country-scoped location and classify the
   assert.match(ui, /City \/ district \/ rural region/);
   assert.match(ui, /Enter a real city, district or region/);
   assert.match(ui, /const environmentByArea = \{ URBAN:'city', SUBURBAN:'city', RURAL:'rural', BORDER:'border', INDUSTRIAL:'industrial', COASTAL:'coastal', MOUNTAIN:'mountain' \}/);
-  assert.match(ui, /const sector = areaClassSelect\.value \+ ' · ' \+ locationName/);
+  assert.match(ui, /const areaClass = String\(areaClassSelect && areaClassSelect\.value \|\| 'URBAN'\)\.toUpperCase\(\);/);
+  assert.match(ui, /const sector = areaClass \+ ' · ' \+ locationName/);
   const guardStart = ui.indexOf('deployButton.onclick = () =>');
   const locationCheck = ui.indexOf('Enter the city, district or rural region before dispatch', guardStart);
   const dispatch = ui.indexOf('e.deployGuard(level, quantity, missionId, sector', guardStart);
