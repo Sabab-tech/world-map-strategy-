@@ -3,19 +3,26 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { transform } from 'esbuild';
 
-export const ANDROID_WEBVIEW_TARGET = 'chrome70';
+export const ANDROID_WEBVIEW_TARGET = 'chrome66';
 export const ANDROID_WEBVIEW_POLYFILL_PATH = '__omega_generated__/android-webview-polyfills.js';
 export const ANDROID_WEBVIEW_POLYFILL_SOURCE = "(function(g){'use strict';\n  if(!Object.fromEntries){\n    Object.fromEntries=function(iterable){\n      if(iterable==null)throw new TypeError('Object.fromEntries requires an iterable');\n      var result={},iteratorMethod=typeof Symbol!=='undefined'&&Symbol.iterator&&iterable[Symbol.iterator];\n      if(typeof iteratorMethod==='function'){\n        var iterator=iteratorMethod.call(iterable),step;\n        while(!(step=iterator.next()).done){\n          var pair=step.value;\n          if(pair==null||(typeof pair!=='object'&&typeof pair!=='function'))throw new TypeError('Iterator value is not an entry object');\n          var key=String(pair[0]);\n          if(key==='__proto__')Object.defineProperty(result,key,{value:pair[1],enumerable:true,configurable:true,writable:true});\n          else result[key]=pair[1];\n        }\n        return result;\n      }\n      for(var i=0;i<iterable.length;i++){\n        var row=iterable[i];\n        if(row==null||(typeof row!=='object'&&typeof row!=='function'))throw new TypeError('Iterator value is not an entry object');\n        var name=String(row[0]);\n        if(name==='__proto__')Object.defineProperty(result,name,{value:row[1],enumerable:true,configurable:true,writable:true});\n        else result[name]=row[1];\n      }\n      return result;\n    };\n  }\n  if(!Array.prototype.flatMap){\n    Object.defineProperty(Array.prototype,'flatMap',{configurable:true,writable:true,value:function(callback,thisArg){\n      if(this==null)throw new TypeError('Array.prototype.flatMap called on null or undefined');\n      if(typeof callback!=='function')throw new TypeError('flatMap callback must be a function');\n      var source=Object(this),length=source.length>>>0,result=[];\n      for(var i=0;i<length;i++)if(i in source){\n        var value=callback.call(thisArg,source[i],i,source);\n        if(Array.isArray(value)){\n          for(var j=0;j<value.length;j++)if(j in value)result.push(value[j]);\n        }else result.push(value);\n      }\n      return result;\n    }});\n  }\n})(typeof window!=='undefined'?window:globalThis);";
 export function injectCompatibilityScript(html, scriptPath = ANDROID_WEBVIEW_POLYFILL_PATH) {
   const source = String(html);
-  if (source.indexOf(scriptPath) >= 0) return source;
-  const tag = '<script src="' + scriptPath + '"></script>\n';
-  const head = /<head\b[^>]*>/i.exec(source);
+  const marker = 'id="omega-android-webview-compat"';
+  if (source.indexOf(marker) >= 0 || source.indexOf(scriptPath) >= 0) return source;
+
+  // Keep the polyfill inline and synchronous: Android 9 WebView can otherwise
+  // execute deferred game scripts before a relative polyfill asset has loaded.
+  const diagnostic = "\\nwindow.__OMEGA_ANDROID_WEBVIEW_COMPAT__ = {version:'1.0.1', objectFromEntries:typeof Object.fromEntries === 'function', arrayFlatMap:typeof Array.prototype.flatMap === 'function'};";
+  const tag = '<script id="omega-android-webview-compat">\\n'
+    + ANDROID_WEBVIEW_POLYFILL_SOURCE + diagnostic
+    + '\\n</script>\\n';
+  const head = /<head\\b[^>]*>/i.exec(source);
   if (head) {
     const index = head.index + head[0].length;
-    return source.slice(0, index) + '\n' + tag + source.slice(index);
+    return source.slice(0, index) + '\\n' + tag + source.slice(index);
   }
-  const firstScript = /<script\b/i.exec(source);
+  const firstScript = /<script\\b/i.exec(source);
   if (firstScript) return source.slice(0, firstScript.index) + tag + source.slice(firstScript.index);
   return tag + source;
 }
