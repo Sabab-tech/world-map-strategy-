@@ -8,7 +8,11 @@
 (function(global){
   'use strict';
 
-  const VERSION='1.0.0';
+  const VERSION='1.1.0';
+  const OWNER_STATE_ROOTS=Object.freeze({
+    resource:Object.freeze(['resourceSummary','resourceInventory','resourceDeposits']),
+    interior:Object.freeze(['cities'])
+  });
 
   function clone(value,seen=new WeakMap()){
     if(value===null||typeof value!=='object')return value;
@@ -87,6 +91,7 @@
       this.transactionId='OMI-TX-'+this.turn+'-'+this.ownerMinistry+'-'+this.commandId;
       this.operations=[];
       this.closed=false;
+      this.expectedRevision=this._scopeRevision();
     }
 
     _assertOpen(){
@@ -113,12 +118,16 @@
 
     _scopeSnapshot(){
       const out={};
-      const domains=new Set([this.ownerMinistry,...this.operations.map(operation=>String(operation.path||'').split('.')[0]).filter(Boolean)]);
+      const domains=new Set([this.ownerMinistry,...(OWNER_STATE_ROOTS[this.ownerMinistry]||[]),...this.operations.map(operation=>String(operation.path||'').split('.')[0]).filter(Boolean)]);
       for(const domain of domains){
         const section=this.state?.[domain],key=countryBucketKey(section,this.countryId);
         out[domain]=key===null?null:clone(section[key]);
       }
       return out;
+    }
+
+    _scopeRevision(){
+      return hash({ownerMinistry:this.ownerMinistry,countryId:this.countryId,scope:this._scopeSnapshot()});
     }
 
     _countryContainer(path,create){
@@ -179,11 +188,16 @@
       // state instead of the entire global Game.state. The previous global hash made
       // every country commit scan all already-materialized countries, producing O(N²)
       // extraction cost during world-scale resource simulation.
-      const beforeDigest=hash({
-        ownerMinistry:this.ownerMinistry,
-        countryId:this.countryId,
-        scope:this._scopeSnapshot()
-      });
+      const beforeDigest=this._scopeRevision();
+      if(beforeDigest!==this.expectedRevision){
+        this.closed=true;
+        const conflict=new Error('STATE_TRANSACTION_CONFLICT');
+        conflict.code='STATE_TRANSACTION_CONFLICT';
+        conflict.transactionId=this.transactionId;
+        conflict.expectedRevision='CONTENT:'+this.expectedRevision;
+        conflict.actualRevision='CONTENT:'+beforeDigest;
+        throw conflict;
+      }
       const applied=[];
       for(const operation of this.operations){
         const ref=this._countryContainer(operation.path,true);
@@ -203,11 +217,7 @@
           after:clone(operation.after)
         });
       }
-      const afterDigest=hash({
-        ownerMinistry:this.ownerMinistry,
-        countryId:this.countryId,
-        scope:this._scopeSnapshot()
-      });
+      const afterDigest=this._scopeRevision();
       this.closed=true;
       return Object.freeze({
         transactionId:this.transactionId,
