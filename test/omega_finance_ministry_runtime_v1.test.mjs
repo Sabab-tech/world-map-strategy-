@@ -243,7 +243,7 @@ test('Finance tabs place cash and macro details behind separate icons while over
 });
 
 
-test('all eight Finance section buttons respond to click delegation',async()=>{
+test('all nine Finance section buttons respond to click delegation',async()=>{
   const {context,elements}=createRuntime();
   await context.OmegaFinanceMinistry.init();
   assert.equal(context.OmegaCabinetUI.renderMinistryDashboard('finance'),true);
@@ -263,5 +263,5 @@ test('ministry viewport layout confines scrolling and keeps Finance navigation c
   assert.match(layoutRepairCss,/height: 100dvh !important/);
   assert.match(layoutRepairCss,/overflow: hidden !important/);
   assert.match(layoutRepairCss,/min-height: 0 !important/);
-  assert.match(layoutRepairCss,/grid-template-columns: repeat\(8, minmax\(0, 1fr\)\)/);
+  assert.match(layoutRepairCss,/grid-template-columns: repeat\(9, minmax\(0, 1fr\)\)/);
 });
