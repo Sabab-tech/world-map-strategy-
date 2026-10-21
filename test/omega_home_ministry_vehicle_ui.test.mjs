@@ -213,7 +213,7 @@ test('Guard Out screen dispatches a vehicle, reserves crew, and its stand-down b
   harness.nodes.get('home-police-confirm-guard').onclick();
   let state = harness.api.getState('AAA');
   assert.equal(state.guardDeployments.length, 1);
-  assert.equal(state.guardDeployments[0].sector, 'Aluminium Plant North Gate');
+  assert.equal(state.guardDeployments[0].sector, 'URBAN · Aluminium Plant North Gate');
   assert.equal(harness.api.getGuardCapacity('AAA').availableVehicles[1], 0);
   const standDown = harness.standDownButtons[harness.standDownButtons.length - 1];
   assert.equal(typeof standDown.onclick, 'function');
