@@ -31,7 +31,8 @@
   const sourceFreshness = year => {
     const y = num(year);
     if (y === null) return 0.72;
-    const age = Math.max(0, new Date().getUTCFullYear() - y);
+    const age = new Date().getUTCFullYear() - y;
+    if (age < 0) return 0.25;
     return Number((age <= 2 ? 1 : Math.max(0.25, 1 - 0.055 * (age - 2))).toFixed(3));
   };
   const clone = (v, seen) => {
@@ -129,7 +130,9 @@
           sourceConfidence: 0.42,
           freshness: sourceFreshness(profile?.baselineYear ?? profile?.provenance?.baselineYear),
           confidence: Number((0.42 * sourceFreshness(profile?.baselineYear ?? profile?.provenance?.baselineYear)).toFixed(3)),
-          dataGap: 'LEGACY_SOURCE_NOT_REVALIDATED',
+          dataGap: num(profile?.baselineYear ?? profile?.provenance?.baselineYear) !== null
+            && num(profile?.baselineYear ?? profile?.provenance?.baselineYear) > new Date().getUTCFullYear()
+            ? 'OBSERVATION_YEAR_IN_FUTURE' : 'LEGACY_SOURCE_NOT_REVALIDATED',
           confidenceBasis: 'LEGACY_GAME_BASELINE_HEURISTIC',
           isCurrentGameState: false
         };
