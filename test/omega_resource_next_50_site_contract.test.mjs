@@ -46,14 +46,14 @@ const baseline = [
 ].map(metadata);
 const candidateIds = new Set(pack.records.map(s => s.siteId));
 const aliasRows = pack.records.filter(s => s?.runtime?.aliasOfSiteId || s?.map?.markerEligible === false);
-const aliasTargets = { SITE_CAN_voiseys_bay_nickel_mine:'SITE_CAN_voisey_s_bay_nickel_mine', SITE_GBR_boulby_mine:'SITE_GBR_boulby_potash_mine' };
-assert.equal(aliasRows.length, 2, 'legacy duplicate rows remain auditable aliases rather than being erased');
+const aliasTargets = { SITE_CAN_voiseys_bay_nickel_mine:'SITE_CAN_voisey_s_bay_nickel_mine', SITE_GBR_boulby_mine:'SITE_GBR_boulby_potash_mine', SITE_SWE_kiruna_iron_ore_mine:'SITE_SWE_kiruna_iron_mine' };
+assert.equal(aliasRows.length, 3, 'legacy duplicate rows remain auditable aliases rather than being erased');
 for (const alias of aliasRows) {
   assert.equal(aliasTargets[alias.siteId], alias.runtime?.aliasOfSiteId || alias.map?.aliasOfSiteId, alias.siteId + ' canonical alias target');
   assert.equal(alias.operation?.commercialExtraction, false, alias.siteId + ' alias is non-executable');
 }
 const physicalRows = pack.records.filter(s => !s?.runtime?.aliasOfSiteId && s?.map?.markerEligible !== false);
-assert.equal(physicalRows.length, 48, 'only unique physical sites may become map/extraction candidates');
+assert.equal(physicalRows.length, 47, 'only unique physical sites may become map/extraction candidates');
 for (const row of pack.records) {
   assert.ok(row.siteId && /^SITE_[A-Z]{3}_[a-z0-9_]+$/.test(row.siteId), 'stable canonical-style siteId: ' + row.siteId);
   assert.ok(/^[A-Z]{3}$/.test(row.countryId), row.siteId + ' ISO-3 country identity');
