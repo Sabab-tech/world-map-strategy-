@@ -71,6 +71,30 @@ public final class OmegaGameplaySmokeTest {
                     "true", ready
             );
 
+            final String compatibilityDiagnosticScript =
+                    "(function() { return JSON.stringify({" +
+                    "marker: !!window.__OMEGA_ANDROID_WEBVIEW_COMPAT__," +
+                    "version: window.__OMEGA_ANDROID_WEBVIEW_COMPAT__ && window.__OMEGA_ANDROID_WEBVIEW_COMPAT__.version," +
+                    "fromEntries: typeof Object.fromEntries === 'function'," +
+                    "flatMap: typeof Array.prototype.flatMap === 'function'," +
+                    "bridgeVersion: window.OmegaAIIntegrityCanonicalBridge && window.OmegaAIIntegrityCanonicalBridge.VERSION" +
+                    "}); })()";
+            final String compatibilityDiagnostic =
+                    evaluate(instrumentation, webViewRef.get(), compatibilityDiagnosticScript);
+            final String compatibilityReadyScript =
+                    "(function() { return !!(window.__OMEGA_ANDROID_WEBVIEW_COMPAT__ &&" +
+                    " window.__OMEGA_ANDROID_WEBVIEW_COMPAT__.version === '1.0.1' &&" +
+                    " typeof Object.fromEntries === 'function' &&" +
+                    " typeof Array.prototype.flatMap === 'function' &&" +
+                    " window.OmegaAIIntegrityCanonicalBridge &&" +
+                    " window.OmegaAIIntegrityCanonicalBridge.VERSION === '1.1.1'); })()";
+            assertEquals(
+                    "APK must execute the Chrome 66 compatibility layer and current canonical bridge; diagnostic="
+                            + compatibilityDiagnostic,
+                    "true",
+                    evaluate(instrumentation, webViewRef.get(), compatibilityReadyScript)
+            );
+
             final String clickSpeedScript =
                     "(function() { var button = document.querySelector('.speed-btn[data-speed=\\\"2\\\"]');" +
                     " if (!button) return 'MISSING_SPEED_CONTROL'; button.click(); return 'CLICK_SENT'; })()";
