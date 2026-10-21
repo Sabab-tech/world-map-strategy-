@@ -831,6 +831,8 @@
       ok: false, code: 'GOVERNMENT_BANKING_NOT_READY',
       message: 'Government Banking is not ready. No transaction was recorded.'
     };
+    const clearingBefore = ensureObject(bankingRoot(), 'fxClearingHouse');
+    const previousClearingCount = finite(clearingBefore.transactionCount);
     const transactionId = 'FX-CNV-' + String(currentTurn()) + '-' + String(state.nextTransactionId);
     const settled = banking.convert({
       countryId: player.countryCode || player.iso3, amount: amount,
@@ -867,7 +869,10 @@
     const clearing = ensureObject(bank, 'fxClearingHouse');
     clearing.settledVolumeUsd = state.settledVolumeUsd;
     clearing.feeRevenueUsd = state.settlementFeesUsd;
-    clearing.transactionCount = finite(clearing.transactionCount) === null ? 1 : clearing.transactionCount + 1;
+    const observedTransactionCount = finite(clearing.transactionCount);
+    if (observedTransactionCount === null) clearing.transactionCount = (previousClearingCount ?? 0) + 1;
+    else if (previousClearingCount !== null && observedTransactionCount <= previousClearingCount)
+      clearing.transactionCount = previousClearingCount + 1;
     clearing.lastSettlement = safeCopy(entry);
     syncAllCountries();
     dispatch('OMEGA_FX_TRANSACTION_SETTLED', safeCopy(entry));
