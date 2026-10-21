@@ -6,7 +6,7 @@ const metricFields = [
   'publicDebtToGdpPct','inflationPct','gdpGrowthPct','militaryExpenditurePctGdp',
   'internetUsersPct','electricityAccessPct','rAndDSpendPctGdp','educationSpendPctGdp',
   'politicalStabilityWgiEstimate','voiceAccountabilityWgiEstimate','unemploymentRatePct',
-  'homicideRatePer100k','industryValueAddedPctGdp','agricultureValueAddedPctGdp'
+  'homicideRatePer100k','industryValueAddedPctGdp','agricultureValueAddedPctGdp','lifeExpectancyYears'
 ];
 const identityFields=['iso2','iso3','name','officialName','continent','subregion','latitude','longitude'];
 const generalFactFields=['capital','languages','currencies','area','landlocked','borders','timeZones','unMember','worldBankRegion','worldBankIncomeLevel','worldBankLendingType'];
@@ -45,6 +45,19 @@ test('shared registry decoding keeps identity, provenance, metrics and geography
  assert.equal(await runtime.init(),true);assert.equal(runtime.diagnostics().recordCount,2);
  const a=runtime.getCountryRecord('AAA');assert.equal(a.identity.name,'Alpha');assert.equal(a.generalFacts.capital,'Alpha Capital');
  assert.equal(a.metrics.gdpCurrentUsd,500000000000);assert.equal(a.metricMetadata.gdpCurrentUsd.year,2022);
+ const gdpMeta=a.metricMetadata.gdpCurrentUsd;
+ assert.equal(gdpMeta.sourceConfidence,0.92,'World Bank observations should receive the documented source-quality score');
+ const age=Math.max(0,new Date().getUTCFullYear()-gdpMeta.year);
+ const expectedFreshness=Number((age<=2?1:Math.max(0.25,1-0.055*(age-2))).toFixed(3));
+ assert.equal(gdpMeta.freshness,expectedFreshness,'freshness must be derived from observation year, not fetch time');
+ assert.equal(gdpMeta.confidence,Number((gdpMeta.sourceConfidence*gdpMeta.freshness).toFixed(3)));
+ assert.equal(gdpMeta.dataGap,null,'complete source-backed metrics should not report an invented data gap');
+ const missingMeta=a.metricMetadata.lifeExpectancyYears;
+ assert.equal(a.metrics.lifeExpectancyYears,null,'missing observations must stay null');
+ assert.equal(missingMeta.sourceConfidence,0);
+ assert.equal(missingMeta.confidence,0);
+ assert.equal(missingMeta.dataGap,'MISSING_OBSERVATION');
+ assert.equal(missingMeta.confidenceBasis,'INFERRED_FROM_SOURCE_STATUS_AND_YEAR');
  assert.deepEqual(a.localGeography.economicCenters,[{name:'Alpha City',description:'fixture city record'}]);
  assert.equal(runtime.getCountryRecord('BBB').metrics.populationTotal,30000000);assert.equal(runtime.getCountryRecord('MISSING'),null);
 });
