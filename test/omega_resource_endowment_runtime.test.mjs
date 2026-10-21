@@ -7,6 +7,7 @@ const resourceFiles=new Map([
   ['resources.json',new URL('../resources.json',import.meta.url)],
   ['resources_2.json',new URL('../resources_2.json',import.meta.url)],
   ['resource_site_reserve_simulation_v1.json',new URL('../resource_site_reserve_simulation_v1.json',import.meta.url)],
+  ['resource_site_country_mineplay_batch_20261020_v1.json',new URL('../resource_site_country_mineplay_batch_20261020_v1.json',import.meta.url)],
   ['resource_site_canonical_catalog_v1.json',new URL('../resource_site_canonical_catalog_v1.json',import.meta.url)],
   ['resource_site_master_registry_v1.json',new URL('../resource_site_master_registry_v1.json',import.meta.url)],
   ['resource_site_reference_expanded_manifest.json',new URL('../resource_site_reference_expanded_manifest.json',import.meta.url)],
@@ -74,6 +75,7 @@ const runtime=globalThis.OmegaResourceEndowmentRuntime;
 const initialized=await runtime.initialize();
 assert.equal(initialized.status,'READY',JSON.stringify(initialized));
 assert.equal(initialized.countries,Object.keys(engine.countryProfiles||{}).length);
+const mineplayScenario=JSON.parse(fs.readFileSync(new URL('../resource_site_country_mineplay_batch_20261020_v1.json',import.meta.url),'utf8'));
 const reserveScenario=JSON.parse(fs.readFileSync(new URL('../resource_site_reserve_simulation_v1.json',import.meta.url),'utf8'));
 assert.equal(reserveScenario.siteCount,250);
 assert.equal(reserveScenario.commercialSiteCount,246);
@@ -87,6 +89,23 @@ const expansionReport=globalThis.OmegaResourceLegacyGameplayExpansion||globalThi
 assert.equal(expansionReport?.status,'READY',JSON.stringify(expansionReport));
 assert.equal(expansionReport?.count,115,JSON.stringify(expansionReport));
 assert.equal(expansionReport?.activeAdded,105,JSON.stringify(expansionReport));
+// Every supplemental site must resolve through the same live country reference API used by the Ministry UI.
+const mineplayByCountry=new Map();
+for(const site of mineplayScenario.records){
+  const rows=mineplayByCountry.get(site.countryId)||[];
+  rows.push(site);mineplayByCountry.set(site.countryId,rows);
+}
+for(const [countryId,expectedSites] of mineplayByCountry){
+  runtime.hydrateCountry(countryId);
+  const refs=runtime.countryMineSiteReferences(countryId)||[];
+  const refIds=new Set(refs.map(x=>String(x.siteId||x.siteReferenceKey||x.id||'')));
+  for(const site of expectedSites){
+    assert.ok(refIds.has(site.siteId),countryId+': '+site.siteId+' must be available to the live country mine reference API');
+  }
+}
+assert.ok((runtime.countryMineSiteReferences('BWA')||[]).some(x=>String(x.siteId||x.siteReferenceKey||x.id||'')==='SITE_BWA_sua_pan_salt_soda_ash_operation'),
+  'Botswana ministry should be able to list its supplemental Sua Pan site');
+
 const ausDiag=runtime.hydrateCountry('AUS');
 assert.equal(ausDiag.status,'APPLIED',JSON.stringify(ausDiag));
 const ausState=runtime.countryResourceState('AUS')||{};
@@ -224,8 +243,8 @@ assert(seen.some(x=>x&&x.payload&&x.payload.batch&&x.payload.batch.batchId===bat
 const preGlobal=runtime.diagnostics();
 const expectedResourceCountries=Object.keys(engine.countryProfiles||{});
 assert.equal(preGlobal.countryCount,expectedResourceCountries.length);
-assert.equal(preGlobal.mineSiteReferenceCount,355);
-assert.equal(preGlobal.mineSiteControllerCount,355);
+assert.equal(preGlobal.mineSiteReferenceCount,399);
+assert.equal(preGlobal.mineSiteControllerCount,399);
 const extractionPromiseA=runtime.extractAll();
 const extractionPromiseB=runtime.extractAll();
 assert.equal(extractionPromiseA,extractionPromiseB,'concurrent turn listeners must share one in-flight world extraction');
@@ -245,8 +264,8 @@ const profileMineOutputs=allMineOutputs.filter(x=>x?.assetType==='MINE_SITE');
 const siteLinkedExecutionOutputs=allMineOutputs.filter(x=>x?.siteReferenceKey&&Number(x?.producedQuantity)>0);
 const simulatedMineOutputs=profileMineOutputs.filter(x=>x?.simulationGenerated===true);
 const simulatedFieldOutputs=allMineOutputs.filter(x=>x?.simulationGenerated===true&&['OIL_FIELD','GAS_FIELD'].includes(x?.assetType));
-assert.equal(siteReferenceRows,355);
-assert.equal(siteControllerRows,355);
+assert.equal(siteReferenceRows,399);
+assert.equal(siteControllerRows,399);
 
 // Every new Part 6 mine must use the same authoritative runtime identity and extraction path.
 const part6Data=JSON.parse(fs.readFileSync(new URL('../resource_site_legacy_gameplay_expansion_part_6_v1.json',import.meta.url),'utf8'));
@@ -341,7 +360,10 @@ const expandedCommercialCatalogIds=legacyExpansionRows
   .filter(site=>site?.operation?.commercialExtraction===true&&site?.map?.markerEligible!==false&&
     !site?.runtime?.aliasOfSiteId&&!legacyCanonicalAliasIds.has(String(site?.siteId||'')))
   .map(site=>String(site.siteId));
-const commercialCatalogIds=[...new Set([...baseCommercialCatalogIds,...expandedCommercialCatalogIds])];
+const mineplayCommercialCatalogIds=mineplayScenario.records
+  .filter(site=>site?.operation?.commercialExtraction===true&&site?.map?.markerEligible!==false)
+  .map(site=>String(site.siteId));
+const commercialCatalogIds=[...new Set([...baseCommercialCatalogIds,...expandedCommercialCatalogIds,...mineplayCommercialCatalogIds])];
 const canonicalSiteIds=new Set((globalThis.OmegaResourceSiteCanonicalCatalogData?.sites||[]).map(x=>x.siteId).filter(Boolean));
 const executedProfileSiteIds=new Set(siteLinkedExecutionOutputs.map(x=>x.siteReferenceKey).filter(x=>canonicalSiteIds.has(x)));
 const missingCommercialSiteIds=commercialCatalogIds.filter(siteId=>!executedProfileSiteIds.has(siteId));
