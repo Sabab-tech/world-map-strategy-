@@ -66,6 +66,15 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot-load -no-snapshot-save -noaudio -no-boot-anim -camera-back none -camera-front none -memory 2048 -cores 2
           disable-animations: true
           script: |
+            set +e
             adb wait-for-device
             adb shell getprop ro.build.version.sdk
-            gradle -p android connectedDebugAndroidTest --no-daemon
+            gradle -p android connectedDebugAndroidTest --no-daemon --info
+            result=$?
+            if [ "$result" -ne 0 ]; then
+              echo "Instrumentation run failed; collecting Android and test-runner diagnostics."
+              adb logcat -d -v time | grep -E "OmegaGameplaySmoke|AndroidJUnitRunner|FATAL EXCEPTION|AssertionError|FAILED|instrumentation" | tail -n 240 || true
+              find android/app/build/reports/androidTests/connected/debug -type f -maxdepth 4 -print 2>/dev/null || true
+              find android/app/build/outputs/androidTest-results/connected/debug -type f -maxdepth 4 -print 2>/dev/null || true
+            fi
+            exit "$result"
