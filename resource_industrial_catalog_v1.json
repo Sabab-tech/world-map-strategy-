@@ -500,6 +500,26 @@
         "truck"
       ],
       "batchDays": 2
+    },
+    "niobium": {
+      "method": "HARD_ROCK_CRUSH_FLOTATION",
+      "fallbackMethod": "OPEN_PIT_DRILL_BLAST",
+      "preferredModes": [
+        "truck",
+        "rail",
+        "ship"
+      ],
+      "batchDays": 3
+    },
+    "ruby": {
+      "method": "ALLUVIAL_GRAVITY",
+      "fallbackMethod": "OPEN_PIT_DRILL_BLAST",
+      "preferredModes": [
+        "truck",
+        "rail",
+        "ship"
+      ],
+      "batchDays": 2
     }
   },
   "processingRules": {
@@ -913,6 +933,28 @@
       "outputs": {
         "BORIC_ACID_OR_BORAX": 0.52,
         "RESIDUE": 0.48
+      },
+      "cycleDays": 2
+    },
+    "niobium": {
+      "factoryType": "NIOBIUM_CONCENTRATION_PLANT",
+      "inputs": {
+        "niobium": 1
+      },
+      "outputs": {
+        "NIOBIUM_CONCENTRATE": 0.72,
+        "TAILINGS": 0.28
+      },
+      "cycleDays": 2
+    },
+    "ruby": {
+      "factoryType": "GEMSTONE_SORTING_PLANT",
+      "inputs": {
+        "ruby": 1
+      },
+      "outputs": {
+        "SORTED_RUBY_ROUGH": 0.2,
+        "GEMSTONE_WASTE": 0.8
       },
       "cycleDays": 2
     }

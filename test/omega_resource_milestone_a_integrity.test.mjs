@@ -19,7 +19,10 @@ const aliasMap={
  SITE_CHL_escondida_copper_mine_legacy2:'SITE_CHL_escondida_copper_mine',
  SITE_IDN_grasberg_copper_gold_mine:'SITE_IDN_grasberg_mine',
  SITE_COD_tenke_fungurume_copper_cobalt_complex:'SITE_COD_tenke_fungurume_mine',
- SITE_COD_kibali_gold_mine_complex:'SITE_COD_kibali_gold_mine'
+ SITE_COD_kibali_gold_mine_complex:'SITE_COD_kibali_gold_mine',
+ SITE_CAN_voiseys_bay_nickel_mine:'SITE_CAN_voisey_s_bay_nickel_mine',
+ SITE_GBR_boulby_mine:'SITE_GBR_boulby_potash_mine',
+ SITE_SWE_kiruna_iron_ore_mine:'SITE_SWE_kiruna_iron_mine'
 };
 const norm=v=>String(v??'').normalize('NFKD').replace(/\p{M}/gu,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
 const countryOf=x=>String(x?.countryId||x?.identity?.countryIso3||x?.countryCode||'').toUpperCase();
@@ -104,9 +107,16 @@ for(const row of allLegacy){
   }
 }
 const legacyAliasRows=allLegacy.filter(x=>aliasOf(x));
-assert.equal(legacyAliasRows.length,10,'aliases must be explicit and enumerable');
-assert.equal(legacyAliasRows.filter(x=>x.map?.markerEligible===false).length,10,'aliases cannot create a duplicate map marker');
-assert.equal(part6.records.every(x=>x.operation?.commercialExtraction===true&&x.map?.markerEligible===true&&!aliasOf(x)),true,'all Part 6 sites are distinct executable map candidates');
+assert.equal(legacyAliasRows.length,13,'aliases must be explicit and enumerable');
+assert.equal(legacyAliasRows.filter(x=>x.map?.markerEligible===false).length,13,'aliases cannot create a duplicate map marker');
+const part6Aliases=part6.records.filter(x=>aliasOf(x));
+assert.equal(part6Aliases.length,3,'Part 6 retains explicit aliases for duplicate physical sites');
+assert.deepEqual(part6Aliases.map(x=>x.siteId).sort(),['SITE_CAN_voiseys_bay_nickel_mine','SITE_GBR_boulby_mine','SITE_SWE_kiruna_iron_ore_mine'].sort());
+assert.equal(aliasOf(part6Aliases.find(x=>x.siteId==='SITE_CAN_voiseys_bay_nickel_mine')),'SITE_CAN_voisey_s_bay_nickel_mine');
+assert.equal(aliasOf(part6Aliases.find(x=>x.siteId==='SITE_GBR_boulby_mine')),'SITE_GBR_boulby_potash_mine');
+assert.equal(aliasOf(part6Aliases.find(x=>x.siteId==='SITE_SWE_kiruna_iron_ore_mine')),'SITE_SWE_kiruna_iron_mine');
+assert.equal(part6Aliases.every(x=>x.operation?.commercialExtraction===false&&x.map?.markerEligible===false),true);
+assert.equal(part6.records.filter(x=>x.operation?.commercialExtraction===true&&x.map?.markerEligible===true&&!aliasOf(x)).length,47,'47 Part 6 records must be distinct executable map candidates');
 for(const row of allLegacy.filter(x=>canonicalIds.has(x.siteId))){
   const c=canonical.sites.find(y=>y.siteId===row.siteId);
   assert.equal(countryOf(c),countryOf(row),row.siteId+': source overlap has country disagreement');
@@ -157,7 +167,7 @@ const expansionAudit=I.auditRegistry(allLegacy,{aliasMap,allowExternalAliasTarge
 assert.equal(expansionAudit.status,'PASS','expansion integrity audit failed: '+JSON.stringify(expansionAudit.errors.slice(0,20)));
 assert.equal(expansionAudit.siteCount,115);
 assert.equal(expansionAudit.uniqueSiteIdCount,115);
-assert.equal(expansionAudit.aliasCount,10);
+assert.equal(expansionAudit.aliasCount,13);
 assert.equal(expansionAudit.aliasTargetsNotFound.length,0);
 
 for(const file of ['index.html','server_bootstrap.js']){
