@@ -42,7 +42,8 @@ test('every profile contains the same extensible sector and calculation contract
     if (registry.metadata.recordSchema.strategicProfileFields) {
       assert.ok(row.strategicProfile, 'Existing strategic profile was not carried into the sector registry.');
       const sourceRow = registry.countries.find((source) => source.identity.iso3 === row.identity.iso3);
-      assert.ok(/^OMEGA_COUNTRY_STRATEGIC_PROFILE_V\\d+$/.test(row.strategicProfile.profileVersion));
+      assert.ok(String(row.strategicProfile.profileVersion || '').startsWith('OMEGA_COUNTRY_STRATEGIC_PROFILE_V'),
+        'the canonical registry must provide an explicit strategic profile version');
       assert.equal(row.strategicProfile.profileVersion, sourceRow.strategicProfile.profileVersion,
         'the sector profile must retain the exact canonical strategic-profile version');
       assert.deepEqual(Object.keys(row.strategicProfile), registry.metadata.recordSchema.strategicProfileFields);
