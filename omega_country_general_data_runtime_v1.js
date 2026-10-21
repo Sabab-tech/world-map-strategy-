@@ -69,7 +69,7 @@ function getBehaviorProfile(v){
  const count=Object.values(dimensions).filter(x=>x.value!==null).length;return{countryId:r.identity.iso3||r.identity.iso2||str(v).toUpperCase(),availability:count?'DERIVED':'UNOBSERVED',source:count?'OMEGA_COUNTRY_GENERAL_DATA_REGISTRY_V1':null,modelVersion:VERSION,dimensions}
 }
 function diagnostics(){return{version:VERSION,ready:s.ready,settled:s.settled,error:s.error,recordCount:s.data?.countries?.length||0,aliasCount:s.byAlias.size,datasetId:s.data?.metadata?.datasetId||null,dataUrl:DATA_URL}}
-const API=Object.freeze({VERSION,DATA_URL,init,diagnostics,resolveCountry:v=>getCountryRecord(v)?.identity||null,getCountryRecord,getBehaviorProfile});
+const API=Object.freeze({VERSION,DATA_URL,init,diagnostics,resolveCountry:v=>getCountryRecord(v)?.identity||null,getCountryRecord,getBehaviorProfile,getMetricDefinition:key=>s.ready?(s.fields.get(str(key))||null):null});
 root.Omega=root.Omega||{};root.Omega.CountryGeneralData=API;root.OmegaCountryGeneralDataRuntime=API;
 const esc=v=>String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 const show=v=>v==null||v===''?'NOT RECORDED':typeof v==='boolean'?(v?'YES':'NO'):Array.isArray(v)?(v.length?v.map(show).join(', '):'NOT RECORDED'):obj(v)?(Object.values(v).some(x=>x!=null&&x!=='')?Object.values(v).filter(x=>x!=null&&x!=='').map(show).join(', '):'NOT RECORDED'):typeof v==='number'?v.toLocaleString('en-US',{maximumFractionDigits:2}):str(v).replace(/_/g,' ');
