@@ -140,8 +140,9 @@ function patchExtraction(){
  // ResourceEndowmentRuntime publishes a frozen canonical API. Wrap a facade rather
  // than assigning into that immutable object; keep both public aliases in sync.
  const facade=Object.assign({},rt);
- facade.extractCountry=async(c,keys)=>{const r=await countryExtract(c,keys);auditCountry(c);return r;};
- facade.extractAll=async()=>{const r=await all();for(const x of r?.results||[])auditCountry(x?.countryId);return r;};
+ // Preserve the original receiver in case a canonical implementation uses this internally.
+ facade.extractCountry=async(c,keys)=>{const r=await countryExtract.call(rt,c,keys);auditCountry(c);return r;};
+ facade.extractAll=async()=>{const r=await all.call(rt);for(const x of r?.results||[])auditCountry(x?.countryId);return r;};
  facade.__resourceSystemHardeningExtraction=true;
  g.Omega=g.Omega||{};
  g.Omega.ResourceEndowmentRuntime=facade;
