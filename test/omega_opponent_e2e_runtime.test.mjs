@@ -20,10 +20,15 @@ const projectRoot=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..'
 const nativeFetch=globalThis.fetch.bind(globalThis);
 globalThis.fetch=async input=>{
   const request=String(input);
-  if(request.startsWith('./')){
-    const relative=request.replace(/^\.\//,'').split(/[?#]/)[0];
-    const full=path.join(projectRoot,relative);
-    if(!full.startsWith(projectRoot+path.sep))return{ok:false,status:400,json:async()=>{throw new Error('INVALID_TEST_PATH')}};
+  // Browser-oriented runtime modules use bare relative asset paths (for example
+  // "countries.json"), while some modules use "./asset.json". Resolve both to
+  // repository files in this Node integration test; leave absolute/network URLs
+  // to native fetch.
+  const isRelativeAsset=!/^[a-zA-Z][a-zA-Z\\d+.-]*:/.test(request)&&!request.startsWith('/');
+  if(isRelativeAsset){
+    const relative=request.replace(/^\.\\//,'').split(/[?#]/)[0];
+    const full=path.resolve(projectRoot,relative);
+    if(full!==projectRoot&&!full.startsWith(projectRoot+path.sep))return{ok:false,status:400,json:async()=>{throw new Error('INVALID_TEST_PATH')}};
     try{
       const body=fs.readFileSync(full,'utf8');
       return{ok:true,status:200,json:async()=>JSON.parse(body)};
@@ -39,7 +44,9 @@ if(typeof globalThis.dispatchEvent!=='function'){const t=new EventTarget();globa
 await import('../omega_universal_entity_identity_engine.js');
 await import('../omega_country_semantic_bridge.js');
 const bridge=globalThis.OmegaCanonicalIdentityRegistry||globalThis.OmegaCountrySemanticBridge;
-await bridge.init();
+assert.equal(await bridge.init(),true,'canonical identity datasets must load from repository assets');
+assert.equal(bridge.diagnostics().ready,true,'canonical identity registry must be ready before behavior scoring');
+assert.ok(bridge.diagnostics().countryCount>150,'canonical identity registry must load the country roster');
 await import('../omega_country_runtime_data_v1.js');
 assert.equal(await globalThis.OmegaCountryRuntimeData.ready,true,'shared country identity runtime must initialise');
 await import('../omega_country_general_data_runtime_v1.js');
