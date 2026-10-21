@@ -207,7 +207,7 @@ test('vehicle hangar button click submits an order and updates the authoritative
 test('guard dispatch refuses an empty geographic location before mutating game state', () => {
   const harness = makeUiHarness({ 1: 1 });
   harness.ui.renderGuardOut(1);
-  harness.nodes.get('home-police-guard-mission').value = 'industrial_guard';
+  harness.nodes.get('home-police-guard-mission').value = 'border_interdiction';
   harness.nodes.get('home-police-guard-sector').value = '';
   harness.nodes.get('home-police-confirm-guard').onclick();
   assert.equal(harness.api.getState('AAA').guardDeployments.length, 0);
