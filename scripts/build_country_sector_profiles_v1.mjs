@@ -409,13 +409,73 @@ const metadata = {
   metricCoverage,
   noSourceRecordsDeleted: true,
   unknownValuesConvertedToZero: false,
+  storageModel: 'COMPACT_REFERENCES_TO_CANONICAL_COUNTRY_REGISTRY',
   userInterfaceBinding: 'DATA_LAYER_ONLY_UI_MAPPING_NOT_YET_CONFIGURED'
 };
+function compactDerivedMetric(metric) {
+  if (!metric || typeof metric !== 'object') return null;
+  const compact = {
+    value: finite(metric.value), unit: metric.unit || null, year: finite(metric.year),
+    sourceId: metric.sourceId || null, sourceName: metric.sourceName || null,
+    status: metric.status || 'UNKNOWN', method: metric.method || null,
+    sourceUrl: metric.sourceUrl || null, note: metric.note || null
+  };
+  if (metric.modelId) Object.assign(compact, {
+    modelId: metric.modelId, formula: metric.formula || null,
+    availableInputCount: finite(metric.availableInputCount),
+    requiredInputCount: finite(metric.requiredInputCount),
+    coveragePct: finite(metric.coveragePct),
+    inputYears: metric.inputYears || {}, inputStatuses: metric.inputStatuses || {},
+    minInputYear: finite(metric.minInputYear), maxInputYear: finite(metric.maxInputYear),
+    observationYearSpread: finite(metric.observationYearSpread),
+    legacyOrLocalInputCount: finite(metric.legacyOrLocalInputCount),
+    missingInputs: Array.isArray(metric.missingInputs) ? metric.missingInputs : [],
+    comparabilityNote: metric.comparabilityNote || null
+  });
+  else if (metric.inputYears) Object.assign(compact, {
+    formula: metric.formula || null, inputYears: metric.inputYears,
+    missingInputs: Array.isArray(metric.missingInputs) ? metric.missingInputs : []
+  });
+  return compact;
+}
+const compactProfiles = profiles.map((profile) => ({
+  identity: profile.identity,
+  profileVersion: profile.profileVersion,
+  sourceRegistryRef: {
+    dataset: 'country_general_data_registry_v1.json',
+    identityKey: 'iso3',
+    identityValue: profile.identity.iso3
+  },
+  derivedMetrics: Object.fromEntries(Object.entries(profile.derivedMetrics)
+    .map(([key, metric]) => [key, compactDerivedMetric(metric)])),
+  analytics: profile.analytics,
+  relativeSignals: profile.relativeSignals,
+  sectors: Object.fromEntries(Object.entries(profile.sectors).map(([sectorId, sector]) => {
+    const derivedKeys = new Set(schema.sectors.find((entry) => entry.id === sectorId)?.derivedMetricKeys || []);
+    return [sectorId, {
+      id: sector.id, title: sector.title, status: sector.status, description: sector.description,
+      indicators: Object.fromEntries(Object.keys(sector.indicators || {}).map((key) => [key, {
+        refType: derivedKeys.has(key) ? 'DERIVED_METRIC' : 'METRIC', key
+      }])),
+      facts: Object.fromEntries(Object.keys(sector.facts || {}).map((key) => [key, { refType: 'GENERAL_FACT', key }])),
+      sourceGroup: sector.sourceGroup ? { refType: 'SOURCE_GROUP', key: sectorId === 'naturalResources' ? 'naturalResources' :
+        (sectorId === 'publicSafety' ? 'publicSafety' : (schema.sectors.find((entry) => entry.id === sectorId)?.sourceGroup || null)) } : null,
+      analytics: Object.fromEntries(Object.keys(sector.analytics || {}).map((key) => [key, { refType: 'ANALYTICS', key }])),
+      extensionSlots: sector.extensionSlots
+    }];
+  })),
+  extensions: profile.extensions
+}));
 const output = {
   metadata,
   schemaReference: 'country_sector_profile_schema_v1.json',
-  sourcePolicy: 'Direct observations, legacy inputs, derived calculations, game models and unsourced extension slots remain distinct.',
-  countries: profiles
+  sourceRegistry: {
+    path: 'country_general_data_registry_v1.json',
+    identityKey: 'iso3',
+    resolution: 'Join profile sourceRegistryRef.identityValue to canonical registry record identity.iso3; never invent missing values.'
+  },
+  sourcePolicy: 'Compact source references avoid duplicating canonical facts and observations. Derived metrics, analytical scores, and source-year evidence retain explicit status and missing-value semantics.',
+  countries: compactProfiles
 };
 writeFileSync(OUTPUT, JSON.stringify(output, null, 2) + '\n');
 console.log(JSON.stringify({
