@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.0.0",
+  "schemaVersion": "1.1.0",
   "datasetId": "OMEGA_COUNTRY_SECTOR_PROFILE_SCHEMA_V1",
   "title": "OMEGA extensible country sector profile schema",
   "purpose": "Defines extensible country sectors, evidence-backed indicators, same-year calculations, transparent peer-relative analytical models, and future custom attributes without changing the canonical country roster.",
