@@ -77,7 +77,7 @@ function adjustProduction(site,c,stream,sim){
 function patchSiteModel(){
  const r=g.Omega?.ResourceRealism||g.OmegaResourceRealism;if(!r?.siteModel||r.__resourceSystemHardeningSiteModel)return false;
  const original=r.siteModel;
- r.siteModel=function(site,profile,countryId){
+ const wrappedSiteModel=function(site,profile,countryId){
    const s=clone(site||{}),c=country(countryId||s.countryId);
    const multiCommodity=Array.isArray(s.commodities)&&s.commodities.length>0;
    const siteResource=s.resourceId||s.resourceTypeId||s.resource;
@@ -110,14 +110,17 @@ function patchSiteModel(){
        return out;
      });
    }
-   const result=original(s,profile,countryId);if(!result?.commodityStreams)return result;
+   const result=original.call(r,s,profile,countryId);if(!result?.commodityStreams)return result;
    const streams=result.commodityStreams.map(x=>{const streamSim=resolveSimulation(s,x?.resourceId||s.resourceId||s.resourceTypeId||s.resource);const y={...x,production:adjustProduction(s,c,x,streamSim)};if(s.__omegaSimulationInjected||String(x?.production?.authority||'').toUpperCase()==='SIMULATED'){y.production.authority='SIMULATED';y.production.dataStatus='SIMULATED';y.production.observedRate=x.production.observedRate??null;}return y;});
    return{...result,commodityStreams:streams,simulationProfile:{siteId:sim.siteId,source:sim.source,capacityModel:sim.capacityModel,scenarioLifeYears:sim.scenarioLifeYears,
      nominalCapacity:sim.nominalCapacity,minimumCapacity:sim.minimumCapacity,maximumCapacity:sim.maximumCapacity,utilization:sim.utilization,recovery:sim.recovery,
      decline:sim.decline,maintenance:sim.maintenance,transportCapacityDaily:sim.transportCapacityDaily,transportRoute:sim.transportRoute,reserveQuantity:sim.reserveQuantity,reserveUnit:sim.reserveUnit}};
  };
- r.siteModel.__resourceSystemHardeningSiteModel=true;
- r.__resourceSystemHardeningSiteModel=true;
+ wrappedSiteModel.__resourceSystemHardeningSiteModel=true;
+ const wrappedRuntime=Object.assign({},r,{siteModel:wrappedSiteModel,__resourceSystemHardeningSiteModel:true});
+ g.Omega=g.Omega||{};
+ g.Omega.ResourceRealism=wrappedRuntime;
+ g.OmegaResourceRealism=wrappedRuntime;
  return true;
 }
 
@@ -134,10 +137,17 @@ function auditCountry(c){
 }
 function patchExtraction(){
  const rt=g.Omega?.ResourceEndowmentRuntime||g.OmegaResourceEndowmentRuntime;if(!rt||rt.__resourceSystemHardeningExtraction)return false;
+ if(typeof rt.extractAll!=='function'||typeof rt.extractCountry!=='function')return false;
  const all=rt.extractAll,countryExtract=rt.extractCountry;
- rt.extractCountry=async(c,keys)=>{const r=await countryExtract(c,keys);auditCountry(c);return r;};
- rt.extractAll=async()=>{const r=await all();for(const x of r?.results||[])auditCountry(x?.countryId);return r;};
- rt.__resourceSystemHardeningExtraction=true;return true;
+ const wrappedRuntime=Object.assign({},rt,{
+   extractCountry:async(c,keys)=>{const result=await countryExtract(c,keys);auditCountry(c);return result;},
+   extractAll:async()=>{const result=await all();for(const item of result?.results||[])auditCountry(item?.countryId);return result;},
+   __resourceSystemHardeningExtraction:true
+ });
+ g.Omega=g.Omega||{};
+ g.Omega.ResourceEndowmentRuntime=wrappedRuntime;
+ g.OmegaResourceEndowmentRuntime=wrappedRuntime;
+ return true;
 }
 
 function ontology(){return g.__OmegaResourceEconomyOntology||{};}

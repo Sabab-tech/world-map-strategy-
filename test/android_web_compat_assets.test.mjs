@@ -3,7 +3,10 @@ import assert from 'node:assert/strict';
 import {
   ANDROID_WEBVIEW_TARGET,
   transpileJavaScript,
-  transpileInlineScripts
+  transpileInlineScripts,
+  injectCompatibilityScript,
+  ANDROID_WEBVIEW_POLYFILL_PATH,
+  ANDROID_WEBVIEW_POLYFILL_SOURCE
 } from '../scripts/build_android_web_compat_assets.mjs';
 
 test('Android WebView target lowers optional chaining and nullish coalescing', async () => {
@@ -41,4 +44,17 @@ test('emoji icon matching does not use an unsupported Unicode-property regex lit
     'the precise matcher must be created dynamically so unsupported Unicode properties can be caught');
   assert.match(iconSource, /catch\s*\(_\)\s*\{\s*ICON_RE\s*=\s*new RegExp/s,
     'a legacy-safe matcher must be provided when the Unicode property is unsupported');
+});
+
+
+test('legacy WebView built-in polyfills are injected before page scripts', () => {
+  assert.match(ANDROID_WEBVIEW_POLYFILL_SOURCE, /Object\.fromEntries/);
+  assert.match(ANDROID_WEBVIEW_POLYFILL_SOURCE, /Array\.prototype\.flatMap/);
+  assert.doesNotMatch(ANDROID_WEBVIEW_POLYFILL_SOURCE, /\?\./);
+  assert.doesNotMatch(ANDROID_WEBVIEW_POLYFILL_SOURCE, /\?\?/);
+  const input = '<!doctype html><html><head><title>OMEGA</title></head><body><script src="runtime.js"></script></body></html>';
+  const output = injectCompatibilityScript(input);
+  assert.ok(output.indexOf(ANDROID_WEBVIEW_POLYFILL_PATH) < output.indexOf('runtime.js'));
+  assert.equal(output.split(ANDROID_WEBVIEW_POLYFILL_PATH).length - 1, 1);
+  assert.equal(injectCompatibilityScript(output), output, 'injecting twice must not duplicate the polyfill');
 });

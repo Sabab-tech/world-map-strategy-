@@ -5,7 +5,7 @@
  */
 (function(global){
   'use strict';
-  if(global.OmegaMinisterStateRegistry) return;
+  if(global.OmegaMinisterStateRegistry && typeof global.OmegaMinisterStateRegistry.consistencyCheck==='function' && typeof global.OmegaMinisterStateRegistry.getAssignments==='function') return;
 
   const VERSION='1.0.0';
   const CONFIG_ID='OMEGA_MINISTER_RUNTIME_CONFIG';

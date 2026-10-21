@@ -8,30 +8,29 @@
   'use strict';
   if(global.OmegaAIIntegrityCanonicalBridge?.VERSION === '1.1.0')return;
 
-  const VERSION='1.1.0';
+  const VERSION='1.1.1';
+  let semanticApi=null;
   function install(){
     const rt=global.OmegaProductionSemanticRuntime;
     const integrity=global.OmegaAIIntegrity;
     if(!rt||!integrity||typeof rt.parse!=='function')return false;
-    if(integrity.__canonicalSemanticBridgeV110)return true;
-
-    integrity.parse=function(question,context={}){
-      return rt.parse(question,context);
-    };
-    integrity.__canonicalSemanticBridgeV110=true;
-    integrity.CANONICAL_SEMANTIC_VERSION=rt.VERSION||null;
-    integrity.SEMANTIC_AUTHORITY='OmegaProductionSemanticRuntime';
-
-    if(typeof integrity.detectIntent==='function'){
-      integrity.detectIntent=function(question,context={}){
+    semanticApi=Object.freeze({
+      VERSION,
+      semanticVersion:rt.VERSION||null,
+      SEMANTIC_AUTHORITY:'OmegaProductionSemanticRuntime',
+      parse(question,context={}){return rt.parse(question,context);},
+      detectIntent(question,context={}){
         const p=rt.parse(question,context);
         return {intent:p?.targetDomain||p?.operation||'GENERAL',confidence:Number(p?.confidence||0)};
-      };
-    }
+      }
+    });
+    global.OmegaAIIntegritySemanticBridge=semanticApi;
     return true;
   }
 
-  global.OmegaAIIntegrityCanonicalBridge=Object.freeze({VERSION,install});
+  // OmegaAIIntegrity is intentionally frozen. Expose a dedicated semantic facade
+  // instead of mutating that validation API during page startup.
+  global.OmegaAIIntegrityCanonicalBridge=Object.freeze({VERSION,install,getApi(){return semanticApi;}});
   const boot=setInterval(()=>{if(install())clearInterval(boot)},50);
   setTimeout(()=>clearInterval(boot),15000);
 })(typeof globalThis!=='undefined'?globalThis:window);
