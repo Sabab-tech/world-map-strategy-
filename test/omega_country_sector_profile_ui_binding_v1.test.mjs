@@ -93,10 +93,10 @@ test('every compact profile reference resolves to a declared canonical or profil
 
 test('expanded official World Bank indicators are unique and assigned to profile sectors', () => {
   const start = builder.indexOf('const METRIC_CATALOGUE = [');
-  const end = builder.indexOf('\\n];', start);
+  const end = builder.indexOf('\n];', start);
   assert.ok(start >= 0 && end > start, 'canonical metric catalogue must exist');
-  const lines = builder.slice(start, end).split('\\n').filter(line => /^\\s*\\{ key:/.test(line));
-  const keys = lines.map(line => line.match(/key:\\s*'([^']+)'/)?.[1]).filter(Boolean);
+  const lines = builder.slice(start, end).split('\n').filter(line => /^\s*\{ key:/.test(line));
+  const keys = lines.map(line => line.match(/key:\s*'([^']+)'/)?.[1]).filter(Boolean);
   assert.equal(keys.length, new Set(keys).size, 'canonical metric catalogue must contain no duplicate keys');
   for (const [key, indicator] of Object.entries(expandedWdiMetrics)) {
     const rows = lines.filter(line => line.includes("key: '" + key + "'"));
