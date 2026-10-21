@@ -88,7 +88,8 @@ const indState=runtime.countryResourceState('IND')||{};
 const expansionReport=globalThis.OmegaResourceLegacyGameplayExpansion||globalThis.Omega?.ResourceLegacyGameplayExpansion;
 assert.equal(expansionReport?.status,'READY',JSON.stringify(expansionReport));
 assert.equal(expansionReport?.count,115,JSON.stringify(expansionReport));
-assert.equal(expansionReport?.activeAdded,105,JSON.stringify(expansionReport));
+assert.equal(expansionReport?.activeAdded,104,JSON.stringify(expansionReport));
+assert.equal(expansionReport?.aliasCount,11,JSON.stringify(expansionReport));
 // Every supplemental site must resolve through the same live country reference API used by the Ministry UI.
 const mineplayByCountry=new Map();
 for(const site of mineplayScenario.records){
@@ -354,7 +355,7 @@ const legacyExpansionRows=[1,2,3,4,5,6].flatMap(part=>{
 const legacyCanonicalAliasIds=new Set([
   'SITE_AUS_olympic_dam_uranium_copper','SITE_BRA_carajas_iron_ore_mine_legacy2',
   'SITE_CHL_escondida_copper_mine_legacy2','SITE_IDN_grasberg_copper_gold_mine',
-  'SITE_COD_tenke_fungurume_copper_cobalt_complex','SITE_COD_kibali_gold_mine_complex'
+  'SITE_COD_tenke_fungurume_copper_cobalt_complex','SITE_COD_kibali_gold_mine_complex','SITE_CAN_voiseys_bay_nickel_mine'
 ]);
 const expandedCommercialCatalogIds=legacyExpansionRows
   .filter(site=>site?.operation?.commercialExtraction===true&&site?.map?.markerEligible!==false&&
