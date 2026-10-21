@@ -112,7 +112,7 @@ test('defense command spends no funds when country readiness cannot be updated',
 test('DEFCON and procurement progress persist only for the selected country', () => {
   const extractMethod = signature => {
     const start = source.indexOf('    ' + signature);
-    const end = source.indexOf('\\n    },', start);
+    const end = source.indexOf('\n    },', start);
     assert.ok(start >= 0 && end > start, signature + ' should be a bounded method');
     return source.slice(start, end + 7);
   };
@@ -121,7 +121,7 @@ test('DEFCON and procurement progress persist only for the selected country', ()
     extractMethod('getProcurementCatalogue() {'),
     extractMethod('getDefenseCountryRow(countryCode, createIfMissing = false) {'),
     extractMethod('executeDefenseProcurement(itemId) {')
-  ].join('\\n');
+  ].join('\n');
   const context = {
     console,
     Game: { state: { defense: { BD: { orsData: { infantry: 80, armor: 70 }, orsDataSource: 'PLAYER_INITIALIZED_SIMULATION_STATE' } } } },
