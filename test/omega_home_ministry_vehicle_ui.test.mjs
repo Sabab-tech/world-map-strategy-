@@ -8,6 +8,9 @@ const ui = readFileSync(new URL('../omega_home_ministry_ui_v1.js', import.meta.u
 const operationsUi = readFileSync(new URL('../omega_home_ministry_police_operations_ui_v1.js', import.meta.url), 'utf8');
 const ministryEngine = readFileSync(new URL('../ministry_engine.js', import.meta.url), 'utf8');
 const cabinetEngine = readFileSync(new URL('../cabinet_engine.js', import.meta.url), 'utf8');
+const indexHtml = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+const budgetUi = readFileSync(new URL('../omega_home_ministry_budget_ui_v2.js', import.meta.url), 'utf8');
+const serviceWorker = readFileSync(new URL('../omega-offline-map-sw.js', import.meta.url), 'utf8');
 
 
 function makeUiHarness(vehicleInventory = null, recordedAssets = null) {
@@ -26,7 +29,7 @@ function makeUiHarness(vehicleInventory = null, recordedAssets = null) {
       'home-police-guard-environment': 'city',
       'home-police-guard-road': 'congested',
       'home-police-guard-quantity': '1',
-      'home-police-guard-sector': 'General Sector',
+      'home-police-guard-sector': '',
     };
     return {
       id, value: defaults[id] || '', textContent: '', innerHTML: '', className: '', disabled: false,
@@ -201,6 +204,24 @@ test('vehicle hangar button click submits an order and updates the authoritative
   assert.equal(harness.state.economy.AAA.treasury, 10000000 - harness.api.VEHICLES[0].cost);
 });
 
+test('guard dispatch refuses an empty geographic location before mutating game state', () => {
+  const harness = makeUiHarness({ 1: 1 });
+  harness.ui.renderGuardOut(1);
+  harness.nodes.get('home-police-guard-mission').value = 'border_interdiction';
+  harness.nodes.get('home-police-guard-sector').value = '';
+  harness.nodes.get('home-police-confirm-guard').onclick();
+  assert.equal(harness.api.getState('AAA').guardDeployments.length, 0);
+  assert.match(harness.nodes.get('home-police-guard-error').textContent, /Enter the city, district or rural region/);
+  const area = harness.nodes.get('home-police-guard-area-class');
+  area.value = 'RURAL';
+  area.onchange();
+  assert.equal(harness.nodes.get('home-police-guard-environment').value, 'rural');
+  harness.nodes.get('home-police-guard-sector').value = 'North District';
+  harness.nodes.get('home-police-confirm-guard').onclick();
+  assert.equal(harness.api.getState('AAA').guardDeployments.length, 1);
+  assert.equal(harness.api.getState('AAA').guardDeployments[0].sector, 'RURAL · North District');
+});
+
 test('Guard Out screen dispatches a vehicle, reserves crew, and its stand-down button returns both', () => {
   const harness = makeUiHarness({ 1: 1 });
   harness.ui.renderGuardOut(1);
@@ -210,7 +231,7 @@ test('Guard Out screen dispatches a vehicle, reserves crew, and its stand-down b
   harness.nodes.get('home-police-confirm-guard').onclick();
   let state = harness.api.getState('AAA');
   assert.equal(state.guardDeployments.length, 1);
-  assert.equal(state.guardDeployments[0].sector, 'Aluminium Plant North Gate');
+  assert.equal(state.guardDeployments[0].sector, 'URBAN · Aluminium Plant North Gate');
   assert.equal(harness.api.getGuardCapacity('AAA').availableVehicles[1], 0);
   const standDown = harness.standDownButtons[harness.standDownButtons.length - 1];
   assert.equal(typeof standDown.onclick, 'function');
@@ -232,6 +253,7 @@ test('Guard Out asset selector only targets recorded factories and passes the se
   assert.ok(harness.nodes.get('cabinet-body').innerHTML.includes('AL-01') && harness.nodes.get('cabinet-body').innerHTML.includes('Aluminium Plant North Gate'), 'only actual recorded target rows should populate the selector');
   assetSelect.value = 'AL-01';
   assetSelect.onchange();
+  assert.equal(harness.nodes.get('home-police-guard-sector').value, '', 'selecting an asset must not fake a geographic location from the facility name');
   assert.equal(harness.nodes.get('home-police-guard-environment').value, 'industrial');
   assert.equal(harness.nodes.get('home-police-guard-road').value, 'rough');
   harness.nodes.get('home-police-guard-mission').value = 'industrial_guard';
@@ -379,4 +401,37 @@ test('Home Affairs opens on real police controls and hides generic no-op actions
   assert.doesNotMatch(ministryEngine,/executeDeptAction\('\$\{m\.id\}', '(?:upgrade_capacity|issue_decree|allocate_budget|audit_loyalty)'/);
   assert.doesNotMatch(cabinetEngine,/SIGN DECREE/);
   assert.match(cabinetEngine,/NO GAME-STATE CHANGE/);
+});
+
+
+test('Home Ministry reuses its existing Finance-backed budget UI instead of registering a duplicate panel', () => {
+  assert.match(indexHtml, /omega_home_ministry_budget_ui_v2\.js/);
+  assert.match(serviceWorker, /omega_home_ministry_budget_ui_v2\.js/);
+  assert.match(budgetUi, /getHomeBudgetSnapshot/);
+  assert.match(budgetUi, /setHomeBudgetPlan/);
+  assert.match(budgetUi, /Finance allocation/);
+  assert.match(budgetUi, /READ-ONLY COUNTRY VIEW/);
+  assert.match(engine, /HOME_BUDGET_PLAN_EXCEEDS_PARENT_ALLOCATION/);
+  assert.doesNotMatch(ui, /home-police-dashboard-budget/);
+  assert.doesNotMatch(ui, /ui\.renderHomeMinistryBudget = function/);
+});
+
+test('police deployments require a real country-scoped location and classify the operating area', () => {
+  assert.match(ui, /home-police-guard-area-class/);
+  assert.match(ui, /City \/ district \/ rural region/);
+  assert.match(ui, /Enter a real city, district or region/);
+  assert.match(ui, /const environmentByArea = \{ URBAN:'city', SUBURBAN:'city', RURAL:'rural', BORDER:'border', INDUSTRIAL:'industrial', COASTAL:'coastal', MOUNTAIN:'mountain' \}/);
+  assert.match(ui, /const areaClass = String\(areaClassSelect && areaClassSelect\.value \|\| 'URBAN'\)\.toUpperCase\(\);/);
+  assert.match(ui, /const sector = areaClass \+ ' · ' \+ locationName/);
+  const guardStart = ui.indexOf('deployButton.onclick = () =>');
+  const locationCheck = ui.indexOf('Enter the city, district or rural region before dispatch', guardStart);
+  const dispatch = ui.indexOf('e.deployGuard(level, quantity, missionId, sector', guardStart);
+  assert.ok(guardStart >= 0 && locationCheck > guardStart && dispatch > locationCheck,
+    'blank location must be rejected before the dispatch action is called');
+});
+
+test('vehicle illustrations preserve aspect ratio and remain visible in compact WebView layouts', () => {
+  assert.match(ui, /preserveAspectRatio="xMidYMid meet"/);
+  assert.match(ui, /home-police-vehicle-art\{display:block;visibility:visible;width:100%;max-width:100%;height:auto;min-height:88px/);
+  assert.match(ui, /home-police-vehicle-art-hero\{min-height:140px\}/);
 });
