@@ -69,22 +69,22 @@ test('country sector UI resolves compact references through canonical data and p
 
 test('expanded World Bank indicators are unique and visible in canonical country profiles', () => {
  const start = builder.indexOf('const METRIC_CATALOGUE = [');
- const end = builder.indexOf('\\n];', start);
+ const end = builder.indexOf('\n];', start);
  assert.ok(start >= 0 && end > start, 'canonical metric catalogue must exist');
- const rows = builder.slice(start, end).split('\\n').filter(line => /^\\s*\\{ key:/.test(line));
- const keys = rows.map(line => line.match(/key:\\s*'([^']+)'/)?.[1]).filter(Boolean);
+ const rows = builder.slice(start, end).split('\n').filter(line => /^\s*\{ key:/.test(line));
+ const keys = rows.map(line => line.match(/key:\s*'([^']+)'/)?.[1]).filter(Boolean);
  assert.equal(keys.length, new Set(keys).size, 'duplicate canonical metric keys are not allowed');
  for (const [key, indicator] of Object.entries(expandedWdiMetrics)) {
-  const matches = rows.filter(line => line.includes(\"key: '\" + key + \"'\"));
+  const matches = rows.filter(line => line.includes("key: '" + key + "'"));
   assert.equal(matches.length, 1, 'expected exactly one catalogue entry for ' + key);
-  assert.ok(matches[0].includes(\"wb: '\" + indicator + \"'\"), key + ' must use its declared World Bank series');
+  assert.ok(matches[0].includes("wb: '" + indicator + "'"), key + ' must use the declared official World Bank series');
   assert.ok(registryMetricKeys.has(key), 'rebuilt registry must publish metric definition ' + key);
   assert.ok(profileMetricKeys.has(key), 'profile schema must expose ' + key);
  }
  for (const [key, indicator] of Object.entries({ malePopulationPct: 'SP.POP.TOTL.MA.ZS', femalePopulationPct: 'SP.POP.TOTL.FE.ZS' })) {
-  const matches = rows.filter(line => line.includes(\"key: '\" + key + \"'\"));
+  const matches = rows.filter(line => line.includes("key: '" + key + "'"));
   assert.equal(matches.length, 1);
-  assert.ok(matches[0].includes(\"wb: '\" + indicator + \"'\"), key + ' must prefer official sourced observations when available');
+  assert.ok(matches[0].includes("wb: '" + indicator + "'"), key + ' must use the declared official World Bank series');
  }
 });
 
