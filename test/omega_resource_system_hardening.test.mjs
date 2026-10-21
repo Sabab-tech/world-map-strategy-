@@ -37,35 +37,20 @@ vm.createContext(context);
 vm.runInContext(read('omega_resource_production_capacity_contract_v1.js'),context,{filename:'omega_resource_production_capacity_contract_v1.js'});
 vm.runInContext(read('omega_resource_realism_runtime_v1.js'),context,{filename:'omega_resource_realism_runtime_v1.js'});
 context.Omega.ResourceLogisticsRuntime={plan:()=>({status:'PLANNED',requestedQuantity:100,dispatchQuantity:100,capacity:100,transportMode:'truck',travelTimeDays:1})};
-const frozenRealism=Object.freeze(context.Omega.ResourceRealism);
-context.OmegaResourceRealism=frozenRealism;
-const extractionCalls={country:0,all:0};
-const frozenEndowment=Object.freeze({
-  VERSION:'test-frozen-endowment',
-  initialize:async()=>({status:'READY'}),
-  extractCountry:async countryId=>{extractionCalls.country++;return{status:'DONE',countryId};},
-  extractAll:async()=>{extractionCalls.all++;return{status:'DONE',results:[{countryId:'CHL'}]};}
+let frozenCountryCalls=0,frozenAllCalls=0;
+const frozenEndowmentRuntime=Object.freeze({
+  VERSION:'TEST_FROZEN_RESOURCE_RUNTIME',
+  async extractCountry(countryId,keys){frozenCountryCalls++;return{status:'APPLIED',countryId,keys,results:[]};},
+  async extractAll(){frozenAllCalls++;return{status:'APPLIED',results:[{countryId:'BGD'}]};}
 });
-context.Omega.ResourceEndowmentRuntime=frozenEndowment;
-context.OmegaResourceEndowmentRuntime=frozenEndowment;
+context.Omega.ResourceEndowmentRuntime=frozenEndowmentRuntime;
+context.OmegaResourceEndowmentRuntime=frozenEndowmentRuntime;
 vm.runInContext(read('omega_resource_system_hardening_v1.js'),context,{filename:'omega_resource_system_hardening_v1.js'});
 
 const realism=context.Omega.ResourceRealism;
 const hard=context.Omega.ResourceSystemHardening;
 assert(hard);
 assert.equal(hard.VERSION,'1.0.0');
-assert.notEqual(realism,frozenRealism,'hardening must expose a wrapper instead of mutating the frozen ResourceRealism API');
-assert.equal(Object.isFrozen(frozenRealism),true);
-assert.equal(context.Omega.ResourceEndowmentRuntime.__resourceSystemHardeningExtraction,true,
-  'hardening must wrap frozen extraction APIs rather than assign methods onto them');
-assert.notEqual(context.Omega.ResourceEndowmentRuntime,frozenEndowment);
-assert.equal(Object.isFrozen(frozenEndowment),true);
-const extractionProbe=await context.Omega.ResourceEndowmentRuntime.extractCountry('CHL');
-assert.equal(extractionProbe.status,'DONE');
-assert.equal(extractionCalls.country,1);
-const extractionAllProbe=await context.Omega.ResourceEndowmentRuntime.extractAll();
-assert.equal(extractionAllProbe.status,'DONE');
-assert.equal(extractionCalls.all,1);
 
 const t0=performance.now();
 let simulatedCount=0;
@@ -154,6 +139,20 @@ assert.equal(diagnostics.masterSiteCount,250);
 assert.equal(diagnostics.commercialSiteCount,246);
 assert.equal(diagnostics.playableCommercialSimulationCount,246);
 assert.equal(diagnostics.blockedCommercialSimulationCount,0);
+
+// The canonical extraction API is frozen. Hardening must wrap a facade, not mutate it.
+const wrappedEndowmentRuntime=context.OmegaResourceEndowmentRuntime;
+assert.equal(Object.isFrozen(frozenEndowmentRuntime),true);
+assert.notEqual(wrappedEndowmentRuntime,frozenEndowmentRuntime,'frozen API must be extended through a facade');
+assert.equal(context.Omega.ResourceEndowmentRuntime,wrappedEndowmentRuntime,'both canonical aliases must reference the facade');
+assert.equal(wrappedEndowmentRuntime.__resourceSystemHardeningExtraction,true);
+const oneCountry=await wrappedEndowmentRuntime.extractCountry('BGD',[]);
+assert.equal(oneCountry.status,'APPLIED');
+const allCountries=await wrappedEndowmentRuntime.extractAll();
+assert.equal(allCountries.status,'APPLIED');
+assert.equal(frozenCountryCalls,1);
+assert.equal(frozenAllCalls,1);
+assert.equal(hard.diagnostics().extractionPatched,true);
 
 console.log(JSON.stringify({
   certificate:'OMEGA-RESOURCE-SYSTEM-HARDENING-V1',

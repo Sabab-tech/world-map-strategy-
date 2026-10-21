@@ -77,7 +77,7 @@ function adjustProduction(site,c,stream,sim){
 function patchSiteModel(){
  const r=g.Omega?.ResourceRealism||g.OmegaResourceRealism;if(!r?.siteModel||r.__resourceSystemHardeningSiteModel)return false;
  const original=r.siteModel;
- const wrappedSiteModel=function(site,profile,countryId){
+ r.siteModel=function(site,profile,countryId){
    const s=clone(site||{}),c=country(countryId||s.countryId);
    const multiCommodity=Array.isArray(s.commodities)&&s.commodities.length>0;
    const siteResource=s.resourceId||s.resourceTypeId||s.resource;
@@ -110,17 +110,14 @@ function patchSiteModel(){
        return out;
      });
    }
-   const result=original.call(r,s,profile,countryId);if(!result?.commodityStreams)return result;
+   const result=original(s,profile,countryId);if(!result?.commodityStreams)return result;
    const streams=result.commodityStreams.map(x=>{const streamSim=resolveSimulation(s,x?.resourceId||s.resourceId||s.resourceTypeId||s.resource);const y={...x,production:adjustProduction(s,c,x,streamSim)};if(s.__omegaSimulationInjected||String(x?.production?.authority||'').toUpperCase()==='SIMULATED'){y.production.authority='SIMULATED';y.production.dataStatus='SIMULATED';y.production.observedRate=x.production.observedRate??null;}return y;});
    return{...result,commodityStreams:streams,simulationProfile:{siteId:sim.siteId,source:sim.source,capacityModel:sim.capacityModel,scenarioLifeYears:sim.scenarioLifeYears,
      nominalCapacity:sim.nominalCapacity,minimumCapacity:sim.minimumCapacity,maximumCapacity:sim.maximumCapacity,utilization:sim.utilization,recovery:sim.recovery,
      decline:sim.decline,maintenance:sim.maintenance,transportCapacityDaily:sim.transportCapacityDaily,transportRoute:sim.transportRoute,reserveQuantity:sim.reserveQuantity,reserveUnit:sim.reserveUnit}};
  };
- wrappedSiteModel.__resourceSystemHardeningSiteModel=true;
- const wrappedRuntime=Object.assign({},r,{siteModel:wrappedSiteModel,__resourceSystemHardeningSiteModel:true});
- g.Omega=g.Omega||{};
- g.Omega.ResourceRealism=wrappedRuntime;
- g.OmegaResourceRealism=wrappedRuntime;
+ r.siteModel.__resourceSystemHardeningSiteModel=true;
+ r.__resourceSystemHardeningSiteModel=true;
  return true;
 }
 
@@ -136,17 +133,20 @@ function auditCountry(c){
  rs.mineStates=states;rs.depletionIntegrity=a;return a;
 }
 function patchExtraction(){
- const rt=g.Omega?.ResourceEndowmentRuntime||g.OmegaResourceEndowmentRuntime;if(!rt||rt.__resourceSystemHardeningExtraction)return false;
- if(typeof rt.extractAll!=='function'||typeof rt.extractCountry!=='function')return false;
+ const rt=g.Omega?.ResourceEndowmentRuntime||g.OmegaResourceEndowmentRuntime;
+ if(!rt||rt.__resourceSystemHardeningExtraction)return false;
  const all=rt.extractAll,countryExtract=rt.extractCountry;
- const wrappedRuntime=Object.assign({},rt,{
-   extractCountry:async(c,keys)=>{const result=await countryExtract(c,keys);auditCountry(c);return result;},
-   extractAll:async()=>{const result=await all();for(const item of result?.results||[])auditCountry(item?.countryId);return result;},
-   __resourceSystemHardeningExtraction:true
- });
+ if(typeof all!=='function'||typeof countryExtract!=='function')return false;
+ // ResourceEndowmentRuntime publishes a frozen canonical API. Wrap a facade rather
+ // than assigning into that immutable object; keep both public aliases in sync.
+ const facade=Object.assign({},rt);
+ // Preserve the original receiver in case a canonical implementation uses this internally.
+ facade.extractCountry=async(c,keys)=>{const r=await countryExtract.call(rt,c,keys);auditCountry(c);return r;};
+ facade.extractAll=async()=>{const r=await all.call(rt);for(const x of r?.results||[])auditCountry(x?.countryId);return r;};
+ facade.__resourceSystemHardeningExtraction=true;
  g.Omega=g.Omega||{};
- g.Omega.ResourceEndowmentRuntime=wrappedRuntime;
- g.OmegaResourceEndowmentRuntime=wrappedRuntime;
+ g.Omega.ResourceEndowmentRuntime=facade;
+ g.OmegaResourceEndowmentRuntime=facade;
  return true;
 }
 
