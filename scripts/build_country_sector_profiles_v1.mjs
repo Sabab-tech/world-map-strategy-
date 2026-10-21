@@ -49,6 +49,7 @@ const schemaMetricKeys = new Set([
   ...schema.sectors.flatMap((sector) => [...(sector.metricKeys || []), ...(sector.derivedMetricKeys || [])]),
   ...(schema.extensionMetricDefinitions || []).map((metric) => metric.key)
 ]);
+const explicitExternalMetricKeys = new Set((schema.extensionMetricDefinitions || []).map((metric) => metric.key));
 const identityIndex = Object.fromEntries(recordSchema.identityFields.map((key, index) => [key, index]));
 const factIndex = Object.fromEntries(recordSchema.generalFactFields.map((key, index) => [key, index]));
 const resourceIndex = Object.fromEntries(recordSchema.naturalResourceFields.map((key, index) => [key, index]));
@@ -433,6 +434,22 @@ const metadata = {
   }],
   userInterfaceBinding: 'DATA_LAYER_ONLY_UI_MAPPING_NOT_YET_CONFIGURED'
 };
+function compactRelativeSignal(signal) {
+  return {
+    sectorId: signal.sectorId || null,
+    metricKey: signal.metricKey || null,
+    title: signal.title || null,
+    value: finite(signal.value),
+    unit: signal.unit || null,
+    year: finite(signal.year),
+    sourceId: signal.sourceId || null,
+    sourceName: signal.sourceName || null,
+    evidenceStatus: signal.evidenceStatus || 'UNKNOWN',
+    peerPercentile: finite(signal.peerPercentile),
+    model: signal.model || null,
+    caveat: signal.caveat || null
+  };
+}
 function compactDerivedMetric(metric) {
   if (!metric || typeof metric !== 'object') return null;
   const compact = {
@@ -499,7 +516,8 @@ const compactProfiles = profiles.map((profile) => ({
   identity: profile.identity,
   profileVersion: profile.profileVersion,
   externalMetrics: Object.fromEntries([...schemaMetricKeys]
-    .filter((key) => !canonicalMetricKeys.has(key) && !Object.hasOwn(profile.derivedMetrics, key))
+    .filter((key) => explicitExternalMetricKeys.has(key)
+      || (!canonicalMetricKeys.has(key) && !Object.hasOwn(profile.derivedMetrics, key)))
     .map((key) => [key, externalMetricValue(key, profile.identity.iso3)])),
   sourceRegistryRef: {
     dataset: 'country_general_data_registry_v1.json',
@@ -508,14 +526,22 @@ const compactProfiles = profiles.map((profile) => ({
   },
   derivedMetrics: Object.fromEntries(Object.entries(profile.derivedMetrics)
     .map(([key, metric]) => [key, compactDerivedMetric(metric)])),
-  analytics: profile.analytics,
-  relativeSignals: profile.relativeSignals,
+  analytics: Object.fromEntries(Object.entries(profile.analytics || {})
+    .map(([key, metric]) => [key, compactDerivedMetric(metric)])),
+  relativeSignals: {
+    policy: profile.relativeSignals?.policy || null,
+    strengths: (profile.relativeSignals?.strengths || []).map(compactRelativeSignal),
+    vulnerabilities: (profile.relativeSignals?.vulnerabilities || []).map(compactRelativeSignal)
+  },
   sectors: Object.fromEntries(Object.entries(profile.sectors).map(([sectorId, sector]) => {
     const derivedKeys = new Set(Object.keys(profile.derivedMetrics));
     return [sectorId, {
       id: sector.id, title: sector.title, status: sector.status, description: sector.description,
       indicators: Object.fromEntries(Object.keys(sector.indicators || {}).map((key) => [key, {
-        refType: derivedKeys.has(key) ? 'DERIVED_METRIC' : (canonicalMetricKeys.has(key) ? 'METRIC' : 'EXTERNAL_METRIC'), key
+        refType: explicitExternalMetricKeys.has(key) ? 'EXTERNAL_METRIC'
+          : derivedKeys.has(key) ? 'DERIVED_METRIC'
+          : canonicalMetricKeys.has(key) ? 'METRIC' : 'EXTERNAL_METRIC',
+        key
       }])),
       facts: Object.fromEntries(Object.keys(sector.facts || {}).map((key) => [key, { refType: 'GENERAL_FACT', key }])),
       sourceGroup: sector.sourceGroup ? { refType: 'SOURCE_GROUP', key: sectorId === 'naturalResources' ? 'naturalResources' :
