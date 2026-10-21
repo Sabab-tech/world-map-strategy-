@@ -15,18 +15,27 @@
     if(!rt||!integrity||typeof rt.parse!=='function')return false;
     if(integrity.__canonicalSemanticBridgeV110)return true;
 
-    integrity.parse=function(question,context={}){
+    // The integrity layer intentionally freezes its public API. Extend it copy-on-write
+    // instead of mutating that frozen object, which throws in strict-mode WebViews.
+    const canonical=Object.assign({},integrity);
+    canonical.parse=function(question,context={}){
       return rt.parse(question,context);
     };
-    integrity.__canonicalSemanticBridgeV110=true;
-    integrity.CANONICAL_SEMANTIC_VERSION=rt.VERSION||null;
-    integrity.SEMANTIC_AUTHORITY='OmegaProductionSemanticRuntime';
+    canonical.__canonicalSemanticBridgeV110=true;
+    canonical.CANONICAL_SEMANTIC_VERSION=rt.VERSION||null;
+    canonical.SEMANTIC_AUTHORITY='OmegaProductionSemanticRuntime';
 
-    if(typeof integrity.detectIntent==='function'){
-      integrity.detectIntent=function(question,context={}){
+    if(typeof canonical.detectIntent==='function'){
+      canonical.detectIntent=function(question,context={}){
         const p=rt.parse(question,context);
         return {intent:p?.targetDomain||p?.operation||'GENERAL',confidence:Number(p?.confidence||0)};
       };
+    }
+    const bridged=Object.freeze(canonical);
+    global.OmegaAIIntegrity=bridged;
+    const metadata=global.__OMEGA_AI_INTEGRITY__;
+    if(metadata&&typeof metadata==='object'){
+      global.__OMEGA_AI_INTEGRITY__=Object.assign({},metadata,{api:bridged,canonicalSemanticVersion:rt.VERSION||null,semanticAuthority:'OmegaProductionSemanticRuntime'});
     }
     return true;
   }

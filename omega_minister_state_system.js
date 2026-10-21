@@ -5,7 +5,12 @@
  */
 (function(global){
   'use strict';
-  if(global.OmegaMinisterStateRegistry) return;
+  const existingRegistry=global.OmegaMinisterStateRegistry;
+  const hasCanonicalContract=r=>!!r&&typeof r.consistencyCheck==='function'&&typeof r.getAssignments==='function'&&typeof r.getActiveMinister==='function'&&typeof r.onGameTime==='function';
+  if(hasCanonicalContract(existingRegistry))return;
+  // A legacy V2 selector can publish its narrower registry under this global.
+  // Retain its reference for compatibility, but install the full canonical state API.
+  if(existingRegistry&&typeof existingRegistry==='object')global.OmegaMinisterLegacyRegistry=global.OmegaMinisterLegacyRegistry||existingRegistry;
 
   const VERSION='1.0.0';
   const CONFIG_ID='OMEGA_MINISTER_RUNTIME_CONFIG';

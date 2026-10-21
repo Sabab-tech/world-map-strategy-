@@ -10,7 +10,18 @@
   const registry=()=>global.OmegaMinisterState?.registry||global.OmegaMinisterStateRegistry||null, ministerId=p=>String(p?.id||p?.ministerId||''), safeName=p=>text(p?.baseName||p?.name||p?.ministerName||ministerId(p)||'Minister');
   const candidates=m=>{const r=registry();return r?.profiles?[...r.profiles.values()].filter(p=>norm(p?.ministryId)===norm(m)):[]};
   const active=m=>{const r=registry(),c=country();if(!r||!c||!m)return null;try{return r.getActiveMinister?.(c,m)||null}catch(_){return null}};
-  function ensureGlobalRegistryAlias(){const r=registry();if(r)global.OmegaMinisterStateRegistry=r;return r}
+  function ensureGlobalRegistryAlias(){
+    const current=global.OmegaMinisterStateRegistry;
+    if(current&&typeof current.consistencyCheck==='function'&&typeof current.getAssignments==='function')return current;
+    const candidate=global.OmegaMinisterState?.registry||current;
+    if(candidate&&typeof candidate.consistencyCheck==='function'&&typeof candidate.getAssignments==='function'){
+      global.OmegaMinisterStateRegistry=candidate;
+      return candidate;
+    }
+    // The selector may still use the V2 registry internally, but must not replace
+    // the canonical state global with that narrower adapter.
+    return candidate||null;
+  }
   function ensureState(id,m){const r=ensureGlobalRegistryAlias(),c=country();if(!r||!c)throw Error('MINISTER_RUNTIME_CONTEXT_UNRESOLVED');const sid=String(id),now=Date.now();if(!r.getRuntime(sid))r.setRuntime(sid,{ministerId:sid,countryId:c,ministryId:m,status:'ACTIVE',recruitmentTime:now,assignmentTime:now,lastUpdateTick:now,workload:0,cognitiveLoad:0,stress:0,fatigue:0,politicalPressure:0,economicPressure:0,crisisPressure:0,confidence:.5,trust:.5,activeTasks:[],activePlans:[],pendingDecisions:[],currentObjectives:[],currentAttention:[],currentStrategicPosture:'BALANCED'});if(!r.getLearning(sid))r.setLearning(sid,{ministerId:sid,totalServiceTime:0,totalTaskExposure:0,domainExperience:{},crisisExperience:0,decisionExperience:0,successfulDecisions:0,failedDecisions:0,completedPlans:0,failedPlans:0,learnedLessons:[],forecastCalibration:.5,strategyEffectiveness:.5,skillEvolution:{},specialization:{}});return r}
   function appoint(m,p){const c=country(),id=ministerId(p);if(!c)throw Error('COUNTRY_CONTEXT_UNRESOLVED');if(!id)throw Error('MINISTER_ID_UNRESOLVED');const r=ensureState(id,m),old=active(m)?.profile?.id;if(old&&String(old)!==id)r.unassign(old);r.assign(id,c,m,Date.now());try{localStorage.setItem(`OMEGA_MINISTER_SELECTED_V9::${c}::${m}`,id)}catch(_){}const payload={countryId:c,ministryId:m,ministerId:id,profile:p,timestamp:Date.now()};['MINISTER_ASSIGNED','MINISTER_SELECTED','OMEGA_MINISTER_CHANGED'].forEach(t=>global.dispatchEvent(new CustomEvent(t,{detail:payload})));if(global.OmegaCabinetUI){global.OmegaCabinetUI.currentInterrogatedMinister=p;global.OmegaCabinetUI.currentActiveMinisterId=id}return active(m)}
   function selected(m,cs){const a=active(m),aid=a?.profile?.id||a?.profile?.ministerId;if(aid){const i=cs.findIndex(p=>ministerId(p)===String(aid));if(i>=0)return i}try{const s=localStorage.getItem(`OMEGA_MINISTER_SELECTED_V9::${country()}::${m}`),i=cs.findIndex(p=>ministerId(p)===s);if(i>=0)return i}catch(_){}return 0}
