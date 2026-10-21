@@ -26,7 +26,7 @@ function makeUiHarness(vehicleInventory = null, recordedAssets = null) {
       'home-police-guard-environment': 'city',
       'home-police-guard-road': 'congested',
       'home-police-guard-quantity': '1',
-      'home-police-guard-sector': 'General Sector',
+      'home-police-guard-sector': '',
     };
     return {
       id, value: defaults[id] || '', textContent: '', innerHTML: '', className: '', disabled: false,
@@ -379,4 +379,58 @@ test('Home Affairs opens on real police controls and hides generic no-op actions
   assert.doesNotMatch(ministryEngine,/executeDeptAction\('\$\{m\.id\}', '(?:upgrade_capacity|issue_decree|allocate_budget|audit_loyalty)'/);
   assert.doesNotMatch(cabinetEngine,/SIGN DECREE/);
   assert.match(cabinetEngine,/NO GAME-STATE CHANGE/);
+});
+
+
+test('Home Ministry exposes a working Finance-linked budget panel without duplicating Finance balances', () => {
+  const harness = makeUiHarness({ 1: 2 });
+  const host = harness.nodes.get('home-ministry-host') || (() => {
+    const value = { id: 'home-ministry-host', innerHTML: '', isConnected: true };
+    harness.nodes.set('home-ministry-host', value);
+    return value;
+  })();
+  assert.equal(harness.ui.renderHomeMinistryInto(host), true);
+  assert.match(host.innerHTML, /home-police-dashboard-budget/);
+  harness.nodes.get('home-police-dashboard-budget').onclick();
+  assert.match(host.innerHTML, /HOME MINISTRY BUDGET/);
+  assert.match(host.innerHTML, /Finance allocation required/);
+  assert.match(host.innerHTML, /OPEN FINANCE MINISTRY/);
+  assert.match(ui, /ui\.renderHomeMinistryBudget = function/);
+  assert.match(ui, /getHomeBudgetSnapshot\(country\)/);
+  assert.match(ui, /setHomeBudgetPlan\(nextPlan, country\)/);
+  assert.match(ui, /OMEGA_HOME_BUDGET:/);
+  assert.match(engine, /HOME_BUDGET_PLAN_EXCEEDS_PARENT_ALLOCATION/);
+  assert.match(engine, /HOME_BUDGET_BELOW_SPENT/);
+});
+
+test('Home Ministry budget plan supports all canonical categories, read-only scope, and current-year ledger rows', () => {
+  for (const category of ['personnel', 'vehicles', 'maintenance', 'facilities', 'training', 'operations']) {
+    assert.match(engine, new RegExp(category + ':\\{label:'));
+  }
+  assert.match(ui, /data-home-budget-mode/);
+  assert.match(ui, /data-home-budget-value/);
+  assert.match(ui, /snapshot\.canEdit/);
+  assert.match(ui, /Finance transaction/);
+  assert.match(ui, /Turn /);
+  assert.match(ui, /Only the active player country can be edited/);
+  assert.match(ui, /combined planned value cannot exceed the parent allocation/);
+});
+
+test('police deployments require a real country-scoped location and classify the operating area', () => {
+  assert.match(ui, /home-police-guard-area-class/);
+  assert.match(ui, /City \/ district \/ rural region/);
+  assert.match(ui, /Enter a real city, district or region/);
+  assert.match(ui, /const environmentByArea = \\{ URBAN:'city', SUBURBAN:'city', RURAL:'rural', BORDER:'border', INDUSTRIAL:'industrial', COASTAL:'coastal', MOUNTAIN:'mountain' \\}/);
+  assert.match(ui, /const sector = areaClassSelect\.value \+ ' · ' \+ locationName/);
+  const guardStart = ui.indexOf('deployButton.onclick = () =>');
+  const locationCheck = ui.indexOf('Enter the city, district or rural region before dispatch', guardStart);
+  const dispatch = ui.indexOf('e.deployGuard(level, quantity, missionId, sector', guardStart);
+  assert.ok(guardStart >= 0 && locationCheck > guardStart && dispatch > locationCheck,
+    'blank location must be rejected before the dispatch action is called');
+});
+
+test('vehicle illustrations preserve aspect ratio and remain visible in compact WebView layouts', () => {
+  assert.match(ui, /preserveAspectRatio="xMidYMid meet"/);
+  assert.match(ui, /home-police-vehicle-art\\{display:block;visibility:visible;width:100%;max-width:100%;height:auto;min-height:88px/);
+  assert.match(ui, /home-police-vehicle-art-hero\\{min-height:140px\\}/);
 });
