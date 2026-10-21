@@ -71,7 +71,7 @@ test('live runtime records override baseline values without losing unrelated sou
   assert.equal(live.gdp, 123456);
   assert.equal(live.runtimeOnlyField, 'live');
   assert.equal(live.currency_code, baseline.currency_code);
-  assert.equal(liveOnly.gdp, 123456, 'live-only accessor returns the player's current economic record');
+  assert.equal(liveOnly.gdp, 123456, "live-only accessor returns the player's current economic record");
   assert.equal(liveOnly.runtimeOnlyField, 'live');
   assert.equal(liveOnly.currency_code, undefined, 'live-only accessor does not merge or duplicate baseline data');
   assert.equal(api.getLiveRecord('population', 'BD'), null, 'missing live domains remain missing');
