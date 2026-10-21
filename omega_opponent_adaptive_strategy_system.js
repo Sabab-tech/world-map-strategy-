@@ -167,9 +167,13 @@
       const x=p.dimensions[d];
       if(x&&x.value!==null&&x.value!==undefined){
         const direction=num(directions[d])??1;
-        const utility=direction>=0?x.value:1-x.value;
-        vals.push({dimension:d,value:x.value,direction,utility,
-          confidence:clamp(x.confidence??0.5),source:x.source||null});
+        const rawUtility=direction>=0?x.value:1-x.value;
+        const confidence=clamp(x.confidence??0.5)??0.5;
+        // Low-confidence evidence must not push the decision far from neutral.
+        // Explicit doctrine (confidence 1) retains its full intended effect.
+        const utility=0.5+(rawUtility-0.5)*confidence;
+        vals.push({dimension:d,value:x.value,direction,utility,rawUtility,
+          confidence,source:x.source||null,evidence:clone(x.evidence||[])});
       }
     }
     if(!vals.length&&preferenceValue===null)return{known:false,score:null,confidence:0,profile:p};
