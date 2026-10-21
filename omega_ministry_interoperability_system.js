@@ -1750,7 +1750,7 @@
         if(row.status==='ACCEPTED_NO_STATE_WRITE'){
           row.reason='NO_AUTHORITATIVE_STATE_WRITE';
           row.result={accepted:false,code:'NO_AUTHORITATIVE_STATE_WRITE',reason:'NO_AUTHORITATIVE_STATE_WRITE',
-            handlerResult:clone(result),warning:'The handler acknowledged the command but staged no authoritative state write.'};
+            handlerResult:clone(handlerResult),warning:'The handler acknowledged the command but staged no authoritative state write.'};
           this.metrics.noStateWrites+=1;
         }
         if(row.transaction?.afterRevision)row.stateRevisionAfter=row.transaction.afterRevision;
