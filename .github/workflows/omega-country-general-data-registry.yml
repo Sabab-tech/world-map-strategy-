@@ -95,17 +95,17 @@ jobs:
           node --check scripts/build_country_sector_profiles_v1.mjs
           node --test test/country_sector_profiles_v1.test.mjs
 
-      - name: Commit registry only if it changed
+      - name: Commit canonical country data artifacts only if changed
         if: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
         shell: bash
         run: |
           set -euo pipefail
-          if [[ -z "$(git status --porcelain -- country_general_data_registry_v1.json)" ]]; then
-            echo "Registry content unchanged; no generated data commit required."
+          git add -f country_general_data_registry_v1.json country_sector_profiles_v1.json
+          if git diff --cached --quiet; then
+            echo "Country data artifacts unchanged; no generated data commit required."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add country_general_data_registry_v1.json
-          git commit -m "Update unified country general data registry"
+          git commit -m "Update canonical country data artifacts"
           git push origin "HEAD:${GITHUB_REF_NAME}"
