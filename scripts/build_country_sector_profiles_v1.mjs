@@ -11,6 +11,7 @@ import { resolve } from 'node:path';
 const ROOT = process.cwd();
 const INPUT = resolve(ROOT, 'country_general_data_registry_v1.json');
 const SCHEMA = resolve(ROOT, 'country_sector_profile_schema_v1.json');
+const OFFICIAL_INDEX_SNAPSHOT = resolve(ROOT, 'country_official_index_observations_v1.json');
 const OUTPUT = resolve(ROOT, 'country_sector_profiles_v1.json');
 
 function readJson(path) {
@@ -23,6 +24,12 @@ const objectFrom = (keys, values) => Object.fromEntries(keys.map((key, index) =>
 
 const registry = readJson(INPUT);
 const schema = readJson(SCHEMA);
+const officialIndexSnapshot = readJson(OFFICIAL_INDEX_SNAPSHOT);
+if (officialIndexSnapshot.metadata?.datasetId !== 'OMEGA_TI_CPI_2025_SNAPSHOT_V1'
+  || !Array.isArray(officialIndexSnapshot.countries)) {
+  throw new Error('TI_CPI_2025_SNAPSHOT_SCHEMA_UNSUPPORTED');
+}
+const officialIndexByIso3 = new Map(officialIndexSnapshot.countries.map((row) => [String(row.iso3 || '').toUpperCase(), row]));
 const recordSchema = registry.metadata && registry.metadata.recordSchema;
 if (!Array.isArray(registry.countries) || !recordSchema || recordSchema.encoding !== 'ORDERED_VALUE_ARRAYS_V1') {
   throw new Error('COUNTRY_GENERAL_REGISTRY_SCHEMA_UNSUPPORTED');
@@ -37,6 +44,12 @@ const sourceNames = registry.metadata.provenanceEncoding.sourceNames || [];
 const methods = registry.metadata.provenanceEncoding.methods || [];
 const metricsCatalog = registry.fieldCatalogue || [];
 const metricIndex = Object.fromEntries(metricsCatalog.map((field, index) => [field.key, index]));
+const canonicalMetricKeys = new Set(metricsCatalog.map((field) => field.key));
+const schemaMetricKeys = new Set([
+  ...schema.sectors.flatMap((sector) => [...(sector.metricKeys || []), ...(sector.derivedMetricKeys || [])]),
+  ...(schema.extensionMetricDefinitions || []).map((metric) => metric.key)
+]);
+const explicitExternalMetricKeys = new Set((schema.extensionMetricDefinitions || []).map((metric) => metric.key));
 const identityIndex = Object.fromEntries(recordSchema.identityFields.map((key, index) => [key, index]));
 const factIndex = Object.fromEntries(recordSchema.generalFactFields.map((key, index) => [key, index]));
 const resourceIndex = Object.fromEntries(recordSchema.naturalResourceFields.map((key, index) => [key, index]));
@@ -409,13 +422,149 @@ const metadata = {
   metricCoverage,
   noSourceRecordsDeleted: true,
   unknownValuesConvertedToZero: false,
+  storageModel: 'COMPACT_REFERENCES_TO_CANONICAL_COUNTRY_REGISTRY',
+  externalIndexSources: [{
+    datasetId: officialIndexSnapshot.metadata.datasetId,
+    publisher: officialIndexSnapshot.metadata.publisher,
+    publisherUrl: officialIndexSnapshot.metadata.publisherUrl,
+    sourceUrl: officialIndexSnapshot.metadata.sourceUrl,
+    observationYear: officialIndexSnapshot.metadata.observationYear,
+    observationCount: officialIndexSnapshot.countries.length,
+    missingObservationsRemainNull: true
+  }],
   userInterfaceBinding: 'DATA_LAYER_ONLY_UI_MAPPING_NOT_YET_CONFIGURED'
 };
+function compactRelativeSignal(signal) {
+  return {
+    sectorId: signal.sectorId || null,
+    metricKey: signal.metricKey || null,
+    title: signal.title || null,
+    value: finite(signal.value),
+    unit: signal.unit || null,
+    year: finite(signal.year),
+    sourceId: signal.sourceId || null,
+    sourceName: signal.sourceName || null,
+    evidenceStatus: signal.evidenceStatus || 'UNKNOWN',
+    peerPercentile: finite(signal.peerPercentile),
+    model: signal.model || null,
+    caveat: signal.caveat || null
+  };
+}
+function compactDerivedMetric(metric, options = {}) {
+  if (!metric || typeof metric !== 'object') return null;
+  const compact = {
+    value: finite(metric.value), unit: metric.unit || null, year: finite(metric.year),
+    sourceId: metric.sourceId || null, sourceName: metric.sourceName || null,
+    status: metric.status || 'UNKNOWN', method: metric.method || null,
+    sourceUrl: metric.sourceUrl || null, note: metric.note || null
+  };
+  if (metric.modelId) {
+    compact.modelId = metric.modelId;
+    if (options.includeModelEvidence !== false) Object.assign(compact, {
+      formula: metric.formula || null,
+      availableInputCount: finite(metric.availableInputCount),
+      requiredInputCount: finite(metric.requiredInputCount),
+      coveragePct: finite(metric.coveragePct),
+      inputYears: metric.inputYears || {}, inputStatuses: metric.inputStatuses || {},
+      minInputYear: finite(metric.minInputYear), maxInputYear: finite(metric.maxInputYear),
+      observationYearSpread: finite(metric.observationYearSpread),
+      legacyOrLocalInputCount: finite(metric.legacyOrLocalInputCount),
+      missingInputs: Array.isArray(metric.missingInputs) ? metric.missingInputs : [],
+      comparabilityNote: metric.comparabilityNote || null
+    });
+  }
+  else if (metric.inputYears) Object.assign(compact, {
+    formula: metric.formula || null, inputYears: metric.inputYears,
+    missingInputs: Array.isArray(metric.missingInputs) ? metric.missingInputs : []
+  });
+  return compact;
+}
+function externalMetricValue(key, iso3) {
+  const definition = (schema.extensionMetricDefinitions || []).find((item) => item.key === key);
+  if (key === 'corruptionPerceptionIndex' || key === 'corruptionPerceptionRank') {
+    const observation = officialIndexByIso3.get(iso3);
+    const field = key === 'corruptionPerceptionIndex' ? 'score' : 'rank';
+    const value = observation ? finite(observation[field]) : null;
+    return {
+      key, value,
+      unit: key === 'corruptionPerceptionIndex' ? 'score (0-100)' : 'publisher rank (1-182; lower is better)',
+      year: observation ? finite(observation.year) : null,
+      sourceId: officialIndexSnapshot.metadata.datasetId,
+      sourceName: officialIndexSnapshot.metadata.publisher,
+      method: officialIndexSnapshot.metadata.sourceType,
+      sourceUrl: officialIndexSnapshot.metadata.publisherUrl,
+      mirrorUrl: officialIndexSnapshot.metadata.sourceUrl,
+      status: value === null ? 'NO_SOURCE_OBSERVATION' : 'SOURCE_OBSERVATION',
+      note: key === 'corruptionPerceptionIndex'
+        ? officialIndexSnapshot.metadata.scoreScale
+        : officialIndexSnapshot.metadata.rankSemantics
+    };
+  }
+  if (key === 'humanDevelopmentIndex') {
+    return {
+      key, value: null, unit: 'index (0-1)', year: null,
+      sourceId: null, sourceName: null, method: null, sourceUrl: null,
+      status: 'NOT_IMPORTED',
+      note: 'The schema defines an expected HDI observation, but no validated offline HDI values are present in the canonical or external snapshot datasets. No value is inferred.'
+    };
+  }
+  return {
+    key, value: null, unit: definition?.unit || null, year: null,
+    sourceId: null, sourceName: null, method: null, sourceUrl: null,
+    status: definition?.initialStatus || 'NOT_IMPORTED',
+    note: definition?.description || 'Declared sector metric is not present in the canonical registry or a validated external observation snapshot.'
+  };
+}
+const compactProfiles = profiles.map((profile) => ({
+  identity: profile.identity,
+  profileVersion: profile.profileVersion,
+  externalMetrics: Object.fromEntries([...schemaMetricKeys]
+    .filter((key) => explicitExternalMetricKeys.has(key)
+      || (!canonicalMetricKeys.has(key) && !Object.hasOwn(profile.derivedMetrics, key)))
+    .map((key) => [key, externalMetricValue(key, profile.identity.iso3)])),
+  sourceRegistryRef: {
+    dataset: 'country_general_data_registry_v1.json',
+    identityKey: 'iso3',
+    identityValue: profile.identity.iso3
+  },
+  derivedMetrics: Object.fromEntries(Object.entries(profile.derivedMetrics)
+    .map(([key, metric]) => [key, compactDerivedMetric(metric, { includeModelEvidence: false })])),
+  analytics: Object.fromEntries(Object.entries(profile.analytics || {})
+    .map(([key, metric]) => [key, compactDerivedMetric(metric)])),
+  relativeSignals: {
+    policy: profile.relativeSignals?.policy || null,
+    strengths: (profile.relativeSignals?.strengths || []).map(compactRelativeSignal),
+    vulnerabilities: (profile.relativeSignals?.vulnerabilities || []).map(compactRelativeSignal)
+  },
+  sectors: Object.fromEntries(Object.entries(profile.sectors).map(([sectorId, sector]) => {
+    const derivedKeys = new Set(Object.keys(profile.derivedMetrics));
+    return [sectorId, {
+      status: sector.status,
+      indicators: Object.fromEntries(Object.keys(sector.indicators || {}).map((key) => [key, {
+        refType: explicitExternalMetricKeys.has(key) ? 'EXTERNAL_METRIC'
+          : derivedKeys.has(key) ? 'DERIVED_METRIC'
+          : canonicalMetricKeys.has(key) ? 'METRIC' : 'EXTERNAL_METRIC',
+        key
+      }])),
+      facts: Object.fromEntries(Object.keys(sector.facts || {}).map((key) => [key, { refType: 'GENERAL_FACT', key }])),
+      sourceGroup: sector.sourceGroup ? { refType: 'SOURCE_GROUP', key: sectorId === 'naturalResources' ? 'naturalResources' :
+        (sectorId === 'publicSafety' ? 'publicSafety' : (schema.sectors.find((entry) => entry.id === sectorId)?.sourceGroup || null)) } : null,
+      analytics: Object.fromEntries(Object.keys(sector.analytics || {}).map((key) => [key, { refType: 'ANALYTICS', key }])),
+      // The schema file is the sole authority for sector labels and extension-slot definitions.
+    }];
+  })),
+  extensions: profile.extensions
+}));
 const output = {
   metadata,
   schemaReference: 'country_sector_profile_schema_v1.json',
-  sourcePolicy: 'Direct observations, legacy inputs, derived calculations, game models and unsourced extension slots remain distinct.',
-  countries: profiles
+  sourceRegistry: {
+    path: 'country_general_data_registry_v1.json',
+    identityKey: 'iso3',
+    resolution: 'Join profile sourceRegistryRef.identityValue to canonical registry record identity.iso3; never invent missing values.'
+  },
+  sourcePolicy: 'Compact source references avoid duplicating canonical facts and observations. Derived metrics, analytical scores, and source-year evidence retain explicit status and missing-value semantics.',
+  countries: compactProfiles
 };
 writeFileSync(OUTPUT, JSON.stringify(output, null, 2) + '\n');
 console.log(JSON.stringify({

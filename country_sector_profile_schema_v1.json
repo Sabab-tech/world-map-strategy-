@@ -921,6 +921,42 @@
       "nullable": true,
       "initialStatus": "MODEL_NOT_DEFINED",
       "description": "Model-derived diplomatic alignment; not an official country score."
+    },
+    {
+      "key": "corruptionPerceptionIndex",
+      "sectorId": "governanceAndInstitutions",
+      "title": "Corruption Perceptions Index score",
+      "type": "number",
+      "unit": "score (0-100; higher means lower perceived public-sector corruption)",
+      "sourcePolicy": "Transparency International 2025 CPI results snapshot; the embedded source is a documented mirror of publisher results. Missing countries remain null.",
+      "nullable": true,
+      "initialStatus": "NO_SOURCE_OBSERVATION",
+      "sourceId": "OMEGA_TI_CPI_2025_SNAPSHOT_V1",
+      "observationYear": 2025
+    },
+    {
+      "key": "corruptionPerceptionRank",
+      "sectorId": "governanceAndInstitutions",
+      "title": "Corruption Perceptions Index rank",
+      "type": "integer",
+      "unit": "publisher rank (1-182; lower numeric rank is higher position)",
+      "sourcePolicy": "Transparency International 2025 CPI results snapshot; rank is a publisher-defined ordinal and should not be treated as cardinal distance.",
+      "nullable": true,
+      "initialStatus": "NO_SOURCE_OBSERVATION",
+      "sourceId": "OMEGA_TI_CPI_2025_SNAPSHOT_V1",
+      "observationYear": 2025
+    },
+    {
+      "key": "humanDevelopmentIndex",
+      "sectorId": "populationAndHumanDevelopment",
+      "title": "Human Development Index",
+      "type": "number",
+      "unit": "index (0-1)",
+      "sourcePolicy": "UNDP Human Development Report composite indices time series, HDI_2023 field. Import an offline observation snapshot with source/year provenance before exposing numeric values.",
+      "nullable": true,
+      "initialStatus": "NOT_IMPORTED",
+      "sourceId": null,
+      "observationYear": null
     }
   ]
 }
