@@ -16,7 +16,7 @@
   const HISTORY_DAYS = 30;
   const FX_FEE_BPS = 15;
   const CURRENCY_OVERRIDES = Object.freeze({
-    ALA: 'EUR', ATA: null, BES: 'USD', BVT: null, IOT: 'USD', ATF: 'EUR',
+    ALA: 'EUR', ATA: null, BES: 'USD', BVT: 'NOK', IOT: 'USD', ATF: 'EUR',
     GGY: 'GBP', HMD: 'AUD', IMN: 'GBP', JEY: 'GBP', MYT: 'EUR', REU: 'EUR',
     BLM: 'EUR', SHN: 'SHP', MAF: 'EUR', SPM: 'EUR', SGS: 'GBP', SJM: 'NOK', UMI: 'USD'
   });
@@ -177,15 +177,40 @@
     return isObject(profile && profile.sourceValues) ? profile.sourceValues : {};
   }
   function getCountryCurrency(profile) {
-    if (!profile) return null;
+    if (!isObject(profile)) return null;
     const iso3 = normalizeCode(profile.iso3 || profile.numericCode);
-    const saved = normalizeCode(sourceValues(profile).currency_code || profile.currency_code || profile.currencyCode);
-    if (saved && saved.length === 3) return saved;
+    const src = sourceValues(profile);
+    const facts = isObject(profile.generalFacts) ? profile.generalFacts : {};
+    const snapshot = isObject(profile.legacySnapshots) ? profile.legacySnapshots : {};
+    const indicators = isObject(profile.indicators) ? profile.indicators : {};
+    const candidates = [
+      src.currency_code, src.currencyCode,
+      profile.currency_code, profile.currencyCode,
+      indicators.currency_code, indicators.currencyCode,
+      Array.isArray(profile.currencyCodes) ? profile.currencyCodes[0] : profile.currencyCodes,
+      Array.isArray(facts.currencyCodes) ? facts.currencyCodes[0] : facts.currencyCodes,
+      Array.isArray(facts.currency_codes) ? facts.currency_codes[0] : facts.currency_codes,
+      facts.currencyCode, facts.currency_code,
+      snapshot.currency_code, snapshot.currencyCode,
+      snapshot.economy && (snapshot.economy.currency_code || snapshot.economy.currencyCode)
+    ];
+    for (const candidate of candidates) {
+      const code = normalizeCode(candidate);
+      if (code.length === 3 && code !== 'XXX') return code;
+    }
     if (own(CURRENCY_OVERRIDES, iso3)) return CURRENCY_OVERRIDES[iso3];
     return null;
   }
   function getCountryCurrencyName(profile, code) {
-    return sourceValues(profile).currency_name
+    const src = sourceValues(profile);
+    const facts = isObject(profile && profile.generalFacts) ? profile.generalFacts : {};
+    const snapshot = isObject(profile && profile.legacySnapshots) ? profile.legacySnapshots : {};
+    const factNames = Array.isArray(facts.currencyNames) ? facts.currencyNames[0] : facts.currencyNames;
+    const snapshotName = snapshot.currency_name || snapshot.currencyName
+      || (snapshot.economy && (snapshot.economy.currency_name || snapshot.economy.currencyName));
+    return src.currency_name || src.currencyName
+      || (profile && (profile.currency_name || profile.currencyName))
+      || factNames || facts.currencyName || facts.currency_name || snapshotName
       || CURRENCY_NAME_OVERRIDES[code]
       || (currencies.get(code) && currencies.get(code).name)
       || (code ? code + ' (name not supplied)' : 'No national currency / not applicable');
@@ -299,9 +324,14 @@
     if (!normalized) return null;
     if (normalized === 'USD') return 1;
     if (mode === 'REFERENCE') return rateValue(state.referenceRates, normalized);
-    const item = state.simulationRates[normalized] || state.simulationRates[effectiveRateCode(normalized)];
-    const value = finite(isObject(item) ? item.localPerUsd : item);
-    return value !== null && value > 0 ? value : null;
+    const direct = state.simulationRates[normalized];
+    const directValue = finite(isObject(direct) ? direct.localPerUsd : direct);
+    if (directValue !== null && directValue > 0) return directValue;
+    const alias = effectiveRateCode(normalized);
+    if (!alias || alias === normalized) return null;
+    const aliased = state.simulationRates[alias];
+    const aliasValue = finite(isObject(aliased) ? aliased.localPerUsd : aliased);
+    return aliasValue !== null && aliasValue > 0 ? aliasValue : null;
   }
   function allRateValues(mode) {
     const out = { USD: 1 };
@@ -780,27 +810,59 @@
 
   function executeConversion(action) {
     action = isObject(action) ? action : {};
+    if (!initialized || !state) return { ok: false, code: 'NOT_INITIALIZED' };
     const player = getPlayerProfile();
     const mode = String(action.mode || state.viewMode || 'SIMULATION').toUpperCase() === 'REFERENCE' ? 'REFERENCE' : 'SIMULATION';
-    const rates = allRateValues(mode);
-    const result = calculateConversion(action.amount, action.fromCode, action.toCode, rates, FX_FEE_BPS);
-    if (!result.ok) return result;
+    if (mode === 'REFERENCE') return {
+      ok: false, code: 'REFERENCE_QUOTES_READ_ONLY',
+      message: 'Reference quotes are read-only. Switch to OMEGA Game Simulation to record a conversion.'
+    };
+    const amount = finite(action.amount);
+    const fromCode = normalizeCode(action.fromCode), toCode = normalizeCode(action.toCode);
+    if (!player) return { ok: false, code: 'PLAYER_COUNTRY_UNAVAILABLE' };
+    if (!fromCode || !toCode) return { ok: false, code: 'CURRENCY_REQUIRED' };
+    if (fromCode === toCode) return {
+      ok: false, code: 'SAME_CURRENCY_CONVERSION', message: 'Choose two different currencies.'
+    };
+    const quote = calculateConversion(amount, fromCode, toCode, allRateValues('SIMULATION'), FX_FEE_BPS);
+    if (!quote.ok) return quote;
+    const banking = global.OmegaGovernmentBanking || global.Omega && global.Omega.GovernmentBanking;
+    if (!banking || typeof banking.convert !== 'function') return {
+      ok: false, code: 'GOVERNMENT_BANKING_NOT_READY',
+      message: 'Government Banking is not ready. No transaction was recorded.'
+    };
+    const transactionId = 'FX-CNV-' + String(currentTurn()) + '-' + String(state.nextTransactionId);
+    const settled = banking.convert({
+      countryId: player.countryCode || player.iso3, amount: amount,
+      fromCurrencyCode: fromCode, toCurrencyCode: toCode, feeBps: FX_FEE_BPS,
+      idempotencyKey: transactionId, reference: 'OMEGA Finance FX converter'
+    });
+    if (!settled || settled.ok !== true) return settled || { ok: false, code: 'BANKING_SETTLEMENT_FAILED' };
+    if (settled.duplicate) return Object.assign({ ok: true, duplicate: true, mode: 'SIMULATION' }, quote, {
+      transaction: safeCopy(settled.transaction || settled), bankTransactionId: settled.transactionId || transactionId
+    });
+    const actualAmount = finite(settled.amountTarget) ?? quote.amountTarget;
+    const actualGross = finite(settled.grossTarget) ?? quote.grossTarget;
+    const actualFeeUsd = finite(settled.feeUsd) ?? quote.feeUsd;
+    const actualNotional = finite(settled.usdNotional) ?? quote.usdNotional;
+    const actualFeeTarget = finite(settled.feeTarget) ?? quote.feeTarget;
+    const bankTransaction = settled.transaction || settled;
     const entry = {
-      id: 'FX-' + String(state.nextTransactionId++), turn: currentTurn(),
-      timestamp: new Date().toISOString(), type: 'CURRENCY_CONVERSION',
-      playerCountryCode: player && (player.countryCode || player.iso3) || null,
-      playerCountryName: player && player.name || null,
-      mode: mode, provider: mode === 'REFERENCE' ? 'FRANKFURTER_V2' : 'OMEGA_SIMULATION',
-      fromCode: result.fromCode, toCode: result.toCode, amountFrom: result.amount,
-      usdNotional: result.usdNotional, crossRate: result.crossRate,
-      amountGrossTo: result.grossTarget, amountTo: result.amountTarget,
-      feeBps: result.feeBps, feeUsd: result.feeUsd, feeTo: result.feeTarget,
-      settlementRoute: result.route, source: 'GOVERNMENT_BANKING_FX_CLEARING'
+      id: 'FX-' + String(state.nextTransactionId++),
+      bankTransactionId: settled.transactionId || bankTransaction.transactionId || transactionId,
+      turn: currentTurn(), timestamp: new Date().toISOString(), type: 'CURRENCY_CONVERSION',
+      playerCountryCode: player.countryCode || player.iso3 || null, playerCountryName: player.name || null,
+      mode: 'SIMULATION', provider: 'OMEGA_GOVERNMENT_BANKING',
+      fromCode: fromCode, toCode: toCode, amountFrom: amount,
+      usdNotional: actualNotional, crossRate: finite(settled.crossRate) ?? quote.crossRate,
+      amountGrossTo: actualGross, amountTo: actualAmount, feeBps: FX_FEE_BPS,
+      feeUsd: actualFeeUsd, feeTo: actualFeeTarget, settlementRoute: settled.route || quote.route,
+      source: 'GOVERNMENT_BANKING_ACCOUNT_SETTLEMENT'
     };
     state.ledger.push(entry);
     state.ledger = state.ledger.slice(-500);
-    state.settledVolumeUsd = (finite(state.settledVolumeUsd) || 0) + result.usdNotional;
-    state.settlementFeesUsd = (finite(state.settlementFeesUsd) || 0) + result.feeUsd;
+    state.settledVolumeUsd = (finite(state.settledVolumeUsd) || 0) + actualNotional;
+    state.settlementFeesUsd = (finite(state.settlementFeesUsd) || 0) + actualFeeUsd;
     const bank = bankingRoot();
     const clearing = ensureObject(bank, 'fxClearingHouse');
     clearing.settledVolumeUsd = state.settledVolumeUsd;
@@ -809,7 +871,12 @@
     clearing.lastSettlement = safeCopy(entry);
     syncAllCountries();
     dispatch('OMEGA_FX_TRANSACTION_SETTLED', safeCopy(entry));
-    return Object.assign({ ok: true }, result, { transaction: safeCopy(entry) });
+    refreshPanelMetrics();
+    return Object.assign({ ok: true }, quote, {
+      amountTarget: actualAmount, grossTarget: actualGross, feeUsd: actualFeeUsd,
+      feeTarget: actualFeeTarget, usdNotional: actualNotional, route: entry.settlementRoute,
+      mode: 'SIMULATION', transaction: safeCopy(bankTransaction), bankTransactionId: entry.bankTransactionId
+    });
   }
 
   function simulationTick(turn, durationMs) {
@@ -949,6 +1016,72 @@
         + '<td>' + escapeHTML(String(live && live.source || 'N/A')) + '</td></tr>';
     }).join('');
   }
+  function getCountryQuotes(mode) {
+    const selectedMode = String(mode || (state && state.viewMode) || 'SIMULATION').toUpperCase() === 'REFERENCE'
+      ? 'REFERENCE' : 'SIMULATION';
+    return profiles.map(function (profile) {
+      const code = getCountryCurrency(profile);
+      const rate = code ? rateFor(code, selectedMode) : null;
+      const item = code && state && state.simulationRates
+        ? state.simulationRates[code] || state.simulationRates[effectiveRateCode(code)] : null;
+      const source = !code ? 'NO_CURRENCY'
+        : selectedMode === 'REFERENCE'
+          ? (rate !== null ? String(state.referenceStatus || 'REFERENCE') : 'REFERENCE_RATE_UNAVAILABLE')
+          : String(item && item.source || (rate !== null ? 'USD_NUMERAIRE' : 'SIMULATION_RATE_UNAVAILABLE'));
+      return {
+        countryCode: profile.countryCode || profile.code || profile.iso2 || null,
+        iso3: profile.iso3 || null,
+        countryName: profile.name || 'Unknown',
+        currencyCode: code,
+        currencyName: getCountryCurrencyName(profile, code),
+        mode: selectedMode,
+        localPerUsd: rate,
+        usdPerLocalUnit: rate !== null && rate > 0 ? 1 / rate : null,
+        rateSource: source,
+        status: !code ? 'NO_CURRENCY' : rate !== null && rate > 0 ? 'AVAILABLE' : 'RATE_UNAVAILABLE'
+      };
+    });
+  }
+  function countryRateCoverage(mode) {
+    const rows = getCountryQuotes(mode);
+    const applicable = rows.filter(function (row) { return !!row.currencyCode; });
+    const covered = applicable.filter(function (row) { return row.localPerUsd !== null && row.localPerUsd > 0; });
+    return { covered: covered.length, applicable: applicable.length, text: covered.length + '/' + applicable.length };
+  }
+  function renderCountryLookup(query, mode) {
+    const q = String(query || '').trim().toLowerCase();
+    const rows = getCountryQuotes(mode);
+    const player = getPlayerProfile();
+    const playerId = normalizeCode(player && (player.countryCode || player.iso2 || player.iso3));
+    let row = null;
+    if (!q) row = rows.find(function (item) {
+      return normalizeCode(item.countryCode || item.iso3) === playerId
+        || normalizeCode(item.iso3) === normalizeCode(player && player.iso3);
+    }) || rows[0] || null;
+    else row = rows.find(function (item) {
+      return normalizeCode(item.iso3) === normalizeCode(q)
+        || normalizeCode(item.countryCode) === normalizeCode(q)
+        || normalizeCode(item.currencyCode) === normalizeCode(q);
+    }) || rows.find(function (item) {
+      return String(item.countryName || '').toLowerCase() === q;
+    }) || rows.find(function (item) {
+      return String(item.countryName || '').toLowerCase().includes(q)
+        || String(item.currencyName || '').toLowerCase().includes(q);
+    }) || null;
+    if (!row) return '<div class="ofx-country-lookup-empty">No country or currency matched. Try a country name, ISO code or currency code.</div>';
+    const code = escapeHTML(row.currencyCode || 'N/A');
+    const rate = row.localPerUsd, usd = row.usdPerLocalUnit;
+    const status = row.status === 'NO_CURRENCY' ? 'No national currency recorded'
+      : row.status === 'RATE_UNAVAILABLE' ? 'Rate unavailable for this source'
+      : 'Rate available · ' + row.rateSource;
+    return '<div class="ofx-country-lookup-card">'
+      + '<div class="ofx-country-lookup-title"><div><strong>' + escapeHTML(row.countryName) + '</strong><small>' + escapeHTML(row.iso3 || row.countryCode || '') + ' · ' + code + ' · ' + escapeHTML(row.currencyName || 'Currency not recorded') + '</small></div>'
+      + '<span class="ofx-lookup-status' + (row.status === 'AVAILABLE' ? ' is-available' : '') + '">' + escapeHTML(row.status.replace(/_/g, ' ')) + '</span></div>'
+      + '<div class="ofx-country-lookup-rates"><div><span>1 USD equals</span><strong>' + escapeHTML(rate !== null && rate > 0 ? fmtRate(rate) + ' ' + (row.currencyCode || '') : 'N/A') + '</strong></div>'
+      + '<div><span>1 ' + code + ' equals</span><strong>' + escapeHTML(usd !== null && usd > 0 ? '$' + fmtRate(usd) + ' USD' : 'N/A') + '</strong></div></div>'
+      + '<p class="ofx-note">' + escapeHTML(status) + '</p></div>';
+  }
+
   function renderBankingCountryTable(query, mode) {
     const q = String(query || '').trim().toLowerCase();
     const rows = profiles.filter(function (p) {
@@ -1004,6 +1137,10 @@
       + '<article><span>USD per local unit</span><strong data-ofx-live="usd-per-local">' + escapeHTML(rate ? fmtRate(1 / rate) : 'N/A') + '</strong><small>Reciprocal FX quote</small></article>'
       + '<article><span>Known currency codes</span><strong data-ofx-live="currency-count">' + escapeHTML(String(currencies.size)) + '</strong><small>Shared currency zones use one rate</small></article>'
       + '</div>'
+      + '<section class="ofx-section ofx-country-quick-lookup"><div class="ofx-heading"><div><h4>Country currency lookup</h4><p>Find the recorded currency and the available game/reference USD quote. Unobserved rates remain unavailable.</p></div></div>'
+      + '<label class="ofx-search">Country, ISO code or currency<input type="search" data-ofx-country-lookup value="' + escapeHTML(player && player.name || '') + '" placeholder="Bangladesh, BGD, BDT..." autocomplete="off"></label>'
+      + '<div data-ofx-country-lookup-result>' + renderCountryLookup(player && player.name || '', mode) + '</div>'
+      + '<p class="ofx-note">Simulation quote coverage: ' + escapeHTML(countryRateCoverage('SIMULATION').text) + ' country/area currency records. Reference data is comparison-only and cannot be settled.</p></section>'
       + '<section class="ofx-section"><div class="ofx-heading"><div><h4>Cross-Currency Clearing</h4><p>Convert currencies directly, including BDT ↔ NGN. Settlements are recorded in Government Banking.</p></div>'
       + '<button type="button" class="ofx-secondary" data-ofx-refresh>Refresh reference rates</button></div>'
       + '<form class="ofx-form" data-ofx-action="ofx-convert">'
@@ -1335,10 +1472,20 @@
         if (body) body.innerHTML = renderBankingCountryTable(target.value, state.viewMode);
       } else if (target.matches && target.matches('[data-ofx-action="ofx-convert"] select[name="mode"]')) {
         state.viewMode = target.value === 'REFERENCE' ? 'REFERENCE' : 'SIMULATION';
+        const panel = target.closest('[data-ofx-panel]');
+        const lookup = panel && panel.querySelector('[data-ofx-country-lookup]');
+        const output = panel && panel.querySelector('[data-ofx-country-lookup-result]');
+        if (output) output.innerHTML = renderCountryLookup(lookup && lookup.value, state.viewMode);
       }
     });
     global.document.addEventListener('input', function (event) {
       const target = event.target;
+      if (target && target.matches && target.matches('[data-ofx-country-lookup]')) {
+        const panel = target.closest('[data-ofx-panel]');
+        const output = panel && panel.querySelector('[data-ofx-country-lookup-result]');
+        const modeEl = panel && panel.querySelector('[data-ofx-action="ofx-convert"] select[name="mode"]');
+        if (output) output.innerHTML = renderCountryLookup(target.value, modeEl && modeEl.value || state.viewMode);
+      }
       if (target && target.matches && target.matches('[data-ofx-bank-filter]')) {
         const panel = target.closest('[data-ofx-panel]');
         const body = panel && panel.querySelector('[data-ofx-banking-table]');
@@ -1475,9 +1622,15 @@
     });
   }
   function diagnostics() {
+    const simulationCoverage = countryRateCoverage('SIMULATION');
+    const referenceCoverage = countryRateCoverage('REFERENCE');
     return {
       version: VERSION, initialized: initialized, countryAreaCount: profiles.length,
       currencyCount: currencies.size,
+      countriesWithCurrency: profiles.filter(profile => !!getCountryCurrency(profile)).length,
+      countriesWithSimulationRate: simulationCoverage.covered,
+      countriesWithApplicableCurrency: simulationCoverage.applicable,
+      countriesWithReferenceRate: referenceCoverage.covered,
       currenciesWithSimulationRate: currencies.size ? Array.from(currencies.keys()).filter(code => rateFor(code, 'SIMULATION') !== null).length : 0,
       currenciesWithReferenceRate: currencies.size ? Array.from(currencies.keys()).filter(code => rateFor(code, 'REFERENCE') !== null).length : 0,
       referenceStatus: state && state.referenceStatus || 'NOT_INITIALIZED',
@@ -1501,6 +1654,7 @@
     getCurrencies: function () { return Array.from(currencies.values()).map(safeCopy); },
     getRate: rateFor,
     getRates: allRateValues,
+    getCountryQuotes: getCountryQuotes,
     getCurrencyCode: getCountryCurrency,
     getPolicy: function (code) { return safeCopy(currencyPolicy(normalizeCode(code))); },
     applyMonetaryPolicy: applyMonetaryPolicy,
